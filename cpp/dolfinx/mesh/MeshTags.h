@@ -208,29 +208,34 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   // Send input global indices to 'post master' rank, based on input
   // global index value
-  const std::int64_t num_igi_global
-      = mesh->geometry().index_map()->size_global();
+  const std::int64_t num_nodes_g = mesh->geometry().index_map()->size_global();
   const int comm_size = MPI::size(comm);
   // NOTE: could make this int32_t be sending: index <- index - dest_rank_offset
-  std::vector<std::vector<std::int64_t>> send_igi(comm_size);
+  std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
   for (std::int64_t node : nodes_g)
   {
-    // TODO: Optimise this call
-    // Figure out which process responsible for the input global index
+    // TODO: Optimise this call by adding 'vectorised verion of
+    //       MPI::index_owner
+    // Figure out which process is the postmaster for the input global index
     const std::int32_t p
-        = dolfinx::MPI::index_owner(comm_size, node, num_igi_global);
-    send_igi[p].push_back(node);
+        = dolfinx::MPI::index_owner(comm_size, node, num_nodes_g);
+    nodes_g_send[p].push_back(node);
   }
 
-  const graph::AdjacencyList<std::int64_t> recv_igi
-      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(send_igi));
+  // Send/receive
+  const graph::AdjacencyList<std::int64_t> nodes_g_recv
+      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
 
   // -------------------
   // 2. Send the entity key (nodes list) and tag to the postmaster based
-  //    on first node in the entity 'key'
+  //    on the lowest index node in the entity 'key'
+  //
+  //    NOTE: Stage 2 doesn't depend on the data received in Step 1, so
+  //    data (i) the communication could be combined, or (ii) the
+  //    communication in Step 1 could be make non-blocking.
 
-  std::vector<std::vector<std::int64_t>> send_nodes(comm_size);
-  std::vector<std::vector<T>> send_values(comm_size);
+  std::vector<std::vector<std::int64_t>> entities_send(comm_size);
+  std::vector<std::vector<T>> values_send(comm_size);
   for (std::int32_t e = 0; e < entities.rows(); ++e)
   {
     // Copy nodes for entity
@@ -238,42 +243,47 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
                                      entities.row(e).data() + entities.cols());
     std::sort(entity.begin(), entity.end());
 
-    // Determine post-master based on lowest entity node
+    // Determine postmaster based on lowest entity node
     const std::int32_t p
-        = dolfinx::MPI::index_owner(comm_size, entity[0], num_igi_global);
-    send_nodes[p].insert(send_nodes[p].end(), entity.begin(), entity.end());
-    send_values[p].push_back(values[e]);
+        = dolfinx::MPI::index_owner(comm_size, entity[0], num_nodes_g);
+    entities_send[p].insert(entities_send[p].end(), entity.begin(),
+                            entity.end());
+    values_send[p].push_back(values[e]);
   }
 
-  // FIXME: Pack into one MPI call
-  const graph::AdjacencyList<std::int64_t> recv_nodes
-      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(send_nodes));
-  const graph::AdjacencyList<T> recv_values
-      = MPI::all_to_all(comm, graph::AdjacencyList<T>(send_values));
+  // TODO: Pack into one MPI call
+  const graph::AdjacencyList<std::int64_t> entities_recv = MPI::all_to_all(
+      comm, graph::AdjacencyList<std::int64_t>(entities_send));
+  const graph::AdjacencyList<T> values_recv
+      = MPI::all_to_all(comm, graph::AdjacencyList<T>(values_send));
 
   // -------------------
-  // 3. As 'postmaster', send back the entity key (nodes list) and tag
+  // 3. As 'postmaster', send back the entity key (node list) and tag
   //    value to ranks that possibly need the data. Do this based on the
   //    first node index in the entity key.
 
+  // Figure out which processes are owners of received nodes
   std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
   std::vector<std::vector<T>> send_vals_owned(comm_size);
   const int nnodes_per_entity = entities.cols();
-  // Figure out which processes are owners of received nodes
-  for (int p = 0; p < recv_nodes.num_nodes(); ++p)
-  {
-    auto nodes = recv_nodes.links(p);
-    auto vals = recv_values.links(p);
 
+  // Loop over processes
+  for (int p = 0; p < entities_recv.num_nodes(); ++p)
+  {
+    auto nodes = entities_recv.links(p);
+    auto vals = values_recv.links(p);
+
+    // Loop over received entities
     for (int e = 0; e < nodes.size() / nnodes_per_entity; ++e)
     {
       std::vector<std::int64_t> entity(nodes.data() + e * nnodes_per_entity,
                                        nodes.data() + e * nnodes_per_entity
                                            + nnodes_per_entity);
 
-      for (int q = 0; q < recv_igi.num_nodes(); ++q)
+      // Loop over process
+      for (int q = 0; q < nodes_g_recv.num_nodes(); ++q)
       {
-        auto igi = recv_igi.links(q);
+        auto igi = nodes_g_recv.links(q);
         for (int j = 0; j < igi.size(); ++j)
         {
           if (igi[j] == entity[0])
@@ -287,7 +297,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     }
   }
 
-  // FIXME: Pack into one MPI call
+  // TODO: Pack into one MPI call
   const graph::AdjacencyList<std::int64_t> recv_ents = MPI::all_to_all(
       comm, graph::AdjacencyList<std::int64_t>(send_nodes_owned));
   const graph::AdjacencyList<T> recv_vals
@@ -340,14 +350,14 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   std::vector<T> values_new;
   const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>>
-      entities_recv(recv_ents.array().data(),
-                    recv_ents.array().rows() / nnodes_per_entity,
-                    nnodes_per_entity);
+      _entities(recv_ents.array().data(),
+                recv_ents.array().rows() / nnodes_per_entity,
+                nnodes_per_entity);
   std::vector<std::int64_t> entity(nnodes_per_entity);
-  for (Eigen::Index e = 0; e < entities_recv.rows(); ++e)
+  for (Eigen::Index e = 0; e < _entities.rows(); ++e)
   {
-    std::copy(entities_recv.row(e).data(),
-              entities_recv.row(e).data() + nnodes_per_entity, entity.begin());
+    std::copy(_entities.row(e).data(),
+              _entities.row(e).data() + nnodes_per_entity, entity.begin());
     std::sort(entity.begin(), entity.end());
     if (const auto it = entities_igi.find(entity); it != entities_igi.end())
     {
