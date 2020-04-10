@@ -20,6 +20,10 @@ class xml_document;
 
 namespace dolfinx
 {
+namespace fem
+{
+class CoordinateElement;
+}
 
 namespace function
 {
@@ -92,20 +96,22 @@ public:
                       const std::string xpath = "/Xdmf/Domain");
 
   /// Read in Mesh
+  /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
-  mesh::Mesh read_mesh(const std::string name,
+  mesh::Mesh read_mesh(const fem::CoordinateElement& element,
+                       const std::string name,
                        const std::string xpath = "/Xdmf/Domain") const;
 
   /// Read in the data for Mesh
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid data is located
-  /// @return Points on each process, cells topology (global node
-  ///   indexing), and the cell type
+  /// @return (Cell type, degree), points on each process, and cells
+  ///   topology (global node indexing)
   std::tuple<
-      mesh::CellType,
+      std::pair<mesh::CellType, int>,
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
       Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                    Eigen::RowMajor>>
@@ -139,6 +145,10 @@ public:
   read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                 const std::string name,
                 const std::string xpath = "/Xdmf/Domain");
+
+  /// Get the MPI communicator
+  /// @return The MPI communicator for the file object
+  MPI_Comm comm() const;
 
 private:
   // MPI communicator

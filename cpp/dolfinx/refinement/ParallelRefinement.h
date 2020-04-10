@@ -6,12 +6,12 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
 #include <set>
 #include <vector>
-#include <Eigen/Dense>
 
 namespace dolfinx
 {
@@ -68,7 +68,7 @@ public:
   void update_logical_edgefunction();
 
   /// Add new vertex for each marked edge, and create
-  /// new_vertex_coordinates and global_edge->new_vertex mapping.
+  /// new_vertex_coordinates and global_edge->new_vertex map.
   /// Communicate new vertices with MPI to all affected processes.
   void create_new_vertices();
 
@@ -98,7 +98,8 @@ private:
   std::map<std::int32_t, std::int64_t> _local_edge_to_new_vertex;
 
   // New storage for all coordinates when creating new vertices
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _new_vertex_coordinates;
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+      _new_vertex_coordinates;
 
   // New storage for all cells when creating new topology
   std::vector<std::int64_t> _new_cell_topology;
@@ -115,7 +116,6 @@ private:
 
   // Neighbourhood communicator
   MPI_Comm _neighbour_comm;
-
 };
 } // namespace refinement
 } // namespace dolfinx

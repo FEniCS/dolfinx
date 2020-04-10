@@ -6,7 +6,7 @@
 
 # import numpy as np
 
-# from dolfinx import MPI, UnitSquareMesh
+# from dolfinx import UnitSquareMesh
 # from dolfinx.cpp.mesh import PeriodicBoundaryComputation
 # from dolfinx_utils.test.skips import skip_in_parallel
 
@@ -17,7 +17,7 @@
 
 # @pytest.fixture
 # def mesh():
-#     return UnitSquareMesh(MPI.comm_world, 4, 4)
+#     return UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
 
 
 # @skip_in_parallel

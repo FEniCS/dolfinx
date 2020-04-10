@@ -135,7 +135,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
     const Eigen::Array<unsigned long long, Eigen::Dynamic, 1>& adjncy
         = adj_graph.array();
 
-    // Generate mapping for where new boundary cells need to be sent
+    // Generate map for where new boundary cells need to be sent
     for (std::int32_t i = 0; i < ncells; i++)
     {
       const std::int32_t proc_this = part[i];

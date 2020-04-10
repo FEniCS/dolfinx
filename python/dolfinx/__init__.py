@@ -35,13 +35,13 @@ from dolfinx.common import (has_debug, has_petsc_complex, has_kahip,
                            has_parmetis, git_commit_hash, TimingType, timing,
                            timings, list_timings)
 
-import dolfinx.MPI
 import dolfinx.log
 
 from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
-from .cpp.mesh import Mesh, Topology, Geometry, MeshEntity, MeshQuality
+from dolfinx.mesh import Mesh
+from .cpp.mesh import Topology, Geometry, MeshEntity, MeshQuality
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)
 

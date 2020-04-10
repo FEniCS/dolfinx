@@ -251,7 +251,7 @@ void ParallelRefinement::create_new_vertices()
     {
       for (int remote_process : shared_edge_i->second)
       {
-        // send mapping from global edge index to new global vertex index
+        // send map from global edge index to new global vertex index
         values_to_send[remote_process].push_back(
             edge_index_map->local_to_global(local_edge.first));
         values_to_send[remote_process].push_back(local_edge.second);
@@ -310,11 +310,9 @@ mesh::Mesh ParallelRefinement::build_local() const
                                 Eigen::RowMajor>>
       cells(_new_cell_topology.data(), num_cells, num_cell_vertices);
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(_mesh.topology().cell_type(), cells.cols());
   mesh::Mesh mesh = mesh::create(
-      _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells), layout,
-      _new_vertex_coordinates, mesh::GhostMode::none);
+      _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells),
+      _mesh.geometry().cmap(), _new_vertex_coordinates, mesh::GhostMode::none);
 
   return mesh;
 }
@@ -337,18 +335,16 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
       cells(_new_cell_topology.data(), num_local_cells, num_vertices_per_cell);
 
   // Build mesh
-
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(_mesh.topology().cell_type(), cells.cols());
   if (redistribute)
   {
     return mesh::create(_mesh.mpi_comm(),
-                        graph::AdjacencyList<std::int64_t>(cells), layout,
-                        _new_vertex_coordinates, mesh::GhostMode::none);
+                        graph::AdjacencyList<std::int64_t>(cells),
+                        _mesh.geometry().cmap(), _new_vertex_coordinates,
+                        mesh::GhostMode::none);
   }
 
   MPI_Comm comm = _mesh.mpi_comm();
-  mesh::Topology topology(layout.cell_type());
+  mesh::Topology topology(_mesh.geometry().cmap().cell_shape());
   const graph::AdjacencyList<std::int64_t> my_cells(cells);
   {
     auto [cells_local, local_to_global_vertices]
@@ -356,7 +352,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 
     // Create (i) local topology object and (ii) IndexMap for cells, and
     // set cell-vertex topology
-    mesh::Topology topology_local(layout.cell_type());
+    mesh::Topology topology_local(_mesh.geometry().cmap().cell_shape());
     const int tdim = topology_local.dim();
     auto map = std::make_shared<common::IndexMap>(
         comm, cells_local.num_nodes(), std::vector<std::int64_t>(), 1);
@@ -420,8 +416,9 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
     topology.set_connectivity(_cells_d, tdim, 0);
   }
 
-  const mesh::Geometry geometry = mesh::create_geometry(
-      comm, topology, layout, my_cells, _new_vertex_coordinates);
+  const mesh::Geometry geometry
+      = mesh::create_geometry(comm, topology, _mesh.geometry().cmap(), my_cells,
+                              _new_vertex_coordinates);
 
   return mesh::Mesh(comm, std::move(topology), std::move(geometry));
 }
