@@ -76,25 +76,21 @@ public:
   /// Move assignment
   MeshTags& operator=(MeshTags&& tags) = default;
 
-  /// Find all MeshTags for a list of values and return the corresponding
-  /// indices per value, local-to-process
-  /// @param[in] values A list values
+  /// Find all MeshTags local-to-process indices for a given value.
+  /// @param[in] values The value
   /// @return The corresponding indices
-  const std::vector<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-  locate_indices(const std::vector<T>& values) const
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+  locate_indices(const T value) const
   {
-    std::vector<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> indices(
-        values.size());
+    int n = std::count(_values.begin(), _values.end(), value);
+    Eigen::Array<std::int32_t, Eigen::Dynamic, 1> indices(n);
     // Find values
+    int counter = 0;
     for (std::int32_t i = 0; i < _values.size(); ++i)
     {
-      for (std::int32_t j = 0; j < values.size(); ++j)
+      if (_values[i] == value)
       {
-        if (_values[i] == values[j])
-        {
-          indices[j].conservativeResize(indices[j].size() + 1);
-          indices[j].tail(1) = _indices[i];
-        }
+        indices[counter++] = _indices[i];
       }
     }
     return indices;
@@ -176,7 +172,7 @@ private:
     _indices.erase(_indices.begin() + last_unique + 1, _indices.end());
     _values.erase(_values.begin() + last_unique + 1, _values.end());
   }
-};
+}; // namespace mesh
 
 /// Create MeshTags from arrays
 /// @param[in] comm
