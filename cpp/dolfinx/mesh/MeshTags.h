@@ -267,8 +267,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   // NOTE: Could: (i) use a std::unordered_multimap, or (ii) only send
   // owned nodes to the postmaster and use map, unordered_map or
-  // std::vector<pair>>, followed by a neighbourhood all_to_all at the
-  // end.
+  // std::vector<pair>>, followed by a
+  // neighbourhood all_to_all at the end.
   //
   // Build map from global node index to ranks that have it
   std::multimap<std::int64_t, int> node_to_rank;
@@ -316,9 +316,18 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // 4. From the received (key, value) data, determine which keys
   //    (entities) are on this process.
 
+  // TODO: Rather than using std::map<std::vector<std::int64_t>,
+  //       std::int32_t>, use a rectangular Eigen::Array to avoid the
+  //       cost of std::vector<std::int64_t> allocations, and sort the
+  //       Array by row.
+  //
+  // TODO: We have received possible tags from other ranks, so we could
+  //       avoid creating the std::map for *all* entities and just for
+  //       candidate entities.
+
   // Using just the information on current local mesh partition prepare
-  // a mapping from *ordered* nodes of entity input global indices to
-  // entity local index
+  // a map from *ordered* nodes of entity input global indices to entity
+  // local index
   std::map<std::vector<std::int64_t>, std::int32_t> entities_igi;
   auto map_e = mesh->topology().index_map(e_dim);
   assert(map_e);
