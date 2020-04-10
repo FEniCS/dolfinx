@@ -662,15 +662,9 @@ fem::Form fem::create_form(
         "Vertex integrals not supported. Under development.");
   }
 
-  // Create CoordinateElement
-  ufc_coordinate_mapping* cmap = ufc_form.create_coordinate_mapping();
-  auto coord_mapping = std::make_shared<const fem::CoordinateElement>(
-      create_coordinate_map(*cmap));
-  std::free(cmap);
-
   return fem::Form(spaces, integrals,
                    FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
-                   fem::get_constants_from_ufc_form(ufc_form), coord_mapping);
+                   fem::get_constants_from_ufc_form(ufc_form));
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement
@@ -684,13 +678,29 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
          {quadrilateral, mesh::CellType::quadrilateral},
          {hexahedron, mesh::CellType::hexahedron}};
 
+  // Get cell type
   const mesh::CellType cell_type = ufc_to_cell.at(ufc_cmap.cell_shape);
   assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
 
+  // Get scalar dof layout for geometry
+  ufc_dofmap* dmap = ufc_cmap.create_scalar_dofmap();
+  assert(dmap);
+  ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
+  std::free(dmap);
+
   return fem::CoordinateElement(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
-      ufc_cmap.signature, ufc_cmap.compute_physical_coordinates,
+      ufc_cmap.signature, dof_layout, ufc_cmap.compute_physical_coordinates,
       ufc_cmap.compute_reference_geometry);
+}
+//-----------------------------------------------------------------------------
+fem::CoordinateElement
+fem::create_coordinate_map(ufc_coordinate_mapping* (*fptr)())
+{
+  ufc_coordinate_mapping* cmap = fptr();
+  fem::CoordinateElement element = create_coordinate_map(*cmap);
+  std::free(cmap);
+  return element;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<function::FunctionSpace>

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "ElementDofLayout.h"
 #include <Eigen/Dense>
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
@@ -30,6 +31,7 @@ public:
   /// @param[in] topological_dimension
   /// @param[in] geometric_dimension
   /// @param[in] signature
+  /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   /// @param[in] compute_physical_coordinates Push-forward function from
   ///   reference to physical coordinates
   /// @param[in] compute_reference_geometry Pull-back function from
@@ -37,6 +39,7 @@ public:
   CoordinateElement(
       mesh::CellType cell_type, int topological_dimension,
       int geometric_dimension, const std::string& signature,
+      const ElementDofLayout& dof_layout,
       std::function<void(double*, int, const double*, const double*)>
           compute_physical_coordinates,
       std::function<void(double*, double*, double*, double*, int, const double*,
@@ -59,6 +62,9 @@ public:
 
   /// Return the geometric dimension of the cell shape
   int geometric_dimension() const;
+
+  /// Return the dof layout
+  const ElementDofLayout& dof_layout() const;
 
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
@@ -94,6 +100,8 @@ private:
   mesh::CellType _cell;
 
   std::string _signature;
+
+  ElementDofLayout _dof_layout;
 
   std::function<void(double*, int, const double*, const double*)>
       _compute_physical_coordinates;

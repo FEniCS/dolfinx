@@ -62,8 +62,8 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 //-----------------------------------------------------------------------------
 
 /// Communicate with sharing processes to find out which entities are
-/// ghosts and return a mapping vector to move these local indices to
-/// the end of the local range. Also returns the index map, and shared
+/// ghosts and return a map (vector) to move these local indices to the
+/// end of the local range. Also returns the index map, and shared
 /// entities, i.e. the set of all processes which share each shared
 /// entity.
 /// @param[in] comm MPI Communicator

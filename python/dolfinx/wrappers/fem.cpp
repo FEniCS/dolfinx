@@ -110,7 +110,7 @@ void fem(py::module& m)
       "Create a ufc_form object from a pointer.");
 
   m.def(
-      "make_coordinate_mapping",
+      "make_coordinate_map",
       [](std::uintptr_t e) {
         ufc_coordinate_mapping* p
             = reinterpret_cast<ufc_coordinate_mapping*>(e);
@@ -247,15 +247,12 @@ void fem(py::module& m)
                                        Eigen::RowMajor>&>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
-      .def_property_readonly("cell_type",
-                             &dolfinx::fem::ElementDofLayout::cell_type)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)
       .def("num_entity_closure_dofs",
            &dolfinx::fem::ElementDofLayout::num_entity_closure_dofs)
       .def("entity_dofs", &dolfinx::fem::ElementDofLayout::entity_dofs)
       .def("entity_closure_dofs",
-           &dolfinx::fem::ElementDofLayout::entity_closure_dofs)
-      .def("degree", &dolfinx::fem::ElementDofLayout::degree);
+           &dolfinx::fem::ElementDofLayout::entity_closure_dofs);
 
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
@@ -273,7 +270,9 @@ void fem(py::module& m)
   // dolfinx::fem::CoordinateElement
   py::class_<dolfinx::fem::CoordinateElement,
              std::shared_ptr<dolfinx::fem::CoordinateElement>>(
-      m, "CoordinateElement", "Coordinate mapping object")
+      m, "CoordinateElement", "Coordinate map element")
+      .def_property_readonly("dof_layout",
+                             &dolfinx::fem::CoordinateElement::dof_layout)
       .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward);
 
   // dolfinx::fem::DirichletBC
@@ -496,8 +495,7 @@ void fem(py::module& m)
            })
       .def_property_readonly("rank", &dolfinx::fem::Form::rank)
       .def("mesh", &dolfinx::fem::Form::mesh)
-      .def("function_space", &dolfinx::fem::Form::function_space)
-      .def("coordinate_mapping", &dolfinx::fem::Form::coordinate_mapping);
+      .def("function_space", &dolfinx::fem::Form::function_space);
 
   m.def("locate_dofs_topological", &dolfinx::fem::locate_dofs_topological,
         py::arg("V"), py::arg("dim"), py::arg("entities"),

@@ -7,7 +7,6 @@
 #include "Form.h"
 #include "DofMap.h"
 #include <dolfinx/common/types.h>
-#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/function/Constant.h>
@@ -30,15 +29,14 @@ Form::Form(
     const FormIntegrals& integrals, const FormCoefficients& coefficients,
     const std::vector<
         std::pair<std::string, std::shared_ptr<const function::Constant>>>
-        constants,
-    std::shared_ptr<const CoordinateElement> coord_mapping)
+        constants)
     : _integrals(integrals), _coefficients(coefficients), _constants(constants),
-      _function_spaces(function_spaces), _coord_mapping(coord_mapping)
+      _function_spaces(function_spaces)
 {
   // Set _mesh from function::FunctionSpace, and check they are the same
   if (!function_spaces.empty())
     _mesh = function_spaces[0]->mesh();
-  for (const auto & V : function_spaces)
+  for (const auto& V : function_spaces)
   {
     if (_mesh != V->mesh())
       throw std::runtime_error("Incompatible mesh");
@@ -53,8 +51,7 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces)
     : Form(function_spaces, FormIntegrals(), FormCoefficients({}),
            std::vector<std::pair<std::string,
-                                 std::shared_ptr<const function::Constant>>>(),
-           nullptr)
+                                 std::shared_ptr<const function::Constant>>>())
 {
   // Do nothing
 }
@@ -120,7 +117,7 @@ void Form::set_constants(
 //-----------------------------------------------------------------------------
 bool Form::all_constants_set() const
 {
-  for (const auto & constant : _constants)
+  for (const auto& constant : _constants)
     if (!constant.second)
       return false;
 
@@ -130,7 +127,7 @@ bool Form::all_constants_set() const
 std::set<std::string> Form::get_unset_constants() const
 {
   std::set<std::string> unset;
-  for (const auto & constant : _constants)
+  for (const auto& constant : _constants)
   {
     if (!constant.second)
       unset.insert(constant.first);
@@ -207,9 +204,4 @@ Form::constants() const
 }
 //-----------------------------------------------------------------------------
 const fem::FormIntegrals& Form::integrals() const { return _integrals; }
-//-----------------------------------------------------------------------------
-std::shared_ptr<const fem::CoordinateElement> Form::coordinate_mapping() const
-{
-  return _coord_mapping;
-}
 //-----------------------------------------------------------------------------

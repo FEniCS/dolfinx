@@ -6,9 +6,9 @@
 
 import os
 
-import mpi4py
 import numpy
 import pytest
+from mpi4py import MPI
 from dolfinx_utils.test.fixtures import tempdir
 
 from dolfinx.cpp.mesh import CellType
@@ -19,7 +19,7 @@ from dolfinx.mesh import MeshTags, locate_entities_geometrical
 assert (tempdir)
 
 # Supported XDMF file encoding
-if mpi4py.MPI.COMM_WORLD.size > 1:
+if MPI.COMM_WORLD.size > 1:
     encodings = (XDMFFile.Encoding.HDF5, )
 else:
     encodings = (XDMFFile.Encoding.ASCII, XDMFFile.Encoding.HDF5)
@@ -31,7 +31,7 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 @pytest.mark.parametrize("encoding", encodings)
 def test_3d(tempdir, cell_type, encoding):
     filename = os.path.join(tempdir, "meshtags_3d.xdmf")
-    comm = mpi4py.MPI.COMM_WORLD
+    comm = MPI.COMM_WORLD
     mesh = UnitCubeMesh(comm, 4, 4, 4, cell_type)
 
     bottom_facets = locate_entities_geometrical(mesh, 2, lambda x: numpy.isclose(x[1], 0.0))
@@ -73,8 +73,8 @@ def test_3d(tempdir, cell_type, encoding):
         file.write_meshtags(mt_in)
 
     # Check number of owned and marked entities
-    lines_local = comm.allreduce((mt_lines.indices < mesh.topology.index_map(1).size_local).sum(), op=mpi4py.MPI.SUM)
+    lines_local = comm.allreduce((mt_lines.indices < mesh.topology.index_map(1).size_local).sum(), op=MPI.SUM)
     lines_local_in = comm.allreduce(
-        (mt_lines_in.indices < mesh_in.topology.index_map(1).size_local).sum(), op=mpi4py.MPI.SUM)
+        (mt_lines_in.indices < mesh_in.topology.index_map(1).size_local).sum(), op=MPI.SUM)
 
     assert lines_local == lines_local_in

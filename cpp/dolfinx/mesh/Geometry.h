@@ -8,7 +8,7 @@
 
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <string>
@@ -39,13 +39,29 @@ class Geometry
 {
 public:
   /// Constructor
+  template <typename AdjacencyList32, typename Vector64>
   Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
-           const graph::AdjacencyList<std::int32_t>& dofmap,
-           const fem::ElementDofLayout& layout,
-           const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                              Eigen::RowMajor>& x,
-           const std::vector<std::int64_t>& global_indices,
-           const std::vector<std::int64_t>& input_global_indices);
+           AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
+           const Eigen::Ref<const Eigen::Array<
+               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
+           Vector64&& input_global_indices)
+      : _dim(x.cols()), _dofmap(std::forward<AdjacencyList32>(dofmap)),
+        _index_map(index_map), _cmap(element),
+        _input_global_indices(std::forward<Vector64>(input_global_indices))
+  {
+    if (x.rows() != (int)_input_global_indices.size())
+      throw std::runtime_error("Size mis-match");
+
+    // Make all geometry 3D
+    if (_dim == 3)
+      _x = x;
+    else if (_dim != 3)
+    {
+      _x.resize(x.rows(), 3);
+      _x.setZero();
+      _x.block(0, 0, x.rows(), x.cols()) = x;
+    }
+  }
 
   /// Copy constructor
   Geometry(const Geometry&) = default;
@@ -65,11 +81,6 @@ public:
   /// Return Euclidean dimension of coordinate system
   int dim() const;
 
-  /// @todo Remove this non-const version. Just here for mesh::Ordering
-  ///
-  /// DOF map
-  graph::AdjacencyList<std::int32_t>& dofmap();
-
   /// DOF map
   const graph::AdjacencyList<std::int32_t>& dofmap() const;
 
@@ -82,29 +93,20 @@ public:
   /// Geometry degrees-of-freedom
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x() const;
 
+  /// The element that describes the geometry map
+  /// @return The coordinate/geometry element
+  const fem::CoordinateElement& cmap() const;
+
   /// Return coordinate array for node n (index is local to the process)
   Eigen::Vector3d node(int n) const;
 
-  /// Global input indices for points
-  const std::vector<std::int64_t>& global_indices() const;
-
   /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const;
-
-  /// @warning Experimental. Needs revision
-  ///
-  /// Put ElementDofLayout here for now
-  const fem::ElementDofLayout& dof_layout() const;
 
   /// Hash of coordinate values
   /// @return A tree-hashed value of the coordinates over all MPI
   ///   processes
   std::size_t hash() const;
-
-  /// @warning Experimental. Needs revision
-  ///
-  /// Put CoordinateElement here for now
-  std::shared_ptr<const fem::CoordinateElement> coord_mapping;
 
 private:
   // Geometric dimension
@@ -116,14 +118,11 @@ private:
   // IndexMap for geometry 'dofmap'
   std::shared_ptr<const common::IndexMap> _index_map;
 
-  // The dof layout on the cell
-  fem::ElementDofLayout _layout;
+  // The coordinate element
+  fem::CoordinateElement _cmap;
 
   // Coordinates for all points stored as a contiguous array
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
-
-  // Global indices for points
-  std::vector<std::int64_t> _global_indices;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
@@ -133,7 +132,7 @@ private:
 /// FIXME: document
 mesh::Geometry create_geometry(
     MPI_Comm comm, const Topology& topology,
-    const fem::ElementDofLayout& layout,
+    const fem::CoordinateElement& coordinate_element,
     const graph::AdjacencyList<std::int64_t>& cells,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x);

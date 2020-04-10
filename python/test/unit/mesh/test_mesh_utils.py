@@ -8,11 +8,12 @@ import os
 
 import numpy as np
 import pytest
-from dolfinx_utils.test.fixtures import tempdir
+from mpi4py import MPI
 
-import dolfinx
-from dolfinx import cpp
+import ufl
+from dolfinx import cpp, fem
 from dolfinx.io import XDMFFile
+from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
 
@@ -56,6 +57,16 @@ def xtest_extract_topology():
     # unchanged, and edges entries dropped
     cells_filtered1 = cpp.mesh.extract_topology(layout, cells)
     assert np.array_equal(cells_filtered.array(), cells_filtered1.array())
+
+
+def local_range(process, N, size):
+    n = N // size
+    r = N % size
+    if process < r:
+        local_range = [process * (n + 1), process * (n + 1) + n + 1]
+    else:
+        local_range = [process * n + r, process * n + r + n]
+    return local_range
 
 
 def create_mesh_gmsh(shape, order):
@@ -179,11 +190,11 @@ def test_topology_partition(tempdir, shape, order):
 
     pytest.importorskip("pygmsh")
 
-    size = cpp.MPI.size(cpp.MPI.comm_world)
+    size = MPI.COMM_WORLD.size
     layout = get_dof_layout(shape, order)
     dim = cpp.mesh.cell_dim(shape)
 
-    # rank = cpp.MPI.rank(cpp.MPI.comm_world)
+    # rank = MPI.COMM_WORLD.rank
     # if rank == 0:
     #     # Create mesh data
     #     cells, x = create_mesh_gmsh(shape, order)
@@ -211,8 +222,8 @@ def test_topology_partition(tempdir, shape, order):
 
     # Divide data amongst ranks (for testing). Also possible to start
     # with all data on a single rank.
-    range_c = cpp.MPI.local_range(dolfinx.MPI.comm_world.rank, len(cells), dolfinx.MPI.comm_world.size)
-    range_v = cpp.MPI.local_range(dolfinx.MPI.comm_world.rank, len(x), dolfinx.MPI.comm_world.size)
+    range_c = local_range(MPI.COMM_WORLD.rank, len(cells), MPI.COMM_WORLD.size)
+    range_v = local_range(MPI.COMM_WORLD.rank, len(x), MPI.COMM_WORLD.size)
     cells = cells[range_c[0]:range_c[1]]
     x = np.array(x[range_v[0]:range_v[1], : dim])
 
@@ -226,16 +237,16 @@ def test_topology_partition(tempdir, shape, order):
     # this should just be the identity operator. For other elements
     # the filtered lists may have 'gaps', i.e. the indices might not
     # be contiguous.
-    cells_global_v = cpp.mesh.extract_topology(layout, cells_global)
+    cells_global_v = cpp.mesh.extract_topology(shape, layout, cells_global)
 
     # Compute the destination rank for cells on this process via graph
     # partitioning
-    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size, layout.cell_type,
+    dest = cpp.mesh.partition_cells(MPI.COMM_WORLD, size, shape,
                                     cells_global_v, cpp.mesh.GhostMode.none)
     assert len(dest) == cells_global_v.num_nodes
 
     # Distribute cells to destination rank
-    cells, src, original_cell_index, ghost_index = cpp.graph.distribute(cpp.MPI.comm_world,
+    cells, src, original_cell_index, ghost_index = cpp.graph.distribute(MPI.COMM_WORLD,
                                                                         cells_global_v, dest)
 
     # Build local cell-vertex connectivity, with local vertex indices
@@ -249,19 +260,19 @@ def test_topology_partition(tempdir, shape, order):
 
     # Create (i) local topology object and (ii) IndexMap for cells, and
     # set cell-vertex topology
-    topology_local = cpp.mesh.Topology(cpp.MPI.comm_self, layout.cell_type)
+    topology_local = cpp.mesh.Topology(MPI.COMM_SELF, shape)
     tdim = topology_local.dim
-    map = cpp.common.IndexMap(cpp.MPI.comm_self, cells_local.num_nodes, [], 1)
+    map = cpp.common.IndexMap(MPI.COMM_SELF, cells_local.num_nodes, [], 1)
     topology_local.set_index_map(tdim, map)
     topology_local.set_connectivity(cells_local, tdim, 0)
 
     # Attach an IndexMap for vertices to local topology
     n = len(local_to_global_vertices)
-    index_map = cpp.common.IndexMap(cpp.MPI.comm_self, n, [], 1)
+    index_map = cpp.common.IndexMap(MPI.COMM_SELF, n, [], 1)
     topology_local.set_index_map(0, index_map)
 
     # Create facets for local topology, and attach to the topology object
-    cf, fv, map = cpp.mesh.compute_entities(cpp.MPI.comm_self,
+    cf, fv, map = cpp.mesh.compute_entities(MPI.COMM_SELF,
                                             topology_local, tdim - 1)
     topology_local.set_connectivity(cf, tdim, tdim - 1)
     topology_local.set_index_map(tdim - 1, index_map)
@@ -279,11 +290,11 @@ def test_topology_partition(tempdir, shape, order):
     # Build distributed cell-vertex AdjacencyList, IndexMap for
     # vertices, and map from local index to old global index
     exterior_vertices = cpp.mesh.compute_vertex_exterior_markers(topology_local)
-    cells, vertex_map = cpp.graph.create_distributed_adjacency_list(cpp.MPI.comm_world, cells_local,
+    cells, vertex_map = cpp.graph.create_distributed_adjacency_list(MPI.COMM_WORLD, cells_local,
                                                                     local_to_global_vertices, exterior_vertices)
 
     # --- Create distributed topology
-    topology = cpp.mesh.Topology(cpp.MPI.comm_world, layout.cell_type)
+    topology = cpp.mesh.Topology(MPI.COMM_WORLD, shape)
 
     # Set vertex IndexMap, and vertex-vertex connectivity
     topology.set_index_map(0, vertex_map)
@@ -291,12 +302,12 @@ def test_topology_partition(tempdir, shape, order):
     topology.set_connectivity(c0, 0, 0)
 
     # Set cell IndexMap and cell-vertex connectivity
-    index_map = cpp.common.IndexMap(cpp.MPI.comm_world, cells.num_nodes, [], 1)
+    index_map = cpp.common.IndexMap(MPI.COMM_WORLD, cells.num_nodes, [], 1)
     topology.set_index_map(tdim, index_map)
     topology.set_connectivity(cells, tdim, 0)
 
     # Create facets for topology, and attach to topology object
-    cf, fv, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world,
+    cf, fv, index_map = cpp.mesh.compute_entities(MPI.COMM_WORLD,
                                                   topology, tdim - 1)
     if cf is not None:
         topology.set_connectivity(cf, tdim, tdim - 1)
@@ -308,7 +319,7 @@ def test_topology_partition(tempdir, shape, order):
     if fc is not None:
         topology.set_connectivity(fc, tdim - 1, tdim)
 
-    ce, ev, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world,
+    ce, ev, index_map = cpp.mesh.compute_entities(MPI.COMM_WORLD,
                                                   topology, 1)
     if ce is not None:
         topology.set_connectivity(ce, tdim, 1)
@@ -321,7 +332,7 @@ def test_topology_partition(tempdir, shape, order):
 
     # NOTE: Could be a local (MPI_COMM_SELF) dofmap?
     # Build 'geometry' dofmap on the topology
-    dof_index_map, dofmap = cpp.fem.build_dofmap(cpp.MPI.comm_world,
+    dof_index_map, dofmap = cpp.fem.build_dofmap(MPI.COMM_WORLD,
                                                  topology, layout, 1)
 
     # Send/receive the 'cell nodes' (includes high-order geometry
@@ -334,7 +345,7 @@ def test_topology_partition(tempdir, shape, order):
     # NOTE: This could be optimised as we have earlier computed which
     # processes own the cells this process needs.
     cell_nodes, src, global_index_cell, ghost_owners = \
-        cpp.graph.distribute(cpp.MPI.comm_world,
+        cpp.graph.distribute(MPI.COMM_WORLD,
                              cells_global, dest)
     assert cell_nodes.num_nodes == cells.num_nodes
     assert global_index_cell == original_cell_index
@@ -349,7 +360,7 @@ def test_topology_partition(tempdir, shape, order):
 
     # Fetch node coordinates by global index from other ranks. Order of
     # coords matches order of the indices in 'indices'
-    coords = cpp.graph.distribute_data(cpp.MPI.comm_world, indices, x)
+    coords = cpp.graph.distribute_data(MPI.COMM_WORLD, indices, x)
 
     # Compute local-to-global map from local indices in dofmap to the
     # corresponding global indices in cell_nodes
@@ -364,10 +375,15 @@ def test_topology_partition(tempdir, shape, order):
     x_g = coords[l2l]
 
     # Create Geometry
-    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, layout, x_g, l2g, indices)
+    cell_str = cpp.mesh.to_string(shape)
+    cell = ufl.Cell(cell_str, geometric_dimension=x_g.shape[1])
+    element = ufl.VectorElement("Lagrange", cell, order)
+    domain = ufl.Mesh(element)
+    cmap = fem.create_coordinate_map(domain)
+    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, cmap, x_g, indices)
 
     # Create mesh
-    mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
+    mesh = cpp.mesh.Mesh(MPI.COMM_WORLD, topology, geometry)
 
     # Write mesh to file
     filename = os.path.join(tempdir, "mesh_{}_{}.xdmf".format(cpp.mesh.to_string(shape), order))

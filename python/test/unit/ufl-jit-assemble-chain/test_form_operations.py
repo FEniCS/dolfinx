@@ -8,8 +8,9 @@
 
 import numpy
 import pytest
+from mpi4py import MPI
 
-from dolfinx import MPI, FunctionSpace, RectangleMesh
+from dolfinx import FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
 from ufl import TestFunction, TrialFunction, dx, grad, inner, lhs, rhs, system
 
@@ -19,7 +20,7 @@ def test_lhs_rhs_simple():
     """Test taking lhs/rhs of DOLFINX specific forms (constants
     without cell). """
 
-    mesh = RectangleMesh(MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
+    mesh = RectangleMesh(MPI.COMM_WORLD, [numpy.array([0.0, 0.0, 0.0]),
                                           numpy.array([2.0, 1.0, 0.0])],
                          [3, 5], CellType.triangle)
     V = FunctionSpace(mesh, "CG", 1)

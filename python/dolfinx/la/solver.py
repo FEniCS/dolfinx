@@ -7,8 +7,6 @@
 
 from petsc4py import PETSc
 
-from dolfinx import cpp
-
 
 def solve(A, x, b):
     """Solve linear system Ax = b.
@@ -30,7 +28,7 @@ def solve(A, x, b):
 
     """
 
-    solver = PETSc.KSP().create(cpp.MPI.comm_world)
+    solver = PETSc.KSP().create(A.getComm())
     solver.setOperators(A)
     solver.solve(b, x)
     return x
