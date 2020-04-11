@@ -412,7 +412,7 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
   // Get cell dimension
   const int d = mesh::cell_dim(type);
   const mesh::Topology& topology = mesh.topology();
-  // FIXME: cleanup these calls? Some of the happen internally again.
+  // FIXME: cleanup these calls as part of topology storage management rework.
   mesh.topology_mutable().create_entities(d - 1);
   auto connectivity = topology.connectivity(d, d - 1);
   assert(connectivity);
@@ -737,14 +737,15 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
   // Create entities
   mesh.topology_mutable().create_entities(dim);
 
-  // Compute connectivities for boundary detection
-  // (Topology::on_boundary())
+  // Compute connectivities
+  mesh.topology_mutable().create_connectivity(0, tdim);
+  mesh.topology_mutable().create_connectivity(tdim, 0);
   if (dim < tdim)
   {
-    // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh.topology_mutable().create_entities(dim);
+    mesh.topology_mutable().create_connectivity(dim, 0);
+    // Additional connectivity for boundary detection
+    // (Topology::on_boundary())
     mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-    mesh.topology_mutable().create_connectivity(0, tdim);
   }
 
   const int num_vertices = mesh.topology().index_map(0)->size_local()
