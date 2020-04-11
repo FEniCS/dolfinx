@@ -228,10 +228,7 @@ void mesh(py::module& m)
       .def_readwrite("name", &dolfinx::mesh::MeshTags<SCALAR>::name)           \
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<SCALAR>::dim)     \
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<SCALAR>::mesh)   \
-      .def("ufl_id",                                                           \
-           [](const dolfinx::mesh::MeshTags<SCALAR>& self) {                   \
-             return self.id();                                                 \
-           })                                                                  \
+      .def("ufl_id", &dolfinx::mesh::MeshTags<SCALAR>::id)                     \
       .def_property_readonly("values",                                         \
                              [](dolfinx::mesh::MeshTags<SCALAR>& self) {       \
                                return py::array_t<SCALAR>(                     \
