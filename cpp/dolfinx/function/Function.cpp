@@ -44,9 +44,10 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
   assert(dofmap.element_dof_layout);
   if (dofmap.element_dof_layout->is_view())
   {
-    std::runtime_error("Cannot initialize vector of degrees of freedom for "
-                       "function. Cannot be created from subspace. Consider "
-                       "collapsing the function space");
+    throw std::runtime_error(
+        "Cannot initialize vector of degrees of freedom for "
+        "function. Cannot be created from subspace. Consider "
+        "collapsing the function space");
   }
 
   assert(dofmap.index_map);
@@ -238,7 +239,7 @@ void Function::eval(
 
     // Compute reference coordinates X, and J, detJ and K
     cmap.compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
-                                     coordinate_dofs);
+                                    coordinate_dofs);
 
     // Compute basis on reference element
     element.evaluate_reference_basis(basis_reference_values, X);

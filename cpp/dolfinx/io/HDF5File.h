@@ -128,7 +128,7 @@ void HDF5File::write_data(
     dset_name = "/" + dataset_name;
 
   std::int64_t global_rows = 0;
-  MPI_Allreduce(&data.rows(), &global_rows, 1, MPI_INT64_T, MPI_SUM,
+  MPI_Allreduce(data.rows(), &global_rows, 1, MPI_INT64_T, MPI_SUM,
                 _mpi_comm.comm());
 
   std::vector<std::int64_t> global_size = {global_rows, data.cols()};
