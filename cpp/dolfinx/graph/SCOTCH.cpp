@@ -47,9 +47,9 @@ dolfinx::graph::SCOTCH::compute_reordering(
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data = graph.array();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
       = graph.offsets();
-  std::vector<SCOTCH_Num> verttab(offsets.data(),
-                                  offsets.data() + offsets.rows());
-  std::vector<SCOTCH_Num> edgetab(data.data(), data.data() + data.rows());
+  const std::vector<SCOTCH_Num> verttab(offsets.data(),
+                                        offsets.data() + offsets.rows());
+  const std::vector<SCOTCH_Num> edgetab(data.data(), data.data() + data.rows());
 
   // Create SCOTCH graph
   SCOTCH_Graph scotch_graph;
@@ -64,21 +64,19 @@ dolfinx::graph::SCOTCH::compute_reordering(
   // Build SCOTCH graph
   SCOTCH_Num edgenbr = verttab.back();
   common::Timer timer1("SCOTCH: call SCOTCH_graphBuild");
-  if (SCOTCH_graphBuild(&scotch_graph, baseval, vertnbr, &verttab[0],
-                        &verttab[1], nullptr, nullptr, edgenbr, edgetab.data(),
+  if (SCOTCH_graphBuild(&scotch_graph, baseval, vertnbr, verttab.data(),
+                        nullptr, nullptr, nullptr, edgenbr, edgetab.data(),
                         nullptr))
   {
     throw std::runtime_error("Error building SCOTCH graph");
   }
   timer1.stop();
 
-  // Check graph data for consistency
-  /*
-  #ifdef DEBUG
+// Check graph data for consistency
+#ifdef DEBUG
   if (SCOTCH_graphCheck(&scotch_graph))
     throw std::runtime_error("Consistency error in SCOTCH graph");
-  #endif
-  */
+#endif
 
   // Re-ordering strategy
   SCOTCH_Strat strat;
@@ -133,12 +131,6 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   // C-style array indexing
   const SCOTCH_Num baseval = 0;
 
-  // Number of processes
-  const std::size_t num_processes = MPI::size(mpi_comm);
-
-  // This process number
-  const std::size_t proc_num = MPI::rank(mpi_comm);
-
   // Local data ---------------------------------
 
   // Number of local graph vertices (typically cells)
@@ -155,32 +147,14 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
 
   // Global data ---------------------------------
 
-#ifdef DEBUG
-  // FIXME: explain this test
-  // Number of local graph vertices on each process
-  std::vector<SCOTCH_Num> proccnttab(num_processes);
-  MPI_Allgather(&vertlocnbr, 1, MPI::mpi_type<SCOTCH_Num>(), proccnttab.data(),
-                1, MPI::mpi_type<SCOTCH_Num>(), mpi_comm);
-
-  // Array containing . . . . (some sanity checks)
-  std::vector<std::size_t> procvrttab(num_processes + 1);
-  for (std::size_t i = 0; i < num_processes; ++i)
-  {
-    procvrttab[i] = std::accumulate(proccnttab.begin(), proccnttab.begin() + i,
-                                    (std::size_t)0);
-  }
-  procvrttab[num_processes]
-      = procvrttab[num_processes - 1] + proccnttab[num_processes - 1];
-
-  // Sanity check
-  for (std::size_t i = 1; i <= proc_num; ++i)
-    assert(procvrttab[i] >= (procvrttab[i - 1] + proccnttab[i - 1]));
-#endif
-
   // Create SCOTCH graph and initialise
   SCOTCH_Dgraph dgrafdat;
   if (SCOTCH_dgraphInit(&dgrafdat, mpi_comm) != 0)
     throw std::runtime_error("Error initializing SCOTCH graph");
+
+  // FIXME: If the nodes have weights but this rank has no nodes, then
+  //        SCOTCH may deadlock since vload.data() will be nullptr on
+  //        this rank but not null on all other ranks.
 
   // Handle cell weights (if any)
   std::vector<SCOTCH_Num> vload;
