@@ -380,6 +380,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   return mesh::MeshTags<T>(mesh, e_dim, std::move(indices_new),
                            std::move(values_new));
-} // namespace mesh
+}
 } // namespace mesh
 } // namespace dolfinx
