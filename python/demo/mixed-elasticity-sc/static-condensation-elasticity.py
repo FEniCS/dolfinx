@@ -15,19 +15,23 @@ import cffi
 import numba
 import numba.cffi_support
 import numpy
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
 import dolfinx.cpp
 import dolfinx.io
 import dolfinx.la
+from dolfinx.mesh import locate_entities_geometrical
+from dolfinx.fem import locate_dofs_topological
 import ufl
 
 filedir = os.path.dirname(__file__)
-infile = dolfinx.io.XDMFFile(dolfinx.MPI.comm_world,
+infile = dolfinx.io.XDMFFile(MPI.COMM_WORLD,
                              os.path.join(filedir, "cooks_tri_mesh.xdmf"),
+                             "r",
                              encoding=dolfinx.cpp.io.XDMFFile.Encoding.ASCII)
-mesh = infile.read_mesh(dolfinx.cpp.mesh.GhostMode.none)
+mesh = infile.read_mesh("Grid")
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
@@ -44,31 +48,32 @@ Usize = U.dolfin_element().space_dimension()
 sigma, tau = ufl.TrialFunction(S), ufl.TestFunction(S)
 u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
 
-# Homogeneous boundary condition in displacement
-u_bc = dolfinx.Function(U)
-with u_bc.vector.localForm() as loc:
-    loc.set(0.0)
-
-facetdim = mesh.topology.dim - 1
-mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
-mf.mark(lambda x: numpy.isclose(x[0], 0.0), 1)
-bndry_facets = numpy.where(mf.values == 1)[0]
-
-# Displacement BC is applied to the right side
-bdofs = dolfinx.fem.locate_dofs_topological(U, facetdim, bndry_facets)
-bc = dolfinx.fem.DirichletBC(u_bc, bdofs)
-
 
 def free_end(x):
     """Marks the leftmost points of the cantilever"""
     return numpy.isclose(x[0], 48.0)
 
 
-# Mark free end facets as 1
-mf = dolfinx.mesh.MeshFunction("size_t", mesh, 1, 0)
-mf.mark(free_end, 1)
+def left(x):
+    """Marks left part of boundary, where cantilever is attached to wall"""
+    return numpy.isclose(x[0], 0.0)
 
-ds = ufl.Measure("ds", subdomain_data=mf)
+
+# Locate all facets at the free end and assign them value 1
+free_end_facets = locate_entities_geometrical(mesh, 1, free_end, boundary_only=True)
+mt = dolfinx.mesh.MeshTags(mesh, 1, free_end_facets, 1)
+
+ds = ufl.Measure("ds", subdomain_data=mt)
+
+# Homogeneous boundary condition in displacement
+u_bc = dolfinx.Function(U)
+with u_bc.vector.localForm() as loc:
+    loc.set(0.0)
+
+# Displacement BC is applied to the left side
+left_facets = locate_entities_geometrical(mesh, 1, left, boundary_only=True)
+bdofs = locate_dofs_topological(U, 1, left_facets)
+bc = dolfinx.fem.DirichletBC(u_bc, bdofs)
 
 # Elastic stiffness tensor and Poisson ratio
 E, nu = 1.0, 1.0 / 3.0
@@ -109,31 +114,27 @@ c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.types.double),
     numba.types.CPointer(numba.types.int32),
-    numba.types.CPointer(numba.types.uint8),
-    numba.types.CPointer(numba.types.boolean),
-    numba.types.CPointer(numba.types.boolean),
-    numba.types.CPointer(numba.types.uint8))
+    numba.types.CPointer(numba.types.uint8), numba.types.uint32)
 
 
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL,
-                                edge_reflections=ffi.NULL, face_reflections=ffi.NULL,
-                                face_rotations=ffi.NULL):
+                                cell_permutation_info=0):
     # Prepare target condensed local elem tensor
     A = numba.carray(A_, (Usize, Usize), dtype=PETSc.ScalarType)
 
     # Tabulate all sub blocks locally
     A00 = numpy.zeros((Ssize, Ssize), dtype=PETSc.ScalarType)
     kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, permutation,
-             edge_reflections, face_reflections, face_rotations)
+             cell_permutation_info)
 
     A01 = numpy.zeros((Ssize, Usize), dtype=PETSc.ScalarType)
     kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, permutation,
-             edge_reflections, face_reflections, face_rotations)
+             cell_permutation_info)
 
     A10 = numpy.zeros((Usize, Ssize), dtype=PETSc.ScalarType)
     kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, permutation,
-             edge_reflections, face_reflections, face_rotations)
+             cell_permutation_info)
 
     # A = - A10 * A00^{-1} * A01
     A[:, :] = - A10 @ numpy.linalg.solve(A00, A01)
@@ -154,9 +155,6 @@ dolfinx.fem.set_bc(b, [bc])
 uc = dolfinx.Function(U)
 dolfinx.la.solve(A_cond, uc.vector, b)
 
-with dolfinx.io.XDMFFile(dolfinx.MPI.comm_world, "uc.xdmf") as outfile:
-    outfile.write_checkpoint(uc, "uc")
-
 # Pure displacement based formulation
 a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx
 A = dolfinx.fem.assemble_matrix(a, [bc])
@@ -170,6 +168,7 @@ p = [48.0, 52.0, 0.0]
 cell = dolfinx.cpp.geometry.compute_first_collision(bb_tree, p)
 if cell >= 0:
     value = uc.eval(p, numpy.asarray(cell))
+    print(value[1])
     assert numpy.isclose(value[1], 23.95, rtol=1.e-2)
 
 # Check the equality of displacement based and mixed condensed global

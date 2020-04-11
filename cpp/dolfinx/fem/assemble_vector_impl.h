@@ -8,6 +8,7 @@
 
 #include <Eigen/Dense>
 #include <dolfinx/common/types.h>
+#include <functional>
 #include <memory>
 #include <petscsys.h>
 #include <vector>
@@ -18,6 +19,12 @@ namespace dolfinx
 namespace function
 {
 class Function;
+}
+
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
 }
 
 namespace mesh
@@ -39,23 +46,20 @@ namespace impl
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 ///                  before assembly.
 /// @param[in] L The linear forms to assemble into b
-void
-    assemble_vector(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const Form& L);
+void assemble_vector(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap,
-    int num_dofs_per_cell,
+    const graph::AdjacencyList<std::int32_t>& dofmap, int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const std::uint8_t*, const bool*, const bool*,
-                             const std::uint8_t*)>& kernel,
+                             const std::uint8_t*, const std::uint32_t)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar>& constant_values);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_exterior_facets(
@@ -64,11 +68,10 @@ void assemble_exterior_facets(
     const fem::DofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const std::uint8_t*, const bool*, const bool*,
-                             const std::uint8_t*)>& fn,
+                             const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar>& constant_values);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
 void assemble_interior_facets(
@@ -77,12 +80,11 @@ void assemble_interior_facets(
     const fem::DofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const std::uint8_t*, const bool*, const bool*,
-                             const std::uint8_t*)>& fn,
+                             const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar>& constant_values);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values);
 
 /// Modify b such that:
 ///

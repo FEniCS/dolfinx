@@ -11,7 +11,7 @@
 # import pytest
 # from petsc4py import PETSc
 
-# from dolfinx import MPI, FunctionSpace, UnitCubeMesh, UnitSquareMesh
+# from dolfinx FunctionSpace, UnitCubeMesh, UnitSquareMesh
 # from dolfinx.cpp.fem import DiscreteOperators
 # from dolfinx_utils.test.skips import skip_in_parallel
 
@@ -26,17 +26,17 @@
 #         W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
 #         G = DiscreteOperators.build_gradient(W._cpp_object, V._cpp_object)
 #         assert G.getRefCount() == 1
-#         num_edges = mesh.num_entities_global(1)
+#         num_edges = mesh.topology.index_map(1).size_global
 #         m, n = G.getSize()
 #         assert m == num_edges
-#         assert n == mesh.num_entities_global(0)
+#         assert n == mesh.topology.index_map(0).size_global
 #         assert round(
 #             G.norm(PETSc.NormType.FROBENIUS) - sqrt(2.0 * num_edges),
 #             8) == 0.0
 
 #     meshes = [
-#         UnitSquareMesh(MPI.comm_world, 11, 6),
-#         UnitCubeMesh(MPI.comm_world, 4, 3, 7)
+#         UnitSquareMesh(MPI.COMM_WORLD, 11, 6),
+#         UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 7)
 #     ]
 #     for mesh in meshes:
 #         compute_discrete_gradient(mesh)
@@ -45,7 +45,7 @@
 # def test_incompatible_spaces():
 #     "Test that error is thrown when function spaces are not compatible"
 
-#     mesh = UnitSquareMesh(MPI.comm_world, 13, 7)
+#     mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 7)
 #     V = FunctionSpace(mesh, ("Lagrange", 1))
 #     W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
 #     with pytest.raises(RuntimeError):

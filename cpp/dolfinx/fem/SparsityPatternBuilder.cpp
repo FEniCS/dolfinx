@@ -8,6 +8,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Topology.h>
 
@@ -44,7 +45,7 @@ void SparsityPatternBuilder::interior_facets(
     throw std::runtime_error("Facet-cell connectivity has not been computed.");
 
   // Array to store macro-dofs, if required (for interior facets)
-  std::array<Eigen::Array<PetscInt, Eigen::Dynamic, 1>, 2> macro_dofs;
+  std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2> macro_dofs;
 
   // Loop over owned facets
   auto map = topology.index_map(D - 1);

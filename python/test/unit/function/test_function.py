@@ -12,16 +12,17 @@ import cffi
 import numpy as np
 import pytest
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import (MPI, Function, FunctionSpace, TensorFunctionSpace,
+from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
                      UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
 
 
 @pytest.fixture
 def mesh():
-    return UnitCubeMesh(MPI.comm_world, 3, 3, 3)
+    return UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
 
 
 @pytest.fixture
@@ -166,7 +167,7 @@ def test_eval(R, V, W, Q, mesh):
     u2.interpolate(e2)
     u3.interpolate(e3)
 
-    x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
+    x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     cells = geometry.compute_first_entity_collision(tree, mesh, x0)
     assert np.allclose(u3.eval(x0, cells)[:3], u2.eval(x0, cells), rtol=1e-15, atol=1e-15)
@@ -180,7 +181,7 @@ def test_eval_multiple(W):
     u = Function(W)
     u.vector.set(1.0)
     mesh = W.mesh
-    x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
+    x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     x = np.array([x0, x0 + 1.0e8])
     tree = geometry.BoundingBoxTree(mesh, W.mesh.geometry.dim)
     cells = geometry.compute_first_entity_collision(tree, mesh, x)
@@ -292,15 +293,17 @@ def test_interpolation_old(V, W, mesh):
     def f1(x):
         return np.ones((mesh.geometry.dim, x.shape[1]))
 
+    num_vertices = mesh.topology.index_map(0).size_local
+
     # Scalar interpolation
     f = Function(V)
     f.interpolate(f0)
-    assert round(f.vector.norm(PETSc.NormType.N1) - mesh.num_entities(0), 7) == 0
+    assert round(f.vector.norm(PETSc.NormType.N1) - num_vertices, 7) == 0
 
     # Vector interpolation
     f = Function(W)
     f.interpolate(f1)
-    assert round(f.vector.norm(PETSc.NormType.N1) - 3 * mesh.num_entities(0), 7) == 0
+    assert round(f.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
 
 
 @skip_if_complex
@@ -316,7 +319,7 @@ def test_cffi_expression(V):
         values[i*value_size + 0] = x[i*3 + 0] + x[i*3 + 1];
     }
     """
-    module = "_expr_eval" + str(MPI.comm_world.rank)
+    module = "_expr_eval" + str(MPI.COMM_WORLD.rank)
 
     # Build the kernel
     ffi = cffi.FFI()

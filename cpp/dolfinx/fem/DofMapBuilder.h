@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
+#include <mpi.h>
 #include <tuple>
 #include <vector>
 
@@ -27,7 +27,6 @@ class Topology;
 
 namespace fem
 {
-class DofMap;
 class ElementDofLayout;
 
 /// Builds a DofMap on a mesh::Mesh
@@ -37,21 +36,17 @@ class DofMapBuilder
 
 public:
   /// Build dofmap
-  static DofMap
+  static std::tuple<std::shared_ptr<const ElementDofLayout>,
+                    std::shared_ptr<const common::IndexMap>,
+                    graph::AdjacencyList<std::int32_t>>
   build(MPI_Comm comm, const mesh::Topology& topology,
         std::shared_ptr<const ElementDofLayout> element_dof_layout);
 
-  /// Build sub-dofmap view
-  static DofMap build_submap(const DofMap& dofmap_parent,
-                             const std::vector<int>& component,
-                             const mesh::Topology& topology);
-
   /// Build dofmap
-  static std::pair<std::unique_ptr<common::IndexMap>,
-                   Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+  static std::pair<std::shared_ptr<common::IndexMap>,
+                   graph::AdjacencyList<std::int32_t>>
   build(MPI_Comm comm, const mesh::Topology& topology,
-        const ElementDofLayout& element_dof_layout,
-        const std::int32_t block_size);
+        const ElementDofLayout& element_dof_layout, int block_size);
 };
 } // namespace fem
 } // namespace dolfinx

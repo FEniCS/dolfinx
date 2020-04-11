@@ -8,6 +8,7 @@
 #include "ElementDofLayout.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 
 using namespace dolfinx;
@@ -23,15 +24,15 @@ int get_num_permutations(mesh::CellType cell_type)
   case (mesh::CellType::point):
     return 0;
   case (mesh::CellType::interval):
-    return 1;
+    return 0;
   case (mesh::CellType::triangle):
-    return 5;
+    return 3;
   case (mesh::CellType::tetrahedron):
-    return 18;
+    return 14;
   case (mesh::CellType::quadrilateral):
-    return 6;
+    return 4;
   case (mesh::CellType::hexahedron):
-    return 28;
+    return 24;
   default:
     LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
                     "order elements may be incorrect.";
@@ -54,43 +55,6 @@ std::array<std::int8_t, 2> calculate_triangle_orders(T v1, T v2, T v3)
     return {2, v1 > v2};
 
   throw std::runtime_error("Two of a triangle's vertices appear to be equal.");
-}
-//-----------------------------------------------------------------------------
-/// Calculates the number of times the rotations and reflection of a triangle
-/// should be applied to a tetrahedron with the given global vertex numbers
-/// @param[in] v1, v2, v3, v4 The global vertex numbers of the tetrahedron's
-/// vertices
-/// @return The rotation and reflection orders for the tetrahedron
-template <typename T>
-std::array<std::int8_t, 4> calculate_tetrahedron_orders(T v1, T v2, T v3, T v4)
-{
-  if (v1 < v2 and v1 < v3 and v1 < v4)
-  {
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<T>(v2, v3, v4);
-    return {0, 0, tri_orders[0], tri_orders[1]};
-  }
-  else if (v2 < v1 and v2 < v3 and v2 < v4)
-  {
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<T>(v3, v1, v4);
-    return {1, 0, tri_orders[0], tri_orders[1]};
-  }
-  else if (v3 < v1 and v3 < v2 and v3 < v4)
-  {
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<T>(v1, v2, v4);
-    return {2, 0, tri_orders[0], tri_orders[1]};
-  }
-  else if (v4 < v1 and v4 < v2 and v4 < v3)
-  {
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<T>(v2, v1, v3);
-    return {0, 1, tri_orders[0], tri_orders[1]};
-  }
-
-  throw std::runtime_error(
-      "Two of a tetrahedron's vertices appear to be equal.");
 }
 //-----------------------------------------------------------------------------
 /// Calculates the number of times the rotation and reflection of a
@@ -116,74 +80,16 @@ std::array<std::int8_t, 2> calculate_quadrilateral_orders(T v1, T v2, T v3,
       "Two of a quadrilateral's vertices appear to be equal.");
 }
 //-----------------------------------------------------------------------------
-/// Calculates the number of times the rotations and reflection of a triangle
-/// should be applied to a hexahedron with the given global vertex numbers
-/// @param[in] v1, v2, v3, v4, v5, v6, v7, v8 The global vertex numbers of the
-/// hexahedron's vertices
-/// @return The rotation and reflection orders for the hexahedron
-template <typename T>
-std::array<std::int8_t, 4> calculate_hexahedron_orders(T v1, T v2, T v3, T v4,
-                                                       T v5, T v6, T v7, T v8)
+Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+empty_ordering(const mesh::Topology& topology)
 {
-  if (v1 < v2 and v1 < v3 and v1 < v4 and v1 < v5 and v1 < v6 and v1 < v7
-      and v1 < v8)
-  {
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<T>(v2, v3, v5);
-    return {0, 0, tri_orders[0], tri_orders[1]};
-  }
-  else if (v2 < v1 and v2 < v3 and v2 < v4 and v2 < v5 and v2 < v6 and v2 < v7
-           and v2 < v8)
-  {
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<T>(v4, v1, v6);
-    return {1, 0, tri_orders[0], tri_orders[1]};
-  }
-  else if (v3 < v1 and v3 < v2 and v3 < v4 and v3 < v5 and v3 < v6 and v3 < v7
-           and v3 < v8)
-  {
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<T>(v1, v4, v7);
-    return {3, 0, tri_orders[0], tri_orders[1]};
-  }
-  else if (v4 < v1 and v4 < v2 and v4 < v3 and v4 < v5 and v4 < v6 and v4 < v7
-           and v4 < v8)
-  {
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<T>(v2, v3, v8);
-    return {2, 0, tri_orders[0], tri_orders[1]};
-  }
-  else if (v5 < v1 and v5 < v2 and v5 < v3 and v5 < v4 and v5 < v6 and v5 < v7
-           and v5 < v8)
-  {
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<T>(v1, v7, v6);
-    return {0, 1, tri_orders[0], tri_orders[1]};
-  }
-  else if (v6 < v1 and v6 < v2 and v6 < v3 and v6 < v4 and v6 < v5 and v6 < v7
-           and v6 < v8)
-  {
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<T>(v5, v8, v2);
-    return {0, 2, tri_orders[0], tri_orders[1]};
-  }
-  else if (v7 < v1 and v7 < v2 and v7 < v3 and v7 < v4 and v7 < v5 and v7 < v6
-           and v7 < v8)
-  {
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<T>(v8, v5, v3);
-    return {2, 2, tri_orders[0], tri_orders[1]};
-  }
-  else if (v8 < v1 and v8 < v2 and v8 < v3 and v8 < v4 and v8 < v5 and v8 < v6
-           and v8 < v7)
-  {
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<T>(v4, v6, v7);
-    return {2, 1, tri_orders[0], tri_orders[1]};
-  }
-
-  throw std::runtime_error(
-      "Two of a hexahedron's vertices appear to be equal.");
+  const int D = topology.dim();
+  auto cells = topology.connectivity(D, 0);
+  assert(cells);
+  const int num_cells = cells->num_nodes();
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cell_orders(num_cells, 0);
+  return cell_orders;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -213,40 +119,6 @@ compute_ordering_triangle(const mesh::Topology& topology)
     cell_orders(cell_n, 0) = (v1 > v2);
     cell_orders(cell_n, 1) = (v0 > v2);
     cell_orders(cell_n, 2) = (v0 > v1);
-
-    // Set the orders for the face rotation and reflection
-    const std::array<std::int8_t, 2> tri_orders
-        = calculate_triangle_orders<std::int64_t>(v0, v1, v2);
-    cell_orders(cell_n, 3) = tri_orders[0];
-    cell_orders(cell_n, 4) = tri_orders[1];
-  }
-
-  return cell_orders;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_ordering_interval(const mesh::Topology& topology)
-{
-  const int D = topology.dim();
-  auto cells = topology.connectivity(D, 0);
-  assert(cells);
-  const int num_cells = cells->num_nodes();
-  const int num_permutations = get_num_permutations(topology.cell_type());
-  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cell_orders(num_cells, num_permutations);
-
-  // Set orders for each cell
-  auto map = topology.index_map(0);
-  assert(map);
-  const std::vector<std::int64_t> global_indices = map->global_indices();
-  for (int cell_n = 0; cell_n < num_cells; ++cell_n)
-  {
-    auto vertices = cells->links(cell_n);
-    const std::int64_t v0 = global_indices[vertices[0]];
-    const std::int64_t v1 = global_indices[vertices[1]];
-
-    // Set the orders for the edge flip
-    cell_orders(cell_n, 0) = (v0 > v1);
   }
 
   return cell_orders;
@@ -280,12 +152,6 @@ compute_ordering_quadrilateral(const mesh::Topology& topology)
     cell_orders(cell_n, 1) = (v2 > v3);
     cell_orders(cell_n, 2) = (v0 > v2);
     cell_orders(cell_n, 3) = (v1 > v3);
-
-    // Set the orders for the face rotation and reflection
-    const std::array<std::int8_t, 2> quad_orders
-        = calculate_quadrilateral_orders<std::int64_t>(v0, v1, v2, v3);
-    cell_orders(cell_n, 4) = quad_orders[0];
-    cell_orders(cell_n, 5) = quad_orders[1];
   }
 
   return cell_orders;
@@ -339,14 +205,6 @@ compute_ordering_tetrahedron(const mesh::Topology& topology)
         = calculate_triangle_orders<std::int64_t>(v0, v1, v2);
     cell_orders(cell_n, 12) = tri_orders3[0];
     cell_orders(cell_n, 13) = tri_orders3[1];
-
-    // Set the orders for the volume rotations and reflections
-    const std::array<std::int8_t, 4> tet_orders
-        = calculate_tetrahedron_orders<std::int64_t>(v0, v1, v2, v3);
-    cell_orders(cell_n, 14) = tet_orders[0];
-    cell_orders(cell_n, 15) = tet_orders[1];
-    cell_orders(cell_n, 16) = tet_orders[2];
-    cell_orders(cell_n, 17) = tet_orders[3];
   }
 
   return cell_orders;
@@ -418,15 +276,6 @@ compute_ordering_hexahedron(const mesh::Topology& topology)
         = calculate_quadrilateral_orders<std::int64_t>(v1, v3, v5, v7);
     cell_orders(cell_n, 22) = quad_orders5[0];
     cell_orders(cell_n, 23) = quad_orders5[1];
-
-    // Set the orders for the volume rotations and reflections
-    const std::array<std::int8_t, 4> hex_orders
-        = calculate_hexahedron_orders<std::int64_t>(v0, v1, v2, v3, v4, v5, v6,
-                                                    v7);
-    cell_orders(cell_n, 24) = hex_orders[0];
-    cell_orders(cell_n, 25) = hex_orders[1];
-    cell_orders(cell_n, 26) = hex_orders[2];
-    cell_orders(cell_n, 27) = hex_orders[3];
   }
 
   return cell_orders;
@@ -447,16 +296,10 @@ fem::compute_dof_permutations(const mesh::Topology& topology,
   switch (topology.cell_type())
   {
   case (mesh::CellType::point):
-  {
-    auto map = topology.index_map(0);
-    assert(map);
-    const int num_vertices = map->size_local() + map->num_ghosts();
-    // FIXME: This looks wrong
-    cell_ordering.resize(num_vertices, 0);
+    cell_ordering = empty_ordering(topology);
     break;
-  }
   case (mesh::CellType::interval):
-    cell_ordering = compute_ordering_interval(topology);
+    cell_ordering = empty_ordering(topology);
     break;
   case (mesh::CellType::triangle):
     cell_ordering = compute_ordering_triangle(topology);
@@ -478,7 +321,8 @@ fem::compute_dof_permutations(const mesh::Topology& topology,
   // Build permutations. Each row of this represent the rotation or
   // reflection of a mesh entity Will have shape (number of
   // permutations) × (number of dofs on reference) where (number of
-  // permutations) = (num_edges + 2*num_faces + 4*num_volumes)
+  // permutations) = (num_edges) for 2D cells and (num_edges + 2*num_faces)
+  // for 3D cells
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       permutations = dof_layout.base_permutations();
   const int pcols = permutations.cols();

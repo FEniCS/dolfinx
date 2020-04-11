@@ -17,8 +17,8 @@ install-python-components: &install-python-components
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
   command: |
-    python3 -m flake8 python/dolfin
-    python3 -m flake8 python/dolfin_utils
+    python3 -m flake8 python/dolfinx
+    python3 -m flake8 python/dolfinx_utils
     python3 -m flake8 python/demo
     python3 -m flake8 python/test
 
@@ -37,24 +37,27 @@ build-install-cpp: &build-install-cpp
 unit-tests-cpp: &unit-tests-cpp
   name: Build and run C++ unit tests (serial and MPI)
   command: |
-    cd build
-    ninja -j3 unittests
+    cd build/test/unit
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer .
+    ninja -j3
     ctest --output-on-failure -R unittests
     mpirun -np 3 ctest --output-on-failure -R unittests
 
 regression-tests-cpp: &regression-tests-cpp
   name: Build and run C++ regressions tests (serial)
   command: |
-    cd build
-    ninja -j3 demos
+    cd build/demo
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer .
+    ninja -j3
     ctest -j3 -R demo -R serial
 
 regression-tests-cpp-mpi: &regression-tests-cpp-mpi
   name: Run C++ regression tests (MPI)
   command: |
-    cd build
-    ninja -j3 demos
-    ctest --verbose -R demo -R mpi
+    cd build/demo
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer .
+    ninja -j3
+    ctest --verbose -R demo -R mpi_3
 
 build-python-interface: &build-python-interface
   name: Build Python/pybind11 interface
@@ -125,13 +128,13 @@ commands:
           --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
           --target << parameters.docker-target >>
           --file << parameters.dockerfile >> << parameters.extra-args >>
-          --tag quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
-          sudo docker push quay.io/fenicsproject/dolfinx:<< parameters.docker-target >>
+          --tag dolfinx/<< parameters.docker-target >>:latest . &&
+          sudo docker push dolfinx/<< parameters.docker-target >>:latest
 
 jobs:
   build-real:
     docker:
-      - image: quay.io/fenicsproject/dolfinx:dev-env-real
+      - image: dolfinx/dev-env-real:latest
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
@@ -166,7 +169,7 @@ jobs:
 
   build-complex:
     docker:
-      - image: quay.io/fenicsproject/dolfinx:dev-env-complex
+      - image: dolfinx/dev-env-complex:latest
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
@@ -226,8 +229,8 @@ jobs:
             sudo apt-get -y install docker-ce docker-ce-cli containerd.io
             sudo docker run hello-world
       - run:
-          name: Login to quay.io
-          command: echo ${QUAYIO_TOKEN} | sudo docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
+          name: Login to Dockerhub
+          command: echo ${DH_TOKEN} | sudo docker login -u ${DH_USERNAME} --password-stdin
       - build-and-push-target:
           docker-target: "base"
       - build-and-push-target:
@@ -275,7 +278,7 @@ workflows:
                 - master
     jobs:
       - build-and-push-complete-build-docker-images:
-          context: quay.io
+          context: dockerhub
 
   build-and-push-docker-images:
     when: << pipeline.parameters.build-and-push-docker-images >>
@@ -285,4 +288,4 @@ workflows:
             branches:
               only:
                 - master
-          context: quay.io
+          context: dockerhub

@@ -20,7 +20,6 @@
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -136,95 +135,5 @@ void common(py::module& m)
                   &dolfinx::common::SubSystemsManager::mpi_initialized)
       .def_static("mpi_finalized",
                   &dolfinx::common::SubSystemsManager::mpi_finalized);
-}
-
-// Interface for MPI
-void mpi(py::module& m)
-{
-
-#ifndef HAS_PYBIND11_MPI4PY
-  // Expose the MPICommWrapper directly since we cannot cast it to
-  // mpi4py
-  py::class_<MPICommWrapper>(
-      m, "MPICommWrapper",
-      "DOLFIN is compiled without support for mpi4py. This object can be "
-      "passed into DOLFIN as an MPI communicator, but is not an mpi4py comm.")
-      .def(
-          "underlying_comm",
-          [](MPICommWrapper self) { return (std::uintptr_t)self.get(); },
-          "Return the underlying MPI_Comm cast to std::uintptr_t. "
-          "The return value may or may not make sense depending on the MPI "
-          "implementation.");
-#endif
-
-  // dolfinx::MPI
-  py::class_<dolfinx::MPI>(m, "MPI", "MPI utilities")
-      .def_property_readonly_static(
-          "comm_world",
-          [](py::object) { return MPICommWrapper(MPI_COMM_WORLD); })
-      .def_property_readonly_static(
-          "comm_self", [](py::object) { return MPICommWrapper(MPI_COMM_SELF); })
-      .def_property_readonly_static(
-          "comm_null", [](py::object) { return MPICommWrapper(MPI_COMM_NULL); })
-      .def_static("init",
-                  (void (*)()) & dolfinx::common::SubSystemsManager::init_mpi,
-                  "Initialise MPI")
-      .def_static(
-          "init",
-          [](std::vector<std::string> args, int required_thread_level) -> int {
-            std::vector<char*> argv(args.size());
-            for (std::size_t i = 0; i < args.size(); ++i)
-              argv[i] = const_cast<char*>(args[i].data());
-            return dolfinx::common::SubSystemsManager::init_mpi(
-                args.size(), argv.data(), required_thread_level);
-          },
-          "Initialise MPI with command-line args and required level "
-          "of thread support. Return provided thread level.")
-      .def_static("responsible",
-                  &dolfinx::common::SubSystemsManager::responsible_mpi,
-                  "Return true if DOLFIN initialised MPI (and is therefore "
-                  "responsible for finalization)")
-      .def_static("initialized",
-                  &dolfinx::common::SubSystemsManager::mpi_initialized,
-                  "Check if MPI has been initialised")
-      .def_static("finalized",
-                  &dolfinx::common::SubSystemsManager::mpi_finalized,
-                  "Check if MPI has been finalized")
-      .def_static("barrier",
-                  [](const MPICommWrapper comm) {
-                    return dolfinx::MPI::barrier(comm.get());
-                  })
-      .def_static("rank",
-                  [](const MPICommWrapper comm) {
-                    return dolfinx::MPI::rank(comm.get());
-                  })
-      .def_static("size",
-                  [](const MPICommWrapper comm) {
-                    return dolfinx::MPI::size(comm.get());
-                  })
-      .def_static("local_range",
-                  [](MPICommWrapper comm, std::int64_t N) {
-                    return dolfinx::MPI::local_range(comm.get(), N);
-                  })
-      // templated for double
-      .def_static("max",
-                  [](const MPICommWrapper comm, double value) {
-                    return dolfinx::MPI::max(comm.get(), value);
-                  })
-      .def_static("min",
-                  [](const MPICommWrapper comm, double value) {
-                    return dolfinx::MPI::min(comm.get(), value);
-                  })
-      .def_static("sum",
-                  [](const MPICommWrapper comm, double value) {
-                    return dolfinx::MPI::sum(comm.get(), value);
-                  })
-      .def_static("sum",
-                  [](const MPICommWrapper comm, std::complex<double> value) {
-                    return dolfinx::MPI::sum(comm.get(), value);
-                  })
-      .def_static("sum", [](const MPICommWrapper comm, std::int64_t value) {
-        return dolfinx::MPI::sum(comm.get(), value);
-      });
 }
 } // namespace dolfinx_wrappers

@@ -6,10 +6,11 @@
 
 #include "IntervalMesh.h"
 #include "dolfinx/common/MPI.h"
-#include "dolfinx/mesh/Partitioning.h"
 #include <Eigen/Dense>
 #include <cfloat>
 #include <cmath>
+#include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/graph/AdjacencyList.h>
 
 using namespace dolfinx;
 using namespace dolfinx::generation;
@@ -17,6 +18,7 @@ using namespace dolfinx::generation;
 namespace
 {
 mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
+                 const fem::CoordinateElement& element,
                  const mesh::GhostMode ghost_mode)
 {
   // Receive mesh according to parallel policy
@@ -24,8 +26,8 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   {
     Eigen::Array<double, 0, 1> geom(0, 1);
     Eigen::Array<std::int64_t, 0, 2, Eigen::RowMajor> topo(0, 2);
-    return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::interval, geom, topo, {}, ghost_mode);
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
+                        geom, ghost_mode);
   }
 
   const double a = x[0];
@@ -57,16 +59,17 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   for (std::size_t ix = 0; ix < nx; ix++)
     topo.row(ix) << ix, ix + 1;
 
-  return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::interval, geom, topo, {}, ghost_mode);
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
+                      geom, ghost_mode);
 }
 } // namespace
 
 //-----------------------------------------------------------------------------
 mesh::Mesh IntervalMesh::create(MPI_Comm comm, std::size_t n,
                                 std::array<double, 2> x,
+                                const fem::CoordinateElement& element,
                                 const mesh::GhostMode ghost_mode)
 {
-  return build(comm, n, x, ghost_mode);
+  return build(comm, n, x, element, ghost_mode);
 }
 //-----------------------------------------------------------------------------

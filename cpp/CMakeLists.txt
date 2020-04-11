@@ -252,74 +252,20 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfinx.conf
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
-# Generate form files for tests and demos and DOLFIN if not exists
-# FIXME: Generate files in Build directory instead, at least for demo
-#        and tests?
-
-set(COPY_DEMO_TEST_DEMO_DATA FALSE)
-if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFINX_SOURCE_DIR}/demo/poisson/Poisson.h)
-  message(STATUS "")
-  message(STATUS "Generating form files in demo and test and directories. May take some time...")
-  message(STATUS "----------------------------------------------------------------------------------------")
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-form-files.py ${PETSC_SCALAR_COMPLEX}
-    WORKING_DIRECTORY ${DOLFINX_SOURCE_DIR}
-    RESULT_VARIABLE FORM_GENERATION_RESULT
-    OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
-    ERROR_VARIABLE FORM_GENERATION_OUTPUT
-    )
-
-  if (FORM_GENERATION_RESULT)
-    # Cleanup so download is triggered next time we run cmake
-    if (EXISTS ${DOLFINX_SOURCE_DIR}/demo/poisson/Poisson.h)
-      file(REMOVE ${DOLFINX_SOURCE_DIR}/demo/poisson/Poisson.h)
-    endif()
-    message(FATAL_ERROR "Generation of form files failed: \n${FORM_GENERATION_OUTPUT}")
-  endif()
-  set(COPY_DEMO_TEST_DEMO_DATA TRUE)
-endif()
-
-#------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for demos if needed
-
-# FIXME: Generate files in Build directory instead?
-# NOTE: We need to call this script after generate-formfiles
-
-if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFINX_SOURCE_DIR}/demo/poisson/CMakeLists.txt)
-  message(STATUS "")
-  message(STATUS "Generating CMakeLists.txt files in demo and test directories")
-  message(STATUS "-------------------------------------------------------------------")
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
-    WORKING_DIRECTORY ${DOLFINX_SOURCE_DIR}
-    RESULT_VARIABLE CMAKE_GENERATION_RESULT
-    OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT
-    ERROR_VARIABLE CMAKE_GENERATION_OUTPUT
-    )
-  if (CMAKE_GENERATION_RESULT)
-
-    # Cleanup so FFC rebuild is triggered next time we run cmake
-    if (EXISTS ${DOLFINX_SOURCE_DIR}/demo/poisson/CMakeLists.txt)
-      file(REMOVE ${DOLFINX_SOURCE_DIR}/demo/poisson/CMakeLists.txt)
-    endif()
-    message(FATAL_ERROR "Generation of CMakeLists.txt files failed: \n${CMAKE_GENERATION_OUTPUT}")
-  endif()
-
-  set(COPY_DEMO_TEST_DEMO_DATA TRUE)
-endif()
-
-#------------------------------------------------------------------------------
 # Copy data in demo/test direcories to the build directories
 
-# FIXME: We should probably just generate them directly in the build
-# directory...
+set(GENERATE_DEMO_TEST_DATA FALSE)
+if (PYTHONINTERP_FOUND AND (${DOLFINX_SOURCE_DIR}/demo IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/demo OR ${DOLFINX_SOURCE_DIR}/test IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/test))
+  file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/demo ${CMAKE_CURRENT_BINARY_DIR}/test)
+  set(GENERATE_DEMO_TEST_DATA TRUE)
+endif()
 
-if (PYTHONINTERP_FOUND AND COPY_DEMO_TEST_DEMO_DATA)
+if (GENERATE_DEMO_TEST_DATA)
   message(STATUS "")
   message(STATUS "Copying demo and test data to build directory.")
   message(STATUS "----------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFINX_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFINX_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR} ${PETSC_SCALAR_COMPLEX}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     RESULT_VARIABLE COPY_DEMO_DATA_RESULT
     OUTPUT_VARIABLE COPY_DEMO_DATA_OUTPUT
@@ -330,37 +276,77 @@ if (PYTHONINTERP_FOUND AND COPY_DEMO_TEST_DEMO_DATA)
 endif()
 
 #------------------------------------------------------------------------------
-# Add demos and install demo source files and mesh files
+# Generate form files for tests and demos
 
-# Set make program
-if ("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
-  set(MAKE_PROGRAM "$(MAKE)")
-else()
-  set(MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
+if (GENERATE_DEMO_TEST_DATA)
+  message(STATUS "")
+  message(STATUS "Generating form files in demo and test directories. May take some time...")
+  message(STATUS "----------------------------------------------------------------------------------------")
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-form-files.py ${PETSC_SCALAR_COMPLEX}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    RESULT_VARIABLE FORM_GENERATION_RESULT
+    OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
+    ERROR_VARIABLE FORM_GENERATION_OUTPUT
+    )
+
+  if (FORM_GENERATION_RESULT)
+    # Cleanup so that form generation is triggered next time we run cmake
+    file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/demo ${CMAKE_CURRENT_BINARY_DIR}/test)
+    message(FATAL_ERROR "Generation of form files failed: \n${FORM_GENERATION_OUTPUT}")
+  endif()
 endif()
 
-# Install the demo source files
-install(DIRECTORY demo DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx
-  FILES_MATCHING
-  PATTERN "CMakeLists.txt"
-  PATTERN "*.cpp"
-  PATTERN "*.ufl"
-  PATTERN "*.h"
-  PATTERN "*.py"
-  PATTERN "*.xml*"
-  PATTERN "CMakeFiles" EXCLUDE)
+#------------------------------------------------------------------------------
+# Generate CMakeLists.txt files for demos if needed
+
+# NOTE: We need to call this script after generate-formfiles
+
+if (GENERATE_DEMO_TEST_DATA)
+  message(STATUS "")
+  message(STATUS "Generating CMakeLists.txt files in demo directory")
+  message(STATUS "-------------------------------------------------------------------")
+  # Generate CMakeLists.txt files in build directory
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    RESULT_VARIABLE CMAKE_GENERATION_RESULT
+    OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT
+    ERROR_VARIABLE CMAKE_GENERATION_OUTPUT
+    )
+  if (CMAKE_GENERATION_RESULT)
+    # Cleanup so FFCX rebuild is triggered next time we run cmake
+    file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/demo ${CMAKE_CURRENT_BINARY_DIR}/test)
+    message(FATAL_ERROR "Generation of CMakeLists.txt files in build directory failed: \n${CMAKE_GENERATION_OUTPUT}")
+  else()
+    # Generate CMakeLists.txt files in source directory as well, as developers might find it
+    # easier to run in-place demo builds while preparing new demos or modifying existing ones
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE} ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      RESULT_VARIABLE CMAKE_GENERATION_RESULT
+      OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT
+      ERROR_VARIABLE CMAKE_GENERATION_OUTPUT
+      )
+    if (CMAKE_GENERATION_RESULT)
+      message(FATAL_ERROR "Generation of CMakeLists.txt files in source directory failed: \n${CMAKE_GENERATION_OUTPUT}")
+    endif()
+  endif()
+endif()
 
 #------------------------------------------------------------------------------
-# Add tests
-
-enable_testing()
-
-# Add target "unittests", but do not add to default target
-add_subdirectory(test/unit EXCLUDE_FROM_ALL)
-
-# Add demos but do not add to default target
-set(CMAKE_MODULE_PATH "${DOLFINX_SOURCE_DIR}/cmake/modules")
-add_subdirectory(demo EXCLUDE_FROM_ALL)
+# Install the demo source files
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/demo DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx
+  FILES_MATCHING
+  PATTERN "CMakeLists.txt"
+  PATTERN "*.h"
+  PATTERN "*.hpp"
+  PATTERN "*.c"
+  PATTERN "*.cpp"
+  PATTERN "*.ufl"
+  PATTERN "*.xdmf"
+  PATTERN "*.h5"
+  PATTERN "CMakeFiles" EXCLUDE)
 
 #------------------------------------------------------------------------------
 # Add "make uninstall" target

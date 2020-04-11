@@ -22,11 +22,6 @@ struct ufc_form;
 namespace dolfinx
 {
 
-namespace fem
-{
-class CoordinateElement;
-}
-
 namespace function
 {
 class Constant;
@@ -37,7 +32,7 @@ namespace mesh
 {
 class Mesh;
 template <typename T>
-class MeshFunction;
+class MeshTags;
 } // namespace mesh
 
 namespace fem
@@ -75,26 +70,24 @@ public:
   /// @param[in] function_spaces Function Spaces
   /// @param[in] integrals
   /// @param[in] coefficients
-  /// @param[in] constants
-  ///            Vector of pairs (name, constant). The index in the vector
-  ///            is the position of the constant in the original
-  ///            (nonsimplified) form.
-  /// @param[in] coord_mapping Coordinate mapping
+  /// @param[in] constants Vector of pairs (name, constant). The index
+  ///   in the vector is the position of the constant in the original
+  ///   (nonsimplified) form.
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
        const FormIntegrals& integrals, const FormCoefficients& coefficients,
        const std::vector<
            std::pair<std::string, std::shared_ptr<const function::Constant>>>
-           constants,
-       std::shared_ptr<const CoordinateElement> coord_mapping);
+           constants);
 
   /// Create form (no UFC integrals). Integrals can be attached later
   /// using FormIntegrals::set_cell_tabulate_tensor.
   /// @warning Experimental
   ///
   /// @param[in] function_spaces Vector of function spaces
-  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
-           function_spaces);
+  explicit Form(
+      const std::vector<std::shared_ptr<const function::FunctionSpace>>&
+          function_spaces);
 
   /// Move constructor
   Form(Form&& form) = default;
@@ -175,27 +168,26 @@ public:
       FormIntegrals::Type type, int i,
       std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                          const double*, const int*, const std::uint8_t*,
-                         const bool*, const bool*, const std::uint8_t*)>
+                         const std::uint32_t)>
           fn);
 
   /// Set cell domains
   /// @param[in] cell_domains The cell domains
-  void set_cell_domains(const mesh::MeshFunction<std::size_t>& cell_domains);
+  void set_cell_domains(const mesh::MeshTags<int>& cell_domains);
 
   /// Set exterior facet domains
   /// @param[in] exterior_facet_domains The exterior facet domains
-  void set_exterior_facet_domains(
-      const mesh::MeshFunction<std::size_t>& exterior_facet_domains);
+  void
+  set_exterior_facet_domains(const mesh::MeshTags<int>& exterior_facet_domains);
 
   /// Set interior facet domains
   /// @param[in] interior_facet_domains The interior facet domains
-  void set_interior_facet_domains(
-      const mesh::MeshFunction<std::size_t>& interior_facet_domains);
+  void
+  set_interior_facet_domains(const mesh::MeshTags<int>& interior_facet_domains);
 
   /// Set vertex domains
   /// @param[in] vertex_domains The vertex domains.
-  void
-  set_vertex_domains(const mesh::MeshFunction<std::size_t>& vertex_domains);
+  void set_vertex_domains(const mesh::MeshTags<int>& vertex_domains);
 
   /// Access coefficients
   FormCoefficients& coefficients();
@@ -215,10 +207,6 @@ public:
       std::pair<std::string, std::shared_ptr<const function::Constant>>>&
   constants() const;
 
-  /// Get coordinate_mapping
-  /// @warning Experimental
-  std::shared_ptr<const fem::CoordinateElement> coordinate_mapping() const;
-
 private:
   // Integrals associated with the Form
   FormIntegrals _integrals;
@@ -235,9 +223,6 @@ private:
 
   // The mesh (needed for functionals when we don't have any spaces)
   std::shared_ptr<const mesh::Mesh> _mesh;
-
-  // Coordinate_mapping
-  std::shared_ptr<const fem::CoordinateElement> _coord_mapping;
 };
 } // namespace fem
 } // namespace dolfinx

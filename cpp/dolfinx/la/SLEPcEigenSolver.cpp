@@ -107,7 +107,7 @@ std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(std::size_t i) const
   PetscInt num_computed_eigenvalues;
   EPSGetConverged(_eps, &num_computed_eigenvalues);
 
-  const PetscInt ii = static_cast<PetscInt>(i);
+  const auto ii = static_cast<PetscInt>(i);
   if (ii < num_computed_eigenvalues)
   {
 #ifdef PETSC_USE_COMPLEX
@@ -131,7 +131,7 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
                                      Vec c, std::size_t i) const
 {
   assert(_eps);
-  const PetscInt ii = static_cast<PetscInt>(i);
+  const auto ii = static_cast<PetscInt>(i);
 
   // Get number of computed eigenvectors/values
   PetscInt num_computed_eigenvalues;

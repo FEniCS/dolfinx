@@ -11,14 +11,15 @@
 from contextlib import ExitStack
 
 import numpy as np
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
-from dolfinx import (MPI, BoxMesh, DirichletBC, Function, VectorFunctionSpace,
+from dolfinx import (BoxMesh, DirichletBC, Function, VectorFunctionSpace,
                      cpp)
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector, set_bc,
-                         locate_dofs_geometrical)
+from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
+                         locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.la import VectorSpaceBasis
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
@@ -37,9 +38,8 @@ def build_nullspace(V):
         basis = [np.asarray(x) for x in vec_local]
 
         # Build translational null space basis
-        V.sub(0).dofmap.set(basis[0], 1.0)
-        V.sub(1).dofmap.set(basis[1], 1.0)
-        V.sub(2).dofmap.set(basis[2], 1.0)
+        for i in range(3):
+            basis[i][V.sub(i).dofmap.list.array()] = 1.0
 
         # Build rotational null space basis
         V.sub(0).set_x(basis[3], -1.0, 1)
@@ -60,16 +60,14 @@ def build_nullspace(V):
 
 
 # Load mesh from file
-# mesh = Mesh(MPI.comm_world)
-# XDMFFile(MPI.comm_world, "../pulley.xdmf").read(mesh)
+# mesh = Mesh(MPI.COMM_WORLD)
+# XDMFFile(MPI.COMM_WORLD, "../pulley.xdmf").read(mesh)
 
 # mesh = UnitCubeMesh(2, 2, 2)
 mesh = BoxMesh(
-    MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
+    MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
     CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.none)
-cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
-mesh.geometry.coord_mapping = cmap
 
 # Function to mark inner surface of pulley
 # def inner_surface(x, on_boundary):
@@ -153,7 +151,7 @@ opts["mg_levels_esteig_ksp_type"] = "cg"
 opts["mg_levels_ksp_chebyshev_esteig_steps"] = 20
 
 # Create CG Krylov solver and turn convergence monitoring on
-solver = PETSc.KSP().create(MPI.comm_world)
+solver = PETSc.KSP().create(MPI.COMM_WORLD)
 solver.setFromOptions()
 
 # Set matrix operator
@@ -165,25 +163,10 @@ solver.solve(b, u.vector)
 solver.view()
 
 # Save solution to XDMF format
-file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
-file.write(u)
+with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
+    file.write_mesh(mesh)
+    file.write_function(u)
 
 unorm = u.vector.norm()
-if MPI.rank(mesh.mpi_comm()) == 0:
+if mesh.mpi_comm().rank == 0:
     print("Solution vector norm:", unorm)
-
-# Save colored mesh partitions in VTK format if running in parallel
-# if MPI.size(mesh.mpi_comm()) > 1:
-#    File("partitions.pvd") << MeshFunction("size_t", mesh, mesh.topology.dim, \
-#                                           MPI.rank(mesh.mpi_comm()))
-
-# Project and write stress field to post-processing file
-# W = TensorFunctionSpace(mesh, "Discontinuous Lagrange", 0)
-# stress = project(sigma(u), V=W)
-# File("stress.pvd") << stress
-
-# Plot solution
-# import matplotlib.pyplot as plt
-# import dolfinx.plotting
-# dolfinx.plotting.plot(u)
-# plt.show()

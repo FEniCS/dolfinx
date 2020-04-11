@@ -8,16 +8,18 @@ import os
 
 import numpy as np
 import pytest
-import ufl
-
+from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 from petsc4py import PETSc
-from dolfinx import MPI, Function, FunctionSpace, FacetNormal, CellDiameter
-from dolfinx.cpp.mesh import GhostMode
+
+import ufl
+from dolfinx import CellDiameter, FacetNormal, Function, FunctionSpace
+# from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import assemble_matrix, assemble_scalar, assemble_vector
 from dolfinx.io import XDMFFile
-from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
-                 TestFunction, TrialFunction)
-from dolfinx_utils.test.skips import skip_in_parallel
+from ufl import (SpatialCoordinate, TestFunction, TrialFunction, avg, div, ds,
+                 dS, dx, grad, inner, jump)
+
 
 # TODO: Remove this skip in parallel once ghosting if fixed
 # (see https://github.com/FEniCS/dolfinx/pull/746)
@@ -33,11 +35,8 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     degree of the Lagrange function space.
 
     """
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
-        if MPI.size(MPI.comm_world) == 1:  # Serial
-            mesh = xdmf.read_mesh(GhostMode.none)
-        else:
-            mesh = xdmf.read_mesh(GhostMode.shared_facet)
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, ("DG", degree))
     u, v = TrialFunction(V), TestFunction(V)
@@ -88,7 +87,7 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     A.assemble()
 
     # Create LU linear solver
-    solver = PETSc.KSP().create(MPI.comm_world)
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
     solver.setType(PETSc.KSP.Type.PREONLY)
     solver.getPC().setType(PETSc.PC.Type.LU)
     solver.setOperators(A)
@@ -98,8 +97,5 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                           mode=PETSc.ScatterMode.FORWARD)
-
-    error = assemble_scalar((u_exact - uh)**2 * dx)
-    error = MPI.sum(mesh.mpi_comm(), error)
-
+    error = mesh.mpi_comm().allreduce(assemble_scalar((u_exact - uh)**2 * dx), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14

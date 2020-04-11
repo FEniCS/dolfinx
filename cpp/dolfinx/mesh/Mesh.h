@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Anders Logg, Chris Richardson
+// Copyright (C) 2006-2020 Anders Logg, Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -6,109 +6,98 @@
 
 #pragma once
 
+#include "Geometry.h"
+#include "Topology.h"
 #include "cell_types.h"
+#include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/types.h>
-#include <memory>
 #include <string>
 #include <utility>
 
 namespace dolfinx
 {
 
-namespace function
+namespace fem
 {
-class Function;
+class CoordinateElement;
+}
+
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
 }
 
 namespace mesh
 {
-class CoordinateDofs;
-class Geometry;
-enum class GhostMode : int;
-class MeshEntity;
-class Topology;
 
-/// A _Mesh_ consists of a set of connected and numbered mesh entities.
-///
-/// Both the representation and the interface are
-/// dimension-independent, but a concrete interface is also provided
-/// for standard named mesh entities:
-///
-/// | Entity | Dimension | Codimension  |
-/// | ------ | --------- | ------------ |
-/// | Vertex |  0        |              |
-/// | Edge   |  1        |              |
-/// | Face   |  2        |              |
-/// | Facet  |           |      1       |
-/// | Cell   |           |      0       |
-///
-/// When working with mesh iterators, all entities and connectivity
-/// are precomputed automatically the first time an iterator is
-/// created over any given topological dimension or connectivity.
-///
-/// Note that for efficiency, only entities of dimension zero
-/// (vertices) and entities of the maximal dimension (cells) exist
-/// when creating a _Mesh_. Other entities must be explicitly created
-/// by calling init(). For example, all edges in a mesh may be
-/// created by a call to mesh.init(1). Similarly, connectivities
-/// such as all edges connected to a given vertex must also be
-/// explicitly created (in this case by a call to mesh.create_connectivity(0,
-/// 1)).
+/// Enum for different partitioning ghost modes
+enum class GhostMode : int
+{
+  none,
+  shared_facet,
+  shared_vertex
+};
+
+/// A Mesh consists of a set of connected and numbered mesh topological
+/// entities, and geometry data
 
 class Mesh
 {
 public:
-  // FIXME: What about global vertex indices?
-  // FIXME: Be explicit in passing geometry degree/type
+  /// Create a mesh
+  /// @param[in] comm MPI Communicator
+  /// @param[in] topology Mesh topology
+  /// @param[in] geometry Mesh geometry
+  template <typename Topology, typename Geometry>
+  Mesh(MPI_Comm comm, Topology&& topology, Geometry&& geometry)
+      : _topology(std::forward<Topology>(topology)),
+        _geometry(std::forward<Geometry>(geometry)), _mpi_comm(comm)
+  {
+    // Do nothing
+  }
+
+  /// @todo Remove this constructor once the creation of
+  /// ElementDofLayout and coordinate maps is make straightforward
+  ///
   /// Construct a Mesh from topological and geometric data.
-  ///
-  /// In parallel, geometric points must be arranged in global index
-  /// order across processes, starting from 0 on process 0, and must not
-  /// be duplicated. The points will be redistributed to the processes
-  /// that need them.
-  ///
-  /// Cells should be listed only on the processes they appear on, i.e.
-  /// mesh partitioning should be performed on the topology data before
-  /// calling the Mesh constructor. Ghost cells, if present, must be at
-  /// the end of the list of cells, and the number of ghost cells must
-  /// be provided.
   ///
   /// @param[in] comm MPI Communicator
   /// @param[in] type Cell type
-  /// @param[in] points Array of geometric points, arranged in global
-  ///                   index order
+  /// @param[in] x Array of geometric points, arranged in global index
+  ///   order
   /// @param[in] cells Array of cells (containing the global point
-  ///                  indices for each cell)
+  ///   indices for each cell)
+  /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] global_cell_indices Array of global cell indices. If
-  ///                                not empty, this must be same size
-  ///                                as the number of rows in cells. If
-  ///                                empty, global cell indices will be
-  ///                                constructed, beginning from 0 on
-  ///                                process 0.
+  ///   not empty, this must be same size as the number of rows in
+  ///   cells. If empty, global cell indices will be constructed,
+  ///   beginning from 0 on process 0.
   /// @param[in] ghost_mode The ghost mode
   /// @param[in] num_ghost_cells Number of ghost cells on this process
-  ///                            (must be at end of list of cells)
-  Mesh(MPI_Comm comm, mesh::CellType type,
-       const Eigen::Ref<const Eigen::Array<
-           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
-       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                           Eigen::Dynamic, Eigen::RowMajor>>&
-           cells,
-       const std::vector<std::int64_t>& global_cell_indices,
-       const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
+  ///   (must be at end of list of cells)
+  [[deprecated]] Mesh(
+      MPI_Comm comm, mesh::CellType type,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
+          cells,
+      const fem::CoordinateElement& element,
+      const std::vector<std::int64_t>& global_cell_indices,
+      const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
 
   /// Copy constructor
   /// @param[in] mesh Mesh to be copied
-  Mesh(const Mesh& mesh);
+  Mesh(const Mesh& mesh) = default;
 
-  /// Move constructor.
+  /// Move constructor
   /// @param mesh Mesh to be moved.
-  Mesh(Mesh&& mesh);
+  Mesh(Mesh&& mesh) = default;
 
   /// Destructor
-  ~Mesh();
+  ~Mesh() = default;
 
   // Assignment operator
   Mesh& operator=(const Mesh& mesh) = delete;
@@ -117,18 +106,9 @@ public:
   /// @param mesh Another Mesh object
   Mesh& operator=(Mesh&& mesh) = default;
 
-  /// @todo Remove and work via Topology
-  /// Get number of entities of given topological dimension
-  /// @param[in] d Topological dimension.
-  /// @return Number of entities of topological dimension d
-  std::int32_t num_entities(int d) const;
-
-  /// @todo Remove and work via Topology
-  /// Get global number of entities of given topological dimension
-  /// @param[in] dim Topological dimension.
-  /// @return Global number of entities of topological dimension d
-  std::int64_t num_entities_global(int dim) const;
-
+  // TODO: Is there any use for this? In many situations one has to get the
+  // topology of a const Mesh, which is done by Mesh::topology_mutable. Note
+  // that the python interface (calls Mesh::topology()) may still rely on it.
   /// Get mesh topology
   /// @return The topology object associated with the mesh.
   Topology& topology();
@@ -137,6 +117,10 @@ public:
   /// @return The topology object associated with the mesh.
   const Topology& topology() const;
 
+  /// Get mesh topology if one really needs the mutable version
+  /// @return The topology object associated with the mesh.
+  Topology& topology_mutable() const;
+
   /// Get mesh geometry
   /// @return The geometry object associated with the mesh
   Geometry& geometry();
@@ -144,26 +128,6 @@ public:
   /// Get mesh geometry (const version)
   /// @return The geometry object associated with the mesh
   const Geometry& geometry() const;
-
-  /// @todo Remove and work via Topology
-  /// Create entities of given topological dimension.
-  /// @param[in] dim Topological dimension
-  /// @return Number of newly created entities, returns -1 if entities
-  ///   already existed
-  std::int32_t create_entities(int dim) const;
-
-  /// @todo Remove and work via Topology
-  /// Create connectivity between given pair of dimensions, d0 -> d1
-  /// @param[in] d0 Topological dimension
-  /// @param[in] d1 Topological dimension
-  void create_connectivity(int d0, int d1) const;
-
-  /// @todo Remove and work via Topology
-  /// Compute all entities and connectivity
-  void create_connectivity_all() const;
-
-  /// Compute entity permutations and reflections
-  void create_entity_permutations() const;
 
   /// Compute minimum cell size in mesh, measured greatest distance
   /// between any two vertices of a cell.
@@ -195,57 +159,37 @@ public:
   /// @returns The unique identifier associated with the object
   std::size_t id() const { return _unique_id; }
 
-  /// Informal string representation
-  /// @param[in] verbose Flag to turn on additional output
-  /// @return An informal representation of the mesh.
-  std::string str(bool verbose) const;
-
   /// Mesh MPI communicator
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
 
-  /// Ghost mode used for partitioning. Possible values are same as
-  /// `parameters["ghost_mode"]`.
-  /// @warning The interface may change in future without deprecation;
-  ///          the method is now intended for internal library use.
-  mesh::GhostMode get_ghost_mode() const;
-
-  /// @todo This should be part of Geometry
-  /// Get coordinate dofs for all local cells
-  CoordinateDofs& coordinate_dofs();
-
-  /// @todo This should be part of Geometry
-  /// Get coordinate dofs for all local cells (const version)
-  const CoordinateDofs& coordinate_dofs() const;
-
-  /// FIXME: This should be with Geometry
-  /// Polynomial degree of the mesh geometry
-  std::int32_t degree() const;
+  /// Name
+  std::string name = "mesh";
 
 private:
-  // Mesh topology
-  std::unique_ptr<Topology> _topology;
+  // Mesh topology:
+  // TODO: This is mutable because of the current memory management within
+  // mesh::Topology. It allows to obtain a non-const Topology from a
+  // const mesh (via Mesh::topology_mutable()).
+  //
+  mutable Topology _topology;
 
   // Mesh geometry
-  std::unique_ptr<Geometry> _geometry;
-
-  // FIXME: This should be in geometry!
-  // Coordinate dofs
-  std::unique_ptr<CoordinateDofs> _coordinate_dofs;
-
-  // FIXME: This shouldn't be here
-  // Mesh geometric degree (in Lagrange basis) describing coordinate
-  // dofs
-  std::int32_t _degree;
+  Geometry _geometry;
 
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 
-  // Ghost mode used for partitioning
-  GhostMode _ghost_mode;
-
   // Unique identifier
-  std::size_t _unique_id;
+  std::size_t _unique_id = common::UniqueIdGenerator::id();
 };
+
+/// Create a mesh
+Mesh create(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+            const fem::CoordinateElement& element,
+            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>& x,
+            GhostMode ghost_mode);
+
 } // namespace mesh
 } // namespace dolfinx

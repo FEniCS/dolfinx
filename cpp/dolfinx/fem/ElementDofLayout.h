@@ -9,7 +9,6 @@
 #include <Eigen/Dense>
 #include <array>
 #include <dolfinx/common/types.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <set>
 #include <ufc.h>
@@ -17,6 +16,10 @@
 
 namespace dolfinx
 {
+namespace mesh
+{
+enum class CellType;
+}
 
 namespace fem
 {
@@ -34,6 +37,25 @@ class ElementDofLayout
 {
 public:
   /// Constructor
+  /// @param[in] block_size The number of dofs co-located at each point.
+  /// @param[in] entity_dofs The dofs on each entity, in the format:
+  ///   entity_dofs[entity_dim][entity_number] = [dof0, dof1, ...]
+  /// @param[in] parent_map TODO
+  /// @param[in] sub_dofmaps TODO
+  /// @param[in] cell_type The cell type of the mesh.
+  /// @param[in] base_permutations The base permutations for the dofs on
+  ///   the cell. These will be used to permute the dofs on the cell.
+  ///   Each row of this array is one base permutation, and the number
+  ///   of columns should be the number of (local) dofs on each cell.
+  ///   Points (dim 0 entities) have no permutations. Lines (dim 1
+  ///   entities) have one permutation each to represent the line being
+  ///   reversed. Faces (dim 2 entities) have two permutations each to
+  ///   represent the face being rotated (one vertex anticlockwise) and
+  ///   reflected. Volumes (dim 3 entities) have four permutations each
+  ///   to represent the volume being rotated (by one vertex) in three
+  ///   directions and reflected. It would be possible to represent a
+  ///   volume with 3 base permutations (2 rotations and 1 reflection),
+  ///   but the implementation with 3 is simpler.
   ElementDofLayout(
       int block_size,
       const std::vector<std::vector<std::set<int>>>& entity_dofs,
@@ -61,10 +83,6 @@ public:
   /// Move assignment
   ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
 
-  /// Cell type (shape)
-  /// @return The cell type
-  mesh::CellType cell_type() const;
-
   /// Return the dimension of the local finite element function space on
   /// a cell (number of dofs on element)
   /// @return Dimension of the local finite element function space.
@@ -78,7 +96,7 @@ public:
   /// Return the number of closure dofs for a given entity dimension
   /// @param[in] dim Entity dimension
   /// @return Number of dofs associated with closure of given entity
-  ///         dimension
+  ///   dimension
   int num_entity_closure_dofs(int dim) const;
 
   /// Local-local mapping of dofs on entity of cell
@@ -120,9 +138,8 @@ public:
 
   /// True iff dof map is a view into another map
   ///
-  /// @returns bool
-  ///         True if the dof map is a sub-dof map (a view into
-  ///         another map).
+  /// @returns bool True if the dof map is a sub-dof map (a view into
+  ///   another map).
   bool is_view() const;
 
   /// Returns the base permutations of the DoFs, as computed by FFCx
@@ -135,9 +152,6 @@ public:
 private:
   // Block size
   int _block_size;
-
-  // Cell type
-  mesh::CellType _cell_type;
 
   // Mapping of dofs to this ElementDofLayout's immediate parent
   std::vector<int> _parent_map;
@@ -166,5 +180,6 @@ private:
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _base_permutations;
 };
+
 } // namespace fem
 } // namespace dolfinx

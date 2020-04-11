@@ -37,7 +37,7 @@ public:
   Timer();
 
   /// Create timer with logging
-  Timer(std::string task);
+  Timer(const std::string& task);
 
   /// Destructor
   ~Timer();

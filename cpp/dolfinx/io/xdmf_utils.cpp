@@ -5,41 +5,18 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "xdmf_utils.h"
-
-// #include "HDF5File.h"
-// #include "HDF5Utility.h"
-// #include "XDMFFile.h"
 #include "pugixml.hpp"
-// #include <algorithm>
 #include <boost/algorithm/string.hpp>
-// #include <boost/container/vector.hpp>
 #include <boost/filesystem.hpp>
-// #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-// #include <dolfinx/common/MPI.h>
-// #include <dolfinx/common/defines.h>
-// #include <dolfinx/common/log.h>
-// #include <dolfinx/common/utils.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
-// #include <dolfinx/la/PETScVector.h>
-// #include <dolfinx/la/utils.h>
-// #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/DistributedMeshTools.h>
-// #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
-// #include <dolfinx/mesh/MeshValueCollection.h>
-// #include <dolfinx/mesh/Partitioning.h>
-// #include <iomanip>
-// #include <memory>
-// #include <petscvec.h>
-// #include <set>
-// #include <string>
-// #include <vector>
 #include <map>
 
 using namespace dolfinx;
@@ -104,7 +81,7 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   {
     throw std::runtime_error("Node name is \""
                              + std::string(dataitem_node.name())
-                             + "\", expecting \"DataItem\"");
+                             + R"(", expecting "DataItem")");
   }
 
   // Check that format is HDF
@@ -114,7 +91,7 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   if (format.compare("HDF") != 0)
   {
     throw std::runtime_error("DataItem format \"" + format
-                             + "\" is not \"HDF\"");
+                             + R"(" is not "HDF")");
   }
 
   // Get path data
@@ -163,7 +140,7 @@ xdmf_utils::get_dataset_shape(const pugi::xml_node& dataset_node)
     boost::split(dims_list, dims_str, boost::is_any_of(" "));
 
     // Cast dims to integers
-    for (auto d : dims_list)
+    for (const auto& d : dims_list)
       dims.push_back(boost::lexical_cast<std::int64_t>(d));
   }
 
@@ -189,18 +166,14 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 
   // Check that number of cells can be determined
   if (tdims.size() != 2 and num_cells_topolgy == -1)
-  {
     throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
-  }
 
   // Check for consistency if number of cells appears in both the topology
   // and DataItem nodes
   if (num_cells_topolgy != -1 and tdims.size() == 2)
   {
     if (num_cells_topolgy != tdims[0])
-    {
       throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
-    }
   }
 
   return std::max(num_cells_topolgy, tdims[0]);
@@ -213,23 +186,26 @@ xdmf_utils::get_point_data_values(const function::Function& u)
   assert(mesh);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       data_values = u.compute_point_values();
-  std::int64_t width = get_padded_width(u);
+
+  const int width = get_padded_width(u);
+  assert(mesh->geometry().index_map());
+  const int num_local_points = mesh->geometry().index_map()->size_local();
+  assert(data_values.rows() >= num_local_points);
+  data_values.conservativeResize(num_local_points, Eigen::NoChange);
 
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
-  const std::size_t num_local_points = mesh->geometry().num_points();
   std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
-
-  const std::size_t value_rank = u.value_rank();
+  const int value_rank = u.value_rank();
   if (value_rank > 0)
   {
     // Transpose vector/tensor data arrays
-    const std::size_t value_size = u.value_size();
-    for (std::size_t i = 0; i < num_local_points; i++)
+    const int value_size = u.value_size();
+    for (int i = 0; i < num_local_points; i++)
     {
-      for (std::size_t j = 0; j < value_size; j++)
+      for (int j = 0; j < value_size; j++)
       {
-        std::size_t tensor_2d_offset
+        int tensor_2d_offset
             = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
         _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
       }
@@ -241,18 +217,6 @@ xdmf_utils::get_point_data_values(const function::Function& u)
         data_values.data(),
         data_values.data() + data_values.rows() * data_values.cols());
   }
-
-  // Reorder values by global point indices
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                          Eigen::RowMajor>>
-      in_vals(_data_values.data(), _data_values.size() / width, width);
-
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      vals = mesh::DistributedMeshTools::reorder_by_global_indices(
-          mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
-
-  _data_values
-      = std::vector<PetscScalar>(vals.data(), vals.data() + vals.size());
 
   return _data_values;
 }
@@ -277,16 +241,17 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   const auto dofmap = u.function_space()->dofmap();
   assert(dofmap->element_dof_layout);
   const int ndofs = dofmap->element_dof_layout->num_dofs();
-  for (auto& cell : mesh::MeshRange(*mesh, tdim))
+
+  for (int cell = 0; cell < num_local_cells; ++cell)
   {
     // Tabulate dofs
-    auto dofs = dofmap->cell_dofs(cell.index());
+    auto dofs = dofmap->cell_dofs(cell);
     assert(ndofs == value_size);
     for (int i = 0; i < ndofs; ++i)
       dof_set.push_back(dofs[i]);
   }
 
-  // Get  values
+  // Get values
   std::vector<PetscScalar> data_values(dof_set.size());
   {
     la::VecReadWrapper u_wrapper(u.vector().vec());
@@ -326,17 +291,18 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   return data_values;
 }
 //-----------------------------------------------------------------------------
-std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type, int order)
+std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
+                                          int num_nodes)
 {
   static const std::map<mesh::CellType, std::map<int, std::string>> vtk_map = {
       {mesh::CellType::point, {{1, "PolyVertex"}}},
-      {mesh::CellType::interval, {{1, "PolyLine"}, {2, "Edge_3"}}},
-      {mesh::CellType::triangle, {{1, "Triangle"}, {2, "Triangle_6"}}},
+      {mesh::CellType::interval, {{2, "PolyLine"}, {3, "Edge_3"}}},
+      {mesh::CellType::triangle, {{3, "Triangle"}, {6, "Triangle_6"}}},
       {mesh::CellType::quadrilateral,
-       {{1, "Quadrilateral"}, {2, "Quadrilateral_8"}}},
+       {{4, "Quadrilateral"}, {9, "Quadrilateral_9"}}},
       {mesh::CellType::tetrahedron,
-       {{1, "Tetrahedron"}, {2, "Tetrahedron_10"}}},
-      {mesh::CellType::hexahedron, {{1, "Hexahedron"}, {2, "Hexahedron_20"}}}};
+       {{4, "Tetrahedron"}, {10, "Tetrahedron_10"}}},
+      {mesh::CellType::hexahedron, {{8, "Hexahedron"}, {27, "Hexahedron_27"}}}};
 
   // Get cell family
   auto cell = vtk_map.find(cell_type);
@@ -344,7 +310,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type, int order)
     throw std::runtime_error("Could not find cell type.");
 
   // Get cell string
-  auto cell_str = cell->second.find(order);
+  auto cell_str = cell->second.find(num_nodes);
   if (cell_str == cell->second.end())
     throw std::runtime_error("Could not find VTK string for cell order.");
 

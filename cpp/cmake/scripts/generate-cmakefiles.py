@@ -39,19 +39,20 @@ CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
 set_source_files_properties(main.cpp PROPERTIES COMPILE_FLAGS "$<$<BOOL:${{HAVE_NO_MULTLINE}}>:-Wno-comment -Wall -Wextra -pedantic -Werror>")
 
 # Test targets
-set(TEST_PARAMETERS -np 3 ${{MPIEXEC_PARAMS}} "./${{PROJECT_NAME}}")
-add_test(NAME ${{PROJECT_NAME}}_mpi COMMAND "mpirun" ${{TEST_PARAMETERS}})
+set(TEST_PARAMETERS2 -np 2 ${{MPIEXEC_PARAMS}} "./${{PROJECT_NAME}}")
+set(TEST_PARAMETERS3 -np 3 ${{MPIEXEC_PARAMS}} "./${{PROJECT_NAME}}")
+add_test(NAME ${{PROJECT_NAME}}_mpi_2 COMMAND "mpirun" ${{TEST_PARAMETERS2}})
+add_test(NAME ${{PROJECT_NAME}}_mpi_3 COMMAND "mpirun" ${{TEST_PARAMETERS3}})
 add_test(NAME ${{PROJECT_NAME}}_serial COMMAND ${{PROJECT_NAME}})
 """
 
 # Subdirectories
-sub_directories = ['demo', 'bench']
+sub_directories = ["demo"]
 # Prefix map for subdirectories
-executable_prefixes = dict(demo="demo_", bench="bench_")
+executable_prefixes = dict(demo="demo_")
 
 # Main file name map for subdirectories
-main_file_names = dict(
-    demo=set(["main.cpp", "main.cpp.rst"]), bench=set(["main.cpp"]))
+main_file_names = dict(demo=set(["main.cpp"]))
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)
 exclude_projects = []
@@ -87,8 +88,10 @@ def generate_cmake_files(subdirectory, generated_files):
             filename, extension = os.path.splitext(f)
             if extension == ".cpp":
                 cpp_files.add(f)
-            if extension == ".c":
+            elif extension == ".c":
                 c_files.add(f)
+            elif extension == ".ufl":
+                c_files.add(f.replace(".ufl", ".c"))
             if ".cpp.rst" in f:
                 cpp_files.add(filename)
 

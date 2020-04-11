@@ -6,14 +6,10 @@
 
 #pragma once
 
-#include "Graph.h"
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/types.h>
-#include <map>
-#include <string>
-#include <utility>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <vector>
 
 // FIXME: Avoid exposing ParMETIS publicly
@@ -27,9 +23,6 @@ namespace dolfinx
 namespace graph
 {
 
-template <typename T>
-class CSRGraph;
-
 /// This class provides an interface to ParMETIS
 
 class ParMETIS
@@ -37,20 +30,10 @@ class ParMETIS
 #ifdef HAS_PARMETIS
 public:
   // Standard ParMETIS partition
-  static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-  partition(MPI_Comm mpi_comm, idx_t nparts, const CSRGraph<idx_t>& csr_graph);
+  static AdjacencyList<std::int32_t>
+  partition(MPI_Comm mpi_comm, idx_t nparts,
+            const AdjacencyList<idx_t>& adj_graph, bool ghosting);
 
-private:
-  // ParMETIS adaptive repartition, so has to be non-const here
-  template <typename T>
-  static std::vector<int> adaptive_repartition(MPI_Comm mpi_comm,
-                                               const CSRGraph<T>& csr_graph,
-                                               double weight = 1000);
-
-  // ParMETIS refine repartition
-  template <typename T>
-  static std::vector<int> refine(MPI_Comm mpi_comm,
-                                 const CSRGraph<T>& csr_graph);
 #endif
 };
 } // namespace graph

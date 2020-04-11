@@ -4,17 +4,26 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os
+
 import numpy as np
+import pytest
+from mpi4py import MPI
 
-from dolfinx import cpp
+import ufl
+from dolfinx import cpp, fem
+from dolfinx.io import XDMFFile
+from dolfinx_utils.test.fixtures import tempdir
+
+assert (tempdir)
 
 
-def test_extract_topology():
+def xtest_extract_topology():
     """Test creation of topology adjacency lists, with extraction
     of cell vertices for 'higher-order' topologies"""
 
     # FIXME: make creating the ElementDofLayout simpler and clear
-    perms = np.zeros([5, 3], dtype=np.int8)
+    perms = np.zeros([3, 3], dtype=np.int8)
     perms[:] = [0, 1, 2]
     entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(),
                                                     set()], [set()]]
@@ -23,163 +32,307 @@ def test_extract_topology():
 
     # Create cell 'topology' for 'P1' triangulation, i.e. no mid-side
     # nodes, and convert to an AdjacencyList
-    cells0 = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
-    cells0 = cpp.graph.AdjacencyList64(cells0)
+    cells = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
+    cells = cpp.graph.AdjacencyList64(cells)
 
     # Extract a 'proper, vertex-only topology. Vertex indices are
     # unchanged. Should be same as input as input is vertex-only
     # triangulation.
-    cells_filtered0 = cpp.mesh.extract_topology(layout, cells0)
-    assert np.array_equal(cells0.array(), cells_filtered0.array())
+    cells_filtered = cpp.mesh.extract_topology(layout, cells)
+    assert np.array_equal(cells.array(), cells_filtered.array())
 
     # Create element dof layout for P2 element
+    perms = np.zeros([3, 6], dtype=np.int8)
+    perms[:] = [0, 1, 2, 3, 4, 5]
     entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
     layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [],
                                       cpp.mesh.CellType.triangle, perms)
 
     # Create cell 'topology' for 'P2' triangulation, i.e. with mid-side
     # nodes, and convert to an AdjacencyList
-    cells1 = [[0, 1, 4, 15, 14, 6], [0, 4, 3, 8, 9, 14], [1, 2, 5, 11, 12, 10], [1, 5, 4, 13, 15, 12]]
-    cells1 = cpp.graph.AdjacencyList64(cells1)
+    cells = [[0, 1, 4, 15, 14, 6], [0, 4, 3, 8, 9, 14], [1, 2, 5, 11, 12, 10], [1, 5, 4, 13, 15, 12]]
+    cells = cpp.graph.AdjacencyList64(cells)
 
     # Extract a 'proper, vertex-only topology. Vertex indices are
     # unchanged, and edges entries dropped
-    cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
-    assert np.array_equal(cells_filtered0.array(), cells_filtered1.array())
+    cells_filtered1 = cpp.mesh.extract_topology(layout, cells)
+    assert np.array_equal(cells_filtered.array(), cells_filtered1.array())
 
 
-def test_topology_partition():
-    """Test partitioning of cells"""
-    # FIXME: make creating the ElementDofLayout simpler and clear
-
-    rank = cpp.MPI.rank(cpp.MPI.comm_world)
-    size = cpp.MPI.size(cpp.MPI.comm_world)
-
-    cell_type = cpp.mesh.CellType.triangle
-
-    # Create element dof layout for 'P1' simplex triangulation in 2D
-    perms = np.zeros([5, 3], dtype=np.int8)
-    perms[:] = [0, 1, 2]
-    entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
-    layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
-
-    # Create topology on rank 0, create empty AdjacencyList on other
-    # ranks
-    if rank == 0:
-        cells0 = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
-        cells0 = cpp.graph.AdjacencyList64(cells0)
-        cells_filtered0 = cpp.mesh.extract_topology(layout, cells0)
+def local_range(process, N, size):
+    n = N // size
+    r = N % size
+    if process < r:
+        local_range = [process * (n + 1), process * (n + 1) + n + 1]
     else:
-        cells_filtered0 = cpp.graph.AdjacencyList64(0)
+        local_range = [process * n + r, process * n + r + n]
+    return local_range
 
-    # Partition cells, compute the destination process for cells on this
-    # process
-    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,
-                                    layout.cell_type, cells_filtered0)
-    assert len(dest) == cells_filtered0.num_nodes
 
-    # Create element dof layout for 'P2' simplex triangulation in 2D
-    entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
-    layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
-    if rank == 0:
-        # cells_in = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
+def create_mesh_gmsh(shape, order):
+    """Compute cell topology and geometric points for a range of cells types
+    and geometric orders
 
-        cells_in = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
-        x = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]]
-        x = np.array(x)
+    """
 
-        cells1 = cpp.graph.AdjacencyList64(cells_in)
-        cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
-        cells_in = cpp.graph.AdjacencyList64(cells_in)
+    import pygmsh
+    geom = pygmsh.built_in.Geometry()
+    if shape == cpp.mesh.CellType.triangle:
+        geom = pygmsh.opencascade.Geometry()
+        geom.add_disk([0.0, 0.0, 0.0], 1.0, char_length=1.2)
+    elif shape == cpp.mesh.CellType.tetrahedron:
+        geom = pygmsh.opencascade.Geometry()
+        geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+    elif shape == cpp.mesh.CellType.quadrilateral:
+        rect = geom.add_rectangle(0.0, 2.0, 0.0, 1.0, 0.0, 0.1)
+        geom.set_recombined_surfaces([rect.surface])
+    elif shape == cpp.mesh.CellType.hexahedron:
+        lbw = [2, 3, 5]
+        points = [geom.add_point([x, 0.0, 0.0], 1.0) for x in [0.0, lbw[0]]]
+        line = geom.add_line(*points)
+        _, rectangle, _ = geom.extrude(line, translation_axis=[0.0, lbw[1], 0.0], num_layers=lbw[1], recombine=True)
+        geom.extrude(rectangle, translation_axis=[0.0, 0.0, lbw[2]], num_layers=lbw[2], recombine=True)
+
+    names = {
+        (cpp.mesh.CellType.triangle, 1): "triangle",
+        (cpp.mesh.CellType.triangle, 2): "triangle6",
+        (cpp.mesh.CellType.quadrilateral, 1): "quad",
+        (cpp.mesh.CellType.quadrilateral, 2): "quad9",
+        (cpp.mesh.CellType.tetrahedron, 1): "tetra",
+        (cpp.mesh.CellType.tetrahedron, 2): "tetra10",
+        (cpp.mesh.CellType.hexahedron, 1): "hexahedron",
+        (cpp.mesh.CellType.hexahedron, 2): "hexahedron27"
+    }
+
+    # Generate mesh
+    dim = cpp.mesh.cell_dim(shape)
+    mesh = pygmsh.generate_mesh(geom, dim=dim, mesh_file_type="vtk",
+                                extra_gmsh_arguments=["-order", "{}".format(order)])
+    name = names[(shape, order)]
+    cells = np.array([cells for cells in mesh.cells if cells.type == name])
+
+    return cells[0][1], mesh.points
+
+
+def get_dof_layout(shape, order):
+    """Create ElementDofLayouts for a range of Lagrange element types"""
+    if shape == cpp.mesh.CellType.triangle and order == 1:
+        perms = np.zeros([3, 3], dtype=np.int8)
+        perms[:] = range(3)
+        entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.triangle and order == 2:
+        perms = np.zeros([3, 6], dtype=np.int8)
+        perms[:] = range(6)
+        entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.quadrilateral and order == 1:
+        perms = np.zeros([4, 4], dtype=np.int8)
+        perms[:] = range(4)
+        entity_dofs = [[set([0]), set([1]), set([2]), set([3])],
+                       4 * [set()], [set()]]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.quadrilateral and order == 2:
+        perms = np.zeros([4, 9], dtype=np.int8)
+        perms[:] = range(9)
+        entity_dofs = [[set([0]), set([1]), set([3]), set([4])],
+                       [set([2]), set([5]), set([6]), set([7])],
+                       [set([8])]]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.tetrahedron and order == 1:
+        perms = np.zeros([14, 4], dtype=np.int8)
+        perms[:] = range(4)
+        entity_dofs = [[set([0]), set([1]), set([2]), set([3])],
+                       6 * [set()], 4 * [set()], [set()]]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.tetrahedron and order == 2:
+        perms = np.zeros([14, 10], dtype=np.int8)
+        perms[:] = range(10)
+        entity_dofs = [[set([0]), set([1]), set([2]), set([3])],
+                       [set([4]), set([5]), set([6]), set([7]), set([8]), set([9])],
+                       4 * [set()], [set()]]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.hexahedron and order == 1:
+        perms = np.zeros([24, 8], dtype=np.int8)
+        perms[:] = range(8)
+        entity_dofs = [
+            [set([0]), set([1]), set([2]), set([3]), set([4]), set([5]), set([6]), set([7])],
+            12 * [set()], 6 * [set()], [set([])]
+        ]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.hexahedron and order == 2:
+        perms = np.zeros([24, 27], dtype=np.int8)
+        perms[:] = range(27)
+        entity_dofs = [
+            [set([0]), set([1]), set([3]), set([4]), set([9]), set([10]), set([12]), set([13])],
+            [set([2]), set([5]), set([11]), set([14]), set([6]), set([7]), set([15]), set([16]),
+                set([18]), set([19]), set([21]), set([22])],
+            [set([8]), set([17]), set([20]), set([23]), set([24]), set([25])],
+            [set([26])]
+        ]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     else:
-        cells1 = cpp.graph.AdjacencyList64(0)
-        x = np.zeros([0, 2])
-        cells_filtered1 = cpp.graph.AdjacencyList64(0)
+        raise RuntimeError("Unknown dof layout")
 
-    # Compute the destination process for cells on this process
-    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,
-                                    layout.cell_type, cells_filtered1)
-    # print(dest)
-    assert len(dest) == cells_filtered1.num_nodes
 
-    # Distribute cells to destination process
-    # return
-    cells, src, original_cell_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
-                                                          dest)
-    # print(cells.array())
-    # print(src)
-    # if rank == 3:
-    #     print("Num:", cells.num_nodes)
-    #     for i in range(cells.num_nodes):
-    #         print("  ", cells.links(i))
-    #     print(original_index)
-    assert cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes) == 4
+@pytest.mark.parametrize("order", [
+    1,
+    2
+])
+@pytest.mark.parametrize("shape", [
+    cpp.mesh.CellType.triangle,
+    cpp.mesh.CellType.quadrilateral,
+    cpp.mesh.CellType.tetrahedron,
+    cpp.mesh.CellType.hexahedron
+])
+def test_topology_partition(tempdir, shape, order):
+    """Test partitioning and creation of meshes"""
 
-    # Build local cell-vertex connectivity (with local vertex indices
-    # [0, 1, 2, ..., n)), map from global indices in 'cells' to the
-    # local vertex indices, and
-    cells_local, local_to_global_vertices = cpp.mesh.create_local_adjacency_list(cells)
+    pytest.importorskip("pygmsh")
+
+    size = MPI.COMM_WORLD.size
+    layout = get_dof_layout(shape, order)
+    dim = cpp.mesh.cell_dim(shape)
+
+    # rank = MPI.COMM_WORLD.rank
+    # if rank == 0:
+    #     # Create mesh data
+    #     cells, x = create_mesh_gmsh(shape, order)
+    #     x = np.array(x[:, : dim])
+
+    #     # Permute to DOLFIN ordering and create adjacency list
+    #     cells = cpp.io.permute_cell_ordering(cells,
+    #                                           cpp.io.permutation_vtk_to_dolfin(shape,
+    #                                                                            cells.shape[1]))
+    #     cells_global = cpp.graph.AdjacencyList64(cells)
+
+    #     # Extract topology data, e.g. just the vertices. For P1 geometry
+    #     # this should just be the identity operator. For other elements
+    #     # the filtered lists may have 'gaps', i.e. the indices might not
+    #     # be contiguous.
+    #     cells_global_v = cpp.mesh.extract_topology(layout, cells_global)
+    # else:
+    #     # Empty data on ranks other than 0
+    #     cells_global = cpp.graph.AdjacencyList64(0)
+    #     x = np.zeros([0, dim])
+    #     cells_global_v = cpp.graph.AdjacencyList64(0)
+
+    # Create mesh data
+    cells, x = create_mesh_gmsh(shape, order)
+
+    # Divide data amongst ranks (for testing). Also possible to start
+    # with all data on a single rank.
+    range_c = local_range(MPI.COMM_WORLD.rank, len(cells), MPI.COMM_WORLD.size)
+    range_v = local_range(MPI.COMM_WORLD.rank, len(x), MPI.COMM_WORLD.size)
+    cells = cells[range_c[0]:range_c[1]]
+    x = np.array(x[range_v[0]:range_v[1], : dim])
+
+    # Permute to DOLFIN ordering and create adjacency list
+    cells = cpp.io.permute_cell_ordering(cells,
+                                         cpp.io.permutation_vtk_to_dolfin(shape,
+                                                                          cells.shape[1]))
+    cells_global = cpp.graph.AdjacencyList64(cells)
+
+    # Extract topology data, e.g. just the vertices. For P1 geometry
+    # this should just be the identity operator. For other elements
+    # the filtered lists may have 'gaps', i.e. the indices might not
+    # be contiguous.
+    cells_global_v = cpp.mesh.extract_topology(shape, layout, cells_global)
+
+    # Compute the destination rank for cells on this process via graph
+    # partitioning
+    dest = cpp.mesh.partition_cells(MPI.COMM_WORLD, size, shape,
+                                    cells_global_v, cpp.mesh.GhostMode.none)
+    assert len(dest) == cells_global_v.num_nodes
+
+    # Distribute cells to destination rank
+    cells, src, original_cell_index, ghost_index = cpp.graph.distribute(MPI.COMM_WORLD,
+                                                                        cells_global_v, dest)
+
+    # Build local cell-vertex connectivity, with local vertex indices
+    # [0, 1, 2, ..., n), from cell-vertex connectivity using global
+    # indices and get map from global vertex indices in 'cells' to the
+    # local vertex indices
+    cells_local, local_to_global_vertices = cpp.graph.create_local_adjacency_list(cells)
     assert len(local_to_global_vertices) == len(np.unique(cells.array()))
     assert len(local_to_global_vertices) == len(np.unique(cells_local.array()))
     assert np.unique(cells_local.array())[-1] == len(local_to_global_vertices) - 1
 
-    # Create local topology, and set cell-vertex topology
-    topology = cpp.mesh.Topology(layout.cell_type)
-    index_map = cpp.common.IndexMap(cpp.MPI.comm_self, cells_local.num_nodes, [], 1)
-    topology.set_connectivity(cells_local, topology.dim, 0)
-    topology.set_index_map(topology.dim, index_map)
+    # Create (i) local topology object and (ii) IndexMap for cells, and
+    # set cell-vertex topology
+    topology_local = cpp.mesh.Topology(MPI.COMM_SELF, shape)
+    tdim = topology_local.dim
+    map = cpp.common.IndexMap(MPI.COMM_SELF, cells_local.num_nodes, [], 1)
+    topology_local.set_index_map(tdim, map)
+    topology_local.set_connectivity(cells_local, tdim, 0)
 
-    # Attach vertex IndexMap to local topology
+    # Attach an IndexMap for vertices to local topology
     n = len(local_to_global_vertices)
-    index_map = cpp.common.IndexMap(cpp.MPI.comm_self, n, [], 1)
-    topology.set_index_map(0, index_map)
+    index_map = cpp.common.IndexMap(MPI.COMM_SELF, n, [], 1)
+    topology_local.set_index_map(0, index_map)
 
-    # Create facets for local topology, and attach to topology object
-    cell_facet, facet_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_self,
-                                                                    topology, topology.dim - 1)
-    topology.set_connectivity(cell_facet, topology.dim, topology.dim - 1)
-    topology.set_index_map(topology.dim - 1, index_map)
-    if facet_vertex is not None:
-        topology.set_connectivity(facet_vertex, topology.dim - 1, 0)
-    facet_cell, _ = cpp.mesh.compute_connectivity(topology, topology.dim - 1, topology.dim)
-    topology.set_connectivity(facet_cell, topology.dim - 1, topology.dim)
+    # Create facets for local topology, and attach to the topology object
+    cf, fv, map = cpp.mesh.compute_entities(MPI.COMM_SELF,
+                                            topology_local, tdim - 1)
+    topology_local.set_connectivity(cf, tdim, tdim - 1)
+    topology_local.set_index_map(tdim - 1, index_map)
+    if fv is not None:
+        topology_local.set_connectivity(fv, tdim - 1, 0)
+    fc, _ = cpp.mesh.compute_connectivity(topology_local, tdim - 1, tdim)
+    topology_local.set_connectivity(fc, tdim - 1, tdim)
 
     # Get facets that are on the boundary of the local topology, i.e are
     # connect to one cell only
-    boundary = cpp.mesh.compute_interior_facets(topology)
-    topology.set_interior_facets(boundary)
-    boundary = topology.on_boundary(topology.dim - 1)
+    boundary = cpp.mesh.compute_interior_facets(topology_local)
+    topology_local.set_interior_facets(boundary)
+    boundary = topology_local.on_boundary(tdim - 1)
 
     # Build distributed cell-vertex AdjacencyList, IndexMap for
     # vertices, and map from local index to old global index
-    cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
-                                                                   local_to_global_vertices)
+    exterior_vertices = cpp.mesh.compute_vertex_exterior_markers(topology_local)
+    cells, vertex_map = cpp.graph.create_distributed_adjacency_list(MPI.COMM_WORLD, cells_local,
+                                                                    local_to_global_vertices, exterior_vertices)
 
-    # if rank == 1:
-    #     print("Num:", cells.num_nodes)
-    #     for i in range(cells.num_nodes):
-    #         print("  ", cells.links(i))
-    #     print(original_index)
-    #     print(local_to_global_vertices)
-    # print(cells.num_nodes)
-    # Create distributed topology
-    topology = cpp.mesh.Topology(layout.cell_type)
+    # --- Create distributed topology
+    topology = cpp.mesh.Topology(MPI.COMM_WORLD, shape)
 
-    # Set vertex IndexMap and vertex-vertex connectivity
+    # Set vertex IndexMap, and vertex-vertex connectivity
     topology.set_index_map(0, vertex_map)
     c0 = cpp.graph.AdjacencyList(vertex_map.size_local + vertex_map.num_ghosts)
     topology.set_connectivity(c0, 0, 0)
 
     # Set cell IndexMap and cell-vertex connectivity
-    num_cells = cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes)
-    index_map = cpp.common.IndexMap(cpp.MPI.comm_self, num_cells, [], 1)
-    topology.set_index_map(topology.dim, index_map)
-    topology.set_connectivity(cells, topology.dim, 0)
+    index_map = cpp.common.IndexMap(MPI.COMM_WORLD, cells.num_nodes, [], 1)
+    topology.set_index_map(tdim, index_map)
+    topology.set_connectivity(cells, tdim, 0)
 
-    # NOTE: This could be a local (MPI_COMM_SELF) dofmap
+    # Create facets for topology, and attach to topology object
+    cf, fv, index_map = cpp.mesh.compute_entities(MPI.COMM_WORLD,
+                                                  topology, tdim - 1)
+    if cf is not None:
+        topology.set_connectivity(cf, tdim, tdim - 1)
+    if index_map is not None:
+        topology.set_index_map(tdim - 1, index_map)
+    if fv is not None:
+        topology.set_connectivity(fv, tdim - 1, 0)
+    fc, _ = cpp.mesh.compute_connectivity(topology, tdim - 1, tdim)
+    if fc is not None:
+        topology.set_connectivity(fc, tdim - 1, tdim)
+
+    ce, ev, index_map = cpp.mesh.compute_entities(MPI.COMM_WORLD,
+                                                  topology, 1)
+    if ce is not None:
+        topology.set_connectivity(ce, tdim, 1)
+    if index_map is not None:
+        topology.set_index_map(1, index_map)
+    if ev is not None:
+        topology.set_connectivity(ev, 1, 0)
+
+    # --- Geometry
+
+    # NOTE: Could be a local (MPI_COMM_SELF) dofmap?
     # Build 'geometry' dofmap on the topology
-    # return
-    dof_index_map, dofmap = cpp.fem.build_dofmap(cpp.MPI.comm_world,
+    dof_index_map, dofmap = cpp.fem.build_dofmap(MPI.COMM_WORLD,
                                                  topology, layout, 1)
 
     # Send/receive the 'cell nodes' (includes high-order geometry
@@ -188,18 +341,53 @@ def test_topology_partition():
     # NOTE: Maybe we can ensure that the 'global cells' are in the same
     # order as the owned cells (maybe they are already) to avoid the
     # need for global_index_nodes
-    cell_nodes, global_index_nodes = cpp.mesh.exchange(cpp.MPI.comm_world,
-                                                       cells1, dest, set(src))
+    #
+    # NOTE: This could be optimised as we have earlier computed which
+    # processes own the cells this process needs.
+    cell_nodes, src, global_index_cell, ghost_owners = \
+        cpp.graph.distribute(MPI.COMM_WORLD,
+                             cells_global, dest)
     assert cell_nodes.num_nodes == cells.num_nodes
-    assert global_index_nodes == original_cell_index
+    assert global_index_cell == original_cell_index
 
-    # Check that number of dofs is equal to number of 'nodes' in the input
-    assert dofmap.shape == cell_nodes.array().shape
+    # Check that number of dofs is equal to number of geometry 'nodes'
+    # from the mesh data input
+    assert dofmap.array().shape == cell_nodes.array().shape
 
-    # Build list of unique node indices
+    # Build list of unique (global) node indices from adjacency list
+    # (geometry nodes)
     indices = np.unique(cell_nodes.array())
 
-    # Fetch node coordinates
-    coords = cpp.mesh.fetch_data(cpp.MPI.comm_world, indices, x)
-    for index, value in zip(indices, coords):
-        print("Index, x:", index, value)
+    # Fetch node coordinates by global index from other ranks. Order of
+    # coords matches order of the indices in 'indices'
+    coords = cpp.graph.distribute_data(MPI.COMM_WORLD, indices, x)
+
+    # Compute local-to-global map from local indices in dofmap to the
+    # corresponding global indices in cell_nodes
+    l2g = cpp.graph.compute_local_to_global_links(cell_nodes, dofmap)
+
+    # Compute local (dof) to local (position in coords) map from (i)
+    # local-to-global for dofs and (ii) local-to-global for entries in
+    # coords
+    l2l = cpp.graph.compute_local_to_local(l2g, indices)
+
+    # Build coordinate dof array
+    x_g = coords[l2l]
+
+    # Create Geometry
+    cell_str = cpp.mesh.to_string(shape)
+    cell = ufl.Cell(cell_str, geometric_dimension=x_g.shape[1])
+    element = ufl.VectorElement("Lagrange", cell, order)
+    domain = ufl.Mesh(element)
+    cmap = fem.create_coordinate_map(domain)
+    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, cmap, x_g, indices)
+
+    # Create mesh
+    mesh = cpp.mesh.Mesh(MPI.COMM_WORLD, topology, geometry)
+
+    # Write mesh to file
+    filename = os.path.join(tempdir, "mesh_{}_{}.xdmf".format(cpp.mesh.to_string(shape), order))
+    # print(filename)
+    encoding = XDMFFile.Encoding.HDF5
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)

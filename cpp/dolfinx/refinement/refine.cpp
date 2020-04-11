@@ -8,7 +8,7 @@
 #include "PlazaRefinementND.h"
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshFunction.h>
+#include <dolfinx/mesh/MeshTags.h>
 
 using namespace dolfinx;
 using namespace refinement;
@@ -26,9 +26,9 @@ mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh,
   mesh::Mesh refined_mesh = PlazaRefinementND::refine(mesh, redistribute);
 
   // Report the number of refined cells
-  const std::size_t D = mesh.topology().dim();
-  const std::size_t n0 = mesh.num_entities_global(D);
-  const std::size_t n1 = refined_mesh.num_entities_global(D);
+  const int D = mesh.topology().dim();
+  const std::int64_t n0 = mesh.topology().index_map(D)->size_global();
+  const std::int64_t n1 = refined_mesh.topology().index_map(D)->size_global();
   LOG(INFO) << "Number of cells increased from " << n0 << " to " << n1 << " ("
             << 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0)
             << "%% increase).";
@@ -38,7 +38,7 @@ mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 mesh::Mesh
 dolfinx::refinement::refine(const mesh::Mesh& mesh,
-                            const mesh::MeshFunction<int>& cell_markers,
+                            const mesh::MeshTags<std::int8_t>& cell_markers,
                             bool redistribute)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
@@ -51,9 +51,9 @@ dolfinx::refinement::refine(const mesh::Mesh& mesh,
       = PlazaRefinementND::refine(mesh, cell_markers, redistribute);
 
   // Report the number of refined cells
-  const std::size_t D = mesh.topology().dim();
-  const std::size_t n0 = mesh.num_entities_global(D);
-  const std::size_t n1 = refined_mesh.num_entities_global(D);
+  const int D = mesh.topology().dim();
+  const std::int64_t n0 = mesh.topology().index_map(D)->size_global();
+  const std::int64_t n1 = refined_mesh.topology().index_map(D)->size_global();
   LOG(INFO) << "Number of cells increased from " << n0 << " to " << n1 << " ("
             << 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0)
             << "%% increase).";

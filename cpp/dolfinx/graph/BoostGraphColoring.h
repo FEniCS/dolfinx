@@ -34,7 +34,7 @@ public:
   compute_local_vertex_coloring(const Graph& graph,
                                 std::vector<ColorType>& colors)
   {
-    Timer timer("Boost graph coloring (from dolfinx::Graph)");
+    Timer timer("Boost graph coloring (from dolfinx::graph)");
 
     // Typedef for Boost compressed sparse row graph
     typedef boost::compressed_sparse_row_graph<

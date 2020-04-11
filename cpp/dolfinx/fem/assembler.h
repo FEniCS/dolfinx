@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include <dolfinx/common/types.h>
 #include <memory>
 #include <petscmat.h>
@@ -51,9 +52,8 @@ void assemble_vector(Vec b, const Form& L);
 /// @param[in,out] b The Eigen vector to be assembled. It will not be
 ///                  zeroed before assembly.
 /// @param[in] L The linear forms to assemble into b
-void
-    assemble_vector(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const Form& L);
+void assemble_vector(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
@@ -99,6 +99,15 @@ void apply_lifting(
     double scale);
 
 // -- Matrices ---------------------------------------------------------------
+
+// Experimental
+/// Assemble bilinear form into an Eigen Sparse matrix.
+/// @param[in] a The bilinear from to assemble
+/// @param[in] bcs Boundary conditions to apply. For boundary condition
+///                dofs the row and column are zeroed. The diagonal
+///                entry is not set.
+Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> assemble_matrix_eigen(
+    const Form& a, const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
 
 /// Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.

@@ -9,15 +9,15 @@ import time
 
 import numpy as np
 import pytest
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from mpi4py import MPI
+from petsc4py import PETSc
 
 import ufl
-from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem, geometry
-from dolfinx.cpp.mesh import GhostMode, Ordering
+from dolfinx import DirichletBC, Function, FunctionSpace, fem, geometry
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
-from petsc4py import PETSc
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
@@ -35,8 +35,8 @@ def test_manufactured_poisson(degree, filename, datadir):
 
     """
 
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
-        mesh = xdmf.read_mesh(GhostMode.none)
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, ("Lagrange", degree))
     u, v = TrialFunction(V), TestFunction(V)
@@ -66,7 +66,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     u_bc.interpolate(lambda x: x[1]**degree)
 
     # Create Dirichlet boundary condition
-    mesh.create_connectivity_all()
+    mesh.topology.create_connectivity_all()
     facetdim = mesh.topology.dim - 1
     bndry_facets = np.where(np.array(
         mesh.topology.on_boundary(facetdim)) == 1)[0]
@@ -94,7 +94,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     print("Matrix assembly time:", t1 - t0)
 
     # Create LU linear solver
-    solver = PETSc.KSP().create(MPI.comm_world)
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
     solver.setType(PETSc.KSP.Type.PREONLY)
     solver.getPC().setType(PETSc.PC.Type.LU)
     solver.setOperators(A)
@@ -114,8 +114,8 @@ def test_manufactured_poisson(degree, filename, datadir):
     print("Error functional compile time:", t1 - t0)
 
     t0 = time.time()
-    error = assemble_scalar(M)
-    error = MPI.sum(mesh.mpi_comm(), error)
+    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
+
     t1 = time.time()
 
     print("Error assembly time:", t1 - t0)
@@ -131,30 +131,19 @@ def test_manufactured_poisson(degree, filename, datadir):
 ])
 @pytest.mark.parametrize("family",
                          [
-                             ("BDM", 0),
-                             ("RT", 1),
-                             ("N2curl", 0),
-                             ("N1curl", 1),
+                             "BDM",
+                             "N2curl"
                          ])
-@pytest.mark.parametrize("degree", [1, 2])
+@pytest.mark.parametrize("degree", [1, 2, 3])
 def test_manufactured_vector1(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
-        mesh = xdmf.read_mesh(GhostMode.none)
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
 
-    # FIXME: these test are currently failing on unordered meshes
-    if "tetra" in filename:
-        if family[0] == "N1curl":
-            Ordering.order_simplex(mesh)
-
-    V = FunctionSpace(mesh, (family[0], degree + family[1]))
+    V = FunctionSpace(mesh, (family, degree))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
-
-    xp = np.array([0.33, 0.33, 0.0])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
 
     # Source term
     x = SpatialCoordinate(mesh)
@@ -170,7 +159,7 @@ def test_manufactured_vector1(family, degree, filename, datadir):
     # Create LU linear solver (Note: need to use a solver that
     # re-orders to handle pivots, e.g. not the PETSc built-in LU
     # solver)
-    solver = PETSc.KSP().create(MPI.comm_world)
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
     solver.setType("preonly")
     solver.getPC().setType('lu')
     solver.setOperators(A)
@@ -179,6 +168,10 @@ def test_manufactured_vector1(family, degree, filename, datadir):
     uh = Function(V)
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+    xp = np.array([0.33, 0.33, 0.0])
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
 
     up = uh.eval(xp, cells[0])
     print("test0:", up)
@@ -191,39 +184,27 @@ def test_manufactured_vector1(family, degree, filename, datadir):
 
 @skip_if_complex
 @skip_in_parallel
-@pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
-                                      "UnitCubeMesh_tetra.xdmf",
-                                      # "UnitSquareMesh_quad.xdmf",
-                                      # "UnitCubeMesh_hexahedron.xdmf"
-                                      ])
+@pytest.mark.parametrize("filename", [
+    "UnitSquareMesh_triangle.xdmf",
+    "UnitCubeMesh_tetra.xdmf",
+    # "UnitSquareMesh_quad.xdmf",
+    # "UnitCubeMesh_hexahedron.xdmf"
+])
 @pytest.mark.parametrize("family",
                          [
                              "RT",
                              "N1curl",
                          ])
-@pytest.mark.parametrize("degree", [1, 2, 3])
+@pytest.mark.parametrize("degree", [1, 2])
 def test_manufactured_vector2(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
-    # Skip slowest tests
-    if "tetra" in filename and degree > 2:
-        return
-
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
-        mesh = xdmf.read_mesh(GhostMode.none)
-
-    # FIXME: these test are currently failing on unordered meshes
-    if "tetra" in filename:
-        if family == "N1curl":
-            Ordering.order_simplex(mesh)
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, (family, degree + 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
-
-    xp = np.array([0.33, 0.33, 0.0])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
 
     # Source term
     x = SpatialCoordinate(mesh)
@@ -239,7 +220,7 @@ def test_manufactured_vector2(family, degree, filename, datadir):
     # Create LU linear solver (Note: need to use a solver that
     # re-orders to handle pivots, e.g. not the PETSc built-in LU
     # solver)
-    solver = PETSc.KSP().create(MPI.comm_world)
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
     solver.setType("preonly")
     solver.getPC().setType('lu')
     solver.setOperators(A)
@@ -249,6 +230,9 @@ def test_manufactured_vector2(family, degree, filename, datadir):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
+    xp = np.array([0.33, 0.33, 0.0])
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
     up = uh.eval(xp, cells[0])
     print("test0:", up)
     print("test1:", xp[0]**degree)

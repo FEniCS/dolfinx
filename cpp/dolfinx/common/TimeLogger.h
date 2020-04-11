@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/timing.h>
 #include <map>
 #include <memory>
+#include <mpi.h>
 #include <ostream>
 #include <set>
 #include <string>
@@ -29,7 +29,7 @@ class TimeLogger
 {
 public:
   /// Constructor
-  TimeLogger();
+  TimeLogger() = default;
 
   /// Destructor
   ~TimeLogger() = default;

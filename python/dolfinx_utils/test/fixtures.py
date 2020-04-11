@@ -8,10 +8,9 @@
 import os
 import shutil
 from collections import defaultdict
+from mpi4py import MPI
 
 import pytest
-
-from dolfinx import MPI
 
 # --- Test fixtures (use as is or as examples): ---
 
@@ -41,18 +40,20 @@ def _create_tempdir(request):
     basepath = os.path.join(testfiledir, outputname)
     path = os.path.join(basepath, function)
 
-    # Add a sequence number to avoid collisions when tests are
-    # otherwise parameterized
-    if MPI.rank(MPI.comm_world) == 0:
+    # Add a sequence number to avoid collisions when tests are otherwise
+    # parameterized
+    comm = MPI.COMM_WORLD
+    if comm.rank == 0:
         _create_tempdir._sequencenumber[path] += 1
         sequencenumber = _create_tempdir._sequencenumber[path]
-        sequencenumber = MPI.sum(MPI.comm_world, sequencenumber)
     else:
-        sequencenumber = MPI.sum(MPI.comm_world, 0)
+        sequencenumber = None
+
+    sequencenumber = comm.bcast(sequencenumber)
     path += "__" + str(sequencenumber)
 
     # Delete and re-create directory on root node
-    if MPI.rank(MPI.comm_world) == 0:
+    if comm.rank == 0:
         # First time visiting this basepath, delete the old and create
         # a new
         if basepath not in _create_tempdir._basepaths:
@@ -71,7 +72,7 @@ def _create_tempdir(request):
         # e.g. test_foo_tempdir/test_something__3
         if not os.path.exists(path):
             os.mkdir(path)
-    MPI.barrier(MPI.comm_world)
+    comm.Barrier()
 
     return path
 
@@ -92,7 +93,7 @@ def tempdir(request):
 
     Does NOT change the current directory.
 
-    MPI safe (assuming MPI.comm_world context).
+    MPI safe (assuming MPI.COMM_WORLD context).
 
     """
     return _create_tempdir(request)
@@ -111,7 +112,7 @@ def tempdir(request):
 #     Changes the current directory to the tempdir and resets cwd
 #     afterwards.
 
-#     MPI safe (assuming MPI.comm_world context).
+#     MPI safe (assuming MPI.COMM_WORLD context).
 
 #     """
 #     cwd = os.getcwd()

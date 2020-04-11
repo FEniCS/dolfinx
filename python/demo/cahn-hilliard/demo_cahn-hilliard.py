@@ -111,9 +111,10 @@
 import os
 
 import numpy as np
+from mpi4py import MPI
 from petsc4py import PETSc
 
-from dolfinx import (MPI, Function, FunctionSpace, NewtonSolver,
+from dolfinx import (Form, Function, FunctionSpace, NewtonSolver,
                      NonlinearProblem, UnitSquareMesh, log)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem.assemble import assemble_matrix, assemble_vector
@@ -136,9 +137,9 @@ log.set_output_file("log.txt")
 
 class CahnHilliardEquation(NonlinearProblem):
     def __init__(self, a, L):
-        NonlinearProblem.__init__(self)
-        self.L = L
-        self.a = a
+        super().__init__()
+        self.L = Form(L)
+        self.a = Form(a)
         self._F = None
         self._J = None
 
@@ -186,7 +187,7 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 # ``ME`` is built using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space
-mesh = UnitSquareMesh(MPI.comm_world, 96, 96, CellType.triangle)
+mesh = UnitSquareMesh(MPI.COMM_WORLD, 96, 96, CellType.triangle)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 ME = FunctionSpace(mesh, P1 * P1)
 
@@ -294,7 +295,7 @@ a = derivative(L, u, du)
 
 # Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
-solver = NewtonSolver(MPI.comm_world)
+solver = NewtonSolver(MPI.COMM_WORLD)
 solver.convergence_criterion = "incremental"
 solver.rtol = 1e-6
 
@@ -309,13 +310,14 @@ solver.rtol = 1e-6
 # :math:`t_{n+1}` until a terminal time :math:`T` is reached::
 
 # Output file
-file = XDMFFile(MPI.comm_world, "output.xdmf")
+file = XDMFFile(MPI.COMM_WORLD, "output.xdmf", "w")
+file.write_mesh(mesh)
 
 # Step in time
 t = 0.0
 
 # Check if we are running on CI server and reduce run time
-if "CI" in os.environ.keys():
+if "CI" in os.environ.keys() or "GITHUB_ACTIONS" in os.environ.keys():
     T = 3 * dt
 else:
     T = 50 * dt
@@ -328,7 +330,9 @@ while (t < T):
     r = solver.solve(problem, u.vector)
     print("Step, num iterations:", int(t / dt), r[0])
     u.vector.copy(result=u0.vector)
-    file.write(u.sub(0), t)
+    file.write_function(u.sub(0), t)
+
+file.close()
 
 # Within the time stepping loop, the nonlinear problem is solved by
 # calling :py:func:`solver.solve(problem,u.vector)<dolfinx.cpp.NewtonSolver.solve>`,

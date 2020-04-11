@@ -7,27 +7,30 @@
 #include "ElementDofLayout.h"
 #include <array>
 #include <dolfinx/common/log.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <map>
 #include <numeric>
 #include <set>
-
-#include <iostream>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
-    int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs_,
+    int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs,
     const std::vector<int>& parent_map,
     const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps,
     const mesh::CellType cell_type,
     const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         base_permutations)
-    : _block_size(block_size), _cell_type(cell_type), _parent_map(parent_map),
-      _num_dofs(0), _entity_dofs(entity_dofs_), _sub_dofmaps(sub_dofmaps),
+    : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
+      _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps),
       _base_permutations(base_permutations)
 {
+  // TODO: Add size check on base_permutations. Size should be:
+  // number of rows = num_edges + 2*num_faces + 4*num_volumes
+  // number of columns = number of dofs
+
   // TODO: Handle global support dofs
 
   // Compute closure entities
@@ -36,23 +39,23 @@ ElementDofLayout::ElementDofLayout(
       = mesh::cell_entity_closure(cell_type);
 
   // dof = _entity_dofs[dim][entity_index][i]
-  _entity_closure_dofs = entity_dofs_;
-  for (auto entity : entity_closure)
+  _entity_closure_dofs = entity_dofs;
+  for (const auto& entity : entity_closure)
   {
     const int dim = entity.first[0];
     const int index = entity.first[1];
-    assert(dim < (int)entity_dofs_.size());
-    assert(index < (int)entity_dofs_[dim].size());
+    assert(dim < (int)entity_dofs.size());
+    assert(index < (int)entity_dofs[dim].size());
     int subdim = 0;
-    for (auto sub_entity : entity.second)
+    for (const auto& sub_entity : entity.second)
     {
-      assert(subdim < (int)entity_dofs_.size());
+      assert(subdim < (int)entity_dofs.size());
       for (auto sub_index : sub_entity)
       {
-        assert(sub_index < (int)entity_dofs_[subdim].size());
+        assert(sub_index < (int)entity_dofs[subdim].size());
         _entity_closure_dofs[dim][index].insert(
-            entity_dofs_[subdim][sub_index].begin(),
-            entity_dofs_[subdim][sub_index].end());
+            entity_dofs[subdim][sub_index].begin(),
+            entity_dofs[subdim][sub_index].end());
       }
       ++subdim;
     }
@@ -61,19 +64,37 @@ ElementDofLayout::ElementDofLayout(
   // dof = _entity_dofs[dim][entity_index][i]
   _num_entity_dofs.fill(0);
   _num_entity_closure_dofs.fill(0);
-  assert(entity_dofs_.size() == _entity_closure_dofs.size());
-  for (std::size_t dim = 0; dim < entity_dofs_.size(); ++dim)
+  assert(entity_dofs.size() == _entity_closure_dofs.size());
+  for (std::size_t dim = 0; dim < entity_dofs.size(); ++dim)
   {
-    assert(!entity_dofs_[dim].empty());
+    assert(!entity_dofs[dim].empty());
     assert(!_entity_closure_dofs[dim].empty());
-    _num_entity_dofs[dim] = entity_dofs_[dim][0].size();
+    _num_entity_dofs[dim] = entity_dofs[dim][0].size();
     _num_entity_closure_dofs[dim] = _entity_closure_dofs[dim][0].size();
-
-    for (std::size_t entity_index = 0; entity_index < entity_dofs_[dim].size();
+    for (std::size_t entity_index = 0; entity_index < entity_dofs[dim].size();
          ++entity_index)
     {
-      _num_dofs += entity_dofs_[dim][entity_index].size();
+      _num_dofs += entity_dofs[dim][entity_index].size();
     }
+  }
+
+  // Check that base_permutations has the correct shape
+  int perm_count = 0;
+  const std::array<int, 4> perms_per_dim = {0, 1, 2, 4};
+  for (std::size_t dim = 0; dim < entity_dofs.size() - 1; ++dim)
+  {
+    assert(dim < perms_per_dim.size());
+    assert(dim < entity_dofs.size());
+    perm_count += perms_per_dim[dim] * entity_dofs[dim].size();
+  }
+  if (base_permutations.rows() != perm_count
+      or _base_permutations.cols() != _num_dofs)
+  {
+    throw std::runtime_error("Permutation array has wrong shape. Expected "
+                             + std::to_string(perm_count) + " x "
+                             + std::to_string(_num_dofs) + " but got "
+                             + std::to_string(_base_permutations.rows()) + " x "
+                             + std::to_string(_base_permutations.cols()) + ".");
   }
 }
 //-----------------------------------------------------------------------------
@@ -83,8 +104,6 @@ ElementDofLayout ElementDofLayout::copy() const
   layout._parent_map.clear();
   return layout;
 }
-//-----------------------------------------------------------------------------
-mesh::CellType ElementDofLayout::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_dofs() const { return _num_dofs; }
 //-----------------------------------------------------------------------------

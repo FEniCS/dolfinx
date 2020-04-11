@@ -13,6 +13,10 @@
 
 namespace dolfinx
 {
+namespace fem
+{
+class CoordinateElement;
+}
 
 namespace generation
 {
@@ -28,14 +32,14 @@ public:
   /// @param[in] comm MPI communicator to build the mesh on
   /// @param[in] p Two corner points
   /// @param[in] n Number of cells in each direction
-  /// @param[in] cell_type The mesh cell type
+  /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] ghost_mode Mesh ghosting mode
   /// @param[in] diagonal Direction of diagonals: "left", "right",
-  ///                     "left/right", "crossed"
+  ///   "left/right", "crossed"
   /// @return Mesh
   static mesh::Mesh
   create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-         std::array<std::size_t, 2> n, mesh::CellType cell_type,
+         std::array<std::size_t, 2> n, const fem::CoordinateElement& element,
          const mesh::GhostMode ghost_mode, std::string diagonal = "right");
 };
 } // namespace generation

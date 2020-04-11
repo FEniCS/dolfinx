@@ -13,14 +13,15 @@ using namespace dolfinx::fem;
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
     mesh::CellType cell_type, int topological_dimension,
-    int geometric_dimension, std::string signature,
+    int geometric_dimension, const std::string& signature,
+    const ElementDofLayout& dof_layout,
     std::function<void(double*, int, const double*, const double*)>
         compute_physical_coordinates,
     std::function<void(double*, double*, double*, double*, int, const double*,
                        const double*)>
         compute_reference_geometry)
     : _tdim(topological_dimension), _gdim(geometric_dimension),
-      _cell(cell_type), _signature(signature),
+      _cell(cell_type), _signature(signature), _dof_layout(dof_layout),
       _compute_physical_coordinates(compute_physical_coordinates),
       _compute_reference_geometry(compute_reference_geometry)
 {
@@ -33,6 +34,11 @@ mesh::CellType CoordinateElement::cell_shape() const { return _cell; }
 int CoordinateElement::topological_dimension() const { return _tdim; }
 //-----------------------------------------------------------------------------
 int CoordinateElement::geometric_dimension() const { return _gdim; }
+//-----------------------------------------------------------------------------
+const ElementDofLayout& CoordinateElement::dof_layout() const
+{
+  return _dof_layout;
+}
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(
     Eigen::Ref<

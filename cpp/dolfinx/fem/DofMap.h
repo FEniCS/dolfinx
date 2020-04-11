@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2018 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -7,12 +7,10 @@
 #pragma once
 
 #include "ElementDofLayout.h"
-#include "petscsys.h"
 #include <Eigen/Dense>
-#include <array>
 #include <cstdlib>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -43,13 +41,12 @@ class DofMap
 {
 public:
   /// Create a DofMap from the layout of dofs on a reference element, an
-  /// IndexMap defining the distribution of dofs across processes and a vector
-  /// of indices.
+  /// IndexMap defining the distribution of dofs across processes and a
+  /// vector of indices
   DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
          std::shared_ptr<const common::IndexMap> index_map,
-         const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& dofmap);
+         const graph::AdjacencyList<std::int32_t>& dofmap);
 
-public:
   // Copy constructor
   DofMap(const DofMap& dofmap) = delete;
 
@@ -66,24 +63,18 @@ public:
   DofMap& operator=(DofMap&& dofmap) = default;
 
   /// Local-to-global mapping of dofs on a cell
-  /// @param[in] cell_index The cell index.
-  /// @return  Local-global map for cell (used process-local global
-  ///           index)
-  auto cell_dofs(int cell_index) const
+  /// @param[in] cell The cell index
+  /// @return Local-global dof map for the cell (using process-local indices)
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::ConstSegmentReturnType
+  cell_dofs(int cell) const
   {
-    assert(element_dof_layout);
-    const int cell_dimension = element_dof_layout->num_dofs();
-    const int index = cell_index * cell_dimension;
-    assert(index + cell_dimension <= _dofmap.size());
-    return _dofmap.segment(index, cell_dimension);
+    return _dofmap.links(cell);
   }
 
   /// Extract subdofmap component
   /// @param[in] component The component indices
-  /// @param[in] topology The mesh topology the the dofmap is defined on
   /// @return The dofmap for the component
-  DofMap extract_sub_dofmap(const std::vector<int>& component,
-                            const mesh::Topology& topology) const;
+  DofMap extract_sub_dofmap(const std::vector<int>& component) const;
 
   /// Create a "collapsed" dofmap (collapses a sub-dofmap)
   /// @param[in] comm MPI Communicator
@@ -92,43 +83,19 @@ public:
   std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
   collapse(MPI_Comm comm, const mesh::Topology& topology) const;
 
-  /// Set dof entries in vector to a specified value. Parallel layout
-  /// of vector must be consistent with dof map range. This
-  /// function is typically used to construct the null space of a
-  /// matrix operator.
-  ///
-  /// @param[in,out] x The vector to set
-  /// @param[in] value The value to set on the vector
-  void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
-           PetscScalar value) const;
-
-  /// Return informal string representation (pretty-print)
-  /// @param[in] verbose Flag to turn on additional output.
-  /// @return An informal representation of the function space.
-  std::string str(bool verbose) const;
-
-  /// Get dofmap array
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array() const
-  {
-    return _dofmap;
-  }
-
-  // FIXME: can this be removed?
-  /// Return list of dof indices on this process that belong to mesh
-  /// entities of dimension dim
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-  dofs(const mesh::Topology& topology, std::size_t dim) const;
+  /// Get dofmap data
+  /// @return The adjacency list with dof indices for each cell
+  const graph::AdjacencyList<std::int32_t>& list() const { return _dofmap; }
 
   /// Layout of dofs on an element
   std::shared_ptr<const ElementDofLayout> element_dof_layout;
 
-  /// Object containing information about dof distribution across
-  /// processes
+  /// Index map that described the parallel distribution of the dofmap
   std::shared_ptr<const common::IndexMap> index_map;
 
 private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap;
+  graph::AdjacencyList<std::int32_t> _dofmap;
 };
 } // namespace fem
 } // namespace dolfinx

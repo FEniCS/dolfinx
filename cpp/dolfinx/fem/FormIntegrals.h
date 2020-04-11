@@ -18,7 +18,7 @@ namespace mesh
 {
 class Mesh;
 template <typename T>
-class MeshFunction;
+class MeshTags;
 } // namespace mesh
 
 namespace fem
@@ -49,7 +49,7 @@ public:
   /// @return Function to call for tabulate_tensor
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const std::uint8_t*,
-                           const bool*, const bool*, const std::uint8_t*)>&
+                           const std::uint32_t)>&
   get_tabulate_tensor(FormIntegrals::Type type, int i) const;
 
   /// Set the function for 'tabulate_tensor' for integral i of
@@ -61,7 +61,7 @@ public:
       FormIntegrals::Type type, int i,
       std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                          const double*, const int*, const std::uint8_t*,
-                         const bool*, const bool*, const std::uint8_t*)>
+                         const std::uint32_t)>
           fn);
 
   /// Number of integrals of given type
@@ -88,14 +88,12 @@ public:
                                                     int i) const;
 
   /// Set the valid domains for the integrals of a given type from a
-  /// MeshFunction "marker". The MeshFunction should have a value for
-  /// each cell (entity) which corresponds to an integral ID. Note the
-  /// MeshFunction is not stored, so if there any changes to the
-  /// integration domain this must be called again.
+  /// MeshTags "marker". Note the MeshTags is not stored, so if there
+  /// any changes to the integration domain this must be called again.
   /// @param[in] type Integral type
-  /// @param[in] marker Meshfunction mapping entities to integrals
+  /// @param[in] marker MeshTags mapping entities to integrals
   void set_domains(FormIntegrals::Type type,
-                   const mesh::MeshFunction<std::size_t>& marker);
+                   const mesh::MeshTags<int>& marker);
 
   /// If there exists a default integral of any type, set the list of
   /// entities for those integrals from the mesh topology. For cell
@@ -111,7 +109,7 @@ private:
   {
     std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                        const double*, const int*, const std::uint8_t*,
-                       const bool*, const bool*, const std::uint8_t*)>
+                       const std::uint32_t)>
         tabulate;
     int id;
     std::vector<std::int32_t> active_entities;
