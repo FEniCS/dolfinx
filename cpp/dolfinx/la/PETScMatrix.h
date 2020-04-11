@@ -13,10 +13,7 @@
 #include <petscmat.h>
 #include <string>
 
-namespace dolfinx
-{
-
-namespace la
+namespace dolfinx::la
 {
 class SparsityPattern;
 class VectorSpaceBasis;
@@ -102,5 +99,4 @@ public:
   /// such as smoothed aggregation algerbraic multigrid)
   void set_near_nullspace(const la::VectorSpaceBasis& nullspace);
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la

@@ -14,9 +14,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace dolfinx
-{
-namespace graph
+namespace dolfinx::graph
 {
 
 /// This class provides a static adjacency list data structure. It is
@@ -206,5 +204,4 @@ private:
   // Position of first connection for each entity (using local index)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _offsets;
 }; // namespace graph
-} // namespace graph
-} // namespace dolfinx
+} // namespace dolfinx::graph

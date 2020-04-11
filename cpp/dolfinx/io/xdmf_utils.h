@@ -30,9 +30,7 @@ namespace function
 class Function;
 } // namespace function
 
-namespace io
-{
-namespace xdmf_utils
+namespace io::xdmf_utils
 {
 
 // Get DOLFINX cell type string from XML topology node
@@ -135,6 +133,5 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
 } // namespace
 //----------------------------------------------------------------------------
 
-} // namespace xdmf_utils
-} // namespace io
+} // namespace io::xdmf_utils
 } // namespace dolfinx

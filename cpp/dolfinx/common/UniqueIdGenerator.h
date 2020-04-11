@@ -8,10 +8,7 @@
 
 #include <cstddef>
 
-namespace dolfinx
-{
-
-namespace common
+namespace dolfinx::common
 {
 
 /// This is a singleton class that return IDs that are unique in the
@@ -32,5 +29,4 @@ private:
   // Next ID to be returned
   std::size_t _next_id;
 };
-} // namespace common
-} // namespace dolfinx
+} // namespace dolfinx::common

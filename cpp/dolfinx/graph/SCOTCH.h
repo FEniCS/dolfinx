@@ -21,10 +21,7 @@ extern "C"
 #include <ptscotch.h>
 }
 
-namespace dolfinx
-{
-
-namespace graph
+namespace dolfinx::graph
 {
 
 /// This class provides an interface to SCOTCH-PT (parallel version)
@@ -66,5 +63,4 @@ public:
   compute_reordering(const AdjacencyList<std::int32_t>& graph,
                      std::string scotch_strategy = "");
 };
-} // namespace graph
-} // namespace dolfinx
+} // namespace dolfinx::graph

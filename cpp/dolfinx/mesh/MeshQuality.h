@@ -10,9 +10,7 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx
-{
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
 class MeshEntity;
@@ -42,5 +40,4 @@ public:
   static std::pair<std::vector<double>, std::vector<std::int64_t>>
   dihedral_angle_histogram_data(const Mesh& mesh, int num_bins);
 };
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh
