@@ -275,10 +275,8 @@ compute_nonlocal_dual_graph(
             mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer))
             .array();
 
-  // Ghost nodes
+  // Ghost nodes: insert connected cells into local map
   std::set<std::int64_t> ghost_nodes;
-
-  // Insert connected cells into local map
   std::int32_t num_nonlocal_edges = 0;
   for (int i = 0; i < cell_list.rows(); i += 2)
   {
