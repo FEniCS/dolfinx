@@ -11,6 +11,7 @@
 #include "Topology.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/io/cells.h>
@@ -42,11 +43,10 @@ public:
   ///   (indices local to the process)
   /// @param[in] values std::vector<T> of values for each index in
   ///   indices
-  /// @param[in] sorted True for already sorted indices
-  /// @param[in] unique True for unique indices
+  /// @param[in] sorted_and_unique True if indices are sorted and unique
   template <typename U, typename V>
   MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim, U&& indices,
-           V&& values, const bool sorted = false, const bool unique = false)
+           V&& values, bool sorted_and_unique = false)
       : _mesh(mesh), _dim(dim), _indices(std::forward<U>(indices)),
         _values(std::forward<V>(values))
   {
@@ -55,10 +55,14 @@ public:
       throw std::runtime_error(
           "Indices and values arrays must have same size.");
     }
-    if (!sorted)
-      sort();
-    if (!unique)
-      remove_duplicates();
+
+    if (!sorted_and_unique)
+    {
+      auto [indices_sorted, values_sorted]
+          = common::sort_unique(_indices, _values);
+      _indices = std::move(indices_sorted);
+      _values = std::move(values_sorted);
+    }
   }
 
   /// Copy constructor
@@ -109,49 +113,6 @@ private:
 
   // Values attached to entities
   std::vector<T> _values;
-
-  // Sort indices and values according by index
-  void sort()
-  {
-    // Compute the sorting permutation
-    std::vector<int> perm(_indices.size());
-    std::iota(perm.begin(), perm.end(), 0);
-    std::sort(perm.begin(), perm.end(),
-              [&indices = std::as_const(_indices)](const int a, const int b) {
-                return (indices[a] < indices[b]);
-              });
-
-    // Copy data
-    const std::vector<std::int32_t> indices_tmp = _indices;
-    const std::vector<T> values_tmp = _values;
-
-    // Apply sorting and insert
-    for (std::size_t i = 0; i < indices_tmp.size(); ++i)
-    {
-      _indices[i] = indices_tmp[perm[i]];
-      _values[i] = values_tmp[perm[i]];
-    }
-  }
-
-  // Remove duplicates in indices and values according to indices
-  void remove_duplicates()
-  {
-    // Algorithm would fail for empty vector
-    if (_indices.size() == 0)
-      return;
-
-    std::size_t last_unique = 0;
-    for (std::size_t i = 0; i < _indices.size(); ++i)
-    {
-      if (_indices[i] > _indices[last_unique])
-      {
-        _indices[++last_unique] = _indices[i];
-        _values[last_unique] = _values[i];
-      }
-    }
-    _indices.erase(_indices.begin() + last_unique + 1, _indices.end());
-    _values.erase(_values.begin() + last_unique + 1, _values.end());
-  }
 };
 
 /// Create MeshTags from arrays
