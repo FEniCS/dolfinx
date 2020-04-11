@@ -122,7 +122,8 @@ def test_assembly_ds_domains(mesh):
     indices = numpy.hstack((bottom_facets, top_facets, left_facets, right_facets))
     values = numpy.hstack((bottom_vals, top_vals, left_vals, right_vals))
 
-    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim - 1, indices, values)
+    indices, pos = numpy.unique(indices, return_index=True)
+    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim - 1, indices, values[pos])
 
     ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 
