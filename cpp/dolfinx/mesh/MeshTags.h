@@ -54,6 +54,12 @@ public:
       throw std::runtime_error(
           "Indices and values arrays must have same size.");
     }
+#ifdef DEBUG
+    if (!std::is_sorted(indices.begin(), indices.end()))
+      throw std::runtime_error("MeshTag data is not sorted");
+    if (std::adjacent_find(indices.begin(), indices.end()) != indices.end())
+      throw std::runtime_error("MeshTag data has duplicates");
+#endif
   }
 
   /// Copy constructor

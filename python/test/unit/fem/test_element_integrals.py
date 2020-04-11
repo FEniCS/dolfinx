@@ -137,7 +137,7 @@ def test_facet_integral(cell_type):
         num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
         values = np.arange(0, num_facets, dtype=np.intc)
-        marker = MeshTags(mesh, tdim - 1, indices, values, sorted=True, unique=True)
+        marker = MeshTags(mesh, tdim - 1, indices, values)
 
         # Functions that will have the same integral over each facet
         if cell_type == CellType.triangle:
