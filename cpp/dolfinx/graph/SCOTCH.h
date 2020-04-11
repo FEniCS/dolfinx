@@ -32,16 +32,16 @@ namespace graph
 class SCOTCH
 {
 public:
-  /// Compute cell partitions from distributed dual graph.
+  /// Compute distributed graph partition
   /// @param mpi_comm MPI Communicator
-  /// @param nparts Number of partitions to divide the graph into
+  /// @param nparts Number of partitions to divide graph nodes into
   /// @param local_graph Node connectivity graph
-  /// @param node_weights Weight of each node (optional)
+  /// @param node_weights Weight for each node (optional)
   /// @param num_ghost_nodes Number of graph nodes which are owned on
   ///   other processes
   /// @param ghosting Flag to enable ghosting of the output node
-  /// distribution
-  /// @return List of node destinations
+  ///   distribution
+  /// @return Destination rank for each input node
   static AdjacencyList<std::int32_t>
   partition(const MPI_Comm mpi_comm, const int nparts,
             const AdjacencyList<SCOTCH_Num>& local_graph,
