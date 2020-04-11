@@ -215,7 +215,7 @@ void Function::eval(
   assert(_function_space->dofmap());
   const fem::DofMap& dofmap = *_function_space->dofmap();
 
-  mesh.create_entity_permutations();
+  mesh.topology_mutable().create_entity_permutations();
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
       = mesh.topology().get_cell_permutation_info();
 

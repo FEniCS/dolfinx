@@ -126,10 +126,19 @@ void mesh(py::module& m)
   // dolfinx::mesh::Topology class
   py::class_<dolfinx::mesh::Topology, std::shared_ptr<dolfinx::mesh::Topology>>(
       m, "Topology", "Topology object")
-      .def(py::init<dolfinx::mesh::CellType>())
+      .def(py::init([](const MPICommWrapper comm,
+                       const dolfinx::mesh::CellType cell_type) {
+        return std::make_unique<dolfinx::mesh::Topology>(comm.get(), cell_type);
+      }))
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity)
       .def("set_index_map", &dolfinx::mesh::Topology::set_index_map)
       .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
+      .def("create_entities", &dolfinx::mesh::Topology::create_entities)
+      .def("create_entity_permutations",
+           &dolfinx::mesh::Topology::create_entity_permutations)
+      .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity)
+      .def("create_connectivity_all",
+           &dolfinx::mesh::Topology::create_connectivity_all)
       .def("get_facet_permutations",
            &dolfinx::mesh::Topology::get_facet_permutations)
       .def("get_cell_permutation_info",
@@ -145,7 +154,11 @@ void mesh(py::module& m)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
       .def("cell_name", [](const dolfinx::mesh::Topology& self) {
         return dolfinx::mesh::to_string(self.cell_type());
-      });
+      })
+      .def("mpi_comm",
+           [](dolfinx::mesh::Mesh& self) {
+             return MPICommWrapper(self.mpi_comm());
+       });
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
@@ -177,12 +190,6 @@ void mesh(py::module& m)
       .def("hash", &dolfinx::mesh::Mesh::hash)
       .def("hmax", &dolfinx::mesh::Mesh::hmax)
       .def("hmin", &dolfinx::mesh::Mesh::hmin)
-      .def("create_entities", &dolfinx::mesh::Mesh::create_entities)
-      .def("create_entity_permutations",
-           &dolfinx::mesh::Mesh::create_entity_permutations)
-      .def("create_connectivity", &dolfinx::mesh::Mesh::create_connectivity)
-      .def("create_connectivity_all",
-           &dolfinx::mesh::Mesh::create_connectivity_all)
       .def("mpi_comm",
            [](dolfinx::mesh::Mesh& self) {
              return MPICommWrapper(self.mpi_comm());

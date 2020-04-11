@@ -74,11 +74,11 @@ def test_ghost_3d(mode):
 def test_ghost_connectivities(mode):
     # Ghosted mesh
     meshG = UnitSquareMesh(MPI.COMM_WORLD, 4, 4, ghost_mode=mode)
-    meshG.create_connectivity(1, 2)
+    meshG.topology.create_connectivity(1, 2)
 
     # Reference mesh, not ghosted, not parallel
     meshR = UnitSquareMesh(MPI.COMM_SELF, 4, 4, ghost_mode=cpp.mesh.GhostMode.none)
-    meshR.create_connectivity(1, 2)
+    meshR.topology.create_connectivity(1, 2)
     tdim = meshR.topology.dim
 
     # Create reference map from facet midpoint to cell midpoint

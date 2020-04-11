@@ -376,7 +376,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     fiat_cell = FIAT.ufc_cell(cell_name)
 
     # Initialize all mesh entities and connectivities
-    mesh.create_connectivity_all()
+    mesh.topology.create_connectivity_all()
 
     map = mesh.topology.index_map(mesh.topology.dim)
     num_cells = map.size_local + map.num_ghosts
@@ -430,13 +430,13 @@ def test_small_mesh():
 
 def test_topology_surface(cube):
     tdim = cube.topology.dim
-    cube.create_connectivity(tdim - 1, tdim)
+    cube.topology.create_connectivity(tdim - 1, tdim)
 
     surface_vertex_markers = cube.topology.on_boundary(0)
     assert surface_vertex_markers
 
-    cube.create_entities(1)
-    cube.create_connectivity(2, 1)
+    cube.topology.create_entities(1)
+    cube.topology.create_connectivity(2, 1)
     surface_edge_markers = cube.topology.on_boundary(1)
     assert surface_edge_markers
 
