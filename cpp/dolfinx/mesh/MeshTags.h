@@ -154,13 +154,16 @@ private:
   }
 };
 
+/// @todo Generalise to create multiple MeshTags as some of the data sent
+/// (expensively) via MPI re-used.
+///
 /// Create MeshTags from arrays
 /// @param[in] comm The MPI communicator
 /// @param[in] mesh The Mesh that the tags are associated with
 /// @param[in] tag_cell_type Cell type of entities which are being
 ///   tagged
 /// @param[in] entities 'Node' indices (using the of entities
-///   input_global_indices from the Mesh) fir vertices of for each
+///   input_global_indices from the Mesh) for vertices of for each
 ///   entity that is tagged. The numbers of rows is equal to the number
 ///   of entities.
 /// @param[in] values Tag values for each entity in @ entities. The
@@ -181,12 +184,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   assert(mesh);
   if ((std::size_t)entities.rows() != values.size())
     throw std::runtime_error("Number of entities and values must match");
-
-  // Build sorted array of entity node indices
-  std::vector<std::int64_t> nodes(
-      entities.data(), entities.data() + entities.rows() * entities.cols());
-  std::sort(nodes.begin(), nodes.end());
-  nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
 
   // Tagged entity topological dimension
   const int e_dim = mesh::cell_dim(tag_cell_type);
