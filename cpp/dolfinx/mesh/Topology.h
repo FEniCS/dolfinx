@@ -40,8 +40,8 @@ enum class CellType;
 class Topology;
 
 /// Compute marker for owned facets that are interior, i.e. are
-/// connected to two cells, one of which might be on a remote process
-/// @param[in] topology The topology
+/// connected to two cells, one of which might be on a remote process.
+/// @param[in] topology The topology.
 /// @return Vector with length equal to the number of facets on this
 ///   this process. True if the ith facet (local index) is interior to
 ///   the domain.
@@ -59,7 +59,12 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(mesh::CellType type);
+  Topology(MPI_Comm comm, mesh::CellType type)
+      : _mpi_comm(comm), _cell_type(type),
+        _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
+  {
+    // Do nothing
+  }
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -71,7 +76,7 @@ public:
   ~Topology() = default;
 
   /// Assignment
-  Topology& operator=(const Topology& topology) = default;
+  Topology& operator=(const Topology& topology) = delete;
 
   /// Assignment
   Topology& operator=(Topology&& topology) = default;
@@ -131,9 +136,6 @@ public:
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations() const;
 
-  /// Compute entity permutations and reflections used in assembly
-  void create_entity_permutations();
-
   /// Gets markers for owned facets that are interior, i.e. are
   /// connected to two cells, one of which might be on a remote process
   /// @return Vector with length equal to the number of facets owned by
@@ -149,10 +151,40 @@ public:
   size_t hash() const;
 
   /// Cell type
-  /// @return Cell type that th topology is for
+  /// @return Cell type that the topology is for
   mesh::CellType cell_type() const;
 
+  // TODO: Rework memory management and associated API
+  // Currently, there is no clear caching policy implemented and no way of
+  // discarding cached data.
+
+  // creation of entities
+  /// Create entities of given topological dimension.
+  /// @param[in] dim Topological dimension
+  /// @return Number of newly created entities, returns -1 if entities
+  ///   already existed
+  std::int32_t create_entities(int dim);
+
+  /// Create connectivity between given pair of dimensions, d0 -> d1
+  /// @param[in] d0 Topological dimension
+  /// @param[in] d1 Topological dimension
+  void create_connectivity(int d0, int d1);
+
+  /// Compute entity permutations and reflections
+  void create_entity_permutations();
+
+  /// Compute all entities and connectivity
+  void create_connectivity_all();
+
+  /// Mesh MPI communicator
+  /// @return The communicator on which the mesh is distributed
+  MPI_Comm mpi_comm() const;
+
 private:
+
+  // MPI communicator
+  dolfinx::MPI::Comm _mpi_comm;
+
   // Cell type
   mesh::CellType _cell_type;
 

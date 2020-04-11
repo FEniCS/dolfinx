@@ -334,11 +334,12 @@ std::pair<std::vector<std::int32_t>, std::vector<bool>>
 face_long_edge(const mesh::Mesh& mesh)
 {
   const int tdim = mesh.topology().dim();
-  mesh.create_entities(1);
-  mesh.create_entities(2);
-  mesh.create_connectivity(2, 1);
-  mesh.create_connectivity(1, tdim);
-  mesh.create_connectivity(tdim, 2);
+  // FIXME: cleanup these calls? Some of the happen internally again.
+  mesh.topology_mutable().create_entities(1);
+  mesh.topology_mutable().create_entities(2);
+  mesh.topology_mutable().create_connectivity(2, 1);
+  mesh.topology_mutable().create_connectivity(1, tdim);
+  mesh.topology_mutable().create_connectivity(tdim, 2);
 
   std::int64_t num_faces = mesh.topology().index_map(2)->size_local()
                            + mesh.topology().index_map(2)->num_ghosts();

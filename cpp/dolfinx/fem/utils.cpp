@@ -171,17 +171,18 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
   {
-
-    mesh.create_entities(mesh.topology().dim() - 1);
-    mesh.create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
+  // FIXME: cleanup these calls? Some of the happen internally again.
+    mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
+    mesh.topology_mutable().create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
     SparsityPatternBuilder::interior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
   {
-    mesh.create_entities(mesh.topology().dim() - 1);
-    mesh.create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
+    // FIXME: cleanup these calls? Some of the happen internally again.
+    mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
+    mesh.topology_mutable().create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
     SparsityPatternBuilder::exterior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
@@ -241,12 +242,12 @@ la::PETScMatrix fem::create_matrix_block(
           SparsityPatternBuilder::cells(sp, mesh.topology(), dofmaps);
         if (integrals.num_integrals(FormIntegrals::Type::interior_facet) > 0)
         {
-          mesh.create_entities(mesh.topology().dim() - 1);
+          mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
           SparsityPatternBuilder::interior_facets(sp, mesh.topology(), dofmaps);
         }
         if (integrals.num_integrals(FormIntegrals::Type::exterior_facet) > 0)
         {
-          mesh.create_entities(mesh.topology().dim() - 1);
+          mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
           SparsityPatternBuilder::exterior_facets(sp, mesh.topology(), dofmaps);
         }
         sp.assemble();
@@ -621,7 +622,7 @@ fem::Form fem::create_form(
     {
       auto mesh = spaces[0]->mesh();
       const int tdim = mesh->topology().dim();
-      spaces[0]->mesh()->create_entities(tdim - 1);
+      spaces[0]->mesh()->topology_mutable().create_entities(tdim - 1);
     }
   }
 

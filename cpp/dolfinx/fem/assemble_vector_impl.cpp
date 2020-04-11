@@ -41,7 +41,7 @@ void _lift_bc_cells(
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
 
-  mesh.create_entity_permutations();
+  mesh.topology_mutable().create_entity_permutations();
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
@@ -156,13 +156,16 @@ void _lift_bc_exterior_facets(
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
 
-  mesh.create_entity_permutations();
+  mesh.topology_mutable().create_entity_permutations();
 
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
-  mesh.create_entities(tdim - 1);
-  mesh.create_connectivity(tdim - 1, tdim);
-  mesh.create_entity_permutations();
+
+  // FIXME: cleanup these calls? Some of the happen internally again.
+  mesh.topology_mutable().create_entities(tdim - 1);
+  mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+  // FIXME: Why again -- appears already See 8 lines above.
+  mesh.topology_mutable().create_entity_permutations();
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
@@ -360,7 +363,7 @@ void fem::impl::assemble_cells(
 {
   const int gdim = mesh.geometry().dim();
 
-  mesh.create_entity_permutations();
+  mesh.topology_mutable().create_entity_permutations();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
@@ -412,9 +415,11 @@ void fem::impl::assemble_exterior_facets(
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
-  mesh.create_entities(tdim - 1);
-  mesh.create_connectivity(tdim - 1, tdim);
-  mesh.create_entity_permutations();
+
+  // FIXME: cleanup these calls? Some of the happen internally again.
+  mesh.topology_mutable().create_entities(tdim - 1);
+  mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+  mesh.topology_mutable().create_entity_permutations();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
@@ -485,9 +490,11 @@ void fem::impl::assemble_interior_facets(
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
-  mesh.create_entities(tdim - 1);
-  mesh.create_connectivity(tdim - 1, tdim);
-  mesh.create_entity_permutations();
+
+  // FIXME: cleanup these calls? Some of the happen internally again.
+  mesh.topology_mutable().create_entities(tdim - 1);
+  mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+  mesh.topology_mutable().create_entity_permutations();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();

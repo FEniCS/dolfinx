@@ -123,7 +123,7 @@ send_to_neighbours(MPI_Comm neighbour_comm,
 std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
 {
   // NOTE: Getting markers for owned and unowned facets requires reverse
-  // and forward scatters. It we can work only with owned facets we
+  // and forward scatters. If we can work only with owned facets we
   // would need only a reverse scatter.
 
   const int tdim = topology.dim();
@@ -174,13 +174,6 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
   std::vector<bool> interior_facet(num_cells0.begin(), num_cells0.end());
 
   return interior_facet;
-}
-//-----------------------------------------------------------------------------
-Topology::Topology(mesh::CellType type)
-    : _cell_type(type),
-      _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
@@ -263,6 +256,99 @@ std::vector<bool> Topology::on_boundary(int dim) const
   return marker;
 }
 //-----------------------------------------------------------------------------
+std::int32_t Topology::create_entities(int dim)
+{
+  // TODO: is this check sufficient/correct? Does not catch the cell_entity
+  // entity case. Should there also be a check for
+  // connectivity(this->dim(), dim) ?
+  // Skip if already computed (vertices (dim=0) should always exist)
+  if (connectivity(dim, 0))
+    return -1;
+
+  // Create local entities
+  const auto [cell_entity, entity_vertex, index_map]
+      = TopologyComputation::compute_entities(_mpi_comm.comm(), *this, dim);
+
+  if (cell_entity)
+    set_connectivity(cell_entity, this->dim(), dim);
+
+  // TODO: is this check necessary? Seems redundant after to the "skip check"
+  if (entity_vertex)
+    set_connectivity(entity_vertex, dim, 0);
+
+  assert(index_map);
+  set_index_map(dim, index_map);
+
+  return index_map->size_local();
+}
+//-----------------------------------------------------------------------------
+void Topology::create_connectivity(int d0, int d1)
+{
+  // Make sure entities exist
+  create_entities(d0);
+  create_entities(d1);
+
+  // Compute connectivity
+  const auto [c_d0_d1, c_d1_d0]
+      = TopologyComputation::compute_connectivity(*this, d0, d1);
+
+  // NOTE: that to compute the (d0, d1) connections is it sometimes
+  // necessary to compute the (d1, d0) connections. We store the (d1,
+  // d0) for possible later use, but there is a memory overhead if they
+  // are not required. It may be better to not automatically store
+  // connectivity that was not requested, but advise in a docstring the
+  // most efficient order in which to call this function if several
+  // connectivities are needed.
+
+  // TODO: Caching policy/strategy.
+  // Concerning the note above: Provide an overload
+  // create_connectivity(std::vector<std::pair<int, int>>)?
+
+  // Attach connectivities
+  if (c_d0_d1)
+    set_connectivity(c_d0_d1, d0, d1);
+  if (c_d1_d0)
+    set_connectivity(c_d1_d0, d1, d0);
+
+  // Special facet handing
+  if (d0 == (this->dim() - 1) and d1 == this->dim())
+  {
+    std::vector<bool> f = compute_interior_facets(*this);
+    set_interior_facets(f);
+  }
+}
+//-----------------------------------------------------------------------------
+void Topology::create_entity_permutations()
+{
+  if (_cell_permutations.size() > 0)
+    return;
+
+  const int tdim = this->dim();
+
+  // FIXME: Is this always required? Could it be made cheaper by doing a
+  // local version? This call does quite a lot of parallel work
+  // Create all mesh entities
+  for (int d = 0; d < tdim; ++d)
+    create_entities(d);
+
+  auto [facet_permutations, cell_permutations]
+      = PermutationComputation::compute_entity_permutations(*this);
+  _facet_permutations = std::move(facet_permutations);
+  _cell_permutations = std::move(cell_permutations);
+}
+//-----------------------------------------------------------------------------
+void Topology::create_connectivity_all()
+{
+  // Compute all entities
+  for (int d = 0; d <= dim(); d++)
+    create_entities(d);
+
+  // Compute all connectivity
+  for (int d0 = 0; d0 <= dim(); d0++)
+    for (int d1 = 0; d1 <= dim(); d1++)
+      create_connectivity(d0, d1);
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
@@ -320,18 +406,9 @@ Topology::get_facet_permutations() const
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
-void Topology::create_entity_permutations()
-{
-  if (_cell_permutations.size() > 0)
-    return;
-
-  auto [facet_permutations, cell_permutations]
-      = PermutationComputation::compute_entity_permutations(*this);
-  _facet_permutations = std::move(facet_permutations);
-  _cell_permutations = std::move(cell_permutations);
-}
-//-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
+//-----------------------------------------------------------------------------
+MPI_Comm Topology::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
 Topology
 mesh::create_topology(MPI_Comm comm,
@@ -558,7 +635,7 @@ mesh::create_topology(MPI_Comm comm,
     auto my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         my_local_cells_array, cells.offsets());
 
-    Topology topology(cell_type);
+    Topology topology(comm, cell_type);
     const int tdim = topology.dim();
 
     // Vertex IndexMap
@@ -585,7 +662,7 @@ mesh::create_topology(MPI_Comm comm,
 
   // Create (i) local topology object and (ii) IndexMap for cells, and
   // set cell-vertex topology
-  Topology topology_local(cell_type);
+  Topology topology_local(comm, cell_type);
   const int tdim = topology_local.dim();
   topology_local.set_index_map(tdim, index_map_c);
 
@@ -631,7 +708,7 @@ mesh::create_topology(MPI_Comm comm,
       = graph::Partitioning::create_distributed_adjacency_list(
           comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
-  Topology topology(cell_type);
+  Topology topology(comm, cell_type);
 
   // Set vertex IndexMap, and vertex-vertex connectivity
   auto _vertex_map = std::make_shared<common::IndexMap>(std::move(vertex_map));

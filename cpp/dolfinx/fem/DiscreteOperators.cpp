@@ -41,7 +41,7 @@ using namespace dolfinx::fem;
 //   }
 
 //   // Check that V0 is a (lowest-order) edge basis
-//   mesh.create_entities(1);
+//   mesh.topology_mutable().create_entities(1);
 //   if (V0.dim() != mesh.num_entities_global(1))
 //   {
 //     throw std::runtime_error(
