@@ -168,7 +168,7 @@ private:
     _indices.erase(_indices.begin() + last_unique + 1, _indices.end());
     _values.erase(_values.begin() + last_unique + 1, _values.end());
   }
-}; // namespace mesh
+};
 
 /// Create MeshTags from arrays
 /// @param[in] comm
