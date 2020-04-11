@@ -117,7 +117,7 @@ public:
   ///   process
   /// @param[in] x Data on this process which may be distributed (by
   ///   row). The global index for the [0, ..., n) local rows is assumed
-  ///   to be the local index plus the offset for this process
+  ///   to be the local index plus the offset for this rank
   /// @return The data for each index in @p indices
   template <typename T>
   static Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
