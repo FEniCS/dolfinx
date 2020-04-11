@@ -65,7 +65,7 @@ dolfinx::graph::SCOTCH::compute_reordering(
   SCOTCH_Num edgenbr = verttab.back();
   common::Timer timer1("SCOTCH: call SCOTCH_graphBuild");
   if (SCOTCH_graphBuild(&scotch_graph, baseval, vertnbr, &verttab[0],
-                        &verttab[1], nullptr, nullptr, edgenbr, &edgetab[0],
+                        &verttab[1], nullptr, nullptr, edgenbr, edgetab.data(),
                         nullptr))
   {
     throw std::runtime_error("Error building SCOTCH graph");
