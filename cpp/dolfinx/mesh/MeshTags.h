@@ -9,6 +9,7 @@
 #include "Geometry.h"
 #include "Mesh.h"
 #include "Topology.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/utils.h>
@@ -17,7 +18,6 @@
 #include <dolfinx/io/cells.h>
 #include <map>
 #include <memory>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -54,12 +54,12 @@ public:
       throw std::runtime_error(
           "Indices and values arrays must have same size.");
     }
-// #ifdef DEBUG
+    // #ifdef DEBUG
     if (!std::is_sorted(_indices.begin(), _indices.end()))
       throw std::runtime_error("MeshTag data is not sorted");
     if (std::adjacent_find(_indices.begin(), _indices.end()) != _indices.end())
       throw std::runtime_error("MeshTag data has duplicates");
-// #endif
+    // #endif
   }
 
   /// Copy constructor
@@ -349,8 +349,10 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // -------------------
   // 5. Build MeshTags object
 
-  return mesh::MeshTags<T>(mesh, e_dim, std::move(indices_new),
-                           std::move(values_new));
+  auto [indices_sorted, values_sorted]
+      = common::sort_unique(indices_new, values_new);
+  return mesh::MeshTags<T>(mesh, e_dim, std::move(indices_sorted),
+                           std::move(values_sorted));
 }
 } // namespace mesh
 } // namespace dolfinx

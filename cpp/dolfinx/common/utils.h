@@ -23,7 +23,8 @@ namespace common
 {
 
 /// Sort two arrays based on the values in array @p indices. Any
-/// duplicate indices and the corresponding value are removed.
+/// duplicate indices and the corresponding value are removed. In the
+/// case of duplicates, the entry with the smallest value is retained.
 /// @param[in] indices Array of indices
 /// @param[in] values Array of values
 /// @return Sorted (indices, values), with sorting based on indices
@@ -38,20 +39,19 @@ std::pair<U, V> sort_unique(const U& indices, const V& values)
   for (std::size_t i = 0; i < indices.size(); ++i)
     data[i] = {indices[i], values[i]};
 
-  // Sort, and remove any duplicate indices
+  // Sort make unique
   std::sort(data.begin(), data.end());
-  data.erase(std::unique(data.begin(), data.end(),
-                         [](auto& a, auto& b) { return a.first == b.first; }),
-             data.end());
+  auto it = std::unique(data.begin(), data.end(),
+                        [](auto& a, auto& b) { return a.first == b.first; });
 
   U indices_new;
   V values_new;
   indices_new.reserve(data.size());
   values_new.reserve(data.size());
-  for (auto& d : data)
+  for (auto d = data.begin(); d != it; ++d)
   {
-    indices_new.push_back(d.first);
-    indices_new.push_back(d.second);
+    indices_new.push_back(d->first);
+    values_new.push_back(d->second);
   }
 
   return {std::move(indices_new), std::move(values_new)};
