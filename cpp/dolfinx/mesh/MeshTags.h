@@ -36,7 +36,7 @@ class MeshTags
 {
 public:
   /// Create from entities of given dimension on a mesh
-  /// @param[in] mesh The mesh associated with the tags
+  /// @param[in] mesh The mesh on which the tags are associated
   /// @param[in] dim Topological dimension of mesh entities to tag
   /// @param[in] indices std::vector<std::int32> of entity indices
   ///   (indices local to the process)
@@ -76,30 +76,26 @@ public:
   /// Move assignment
   MeshTags& operator=(MeshTags&& tags) = default;
 
-  /// Find all MeshTags local-to-process indices for a given value.
+  /// Find all entities with a given tag value
   /// @param[in] value The value
-  /// @return The corresponding indices
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-  locate_indices(const T value) const
+  /// @return Indices of tagged entities
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> find(const T value) const
   {
     int n = std::count(_values.begin(), _values.end(), value);
     Eigen::Array<std::int32_t, Eigen::Dynamic, 1> indices(n);
-    // Find values
     int counter = 0;
     for (std::int32_t i = 0; i < _values.size(); ++i)
     {
       if (_values[i] == value)
-      {
         indices[counter++] = _indices[i];
-      }
     }
     return indices;
   }
 
-  /// Indices of tagged mesh entities, local-to-process (const version)
+  /// Indices of tagged mesh entities (local-to-process)
   const std::vector<std::int32_t>& indices() const { return _indices; }
 
-  /// Values attached to mesh entities (const.)
+  /// Values attached to mesh entities
   const std::vector<T>& values() const { return _values; }
 
   /// Return topological dimension of tagged entities
@@ -111,17 +107,17 @@ public:
   /// Name
   std::string name = "mesh_tags";
 
-  /// Unique ID
+  /// Unique ID of the object
   std::size_t id() const { return _unique_id; }
 
 private:
   // Unique identifier
   std::size_t _unique_id = common::UniqueIdGenerator::id();
 
-  /// Associated mesh
+  // Associated mesh
   std::shared_ptr<const Mesh> _mesh;
 
-  /// Topological dimension of tagged mesh entities
+  // Topological dimension of tagged mesh entities
   int _dim;
 
   // Local-to-process indices of tagged entities
