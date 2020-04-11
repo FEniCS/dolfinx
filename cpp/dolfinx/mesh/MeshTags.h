@@ -26,10 +26,10 @@ namespace dolfinx
 namespace mesh
 {
 
-/// A MeshTags is a class used to associate mesh entities with values.
-/// The entity index (local to process) identifies the entity. MeshTags
-/// is a sparse data storage class; it allows tags to be associated with
-/// an arbitrary subset of mesh entities. An entity can have only one
+/// A MeshTags are used to associate mesh entities with values. The
+/// entity index (local to process) identifies the entity. MeshTags is a
+/// sparse data storage class; it allows tags to be associated with an
+/// arbitrary subset of mesh entities. An entity can have only one
 /// associated tag.
 /// @tparam Type
 template <typename T>
@@ -39,14 +39,13 @@ public:
   /// Create from entities of given dimension on a mesh
   /// @param[in] mesh The mesh associated with the tags
   /// @param[in] dim Topological dimension of mesh entities to tag
-  /// @param[in] indices std::vector<std::int32> of entity indices
-  ///   (indices local to the process)
+  /// @param[in] indices std::vector<std::int32> of sorted and unique
+  ///   entity indices (indices local to the process)
   /// @param[in] values std::vector<T> of values for each index in
-  ///   indices
-  /// @param[in] sorted_and_unique True if indices are sorted and unique
+  ///   indices. The size must be equal to the size of @p indices.
   template <typename U, typename V>
   MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim, U&& indices,
-           V&& values, bool sorted_and_unique = false)
+           V&& values)
       : _mesh(mesh), _dim(dim), _indices(std::forward<U>(indices)),
         _values(std::forward<V>(values))
   {
@@ -54,14 +53,6 @@ public:
     {
       throw std::runtime_error(
           "Indices and values arrays must have same size.");
-    }
-
-    if (!sorted_and_unique)
-    {
-      auto [indices_sorted, values_sorted]
-          = common::sort_unique(_indices, _values);
-      _indices = std::move(indices_sorted);
-      _values = std::move(values_sorted);
     }
   }
 
