@@ -45,18 +45,13 @@ def test_assembly_dx_domains(mesh):
     values = numpy.full(indices.shape, 3, dtype=numpy.intc)
     values[0] = 1
     values[1] = 2
-
-    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim, indices, values, sorted=True, unique=True)
-
+    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim, indices, values)
     dx = ufl.Measure('dx', subdomain_data=marker, domain=mesh)
-
     w = dolfinx.Function(V)
     with w.vector.localForm() as w_local:
         w_local.set(0.5)
 
-    #
     # Assemble matrix
-    #
 
     a = w * ufl.inner(u, v) * (dx(1) + dx(2) + dx(3))
 
@@ -127,7 +122,8 @@ def test_assembly_ds_domains(mesh):
     indices = numpy.hstack((bottom_facets, top_facets, left_facets, right_facets))
     values = numpy.hstack((bottom_vals, top_vals, left_vals, right_vals))
 
-    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim - 1, indices, values)
+    indices, pos = numpy.unique(indices, return_index=True)
+    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim - 1, indices, values[pos])
 
     ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 

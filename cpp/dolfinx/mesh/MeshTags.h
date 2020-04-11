@@ -9,14 +9,15 @@
 #include "Geometry.h"
 #include "Mesh.h"
 #include "Topology.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/io/cells.h>
 #include <map>
 #include <memory>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -25,10 +26,10 @@ namespace dolfinx
 namespace mesh
 {
 
-/// A MeshTags is a class used to associate mesh entities with values.
-/// The entity index (local to process) identifies the entity. MeshTags
-/// is a sparse data storage class; it allows tags to be associated with
-/// an arbitrary subset of mesh entities. An entity can have only one
+/// A MeshTags are used to associate mesh entities with values. The
+/// entity index (local to process) identifies the entity. MeshTags is a
+/// sparse data storage class; it allows tags to be associated with an
+/// arbitrary subset of mesh entities. An entity can have only one
 /// associated tag.
 /// @tparam Type
 template <typename T>
@@ -38,15 +39,13 @@ public:
   /// Create from entities of given dimension on a mesh
   /// @param[in] mesh The mesh on which the tags are associated
   /// @param[in] dim Topological dimension of mesh entities to tag
-  /// @param[in] indices std::vector<std::int32> of entity indices
-  ///   (indices local to the process)
+  /// @param[in] indices std::vector<std::int32> of sorted and unique
+  ///   entity indices (indices local to the process)
   /// @param[in] values std::vector<T> of values for each index in
-  ///   indices
-  /// @param[in] sorted True for already sorted indices
-  /// @param[in] unique True for unique indices
+  ///   indices. The size must be equal to the size of @p indices.
   template <typename U, typename V>
   MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim, U&& indices,
-           V&& values, const bool sorted = false, const bool unique = false)
+           V&& values)
       : _mesh(mesh), _dim(dim), _indices(std::forward<U>(indices)),
         _values(std::forward<V>(values))
   {
@@ -55,10 +54,12 @@ public:
       throw std::runtime_error(
           "Indices and values arrays must have same size.");
     }
-    if (!sorted)
-      sort();
-    if (!unique)
-      remove_duplicates();
+#ifdef DEBUG
+    if (!std::is_sorted(_indices.begin(), _indices.end()))
+      throw std::runtime_error("MeshTag data is not sorted");
+    if (std::adjacent_find(_indices.begin(), _indices.end()) != _indices.end())
+      throw std::runtime_error("MeshTag data has duplicates");
+#endif
   }
 
   /// Copy constructor
@@ -125,49 +126,6 @@ private:
 
   // Values attached to entities
   std::vector<T> _values;
-
-  // Sort indices and values according by index
-  void sort()
-  {
-    // Compute the sorting permutation
-    std::vector<int> perm(_indices.size());
-    std::iota(perm.begin(), perm.end(), 0);
-    std::sort(perm.begin(), perm.end(),
-              [&indices = std::as_const(_indices)](const int a, const int b) {
-                return (indices[a] < indices[b]);
-              });
-
-    // Copy data
-    const std::vector<std::int32_t> indices_tmp = _indices;
-    const std::vector<T> values_tmp = _values;
-
-    // Apply sorting and insert
-    for (std::size_t i = 0; i < indices_tmp.size(); ++i)
-    {
-      _indices[i] = indices_tmp[perm[i]];
-      _values[i] = values_tmp[perm[i]];
-    }
-  }
-
-  // Remove duplicates in indices and values according to indices
-  void remove_duplicates()
-  {
-    // Algorithm would fail for empty vector
-    if (_indices.size() == 0)
-      return;
-
-    std::size_t last_unique = 0;
-    for (std::size_t i = 0; i < _indices.size(); ++i)
-    {
-      if (_indices[i] > _indices[last_unique])
-      {
-        _indices[++last_unique] = _indices[i];
-        _values[last_unique] = _values[i];
-      }
-    }
-    _indices.erase(_indices.begin() + last_unique + 1, _indices.end());
-    _values.erase(_values.begin() + last_unique + 1, _values.end());
-  }
 };
 
 /// @todo Generalise to create multiple MeshTags as some of the data sent
@@ -391,8 +349,10 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // -------------------
   // 5. Build MeshTags object
 
-  return mesh::MeshTags<T>(mesh, e_dim, std::move(indices_new),
-                           std::move(values_new));
+  auto [indices_sorted, values_sorted]
+      = common::sort_unique(indices_new, values_new);
+  return mesh::MeshTags<T>(mesh, e_dim, std::move(indices_sorted),
+                           std::move(values_sorted));
 }
 } // namespace mesh
 } // namespace dolfinx

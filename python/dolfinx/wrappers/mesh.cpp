@@ -224,23 +224,18 @@ void mesh(py::module& m)
       m, "MeshTags_" #SCALAR_NAME, "MeshTags object")                          \
       .def(py::init([](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, \
                        int dim, const py::array_t<std::int32_t>& indices,      \
-                       const py::array_t<SCALAR>& values, bool sorted,         \
-                       bool unique) {                                          \
+                       const py::array_t<SCALAR>& values) {                    \
         std::vector<std::int32_t> indices_vec(                                 \
             indices.data(), indices.data() + indices.size());                  \
         std::vector<SCALAR> values_vec(values.data(),                          \
                                        values.data() + values.size());         \
         return std::make_unique<dolfinx::mesh::MeshTags<SCALAR>>(              \
-            mesh, dim, std::move(indices_vec), std::move(values_vec), sorted,  \
-            unique);                                                           \
+            mesh, dim, std::move(indices_vec), std::move(values_vec));         \
       }))                                                                      \
       .def_readwrite("name", &dolfinx::mesh::MeshTags<SCALAR>::name)           \
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<SCALAR>::dim)     \
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<SCALAR>::mesh)   \
-      .def("ufl_id",                                                           \
-           [](const dolfinx::mesh::MeshTags<SCALAR>& self) {                   \
-             return self.id();                                                 \
-           })                                                                  \
+      .def("ufl_id", &dolfinx::mesh::MeshTags<SCALAR>::id)                     \
       .def_property_readonly("values",                                         \
                              [](dolfinx::mesh::MeshTags<SCALAR>& self) {       \
                                return py::array_t<SCALAR>(                     \
