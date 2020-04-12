@@ -56,12 +56,12 @@ SparsityPattern::SparsityPattern(
 
   // Get row ranges using column 0
   std::int64_t row_global_offset(0), row_local_size(0);
-  for (std::size_t row = 0; row < patterns.size(); ++row)
+  for (const auto& pattern : patterns)
   {
-    assert(patterns[row][0]);
-    assert(patterns[row][0]->_index_maps[0]);
-    auto local_range = patterns[row][0]->_index_maps[0]->local_range();
-    const int bs0 = patterns[row][0]->_index_maps[0]->block_size();
+    assert(pattern[0]);
+    assert(pattern[0]->_index_maps[0]);
+    auto local_range = pattern[0]->_index_maps[0]->local_range();
+    const int bs0 = pattern[0]->_index_maps[0]->block_size();
     row_global_offset += bs0 * local_range[0];
     row_local_size += bs0 * (local_range[1] - local_range[0]);
   }
@@ -69,41 +69,40 @@ SparsityPattern::SparsityPattern(
   // Get column ranges using row 0
   std::int64_t col_process_offset(0), col_local_size(0);
   std::vector<const common::IndexMap*> cmaps;
-  for (std::size_t col = 0; col < patterns[0].size(); ++col)
+  for (auto col : patterns[0])
   {
-    assert(patterns[0][col]);
-    assert(patterns[0][col]->_index_maps[1]);
-    cmaps.push_back(patterns[0][col]->_index_maps[1].get());
-    auto local_range = patterns[0][col]->_index_maps[1]->local_range();
-    const int bs1 = patterns[0][col]->_index_maps[1]->block_size();
+    assert(col);
+    assert(col->_index_maps[1]);
+    cmaps.push_back(col->_index_maps[1].get());
+    auto local_range = col->_index_maps[1]->local_range();
+    const int bs1 = col->_index_maps[1]->block_size();
     col_process_offset += bs1 * local_range[0];
     col_local_size += bs1 * (local_range[1] - local_range[0]);
   }
 
   // Iterate over block rows
   std::int64_t row_local_offset = 0;
-  for (std::size_t row = 0; row < patterns.size(); ++row)
+  for (const auto& pattern : patterns)
   {
     // Increase storage for nodes
-    assert(patterns[row][0]);
-    assert(patterns[row][0]->_index_maps[0]);
-    std::int32_t row_size = patterns[row][0]->_index_maps[0]->size_local();
-    const int bs0 = patterns[row][0]->_index_maps[0]->block_size();
+    assert(pattern[0]);
+    assert(pattern[0]->_index_maps[0]);
+    std::int32_t row_size = pattern[0]->_index_maps[0]->size_local();
+    const int bs0 = pattern[0]->_index_maps[0]->block_size();
 
     // FIXME: Issue somewhere here when block size > 1
-    assert(bs0 * row_size
-           == (std::int32_t)patterns[row][0]->_diagonal->num_nodes());
+    assert(bs0 * row_size == (std::int32_t)pattern[0]->_diagonal->num_nodes());
     diagonal.resize(diagonal.size() + bs0 * row_size);
     assert(bs0 * row_size
-           == (std::int32_t)patterns[row][0]->_off_diagonal->num_nodes());
+           == (std::int32_t)pattern[0]->_off_diagonal->num_nodes());
     off_diagonal.resize(off_diagonal.size() + bs0 * row_size);
 
     // Iterate over block columns of current block row
     std::int64_t col_global_offset = col_process_offset;
-    for (std::size_t col = 0; col < patterns[row].size(); ++col)
+    for (std::size_t col = 0; col < pattern.size(); ++col)
     {
       // Get pattern for this block
-      const auto* p = patterns[row][col];
+      const auto* p = pattern[col];
       assert(p);
 
       // Check that
@@ -301,19 +300,19 @@ void SparsityPattern::assemble()
       const std::int32_t row_local = bs0 * row_node_local + j;
       assert((std::size_t)row_local < _diagonal_cache.size());
       auto cols = _diagonal_cache[row_local];
-      for (std::size_t c = 0; c < cols.size(); ++c)
+      for (std::int32_t col : cols)
       {
         ghost_data.push_back(row);
 
         // Convert to global column index
-        const std::int64_t J = col_map(cols[c], *_index_maps[1]);
+        const std::int64_t J = col_map(col, *_index_maps[1]);
         ghost_data.push_back(J);
       }
       auto cols_off = _off_diagonal_cache[row_local];
-      for (std::size_t c = 0; c < cols_off.size(); ++c)
+      for (std::int64_t c : cols_off)
       {
         ghost_data.push_back(row);
-        ghost_data.push_back(cols_off[c]);
+        ghost_data.push_back(c);
       }
     }
   }
