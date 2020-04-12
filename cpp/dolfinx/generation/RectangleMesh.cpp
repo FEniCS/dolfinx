@@ -36,7 +36,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"
       && diagonal != "left/right" && diagonal != "crossed")
   {
-    std::runtime_error("Unknown mesh diagonal definition.");
+    throw std::runtime_error("Unknown mesh diagonal definition.");
   }
 
   const Eigen::Vector3d& p0 = p[0];
