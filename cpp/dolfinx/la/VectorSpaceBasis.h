@@ -10,9 +10,7 @@
 #include <petscmat.h>
 #include <vector>
 
-namespace dolfinx
-{
-namespace la
+namespace dolfinx::la
 {
 class PETScVector;
 
@@ -61,5 +59,4 @@ public:
 private:
   const std::vector<std::shared_ptr<PETScVector>> _basis;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la

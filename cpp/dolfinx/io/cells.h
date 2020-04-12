@@ -11,12 +11,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <vector>
 
-namespace dolfinx
-{
-namespace io
-{
-
-namespace cells
+namespace dolfinx::io::cells
 {
 /// For simplices the FEniCS ordering follows the UFC convention, see:
 /// https://fossies.org/linux/ufc/doc/manual/ufc-user-manual.pdf For
@@ -51,6 +46,4 @@ permute_ordering(
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::uint8_t>& permutation);
 
-} // namespace cells
-} // namespace io
-} // namespace dolfinx
+} // namespace dolfinx::io::cells

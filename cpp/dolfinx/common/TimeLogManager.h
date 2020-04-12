@@ -8,10 +8,7 @@
 
 #include "TimeLogger.h"
 
-namespace dolfinx
-{
-
-namespace common
+namespace dolfinx::common
 {
 
 /// Logger initialisation
@@ -22,5 +19,4 @@ public:
   /// Singleton instance of logger
   static TimeLogger& logger();
 };
-} // namespace common
-} // namespace dolfinx
+} // namespace dolfinx::common

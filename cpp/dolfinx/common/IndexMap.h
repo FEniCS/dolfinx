@@ -14,10 +14,7 @@
 #include <set>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace common
+namespace dolfinx::common
 {
 
 /// This class represents the distribution index arrays across
@@ -288,7 +285,7 @@ public:
   std::vector<std::int64_t> _all_ranges;
 
 private:
-  // Local-to-gl05obal map for ghost indices
+  // Local-to-global map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 
   // Owning neighbour for each ghost index
@@ -310,5 +307,4 @@ private:
                         Mode op) const;
 };
 
-} // namespace common
-} // namespace dolfinx
+} // namespace dolfinx::common

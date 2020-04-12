@@ -17,10 +17,7 @@
 #include <thread>
 #include <tuple>
 
-namespace dolfinx
-{
-
-namespace common
+namespace dolfinx::common
 {
 
 /// Timer logging
@@ -58,5 +55,4 @@ private:
   // total_wall_time, total_user_time, total_system_time)
   std::map<std::string, std::tuple<int, double, double, double>> _timings;
 };
-} // namespace common
-} // namespace dolfinx
+} // namespace dolfinx::common

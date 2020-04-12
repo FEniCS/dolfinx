@@ -10,9 +10,7 @@
 #include <cstdint>
 #include <utility>
 
-namespace dolfinx
-{
-namespace mesh
+namespace dolfinx::mesh
 {
 class Topology;
 
@@ -79,5 +77,4 @@ public:
   compute_entity_permutations(const Topology& topology);
 };
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

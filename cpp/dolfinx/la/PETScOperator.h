@@ -12,9 +12,7 @@
 #include <petscmat.h>
 #include <string>
 
-namespace dolfinx
-{
-namespace la
+namespace dolfinx::la
 {
 class PETScVector;
 
@@ -60,5 +58,4 @@ protected:
   // PETSc Mat pointer
   Mat _matA;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la

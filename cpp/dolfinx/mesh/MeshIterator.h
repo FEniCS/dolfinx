@@ -13,10 +13,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <iterator>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 // Developer note: This code is performance critical as it appears in
 // tight assembly loops. Any changes should be carefully profiled.
@@ -263,5 +260,4 @@ private:
   // Dimension of incident entities
   const int _dim;
 };
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh
