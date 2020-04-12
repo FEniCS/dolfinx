@@ -72,7 +72,7 @@ def test_tabulate_all_coordinates(mesh_factory):
     num_cells = map.size_local + map.num_ghosts
     for c in range(num_cells):
         cell = MeshEntity(mesh, mesh.topology.dim, c)
-        dofs_V = V_dofmap.cell_dofs(i)
+        dofs_V = V_dofmap.cell_dofs(c)
         for di in dofs_V:
             if di >= local_size_V:
                 continue
