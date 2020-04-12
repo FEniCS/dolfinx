@@ -6,12 +6,12 @@
 #include "BoundingBoxTree.h"
 #include "CollisionPredicates.h"
 #include "utils.h"
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
 #include <dolfinx/mesh/utils.h>
 
 using namespace dolfinx;
@@ -284,8 +284,11 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   std::vector<double> leaf_bboxes(6 * num_leaves);
   Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       _leaf_bboxes(leaf_bboxes.data(), 2 * num_leaves, 3);
-  for (auto& e : mesh::MeshRange(mesh, tdim))
-    _leaf_bboxes.block<2, 3>(2 * e.index(), 0) = compute_bbox_of_entity(e);
+  for (int e = 0; e < num_leaves; ++e)
+  {
+    _leaf_bboxes.block<2, 3>(2 * e, 0)
+        = compute_bbox_of_entity(mesh::MeshEntity(mesh, tdim, e));
+  }
 
   // Create leaf partition (to be sorted)
   std::vector<int> leaf_partition(num_leaves);
