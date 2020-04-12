@@ -398,7 +398,6 @@ void VTKWriter::write_cell_data(const function::Function& u,
   const int num_dofs_cell = dofmap.element_dof_layout->num_dofs();
 
   for (int c = 0; c < num_cells; ++c)
-  // for (auto& cell : mesh::MeshRange(mesh, tdim))
   {
     // Tabulate dofs
     auto dofs = dofmap.cell_dofs(c);
