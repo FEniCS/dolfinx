@@ -14,10 +14,7 @@
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-namespace dolfinx
-{
-
-namespace fem
+namespace dolfinx::fem
 {
 
 // FIXME: A dof layout on a reference cell needs to be defined.
@@ -110,5 +107,4 @@ private:
                      const double*)>
       _compute_reference_geometry;
 };
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

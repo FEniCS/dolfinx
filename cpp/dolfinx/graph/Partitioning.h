@@ -15,10 +15,7 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace graph
+namespace dolfinx::graph
 {
 
 /// Tools for distributed graphs
@@ -295,5 +292,4 @@ Partitioning::distribute_data(
   return my_x;
 }
 
-} // namespace graph
-} // namespace dolfinx
+} // namespace dolfinx::graph

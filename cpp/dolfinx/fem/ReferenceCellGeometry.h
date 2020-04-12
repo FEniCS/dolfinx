@@ -9,10 +9,7 @@
 #include <Eigen/Dense>
 #include <dolfinx/mesh/cell_types.h>
 
-namespace dolfinx
-{
-
-namespace fem
+namespace dolfinx::fem
 {
 
 /// Tabulates the vertex positions for the reference cell
@@ -23,5 +20,4 @@ public:
   static Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   get_vertices(mesh::CellType cell_type);
 };
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

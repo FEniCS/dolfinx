@@ -17,9 +17,7 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx
-{
-namespace common
+namespace dolfinx::common
 {
 
 /// Sort two arrays based on the values in array @p indices. Any
@@ -121,5 +119,4 @@ std::int64_t hash_global(const MPI_Comm comm, const T& x)
 
   return global_hash;
 }
-} // namespace common
-} // namespace dolfinx
+} // namespace dolfinx::common

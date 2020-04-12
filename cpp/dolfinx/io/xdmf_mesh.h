@@ -29,10 +29,8 @@ class Mesh;
 class Topology;
 } // namespace mesh
 
-namespace io
-{
 /// Low-level methods for reading XDMF files
-namespace xdmf_mesh
+namespace io::xdmf_mesh
 {
 
 /// Add Mesh to xml node
@@ -72,6 +70,5 @@ std::tuple<
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 read_mesh_data(MPI_Comm comm, const hid_t h5_id, const pugi::xml_node& node);
 
-} // namespace xdmf_mesh
-} // namespace io
+} // namespace io::xdmf_mesh
 } // namespace dolfinx

@@ -10,10 +10,7 @@
 #include "Topology.h"
 #include <dolfinx/graph/AdjacencyList.h>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 
 /// A MeshEntity represents a mesh entity associated with a specific
@@ -114,5 +111,4 @@ protected:
   std::int32_t _local_index;
 }; // namespace mesh
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

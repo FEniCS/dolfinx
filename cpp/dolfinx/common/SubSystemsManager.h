@@ -9,10 +9,7 @@
 #include <petscsys.h>
 #include <string>
 
-namespace dolfinx
-{
-
-namespace common
+namespace dolfinx::common
 {
 
 /// This is a singleton class which manages the initialisation and
@@ -94,5 +91,4 @@ private:
   bool petsc_initialized;
   bool control_mpi;
 };
-} // namespace common
-} // namespace dolfinx
+} // namespace dolfinx::common

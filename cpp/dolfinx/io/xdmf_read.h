@@ -17,13 +17,8 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 
-namespace dolfinx
-{
-
-namespace io
-{
 /// Low-level methods for reading XDMF files
-namespace xdmf_read
+namespace dolfinx::io::xdmf_read
 {
 
 /// Return data associated with a data set node
@@ -158,6 +153,4 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
 }
 //----------------------------------------------------------------------------
 
-} // namespace xdmf_read
-} // namespace io
-} // namespace dolfinx
+} // namespace dolfinx::io::xdmf_read

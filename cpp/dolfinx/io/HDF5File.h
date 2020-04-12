@@ -14,10 +14,7 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace io
+namespace dolfinx::io
 {
 
 /// Interface to HDF5 files
@@ -140,5 +137,4 @@ void HDF5File::write_data(const std::string& dataset_name,
                                global_size, use_mpi_io, chunking);
 }
 //---------------------------------------------------------------------------
-} // namespace io
-} // namespace dolfinx
+} // namespace dolfinx::io

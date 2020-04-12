@@ -2,9 +2,7 @@
 
 #pragma once
 
-namespace dolfinx
-{
-namespace geometry
+namespace dolfinx::geometry
 {
 class Point;
 
@@ -43,5 +41,4 @@ double _orient2d(const double* a, const double* b, const double* c);
 double _orient3d(const double* a, const double* b, const double* c,
                  const double* d);
 
-} // namespace geometry
-} // namespace dolfinx
+} // namespace dolfinx::geometry

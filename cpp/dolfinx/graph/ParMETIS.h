@@ -17,10 +17,7 @@
 #include <parmetis.h>
 #endif
 
-namespace dolfinx
-{
-
-namespace graph
+namespace dolfinx::graph
 {
 
 /// This class provides an interface to ParMETIS
@@ -36,5 +33,4 @@ public:
 
 #endif
 };
-} // namespace graph
-} // namespace dolfinx
+} // namespace dolfinx::graph
