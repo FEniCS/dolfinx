@@ -8,7 +8,7 @@
 #include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshIterator.h"
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <sstream>
 
@@ -62,10 +62,13 @@ std::array<double, 2> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
   double d_ang_max = -1.0;
 
   const int tdim = mesh.topology().dim();
-  for (auto& cell : MeshRange(mesh, tdim))
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
     // Get the angles from the next cell
-    std::array<double, 6> angles = dihedral_angles(cell);
+    std::array<double, 6> angles = dihedral_angles(MeshEntity(mesh, tdim, c));
 
     // And then update the min and max
     d_ang_min
@@ -89,10 +92,13 @@ MeshQuality::dihedral_angle_histogram_data(const Mesh& mesh, int num_bins)
     bins[i] = static_cast<double>(i) * interval + interval / 2.0;
 
   const int tdim = mesh.topology().dim();
-  for (auto& cell : MeshRange(mesh, tdim))
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
     // this one should return the value of the angle
-    std::array<double, 6> angles = dihedral_angles(cell);
+    std::array<double, 6> angles = dihedral_angles(MeshEntity(mesh, tdim, c));
 
     // Iterate through the collected vector
     for (std::size_t i = 0; i < angles.size(); i++)

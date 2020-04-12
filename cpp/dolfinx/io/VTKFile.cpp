@@ -9,6 +9,8 @@
 #include "pugixml.hpp"
 #include <boost/cstdint.hpp>
 #include <boost/detail/endian.hpp>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/DofMap.h>
@@ -19,7 +21,6 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
@@ -152,8 +153,9 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Get vtu file name and clear file
-  std::string vtu_filename = vtu_name(MPI::rank(mpi_comm), MPI::size(mpi_comm),
-                                      counter, filename, ".vtu");
+  std::string vtu_filename
+      = vtu_name(dolfinx::MPI::rank(mpi_comm), dolfinx::MPI::size(mpi_comm),
+                 counter, filename, ".vtu");
   clear_file(vtu_filename);
 
   // Number of cells
@@ -189,8 +191,8 @@ void write_function(const function::Function& u, const std::string filename,
   results_write(u, vtu_filename);
 
   // Parallel-specific files
-  const std::size_t num_processes = MPI::size(mpi_comm);
-  if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
+  const std::size_t num_processes = dolfinx::MPI::size(mpi_comm);
+  if (num_processes > 1 and dolfinx::MPI::rank(mpi_comm) == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, filename, ".pvtu");
     pvtu_write(u, filename, pvtu_filename, counter);
@@ -223,8 +225,8 @@ void write_mesh(const mesh::Mesh& mesh, const std::string filename,
   VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename);
 
   // Parallel-specific files
-  const std::size_t num_processes = MPI::size(mpi_comm);
-  if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
+  const std::size_t num_processes = dolfinx::MPI::size(mpi_comm);
+  if (num_processes > 1 and dolfinx::MPI::rank(mpi_comm) == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, filename, ".pvtu");
     pvtu_write_mesh(filename, pvtu_filename, counter, num_processes);
@@ -583,7 +585,7 @@ void pvtu_write(const function::Function& u, const std::string filename,
     data_type = "cell";
   }
 
-  const int num_processes = MPI::size(mesh.mpi_comm());
+  const int num_processes = dolfinx::MPI::size(mesh.mpi_comm());
   pvtu_write_function(dim, rank, data_type, "u", filename, fname, counter,
                       num_processes);
 }
