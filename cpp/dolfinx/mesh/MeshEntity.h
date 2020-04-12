@@ -14,7 +14,9 @@ namespace dolfinx::mesh
 {
 
 /// A MeshEntity represents a mesh entity associated with a specific
-/// topological dimension of some Mesh.
+/// topological dimension of some Mesh. A MeshEntity object is left in
+/// an undefined state if the Mesh that it is constructed with is
+/// destroyed.
 
 class MeshEntity
 {
@@ -66,7 +68,7 @@ public:
     return _mesh->topology().connectivity(_dim, dim)->links(_local_index);
   }
 
-protected:
+private:
   // The mesh
   Mesh const* _mesh;
 
@@ -75,6 +77,6 @@ protected:
 
   // Local index of entity within topological dimension
   std::int32_t _local_index;
-}; // namespace mesh
+};
 
 } // namespace dolfinx::mesh
