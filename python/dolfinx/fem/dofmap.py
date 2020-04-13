@@ -8,11 +8,6 @@
 from dolfinx import cpp
 
 
-def make_coordinate_map(ufc_coordinate_mapping):
-    """Returns CoordinateElement from a pointer to a ufc_coordinate_mapping"""
-    return cpp.fem.make_coordinate_map(ufc_coordinate_mapping)
-
-
 class DofMap:
     """Degree-of-freedom map
 
