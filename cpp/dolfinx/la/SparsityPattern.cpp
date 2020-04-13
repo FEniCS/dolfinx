@@ -346,7 +346,7 @@ void SparsityPattern::assemble()
     send_count.push_back(sub.size());
   }
 
-  // Compute displacements for data to receive
+  // Compute displacements for data to send
   std::vector<int> send_disp(num_neighbours + 1, 0);
   std::partial_sum(send_count.begin(), send_count.end(), send_disp.begin() + 1);
 
@@ -360,7 +360,7 @@ void SparsityPattern::assemble()
   std::partial_sum(num_rows_recv.begin(), num_rows_recv.end(),
                    recv_disp.begin() + 1);
 
-  // Send all unowned rows to neighbours, and receive rows from neighbours
+  // Send unowned rows to neighbours, and receive rows from neighbours
   std::vector<std::int64_t> ghost_data_received(recv_disp.back());
   MPI_Neighbor_alltoallv(send_data.data(), send_count.data(), send_disp.data(),
                          MPI_INT64_T, ghost_data_received.data(),
