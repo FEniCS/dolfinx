@@ -89,7 +89,7 @@ void fem(py::module& m)
       "make_ufc_finite_element",
       [](std::uintptr_t e) {
         ufc_finite_element* p = reinterpret_cast<ufc_finite_element*>(e);
-        return std::shared_ptr<const ufc_finite_element>(p);
+        return *p;
       },
       "Create a ufc_finite_element object from a pointer.");
 
@@ -97,7 +97,7 @@ void fem(py::module& m)
       "make_ufc_dofmap",
       [](std::uintptr_t e) {
         ufc_dofmap* p = reinterpret_cast<ufc_dofmap*>(e);
-        return std::shared_ptr<const ufc_dofmap>(p);
+        return *p;
       },
       "Create a ufc_dofmap object from a pointer.");
 
@@ -105,7 +105,7 @@ void fem(py::module& m)
       "make_ufc_form",
       [](std::uintptr_t e) {
         ufc_form* p = reinterpret_cast<ufc_form*>(e);
-        return std::shared_ptr<const ufc_form>(p);
+        return *p;
       },
       "Create a ufc_form object from a pointer.");
 
