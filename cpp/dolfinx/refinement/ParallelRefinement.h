@@ -23,6 +23,11 @@ template <typename T>
 class MeshTags;
 } // namespace mesh
 
+namespace common
+{
+class IndexMap;
+}
+
 namespace refinement
 {
 /// Data structure and methods for refining meshes in parallel
@@ -76,18 +81,20 @@ public:
   /// Useful for forming new topology
   const std::map<std::int32_t, std::int64_t>& edge_to_new_vertex() const;
 
-  /// Add new cells with vertex indices
-  /// @param[in] idx
-  void new_cells(const std::vector<std::int64_t>& idx);
-
   /// Use vertex and topology data to partition new mesh across processes
   /// @param[in] redistribute
   /// @return New mesh
-  mesh::Mesh partition(bool redistribute) const;
+  mesh::Mesh partition(std::vector<std::int64_t>& cell_topology,
+                       bool redistribute) const;
 
   /// Build local mesh from internal data when not running in parallel
   /// @return A Mesh
-  mesh::Mesh build_local() const;
+  mesh::Mesh build_local(std::vector<std::int64_t>& cell_topology) const;
+
+  /// Adjust indices to account for extra n values on each process
+  /// @return Global indices as if "n" extra values are appended on each process
+  static std::vector<std::int64_t>
+  adjust_indices(std::shared_ptr<const common::IndexMap> im, std::int32_t n);
 
 private:
   // mesh::Mesh reference
@@ -100,9 +107,6 @@ private:
   // New storage for all coordinates when creating new vertices
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
       _new_vertex_coordinates;
-
-  // New storage for all cells when creating new topology
-  std::vector<std::int64_t> _new_cell_topology;
 
   // Management of marked edges
   std::vector<bool> _marked_edges;

@@ -99,10 +99,15 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   auto c_to_f = mesh.topology().connectivity(tdim, 2);
   assert(c_to_f);
 
-  assert(mesh.topology().index_map(0));
-  const std::vector<std::int64_t> global_indices
-      = mesh.topology().index_map(0)->global_indices(true);
   const std::vector<bool>& marked_edges = p_ref.marked_edges();
+  std::int32_t num_new_vertices_local = std::count(
+      marked_edges.begin(),
+      marked_edges.begin() + mesh.topology().index_map(1)->size_local(), true);
+
+  std::vector<std::int64_t> global_indices = ParallelRefinement::adjust_indices(
+      mesh.topology().index_map(0), num_new_vertices_local);
+
+  std::vector<std::int64_t> cell_topology;
   for (int c = 0; c < num_cells; ++c)
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
@@ -123,10 +128,8 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
     if (marked_edge_list.size() == 0)
     {
       // Copy over existing Cell to new topology
-      std::vector<std::int64_t> cell_topology;
       for (int v = 0; v < vertices.rows(); ++v)
         cell_topology.push_back(global_indices[vertices[v]]);
-      p_ref.new_cells(cell_topology);
       parent_cell.push_back(c);
     }
     else
@@ -175,18 +178,16 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
         parent_cell.push_back(c);
 
       // Convert from cell local index to mesh index and add to cells
-      std::vector<std::int64_t> simplex_set_global(simplex_set.size());
-      for (std::size_t i = 0; i < simplex_set_global.size(); ++i)
-        simplex_set_global[i] = indices[simplex_set[i]];
-      p_ref.new_cells(simplex_set_global);
+      for (std::size_t i = 0; i < simplex_set.size(); ++i)
+        cell_topology.push_back(indices[simplex_set[i]]);
     }
   }
 
   const bool serial = (dolfinx::MPI::size(mesh.mpi_comm()) == 1);
   if (serial)
-    return p_ref.build_local();
+    return p_ref.build_local(cell_topology);
   else
-    return p_ref.partition(redistribute);
+    return p_ref.partition(cell_topology, redistribute);
 }
 //-----------------------------------------------------------------------------
 // 2D version of subdivision allowing for uniform subdivision (flag)
