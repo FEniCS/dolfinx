@@ -287,13 +287,23 @@ void SparsityPattern::assemble()
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
       = _index_maps[0]->ghosts();
-
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& ghost_owners
       = _index_maps[0]->ghost_owners();
 
+  // Get number of processes in neighbourhood
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(_mpi_comm.comm(), neighbours.size(),
+                                 neighbours.data(), MPI_UNWEIGHTED,
+                                 neighbours.size(), neighbours.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+
+  int num_neighbours(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree, &weighted);
+  assert(num_neighbours == outdegree);
+
   // For each ghost row, pack and send (global row, global col) pairs to
   // send to neighborhood
-  std::vector<std::vector<std::int64_t>> data(neighbours.size());
+  std::vector<std::vector<std::int64_t>> data(num_neighbours);
   for (int i = 0; i < num_ghosts0; ++i)
   {
     // Get rank of owner on neighbourhood communicator
@@ -336,19 +346,8 @@ void SparsityPattern::assemble()
   }
 
   // Compute displacements for data to receive
-  std::vector<int> send_disp(neighbours.size() + 1, 0);
+  std::vector<int> send_disp(num_neighbours + 1, 0);
   std::partial_sum(send_count.begin(), send_count.end(), send_disp.begin() + 1);
-
-  // Get number of processes in neighbourhood
-  MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(_mpi_comm.comm(), neighbours.size(),
-                                 neighbours.data(), MPI_UNWEIGHTED,
-                                 neighbours.size(), neighbours.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-
-  int num_neighbours(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree, &weighted);
-  assert(num_neighbours == outdegree);
 
   // Figure out how much data to receive from each neighbour
   std::vector<std::int32_t> num_rows_recv(num_neighbours);
