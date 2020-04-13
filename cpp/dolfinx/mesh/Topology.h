@@ -7,6 +7,7 @@
 #pragma once
 
 #include "cell_types.h"
+#include "TopologyStorage.h"
 #include <Eigen/Dense>
 #include <array>
 #include <cstdint>
@@ -37,6 +38,8 @@ namespace mesh
 enum class GhostMode : int;
 
 enum class CellType;
+
+
 class Topology;
 
 /// Compute marker for owned facets that are interior, i.e. are
@@ -182,6 +185,64 @@ public:
 
 private:
 
+  // TODO: Simplify storage types (see notes).
+  // TODO: Make sure that cache exists when doing work that requires a certain
+  // level of caching.
+
+  TopologyStorage remanent_storage;
+  mutable TopologyStorage cache;
+
+  // TODO: give the storage layer instead of full storage to write into?
+  // Then one can simply use a single layer to remanent storage.
+
+  // TODO: make a free function?
+  /// Create entities of given topological dimension in given storage.
+  /// Works around constness by separating "Storage" from the owning "Topology".
+  /// @param[in,out] storage Object where to store the created entities
+  /// @param[in] dim Topological dimension
+  /// @return Number of newly created entities, returns -1 if entities
+  ///   already existed
+  std::int32_t create_entities(TopologyStorage& storage, int dim) const;
+
+  // TODO: make a free function?
+  /// Create connectivity between given pair of dimensions, d0 -> d1 in given
+  /// storage
+  /// @param[in,out] storage Object where to store the created entities
+  /// @param[in] d0 Topological dimension
+  /// @param[in] d1 Topological dimension
+  void create_connectivity(TopologyStorage& storage, int d0, int d1) const;
+
+  // TODO: make a free function?
+  /// Set markers for owned facets that are interior in given storage
+  /// @param[in,out] storage Object where to store the created entities
+  /// @param[in] interior_facets The marker vector
+  void set_interior_facets(TopologyStorage& storage, const std::vector<bool>& interior_facets) const;
+
+  // TODO: make a free function?
+  /// @todo Merge with set_index_map
+  /// Set connectivity for given pair of topological dimensions in given storage
+  void set_connectivity(TopologyStorage& storage, std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
+                        int d0, int d1) const;
+
+  // TODO: Make a free function?
+  // TODO: Change order of arguments?
+  /// @todo Merge with set_connectivity_map
+  /// Set connectivity for given pair of topological dimensions in given storage
+  void set_index_map(TopologyStorage& storage, int dim,
+                     std::shared_ptr<const common::IndexMap> index_map) const;
+
+  // TODO: make a free function?
+  /// Sets connectivity for all entities and connectivity in given storage
+  /// @param[in,out] storage Object where to store the created entities
+  void create_connectivity_all(TopologyStorage& storage) const;
+
+  // TODO: make a free function?
+  /// Set markers for owned facets that are interior in given storage
+  /// @param[in,out] storage Object where to store the created entities
+  /// @param[in] interior_facets The marker vector
+  /// Compute entity permutations and reflections in given storage
+  void create_entity_permutations(TopologyStorage& storage) const;
+
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 
@@ -207,6 +268,7 @@ private:
   // Marker for owned facets, which evaluates to True for facets that
   // are interior to the domain
   std::shared_ptr<const std::vector<bool>> _interior_facets;
+
 };
 
 /// Create distributed topology

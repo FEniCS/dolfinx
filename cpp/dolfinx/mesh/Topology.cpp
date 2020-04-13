@@ -178,17 +178,37 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
+void Topology::set_index_map(TopologyStorage& storage, int dim,
+                             std::shared_ptr<const common::IndexMap> index_map) const
+{
+  //  assert(dim < (int)_index_map.size());
+//  _index_map[dim] = index_map;
+  storage.set_index_map(dim, std::move(index_map));
+}
+//-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> index_map)
 {
-  assert(dim < (int)_index_map.size());
-  _index_map[dim] = index_map;
+  set_index_map(remanent_storage, dim, std::move(index_map));
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
-  assert(dim < (int)_index_map.size());
-  return _index_map[dim];
+//  assert(dim < (int)_index_map.size());
+//  return _index_map[dim];
+
+  // try in remanent storage
+  auto im = remanent_storage.index_map(dim);
+  if (im)
+    return im;
+
+  // try in cache
+  im = cache.index_map(dim);
+  if (im)
+    return im;
+
+  // return an emty pointer
+  return im;
 }
 //-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim) const
@@ -255,42 +275,48 @@ std::vector<bool> Topology::on_boundary(int dim) const
 
   return marker;
 }
+//
 //-----------------------------------------------------------------------------
-std::int32_t Topology::create_entities(int dim)
-{
+std::int32_t Topology::create_entities(TopologyStorage& storage, int dim)  const {
   // TODO: is this check sufficient/correct? Does not catch the cell_entity
   // entity case. Should there also be a check for
   // connectivity(this->dim(), dim) ?
   // Skip if already computed (vertices (dim=0) should always exist)
-  if (connectivity(dim, 0))
+  if (storage.connectivity(dim, 0))
     return -1;
 
+  // TODO: compute_entities has redundant MPI arg (in topology)
   // Create local entities
   const auto [cell_entity, entity_vertex, index_map]
-      = TopologyComputation::compute_entities(_mpi_comm.comm(), *this, dim);
+  = TopologyComputation::compute_entities(this->mpi_comm(), *this, dim);
 
   if (cell_entity)
-    set_connectivity(cell_entity, this->dim(), dim);
+    set_connectivity(storage, cell_entity, this->dim(), dim);
 
   // TODO: is this check necessary? Seems redundant after to the "skip check"
   if (entity_vertex)
-    set_connectivity(entity_vertex, dim, 0);
+    set_connectivity(storage, entity_vertex, dim, 0);
 
   assert(index_map);
-  set_index_map(dim, index_map);
+  set_index_map(storage, dim, index_map);
 
   return index_map->size_local();
 }
 //-----------------------------------------------------------------------------
-void Topology::create_connectivity(int d0, int d1)
+std::int32_t Topology::create_entities(int dim)
+{
+  return create_entities(remanent_storage, dim);
+}
+//-----------------------------------------------------------------------------
+void Topology::create_connectivity(TopologyStorage& storage, int d0, int d1) const
 {
   // Make sure entities exist
-  create_entities(d0);
-  create_entities(d1);
+  create_entities(storage, d0);
+  create_entities(storage, d1);
 
   // Compute connectivity
   const auto [c_d0_d1, c_d1_d0]
-      = TopologyComputation::compute_connectivity(*this, d0, d1);
+  = TopologyComputation::compute_connectivity(*this, d0, d1);
 
   // NOTE: that to compute the (d0, d1) connections is it sometimes
   // necessary to compute the (d1, d0) connections. We store the (d1,
@@ -306,19 +332,24 @@ void Topology::create_connectivity(int d0, int d1)
 
   // Attach connectivities
   if (c_d0_d1)
-    set_connectivity(c_d0_d1, d0, d1);
+    set_connectivity(storage, c_d0_d1, d0, d1);
   if (c_d1_d0)
-    set_connectivity(c_d1_d0, d1, d0);
+    set_connectivity(storage, c_d1_d0, d1, d0);
 
   // Special facet handing
   if (d0 == (this->dim() - 1) and d1 == this->dim())
   {
     std::vector<bool> f = compute_interior_facets(*this);
-    set_interior_facets(f);
+    set_interior_facets(storage, f);
   }
 }
 //-----------------------------------------------------------------------------
-void Topology::create_entity_permutations()
+void Topology::create_connectivity(int d0, int d1)
+{
+  create_connectivity(remanent_storage, d0, d1);
+}
+//-----------------------------------------------------------------------------
+void Topology::create_entity_permutations(TopologyStorage& storage) const
 {
   if (_cell_permutations.size() > 0)
     return;
@@ -329,40 +360,60 @@ void Topology::create_entity_permutations()
   // local version? This call does quite a lot of parallel work
   // Create all mesh entities
   for (int d = 0; d < tdim; ++d)
-    create_entities(d);
+    create_entities(storage, d);
 
   auto [facet_permutations, cell_permutations]
-      = PermutationComputation::compute_entity_permutations(*this);
-  _facet_permutations = std::move(facet_permutations);
-  _cell_permutations = std::move(cell_permutations);
+  = PermutationComputation::compute_entity_permutations(*this);
+  storage.set_facet_permutations(std::move(facet_permutations));
+  storage.set_cell_permutations(std::move(cell_permutations));
 }
 //-----------------------------------------------------------------------------
-void Topology::create_connectivity_all()
+void Topology::create_entity_permutations()
+{
+  create_entity_permutations(remanent_storage);
+}
+//-----------------------------------------------------------------------------
+void Topology::create_connectivity_all(TopologyStorage& storage) const
 {
   // Compute all entities
   for (int d = 0; d <= dim(); d++)
-    create_entities(d);
+    create_entities(storage, d);
 
   // Compute all connectivity
   for (int d0 = 0; d0 <= dim(); d0++)
     for (int d1 = 0; d1 <= dim(); d1++)
-      create_connectivity(d0, d1);
+      create_connectivity(storage, d0, d1);
+}
+//-----------------------------------------------------------------------------
+void Topology::create_connectivity_all()
+{
+  create_connectivity_all(remanent_storage);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
-  assert(d0 < _connectivity.rows());
-  assert(d1 < _connectivity.cols());
+//  assert(d0 < _connectivity.rows());
+//  assert(d1 < _connectivity.cols());
   return _connectivity(d0, d1);
+}
+//-----------------------------------------------------------------------------
+void Topology::set_connectivity(TopologyStorage& storage,
+    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1) const
+{
+//  assert(d0 < _connectivity.rows());
+//  assert(d1 < _connectivity.cols());
+//  _connectivity(d0, d1) = c;
+  storage.set_connectivity(c, d0, d1);
 }
 //-----------------------------------------------------------------------------
 void Topology::set_connectivity(
     std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
 {
-  assert(d0 < _connectivity.rows());
-  assert(d1 < _connectivity.cols());
-  _connectivity(d0, d1) = c;
+//  assert(d0 < _connectivity.rows());
+//  assert(d1 < _connectivity.cols());
+//  _connectivity(d0, d1) = c;
+  remanent_storage.set_connectivity(c, d0, d1);
 }
 //-----------------------------------------------------------------------------
 const std::vector<bool>& Topology::interior_facets() const
@@ -370,6 +421,11 @@ const std::vector<bool>& Topology::interior_facets() const
   if (!_interior_facets)
     throw std::runtime_error("Facets marker has not been computed.");
   return *_interior_facets;
+}
+//-----------------------------------------------------------------------------
+void Topology::set_interior_facets(TopologyStorage& storage,const std::vector<bool>& interior_facets) const
+{
+  storage.set_interior_facets(interior_facets);
 }
 //-----------------------------------------------------------------------------
 void Topology::set_interior_facets(const std::vector<bool>& interior_facets)
