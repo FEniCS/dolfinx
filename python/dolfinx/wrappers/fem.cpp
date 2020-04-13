@@ -73,52 +73,6 @@ namespace dolfinx_wrappers
 {
 void fem(py::module& m)
 {
-
-  // UFC objects
-  py::class_<ufc_finite_element, std::shared_ptr<ufc_finite_element>>(
-      m, "ufc_finite_element", "UFC finite element object");
-  py::class_<ufc_dofmap, std::shared_ptr<ufc_dofmap>>(m, "ufc_dofmap",
-                                                      "UFC dofmap object");
-  py::class_<ufc_form, std::shared_ptr<ufc_form>>(m, "ufc_form",
-                                                  "UFC form object");
-  py::class_<ufc_coordinate_mapping, std::shared_ptr<ufc_coordinate_mapping>>(
-      m, "ufc_coordinate_mapping", "UFC coordinate_mapping object");
-
-  // Functions to convert pointers (from JIT usually) to UFC objects
-  m.def(
-      "make_ufc_finite_element",
-      [](std::uintptr_t e) {
-        ufc_finite_element* p = reinterpret_cast<ufc_finite_element*>(e);
-        return std::shared_ptr<const ufc_finite_element>(p);
-      },
-      "Create a ufc_finite_element object from a pointer.");
-
-  m.def(
-      "make_ufc_dofmap",
-      [](std::uintptr_t e) {
-        ufc_dofmap* p = reinterpret_cast<ufc_dofmap*>(e);
-        return std::shared_ptr<const ufc_dofmap>(p);
-      },
-      "Create a ufc_dofmap object from a pointer.");
-
-  m.def(
-      "make_ufc_form",
-      [](std::uintptr_t e) {
-        ufc_form* p = reinterpret_cast<ufc_form*>(e);
-        return std::shared_ptr<const ufc_form>(p);
-      },
-      "Create a ufc_form object from a pointer.");
-
-  m.def(
-      "make_coordinate_map",
-      [](std::uintptr_t e) {
-        ufc_coordinate_mapping* p
-            = reinterpret_cast<ufc_coordinate_mapping*>(e);
-        return dolfinx::fem::create_coordinate_map(*p);
-      },
-      "Create a CoordinateElement object from a pointer to a "
-      "ufc_coordinate_map.");
-
   // utils
   m.def("block_function_spaces",
         [](const std::vector<std::vector<const dolfinx::fem::Form*>>& a) {
@@ -187,18 +141,29 @@ void fem(py::module& m)
         "Create ElementDofLayout object from a ufc dofmap.");
   m.def(
       "create_dofmap",
-      [](const MPICommWrapper comm, const ufc_dofmap& dofmap,
+      [](const MPICommWrapper comm, const std::uintptr_t dofmap,
          dolfinx::mesh::Topology& topology) {
-        return dolfinx::fem::create_dofmap(comm.get(), dofmap, topology);
+        const ufc_dofmap* p = reinterpret_cast<const ufc_dofmap*>(dofmap);
+        return dolfinx::fem::create_dofmap(comm.get(), *p, topology);
       },
-      "Create DOLFIN DofMap object from a ufc dofmap.");
-  m.def("create_form",
-        py::overload_cast<const ufc_form&,
-                          const std::vector<std::shared_ptr<
-                              const dolfinx::function::FunctionSpace>>&>(
-            &dolfinx::fem::create_form),
-        "Create DOLFIN form from a ufc form.");
-
+      "Create DofMap object from a pointer to ufc_dofmap.");
+  m.def(
+      "create_form",
+      [](const std::uintptr_t form,
+         const std::vector<
+             std::shared_ptr<const dolfinx::function::FunctionSpace>>& spaces) {
+        const ufc_form* p = reinterpret_cast<const ufc_form*>(form);
+        return dolfinx::fem::create_form(*p, spaces);
+      },
+      "Create Form from a pointer to ufc_form.");
+  m.def(
+      "create_coordinate_map",
+      [](std::uintptr_t cmap) {
+        const ufc_coordinate_mapping* p
+            = reinterpret_cast<const ufc_coordinate_mapping*>(cmap);
+        return dolfinx::fem::create_coordinate_map(*p);
+      },
+      "Create CoordinateElement from a pointer to ufc_coordinate_map.");
   m.def(
       "build_dofmap",
       [](const dolfinx::mesh::Mesh& mesh,
@@ -226,7 +191,11 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::FiniteElement,
              std::shared_ptr<dolfinx::fem::FiniteElement>>(
       m, "FiniteElement", "Finite element object")
-      .def(py::init<const ufc_finite_element&>())
+      .def(py::init([](const std::uintptr_t ufc_element) {
+        const ufc_finite_element* p
+            = reinterpret_cast<const ufc_finite_element*>(ufc_element);
+        return std::make_unique<dolfinx::fem::FiniteElement>(*p);
+      }))
       .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
       .def("dof_reference_coordinates",
            &dolfinx::fem::FiniteElement::dof_reference_coordinates)
