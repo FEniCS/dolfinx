@@ -342,7 +342,7 @@ void SparsityPattern::assemble()
   std::vector<std::int32_t> send_count;
   for (const auto& sub : ghost_data)
   {
-    ghost_data.insert(send_data.end(), sub.begin(), sub.end());
+    send_data.insert(send_data.end(), sub.begin(), sub.end());
     send_count.push_back(sub.size());
   }
 
