@@ -40,7 +40,6 @@ public:
   /// Compute mesh entities of given topological dimension by computing
   /// entity-to-vertex connectivity (dim, 0), and cell-to-entity
   /// connectivity (tdim, dim)
-  /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
   /// @param[in] dim The dimension of the entities to create
   /// @return Tuple of (cell-entity connectivity, entity-vertex
@@ -49,7 +48,7 @@ public:
   static std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<common::IndexMap>>
-  compute_entities(MPI_Comm comm, const Topology& topology, int dim);
+  compute_entities(const Topology& topology, int dim);
 
   /// Compute connectivity (d0 -> d1) for given pair of topological
   /// dimensions

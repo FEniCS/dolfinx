@@ -467,7 +467,7 @@ compute_entities_by_key_matching(
 
   // Cell-entity connectivity
   auto ce
-      = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ce);
+      = std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(connectivity_ce));
 
   // Entity-vertex connectivity
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -476,7 +476,7 @@ compute_entities_by_key_matching(
     connectivity_ev.row(local_index[i]) = entity_list.row(i);
 
   auto ev
-      = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ev);
+      = std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(connectivity_ev));
 
   return {ce, ev, index_map};
 }
@@ -597,9 +597,10 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>>
-TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
+TopologyComputation::compute_entities(const Topology& topology,
                                       int dim)
 {
+  MPI_Comm comm = topology.mpi_comm();
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
   const int tdim = topology.dim();
 
