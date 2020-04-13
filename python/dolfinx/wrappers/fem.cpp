@@ -73,10 +73,6 @@ namespace dolfinx_wrappers
 {
 void fem(py::module& m)
 {
-
-  py::class_<ufc_coordinate_mapping, std::shared_ptr<ufc_coordinate_mapping>>(
-      m, "ufc_coordinate_mapping", "UFC coordinate_mapping object");
-
   // utils
   m.def("block_function_spaces",
         [](const std::vector<std::vector<const dolfinx::fem::Form*>>& a) {
