@@ -34,9 +34,8 @@ struct TopologyStorageLayer
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> index_map;
 
-  // TODO: can this be made a shared_ptr to const?
   // AdjacencyList for pairs of topological dimensions
-  Eigen::Array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
+  Eigen::Array<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
                Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       connectivity;
 
@@ -55,16 +54,13 @@ struct TopologyStorageLayer
   std::shared_ptr<const std::vector<bool>> interior_facets;
 };
 
-class TopologyStorage;
 
 class StorageLock
 {
 
 public:
-  StorageLock(std::shared_ptr<const bool> lock,
-              std::weak_ptr<const bool> sentinel,
-              const TopologyStorage* storage)
-      : lock{std::move(lock)}, storage{storage}
+  StorageLock(std::shared_ptr<TopologyStorageLayer> lock)
+      : lock{std::move(lock)}
   {
     // do nothing
   }
@@ -76,12 +72,10 @@ public:
   StorageLock& operator=(const StorageLock&) = default;
   StorageLock& operator=(StorageLock&&) = default;
 
-  ~StorageLock();
+  ~StorageLock() = default;
 
 private:
-  std::shared_ptr<const bool> lock;
-  std::weak_ptr<const bool> sentinel;
-  const TopologyStorage* storage;
+  std::shared_ptr<TopologyStorageLayer> lock;
 };
 
 class TopologyStorage

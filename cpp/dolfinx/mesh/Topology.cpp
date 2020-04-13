@@ -178,12 +178,12 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
-void Topology::set_index_map(TopologyStorage& storage, int dim,
-                             std::shared_ptr<const common::IndexMap> index_map) const
+void Topology::set_index_map(
+    TopologyStorageLayer& storage, int dim,
+    std::shared_ptr<const common::IndexMap> index_map) const
 {
-  //  assert(dim < (int)_index_map.size());
-//  _index_map[dim] = index_map;
-  storage.set_index_map(dim, std::move(index_map));
+  assert(dim < (int)_index_map.size());
+  storage.index_map[dim] = std::move(index_map);
 }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
@@ -194,20 +194,21 @@ void Topology::set_index_map(int dim,
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
-//  assert(dim < (int)_index_map.size());
-//  return _index_map[dim];
+  //  assert(dim < (int)_index_map.size());
+  //  return _index_map[dim];
 
   // try in remanent storage
-  auto im = remanent_storage.index_map(dim);
+  auto im = remanent_storage.index_map[dim];
   if (im)
     return im;
 
-  // try in cache
-  im = cache.index_map(dim);
-  if (im)
-    return im;
-
-  // return an emty pointer
+  // TODO: LOOP
+  //  // try in cache
+  //  im = cache.index_map(dim);
+  //  if (im)
+  //    return im;
+  //
+  //  // return an emty pointer
   return im;
 }
 //-----------------------------------------------------------------------------
@@ -277,7 +278,8 @@ std::vector<bool> Topology::on_boundary(int dim) const
 }
 //
 //-----------------------------------------------------------------------------
-std::int32_t Topology::create_entities(TopologyStorage& storage, int dim)  const {
+std::int32_t Topology::create_entities(TopologyStorageLayer& storage, int dim) const
+{
   // TODO: is this check sufficient/correct? Does not catch the cell_entity
   // entity case. Should there also be a check for
   // connectivity(this->dim(), dim) ?
@@ -288,7 +290,7 @@ std::int32_t Topology::create_entities(TopologyStorage& storage, int dim)  const
   // TODO: compute_entities has redundant MPI arg (in topology)
   // Create local entities
   const auto [cell_entity, entity_vertex, index_map]
-  = TopologyComputation::compute_entities(this->mpi_comm(), *this, dim);
+      = TopologyComputation::compute_entities(this->mpi_comm(), *this, dim);
 
   if (cell_entity)
     set_connectivity(storage, cell_entity, this->dim(), dim);
@@ -308,7 +310,8 @@ std::int32_t Topology::create_entities(int dim)
   return create_entities(remanent_storage, dim);
 }
 //-----------------------------------------------------------------------------
-void Topology::create_connectivity(TopologyStorage& storage, int d0, int d1) const
+void Topology::create_connectivity(TopologyStorageLayer& storage, int d0,
+                                   int d1) const
 {
   // Make sure entities exist
   create_entities(storage, d0);
@@ -316,7 +319,7 @@ void Topology::create_connectivity(TopologyStorage& storage, int d0, int d1) con
 
   // Compute connectivity
   const auto [c_d0_d1, c_d1_d0]
-  = TopologyComputation::compute_connectivity(*this, d0, d1);
+      = TopologyComputation::compute_connectivity(*this, d0, d1);
 
   // NOTE: that to compute the (d0, d1) connections is it sometimes
   // necessary to compute the (d1, d0) connections. We store the (d1,
@@ -349,7 +352,7 @@ void Topology::create_connectivity(int d0, int d1)
   create_connectivity(remanent_storage, d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Topology::create_entity_permutations(TopologyStorage& storage) const
+void Topology::create_entity_permutations(TopologyStorageLayer& storage) const
 {
   if (_cell_permutations.size() > 0)
     return;
@@ -363,9 +366,13 @@ void Topology::create_entity_permutations(TopologyStorage& storage) const
     create_entities(storage, d);
 
   auto [facet_permutations, cell_permutations]
-  = PermutationComputation::compute_entity_permutations(*this);
-  storage.set_facet_permutations(std::move(facet_permutations));
-  storage.set_cell_permutations(std::move(cell_permutations));
+      = PermutationComputation::compute_entity_permutations(*this);
+  storage.facet_permutations = std::make_shared<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>(
+      std::move(facet_permutations));
+  storage.cell_permutations
+      = std::make_shared<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>(
+          std::move(cell_permutations));
 }
 //-----------------------------------------------------------------------------
 void Topology::create_entity_permutations()
@@ -373,7 +380,7 @@ void Topology::create_entity_permutations()
   create_entity_permutations(remanent_storage);
 }
 //-----------------------------------------------------------------------------
-void Topology::create_connectivity_all(TopologyStorage& storage) const
+void Topology::create_connectivity_all(TopologyStorageLayer& storage) const
 {
   // Compute all entities
   for (int d = 0; d <= dim(); d++)
@@ -393,27 +400,36 @@ void Topology::create_connectivity_all()
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
-//  assert(d0 < _connectivity.rows());
-//  assert(d1 < _connectivity.cols());
-  return _connectivity(d0, d1);
+  // Search in remanent storage
+  if (auto conn = remanent_storage.connectivity(d0, d1); conn)
+    return conn;
+
+  // Search in cache
+  remove_expired_layers();
+  for (const auto& w_layer : cache) {
+    if (auto conn = w_layer.lock()->connectivity(d0, d1); conn)
+      return conn;
+  }
+
+  auto _lock = acquire_cache_lock();
+  auto active_layer = *cache.back().lock();
+  create_connectivity(active_layer, d0, d1);
+  return active_layer.connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Topology::set_connectivity(TopologyStorage& storage,
+void Topology::set_connectivity(
+    TopologyStorageLayer& storage,
     std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1) const
 {
-//  assert(d0 < _connectivity.rows());
-//  assert(d1 < _connectivity.cols());
-//  _connectivity(d0, d1) = c;
-  storage.set_connectivity(c, d0, d1);
+  assert(d0 < storage.connectivity.rows());
+  assert(d1 < storage.connectivity.cols());
+  storage.connectivity(d0, d1) = c;
 }
 //-----------------------------------------------------------------------------
 void Topology::set_connectivity(
     std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
 {
-//  assert(d0 < _connectivity.rows());
-//  assert(d1 < _connectivity.cols());
-//  _connectivity(d0, d1) = c;
-  remanent_storage.set_connectivity(c, d0, d1);
+  set_connectivity(remanent_storage, c, d0, d1);
 }
 //-----------------------------------------------------------------------------
 const std::vector<bool>& Topology::interior_facets() const
@@ -423,9 +439,10 @@ const std::vector<bool>& Topology::interior_facets() const
   return *_interior_facets;
 }
 //-----------------------------------------------------------------------------
-void Topology::set_interior_facets(TopologyStorage& storage,const std::vector<bool>& interior_facets) const
+void Topology::set_interior_facets(
+    TopologyStorageLayer& storage, const std::vector<bool>& interior_facets) const
 {
-  storage.set_interior_facets(interior_facets);
+  storage.interior_facets = std::make_shared<const std::vector<bool>>(interior_facets);
 }
 //-----------------------------------------------------------------------------
 void Topology::set_interior_facets(const std::vector<bool>& interior_facets)
