@@ -304,7 +304,7 @@ void SparsityPattern::assemble()
 
   // For each ghost row, pack and send (global row, global col) pairs to
   // send to neighborhood
-  std::vector<std::vector<std::int64_t>> data(num_neighbours);
+  std::vector<std::vector<std::int64_t>> ghost_data(num_neighbours);
   for (int i = 0; i < num_ghosts0; ++i)
   {
     // Get rank of owner on neighbourhood communicator
@@ -323,26 +323,26 @@ void SparsityPattern::assemble()
       auto cols = _diagonal_cache[row_local];
       for (std::int32_t col : cols)
       {
-        data[np].push_back(row);
+        ghost_data[np].push_back(row);
 
         // Convert to global column index
         const std::int64_t J = col_map(col, *_index_maps[1]);
-        data[np].push_back(J);
+        ghost_data[np].push_back(J);
       }
       auto cols_off = _off_diagonal_cache[row_local];
       for (std::int64_t col : cols_off)
       {
-        data[np].push_back(row);
-        data[np].push_back(col);
+        ghost_data[np].push_back(row);
+        ghost_data[np].push_back(col);
       }
     }
   }
 
-  std::vector<std::int64_t> ghost_data;
+  std::vector<std::int64_t> send_data;
   std::vector<std::int32_t> send_count;
-  for (const auto& sub : data)
+  for (const auto& sub : ghost_data)
   {
-    ghost_data.insert(ghost_data.end(), sub.begin(), sub.end());
+    ghost_data.insert(send_data.end(), sub.begin(), sub.end());
     send_count.push_back(sub.size());
   }
 
@@ -362,7 +362,7 @@ void SparsityPattern::assemble()
 
   // Send all unowned rows to neighbours, and receive rows from neighbours
   std::vector<std::int64_t> ghost_data_received(recv_disp.back());
-  MPI_Neighbor_alltoallv(ghost_data.data(), send_count.data(), send_disp.data(),
+  MPI_Neighbor_alltoallv(send_data.data(), send_count.data(), send_disp.data(),
                          MPI_INT64_T, ghost_data_received.data(),
                          num_rows_recv.data(), recv_disp.data(), MPI_INT64_T,
                          comm);
