@@ -36,7 +36,7 @@ struct TopologyStorageLayer
 
   // AdjacencyList for pairs of topological dimensions
   Eigen::Array<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
-               Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+               3, 3, Eigen::RowMajor>
       connectivity;
 
   // The facet permutations

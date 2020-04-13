@@ -176,40 +176,40 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
   return interior_facet;
 }
 //-----------------------------------------------------------------------------
-int Topology::dim() const { return _connectivity.rows() - 1; }
+int Topology::dim() const { return remanent_storage.connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
-void Topology::set_index_map(
-    TopologyStorageLayer& storage, int dim,
-    std::shared_ptr<const common::IndexMap> index_map) const
+std::shared_ptr<const common::IndexMap>
+Topology::set_index_map(TopologyStorageLayer& storage,
+                        std::shared_ptr<const common::IndexMap> index_map,
+                        int dim) const
 {
-  assert(dim < (int)_index_map.size());
+  assert(dim < static_cast<int>(remanent_storage.index_map.size()));
   storage.index_map[dim] = std::move(index_map);
+  return storage.index_map[dim];
 }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> index_map)
 {
-  set_index_map(remanent_storage, dim, std::move(index_map));
+  set_index_map(remanent_storage, std::move(index_map), dim);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
-  //  assert(dim < (int)_index_map.size());
-  //  return _index_map[dim];
+  using func_t = std::function<std::shared_ptr<const common::IndexMap>(
+      TopologyStorageLayer&)>;
+  func_t read = [=](TopologyStorageLayer& storage) {
+    assert(dim < static_cast<int>(storage.index_map.size()));
+    return storage.index_map[dim];
+  };
 
-  // try in remanent storage
-  auto im = remanent_storage.index_map[dim];
-  if (im)
-    return im;
-
-  // TODO: LOOP
-  //  // try in cache
-  //  im = cache.index_map(dim);
-  //  if (im)
-  //    return im;
-  //
-  //  // return an emty pointer
-  return im;
+  func_t compute = [=](TopologyStorageLayer& storage) {
+    // Implicity creates index map if not available
+    create_entities(storage, dim);
+    return retrieve_fom_storage<const common::IndexMap>(read);
+  };
+  return this->retrieve_fom_storage<const common::IndexMap>(std::move(read),
+                                                            std::move(compute));
 }
 //-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim) const
@@ -221,33 +221,24 @@ std::vector<bool> Topology::on_boundary(int dim) const
                              + std::to_string(dim));
   }
 
-  if (!_interior_facets)
-  {
-    throw std::runtime_error(
-        "Facets have not been marked for interior/exterior.");
-  }
-
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
       connectivity_facet_cell = connectivity(tdim - 1, tdim);
-  if (!connectivity_facet_cell)
-    throw std::runtime_error("Facet-cell connectivity missing");
 
   // TODO: figure out if we can/should make this for owned entities only
-  assert(_index_map[dim]);
+  auto _index_map = index_map(dim);
   std::vector<bool> marker(
-      _index_map[dim]->size_local() + _index_map[dim]->num_ghosts(), false);
+      index_map(dim)->size_local() + index_map(dim)->num_ghosts(), false);
   const int num_facets
-      = _index_map[tdim - 1]->size_local() + _index_map[tdim - 1]->num_ghosts();
+      = index_map(dim - 1)->size_local() + index_map(dim - 1)->num_ghosts();
 
   // Special case for facets
   if (dim == tdim - 1)
   {
-    for (int i = 0; i < num_facets; ++i)
-    {
-      assert(i < (int)_interior_facets->size());
-      if (!(*_interior_facets)[i])
-        marker[i] = true;
-    }
+    auto facets = interior_facets();
+    assert(num_facets <= static_cast<int>(facets.size()));
+    assert(num_facets <= static_cast<int>(marker.size()));
+    std::transform(begin(facets), begin(facets) + num_facets, begin(marker),
+                   [](const bool& interior_facet) { return !interior_facet; });
     return marker;
   }
 
@@ -264,10 +255,13 @@ std::vector<bool> Topology::on_boundary(int dim) const
 
   // Iterate over all facets, selecting only those with one cell
   // attached
+  auto facets = interior_facets();
+  assert(num_facets <= static_cast<int>(facets.size()));
+
   for (int i = 0; i < num_facets; ++i)
   {
-    assert(i < (int)_interior_facets->size());
-    if (!(*_interior_facets)[i])
+    // True if facet is on boundary (= not interior)
+    if (!facets[i])
     {
       for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
         marker[fe_indices[j]] = true;
@@ -276,31 +270,38 @@ std::vector<bool> Topology::on_boundary(int dim) const
 
   return marker;
 }
-//
 //-----------------------------------------------------------------------------
-std::int32_t Topology::create_entities(TopologyStorageLayer& storage, int dim) const
+std::int32_t Topology::create_entities(TopologyStorageLayer& storage,
+                                       int dim) const
 {
-  // TODO: is this check sufficient/correct? Does not catch the cell_entity
-  // entity case. Should there also be a check for
-  // connectivity(this->dim(), dim) ?
-  // Skip if already computed (vertices (dim=0) should always exist)
-  if (storage.connectivity(dim, 0))
+  if (auto conn
+      = (set_connectivity(storage, _connectivity(dim, 0, false), dim, 0));
+      conn)
+  {
+    // TODO: necessary? Stores maybe more than required...
+    // copy over also index map and other connectivities computed below, though
+    // this might not be neccessary
+    set_index_map(storage, index_map(dim), dim);
+    set_connectivity(storage, _connectivity(this->dim(), dim, false),
+                     this->dim(), dim);
     return -1;
+  }
 
-  // TODO: compute_entities has redundant MPI arg (in topology)
   // Create local entities
   const auto [cell_entity, entity_vertex, index_map]
-      = TopologyComputation::compute_entities(this->mpi_comm(), *this, dim);
+      = TopologyComputation::compute_entities(*this, dim);
 
-  if (cell_entity)
-    set_connectivity(storage, cell_entity, this->dim(), dim);
+  // cell_entitity should not be empty because of the checks above
+  assert(cell_entity);
+  set_connectivity(storage, cell_entity, this->dim(), dim);
 
-  // TODO: is this check necessary? Seems redundant after to the "skip check"
-  if (entity_vertex)
-    set_connectivity(storage, entity_vertex, dim, 0);
+  // entitiy_ should not be empty because of the checks above
+  assert(entity_vertex);
+  set_connectivity(storage, entity_vertex, dim, 0);
 
+  // index_map should not be empty because of the checks above
   assert(index_map);
-  set_index_map(storage, dim, index_map);
+  set_index_map(storage, index_map, dim);
 
   return index_map->size_local();
 }
@@ -313,6 +314,18 @@ std::int32_t Topology::create_entities(int dim)
 void Topology::create_connectivity(TopologyStorageLayer& storage, int d0,
                                    int d1) const
 {
+
+  // Are the parens required?
+  if (auto conn
+      = (set_connectivity(storage, _connectivity(d0, d1, false), d0, d1));
+      conn)
+  {
+    // Probably it's better to also copy the shared_ptr to index maps
+    set_index_map(storage, index_map(d0), d0);
+    set_index_map(storage, index_map(d1), d1);
+    return;
+  }
+
   // Make sure entities exist
   create_entities(storage, d0);
   create_entities(storage, d1);
@@ -329,7 +342,6 @@ void Topology::create_connectivity(TopologyStorageLayer& storage, int d0,
   // most efficient order in which to call this function if several
   // connectivities are needed.
 
-  // TODO: Caching policy/strategy.
   // Concerning the note above: Provide an overload
   // create_connectivity(std::vector<std::pair<int, int>>)?
 
@@ -342,8 +354,7 @@ void Topology::create_connectivity(TopologyStorageLayer& storage, int d0,
   // Special facet handing
   if (d0 == (this->dim() - 1) and d1 == this->dim())
   {
-    std::vector<bool> f = compute_interior_facets(*this);
-    set_interior_facets(storage, f);
+    create_interior_facets(storage);
   }
 }
 //-----------------------------------------------------------------------------
@@ -354,8 +365,14 @@ void Topology::create_connectivity(int d0, int d1)
 //-----------------------------------------------------------------------------
 void Topology::create_entity_permutations(TopologyStorageLayer& storage) const
 {
-  if (_cell_permutations.size() > 0)
+  if (auto permutations
+      = (set_cell_permutations(storage, _cell_permutations(false)));
+      permutations)
+  {
+    // Also copy facet permutations to storage
+    set_facet_permutations(storage, _facet_permutations());
     return;
+  }
 
   const int tdim = this->dim();
 
@@ -397,57 +414,96 @@ void Topology::create_connectivity_all()
   create_connectivity_all(remanent_storage);
 }
 //-----------------------------------------------------------------------------
+void Topology::create_interior_facets(TopologyStorageLayer& storage) const
+{
+  if (auto facets = (storage.interior_facets = _interior_facets(false)); facets)
+    return;
+
+  std::vector<bool> f = compute_interior_facets(*this);
+  set_interior_facets(storage, f);
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+Topology::_connectivity(int d0, int d1, bool compute) const
+{
+  // TODO: is this func_t really necessary? Try to find template args that
+  //  further streamlines the call to retrieve_fom_storage.
+  using func_t
+      = std::function<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>(
+          TopologyStorageLayer&)>;
+  func_t read_func = [=](TopologyStorageLayer& storage) {
+    assert(d0 < storage.connectivity.rows());
+    assert(d1 < storage.connectivity.cols());
+    return storage.connectivity(d0, d1);
+  };
+
+  std::function<void(TopologyStorageLayer&)> compute_func
+      = [=](TopologyStorageLayer& storage) {
+          create_connectivity(storage, d0, d1);
+        };
+
+  return retrieve_fom_storage<func_t::result_type::element_type>(
+      std::move(read_func), std::move(compute_func), compute);
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
-  // Search in remanent storage
-  if (auto conn = remanent_storage.connectivity(d0, d1); conn)
-    return conn;
-
-  // Search in cache
-  remove_expired_layers();
-  for (const auto& w_layer : cache) {
-    if (auto conn = w_layer.lock()->connectivity(d0, d1); conn)
-      return conn;
-  }
-
-  auto _lock = acquire_cache_lock();
-  auto active_layer = *cache.back().lock();
-  create_connectivity(active_layer, d0, d1);
-  return active_layer.connectivity(d0, d1);
+  return _connectivity(d0, d1, true);
 }
 //-----------------------------------------------------------------------------
-void Topology::set_connectivity(
+std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+Topology::set_connectivity(
     TopologyStorageLayer& storage,
-    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1) const
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c, int d0,
+    int d1) const
 {
   assert(d0 < storage.connectivity.rows());
   assert(d1 < storage.connectivity.cols());
   storage.connectivity(d0, d1) = c;
+  return storage.connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
 void Topology::set_connectivity(
-    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
 {
   set_connectivity(remanent_storage, c, d0, d1);
 }
 //-----------------------------------------------------------------------------
-const std::vector<bool>& Topology::interior_facets() const
+std::shared_ptr<const std::vector<bool>>
+Topology::_interior_facets(bool compute) const
 {
-  if (!_interior_facets)
-    throw std::runtime_error("Facets marker has not been computed.");
-  return *_interior_facets;
+  // TODO: reduce verbosity here?
+  using func_t = std::function<std::shared_ptr<const std::vector<bool>>(
+      TopologyStorageLayer&)>;
+
+  func_t read_func
+      = [=](TopologyStorageLayer& storage) { return storage.interior_facets; };
+
+  std::function<void(TopologyStorageLayer&)> create_func
+      = [=](TopologyStorageLayer& storage) { create_interior_facets(storage); };
+
+  return retrieve_fom_storage<func_t::result_type::element_type>(
+      std::move(read_func), std::move(create_func), compute);
 }
 //-----------------------------------------------------------------------------
-void Topology::set_interior_facets(
-    TopologyStorageLayer& storage, const std::vector<bool>& interior_facets) const
+const std::vector<bool>& Topology::interior_facets() const
 {
-  storage.interior_facets = std::make_shared<const std::vector<bool>>(interior_facets);
+  return *_interior_facets(true);
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const std::vector<bool>>
+Topology::set_interior_facets(TopologyStorageLayer& storage,
+                              const std::vector<bool>& interior_facets) const
+{
+  storage.interior_facets
+      = std::make_shared<const std::vector<bool>>(interior_facets);
+  return storage.interior_facets;
 }
 //-----------------------------------------------------------------------------
 void Topology::set_interior_facets(const std::vector<bool>& interior_facets)
 {
-  _interior_facets = std::make_shared<const std::vector<bool>>(interior_facets);
+  set_interior_facets(remanent_storage, interior_facets);
 }
 //-----------------------------------------------------------------------------
 size_t Topology::hash() const
@@ -457,26 +513,74 @@ size_t Topology::hash() const
   return this->connectivity(dim(), 0)->hash();
 }
 //-----------------------------------------------------------------------------
+decltype(Topology::remanent_storage.cell_permutations)
+Topology::_cell_permutations(bool compute) const
+{
+  using ret_type = decltype(Topology::remanent_storage.cell_permutations);
+  using func_t = std::function<ret_type(TopologyStorageLayer&)>;
+  func_t read_func = [=](TopologyStorageLayer& storage) {
+    return storage.cell_permutations;
+  };
+
+  std::function<void(TopologyStorageLayer&)> create_func
+      = [=](TopologyStorageLayer& storage) {
+          create_entity_permutations(storage);
+        };
+
+  return retrieve_fom_storage<func_t::result_type::element_type>(
+      std::move(read_func), std::move(create_func), compute);
+};
+//-----------------------------------------------------------------------------
+decltype(Topology::remanent_storage.facet_permutations)
+Topology::_facet_permutations(bool compute) const
+{
+  using ret_type = decltype(Topology::remanent_storage.facet_permutations);
+  using func_t = std::function<ret_type(TopologyStorageLayer&)>;
+  func_t read_func = [=](TopologyStorageLayer& storage) {
+    return storage.facet_permutations;
+  };
+
+  std::function<void(TopologyStorageLayer&)> create_func
+      = [=](TopologyStorageLayer& storage) {
+          create_entity_permutations(storage);
+        };
+
+  return retrieve_fom_storage<func_t::result_type::element_type>(
+      std::move(read_func), std::move(create_func), compute);
+};
+//-----------------------------------------------------------------------------
+std::shared_ptr<
+    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+Topology::set_cell_permutations(
+    TopologyStorageLayer& storage,
+    std::shared_ptr<
+        const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+    cell_permutations) const
+{
+  storage.cell_permutations = cell_permutations;
+}
+//-----------------------------------------------------------------------------
 const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
 Topology::get_cell_permutation_info() const
 {
-  if (_cell_permutations.size() == 0)
-  {
-    throw std::runtime_error(
-        "create_entity_permutations must be called before using this data.");
-  }
-  return _cell_permutations;
+  return *_cell_permutations(true);
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<
+    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+Topology::set_facet_permutations(
+    TopologyStorageLayer& storage,
+    std::shared_ptr<
+        const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+        facet_permutations) const
+{
+  storage.facet_permutations = facet_permutations;
 }
 //-----------------------------------------------------------------------------
 const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_facet_permutations() const
 {
-  if (_cell_permutations.size() == 0)
-  {
-    throw std::runtime_error(
-        "create_entity_permutations must be called before using this data.");
-  }
-  return _facet_permutations;
+  return *_facet_permutations(true);
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
@@ -754,7 +858,7 @@ mesh::create_topology(MPI_Comm comm,
   // Create facets for local topology, and attach to the topology
   // object. This will be used to find possibly shared cells
   auto [cf, fv, map0]
-      = TopologyComputation::compute_entities(comm, topology_local, tdim - 1);
+      = TopologyComputation::compute_entities(topology_local, tdim - 1);
   if (cf)
     topology_local.set_connectivity(cf, tdim, tdim - 1);
   if (map0)
