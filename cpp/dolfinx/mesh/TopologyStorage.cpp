@@ -13,8 +13,8 @@ using namespace dolfinx::mesh;
 //------------------------------------------------------------------------------
 StorageLock::~StorageLock()
 {
-  if (!sentinel.expired())
-    storage->remove_expired_layers();
+  if (!storage.second.expired())
+    storage.first->remove_expired_layers();
 }
 //------------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>

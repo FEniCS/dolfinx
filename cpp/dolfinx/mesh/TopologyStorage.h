@@ -35,8 +35,8 @@ struct TopologyStorageLayer
   std::array<std::shared_ptr<const common::IndexMap>, 4> index_map;
 
   // AdjacencyList for pairs of topological dimensions
-  Eigen::Array<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
-               3, 3, Eigen::RowMajor>
+  Eigen::Array<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>, 3, 3,
+               Eigen::RowMajor>
       connectivity;
 
   // The facet permutations
@@ -54,13 +54,70 @@ struct TopologyStorageLayer
   std::shared_ptr<const std::vector<bool>> interior_facets;
 };
 
+/// Set markers for owned facets that are interior in given storage
+/// @param[in,out] storage Object where to store the created entities
+/// @param[in] interior_facets The marker vector
+std::shared_ptr<const std::vector<bool>>
+set_interior_facets(TopologyStorageLayer& storage,
+                    const std::vector<bool>& interior_facets);
+
+/// Set connectivity for given pair of topological dimensions in given storage
+std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+set_connectivity(TopologyStorageLayer& storage,
+                 std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c,
+                 int d0, int d1);
+
+/// Set connectivity for given pair of topological dimensions in given storage
+std::shared_ptr<const common::IndexMap>
+set_index_map(TopologyStorageLayer& storage,
+              std::shared_ptr<const common::IndexMap> index_map, int dim);
+
+std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+set_cell_permutations(
+    TopologyStorageLayer& storage,
+    std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>);
+
+std::shared_ptr<
+    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+set_facet_permutations(
+    TopologyStorageLayer& storage,
+    std::shared_ptr<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>);
+
+
+template <typename T>
+using guarded_obj = std::pair<T, std::weak_ptr<const bool>>;
+
+using lock_t = std::shared_ptr<const bool>;
+using sentinel_t = std::weak_ptr<const bool>;
+
+using storage_layers_t = std::list<guarded_obj<TopologyStorageLayer>>;
+
+
+template <typename value_t,
+    // Currently only for shared_ptr
+    typename ret_t = std::shared_ptr<value_t>,
+    typename func_t
+    = std::function<std::shared_ptr<value_t>>(TopologyStorageLayer&)>
+ret_t read_from_layers(func_t read, const storage_layers_t& layers) {
+  for (const auto& w_layer : layers)
+  {
+    assert(w_layer.second.lock());
+    if (auto value = read(w_layer.first); value)
+      return value;
+  }
+  return ret_t{};
+}
+
+
+class TopologyStorage;
 
 class StorageLock
 {
 
 public:
-  StorageLock(std::shared_ptr<TopologyStorageLayer> lock)
-      : lock{std::move(lock)}
+  StorageLock(lock_t lock,
+              guarded_obj<TopologyStorage*> storage)
+      : lock{std::move(lock)}, storage{std::move(storage)}
   {
     // do nothing
   }
@@ -72,44 +129,44 @@ public:
   StorageLock& operator=(const StorageLock&) = default;
   StorageLock& operator=(StorageLock&&) = default;
 
-  ~StorageLock() = default;
+  ~StorageLock();
 
 private:
-  std::shared_ptr<TopologyStorageLayer> lock;
+  lock_t lock;
+  guarded_obj<TopologyStorage*> storage;
 };
+
+class Topology;
 
 class TopologyStorage
 {
 public:
-  TopologyStorage() = default;
+  /// Create empty mesh topology
+  TopologyStorage(MPI_Comm comm, std::weak_ptr<const Topology> owner,
+                  guarded_obj<const TopologyStorage*> other_storage
+                  = {nullptr, std::weak_ptr<const bool>{}})
+      : _mpi_comm{comm}, _owner{owner}, _other_storage{other_storage}
+  {
+    // Do nothing
+  }
 
-  TopologyStorage(const TopologyStorage& other) = delete;
-  TopologyStorage(TopologyStorage&& other) = default;
+  /// Copy constructor
+  TopologyStorage(const TopologyStorage& topology) = default;
 
-  TopologyStorage& operator=(const TopologyStorage& other) = delete;
-  TopologyStorage& operator=(TopologyStorage&& other) = default;
+  /// Move constructor
+  TopologyStorage(TopologyStorage&& topology) = default;
 
+  /// Destructor
   ~TopologyStorage() = default;
 
-  /// Return connectivity from entities of dimension d0 to entities of
-  /// dimension d1
-  /// @param[in] d0
-  /// @param[in] d1
-  /// @return The adjacency list that for each entity of dimension d0
-  ///   gives the list of incident entities of dimension d1
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-  connectivity(int d0, int d1) const;
+  /// Assignment
+  TopologyStorage& operator=(const TopologyStorage& topology) = delete;
 
-  /// @todo Merge with set_index_map
-  /// Set connectivity for given pair of topological dimensions
-  void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
-                        int d0, int d1);
+  /// Assignment
+  TopologyStorage& operator=(TopologyStorage&& topology) = default;
 
-  /// Get the IndexMap that described the parallel distribution of the
-  /// mesh entities
-  /// @param[in] dim Topological dimension
-  /// @return Index map for the entities of dimension @p dim
-  std::shared_ptr<const common::IndexMap> index_map(int dim) const;
+  /// The owning topology
+  std::weak_ptr<const Topology> owner() const;
 
   /// @todo Merge with set_connectivity
   ///
@@ -118,16 +175,66 @@ public:
   void set_index_map(int dim,
                      std::shared_ptr<const common::IndexMap> index_map);
 
-  // TODO: make naming consistent with facet permutations
+  /// Get the IndexMap that described the parallel distribution of the
+  /// mesh entities
+  /// @param[in] dim Topological dimension
+  /// @return Index map for the entities of dimension @p dim
+  std::shared_ptr<const common::IndexMap> index_map(int dim) const;
+
+  /// Marker for entities of dimension dim on the boundary. An entity of
+  /// co-dimension < 0 is on the boundary if it is connected to a
+  /// boundary facet. It is not defined for codimension 0.
+  /// @param[in] dim Toplogical dimension of the entities to check. It
+  ///   must be less than the topological dimension.
+  /// @return Vector of length equal to number of local entities, with
+  ///   'true' for entities on the boundary and otherwise 'false'.
+  std::vector<bool> on_boundary(int dim) const;
+
+  /// Return connectivity from entities of dimension d0 to entities of
+  /// dimension d1.
+  /// @param[in] d0
+  /// @param[in] d1
+  /// @return The adjacency list that for each entity of dimension d0
+  ///   gives the list of incident entities of dimension d1
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+  connectivity(int d0, int d1) const;
+
+  /// Computes and returns connectivity from entities of dimension d0 to
+  /// entities of dimension d1.
+  /// The non-const version allows caching if a cache is present.
+  /// By default, all intermediate results are cached as well.
+  /// @param[in] d0
+  /// @param[in] d1
+  /// @param[in] discard_intermediate
+  /// @return The adjacency list that for each entity of dimension d0
+  ///   gives the list of incident entities of dimension d1
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+  compute_connectivity(int d0, int d1, bool discard_intermediate = false);
+
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+  compute_connectivity(int d0, int d1) const;
+
+  /// @todo Merge with set_index_map
+  /// Set connectivity for given pair of topological dimensions
+  void
+  set_connectivity(std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c,
+                   int d0, int d1);
+
   /// Returns the permutation information
   std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
-  get_cell_permutation_info() const;
+  cell_permutations() const;
 
-  /// Sets the cell permutation information
-  void set_cell_permutations(
-      Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> cell_permutations);
+  /// Computes and returns the permutation information.
+  /// The non-const version allows caching if a cache is present.
+  /// By default, all intermediate results are cached as well.
+  /// @param[in] discard_intermediate
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+  compute_cell_permutations(bool discard_intermediate = false);
 
-  /// Get the permutation number to apply to a facet. The permutations
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+  compute_cell_permutations() const;
+
+  /// Get the permutations numbers to apply to a facet. The permutations
   /// are numbered so that:
   ///
   ///   - `n % 2` gives the number of reflections to apply
@@ -138,14 +245,19 @@ public:
   /// @return The permutation number
   std::shared_ptr<
       const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
-  get_facet_permutations() const;
+  facet_permutations() const;
 
-  // TODO: how to ref another function in doc?
-  /// Set the permutation number to apply to a facet. See
-  /// get_facet_permutations() for numbering
-  void set_facet_permutations(
-      Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
-          facet_permutations);
+  /// Computes the permutation numbers to apply to a facet.
+  /// See the documentation of 'facet_permutations' for details.
+  /// The non-const version allows caching if a cache is present.
+  /// By default, all intermediate results are cached as well.
+  std::shared_ptr<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+  compute_facet_permutations(bool discard_intermediate = false);
+
+  std::shared_ptr<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+  compute_facet_permutations() const;
 
   /// Gets markers for owned facets that are interior, i.e. are
   /// connected to two cells, one of which might be on a remote process
@@ -154,61 +266,129 @@ public:
   ///   the domain.
   std::shared_ptr<const std::vector<bool>> interior_facets() const;
 
-  /// Sets markers for owned facets that are interior, i.e. are
-  /// connected to two cells, one of which might be on a remote process
-  /// @param[in] Vector with length equal to the number of facets owned by
-  ///   this process. True if the ith facet (local index) is interior to
-  ///   the domain.
-  void set_interior_facets(std::vector<bool> interior_facets);
+  /// Computes the markers for owned facets that are interior.
+  /// The non-const version allows caching if a cache is present.
+  /// By default, all intermediate results are cached as well.
+  std::shared_ptr<const std::vector<bool>>
+  compute_interior_facets(bool discard_intermediate = false);
 
-  /// Acquire a storage lock. As long as it is alive, the associated storage
-  /// (cache) layer will be as well.
-  /// @param[in] force_new_layer A new storage layer is created and will be
-  /// written to instead of already existing layers. Thus, this may interfere
-  /// with caching requested at another place and should thus be handle with
-  /// care. Hence, this option is deactivated by default, A possible application
-  /// is to enforce removal of data stored for operations in a limited scope.
-  StorageLock lock(bool force_new_layer = false) const
+  std::shared_ptr<const std::vector<bool>> compute_interior_facets();
+  const
+
+      /// Set markers for owned facets that are interior
+      /// @param[in] interior_facets The marker vector
+      void
+      set_interior_facets(const std::vector<bool>& interior_facets);
+
+  /// Return hash based on the hash of cell-vertex connectivity
+  size_t hash() const;
+
+  // creation of entities
+  /// Create entities of given topological dimension.
+  /// @param[in] dim Topological dimension
+  /// @return Number of newly created entities, returns -1 if entities
+  ///   already existed
+  std::int32_t create_entities(int dim);
+
+  /// Create connectivity between given pair of dimensions, d0 -> d1
+  /// @param[in] d0 Topological dimension
+  /// @param[in] d1 Topological dimension
+  void create_connectivity(int d0, int d1);
+
+  /// Compute all entities and connectivity
+  void create_connectivity_all();
+
+  /// Compute entity permutations and reflections
+  void create_entity_permutations();
+
+  /// Compute entity permutations and reflections
+  void create_interior_facets();
+
+  /// Mesh MPI communicator
+  /// @return The communicator on which the mesh is distributed
+  MPI_Comm mpi_comm() const;
+
+  StorageLock acquire_cache_lock(bool force_new_layer = false)
   {
-    remove_expired_layers();
-    if (storage_layers.empty() or force_new_layer)
+    if (layers.empty() or force_new_layer)
     {
-      TopologyStorageLayer storage_layer{};
-      auto storage_lock_ptr = std::make_shared<const bool>(true);
-      std::weak_ptr<const bool> storage_sentinel = storage_lock_ptr;
-      storage_layers.emplace_back(storage_layer, storage_sentinel);
-      return StorageLock{storage_lock_ptr, sentinel, this}
-                         ;
+      auto layer_lock = std::make_shared<const bool>();
+      sentinel_t layer_sentinel = layer_lock;
+      layers.emplace_back(TopologyStorageLayer{}, layer_sentinel);
+      return StorageLock{layer_lock, {this, lifetime}};
     }
     else
     {
-      return StorageLock{storage_layers.back().second.lock(), sentinel, this};
+      return StorageLock{layers.back().second.lock(), {this, lifetime}};
     }
   }
 
-  // Obviously not const. This just
-  void remove_expired_layers() const
+  void remove_expired_layers()
   {
-    storage_layers.remove_if(
-        [](const std::pair<TopologyStorageLayer, std::weak_ptr<const bool>>&
-               pair) { pair.second.expired(); });
+    layers.remove_if([](const std::weak_ptr<TopologyStorageLayer>& layer) {
+      layer.expired();
+    });
   }
 
 private:
-  TopologyStorageLayer& active_layer()
+
+  template <typename value_t,
+            // Currently only for shared_ptr
+            typename ret_t = std::shared_ptr<value_t>,
+            typename func_t
+            = std::function<std::shared_ptr<value_t>>(TopologyStorageLayer&)>
+  ret_t read_fom_storage(func_t read) const
   {
-    assert(!storage_layers.empty());
-    return storage_layers.back().first;
+    // Search in not owned storage
+    if (auto value = read_from_layers(read, _other_storage.first->layers); value)
+        return value;
+
+      // Search in owned storage
+    else read_from_layers(read, layers);
   }
 
-  // inform the locks whether they lock something that is alive.
-  std::shared_ptr<const bool> sentinel{std::make_shared<const bool>(true)};
+  template <typename value_t,
+            // Currently only for shared_ptr
+            typename ret_t = std::shared_ptr<value_t>,
+            typename func_t
+            = std::function<std::shared_ptr<value_t>>(TopologyStorageLayer&)>
+  ret_t compute(
+      func_t read_func,
+      std::function<std::shared_ptr<value_t>(TopologyStorageLayer&)> compute_func)
+  {
+    if (auto stored = read_fom_storage(read_func); stored)
+      return stored;
 
-  // The storage together with a sentinel.
-  // Must be mutable if more than one layer should be supported.
-  // Otherwise things are a bit tricky and probably also not very transparent
-  mutable std::list<std::pair<TopologyStorageLayer, std::weak_ptr<const bool>>>
-      storage_layers{};
+    // Acquire lock for ensuring some internal storage
+    auto _lock = acquire_cache_lock(true);
+    return compute_func();
+  }
+
+  template <typename value_t,
+            // Currently only for shared_ptr
+            typename ret_t = std::shared_ptr<value_t>,
+            typename func_t
+            = std::function<std::shared_ptr<value_t>>(TopologyStorage&)>
+  ret_t compute(func_t compute_func) const
+  {
+    TopologyStorage tmp_storage{mpi_comm(), _owner, {this, lifetime}};
+    return compute_func(tmp_storage);
+  }
+
+  // MPI communicator
+  dolfinx::MPI::Comm _mpi_comm;
+
+  // The owning topology
+  std::weak_ptr<const Topology> _owner;
+
+  // The other (already existing storage) with read access
+  guarded_obj<const TopologyStorage*> _other_storage;
+
+  // The storage layers
+  storage_layers_t layers;
+
+  lock_t lifetime{std::make_shared<const bool>(true)};
 };
+
 
 } // namespace dolfinx::mesh
