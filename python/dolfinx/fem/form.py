@@ -8,7 +8,7 @@
 import cffi
 
 import ufl
-from dolfinx import cpp, fem, jit
+from dolfinx import cpp, jit
 
 
 class Form:
@@ -42,7 +42,7 @@ class Form:
             form_compiler_parameters=self.form_compiler_parameters,
             mpi_comm=mesh.mpi_comm())
 
-        # Cast compiled library to pointer to ufc_form
+        # Dereference compiled pointer
         ffi = cffi.FFI()
         ufc_form = cpp.fem.make_ufc_form(ffi.cast("uintptr_t", ufc_form))
 
