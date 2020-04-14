@@ -141,25 +141,36 @@ res_t compute_and_get(const Topology& topology, std::function<void()> create,
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return cell_dim(cell_type()); }
 //-----------------------------------------------------------------------------
-void Topology::set_index_map(int dim,
-                             std::shared_ptr<const common::IndexMap> index_map)
-{
-  remanent_storage.set_index_map(index_map, dim);
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
-Topology::index_map(int dim, bool discard_intermediate) const
+Topology::index_map(int dim, bool discard_intermediate /*unused*/) const
 {
-  auto lock = acquire_cache_lock();
-  std::shared_ptr<const common::IndexMap> res;
-  { // scope for optionally discarded cache layer
-    auto lock = acquire_cache_lock(discard_intermediate);
-    storage::create_entities(cache, dim);
-    res = cache.index_map(dim);
-  } // discard cache layer
-  // store result because it may have been dropped
-  cache.set_index_map(res, dim);
-  return res;
+  // "discard_intermediate" is not used here because the "intermediate results"
+  // are logically connect to the index map and thus not truly "intermediate".
+
+  if (auto res = cache.index_map(dim); res)
+  {
+    // They usually belong together.
+    // There may be issues with TopologyComputation::compute_entities and at
+    // various other places.
+    assert(cache.connectivity(this->dim(), dim));
+    assert(cache.connectivity(dim, 0));
+    return res;
+  }
+
+  // A scratch object with read access to our cache (which sees all data)
+  Topology scratch(mpi_comm(), cell_type(),
+                   storage::TopologyStorage(true, &cache));
+  scratch.create_entities(dim);
+
+  // No write layer in cache
+  if (cache.number_of_layers() == 0)
+    return scratch.index_map(dim);
+
+  // Happens inside create_entities. The three items are tied together!
+  cache.set_connectivity(scratch.connectivity(dim, 0), dim, 0);
+  cache.set_connectivity(scratch.connectivity(this->dim(), dim), this->dim(),
+                         dim);
+  return cache.set_index_map(scratch.index_map(dim), dim);
 }
 //-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim,
@@ -223,78 +234,64 @@ std::vector<bool> Topology::on_boundary(int dim,
 
   return marker;
 }
-//-----------------------------------------------------------------------------
-std::int32_t Topology::create_entities(int dim)
-{
-  return storage::create_entities(remanent_storage, dim);
-}
-//-----------------------------------------------------------------------------
-
-void Topology::create_connectivity(int d0, int d1)
-{
-  storage::create_connectivity(remanent_storage, d0, d1);
-}
-//-----------------------------------------------------------------------------
-void Topology::create_entity_permutations()
-{
-  storage::create_entity_permutations(remanent_storage);
-}
-//-----------------------------------------------------------------------------
-void Topology::create_connectivity_all()
-{
-  storage::create_connectivity_all(remanent_storage);
-}
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1, bool discard_intermediate) const
 {
-////   TODO: templatize
-//    return compute_and_get(
-//        *this, [=]() { storage::create_connectivity(cache, d0, d1); },
-//        [=]() { return cache.connectivity(d0, d1); },
-//        [=](std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c)
-//        mutable -> void {
-//          cache.set_connectivity(c, d0, d1);
-//        }, discard_intermediate);
-//   General lock to be operable in this function
+
+  if (auto conn = cache.connectivity(d0, d1); conn)
+    return conn;
+
+  // connected index maps:
+  //  im (dim)         |       topologies (d0, d1)
+  //    x                      tdim, x  &  x, 0
+  //  dims 0 and tdim are always valid by construction
+  //  => Attention for
+  //   * (y, x) with y = tdim and
+  //   * (x, z) with z = 0
+  // In such cases, the topology (a) must not be cache stored or (b) everything
+  // by create entities (x) must be cached (more expensive).
+  // Use option discard_intermediate to distinguish.
+  //
+  // NOTE: TopologyComputation::compute_topology will throw in such cases!
+  //
+  // Using the same checks here. Not all four cases are checked since they are
+  // not logically independent.
+
+  // General lock to not write to empty cache
   auto lock = acquire_cache_lock();
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> res;
   { // scope for optionally discarded cache layer
+    // index_map(dim) triggers create_entities.
     auto lock = acquire_cache_lock(discard_intermediate);
-    storage::create_connectivity(cache, d0, d1);
-    res = cache.connectivity(d0, d1);
+    if (!cache.connectivity(d0, 0))
+      index_map(d0);
+
+    if (!cache.connectivity(d1, 0))
+      index_map(d1);
+
+    res = TopologyComputation::compute_connectivity(*this, d0, d1)[0];
   } // discard cache layer
-  // store result because it may have been dropped
-  cache.set_connectivity(res, d0, d1);
-  return res;
-}
-//-----------------------------------------------------------------------------
-void Topology::set_connectivity(
-    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
-{
-  remanent_storage.set_connectivity(c, d0, d1);
+  return cache.set_connectivity(res, d0, d1);
 }
 //-----------------------------------------------------------------------------
 const std::vector<bool>&
 Topology::interior_facets(bool discard_intermediate) const
 {
+  if (auto facets = cache.interior_facets(); facets)
+    return *facets;
+
   // General lock to be operable in this function
   auto lock = acquire_cache_lock();
   std::shared_ptr<const std::vector<bool>> res;
   { // scope for optionally discarded cache layer
     auto lock = acquire_cache_lock(discard_intermediate);
-    storage::create_interior_facets(cache);
-    res = cache.interior_facets();
+    res = std::make_shared<const std::vector<bool>>(
+        TopologyComputation::compute_interior_facets(*this));
   } // discard cache layer
-  // store result because it may have been dropped
-  cache.set_interior_facets(res);
-  return *res;
-}
-//-----------------------------------------------------------------------------
-void Topology::set_interior_facets(const std::vector<bool>& interior_facets)
-{
-  remanent_storage.set_interior_facets(
-      std::make_shared<const std::vector<bool>>(interior_facets));
+
+  // Store result because it may have been dropped
+  return *(cache.set_interior_facets(res));
 }
 //-----------------------------------------------------------------------------
 size_t Topology::hash() const
@@ -307,40 +304,204 @@ size_t Topology::hash() const
 const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
 Topology::get_cell_permutation_info(bool discard_intermediate) const
 {
-  // General lock to be operable in this function
-  auto lock = acquire_cache_lock();
-  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> res;
-  { // scope for optionally discarded cache layer
-    auto lock = acquire_cache_lock(discard_intermediate);
-    storage::create_entity_permutations(cache);
-    res = cache.cell_permutations();
-  } // discard cache layer
-  // store result because it may have been dropped
-  cache.set_cell_permutations(res);
-  return *res;
+  if (auto res = cache.cell_permutations(); res)
+  {
+    assert(cache.facet_permutations());
+    return *res;
+  }
+
+  // A scratch object with read access to our cache (which sees all data)
+  Topology scratch(mpi_comm(), cell_type(),
+                   storage::TopologyStorage(true, &cache));
+  auto scratch_lock = scratch.acquire_cache_lock();
+  scratch.create_entity_permutations();
+
+  // No write layer in cache
+  if (cache.number_of_layers() == 0)
+    return scratch.get_cell_permutation_info();
+
+  if (!discard_intermediate) {
+    // Obtain ownership of all data created
+    // Note: We just go over all since this cannot increase the data anyway.
+    for (int i = 0; i < dim(); ++i) {
+      cache.set_index_map(scratch.cache_data().index_map(i), i);
+      for (int j = 0; j < dim(); ++j) {
+        cache.set_connectivity(scratch.cache_data().connectivity(i, j), i, j);
+      }
+    }
+  }
+
+  // Happens inside create_entity_permutations. The permutations belong together.
+  // Read from the scratch storage because of return types.
+  cache.set_facet_permutations(scratch.cache_data().facet_permutations());
+  return *(cache.set_cell_permutations(scratch.cache_data().cell_permutations()));
 }
 //-----------------------------------------------------------------------------
 const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_facet_permutations(bool discard_intermediate) const
 {
-  // General lock to be operable in this function
-  auto lock = acquire_cache_lock();
-  std::shared_ptr<
-      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
-      res;
-  { // scope for optionally discarded cache layer
-    auto lock = acquire_cache_lock(discard_intermediate);
-    storage::create_entity_permutations(cache);
-    res = cache.facet_permutations();
-  } // discard cache layer
-  // store result because it may have been dropped
-  cache.set_facet_permutations(res);
-  return *res;
+  if (auto facet_permutations = cache.facet_permutations(); facet_permutations)
+    return *facet_permutations;
+
+  // Rely on get_cell_permutation_info. The lock ensure transfer of cached data.
+  auto lock = acquire_cache_lock(discard_intermediate);
+  get_cell_permutation_info(discard_intermediate);
+  return *(cache_data().facet_permutations());
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::mpi_comm() const { return _mpi_comm.comm(); }
+//-----------------------------------------------------------------------------
+storage::TopologyStorage
+Topology::check_and_save_storage(storage::TopologyStorage remanent_storage,
+                                 int tdim)
+{
+  // Ensure that data is not lost.
+  remanent_storage.make_remanent(true);
+  if (!(remanent_storage.index_map(0) && remanent_storage.index_map(0)
+        && remanent_storage.connectivity(tdim, 0)
+        && remanent_storage.connectivity(0, 0)))
+    throw std::invalid_argument("Storage does not provide all required data: "
+                                "index_map(0), index_map(tdim), "
+                                "connectivity(0, 0), connectivity(tdim, 0).");
+
+  return std::move(remanent_storage);
+}
+//------------------------------------------------------------------------------
+std::int32_t Topology::create_entities(int dim)
+{
+  if (auto conn
+      = remanent_storage.set_connectivity(cache.connectivity(dim, 0), dim, 0);
+      conn)
+  {
+    remanent_storage.set_index_map(cache.index_map(dim), dim);
+    remanent_storage.set_connectivity(cache.connectivity(this->dim(), dim),
+                                      this->dim(), dim);
+    return -1;
+  }
+
+  // Create local entities
+  const auto [cell_entity, entity_vertex, index_map]
+      = TopologyComputation::compute_entities(*this, dim);
+
+  // cell_entitity should not be empty because of the checks above
+  assert(cell_entity);
+  remanent_storage.set_connectivity(cell_entity, this->dim(), dim);
+
+  // entitiy_ should not be empty because of the checks above
+  assert(entity_vertex);
+  remanent_storage.set_connectivity(entity_vertex, dim, 0);
+
+  // index_map should not be empty because of the checks above
+  assert(index_map);
+  remanent_storage.set_index_map(index_map, dim);
+
+  return index_map->size_local();
+}
+//--------------------------------------------------------------------------
+void Topology::create_connectivity(int d0, int d1)
+{
+
+  // Are the parens required?
+  if (auto conn
+      = remanent_storage.set_connectivity(cache.connectivity(d0, d1), d0, d1);
+      conn)
+  {
+    // Probably it's better to also copy the shared_ptr to index maps
+    remanent_storage.set_index_map(cache.index_map(d0), d0);
+    remanent_storage.set_index_map(cache.index_map(d1), d1);
+    return;
+  }
+
+  // TODO: this means , they will be stored! Not necessary since they will be
+  // computed on demand otherwise Make sure entities exist
+  create_entities(d0);
+  create_entities(d1);
+
+  // Compute connectivity
+  const auto [c_d0_d1, c_d1_d0]
+      = TopologyComputation::compute_connectivity(*this, d0, d1);
+
+  // NOTE: that to compute the (d0, d1) connections is it sometimes
+  // necessary to compute the (d1, d0) connections. We store the (d1,
+  // d0) for possible later use, but there is a memory overhead if they
+  // are not required. It may be better to not automatically store
+  // connectivity that was not requested, but advise in a docstring the
+  // most efficient order in which to call this function if several
+  // connectivities are needed.
+
+  // Concerning the note above: Provide an overload
+  // create_connectivity(std::vector<std::pair<int, int>>)?
+
+  // Attach connectivities
+  if (c_d0_d1)
+    remanent_storage.set_connectivity(c_d0_d1, d0, d1);
+  if (c_d1_d0)
+    remanent_storage.set_connectivity(c_d1_d0, d1, d0);
+
+  // Special facet handing
+  if (d0 == (this->dim() - 1) and d1 == this->dim())
+  {
+    // TODO: this means, they will be stored! Not necessary since they will be
+    // computed on demand otherwise
+    create_interior_facets();
+  }
+}
+//-----------------------------------------------------------------------------
+void Topology::create_connectivity_all()
+{
+  // Compute all connectivity
+  for (int d0 = 0; d0 <= this->dim(); d0++)
+    for (int d1 = 0; d1 <= this->dim(); d1++)
+      create_connectivity(d0, d1);
+}
+//-----------------------------------------------------------------------------
+void Topology::create_interior_facets()
+{
+  if (auto facets
+      = remanent_storage.set_interior_facets(cache.interior_facets());
+      facets)
+    return;
+
+  auto f = std::make_shared<std::vector<bool>>(
+      TopologyComputation::compute_interior_facets(*this));
+  remanent_storage.set_interior_facets(f);
+}
+//-----------------------------------------------------------------------------
+void Topology::create_entity_permutations()
+{
+  if (auto permutations
+      = remanent_storage.set_cell_permutations(cache.cell_permutations());
+      permutations)
+  {
+    // Also copy facet permutations to storage
+    remanent_storage.set_facet_permutations(cache.facet_permutations());
+    return;
+  }
+
+  const int tdim = this->dim();
+
+  // FIXME: Is this always required? Could it be made cheaper by doing a
+  // local version? This call does quite a lot of parallel work
+  // Create all mesh entities
+  // TODO: drop the afterwards (via new layer of remanent storage or cache, when
+  // not requiring them)?
+  for (int d = 0; d < tdim; ++d)
+    create_entities(d);
+
+  auto [facet_permutations, cell_permutations]
+      = PermutationComputation::compute_entity_permutations(*this);
+
+  remanent_storage.set_facet_permutations(
+      std::make_shared<
+          const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>(
+          std::move(facet_permutations)));
+
+  remanent_storage.set_cell_permutations(
+      std::make_shared<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>(
+          std::move(cell_permutations)));
+}
 //-----------------------------------------------------------------------------
 Topology
 mesh::create_topology(MPI_Comm comm,
@@ -567,22 +728,21 @@ mesh::create_topology(MPI_Comm comm,
     auto my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         my_local_cells_array, cells.offsets());
 
-    Topology topology(comm, cell_type);
-    const int tdim = topology.dim();
+    storage::TopologyStorage storage(true);
+    const int tdim = cell_dim(cell_type);
 
     // Vertex IndexMap
     auto index_map_v
         = std::make_shared<common::IndexMap>(comm, nlocal, ghost_vertices, 1);
-    topology.set_index_map(0, index_map_v);
+    storage.set_index_map(index_map_v, 0);
     auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         index_map_v->size_local() + index_map_v->num_ghosts());
-    topology.set_connectivity(c0, 0, 0);
+    storage.set_connectivity(c0, 0, 0);
 
     // Cell IndexMap
-    topology.set_index_map(tdim, index_map_c);
-    topology.set_connectivity(my_local_cells, tdim, 0);
-    topology.finalize();
-    return topology;
+    storage.set_index_map(index_map_c, tdim);
+    storage.set_connectivity(my_local_cells, tdim, 0);
+    return Topology(comm, cell_type, std::move(storage));
   }
 
   // Build local cell-vertex connectivity, with local vertex indices [0,
@@ -592,35 +752,30 @@ mesh::create_topology(MPI_Comm comm,
   auto [cells_local, local_to_global_vertices]
       = graph::Partitioning::create_local_adjacency_list(cells);
 
-  Topology topology_local(comm, cell_type);
-  auto lock = topology_local.acquire_cache_lock();
-  const int tdim = topology_local.dim();
-  topology_local.set_index_map(tdim, index_map_c);
+  storage::TopologyStorage storage_local{true};
+  const int tdim = cell_dim(cell_type);
+
+  storage_local.set_index_map(index_map_c, tdim);
 
   auto _cells_local
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
-  topology_local.set_connectivity(_cells_local, tdim, 0);
+  storage_local.set_connectivity(_cells_local, tdim, 0);
 
   const int n = local_to_global_vertices.size();
   auto map = std::make_shared<common::IndexMap>(comm, n,
                                                 std::vector<std::int64_t>(), 1);
-  topology_local.set_index_map(0, map);
+  storage_local.set_index_map(map, 0);
   auto _vertices_local
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(n);
-  topology_local.set_connectivity(_vertices_local, 0, 0);
+  storage_local.set_connectivity(_vertices_local, 0, 0);
+
+  Topology topology_local(comm, cell_type, std::move(storage_local));
 
   // Create facets for local topology, and attach to the topology
   // object. This will be used to find possibly shared cells
   topology_local.create_connectivity(tdim, tdim - 1);
   topology_local.create_connectivity(tdim - 1, 0);
   topology_local.create_connectivity(tdim - 1, tdim);
-
-  // FIXME: This looks weird. Revise. "boundary" is never used.
-  // Get facets that are on the boundary of the local topology, i.e
-  // are connect to one cell only
-  auto boundary = topology_local.interior_facets();
-  topology_local.set_interior_facets(boundary);
-  //  boundary = topology_local.on_boundary(tdim - 1);
 
   // Build distributed cell-vertex AdjacencyList, IndexMap for vertices,
   // and map from local index to old global index
@@ -630,20 +785,18 @@ mesh::create_topology(MPI_Comm comm,
       = graph::Partitioning::create_distributed_adjacency_list(
           comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
-  Topology topology(comm, cell_type);
+  storage::TopologyStorage storage(true);
 
   // Set vertex IndexMap, and vertex-vertex connectivity
   auto _vertex_map = std::make_shared<common::IndexMap>(std::move(vertex_map));
-  topology.set_index_map(0, _vertex_map);
+  storage.set_index_map(_vertex_map, 0);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       _vertex_map->size_local() + _vertex_map->num_ghosts());
-  topology.set_connectivity(c0, 0, 0);
+  storage.set_connectivity(c0, 0, 0);
 
   // Set cell IndexMap and cell-vertex connectivity
-  topology.set_index_map(tdim, index_map_c);
+  storage.set_index_map(index_map_c, tdim);
   auto _cells_d = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
-  topology.set_connectivity(_cells_d, tdim, 0);
-  topology.finalize();
-  return topology;
+  storage.set_connectivity(_cells_d, tdim, 0);
+  return Topology(comm, cell_type, std::move(storage));
 }
-//-----------------------------------------------------------------------------

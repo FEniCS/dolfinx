@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "TopologyComputation.h"
-#include "TopologyStorage.h"
+#include "Topology.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <algorithm>
@@ -74,7 +74,7 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 /// @param[in] entity_index Initial numbering for each row in
 ///   entity_list
 /// @returns Tuple of (local_indices, index map, shared entities)
-std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>>
+std::tuple<std::vector<int>, std::shared_ptr<const common::IndexMap>>
 get_local_indexing(
     MPI_Comm comm, const std::shared_ptr<const common::IndexMap>& cell_indexmap,
     const std::shared_ptr<const common::IndexMap>& vertex_indexmap,
@@ -356,8 +356,9 @@ get_local_indexing(
 
   MPI_Comm_free(&neighbour_comm);
 
-  std::shared_ptr<common::IndexMap> index_map
-      = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
+  std::shared_ptr<const common::IndexMap> index_map
+      = std::make_shared<const common::IndexMap>(comm, num_local, ghost_indices,
+                                                 1);
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
@@ -377,9 +378,9 @@ get_local_indexing(
 /// @return Returns the (cell-entity connectivity, entity-cell
 ///   connectivity, index map for the entity distribution across
 ///   processes, shared entities)
-std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<common::IndexMap>>
+std::tuple<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
+           std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
+           std::shared_ptr<const common::IndexMap>>
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
     const std::shared_ptr<const common::IndexMap>& vertex_index_map,
@@ -466,8 +467,8 @@ compute_entities_by_key_matching(
   std::copy(local_index.begin(), local_index.end(), connectivity_ce.data());
 
   // Cell-entity connectivity
-  auto ce
-      = std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(connectivity_ce));
+  auto ce = std::make_shared<const graph::AdjacencyList<std::int32_t>>(
+      std::move(connectivity_ce));
 
   // Entity-vertex connectivity
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -475,8 +476,8 @@ compute_entities_by_key_matching(
   for (int i = 0; i < entity_list.rows(); ++i)
     connectivity_ev.row(local_index[i]) = entity_list.row(i);
 
-  auto ev
-      = std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(connectivity_ev));
+  auto ev = std::make_shared<const graph::AdjacencyList<std::int32_t>>(
+      std::move(connectivity_ev));
 
   return {ce, ev, index_map};
 }
@@ -594,60 +595,68 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<common::IndexMap>>
-TopologyComputation::compute_entities(const storage::TopologyStorage& topology,
-                                      int dim)
+std::tuple<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
+           std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
+           std::shared_ptr<const common::IndexMap>>
+TopologyComputation::compute_entities(const Topology& topology, int dim)
 {
   MPI_Comm comm = topology.mpi_comm();
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
   const int tdim = topology.dim();
 
-  // Vertices must always exist
-  if (dim == 0)
-    return {nullptr, nullptr, nullptr};
-
-  if (topology.connectivity(dim, 0))
+  // Return if the triple is there
+  if (topology.cache_data().connectivity(tdim, dim)
+      && topology.cache_data().connectivity(dim, 0)
+      && topology.cache_data().index_map(dim))
   {
-    // Make sure we really have the connectivity
-    if (!topology.connectivity(tdim, dim))
-    {
-      throw std::runtime_error(
-          "Cannot compute topological entities. Entities of topological "
-          "dimension "
-          + std::to_string(dim)
-          + " exist but cell-dim connectivity is missing.");
-    }
-    return {nullptr, nullptr, nullptr};
+    return {topology.cache_data().connectivity(topology.dim(), dim),
+            topology.cache_data().connectivity(dim, 0),
+            topology.cache_data().index_map(dim)};
+  }
+
+  // Check for incomplete data. This should not happen. Index map and the
+  // two connectivity belong together.
+  if (topology.cache_data().connectivity(dim, 0)
+      || topology.cache_data().connectivity(tdim, dim)
+      || topology.cache_data().index_map(dim))
+  {
+    throw std::runtime_error(
+        "The set of entities for dimention " + std::to_string(dim)
+        + " is broken:"
+          "\n\tcell   - entity:"
+          + std::to_string(topology.cache_data().connectivity(tdim, dim)
+                           != nullptr)
+        + "\n\tentity - vertex:"
+          + std::to_string(topology.cache_data().connectivity(dim, 0) != nullptr)
+        + "\n\tindex map:"
+        + std::to_string(topology.cache_data().index_map(dim) != nullptr));
   }
 
   auto cells = topology.connectivity(tdim, 0);
-  if (!cells)
-    throw std::runtime_error("Cell connectivity missing.");
-
+  assert(cells);
   auto vertex_map = topology.index_map(0);
   assert(vertex_map);
   auto cell_map = topology.index_map(tdim);
   assert(cell_map);
-  std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-             std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-             std::shared_ptr<common::IndexMap>>
+
+  std::tuple<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
+             std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
+             std::shared_ptr<const common::IndexMap>>
       data = compute_entities_by_key_matching(
           comm, *cells, vertex_map, cell_map, topology.cell_type(), dim);
 
   return data;
 }
 //-----------------------------------------------------------------------------
-std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
-TopologyComputation::compute_connectivity(const storage::TopologyStorage& topology, int d0,
+std::array<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>, 2>
+TopologyComputation::compute_connectivity(const Topology& topology, int d0,
                                           int d1)
 {
   LOG(INFO) << "Requesting connectivity " << d0 << " - " << d1;
 
   // Return if connectivity has already been computed
-  if (topology.connectivity(d0, d1))
-    return {nullptr, nullptr};
+  if (auto cached = topology.cache_data().connectivity(d0, d1); cached)
+    return {cached, nullptr};
 
   // Get entities exist
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d0_0
@@ -673,28 +682,28 @@ TopologyComputation::compute_connectivity(const storage::TopologyStorage& topolo
   // Decide how to compute the connectivity
   if (d0 == d1)
   {
-    return {std::make_shared<graph::AdjacencyList<std::int32_t>>(
+    return {std::make_shared<const graph::AdjacencyList<std::int32_t>>(
                 c_d0_0->num_nodes()),
             nullptr};
   }
   else if (d0 < d1)
   {
     // Compute connectivity d1 - d0 (if needed), and take transpose
-    if (!topology.connectivity(d1, d0))
+    if (!topology.cache_data().connectivity(d1, d0))
     {
-      auto c_d1_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      auto c_d1_d0 = std::make_shared<const graph::AdjacencyList<std::int32_t>>(
           compute_from_map(*c_d1_0, *c_d0_0,
                            mesh::cell_entity_type(topology.cell_type(), d1), d1,
                            d0));
-      auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      auto c_d0_d1 = std::make_shared<const graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes(), d0, d1));
       return {c_d0_d1, c_d1_d0};
     }
     else
     {
       assert(c_d0_0);
-      assert(topology.connectivity(d1, d0));
-      auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      assert(topology.cache_data().connectivity(d1, d0));
+      auto c_d0_d1 = std::make_shared<const graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*topology.connectivity(d1, d0),
                                  c_d0_0->num_nodes(), d0, d1));
       return {c_d0_d1, nullptr};
@@ -704,32 +713,29 @@ TopologyComputation::compute_connectivity(const storage::TopologyStorage& topolo
   {
     // Compute by mapping vertices from a lower dimension entity to
     // those of a higher dimension entity
-    auto c_d0_d1
-        = std::make_shared<graph::AdjacencyList<std::int32_t>>(compute_from_map(
-            *c_d0_0, *c_d1_0, mesh::cell_entity_type(topology.cell_type(), d0),
-            d0, d1));
+    auto c_d0_d1 = std::make_shared<const graph::AdjacencyList<std::int32_t>>(
+        compute_from_map(*c_d0_0, *c_d1_0,
+                         mesh::cell_entity_type(topology.cell_type(), d0), d0,
+                         d1));
     return {c_d0_d1, nullptr};
   }
   else
     throw std::runtime_error("Entity dimension error when computing topology.");
 }
 //-----------------------------------------------------------------------------
-std::vector<bool> TopologyComputation::compute_interior_facets(const storage::TopologyStorage& topology)
+std::vector<bool>
+TopologyComputation::compute_interior_facets(const Topology& topology)
 {
   // NOTE: Getting markers for owned and unowned facets requires reverse
   // and forward scatters. If we can work only with owned facets we
   // would need only a reverse scatter.
 
+  // TODO: check for toopology.cache_data().interior_facets()?
+
   const int tdim = topology.dim();
 
-  // create a layer of temporary storage on top of "topology"
-  storage::TopologyStorage scratch = topology.create_on_top();
-  auto lock = scratch.acquire_cache_lock();
-
-  // "create_connectivity" will only create if it does not yet exists in "topology".
-  storage::create_connectivity(scratch, tdim - 1, tdim);
-  auto c = scratch.connectivity(tdim - 1, tdim);
-  auto map = scratch.index_map(tdim - 1);
+  auto c = topology.connectivity(tdim - 1, tdim);
+  auto map = topology.index_map(tdim - 1);
   assert(map);
 
   // Get number of connected cells for each ghost facet

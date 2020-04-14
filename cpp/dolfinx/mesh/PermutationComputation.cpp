@@ -7,7 +7,6 @@
 #include "PermutationComputation.h"
 #include <bitset>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/TopologyStorage.h>
 #include <dolfinx/mesh/Topology.h>
 
 #define BITSETSIZE 32
@@ -162,7 +161,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1>
-compute_edge_reflections(const mesh::storage::TopologyStorage& topology)
+compute_edge_reflections(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
   const CellType cell_type = topology.cell_type();
@@ -210,7 +209,7 @@ compute_edge_reflections(const mesh::storage::TopologyStorage& topology)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1>
-compute_face_permutations(const mesh::storage::TopologyStorage& topology)
+compute_face_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
   assert(tdim > 2);
@@ -245,7 +244,7 @@ compute_face_permutations(const mesh::storage::TopologyStorage& topology)
 std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
           Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
 PermutationComputation::compute_entity_permutations(
-    const mesh::storage::TopologyStorage& topology)
+    const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
   const CellType cell_type = topology.cell_type();

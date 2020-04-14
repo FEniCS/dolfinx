@@ -52,23 +52,24 @@ class Topology;
 ///
 
 // TODO: docs on caching
+// TODO: shared_ptr<const> or non-const for stored data?
+// Currently, everything is set to const (no clear pattern (?) before rework)
 class Topology
 {
-public:
-  /// Create empty mesh topology
-  Topology(MPI_Comm comm, mesh::CellType type)
-      : _mpi_comm(comm), _cell_type(type), remanent_storage(comm, type),
-        cache(comm, type)
-  {
-    // both should be able to read from each other
-    remanent_storage.set_other(&cache);
-    cache.set_other(&remanent_storage);
 
-    // acquire lock for essential and explicitly stored data
+public:
+  /// Create mesh topology with ready data
+  Topology(MPI_Comm comm, mesh::CellType type,
+           storage::TopologyStorage remanent_storage)
+      : _mpi_comm(comm),
+        _cell_type(type), remanent_storage{check_and_save_storage(
+                              std::move(remanent_storage), cell_dim(type))},
+        cache(&remanent_storage)
+  {
+    // Acquire lock for explicitly stored data
     remanent_lock = std::make_shared<const storage::StorageLock>(
         remanent_storage.acquire_cache_lock());
   }
-
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -87,13 +88,6 @@ public:
 
   /// Return topological dimension
   int dim() const;
-
-  /// @todo Merge with set_connectivity
-  ///
-  /// Set the IndexMap for dimension dim
-  /// @warning This is experimental and likely to change
-  void set_index_map(int dim,
-                     std::shared_ptr<const common::IndexMap> index_map);
 
   /// Get the IndexMap that described the parallel distribution of the
   /// mesh entities
@@ -127,12 +121,6 @@ public:
   std::vector<bool> on_boundary(int dim,
                                 bool discard_intermediate = false) const;
 
-  /// @todo Merge with set_index_map
-  /// Set connectivity for given pair of topological dimensions
-  void
-  set_connectivity(std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c,
-                   int d0, int d1);
-
   /// Returns the permutation information
   /// Results will only be cached if the user has acquired a cache lock before.
   /// @param[in] discard_intermediate only has an effect in case of caching
@@ -163,10 +151,6 @@ public:
   const std::vector<bool>& interior_facets(bool discard_intermediate
                                            = false) const;
 
-  /// Set markers for owned facets that are interior
-  /// @param[in] interior_facets The marker vector
-  void set_interior_facets(const std::vector<bool>& interior_facets);
-
   /// Return hash based on the hash of cell-vertex connectivity
   size_t hash() const;
 
@@ -192,29 +176,39 @@ public:
   /// Precompute entity permutations and reflections for later use
   void create_entity_permutations();
 
+  /// Precompute and set markers for owned facets that are interior
+  void create_interior_facets();
+
   /// Mesh MPI communicator
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
 
-  storage::StorageLock acquire_cache_lock(bool force_new_layer = false) const;
-
-  /// Close the essential storage. All data set or created via "create_XYZ"
-  /// *after* calling "finalize" can be discarded via discard_remanent_storage.
-  /// Usage of finalize() and discard_remanent_storage() is dangerous.
-  void finalize() {
-    discard_remanent_storage();
+  /// Enable caching for the lifetime of this lock. If a new layer is forced,
+  /// then all new data will be associated to the lifetime of this lock,
+  /// i.e., it will shadow any previous cache lock. Howver, data created
+  /// explicitly is not affected. The cache only applies to data that is
+  /// computed on-the-fly.
+  storage::StorageLock acquire_cache_lock(bool force_new_layer = false) const {
+    return cache.acquire_cache_lock(force_new_layer);
   }
 
   /// Discard all remanent storage except for essential information. Provides a
   /// new layer to add data which can be discarded again.
   void discard_remanent_storage()
   {
-    discardable_remanent_lock =
-        std::make_shared<const storage::StorageLock>(
-            remanent_storage.acquire_cache_lock(true));
+    discardable_remanent_lock = std::make_shared<const storage::StorageLock>(
+        remanent_storage.acquire_cache_lock(true));
   }
 
+  const storage::TopologyStorage& remanent_data() const {return remanent_storage;}
+
+  const storage::TopologyStorage& cache_data() const {return cache;}
+
+
 private:
+  storage::TopologyStorage static check_and_save_storage(
+      storage::TopologyStorage remanent_storage, int tdim);
+
   std::shared_ptr<const storage::StorageLock> remanent_lock;
   std::shared_ptr<const storage::StorageLock> discardable_remanent_lock;
 

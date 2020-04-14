@@ -38,11 +38,19 @@ namespace dolfinx::mesh::storage
 namespace internal
 {
 
-template <typename T>
-using guarded_obj = std::pair<T, std::weak_ptr<const bool>>;
-
 using lock_t = std::shared_ptr<const bool>;
 using sentinel_t = std::weak_ptr<const bool>;
+
+template <typename T>
+using guarded_obj = std::pair<T, internal::sentinel_t>;
+
+template <typename T>
+guarded_obj<T> make_guarded(T obj, internal::sentinel_t sentinel)
+{
+  return std::make_pair<typename guarded_obj<T>::first_type,
+                        typename guarded_obj<T>::second_type>(
+      std::forward<T&&>(obj), std::move(sentinel));
+}
 
 struct TopologyStorageLayer
 {
@@ -168,15 +176,16 @@ private:
 
 class TopologyStorage
 {
+
 public:
   using StorageLayer = internal::TopologyStorageLayer;
 
   /// Create empty mesh topology
-  TopologyStorage(MPI_Comm comm, mesh::CellType type,
-                  const TopologyStorage* other = nullptr)
-      : _mpi_comm{comm}, _cell_type{type}
+  explicit TopologyStorage(bool remanent, const TopologyStorage* other = nullptr)
+      : _other_storage{make_other(other)}
   {
-    set_other(other);
+    if (remanent)
+      make_remanent(true);
   }
 
   /// Copy constructor
@@ -194,20 +203,6 @@ public:
   /// Assignment
   TopologyStorage& operator=(TopologyStorage&& topology) = default;
 
-  /// Mesh MPI communicator
-  /// @return The communicator on which the mesh is distributed
-  MPI_Comm mpi_comm() const;
-
-  /// The cell type of the topology
-  /// @return The cell type
-  mesh::CellType cell_type() const;
-
-  /// Topological dimension
-  /// @return The topological dimenstion
-  int dim() const;
-
-  /// @todo Merge with set_connectivity
-  ///
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
   std::shared_ptr<const common::IndexMap>
@@ -228,7 +223,6 @@ public:
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
   connectivity(int d0, int d1) const;
 
-  /// @todo Merge with set_index_map
   /// Set connectivity for given pair of topological dimensions
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
   set_connectivity(std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c,
@@ -305,11 +299,11 @@ public:
       auto layer_lock = std::make_shared<const bool>();
       internal::sentinel_t layer_sentinel = layer_lock;
       layers.emplace_back(StorageLayer{}, layer_sentinel);
-      return StorageLock{layer_lock, {this, lifetime}};
+      return StorageLock(layer_lock, {this, lifetime});
     }
     else
     {
-      return StorageLock{layers.back().second.lock(), {this, lifetime}};
+      return StorageLock(layers.back().second.lock(), {this, lifetime});
     }
   }
 
@@ -354,13 +348,24 @@ public:
   /// also automatically creates a writable layer.
   TopologyStorage create_on_top(bool share_ownership = false) const
   {
-    TopologyStorage res{mpi_comm(), cell_type(), this};
+    TopologyStorage res(this);
     if (share_ownership)
       res.make_remanent(true);
     return std::move(res);
   }
 
 private:
+
+  static internal::guarded_obj<const TopologyStorage*>
+  make_other(const TopologyStorage* other)
+  {
+    if (other)
+      return internal::make_guarded(other, other->lifetime);
+    else
+      return internal::make_guarded(other, internal::sentinel_t{});
+  }
+
+
   template <typename value_t,
             // Currently only for shared_ptr
             typename ret_t = std::shared_ptr<value_t>,
@@ -380,13 +385,7 @@ private:
     return internal::read_from_layers<value_t>(read, layers);
   }
 
-  std::shared_ptr<const storage::StorageLock> remanent_lock{};
-
-  // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
-
-  // Type of the cell
-  mesh::CellType _cell_type;
+  std::shared_ptr<const storage::StorageLock> remanent_lock;
 
   // The other (already existing storage) with read access
   internal::guarded_obj<const TopologyStorage*> _other_storage;
@@ -396,45 +395,5 @@ private:
 
   internal::lock_t lifetime{std::make_shared<const bool>(true)};
 };
-
-/// Create entities of given topological dimension in given storage.
-/// Works around constness by separating "Storage" from the owning "Topology".
-/// The user has to ensure that storage has at least one layer where to store
-/// things.
-/// @param[in,out] storage Object where to store the created entities
-/// @param[in] dim Topological dimension
-/// @return Number of newly created entities, returns -1 if entities
-///   already existed
-std::int32_t create_entities(TopologyStorage& storage, int dim);
-
-/// Create connectivity between given pair of dimensions, d0 -> d1 in given
-/// storage. The user has to ensure that storage has at least one layer where to
-/// store things.
-/// @param[in,out] storage Object where to store the created entities
-/// @param[in] d0 Topological dimension
-/// @param[in] d1 Topological dimension
-void create_connectivity(TopologyStorage& storage, int d0, int d1);
-
-/// Set connectivity for given pair of topological dimensions in given storage.
-/// The user has to ensure that storage has at least one layer where to store
-/// things.
-std::shared_ptr<const common::IndexMap>
-set_index_map(std::shared_ptr<const common::IndexMap> index_map, int dim);
-
-/// Sets connectivity for all entities and connectivity in given storage.
-/// The user has to ensure that storage has at least one layer where to store
-/// things.
-/// @param[in,out] storage Object where to store the created entities
-void create_connectivity_all(TopologyStorage& storage);
-
-/// Set markers for owned facets that are interior in given storage. The user
-/// has to ensure that storage has at least one layer where to store things.
-/// @param[in,out] storage Object where to store the created entities
-/// @param[in] interior_facets The marker vector
-/// Compute entity permutations and reflections in given storage
-void create_entity_permutations(TopologyStorage& storage);
-
-/// Computes and set markers for owned facets that are interior
-void create_interior_facets(TopologyStorage& storage);
 
 } // namespace dolfinx::mesh::storage

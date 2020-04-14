@@ -50,10 +50,10 @@ public:
   /// @return Tuple of (cell-entity connectivity, entity-vertex
   ///   connectivity, index map). If the entities already exist, then
   ///   {nullptr, nullptr, nullptr} is returned.
-  static std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-                    std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-                    std::shared_ptr<common::IndexMap>>
-  compute_entities(const storage::TopologyStorage& topology, int dim);
+  static std::tuple<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
+                    std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
+                    std::shared_ptr<const common::IndexMap>>
+  compute_entities(const Topology& topology, int dim);
 
   /// Compute connectivity (d0 -> d1) for given pair of topological
   /// dimensions
@@ -65,8 +65,8 @@ public:
   ///   If (d0, d1) is computed and the computation of (d1, d0) was
   ///   required as part of computing (d0, d1), the (d1, d0) is returned
   ///   as the second entry. The second entry is otherwise nullptr.
-  static std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
-  compute_connectivity(const storage::TopologyStorage& topology, int d0,
+  static std::array<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>, 2>
+  compute_connectivity(const Topology& topology, int d0,
                        int d1);
 
   /// Compute marker for owned facets that are interior, i.e. are
@@ -76,7 +76,7 @@ public:
   ///   this process. True if the ith facet (local index) is interior to
   ///   the domain.
   static std::vector<bool>
-  compute_interior_facets(const storage::TopologyStorage& topology);
+  compute_interior_facets(const Topology& topology);
 };
 
 } // namespace mesh

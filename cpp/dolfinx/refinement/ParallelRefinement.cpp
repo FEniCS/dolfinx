@@ -344,41 +344,40 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   }
 
   MPI_Comm comm = _mesh.mpi_comm();
-  mesh::Topology topology(comm, _mesh.geometry().cmap().cell_shape());
+  mesh::CellType cell_type = _mesh.geometry().cmap().cell_shape();
+  const int tdim = mesh::cell_dim(cell_type);
+
+  mesh::storage::TopologyStorage storage(true);
+
   const graph::AdjacencyList<std::int64_t> my_cells(cells);
   {
     auto [cells_local, local_to_global_vertices]
         = graph::Partitioning::create_local_adjacency_list(my_cells);
 
-    // Create (i) local topology object and (ii) IndexMap for cells, and
+    // Create (i) local storage object and (ii) IndexMap for cells, and
     // set cell-vertex topology
-    mesh::Topology topology_local(comm, _mesh.geometry().cmap().cell_shape());
-    const int tdim = topology_local.dim();
+    mesh::storage::TopologyStorage storage_local(true);
     auto map = std::make_shared<common::IndexMap>(
         comm, cells_local.num_nodes(), std::vector<std::int64_t>(), 1);
-    topology_local.set_index_map(tdim, map);
+    storage_local.set_index_map(map, tdim);
     auto _cells_local
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
-    topology_local.set_connectivity(_cells_local, tdim, 0);
+    storage_local.set_connectivity(_cells_local, tdim, 0);
 
     const int n = local_to_global_vertices.size();
     map = std::make_shared<common::IndexMap>(comm, n,
                                              std::vector<std::int64_t>(), 1);
-    topology_local.set_index_map(0, map);
+    storage_local.set_index_map(map, 0);
     auto _vertices_local
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(n);
-    topology_local.set_connectivity(_vertices_local, 0, 0);
+    storage_local.set_connectivity(_vertices_local, 0, 0);
+
+    // construct local topology
+    mesh::Topology topology_local(comm, cell_type, std::move(storage_local));
 
     // Create facets for local topology, and attach to the topology
     // object. This will be used to find possibly shared cells
       topology_local.create_connectivity(tdim - 1, tdim);
-
-    // FIXME: This looks weird. Revise.
-    // Get facets that are on the boundary of the local topology, i.e
-    // are connect to one cell only
-    std::vector<bool> boundary = topology_local.interior_facets();
-    topology_local.set_interior_facets(boundary);
-    boundary = topology_local.on_boundary(tdim - 1);
 
     // Build distributed cell-vertex AdjacencyList, IndexMap for
     // vertices, and map from local index to old global index
@@ -391,19 +390,21 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
     // Set vertex IndexMap, and vertex-vertex connectivity
     auto _vertex_map
         = std::make_shared<common::IndexMap>(std::move(vertex_map));
-    topology.set_index_map(0, _vertex_map);
+    storage.set_index_map(_vertex_map, 0);
     auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         _vertex_map->size_local() + _vertex_map->num_ghosts());
-    topology.set_connectivity(c0, 0, 0);
+    storage.set_connectivity(c0, 0, 0);
 
     // Set cell IndexMap and cell-vertex connectivity
     auto index_map_c = std::make_shared<common::IndexMap>(
         comm, cells_d.num_nodes(), std::vector<std::int64_t>(), 1);
-    topology.set_index_map(tdim, index_map_c);
+    storage.set_index_map(index_map_c, tdim);
     auto _cells_d
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
-    topology.set_connectivity(_cells_d, tdim, 0);
+    storage.set_connectivity(_cells_d, tdim, 0);
   }
+
+  mesh::Topology topology(comm, cell_type, std::move(storage));
 
   const mesh::Geometry geometry
       = mesh::create_geometry(comm, topology, _mesh.geometry().cmap(), my_cells,
