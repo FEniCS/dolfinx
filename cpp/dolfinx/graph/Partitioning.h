@@ -167,7 +167,7 @@ Partitioning::distribute_data(
   const std::int64_t num_points_local = x.rows();
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
-  std::vector<std::int64_t> global_offsets(size + 1);
+  std::vector<std::int64_t> global_offsets(size + 1, 0);
   MPI_Allgather(&num_points_local, 1, MPI_INT64_T, global_offsets.data() + 1, 1,
                 MPI_INT64_T, comm);
   for (int i = 0; i < size; ++i)
