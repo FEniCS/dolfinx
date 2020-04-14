@@ -224,7 +224,7 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
 
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
       = mesh::midpoints(_mesh, 1, edges);
-  _new_vertex_coordinates.bottomRows(n + num_vertices) = midpoints;
+  _new_vertex_coordinates.bottomRows(num_new_vertices) = midpoints;
 
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.
