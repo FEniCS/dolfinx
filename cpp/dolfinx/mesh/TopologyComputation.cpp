@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "TopologyComputation.h"
-#include "Topology.h"
+#include "TopologyStorage.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <algorithm>
@@ -597,7 +597,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>>
-TopologyComputation::compute_entities(const Topology& topology,
+TopologyComputation::compute_entities(const storage::TopologyStorage& topology,
                                       int dim)
 {
   MPI_Comm comm = topology.mpi_comm();
@@ -640,7 +640,7 @@ TopologyComputation::compute_entities(const Topology& topology,
 }
 //-----------------------------------------------------------------------------
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
-TopologyComputation::compute_connectivity(const Topology& topology, int d0,
+TopologyComputation::compute_connectivity(const storage::TopologyStorage& topology, int d0,
                                           int d1)
 {
   LOG(INFO) << "Requesting connectivity " << d0 << " - " << d1;
@@ -713,4 +713,63 @@ TopologyComputation::compute_connectivity(const Topology& topology, int d0,
   else
     throw std::runtime_error("Entity dimension error when computing topology.");
 }
-//--------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+std::vector<bool> TopologyComputation::compute_interior_facets(const storage::TopologyStorage& topology)
+{
+  // NOTE: Getting markers for owned and unowned facets requires reverse
+  // and forward scatters. If we can work only with owned facets we
+  // would need only a reverse scatter.
+
+  const int tdim = topology.dim();
+
+  // create a layer of temporary storage on top of "topology"
+  storage::TopologyStorage scratch = topology.create_on_top();
+  auto lock = scratch.acquire_cache_lock();
+
+  // "create_connectivity" will only create if it does not yet exists in "topology".
+  storage::create_connectivity(scratch, tdim - 1, tdim);
+  auto c = scratch.connectivity(tdim - 1, tdim);
+  auto map = scratch.index_map(tdim - 1);
+  assert(map);
+
+  // Get number of connected cells for each ghost facet
+  std::vector<int> num_cells1(map->num_ghosts(), 0);
+  for (int f = 0; f < map->num_ghosts(); ++f)
+  {
+    num_cells1[f] = c->num_links(map->size_local() + f);
+    // TEST: For facet-based ghosting, an un-owned facet should be
+    // connected to only one facet
+    // if (num_cells1[f] > 1)
+    // {
+    //   throw std::runtime_error("!!!!!!!!!!");
+    //   std::cout << "!!! Problem with ghosting" << std::endl;
+    // }
+    // else
+    //   std::cout << "Facet as expected" << std::endl;
+    assert(num_cells1[f] == 1 or num_cells1[f] == 2);
+  }
+
+  // Send my ghost data to owner, and receive data for my data from
+  // remote ghosts
+  std::vector<std::int32_t> owned;
+  map->scatter_rev(owned, num_cells1, 1, common::IndexMap::Mode::add);
+
+  // Mark owned facets that are connected to two cells
+  std::vector<int> num_cells0(map->size_local(), 0);
+  for (std::size_t f = 0; f < num_cells0.size(); ++f)
+  {
+    assert(c->num_links(f) == 1 or c->num_links(f) == 2);
+    num_cells0[f] = (c->num_links(f) + owned[f]) > 1 ? 1 : 0;
+  }
+
+  // Send owned data to ghosts, and receive ghost data from owner
+  const std::vector<std::int32_t> ghost_markers
+      = map->scatter_fwd(num_cells0, 1);
+
+  // Copy data, castint 1 -> true and 0 -> false
+  num_cells0.insert(num_cells0.end(), ghost_markers.begin(),
+                    ghost_markers.end());
+  std::vector<bool> interior_facet(num_cells0.begin(), num_cells0.end());
+
+  return interior_facet;
+}

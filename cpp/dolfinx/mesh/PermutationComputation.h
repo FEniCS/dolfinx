@@ -14,6 +14,11 @@ namespace dolfinx::mesh
 {
 class Topology;
 
+namespace storage
+{
+class TopologyStorage;
+}
+
 /// Tools for computing mesh entity permutations
 
 class PermutationComputation
@@ -74,7 +79,7 @@ public:
   /// @return Facet permutation and cells permutations
   static std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
                    Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
-  compute_entity_permutations(const Topology& topology);
+  compute_entity_permutations(const storage::TopologyStorage& topology);
 };
 
 } // namespace dolfinx::mesh
