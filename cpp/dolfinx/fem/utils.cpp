@@ -525,14 +525,9 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     if (element_dof_layout->num_entity_dofs(d) > 0)
     {
       // Create local entities
-      const auto [cell_entity, entity_vertex, index_map]
-          = mesh::TopologyComputation::compute_entities(comm, topology, d);
-      if (cell_entity)
-        topology.set_connectivity(cell_entity, topology.dim(), d);
-      if (entity_vertex)
-        topology.set_connectivity(entity_vertex, d, 0);
-      if (index_map)
-        topology.set_index_map(d, index_map);
+      // TODO: desired storage duration?
+      topology.create_connectivity(d, 0);
+      topology.create_connectivity(topology.dim(), d);
     }
   }
 
