@@ -371,23 +371,12 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 
     // Create facets for local topology, and attach to the topology
     // object. This will be used to find possibly shared cells
-    auto [cf, fv, map0] = mesh::TopologyComputation::compute_entities(
-        comm, topology_local, tdim - 1);
-    if (cf)
-      topology_local.set_connectivity(cf, tdim, tdim - 1);
-    if (map0)
-      topology_local.set_index_map(tdim - 1, map0);
-    if (fv)
-      topology_local.set_connectivity(fv, tdim - 1, 0);
-    auto [fc, ignore] = mesh::TopologyComputation::compute_connectivity(
-        topology_local, tdim - 1, tdim);
-    if (fc)
-      topology_local.set_connectivity(fc, tdim - 1, tdim);
+      topology_local.create_connectivity(tdim - 1, tdim);
 
     // FIXME: This looks weird. Revise.
     // Get facets that are on the boundary of the local topology, i.e
     // are connect to one cell only
-    std::vector<bool> boundary = compute_interior_facets(topology_local);
+    std::vector<bool> boundary = topology_local.interior_facets();
     topology_local.set_interior_facets(boundary);
     boundary = topology_local.on_boundary(tdim - 1);
 
