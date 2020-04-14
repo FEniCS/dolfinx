@@ -127,7 +127,7 @@ std::shared_ptr<const common::IndexMap> TopologyStorage::set_index_map(
   if (layers.empty())
     throw std::runtime_error(
         "No storage layer present. Acquire a cache lock before writing.");
-  return internal::set_index_map(layers.back().first, index_map, dim);
+  return internal::set_index_map(active_layer().first, index_map, dim);
 }
 //------------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
@@ -160,7 +160,7 @@ TopologyStorage::set_connectivity(
   if (layers.empty())
     throw std::runtime_error(
         "No storage layer present. Acquire a cache lock before writing.");
-  return internal::set_connectivity(layers.back().first, c, d0, d1);
+  return internal::set_connectivity(active_layer().first, c, d0, d1);
 }
 //------------------------------------------------------------------------------
 std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
@@ -183,7 +183,7 @@ TopologyStorage::set_cell_permutations(
   if (layers.empty())
     throw std::runtime_error(
         "No storage layer present. Acquire a cache lock before writing.");
-  return internal::set_cell_permutations(layers.back().first,
+  return internal::set_cell_permutations(active_layer().first,
                                          cell_permutations);
 }
 //------------------------------------------------------------------------------
@@ -209,7 +209,7 @@ TopologyStorage::set_facet_permutations(
   if (layers.empty())
     throw std::runtime_error(
         "No storage layer present. Acquire a cache lock before writing.");
-  return internal::set_facet_permutations(layers.back().first,
+  return internal::set_facet_permutations(active_layer().first,
                                           facet_permutations);
 }
 //------------------------------------------------------------------------------
@@ -230,6 +230,6 @@ std::shared_ptr<const std::vector<bool>> TopologyStorage::set_interior_facets(
   if (layers.empty())
     throw std::runtime_error(
         "No storage layer present. Acquire a cache lock before writing.");
-  return internal::set_interior_facets(layers.back().first, interior_facets);
+  return internal::set_interior_facets(active_layer().first, interior_facets);
 }
 //------------------------------------------------------------------------------

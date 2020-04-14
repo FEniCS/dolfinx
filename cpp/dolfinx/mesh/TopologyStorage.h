@@ -174,6 +174,8 @@ private:
   internal::guarded_obj<TopologyStorage*> storage;
 };
 
+
+// TODO: Make lock sequential. This can be done in two ways: See acquire_lock...
 class TopologyStorage
 {
 
@@ -292,18 +294,35 @@ public:
     return ret;
   }
 
+  // TODO: Make lock sequential. This can be done in two ways:
+  // a) A lock must not be copied and moved. Then it cannot leave its scope.
+  // b) Store a vector of locks and at the end of life, remove all new ones.
+  // This should be optional since it increases storage (like a back button)
+  /// Create a new lock. By default, it just is another handle for the current
+  /// layer. The creation of  new write layer is optional.
+  /// Note that it will share ownership with data from other layers. This means,
+  /// it can also overwrite their data. Otherwise, the ownership would be to
+  /// difficult to track, since the lifetimes of the locks do not end in any
+  /// defined order.
+  /// Let locks allow read access to "their" layer?
   StorageLock acquire_cache_lock(bool force_new_layer = false)
   {
     if (layers.empty() or force_new_layer)
     {
       auto layer_lock = std::make_shared<const bool>();
       internal::sentinel_t layer_sentinel = layer_lock;
-      layers.emplace_back(StorageLayer{}, layer_sentinel);
+
+      if (layers.empty())
+        layers.emplace_front(StorageLayer{}, layer_sentinel);
+      // Copy the last active layer for sharing ownership
+      else
+        layers.emplace_front(layers.front().first, layer_sentinel);
+
       return StorageLock(layer_lock, {this, lifetime});
     }
     else
     {
-      return StorageLock(layers.back().second.lock(), {this, lifetime});
+      return StorageLock(active_layer().second.lock(), {this, lifetime});
     }
   }
 
@@ -322,10 +341,10 @@ public:
         acquire_cache_lock(true));
     if (all_data)
     {
-      for (int d0 = 0; d0 < layers.back().first.connectivity.rows(); ++d0)
+      for (int d0 = 0; d0 < active_layer().first.connectivity.rows(); ++d0)
       {
         set_index_map(index_map(d0), d0);
-        for (int d1 = 0; d1 < layers.back().first.connectivity.cols(); ++d0)
+        for (int d1 = 0; d1 < active_layer().first.connectivity.cols(); ++d0)
         {
           set_connectivity(connectivity(d0, d1), d0, d1);
         }
@@ -334,6 +353,11 @@ public:
       set_facet_permutations(facet_permutations());
       set_cell_permutations(cell_permutations());
     }
+  }
+
+  /// The active layer
+  internal::guarded_obj<StorageLayer>& active_layer() {
+    return layers.front();
   }
 
   /// Discard is only guaranteed for what has been written since
@@ -373,16 +397,23 @@ private:
             = std::function<std::shared_ptr<value_t>>(StorageLayer&)>
   ret_t read_from_storage(func_t read) const
   {
-    // Search in not owned storage
+    // Search in owned storage
+    if (auto value = internal::read_from_layers<value_t>(read, layers); value)
+      return value;
+
+    // Search in not owned storage. Assume that if first condition is not met,
+    // the second is not evalutated. Otherwise, there can be a problem with
+    // accessing "first".
     if ((!_other_storage.second.expired()) && _other_storage.first)
     {
       if (auto value = internal::read_from_layers<value_t>(
-              read, _other_storage.first->layers);
+            read, _other_storage.first->layers);
           value)
         return value;
     }
-    // Search in owned storage
-    return internal::read_from_layers<value_t>(read, layers);
+
+    // Nothing found. Return empty pointer.
+    return {};
   }
 
   std::shared_ptr<const storage::StorageLock> remanent_lock;

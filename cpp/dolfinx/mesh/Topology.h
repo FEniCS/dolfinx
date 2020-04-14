@@ -54,11 +54,16 @@ class Topology;
 // TODO: docs on caching
 // TODO: shared_ptr<const> or non-const for stored data?
 // Currently, everything is set to const (no clear pattern (?) before rework)
+// This is in contrast with the previous design, where IndexMap was const but
+// the connectivities not. Is there a reason for that? I did not find any place
+// in the cpp layer where this was of relevance. This is also why setters were
+// removed. See also the comment above the lock in the constructor. Wold it be
+// desirable to keep old defning data once it is overwritten?
 class Topology
 {
 
 public:
-  /// Create mesh topology with ready data
+  /// Create mesh topology with prepared data
   Topology(MPI_Comm comm, mesh::CellType type,
            storage::TopologyStorage remanent_storage)
       : _mpi_comm(comm),
@@ -67,8 +72,13 @@ public:
         cache(&remanent_storage)
   {
     // Acquire lock for explicitly stored data
+    // This lock creates a new layer and thus protects against loss of
+    // *defining* data.
+    // The current implementation does not store old data
+    // (there is no back button) once the essential data is overwritten
+    // (Not a problem currently since there are no setters)!
     remanent_lock = std::make_shared<const storage::StorageLock>(
-        remanent_storage.acquire_cache_lock());
+        remanent_storage.acquire_cache_lock(true));
   }
 
   /// Copy constructor
