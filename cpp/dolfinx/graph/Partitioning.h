@@ -162,8 +162,6 @@ Partitioning::distribute_data(
 {
   common::Timer timer("Fetch float data from remote processes");
 
-  // Get number of points globally
-
   const std::int64_t num_points_local = x.rows();
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
@@ -175,13 +173,20 @@ Partitioning::distribute_data(
 
   // Build index data requests
   std::vector<int> number_index_send(size, 0);
-  for (std::int64_t index : indices)
+  std::vector<int> index_owner(indices.size());
+  std::vector<int> index_order(indices.size());
+  std::iota(index_order.begin(), index_order.end(), 0);
+  std::sort(index_order.begin(), index_order.end(),
+            [&indices](int a, int b) { return (indices[a] < indices[b]); });
+
+  int p = 0;
+  for (std::size_t i = 0; i < index_order.size(); ++i)
   {
-    const int owner
-        = std::upper_bound(global_offsets.begin(), global_offsets.end(), index)
-          - global_offsets.begin() - 1;
-    assert(owner >= 0 and owner < size);
-    number_index_send[owner] += 1;
+    int j = index_order[i];
+    while (indices[j] >= global_offsets[p + 1])
+      ++p;
+    index_owner[j] = p;
+    number_index_send[p]++;
   }
 
   // Compute send displacements
@@ -192,12 +197,10 @@ Partitioning::distribute_data(
   // Pack global index send data
   std::vector<std::int64_t> indices_send(disp_index_send.back());
   std::vector<int> disp_tmp = disp_index_send;
-  for (std::int64_t index : indices)
+  for (std::size_t i = 0; i < indices.size(); ++i)
   {
-    const int owner
-        = std::upper_bound(global_offsets.begin(), global_offsets.end(), index)
-          - global_offsets.begin() - 1;
-    indices_send[disp_tmp[owner]++] = index;
+    const int owner = index_owner[i];
+    indices_send[disp_tmp[owner]++] = indices[i];
   }
 
   // Send/receive number of indices to communicate to each process

@@ -204,28 +204,27 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
 
   // Compute all edge mid-points
   // FIXME: don't need all
-  const std::int32_t num_edges
-      = edge_index_map->size_local() + edge_index_map->num_ghosts();
+  const std::int32_t num_edges = num_new_vertices;
   Eigen::Array<int, Eigen::Dynamic, 1> edges(num_edges);
-  std::iota(edges.data(), edges.data() + edges.rows(), 0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
-      = mesh::midpoints(_mesh, 1, edges);
-
   std::map<std::int32_t, std::int64_t> local_edge_to_new_vertex;
 
   // Add new edge midpoints to list of vertices
-  std::int32_t n = 0;
+  int n = 0;
   for (int local_i = 0; local_i < edge_index_map->size_local(); ++local_i)
   {
     if (_marked_edges[local_i] == true)
     {
-      _new_vertex_coordinates.row(n + num_vertices) = midpoints.row(local_i);
+      edges[n] = local_i;
       auto it = local_edge_to_new_vertex.insert({local_i, n + global_offset});
       assert(it.second);
       ++n;
     }
   }
   assert(n == num_new_vertices);
+
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
+      = mesh::midpoints(_mesh, 1, edges);
+  _new_vertex_coordinates.bottomRows(n + num_vertices) = midpoints;
 
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.
@@ -298,8 +297,6 @@ ParallelRefinement::adjust_indices(std::shared_ptr<const common::IndexMap> im,
     global_offsets.push_back(global_offsets.back() + r);
 
   std::vector<std::int64_t> global_indices = im->global_indices(true);
-  Eigen::Map<Eigen::Array<std::int64_t, 1, Eigen::Dynamic>> em(
-      global_indices.data(), global_indices.size());
 
   Eigen::Array<int, Eigen::Dynamic, 1> ghost_owners = im->ghost_owners();
   int local_size = im->size_local();
