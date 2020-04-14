@@ -9,7 +9,6 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/Partitioning.h>
-#include <dolfinx/mesh/DistributedMeshTools.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
@@ -174,8 +173,8 @@ void ParallelRefinement::create_new_vertices()
   assert(c_to_v);
   auto map_v = _mesh.topology().index_map(0);
   assert(map_v);
-  const std::int32_t num_vertices = map_v->size_local();
-  std::vector<std::int32_t> vertex_to_x(num_vertices);
+  std::vector<std::int32_t> vertex_to_x(map_v->size_local()
+                                        + map_v->num_ghosts());
   auto map_c = _mesh.topology().index_map(tdim);
   assert(map_c);
   for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
@@ -195,15 +194,15 @@ void ParallelRefinement::create_new_vertices()
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = _mesh.geometry().x();
 
+  // Calculate global range for new local vertices
   std::int32_t num_new_vertices
       = std::count(_marked_edges.begin(),
                    _marked_edges.begin() + edge_index_map->size_local(), true);
-
-  // Calculate global range for new local vertices
   const std::size_t global_offset
       = MPI::global_offset(_mesh.mpi_comm(), num_new_vertices, true)
         + _mesh.topology().index_map(0)->local_range()[1];
 
+  const std::int32_t num_vertices = map_v->size_local();
   _new_vertex_coordinates.resize(num_vertices + num_new_vertices, 3);
 
   for (int v = 0; v < num_vertices; ++v)
@@ -233,8 +232,7 @@ void ParallelRefinement::create_new_vertices()
   assert(n == num_new_vertices);
 
   // If they are shared, then the new global vertex index needs to be
-  // sent off-process.  Add offset to map, and collect up any shared new
-  // vertices that need to send the new index off-process
+  // sent off-process.
 
   int num_neighbours = _marked_for_update.size();
   std::vector<std::vector<std::int64_t>> values_to_send(num_neighbours);
