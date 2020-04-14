@@ -179,7 +179,7 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
     {
       // FIXME: We are making an assumption here on the
       // ElementDofLayout. We should use an ElementDofLayout to map
-      // between local vertex index an x dof index.
+      // between local vertex index and x dof index.
       vertex_to_x[vertices[i]] = dofs(i);
     }
   }
@@ -188,10 +188,19 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = _mesh.geometry().x();
 
-  // Calculate global range for new local vertices
-  std::int32_t num_new_vertices
-      = std::count(_marked_edges.begin(),
-                   _marked_edges.begin() + edge_index_map->size_local(), true);
+  // Add new edge midpoints to list of vertices
+  int n = 0;
+  std::map<std::int32_t, std::int64_t> local_edge_to_new_vertex;
+  for (int local_i = 0; local_i < edge_index_map->size_local(); ++local_i)
+  {
+    if (_marked_edges[local_i] == true)
+    {
+      auto it = local_edge_to_new_vertex.insert({local_i, n});
+      assert(it.second);
+      ++n;
+    }
+  }
+  const int num_new_vertices = n;
   const std::size_t global_offset
       = MPI::global_offset(_mesh.mpi_comm(), num_new_vertices, true)
         + _mesh.topology().index_map(0)->local_range()[1];
@@ -202,25 +211,13 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
   for (int v = 0; v < num_vertices; ++v)
     _new_vertex_coordinates.row(v) = x_g.row(vertex_to_x[v]);
 
-  // Compute all edge mid-points
-  // FIXME: don't need all
-  const std::int32_t num_edges = num_new_vertices;
-  Eigen::Array<int, Eigen::Dynamic, 1> edges(num_edges);
-  std::map<std::int32_t, std::int64_t> local_edge_to_new_vertex;
-
-  // Add new edge midpoints to list of vertices
-  int n = 0;
-  for (int local_i = 0; local_i < edge_index_map->size_local(); ++local_i)
+  Eigen::Array<int, Eigen::Dynamic, 1> edges(num_new_vertices);
+  int i = 0;
+  for (auto& e : local_edge_to_new_vertex)
   {
-    if (_marked_edges[local_i] == true)
-    {
-      edges[n] = local_i;
-      auto it = local_edge_to_new_vertex.insert({local_i, n + global_offset});
-      assert(it.second);
-      ++n;
-    }
+    edges[i++] = e.first;
+    e.second += global_offset;
   }
-  assert(n == num_new_vertices);
 
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
       = mesh::midpoints(_mesh, 1, edges);
