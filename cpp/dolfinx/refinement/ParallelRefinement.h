@@ -91,6 +91,11 @@ public:
   mesh::Mesh build_local(std::vector<std::int64_t>& cell_topology) const;
 
   /// Adjust indices to account for extra n values on each process
+  /// This is a utility to help add new topological vertices on each process
+  /// into the space of the index map.
+  ///
+  /// @param im IndexMap
+  /// @param n Number of new entries to be accommodated on this process
   /// @return Global indices as if "n" extra values are appended on each process
   static std::vector<std::int64_t>
   adjust_indices(std::shared_ptr<const common::IndexMap> im, std::int32_t n);

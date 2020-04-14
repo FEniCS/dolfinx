@@ -78,7 +78,7 @@ create_new_geometry(
       = mesh::midpoints(mesh, 1, edges);
   new_vertex_coordinates.bottomRows(num_new_vertices) = midpoints;
 
-  return std::move(new_vertex_coordinates);
+  return new_vertex_coordinates;
 }
 } // namespace
 
@@ -293,7 +293,7 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
     assert(it.second);
   }
 
-  return std::move(local_edge_to_new_vertex);
+  return local_edge_to_new_vertex;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
