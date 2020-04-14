@@ -82,12 +82,14 @@ public:
   const std::map<std::int32_t, std::int64_t>& edge_to_new_vertex() const;
 
   /// Use vertex and topology data to partition new mesh across processes
+  /// @param[in] cell_topology
   /// @param[in] redistribute
   /// @return New mesh
   mesh::Mesh partition(std::vector<std::int64_t>& cell_topology,
                        bool redistribute) const;
 
   /// Build local mesh from internal data when not running in parallel
+  /// @param[in] cell_topology
   /// @return A Mesh
   mesh::Mesh build_local(std::vector<std::int64_t>& cell_topology) const;
 
