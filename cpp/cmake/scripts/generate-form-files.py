@@ -19,7 +19,7 @@
 import os
 import sys
 
-import ffcx
+import ffcx.main
 
 # Call with "./generate-form-files.py 1" for PETSc complex mode
 complex_mode = (sys.argv[-1] == "1")
