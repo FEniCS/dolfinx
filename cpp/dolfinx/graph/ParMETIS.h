@@ -17,10 +17,7 @@
 #include <parmetis.h>
 #endif
 
-namespace dolfinx
-{
-
-namespace graph
+namespace dolfinx::graph
 {
 
 /// This class provides an interface to ParMETIS
@@ -34,18 +31,6 @@ public:
   partition(MPI_Comm mpi_comm, idx_t nparts,
             const AdjacencyList<idx_t>& adj_graph, bool ghosting);
 
-private:
-  // ParMETIS adaptive repartition, so has to be non-const here
-  template <typename T>
-  static std::vector<int>
-  adaptive_repartition(MPI_Comm mpi_comm, const AdjacencyList<T>& adj_graph,
-                       double weight = 1000);
-
-  // ParMETIS refine repartition
-  template <typename T>
-  static std::vector<int> refine(MPI_Comm mpi_comm,
-                                 const AdjacencyList<T>& adj_graph);
 #endif
 };
-} // namespace graph
-} // namespace dolfinx
+} // namespace dolfinx::graph

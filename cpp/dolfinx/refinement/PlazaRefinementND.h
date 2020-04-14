@@ -17,7 +17,7 @@ namespace mesh
 {
 class Mesh;
 template <typename T>
-class MeshFunction;
+class MeshTags;
 } // namespace mesh
 
 namespace refinement
@@ -43,16 +43,14 @@ public:
   /// Refine with markers, optionally redistributing
   ///
   /// @param[in] mesh Input mesh to be refined
-  /// @param[in] refinement_marker MeshFunction listing MeshEntities
-  ///                              which should be split by this
-  ///                              refinement. Value == 1 means
-  ///                              "refine", any other value means "do
-  ///                              not refine".
+  /// @param[in] refinement_marker MeshTags listing mesh entities
+  ///   which should be split by this refinement. Value == 1 means
+  ///   "refine", any other value means "do not refine".
   /// @param[in] redistribute Flag to call the Mesh Partitioner to
   ///                         redistribute after refinement
   /// @return New Mesh
   static mesh::Mesh refine(const mesh::Mesh& mesh,
-                           const mesh::MeshFunction<int>& refinement_marker,
+                           const mesh::MeshTags<std::int8_t>& refinement_marker,
                            bool redistribute);
 
   /// Get the subdivision of an original simplex into smaller simplices,

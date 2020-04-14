@@ -232,8 +232,8 @@ FunctionSpace::sub(const std::vector<int>& component) const
       = this->_element->extract_sub_element(component);
 
   // Extract sub dofmap
-  auto dofmap = std::make_shared<fem::DofMap>(
-      _dofmap->extract_sub_dofmap(component, _mesh->topology()));
+  auto dofmap
+      = std::make_shared<fem::DofMap>(_dofmap->extract_sub_dofmap(component));
 
   // Create new sub space
   auto sub_space = std::make_shared<FunctionSpace>(_mesh, element, dofmap);
@@ -291,21 +291,16 @@ FunctionSpace::tabulate_dof_coordinates() const
   assert(_dofmap);
   std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;
   assert(index_map);
-  std::size_t bs = index_map->block_size();
-  std::size_t local_size
+  int bs = index_map->block_size();
+  std::int32_t local_size
       = bs * (index_map->size_local() + index_map->num_ghosts());
 
   // Dof coordinate on reference element
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = _element->dof_reference_coordinates();
 
-  // Get coordinate mapping
-  if (!_mesh->geometry().coord_mapping)
-  {
-    throw std::runtime_error(
-        "CoordinateElement has not been attached to mesh.");
-  }
-  const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
+  // Get coordinate map
+  const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -381,13 +376,8 @@ void FunctionSpace::set_x(
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = _element->dof_reference_coordinates();
 
-  // Get coordinate mapping
-  if (!_mesh->geometry().coord_mapping)
-  {
-    throw std::runtime_error(
-        "CoordinateElement has not been attached to mesh.");
-  }
-  const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
+  // Get coordinate map
+  const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
 
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinates(_element->space_dimension(), _mesh->geometry().dim());

@@ -10,10 +10,7 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace graph
+namespace dolfinx::graph
 {
 
 template <typename T>
@@ -37,5 +34,4 @@ public:
       const std::set<std::pair<std::size_t, std::size_t>>& edges,
       std::size_t size, bool reverse = false);
 };
-} // namespace graph
-} // namespace dolfinx
+} // namespace dolfinx::graph

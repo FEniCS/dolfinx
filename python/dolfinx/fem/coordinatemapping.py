@@ -8,7 +8,7 @@
 import ufl
 
 from dolfinx import jit
-from dolfinx import fem
+from dolfinx import cpp
 from cffi import FFI
 
 
@@ -35,5 +35,5 @@ def create_coordinate_map(o):
 
     # Wrap compiled coordinate map and return
     ffi = FFI()
-    cmap = fem.dofmap.make_coordinate_mapping(ffi.cast("uintptr_t", cmap_ptr))
+    cmap = cpp.fem.create_coordinate_map(ffi.cast("uintptr_t", cmap_ptr))
     return cmap

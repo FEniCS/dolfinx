@@ -10,10 +10,7 @@
 #include <dolfinx/common/MPI.h>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 
 /// This class provides various functionality for working with
@@ -33,7 +30,5 @@ public:
       const Eigen::Ref<const Eigen::Array<
           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values,
       const std::vector<std::int64_t>& global_indices);
-
 };
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

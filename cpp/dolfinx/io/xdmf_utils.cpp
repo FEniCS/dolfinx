@@ -81,7 +81,7 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   {
     throw std::runtime_error("Node name is \""
                              + std::string(dataitem_node.name())
-                             + "\", expecting \"DataItem\"");
+                             + R"(", expecting "DataItem")");
   }
 
   // Check that format is HDF
@@ -91,7 +91,7 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   if (format.compare("HDF") != 0)
   {
     throw std::runtime_error("DataItem format \"" + format
-                             + "\" is not \"HDF\"");
+                             + R"(" is not "HDF")");
   }
 
   // Get path data
@@ -140,7 +140,7 @@ xdmf_utils::get_dataset_shape(const pugi::xml_node& dataset_node)
     boost::split(dims_list, dims_str, boost::is_any_of(" "));
 
     // Cast dims to integers
-    for (auto d : dims_list)
+    for (const auto& d : dims_list)
       dims.push_back(boost::lexical_cast<std::int64_t>(d));
   }
 
@@ -242,9 +242,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   assert(dofmap->element_dof_layout);
   const int ndofs = dofmap->element_dof_layout->num_dofs();
 
-  auto map_c = mesh->topology().index_map(0);
-  assert(map_c);
-  for (int cell = 0; map_c->size_local(); ++cell)
+  for (int cell = 0; cell < num_local_cells; ++cell)
   {
     // Tabulate dofs
     auto dofs = dofmap->cell_dofs(cell);
@@ -253,7 +251,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
       dof_set.push_back(dofs[i]);
   }
 
-  // Get  values
+  // Get values
   std::vector<PetscScalar> data_values(dof_set.size());
   {
     la::VecReadWrapper u_wrapper(u.vector().vec());

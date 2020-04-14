@@ -9,6 +9,8 @@
 #include "pugixml.hpp"
 #include <boost/cstdint.hpp>
 #include <boost/detail/endian.hpp>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/DofMap.h>
@@ -16,10 +18,9 @@
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/PETScVector.h>
+#include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshFunction.h>
-#include <dolfinx/mesh/MeshIterator.h>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
@@ -58,9 +59,6 @@ std::string vtu_name(const int process, const int num_processes,
                      const int counter, const std::string filename,
                      const std::string ext);
 void clear_file(std::string file);
-template <typename T>
-void mesh_function_write(T& meshfunction, const std::string filename,
-                         const std::size_t counter, double time);
 std::string strip_path(const std::string filename, const std::string file);
 void pvtu_write_mesh(pugi::xml_node xml_node);
 
@@ -76,7 +74,7 @@ void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
 
   // Write headers
   file << "<?xml version=\"1.0\"?>" << std::endl;
-  file << "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" "
+  file << R"(<VTKFile type="UnstructuredGrid"  version="0.1" )"
        << ">" << std::endl;
   file << "<UnstructuredGrid>" << std::endl;
   file << "<Piece  NumberOfPoints=\"" << num_vertices << "\" NumberOfCells=\""
@@ -115,8 +113,8 @@ std::string vtu_name(const int process, const int num_processes,
   fileid.fill('0');
   fileid.width(6);
 
-  filestart.assign(filename, 0, filename.find_last_of("."));
-  extension.assign(filename, filename.find_last_of("."), filename.size());
+  filestart.assign(filename, 0, filename.find_last_of('.'));
+  extension.assign(filename, filename.find_last_of('.'), filename.size());
 
   fileid << counter;
 
@@ -144,7 +142,7 @@ void clear_file(std::string file)
 std::string strip_path(const std::string filename, const std::string file)
 {
   std::string fname;
-  fname.assign(file, filename.find_last_of("/") + 1, file.size());
+  fname.assign(file, filename.find_last_of('/') + 1, file.size());
   return fname;
 }
 //----------------------------------------------------------------------------
@@ -155,8 +153,9 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Get vtu file name and clear file
-  std::string vtu_filename = vtu_name(MPI::rank(mpi_comm), MPI::size(mpi_comm),
-                                      counter, filename, ".vtu");
+  std::string vtu_filename
+      = vtu_name(dolfinx::MPI::rank(mpi_comm), dolfinx::MPI::size(mpi_comm),
+                 counter, filename, ".vtu");
   clear_file(vtu_filename);
 
   // Number of cells
@@ -170,59 +169,6 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
   vtk_header_open(num_nodes, num_cells, vtu_filename);
 
   return vtu_filename;
-}
-//----------------------------------------------------------------------------
-template <typename T>
-void mesh_function_write(T& meshfunction, const std::string filename,
-                         const std::size_t counter, double time)
-{
-  const mesh::Mesh& mesh = *meshfunction.mesh();
-  const std::size_t cell_dim = meshfunction.dim();
-
-  // Update vtu file name and clear file
-  std::string vtu_filename = init(mesh, filename, counter, cell_dim);
-
-  // Write mesh
-  VTKWriter::write_mesh(mesh, cell_dim, vtu_filename);
-
-  // Open file to write data
-  std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
-  fp.precision(16);
-  if (cell_dim == 0)
-    fp << "<PointData  Scalars=\"" << meshfunction.name << "\">" << std::endl;
-  else
-    fp << "<CellData  Scalars=\"" << meshfunction.name << "\">" << std::endl;
-  fp << "<DataArray  type=\"Float64\"  Name=\"" << meshfunction.name
-     << "\"  format=\"ascii\">";
-
-  // Write data
-  fp << meshfunction.values();
-
-  // Write footers
-  fp << "</DataArray>" << std::endl;
-  if (cell_dim == 0)
-    fp << "</PointData>" << std::endl;
-  else
-    fp << "</CellData>" << std::endl;
-
-  // Close file
-  fp.close();
-
-  // Parallel-specific files
-  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
-  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
-  if (num_processes > 1 && process_number == 0)
-  {
-    std::string pvtu_filename = vtu_name(0, 0, counter, filename, ".pvtu");
-    pvtu_write_function(1, 0, "cell", meshfunction.name, filename,
-                        pvtu_filename, counter, num_processes);
-    pvd_file_write(counter, time, filename, pvtu_filename);
-  }
-  else if (num_processes == 1)
-    pvd_file_write(counter, time, filename, vtu_filename);
-
-  // Write pvd files
-  vtk_header_close(vtu_filename);
 }
 //----------------------------------------------------------------------------
 void write_function(const function::Function& u, const std::string filename,
@@ -245,8 +191,8 @@ void write_function(const function::Function& u, const std::string filename,
   results_write(u, vtu_filename);
 
   // Parallel-specific files
-  const std::size_t num_processes = MPI::size(mpi_comm);
-  if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
+  const std::size_t num_processes = dolfinx::MPI::size(mpi_comm);
+  if (num_processes > 1 and dolfinx::MPI::rank(mpi_comm) == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, filename, ".pvtu");
     pvtu_write(u, filename, pvtu_filename, counter);
@@ -279,8 +225,8 @@ void write_mesh(const mesh::Mesh& mesh, const std::string filename,
   VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename);
 
   // Parallel-specific files
-  const std::size_t num_processes = MPI::size(mpi_comm);
-  if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
+  const std::size_t num_processes = dolfinx::MPI::size(mpi_comm);
+  if (num_processes > 1 and dolfinx::MPI::rank(mpi_comm) == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, filename, ".pvtu");
     pvtu_write_mesh(filename, pvtu_filename, counter, num_processes);
@@ -367,7 +313,7 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
     fp << "<PointData  Scalars=\""
        << "u"
        << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\""
+    fp << R"(<DataArray  type="Float64"  Name=")"
        << "u"
        << "\"  format=\""
        << "ascii"
@@ -378,9 +324,9 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
     fp << "<PointData  Vectors=\""
        << "u"
        << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\""
+    fp << R"(<DataArray  type="Float64"  Name=")"
        << "u"
-       << "\"  NumberOfComponents=\"3\" format=\""
+       << R"("  NumberOfComponents="3" format=")"
        << "ascii"
        << "\">";
   }
@@ -389,9 +335,9 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
     fp << "<PointData  Tensors=\""
        << "u"
        << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\""
+    fp << R"(<DataArray  type="Float64"  Name=")"
        << "u"
-       << "\"  NumberOfComponents=\"9\" format=\""
+       << R"("  NumberOfComponents="9" format=")"
        << "ascii"
        << "\">";
   }
@@ -639,7 +585,7 @@ void pvtu_write(const function::Function& u, const std::string filename,
     data_type = "cell";
   }
 
-  const int num_processes = MPI::size(mesh.mpi_comm());
+  const int num_processes = dolfinx::MPI::size(mesh.mpi_comm());
   pvtu_write_function(dim, rank, data_type, "u", filename, fname, counter,
                       num_processes);
 }
@@ -659,30 +605,6 @@ void VTKFile::write(const mesh::Mesh& mesh)
   ++_counter;
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<bool>& meshfunction)
-{
-  mesh_function_write(meshfunction, _filename, _counter, _counter);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<std::size_t>& meshfunction)
-{
-  mesh_function_write(meshfunction, _filename, _counter, _counter);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<int>& meshfunction)
-{
-  mesh_function_write(meshfunction, _filename, _counter, _counter);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<double>& meshfunction)
-{
-  mesh_function_write(meshfunction, _filename, _counter, _counter);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
 void VTKFile::write(const function::Function& u)
 {
   write_function(u, _filename, _counter, _counter);
@@ -692,30 +614,6 @@ void VTKFile::write(const function::Function& u)
 void VTKFile::write(const mesh::Mesh& mesh, double time)
 {
   write_mesh(mesh, _filename, _counter, time);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<int>& mf, double time)
-{
-  mesh_function_write(mf, _filename, _counter, time);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<std::size_t>& mf, double time)
-{
-  mesh_function_write(mf, _filename, _counter, time);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<double>& mf, double time)
-{
-  mesh_function_write(mf, _filename, _counter, time);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<bool>& mf, double time)
-{
-  mesh_function_write(mf, _filename, _counter, time);
   ++_counter;
 }
 //----------------------------------------------------------------------------

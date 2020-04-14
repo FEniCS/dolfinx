@@ -11,11 +11,10 @@
 #include <cassert>
 #include <numeric>
 #include <sstream>
+#include <type_traits>
 #include <vector>
 
-namespace dolfinx
-{
-namespace graph
+namespace dolfinx::graph
 {
 
 /// This class provides a static adjacency list data structure. It is
@@ -28,21 +27,39 @@ template <typename T>
 class AdjacencyList
 {
 public:
-  /// Construct trivial adjacency list where each of the n nodes is connected to
-  /// itself
+  /// Construct trivial adjacency list where each of the n nodes is
+  /// connected to itself
   /// @param [in] n Number of nodes
-  AdjacencyList(const std::int32_t n) : _array(n), _offsets(n + 1)
+  explicit AdjacencyList(const std::int32_t n) : _array(n), _offsets(n + 1)
   {
     std::iota(_array.data(), _array.data() + n, 0);
     std::iota(_offsets.data(), _offsets.data() + n + 1, 0);
   }
 
-  /// Construct adjacency list from array of data
+  /// Construct adjacency list from arrays of data (Eigen data types)
   /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data
   ///   array for node i
-  AdjacencyList(const std::vector<T>& data,
-                const std::vector<std::int32_t>& offsets)
+  template <typename U, typename V,
+            std::enable_if_t<std::is_base_of<Eigen::EigenBase<std::decay_t<V>>,
+                                             std::decay_t<V>>::value,
+                             int> = 0>
+  AdjacencyList(U&& data, V&& offsets)
+      : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
+  {
+    // Do nothing
+  }
+
+  /// Construct adjacency list from arrays of data  (non-Eigen data
+  /// types)
+  /// @param [in] data Adjacency array
+  /// @param [in] offsets The index to the adjacency list in the data
+  ///   array for node i
+  template <typename U, typename V,
+            std::enable_if_t<!std::is_base_of<Eigen::EigenBase<std::decay_t<V>>,
+                                              std::decay_t<V>>::value,
+                             int> = 0>
+  AdjacencyList(U&& data, V&& offsets)
       : _array(data.size()), _offsets(offsets.size())
   {
     assert(offsets.back() == (std::int32_t)data.size());
@@ -50,33 +67,11 @@ public:
     std::copy(offsets.begin(), offsets.end(), _offsets.data());
   }
 
-  /// Construct adjacency list from array of data
-  /// @param [in] data Adjacency array
-  /// @param [in] offsets The index to the adjacency list in the data
-  ///   array for node i
-  AdjacencyList(const Eigen::Array<T, Eigen::Dynamic, 1>& data,
-                const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets)
-      : _array(data), _offsets(offsets)
-  {
-    // Do nothing
-  }
-
-  /// Construct adjacency list from array of data
-  /// @param [in] data Adjacency array
-  /// @param [in] offsets The index to the adjacency list in the data
-  ///   array for node i
-  AdjacencyList(Eigen::Array<T, Eigen::Dynamic, 1>&& data,
-                Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&& offsets)
-      : _array(std::move(data)), _offsets(std::move(offsets))
-  {
-    // Do nothing
-  }
-
   /// Construct adjacency list for a problem with a fixed number of
   /// links (edges) for each node
   /// @param [in] matrix Two-dimensional array of adjacency data where
   ///   matrix(i, j) is the jth neighbor of the ith node
-  AdjacencyList(
+  explicit AdjacencyList(
       const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                           Eigen::RowMajor>>& matrix)
       : _array(matrix.rows() * matrix.cols()), _offsets(matrix.rows() + 1)
@@ -96,7 +91,7 @@ public:
   /// std::vector<<std::set<std::size_t>>, etc)
   /// @param [in] data TODO
   template <typename X>
-  AdjacencyList(const std::vector<X>& data) : _offsets(data.size() + 1)
+  explicit AdjacencyList(const std::vector<X>& data) : _offsets(data.size() + 1)
   {
     // Initialize offsets and compute total size
     std::int32_t size = 0;
@@ -117,10 +112,10 @@ public:
   }
 
   /// Copy constructor
-  AdjacencyList(const AdjacencyList& connectivity) = default;
+  AdjacencyList(const AdjacencyList& list) = default;
 
   /// Move constructor
-  AdjacencyList(AdjacencyList&& connectivity) = default;
+  AdjacencyList(AdjacencyList&& list) = default;
 
   /// Destructor
   ~AdjacencyList() = default;
@@ -199,7 +194,6 @@ public:
       << std::endl;
     for (Eigen::Index e = 0; e < _offsets.size() - 1; e++)
       s << "  " << e << ": " << this->links(e).transpose() << std::endl;
-
     return s.str();
   }
 
@@ -210,5 +204,4 @@ private:
   // Position of first connection for each entity (using local index)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _offsets;
 }; // namespace graph
-} // namespace graph
-} // namespace dolfinx
+} // namespace dolfinx::graph

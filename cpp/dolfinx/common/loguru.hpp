@@ -55,6 +55,7 @@ Website: www.ilikebigbits.com
 	* Version 1.8.0 - 2018-04-23 - Shorten long file names to keep preamble fixed width
 	* Version 1.9.0 - 2018-09-22 - Adjust terminal colors, add LOGURU_VERBOSE_SCOPE_ENDINGS, add LOGURU_SCOPE_TIME_PRECISION, add named log levels
 	* Version 2.0.0 - 2018-09-22 - Split loguru.hpp into loguru.hpp and loguru.cpp
+	* Version 2.1.0 - 2019-09-23 - Update fmtlib + add option to loguru::init to NOT set main thread name.
 
 # Compiling
 	Just include <loguru.hpp> where you want to use Loguru.
@@ -78,7 +79,7 @@ Website: www.ilikebigbits.com
 */
 
 #if defined(LOGURU_IMPLEMENTATION)
-	#warning "You are defining LOGURU_IMPLEMENTATION. This is for older versions of Loguru. You should now instead include loguru.cpp (or build it and link with it)"
+	#error "You are defining LOGURU_IMPLEMENTATION. This is for older versions of Loguru. You should now instead include loguru.cpp (or build it and link with it)"
 #endif
 
 // Disable all warnings from gcc/clang:
@@ -93,7 +94,7 @@ Website: www.ilikebigbits.com
 
 // Semantic versioning. Loguru version can be printed with printf("%d.%d.%d", LOGURU_VERSION_MAJOR, LOGURU_VERSION_MINOR, LOGURU_VERSION_PATCH);
 #define LOGURU_VERSION_MAJOR 2
-#define LOGURU_VERSION_MINOR 0
+#define LOGURU_VERSION_MINOR 1
 #define LOGURU_VERSION_PATCH 0
 
 #if defined(_MSC_VER)
@@ -155,8 +156,8 @@ Website: www.ilikebigbits.com
 	#define LOGURU_WITH_STREAMS 1
 #endif
 
-#ifndef LOGURU_UNSAFE_SIGNAL_HANDLER
-	#define LOGURU_UNSAFE_SIGNAL_HANDLER 1
+#if defined(LOGURU_UNSAFE_SIGNAL_HANDLER)
+	#error "You are defining LOGURU_UNSAFE_SIGNAL_HANDLER. This is for older versions of Loguru. You should now instead set the unsafe_signal_handler option when you call loguru::init."
 #endif
 
 #if LOGURU_IMPLEMENTATION
@@ -230,6 +231,9 @@ Website: www.ilikebigbits.com
 
 #if LOGURU_USE_FMTLIB
 	#include <fmt/format.h>
+	#define LOGURU_FMT(x) "{:" #x "}"
+#else
+	#define LOGURU_FMT(x) "%" #x
 #endif
 
 #ifdef _WIN32
@@ -272,8 +276,19 @@ namespace loguru
 	};
 
 	// Like printf, but returns the formated text.
+#if LOGURU_USE_FMTLIB
+	LOGURU_EXPORT
+	Text vtextprintf(const char* format, fmt::format_args args);
+
+	template<typename... Args>
+	LOGURU_EXPORT
+	Text textprintf(LOGURU_FORMAT_STRING_TYPE format, const Args&... args) {
+		return vtextprintf(format, fmt::make_format_args(args...));
+	}
+#else
 	LOGURU_EXPORT
 	Text textprintf(LOGURU_FORMAT_STRING_TYPE format, ...) LOGURU_PRINTF_LIKE(1, 2);
+#endif
 
 	// Overloaded for variadic template matching.
 	LOGURU_EXPORT
@@ -373,6 +388,27 @@ namespace loguru
 	// Verbosity_INVALID if name is not recognized.
 	typedef Verbosity (*name_to_verbosity_t)(const char* name);
 
+	// Runtime options passed to loguru::init
+	struct Options
+	{
+		// This allows you to use something else instead of "-v" via verbosity_flag.
+		// Set to nullptr to if you don't want Loguru to parse verbosity from the args.'
+		const char* verbosity_flag = "-v";
+
+		// loguru::init will set the name of the calling thread to this.
+		// If you don't want Loguru to set the name of the main thread,
+		// set this to nullptr.
+		// NOTE: on SOME platforms loguru::init will only overwrite the thread name
+		// if a thread name has not already been set.
+		// To always set a thread name, use loguru::set_thread_name instead.
+		const char* main_thread_name = "main thread";
+
+		// Make Loguru try to do unsafe but useful things,
+		// like printing a stack trace, when catching signals.
+		// This may lead to bad things like deadlocks in certain situations.
+		bool unsafe_signal_handler = true;
+	};
+
 	/*  Should be called from the main thread.
 		You don't *need* to call this, but if you do you get:
 			* Signal handlers installed
@@ -397,11 +433,10 @@ namespace loguru
 		That way you can set the default but have the user override it with the -v flag.
 		Note that -v does not affect file logging (see loguru::add_file).
 
-		You can use something else instead of "-v" via verbosity_flag.
-		You can also set verbosity_flag to nullptr.
+		You can you something other than the -v flag by setting the verbosity_flag option.
 	*/
 	LOGURU_EXPORT
-	void init(int& argc, char* argv[], const char* verbosity_flag = "-v");
+	void init(int& argc, char* argv[], const Options& options = {});
 
 	// Will call remove_all_callbacks(). After calling this, logging will still go to stderr.
 	// You generally don't need to call this.
@@ -521,15 +556,23 @@ namespace loguru
 	Verbosity current_verbosity_cutoff();
 
 #if LOGURU_USE_FMTLIB
+	// Internal functions
+	void vlog(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, fmt::format_args args);
+	void raw_vlog(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, fmt::format_args args);
+
 	// Actual logging function. Use the LOG macro instead of calling this directly.
+	template <typename... Args>
 	LOGURU_EXPORT
-	void log(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, fmt::ArgList args);
-	FMT_VARIADIC(void, log, Verbosity, const char*, unsigned, LOGURU_FORMAT_STRING_TYPE)
+	void log(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, const Args &... args) {
+	    vlog(verbosity, file, line, format, fmt::make_format_args(args...));
+	}
 
 	// Log without any preamble or indentation.
+	template <typename... Args>
 	LOGURU_EXPORT
-	void raw_log(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, fmt::ArgList args);
-	FMT_VARIADIC(void, raw_log, Verbosity, const char*, unsigned, LOGURU_FORMAT_STRING_TYPE)
+	void raw_log(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, const Args &... args) {
+	    raw_vlog(verbosity, file, line, format, fmt::make_format_args(args...));
+	}
 #else // LOGURU_USE_FMTLIB?
 	// Actual logging function. Use the LOG macro instead of calling this directly.
 	LOGURU_EXPORT
@@ -584,8 +627,18 @@ namespace loguru
 
 	// Marked as 'noreturn' for the benefit of the static analyzer and optimizer.
 	// stack_trace_skip is the number of extrace stack frames to skip above log_and_abort.
+#if LOGURU_USE_FMTLIB
+	LOGURU_EXPORT
+	LOGURU_NORETURN void vlog_and_abort(int stack_trace_skip, const char* expr, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, fmt::format_args);
+	template <typename... Args>
+	LOGURU_EXPORT
+	LOGURU_NORETURN void log_and_abort(int stack_trace_skip, const char* expr, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, const Args&... args) {
+	    vlog_and_abort(stack_trace_skip, expr, file, line, format, fmt::make_format_args(args...));
+	}
+#else
 	LOGURU_EXPORT
 	LOGURU_NORETURN void log_and_abort(int stack_trace_skip, const char* expr, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, ...) LOGURU_PRINTF_LIKE(5, 6);
+#endif
 	LOGURU_EXPORT
 	LOGURU_NORETURN void log_and_abort(int stack_trace_skip, const char* expr, const char* file, unsigned line);
 
@@ -596,15 +649,15 @@ namespace loguru
 	void flush();
 
 	template<class T> inline Text format_value(const T&)                    { return textprintf("N/A");     }
-	template<>        inline Text format_value(const char& v)               { return textprintf("%c",   v); }
-	template<>        inline Text format_value(const int& v)                { return textprintf("%d",   v); }
-	template<>        inline Text format_value(const unsigned int& v)       { return textprintf("%u",   v); }
-	template<>        inline Text format_value(const long& v)               { return textprintf("%lu",  v); }
-	template<>        inline Text format_value(const unsigned long& v)      { return textprintf("%ld",  v); }
-	template<>        inline Text format_value(const long long& v)          { return textprintf("%llu", v); }
-	template<>        inline Text format_value(const unsigned long long& v) { return textprintf("%lld", v); }
-	template<>        inline Text format_value(const float& v)              { return textprintf("%f",   v); }
-	template<>        inline Text format_value(const double& v)             { return textprintf("%f",   v); }
+	template<>        inline Text format_value(const char& v)               { return textprintf(LOGURU_FMT(c),   v); }
+	template<>        inline Text format_value(const int& v)                { return textprintf(LOGURU_FMT(d),   v); }
+	template<>        inline Text format_value(const unsigned int& v)       { return textprintf(LOGURU_FMT(u),   v); }
+	template<>        inline Text format_value(const long& v)               { return textprintf(LOGURU_FMT(lu),  v); }
+	template<>        inline Text format_value(const unsigned long& v)      { return textprintf(LOGURU_FMT(ld),  v); }
+	template<>        inline Text format_value(const long long& v)          { return textprintf(LOGURU_FMT(llu), v); }
+	template<>        inline Text format_value(const unsigned long long& v) { return textprintf(LOGURU_FMT(lld), v); }
+	template<>        inline Text format_value(const float& v)              { return textprintf(LOGURU_FMT(f),   v); }
+	template<>        inline Text format_value(const double& v)             { return textprintf(LOGURU_FMT(f),   v); }
 
 	/* Thread names can be set for the benefit of readable logs.
 	   If you do not set the thread name, a hex id will be shown instead.
@@ -976,11 +1029,11 @@ namespace loguru
 		{                                                                                          \
 			auto str_left = loguru::format_value(val_left);                                        \
 			auto str_right = loguru::format_value(val_right);                                      \
-			auto fail_info = loguru::textprintf("CHECK FAILED:  %s %s %s  (%s %s %s)  ",           \
+			auto fail_info = loguru::textprintf("CHECK FAILED:  " LOGURU_FMT(s) " " LOGURU_FMT(s) " " LOGURU_FMT(s) "  (" LOGURU_FMT(s) " " LOGURU_FMT(s) " " LOGURU_FMT(s) ")  ",           \
 				#expr_left, #op, #expr_right, str_left.c_str(), #op, str_right.c_str());           \
 			auto user_msg = loguru::textprintf(__VA_ARGS__);                                       \
 			loguru::log_and_abort(0, fail_info.c_str(), __FILE__, __LINE__,                        \
-			                      "%s", user_msg.c_str());                                         \
+			                      LOGURU_FMT(s), user_msg.c_str());                                         \
 		}                                                                                          \
 	} while (false)
 

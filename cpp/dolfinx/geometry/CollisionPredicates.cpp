@@ -80,7 +80,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
       assert(c_to_v);
       auto cell_vertices = c_to_v->links(c);
 
-      auto it = std::find(cell_vertices.data(),
+      const auto *it = std::find(cell_vertices.data(),
                           cell_vertices.data() + cell_vertices.rows(), v[i]);
       assert(it != (cell_vertices.data() + cell_vertices.rows()));
       const int local_vertex = std::distance(cell_vertices.data(), it);
@@ -93,41 +93,42 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
   if (cell_type == mesh::CellType::quadrilateral)
   {
     std::array<int, 4> _v = comp_vertices(entity, 4);
-    return collides_quad_point_2d(g.x(_v[0]), g.x(_v[1]), g.x(_v[2]),
-                                  g.x(_v[3]), point);
+    return collides_quad_point_2d(g.node(_v[0]), g.node(_v[1]), g.node(_v[2]),
+                                  g.node(_v[3]), point);
   }
   else if (tdim == 1 and gdim == 1)
   {
     std::array<int, 4> _v = comp_vertices(entity, 2);
-    return collides_segment_point_1d(g.x(_v[0])[0], g.x(_v[1])[0], point[0]);
+    return collides_segment_point_1d(g.node(_v[0])[0], g.node(_v[1])[0],
+                                     point[0]);
   }
   else if (tdim == 1 and gdim == 2)
   {
     std::array<int, 4> _v = comp_vertices(entity, 2);
-    return collides_segment_point_2d(g.x(_v[0]), g.x(_v[1]), point);
+    return collides_segment_point_2d(g.node(_v[0]), g.node(_v[1]), point);
   }
   else if (tdim == 1 and gdim == 3)
   {
     std::array<int, 4> _v = comp_vertices(entity, 2);
-    return collides_segment_point_3d(g.x(_v[0]), g.x(_v[1]), point);
+    return collides_segment_point_3d(g.node(_v[0]), g.node(_v[1]), point);
   }
   else if (tdim == 2 and gdim == 2)
   {
     std::array<int, 4> _v = comp_vertices(entity, 3);
-    return collides_triangle_point_2d(g.x(_v[0]), g.x(_v[1]), g.x(_v[2]),
-                                      point);
+    return collides_triangle_point_2d(g.node(_v[0]), g.node(_v[1]),
+                                      g.node(_v[2]), point);
   }
   else if (tdim == 2 and gdim == 3)
   {
     std::array<int, 4> _v = comp_vertices(entity, 3);
-    return collides_triangle_point_3d(g.x(_v[0]), g.x(_v[1]), g.x(_v[2]),
-                                      point);
+    return collides_triangle_point_3d(g.node(_v[0]), g.node(_v[1]),
+                                      g.node(_v[2]), point);
   }
   else if (tdim == 3)
   {
     std::array<int, 4> _v = comp_vertices(entity, 4);
-    return collides_tetrahedron_point_3d(g.x(_v[0]), g.x(_v[1]), g.x(_v[2]),
-                                         g.x(_v[3]), point);
+    return collides_tetrahedron_point_3d(g.node(_v[0]), g.node(_v[1]),
+                                         g.node(_v[2]), g.node(_v[3]), point);
   }
   else
   {
@@ -180,7 +181,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
       assert(c_to_v);
       auto cell_vertices = c_to_v->links(c);
 
-      auto it = std::find(cell_vertices.data(),
+      const auto *it = std::find(cell_vertices.data(),
                           cell_vertices.data() + cell_vertices.rows(), v[i]);
       assert(it != (cell_vertices.data() + cell_vertices.rows()));
       const int local_vertex = std::distance(cell_vertices.data(), it);
@@ -194,54 +195,56 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
   {
     std::array<int, 4> _v0 = comp_vertices(entity_0, 2);
     std::array<int, 4> _v1 = comp_vertices(entity_1, 2);
-    return collides_segment_segment(g0.x(_v0[0]), g0.x(_v0[1]), g1.x(_v1[0]),
-                                    g1.x(_v1[1]), gdim);
+    return collides_segment_segment(g0.node(_v0[0]), g0.node(_v0[1]),
+                                    g1.node(_v1[0]), g1.node(_v1[1]), gdim);
   }
   else if (d0 == 1 && d1 == 2)
   {
     std::array<int, 4> _v0 = comp_vertices(entity_0, 2);
     std::array<int, 4> _v1 = comp_vertices(entity_1, 3);
-    return collides_triangle_segment(g1.x(_v1[0]), g1.x(_v1[1]), g1.x(_v1[2]),
-                                     g0.x(_v0[0]), g0.x(_v0[1]), gdim);
+    return collides_triangle_segment(g1.node(_v1[0]), g1.node(_v1[1]),
+                                     g1.node(_v1[2]), g0.node(_v0[0]),
+                                     g0.node(_v0[1]), gdim);
   }
   else if (d0 == 2 && d1 == 1)
   {
     std::array<int, 4> _v0 = comp_vertices(entity_0, 3);
     std::array<int, 4> _v1 = comp_vertices(entity_1, 2);
-    return collides_triangle_segment(g0.x(_v0[0]), g0.x(_v0[1]), g0.x(_v0[2]),
-                                     g1.x(_v1[0]), g1.x(_v1[1]), gdim);
+    return collides_triangle_segment(g0.node(_v0[0]), g0.node(_v0[1]),
+                                     g0.node(_v0[2]), g1.node(_v1[0]),
+                                     g1.node(_v1[1]), gdim);
   }
   else if (d0 == 2 && d1 == 2)
   {
     std::array<int, 4> _v0 = comp_vertices(entity_0, 3);
     std::array<int, 4> _v1 = comp_vertices(entity_1, 3);
-    return collides_triangle_triangle(g0.x(_v0[0]), g0.x(_v0[1]), g0.x(_v0[2]),
-                                      g1.x(_v1[0]), g1.x(_v1[1]), g1.x(_v1[2]),
-                                      gdim);
+    return collides_triangle_triangle(g0.node(_v0[0]), g0.node(_v0[1]),
+                                      g0.node(_v0[2]), g1.node(_v1[0]),
+                                      g1.node(_v1[1]), g1.node(_v1[2]), gdim);
   }
   else if (d0 == 2 && d1 == 3)
   {
     std::array<int, 4> _v0 = comp_vertices(entity_0, 2);
     std::array<int, 4> _v1 = comp_vertices(entity_1, 4);
     return collides_tetrahedron_triangle_3d(
-        g1.x(_v1[0]), g1.x(_v1[1]), g1.x(_v1[2]), g1.x(_v1[3]), g0.x(_v0[0]),
-        g0.x(_v0[1]), g0.x(_v0[2]));
+        g1.node(_v1[0]), g1.node(_v1[1]), g1.node(_v1[2]), g1.node(_v1[3]),
+        g0.node(_v0[0]), g0.node(_v0[1]), g0.node(_v0[2]));
   }
   else if (d0 == 3 && d1 == 2)
   {
     std::array<int, 4> _v0 = comp_vertices(entity_0, 4);
     std::array<int, 4> _v1 = comp_vertices(entity_1, 3);
     return collides_tetrahedron_triangle_3d(
-        g0.x(_v0[0]), g0.x(_v0[1]), g0.x(_v0[2]), g0.x(_v0[3]), g1.x(_v1[0]),
-        g1.x(_v1[1]), g1.x(_v1[2]));
+        g0.node(_v0[0]), g0.node(_v0[1]), g0.node(_v0[2]), g0.node(_v0[3]),
+        g1.node(_v1[0]), g1.node(_v1[1]), g1.node(_v1[2]));
   }
   else if (d0 == 3 && d1 == 3)
   {
     std::array<int, 4> _v0 = comp_vertices(entity_0, 4);
     std::array<int, 4> _v1 = comp_vertices(entity_1, 4);
     return collides_tetrahedron_tetrahedron_3d(
-        g0.x(_v0[0]), g0.x(_v0[1]), g0.x(_v0[2]), g0.x(_v0[3]), g1.x(_v1[0]),
-        g1.x(_v1[1]), g1.x(_v1[2]), g1.x(_v1[3]));
+        g0.node(_v0[0]), g0.node(_v0[1]), g0.node(_v0[2]), g0.node(_v0[3]),
+        g1.node(_v1[0]), g1.node(_v1[1]), g1.node(_v1[2]), g1.node(_v1[3]));
   }
   else
   {

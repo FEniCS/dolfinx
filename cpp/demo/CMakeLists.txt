@@ -1,28 +1,20 @@
 cmake_minimum_required(VERSION 3.9)
 project(dolfinx-demos)
 
-# Find DOLFIN config file (not used here, but check that the demo will
-# be able to find it
-if (NOT TARGET dolfinx)
-  find_package(DOLFINX REQUIRED)
-endif()
+# Find DOLFINX config file
+find_package(DOLFINX REQUIRED)
 
-# Demos that run in real and complex modes
-add_subdirectory(poisson)
+# Enable testing
+enable_testing()
 
-# Demos that run only in real mode
-if (NOT PETSC_SCALAR_COMPLEX)
-  add_subdirectory(hyperelasticity)
-endif()
+# Macro to add demos. Some subdirectories might be skipped because demos may
+# not be running in both real and complex modes.
+macro(add_demo_subdirectory subdir)
+  if (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${subdir})
+    add_subdirectory(${subdir})
+  endif()
+endmacro(add_demo_subdirectory)
 
-# Demos that run only in complex mode
-if (PETSC_SCALAR_COMPLEX)
-  # Add here
-endif()
-
-# FIXME: do this programatically. Can we get a list of all targets?
-if (NOT PETSC_SCALAR_COMPLEX)
-  add_custom_target(demos DEPENDS demo_poisson demo_hyperelasticity)
-else()
-  add_custom_target(demos DEPENDS demo_poisson)
-endif()
+# Add demos
+add_demo_subdirectory(poisson)
+add_demo_subdirectory(hyperelasticity)

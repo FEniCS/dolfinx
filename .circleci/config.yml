@@ -17,8 +17,8 @@ install-python-components: &install-python-components
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
   command: |
-    python3 -m flake8 python/dolfin
-    python3 -m flake8 python/dolfin_utils
+    python3 -m flake8 python/dolfinx
+    python3 -m flake8 python/dolfinx_utils
     python3 -m flake8 python/demo
     python3 -m flake8 python/test
 
@@ -37,24 +37,27 @@ build-install-cpp: &build-install-cpp
 unit-tests-cpp: &unit-tests-cpp
   name: Build and run C++ unit tests (serial and MPI)
   command: |
-    cd build
-    ninja -j3 unittests
+    cd build/test/unit
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer .
+    ninja -j3
     ctest --output-on-failure -R unittests
     mpirun -np 3 ctest --output-on-failure -R unittests
 
 regression-tests-cpp: &regression-tests-cpp
   name: Build and run C++ regressions tests (serial)
   command: |
-    cd build
-    ninja -j3 demos
+    cd build/demo
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer .
+    ninja -j3
     ctest -j3 -R demo -R serial
 
 regression-tests-cpp-mpi: &regression-tests-cpp-mpi
   name: Run C++ regression tests (MPI)
   command: |
-    cd build
-    ninja -j3 demos
-    ctest --verbose -R demo -R mpi
+    cd build/demo
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer .
+    ninja -j3
+    ctest --verbose -R demo -R mpi_3
 
 build-python-interface: &build-python-interface
   name: Build Python/pybind11 interface

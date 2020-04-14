@@ -13,11 +13,9 @@ from dolfinx import cpp, fem, function
 
 __all__ = ["plot"]
 
-_meshfunction_types = (cpp.mesh.MeshFunctionInt, cpp.mesh.MeshFunctionDouble,
-                       cpp.mesh.MeshFunctionSizet)
 _matplotlib_plottable_types = (cpp.function.Function,
                                cpp.mesh.Mesh,
-                               cpp.fem.DirichletBC) + _meshfunction_types
+                               cpp.fem.DirichletBC)
 _all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types)))
 
 
@@ -32,7 +30,7 @@ def _has_matplotlib():
 def mesh2triang(mesh):
     import matplotlib.tri as tri
     xy = mesh.geometry.x
-    cells = mesh.geometry.dofmap().array().reshape((-1, mesh.topology.dim + 1))
+    cells = mesh.geometry.dofmap.array().reshape((-1, mesh.topology.dim + 1))
     return tri.Triangulation(xy[:, 0], xy[:, 1], cells)
 
 
@@ -47,7 +45,7 @@ def mplot_mesh(ax, mesh, **kwargs):
         mplot_mesh(ax, bmesh, **kwargs)
     elif gdim == 3 and tdim == 2:
         xy = mesh.geometry.x
-        cells = mesh.geometry.dofmap().array().reshape((-1, mesh.topology.dim + 1))
+        cells = mesh.geometry.dofmap.array().reshape((-1, mesh.topology.dim + 1))
         return ax.plot_trisurf(
             *[xy[:, i] for i in range(gdim)], triangles=cells, **kwargs)
     elif tdim == 1:
@@ -99,7 +97,9 @@ def mplot_function(ax, f, **kwargs):
             return
         fvec = fem.interpolate(f, fspace).vector
 
-    if fvec.getSize() == mesh.num_entities(tdim):
+    map_c = mesh.topology.index_map(tdim)
+    num_cells = map_c.size_local + map_c.num_ghosts
+    if fvec.getSize() == num_cells:
         # DG0 cellwise function
         C = fvec.get_local()
         if (C.dtype.type is np.complex128):
@@ -203,7 +203,8 @@ def mplot_function(ax, f, **kwargs):
         if (w0.dtype.type is np.complex128):
             warnings.warn("Plotting real part of complex data")
             w0 = np.real(w0)
-        nv = mesh.num_entities(0)
+        map_v = mesh.topology.index_map(0)
+        nv = map_v.size_local + map_v.num_ghosts
         if w0.shape[1] != gdim:
             raise AttributeError(
                 'Vector length must match geometric dimension.')
@@ -230,7 +231,7 @@ def mplot_function(ax, f, **kwargs):
             import matplotlib.tri as tri
             if gdim == 2 and tdim == 2:
                 # FIXME: Not tested
-                cells = mesh.geometry.dofmap().array().reshape((-1, mesh.topology.dim + 1))
+                cells = mesh.geometry.dofmap.array().reshape((-1, mesh.topology.dim + 1))
                 triang = tri.Triangulation(Xdef[0], Xdef[1], cells)
                 shading = kwargs.pop("shading", "flat")
                 return ax.tripcolor(triang, C, shading=shading, **kwargs)
@@ -240,23 +241,6 @@ def mplot_function(ax, f, **kwargs):
                     'Plotting does not support displacement for {} in {}}. Continuing without plot.'.
                     format(tdim, gdim))
                 return
-
-
-def mplot_meshfunction(ax, obj, **kwargs):
-    mesh = obj.mesh
-    tdim = mesh.topology.dim
-    d = obj.dim
-    if tdim == 2 and d == 2:
-        C = obj.array()
-        triang = mesh2triang(mesh)
-        assert not kwargs.pop("facecolors",
-                              None), "Not expecting 'facecolors' in kwargs"
-        return ax.tripcolor(triang, facecolors=C, **kwargs)
-    else:
-        # Return gracefully to make regression test pass without vtk
-        cpp.warning('Matplotlib plotting backend does not support mesh '
-                    'function of dim %d. Continuing without plotting...' % d)
-        return
 
 
 def mplot_dirichletbc(ax, obj, **kwargs):
@@ -322,8 +306,6 @@ def _plot_matplotlib(obj, mesh, kwargs):
         return mplot_mesh(ax, obj, **kwargs)
     elif isinstance(obj, cpp.fem.DirichletBC):
         return mplot_dirichletbc(ax, obj, **kwargs)
-    elif isinstance(obj, _meshfunction_types):
-        return mplot_meshfunction(ax, obj, **kwargs)
     else:
         raise AttributeError('Failed to plot %s' % type(obj))
 
@@ -334,8 +316,7 @@ def plot(object, *args, **kwargs):
 
     *Arguments*
         object
-            a :py:class:`Mesh <dolfinx.cpp.Mesh>`, a :py:class:`MeshFunction
-            <dolfinx.cpp.MeshFunction>`, a :py:class:`Function
+            a :py:class:`Mesh <dolfinx.cpp.Mesh>`, a :py:class:`Function
             <dolfinx.functions.function.Function>`, a :py:class:`Expression`
             <dolfinx.Expression>, a :py:class:`DirichletBC`
             <dolfinx.cpp.DirichletBC>, a :py:class:`FiniteElement

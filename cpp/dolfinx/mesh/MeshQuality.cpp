@@ -5,12 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MeshQuality.h"
+#include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshFunction.h"
-#include "MeshIterator.h"
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
-#include <math.h>
 #include <sstream>
 
 using namespace dolfinx;
@@ -40,10 +39,10 @@ std::array<double, 6> MeshQuality::dihedral_angles(const MeshEntity& cell)
     const std::size_t i2 = cell.entities(0)[edges[5 - i][0]];
     const std::size_t i3 = cell.entities(0)[edges[5 - i][1]];
 
-    const Eigen::Vector3d p0 = mesh.geometry().x(i0);
-    Eigen::Vector3d v1 = mesh.geometry().x(i1) - p0;
-    Eigen::Vector3d v2 = mesh.geometry().x(i2) - p0;
-    Eigen::Vector3d v3 = mesh.geometry().x(i3) - p0;
+    const Eigen::Vector3d p0 = mesh.geometry().node(i0);
+    Eigen::Vector3d v1 = mesh.geometry().node(i1) - p0;
+    Eigen::Vector3d v2 = mesh.geometry().node(i2) - p0;
+    Eigen::Vector3d v3 = mesh.geometry().node(i3) - p0;
 
     v1 /= v1.norm();
     v2 /= v2.norm();
@@ -63,10 +62,13 @@ std::array<double, 2> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
   double d_ang_max = -1.0;
 
   const int tdim = mesh.topology().dim();
-  for (auto& cell : MeshRange(mesh, tdim))
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
     // Get the angles from the next cell
-    std::array<double, 6> angles = dihedral_angles(cell);
+    std::array<double, 6> angles = dihedral_angles(MeshEntity(mesh, tdim, c));
 
     // And then update the min and max
     d_ang_min
@@ -74,46 +76,46 @@ std::array<double, 2> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
     d_ang_max
         = std::max(d_ang_max, *std::max_element(angles.begin(), angles.end()));
   }
-
-  d_ang_min = MPI::min(mesh.mpi_comm(), d_ang_min);
-  d_ang_max = MPI::max(mesh.mpi_comm(), d_ang_max);
-
   return {{d_ang_min, d_ang_max}};
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::vector<std::size_t>>
-MeshQuality::dihedral_angle_histogram_data(const Mesh& mesh,
-                                           std::size_t num_bins)
+std::pair<std::vector<double>, std::vector<std::int64_t>>
+MeshQuality::dihedral_angle_histogram_data(const Mesh& mesh, int num_bins)
 {
   std::vector<double> bins(num_bins);
-  std::vector<std::size_t> values(num_bins, 0);
+  std::vector<std::int64_t> values(num_bins, 0);
 
   // Currently min value is 0.0 and max is Pi
   const double interval = M_PI / (static_cast<double>(num_bins));
 
-  for (std::size_t i = 0; i < num_bins; ++i)
+  for (int i = 0; i < num_bins; ++i)
     bins[i] = static_cast<double>(i) * interval + interval / 2.0;
 
   const int tdim = mesh.topology().dim();
-  for (auto& cell : MeshRange(mesh, tdim))
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
     // this one should return the value of the angle
-    std::array<double, 6> angles = dihedral_angles(cell);
+    std::array<double, 6> angles = dihedral_angles(MeshEntity(mesh, tdim, c));
 
     // Iterate through the collected vector
     for (std::size_t i = 0; i < angles.size(); i++)
     {
       // Compute 'bin' index, and handle special case that angle = Pi
-      const std::size_t slot = std::min(
-          static_cast<std::size_t>(angles[i] / interval), num_bins - 1);
-
+      const int slot
+          = std::min(static_cast<int>(angles[i] / interval), num_bins - 1);
       values[slot] += 1;
     }
   }
 
   // FIXME: This is terrible. Avoid MPI calls inside loop.
   for (std::size_t i = 0; i < values.size(); ++i)
-    values[i] = MPI::sum(mesh.mpi_comm(), values[i]);
+  {
+    std::int64_t value = values[i];
+    MPI_Allreduce(&values[i], &value, 1, MPI_INT64_T, MPI_SUM, mesh.mpi_comm());
+  }
 
   return {bins, values};
 }

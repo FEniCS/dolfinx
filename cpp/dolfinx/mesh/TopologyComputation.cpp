@@ -60,9 +60,10 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
   return index;
 }
 //-----------------------------------------------------------------------------
+
 /// Communicate with sharing processes to find out which entities are
-/// ghosts and return a mapping vector to move these local indices to
-/// the end of the local range. Also returns the index map, and shared
+/// ghosts and return a map (vector) to move these local indices to the
+/// end of the local range. Also returns the index map, and shared
 /// entities, i.e. the set of all processes which share each shared
 /// entity.
 /// @param[in] comm MPI Communicator
@@ -75,8 +76,8 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 /// @returns Tuple of (local_indices, index map, shared entities)
 std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>>
 get_local_indexing(
-    MPI_Comm comm, const std::shared_ptr<const common::IndexMap> cell_indexmap,
-    const std::shared_ptr<const common::IndexMap> vertex_indexmap,
+    MPI_Comm comm, const std::shared_ptr<const common::IndexMap>& cell_indexmap,
+    const std::shared_ptr<const common::IndexMap>& vertex_indexmap,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         entity_list,
@@ -96,13 +97,13 @@ get_local_indexing(
   }
   unique_row.resize(entity_count);
 
+  //---------
   // Set ghost status array values
   // 1 = entities that are only in local cells (i.e. owned)
   // 2 = entities that are only in ghost cells (i.e. not owned)
   // 3 = entities with ownership that needs deciding (used also for unghosted
   // case)
   std::vector<std::int8_t> ghost_status(entity_count, 0);
-  //---------------------------------------------------------------
   {
     if (cell_indexmap->num_ghosts() == 0)
       std::fill(ghost_status.begin(), ghost_status.end(), 3);
@@ -129,13 +130,14 @@ get_local_indexing(
       }
     }
   }
-  //---------------------------------------------------------------
 
+  //---------
   // Create an expanded neighbour_comm from shared_vertices
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
       = vertex_indexmap->compute_shared_indices();
+
   std::set<std::int32_t> neighbour_set;
-  for (auto q : shared_vertices)
+  for (auto& q : shared_vertices)
     neighbour_set.insert(q.second.begin(), q.second.end());
   std::vector<std::int32_t> neighbours(neighbour_set.begin(),
                                        neighbour_set.end());
@@ -178,6 +180,7 @@ get_local_indexing(
           ++procs[p];
       }
     }
+
     for (const auto& q : procs)
     {
       // If any process shares all vertices, then add to list
@@ -215,9 +218,7 @@ get_local_indexing(
 
   // Prepare data for neighbour all to all
   std::vector<std::int64_t> send_entities_data;
-  std::vector<std::int64_t> recv_entities_data;
   std::vector<int> send_offsets = {0};
-  std::vector<int> recv_offsets;
   for (std::size_t i = 0; i < send_entities.size(); ++i)
   {
     send_entities_data.insert(send_entities_data.end(),
@@ -225,9 +226,13 @@ get_local_indexing(
     send_offsets.push_back(send_entities_data.size());
   }
 
-  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
-                                    send_entities_data, recv_offsets,
-                                    recv_entities_data);
+  const graph::AdjacencyList<std::int64_t> recv_data
+      = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
+                                          send_entities_data);
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_entities_data
+      = recv_data.array();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& recv_offsets
+      = recv_data.offsets();
 
   // Compare received with sent for each process
   // Any which are not found will have -1 in recv_index
@@ -253,8 +258,8 @@ get_local_indexing(
     }
   }
 
+  //---------
   // Determine ownership
-  //------------------------------------------------------------------
   std::vector<std::int32_t> local_index(entity_count, -1);
   std::int32_t num_local;
   {
@@ -299,22 +304,19 @@ get_local_indexing(
     assert(c == entity_count);
   }
 
+  //---------
   // Communicate global indices to other processes
-  //------------------------------------------------------------------
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghost_indices(entity_count
-                                                              - num_local);
+  std::vector<std::int64_t> ghost_indices(entity_count - num_local, -1);
   {
     const std::int64_t local_offset
         = dolfinx::MPI::global_offset(comm, num_local, true);
 
     std::vector<std::int64_t> send_global_index_data;
     std::vector<int> send_global_index_offsets = {0};
-    std::vector<std::int64_t> recv_global_index_data;
-    std::vector<int> recv_global_index_offsets;
 
-    // Send global indices for same entities that we sent before
-    // This uses the same pattern as before, so we can match up
-    // the received data to the indices in recv_index
+    // Send global indices for same entities that we sent before. This
+    // uses the same pattern as before, so we can match up the received
+    // data to the indices in recv_index
     for (int np = 0; np < neighbour_size; ++np)
     {
       for (std::int32_t index : send_index[np])
@@ -330,14 +332,15 @@ get_local_indexing(
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
 
-    dolfinx::MPI::neighbor_all_to_all(
-        neighbour_comm, send_global_index_offsets, send_global_index_data,
-        recv_global_index_offsets, recv_global_index_data);
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_global_index_data
+        = dolfinx::MPI::neighbor_all_to_all(
+              neighbour_comm, send_global_index_offsets, send_global_index_data)
+              .array();
 
-    assert(recv_global_index_data.size() == recv_index.size());
+    assert(recv_global_index_data.size() == (int)recv_index.size());
 
     // Map back received indices
-    for (std::size_t j = 0; j < recv_global_index_data.size(); ++j)
+    for (int j = 0; j < recv_global_index_data.size(); ++j)
     {
       const std::int64_t gi = recv_global_index_data[j];
       const std::int32_t idx = recv_index[j];
@@ -347,6 +350,8 @@ get_local_indexing(
         ghost_indices[local_index[idx] - num_local] = gi;
       }
     }
+    for (std::int64_t idx : ghost_indices)
+      assert(idx != -1);
   }
 
   MPI_Comm_free(&neighbour_comm);
@@ -360,8 +365,9 @@ get_local_indexing(
     new_entity_index[i] = local_index[entity_index[i]];
 
   return {std::move(new_entity_index), index_map};
-} // namespace
+}
 //-----------------------------------------------------------------------------
+
 /// Compute entities of dimension d
 /// @param[in] comm MPI communicator (TODO: full or neighbour hood?)
 /// @param[in] cells Adjacency list for cell-vertex connectivity
@@ -376,8 +382,8 @@ std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>>
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
-    const std::shared_ptr<const common::IndexMap> vertex_index_map,
-    const std::shared_ptr<const common::IndexMap> cell_index_map,
+    const std::shared_ptr<const common::IndexMap>& vertex_index_map,
+    const std::shared_ptr<const common::IndexMap>& cell_index_map,
     mesh::CellType cell_type, int dim)
 {
   if (dim == 0)
@@ -452,7 +458,6 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-
   auto [local_index, index_map] = get_local_indexing(
       comm, cell_index_map, vertex_index_map, entity_list, entity_index);
 
@@ -501,12 +506,15 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
   }
 
   // Compute offsets
-  std::vector<std::int32_t> offsets(num_connections.size() + 1, 0);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> offsets
+      = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(
+          num_connections.size() + 1);
   std::partial_sum(num_connections.begin(), num_connections.end(),
-                   offsets.begin() + 1);
+                   offsets.data() + 1);
 
   std::vector<std::int32_t> counter(num_connections.size(), 0);
-  std::vector<std::int32_t> connections(offsets.back());
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> connections(
+      offsets[offsets.rows() - 1]);
   for (int e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
   {
     auto e = c_d1_d0.links(e1);
@@ -514,7 +522,8 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
       connections[offsets[e[e0]] + counter[e[e0]]++] = e1;
   }
 
-  return graph::AdjacencyList<std::int32_t>(connections, offsets);
+  return graph::AdjacencyList<std::int32_t>(std::move(connections),
+                                            std::move(offsets));
 }
 //-----------------------------------------------------------------------------
 
@@ -581,6 +590,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 
   return graph::AdjacencyList<std::int32_t>(connections);
 }
+//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -643,16 +653,16 @@ TopologyComputation::compute_connectivity(const Topology& topology, int d0,
       = topology.connectivity(d0, 0);
   if (d0 > 0 and !topology.connectivity(d0, 0))
   {
-    std::runtime_error("Missing entities of dimension " + std::to_string(d0)
-                       + ".");
+    throw std::runtime_error("Missing entities of dimension "
+                             + std::to_string(d0) + ".");
   }
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d1_0
       = topology.connectivity(d1, 0);
   if (d1 > 0 and !topology.connectivity(d1, 0))
   {
-    std::runtime_error("Missing entities of dimension " + std::to_string(d1)
-                       + ".");
+    throw std::runtime_error("Missing entities of dimension "
+                             + std::to_string(d1) + ".");
   }
 
   // Start timer

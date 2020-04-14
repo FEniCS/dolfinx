@@ -9,10 +9,7 @@
 #include <Eigen/Dense>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace geometry
+namespace dolfinx::geometry
 {
 
 /// This class implements geometric predicates, i.e. function that
@@ -41,5 +38,4 @@ public:
   static bool convex_hull_is_degenerate(const std::vector<Eigen::Vector3d>& p,
                                         std::size_t gdim);
 };
-} // namespace geometry
-} // namespace dolfinx
+} // namespace dolfinx::geometry

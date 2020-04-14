@@ -10,10 +10,7 @@
 #include <boost/timer/timer.hpp>
 #include <string>
 
-namespace dolfinx
-{
-
-namespace common
+namespace dolfinx::common
 {
 
 /// A timer can be used for timing tasks. The basic usage is
@@ -37,7 +34,7 @@ public:
   Timer();
 
   /// Create timer with logging
-  Timer(std::string task);
+  Timer(const std::string& task);
 
   /// Destructor
   ~Timer();
@@ -62,5 +59,4 @@ private:
   // Implementation of timer
   boost::timer::cpu_timer _timer;
 };
-} // namespace common
-} // namespace dolfinx
+} // namespace dolfinx::common

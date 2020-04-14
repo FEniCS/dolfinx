@@ -17,7 +17,6 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
-#include <dolfinx/fem/PETScDMCollection.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/function/Constant.h>
@@ -27,7 +26,7 @@
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshFunction.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/eigen.h>
@@ -74,52 +73,6 @@ namespace dolfinx_wrappers
 {
 void fem(py::module& m)
 {
-
-  // UFC objects
-  py::class_<ufc_finite_element, std::shared_ptr<ufc_finite_element>>(
-      m, "ufc_finite_element", "UFC finite element object");
-  py::class_<ufc_dofmap, std::shared_ptr<ufc_dofmap>>(m, "ufc_dofmap",
-                                                      "UFC dofmap object");
-  py::class_<ufc_form, std::shared_ptr<ufc_form>>(m, "ufc_form",
-                                                  "UFC form object");
-  py::class_<ufc_coordinate_mapping, std::shared_ptr<ufc_coordinate_mapping>>(
-      m, "ufc_coordinate_mapping", "UFC coordinate_mapping object");
-
-  // Functions to convert pointers (from JIT usually) to UFC objects
-  m.def(
-      "make_ufc_finite_element",
-      [](std::uintptr_t e) {
-        ufc_finite_element* p = reinterpret_cast<ufc_finite_element*>(e);
-        return std::shared_ptr<const ufc_finite_element>(p);
-      },
-      "Create a ufc_finite_element object from a pointer.");
-
-  m.def(
-      "make_ufc_dofmap",
-      [](std::uintptr_t e) {
-        ufc_dofmap* p = reinterpret_cast<ufc_dofmap*>(e);
-        return std::shared_ptr<const ufc_dofmap>(p);
-      },
-      "Create a ufc_dofmap object from a pointer.");
-
-  m.def(
-      "make_ufc_form",
-      [](std::uintptr_t e) {
-        ufc_form* p = reinterpret_cast<ufc_form*>(e);
-        return std::shared_ptr<const ufc_form>(p);
-      },
-      "Create a ufc_form object from a pointer.");
-
-  m.def(
-      "make_coordinate_mapping",
-      [](std::uintptr_t e) {
-        ufc_coordinate_mapping* p
-            = reinterpret_cast<ufc_coordinate_mapping*>(e);
-        return dolfinx::fem::create_coordinate_map(*p);
-      },
-      "Create a CoordinateElement object from a pointer to a "
-      "ufc_coordinate_map.");
-
   // utils
   m.def("block_function_spaces",
         [](const std::vector<std::vector<const dolfinx::fem::Form*>>& a) {
@@ -188,18 +141,29 @@ void fem(py::module& m)
         "Create ElementDofLayout object from a ufc dofmap.");
   m.def(
       "create_dofmap",
-      [](const MPICommWrapper comm, const ufc_dofmap& dofmap,
+      [](const MPICommWrapper comm, const std::uintptr_t dofmap,
          dolfinx::mesh::Topology& topology) {
-        return dolfinx::fem::create_dofmap(comm.get(), dofmap, topology);
+        const ufc_dofmap* p = reinterpret_cast<const ufc_dofmap*>(dofmap);
+        return dolfinx::fem::create_dofmap(comm.get(), *p, topology);
       },
-      "Create DOLFIN DofMap object from a ufc dofmap.");
-  m.def("create_form",
-        py::overload_cast<const ufc_form&,
-                          const std::vector<std::shared_ptr<
-                              const dolfinx::function::FunctionSpace>>&>(
-            &dolfinx::fem::create_form),
-        "Create DOLFIN form from a ufc form.");
-
+      "Create DofMap object from a pointer to ufc_dofmap.");
+  m.def(
+      "create_form",
+      [](const std::uintptr_t form,
+         const std::vector<
+             std::shared_ptr<const dolfinx::function::FunctionSpace>>& spaces) {
+        const ufc_form* p = reinterpret_cast<const ufc_form*>(form);
+        return dolfinx::fem::create_form(*p, spaces);
+      },
+      "Create Form from a pointer to ufc_form.");
+  m.def(
+      "create_coordinate_map",
+      [](std::uintptr_t cmap) {
+        const ufc_coordinate_mapping* p
+            = reinterpret_cast<const ufc_coordinate_mapping*>(cmap);
+        return dolfinx::fem::create_coordinate_map(*p);
+      },
+      "Create CoordinateElement from a pointer to ufc_coordinate_map.");
   m.def(
       "build_dofmap",
       [](const dolfinx::mesh::Mesh& mesh,
@@ -213,8 +177,8 @@ void fem(py::module& m)
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout, int bs) {
-        // See https://github.com/pybind/pybind11/issues/1138 on why we need to
-        // convert from a std::unique_ptr to a std::shard_ptr
+        // See https://github.com/pybind/pybind11/issues/1138 on why we need
+        // to convert from a std::unique_ptr to a std::shard_ptr
         auto [map, dofmap] = dolfinx::fem::DofMapBuilder::build(
             comm.get(), topology, element_dof_layout, bs);
         return std::pair(
@@ -227,7 +191,11 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::FiniteElement,
              std::shared_ptr<dolfinx::fem::FiniteElement>>(
       m, "FiniteElement", "Finite element object")
-      .def(py::init<const ufc_finite_element&>())
+      .def(py::init([](const std::uintptr_t ufc_element) {
+        const ufc_finite_element* p
+            = reinterpret_cast<const ufc_finite_element*>(ufc_element);
+        return std::make_unique<dolfinx::fem::FiniteElement>(*p);
+      }))
       .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
       .def("dof_reference_coordinates",
            &dolfinx::fem::FiniteElement::dof_reference_coordinates)
@@ -248,15 +216,12 @@ void fem(py::module& m)
                                        Eigen::RowMajor>&>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
-      .def_property_readonly("cell_type",
-                             &dolfinx::fem::ElementDofLayout::cell_type)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)
       .def("num_entity_closure_dofs",
            &dolfinx::fem::ElementDofLayout::num_entity_closure_dofs)
       .def("entity_dofs", &dolfinx::fem::ElementDofLayout::entity_dofs)
       .def("entity_closure_dofs",
-           &dolfinx::fem::ElementDofLayout::entity_closure_dofs)
-      .def("degree", &dolfinx::fem::ElementDofLayout::degree);
+           &dolfinx::fem::ElementDofLayout::entity_closure_dofs);
 
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
@@ -269,14 +234,14 @@ void fem(py::module& m)
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)
       .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
       .def("cell_dofs", &dolfinx::fem::DofMap::cell_dofs)
-      .def("dofs", &dolfinx::fem::DofMap::dofs)
-      .def("set", &dolfinx::fem::DofMap::set)
-      .def("dof_array", &dolfinx::fem::DofMap::dof_array);
+      .def("list", &dolfinx::fem::DofMap::list);
 
   // dolfinx::fem::CoordinateElement
   py::class_<dolfinx::fem::CoordinateElement,
              std::shared_ptr<dolfinx::fem::CoordinateElement>>(
-      m, "CoordinateElement", "Coordinate mapping object")
+      m, "CoordinateElement", "Coordinate map element")
+      .def_property_readonly("dof_layout",
+                             &dolfinx::fem::CoordinateElement::dof_layout)
       .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward);
 
   // dolfinx::fem::DirichletBC
@@ -334,6 +299,41 @@ void fem(py::module& m)
           Mat, const dolfinx::function::FunctionSpace&,
           const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC>>&,
           PetscScalar>(&dolfinx::fem::add_diagonal));
+
+  m.def("assemble_scalar", &dolfinx::fem::assemble_scalar,
+        "Assemble functional over mesh");
+  // Vectors (single)
+  m.def("assemble_vector",
+        py::overload_cast<Vec, const dolfinx::fem::Form&>(
+            &dolfinx::fem::assemble_vector),
+        py::arg("b"), py::arg("L"),
+        "Assemble linear form into an existing vector");
+  m.def("assemble_vector",
+        py::overload_cast<
+            Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
+            const dolfinx::fem::Form&>(&dolfinx::fem::assemble_vector),
+        py::arg("b"), py::arg("L"),
+        "Assemble linear form into an existing Eigen vector");
+  // Matrices
+  m.def(
+      "assemble_matrix",
+      py::overload_cast<
+          Mat, const dolfinx::fem::Form&,
+          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC>>&>(
+          &dolfinx::fem::assemble_matrix));
+  m.def("assemble_matrix",
+        py::overload_cast<Mat, const dolfinx::fem::Form&,
+                          const std::vector<bool>&, const std::vector<bool>&>(
+            &dolfinx::fem::assemble_matrix));
+  m.def(
+      "add_diagonal",
+      py::overload_cast<
+          Mat, const dolfinx::function::FunctionSpace&,
+          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC>>&,
+          PetscScalar>(&dolfinx::fem::add_diagonal));
+
+  m.def("assemble_matrix_eigen", &dolfinx::fem::assemble_matrix_eigen);
+
   // BC modifiers
   m.def("apply_lifting",
         py::overload_cast<
@@ -402,6 +402,19 @@ void fem(py::module& m)
              std::shared_ptr<dolfinx::fem::FormIntegrals>>
       formintegrals(m, "FormIntegrals",
                     "Holder for integral kernels and domains");
+  formintegrals.def("integral_ids", &dolfinx::fem::FormIntegrals::integral_ids)
+      .def(
+          "integral_domains",
+          [](dolfinx::fem::FormIntegrals& self,
+             dolfinx::fem::FormIntegrals::Type type, int i) {
+            const std::vector<std::int32_t>& domains
+                = self.integral_domains(type, i);
+
+            return py::array_t<std::int32_t>(domains.size(), domains.data(),
+                                             py::none());
+          },
+          py::return_value_policy::reference_internal,
+          "Return active domains for given integral");
 
   py::enum_<dolfinx::fem::FormIntegrals::Type>(formintegrals, "Type")
       .value("cell", dolfinx::fem::FormIntegrals::Type::cell)
@@ -415,6 +428,7 @@ void fem(py::module& m)
       m, "Form", "Variational form object")
       .def(py::init<std::vector<
                std::shared_ptr<const dolfinx::function::FunctionSpace>>>())
+      .def("integrals", &dolfinx::fem::Form::integrals)
       .def(
           "num_coefficients",
           [](const dolfinx::fem::Form& self) {
@@ -441,37 +455,16 @@ void fem(py::module& m)
       .def("set_vertex_domains", &dolfinx::fem::Form::set_vertex_domains)
       .def("set_tabulate_tensor",
            [](dolfinx::fem::Form& self, dolfinx::fem::FormIntegrals::Type type,
-              int i, std::intptr_t addr) {
+              int i, py::object addr) {
              auto tabulate_tensor_ptr = (void (*)(
                  PetscScalar*, const PetscScalar*, const PetscScalar*,
-                 const double*, const int*, const std::uint8_t*, const bool*,
-                 const bool*, const std::uint8_t*))addr;
+                 const double*, const int*, const std::uint8_t*,
+                 const std::uint32_t))addr.cast<std::uintptr_t>();
              self.set_tabulate_tensor(type, i, tabulate_tensor_ptr);
            })
       .def_property_readonly("rank", &dolfinx::fem::Form::rank)
       .def("mesh", &dolfinx::fem::Form::mesh)
-      .def("function_space", &dolfinx::fem::Form::function_space)
-      .def("coordinate_mapping", &dolfinx::fem::Form::coordinate_mapping);
-
-  // dolfinx::fem::PETScDMCollection
-  py::class_<dolfinx::fem::PETScDMCollection,
-             std::shared_ptr<dolfinx::fem::PETScDMCollection>>(
-      m, "PETScDMCollection")
-      .def(py::init<std::vector<
-               std::shared_ptr<const dolfinx::function::FunctionSpace>>>())
-      .def_static(
-          "create_transfer_matrix",
-          [](const dolfinx::function::FunctionSpace& V0,
-             const dolfinx::function::FunctionSpace& V1) {
-            auto A = dolfinx::fem::PETScDMCollection::create_transfer_matrix(
-                V0, V1);
-            Mat _A = A.mat();
-            PetscObjectReference((PetscObject)_A);
-            return _A;
-          },
-          py::return_value_policy::take_ownership)
-      .def("check_ref_count", &dolfinx::fem::PETScDMCollection::check_ref_count)
-      .def("get_dm", &dolfinx::fem::PETScDMCollection::get_dm);
+      .def("function_space", &dolfinx::fem::Form::function_space);
 
   m.def("locate_dofs_topological", &dolfinx::fem::locate_dofs_topological,
         py::arg("V"), py::arg("dim"), py::arg("entities"),

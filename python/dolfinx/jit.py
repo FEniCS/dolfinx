@@ -8,31 +8,30 @@ import functools
 import os
 from pathlib import Path
 
+from mpi4py import MPI
+
 import dolfinx.pkgconfig
 import ffcx
 import ffcx.codegeneration.jit
 import ufl
-from dolfinx import common, cpp
+from dolfinx import common
 
 if dolfinx.pkgconfig.exists("dolfinx"):
     dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
 else:
-    raise RuntimeError(
-        "Could not find DOLFINX pkg-config file. Make sure appropriate paths are set."
-    )
+    raise RuntimeError("Could not find DOLFINX pkg-config file. Make sure appropriate paths are set.")
 
 
 def mpi_jit_decorator(local_jit, *args, **kwargs):
     """A decorator for jit compilation
 
-    Use this function as a decorator to any jit compiler function.  In
-    a parallel run, this function will first call the jit compilation
-    function on the first process. When this is done, and the module
-    is in the cache, it will call the jit compiler on the remaining
+    Use this function as a decorator to any jit compiler function. In a
+    parallel run, this function will first call the jit compilation
+    function on the first process. When this is done, and the module is
+    in the cache, it will call the jit compiler on the remaining
     processes, which will then use the cached module.
 
-    *Example*
-        .. code-block:: python
+    *Example* .. code-block:: python
 
             def jit_something(something):
                 ....
@@ -42,19 +41,19 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     @functools.wraps(local_jit)
     def mpi_jit(*args, **kwargs):
 
-        # FIXME: should require mpi_comm to be explicit
-        # and not default to comm_world?
-        mpi_comm = kwargs.pop("mpi_comm", cpp.MPI.comm_world)
+        # FIXME: should require mpi_comm to be explicit and not default
+        # to comm_world?
+        mpi_comm = kwargs.pop("mpi_comm", MPI.COMM_WORLD)
 
         # Just call JIT compiler when running in serial
-        if cpp.MPI.size(mpi_comm) == 1:
+        if mpi_comm.size == 1:
             return local_jit(*args, **kwargs)
 
         # Default status (0 == ok, 1 == fail)
         status = 0
 
         # Compile first on process 0
-        root = cpp.MPI.rank(mpi_comm) == 0
+        root = mpi_comm.rank == 0
         if root:
             try:
                 output = local_jit(*args, **kwargs)
@@ -69,11 +68,10 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
         # a sketch in dijitso of how to make only one process per
         # physical cache directory do the compilation.
 
-        # Wait for the compiling process to finish and get status
-        # TODO: Would be better to broadcast the status from root but
-        # this works.
-        global_status = cpp.MPI.max(mpi_comm, status)
-
+        # Wait for the compiling process to finish and get status TODO:
+        # Would be better to broadcast the status from root but this
+        # works.
+        global_status = mpi_comm.allreduce(status, op=MPI.MAX)
         if global_status == 0:
             # Success, call jit on all other processes (this should just
             # read the cache)

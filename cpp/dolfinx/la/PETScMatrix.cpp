@@ -123,8 +123,14 @@ void PETScMatrix::set_from_options()
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
 {
+  assert(_matA);
+
+  // Get matrix communicator
+  MPI_Comm comm = MPI_COMM_NULL;
+  PetscObjectGetComm((PetscObject)_matA, &comm);
+
   // Create PETSc nullspace
-  MatNullSpace petsc_ns = create_petsc_nullspace(mpi_comm(), nullspace);
+  MatNullSpace petsc_ns = create_petsc_nullspace(comm, nullspace);
 
   // Attach PETSc nullspace to matrix
   assert(_matA);
@@ -138,8 +144,14 @@ void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
 {
+  assert(_matA);
+
+  // Get matrix communicator
+  MPI_Comm comm = MPI_COMM_NULL;
+  PetscObjectGetComm((PetscObject)_matA, &comm);
+
   // Create PETSc nullspace
-  MatNullSpace petsc_ns = la::create_petsc_nullspace(mpi_comm(), nullspace);
+  MatNullSpace petsc_ns = la::create_petsc_nullspace(comm, nullspace);
 
   // Attach near  nullspace to matrix
   assert(_matA);

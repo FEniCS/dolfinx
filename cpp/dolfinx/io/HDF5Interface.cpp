@@ -192,7 +192,7 @@ void HDF5Interface::delete_attribute(const hid_t hdf5_file_handle,
 herr_t HDF5Interface::attribute_iteration_function(hid_t, const char* name,
                                                    const H5A_info_t*, void* str)
 {
-  std::vector<std::string>* s = (std::vector<std::string>*)str;
+  auto* s = (std::vector<std::string>*)str;
   std::string attr_name(name);
   s->push_back(name);
   return 0;
@@ -436,7 +436,7 @@ HDF5Interface::dataset_list(const hid_t hdf5_file_handle,
   {
     if (H5Gget_objname_by_idx(group_id, i, namebuf, HDF5_MAXSTRLEN) < 0)
       throw std::runtime_error("Call to H5Gget_objname_by_idx unsuccessful");
-    list_of_datasets.push_back(std::string(namebuf));
+    list_of_datasets.emplace_back(namebuf);
   }
 
   // Close group

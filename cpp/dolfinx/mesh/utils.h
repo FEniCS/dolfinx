@@ -18,10 +18,12 @@ class ElementDofLayout;
 
 namespace mesh
 {
+enum class CellType;
 class Mesh;
 class MeshEntity;
 
 /// Extract topology from cell data, i.e. extract cell vertices
+/// @param[in] cell_type The cell shape
 /// @param[in] layout The layout of geometry 'degrees-of-freedom' on the
 ///     reference cell
 /// @param[in] cells List of 'nodes' for each cell using global indices.
@@ -30,7 +32,7 @@ class MeshEntity;
 ///     'gaps' due to mid-side and other higher-order nodes being
 ///     removed from the input @p cell.
 graph::AdjacencyList<std::int64_t>
-extract_topology(const fem::ElementDofLayout& layout,
+extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
                  const graph::AdjacencyList<std::int64_t>& cells);
 
 /// Compute (generalized) volume of mesh entities of given dimension
@@ -79,11 +81,12 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
 /// @returns List of marked entity indices (indices local to the
 /// process)
 /// @endcond
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> compute_marked_boundary_entities(
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_geometrical(
     const mesh::Mesh& mesh, const int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker);
+                                            Eigen::RowMajor>>&)>& marker,
+    const bool boundary_only);
 
 } // namespace mesh
 } // namespace dolfinx

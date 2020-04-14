@@ -14,10 +14,7 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace io
+namespace dolfinx::io
 {
 
 /// Interface to HDF5 files
@@ -28,8 +25,8 @@ class HDF5File
 public:
   /// Constructor. file_mode should be "a" (append), "w" (write) or "r"
   /// (read).
-  HDF5File(MPI_Comm comm, const std::string filename,
-           const std::string file_mode);
+  HDF5File(MPI_Comm comm, const std::string& filename,
+           const std::string& file_mode);
 
   /// Destructor
   ~HDF5File();
@@ -41,7 +38,7 @@ public:
   void flush();
 
   /// Check if dataset exists in HDF5 file
-  bool has_dataset(const std::string dataset_name) const;
+  bool has_dataset(const std::string& dataset_name) const;
 
   /// Set the MPI atomicity
   void set_mpi_atomicity(bool atomic);
@@ -58,17 +55,17 @@ public:
   /// Write contiguous data to HDF5 data set. Data is flattened into a
   /// 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
   template <typename T>
-  void write_data(const std::string dataset_name, const std::vector<T>& data,
+  void write_data(const std::string& dataset_name, const std::vector<T>& data,
                   const std::vector<std::int64_t>& global_size,
                   bool use_mpi_io);
 
   /// Write 2D dataset to HDF5. Eigen::Arrays on each process must have
   /// the same number of columns.
   template <typename T>
-  void write_data(
-      const std::string dataset_name,
-      Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& data,
-      bool use_mpi_io);
+  void write_data(const std::string& dataset_name,
+                  const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                     Eigen::RowMajor>& data,
+                  bool use_mpi_io);
 
 private:
   // HDF5 file descriptor/handle
@@ -81,7 +78,7 @@ private:
 //---------------------------------------------------------------------------
 // Needs to go here, because of use in XDMFFile.cpp
 template <typename T>
-void HDF5File::write_data(const std::string dataset_name,
+void HDF5File::write_data(const std::string& dataset_name,
                           const std::vector<T>& data,
                           const std::vector<std::int64_t>& global_size,
                           bool use_mpi_io)
@@ -110,10 +107,10 @@ void HDF5File::write_data(const std::string dataset_name,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void HDF5File::write_data(
-    const std::string dataset_name,
-    Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& data,
-    bool use_mpi_io)
+void HDF5File::write_data(const std::string& dataset_name,
+                          const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                             Eigen::RowMajor>& data,
+                          bool use_mpi_io)
 {
   assert(_hdf5_file_id > 0);
 
@@ -127,7 +124,11 @@ void HDF5File::write_data(
   if (dset_name[0] != '/')
     dset_name = "/" + dataset_name;
 
-  std::int64_t global_rows = MPI::sum(_mpi_comm.comm(), data.rows());
+  std::int64_t global_rows = 0;
+  const std::int64_t local_rows = data.rows();
+  MPI_Allreduce(&local_rows, &global_rows, 1, MPI_INT64_T, MPI_SUM,
+                _mpi_comm.comm());
+
   std::vector<std::int64_t> global_size = {global_rows, data.cols()};
   if (data.cols() == 1)
     global_size = {global_rows};
@@ -136,5 +137,4 @@ void HDF5File::write_data(
                                global_size, use_mpi_io, chunking);
 }
 //---------------------------------------------------------------------------
-} // namespace io
-} // namespace dolfinx
+} // namespace dolfinx::io

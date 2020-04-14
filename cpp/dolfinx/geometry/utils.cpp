@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "BoundingBoxTree.h"
 #include "CollisionPredicates.h"
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -344,7 +345,10 @@ geometry::BoundingBoxTree geometry::create_midpoint_tree(const mesh::Mesh& mesh)
 
   // Create list of midpoints for all cells
   const int dim = mesh.topology().dim();
-  Eigen::Array<int, Eigen::Dynamic, 1> entities(mesh.num_entities(dim));
+  auto map = mesh.topology().index_map(dim);
+  assert(map);
+  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+  Eigen::Array<int, Eigen::Dynamic, 1> entities(num_cells);
   std::iota(entities.data(), entities.data() + entities.rows(), 0);
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
       = mesh::midpoints(mesh, dim, entities);
@@ -547,7 +551,7 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
       = entity.mesh().geometry().dofmap();
 
   // Find attached cell
-  entity.mesh().create_connectivity(dim, tdim);
+  entity.mesh().topology_mutable().create_connectivity(dim, tdim);
   auto e_to_c = entity.mesh().topology().connectivity(dim, tdim);
   assert(e_to_c);
   assert(e_to_c->num_links(entity.index()) > 0);
@@ -565,62 +569,62 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
   {
   case (mesh::CellType::interval):
   {
-    auto it0
+    const auto* it0
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[0]);
     assert(it0 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex0 = std::distance(cell_vertices.data(), it0);
-    auto it1
+    const auto* it1
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[1]);
     assert(it1 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex1 = std::distance(cell_vertices.data(), it1);
 
-    const Eigen::Vector3d a = geometry.x(dofs(local_vertex0));
-    const Eigen::Vector3d b = geometry.x(dofs(local_vertex1));
+    const Eigen::Vector3d a = geometry.node(dofs(local_vertex0));
+    const Eigen::Vector3d b = geometry.node(dofs(local_vertex1));
     return geometry::squared_distance_interval(p, a, b);
   }
   case (mesh::CellType::triangle):
   {
-    auto it0
+    const auto* it0
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[0]);
     assert(it0 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex0 = std::distance(cell_vertices.data(), it0);
-    auto it1
+    const auto* it1
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[1]);
     assert(it1 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex1 = std::distance(cell_vertices.data(), it1);
-    auto it2
+    const auto* it2
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[2]);
     assert(it2 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex2 = std::distance(cell_vertices.data(), it2);
 
-    const Eigen::Vector3d a = geometry.x(dofs(local_vertex0));
-    const Eigen::Vector3d b = geometry.x(dofs(local_vertex1));
-    const Eigen::Vector3d c = geometry.x(dofs(local_vertex2));
+    const Eigen::Vector3d a = geometry.node(dofs(local_vertex0));
+    const Eigen::Vector3d b = geometry.node(dofs(local_vertex1));
+    const Eigen::Vector3d c = geometry.node(dofs(local_vertex2));
     return geometry::squared_distance_triangle(p, a, b, c);
   }
   case (mesh::CellType::tetrahedron):
   {
-    auto it0
+    const auto* it0
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[0]);
     assert(it0 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex0 = std::distance(cell_vertices.data(), it0);
-    auto it1
+    const auto* it1
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[1]);
     assert(it1 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex1 = std::distance(cell_vertices.data(), it1);
-    auto it2
+    const auto* it2
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[2]);
     assert(it2 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex2 = std::distance(cell_vertices.data(), it2);
-    auto it3
+    const auto* it3
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[3]);
     assert(it2 != (cell_vertices.data() + cell_vertices.rows()));
@@ -633,10 +637,10 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
     // only return the distance to that point.
 
     // Get the vertices as points
-    const Eigen::Vector3d a = geometry.x(dofs(local_vertex0));
-    const Eigen::Vector3d b = geometry.x(dofs(local_vertex1));
-    const Eigen::Vector3d c = geometry.x(dofs(local_vertex2));
-    const Eigen::Vector3d d = geometry.x(dofs(local_vertex3));
+    const Eigen::Vector3d a = geometry.node(dofs(local_vertex0));
+    const Eigen::Vector3d b = geometry.node(dofs(local_vertex1));
+    const Eigen::Vector3d c = geometry.node(dofs(local_vertex2));
+    const Eigen::Vector3d d = geometry.node(dofs(local_vertex3));
 
     // Initialize squared distance
     double r2 = std::numeric_limits<double>::max();

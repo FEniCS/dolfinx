@@ -199,10 +199,10 @@ MatNullSpace dolfinx::la::create_petsc_nullspace(
 
   // Copy vectors in vector space object
   std::vector<Vec> _nullspace;
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
+  for (int i = 0; i < nullspace.dim(); ++i)
   {
     assert(nullspace[i]);
-    auto x = nullspace[i]->vec();
+    auto *x = nullspace[i]->vec();
 
     // Copy vector pointer
     assert(x);
@@ -274,7 +274,7 @@ void dolfinx::la::petsc_error(int error_code, std::string filename,
 }
 //-----------------------------------------------------------------------------
 dolfinx::la::VecWrapper::VecWrapper(Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y), _y_local(nullptr), _ghosted(ghosted)
+    : x(nullptr, 0), _y(y),  _ghosted(ghosted)
 {
   assert(_y);
   if (ghosted)
@@ -331,7 +331,7 @@ void dolfinx::la::VecWrapper::restore()
 }
 //-----------------------------------------------------------------------------
 dolfinx::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y), _y_local(nullptr), _ghosted(ghosted)
+    : x(nullptr, 0), _y(y),  _ghosted(ghosted)
 {
   assert(_y);
   if (ghosted)

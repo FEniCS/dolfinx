@@ -29,11 +29,6 @@ class Mesh;
 namespace fem
 {
 
-/// Marking function to define facets when DirichletBC applies
-using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-    const Eigen::Ref<
-        const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)>;
-
 /// Build an array of degree-of-freedom indices that are associated with
 /// give mesh entities (topological)
 ///
@@ -85,7 +80,9 @@ locate_dofs_topological(
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
 locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
-    marking_function marker);
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker);
 
 /// Interface for setting (strong) Dirichlet boundary conditions
 ///
@@ -109,7 +106,7 @@ public:
   /// @param[in] dofs Degree-of-freedom indices in the space of the
   ///   boundary value function applied to V_dofs[i]
   DirichletBC(
-      std::shared_ptr<const function::Function> g,
+      const std::shared_ptr<const function::Function>& g,
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
           dofs);
 
@@ -123,7 +120,7 @@ public:
   /// @param[in] V The function (sub)space on which the boundary
   ///   condition is applied
   DirichletBC(
-      std::shared_ptr<const function::Function> g,
+      const std::shared_ptr<const function::Function>& g,
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>&
           V_g_dofs,
       std::shared_ptr<const function::FunctionSpace> V);

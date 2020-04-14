@@ -6,8 +6,8 @@
 
 #include "VTKWriter.h"
 #include "cells.h"
-#include <boost/detail/endian.hpp>
 #include <cstdint>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Function.h>
@@ -15,10 +15,9 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
+#include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshFunction.h>
-#include <dolfinx/mesh/MeshIterator.h>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
@@ -30,6 +29,47 @@ using namespace dolfinx::io;
 
 namespace
 {
+//-----------------------------------------------------------------------------
+int get_degree(const mesh::CellType& cell_type, int num_dofs)
+{
+  switch (cell_type)
+  {
+  case mesh::CellType::interval:
+    if (num_dofs == 2)
+      return 1;
+    else if (num_dofs == 3)
+      return 2;
+    break;
+  case mesh::CellType::triangle:
+    if (num_dofs == 3)
+      return 1;
+    else if (num_dofs == 6)
+      return 2;
+    break;
+  case mesh::CellType::quadrilateral:
+    if (num_dofs == 4)
+      return 1;
+    else if (num_dofs == 9)
+      return 2;
+    break;
+  case mesh::CellType::tetrahedron:
+    if (num_dofs == 4)
+      return 1;
+    else if (num_dofs == 10)
+      return 2;
+    break;
+  case mesh::CellType::hexahedron:
+    if (num_dofs == 8)
+      return 1;
+    else if (num_dofs == 27)
+      return 2;
+    break;
+  default:
+    throw std::runtime_error("Unknown cell type");
+  }
+
+  throw std::runtime_error("Cannot determine degree");
+}
 //-----------------------------------------------------------------------------
 // Get VTK cell type
 std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim,
@@ -98,9 +138,10 @@ std::string ascii_cell_data(const mesh::Mesh& mesh,
   std::ostringstream ss;
   ss << std::scientific;
   ss << std::setprecision(16);
-  std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
-  for (int i = 0;
-       i < mesh.topology().index_map(mesh.topology().dim())->size_local(); ++i)
+  auto cell_offset = offset.begin();
+  const int tdim = mesh.topology().dim();
+  const int num_cells = mesh.topology().index_map(tdim)->size_local();
+  for (int i = 0; i < num_cells; ++i)
   {
     if (rank == 1 && data_dim == 2)
     {
@@ -139,11 +180,11 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
                       std::string filename)
 {
   const int num_cells = mesh.topology().index_map(cell_dim)->size_local();
-  const int element_degree = mesh.geometry().dof_layout().degree();
+  const int degree = get_degree(mesh.geometry().cmap().cell_shape(),
+                                mesh.geometry().cmap().dof_layout().num_dofs());
 
   // Get VTK cell type
-  const std::int8_t vtk_cell_type
-      = get_vtk_cell_type(mesh, cell_dim, element_degree);
+  const std::int8_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim, degree);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -155,7 +196,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
 
   // Write vertex positions
   file << "<Points>" << std::endl;
-  file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
+  file << R"(<DataArray  type="Float64"  NumberOfComponents="3"  format=")"
        << "ascii"
        << "\">";
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points
@@ -166,7 +207,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
 
   // Write cell connectivity
   file << "<Cells>" << std::endl;
-  file << "<DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\""
+  file << R"(<DataArray  type="Int32"  Name="connectivity"  format=")"
        << "ascii"
        << "\">";
 
@@ -184,32 +225,48 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   {
     // Special case where the cells are visualized (Supports higher order
     // elements)
-    const graph::AdjacencyList<std::int32_t>& connectivity_g
+    const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh.geometry().dofmap();
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_connections
-        = connectivity_g.array();
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-        = connectivity_g.offsets();
-    num_nodes = connectivity_g.num_links(0);
+    // FIXME: USe better way to get number of nods
+    num_nodes = x_dofmap.num_links(0);
 
     const std::vector<std::uint8_t> perm
         = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
-    for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j)
+    for (int c = 0; c < x_dofmap.num_nodes(); ++c)
     {
-      for (int i = 0; i < num_nodes; ++i)
-        file << cell_connections(pos_g(j) + perm[i]) << " ";
+      auto x_dofs = x_dofmap.links(c);
+      for (int i = 0; i < x_dofs.rows(); ++i)
+        file << x_dofs(perm[i]) << " ";
       file << " ";
     }
     file << "</DataArray>" << std::endl;
   }
   else
   {
-    const int degree = mesh.geometry().dof_layout().degree();
+    // const int degree = mesh.geometry().cmap().dof_layout().degree();
+
     if (degree > 1)
+      throw std::runtime_error("Higher order mesh entities not implemented.");
+
+    // Build a map from topology to geometry
+    auto c_to_v = mesh.topology().connectivity(tdim, 0);
+    assert(c_to_v);
+
+    auto map = mesh.topology().index_map(0);
+    assert(map);
+    const std::int32_t num_mesh_vertices
+        = map->size_local() + map->num_ghosts();
+
+    std::vector<std::int32_t> vertex_to_node(num_mesh_vertices);
+    auto x_dofmap = mesh.geometry().dofmap();
+    for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
-      throw std::runtime_error("MeshFunction of lower degree than the "
-                               "topological dimension is not implemented");
+      auto vertices = c_to_v->links(c);
+      auto x_dofs = x_dofmap.links(c);
+      for (int i = 0; i < vertices.rows(); ++i)
+        vertex_to_node[vertices[i]] = x_dofs(i);
     }
+
     mesh::CellType e_type
         = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
     // FIXME : Need to implement permutations for higher order
@@ -218,15 +275,13 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     const int num_vertices = mesh::num_cell_vertices(e_type);
     const std::vector<std::uint8_t> perm
         = io::cells::vtk_to_dolfin(e_type, num_vertices);
-    auto vertex_connectivity = mesh.topology().connectivity(cell_dim, 0);
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& vertex_connections
-        = vertex_connectivity->array();
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_vertex
-        = vertex_connectivity->offsets();
-    for (int j = 0; j < mesh.num_entities(cell_dim); ++j)
+    auto e_to_v = mesh.topology().connectivity(cell_dim, 0);
+    assert(e_to_v);
+    for (int e = 0; e < e_to_v->num_nodes(); ++e)
     {
+      auto vertices = e_to_v->links(e);
       for (int i = 0; i < num_vertices; ++i)
-        file << vertex_connections(pos_vertex(j) + perm[i]) << " ";
+        file << vertex_to_node[vertices(perm[i])] << " ";
       file << " ";
     }
     file << "</DataArray>" << std::endl;
@@ -235,7 +290,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   }
 
   // Write offset into connectivity array for the end of each cell
-  file << "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\""
+  file << R"(<DataArray  type="Int32"  Name="offsets"  format=")"
        << "ascii"
        << "\">";
   for (int offsets = 1; offsets <= num_cells; offsets++)
@@ -243,7 +298,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   file << "</DataArray>" << std::endl;
 
   // Write cell type
-  file << "<DataArray  type=\"Int8\"  Name=\"types\"  format=\""
+  file << R"(<DataArray  type="Int8"  Name="types"  format=")"
        << "ascii"
        << "\">";
   for (int types = 0; types < num_cells; types++)
@@ -273,13 +328,12 @@ void VTKWriter::write_cell_data(const function::Function& u,
   assert(u.function_space()->dofmap());
   const mesh::Mesh& mesh = *u.function_space()->mesh();
   const fem::DofMap& dofmap = *u.function_space()->dofmap();
-  const std::size_t tdim = mesh.topology().dim();
-  const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local();
-
+  const int tdim = mesh.topology().dim();
+  const std::int32_t num_cells = mesh.topology().index_map(tdim)->size_local();
   std::string encode_string = "ascii";
 
   // Get rank of function::Function
-  const std::size_t rank = u.value_rank();
+  const int rank = u.value_rank();
   if (rank > 2)
   {
     throw std::runtime_error("Don't know how to handle vector function with "
@@ -287,7 +341,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   }
 
   // Get number of components
-  const std::size_t data_dim = u.value_size();
+  const int data_dim = u.value_size();
 
   // Open file
   std::ofstream fp(filename.c_str(), std::ios_base::app);
@@ -299,7 +353,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
     fp << "<CellData  Scalars=\""
        << "u"
        << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\""
+    fp << R"(<DataArray  type="Float64"  Name=")"
        << "u"
        << "\"  format=\"" << encode_string << "\">";
   }
@@ -314,9 +368,9 @@ void VTKWriter::write_cell_data(const function::Function& u,
     fp << "<CellData  Vectors=\""
        << "u"
        << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\""
+    fp << R"(<DataArray  type="Float64"  Name=")"
        << "u"
-       << "\"  NumberOfComponents=\"3\" format=\"" << encode_string << "\">";
+       << R"("  NumberOfComponents="3" format=")" << encode_string << "\">";
   }
   else if (rank == 2)
   {
@@ -328,9 +382,9 @@ void VTKWriter::write_cell_data(const function::Function& u,
     fp << "<CellData  Tensors=\""
        << "u"
        << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\""
+    fp << R"(<DataArray  type="Float64"  Name=")"
        << "u"
-       << "\"  NumberOfComponents=\"9\" format=\"" << encode_string << "\">";
+       << R"("  NumberOfComponents="9" format=")" << encode_string << "\">";
   }
 
   // Allocate memory for function values at cell centres
@@ -339,13 +393,14 @@ void VTKWriter::write_cell_data(const function::Function& u,
   // Build lists of dofs and create map
   std::vector<std::int32_t> dof_set;
   std::vector<std::size_t> offset(size + 1);
-  std::vector<std::size_t>::iterator cell_offset = offset.begin();
+  auto cell_offset = offset.begin();
   assert(dofmap.element_dof_layout);
   const int num_dofs_cell = dofmap.element_dof_layout->num_dofs();
-  for (auto& cell : mesh::MeshRange(mesh, tdim))
+
+  for (int c = 0; c < num_cells; ++c)
   {
     // Tabulate dofs
-    auto dofs = dofmap.cell_dofs(cell.index());
+    auto dofs = dofmap.cell_dofs(c);
     for (int i = 0; i < num_dofs_cell; ++i)
       dof_set.push_back(dofs[i]);
 

@@ -63,7 +63,7 @@ public:
   // FIXME: Is this well-defined? What does it do on non-simplex
   // elements?
   /// Return the maximum polynomial degree
-  std::size_t degree() const;
+  int degree() const;
 
   /// The finite element family
   /// @return The string of the finite element family
@@ -85,8 +85,7 @@ public:
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-      const bool* edge_reflections, const bool* face_reflections,
-      const std::uint8_t* face_rotations) const;
+      const std::uint32_t permutation_info) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
@@ -97,8 +96,7 @@ public:
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-      const bool* edge_reflections, const bool* face_reflections,
-      const std::uint8_t* face_rotations) const;
+      const std::uint32_t permutation_info) const;
 
   /// Check if reference coordinates for dofs are defined
   /// @return True if the dof coordinates are available
@@ -162,8 +160,8 @@ private:
       _evaluate_reference_basis_derivatives;
 
   std::function<int(double*, int, int, const double*, const double*,
-                    const double*, const double*, const double*, const bool*,
-                    const bool*, const std::uint8_t*)>
+                    const double*, const double*, const double*,
+                    const std::uint32_t)>
       _transform_reference_basis_derivatives;
 
   std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*,

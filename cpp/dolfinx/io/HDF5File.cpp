@@ -6,7 +6,6 @@
 
 #include "HDF5File.h"
 #include "HDF5Interface.h"
-#include "HDF5Utility.h"
 #include <Eigen/Dense>
 #include <boost/filesystem.hpp>
 #include <fstream>
@@ -18,8 +17,8 @@ using namespace dolfinx;
 using namespace dolfinx::io;
 
 //-----------------------------------------------------------------------------
-HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
-                   const std::string file_mode)
+HDF5File::HDF5File(MPI_Comm comm, const std::string& filename,
+                   const std::string& file_mode)
     : _hdf5_file_id(0), _mpi_comm(comm)
 {
   // See https://www.hdfgroup.org/hdf5-quest.html#gzero on zero for
@@ -42,7 +41,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
   }
 
   // Wait until directory has been created
-  MPI::barrier(_mpi_comm.comm());
+  MPI_Barrier(_mpi_comm.comm());
 
   // Open HDF5 file
   const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
@@ -74,7 +73,7 @@ void HDF5File::flush()
   HDF5Interface::flush_file(_hdf5_file_id);
 }
 //-----------------------------------------------------------------------------
-bool HDF5File::has_dataset(const std::string dataset_name) const
+bool HDF5File::has_dataset(const std::string& dataset_name) const
 {
   assert(_hdf5_file_id > 0);
   return HDF5Interface::has_dataset(_hdf5_file_id, dataset_name);

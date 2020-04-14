@@ -35,13 +35,13 @@ from dolfinx.common import (has_debug, has_petsc_complex, has_kahip,
                            has_parmetis, git_commit_hash, TimingType, timing,
                            timings, list_timings)
 
-import dolfinx.MPI
 import dolfinx.log
 
 from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
-from .cpp.mesh import Mesh, Topology, Geometry, MeshEntity, EntityRange, MeshQuality
+from dolfinx.mesh import Mesh
+from .cpp.mesh import Topology, Geometry, MeshEntity, MeshQuality
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)
 
@@ -54,13 +54,15 @@ from .function import (FunctionSpace, VectorFunctionSpace,
 from .specialfunctions import (FacetNormal, CellVolume, CellNormal,
                                CellDiameter, Circumradius)
 
-from .mesh import MeshFunction
-from .mesh import MeshValueCollection
+from .mesh import MeshTags
 
-# Initialise PETSc
+# Initialise PETSc and logging
 from dolfinx import cpp
 import sys
-cpp.common.SubSystemsManager.init_logging(sys.argv)
+# FIXME: We're not passing command link argument here because some
+# pytest arg crash loguru
+cpp.common.SubSystemsManager.init_logging([""])
+# cpp.common.SubSystemsManager.init_logging(sys.argv)
 del sys
 cpp.common.SubSystemsManager.init_petsc()
 

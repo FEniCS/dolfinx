@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <dolfinx/common/MPI.h>
 #include <map>
+#include <mpi.h>
 #include <set>
 #include <string>
 #include <variant>

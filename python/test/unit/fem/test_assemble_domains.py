@@ -7,26 +7,28 @@
 
 import numpy
 import pytest
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
+from dolfinx.mesh import locate_entities_geometrical
 import ufl
 
 
 @pytest.fixture
 def mesh():
-    return dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 10, 10)
+    return dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
 
 
 parametrize_ghost_mode = pytest.mark.parametrize("mode", [
     pytest.param(dolfinx.cpp.mesh.GhostMode.none,
-                 marks=pytest.mark.skipif(condition=dolfinx.MPI.size(dolfinx.MPI.comm_world) > 1,
+                 marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size > 1,
                                           reason="Unghosted interior facets fail in parallel")),
     pytest.param(dolfinx.cpp.mesh.GhostMode.shared_facet,
-                 marks=pytest.mark.skipif(condition=dolfinx.MPI.size(dolfinx.MPI.comm_world) == 1,
+                 marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size == 1,
                                           reason="Shared ghost modes fail in serial")),
     pytest.param(dolfinx.cpp.mesh.GhostMode.shared_vertex,
-                 marks=pytest.mark.skipif(condition=dolfinx.MPI.size(dolfinx.MPI.comm_world) == 1,
+                 marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size == 1,
                                           reason="Shared ghost modes fail in serial"))])
 
 
@@ -34,25 +36,24 @@ def test_assembly_dx_domains(mesh):
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    marker = dolfinx.MeshFunction("size_t", mesh, mesh.topology.dim, 0)
-    values = marker.values
-    # Mark first, second and all other
-    # Their union is the whole domain
-    values[0] = 111
-    values[1] = 222
-    values[2:] = 333
-
+    # Prepare a marking structures
+    # indices cover all cells
+    # values are [1, 2, 3, 3, ...]
+    imap = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = imap.size_local + imap.num_ghosts
+    indices = numpy.arange(0, num_cells)
+    values = numpy.full(indices.shape, 3, dtype=numpy.intc)
+    values[0] = 1
+    values[1] = 2
+    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim, indices, values)
     dx = ufl.Measure('dx', subdomain_data=marker, domain=mesh)
-
     w = dolfinx.Function(V)
     with w.vector.localForm() as w_local:
         w_local.set(0.5)
 
-    #
     # Assemble matrix
-    #
 
-    a = w * ufl.inner(u, v) * (dx(111) + dx(222) + dx(333))
+    a = w * ufl.inner(u, v) * (dx(1) + dx(2) + dx(3))
 
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
@@ -66,11 +67,9 @@ def test_assembly_dx_domains(mesh):
 
     assert norm1 == pytest.approx(norm2, 1.0e-12)
 
-    #
     # Assemble vector
-    #
 
-    L = ufl.inner(w, v) * (dx(111) + dx(222) + dx(333))
+    L = ufl.inner(w, v) * (dx(1) + dx(2) + dx(3))
     b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
@@ -80,26 +79,21 @@ def test_assembly_dx_domains(mesh):
 
     assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
 
-    #
     # Assemble scalar
-    #
 
-    L = w * (dx(111) + dx(222) + dx(333))
+    L = w * (dx(1) + dx(2) + dx(3))
     s = dolfinx.fem.assemble_scalar(L)
-    s = dolfinx.MPI.sum(mesh.mpi_comm(), s)
+    s = mesh.mpi_comm().allreduce(s, op=MPI.SUM)
 
     L2 = w * dx
     s2 = dolfinx.fem.assemble_scalar(L2)
-    s2 = dolfinx.MPI.sum(mesh.mpi_comm(), s2)
-
+    s2 = mesh.mpi_comm().allreduce(s2, op=MPI.SUM)
     assert (s == pytest.approx(s2, 1.0e-12) and 0.5 == pytest.approx(s, 1.0e-12))
 
 
 def test_assembly_ds_domains(mesh):
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-
-    marker = dolfinx.MeshFunction("size_t", mesh, mesh.topology.dim - 1, 0)
 
     def bottom(x):
         return numpy.isclose(x[1], 0.0)
@@ -113,10 +107,23 @@ def test_assembly_ds_domains(mesh):
     def right(x):
         return numpy.isclose(x[0], 1.0)
 
-    marker.mark(bottom, 111)
-    marker.mark(top, 222)
-    marker.mark(left, 333)
-    marker.mark(right, 444)
+    bottom_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, bottom, boundary_only=True)
+    bottom_vals = numpy.full(bottom_facets.shape, 1, numpy.intc)
+
+    top_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, top, boundary_only=True)
+    top_vals = numpy.full(top_facets.shape, 2, numpy.intc)
+
+    left_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, left, boundary_only=True)
+    left_vals = numpy.full(left_facets.shape, 3, numpy.intc)
+
+    right_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, right, boundary_only=True)
+    right_vals = numpy.full(right_facets.shape, 6, numpy.intc)
+
+    indices = numpy.hstack((bottom_facets, top_facets, left_facets, right_facets))
+    values = numpy.hstack((bottom_vals, top_vals, left_vals, right_vals))
+
+    indices, pos = numpy.unique(indices, return_index=True)
+    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim - 1, indices, values[pos])
 
     ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 
@@ -125,7 +132,7 @@ def test_assembly_ds_domains(mesh):
         w_local.set(0.5)
 
     # Assemble matrix
-    a = w * ufl.inner(u, v) * (ds(111) + ds(222) + ds(333) + ds(444))
+    a = w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6))
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
     norm1 = A.norm()
@@ -136,7 +143,7 @@ def test_assembly_ds_domains(mesh):
     assert norm1 == pytest.approx(norm2, 1.0e-12)
 
     # Assemble vector
-    L = ufl.inner(w, v) * (ds(111) + ds(222) + ds(333) + ds(444))
+    L = ufl.inner(w, v) * (ds(1) + ds(2) + ds(3) + ds(6))
     b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     L2 = ufl.inner(w, v) * ds
@@ -145,28 +152,28 @@ def test_assembly_ds_domains(mesh):
     assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
 
     # Assemble scalar
-    L = w * (ds(111) + ds(222) + ds(333) + ds(444))
+    L = w * (ds(1) + ds(2) + ds(3) + ds(6))
     s = dolfinx.fem.assemble_scalar(L)
-    s = dolfinx.MPI.sum(mesh.mpi_comm(), s)
+    s = mesh.mpi_comm().allreduce(s, op=MPI.SUM)
     L2 = w * ds
     s2 = dolfinx.fem.assemble_scalar(L2)
-    s2 = dolfinx.MPI.sum(mesh.mpi_comm(), s2)
+    s2 = mesh.mpi_comm().allreduce(s2, op=MPI.SUM)
     assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
 
 
 @parametrize_ghost_mode
 def xtest_assembly_dS_domains(mode):
     N = 10
-    mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, N, N, ghost_mode=mode)
+    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, N, N, ghost_mode=mode)
     one = dolfinx.Constant(mesh, 1)
     val = dolfinx.fem.assemble_scalar(one * ufl.dS)
-    val = dolfinx.MPI.sum(mesh.mpi_comm(), val)
+    val = mesh.mpi_comm().allreduce(val, op=MPI.SUM)
     assert val == pytest.approx(2 * (N - 1) + N * numpy.sqrt(2), 1.0e-7)
 
 
 @parametrize_ghost_mode
 def xtest_additivity(mode):
-    mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 12, ghost_mode=mode)
+    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
 
     f1 = dolfinx.Function(V)
@@ -183,15 +190,15 @@ def xtest_additivity(mode):
     j3 = ufl.inner(ufl.avg(f3), ufl.avg(f3)) * ufl.dS(mesh)
 
     # Assemble each scalar form separately
-    J1 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j1))
-    J2 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j2))
-    J3 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j3))
+    J1 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j1), op=MPI.SUM)
+    J2 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j2), op=MPI.SUM)
+    J3 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j3), op=MPI.SUM)
 
     # Sum forms and assemble the result
-    J12 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j1 + j2))
-    J13 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j1 + j3))
-    J23 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j2 + j3))
-    J123 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j1 + j2 + j3))
+    J12 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j1 + j2), op=MPI.SUM)
+    J13 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j1 + j3), op=MPI.SUM)
+    J23 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j2 + j3), op=MPI.SUM)
+    J123 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j1 + j2 + j3), op=MPI.SUM)
 
     # Compare assembled values
     assert (J1 + J2) == pytest.approx(J12)

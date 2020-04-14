@@ -10,10 +10,10 @@ from contextlib import ExitStack
 
 import numpy as np
 import pytest
+from mpi4py import MPI
 
 import ufl
-from dolfinx import (MPI, UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,
-                     cpp, fem, la)
+from dolfinx import UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp, la
 from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_matrix
 from dolfinx.generation import BoxMesh
@@ -39,7 +39,8 @@ def build_elastic_nullspace(V):
 
         # Build translational null space basis
         for i in range(gdim):
-            V.sub(i).dofmap.set(basis[i], 1.0)
+            dofs = V.sub(i).dofmap.list
+            basis[i][dofs.array()] = 1.0
 
         # Build rotational null space basis
         if gdim == 2:
@@ -69,8 +70,8 @@ def build_broken_elastic_nullspace(V):
         basis = [np.asarray(x) for x in vec_local]
 
         # Build translational null space basis
-        V.sub(0).dofmap.set(basis[0], 1.0)
-        V.sub(1).dofmap.set(basis[1], 1.0)
+        basis[0][V.sub(0).dofmap.list.array()] = 1.0
+        basis[1][V.sub(1).dofmap.list.array()] = 1.0
 
         # Build rotational null space basis
         V.sub(0).set_x(basis[2], -1.0, 1)
@@ -83,8 +84,8 @@ def build_broken_elastic_nullspace(V):
 
 
 @pytest.mark.parametrize("mesh", [
-    UnitSquareMesh(MPI.comm_world, 12, 13),
-    UnitCubeMesh(MPI.comm_world, 12, 18, 15)
+    UnitSquareMesh(MPI.COMM_WORLD, 12, 13),
+    UnitCubeMesh(MPI.COMM_WORLD, 12, 18, 15)
 ])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_orthogonal(mesh, degree):
@@ -100,9 +101,9 @@ def test_nullspace_orthogonal(mesh, degree):
 
 
 @pytest.mark.parametrize("mesh", [
-    UnitSquareMesh(MPI.comm_world, 12, 13),
+    UnitSquareMesh(MPI.COMM_WORLD, 12, 13),
     BoxMesh(
-        MPI.comm_world,
+        MPI.COMM_WORLD,
         [np.array([0.8, -0.2, 1.2]),
          np.array([3.0, 11.0, -5.0])], [12, 18, 25],
         cell_type=CellType.tetrahedron,
@@ -112,8 +113,6 @@ def test_nullspace_orthogonal(mesh, degree):
 def test_nullspace_check(mesh, degree):
     V = VectorFunctionSpace(mesh, ('Lagrange', degree))
     u, v = TrialFunction(V), TestFunction(V)
-
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
 
     E, nu = 2.0e2, 0.3
     mu = E / (2.0 * (1.0 + nu))

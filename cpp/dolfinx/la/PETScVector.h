@@ -44,7 +44,7 @@ public:
   PETScVector(const PETScVector& x) = delete;
 
   /// Move constructor
-  PETScVector(PETScVector&& x);
+  PETScVector(PETScVector&& x) noexcept;
 
   /// Create holder of a PETSc Vec object/pointer. The Vec x object
   /// should already be created. If inc_ref_count is true, the reference
@@ -69,7 +69,7 @@ public:
   std::int64_t size() const;
 
   /// Return local size of vector (belonging to this process)
-  std::size_t local_size() const;
+  std::int32_t local_size() const;
 
   /// Return ownership range for process
   std::array<std::int64_t, 2> local_range() const;

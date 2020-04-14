@@ -76,16 +76,17 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+from mpi4py import MPI
 
 import dolfinx
 import dolfinx.plotting
 import ufl
-from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
+from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh,
                      solve)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import compute_marked_boundary_entities
+from dolfinx.mesh import locate_entities_geometrical
 from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import ds, dx, grad, inner
 
@@ -98,14 +99,11 @@ from ufl import ds, dx, grad, inner
 
 # Create mesh and define function space
 mesh = RectangleMesh(
-    MPI.comm_world,
+    MPI.COMM_WORLD,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
 
 V = FunctionSpace(mesh, ("Lagrange", 1))
-
-cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
-mesh.geometry.coord_mapping = cmap
 
 # The second argument to :py:class:`FunctionSpace
 # <dolfinx.function.FunctionSpace>` is the finite element
@@ -143,8 +141,10 @@ mesh.geometry.coord_mapping = cmap
 # Define boundary condition on x = 0 or x = 1
 u0 = Function(V)
 u0.vector.set(0.0)
-facets = compute_marked_boundary_entities(mesh, 1, lambda x: np.logical_or(x[0] < np.finfo(float).eps,
-                                                                           x[0] > 1.0 - np.finfo(float).eps))
+facets = locate_entities_geometrical(mesh, 1,
+                                     lambda x: np.logical_or(x[0] < np.finfo(float).eps,
+                                                             x[0] > 1.0 - np.finfo(float).eps),
+                                     boundary_only=True)
 bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets))
 
 
@@ -199,8 +199,9 @@ solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 
 # Save solution in XDMF format
-with XDMFFile(MPI.comm_world, "poisson.xdmf") as file:
-    file.write(u)
+with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
+    file.write_mesh(mesh)
+    file.write_function(u)
 
 # Plot solution
 dolfinx.plotting.plot(u)

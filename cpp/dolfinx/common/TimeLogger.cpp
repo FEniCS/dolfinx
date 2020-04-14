@@ -7,16 +7,12 @@
 #include "TimeLogger.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
+#include <variant>
 #include <vector>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
 
-//-----------------------------------------------------------------------------
-TimeLogger::TimeLogger()
-{
-  // Do nothing
-}
 //-----------------------------------------------------------------------------
 void TimeLogger::register_timing(std::string task, double wall, double user,
                                  double system)
@@ -68,7 +64,10 @@ Table TimeLogger::timings(std::set<TimingType> type)
   {
     const std::string task = it.first;
     const auto [num_timings, wall, usr, sys] = it.second;
-    table.set(task, "reps", num_timings);
+    // NB - the cast to std::variant should not be needed: needed by Intel
+    // compiler.
+    table.set(task, "reps",
+              std::variant<std::string, int, double>(num_timings));
     if (time_wall)
     {
       table.set(task, "wall avg", wall / static_cast<double>(num_timings));

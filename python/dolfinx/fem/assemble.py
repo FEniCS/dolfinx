@@ -118,7 +118,7 @@ def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 @assemble_vector_nest.register(PETSc.Vec)
 def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
     """Assemble linear forms into a nested PETSc (VecNest) vector. The vector is not
-    zeroed before assembly and it is not finalised, qi.e. ghost values
+    zeroed before assembly and it is not finalised, i.e. ghost values
     are not accumulated on the owning processes.
 
     """
@@ -131,7 +131,7 @@ def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.V
 @functools.singledispatch
 def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
                           a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
-                          bcs: typing.List[DirichletBC],
+                          bcs: typing.List[DirichletBC] = [],
                           x0: typing.Optional[PETSc.Vec] = None,
                           scale: float = 1.0) -> PETSc.Vec:
     """Assemble linear forms into a monolithic vector. The vector is not
@@ -149,7 +149,7 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
 def _(b: PETSc.Vec,
       L: typing.List[typing.Union[Form, cpp.fem.Form]],
       a,
-      bcs: typing.List[DirichletBC],
+      bcs: typing.List[DirichletBC] = [],
       x0: typing.Optional[PETSc.Vec] = None,
       scale: float = 1.0) -> PETSc.Vec:
     """Assemble linear forms into a monolithic vector. The vector is not
@@ -187,6 +187,22 @@ def _(b: PETSc.Vec,
 
 # -- Matrix assembly ---------------------------------------------------------
 
+def assemble_csr_matrix(a: typing.Union[Form, cpp.fem.Form],
+                        bcs: typing.List[DirichletBC] = [],
+                        diagonal: float = 1.0) -> PETSc.Mat:
+    """Assemble bilinear form into an Scipy CSR matrix, in serial.
+    """
+    _a = _create_cpp_form(a)
+    A = cpp.fem.assemble_matrix_eigen(_a, bcs)
+
+    if _a.function_space(0).id == _a.function_space(1).id:
+        for bc in bcs:
+            if _a.function_space(0).contains(bc.function_space):
+                bc_dofs = bc.dof_indices[:, 0]
+                for i in bc_dofs:
+                    A[i, i] = 1.0
+    return A
+
 
 @functools.singledispatch
 def assemble_matrix(a: typing.Union[Form, cpp.fem.Form],
@@ -220,7 +236,7 @@ def _(A: PETSc.Mat,
 # FIXME: Revise this interface
 @functools.singledispatch
 def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
-                         bcs: typing.List[DirichletBC],
+                         bcs: typing.List[DirichletBC] = [],
                          diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = cpp.fem.create_matrix_nest(_create_cpp_form(a))
@@ -232,7 +248,7 @@ def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.F
 @assemble_matrix_nest.register(PETSc.Mat)
 def _(A: PETSc.Mat,
       a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
-      bcs: typing.List[DirichletBC],
+      bcs: typing.List[DirichletBC] = [],
       diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     _a = _create_cpp_form(a)
@@ -247,7 +263,7 @@ def _(A: PETSc.Mat,
 # FIXME: Revise this interface
 @functools.singledispatch
 def assemble_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
-                          bcs: typing.List[DirichletBC],
+                          bcs: typing.List[DirichletBC] = [],
                           diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = cpp.fem.create_matrix_block(_create_cpp_form(a))
@@ -258,7 +274,7 @@ def assemble_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.
 @assemble_matrix_block.register(PETSc.Mat)
 def _(A: PETSc.Mat,
       a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
-      bcs: typing.List[DirichletBC],
+      bcs: typing.List[DirichletBC] = [],
       diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     _a = _create_cpp_form(a)

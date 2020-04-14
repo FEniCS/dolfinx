@@ -10,14 +10,13 @@
 #include "Topology.h"
 #include <dolfinx/graph/AdjacencyList.h>
 
-namespace dolfinx
-{
-
-namespace mesh
+namespace dolfinx::mesh
 {
 
 /// A MeshEntity represents a mesh entity associated with a specific
-/// topological dimension of some Mesh.
+/// topological dimension of some Mesh. A MeshEntity object is left in
+/// an undefined state if the Mesh that it is constructed with is
+/// destroyed.
 
 class MeshEntity
 {
@@ -47,20 +46,6 @@ public:
   /// Move assignment operator
   MeshEntity& operator=(MeshEntity&& e) = default;
 
-  /// Comparison Operator
-  /// @param[in] e Another mesh entity
-  /// @return True if the two mesh entities are equal.
-  bool operator==(const MeshEntity& e) const
-  {
-    return (_mesh == e._mesh and _dim == e._dim
-            and _local_index == e._local_index);
-  }
-
-  /// Comparison Operator
-  /// @param[in] e Another mesh entity.
-  /// @return True if the two mesh entities are NOT equal.
-  bool operator!=(const MeshEntity& e) const { return !operator==(e); }
-
   /// Return mesh associated with mesh entity
   /// @return The mesh
   const Mesh& mesh() const { return *_mesh; }
@@ -83,27 +68,7 @@ public:
     return _mesh->topology().connectivity(_dim, dim)->links(_local_index);
   }
 
-  /// Return array of indices for incident mesh entities of given
-  const std::int32_t* entities_ptr(int dim) const
-  {
-    if (dim == _dim)
-      return &_local_index;
-    else
-    {
-      assert(_mesh->topology().connectivity(_dim, dim));
-      const std::int32_t* initialized_mesh_entities
-          = _mesh->topology().connectivity(_dim, dim)->links_ptr(_local_index);
-      assert(initialized_mesh_entities);
-      return initialized_mesh_entities;
-    }
-  }
-
-protected:
-  friend class MeshRange;
-  friend class EntityRange;
-  friend class MeshIterator;
-  friend class MeshEntityIterator;
-
+private:
   // The mesh
   Mesh const* _mesh;
 
@@ -112,7 +77,6 @@ protected:
 
   // Local index of entity within topological dimension
   std::int32_t _local_index;
-}; // namespace mesh
+};
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

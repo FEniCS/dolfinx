@@ -44,9 +44,10 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
   assert(dofmap.element_dof_layout);
   if (dofmap.element_dof_layout->is_view())
   {
-    std::runtime_error("Cannot initialize vector of degrees of freedom for "
-                       "function. Cannot be created from subspace. Consider "
-                       "collapsing the function space");
+    throw std::runtime_error(
+        "Cannot initialize vector of degrees of freedom for "
+        "function. Cannot be created from subspace. Consider "
+        "collapsing the function space");
   }
 
   assert(dofmap.index_map);
@@ -184,14 +185,8 @@ void Function::eval(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
-  // Get coordinate mapping
-  std::shared_ptr<const fem::CoordinateElement> cmap
-      = mesh.geometry().coord_mapping;
-  if (!cmap)
-  {
-    throw std::runtime_error(
-        "fem::CoordinateElement has not been attached to mesh.");
-  }
+  // Get coordinate map
+  const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 
   // Get element
   assert(_function_space->element());
@@ -221,17 +216,9 @@ void Function::eval(
   assert(_function_space->dofmap());
   const fem::DofMap& dofmap = *_function_space->dofmap();
 
-  mesh.create_entity_permutations();
-
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_edge_reflections
-      = mesh.topology().get_edge_reflections();
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_reflections
-      = mesh.topology().get_face_reflections();
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_rotations
-      = mesh.topology().get_face_rotations();
+  mesh.topology_mutable().create_entity_permutations();
+  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+      = mesh.topology().get_cell_permutation_info();
 
   // Loop over points
   u.setZero();
@@ -251,23 +238,15 @@ void Function::eval(
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Compute reference coordinates X, and J, detJ and K
-    cmap->compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
-                                     coordinate_dofs);
+    cmap.compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
+                                    coordinate_dofs);
 
     // Compute basis on reference element
     element.evaluate_reference_basis(basis_reference_values, X);
 
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cell_index);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cell_index);
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cell_index);
-
     // Push basis forward to physical element
     element.transform_reference_basis(basis_values, basis_reference_values, X,
-                                      J, detJ, K, e_ref_cell.data(),
-                                      f_ref_cell.data(), f_rot_cell.data());
+                                      J, detJ, K, cell_info[cell_index]);
 
     // Get degrees of freedom for current cell
     auto dofs = dofmap.cell_dofs(cell_index);

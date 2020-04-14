@@ -109,7 +109,7 @@ int main()
   PetscErrorCode ierr;
   int argc = 0;
   char** argv = NULL;
-  ierr = SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+  SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
   EPS eps;
   ierr = EPSCreate(PETSC_COMM_SELF, &eps); CHKERRQ(ierr);
   //ierr = EPSSetFromOptions(eps); CHKERRQ(ierr);
@@ -194,5 +194,5 @@ if (SLEPC_FOUND)
 else()
   find_package_handle_standard_args(SLEPc
     REQUIRED_VARS SLEPC_FOUND
-    FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR.")
+    FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR as an environment variable.")
 endif()

@@ -12,9 +12,7 @@
 #include <petscmat.h>
 #include <string>
 
-namespace dolfinx
-{
-namespace la
+namespace dolfinx::la
 {
 class PETScVector;
 
@@ -31,7 +29,7 @@ public:
   PETScOperator(const PETScOperator& A) = delete;
 
   /// Move constructor
-  PETScOperator(PETScOperator&& A);
+  PETScOperator(PETScOperator&& A) noexcept;
 
   /// Destructor
   virtual ~PETScOperator();
@@ -53,9 +51,6 @@ public:
   ///                --> z = x
   PETScVector create_vector(std::size_t dim) const;
 
-  /// Return the MPI communicator
-  MPI_Comm mpi_comm() const;
-
   /// Return PETSc Mat pointer
   Mat mat() const;
 
@@ -63,5 +58,4 @@ protected:
   // PETSc Mat pointer
   Mat _matA;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la

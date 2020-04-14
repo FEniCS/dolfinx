@@ -10,9 +10,7 @@
 #include <petscmat.h>
 #include <vector>
 
-namespace dolfinx
-{
-namespace la
+namespace dolfinx::la
 {
 class PETScVector;
 
@@ -53,13 +51,12 @@ public:
   void orthogonalize(PETScVector& x) const;
 
   /// Number of vectors in the basis
-  std::size_t dim() const;
+  int dim() const;
 
   /// Get a particular basis vector
-  std::shared_ptr<const PETScVector> operator[](std::size_t i) const;
+  std::shared_ptr<const PETScVector> operator[](int i) const;
 
 private:
   const std::vector<std::shared_ptr<PETScVector>> _basis;
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la

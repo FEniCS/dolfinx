@@ -26,8 +26,6 @@ class Function;
 namespace mesh
 {
 class Mesh;
-template <typename T>
-class MeshFunction;
 } // namespace mesh
 
 namespace io
@@ -50,35 +48,11 @@ public:
   /// Output mesh
   void write(const mesh::Mesh& mesh);
 
-  /// Output mesh::MeshFunction<bool>
-  void write(const mesh::MeshFunction<bool>& meshfunction);
-
-  /// Output mesh::MeshFunction<std::size_t>
-  void write(const mesh::MeshFunction<std::size_t>& meshfunction);
-
-  /// Output mesh::MeshFunction<int>
-  void write(const mesh::MeshFunction<int>& meshfunction);
-
-  /// Output mesh::MeshFunction<double>
-  void write(const mesh::MeshFunction<double>& meshfunction);
-
   /// Output function::Function
   void write(const function::Function& u);
 
   /// Output mesh::Mesh and timestep
   void write(const mesh::Mesh& mesh, double t);
-
-  /// Output mesh::MeshFunction and timestep
-  void write(const mesh::MeshFunction<int>& mesh, double t);
-
-  /// Output mesh::MeshFunction and timestep
-  void write(const mesh::MeshFunction<std::size_t>& mf, double t);
-
-  /// Output mesh::MeshFunction and timestep
-  void write(const mesh::MeshFunction<double>& mf, double t);
-
-  /// Output mesh::MeshFunction and timestep
-  void write(const mesh::MeshFunction<bool>& mf, double t);
 
   /// Output function::Function and timestep
   void write(const function::Function& u, double t);

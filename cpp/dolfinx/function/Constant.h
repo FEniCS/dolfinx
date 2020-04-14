@@ -7,13 +7,10 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfinx/common/types.h>
+#include <petscsys.h>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace function
+namespace dolfinx::function
 {
 
 /// A constant value which can be attached to a Form.
@@ -41,5 +38,4 @@ public:
   /// Values, stored as a flattened array.
   std::vector<PetscScalar> value;
 };
-} // namespace function
-} // namespace dolfinx
+} // namespace dolfinx::function
