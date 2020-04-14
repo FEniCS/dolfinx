@@ -198,14 +198,15 @@ public:
 
   storage::StorageLock acquire_cache_lock(bool force_new_layer = false) const;
 
-  // Close the essential storage. All data set or created via "create_XYZ"
-  // *after* calling "finalize" can be discarded via discard_remanent_storage.
-  // Usage of finalize() and discard_remanent_storage() is dangerous.
+  /// Close the essential storage. All data set or created via "create_XYZ"
+  /// *after* calling "finalize" can be discarded via discard_remanent_storage.
+  /// Usage of finalize() and discard_remanent_storage() is dangerous.
   void finalize() {
     discard_remanent_storage();
   }
 
-  // Discard all remanent storage except for essential information.
+  /// Discard all remanent storage except for essential information. Provides a
+  /// new layer to add data which can be discarded again.
   void discard_remanent_storage()
   {
     discardable_remanent_lock =
