@@ -103,12 +103,6 @@ void ParallelRefinement::mark_all()
   _marked_edges.assign(edge_im->size_local() + edge_im->num_ghosts(), true);
 }
 //-----------------------------------------------------------------------------
-const std::map<std::int32_t, std::int64_t>&
-ParallelRefinement::edge_to_new_vertex() const
-{
-  return _local_edge_to_new_vertex;
-}
-//-----------------------------------------------------------------------------
 void ParallelRefinement::mark(
     const mesh::MeshTags<std::int8_t>& refinement_marker)
 {
@@ -159,7 +153,7 @@ void ParallelRefinement::update_logical_edgefunction()
     _marked_edges[local_index] = true;
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::create_new_vertices()
+std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
 {
   // Take marked_edges and use to create new vertices
   const std::shared_ptr<const common::IndexMap> edge_index_map
@@ -217,6 +211,8 @@ void ParallelRefinement::create_new_vertices()
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
       = mesh::midpoints(_mesh, 1, edges);
 
+  std::map<std::int32_t, std::int64_t> local_edge_to_new_vertex;
+
   // Add new edge midpoints to list of vertices
   std::int32_t n = 0;
   for (int local_i = 0; local_i < edge_index_map->size_local(); ++local_i)
@@ -224,7 +220,7 @@ void ParallelRefinement::create_new_vertices()
     if (_marked_edges[local_i] == true)
     {
       _new_vertex_coordinates.row(n + num_vertices) = midpoints.row(local_i);
-      auto it = _local_edge_to_new_vertex.insert({local_i, n + global_offset});
+      auto it = local_edge_to_new_vertex.insert({local_i, n + global_offset});
       assert(it.second);
       ++n;
     }
@@ -236,7 +232,7 @@ void ParallelRefinement::create_new_vertices()
 
   int num_neighbours = _marked_for_update.size();
   std::vector<std::vector<std::int64_t>> values_to_send(num_neighbours);
-  for (auto& local_edge : _local_edge_to_new_vertex)
+  for (auto& local_edge : local_edge_to_new_vertex)
   {
     const std::size_t local_i = local_edge.first;
     // shared, but locally owned : remote owned are not in list.
@@ -276,10 +272,12 @@ void ParallelRefinement::create_new_vertices()
       = _mesh.topology().index_map(1)->global_to_local(recv_global_edge);
   for (int i = 0; i < received_values.size() / 2; ++i)
   {
-    auto it = _local_edge_to_new_vertex.insert(
+    auto it = local_edge_to_new_vertex.insert(
         {recv_local_edge[i], received_values[i * 2 + 1]});
     assert(it.second);
   }
+
+  return local_edge_to_new_vertex;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>

@@ -79,9 +79,8 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   const std::int32_t num_cell_vertices = tdim + 1;
 
   // Make new vertices in parallel
-  p_ref.create_new_vertices();
-  const std::map<std::int32_t, std::int64_t>& new_vertex_map
-      = p_ref.edge_to_new_vertex();
+  const std::map<std::int32_t, std::int64_t> new_vertex_map
+      = p_ref.create_new_vertices();
 
   std::vector<std::size_t> parent_cell;
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);

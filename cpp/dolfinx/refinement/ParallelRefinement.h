@@ -75,11 +75,8 @@ public:
   /// Add new vertex for each marked edge, and create
   /// new_vertex_coordinates and global_edge->new_vertex map.
   /// Communicate new vertices with MPI to all affected processes.
-  void create_new_vertices();
-
-  /// Mapping of old edge (to be removed) to new global vertex number.
-  /// Useful for forming new topology
-  const std::map<std::int32_t, std::int64_t>& edge_to_new_vertex() const;
+  /// @return edge_to_new_vertex map
+  std::map<std::int32_t, std::int64_t> create_new_vertices();
 
   /// Use vertex and topology data to partition new mesh across processes
   /// @param[in] cell_topology
@@ -101,10 +98,6 @@ public:
 private:
   // mesh::Mesh reference
   const mesh::Mesh& _mesh;
-
-  // Mapping from old local edge index to new global vertex, needed to
-  // create new topology
-  std::map<std::int32_t, std::int64_t> _local_edge_to_new_vertex;
 
   // New storage for all coordinates when creating new vertices
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
