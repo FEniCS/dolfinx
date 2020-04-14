@@ -80,8 +80,9 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
       assert(c_to_v);
       auto cell_vertices = c_to_v->links(c);
 
-      const auto *it = std::find(cell_vertices.data(),
-                          cell_vertices.data() + cell_vertices.rows(), v[i]);
+      const auto* it
+          = std::find(cell_vertices.data(),
+                      cell_vertices.data() + cell_vertices.rows(), v[i]);
       assert(it != (cell_vertices.data() + cell_vertices.rows()));
       const int local_vertex = std::distance(cell_vertices.data(), it);
       idx[i] = dofs(local_vertex);
@@ -181,8 +182,9 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
       assert(c_to_v);
       auto cell_vertices = c_to_v->links(c);
 
-      const auto *it = std::find(cell_vertices.data(),
-                          cell_vertices.data() + cell_vertices.rows(), v[i]);
+      const auto* it
+          = std::find(cell_vertices.data(),
+                      cell_vertices.data() + cell_vertices.rows(), v[i]);
       assert(it != (cell_vertices.data() + cell_vertices.rows()));
       const int local_vertex = std::distance(cell_vertices.data(), it);
       idx[i] = dofs(local_vertex);
@@ -576,21 +578,23 @@ bool CollisionPredicates::collides_quad_point_2d(const Eigen::Vector3d& p0,
 {
   const double ref0 = orient2d(p0, p1, p2);
   const double ref1 = orient2d(p3, p2, p1);
+  // Tolerance for collision detection
+  const double tol = 1e-16;
 
   if (ref0 * ref1 <= 0.0)
     throw std::runtime_error("Badly formed quadrilateral");
 
   if (ref0 > 0.0)
   {
-    return (orient2d(p1, p3, point) >= 0.0 and orient2d(p3, p2, point) >= 0.0
-            and orient2d(p2, p0, point) >= 0.0
-            and orient2d(p0, p1, point) >= 0.0);
+    return (orient2d(p1, p3, point) >= -tol and orient2d(p3, p2, point) >= -tol
+            and orient2d(p2, p0, point) >= -tol
+            and orient2d(p0, p1, point) >= -tol);
   }
   else
   {
-    return (orient2d(p1, p3, point) <= 0.0 and orient2d(p3, p2, point) <= 0.0
-            and orient2d(p2, p0, point) <= 0.0
-            and orient2d(p0, p1, point) <= 0.0);
+    return (orient2d(p1, p3, point) <= tol and orient2d(p3, p2, point) <= tol
+            and orient2d(p2, p0, point) <= tol
+            and orient2d(p0, p1, point) <= tol);
   }
 }
 //-----------------------------------------------------------------------------
@@ -819,21 +823,24 @@ bool CollisionPredicates::collides_tetrahedron_point_3d(
     const Eigen::Vector3d& p2, const Eigen::Vector3d& p3,
     const Eigen::Vector3d& point)
 {
+  // Tolerance for collision detection
+  const double tol = 1e-16;
+
   const double ref = orient3d(p0, p1, p2, p3);
 
   if (ref > 0.0)
   {
-    return (orient3d(p0, p1, p2, point) >= 0.0
-            and orient3d(p0, p3, p1, point) >= 0.0
-            and orient3d(p0, p2, p3, point) >= 0.0
-            and orient3d(p1, p3, p2, point) >= 0.0);
+    return (orient3d(p0, p1, p2, point) >= -tol
+            and orient3d(p0, p3, p1, point) >= -tol
+            and orient3d(p0, p2, p3, point) >= -tol
+            and orient3d(p1, p3, p2, point) >= -tol);
   }
   else if (ref < 0.0)
   {
-    return (orient3d(p0, p1, p2, point) <= 0.0
-            and orient3d(p0, p3, p1, point) <= 0.0
-            and orient3d(p0, p2, p3, point) <= 0.0
-            and orient3d(p1, p3, p2, point) <= 0.0);
+    return (orient3d(p0, p1, p2, point) <= tol
+            and orient3d(p0, p3, p1, point) <= tol
+            and orient3d(p0, p2, p3, point) <= tol
+            and orient3d(p1, p3, p2, point) <= tol);
   }
   else
   {
