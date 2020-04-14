@@ -7,6 +7,7 @@
 #include "VTKWriter.h"
 #include "cells.h"
 #include <cstdint>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Function.h>
@@ -17,7 +18,6 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
@@ -139,8 +139,9 @@ std::string ascii_cell_data(const mesh::Mesh& mesh,
   ss << std::scientific;
   ss << std::setprecision(16);
   auto cell_offset = offset.begin();
-  for (int i = 0;
-       i < mesh.topology().index_map(mesh.topology().dim())->size_local(); ++i)
+  const int tdim = mesh.topology().dim();
+  const int num_cells = mesh.topology().index_map(tdim)->size_local();
+  for (int i = 0; i < num_cells; ++i)
   {
     if (rank == 1 && data_dim == 2)
     {
@@ -395,10 +396,11 @@ void VTKWriter::write_cell_data(const function::Function& u,
   auto cell_offset = offset.begin();
   assert(dofmap.element_dof_layout);
   const int num_dofs_cell = dofmap.element_dof_layout->num_dofs();
-  for (auto& cell : mesh::MeshRange(mesh, tdim))
+
+  for (int c = 0; c < num_cells; ++c)
   {
     // Tabulate dofs
-    auto dofs = dofmap.cell_dofs(cell.index());
+    auto dofs = dofmap.cell_dofs(c);
     for (int i = 0; i < num_dofs_cell; ++i)
       dof_set.push_back(dofs[i]);
 

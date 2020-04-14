@@ -70,16 +70,16 @@ def test_tabulate_all_coordinates(mesh_factory):
     # Check that all coordinates are within the cell it should be
     map = mesh.topology.index_map(mesh.topology.dim)
     num_cells = map.size_local + map.num_ghosts
-    for i in range(num_cells):
-        cell = MeshEntity(mesh, mesh.topology.dim, i)
-        dofs_V = V_dofmap.cell_dofs(i)
+    for c in range(num_cells):
+        cell = MeshEntity(mesh, mesh.topology.dim, c)
+        dofs_V = V_dofmap.cell_dofs(c)
         for di in dofs_V:
             if di >= local_size_V:
                 continue
             assert cell.contains(all_coords_V[di])
             checked_V[di] = True
 
-        dofs_W = W_dofmap.cell_dofs(cell.index())
+        dofs_W = W_dofmap.cell_dofs(c)
         for di in dofs_W:
             if di >= local_size_W:
                 continue
@@ -110,11 +110,11 @@ def test_tabulate_dofs(mesh_factory):
 
     map = mesh.topology.index_map(mesh.topology.dim)
     num_cells = map.size_local + map.num_ghosts
-    for i in range(num_cells):
-        dofs0 = L0.dofmap.cell_dofs(i)
-        dofs1 = L01.dofmap.cell_dofs(i)
-        dofs2 = L11.dofmap.cell_dofs(i)
-        dofs3 = L1.dofmap.cell_dofs(i)
+    for c in range(num_cells):
+        dofs0 = L0.dofmap.cell_dofs(c)
+        dofs1 = L01.dofmap.cell_dofs(c)
+        dofs2 = L11.dofmap.cell_dofs(c)
+        dofs3 = L1.dofmap.cell_dofs(c)
         assert len(np.intersect1d(dofs0, dofs1)) == 0
         assert len(np.intersect1d(dofs0, dofs2)) == 0
         assert len(np.intersect1d(dofs1, dofs2)) == 0

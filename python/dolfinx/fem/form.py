@@ -8,7 +8,7 @@
 import cffi
 
 import ufl
-from dolfinx import cpp, fem, jit
+from dolfinx import cpp, jit
 
 
 class Form:
@@ -42,17 +42,14 @@ class Form:
             form_compiler_parameters=self.form_compiler_parameters,
             mpi_comm=mesh.mpi_comm())
 
-        # Cast compiled library to pointer to ufc_form
-        ffi = cffi.FFI()
-        ufc_form = fem.dofmap.make_ufc_form(ffi.cast("uintptr_t", ufc_form))
-
         # For every argument in form extract its function space
         function_spaces = [
             func.ufl_function_space()._cpp_object for func in form.arguments()
         ]
 
         # Prepare dolfinx.Form and hold it as a member
-        self._cpp_object = cpp.fem.create_form(ufc_form, function_spaces)
+        ffi = cffi.FFI()
+        self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ufc_form), function_spaces)
 
         # Need to fill the form with coefficients data
         # For every coefficient in form take its C++ object
