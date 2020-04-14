@@ -112,7 +112,7 @@ facet_permutations(const TopologyStorageLayer& storage)
 //------------------------------------------------------------------------------
 StorageLock::~StorageLock()
 {
-  if (!storage.second.expired())
+  if (!storage.second.expired() && storage.first)
     storage.first->remove_expired_layers();
 }
 //------------------------------------------------------------------------------

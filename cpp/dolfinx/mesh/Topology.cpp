@@ -357,15 +357,16 @@ storage::TopologyStorage
 Topology::check_and_save_storage(storage::TopologyStorage remanent_storage,
                                  int tdim)
 {
-  // Ensure that data is not lost.
+  // A safety measure, probbaly not required. Depends on what happens when leaving a function.
   remanent_storage.make_remanent(true);
   if (!(remanent_storage.index_map(0) && remanent_storage.index_map(0)
         && remanent_storage.connectivity(tdim, 0)
         && remanent_storage.connectivity(0, 0)))
     throw std::invalid_argument("Storage does not provide all required data: "
                                 "index_map(0), index_map(tdim), "
-                                "connectivity(0, 0), connectivity(tdim, 0).");
-
+                                "connectivity(0, 0), connectivity(tdim, 0).\n"
+                                "Maybe, the storage was not remanent before "
+                                "move.");
   return std::move(remanent_storage);
 }
 //------------------------------------------------------------------------------

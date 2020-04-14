@@ -167,6 +167,11 @@ public:
   StorageLock& operator=(const StorageLock&) = default;
   StorageLock& operator=(StorageLock&&) = default;
 
+  void release() {
+    lock.reset();
+    storage = internal::make_guarded<TopologyStorage*>(nullptr, internal::sentinel_t{});
+  };
+
   ~StorageLock();
 
 private:
@@ -175,7 +180,8 @@ private:
 };
 
 
-// TODO: Make lock sequential. This can be done in two ways: See acquire_lock...
+// TODO: Make lock sequential. See "acquire_cache_lock"... where interesting
+// things may happen
 class TopologyStorage
 {
 
@@ -190,7 +196,8 @@ public:
       make_remanent(true);
   }
 
-  /// Copy constructor
+  /// Copy constructor. Currently, we have const copy-on-write, there it is
+  /// safe to copy.
   TopologyStorage(const TopologyStorage& topology) = default;
 
   /// Move constructor
@@ -296,15 +303,23 @@ public:
 
   // TODO: Make lock sequential. This can be done in two ways:
   // a) A lock must not be copied and moved. Then it cannot leave its scope.
+  // This is however tricky. This means no smart ptrs, no reassignment and
+  // probably copy elision might do some nasty things. Better not go this way.
   // b) Store a vector of locks and at the end of life, remove all new ones.
-  // This should be optional since it increases storage (like a back button)
+  // This means the the storage own the locks, everyone else has weakptrs.
+  // In the end, this is against the concept of a lock.
+
   /// Create a new lock. By default, it just is another handle for the current
-  /// layer. The creation of  new write layer is optional.
-  /// Note that it will share ownership with data from other layers. This means,
-  /// it can also overwrite their data. Otherwise, the ownership would be to
-  /// difficult to track, since the lifetimes of the locks do not end in any
-  /// defined order.
-  /// Let locks allow read access to "their" layer?
+  /// layer. The creation of new write layer is optional.
+  /// Note that it will share ownership with data from other layers.
+  /// This avoid the problem of vanishing data since the lifetimes of the locks
+  /// do not end in any defined order.
+  /// Then current implementation does not enable to also overwrite
+  /// their data. This might be supported in the future.
+  /// As a consequence, ATM one can go back in history, desired or not.
+  /// A write through option to update data that is present in previous layers
+  /// would fix the constness thing. Wether this is good semantics is something
+  /// else. Then this class should not be copyable.
   StorageLock acquire_cache_lock(bool force_new_layer = false)
   {
     if (layers.empty() or force_new_layer)
@@ -335,24 +350,16 @@ public:
 
   std::size_t number_of_layers() const { return layers.size(); }
 
+  // TODO: this is not totally sound. Do not allow this lock to have more than
+  // one owner (needs non-trivial copy contructor/assignment) or no copies at
+  // all.
+  /// Make a new layer that stays until discarded and keeps alive all
+  /// data. It is risky to rely on this functionality in case of shared
+  /// ownership.
   void make_remanent(bool all_data)
   {
     remanent_lock = std::make_shared<const storage::StorageLock>(
         acquire_cache_lock(true));
-    if (all_data)
-    {
-      for (int d0 = 0; d0 < active_layer().first.connectivity.rows(); ++d0)
-      {
-        set_index_map(index_map(d0), d0);
-        for (int d1 = 0; d1 < active_layer().first.connectivity.cols(); ++d0)
-        {
-          set_connectivity(connectivity(d0, d1), d0, d1);
-        }
-      }
-      set_interior_facets(interior_facets());
-      set_facet_permutations(facet_permutations());
-      set_cell_permutations(cell_permutations());
-    }
   }
 
   /// The active layer
@@ -362,6 +369,8 @@ public:
 
   /// Discard is only guaranteed for what has been written since
   /// "make_remanent" and only if no new locks have been acquired.
+  /// This is a fairly intrasparent thing such that one should not rely on
+  /// them for important things, ie. invariant of classes etc.
   void discard() { remanent_lock.reset(); }
 
   /// Creates storage on top (ie. with read access) of this. Note that the
@@ -416,6 +425,8 @@ private:
     return {};
   }
 
+  // With shared_ptr, TopologyStorage can be copied, which is not really a
+  // problem as long as it remains a non-overwriting copy-on-write storage.
   std::shared_ptr<const storage::StorageLock> remanent_lock;
 
   // The other (already existing storage) with read access

@@ -74,10 +74,20 @@ public:
     // Acquire lock for explicitly stored data
     // This lock creates a new layer and thus protects against loss of
     // *defining* data.
-    // The current implementation does not store old data
-    // (there is no back button) once the essential data is overwritten
-    // (Not a problem currently since there are no setters)!
+    // The current storage implementation does not overwrite old data
+    // such that the the essential data is never overwritten.
+    // There are currently no setters such that this is not an issue.
+    // However, since stored data is const, this is not really a problem.
+    // Rethink, if stored data is not const.
+    // Not that this is necessary, because storage object are shallow copyied
+    // such that someone else could call "discard" on this storage object from
+    // outside.
     remanent_lock = std::make_shared<const storage::StorageLock>(
+        remanent_storage.acquire_cache_lock(true));
+
+    // This lock enables unscoped remanent storage for the create_XYZ members
+    // that can be discarded manually.
+    discardable_remanent_lock = std::make_shared<const storage::StorageLock>(
         remanent_storage.acquire_cache_lock(true));
   }
 
@@ -222,6 +232,7 @@ private:
   std::shared_ptr<const storage::StorageLock> remanent_lock;
   std::shared_ptr<const storage::StorageLock> discardable_remanent_lock;
 
+  // TODO: problem for lifetimes?
   storage::TopologyStorage remanent_storage;
   mutable storage::TopologyStorage cache;
 
