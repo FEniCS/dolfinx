@@ -514,6 +514,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
                                mesh::Topology& topology)
 {
+  //TODO: make Topology constant here (then mesh can be const, maybe)
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
       create_element_dof_layout(ufc_dofmap, topology.cell_type()));
   assert(element_dof_layout);
