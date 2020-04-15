@@ -162,77 +162,32 @@ Partitioning::distribute_data(
 {
   common::Timer timer("Fetch float data from remote processes");
 
-  // Get number of points globally
-  std::int64_t num_points = 0;
   const std::int64_t num_points_local = x.rows();
-  MPI_Allreduce(&num_points_local, &num_points, 1, MPI_INT64_T, MPI_SUM, comm);
-
-  // Get ownership range for this rank, and compute offset
   const int size = dolfinx::MPI::size(comm);
-  const std::array<std::int64_t, 2> range
-      = dolfinx::MPI::local_range(dolfinx::MPI::rank(comm), num_points, size);
-  const std::int64_t offset_x
-      = dolfinx::MPI::global_offset(comm, range[1] - range[0], true);
-
-  const int gdim = x.cols();
-  assert(gdim != 0);
-
-  // Determine number of points to send to owner
-  std::vector<int> number_send(size, 0);
-  for (int i = 0; i < x.rows(); ++i)
-  {
-    // TODO: optimise this call
-    const std::int64_t index_global = i + offset_x;
-    const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
-    number_send[owner] += 1;
-  }
-
-  // Compute send displacements
-  std::vector<int> disp_send(size + 1, 0);
-  std::partial_sum(number_send.begin(), number_send.end(),
-                   disp_send.begin() + 1);
-
-  // Pack x data
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_send(
-      disp_send.back(), gdim);
-  std::vector<int> disp_tmp = disp_send;
-  for (int i = 0; i < x.rows(); ++i)
-  {
-    const std::int64_t index_global = i + offset_x;
-    const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
-    x_send.row(disp_tmp[owner]++) = x.row(i);
-  }
-
-  // Send/receive number of points to communicate to each process
-  std::vector<int> number_recv(size);
-  MPI_Alltoall(number_send.data(), 1, MPI_INT, number_recv.data(), 1, MPI_INT,
-               comm);
-
-  // Compute receive displacements
-  std::vector<int> disp_recv(size + 1, 0);
-  std::partial_sum(number_recv.begin(), number_recv.end(),
-                   disp_recv.begin() + 1);
-
-  // Build compound data type. This will allow us to re-use send/receive
-  // displacements for indices and point data
-  MPI_Datatype compound_type;
-  MPI_Type_contiguous(gdim, dolfinx::MPI::mpi_type<T>(), &compound_type);
-  MPI_Type_commit(&compound_type);
-
-  // Send/receive points
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_recv(
-      disp_recv.back(), gdim);
-  MPI_Alltoallv(x_send.data(), number_send.data(), disp_send.data(),
-                compound_type, x_recv.data(), number_recv.data(),
-                disp_recv.data(), compound_type, comm);
+  const int rank = dolfinx::MPI::rank(comm);
+  std::vector<std::int64_t> global_sizes(size);
+  MPI_Allgather(&num_points_local, 1, MPI_INT64_T, global_sizes.data(), 1,
+                MPI_INT64_T, comm);
+  std::vector<std::int64_t> global_offsets(size + 1, 0);
+  std::partial_sum(global_sizes.begin(), global_sizes.end(),
+                   global_offsets.begin() + 1);
 
   // Build index data requests
   std::vector<int> number_index_send(size, 0);
-  for (std::int64_t index : indices)
+  std::vector<int> index_owner(indices.size());
+  std::vector<int> index_order(indices.size());
+  std::iota(index_order.begin(), index_order.end(), 0);
+  std::sort(index_order.begin(), index_order.end(),
+            [&indices](int a, int b) { return (indices[a] < indices[b]); });
+
+  int p = 0;
+  for (std::size_t i = 0; i < index_order.size(); ++i)
   {
-    // TODO: optimise this call
-    const int owner = dolfinx::MPI::index_owner(size, index, num_points);
-    number_index_send[owner] += 1;
+    int j = index_order[i];
+    while (indices[j] >= global_offsets[p + 1])
+      ++p;
+    index_owner[j] = p;
+    number_index_send[p]++;
   }
 
   // Compute send displacements
@@ -242,12 +197,11 @@ Partitioning::distribute_data(
 
   // Pack global index send data
   std::vector<std::int64_t> indices_send(disp_index_send.back());
-  disp_tmp = disp_index_send;
-  for (std::int64_t index : indices)
+  std::vector<int> disp_tmp = disp_index_send;
+  for (std::size_t i = 0; i < indices.size(); ++i)
   {
-    // TODO: optimise this call
-    const int owner = dolfinx::MPI::index_owner(size, index, num_points);
-    indices_send[disp_tmp[owner]++] = index;
+    const int owner = index_owner[i];
+    indices_send[disp_tmp[owner]++] = indices[i];
   }
 
   // Send/receive number of indices to communicate to each process
@@ -267,23 +221,28 @@ Partitioning::distribute_data(
                 number_index_recv.data(), disp_index_recv.data(), MPI_INT64_T,
                 comm);
 
+  const int item_size = x.cols();
+  assert(item_size != 0);
   // Pack point data to send back (transpose)
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_return(
-      indices_recv.size(), gdim);
+      indices_recv.size(), item_size);
   for (int p = 0; p < size; ++p)
   {
     for (int i = disp_index_recv[p]; i < disp_index_recv[p + 1]; ++i)
     {
-      const std::int64_t index = indices_recv[i];
-      const std::int32_t index_local = index - offset_x;
+      const std::int32_t index_local = indices_recv[i] - global_offsets[rank];
       assert(index_local >= 0);
-      x_return.row(i) = x_recv.row(index_local);
+      x_return.row(i) = x.row(index_local);
     }
   }
 
+  MPI_Datatype compound_type;
+  MPI_Type_contiguous(item_size, dolfinx::MPI::mpi_type<T>(), &compound_type);
+  MPI_Type_commit(&compound_type);
+
   // Send back point data
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> my_x(
-      disp_index_send.back(), gdim);
+      disp_index_send.back(), item_size);
   MPI_Alltoallv(x_return.data(), number_index_recv.data(),
                 disp_index_recv.data(), compound_type, my_x.data(),
                 number_index_send.data(), disp_index_send.data(), compound_type,
