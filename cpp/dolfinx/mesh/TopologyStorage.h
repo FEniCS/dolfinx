@@ -160,11 +160,11 @@ public:
     // do nothing
   }
 
-  StorageLock() = delete;
-  StorageLock(const StorageLock&) = default;
+  StorageLock() = delete; 
+  StorageLock(const StorageLock&) = delete;
   StorageLock(StorageLock&&) = default;
 
-  StorageLock& operator=(const StorageLock&) = default;
+  StorageLock& operator=(const StorageLock&) = delete;
   StorageLock& operator=(StorageLock&&) = default;
 
   void release()
