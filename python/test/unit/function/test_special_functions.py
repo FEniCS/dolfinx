@@ -6,10 +6,11 @@
 """Unit tests for the function library"""
 
 import pytest
+from mpi4py import MPI
 
 import dolfinx
 import ufl
-from dolfinx import (MPI, UnitCubeMesh, UnitIntervalMesh,
+from dolfinx import (UnitCubeMesh, UnitIntervalMesh,
                      UnitSquareMesh)
 from dolfinx_utils.test.skips import skip_in_parallel
 
@@ -17,8 +18,8 @@ from dolfinx_utils.test.skips import skip_in_parallel
 @pytest.mark.skip
 @skip_in_parallel
 def testFacetArea():
-    references = [(UnitIntervalMesh(MPI.comm_world, 1), 2, 2), (UnitSquareMesh(
-        MPI.comm_world, 1, 1), 4, 4), (UnitCubeMesh(MPI.comm_world, 1, 1, 1),
+    references = [(UnitIntervalMesh(MPI.COMM_WORLD, 1), 2, 2), (UnitSquareMesh(
+        MPI.COMM_WORLD, 1, 1), 4, 4), (UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1),
                                        6, 3)]
     for mesh, surface, ref_int in references:
         c0 = ufl.FacetArea(mesh)

@@ -7,14 +7,10 @@
 #pragma once
 
 #include <array>
-#include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
-namespace dolfinx
-{
-namespace mesh
+namespace dolfinx::mesh
 {
 class Mesh;
 class MeshEntity;
@@ -24,8 +20,8 @@ class MeshEntity;
 class MeshQuality
 {
 public:
-  /// Compute the minimum and maximum radius ratio of cells (across all
-  /// processes)
+  /// Compute the minimum and maximum radius ratio of cells (for local
+  /// rank only )
   /// @param[in] mesh The mesh
   /// @return The [minimum, maximum] cell radii ratio
   ///         (geometric_dimension * * inradius / circumradius,
@@ -41,8 +37,7 @@ public:
 
   /// Create (dihedral angles, number of cells) data for creating a
   /// histogram of dihedral
-  static std::pair<std::vector<double>, std::vector<std::size_t>>
-  dihedral_angle_histogram_data(const Mesh& mesh, std::size_t num_bins);
+  static std::pair<std::vector<double>, std::vector<std::int64_t>>
+  dihedral_angle_histogram_data(const Mesh& mesh, int num_bins);
 };
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

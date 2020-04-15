@@ -14,10 +14,7 @@
 #include <set>
 #include <vector>
 
-namespace dolfinx
-{
-
-namespace common
+namespace dolfinx::common
 {
 
 /// This class represents the distribution index arrays across
@@ -103,6 +100,9 @@ public:
           indices,
       bool blocked = true) const;
 
+  /// @todo Consider removing this function in favour of the version
+  /// that accepts an Eigen array.
+  ///
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
   /// @param[in] blocked If true work with blocked indices. If false the
@@ -122,6 +122,17 @@ public:
   std::vector<std::int32_t>
   global_to_local(const std::vector<std::int64_t>& indices,
                   bool blocked = true) const;
+
+  /// Compute local indices for array of global indices
+  /// @param[in] indices Global indices
+  /// @param[in] blocked If true work with blocked indices. If false the
+  ///   input indices are not block-wise.
+  /// @return The local of the corresponding global index in indices.
+  ///   Return -1 if the local index does not exist on this process.
+  std::vector<std::int32_t> global_to_local(
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
+          indices,
+      bool blocked = true) const;
 
   /// Global indices
   /// @return The global index for all local indices (0, 1, 2, ...) on this
@@ -274,7 +285,7 @@ public:
   std::vector<std::int64_t> _all_ranges;
 
 private:
-  // Local-to-gl05obal map for ghost indices
+  // Local-to-global map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 
   // Owning neighbour for each ghost index
@@ -296,5 +307,4 @@ private:
                         Mode op) const;
 };
 
-} // namespace common
-} // namespace dolfinx
+} // namespace dolfinx::common

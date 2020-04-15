@@ -8,26 +8,6 @@
 from dolfinx import cpp
 
 
-def make_ufc_finite_element(ufc_finite_element):
-    """Returns ufc finite element from a pointer"""
-    return cpp.fem.make_ufc_finite_element(ufc_finite_element)
-
-
-def make_ufc_dofmap(ufc_dofmap):
-    """Returns ufc dofmap from a pointer"""
-    return cpp.fem.make_ufc_dofmap(ufc_dofmap)
-
-
-def make_ufc_form(ufc_form):
-    """Returns ufc form from a pointer"""
-    return cpp.fem.make_ufc_form(ufc_form)
-
-
-def make_coordinate_mapping(ufc_coordinate_mapping):
-    """Returns CoordinateElement from a pointer to a ufc_coordinate_mapping"""
-    return cpp.fem.make_coordinate_mapping(ufc_coordinate_mapping)
-
-
 class DofMap:
     """Degree-of-freedom map
 

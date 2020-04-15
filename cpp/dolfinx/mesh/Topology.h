@@ -36,11 +36,12 @@ namespace mesh
 {
 enum class GhostMode : int;
 
+enum class CellType;
 class Topology;
 
 /// Compute marker for owned facets that are interior, i.e. are
-/// connected to two cells, one of which might be on a remote process
-/// @param[in] topology The topology
+/// connected to two cells, one of which might be on a remote process.
+/// @param[in] topology The topology.
 /// @return Vector with length equal to the number of facets on this
 ///   this process. True if the ith facet (local index) is interior to
 ///   the domain.
@@ -58,7 +59,12 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(mesh::CellType type);
+  Topology(MPI_Comm comm, mesh::CellType type)
+      : _mpi_comm(comm), _cell_type(type),
+        _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
+  {
+    // Do nothing
+  }
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -70,7 +76,7 @@ public:
   ~Topology() = default;
 
   /// Assignment
-  Topology& operator=(const Topology& topology) = default;
+  Topology& operator=(const Topology& topology) = delete;
 
   /// Assignment
   Topology& operator=(Topology&& topology) = default;
@@ -130,9 +136,6 @@ public:
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations() const;
 
-  /// Compute entity permutations and reflections used in assembly
-  void create_entity_permutations();
-
   /// Gets markers for owned facets that are interior, i.e. are
   /// connected to two cells, one of which might be on a remote process
   /// @return Vector with length equal to the number of facets owned by
@@ -148,10 +151,40 @@ public:
   size_t hash() const;
 
   /// Cell type
-  /// @return Cell type that th topology is for
+  /// @return Cell type that the topology is for
   mesh::CellType cell_type() const;
 
+  // TODO: Rework memory management and associated API
+  // Currently, there is no clear caching policy implemented and no way of
+  // discarding cached data.
+
+  // creation of entities
+  /// Create entities of given topological dimension.
+  /// @param[in] dim Topological dimension
+  /// @return Number of newly created entities, returns -1 if entities
+  ///   already existed
+  std::int32_t create_entities(int dim);
+
+  /// Create connectivity between given pair of dimensions, d0 -> d1
+  /// @param[in] d0 Topological dimension
+  /// @param[in] d1 Topological dimension
+  void create_connectivity(int d0, int d1);
+
+  /// Compute entity permutations and reflections
+  void create_entity_permutations();
+
+  /// Compute all entities and connectivity
+  void create_connectivity_all();
+
+  /// Mesh MPI communicator
+  /// @return The communicator on which the mesh is distributed
+  MPI_Comm mpi_comm() const;
+
 private:
+
+  // MPI communicator
+  dolfinx::MPI::Comm _mpi_comm;
+
   // Cell type
   mesh::CellType _cell_type;
 
@@ -176,9 +209,6 @@ private:
   std::shared_ptr<const std::vector<bool>> _interior_facets;
 };
 
-/// @todo Avoid passing ElementDofLayout. All we need is way to extract
-/// the vertices from cells, and the CellType
-///
 /// Create distributed topology
 /// @param[in] comm MPI communicator across which the topology is
 ///   distributed
@@ -189,9 +219,7 @@ private:
 ///   with each cell.
 /// @param[in] ghost_owners The ownership of any ghost cells (ghost
 ///   cells are always at the end of the list of cells, above)
-/// @param[in] layout Describe the association between 'nodes' in @p
-///   cells and geometry degrees-of-freedom on the element. It is used
-///   to extract the vertex entries in @p cells.
+/// @param[in] cell_type The cell shape
 /// @param[in] ghost_mode How to partition the cell overlap: none,
 /// shared_facet or shared_vertex
 /// @return A distributed Topology.
@@ -199,7 +227,6 @@ Topology create_topology(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& cells,
                          const std::vector<std::int64_t>& original_cell_index,
                          const std::vector<int>& ghost_owners,
-                         const fem::ElementDofLayout& layout,
-                         mesh::GhostMode ghost_mode);
+                         const CellType& cell_type, mesh::GhostMode ghost_mode);
 } // namespace mesh
 } // namespace dolfinx

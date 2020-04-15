@@ -112,7 +112,7 @@ DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
 /// Create a form from a form_create function returning a pointer to a
 /// ufc_form, taking care of memory allocation
 /// @param[in] fptr pointer to a function returning a pointer to
-///     ufc_form
+///    ufc_form
 /// @param[in] spaces function spaces
 /// @return Form
 std::shared_ptr<Form> create_form(
@@ -140,13 +140,20 @@ get_constants_from_ufc_form(const ufc_form& ufc_form);
 fem::CoordinateElement
 create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap);
 
+/// Create a CoordinateElement from ufc
+/// @param[in] fptr Function Pointer to a ufc_function_coordinate_map
+///   function
+/// @return A DOLFINX coordinate map
+fem::CoordinateElement
+create_coordinate_map(ufc_coordinate_mapping* (*fptr)());
+
 /// Create FunctionSpace from UFC
 /// @param[in] fptr Function Pointer to a ufc_function_space_create
-///     function
+///   function
 /// @param[in] function_name Name of a function whose function space to
-///     create. Function name is the name of Python variable for
-///     ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as
-///     defined in the UFL file.
+///   create. Function name is the name of Python variable for
+///   ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as defined
+///   in the UFL file.
 /// @param[in] mesh Mesh
 /// @return The created FunctionSpace
 std::shared_ptr<function::FunctionSpace>

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "HDF5File.h"
+#include "HDF5Interface.h"
 #include "pugixml.hpp"
 #include <array>
 #include <boost/filesystem.hpp>
@@ -30,12 +30,11 @@ namespace function
 class Function;
 } // namespace function
 
-namespace io
-{
-namespace xdmf_utils
+namespace io::xdmf_utils
 {
 
 // Get DOLFINX cell type string from XML topology node
+// @return DOLFINX cell type and polynomial degree
 std::pair<std::string, int> get_cell_type(const pugi::xml_node& topology_node);
 
 // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
@@ -62,7 +61,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 
 /// TODO: Document
 template <typename T>
-void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
+void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
                    const std::string h5_path, const T& x,
                    const std::int64_t offset,
                    const std::vector<std::int64_t> shape,
@@ -111,11 +110,6 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
     for (auto n : shape)
       num_items_total *= n;
 
-    // std::cout << "Testing: " << num_items_total << ", "
-    //           << dolfinx::MPI::sum(comm, x.size()) << std::endl;
-    // assert(num_items_total == (std::int64_t)dolfinx::MPI::sum(MPI_COMM_WORLD,
-    // x.size()));
-
     // Compute data offset and range of values
     std::int64_t local_shape0 = x.size();
     for (std::size_t i = 1; i < shape.size(); ++i)
@@ -139,6 +133,5 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
 } // namespace
 //----------------------------------------------------------------------------
 
-} // namespace xdmf_utils
-} // namespace io
+} // namespace io::xdmf_utils
 } // namespace dolfinx

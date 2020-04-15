@@ -10,6 +10,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <set>
 #include <unordered_set>
@@ -113,7 +114,8 @@ compute_local_dual_graph_keyed(
     {
       // No match, so add facet0 to map
       facet_cell_map.push_back(
-          {std::vector(facet0.begin(), facet0.end()), cell_index0});
+          {std::vector<std::int32_t>(facet0.begin(), facet0.end()),
+           cell_index0});
     }
   }
 
@@ -124,9 +126,10 @@ compute_local_dual_graph_keyed(
   {
     const int k = facets.size() - 1;
     const int cell_index = facets[k].second;
-    facet_cell_map.emplace_back(std::vector<std::int32_t>(facets[k].first.begin(),
-                                                        facets[k].first.end()),
-                              cell_index);
+    facet_cell_map.emplace_back(
+        std::vector<std::int32_t>(facets[k].first.begin(),
+                                  facets[k].first.end()),
+        cell_index);
   }
 
   return {std::move(local_graph), std::move(facet_cell_map), num_local_edges};
@@ -186,17 +189,18 @@ compute_nonlocal_dual_graph(
   // to this function, not the user numbering) numbering
 
   // Get global range of vertex indices
-  const std::int64_t num_global_vertices
-      = dolfinx::MPI::max(
-            mpi_comm, (cell_vertices.rows() > 0) ? cell_vertices.maxCoeff() : 0)
-        + 1;
+  std::int64_t num_global_vertices = 0;
+  const std::int64_t max_vertex
+      = (cell_vertices.rows() > 0) ? cell_vertices.maxCoeff() : 0;
+  MPI_Allreduce(&max_vertex, &num_global_vertices, 1, MPI_INT64_T, MPI_SUM,
+                mpi_comm);
+  num_global_vertices += 1;
 
   // Send facet-cell map to intermediary match-making processes
   std::vector<std::vector<std::int64_t>> send_buffer(num_processes);
-  std::vector<std::vector<std::int64_t>> received_buffer(num_processes);
 
   // Pack map data and send to match-maker process
-  for (const auto & it : facet_cell_map)
+  for (const auto& it : facet_cell_map)
   {
     // FIXME: Could use a better index? First vertex is slightly
     //        skewed towards low values - may not be important
@@ -214,7 +218,9 @@ compute_nonlocal_dual_graph(
   }
 
   // Send data
-  dolfinx::MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
+  const graph::AdjacencyList<std::int64_t> received_buffer
+      = dolfinx::MPI::all_to_all(
+          mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer));
 
   // Clear send buffer
   send_buffer = std::vector<std::vector<std::int64_t>>(num_processes);
@@ -232,14 +238,14 @@ compute_nonlocal_dual_graph(
   for (int p = 0; p < num_processes; ++p)
   {
     // Unpack into map
-    const std::vector<std::int64_t>& data_p = received_buffer[p];
-    for (auto it = data_p.begin(); it != data_p.end();
-         it += (num_vertices_per_facet + 1))
+    auto data_p = received_buffer.links(p);
+    for (int i = 0; i < data_p.rows(); i += (num_vertices_per_facet + 1))
     {
       // Build map key
-      std::copy(it, it + num_vertices_per_facet, key.first.begin());
+      std::copy(data_p.data() + i, data_p.data() + i + num_vertices_per_facet,
+                key.first.begin());
       key.second.first = p;
-      key.second.second = *(it + num_vertices_per_facet);
+      key.second.second = data_p[i + num_vertices_per_facet];
 
       // Perform map insertion/look-up
       std::pair<MatchMap::iterator, bool> data = matchmap.insert(key);
@@ -264,15 +270,15 @@ compute_nonlocal_dual_graph(
   }
 
   // Send matches to other processes
-  std::vector<std::int64_t> cell_list;
-  dolfinx::MPI::all_to_all(mpi_comm, send_buffer, cell_list);
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_list
+      = dolfinx::MPI::all_to_all(
+            mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer))
+            .array();
 
-  // Ghost nodes
+  // Ghost nodes: insert connected cells into local map
   std::set<std::int64_t> ghost_nodes;
-
-  // Insert connected cells into local map
   std::int32_t num_nonlocal_edges = 0;
-  for (std::size_t i = 0; i < cell_list.size(); i += 2)
+  for (int i = 0; i < cell_list.rows(); i += 2)
   {
     assert((std::int64_t)cell_list[i] >= offset);
     assert((std::int64_t)(cell_list[i] - offset)

@@ -7,6 +7,7 @@
 #include "VTKWriter.h"
 #include "cells.h"
 #include <cstdint>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Function.h>
@@ -17,7 +18,6 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
@@ -29,6 +29,47 @@ using namespace dolfinx::io;
 
 namespace
 {
+//-----------------------------------------------------------------------------
+int get_degree(const mesh::CellType& cell_type, int num_dofs)
+{
+  switch (cell_type)
+  {
+  case mesh::CellType::interval:
+    if (num_dofs == 2)
+      return 1;
+    else if (num_dofs == 3)
+      return 2;
+    break;
+  case mesh::CellType::triangle:
+    if (num_dofs == 3)
+      return 1;
+    else if (num_dofs == 6)
+      return 2;
+    break;
+  case mesh::CellType::quadrilateral:
+    if (num_dofs == 4)
+      return 1;
+    else if (num_dofs == 9)
+      return 2;
+    break;
+  case mesh::CellType::tetrahedron:
+    if (num_dofs == 4)
+      return 1;
+    else if (num_dofs == 10)
+      return 2;
+    break;
+  case mesh::CellType::hexahedron:
+    if (num_dofs == 8)
+      return 1;
+    else if (num_dofs == 27)
+      return 2;
+    break;
+  default:
+    throw std::runtime_error("Unknown cell type");
+  }
+
+  throw std::runtime_error("Cannot determine degree");
+}
 //-----------------------------------------------------------------------------
 // Get VTK cell type
 std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim,
@@ -98,8 +139,9 @@ std::string ascii_cell_data(const mesh::Mesh& mesh,
   ss << std::scientific;
   ss << std::setprecision(16);
   auto cell_offset = offset.begin();
-  for (int i = 0;
-       i < mesh.topology().index_map(mesh.topology().dim())->size_local(); ++i)
+  const int tdim = mesh.topology().dim();
+  const int num_cells = mesh.topology().index_map(tdim)->size_local();
+  for (int i = 0; i < num_cells; ++i)
   {
     if (rank == 1 && data_dim == 2)
     {
@@ -138,11 +180,11 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
                       std::string filename)
 {
   const int num_cells = mesh.topology().index_map(cell_dim)->size_local();
-  const int element_degree = mesh.geometry().dof_layout().degree();
+  const int degree = get_degree(mesh.geometry().cmap().cell_shape(),
+                                mesh.geometry().cmap().dof_layout().num_dofs());
 
   // Get VTK cell type
-  const std::int8_t vtk_cell_type
-      = get_vtk_cell_type(mesh, cell_dim, element_degree);
+  const std::int8_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim, degree);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -201,7 +243,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   }
   else
   {
-    const int degree = mesh.geometry().dof_layout().degree();
+    // const int degree = mesh.geometry().cmap().dof_layout().degree();
 
     if (degree > 1)
       throw std::runtime_error("Higher order mesh entities not implemented.");
@@ -354,10 +396,11 @@ void VTKWriter::write_cell_data(const function::Function& u,
   auto cell_offset = offset.begin();
   assert(dofmap.element_dof_layout);
   const int num_dofs_cell = dofmap.element_dof_layout->num_dofs();
-  for (auto& cell : mesh::MeshRange(mesh, tdim))
+
+  for (int c = 0; c < num_cells; ++c)
   {
     // Tabulate dofs
-    auto dofs = dofmap.cell_dofs(cell.index());
+    auto dofs = dofmap.cell_dofs(c);
     for (int i = 0; i < num_dofs_cell; ++i)
       dof_set.push_back(dofs[i]);
 

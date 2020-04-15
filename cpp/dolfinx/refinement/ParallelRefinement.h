@@ -6,12 +6,12 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
 #include <set>
 #include <vector>
-#include <Eigen/Dense>
 
 namespace dolfinx
 {
@@ -22,6 +22,11 @@ class Mesh;
 template <typename T>
 class MeshTags;
 } // namespace mesh
+
+namespace common
+{
+class IndexMap;
+}
 
 namespace refinement
 {
@@ -68,40 +73,41 @@ public:
   void update_logical_edgefunction();
 
   /// Add new vertex for each marked edge, and create
-  /// new_vertex_coordinates and global_edge->new_vertex mapping.
+  /// new_vertex_coordinates and global_edge->new_vertex map.
   /// Communicate new vertices with MPI to all affected processes.
-  void create_new_vertices();
-
-  /// Mapping of old edge (to be removed) to new global vertex number.
-  /// Useful for forming new topology
-  const std::map<std::int32_t, std::int64_t>& edge_to_new_vertex() const;
-
-  /// Add new cells with vertex indices
-  /// @param[in] idx
-  void new_cells(const std::vector<std::int64_t>& idx);
+  /// @return edge_to_new_vertex map
+  std::map<std::int32_t, std::int64_t> create_new_vertices();
 
   /// Use vertex and topology data to partition new mesh across processes
-  /// @param[in] redistribute
+  /// @param[in] cell_topology Topology of cells, (vertex indices)
+  /// @param[in] redistribute Flag, calls partitioner if true
   /// @return New mesh
-  mesh::Mesh partition(bool redistribute) const;
+  mesh::Mesh partition(const std::vector<std::int64_t>& cell_topology,
+                       bool redistribute) const;
 
   /// Build local mesh from internal data when not running in parallel
+  /// @param[in] cell_topology
   /// @return A Mesh
-  mesh::Mesh build_local() const;
+  mesh::Mesh build_local(const std::vector<std::int64_t>& cell_topology) const;
+
+  /// Adjust indices to account for extra n values on each process
+  /// This is a utility to help add new topological vertices on each process
+  /// into the space of the index map.
+  ///
+  /// @param index_map IndexMap of current mesh vertices
+  /// @param n Number of new entries to be accommodated on this process
+  /// @return Global indices as if "n" extra values are appended on each process
+  static std::vector<std::int64_t>
+  adjust_indices(const std::shared_ptr<const common::IndexMap>& index_map,
+                 std::int32_t n);
 
 private:
-  // mesh::Mesh reference
+  // Mesh
   const mesh::Mesh& _mesh;
 
-  // Mapping from old local edge index to new global vertex, needed to
-  // create new topology
-  std::map<std::int32_t, std::int64_t> _local_edge_to_new_vertex;
-
   // New storage for all coordinates when creating new vertices
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _new_vertex_coordinates;
-
-  // New storage for all cells when creating new topology
-  std::vector<std::int64_t> _new_cell_topology;
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+      _new_vertex_coordinates;
 
   // Management of marked edges
   std::vector<bool> _marked_edges;
@@ -115,7 +121,6 @@ private:
 
   // Neighbourhood communicator
   MPI_Comm _neighbour_comm;
-
 };
 } // namespace refinement
 } // namespace dolfinx

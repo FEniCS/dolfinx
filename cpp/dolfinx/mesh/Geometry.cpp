@@ -17,32 +17,7 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-Geometry::Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
-                   const graph::AdjacencyList<std::int32_t>& dofmap,
-                   const fem::ElementDofLayout& layout,
-                   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>& x,
-                   const std::vector<std::int64_t>& global_indices)
-    : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map), _layout(layout),
-      _global_indices(global_indices)
-{
-  if (x.rows() != (int)global_indices.size())
-    throw std::runtime_error("Size mis-match");
-
-  // Make all geometry 3D
-  if (_dim == 3)
-    _x = x;
-  else
-  {
-    _x.resize(x.rows(), 3);
-    _x.setZero();
-    _x.block(0, 0, x.rows(), x.cols()) = x;
-  }
-}
-//-----------------------------------------------------------------------------
 int Geometry::dim() const { return _dim; }
-//-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>& Geometry::dofmap() { return _dofmap; }
 //-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() const
 {
@@ -65,17 +40,17 @@ Geometry::x() const
   return _x;
 }
 //-----------------------------------------------------------------------------
+const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
+//-----------------------------------------------------------------------------
 Eigen::Vector3d Geometry::node(int n) const
 {
   return _x.row(n).matrix().transpose();
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Geometry::global_indices() const
+const std::vector<std::int64_t>& Geometry::input_global_indices() const
 {
-  return _global_indices;
+  return _input_global_indices;
 }
-//-----------------------------------------------------------------------------
-const fem::ElementDofLayout& Geometry::dof_layout() const { return _layout; }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::hash() const
 {
@@ -91,7 +66,7 @@ std::size_t Geometry::hash() const
 //-----------------------------------------------------------------------------
 mesh::Geometry mesh::create_geometry(
     MPI_Comm comm, const Topology& topology,
-    const fem::ElementDofLayout& layout,
+    const fem::CoordinateElement& coordinate_element,
     const graph::AdjacencyList<std::int64_t>& cell_nodes,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
@@ -100,8 +75,8 @@ mesh::Geometry mesh::create_geometry(
   // fem::DofMapBuilder::build to take connectivities
 
   //  Build 'geometry' dofmap on the topology
-  auto [dof_index_map, dofmap]
-      = fem::DofMapBuilder::build(comm, topology, layout, 1);
+  auto [dof_index_map, dofmap] = fem::DofMapBuilder::build(
+      comm, topology, coordinate_element.dof_layout(), 1);
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
@@ -114,7 +89,7 @@ mesh::Geometry mesh::create_geometry(
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
-      = graph::Partitioning::distribute_data(comm, indices, x);
+      = graph::Partitioning::distribute_data<double>(comm, indices, x);
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
@@ -130,9 +105,17 @@ mesh::Geometry mesh::create_geometry(
   // Build coordinate dof array
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(
       coords.rows(), coords.cols());
-  for (int i = 0; i < coords.rows(); ++i)
-    xg.row(i) = coords.row(l2l[i]);
 
-  return Geometry(dof_index_map, dofmap, layout, xg, l2g);
+  // Allocate space for input global indices
+  std::vector<std::int64_t> igi(indices.size());
+
+  for (int i = 0; i < coords.rows(); ++i)
+  {
+    xg.row(i) = coords.row(l2l[i]);
+    igi[i] = indices[l2l[i]];
+  }
+
+  return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
+                  std::move(xg), std::move(igi));
 }
 //-----------------------------------------------------------------------------

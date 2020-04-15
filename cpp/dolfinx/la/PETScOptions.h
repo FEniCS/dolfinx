@@ -11,9 +11,7 @@
 #include <petscoptions.h>
 #include <string>
 
-namespace dolfinx
-{
-namespace la
+namespace dolfinx::la
 {
 
 /// These class provides static functions that permit users to set and
@@ -49,5 +47,4 @@ public:
   /// Clear PETSc global options database
   static void clear();
 };
-} // namespace la
-} // namespace dolfinx
+} // namespace dolfinx::la

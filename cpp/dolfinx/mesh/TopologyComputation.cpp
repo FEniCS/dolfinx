@@ -62,8 +62,8 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 //-----------------------------------------------------------------------------
 
 /// Communicate with sharing processes to find out which entities are
-/// ghosts and return a mapping vector to move these local indices to
-/// the end of the local range. Also returns the index map, and shared
+/// ghosts and return a map (vector) to move these local indices to the
+/// end of the local range. Also returns the index map, and shared
 /// entities, i.e. the set of all processes which share each shared
 /// entity.
 /// @param[in] comm MPI Communicator
@@ -218,9 +218,7 @@ get_local_indexing(
 
   // Prepare data for neighbour all to all
   std::vector<std::int64_t> send_entities_data;
-  std::vector<std::int64_t> recv_entities_data;
   std::vector<int> send_offsets = {0};
-  std::vector<int> recv_offsets;
   for (std::size_t i = 0; i < send_entities.size(); ++i)
   {
     send_entities_data.insert(send_entities_data.end(),
@@ -228,9 +226,13 @@ get_local_indexing(
     send_offsets.push_back(send_entities_data.size());
   }
 
-  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
-                                    send_entities_data, recv_offsets,
-                                    recv_entities_data);
+  const graph::AdjacencyList<std::int64_t> recv_data
+      = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
+                                          send_entities_data);
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_entities_data
+      = recv_data.array();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& recv_offsets
+      = recv_data.offsets();
 
   // Compare received with sent for each process
   // Any which are not found will have -1 in recv_index
@@ -311,12 +313,10 @@ get_local_indexing(
 
     std::vector<std::int64_t> send_global_index_data;
     std::vector<int> send_global_index_offsets = {0};
-    std::vector<std::int64_t> recv_global_index_data;
-    std::vector<int> recv_global_index_offsets;
 
-    // Send global indices for same entities that we sent before
-    // This uses the same pattern as before, so we can match up
-    // the received data to the indices in recv_index
+    // Send global indices for same entities that we sent before. This
+    // uses the same pattern as before, so we can match up the received
+    // data to the indices in recv_index
     for (int np = 0; np < neighbour_size; ++np)
     {
       for (std::int32_t index : send_index[np])
@@ -332,14 +332,15 @@ get_local_indexing(
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
 
-    dolfinx::MPI::neighbor_all_to_all(
-        neighbour_comm, send_global_index_offsets, send_global_index_data,
-        recv_global_index_offsets, recv_global_index_data);
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_global_index_data
+        = dolfinx::MPI::neighbor_all_to_all(
+              neighbour_comm, send_global_index_offsets, send_global_index_data)
+              .array();
 
-    assert(recv_global_index_data.size() == recv_index.size());
+    assert(recv_global_index_data.size() == (int)recv_index.size());
 
     // Map back received indices
-    for (std::size_t j = 0; j < recv_global_index_data.size(); ++j)
+    for (int j = 0; j < recv_global_index_data.size(); ++j)
     {
       const std::int64_t gi = recv_global_index_data[j];
       const std::int32_t idx = recv_index[j];
@@ -505,12 +506,15 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
   }
 
   // Compute offsets
-  std::vector<std::int32_t> offsets(num_connections.size() + 1, 0);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> offsets
+      = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(
+          num_connections.size() + 1);
   std::partial_sum(num_connections.begin(), num_connections.end(),
-                   offsets.begin() + 1);
+                   offsets.data() + 1);
 
   std::vector<std::int32_t> counter(num_connections.size(), 0);
-  std::vector<std::int32_t> connections(offsets.back());
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> connections(
+      offsets[offsets.rows() - 1]);
   for (int e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
   {
     auto e = c_d1_d0.links(e1);
@@ -518,7 +522,8 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
       connections[offsets[e[e0]] + counter[e[e0]]++] = e1;
   }
 
-  return graph::AdjacencyList<std::int32_t>(connections, offsets);
+  return graph::AdjacencyList<std::int32_t>(std::move(connections),
+                                            std::move(offsets));
 }
 //-----------------------------------------------------------------------------
 
@@ -648,16 +653,16 @@ TopologyComputation::compute_connectivity(const Topology& topology, int d0,
       = topology.connectivity(d0, 0);
   if (d0 > 0 and !topology.connectivity(d0, 0))
   {
-    std::runtime_error("Missing entities of dimension " + std::to_string(d0)
-                       + ".");
+    throw std::runtime_error("Missing entities of dimension "
+                             + std::to_string(d0) + ".");
   }
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d1_0
       = topology.connectivity(d1, 0);
   if (d1 > 0 and !topology.connectivity(d1, 0))
   {
-    std::runtime_error("Missing entities of dimension " + std::to_string(d1)
-                       + ".");
+    throw std::runtime_error("Missing entities of dimension "
+                             + std::to_string(d1) + ".");
   }
 
   // Start timer

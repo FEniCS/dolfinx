@@ -44,9 +44,10 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
   assert(dofmap.element_dof_layout);
   if (dofmap.element_dof_layout->is_view())
   {
-    std::runtime_error("Cannot initialize vector of degrees of freedom for "
-                       "function. Cannot be created from subspace. Consider "
-                       "collapsing the function space");
+    throw std::runtime_error(
+        "Cannot initialize vector of degrees of freedom for "
+        "function. Cannot be created from subspace. Consider "
+        "collapsing the function space");
   }
 
   assert(dofmap.index_map);
@@ -184,14 +185,8 @@ void Function::eval(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
-  // Get coordinate mapping
-  std::shared_ptr<const fem::CoordinateElement> cmap
-      = mesh.geometry().coord_mapping;
-  if (!cmap)
-  {
-    throw std::runtime_error(
-        "fem::CoordinateElement has not been attached to mesh.");
-  }
+  // Get coordinate map
+  const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 
   // Get element
   assert(_function_space->element());
@@ -221,7 +216,7 @@ void Function::eval(
   assert(_function_space->dofmap());
   const fem::DofMap& dofmap = *_function_space->dofmap();
 
-  mesh.create_entity_permutations();
+  mesh.topology_mutable().create_entity_permutations();
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
       = mesh.topology().get_cell_permutation_info();
 
@@ -243,8 +238,8 @@ void Function::eval(
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Compute reference coordinates X, and J, detJ and K
-    cmap->compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
-                                     coordinate_dofs);
+    cmap.compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
+                                    coordinate_dofs);
 
     // Compute basis on reference element
     element.evaluate_reference_basis(basis_reference_values, X);

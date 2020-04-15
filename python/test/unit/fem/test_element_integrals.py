@@ -5,18 +5,19 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the fem interface"""
 
-from random import shuffle
 from itertools import combinations, product
+from random import shuffle
 
 import numpy as np
 import pytest
-from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 
-from dolfinx import MPI, cpp, fem, Mesh, FunctionSpace, VectorFunctionSpace, FacetNormal, Function
-from dolfinx.mesh import MeshTags
-from ufl import inner, ds, dS, TestFunction, TrialFunction
+from dolfinx import (FacetNormal, Function, FunctionSpace, Mesh,
+                     VectorFunctionSpace, fem)
 from dolfinx.cpp.mesh import CellType
-
+from dolfinx.mesh import MeshTags
+from dolfinx_utils.test.skips import skip_in_parallel
+from ufl import TestFunction, TrialFunction, ds, dS, inner
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
@@ -55,10 +56,8 @@ def unit_cell(cell_type, random_order=True):
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
-    mesh = Mesh(MPI.comm_world, cell_type, ordered_points, cells,
-                [], cpp.mesh.GhostMode.none)
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
-    mesh.create_connectivity_all()
+    mesh = Mesh(MPI.COMM_WORLD, cell_type, ordered_points, cells, [])
+    mesh.topology.create_connectivity_all()
     return mesh
 
 
@@ -116,10 +115,8 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
-    mesh = Mesh(MPI.comm_world, cell_type, ordered_points, ordered_cells,
-                [], cpp.mesh.GhostMode.none)
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
-    mesh.create_connectivity_all()
+    mesh = Mesh(MPI.COMM_WORLD, cell_type, ordered_points, ordered_cells, [])
+    mesh.topology.create_connectivity_all()
     if return_order:
         return mesh, order
     return mesh
@@ -131,16 +128,16 @@ def test_facet_integral(cell_type):
     """Test that the integral of a function over a facet is correct"""
     for count in range(5):
         mesh = unit_cell(cell_type)
+        tdim = mesh.topology.dim
 
         V = FunctionSpace(mesh, ("Lagrange", 2))
-
-        num_facets = mesh.num_entities(mesh.topology.dim - 1)
-
         v = Function(V)
 
+        map_f = mesh.topology.index_map(tdim - 1)
+        num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
         values = np.arange(0, num_facets, dtype=np.intc)
-        marker = MeshTags(mesh, mesh.topology.dim - 1, indices, values, sorted=True, unique=True)
+        marker = MeshTags(mesh, tdim - 1, indices, values)
 
         # Functions that will have the same integral over each facet
         if cell_type == CellType.triangle:
@@ -170,17 +167,17 @@ def test_facet_normals(cell_type):
     """Test that FacetNormal is outward facing"""
     for count in range(5):
         mesh = unit_cell(cell_type)
+        tdim = mesh.topology.dim
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 1))
         normal = FacetNormal(mesh)
-
-        num_facets = mesh.num_entities(mesh.topology.dim - 1)
-
         v = Function(V)
 
+        map_f = mesh.topology.index_map(tdim - 1)
+        num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
         values = np.arange(0, num_facets, dtype=np.intc)
-        marker = MeshTags(mesh, mesh.topology.dim - 1, indices, values)
+        marker = MeshTags(mesh, tdim - 1, indices, values)
 
         # For each facet, check that the inner product of the normal and
         # the vector that has a positive normal component on only that facet
@@ -272,10 +269,10 @@ def test_plus_minus_simple_vector(cell_type, pm):
 
     # Check that the above vectors all have the same values as the first one,
     # but permuted due to differently ordered dofs
-    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        dofmap1 = space.mesh.geometry.dofmap()
+        dofmap1 = space.mesh.geometry.dofmap
 
         # For each cell
         for cell in range(2):
@@ -325,10 +322,10 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
 
     # Check that the above vectors all have the same values as the first one,
     # but permuted due to differently ordered dofs
-    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        dofmap1 = space.mesh.geometry.dofmap()
+        dofmap1 = space.mesh.geometry.dofmap
 
         # For each cell
         for cell in range(2):
@@ -373,10 +370,10 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 
     # Check that the above matrices all have the same values, but permuted due to differently
     # ordered dofs
-    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        dofmap1 = space.mesh.geometry.dofmap()
+        dofmap1 = space.mesh.geometry.dofmap
 
         dof_order = []
 

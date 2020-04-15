@@ -9,10 +9,7 @@
 #include <petscmat.h>
 #include <petscvec.h>
 
-namespace dolfinx
-{
-
-namespace nls
+namespace dolfinx::nls
 {
 
 /// This is a base class for nonlinear problems which can return the
@@ -47,5 +44,4 @@ public:
   /// to construct preconditioner.
   virtual Mat P(const Vec) { return nullptr; }
 };
-} // namespace nls
-} // namespace dolfinx
+} // namespace dolfinx::nls

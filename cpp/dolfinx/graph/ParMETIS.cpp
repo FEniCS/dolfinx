@@ -126,9 +126,11 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     MPI_Comm mpi_comm, idx_t nparts,
     const graph::AdjacencyList<idx_t>& adj_graph, bool ghosting)
 {
-  std::map<std::int64_t, std::vector<int>> ghost_procs;
-
   common::Timer timer("Compute graph partition (ParMETIS)");
+
+  std::map<std::int64_t, std::vector<int>> ghost_procs;
+  const int rank = dolfinx::MPI::rank(mpi_comm);
+  const int size = dolfinx::MPI::size(mpi_comm);
 
   // Options for ParMETIS
   idx_t options[3];
@@ -148,9 +150,11 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
   std::vector<real_t> ubvec(ncon, 1.05);
 
   // Communicate number of nodes between all processors
-  std::vector<idx_t> node_distribution;
+  std::vector<idx_t> node_distribution(size);
   const idx_t num_local_cells = adj_graph.num_nodes();
-  MPI::all_gather(mpi_comm, num_local_cells, node_distribution);
+  MPI_Allgather(&num_local_cells, 1, MPI::mpi_type<idx_t>(),
+                node_distribution.data(), 1, MPI::mpi_type<idx_t>(), mpi_comm);
+
   node_distribution.insert(node_distribution.begin(), 0);
   for (std::size_t i = 1; i != node_distribution.size(); ++i)
     node_distribution[i] += node_distribution[i - 1];
@@ -170,9 +174,6 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
                                  &edgecut, part.data(), &mpi_comm);
   assert(err == METIS_OK);
   timer1.stop();
-
-  const int rank = dolfinx::MPI::rank(mpi_comm);
-  const int size = dolfinx::MPI::size(mpi_comm);
 
   const unsigned long long elm_begin = node_distribution[rank];
   const unsigned long long elm_end = node_distribution[rank + 1];
@@ -212,7 +213,6 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
 
     // Do halo exchange of cell partition data
     std::vector<std::vector<std::int64_t>> send_cell_partition(size);
-    std::vector<std::int64_t> recv_cell_partition;
     for (const auto& hcell : halo_cell_to_remotes)
     {
       for (auto proc : hcell.second)
@@ -228,23 +228,22 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     }
 
     // Actual halo exchange
-    dolfinx::MPI::all_to_all(mpi_comm, send_cell_partition,
-                             recv_cell_partition);
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_cell_partition
+        = dolfinx::MPI::all_to_all(
+              mpi_comm, graph::AdjacencyList<std::int64_t>(send_cell_partition))
+              .array();
 
     // Construct a map from all currently foreign cells to their new
     // partition number
     std::map<std::int64_t, std::int32_t> cell_ownership;
-    for (auto p = recv_cell_partition.begin(); p != recv_cell_partition.end();
-         p += 2)
-    {
-      cell_ownership[*p] = *(p + 1);
-    }
+    for (int p = 0; p < recv_cell_partition.rows(); p += 2)
+      cell_ownership[recv_cell_partition[p]] = recv_cell_partition[p + 1];
 
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& xadj
         = adj_graph.offsets();
     const Eigen::Array<idx_t, Eigen::Dynamic, 1>& adjncy = adj_graph.array();
 
-    // Generate mapping for where new boundary cells need to be sent
+    // Generate map for where new boundary cells need to be sent
     for (std::int32_t i = 0; i < ncells; i++)
     {
       const std::int32_t proc_this = part[i];
@@ -281,9 +280,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     offsets.push_back(dests.size());
   }
 
-  graph::AdjacencyList<std::int32_t> partition_adj(dests, offsets);
-
-  return partition_adj;
+  return graph::AdjacencyList<std::int32_t>(dests, offsets);
 }
 //-----------------------------------------------------------------------------
 #endif

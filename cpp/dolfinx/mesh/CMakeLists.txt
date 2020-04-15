@@ -1,17 +1,13 @@
 set(HEADERS_mesh
-  ${CMAKE_CURRENT_SOURCE_DIR}/DistributedMeshTools.h
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_mesh.h
   ${CMAKE_CURRENT_SOURCE_DIR}/GraphBuilder.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshEntity.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/MeshFunction.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/MeshIterator.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Partitioning.h
   ${CMAKE_CURRENT_SOURCE_DIR}/PermutationComputation.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshQuality.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Topology.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/MeshValueCollection.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshTags.h
   ${CMAKE_CURRENT_SOURCE_DIR}/TopologyComputation.h
   ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.h
@@ -19,7 +15,6 @@ set(HEADERS_mesh
   PARENT_SCOPE)
 
 target_sources(dolfinx PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/DistributedMeshTools.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/GraphBuilder.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.cpp

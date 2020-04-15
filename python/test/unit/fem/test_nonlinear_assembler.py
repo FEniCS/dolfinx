@@ -9,6 +9,7 @@ import math
 
 import numpy
 import pytest
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
@@ -36,7 +37,7 @@ def test_matrix_assembly_block():
     blocked structures, PETSc Nest structures, and monolithic structures
     in the nonlinear setting
     """
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 4, 8)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
 
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -243,7 +244,7 @@ def test_assembly_solve_block():
     """Solve a two-field nonlinear diffusion like problem with block matrix
     approaches and test that solution is the same.
     """
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 11)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11)
     p = 1
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p)
     V0 = dolfinx.function.FunctionSpace(mesh, P)
@@ -296,12 +297,12 @@ def test_assembly_solve_block():
     Jmat0 = dolfinx.fem.create_matrix_block(J)
     Fvec0 = dolfinx.fem.create_vector_block(F)
 
-    snes = PETSc.SNES().create(dolfinx.MPI.comm_world)
+    snes = PETSc.SNES().create(MPI.COMM_WORLD)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     snes.getKSP().setType("preonly")
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("mumps")
+    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
     snes.setFunction(problem.F_block, Fvec0)
@@ -329,7 +330,7 @@ def test_assembly_solve_block():
     Jmat1 = dolfinx.fem.create_matrix_nest(J)
     Fvec1 = dolfinx.fem.create_vector_nest(F)
 
-    snes = PETSc.SNES().create(dolfinx.MPI.comm_world)
+    snes = PETSc.SNES().create(MPI.COMM_WORLD)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     nested_IS = Jmat1.getNestISs()
@@ -342,10 +343,10 @@ def test_assembly_solve_block():
     ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
     ksp_u.setType("preonly")
     ksp_u.getPC().setType('lu')
-    ksp_u.getPC().setFactorSolverType('mumps')
+    ksp_u.getPC().setFactorSolverType('superlu_dist')
     ksp_p.setType("preonly")
     ksp_p.getPC().setType('lu')
-    ksp_p.getPC().setFactorSolverType('mumps')
+    ksp_p.getPC().setFactorSolverType('superlu_dist')
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
     snes.setFunction(problem.F_nest, Fvec1)
@@ -404,12 +405,12 @@ def test_assembly_solve_block():
     Jmat2 = dolfinx.fem.create_matrix(J)
     Fvec2 = dolfinx.fem.create_vector(F)
 
-    snes = PETSc.SNES().create(dolfinx.MPI.comm_world)
+    snes = PETSc.SNES().create(MPI.COMM_WORLD)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     snes.getKSP().setType("preonly")
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("mumps")
+    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     problem = NonlinearPDE_SNESProblem(F, J, U, bcs)
     snes.setFunction(problem.F_mono, Fvec2)
@@ -435,8 +436,8 @@ def test_assembly_solve_block():
 
 
 @pytest.mark.parametrize("mesh", [
-    dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 11),
-    dolfinx.generation.UnitCubeMesh(dolfinx.MPI.comm_world, 3, 5, 4)
+    dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11),
+    dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4)
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
@@ -495,12 +496,12 @@ def test_assembly_solve_taylor_hood(mesh):
     Pmat0 = dolfinx.fem.create_matrix_block(P)
     Fvec0 = dolfinx.fem.create_vector_block(F)
 
-    snes = PETSc.SNES().create(dolfinx.MPI.comm_world)
+    snes = PETSc.SNES().create(MPI.COMM_WORLD)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     snes.getKSP().setType("minres")
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("mumps")
+    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
     snes.setFunction(problem.F_block, Fvec0)
@@ -526,7 +527,7 @@ def test_assembly_solve_taylor_hood(mesh):
     Pmat1 = dolfinx.fem.create_matrix_nest(P)
     Fvec1 = dolfinx.fem.create_vector_nest(F)
 
-    snes = PETSc.SNES().create(dolfinx.MPI.comm_world)
+    snes = PETSc.SNES().create(MPI.COMM_WORLD)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     nested_IS = Jmat1.getNestISs()
@@ -539,10 +540,10 @@ def test_assembly_solve_taylor_hood(mesh):
     ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
     ksp_u.setType("preonly")
     ksp_u.getPC().setType('lu')
-    ksp_u.getPC().setFactorSolverType('mumps')
+    ksp_u.getPC().setFactorSolverType('superlu_dist')
     ksp_p.setType("preonly")
     ksp_p.getPC().setType('lu')
-    ksp_p.getPC().setFactorSolverType('mumps')
+    ksp_p.getPC().setFactorSolverType('superlu_dist')
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
     snes.setFunction(problem.F_nest, Fvec1)
@@ -593,12 +594,12 @@ def test_assembly_solve_taylor_hood(mesh):
     Pmat2 = dolfinx.fem.create_matrix(P)
     Fvec2 = dolfinx.fem.create_vector(F)
 
-    snes = PETSc.SNES().create(dolfinx.MPI.comm_world)
+    snes = PETSc.SNES().create(MPI.COMM_WORLD)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     snes.getKSP().setType("minres")
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("mumps")
+    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     problem = NonlinearPDE_SNESProblem(F, J, U, bcs, P=P)
     snes.setFunction(problem.F_mono, Fvec2)

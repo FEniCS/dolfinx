@@ -6,6 +6,7 @@
 """Unit tests for Newton solver assembly"""
 
 import numpy as np
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
@@ -90,7 +91,7 @@ class NonlinearPDE_SNESProblem():
 def test_linear_pde():
     """Test Newton solver for a linear PDE"""
     # Create mesh and function space
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 12)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
     V = function.FunctionSpace(mesh, ("Lagrange", 1))
     u = function.Function(V)
     v = TestFunction(V)
@@ -109,7 +110,7 @@ def test_linear_pde():
     problem = NonlinearPDEProblem(F, u, bc)
 
     # Create Newton solver and solve
-    solver = dolfinx.cpp.nls.NewtonSolver(dolfinx.MPI.comm_world)
+    solver = dolfinx.cpp.nls.NewtonSolver(MPI.COMM_WORLD)
     n, converged = solver.solve(problem, u.vector)
     assert converged
     assert n == 1
@@ -125,7 +126,7 @@ def test_linear_pde():
 def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 5)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 5)
     V = function.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfinx.function.Function(V)
     v = TestFunction(V)
@@ -147,7 +148,7 @@ def test_nonlinear_pde():
     # Create Newton solver and solve
     u.vector.set(0.9)
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    solver = dolfinx.cpp.nls.NewtonSolver(dolfinx.MPI.comm_world)
+    solver = dolfinx.cpp.nls.NewtonSolver(MPI.COMM_WORLD)
     n, converged = solver.solve(problem, u.vector)
     assert converged
     assert n < 6
@@ -163,7 +164,7 @@ def test_nonlinear_pde():
 def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 15)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 15)
     V = function.FunctionSpace(mesh, ("Lagrange", 1))
     u = function.Function(V)
     v = TestFunction(V)
@@ -198,7 +199,7 @@ def test_nonlinear_pde_snes():
     snes.getKSP().setTolerances(rtol=1.0e-9)
 
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("mumps")
+    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     snes.solve(None, u.vector)
     assert snes.getConvergedReason() > 0
@@ -215,13 +216,13 @@ def test_nonlinear_pde_snes():
 
 
 def test_newton_solver_inheritance():
-    base = dolfinx.cpp.nls.NewtonSolver(dolfinx.MPI.comm_world)
+    base = dolfinx.cpp.nls.NewtonSolver(MPI.COMM_WORLD)
     assert isinstance(base, dolfinx.cpp.nls.NewtonSolver)
 
     class DerivedNewtonSolver(dolfinx.cpp.nls.NewtonSolver):
         pass
 
-    derived = DerivedNewtonSolver(dolfinx.MPI.comm_world)
+    derived = DerivedNewtonSolver(MPI.COMM_WORLD)
     assert isinstance(derived, DerivedNewtonSolver)
 
 
@@ -250,7 +251,7 @@ def test_newton_solver_inheritance_override_methods():
         def converged(self, r, problem, it):
             return super().converged(r, problem, it)
 
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 12)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
     V = function.FunctionSpace(mesh, ("Lagrange", 1))
     u = function.Function(V)
     v = TestFunction(V)
@@ -267,7 +268,7 @@ def test_newton_solver_inheritance_override_methods():
     problem = NonlinearPDEProblem(F, u, bc)
 
     # Create Newton solver and solve
-    solver = CustomNewtonSolver(dolfinx.MPI.comm_world)
+    solver = CustomNewtonSolver(MPI.COMM_WORLD)
     n, converged = solver.solve(problem, u.vector)
 
     assert called_methods[CustomNewtonSolver.converged.__name__]

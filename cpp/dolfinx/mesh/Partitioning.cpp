@@ -62,7 +62,6 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
     const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode)
 {
   common::Timer timer("Partition cells across processes");
-
   LOG(INFO) << "Compute partition of cells across processes";
 
   if (cells.num_nodes() > 0)

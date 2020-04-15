@@ -20,6 +20,7 @@ namespace
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 2> n,
+                     const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode, std::string diagonal)
 {
   // Receive mesh if not rank 0
@@ -27,9 +28,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
-    const fem::ElementDofLayout layout
-        = fem::geometry_layout(mesh::CellType::triangle, topo.cols());
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                         geom, ghost_mode);
   }
 
@@ -37,7 +36,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"
       && diagonal != "left/right" && diagonal != "crossed")
   {
-    std::runtime_error("Unknown mesh diagonal definition.");
+    throw std::runtime_error("Unknown mesh diagonal definition.");
   }
 
   const Eigen::Vector3d& p0 = p[0];
@@ -193,9 +192,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     }
   }
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(mesh::CellType::triangle, topo.cols());
-  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                       geom, ghost_mode);
 }
 
@@ -203,6 +200,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 //-----------------------------------------------------------------------------
 mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                       std::array<std::size_t, 2> n,
+                      const fem::CoordinateElement& element,
                       const mesh::GhostMode ghost_mode)
 {
   // Receive mesh if not rank 0
@@ -210,9 +208,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(0, 4);
-    const fem::ElementDofLayout layout
-        = fem::geometry_layout(mesh::CellType::quadrilateral, topo.cols());
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                         geom, ghost_mode);
   }
 
@@ -257,21 +253,21 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
       ++cell;
     }
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(mesh::CellType::quadrilateral, topo.cols());
-  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                       geom, ghost_mode);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh
-RectangleMesh::create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                      std::array<std::size_t, 2> n, mesh::CellType cell_type,
-                      const mesh::GhostMode ghost_mode, std::string diagonal)
+mesh::Mesh RectangleMesh::create(MPI_Comm comm,
+                                 const std::array<Eigen::Vector3d, 2>& p,
+                                 std::array<std::size_t, 2> n,
+                                 const fem::CoordinateElement& element,
+                                 const mesh::GhostMode ghost_mode,
+                                 std::string diagonal)
 {
-  if (cell_type == mesh::CellType::triangle)
-    return build_tri(comm, p, n, ghost_mode, diagonal);
-  else if (cell_type == mesh::CellType::quadrilateral)
-    return build_quad(comm, p, n, ghost_mode);
+  if (element.cell_shape() == mesh::CellType::triangle)
+    return build_tri(comm, p, n, element, ghost_mode, diagonal);
+  else if (element.cell_shape() == mesh::CellType::quadrilateral)
+    return build_quad(comm, p, n, element, ghost_mode);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
 }

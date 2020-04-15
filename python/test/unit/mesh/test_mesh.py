@@ -8,19 +8,20 @@ import math
 # import os
 import sys
 
+
 import numpy as np
 import pytest
-
-import dolfinx
-import FIAT
-from dolfinx import (MPI, BoxMesh, Mesh, MeshEntity, MeshFunction,
-                     RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, cpp)
-from dolfinx.cpp.mesh import CellType, is_simplex
-from dolfinx.fem import assemble_scalar
+from mpi4py import MPI
 # from dolfinx.io import XDMFFile
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
+
+import dolfinx
+import FIAT
+from dolfinx import (BoxMesh, Mesh, MeshEntity, RectangleMesh,
+                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
+from dolfinx.cpp.mesh import CellType, is_simplex
+from dolfinx.fem import assemble_scalar
 from ufl import dx
 
 assert (tempdir)
@@ -29,7 +30,7 @@ assert (tempdir)
 @pytest.fixture
 def mesh1d():
     """Create 1D mesh with degenerate cell"""
-    mesh1d = UnitIntervalMesh(MPI.comm_world, 4)
+    mesh1d = UnitIntervalMesh(MPI.COMM_WORLD, 4)
     i1 = np.where((mesh1d.geometry.x
                    == (0.75, 0, 0)).all(axis=1))[0][0]
     i2 = np.where((mesh1d.geometry.x
@@ -43,7 +44,7 @@ def mesh1d():
 def mesh2d():
     """Create 2D mesh with one equilateral triangle"""
     mesh2d = RectangleMesh(
-        MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
+        MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, cpp.mesh.GhostMode.none, 'left')
     i1 = np.where((mesh2d.geometry.x
@@ -55,7 +56,7 @@ def mesh2d():
 @pytest.fixture
 def mesh3d():
     """Create 3D mesh with regular tetrahedron and degenerate cells"""
-    mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
+    mesh3d = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)
     i1 = np.where((mesh3d.geometry.x
                    == (0, 1, 0)).all(axis=1))[0][0]
     i2 = np.where((mesh3d.geometry.x
@@ -68,7 +69,7 @@ def mesh3d():
 
 @pytest.fixture
 def c0(mesh3d):
-    """Original tetrahedron from UnitCubeMesh(MPI.comm_world, 1, 1, 1)"""
+    """Original tetrahedron from UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)"""
     return MeshEntity(mesh3d, mesh3d.topology.dim, 0)
 
 
@@ -86,42 +87,37 @@ def c5(mesh3d):
 
 @pytest.fixture
 def interval():
-    return UnitIntervalMesh(MPI.comm_world, 10)
+    return UnitIntervalMesh(MPI.COMM_WORLD, 10)
 
 
 @pytest.fixture
 def square():
-    return UnitSquareMesh(MPI.comm_world, 5, 5)
+    return UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
 
 
 @pytest.fixture
 def rectangle():
     return RectangleMesh(
-        MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
+        MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([2.0, 2.0, 0.0])], [5, 5],
         CellType.triangle, cpp.mesh.GhostMode.none)
 
 
 @pytest.fixture
 def cube():
-    return UnitCubeMesh(MPI.comm_world, 3, 3, 3)
+    return UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
 
 
 @pytest.fixture
 def box():
-    return BoxMesh(MPI.comm_world, [np.array([0, 0, 0]),
+    return BoxMesh(MPI.COMM_WORLD, [np.array([0, 0, 0]),
                                     np.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
                    cpp.mesh.GhostMode.none)
 
 
 @pytest.fixture
 def mesh():
-    return UnitSquareMesh(MPI.comm_world, 3, 3)
-
-
-@pytest.fixture
-def f(mesh):
-    return MeshFunction('int', mesh, 0, 0)
+    return UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
 
 
 def new_comm(comm):
@@ -145,7 +141,6 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
         assert mesh.geometry.dim == domain.geometric_dimension()
         assert mesh.topology.dim == domain.topological_dimension()
         assert mesh.ufl_cell() == domain.ufl_cell()
-        assert mesh.id == domain.ufl_id()
 
     _check_ufl_domain(interval)
     _check_ufl_domain(square)
@@ -163,7 +158,7 @@ def test_mesh_construction_pygmsh():
 
     pygmsh = pytest.importorskip("pygmsh")
 
-    if MPI.rank(MPI.comm_world) == 0:
+    if MPI.COMM_WORLD.rank == 0:
         geom = pygmsh.opencascade.Geometry()
         geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
         pygmsh_mesh = pygmsh.generate_mesh(geom)
@@ -176,27 +171,27 @@ def test_mesh_construction_pygmsh():
             "line": np.zeros([0, 2], dtype=np.int64)
         }
 
-    mesh = Mesh(MPI.comm_world, dolfinx.cpp.mesh.CellType.tetrahedron, points,
+    mesh = Mesh(MPI.COMM_WORLD, dolfinx.cpp.mesh.CellType.tetrahedron, points,
                 cells['tetra'], [], cpp.mesh.GhostMode.none)
     assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
-    mesh = Mesh(MPI.comm_world,
+    mesh = Mesh(MPI.COMM_WORLD,
                 dolfinx.cpp.mesh.CellType.triangle, points,
                 cells['triangle'], [], cpp.mesh.GhostMode.none)
     assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
 
-    mesh = Mesh(MPI.comm_world,
+    mesh = Mesh(MPI.COMM_WORLD,
                 dolfinx.cpp.mesh.CellType.interval, points,
                 cells['line'], [], cpp.mesh.GhostMode.none)
     assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 1
 
-    if MPI.rank(MPI.comm_world) == 0:
+    if MPI.COMM_WORLD.rank == 0:
         print("Generate mesh")
         geom = pygmsh.opencascade.Geometry()
         geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
@@ -212,13 +207,13 @@ def test_mesh_construction_pygmsh():
             "line3": np.zeros([0, 3], dtype=np.int64)
         }
 
-    mesh = Mesh(MPI.comm_world, dolfinx.cpp.mesh.CellType.tetrahedron, points,
+    mesh = Mesh(MPI.COMM_WORLD, dolfinx.cpp.mesh.CellType.tetrahedron, points,
                 cells['tetra10'], [], cpp.mesh.GhostMode.none)
     assert mesh.geometry.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
-    mesh = Mesh(MPI.comm_world, dolfinx.cpp.mesh.CellType.triangle, points,
+    mesh = Mesh(MPI.COMM_WORLD, dolfinx.cpp.mesh.CellType.triangle, points,
                 cells['triangle6'], [], cpp.mesh.GhostMode.none)
     assert mesh.geometry.degree() == 2
     assert mesh.geometry.dim == 3
@@ -227,58 +222,60 @@ def test_mesh_construction_pygmsh():
 
 def test_UnitSquareMeshDistributed():
     """Create mesh of unit square."""
-    mesh = UnitSquareMesh(MPI.comm_world, 5, 7)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 7)
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 70
     assert mesh.geometry.dim == 2
-    assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 48
+    assert mesh.mpi_comm().allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 48
 
 
 def test_UnitSquareMeshLocal():
     """Create mesh of unit square."""
-    mesh = UnitSquareMesh(MPI.comm_self, 5, 7)
-    assert mesh.num_entities(0) == 48
-    assert mesh.num_cells() == 70
+    mesh = UnitSquareMesh(MPI.COMM_SELF, 5, 7)
+    assert mesh.topology.index_map(0).size_global == 48
+    assert mesh.topology.index_map(2).size_global == 70
     assert mesh.geometry.dim == 2
 
 
 def test_UnitCubeMeshDistributed():
     """Create mesh of unit cube."""
-    mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9)
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 7, 9)
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(3).size_global == 1890
     assert mesh.geometry.dim == 3
-    assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 480
+    assert mesh.mpi_comm().allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
 
 
 def test_UnitCubeMeshLocal():
     """Create mesh of unit cube."""
-    mesh = UnitCubeMesh(MPI.comm_self, 5, 7, 9)
-    assert mesh.num_entities(0) == 480
-    assert mesh.num_cells() == 1890
+    mesh = UnitCubeMesh(MPI.COMM_SELF, 5, 7, 9)
+    assert mesh.topology.index_map(0).size_global == 480
+    assert mesh.topology.index_map(0).size_local == 480
+    assert mesh.topology.index_map(3).size_global == 1890
+    assert mesh.topology.index_map(3).size_local == 1890
     assert mesh.geometry.dim == 3
 
 
 def test_UnitQuadMesh():
-    mesh = UnitSquareMesh(MPI.comm_world, 5, 7, CellType.quadrilateral)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 7, CellType.quadrilateral)
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 35
     assert mesh.geometry.dim == 2
-    assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 48
+    assert mesh.mpi_comm().allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 48
 
 
 def test_UnitHexMesh():
-    mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9, CellType.hexahedron)
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 7, 9, CellType.hexahedron)
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(3).size_global == 315
     assert mesh.geometry.dim == 3
-    assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 480
+    assert mesh.mpi_comm().allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
 
 
 def test_hash():
-    h1 = UnitSquareMesh(MPI.comm_world, 4, 4).hash()
-    h2 = UnitSquareMesh(MPI.comm_world, 4, 5).hash()
-    h3 = UnitSquareMesh(MPI.comm_world, 4, 4).hash()
+    h1 = UnitSquareMesh(MPI.COMM_WORLD, 4, 4).hash()
+    h2 = UnitSquareMesh(MPI.COMM_WORLD, 4, 5).hash()
+    h3 = UnitSquareMesh(MPI.COMM_WORLD, 4, 4).hash()
     assert h1 == h3
     assert h1 != h2
 
@@ -286,7 +283,7 @@ def test_hash():
 @skip_in_parallel
 def test_GetCoordinates():
     """Get coordinates of vertices"""
-    mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
     assert len(mesh.geometry.x) == 36
 
 
@@ -343,11 +340,11 @@ def test_rmin_rmax(mesh1d, mesh2d, mesh3d):
 
 
 mesh_factories = [
-    (UnitIntervalMesh, (MPI.comm_world, 8)),
-    (UnitSquareMesh, (MPI.comm_world, 4, 4)),
-    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
-    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.quadrilateral)),
-    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.hexahedron)),
+    (UnitIntervalMesh, (MPI.COMM_WORLD, 8)),
+    (UnitSquareMesh, (MPI.COMM_WORLD, 4, 4)),
+    (UnitCubeMesh, (MPI.COMM_WORLD, 2, 2, 2)),
+    (UnitSquareMesh, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+    (UnitCubeMesh, (MPI.COMM_WORLD, 2, 2, 2, CellType.hexahedron)),
     # FIXME: Add mechanism for testing meshes coming from IO
 ]
 
@@ -379,9 +376,11 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     fiat_cell = FIAT.ufc_cell(cell_name)
 
     # Initialize all mesh entities and connectivities
-    mesh.create_connectivity_all()
+    mesh.topology.create_connectivity_all()
 
-    for i in range(mesh.num_cells()):
+    map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = map.size_local + map.num_ghosts
+    for i in range(num_cells):
         cell = MeshEntity(mesh, mesh.topology.dim, i)
         # Get mesh-global (MPI-local) indices of cell vertices
         vertex_global_indices = cell.entities(0)
@@ -406,7 +405,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
 
 def test_mesh_topology_lifetime():
     """Check that lifetime of Mesh.topology is bound to underlying mesh object"""
-    mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
     rc = sys.getrefcount(mesh)
     topology = mesh.topology
     assert sys.getrefcount(mesh) == rc + 1
@@ -416,48 +415,48 @@ def test_mesh_topology_lifetime():
 
 @skip_in_parallel
 def test_small_mesh():
-    mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
+    mesh3d = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)
     gdim = mesh3d.geometry.dim
     assert mesh3d.topology.index_map(gdim).size_global == 6
 
-    mesh2d = UnitSquareMesh(MPI.comm_world, 1, 1)
+    mesh2d = UnitSquareMesh(MPI.COMM_WORLD, 1, 1)
     gdim = mesh2d.geometry.dim
     assert mesh2d.topology.index_map(gdim).size_global == 2
 
-    mesh1d = UnitIntervalMesh(MPI.comm_world, 2)
+    mesh1d = UnitIntervalMesh(MPI.COMM_WORLD, 2)
     gdim = mesh1d.geometry.dim
     assert mesh1d.topology.index_map(gdim).size_global == 2
 
 
 def test_topology_surface(cube):
     tdim = cube.topology.dim
-    cube.create_connectivity(tdim - 1, tdim)
+    cube.topology.create_connectivity(tdim - 1, tdim)
 
     surface_vertex_markers = cube.topology.on_boundary(0)
     assert surface_vertex_markers
 
-    cube.create_entities(1)
-    cube.create_connectivity(2, 1)
+    cube.topology.create_entities(1)
+    cube.topology.create_connectivity(2, 1)
     surface_edge_markers = cube.topology.on_boundary(1)
     assert surface_edge_markers
 
     surface_facet_markers = cube.topology.on_boundary(2)
     sf_count = np.count_nonzero(np.array(surface_facet_markers))
     n = 3
-    assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
+    assert cube.mpi_comm().allreduce(sf_count, MPI.SUM) == n * n * 12
 
 
 def test_UnitHexMesh_assemble():
-    mesh = UnitCubeMesh(MPI.comm_world, 6, 7, 5, CellType.hexahedron)
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
     vol = assemble_scalar(1 * dx(mesh))
-    vol = MPI.sum(mesh.mpi_comm(), vol)
+    vol = mesh.mpi_comm().allreduce(vol, MPI.SUM)
     assert(vol == pytest.approx(1, rel=1e-9))
 
 
 def xtest_mesh_order_unchanged_triangle():
     points = [[0, 0], [1, 0], [1, 1]]
     cells = [[0, 1, 2]]
-    mesh = Mesh(MPI.comm_world, CellType.triangle, points,
+    mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points,
                 cells, [], cpp.mesh.GhostMode.none)
     assert (mesh.cells()[0] == cells[0]).all()
 
@@ -465,7 +464,7 @@ def xtest_mesh_order_unchanged_triangle():
 def xtest_mesh_order_unchanged_quadrilateral():
     points = [[0, 0], [1, 0], [0, 1], [1, 1]]
     cells = [[0, 1, 2, 3]]
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points,
+    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points,
                 cells, [], cpp.mesh.GhostMode.none)
     assert (mesh.cells()[0] == cells[0]).all()
 
@@ -473,7 +472,7 @@ def xtest_mesh_order_unchanged_quadrilateral():
 def xtest_mesh_order_unchanged_tetrahedron():
     points = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 0, 1]]
     cells = [[0, 1, 2, 3]]
-    mesh = Mesh(MPI.comm_world, CellType.tetrahedron, points,
+    mesh = Mesh(MPI.COMM_WORLD, CellType.tetrahedron, points,
                 cells, [], cpp.mesh.GhostMode.none)
     assert (mesh.cells()[0] == cells[0]).all()
 
@@ -482,6 +481,6 @@ def xtest_mesh_order_unchanged_hexahedron():
     points = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0],
               [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]]
     cells = [[0, 1, 2, 3, 4, 5, 6, 7]]
-    mesh = Mesh(MPI.comm_world, CellType.hexahedron, points,
+    mesh = Mesh(MPI.COMM_WORLD, CellType.hexahedron, points,
                 cells, [], cpp.mesh.GhostMode.none)
     assert (mesh.cells()[0] == cells[0]).all()

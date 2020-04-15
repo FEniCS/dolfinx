@@ -318,11 +318,12 @@ T circumradius_tmpl(const mesh::Mesh& mesh,
 
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
-mesh::extract_topology(const fem::ElementDofLayout& layout,
+mesh::extract_topology(const CellType& cell_type,
+                       const fem::ElementDofLayout& layout,
                        const graph::AdjacencyList<std::int64_t>& cells)
 {
   // Use ElementDofLayout to get vertex dof indices (local to a cell)
-  const int num_vertices_per_cell = num_cell_vertices(layout.cell_type());
+  const int num_vertices_per_cell = num_cell_vertices(cell_type);
   std::vector<int> local_vertices(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
@@ -411,7 +412,8 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
   // Get cell dimension
   const int d = mesh::cell_dim(type);
   const mesh::Topology& topology = mesh.topology();
-  mesh.create_entities(d - 1);
+  // FIXME: cleanup these calls as part of topology storage management rework.
+  mesh.topology_mutable().create_entities(d - 1);
   auto connectivity = topology.connectivity(d, d - 1);
   assert(connectivity);
 
@@ -470,10 +472,11 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   {
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
-
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(
-        mesh.num_entities(1), 3);
-    for (int i = 0; i < mesh.num_entities(1); ++i)
+    auto map = mesh.topology().index_map(1);
+    assert(map);
+    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
+    for (int i = 0; i < num_cells; ++i)
     {
       // Get the two vertices as points
       const mesh::MeshEntity e(mesh, 1, i);
@@ -489,9 +492,11 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   }
   case (mesh::CellType::triangle):
   {
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(
-        mesh.num_entities(2), 3);
-    for (int i = 0; i < mesh.num_entities(2); ++i)
+    auto map = mesh.topology().index_map(2);
+    assert(map);
+    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
+    for (int i = 0; i < num_cells; ++i)
     {
       // Get the three vertices as points
       const mesh::MeshEntity e(mesh, 2, i);
@@ -508,9 +513,11 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   case (mesh::CellType::quadrilateral):
   {
     // TODO: check
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(
-        mesh.num_entities(2), 3);
-    for (int i = 0; i < mesh.num_entities(2); ++i)
+    auto map = mesh.topology().index_map(2);
+    assert(map);
+    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
+    for (int i = 0; i < num_cells; ++i)
     {
       // Get three vertices as points
       const mesh::MeshEntity e(mesh, 2, i);
@@ -558,7 +565,7 @@ Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
     if (geometry.dim() != 2)
       throw std::runtime_error("Illegal geometric dimension");
 
-    cell.mesh().create_connectivity(2, 1);
+    cell.mesh().topology_mutable().create_connectivity(2, 1);
     mesh::MeshEntity f(cell.mesh(), tdim - 1, cell.entities(1)[facet_local]);
 
     // Get global index of opposite vertex
@@ -588,7 +595,7 @@ Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
       throw std::runtime_error("Illegal geometric dimension");
 
     // Make sure we have facets
-    cell.mesh().create_connectivity(2, 1);
+    cell.mesh().topology_mutable().create_connectivity(2, 1);
 
     // Create facet from the mesh and local facet number
     MeshEntity f(cell.mesh(), tdim - 1, cell.entities(1)[facet_local]);
@@ -616,7 +623,7 @@ Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
   case (mesh::CellType::tetrahedron):
   {
     // Make sure we have facets
-    cell.mesh().create_connectivity(3, 2);
+    cell.mesh().topology_mutable().create_connectivity(3, 2);
 
     // Create facet from the mesh and local facet number
     MeshEntity f(cell.mesh(), tdim - 1, cell.entities(2)[facet_local]);
@@ -718,8 +725,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
   return x_mid;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-mesh::locate_entities_geometrical(
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
     const mesh::Mesh& mesh, const int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -729,15 +735,17 @@ mesh::locate_entities_geometrical(
   const int tdim = mesh.topology().dim();
 
   // Create entities
-  mesh.create_entities(dim);
+  mesh.topology_mutable().create_entities(dim);
 
-  // Compute connectivities for boundary detection
-  // (Topology::on_boundary())
+  // Compute connectivities
+  mesh.topology_mutable().create_connectivity(0, tdim);
+  mesh.topology_mutable().create_connectivity(tdim, 0);
   if (dim < tdim)
   {
-    mesh.create_entities(dim);
-    mesh.create_connectivity(tdim - 1, tdim);
-    mesh.create_connectivity(0, tdim);
+    mesh.topology_mutable().create_connectivity(dim, 0);
+    // Additional connectivity for boundary detection
+    // (Topology::on_boundary())
+    mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
   }
 
   const int num_vertices = mesh.topology().index_map(0)->size_local()
@@ -788,7 +796,7 @@ mesh::locate_entities_geometrical(
       // Get first cell and find position
       const int c = v_to_c->links(i)[0];
       auto vertices = c_to_v->links(c);
-      const auto *it
+      const auto* it
           = std::find(vertices.data(), vertices.data() + vertices.rows(), i);
       assert(it != (vertices.data() + vertices.rows()));
       const int local_pos = std::distance(vertices.data(), it);

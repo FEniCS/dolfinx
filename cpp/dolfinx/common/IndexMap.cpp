@@ -266,6 +266,16 @@ std::vector<std::int32_t>
 IndexMap::global_to_local(const std::vector<std::int64_t>& indices,
                           bool blocked) const
 {
+  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>
+      _indices(indices.data(), indices.size());
+  return this->global_to_local(_indices, blocked);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t> IndexMap::global_to_local(
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
+        indices,
+    bool blocked) const
+{
   const std::int32_t local_size
       = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
 
@@ -276,11 +286,11 @@ IndexMap::global_to_local(const std::vector<std::int64_t>& indices,
       global_local_ghosts.begin(), global_local_ghosts.end());
 
   const int bs = blocked ? 1 : _block_size;
-
   std::vector<std::int32_t> local;
   const std::array<std::int64_t, 2> range = this->local_range();
-  for (auto index : indices)
+  for (Eigen::Index i = 0; i < indices.size(); ++i)
   {
+    const std::int64_t index = indices[i];
     if (index >= bs * range[0] and index < bs * range[1])
       local.push_back(index - bs * range[0]);
     else
@@ -374,7 +384,6 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
                                  &weighted);
   assert(indegree == outdegree);
   std::vector<int> neighbours(indegree), neighbours1(indegree);
-
   MPI_Dist_graph_neighbors(neighbour_comm, indegree, neighbours.data(),
                            MPI_UNWEIGHTED, outdegree, neighbours1.data(),
                            MPI_UNWEIGHTED);
@@ -404,7 +413,6 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
     {
       int idx = _forward_indices[c];
       fwd_sharing_data.push_back(shared_indices[idx].size());
-
       fwd_sharing_data.insert(fwd_sharing_data.end(),
                               shared_indices[idx].begin(),
                               shared_indices[idx].end());
@@ -413,11 +421,15 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
     fwd_sharing_offsets.push_back(fwd_sharing_data.size());
   }
 
-  std::vector<int> recv_sharing_offsets;
-  std::vector<std::int64_t> recv_sharing_data;
-  MPI::neighbor_all_to_all(neighbour_comm, fwd_sharing_offsets,
-                           fwd_sharing_data, recv_sharing_offsets,
-                           recv_sharing_data);
+  graph::AdjacencyList<std::int64_t> sharing = MPI::neighbor_all_to_all(
+      neighbour_comm, fwd_sharing_offsets, fwd_sharing_data);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> recv_sharing_offsets
+      = sharing.offsets();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_sharing_data
+      = sharing.array();
+
+  // FIXME: The below is confusing and the std::set<int> inside the loop
+  // should be avoided
 
   // Unpack
   for (int i = 0; i < _ghosts.size(); ++i)
@@ -428,8 +440,8 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
     int& rp = recv_sharing_offsets[np];
     int ns = recv_sharing_data[rp];
     ++rp;
-    std::set<int> procs(recv_sharing_data.begin() + rp,
-                        recv_sharing_data.begin() + rp + ns);
+    std::set<int> procs(recv_sharing_data.data() + rp,
+                        recv_sharing_data.data() + rp + ns);
     rp += ns;
     procs.insert(p);
     procs.erase(_myrank);

@@ -24,17 +24,18 @@ using namespace dolfinx::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Given a list of indices (unknown_indices) on each process,
-// return a map to sharing processes for each index, taking the owner as the
+// Given a list of indices (unknown_indices) on each process, return a
+// map to sharing processes for each index, taking the owner as the
 // first in the list
 std::unordered_map<std::int64_t, std::vector<int>>
 compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 {
   const int mpi_size = dolfinx::MPI::size(comm);
-  const std::int64_t global_space
-      = dolfinx::MPI::max(comm, *std::max_element(unknown_indices.begin(),
-                                                  unknown_indices.end()))
-        + 1;
+  std::int64_t global_space = 0;
+  const std::int64_t max_index
+      = *std::max_element(unknown_indices.begin(), unknown_indices.end());
+  MPI_Allreduce(&max_index, &global_space, 1, MPI_INT64_T, MPI_SUM, comm);
+  global_space += 1;
 
   std::vector<std::vector<std::int64_t>> send_indices(mpi_size);
   for (std::int64_t global_i : unknown_indices)
@@ -44,24 +45,25 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
     send_indices[index_owner].push_back(global_i);
   }
 
-  std::vector<std::vector<std::int64_t>> recv_indices(mpi_size);
-  dolfinx::MPI::all_to_all(comm, send_indices, recv_indices);
+  const graph::AdjacencyList<std::int64_t> recv_indices
+      = dolfinx::MPI::all_to_all(
+          comm, graph::AdjacencyList<std::int64_t>(send_indices));
 
   // Get index sharing - first vector entry (lowest) is owner.
   std::unordered_map<std::int64_t, std::vector<int>> index_to_owner;
-  for (int p = 0; p < mpi_size; ++p)
+  for (int p = 0; p < recv_indices.num_nodes(); ++p)
   {
-    const std::vector<std::int64_t>& recv_p = recv_indices[p];
-    for (std::size_t j = 0; j < recv_p.size(); ++j)
+    auto recv_p = recv_indices.links(p);
+    for (int j = 0; j < recv_p.rows(); ++j)
       index_to_owner[recv_p[j]].push_back(p);
   }
 
   // Send index ownership data back to all sharing processes
   std::vector<std::vector<int>> send_owner(mpi_size);
-  for (int p = 0; p < mpi_size; ++p)
+  for (int p = 0; p < recv_indices.num_nodes(); ++p)
   {
-    const std::vector<std::int64_t>& recv_p = recv_indices[p];
-    for (std::size_t j = 0; j < recv_p.size(); ++j)
+    auto recv_p = recv_indices.links(p);
+    for (int j = 0; j < recv_p.rows(); ++j)
     {
       const auto it = index_to_owner.find(recv_p[j]);
       assert(it != index_to_owner.end());
@@ -74,18 +76,17 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 
   // Alltoall is necessary because cells which are shared by vertex are not yet
   // known to this process
-  std::vector<std::vector<int>> recv_owner(mpi_size);
-  dolfinx::MPI::all_to_all(comm, send_owner, recv_owner);
+  const graph::AdjacencyList<int> recv_owner
+      = dolfinx::MPI::all_to_all(comm, graph::AdjacencyList<int>(send_owner));
 
   // Now fill index_to_owner with locally needed indices
   index_to_owner.clear();
   for (int p = 0; p < mpi_size; ++p)
   {
     const std::vector<std::int64_t>& send_v = send_indices[p];
-    const std::vector<int>& r_owner = recv_owner[p];
-    int c = 0;
-    int i = 0;
-    while (c < (int)r_owner.size())
+    auto r_owner = recv_owner.links(p);
+    int c(0), i(0);
+    while (c < r_owner.rows())
     {
       int count = r_owner[c++];
       for (int j = 0; j < count; ++j)
@@ -98,7 +99,7 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 }
 //----------------------------------------------------------------------------------------------
 // Wrapper around neighbor_all_to_all for vector<vector> style input
-std::vector<std::int64_t>
+Eigen::Array<std::int64_t, Eigen::Dynamic, 1>
 send_to_neighbours(MPI_Comm neighbour_comm,
                    const std::vector<std::vector<std::int64_t>>& send_data)
 {
@@ -110,11 +111,10 @@ send_to_neighbours(MPI_Comm neighbour_comm,
     qsend_offsets.push_back(qsend_data.size());
   }
 
-  std::vector<std::int64_t> qrecv_data;
-  std::vector<int> qrecv_offsets;
-  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets, qsend_data,
-                                    qrecv_offsets, qrecv_data);
-  return qrecv_data;
+  return dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets,
+                                           qsend_data)
+      .array();
+  //----------------------------------------------------------------------------------------------
 }
 
 } // namespace
@@ -123,7 +123,7 @@ send_to_neighbours(MPI_Comm neighbour_comm,
 std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
 {
   // NOTE: Getting markers for owned and unowned facets requires reverse
-  // and forward scatters. It we can work only with owned facets we
+  // and forward scatters. If we can work only with owned facets we
   // would need only a reverse scatter.
 
   const int tdim = topology.dim();
@@ -174,13 +174,6 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
   std::vector<bool> interior_facet(num_cells0.begin(), num_cells0.end());
 
   return interior_facet;
-}
-//-----------------------------------------------------------------------------
-Topology::Topology(mesh::CellType type)
-    : _cell_type(type),
-      _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
@@ -263,6 +256,99 @@ std::vector<bool> Topology::on_boundary(int dim) const
   return marker;
 }
 //-----------------------------------------------------------------------------
+std::int32_t Topology::create_entities(int dim)
+{
+  // TODO: is this check sufficient/correct? Does not catch the cell_entity
+  // entity case. Should there also be a check for
+  // connectivity(this->dim(), dim) ?
+  // Skip if already computed (vertices (dim=0) should always exist)
+  if (connectivity(dim, 0))
+    return -1;
+
+  // Create local entities
+  const auto [cell_entity, entity_vertex, index_map]
+      = TopologyComputation::compute_entities(_mpi_comm.comm(), *this, dim);
+
+  if (cell_entity)
+    set_connectivity(cell_entity, this->dim(), dim);
+
+  // TODO: is this check necessary? Seems redundant after to the "skip check"
+  if (entity_vertex)
+    set_connectivity(entity_vertex, dim, 0);
+
+  assert(index_map);
+  set_index_map(dim, index_map);
+
+  return index_map->size_local();
+}
+//-----------------------------------------------------------------------------
+void Topology::create_connectivity(int d0, int d1)
+{
+  // Make sure entities exist
+  create_entities(d0);
+  create_entities(d1);
+
+  // Compute connectivity
+  const auto [c_d0_d1, c_d1_d0]
+      = TopologyComputation::compute_connectivity(*this, d0, d1);
+
+  // NOTE: that to compute the (d0, d1) connections is it sometimes
+  // necessary to compute the (d1, d0) connections. We store the (d1,
+  // d0) for possible later use, but there is a memory overhead if they
+  // are not required. It may be better to not automatically store
+  // connectivity that was not requested, but advise in a docstring the
+  // most efficient order in which to call this function if several
+  // connectivities are needed.
+
+  // TODO: Caching policy/strategy.
+  // Concerning the note above: Provide an overload
+  // create_connectivity(std::vector<std::pair<int, int>>)?
+
+  // Attach connectivities
+  if (c_d0_d1)
+    set_connectivity(c_d0_d1, d0, d1);
+  if (c_d1_d0)
+    set_connectivity(c_d1_d0, d1, d0);
+
+  // Special facet handing
+  if (d0 == (this->dim() - 1) and d1 == this->dim())
+  {
+    std::vector<bool> f = compute_interior_facets(*this);
+    set_interior_facets(f);
+  }
+}
+//-----------------------------------------------------------------------------
+void Topology::create_entity_permutations()
+{
+  if (_cell_permutations.size() > 0)
+    return;
+
+  const int tdim = this->dim();
+
+  // FIXME: Is this always required? Could it be made cheaper by doing a
+  // local version? This call does quite a lot of parallel work
+  // Create all mesh entities
+  for (int d = 0; d < tdim; ++d)
+    create_entities(d);
+
+  auto [facet_permutations, cell_permutations]
+      = PermutationComputation::compute_entity_permutations(*this);
+  _facet_permutations = std::move(facet_permutations);
+  _cell_permutations = std::move(cell_permutations);
+}
+//-----------------------------------------------------------------------------
+void Topology::create_connectivity_all()
+{
+  // Compute all entities
+  for (int d = 0; d <= dim(); d++)
+    create_entities(d);
+
+  // Compute all connectivity
+  for (int d0 = 0; d0 <= dim(); d0++)
+    for (int d1 = 0; d1 <= dim(); d1++)
+      create_connectivity(d0, d1);
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
@@ -301,43 +387,44 @@ size_t Topology::hash() const
 const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
 Topology::get_cell_permutation_info() const
 {
+  if (_cell_permutations.size() == 0)
+  {
+    throw std::runtime_error(
+        "create_entity_permutations must be called before using this data.");
+  }
   return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
 const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_facet_permutations() const
 {
+  if (_cell_permutations.size() == 0)
+  {
+    throw std::runtime_error(
+        "create_entity_permutations must be called before using this data.");
+  }
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
-void Topology::create_entity_permutations()
-{
-  if (_cell_permutations.size() > 0)
-    return;
-
-  auto [facet_permutations, cell_permutations]
-      = PermutationComputation::compute_entity_permutations(*this);
-  _facet_permutations = std::move(facet_permutations);
-  _cell_permutations = std::move(cell_permutations);
-}
-//-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
+//-----------------------------------------------------------------------------
+MPI_Comm Topology::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
 Topology
 mesh::create_topology(MPI_Comm comm,
                       const graph::AdjacencyList<std::int64_t>& cells,
                       const std::vector<std::int64_t>& original_cell_index,
                       const std::vector<int>& ghost_owners,
-                      const fem::ElementDofLayout& layout, mesh::GhostMode)
+                      const CellType& cell_type, mesh::GhostMode)
 {
   if (cells.num_nodes() > 0)
   {
-    if (cells.num_links(0) != mesh::num_cell_vertices(layout.cell_type()))
+    if (cells.num_links(0) != mesh::num_cell_vertices(cell_type))
     {
       throw std::runtime_error(
           "Inconsistent number of cell vertices. Got "
           + std::to_string(cells.num_links(0)) + ", expected "
-          + std::to_string(mesh::num_cell_vertices(layout.cell_type())) + ".");
+          + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
     }
   }
 
@@ -459,12 +546,14 @@ mesh::create_topology(MPI_Comm comm,
         }
       }
     }
-    std::vector<std::int64_t> recv_pairs
+
+    // FIXME: make const
+    Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
         = send_to_neighbours(neighbour_comm, send_pairs);
 
     std::vector<std::int64_t> ghost_vertices(nghosts, -1);
     // Unpack received data and make list of ghosts
-    for (std::size_t i = 0; i < recv_pairs.size(); i += 2)
+    for (int i = 0; i < recv_pairs.rows(); i += 2)
     {
       std::int64_t gi = recv_pairs[i];
       const auto it = global_to_local_index.find(gi);
@@ -518,7 +607,7 @@ mesh::create_topology(MPI_Comm comm,
     recv_pairs = send_to_neighbours(neighbour_comm, send_pairs);
 
     // Unpack received data and add to ghosts
-    for (std::size_t i = 0; i < recv_pairs.size(); i += 2)
+    for (int i = 0; i < recv_pairs.rows(); i += 2)
     {
       std::int64_t gi = recv_pairs[i];
       const auto it = global_to_local_index.find(gi);
@@ -546,7 +635,7 @@ mesh::create_topology(MPI_Comm comm,
     auto my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         my_local_cells_array, cells.offsets());
 
-    Topology topology(layout.cell_type());
+    Topology topology(comm, cell_type);
     const int tdim = topology.dim();
 
     // Vertex IndexMap
@@ -564,16 +653,16 @@ mesh::create_topology(MPI_Comm comm,
     return topology;
   }
 
-  // Build local cell-vertex connectivity, with local vertex indices
-  // [0, 1, 2, ..., n), from cell-vertex connectivity using global
-  // indices and get map from global vertex indices in 'cells' to the
-  // local vertex indices
+  // Build local cell-vertex connectivity, with local vertex indices [0,
+  // 1, 2, ..., n), from cell-vertex connectivity using global indices
+  // and get map from global vertex indices in 'cells' to the local
+  // vertex indices
   auto [cells_local, local_to_global_vertices]
       = graph::Partitioning::create_local_adjacency_list(cells);
 
   // Create (i) local topology object and (ii) IndexMap for cells, and
   // set cell-vertex topology
-  Topology topology_local(layout.cell_type());
+  Topology topology_local(comm, cell_type);
   const int tdim = topology_local.dim();
   topology_local.set_index_map(tdim, index_map_c);
 
@@ -611,15 +700,15 @@ mesh::create_topology(MPI_Comm comm,
   topology_local.set_interior_facets(boundary);
   boundary = topology_local.on_boundary(tdim - 1);
 
-  // Build distributed cell-vertex AdjacencyList, IndexMap for
-  // vertices, and map from local index to old global index
+  // Build distributed cell-vertex AdjacencyList, IndexMap for vertices,
+  // and map from local index to old global index
   const std::vector<bool>& exterior_vertices
       = Partitioning::compute_vertex_exterior_markers(topology_local);
   auto [cells_d, vertex_map]
       = graph::Partitioning::create_distributed_adjacency_list(
           comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
-  Topology topology(layout.cell_type());
+  Topology topology(comm, cell_type);
 
   // Set vertex IndexMap, and vertex-vertex connectivity
   auto _vertex_map = std::make_shared<common::IndexMap>(std::move(vertex_map));

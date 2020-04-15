@@ -32,8 +32,8 @@ create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   std::int64_t nz = n[2];
 
   const std::int64_t n_points = (nx + 1) * (ny + 1) * (nz + 1);
-  std::array<std::int64_t, 2> range_p
-      = dolfinx::MPI::local_range(comm, n_points);
+  std::array<std::int64_t, 2> range_p = dolfinx::MPI::local_range(
+      dolfinx::MPI::rank(comm), n_points, dolfinx::MPI::size(comm));
 
   // Extract minimum and maximum coordinates
   const double x0 = std::min(p0[0], p1[0]);
@@ -88,6 +88,7 @@ create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 3> n,
+                     const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode)
 {
   common::Timer timer("Build BoxMesh");
@@ -99,8 +100,8 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   std::int64_t ny = n[1];
   std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
-  std::array<std::int64_t, 2> range_c
-      = dolfinx::MPI::local_range(comm, n_cells);
+  std::array<std::int64_t, 2> range_c = dolfinx::MPI::local_range(
+      dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
   Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(
       6 * (range_c[1] - range_c[0]), 4);
 
@@ -137,14 +138,13 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(mesh::CellType::tetrahedron, topo.cols());
-  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                       geom, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 3> n,
+                     const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode)
 {
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom
@@ -154,8 +154,8 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const std::int64_t ny = n[1];
   const std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
-  std::array<std::int64_t, 2> range_c
-      = dolfinx::MPI::local_range(comm, n_cells);
+  std::array<std::int64_t, 2> range_c = dolfinx::MPI::local_range(
+      dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
   Eigen::Array<std::int64_t, Eigen::Dynamic, 8, Eigen::RowMajor> topo(
       range_c[1] - range_c[0], 8);
 
@@ -180,9 +180,7 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(mesh::CellType::hexahedron, topo.cols());
-  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                       geom, ghost_mode);
 }
 //-----------------------------------------------------------------------------
@@ -193,13 +191,13 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 mesh::Mesh BoxMesh::create(MPI_Comm comm,
                            const std::array<Eigen::Vector3d, 2>& p,
                            std::array<std::size_t, 3> n,
-                           mesh::CellType cell_type,
+                           const fem::CoordinateElement& element,
                            const mesh::GhostMode ghost_mode)
 {
-  if (cell_type == mesh::CellType::tetrahedron)
-    return build_tet(comm, p, n, ghost_mode);
-  else if (cell_type == mesh::CellType::hexahedron)
-    return build_hex(comm, p, n, ghost_mode);
+  if (element.cell_shape() == mesh::CellType::tetrahedron)
+    return build_tet(comm, p, n, element, ghost_mode);
+  else if (element.cell_shape() == mesh::CellType::hexahedron)
+    return build_hex(comm, p, n, element, ghost_mode);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
 }

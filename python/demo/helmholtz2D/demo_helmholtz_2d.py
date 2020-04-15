@@ -11,10 +11,10 @@ book \"Finite Element Analysis of Acoustic Scattering\" p138-139.
 In real mode, the Method of Manufactured Solutions is used to produce the exact
 solution and source term."""
 
-
 import numpy as np
+from mpi4py import MPI
 
-from dolfinx import (MPI, FacetNormal, Function, FunctionSpace, UnitSquareMesh,
+from dolfinx import (FacetNormal, Function, FunctionSpace, UnitSquareMesh,
                      has_petsc_complex, solve)
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.io import XDMFFile
@@ -29,7 +29,7 @@ deg = 1
 # number of elements in each direction of mesh
 n_elem = 128
 
-mesh = UnitSquareMesh(MPI.comm_world, n_elem, n_elem)
+mesh = UnitSquareMesh(MPI.COMM_WORLD, n_elem, n_elem)
 n = FacetNormal(mesh)
 
 # Source amplitude
@@ -55,9 +55,10 @@ u = Function(V)
 solve(a == L, u, [])
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)
-with XDMFFile(MPI.comm_world, "plane_wave.xdmf",
+with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w",
               encoding=XDMFFile.Encoding.HDF5) as file:
-    file.write(u)
+    file.write_mesh(mesh)
+    file.write_function(u)
 
 """Calculate L2 and H1 errors of FEM solution and best approximation.
 This demonstrates the error bounds given in Ihlenburg. Pollution errors
@@ -79,16 +80,11 @@ u_exact.interpolate(lambda x: A * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
 
 # H1 errors
 diff = u - u_exact
-# diff_BA = u_BA - u_exact
-H1_diff = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(grad(diff), grad(diff)) * dx))
-# H1_BA = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(grad(diff_BA), grad(diff_BA)) * dx))
-H1_exact = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(grad(u_exact), grad(u_exact)) * dx))
-# print("Relative H1 error of best approximation:", abs(np.sqrt(H1_BA) / np.sqrt(H1_exact)))
+H1_diff = mesh.mpi_comm().allreduce(assemble_scalar(inner(grad(diff), grad(diff)) * dx), op=MPI.SUM)
+H1_exact = mesh.mpi_comm().allreduce(assemble_scalar(inner(grad(u_exact), grad(u_exact)) * dx), op=MPI.SUM)
 print("Relative H1 error of FEM solution:", abs(np.sqrt(H1_diff) / np.sqrt(H1_exact)))
 
 # L2 errors
-L2_diff = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(diff, diff) * dx))
-# L2_BA = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(diff_BA, diff_BA) * dx))
-L2_exact = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(u_exact, u_exact) * dx))
-# print("Relative L2 error  of best approximation:", abs(np.sqrt(L2_BA) / np.sqrt(L2_exact)))
+L2_diff = mesh.mpi_comm().allreduce(assemble_scalar(inner(diff, diff) * dx), op=MPI.SUM)
+L2_exact = mesh.mpi_comm().allreduce(assemble_scalar(inner(u_exact, u_exact) * dx), op=MPI.SUM)
 print("Relative L2 error of FEM solution:", abs(np.sqrt(L2_diff) / np.sqrt(L2_exact)))

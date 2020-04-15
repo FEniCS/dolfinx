@@ -7,7 +7,6 @@
 #pragma once
 
 #include "ElementDofLayout.h"
-#include "petscsys.h"
 #include <Eigen/Dense>
 #include <cstdlib>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -66,7 +65,7 @@ public:
   /// Local-to-global mapping of dofs on a cell
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local indices)
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1>::ConstSegmentReturnType
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::ConstSegmentReturnType
   cell_dofs(int cell) const
   {
     return _dofmap.links(cell);
@@ -86,7 +85,7 @@ public:
 
   /// Get dofmap data
   /// @return The adjacency list with dof indices for each cell
-  const graph::AdjacencyList<PetscInt>& list() const { return _dofmap; }
+  const graph::AdjacencyList<std::int32_t>& list() const { return _dofmap; }
 
   /// Layout of dofs on an element
   std::shared_ptr<const ElementDofLayout> element_dof_layout;
@@ -96,7 +95,7 @@ public:
 
 private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
-  graph::AdjacencyList<PetscInt> _dofmap;
+  graph::AdjacencyList<std::int32_t> _dofmap;
 };
 } // namespace fem
 } // namespace dolfinx
