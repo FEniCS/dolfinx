@@ -79,29 +79,30 @@ public:
   std::map<std::int32_t, std::int64_t> create_new_vertices();
 
   /// Use vertex and topology data to partition new mesh across processes
-  /// @param[in] cell_topology
-  /// @param[in] redistribute
+  /// @param[in] cell_topology Topology of cells, (vertex indices)
+  /// @param[in] redistribute Flag, calls partitioner if true
   /// @return New mesh
-  mesh::Mesh partition(std::vector<std::int64_t>& cell_topology,
+  mesh::Mesh partition(const std::vector<std::int64_t>& cell_topology,
                        bool redistribute) const;
 
   /// Build local mesh from internal data when not running in parallel
   /// @param[in] cell_topology
   /// @return A Mesh
-  mesh::Mesh build_local(std::vector<std::int64_t>& cell_topology) const;
+  mesh::Mesh build_local(const std::vector<std::int64_t>& cell_topology) const;
 
   /// Adjust indices to account for extra n values on each process
   /// This is a utility to help add new topological vertices on each process
   /// into the space of the index map.
   ///
-  /// @param im IndexMap
+  /// @param index_map IndexMap of current mesh vertices
   /// @param n Number of new entries to be accommodated on this process
   /// @return Global indices as if "n" extra values are appended on each process
   static std::vector<std::int64_t>
-  adjust_indices(std::shared_ptr<const common::IndexMap> im, std::int32_t n);
+  adjust_indices(const std::shared_ptr<const common::IndexMap>& index_map,
+                 std::int32_t n);
 
 private:
-  // mesh::Mesh reference
+  // Mesh
   const mesh::Mesh& _mesh;
 
   // New storage for all coordinates when creating new vertices

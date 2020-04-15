@@ -299,27 +299,26 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
   return local_edge_to_new_vertex;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-ParallelRefinement::adjust_indices(std::shared_ptr<const common::IndexMap> im,
-                                   std::int32_t n)
+std::vector<std::int64_t> ParallelRefinement::adjust_indices(
+    const std::shared_ptr<const common::IndexMap>& index_map, std::int32_t n)
 {
-  // Add in an extra "n" indices at the end of the current local_range of "im",
-  // and adjust existing indices to match.
+  // Add in an extra "n" indices at the end of the current local_range of
+  // "index_map", and adjust existing indices to match.
 
   // Get number of new indices on all processes
-  int mpi_size = dolfinx::MPI::size(im->mpi_comm());
-  int mpi_rank = dolfinx::MPI::rank(im->mpi_comm());
+  int mpi_size = dolfinx::MPI::size(index_map->mpi_comm());
+  int mpi_rank = dolfinx::MPI::rank(index_map->mpi_comm());
   std::vector<std::int32_t> recvn(mpi_size);
   MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T,
-                im->mpi_comm());
+                index_map->mpi_comm());
   std::vector<std::int64_t> global_offsets = {0};
   for (std::int32_t r : recvn)
     global_offsets.push_back(global_offsets.back() + r);
 
-  std::vector<std::int64_t> global_indices = im->global_indices(true);
+  std::vector<std::int64_t> global_indices = index_map->global_indices(true);
 
-  Eigen::Array<int, Eigen::Dynamic, 1> ghost_owners = im->ghost_owners();
-  int local_size = im->size_local();
+  Eigen::Array<int, Eigen::Dynamic, 1> ghost_owners = index_map->ghost_owners();
+  int local_size = index_map->size_local();
   for (int i = 0; i < local_size; ++i)
     global_indices[i] += global_offsets[mpi_rank];
   for (int i = 0; i < ghost_owners.size(); ++i)
@@ -328,8 +327,8 @@ ParallelRefinement::adjust_indices(std::shared_ptr<const common::IndexMap> im,
   return global_indices;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh
-ParallelRefinement::build_local(std::vector<std::int64_t>& cell_topology) const
+mesh::Mesh ParallelRefinement::build_local(
+    const std::vector<std::int64_t>& cell_topology) const
 {
   const std::size_t tdim = _mesh.topology().dim();
   const std::size_t num_cell_vertices = tdim + 1;
@@ -348,7 +347,7 @@ ParallelRefinement::build_local(std::vector<std::int64_t>& cell_topology) const
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh
-ParallelRefinement::partition(std::vector<std::int64_t>& cell_topology,
+ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
                               bool redistribute) const
 {
   const int num_vertices_per_cell
