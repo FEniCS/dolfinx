@@ -332,7 +332,7 @@ Topology::get_cell_permutation_info(bool discard_intermediate) const
         std::move(_facet_permutations));
     cell_permutations = std::make_shared<
         const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>(
-        std::move(cell_permutations));
+        std::move(_cell_permutations));
   } // leave scope of discard_lock
 
   // Write since layer may have been discard
