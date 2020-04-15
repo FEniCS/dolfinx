@@ -29,7 +29,7 @@ double orient3d(const Eigen::Vector3d& a,
 {
   return _orient3d(a.data(), b.data(), c.data(), d.data());
 }
-
+} // namespace dolfinx::geometry
 //-----------------------------------------------------------------------------
 
 /*****************************************************************************/
@@ -716,7 +716,7 @@ REAL orient2dadapt(const REAL* pa, const REAL* pb, const REAL* pc,
 
   return (D[Dlength - 1]);
 }
-
+namespace dolfinx::geometry {
 double _orient2d(const double* pa, const double* pb,
                                     const double* pc)
 /* REAL *pa; */
@@ -765,6 +765,8 @@ double _orient2d(const double* pa, const double* pb,
 
   return orient2dadapt(pa, pb, pc, detsum);
 }
+} // namespace dolfinx::geometry
+
 
 /*****************************************************************************/
 /*                                                                           */
@@ -1296,7 +1298,7 @@ REAL orient3dadapt(const REAL* pa, const REAL* pb, const REAL* pc,
 
   return finnow[finlength - 1];
 }
-
+namespace dolfinx::geometry{
 double _orient3d(const double* pa, const double* pb,
                                     const double* pc, const double* pd)
 /* REAL *pa; */
