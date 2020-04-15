@@ -124,7 +124,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
       if (marked_edges[edges[ei]])
         marked_edge_list.push_back(ei);
 
-    if (marked_edge_list.size() == 0)
+    if (marked_edge_list.empty())
     {
       // Copy over existing Cell to new topology
       for (int v = 0; v < vertices.rows(); ++v)
@@ -177,8 +177,8 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
         parent_cell.push_back(c);
 
       // Convert from cell local index to mesh index and add to cells
-      for (std::size_t i = 0; i < simplex_set.size(); ++i)
-        cell_topology.push_back(indices[simplex_set[i]]);
+      for (std::int32_t v : simplex_set)
+        cell_topology.push_back(indices[v]);
     }
   }
 

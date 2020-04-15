@@ -28,6 +28,9 @@ namespace
 //-----------------------------------------------------------------------------
 // Create geometric points of new Mesh, from current Mesh and a edge_to_vertex
 // map listing the new local points (midpoints of those edges)
+// @param Mesh
+// @param local_edge_to_new_vertex
+// @return array of points
 Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 create_new_geometry(
     const mesh::Mesh& mesh,

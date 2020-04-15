@@ -165,11 +165,12 @@ Partitioning::distribute_data(
   const std::int64_t num_points_local = x.rows();
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
-  std::vector<std::int64_t> global_offsets(size + 1, 0);
-  MPI_Allgather(&num_points_local, 1, MPI_INT64_T, global_offsets.data() + 1, 1,
+  std::vector<std::int64_t> global_sizes(size);
+  MPI_Allgather(&num_points_local, 1, MPI_INT64_T, global_sizes.data(), 1,
                 MPI_INT64_T, comm);
-  for (int i = 0; i < size; ++i)
-    global_offsets[i + 1] += global_offsets[i];
+  std::vector<std::int64_t> global_offsets(size + 1, 0);
+  std::partial_sum(global_sizes.begin(), global_sizes.end(),
+                   global_offsets.begin() + 1);
 
   // Build index data requests
   std::vector<int> number_index_send(size, 0);
@@ -220,29 +221,28 @@ Partitioning::distribute_data(
                 number_index_recv.data(), disp_index_recv.data(), MPI_INT64_T,
                 comm);
 
-  const int gdim = x.cols();
-  assert(gdim != 0);
+  const int item_size = x.cols();
+  assert(item_size != 0);
   // Pack point data to send back (transpose)
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_return(
-      indices_recv.size(), gdim);
+      indices_recv.size(), item_size);
   for (int p = 0; p < size; ++p)
   {
     for (int i = disp_index_recv[p]; i < disp_index_recv[p + 1]; ++i)
     {
-      const std::int64_t index = indices_recv[i];
-      const std::int32_t index_local = index - global_offsets[rank];
+      const std::int32_t index_local = indices_recv[i] - global_offsets[rank];
       assert(index_local >= 0);
       x_return.row(i) = x.row(index_local);
     }
   }
 
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(gdim, dolfinx::MPI::mpi_type<T>(), &compound_type);
+  MPI_Type_contiguous(item_size, dolfinx::MPI::mpi_type<T>(), &compound_type);
   MPI_Type_commit(&compound_type);
 
   // Send back point data
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> my_x(
-      disp_index_send.back(), gdim);
+      disp_index_send.back(), item_size);
   MPI_Alltoallv(x_return.data(), number_index_recv.data(),
                 disp_index_recv.data(), compound_type, my_x.data(),
                 number_index_send.data(), disp_index_send.data(), compound_type,
