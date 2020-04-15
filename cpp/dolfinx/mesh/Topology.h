@@ -50,6 +50,8 @@ class Topology;
 /// where dim is the topological dimension and i is the index of the
 /// entity within that topological dimension.
 ///
+/// All data beyond the defining data can either be provided at construction
+/// time, created via create_XYZ or computed on-the-fly with optional caching.
 
 // TODO: docs on caching
 // TODO: shared_ptr<const> or non-const for stored data?
@@ -58,36 +60,45 @@ class Topology;
 // the connectivities not. Is there a reason for that? I did not find any place
 // in the cpp layer where this was of relevance. This is also why setters were
 // removed. See also the comment above the lock in the constructor. Wold it be
-// desirable to keep old defning data once it is overwritten?
+// desirable to keep old defining data once it is overwritten?
 class Topology
 {
 
 public:
-  /// Create mesh topology with prepared data
+  /// Create mesh topology with prepared data.
+  /// Note that everything beyond the data that defines the topology can be
+  /// computed on-the-fly with possible caching.
+  /// @param[in] comm MPI communicator
+  /// @param[in] remanent_storage storage with at least all essential data.
+  /// Essential data are
+  ///  * the connectivities for (d0, d1) = (tdim, 0) and (d0, d1) = (0, 0) as
+  ///    well as
+  ///  * the index maps for dim = tdim and dim = 0.
+  /// Essential present in remanent storage will stay until end of life
+  /// the object created, i.e. become permanent, the remaing data can be
+  /// discarded (in the sense of losing ownership; not deletion) manually.
+  /// When more than essential data is provided, the caller is responsible for
+  /// correctness. In is safer to only provide the essential data at
+  /// construction and create other data, if desired, via "create_XYZ" member
+  // functions.
   Topology(MPI_Comm comm, mesh::CellType type,
            storage::TopologyStorage remanent_storage)
-      : _mpi_comm(comm),
-        _cell_type(type), remanent_storage{check_and_save_storage(
-                              std::move(remanent_storage), cell_dim(type))},
-        cache(&remanent_storage)
+      : _mpi_comm(comm), _cell_type(type), permanent_storage{true},
+        remanent_storage{check_storage(std::move(remanent_storage), cell_dim(_cell_type))},
+        cache{false, &remanent_storage}
   {
-    // Acquire lock for explicitly stored data
-    // This lock creates a new layer and thus protects against loss of
-    // *defining* data.
-    // The current storage implementation does not overwrite old data
-    // such that the the essential data is never overwritten.
-    // There are currently no setters such that this is not an issue.
-    // However, since stored data is const, this is not really a problem.
-    // Rethink, if stored data is not const.
-    // Not that this is necessary, because storage object are shallow copyied
-    // such that someone else could call "discard" on this storage object from
-    // outside.
-    remanent_lock = std::make_shared<const storage::StorageLock>(
-        remanent_storage.acquire_cache_lock(true));
+    // Make essential data permanent
+    permanent_storage.set_connectivity(
+        this->remanent_storage.connectivity(dim(), 0), dim(), 0);
+    permanent_storage.set_connectivity(
+        this->remanent_storage.connectivity(dim(), 0), dim(), 0);
+    permanent_storage.set_index_map(this->remanent_storage.index_map(dim()),
+                                    dim());
+    permanent_storage.set_index_map(this->remanent_storage.index_map(0), 0);
 
-    // This lock enables unscoped remanent storage for the create_XYZ members
-    // that can be discarded manually.
-    discardable_remanent_lock = std::make_shared<const storage::StorageLock>(
+    // This lock enables unscoped remanent storage layer for the
+    // create_XYZ members that can be discarded manually.
+    remanent_lock = std::make_shared<const storage::StorageLock>(
         remanent_storage.acquire_cache_lock(true));
   }
 
@@ -144,6 +155,9 @@ public:
   /// Returns the permutation information
   /// Results will only be cached if the user has acquired a cache lock before.
   /// @param[in] discard_intermediate only has an effect in case of caching
+  /// and does not discard facet permutations which are computed together
+  /// but not as a precondition.
+  /// @return The permutation numbers
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
   get_cell_permutation_info(bool discard_intermediate = false) const;
 
@@ -157,7 +171,9 @@ public:
   /// a facet of that cell.
   /// Results will only be cached if the user has acquired a cache lock before.
   /// @param[in] discard_intermediate only has an effect in case of caching
-  /// @return The permutation number
+  /// and does not discard cell permutations which are computed together
+  /// but not as a precondition.
+  /// @return The permutation numbers
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations(bool discard_intermediate = false) const;
 
@@ -208,32 +224,46 @@ public:
   /// i.e., it will shadow any previous cache lock. Howver, data created
   /// explicitly is not affected. The cache only applies to data that is
   /// computed on-the-fly.
-  storage::StorageLock acquire_cache_lock(bool force_new_layer = false) const {
+  storage::StorageLock acquire_cache_lock(bool force_new_layer = false) const
+  {
     return cache.acquire_cache_lock(force_new_layer);
   }
 
   /// Discard all remanent storage except for essential information. Provides a
-  /// new layer to add data which can be discarded again.
+  /// new layer to add data which can be discarded again. Note that this only
+  /// drops ownership but does not necessarily remove data from storage.
+  /// Nevertheless, it is still guaranteed that there is no memory overhead.
   void discard_remanent_storage()
   {
-    discardable_remanent_lock = std::make_shared<const storage::StorageLock>(
+    remanent_lock = std::make_shared<const storage::StorageLock>(
         remanent_storage.acquire_cache_lock(true));
   }
 
-  const storage::TopologyStorage& remanent_data() const {return remanent_storage;}
+  const storage::TopologyStorage& remanent_data() const
+  {
+    return remanent_storage;
+  }
 
-  const storage::TopologyStorage& cache_data() const {return cache;}
-
+  const storage::TopologyStorage& cache_data() const { return cache; }
 
 private:
-  storage::TopologyStorage static check_and_save_storage(
+  storage::TopologyStorage static check_storage(
       storage::TopologyStorage remanent_storage, int tdim);
 
-  std::shared_ptr<const storage::StorageLock> remanent_lock;
-  std::shared_ptr<const storage::StorageLock> discardable_remanent_lock;
+  std::optional<storage::StorageLock> lock_if_cache(bool force_new_layer) const {
+    if (cache_data().writable())
+      return {};
+    else
+      return acquire_cache_lock(force_new_layer);
+  }
 
-  // TODO: problem for lifetimes?
+  std::shared_ptr<const storage::StorageLock> remanent_lock;
+
+  // cannot be discard
+  storage::TopologyStorage permanent_storage;
+  // can be discard
   storage::TopologyStorage remanent_storage;
+  // caching (off by default)
   mutable storage::TopologyStorage cache;
 
   // MPI communicator

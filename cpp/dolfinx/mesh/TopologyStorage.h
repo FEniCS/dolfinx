@@ -167,9 +167,11 @@ public:
   StorageLock& operator=(const StorageLock&) = default;
   StorageLock& operator=(StorageLock&&) = default;
 
-  void release() {
+  void release()
+  {
     lock.reset();
-    storage = internal::make_guarded<TopologyStorage*>(nullptr, internal::sentinel_t{});
+    storage = internal::make_guarded<TopologyStorage*>(nullptr,
+                                                       internal::sentinel_t{});
   };
 
   ~StorageLock();
@@ -179,7 +181,6 @@ private:
   internal::guarded_obj<TopologyStorage*> storage;
 };
 
-
 // TODO: Make lock sequential. See "acquire_cache_lock"... where interesting
 // things may happen
 class TopologyStorage
@@ -188,13 +189,36 @@ class TopologyStorage
 public:
   using StorageLayer = internal::TopologyStorageLayer;
 
-  /// Create empty mesh topology
-  explicit TopologyStorage(bool remanent, const TopologyStorage* other = nullptr)
+  /// Create Storage layer
+  /// @param[in] remanent if given creates a remanent storage layer of which the
+  /// lifetime is bound to this object.
+  /// @param[in] other gives read access to this object as long other exists.
+  /// In order to have access to other's data beyond other's lifetime, the data
+  /// must be copied (shallow copies) manually. In the end, this can be against
+  /// the intented use of other.
+  TopologyStorage(bool remanent, const TopologyStorage* other)
       : _other_storage{make_other(other)}
   {
     if (remanent)
-      make_remanent(true);
+      remanent_lock
+          = std::make_shared<const StorageLock>(acquire_cache_lock(true));
   }
+
+  /// Create Storage layer without background (non-owned read-only) storage.
+  explicit TopologyStorage(bool remanent) : TopologyStorage(remanent, nullptr)
+  {
+    // do nothing
+  }
+
+  /// Create non-remanent Storage layer with background (non-owned read-only)
+  /// storage.
+  explicit TopologyStorage(const TopologyStorage* other)
+      : TopologyStorage(false, other)
+  {
+    // do nothing
+  }
+
+  TopologyStorage() = default;
 
   /// Copy constructor. Currently, we have const copy-on-write, there it is
   /// safe to copy.
@@ -207,7 +231,7 @@ public:
   ~TopologyStorage() = default;
 
   /// Assignment
-  TopologyStorage& operator=(const TopologyStorage& topology) = delete;
+  TopologyStorage& operator=(const TopologyStorage& topology) = default;
 
   /// Assignment
   TopologyStorage& operator=(TopologyStorage&& topology) = default;
@@ -341,6 +365,11 @@ public:
     }
   }
 
+  bool is_remanent() { return remanent_lock != nullptr; }
+
+  // Is writable, whether there is a at least one writable layer
+  bool writable() const { return layers.empty(); }
+
   void remove_expired_layers()
   {
     layers.remove_if([](const internal::guarded_obj<StorageLayer>& layer) {
@@ -350,45 +379,21 @@ public:
 
   std::size_t number_of_layers() const { return layers.size(); }
 
-  // TODO: this is not totally sound. Do not allow this lock to have more than
-  // one owner (needs non-trivial copy contructor/assignment) or no copies at
-  // all.
-  /// Make a new layer that stays until discarded and keeps alive all
-  /// data. It is risky to rely on this functionality in case of shared
-  /// ownership.
-  void make_remanent(bool all_data)
-  {
-    remanent_lock = std::make_shared<const storage::StorageLock>(
-        acquire_cache_lock(true));
-  }
-
   /// The active layer
-  internal::guarded_obj<StorageLayer>& active_layer() {
-    return layers.front();
-  }
+  internal::guarded_obj<StorageLayer>& active_layer() { return layers.front(); }
 
-  /// Discard is only guaranteed for what has been written since
-  /// "make_remanent" and only if no new locks have been acquired.
-  /// This is a fairly intrasparent thing such that one should not rely on
-  /// them for important things, ie. invariant of classes etc.
-  void discard() { remanent_lock.reset(); }
-
-  /// Creates storage on top (ie. with read access) of this. Note that the
-  /// it is still in valid state if the original instance has gone. The new
-  /// instance however, does not have any ownership on the original data by
-  /// default.
+  /// Creates storage on top (ie. with read access) of this. Note that it is
+  /// still in a valid state if the original instance has gone. The new
+  /// instance does not have any ownership on the original data by
+  /// default such that data may go away when the creating storage does.
   /// @param[in] share_ownership whether ownership shall be shared. This then
   /// also automatically creates a writable layer.
   TopologyStorage create_on_top(bool share_ownership = false) const
   {
-    TopologyStorage res(this);
-    if (share_ownership)
-      res.make_remanent(true);
-    return std::move(res);
+    return TopologyStorage(share_ownership, this);
   }
 
 private:
-
   static internal::guarded_obj<const TopologyStorage*>
   make_other(const TopologyStorage* other)
   {
@@ -397,7 +402,6 @@ private:
     else
       return internal::make_guarded(other, internal::sentinel_t{});
   }
-
 
   template <typename value_t,
             // Currently only for shared_ptr
@@ -416,7 +420,7 @@ private:
     if ((!_other_storage.second.expired()) && _other_storage.first)
     {
       if (auto value = internal::read_from_layers<value_t>(
-            read, _other_storage.first->layers);
+              read, _other_storage.first->layers);
           value)
         return value;
     }
@@ -435,6 +439,7 @@ private:
   // The storage layers
   internal::storage_layers_t layers;
 
+  // Lifetime information
   internal::lock_t lifetime{std::make_shared<const bool>(true)};
 };
 
