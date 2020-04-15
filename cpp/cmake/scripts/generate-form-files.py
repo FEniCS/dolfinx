@@ -19,7 +19,7 @@
 import os
 import sys
 
-import ffcx
+from ffcx.main import main as ffcx_main
 
 # Call with "./generate-form-files.py 1" for PETSc complex mode
 complex_mode = (sys.argv[-1] == "1")
@@ -46,7 +46,7 @@ for subdir in subdirs:
                 args += ["--scalar_type", "double complex"]
             args.append(f)
             try:
-                ffcx.main(args)
+                ffcx_main(args)
             except Exception as e:
                 failures.append((root, f, e))
         os.chdir(topdir)
