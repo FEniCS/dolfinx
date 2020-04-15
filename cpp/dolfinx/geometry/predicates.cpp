@@ -394,7 +394,7 @@ REAL *e;
 /*  Don't change this routine unless you fully understand it.                */
 /*                                                                           */
 /*****************************************************************************/
-
+namespace dolfinx::geometry {
 void exactinit()
 {
   REAL half;
@@ -432,7 +432,7 @@ void exactinit()
   o3derrboundB = (3.0 + 28.0 * epsilon) * epsilon;
   o3derrboundC = (26.0 + 288.0 * epsilon) * epsilon * epsilon;
 }
-
+} // dolfinx::geometry
 
 /*****************************************************************************/
 /*                                                                           */
