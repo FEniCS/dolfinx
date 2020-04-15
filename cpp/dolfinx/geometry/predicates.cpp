@@ -1,4 +1,9 @@
 #include "predicates.h"
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <sys/time.h>
+
 namespace dolfinx::geometry{
 //-----------------------------------------------------------------------------
 double orient1d(double a, double b, double x)
@@ -125,11 +130,6 @@ double orient3d(const Eigen::Vector3d& a,
 /*    have questions.                                                        */
 /*                                                                           */
 /*****************************************************************************/
-
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <sys/time.h>
 
 /* On some machines, the exact arithmetic routines might be defeated by the  */
 /*   use of internal extended precision floating-point registers.  Sometimes */
