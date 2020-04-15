@@ -138,20 +138,19 @@ Topology::index_map(int dim, bool discard_intermediate /*unused*/) const
     return res;
   }
 
-  // A scratch object with read access to our cache (which sees all data)
-  Topology scratch(mpi_comm(), cell_type(),
-                   storage::TopologyStorage(true, &cache));
-  scratch.create_entities(dim);
+  // General lock
+  auto lock = acquire_cache_lock();
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> _entity_vertex;
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> _cell_entity;
+  std::shared_ptr<const common::IndexMap> _index_map;
 
-  // No write layer in cache
-  if (cache.number_of_layers() == 0)
-    return scratch.index_map(dim);
+  // Create local entities
+  std::tie(_cell_entity, _entity_vertex, _index_map)
+  = TopologyComputation::compute_entities(*this, dim);
 
-  // Happens inside create_entities. The three items are tied together!
-  cache.set_connectivity(scratch.connectivity(dim, 0), dim, 0);
-  cache.set_connectivity(scratch.connectivity(this->dim(), dim), this->dim(),
-                         dim);
-  return cache.set_index_map(scratch.index_map(dim), dim);
+  cache.set_connectivity(_cell_entity, this->dim(), dim);
+  cache.set_connectivity(_entity_vertex, dim, 0);
+  return cache.set_index_map(_index_map, dim);
 }
 //-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim,
@@ -311,31 +310,34 @@ Topology::get_cell_permutation_info(bool discard_intermediate) const
     return *res;
   }
 
-  // A scratch object with read access to our cache (which sees all data)
-  Topology scratch(mpi_comm(), cell_type(),
-                   storage::TopologyStorage(true, &cache));
-  auto scratch_lock = scratch.acquire_cache_lock();
-  scratch.create_entity_permutations();
+  // General lock
+  auto lock = acquire_cache_lock();
+  std::shared_ptr<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      facet_permutations;
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+      cell_permutations;
 
-  // No write layer in cache
-  if (cache.number_of_layers() == 0)
-    return scratch.get_cell_permutation_info();
+  { // scope for optionally discarded cache layer
+    auto discard_lock = acquire_cache_lock(discard_intermediate);
+    // Requires entities: trigger via call to index_map
+    for (int d = 0; d < dim(); ++d)
+      index_map(d);
 
-  if (!discard_intermediate) {
-    // Obtain ownership of all data created
-    // Note: We just go over all since this cannot increase the data anyway.
-    for (int i = 0; i < dim(); ++i) {
-      cache.set_index_map(scratch.cache_data().index_map(i), i);
-      for (int j = 0; j < dim(); ++j) {
-        cache.set_connectivity(scratch.cache_data().connectivity(i, j), i, j);
-      }
-    }
-  }
+    auto [_facet_permutations, _cell_permutations]
+        = PermutationComputation::compute_entity_permutations(*this);
 
-  // Happens inside create_entity_permutations. The permutations belong together.
-  // Read from the scratch storage because of return types.
-  cache.set_facet_permutations(scratch.cache_data().facet_permutations());
-  return *(cache.set_cell_permutations(scratch.cache_data().cell_permutations()));
+    facet_permutations = std::make_shared<
+        const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>(
+        std::move(_facet_permutations));
+    cell_permutations = std::make_shared<
+        const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>(
+        std::move(cell_permutations));
+  } // leave scope of discard_lock
+
+  // Write since layer may have been discard
+  cache.set_facet_permutations(facet_permutations);
+  return *(cache.set_cell_permutations(cell_permutations));
 }
 //-----------------------------------------------------------------------------
 const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
