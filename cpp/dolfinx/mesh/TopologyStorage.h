@@ -160,7 +160,7 @@ public:
     // do nothing
   }
 
-  StorageLock() = delete; 
+  StorageLock() = delete;
   StorageLock(const StorageLock&) = delete;
   StorageLock(StorageLock&&) = default;
 
@@ -221,7 +221,10 @@ public:
   TopologyStorage() = default;
 
   /// Copy constructor. Currently, we have const copy-on-write, there it is
-  /// safe to copy.
+  /// safe to copy. But this may lead to hierarchies due to injected read-only
+  /// data. The main use of having this copyable is to allow its owner to be
+  /// copyable without having to resort to shared ptrs.
+  /// To just read data from another storage use the member read_from.
   TopologyStorage(const TopologyStorage& topology) = default;
 
   /// Move constructor
@@ -379,8 +382,11 @@ public:
 
   std::size_t number_of_layers() const { return layers.size(); }
 
-  /// The active layer
-  internal::guarded_obj<StorageLayer>& active_layer() { return layers.front(); }
+  /// Copy data from other, not lifetimes.
+  void read_from(const TopologyStorage& other)
+  {
+    active_layer().first = other.active_layer().first;
+  }
 
   /// Creates storage on top (ie. with read access) of this. Note that it is
   /// still in a valid state if the original instance has gone. The new
@@ -394,6 +400,12 @@ public:
   }
 
 private:
+
+  // The active layer
+  internal::guarded_obj<StorageLayer>& active_layer() { return layers.front(); }
+  // Const version
+  const internal::guarded_obj<StorageLayer>& active_layer() const { return layers.front(); }
+
   static internal::guarded_obj<const TopologyStorage*>
   make_other(const TopologyStorage* other)
   {
