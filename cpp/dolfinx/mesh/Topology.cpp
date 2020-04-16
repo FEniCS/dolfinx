@@ -9,9 +9,7 @@
 #include "Partitioning.h"
 #include "PermutationComputation.h"
 #include "TopologyComputation.h"
-#include "utils.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/Partitioning.h>
@@ -128,6 +126,10 @@ Topology::index_map(int dim, bool discard_intermediate /*unused*/) const
   // "discard_intermediate" is not used here because the "intermediate results"
   // are logically connect to the index map and thus not truly "intermediate".
 
+  // General lock: protects against loss of data and creates one temporary
+  // writable layer if there is none.
+  auto lock = acquire_cache_lock();
+
   if (auto res = cache.index_map(dim); res)
   {
     // They usually belong together.
@@ -138,19 +140,14 @@ Topology::index_map(int dim, bool discard_intermediate /*unused*/) const
     return res;
   }
 
-  // General lock
-  auto lock = acquire_cache_lock();
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> _entity_vertex;
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> _cell_entity;
-  std::shared_ptr<const common::IndexMap> _index_map;
+  // TODO: lock for thread safety
 
-  // Create local entities
-  std::tie(_cell_entity, _entity_vertex, _index_map)
-  = TopologyComputation::compute_entities(*this, dim);
-
-  cache.set_connectivity(_cell_entity, this->dim(), dim);
-  cache.set_connectivity(_entity_vertex, dim, 0);
-  return cache.set_index_map(_index_map, dim);
+  // Scratch has read access to cache.
+  auto scratch = create_scratch();
+  scratch.create_entities(dim);
+  // Copy newly recorded data
+  cache.read_from(scratch.cache);
+  return cache.index_map(dim);
 }
 //-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim,
@@ -218,6 +215,7 @@ std::vector<bool> Topology::on_boundary(int dim,
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1, bool discard_intermediate) const
 {
+
   if (auto conn = cache.connectivity(d0, d1); conn)
     return conn;
 
@@ -237,38 +235,50 @@ Topology::connectivity(int d0, int d1, bool discard_intermediate) const
   // Using the same checks here. Not all four cases are checked since they are
   // not logically independent.
 
-  // General lock to ensure a writable cache layer
+  // General lock: protects against loss of data and creates one temporary
+  // writable layer if there is none.
+  //  auto lock = acquire_cache_lock();
+  //  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> res;
+  //  // Special cases for which we cannot discard intermediate data.
+  //  if (d0 == dim() or d1 == 0)
+  //  {
+  //    // This calls do not do excessive work since they are either computed
+  //    // or essential, i.e. present by construction.
+  //    // case (d0, 0): computes connectivities (tdim, d0) and (d0, 0)
+  //    index_map(d0);
+  //    // case (tdim, d1) computes connectivities (tdim, d1) and (d1, 0)
+  //    index_map(d1);
+  //    assert(cache.connectivity(d0, d1));
+  //    return cache.connectivity(d0, d1);
+  //  }
+  //  else
+  //  {
+  //    { // scope for temporary writing cache
+  //      auto lock = acquire_cache_lock(discard_intermediate);
+  //      // index_map(dim) triggers create_entities.
+  //      if (!cache.connectivity(d0, 0))
+  //        index_map(d0);
+  //
+  //      if (!cache.connectivity(d1, 0))
+  //        index_map(d1);
+  //
+  //      res = TopologyComputation::compute_connectivity(*this, d0, d1)[0];
+  //    } // discard temporary cache
+
+  // Store result because it may have been dropped
+  //    return cache.set_connectivity(res, d0, d1);
+  //  }
+
+  // General lock: protects against loss of data and creates one temporary
+  // writable layer if there is none.
   auto lock = acquire_cache_lock();
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> res;
-  // Special cases for which we cannot discard intermediate data.
-  if (d0 == dim() or d1 == 0)
-  {
-    // This calls do not do excessive work since they are either computed
-    // or essential, i.e. present by construction.
-    // case (d0, 0): computes connectivities (tdim, d0) and (d0, 0)
-    index_map(d0);
-    // case (tdim, d1) computes connectivities (tdim, d1) and (d1, 0)
-    index_map(d1);
-    assert(cache.connectivity(d0, d1));
-    return cache.connectivity(d0, d1);
-  }
-  else
-  {
-    { // scope for temporary writing cache
-      auto lock = acquire_cache_lock(discard_intermediate);
-      // index_map(dim) triggers create_entities.
-      if (!cache.connectivity(d0, 0))
-        index_map(d0);
 
-      if (!cache.connectivity(d1, 0))
-        index_map(d1);
-
-      res = TopologyComputation::compute_connectivity(*this, d0, d1)[0];
-    } // discard temporary cache
-
-    // Store result because it may have been dropped
-    return cache.set_connectivity(res, d0, d1);
-  }
+  // TODO: lock for thread safety
+  // Scratch has read access to cache.
+  auto scratch = create_scratch();
+  scratch.create_connectivity(d0, d1, discard_intermediate);
+  cache.read_from(scratch.cache);
+  return cache.connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
 const std::vector<bool>&
@@ -277,18 +287,31 @@ Topology::interior_facets(bool discard_intermediate) const
   if (auto facets = cache.interior_facets(); facets)
     return *facets;
 
-  // General lock to be operable in this function
+  // TODO: go for the scratch-create pattern for thread safety.
+
+  //  // General lock: protects against loss of data and creates one temporary
+  //  // writable layer if there is none.
+  //  auto lock = acquire_cache_lock();
+  //  std::shared_ptr<const std::vector<bool>> res;
+  //
+  //  { // scope for optionally discarded cache layer
+  //    auto lock = acquire_cache_lock(discard_intermediate);
+  //    res = TopologyComputation::compute_interior_facets(*this);
+  //  } // discard cache layer
+  //
+  //  // Store result because it may have been dropped
+  //  return *(cache.set_interior_facets(res));
+
+  // General lock: protects against loss of data and creates one temporary
+  // writable layer if there is none.
   auto lock = acquire_cache_lock();
-  std::shared_ptr<const std::vector<bool>> res;
 
-  { // scope for optionally discarded cache layer
-    auto lock = acquire_cache_lock(discard_intermediate);
-    res = std::make_shared<const std::vector<bool>>(
-        TopologyComputation::compute_interior_facets(*this));
-  } // discard cache layer
-
-  // Store result because it may have been dropped
-  return *(cache.set_interior_facets(res));
+  // TODO: lock for thread safety
+  // Scratch has read access to cache.
+  auto scratch = create_scratch();
+  scratch.create_interior_facets(discard_intermediate);
+  cache.read_from(scratch.cache);
+  return *cache.interior_facets();
 }
 //-----------------------------------------------------------------------------
 size_t Topology::hash() const
@@ -304,55 +327,64 @@ Topology::get_cell_permutation_info(bool discard_intermediate) const
   // Note: discard intermediate does not apply to facet_permutations which
   // are computed as well.
 
+  // General lock: protects against loss of data and creates one temporary
+  // writable layer if there is none. Above the check because of composed access
+  // for the assertion.
+  auto lock = acquire_cache_lock();
+
   if (auto res = cache.cell_permutations(); res)
   {
     assert(cache.facet_permutations());
     return *res;
   }
+  //
+  //  // TODO: go for the scratch-create pattern for thread safety.
+  //
+  //  std::shared_ptr<
+  //      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+  //      facet_permutations;
+  //  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+  //      cell_permutations;
+  //
+  //  { // scope for optionally discarded cache layer
+  //    auto discard_lock = acquire_cache_lock(discard_intermediate);
+  //    // Requires entities: trigger via call to index_map
+  //    for (int d = 0; d < dim(); ++d)
+  //      index_map(d);
+  //
+  //    std::tie(facet_permutations, cell_permutations)
+  //        = PermutationComputation::compute_entity_permutations(*this);
+  //  } // leave scope of discard_lock
+  //
+  //  // Write since layer may have been discard
+  //  cache.set_facet_permutations(facet_permutations);
+  //  return *(cache.set_cell_permutations(cell_permutations));
 
-  // General lock
-  auto lock = acquire_cache_lock();
-  std::shared_ptr<
-      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
-      facet_permutations;
-  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
-      cell_permutations;
-
-  { // scope for optionally discarded cache layer
-    auto discard_lock = acquire_cache_lock(discard_intermediate);
-    // Requires entities: trigger via call to index_map
-    for (int d = 0; d < dim(); ++d)
-      index_map(d);
-
-    auto [_facet_permutations, _cell_permutations]
-        = PermutationComputation::compute_entity_permutations(*this);
-
-    facet_permutations = std::make_shared<
-        const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>(
-        std::move(_facet_permutations));
-    cell_permutations = std::make_shared<
-        const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>(
-        std::move(_cell_permutations));
-  } // leave scope of discard_lock
-
-  // Write since layer may have been discard
-  cache.set_facet_permutations(facet_permutations);
-  return *(cache.set_cell_permutations(cell_permutations));
+  // TODO: lock for thread safety
+  // Scratch has read access to cache.
+  auto scratch = create_scratch();
+  scratch.create_entity_permutations(discard_intermediate);
+  cache.read_from(scratch.cache);
+  return *cache.cell_permutations();
 }
 //-----------------------------------------------------------------------------
 const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_facet_permutations(bool discard_intermediate) const
 {
+  // General lock: protects against loss of data and creates one temporary
+  // writable layer if there is none. Above the check because of composed access
+  // for the assertion.
+  auto lock = acquire_cache_lock();
   if (auto facet_permutations = cache.facet_permutations(); facet_permutations)
   {
     assert(cache.cell_permutations());
     return *facet_permutations;
   }
 
-  // Rely on get_cell_permutation_info. The lock ensures transfer of cached data.
-  auto lock = acquire_cache_lock(discard_intermediate);
+  // TODO: lock for thread safety
+  // Rely on get_cell_permutation_info.
   get_cell_permutation_info(discard_intermediate);
-  return *(cache_data().facet_permutations());
+  return *(cache.facet_permutations());
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
@@ -402,53 +434,23 @@ std::int32_t Topology::create_entities(int dim)
   return index_map->size_local();
 }
 //--------------------------------------------------------------------------
-void Topology::create_connectivity(int d0, int d1)
+void Topology::create_connectivity(int d0, int d1, bool discard_intermediate)
 {
-
-  // Are the parens required?
   if (auto conn
       = remanent_storage.set_connectivity(cache.connectivity(d0, d1), d0, d1);
       conn)
-  {
-    // Probably it's better to also copy the shared_ptr to index maps
-    remanent_storage.set_index_map(cache.index_map(d0), d0);
-    remanent_storage.set_index_map(cache.index_map(d1), d1);
     return;
-  }
 
-  // TODO: this means , they will be stored! Not necessary since they will be
-  // computed on demand otherwise Make sure entities exist
-  create_entities(d0);
-  create_entities(d1);
+  // the create_XYZ should not store anything not explicitly required
+  auto discard_lock = acquire_cache_lock(true);
+  // trigger discardable entity comutations
+  index_map(d0);
+  index_map(d1);
+  if (!discard_intermediate)
+    remanent_storage.read_from(cache);
 
-  // Compute connectivity
-  const auto [c_d0_d1, c_d1_d0]
-      = TopologyComputation::compute_connectivity(*this, d0, d1);
-
-  // NOTE: that to compute the (d0, d1) connections is it sometimes
-  // necessary to compute the (d1, d0) connections. We store the (d1,
-  // d0) for possible later use, but there is a memory overhead if they
-  // are not required. It may be better to not automatically store
-  // connectivity that was not requested, but advise in a docstring the
-  // most efficient order in which to call this function if several
-  // connectivities are needed.
-
-  // Concerning the note above: Provide an overload
-  // create_connectivity(std::vector<std::pair<int, int>>)?
-
-  // Attach connectivities
-  if (c_d0_d1)
-    remanent_storage.set_connectivity(c_d0_d1, d0, d1);
-  if (c_d1_d0)
-    remanent_storage.set_connectivity(c_d1_d0, d1, d0);
-
-  // Special facet handing
-  if (d0 == (this->dim() - 1) and d1 == this->dim())
-  {
-    // TODO: this means, they will be stored! Not necessary since they will be
-    // computed on demand otherwise
-    create_interior_facets();
-  }
+  remanent_storage.set_connectivity(
+      TopologyComputation::compute_connectivity(*this, d0, d1), d0, d1);
 }
 //-----------------------------------------------------------------------------
 void Topology::create_connectivity_all()
@@ -456,22 +458,28 @@ void Topology::create_connectivity_all()
   // Compute all connectivity
   for (int d0 = 0; d0 <= this->dim(); d0++)
     for (int d1 = 0; d1 <= this->dim(); d1++)
-      create_connectivity(d0, d1);
+      create_connectivity(d0, d1, false);
 }
 //-----------------------------------------------------------------------------
-void Topology::create_interior_facets()
+void Topology::create_interior_facets(bool discard_intermediate)
 {
   if (auto facets
       = remanent_storage.set_interior_facets(cache.interior_facets());
       facets)
     return;
 
-  auto f = std::make_shared<std::vector<bool>>(
+  // the create_XYZ should not store anything not explicitly required
+  auto discard_lock = acquire_cache_lock(true);
+  // Requirements
+  connectivity(dim() - 1, dim());
+  if (!discard_intermediate)
+    remanent_storage.read_from(cache);
+
+  remanent_storage.set_interior_facets(
       TopologyComputation::compute_interior_facets(*this));
-  remanent_storage.set_interior_facets(f);
 }
 //-----------------------------------------------------------------------------
-void Topology::create_entity_permutations()
+void Topology::create_entity_permutations(bool discard_intermediate)
 {
   if (auto permutations
       = remanent_storage.set_cell_permutations(cache.cell_permutations());
@@ -486,23 +494,21 @@ void Topology::create_entity_permutations()
 
   // FIXME: Is this always required? Could it be made cheaper by doing a
   // local version? This call does quite a lot of parallel work
+
+  // the create_XYZ should not store anything not explicitly required
+  auto discard_lock = acquire_cache_lock(true);
   // Create all mesh entities
-  // TODO: drop the afterwards (via new layer of remanent storage or cache, when
-  // not requiring them)?
   for (int d = 0; d < tdim; ++d)
-    create_entities(d);
+    // trigger entity computation on cache
+    index_map(d);
+
+  if (!discard_intermediate)
+    remanent_storage.read_from(cache);
 
   auto [facet_permutations, cell_permutations]
       = PermutationComputation::compute_entity_permutations(*this);
-
-  remanent_storage.set_facet_permutations(
-      std::make_shared<
-          const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>(
-          std::move(facet_permutations)));
-
-  remanent_storage.set_cell_permutations(
-      std::make_shared<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>(
-          std::move(cell_permutations)));
+  remanent_storage.set_facet_permutations(facet_permutations);
+  remanent_storage.set_cell_permutations(cell_permutations);
 }
 //-----------------------------------------------------------------------------
 Topology

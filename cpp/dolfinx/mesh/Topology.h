@@ -61,6 +61,27 @@ class Topology;
 // in the cpp layer where this was of relevance. This is also why setters were
 // removed. See also the comment above the lock in the constructor. Wold it be
 // desirable to keep old defining data once it is overwritten?
+
+// TODO: also needs a lock for thread safety. In acquire_cache_lock?
+// If there is one lock for computations (prevents excessive memory consumption)
+// then one compute/get member must not call another member. Otherwise, there
+// will be a deadlock. This can be achieved by either calling the computation
+// functions which will never modify anything. Another option is to use
+// a scratch Topology object that encapsules all computations which does not
+// need locking because one just calls members that do not lock. Use for example
+// the create_XYZ members to do the actual computations. This seems to be the
+// cleanest pattern anayway.
+
+// Is read access, ie. getting a shared_ptr<const XYZ>? The race condition does
+// not matter because of logical constness, but the data race?
+// According to cpp reference: control block of shared_ptr is thread safe. Thus,
+// assignment is. So what can happen? Ask for the shared_ptr, having it, I also
+// have the object which is const. So fine.
+// IMPORTANT: However, losing storage is an issue. Image,
+// a cache layer is dropped the cache is emptied and now I believe I have
+// index map, but the connectivities are not there any more.
+// Thus, when reading of more than one quantity (quantities that are logically
+// connected, one also has to have a lock for protection against losing data.
 class Topology
 {
 
@@ -74,32 +95,29 @@ public:
   ///  * the connectivities for (d0, d1) = (tdim, 0) and (d0, d1) = (0, 0) as
   ///    well as
   ///  * the index maps for dim = tdim and dim = 0.
-  /// Essential present in remanent storage will stay until end of life
-  /// the object created, i.e. become permanent, the remaing data can be
-  /// discarded (in the sense of losing ownership; not deletion) manually.
   /// When more than essential data is provided, the caller is responsible for
   /// correctness. In is safer to only provide the essential data at
   /// construction and create other data, if desired, via "create_XYZ" member
-  // functions.
+  /// functions.
   Topology(MPI_Comm comm, mesh::CellType type,
            storage::TopologyStorage remanent_storage)
-      : _mpi_comm(comm), _cell_type(type), permanent_storage{true},
-        remanent_storage{check_storage(std::move(remanent_storage), cell_dim(_cell_type))},
-        cache{false, &remanent_storage}
+      : _mpi_comm(comm), _cell_type(type),
+        remanent_storage{true}, cache{false, &(this->remanent_storage)}
   {
-    // Make essential data permanent
-    permanent_storage.set_connectivity(
-        this->remanent_storage.connectivity(dim(), 0), dim(), 0);
-    permanent_storage.set_connectivity(
-        this->remanent_storage.connectivity(dim(), 0), dim(), 0);
-    permanent_storage.set_index_map(this->remanent_storage.index_map(dim()),
-                                    dim());
-    permanent_storage.set_index_map(this->remanent_storage.index_map(0), 0);
+    auto tmp = check_storage(std::move(remanent_storage), cell_dim(_cell_type));
+    // Make essential data permanent: copy to remanent storage and create a new layer on top
+    remanent_storage.set_connectivity(tmp.connectivity(dim(), 0), dim(), 0);
+    remanent_storage.set_connectivity(tmp.connectivity(dim(), 0), dim(), 0);
+    remanent_storage.set_index_map(tmp.index_map(dim()), dim());
+    remanent_storage.set_index_map(tmp.index_map(0), 0);
 
-    // This lock enables unscoped remanent storage layer for the
+    // This lock creates an unscoped remanent storage layer for the
     // create_XYZ members that can be discarded manually.
+    // everything written to the underlying layer is permanent.
     remanent_lock = std::make_shared<const storage::StorageLock>(
         remanent_storage.acquire_cache_lock(true));
+    // read all data from the input
+    remanent_storage.read_from(tmp);
   }
 
   /// Copy constructor
@@ -132,6 +150,9 @@ public:
   /// Computes and returns connectivity from entities of dimension d0 to
   /// entities of dimension d1.
   /// Results will only be cached if the user has acquired a cache lock before.
+  /// Not that it is cheaper to compute first the connectivity for
+  /// (max(d0, d1), min(d0, d1)) if both variants are required (requires cache)
+  /// or explicit create_connectivity() calls.
   /// @param[in] d0
   /// @param[in] d1
   /// @param[in] discard_intermediate only has an effect in case of caching
@@ -202,18 +223,24 @@ public:
   std::int32_t create_entities(int dim);
 
   /// Precompute connectivity between given pair of dimensions, d0 -> d1
+  /// Not that it is cheaper to compute first the connectivity for
+  /// (max(d0, d1), min(d0, d1)) if both variants are required.
   /// @param[in] d0 Topological dimension
   /// @param[in] d1 Topological dimension
-  void create_connectivity(int d0, int d1);
+  /// @param[in] discard_intermediate results (only store the requested
+  // connectivity)
+  void create_connectivity(int d0, int d1, bool discard_intermediate = false);
 
   /// Precompute all entities and connectivity for later use
   void create_connectivity_all();
 
   /// Precompute entity permutations and reflections for later use
-  void create_entity_permutations();
+  /// @param[in] discard_intermediate results (only store permutations)
+  void create_entity_permutations(bool discard_intermediate = false);
 
   /// Precompute and set markers for owned facets that are interior
-  void create_interior_facets();
+  /// @param[in] discard_intermediate results (only store facet markers)
+  void create_interior_facets(bool discard_intermediate = false);
 
   /// Mesh MPI communicator
   /// @return The communicator on which the mesh is distributed
@@ -239,31 +266,32 @@ public:
         remanent_storage.acquire_cache_lock(true));
   }
 
+  /// Get the data that is either permanent or at least remanent, ie. explicitly
+  /// created via the create_XYZ members.
   const storage::TopologyStorage& remanent_data() const
   {
     return remanent_storage;
   }
 
-  const storage::TopologyStorage& cache_data() const { return cache; }
+  /// Get the all stored data, that is permanent, remanent and in cache
+  const storage::TopologyStorage& data() const { return cache; }
 
 private:
+  Topology create_scratch() const
+  {
+    return {mpi_comm(), _cell_type, storage::TopologyStorage(&cache)};
+  }
+
   storage::TopologyStorage static check_storage(
       storage::TopologyStorage remanent_storage, int tdim);
 
-  std::optional<storage::StorageLock> lock_if_cache(bool force_new_layer) const {
-    if (cache_data().writable())
-      return {};
-    else
-      return acquire_cache_lock(force_new_layer);
-  }
-
   std::shared_ptr<const storage::StorageLock> remanent_lock;
 
-  // cannot be discard
-  storage::TopologyStorage permanent_storage;
-  // can be discard
+  // Storage for class invariant (permanent) and remanent (discardable
+  // persistent) data
   storage::TopologyStorage remanent_storage;
-  // caching (off by default)
+
+  // Caching (only when the user acquired a lock)
   mutable storage::TopologyStorage cache;
 
   // MPI communicator
