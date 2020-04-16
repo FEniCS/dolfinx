@@ -155,12 +155,18 @@ int _build_from_leaf(
     (b.row(1) - b.row(0)).maxCoeff(&axis);
     auto partition_middle
         = partition_begin + (partition_end - partition_begin) / 2;
-    std::nth_element(partition_begin, partition_middle, partition_end,
-                     [&leaf_bboxes, axis](int i, int j) -> bool {
-                       const double* bi = leaf_bboxes.data() + 6 * i + axis;
-                       const double* bj = leaf_bboxes.data() + 6 * j + axis;
-                       return (bi[0] + bi[3]) < (bj[0] + bj[3]);
-                     });
+    std::nth_element(
+        partition_begin, partition_middle, partition_end,
+        [&leaf_bboxes, axis](int i, int j) -> bool {
+          const Eigen::Array<double, 1, 3, Eigen::RowMajor> bi
+              = leaf_bboxes.row(i * 2) + leaf_bboxes.row(i * 2 + 1);
+          const Eigen::Array<double, 1, 3, Eigen::RowMajor> bj
+              = leaf_bboxes.row(j * 2) + leaf_bboxes.row(j * 2 + 1);
+          return (bi[axis] < bj[axis]);
+          // const double* bi = leaf_bboxes.data() + 6 * i + axis;
+          // const double* bj = leaf_bboxes.data() + 6 * j + axis;
+          // return (bi[0] + bi[3]) < (bj[0] + bj[3]);
+        });
 
     // Split bounding boxes into two groups and call recursively
     std::array<int, 2> bbox;
