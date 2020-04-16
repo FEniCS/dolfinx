@@ -47,9 +47,9 @@ compute_face_permutations_simplex(
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 3; ++j)
       {
-        const auto *const it = std::find(cell_vertices.data(),
-                                  cell_vertices.data() + cell_vertices.size(),
-                                  vertices[j]);
+        const auto* const it = std::find(
+            cell_vertices.data(), cell_vertices.data() + cell_vertices.size(),
+            vertices[j]);
         // Get the actual local vertex indices
         e_vertices[j] = it - cell_vertices.data();
       }
@@ -107,9 +107,9 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 4; ++j)
       {
-        const auto *const it = std::find(cell_vertices.data(),
-                                  cell_vertices.data() + cell_vertices.size(),
-                                  vertices[j]);
+        const auto* const it = std::find(
+            cell_vertices.data(), cell_vertices.data() + cell_vertices.size(),
+            vertices[j]);
         // Get the actual local vertex indices
         e_vertices[j] = it - cell_vertices.data();
       }
@@ -163,6 +163,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
 Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1>
 compute_edge_reflections(const mesh::Topology& topology)
 {
+
   const int tdim = topology.dim();
   const CellType cell_type = topology.cell_type();
   const int edges_per_cell = mesh::cell_num_entities(cell_type, 1);
@@ -172,6 +173,7 @@ compute_edge_reflections(const mesh::Topology& topology)
   Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1> edge_perm(num_cells);
   edge_perm.fill(0);
 
+  // Expected be computed on demand
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
   auto c_to_e = topology.connectivity(tdim, 1);
@@ -193,10 +195,10 @@ compute_edge_reflections(const mesh::Topology& topology)
       // from the lowest numbered vertex to the highest numbered vertex.
 
       // Find iterators pointing to cell vertex given a vertex on facet
-      const auto *const it0
+      const auto* const it0
           = std::find(cell_vertices.data(),
                       cell_vertices.data() + cell_vertices.size(), vertices[0]);
-      const auto *const it1
+      const auto* const it1
           = std::find(cell_vertices.data(),
                       cell_vertices.data() + cell_vertices.size(), vertices[1]);
 
@@ -213,10 +215,8 @@ compute_face_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
   assert(tdim > 2);
-  if (!topology.index_map(2))
-    throw std::runtime_error("Faces have not been computed.");
 
-  // If faces have been computed, the below should exist
+  // Expected be computed on demand
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
   auto c_to_f = topology.connectivity(tdim, 2);
@@ -241,8 +241,9 @@ compute_face_permutations(const mesh::Topology& topology)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
-          Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+std::pair<std::shared_ptr<
+              const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>,
+          std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>>
 PermutationComputation::compute_entity_permutations(
     const mesh::Topology& topology)
 {
@@ -296,6 +297,11 @@ PermutationComputation::compute_entity_permutations(
 
   assert(used_bits < BITSETSIZE);
 
-  return {std::move(facet_permutations), std::move(cell_permutation_info)};
+  return {
+      std::make_shared<
+          const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>(
+          std::move(facet_permutations)),
+      std::make_shared<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>(
+          std::move(cell_permutation_info))};
 }
 //-----------------------------------------------------------------------------

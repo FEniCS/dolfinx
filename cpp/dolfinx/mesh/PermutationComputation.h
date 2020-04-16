@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <cstdint>
 #include <utility>
+#include <memory>
 
 namespace dolfinx::mesh
 {
@@ -77,8 +78,8 @@ public:
   ///    on permuted facets.
   ///
   /// @return Facet permutation and cells permutations
-  static std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
-                   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+  static std::pair<std::shared_ptr<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>,
+      std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>>
   compute_entity_permutations(const Topology& topology);
 };
 
