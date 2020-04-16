@@ -62,26 +62,26 @@ class Topology;
 // removed. See also the comment above the lock in the constructor. Wold it be
 // desirable to keep old defining data once it is overwritten?
 
-// TODO: also needs a lock for thread safety. In acquire_cache_lock?
-// If there is one lock for computations (prevents excessive memory consumption)
-// then one compute/get member must not call another member. Otherwise, there
-// will be a deadlock. This can be achieved by either calling the computation
-// functions which will never modify anything. Another option is to use
-// a scratch Topology object that encapsules all computations which does not
-// need locking because one just calls members that do not lock. Use for example
-// the create_XYZ members to do the actual computations. This seems to be the
-// cleanest pattern anayway.
-
+// TODO: also needs a locks for thread safety.
+// [Better name for cache lock?]
 // Is read access, ie. getting a shared_ptr<const XYZ>? The race condition does
 // not matter because of logical constness, but the data race?
 // According to cpp reference: control block of shared_ptr is thread safe. Thus,
 // assignment is. So what can happen? Ask for the shared_ptr, having it, I also
 // have the object which is const. So fine.
-// IMPORTANT: However, losing storage is an issue. Image,
-// a cache layer is dropped the cache is emptied and now I believe I have
-// index map, but the connectivities are not there any more.
+// IMPORTANT: However, losing cache is an issue. Image,
+// a cache layer is dropped and the cache is emptied.  Now I may believe to have
+// an index map, but the connectivities are not there anymore.
 // Thus, when reading of more than one quantity (quantities that are logically
-// connected, one also has to have a lock for protection against losing data.
+// connected, one also has to have a cache lock for protection against losing
+// data.
+// Concerning sync locks: std::scoped_lock allows to acquire more than one lock
+// at the same time this is a nice feature when doing fine grained locking
+// per getter or even finer, getter and argument, i.e. in index index_map(1),
+// while not blocking index_map(2) but connectivit(1, 0) since this goes
+// together with index_map(1).
+// Store the mutexes in a corresponding struct?
+//
 class Topology
 {
 

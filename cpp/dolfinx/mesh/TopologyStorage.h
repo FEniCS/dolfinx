@@ -181,8 +181,11 @@ private:
   internal::guarded_obj<TopologyStorage*> storage;
 };
 
-// TODO: Make lock sequential. See "acquire_cache_lock"... where interesting
-// things may happen
+// This class does too many thing. In the end, it just manages layers of
+// storage. This should be factored out and generalized into either a template
+// or a type-erasure like thing where the user unwraps the layers.
+// The type sored within the layer should handle the getters and setters.
+// The requirements on the layer type should be made clear.
 class TopologyStorage
 {
 
