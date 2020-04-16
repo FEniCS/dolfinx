@@ -83,9 +83,9 @@ public:
 
 private:
   // Constructor
-  BoundingBoxTree(const std::vector<double>& leaf_bboxes,
-                  const std::vector<int>::iterator partition_begin,
-                  const std::vector<int>::iterator partition_end);
+  // BoundingBoxTree(const std::vector<double>& leaf_bboxes,
+  //                const std::vector<int>::iterator partition_begin,
+  //                const std::vector<int>::iterator partition_end);
 
   // Topological dimension of leaf entities
   int _tdim;
