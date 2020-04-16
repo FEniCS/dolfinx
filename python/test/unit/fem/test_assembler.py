@@ -35,8 +35,13 @@ def nest_matrix_norm(A):
     return math.sqrt(norm)
 
 
-def test_assemble_functional():
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+@pytest.mark.parametrize('mesh', [dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12),
+                                  dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12,
+                                                                    dolfinx.cpp.mesh.CellType.triangle,
+                                                                    dolfinx.cpp.mesh.GhostMode.shared_facet)
+
+                                  ])
+def test_assemble_functional(mesh):
     M = 1.0 * dx(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
     value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
@@ -46,6 +51,10 @@ def test_assemble_functional():
     value = dolfinx.fem.assemble_scalar(M)
     value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
     assert value == pytest.approx(0.5, 1e-12)
+    M = 1.0 * ds(domain=mesh)
+    value = dolfinx.fem.assemble_scalar(M)
+    value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
+    assert value == pytest.approx(4.0, 1e-12)
 
 
 def test_assemble_derivatives():
