@@ -15,7 +15,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <numeric>
@@ -605,38 +604,40 @@ TopologyComputation::compute_entities(const Topology& topology, int dim)
   const int tdim = topology.dim();
 
   // Return if the triple is there
-  if (topology.cache_data().connectivity(tdim, dim)
-      && topology.cache_data().connectivity(dim, 0)
-      && topology.cache_data().index_map(dim))
+  if (topology.data().connectivity(tdim, dim)
+      && topology.data().connectivity(dim, 0)
+      && topology.data().index_map(dim))
   {
-    return {topology.cache_data().connectivity(topology.dim(), dim),
-            topology.cache_data().connectivity(dim, 0),
-            topology.cache_data().index_map(dim)};
+    return {topology.data().connectivity(topology.dim(), dim),
+            topology.data().connectivity(dim, 0),
+            topology.data().index_map(dim)};
   }
 
   // Check for incomplete data. This should not happen. Index map and the
   // two connectivity belong together.
-  if (topology.cache_data().connectivity(dim, 0)
-      || topology.cache_data().connectivity(tdim, dim)
-      || topology.cache_data().index_map(dim))
+  // TODO: convert to assertion once things are stable
+  if (topology.data().connectivity(dim, 0)
+      || topology.data().connectivity(tdim, dim)
+      || topology.data().index_map(dim))
   {
     throw std::runtime_error(
-        "The set of entities for dimention " + std::to_string(dim)
+        "The set of entities for dimension " + std::to_string(dim)
         + " is broken:"
           "\n\tcell   - entity:"
-          + std::to_string(topology.cache_data().connectivity(tdim, dim)
-                           != nullptr)
+        + std::to_string(topology.data().connectivity(tdim, dim)
+                         != nullptr)
         + "\n\tentity - vertex:"
-          + std::to_string(topology.cache_data().connectivity(dim, 0) != nullptr)
+        + std::to_string(topology.data().connectivity(dim, 0) != nullptr)
         + "\n\tindex map:"
-        + std::to_string(topology.cache_data().index_map(dim) != nullptr));
+        + std::to_string(topology.data().index_map(dim) != nullptr));
   }
 
-  auto cells = topology.connectivity(tdim, 0);
+  // present by construction (invariant of Topology)
+  auto cells = topology.data().connectivity(tdim, 0);
   assert(cells);
-  auto vertex_map = topology.index_map(0);
+  auto vertex_map = topology.data().index_map(0);
   assert(vertex_map);
-  auto cell_map = topology.index_map(tdim);
+  auto cell_map = topology.data().index_map(tdim);
   assert(cell_map);
 
   std::tuple<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
@@ -648,20 +649,20 @@ TopologyComputation::compute_entities(const Topology& topology, int dim)
   return data;
 }
 //-----------------------------------------------------------------------------
-std::array<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>, 2>
+std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 TopologyComputation::compute_connectivity(const Topology& topology, int d0,
                                           int d1)
 {
   LOG(INFO) << "Requesting connectivity " << d0 << " - " << d1;
 
   // Return if connectivity has already been computed
-  if (auto cached = topology.cache_data().connectivity(d0, d1); cached)
+  if (auto cached = topology.data().connectivity(d0, d1); cached)
     return {cached, nullptr};
 
   // Get entities exist
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d0_0
       = topology.connectivity(d0, 0);
-  if (d0 > 0 and !topology.connectivity(d0, 0))
+  if (d0 > 0 and !topology.data().connectivity(d0, 0))
   {
     throw std::runtime_error("Missing entities of dimension "
                              + std::to_string(d0) + ".");
@@ -669,7 +670,7 @@ TopologyComputation::compute_connectivity(const Topology& topology, int d0,
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d1_0
       = topology.connectivity(d1, 0);
-  if (d1 > 0 and !topology.connectivity(d1, 0))
+  if (d1 > 0 and !topology.data().connectivity(d1, 0))
   {
     throw std::runtime_error("Missing entities of dimension "
                              + std::to_string(d1) + ".");
@@ -682,61 +683,69 @@ TopologyComputation::compute_connectivity(const Topology& topology, int d0,
   // Decide how to compute the connectivity
   if (d0 == d1)
   {
-    return {std::make_shared<const graph::AdjacencyList<std::int32_t>>(
-                c_d0_0->num_nodes()),
-            nullptr};
+    return std::make_shared<const graph::AdjacencyList<std::int32_t>>(
+                c_d0_0->num_nodes());
   }
   else if (d0 < d1)
   {
     // Compute connectivity d1 - d0 (if needed), and take transpose
-    if (!topology.cache_data().connectivity(d1, d0))
+    if (!topology.data().connectivity(d1, d0))
     {
       auto c_d1_d0 = std::make_shared<const graph::AdjacencyList<std::int32_t>>(
           compute_from_map(*c_d1_0, *c_d0_0,
                            mesh::cell_entity_type(topology.cell_type(), d1), d1,
                            d0));
-      auto c_d0_d1 = std::make_shared<const graph::AdjacencyList<std::int32_t>>(
+      return std::make_shared<const graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes(), d0, d1));
-      return {c_d0_d1, c_d1_d0};
     }
     else
     {
       assert(c_d0_0);
-      assert(topology.cache_data().connectivity(d1, d0));
-      auto c_d0_d1 = std::make_shared<const graph::AdjacencyList<std::int32_t>>(
+      assert(topology.data().connectivity(d1, d0));
+      return std::make_shared<const graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*topology.connectivity(d1, d0),
                                  c_d0_0->num_nodes(), d0, d1));
-      return {c_d0_d1, nullptr};
     }
   }
   else if (d0 > d1)
   {
     // Compute by mapping vertices from a lower dimension entity to
     // those of a higher dimension entity
-    auto c_d0_d1 = std::make_shared<const graph::AdjacencyList<std::int32_t>>(
+    return std::make_shared<const graph::AdjacencyList<std::int32_t>>(
         compute_from_map(*c_d0_0, *c_d1_0,
                          mesh::cell_entity_type(topology.cell_type(), d0), d0,
                          d1));
-    return {c_d0_d1, nullptr};
   }
   else
     throw std::runtime_error("Entity dimension error when computing topology.");
 }
 //-----------------------------------------------------------------------------
-std::vector<bool>
+std::shared_ptr<const std::vector<bool>>
 TopologyComputation::compute_interior_facets(const Topology& topology)
 {
   // NOTE: Getting markers for owned and unowned facets requires reverse
   // and forward scatters. If we can work only with owned facets we
   // would need only a reverse scatter.
 
-  // TODO: check for toopology.cache_data().interior_facets()?
+  if (auto facets = topology.data().interior_facets(); facets)
+    return facets;
 
   const int tdim = topology.dim();
 
-  auto c = topology.connectivity(tdim - 1, tdim);
-  auto map = topology.index_map(tdim - 1);
-  assert(map);
+  auto c = topology.data().connectivity(tdim - 1, tdim);
+  if (!c)
+  {
+    throw std::runtime_error("Missing facet connectivity, that is ("
+                             + std::to_string(tdim - 1) + ","
+                             + std::to_string(tdim) + ").");
+  }
+  auto map = topology.data().index_map(tdim - 1);
+  // Somethings really wrong when the topoogy is there but not the index map.
+  if (!map)
+  {
+    throw std::runtime_error("Missing index map for dimension "
+                             + std::to_string(tdim - 1) + ".");
+  }
 
   // Get number of connected cells for each ghost facet
   std::vector<int> num_cells1(map->num_ghosts(), 0);
@@ -775,7 +784,7 @@ TopologyComputation::compute_interior_facets(const Topology& topology)
   // Copy data, castint 1 -> true and 0 -> false
   num_cells0.insert(num_cells0.end(), ghost_markers.begin(),
                     ghost_markers.end());
-  std::vector<bool> interior_facet(num_cells0.begin(), num_cells0.end());
+  std::vector<bool> interior_facets(num_cells0.begin(), num_cells0.end());
 
-  return interior_facet;
+  return std::make_shared<const std::vector<bool>>(std::move(interior_facets));
 }
