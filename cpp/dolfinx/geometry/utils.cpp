@@ -34,7 +34,7 @@ bool point_outside_of_plane(const Eigen::Vector3d& p, const Eigen::Vector3d& a,
 }
 //-----------------------------------------------------------------------------
 // Check whether bounding box is a leaf node
-bool is_leaf(const std::array<int, 2>& bbox, int node)
+inline bool is_leaf(const std::array<int, 2>& bbox, int node)
 {
   // Leaf nodes are marked by setting child_0 equal to the node itself
   return bbox[0] == node;
@@ -251,9 +251,7 @@ int _compute_first_entity_collision(const geometry::BoundingBoxTree& tree,
 // Compute collisions with tree (recursive)
 void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
                               const geometry::BoundingBoxTree& B, int node_A,
-                              int node_B, const mesh::Mesh* mesh_A,
-                              const mesh::Mesh* mesh_B,
-                              std::vector<int>& entities_A,
+                              int node_B, std::vector<int>& entities_A,
                               std::vector<int>& entities_B)
 {
   // If bounding boxes don't collide, then don't search further
@@ -275,42 +273,20 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
     const int entity_index_A = bbox_A[1];
     const int entity_index_B = bbox_B[1];
 
-    // If we have a mesh, check that the candidate is really a collision
-    if (mesh_A)
-    {
-      assert(mesh_B);
-      mesh::MeshEntity cell_A(*mesh_A, mesh_A->topology().dim(),
-                              entity_index_A);
-      mesh::MeshEntity cell_B(*mesh_B, mesh_B->topology().dim(),
-                              entity_index_B);
-      if (geometry::CollisionPredicates::collides(cell_A, cell_B))
-      {
-        entities_A.push_back(entity_index_A);
-        entities_B.push_back(entity_index_B);
-      }
-    }
-    else
-    {
-      // Otherwise, add the candidate
-      entities_A.push_back(entity_index_A);
-      entities_B.push_back(entity_index_B);
-    }
+    entities_A.push_back(entity_index_A);
+    entities_B.push_back(entity_index_B);
   }
   else if (is_leaf_A)
   {
     // If we reached the leaf in A, then descend B
-    _compute_collisions_tree(A, B, node_A, bbox_B[0], mesh_A, mesh_B,
-                             entities_A, entities_B);
-    _compute_collisions_tree(A, B, node_A, bbox_B[1], mesh_A, mesh_B,
-                             entities_A, entities_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[0], entities_A, entities_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[1], entities_A, entities_B);
   }
   else if (is_leaf_B)
   {
     // If we reached the leaf in B, then descend A
-    _compute_collisions_tree(A, B, bbox_A[0], node_B, mesh_A, mesh_B,
-                             entities_A, entities_B);
-    _compute_collisions_tree(A, B, bbox_A[1], node_B, mesh_A, mesh_B,
-                             entities_A, entities_B);
+    _compute_collisions_tree(A, B, bbox_A[0], node_B, entities_A, entities_B);
+    _compute_collisions_tree(A, B, bbox_A[1], node_B, entities_A, entities_B);
   }
   else if (node_A > node_B)
   {
@@ -318,17 +294,13 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
     // tree first. Note that nodes are added in reverse order with the top
     // bounding box at the end so the largest tree (the one with the the
     // most boxes left to traverse) has the largest node number.
-    _compute_collisions_tree(A, B, bbox_A[0], node_B, mesh_A, mesh_B,
-                             entities_A, entities_B);
-    _compute_collisions_tree(A, B, bbox_A[1], node_B, mesh_A, mesh_B,
-                             entities_A, entities_B);
+    _compute_collisions_tree(A, B, bbox_A[0], node_B, entities_A, entities_B);
+    _compute_collisions_tree(A, B, bbox_A[1], node_B, entities_A, entities_B);
   }
   else
   {
-    _compute_collisions_tree(A, B, node_A, bbox_B[0], mesh_A, mesh_B,
-                             entities_A, entities_B);
-    _compute_collisions_tree(A, B, node_A, bbox_B[1], mesh_A, mesh_B,
-                             entities_A, entities_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[0], entities_A, entities_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[1], entities_A, entities_B);
   }
 
   // Note that cases above can be collected in fewer cases but this way
@@ -371,8 +343,7 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
 
   // Call recursive find function
   _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,
-                           tree1.num_bboxes() - 1, nullptr, nullptr, entities_0,
-                           entities_1);
+                           tree1.num_bboxes() - 1, entities_0, entities_1);
 
   return std::pair(entities_0, entities_1);
 }
@@ -387,10 +358,23 @@ geometry::compute_entity_collisions(const BoundingBoxTree& tree0,
   std::vector<int> entities_0;
   std::vector<int> entities_1;
   _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,
-                           tree1.num_bboxes() - 1, &mesh0, &mesh1, entities_0,
-                           entities_1);
+                           tree1.num_bboxes() - 1, entities_0, entities_1);
 
-  return std::pair(entities_0, entities_1);
+  // Check actual collisions with mesh
+  std::vector<int> entities_A, entities_B;
+  for (std::size_t i = 0; i < entities_0.size(); ++i)
+  {
+
+    mesh::MeshEntity cell0(mesh0, mesh0.topology().dim(), entities_0[i]);
+    mesh::MeshEntity cell1(mesh1, mesh1.topology().dim(), entities_1[i]);
+    if (geometry::CollisionPredicates::collides(cell0, cell1))
+    {
+      entities_A.push_back(entities_0[i]);
+      entities_B.push_back(entities_1[i]);
+    }
+  }
+
+  return std::pair(entities_A, entities_B);
 }
 //-----------------------------------------------------------------------------
 std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
