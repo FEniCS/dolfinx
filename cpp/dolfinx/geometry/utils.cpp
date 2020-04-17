@@ -34,7 +34,7 @@ bool point_outside_of_plane(const Eigen::Vector3d& p, const Eigen::Vector3d& a,
 }
 //-----------------------------------------------------------------------------
 // Check whether bounding box is a leaf node
-inline bool is_leaf(const std::array<int, 2>& bbox, int node)
+bool is_leaf(const std::array<int, 2>& bbox, int node)
 {
   // Leaf nodes are marked by setting child_0 equal to the node itself
   return bbox[0] == node;

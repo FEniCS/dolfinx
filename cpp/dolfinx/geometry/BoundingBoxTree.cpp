@@ -187,7 +187,7 @@ build_from_leaf(
     const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& leaf_bboxes)
 {
   assert(leaf_bboxes.size() % 2 == 0);
-  std::vector<int> partition(leaf_bboxes.size() / 2);
+  std::vector<int> partition(leaf_bboxes.rows() / 2);
   std::iota(partition.begin(), partition.end(), 0);
 
   std::vector<std::array<int, 2>> bboxes;
@@ -297,7 +297,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   }
 
   // Recursively build the bounding box tree from the leaves
-  auto [_bboxes, _bbox_coordinates] = build_from_leaf(leaf_bboxes);
+  std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " entities.";
