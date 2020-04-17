@@ -9,6 +9,8 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <memory>
+#include <shared_mutex>
+#include <stack>
 #include <vector>
 
 namespace dolfinx
@@ -51,6 +53,305 @@ guarded_obj<T> make_guarded(T obj, internal::sentinel_t sentinel)
                         typename guarded_obj<T>::second_type>(
       std::forward<T&&>(obj), std::move(sentinel));
 }
+
+template <typename T>
+using owned_obj = std::pair<T, internal::lock_t>;
+
+template <typename T>
+owned_obj<T> make_owned(T obj, internal::lock_t lock)
+{
+  return std::make_pair<typename guarded_obj<T>::first_type,
+                        typename owned_obj<T>::second_type>(
+      std::forward<T&&>(obj), std::move(lock));
+}
+
+/// Gives read-only or full access via visitor pattern of the underlying type
+template <typename Accessed_t, typename Lock_t = bool>
+class DataAccessor
+{
+public:
+  explicit DataAccessor(Accessed_t& accessed, Lock_t lock)
+      : accessed{accessed}, lock{std::move(lock)}
+  {
+    // do nothing
+  }
+
+  explicit DataAccessor(Accessed_t& accessed) : accessed{accessed}, lock{false}
+  {
+    // do nothing
+  }
+
+  DataAccessor() = delete;
+  DataAccessor(const DataAccessor& other) = delete;
+  DataAccessor(DataAccessor&& other) = default;
+  DataAccessor& operator=(const DataAccessor& other) = delete;
+  DataAccessor& operator=(DataAccessor&& other) = default;
+  ~DataAccessor() = default;
+
+  template <typename Func_t, typename... Args_t>
+  auto read(Func_t&& func, Args_t&&... args) const
+  {
+    return accessed->read(std::forward<Func_t>(func),
+                          std::forward<Args_t>(args)...);
+  }
+
+  template <typename Func_t, typename... Args_t>
+  auto write(Func_t&& func, Args_t&&... args)
+  {
+    return accessed->write(std::forward<Func_t>(func),
+                           std::forward<Args_t>(args)...);
+  }
+
+  template <typename Func_t, typename... Args_t>
+  auto apply(Func_t&& func, Args_t&&... args)
+  {
+    return Func_t(*accessed, std::forward<Args_t>(args)...);
+  }
+
+  const Accessed_t* operator->() const noexcept { return accessed; }
+
+private:
+  Accessed_t* accessed;
+  Lock_t lock;
+};
+
+template <typename Accessed_t>
+class SafeAccess
+{
+public:
+  SafeAccess(Accessed_t&& accessed)
+      : _accessed{std::forward<Accessed_t>(accessed)} {
+          // do nothing
+      };
+
+  auto read_access() const { return _accessed.safe_read_access(); }
+
+  auto read_write_access() { return _accessed.safe_read_write_access(); }
+
+  Accessed_t* unsafe() { return &_accessed; }
+  const Accessed_t* unsafe() const { return &_accessed; }
+
+private:
+  Accessed_t _accessed{};
+};
+
+template <typename Layer_t>
+class LayerManager;
+
+// Keeps a storage layer alive as long as the storage is alive!
+// Q: If a layer is kept, but overwritten by another one. From which should be
+// read?
+// a) Layer keeps lower layers alive: Sequential desctruction but if stored data
+// is not constant it keeps additional data around. Then there is no need to
+// copy lower layers.
+template <typename Layer_t>
+class StorageLock
+{
+public:
+  using Storage_t = LayerManager<Layer_t>;
+
+  // TODO: The ptr to the active layer is not be necessary ATM but reminds
+  // of considering using shared/weak_ptr for the layers.
+  StorageLock(owned_obj<typename Storage_t::Layer_t*> layer,
+              guarded_obj<Storage_t*> storage)
+      : _layer{std::move(layer)}, _storage{std::move(storage)}
+  {
+    // do nothing
+  }
+
+  StorageLock() = delete;
+  StorageLock(const StorageLock&) = delete;
+  StorageLock(StorageLock&&) = default;
+
+  StorageLock& operator=(const StorageLock&) = delete;
+  StorageLock& operator=(StorageLock&&) = default;
+
+  ~StorageLock() { release(); };
+
+  void release()
+  {
+    _layer.first = nullptr;
+    _layer.second.reset();
+    // Signalize to the layer manager that a lock has gone
+    _storage.layer_expired();
+    _storage.first = nullptr;
+    _storage.second.reset();
+  };
+
+private:
+  owned_obj<typename Storage_t::Layer_t*> _layer;
+  guarded_obj<Storage_t*> _storage;
+};
+
+template <typename Layer_t>
+class LayerManager
+{
+public:
+  using Lock_t = StorageLock<Layer_t>;
+
+  using ReadPtr
+      = DataAccessor<const LayerManager, std::shared_lock<std::shared_mutex>>;
+  using ReadWritePtr
+      = DataAccessor<LayerManager, std::unique_lock<std::shared_mutex>>;
+
+  /// Create Storage layer
+  /// @param[in] remanent if given creates a remanent storage layer of which the
+  /// lifetime is bound to this object.
+  LayerManager(bool remanent, const LayerManager* other)
+  {
+    if (remanent)
+    {
+      layer_stack.emplace({});
+      remanent_lock = make_owned<const Layer_t*>(&layer_stack.top());
+    }
+  }
+
+  LayerManager() = default;
+
+  /// Copy constructor. Currently, we have const copy-on-write, such that it is
+  /// safe to copy. But this may lead to hierarchies due to injected read-only
+  /// data. The main use of having this copyable is to allow its owner to be
+  /// copyable without having to resort to shared ptrs.
+  /// To just read data from another storage use the member read_from.
+  LayerManager(const LayerManager& other) = default;
+
+  /// Move constructor
+  LayerManager(LayerManager&& other) = default;
+
+  /// Destructor
+  ~LayerManager() = default;
+
+  /// Copy assignment
+  LayerManager& operator=(const LayerManager& other) = default;
+
+  /// Move assignment
+  LayerManager& operator=(LayerManager&& other) = default;
+
+  /// Create a new lock to keep a storage layer alive. By default, this returns
+  /// just is another handle for the current layer (the const version).
+  /// The creation of new write layer is optional.
+  /// Note that it will share ownership with data from other
+  /// layers. This avoid the problem of vanishing data since the lifetimes of
+  /// the locks do not end in any defined order.
+  /// [REVISIT: copy the active layer or lock it. In one case old data can be
+  /// destroyed on overwrite (current), in the other this is not possible]
+  /// Once a new layer is active, lower layers cannot be written to.
+  /// However, the read-only "other" data may still be changed from outside.
+  /// It is only frozen during read access.
+  /// Then current implementation does not enable to also overwrite
+  /// their data. Only to add new data on top.
+  /// As a consequence, one can go back in history by dropping layer locks.
+  Lock_t hold_layer(bool force_new_layer)
+  {
+    if (layer_stack.empty() or force_new_layer)
+    {
+      auto layer_lock = std::make_shared<const bool>();
+      sentinel_t layer_sentinel = layer_lock;
+
+      if (layer_stack.empty())
+        layer_stack.emplace(Layer_t{}, layer_sentinel);
+
+      // Copy the last active layer for sharing ownership
+      else
+        layer_stack.emplace_back(active_layer().first, layer_sentinel);
+    }
+    return Lock_t(make_owned<const Layer_t*>(&active_layer().first,
+                                             &active_layer().second.lock()),
+                  {this, lifetime});
+  }
+
+  void layer_expired()
+  {
+    auto write_lock = std::unique_lock(mtx);
+    while(!layer_stack.empty() && layer_stack.top().second.expired())
+      layer_stack.pop();
+  }
+
+  bool is_remanent() { return remanent_lock.first != nullptr; }
+
+  bool empty() const { return layer_stack.empty(); }
+
+  template <typename Reader_t, typename... Args_t>
+  auto read(Reader_t&& reader, Args_t&&... args) const
+  {
+    if (layer_stack.empty())
+      throw std::runtime_error("Cannot read from empty (zero layers) cache.");
+    const auto& active = active_layer();
+    assert(!active.second.expired());
+    if (auto res = reader(active.first, std::forward<Args_t>(args)...); res)
+      return res;
+  }
+
+  template <typename Writer, typename... Args_t>
+  auto write(Writer&& writer, Args_t&&... args)
+  {
+    if (layer_stack.empty())
+      throw std::runtime_error("Cannot write to empty (zero layers) cache.");
+    auto& active = active_layer();
+    assert(!active.second.expired());
+    return writer(active.first, std::forward<Args_t>(args)...);
+  }
+
+  ReadPtr safe_read_access() const
+  {
+    return ReadPtr{this, std::shared_lock(mtx)};
+  }
+
+  ReadWritePtr safe_read_write_access()
+  {
+    return ReadWritePtr{this, std::unique_lock(mtx)};
+  }
+
+private:
+  // Protecting read/write
+  mutable std::shared_mutex mtx;
+
+  // TODO: How to copy data also from other? Layer has to do this on his own
+  // via update() or fill(), but here we have to provide the possibility to pass
+  // through all. NOTE: If read does not return true (or something that is
+  // converted to true), then the full hierarchy in traversed. However,
+  // starting with the layer that should not be overwritten! So the update must
+  // only happen in empty places.
+
+  // TODO: bring back "other_storage" and gather locks in a vector?
+  std::shared_lock<std::shared_mutex> read_lock() const
+  {
+    return std::shared_lock(mtx);
+  }
+
+  std::stack<std::shared_lock<std::shared_mutex>> stack_locks(std::stack<std::shared_lock<std::shared_mutex>> locks) const
+  {
+    locks.push(std::shared_lock(mtx));
+    return std::move(locks);
+  }
+
+  std::unique_lock<std::shared_mutex> read_write_lock() const
+  {
+    return std::unique_lock(mtx);
+  }
+
+  /// The active layer
+  internal::guarded_obj<Layer_t>& active_layer()
+  {
+    assert(!layer_stack.top().second.expired());
+    return layer_stack.top();
+  }
+  /// Const version
+  const internal::guarded_obj<Layer_t>& active_layer() const
+  {
+    assert(!layer_stack.top().second.expired());
+    return layer_stack.top();
+  }
+
+  // Own one layer. Is this useful? For certain cases yes.
+  owned_obj<const Layer_t*> remanent_lock{nullptr, lock_t{}};
+
+  // The storage layers
+  std::stack<guarded_obj<Layer_t>> layer_stack;
+
+  // Lifetime information
+  internal::lock_t lifetime{std::make_shared<const bool>(true)};
+};
 
 struct TopologyStorageLayer
 {
