@@ -116,7 +116,8 @@ public:
     // everything written to the underlying layer is permanent.
     remanent_lock = std::make_shared<const storage::StorageLock>(
         remanent_storage.acquire_cache_lock(true));
-    // read all data from the input
+    // FIXME: This does not read from input's read-only layer!
+    // Read all data from the input
     remanent_storage.read_from(tmp);
   }
 

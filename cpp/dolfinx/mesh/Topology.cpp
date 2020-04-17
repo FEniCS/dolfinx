@@ -229,45 +229,6 @@ Topology::connectivity(int d0, int d1, bool discard_intermediate) const
   // In such cases, the topology (a) must not be cache stored or (b) everything
   // by create entities (x) must be cached (more expensive).
   // Use option discard_intermediate to distinguish.
-  //
-  // NOTE: TopologyComputation::compute_topology will throw in such cases!
-  //
-  // Using the same checks here. Not all four cases are checked since they are
-  // not logically independent.
-
-  // General lock: protects against loss of data and creates one temporary
-  // writable layer if there is none.
-  //  auto lock = acquire_cache_lock();
-  //  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> res;
-  //  // Special cases for which we cannot discard intermediate data.
-  //  if (d0 == dim() or d1 == 0)
-  //  {
-  //    // This calls do not do excessive work since they are either computed
-  //    // or essential, i.e. present by construction.
-  //    // case (d0, 0): computes connectivities (tdim, d0) and (d0, 0)
-  //    index_map(d0);
-  //    // case (tdim, d1) computes connectivities (tdim, d1) and (d1, 0)
-  //    index_map(d1);
-  //    assert(cache.connectivity(d0, d1));
-  //    return cache.connectivity(d0, d1);
-  //  }
-  //  else
-  //  {
-  //    { // scope for temporary writing cache
-  //      auto lock = acquire_cache_lock(discard_intermediate);
-  //      // index_map(dim) triggers create_entities.
-  //      if (!cache.connectivity(d0, 0))
-  //        index_map(d0);
-  //
-  //      if (!cache.connectivity(d1, 0))
-  //        index_map(d1);
-  //
-  //      res = TopologyComputation::compute_connectivity(*this, d0, d1)[0];
-  //    } // discard temporary cache
-
-  // Store result because it may have been dropped
-  //    return cache.set_connectivity(res, d0, d1);
-  //  }
 
   // General lock: protects against loss of data and creates one temporary
   // writable layer if there is none.
@@ -286,21 +247,6 @@ Topology::interior_facets(bool discard_intermediate) const
 {
   if (auto facets = cache.interior_facets(); facets)
     return *facets;
-
-  // TODO: go for the scratch-create pattern for thread safety.
-
-  //  // General lock: protects against loss of data and creates one temporary
-  //  // writable layer if there is none.
-  //  auto lock = acquire_cache_lock();
-  //  std::shared_ptr<const std::vector<bool>> res;
-  //
-  //  { // scope for optionally discarded cache layer
-  //    auto lock = acquire_cache_lock(discard_intermediate);
-  //    res = TopologyComputation::compute_interior_facets(*this);
-  //  } // discard cache layer
-  //
-  //  // Store result because it may have been dropped
-  //  return *(cache.set_interior_facets(res));
 
   // General lock: protects against loss of data and creates one temporary
   // writable layer if there is none.
@@ -324,7 +270,7 @@ size_t Topology::hash() const
 const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
 Topology::get_cell_permutation_info(bool discard_intermediate) const
 {
-  // Note: discard intermediate does not apply to facet_permutations which
+  // Note: discard_intermediate does not apply to facet_permutations which
   // are computed as well.
 
   // General lock: protects against loss of data and creates one temporary
@@ -337,28 +283,6 @@ Topology::get_cell_permutation_info(bool discard_intermediate) const
     assert(cache.facet_permutations());
     return *res;
   }
-  //
-  //  // TODO: go for the scratch-create pattern for thread safety.
-  //
-  //  std::shared_ptr<
-  //      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
-  //      facet_permutations;
-  //  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
-  //      cell_permutations;
-  //
-  //  { // scope for optionally discarded cache layer
-  //    auto discard_lock = acquire_cache_lock(discard_intermediate);
-  //    // Requires entities: trigger via call to index_map
-  //    for (int d = 0; d < dim(); ++d)
-  //      index_map(d);
-  //
-  //    std::tie(facet_permutations, cell_permutations)
-  //        = PermutationComputation::compute_entity_permutations(*this);
-  //  } // leave scope of discard_lock
-  //
-  //  // Write since layer may have been discard
-  //  cache.set_facet_permutations(facet_permutations);
-  //  return *(cache.set_cell_permutations(cell_permutations));
 
   // TODO: lock for thread safety
   // Scratch has read access to cache.
@@ -441,14 +365,49 @@ void Topology::create_connectivity(int d0, int d1, bool discard_intermediate)
       conn)
     return;
 
-  // the create_XYZ should not store anything not explicitly required
+  // The create_XYZ should not write to cache but to remanent storage
+  // Work with remanent storage alone and do not call the const members as they
+  // are proxies anyway? OTOH, discarding is then more complicated.
   auto discard_lock = acquire_cache_lock(true);
-  // trigger discardable entity comutations
-  index_map(d0);
-  index_map(d1);
+  // trigger discardable entity computations
+  index_map(d0, false);
+  index_map(d1, false);
   if (!discard_intermediate)
     remanent_storage.read_from(cache);
 
+  // TODO: check these thoughts
+  // semantically, it should be safe for compute_connectivity to call
+  // this->getter_XYZ(...). The getter will either return the required data or
+  // obtain a lock, create its own scratch object and work on that.
+
+  // TODO: check/revisit these IMPORTANT thoughts
+  // The danger of losing state: In a multi-threaded environment, it can be that
+  // one obtains a cache lock and another thread as well. This other thread may
+  // even create a new layer. The first thread then reads/write data from/to
+  // a different layer than the one for which he holds the lock. Thus, despite
+  // having a lock, his own write operations are not guaranteed to stay for the
+  // lifetime of his lock! HOW CAN THIS BE AVOIDED?
+  // A) Do not obtain the lock but the layer and read from that instead.
+  // Since a layer always has ownership of all previous layers and does not see
+  // new data, data cannot be lost. Can  a layer be "lost" between dropping and
+  // holding? The layer manager must not allow that. Exposing a layer must block
+  // the cleanup. Either it is safe in that regard or it has to be locked from
+  // outside.
+  // B) Get hold of a mutex before aquiring a cache lock. Note that this mutex
+  // must not be locked when the user obtains a cache lock. Otherwise, there
+  // will be a deadlock on computation. We rather thing here of being the user
+  // of a scratch object, that should be intialized safely.
+  // For such an object, the permanent storage cannot go away, it's an invariant
+  // of it's creator on which it depends. The question is what really lands
+  // in its remanent storage. This involves reads of the cache of the parent
+  // Topology. However, once created, it cannot lose it's remanent data
+  // once possessing it. The dangerous operation is the copy of the first layer.
+  // This is not thread safe on it's own, even it the copying thread owns
+  // a lock. The reason for this is that another lock may end it's life and the
+  // layer gets dropped. The results could be a dangling reference, i.e.
+  // destruction may not even be detected.
+  // "Common knowladge": Anything declared mutable must be thread safe.
+  // The layer-management process must be thread safe.
   remanent_storage.set_connectivity(
       TopologyComputation::compute_connectivity(*this, d0, d1), d0, d1);
 }
@@ -468,10 +427,10 @@ void Topology::create_interior_facets(bool discard_intermediate)
       facets)
     return;
 
-  // the create_XYZ should not store anything not explicitly required
+  // The create_XYZ should not write to cache but to remanent storage
   auto discard_lock = acquire_cache_lock(true);
   // Requirements
-  connectivity(dim() - 1, dim());
+  connectivity(dim() - 1, dim(), false);
   if (!discard_intermediate)
     remanent_storage.read_from(cache);
 
@@ -495,12 +454,12 @@ void Topology::create_entity_permutations(bool discard_intermediate)
   // FIXME: Is this always required? Could it be made cheaper by doing a
   // local version? This call does quite a lot of parallel work
 
-  // the create_XYZ should not store anything not explicitly required
+  // The create_XYZ should not write to cache but to remanent storage
   auto discard_lock = acquire_cache_lock(true);
   // Create all mesh entities
   for (int d = 0; d < tdim; ++d)
     // trigger entity computation on cache
-    index_map(d);
+    index_map(d, false);
 
   if (!discard_intermediate)
     remanent_storage.read_from(cache);

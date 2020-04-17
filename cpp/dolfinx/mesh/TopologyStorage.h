@@ -348,10 +348,11 @@ public:
   /// their data. This might be supported in the future.
   /// As a consequence, ATM one can go back in history, desired or not.
   /// A write through option to update data that is present in previous layers
-  /// would fix the constness thing. Wether this is good semantics is something
+  /// would fix the constness thing. Whether this is good semantics is something
   /// else. Then this class should not be copyable.
   StorageLock acquire_cache_lock(bool force_new_layer = false)
   {
+    // TODO: accessing layers is not therad safe currently
     if (layers.empty() or force_new_layer)
     {
       auto layer_lock = std::make_shared<const bool>();
@@ -378,6 +379,8 @@ public:
 
   void remove_expired_layers()
   {
+    // TODO: this dangerous in multithreaded environments. Removes data while
+    // someone else reads it.
     layers.remove_if([](const internal::guarded_obj<StorageLayer>& layer) {
       return layer.second.expired();
     });
@@ -388,6 +391,9 @@ public:
   /// Copy data from other, not lifetimes.
   void read_from(const TopologyStorage& other)
   {
+    // TODO: this access is not thread safe as long as layers can be removed
+    // anytime.
+    // FIXME: this does not read from "other"
     active_layer().first = other.active_layer().first;
   }
 
@@ -403,11 +409,16 @@ public:
   }
 
 private:
-
+  // TODO: this access is not thread safe as long as layers can be removed
+  // anytime. This should rather return an "owned object" instead of a guarded
+  // one. Work with weak pointers/shared_ptrs directly?
   // The active layer
   internal::guarded_obj<StorageLayer>& active_layer() { return layers.front(); }
   // Const version
-  const internal::guarded_obj<StorageLayer>& active_layer() const { return layers.front(); }
+  const internal::guarded_obj<StorageLayer>& active_layer() const
+  {
+    return layers.front();
+  }
 
   static internal::guarded_obj<const TopologyStorage*>
   make_other(const TopologyStorage* other)
@@ -425,20 +436,17 @@ private:
             = std::function<std::shared_ptr<value_t>>(StorageLayer&)>
   ret_t read_from_storage(func_t read) const
   {
-    // Search in owned storage
-    if (auto value = internal::read_from_layers<value_t>(read, layers); value)
-      return value;
-
-    // Search in not owned storage. Assume that if first condition is not met,
-    // the second is not evalutated. Otherwise, there can be a problem with
-    // accessing "first".
-    if ((!_other_storage.second.expired()) && _other_storage.first)
+    // Search in not owned storage
+    const auto& active = active_layer();
+    if (!active.second.expired())
     {
-      if (auto value = internal::read_from_layers<value_t>(
-              read, _other_storage.first->layers);
-          value)
+      if (auto value = read(active.first); value)
         return value;
     }
+
+    // Search in not owned storage
+    if ((!_other_storage.second.expired()) && _other_storage.first)
+      return _other_storage.first->read_from_storage(read);
 
     // Nothing found. Return empty pointer.
     return {};
@@ -448,6 +456,8 @@ private:
   // problem as long as it remains a non-overwriting copy-on-write storage.
   std::shared_ptr<const storage::StorageLock> remanent_lock;
 
+  // TODO: potentially dangerous! (there is a warning in the constructors doc.)
+  // TODO: Provide means to lock it while reading.
   // The other (already existing storage) with read access
   internal::guarded_obj<const TopologyStorage*> _other_storage;
 
