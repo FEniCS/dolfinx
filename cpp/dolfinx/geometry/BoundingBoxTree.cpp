@@ -115,7 +115,8 @@ Eigen::Array<double, 2, 3, Eigen::RowMajor> compute_bbox_of_bboxes(
 
   return b;
 }
-//-----------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
 int _build_from_leaf(
     const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& leaf_bboxes,
     const std::vector<int>::iterator partition_begin,
@@ -155,15 +156,14 @@ int _build_from_leaf(
     (b.row(1) - b.row(0)).maxCoeff(&axis);
     auto partition_middle
         = partition_begin + (partition_end - partition_begin) / 2;
-    std::nth_element(
-        partition_begin, partition_middle, partition_end,
-        [&leaf_bboxes, axis](int i, int j) -> bool {
-          const Eigen::Array<double, 1, 3, Eigen::RowMajor> bi
-              = leaf_bboxes.row(i * 2) + leaf_bboxes.row(i * 2 + 1);
-          const Eigen::Array<double, 1, 3, Eigen::RowMajor> bj
-              = leaf_bboxes.row(j * 2) + leaf_bboxes.row(j * 2 + 1);
-          return (bi[axis] < bj[axis]);
-        });
+    std::nth_element(partition_begin, partition_middle, partition_end,
+                     [&leaf_bboxes, axis](int i, int j) -> bool {
+                       const double bi = leaf_bboxes(i * 2, axis)
+                                         + leaf_bboxes(i * 2 + 1, axis);
+                       const double bj = leaf_bboxes(j * 2, axis)
+                                         + leaf_bboxes(j * 2 + 1, axis);
+                       return (bi < bj);
+                     });
 
     // Split bounding boxes into two groups and call recursively
     std::array<int, 2> bbox;
@@ -179,6 +179,37 @@ int _build_from_leaf(
     return bboxes.size() - 1;
   }
 }
+
+//-----------------------------------------------------------------------------
+std::tuple<Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor>,
+           Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+build_from_leaf(
+    const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& leaf_bboxes)
+{
+  assert(leaf_bboxes.size() % 2 == 0);
+  std::vector<int> partition(leaf_bboxes.size() / 2);
+  std::iota(partition.begin(), partition.end(), 0);
+
+  std::vector<std::array<int, 2>> bboxes;
+  std::vector<double> bbox_coordinates;
+  _build_from_leaf(leaf_bboxes, partition.begin(), partition.end(), bboxes,
+                   bbox_coordinates);
+
+  Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor> bbox_array(
+      bboxes.size(), 2);
+  for (std::size_t i = 0; i < bboxes.size(); ++i)
+  {
+    bbox_array(i, 0) = bboxes[i][0];
+    bbox_array(i, 1) = bboxes[i][1];
+  }
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> bbox_coord_array(
+      bbox_coordinates.size() / 3, 3);
+  std::copy(bbox_coordinates.begin(), bbox_coordinates.end(),
+            bbox_coord_array.data());
+
+  return {bbox_array, bbox_coord_array};
+}
+
 //-----------------------------------------------------------------------------
 int _build_from_point(const std::vector<Eigen::Vector3d>& points,
                       const std::vector<int>::iterator begin,
@@ -257,24 +288,16 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   auto map = mesh.topology().index_map(tdim);
   assert(map);
   const std::int32_t num_leaves = map->size_local() + map->num_ghosts();
-  std::vector<double> leaf_bboxes(6 * num_leaves);
-  Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      _leaf_bboxes(leaf_bboxes.data(), 2 * num_leaves, 3);
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> leaf_bboxes(
+      2 * num_leaves, 3);
   for (int e = 0; e < num_leaves; ++e)
   {
-    _leaf_bboxes.block<2, 3>(2 * e, 0)
+    leaf_bboxes.block<2, 3>(2 * e, 0)
         = compute_bbox_of_entity(mesh::MeshEntity(mesh, tdim, e));
   }
 
-  // Create leaf partition (to be sorted)
-  std::vector<int> leaf_partition(num_leaves);
-  std::iota(leaf_partition.begin(), leaf_partition.end(), 0);
-
   // Recursively build the bounding box tree from the leaves
-  std::vector<std::array<int, 2>> bboxes;
-  std::vector<double> bbox_coordinates;
-  _build_from_leaf(_leaf_bboxes, leaf_partition.begin(), leaf_partition.end(),
-                   bboxes, bbox_coordinates);
+  auto [_bboxes, _bbox_coordinates] = build_from_leaf(leaf_bboxes);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " entities.";
@@ -285,46 +308,18 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   if (mpi_size > 1)
   {
     // Send root node coordinates to all processes
-    std::vector<double> send_bbox(bbox_coordinates.end() - 6,
-                                  bbox_coordinates.end());
+    const auto send_bbox = _bbox_coordinates.bottomRows(2);
     Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> recv_bbox(
         mpi_size * 2, 3);
     MPI_Allgather(send_bbox.data(), 6, MPI_DOUBLE, recv_bbox.data(), 6,
                   MPI_DOUBLE, comm);
 
-    std::vector<int> global_leaves(mpi_size);
-    std::iota(global_leaves.begin(), global_leaves.end(), 0);
-
-    std::vector<std::array<int, 2>> global_bboxes;
-    std::vector<double> global_bbox_coordinates;
-    _build_from_leaf(recv_bbox, global_leaves.begin(), global_leaves.end(),
-                     global_bboxes, global_bbox_coordinates);
-    Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor> _global_bboxes(
-        global_bboxes.size(), 2);
-    for (std::size_t i = 0; i < global_bboxes.size(); ++i)
-    {
-      _global_bboxes(i, 0) = global_bboxes[i][0];
-      _global_bboxes(i, 1) = global_bboxes[i][1];
-    }
-    Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        _global_bbox_coordinates(global_bbox_coordinates.data(),
-                                 global_bbox_coordinates.size() / 3, 3);
-    global_tree.reset(
-        new BoundingBoxTree(_global_bboxes, _global_bbox_coordinates));
+    auto [global_bboxes, global_coords] = build_from_leaf(recv_bbox);
+    global_tree.reset(new BoundingBoxTree(global_bboxes, global_coords));
 
     LOG(INFO) << "Computed global bounding box tree with "
               << global_tree->num_bboxes() << " boxes.";
   }
-
-  _bboxes.resize(bboxes.size(), 2);
-  for (std::size_t i = 0; i < bboxes.size(); ++i)
-  {
-    _bboxes(i, 0) = bboxes[i][0];
-    _bboxes(i, 1) = bboxes[i][1];
-  }
-  _bbox_coordinates
-      = Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
-          bbox_coordinates.data(), bbox_coordinates.size() / 3, 3);
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
