@@ -45,7 +45,7 @@ class TopologyStorage;
 /// computation of mesh entities and connectivity. Members of this class should
 /// should not call back on the corresponding getters of topology. In order to
 /// find out whether data is present, investigate the actual storage via
-/// Topology::storage.
+/// Topology::data.
 /// All members should check whether the requiered data is already present and
 /// if it this this simply return the stored data.
 

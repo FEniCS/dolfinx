@@ -104,6 +104,7 @@ public:
       : _mpi_comm(comm), _cell_type(type),
         remanent_storage{true}, cache{false, &(this->remanent_storage)}
   {
+    // TODO: read safely!
     auto tmp = check_storage(std::move(remanent_storage), cell_dim(_cell_type));
     // Make essential data permanent: copy to remanent storage and create a new layer on top
     remanent_storage.set_connectivity(tmp.connectivity(dim(), 0), dim(), 0);

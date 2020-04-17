@@ -406,7 +406,7 @@ void Topology::create_connectivity(int d0, int d1, bool discard_intermediate)
   // a lock. The reason for this is that another lock may end it's life and the
   // layer gets dropped. The results could be a dangling reference, i.e.
   // destruction may not even be detected.
-  // "Common knowladge": Anything declared mutable must be thread safe.
+  // "Common knowledge": Anything declared mutable must be thread safe.
   // The layer-management process must be thread safe.
   remanent_storage.set_connectivity(
       TopologyComputation::compute_connectivity(*this, d0, d1), d0, d1);
