@@ -447,7 +447,7 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
     topology.set_connectivity(_cells_d, tdim, 0);
   }
 
-  const mesh::Geometry geometry
+  mesh::Geometry geometry
       = mesh::create_geometry(comm, topology, _mesh.geometry().cmap(), my_cells,
                               _new_vertex_coordinates);
 
