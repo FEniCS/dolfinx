@@ -67,7 +67,7 @@ public:
   }
 
   /// Copy constructor
-  Topology(const Topology& topology) = default;
+  Topology(const Topology& topology) = delete;
 
   /// Move constructor
   Topology(Topology&& topology) = default;

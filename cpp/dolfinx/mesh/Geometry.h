@@ -64,7 +64,7 @@ public:
   }
 
   /// Copy constructor
-  Geometry(const Geometry&) = default;
+  Geometry(const Geometry&) = delete;
 
   /// Move constructor
   Geometry(Geometry&&) = default;

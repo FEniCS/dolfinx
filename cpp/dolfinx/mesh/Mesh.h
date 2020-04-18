@@ -90,7 +90,7 @@ public:
 
   /// Copy constructor
   /// @param[in] mesh Mesh to be copied
-  Mesh(const Mesh& mesh) = default;
+  Mesh(const Mesh& mesh) = delete;
 
   /// Move constructor
   /// @param mesh Mesh to be moved.
