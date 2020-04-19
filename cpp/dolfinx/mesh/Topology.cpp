@@ -826,5 +826,5 @@ mesh::create_topology(MPI_Comm comm,
   storage.write(storage::set_index_map, index_map_c, tdim);
   auto _cells_d = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
   storage.write(storage::set_connectivity, _cells_d, tdim, 0);
-  return Topology(comm, cell_type, std::move(storage));
+  return Topology(comm, cell_type, storage);
 }
