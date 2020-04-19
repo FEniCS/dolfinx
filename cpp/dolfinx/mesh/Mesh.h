@@ -88,10 +88,6 @@ public:
       const std::vector<std::int64_t>& global_cell_indices,
       const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
 
-  /// Copy constructor
-  /// @param[in] mesh Mesh to be copied
-  Mesh(const Mesh& mesh) = delete;
-
   /// Move constructor
   /// @param mesh Mesh to be moved.
   Mesh(Mesh&& mesh) = default;
@@ -99,12 +95,25 @@ public:
   /// Destructor
   ~Mesh() = default;
 
-  // Assignment operator
-  Mesh& operator=(const Mesh& mesh) = delete;
-
   /// Assignment move operator
   /// @param mesh Another Mesh object
   Mesh& operator=(Mesh&& mesh) = default;
+
+private:
+  /// Copy constructor: set private to avoid unnecessary copies.
+  /// Use Mesh::copy() instead.
+  /// @param[in] mesh Mesh to be copied
+  Mesh(const Mesh& mesh);
+
+  /// Assignment operator: set private to avoid unnecessary copies.
+  /// Use Mesh::copy_assign(const Mesh& mesh) instead.
+  Mesh& operator=(const Mesh& mesh);
+public:
+  /// Create a copy
+  Mesh copy() const;
+
+  /// Explicit copy assignment
+  Mesh& copy_assign(const Mesh& other);
 
   // TODO: Is there any use for this? In many situations one has to get the
   // topology of a const Mesh, which is done by Mesh::topology_mutable. Note

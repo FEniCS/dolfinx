@@ -63,20 +63,29 @@ public:
     }
   }
 
-  /// Copy constructor
-  Geometry(const Geometry&) = delete;
-
   /// Move constructor
   Geometry(Geometry&&) = default;
 
   /// Destructor
   ~Geometry() = default;
 
-  /// Copy Assignment
-  Geometry& operator=(const Geometry&) = delete;
-
   /// Move Assignment
   Geometry& operator=(Geometry&&) = default;
+
+private:
+  /// Copy constructor: set private to avoid unintended copies. Use
+  /// Geometry::copy() instead.
+  Geometry(const Geometry&) = default;
+
+  /// Copy Assignment: set private to avoid unintended copies. Use
+  /// Geometry::copy_assign(const Geometry& other) instead.
+  Geometry& operator=(const Geometry&) = default;
+public:
+  /// Create a copy
+  Geometry copy() const;
+
+  /// Explicit copy assignment
+  Geometry& copy_assign(const Geometry& other);
 
   /// Return Euclidean dimension of coordinate system
   int dim() const;

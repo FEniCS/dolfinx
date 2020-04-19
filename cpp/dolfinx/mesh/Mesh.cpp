@@ -134,6 +134,21 @@ Mesh::Mesh(
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+Mesh::Mesh(const Mesh& other) : _topology{other._topology.copy()}, _geometry{other._geometry.copy()},
+                          _mpi_comm{other._mpi_comm} {}
+//-----------------------------------------------------------------------------
+Mesh& Mesh::operator=(const Mesh& other) {
+  Mesh tmp{other};
+  std::swap(*this, tmp);
+  return *this;
+}
+//-----------------------------------------------------------------------------
+Mesh Mesh::copy() const { return Mesh{*this}; }
+//-----------------------------------------------------------------------------
+Mesh& Mesh::copy_assign(const Mesh& other) {
+  return *this = other;
+}
+//-----------------------------------------------------------------------------
 Topology& Mesh::topology() { return _topology; }
 //-----------------------------------------------------------------------------
 const Topology& Mesh::topology() const { return _topology; }

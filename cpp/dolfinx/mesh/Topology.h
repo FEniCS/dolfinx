@@ -66,9 +66,6 @@ public:
     // Do nothing
   }
 
-  /// Copy constructor
-  Topology(const Topology& topology) = delete;
-
   /// Move constructor
   Topology(Topology&& topology) = default;
 
@@ -76,10 +73,23 @@ public:
   ~Topology() = default;
 
   /// Assignment
-  Topology& operator=(const Topology& topology) = delete;
-
-  /// Assignment
   Topology& operator=(Topology&& topology) = default;
+
+private:
+  /// Copy constructor: set private to avoid unintended copies.
+  /// Use Topology::copy() instead
+  Topology(const Topology& topology) = default;
+
+  /// Assignment: set private to avoid unintended copies
+  /// Use Topology::copy_assign(const Topology& other) instead.
+  Topology& operator=(const Topology& topology);
+
+public:
+  /// Create a copy
+  Topology copy() const;
+
+  /// Explicit copy assignment
+  Topology& copy_assign(const Topology& other);
 
   /// Return topological dimension
   int dim() const;
@@ -181,7 +191,6 @@ public:
   MPI_Comm mpi_comm() const;
 
 private:
-
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 

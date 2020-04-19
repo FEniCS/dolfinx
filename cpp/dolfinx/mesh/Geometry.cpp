@@ -17,6 +17,12 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
+Geometry Geometry::copy() const { return Geometry{*this}; }
+//-----------------------------------------------------------------------------
+Geometry& Geometry::copy_assign(const Geometry& other) {
+  return *this = other;
+}
+//-----------------------------------------------------------------------------
 int Geometry::dim() const { return _dim; }
 //-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() const

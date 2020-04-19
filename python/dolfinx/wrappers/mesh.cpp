@@ -94,6 +94,7 @@ void mesh(py::module& m)
                     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                        Eigen::RowMajor>&,
                     const std::vector<std::int64_t>&>())
+      .def("copy", &dolfinx::mesh::Geometry::copy)
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
       .def_property_readonly("dofmap", &dolfinx::mesh::Geometry::dofmap)
@@ -130,6 +131,7 @@ void mesh(py::module& m)
                        const dolfinx::mesh::CellType cell_type) {
         return std::make_unique<dolfinx::mesh::Topology>(comm.get(), cell_type);
       }))
+      .def("copy", &dolfinx::mesh::Topology::copy)
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity)
       .def("set_index_map", &dolfinx::mesh::Topology::set_index_map)
       .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
@@ -166,8 +168,8 @@ void mesh(py::module& m)
       .def(py::init([](const MPICommWrapper comm,
                        const dolfinx::mesh::Topology& topology,
                        dolfinx::mesh::Geometry& geometry) {
-        return std::make_unique<dolfinx::mesh::Mesh>(comm.get(), topology,
-                                                     geometry);
+        return std::make_unique<dolfinx::mesh::Mesh>(comm.get(), topology.copy(),
+                                                     geometry.copy());
       }))
       .def(py::init(
           [](const MPICommWrapper comm, dolfinx::mesh::CellType type,
@@ -184,6 +186,7 @@ void mesh(py::module& m)
                 comm.get(), type, geometry, topology, element,
                 global_cell_indices, ghost_mode);
           }))
+      .def("copy", &dolfinx::mesh::Mesh::copy)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")

@@ -176,6 +176,18 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
   return interior_facet;
 }
 //-----------------------------------------------------------------------------
+Topology Topology::copy() const { return Topology{*this}; }
+//-----------------------------------------------------------------------------
+Topology& Topology::operator=(const Topology& other) {
+  Topology tmp{other};
+  std::swap(*this, tmp);
+  return *this;
+}
+//-----------------------------------------------------------------------------
+Topology& Topology::copy_assign(const Topology& other) {
+  return *this = other;
+}
+//-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
