@@ -129,8 +129,10 @@ void fem::impl::assemble_cells(
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
 
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
       = mesh.topology().get_cell_permutation_info();
+  assert(cell_info);
 
   // Iterate over active cells
   for (std::int32_t c : active_cells)
@@ -144,7 +146,7 @@ void fem::impl::assemble_cells(
     auto coeff_cell = coeffs.row(c);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
+           coordinate_dofs.data(), nullptr, nullptr, (*cell_info)[c]);
 
     auto dofs0 = dofmap0.links(c);
     auto dofs1 = dofmap1.links(c);
@@ -210,10 +212,12 @@ void fem::impl::assemble_exterior_facets(
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
 
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
+  std::shared_ptr<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>> perms
       = mesh.topology().get_facet_permutations();
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
       = mesh.topology().get_cell_permutation_info();
+  assert(perms);
+  assert(cell_info);
 
   // Iterate over all facets
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -242,10 +246,10 @@ void fem::impl::assemble_exterior_facets(
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cells[0]);
-    const std::uint8_t perm = perms(local_facet, cells[0]);
+    const std::uint8_t perm = (*perms)(local_facet, cells[0]);
     Ae.setZero(dmap0.size(), dmap1.size());
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), &local_facet, &perm, cell_info[cells[0]]);
+           coordinate_dofs.data(), &local_facet, &perm, (*cell_info)[cells[0]]);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -313,10 +317,12 @@ void fem::impl::assemble_interior_facets(
   // Temporaries for joint dofmaps
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dmapjoint0, dmapjoint1;
 
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
+  std::shared_ptr<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>> perms
       = mesh.topology().get_facet_permutations();
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
       = mesh.topology().get_cell_permutation_info();
+  assert(perms);
+  assert(cell_info);
 
   // Iterate over all facets
   auto c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -346,7 +352,7 @@ void fem::impl::assemble_interior_facets(
     const std::array<int, 2> local_facet = {local_facet0, local_facet1};
 
     const std::array<std::uint8_t, 2> perm
-        = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
+        = {(*perms)(local_facet[0], cells[0]), (*perms)(local_facet[1], cells[1])};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
@@ -390,7 +396,7 @@ void fem::impl::assemble_interior_facets(
     Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       cell_info[cells[0]]);
+       (*cell_info)[cells[0]]);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
