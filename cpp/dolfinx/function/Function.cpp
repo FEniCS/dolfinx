@@ -217,8 +217,9 @@ void Function::eval(
   const fem::DofMap& dofmap = *_function_space->dofmap();
 
   mesh.topology_mutable().create_entity_permutations();
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
       = mesh.topology().get_cell_permutation_info();
+  assert(cell_info);
 
   // Loop over points
   u.setZero();
@@ -246,7 +247,7 @@ void Function::eval(
 
     // Push basis forward to physical element
     element.transform_reference_basis(basis_values, basis_reference_values, X,
-                                      J, detJ, K, cell_info[cell_index]);
+                                      J, detJ, K, (*cell_info)[cell_index]);
 
     // Get degrees of freedom for current cell
     auto dofs = dofmap.cell_dofs(cell_index);

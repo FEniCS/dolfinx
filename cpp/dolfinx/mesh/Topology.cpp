@@ -115,7 +115,6 @@ send_to_neighbours(MPI_Comm neighbour_comm,
       .array();
 }
 //-----------------------------------------------------------------------------
-
 } // namespace
 //-----------------------------------------------------------------------------
 Topology::Topology(MPI_Comm comm, mesh::CellType type,
@@ -126,17 +125,24 @@ Topology::Topology(MPI_Comm comm, mesh::CellType type,
   check_storage(remanent_storage, cell_dim(_cell_type));
   // Make essential data permanent: copy to remanent storage and create a new
   // layer on top
-  _remanent_storage.write(
-      storage::set_connectivity,
-      remanent_storage.read(storage::connectivity, dim(), 0), dim(), 0);
-  _remanent_storage.write(storage::set_connectivity,
-                          remanent_storage.read(storage::connectivity, 0, 0), 0,
-                          0);
   _remanent_storage.write(storage::set_index_map,
                           remanent_storage.read(storage::index_map, dim()),
                           dim());
   _remanent_storage.write(storage::set_index_map,
                           remanent_storage.read(storage::index_map, 0), 0);
+
+  _remanent_storage.write(
+      storage::set_connectivity,
+      remanent_storage.read(storage::connectivity, dim(), 0), dim(), 0);
+
+  auto vertex_conn = remanent_storage.read(storage::connectivity, 0, 0);
+  if (!vertex_conn)
+  {
+    auto vertex_map = _remanent_storage.read(storage::index_map, 0);
+    vertex_conn = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+        vertex_map->size_local() + vertex_map->num_ghosts());
+  }
+  _remanent_storage.write(storage::set_connectivity, vertex_conn, 0, 0);
 
   // This lock creates an unscoped remanent storage layer for the
   // create_XYZ members that can be discarded manually.
@@ -144,7 +150,7 @@ Topology::Topology(MPI_Comm comm, mesh::CellType type,
   _remanent_lock.emplace(_remanent_storage.hold_layer(true));
 
   // Read all data from the input
-  storage::read_from(_remanent_storage, remanent_storage);
+  storage::assign(_remanent_storage, remanent_storage);
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return cell_dim(cell_type()); }
@@ -154,29 +160,14 @@ Topology::index_map(int dim, bool discard_intermediate /*unused*/) const
 {
   // "discard_intermediate" is not used here because the "intermediate results"
   // are logically connect to the index map and thus not truly "intermediate".
-
-  // General lock: protects against loss of data and creates one temporary
-  // writable layer if there is none.
-  auto lock = acquire_cache_lock();
-
   if (auto res = _cache.read(storage::index_map, dim); res)
-  {
-    // They usually belong together.
-    // There may be issues with TopologyComputation::compute_entities and at
-    // various other places.
-    assert(_cache.read(storage::connectivity, this->dim(), dim));
-    assert(_cache.read(storage::connectivity, dim, 0));
     return res;
-  }
-
-  // TODO: lock for thread safety
 
   // Scratch has read access to cache.
   auto scratch = create_scratch();
   scratch.create_entities(dim);
-  // Copy newly recorded data
-  storage::read_from(_cache, scratch._cache);
-  return _cache.read(storage::index_map, dim);
+  storage::assign_if_not_empty(_cache, scratch._cache, false);
+  return scratch.index_map(dim);
 }
 //-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim,
@@ -244,8 +235,8 @@ std::vector<bool> Topology::on_boundary(int dim,
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1, bool discard_intermediate) const
 {
-
-  if (auto conn = _cache.read(storage::connectivity, d0, d1); conn)
+  if (auto conn = _cache.read(storage::connectivity, d0, d1);
+      conn || (d0 == 0 && d1 == 0))
     return conn;
 
   // connected index maps:
@@ -259,16 +250,11 @@ Topology::connectivity(int d0, int d1, bool discard_intermediate) const
   // by create entities (x) must be cached (more expensive).
   // Use option discard_intermediate to distinguish.
 
-  // General lock: protects against loss of data and creates one temporary
-  // writable layer if there is none.
-  auto lock = acquire_cache_lock();
-
-  // TODO: lock for thread safety
-  // Scratch has read access to cache.
+  // Scratch has read access to this' storage.
   auto scratch = create_scratch();
   scratch.create_connectivity(d0, d1, discard_intermediate);
-  storage::read_from(_cache, scratch._cache);
-  return _cache.read(storage::connectivity, d0, d1);
+  storage::assign_if_not_empty(_cache, scratch._cache, false);
+  return scratch.connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
 const std::vector<bool>&
@@ -277,15 +263,10 @@ Topology::interior_facets(bool discard_intermediate) const
   if (auto facets = _cache.read(storage::interior_facets); facets)
     return *facets;
 
-  // General lock: protects against loss of data and creates one temporary
-  // writable layer if there is none.
-  auto lock = acquire_cache_lock();
-
-  // TODO: lock for thread safety
-  // Scratch has read access to cache.
+  // Scratch has read access to this' storage.
   auto scratch = create_scratch();
   scratch.create_interior_facets(discard_intermediate);
-  storage::read_from(_cache, scratch._cache);
+  storage::assign_if_not_empty(_cache, scratch._cache, false);
   return *_cache.read(storage::interior_facets);
 }
 //-----------------------------------------------------------------------------
@@ -296,56 +277,39 @@ size_t Topology::hash() const
   return this->connectivity(dim(), 0)->hash();
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
+std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
 Topology::get_cell_permutation_info(bool discard_intermediate) const
 {
   // Note: discard_intermediate does not apply to facet_permutations which
   // are computed as well.
 
-  // General lock: protects against loss of data and creates one temporary
-  // writable layer if there is none. Above the check because of composed access
-  // for the assertion.
-  auto lock = acquire_cache_lock();
-
   if (auto res = _cache.read(storage::cell_permutations); res)
-  {
-    assert(_cache.read(storage::facet_permutations));
-    return *res;
-  }
+    return res;
 
-  // TODO: lock for thread safety
-  // Scratch has read access to cache.
   auto scratch = create_scratch();
   scratch.create_entity_permutations(discard_intermediate);
-  storage::read_from(_cache, scratch._cache);
-  return *(_cache.read(storage::cell_permutations));
+  storage::assign_if_not_empty(_cache, scratch._cache, false);
+  return scratch.get_cell_permutation_info();
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
+std::shared_ptr<
+    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
 Topology::get_facet_permutations(bool discard_intermediate) const
 {
-  // General lock: protects against loss of data and creates one temporary
-  // writable layer if there is none. Above the check because of composed access
-  // for the assertion.
-  auto lock = acquire_cache_lock();
-  if (auto facet_permutations = _cache.read(storage::facet_permutations);
-      facet_permutations)
-  {
-    assert(_cache.read(storage::facet_permutations));
-    return *facet_permutations;
-  }
+  if (auto res = _cache.read(storage::facet_permutations); res)
+    return res;
 
-  // TODO: lock for thread safety
-  // Rely on get_cell_permutation_info.
-  get_cell_permutation_info(discard_intermediate);
-  return *(_cache.read(storage::facet_permutations));
+  auto scratch = create_scratch();
+  scratch.create_entity_permutations(discard_intermediate);
+  storage::assign_if_not_empty(_cache, scratch._cache, false);
+  return scratch.get_facet_permutations();
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
-Topology::Storage::Lock_t
+Topology::Storage::LayerLock_t
 Topology::acquire_cache_lock(bool force_new_layer) const
 {
   return _cache.hold_layer(force_new_layer);
@@ -373,15 +337,19 @@ void Topology::check_storage(const Topology::Storage& remanent_storage,
 {
   if (!(remanent_storage.read(storage::index_map, tdim)
         && remanent_storage.read(storage::index_map, 0)
-        && remanent_storage.read(storage::connectivity, tdim, 0)
-        && remanent_storage.read(storage::connectivity, 0, 0)))
+        && remanent_storage.read(storage::connectivity, tdim, 0)))
     throw std::invalid_argument("Storage does not provide all required data: "
-                                "index_map(0), index_map(tdim), "
-                                "connectivity(0, 0), connectivity(tdim, 0).");
+                                "index_map(0), index_map(tdim) and "
+                                "connectivity(tdim, 0).");
 }
 //------------------------------------------------------------------------------
 std::int32_t Topology::create_entities(int dim)
 {
+  // Nothing to do in this case. Has to be there already.
+  if (dim == 0)
+    return -1;
+
+  // Transfer from cache. It is guaranteed that entities stay together.
   if (auto conn = _remanent_storage.write(
           storage::set_connectivity, _cache.read(storage::connectivity, dim, 0),
           dim, 0);
@@ -404,11 +372,11 @@ std::int32_t Topology::create_entities(int dim)
   _remanent_storage.write(storage::set_connectivity, cell_entity, this->dim(),
                           dim);
 
-  // entitiy_vertex should not be empty because of the check above
+  // entity_vertex should not be empty because of the check above
   assert(entity_vertex);
   _remanent_storage.write(storage::set_connectivity, entity_vertex, dim, 0);
 
-  // index_map should not be empty because of the check above
+  // entity_vertex should not be empty because of the check above
   assert(index_map);
   _remanent_storage.write(storage::set_index_map, index_map, dim);
 
@@ -423,15 +391,12 @@ void Topology::create_connectivity(int d0, int d1, bool discard_intermediate)
       conn)
     return;
 
-  // The create_XYZ should not write to cache but to remanent storage
-  // Work with remanent storage alone and do not call the const members as they
-  // are proxies anyway? OTOH, discarding is then more complicated.
-  auto discard_lock = acquire_cache_lock(true);
-  // trigger discardable entity computations
+  auto cache_lock = acquire_cache_lock(true);
+  // trigger *discardable* entity computations
   index_map(d0, false);
   index_map(d1, false);
   if (!discard_intermediate)
-    storage::read_from(_remanent_storage, _cache);
+    storage::assign(_remanent_storage, _cache);
 
   // TODO: check these thoughts
   // semantically, it should be safe for compute_connectivity to call
@@ -487,11 +452,11 @@ void Topology::create_interior_facets(bool discard_intermediate)
     return;
 
   // The create_XYZ should not write to cache but to remanent storage
-  auto discard_lock = acquire_cache_lock(true);
+  auto cache_lock = acquire_cache_lock(true);
   // Requirements
   connectivity(dim() - 1, dim(), false);
   if (!discard_intermediate)
-    storage::read_from(_remanent_storage, _cache);
+    storage::assign(_remanent_storage, _cache);
 
   _remanent_storage.write(storage::set_interior_facets,
                           TopologyComputation::compute_interior_facets(*this));
@@ -523,7 +488,7 @@ void Topology::create_entity_permutations(bool discard_intermediate)
     index_map(d, false);
 
   if (!discard_intermediate)
-    storage::read_from(_remanent_storage, _cache);
+    storage::assign(_remanent_storage, _cache);
 
   auto [facet_permutations, cell_permutations]
       = PermutationComputation::compute_entity_permutations(*this);
@@ -826,5 +791,19 @@ mesh::create_topology(MPI_Comm comm,
   storage.write(storage::set_index_map, index_map_c, tdim);
   auto _cells_d = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
   storage.write(storage::set_connectivity, _cells_d, tdim, 0);
+  return Topology(comm, cell_type, storage);
+}
+
+Topology mesh::create_topology(
+    MPI_Comm comm, const CellType& cell_type,
+    std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps_tdim_0,
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+        connectivity_tdim_0)
+{
+  const int tdim{cell_dim(cell_type)};
+  Topology::Storage storage(true);
+  storage.write(storage::set_index_map, index_maps_tdim_0[0], tdim);
+  storage.write(storage::set_index_map, index_maps_tdim_0[1], 0);
+  storage.write(storage::set_connectivity, connectivity_tdim_0, tdim, 0);
   return Topology(comm, cell_type, storage);
 }

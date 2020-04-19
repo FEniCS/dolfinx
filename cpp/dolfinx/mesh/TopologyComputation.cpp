@@ -603,6 +603,11 @@ TopologyComputation::compute_entities(const Topology& topology, int dim)
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
   const int tdim = topology.dim();
 
+  // Vertices have to be there. Nothing to compute
+  if (dim == 0) {
+    return {nullptr, nullptr, nullptr};
+  }
+
   // Return if the triple is there
   if (topology.data().read(storage::connectivity, tdim, dim)
       && topology.data().read(storage::connectivity, dim, 0)
@@ -657,7 +662,7 @@ TopologyComputation::compute_connectivity(const Topology& topology, int d0,
 
   // Return if connectivity has already been computed
   if (auto cached = topology.data().read(storage::connectivity, d0, d1); cached)
-    return {cached, nullptr};
+    return cached;
 
   // Get entities exist
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d0_0

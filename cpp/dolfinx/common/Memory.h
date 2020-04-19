@@ -140,7 +140,7 @@ class LayerLock
 public:
   /// Constructor: require a reference to the guarded layer and a weakly owned
   /// callback that is invoked when the lock is released or destroyed.
-  LayerLock(owned<const Layer_t&> layer,
+  LayerLock(owned<maybe_null<const Layer_t>> layer,
             weakly_owned<std::function<void(maybe_null<const Layer_t>)>> on_destruction)
       : _layer{std::move(layer)}, _on_destruction{std::move(on_destruction)}
   {
@@ -159,7 +159,7 @@ public:
   /// the lock has been released.
   maybe_null<const Layer_t> layer() const
   {
-    return check(_on_destruction) ? maybe_null<const Layer_t>{&_layer.get()} : maybe_null<const Layer_t>{nullptr};
+    return check(_on_destruction) ? maybe_null<const Layer_t>{_layer.get()} : maybe_null<const Layer_t>{nullptr};
   }
 
   /// Relases ownership.
@@ -173,7 +173,7 @@ public:
 
 private:
   // Owned layer
-  owned<const Layer_t&> _layer;
+  owned<const Layer_t*> _layer;
 
   // Callback informing that the lock has been released
   weakly_owned<std::function<void(maybe_null<const Layer_t>)>> _on_destruction;
@@ -218,7 +218,7 @@ template <typename Layer_t>
 class LayerManager
 {
 public:
-  using Lock_t = LayerLock<Layer_t>;
+  using LayerLock_t = LayerLock<Layer_t>;
 
   /// Create Storage layer
   /// @param[in] remanent if given creates a remanent storage layer of which the
@@ -269,7 +269,7 @@ public:
   /// outside.
   /// [remove if not needed]
   /// Thread safety: it is only frozen during "safe access".
-  Lock_t hold_layer(bool force_new_layer = false)
+  LayerLock_t hold_layer(bool force_new_layer = false)
   {
     auto layer_lock = std::make_shared<const bool>(true);
     if (layers.empty() or force_new_layer)
@@ -277,7 +277,7 @@ public:
       layers.emplace_back(Layer_t{}, layer_lock);
     }
     std::function<void(maybe_null<const Layer_t> layer)> callback = [=](maybe_null<const Layer_t> layer) { this->layer_expired(layer); };
-    return Lock_t(make_owned<const Layer_t&>(active_layer().get(),
+    return LayerLock_t(make_owned<maybe_null<const Layer_t>>(&active_layer().get(),
                                              std::move(layer_lock)),
                   make_guarded(callback, lifetime));
   }
@@ -371,8 +371,8 @@ private:
 
   weakly_owned<maybe_null<const LayerManager>> other;
 
-  // Own one layer. Is this useful? For certain cases yes.
-  std::optional<Lock_t> remanent_lock{};
+  // Own one layer. Enables remanent storage.
+  std::optional<LayerLock_t> remanent_lock{};
 
   // The storage layers
   std::vector<weakly_owned<Layer_t>> layers;

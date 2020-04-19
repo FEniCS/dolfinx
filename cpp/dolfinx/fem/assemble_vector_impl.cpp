@@ -82,8 +82,9 @@ void _lift_bc_cells(
   const Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values
       = pack_constants(a);
 
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
       = mesh.topology().get_cell_permutation_info();
+  assert(cell_info);
 
   // Iterate over all cells
   const int tdim = mesh.topology().dim();
@@ -120,7 +121,7 @@ void _lift_bc_cells(
     auto coeff_array = coeffs.row(c);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
+       coordinate_dofs.data(), nullptr, nullptr, (*cell_info)[c]);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -214,10 +215,12 @@ void _lift_bc_exterior_facets(
   auto map = topology.index_map(tdim - 1);
   assert(map);
 
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
+  std::shared_ptr<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>> perms
       = mesh.topology().get_facet_permutations();
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
       = mesh.topology().get_cell_permutation_info();
+  assert(perms);
+  assert(cell_info);
 
   for (int f = 0; f < map->size_local(); ++f)
   {
@@ -235,7 +238,7 @@ void _lift_bc_exterior_facets(
     assert(it != (facets.data() + facets.rows()));
     const int local_facet = std::distance(facets.data(), it);
 
-    const std::uint8_t perm = perms(local_facet, cell);
+    const std::uint8_t perm = (*perms)(local_facet, cell);
 
     // Get dof maps for cell
     auto dmap1 = dofmap1.cell_dofs(cell);
@@ -268,7 +271,7 @@ void _lift_bc_exterior_facets(
     auto coeff_array = coeffs.row(cell);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm, cell_info[cell]);
+       coordinate_dofs.data(), &local_facet, &perm, (*cell_info)[cell]);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -378,8 +381,9 @@ void fem::impl::assemble_cells(
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be(num_dofs_per_cell);
 
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
       = mesh.topology().get_cell_permutation_info();
+  assert(cell_info);
 
   // Iterate over active cells
   for (std::int32_t c : active_cells)
@@ -393,7 +397,7 @@ void fem::impl::assemble_cells(
     auto coeff_cell = coeffs.row(c);
     be.setZero();
     kernel(be.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
+           coordinate_dofs.data(), nullptr, nullptr, (*cell_info)[c]);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);
@@ -434,10 +438,12 @@ void fem::impl::assemble_exterior_facets(
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
+  std::shared_ptr<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>> perms
       = mesh.topology().get_facet_permutations();
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
       = mesh.topology().get_cell_permutation_info();
+  assert(perms);
+  assert(cell_info);
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -454,7 +460,7 @@ void fem::impl::assemble_exterior_facets(
     const auto* it = std::find(facets.data(), facets.data() + facets.rows(), f);
     assert(it != (facets.data() + facets.rows()));
     const int local_facet = std::distance(facets.data(), it);
-    const std::uint8_t perm = perms(local_facet, cell);
+    const std::uint8_t perm = (*perms)(local_facet, cell);
 
     // Get cell vertex coordinates
     auto x_dofs = x_dofmap.links(cell);
@@ -468,7 +474,7 @@ void fem::impl::assemble_exterior_facets(
     auto coeff_cell = coeffs.row(cell);
     be.setZero(dmap.size());
     fn(be.data(), coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm, cell_info[cell]);
+       coordinate_dofs.data(), &local_facet, &perm, (*cell_info)[cell]);
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
@@ -511,10 +517,12 @@ void fem::impl::assemble_interior_facets(
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
+  std::shared_ptr<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>> perms
       = mesh.topology().get_facet_permutations();
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
       = mesh.topology().get_cell_permutation_info();
+  assert(perms);
+  assert(cell_info);
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -539,7 +547,7 @@ void fem::impl::assemble_interior_facets(
 
     // Orientation
     const std::array<std::uint8_t, 2> perm
-        = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
+        = {(*perms)(local_facet[0], cells[0]), (*perms)(local_facet[1], cells[1])};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
@@ -574,7 +582,7 @@ void fem::impl::assemble_interior_facets(
     be.setZero(dmap0.size() + dmap1.size());
     fn(be.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       cell_info[cells[0]]);
+       (*cell_info)[cells[0]]);
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap0.size(); ++i)

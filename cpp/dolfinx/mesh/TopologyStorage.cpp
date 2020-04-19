@@ -159,11 +159,18 @@ void storage::assign(TopologyStorageLayer& to,
   });
 }
 //------------------------------------------------------------------------------
-void storage::read_from(TopologyStorage& to,
+void storage::assign(TopologyStorage& to,
                         const TopologyStorage& from, bool override)
 {
   to.write([&](TopologyStorageLayer& target) {
     storage::assign(target, from, override);
     return false;
   });
+}
+//------------------------------------------------------------------------------
+void storage::assign_if_not_empty(TopologyStorage& to,
+                     const TopologyStorage& from, bool override)
+{
+  if (!to.empty())
+    assign(to, from, override);
 }

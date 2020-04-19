@@ -60,26 +60,7 @@ enum class CellType;
 // in the cpp layer where this was of relevance. This is also why setters were
 // removed. See also the comment above the lock in the constructor. Wold it be
 // desirable to keep old defining data once it is overwritten?
-
-// TODO: also needs a locks for thread safety.
-// [Better name for cache lock?]
-// Is read access, ie. getting a shared_ptr<const XYZ>? The race condition does
-// not matter because of logical constness, but the data race?
-// According to cpp reference: control block of shared_ptr is thread safe. Thus,
-// assignment is. So what can happen? Ask for the shared_ptr, having it, I also
-// have the object which is const. So fine.
-// IMPORTANT: However, losing cache is an issue. Image,
-// a cache layer is dropped and the cache is emptied.  Now I may believe to have
-// an index map, but the connectivities are not there anymore.
-// Thus, when reading of more than one quantity (quantities that are logically
-// connected, one also has to have a cache lock for protection against losing
-// data.
-// Concerning sync locks: std::scoped_lock allows to acquire more than one lock
-// at the same time this is a nice feature when doing fine grained locking
-// per getter or even finer, getter and argument, i.e. in index index_map(1),
-// while not blocking index_map(2) but connectivit(1, 0) since this goes
-// together with index_map(1).
-// Store the mutexes in a corresponding struct?
+//
 //
 class Topology
 {
@@ -100,10 +81,13 @@ public:
   /// correctness. In is safer to only provide the essential data at
   /// construction and create other data, if desired, via "create_XYZ" member
   /// functions.
+  /// The copy from remanent_storage is shallow since storage internally work
+  /// via shared_ptr<const T>.
   Topology(MPI_Comm comm, mesh::CellType type, const Storage& remanent_storage);
 
+
   // TODO: added constructor or factory based on index maps and
-  //  adajacency lists. This avoid exposing the storage to python. Would then
+  //  adjacency lists. This avoid exposing the storage to python. Would then
   //  also completely remove the topology storage outside of topology, which is
   //  weird anyway.
 
@@ -114,7 +98,7 @@ public:
                  topology.remanent_data()} {};
 
   /// Move constructor
-  Topology(Topology&& topology) = default;
+  Topology(Topology&& topology) noexcept = default;
 
   /// Destructor
   ~Topology() = default;
@@ -123,7 +107,7 @@ public:
   Topology& operator=(const Topology& topology) = delete;
 
   /// Assignment
-  Topology& operator=(Topology&& topology) = default;
+  Topology& operator=(Topology&& topology) noexcept = default;
 
   /// Return topological dimension
   int dim() const;
@@ -169,7 +153,7 @@ public:
   /// and does not discard facet permutations which are computed together
   /// but not as a precondition.
   /// @return The permutation numbers
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
   get_cell_permutation_info(bool discard_intermediate = false) const;
 
   /// Get the permutation number to apply to a facet. The permutations
@@ -185,7 +169,7 @@ public:
   /// and does not discard cell permutations which are computed together
   /// but not as a precondition.
   /// @return The permutation numbers
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
+  std::shared_ptr<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
   get_facet_permutations(bool discard_intermediate = false) const;
 
   /// Gets markers for owned facets that are interior, i.e. are
@@ -241,7 +225,7 @@ public:
   /// i.e., it will shadow any previous cache lock. Howver, data created
   /// explicitly is not affected. The cache only applies to data that is
   /// computed on-the-fly.
-  Storage::Lock_t acquire_cache_lock(bool force_new_layer = false) const;
+  Storage::LayerLock_t acquire_cache_lock(bool force_new_layer = false) const;
 
   /// Discard all remanent storage except for essential information. Provides a
   /// new layer to add data which can be discarded again. Note that this only
@@ -261,7 +245,7 @@ private:
 
   static void check_storage(const Storage& remanent_storage, int tdim);
 
-  std::optional<const Storage::Lock_t> _remanent_lock;
+  std::optional<const Storage::LayerLock_t> _remanent_lock;
 
   // Storage for class invariant (permanent) and remanent (discardable
   // persistent) data
@@ -296,5 +280,20 @@ Topology create_topology(MPI_Comm comm,
                          const std::vector<std::int64_t>& original_cell_index,
                          const std::vector<int>& ghost_owners,
                          const CellType& cell_type, mesh::GhostMode ghost_mode);
+
+/// Create a toplogy from essential data.
+/// @param[in] comm MPI communicator across which the topology is
+///   distributed
+/// @param[in] cell_type The cell shape
+/// @param[in] index_maps_tdim_0 The array keeps the index maps for dim = tdim
+/// and dim = 0.
+/// @param[in] connectivity_tdim_0 The cell-vertex connectivity,  that is for
+/// (tdim, 0).
+/// @return A distributed Topology based on given essential data.
+/// The array keeps the index maps for dim = tdim and dim = 0.
+
+Topology create_topology(MPI_Comm comm, const CellType& cell_type,
+    std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps_tdim_0,
+                                 std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity_tdim_0);
 } // namespace mesh
 } // namespace dolfinx

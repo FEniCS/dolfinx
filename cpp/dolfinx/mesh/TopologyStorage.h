@@ -126,9 +126,9 @@ int assign(TopologyStorageLayer& to, const TopologyStorageLayer& from, bool over
 int assign_where_empty(TopologyStorageLayer& to, const TopologyStorageLayer& from);
 
 using TopologyStorage
-    = dolfinx::common::memory::LayerManager<TopologyStorageLayer>;
+    = common::memory::LayerManager<TopologyStorageLayer>;
 
-using TopologyStorageLock = TopologyStorage::Lock_t;
+using TopologyStorageLock = TopologyStorage::LayerLock_t;
 
 /// Walk through the storage "from" and assigns its layers to "to" beginning
 /// with the oldest layer, ending with the newest one, i.e. it copies over the
@@ -138,8 +138,12 @@ void assign(TopologyStorageLayer& to, const TopologyStorage& from, bool override
 /// Walk through the storage "from" and assigns its layers to the current
 /// writing layer of "to" beginning with the oldest layer, ending with the
 /// newest one, i.e. it copies over the current state of "from".
-void read_from(TopologyStorage& to, const TopologyStorage& from,
+void assign(TopologyStorage& to, const TopologyStorage& from,
                bool override=false);
+
+/// Version of assign that does not throw when "to" is empty (does nothing)
+void assign_if_not_empty(TopologyStorage& to, const TopologyStorage& from,
+            bool override=false);
 
 
 } // namespace dolfinx::mesh::storage
