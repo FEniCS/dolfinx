@@ -45,7 +45,7 @@ struct TopologyStorageLayer
   std::array<std::shared_ptr<const common::IndexMap>, 4> index_map;
 
   // AdjacencyList for pairs of topological dimensions
-  Eigen::Array<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>, 3, 3,
+  Eigen::Array<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>, 4, 4,
                Eigen::RowMajor>
       connectivity;
 
