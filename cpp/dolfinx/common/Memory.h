@@ -14,6 +14,8 @@
 #include <memory>
 #include <shared_mutex>
 #include <vector>
+#include <functional>
+
 
 namespace dolfinx::common::memory
 {
@@ -21,38 +23,83 @@ namespace dolfinx::common::memory
 using lock_t = std::shared_ptr<const bool>;
 using sentinel_t = std::weak_ptr<const bool>;
 
-template <typename T>
-using guarded_obj = std::pair<T, sentinel_t>;
+
+/// A wrapper for objects with lifetime dependencies without using smart
+/// pointers but mimicking their interface to a certain degree.
+template <typename T, typename observer_t>
+class observed
+{
+public:
+  observed(T&& obj, observer_t observer)
+      : obj{std::move(obj)}, observer{std::move(observer)}
+  {
+    // do nothing
+  }
+
+  observed() = default;
+  observed(const observed& other) = default;
+  explicit observed(observed&& other) = default;
+
+  observed& operator=(const observed& other) = default;
+  observed& operator=(observed&& other) = default;
+
+  ~observed() = default;
+
+  T& get()
+  {
+    assert(use_count() != 0);
+    return obj;
+  }
+
+  const T& get() const
+  {
+    assert(use_count() != 0);
+    return to_pointer(obj);
+  }
+
+  [[nodiscard]] long use_count() const noexcept { return observer.use_count(); }
+
+  void reset() noexcept { observer.reset(); }
+
+private:
+  T obj;
+  observer_t observer;
+};
 
 template <typename T>
-guarded_obj<T> make_guarded(T obj, sentinel_t sentinel)
+using maybe_null = T*;
+
+template <typename T>
+using weakly_owned = observed<T, sentinel_t>;
+
+template <typename T>
+using weakly_owned = observed<T, sentinel_t>;
+
+template <typename T>
+weakly_owned<T> make_guarded(T obj, sentinel_t sentinel)
 {
-  return std::make_pair<typename guarded_obj<T>::first_type,
-                        typename guarded_obj<T>::second_type>(
-      std::forward<T&&>(obj), std::move(sentinel));
+  return weakly_owned<T>{std::forward<T&&>(obj), std::move(sentinel)};
 }
 
 template <typename T>
-bool check(const guarded_obj<T>& obj)
+bool check(const weakly_owned<T>& obj)
 {
-  return !obj.second.expired();
+  return obj.use_count() != 0;
 }
 
 template <typename T>
-bool check(const guarded_obj<T*>& obj)
+bool check(const weakly_owned<T*>& obj)
 {
-  return !obj.second.expired() && obj;
+  return obj.use_count() != 0 && obj.get();
 }
 
 template <typename T>
-using owned_obj = std::pair<T, lock_t>;
+using owned = observed<T, lock_t>;
 
 template <typename T>
-owned_obj<T> make_owned(T obj, lock_t lock)
+owned<T> make_owned(T obj, lock_t lock)
 {
-  return std::make_pair<typename guarded_obj<T>::first_type,
-                        typename owned_obj<T>::second_type>(
-      std::forward<T&&>(obj), std::move(lock));
+  return owned<T>{std::forward<T&&>(obj), std::move(lock)};
 }
 
 /// Gives read-only or full access via visitor pattern of the underlying type
@@ -89,9 +136,9 @@ public:
                       Locks_t... locks)
       : get_read{std::move(get_read)},
         get_read_write{std::move(get_read_write)}, locks{std::make_tuple(
-                                                       std::move(locks)...)} {
-                                                       // do nothing
-                                                   };
+          std::move(locks)...)} {
+    // do nothing
+  };
 
   auto read_access() const { return get_read(); }
   auto read_write_access() { return get_read_write(); }
@@ -119,45 +166,54 @@ auto visit(Iterator_t begin, Iterator_t end, Visitor_t&& visitor,
 template <typename Layer_t>
 class LayerManager;
 
+/// A class holding a layer from a layer manager and by that determining its
+/// lifetime. If the lock is destroyed it will give notice to the layer_manager.
+/// A layer can be owned by more than one lock (shared ownership). The lock
+/// can expose the layer for inspection.
 template <typename Layer_t>
 class LayerLock
 {
 public:
-  // TODO: The ptr to the active layer is not be necessary ATM but reminds
-  // of considering using shared/weak_ptr for the layers.
-  LayerLock(owned_obj<const Layer_t*> layer,
-            guarded_obj<std::function<void()>> on_destruction)
+  /// Constructor: require a reference to the guarded layer and a weakly owned
+  /// callback that is invoked when the lock is released or destroyed.
+  LayerLock(owned<const Layer_t&> layer,
+            weakly_owned<std::function<void()>> on_destruction)
       : _layer{std::move(layer)}, _on_destruction{std::move(on_destruction)}
   {
     // do nothing
   }
 
-  LayerLock() = default;
-  LayerLock(const LayerLock&) = delete;
+  LayerLock(const LayerLock&) = default;
   LayerLock(LayerLock&&) = default;
 
-  LayerLock& operator=(const LayerLock&) = delete;
+  LayerLock& operator=(const LayerLock&) = default;
   LayerLock& operator=(LayerLock&&) = default;
 
-  ~LayerLock() { release(); };
+  ~LayerLock() { release();};
 
-  const Layer_t* layer() const { return _layer; }
+  /// Returns a pointer to the owned layer. If no layer os owned because
+  /// the lock has been released.
+  maybe_null<const Layer_t> layer() const
+  {
+    return check(_layer) ? &_layer : nullptr;
+  }
 
-private:
+  /// Relases ownership.
   void release()
   {
-    _layer.second.reset();
+    _layer.reset();
     // Signalize to the layer manager that a lock has gone
     if (check(_on_destruction))
-      _on_destruction.first();
+      _on_destruction.get()(layer());
   };
 
 private:
-  owned_obj<const Layer_t*> _layer;
-  guarded_obj<std::function<void()>> _on_destruction;
+  // Owned layer
+  owned<const Layer_t&> _layer;
+
+  // Callback informing that the lock has been released
+  weakly_owned<std::function<void()>> _on_destruction;
 };
-
-
 
 // NOTE concerning multithreading: there is a lot to optimize there. The layer
 // structure allows, eg., for reading everything below the active layer at
@@ -170,45 +226,50 @@ private:
 // Thus, to keep the code clean, not much work is done in that direction
 // and what is in place might be removed.
 
-// What if locks do not call back? No call back, just clean upon each access as
-// in initial designs. When considering a stack-like memory
-// (intermediate layers are not to be removed) this should not really be an
-// issue. Possibly do both, also fixing issue of copying (losing locks).
-// Thus, it would be nice to not have to store a layer manager as ptr.
-//
-// Since guarded_obj holds objects, constness is respected here. But also means
-// that memory is not automatically freed, its the "guard" who loses its
-// shared_ptr.
-// V1: shared_ptr -> no automatric free of memory, remove if use count = 1
-// this is quite equivalent to the guarded_obj model
-// V2: weak_ptr -> memory immediatly freed, only layer stack is cleaned up
-// V3: shared_ptr/guarded with callback and removal from within the stack (no
-// stack model anymore).
-//  '-> Concerning copy: Only allowed for weak_ptr model.
-// It is a very bad idea to store the layer manager as a (shared) ptr since
-// one does not want to have it constant, but then two object lose same data.
-// which means, one is just a view, not a copy.
+// NOTE concerning copies: It is difficult to ask how to copy this data
+// structure. It is not clear what kind of copy should be made. Therefore,
+// since all essential data can be accessed, it is up to the user to create
+// a new instance transferred the data he wants to preserve.
 
+// NOTE on memory management: The current model is a stack, that means that
+// data is not necessarily cleaned up when its handle dies but only when no
+// other data depends on it any longer. This behavior, however, can be adapted
+// easily. Related to that, cleanup is triggered each time a layer lock goes
+// ends its life. There is no kind of automatic cleanup. However, that could be
+// easily added as well. Two general types of behavior:
+// 1. Stack (current) == last in / first out, cleanup possibly delayed until
+//    dependent object go away.
+// 2. Immediate cleanup, pull out layers from the middle of the layer stack
+// If the layer locks are not passed around as crazy, both approaches are
+// equivalent. In general, it is quite straighforward to switch, unless one
+// aims for sophisticated multithreading. Also, both variants can be base on
+// callbacks and/or regularly (each access) triggered cleanup.
+// Regarding the implementation: The current implementation does not rely on
+// smart pointers simply for constness reasons. The wrapper types employed
+// instead behave quite similar, however, such they can easily be interchanged.
 
+/// Manages a collection of data layers. It provides means to add layers,
+/// read and write them.
 template <typename Layer_t>
 class LayerManager
 {
 public:
   using Lock_t = LayerLock<Layer_t>;
 
+  // TODO: [MULTITHREADING] remove if not needed
   using ReadPtr
-      = DataAccessor<const LayerManager,
-                     std::vector<std::shared_lock<std::shared_mutex>>>;
+  = DataAccessor<const LayerManager,
+      std::vector<std::shared_lock<std::shared_mutex>>>;
   using ReadWritePtr
-      = DataAccessor<LayerManager, std::unique_lock<std::shared_mutex>,
-                     std::vector<std::shared_lock<std::shared_mutex>>>;
+  = DataAccessor<LayerManager, std::unique_lock<std::shared_mutex>,
+      std::vector<std::shared_lock<std::shared_mutex>>>;
 
   /// Create Storage layer
   /// @param[in] remanent if given creates a remanent storage layer of which the
   /// lifetime is bound to this object.
   /// @param[in] other points to another LayerManager for read only access.
   /// Its data will not be copied into the new LayerManager.
-  LayerManager(bool remanent, const LayerManager* other)
+  LayerManager(bool remanent, maybe_null<const LayerManager> other)
       : other{make_guarded(other, other->lifetime)}
   {
     if (remanent)
@@ -223,13 +284,8 @@ public:
 
   LayerManager() = default;
 
-  // TODO: the copy constructor should not be default. While this basically
-  // works, the locks from "other" will not trigger cleanup on "this".
-  // Note that the guarded object still know whether they are expired, cleanup
-  // is just not triggered. So it is better to forbid copying and store either
-  // in a shared_ptr or implement a proper copy constructor.
-  /// Copy constructor.
-  LayerManager(const LayerManager& other) = default;
+  /// Copy constructor [deleted]
+  LayerManager(const LayerManager& other) = delete;
 
   /// Move constructor
   LayerManager(LayerManager&& other) = default;
@@ -237,13 +293,12 @@ public:
   /// Destructor
   ~LayerManager() = default;
 
-  /// Copy assignment
-  LayerManager& operator=(const LayerManager& other) = default;
+  /// Copy assignment [deleted]
+  LayerManager& operator=(const LayerManager& other) = delete;
 
   /// Move assignment
   LayerManager& operator=(LayerManager&& other) = default;
 
-  // TODO: terminology
   /// Create a new lock-like handle to keep a storage layer alive. By default,
   /// this returns just is another handle for the current layer. The creation of
   /// a new write layer is optional. Note that layers will be destroyed in
@@ -252,38 +307,44 @@ public:
   /// valid use case at all].
   /// Once a new layer is active, lower layers cannot be written to. This
   /// creates the possibility to recover the previous state. Also not that
-  /// while lower layer cannot be written to, they can be read.
-  /// We remark that the read-only "other" data may still be changed from
-  /// outside. It is only frozen during "safe access".
-  Lock_t hold_layer(bool force_new_layer=false)
+  /// while lower layers cannot be written to, they can be read.
+  /// However, that the read-only "other" data may still be changed from
+  /// outside.
+  /// [remove if not needed]
+  /// Thread safety: it is only frozen during "safe access".
+  Lock_t hold_layer(bool force_new_layer = false)
   {
     auto layer_lock = std::make_shared<const bool>(true);
     if (layers.empty() or force_new_layer)
     {
       layers.emplace_back(Layer_t{}, layer_lock);
     }
-    return Lock_t(make_owned<const Layer_t*>(&active_layer().first,
+    return Lock_t(make_owned<const Layer_t&>(&active_layer().get(),
                                              std::move(layer_lock)),
                   make_guarded([=]() { this->layer_expired(); }, lifetime));
   }
 
   void push_layer(Layer_t layer) { layers.emplace_back(std::move(layer)); }
 
-  bool is_remanent() { return remanent_lock.first != nullptr; }
+  bool is_remanent() { return remanent_lock.has_value(); }
 
   bool empty() const { return layers.empty(); }
+
+  bool has_other() const { return check_other(); }
+
+  maybe_null<const LayerManager> get_other() const { return other; }
 
   template <typename Visitor_t, typename... Args_t>
   auto visit_from_top(Visitor_t&& visitor, Args_t&&... args) const
   {
-    decltype(visitor(rbegin(layers)->first, std::forward<Args_t>(args)...)) res;
+    decltype(visitor(rbegin(layers)->get(), std::forward<Args_t>(args)...)) res;
     if (res
-        = visit(rbegin(layers), rend(layers), std::forward<Visitor_t>(visitor),
-                std::forward<Args_t>(args)...);
+            = visit(rbegin(layers), rend(layers), std::forward<Visitor_t>(visitor),
+                    std::forward<Args_t>(args)...);
         res)
       return res;
     if (check_other())
-      res = other.first->visit_from_top(std::forward<Visitor_t>(visitor),
+      res = other.get()->visit_from_top(std::forward<Visitor_t>(visitor),
                                         std::forward<Args_t>(args)...);
     return res;
   }
@@ -292,8 +353,8 @@ public:
   auto visit_from_bottom(Visitor_t&& visitor, Args_t&&... args) const
   {
     if (check_other())
-      if (auto res = other.first->visit_from_bottom(
-              std::forward<Visitor_t>(visitor), std::forward<Args_t>(args)...);
+      if (auto res = other.get()->visit_from_bottom(
+            std::forward<Visitor_t>(visitor), std::forward<Args_t>(args)...);
           res)
         return res;
     return visit(begin(layers), end(layers), std::forward<Visitor_t>(visitor),
@@ -312,11 +373,11 @@ public:
   {
     if (layers.empty())
       throw std::runtime_error("Cannot write to empty (zero layers) cache.");
-    auto& active = active_layer();
-    assert(!active.second.expired());
-    return writer(active.first, std::forward<Args_t>(args)...);
+    assert(check_layer(active_layer()));
+    return writer(active_layer().get(), std::forward<Args_t>(args)...);
   }
 
+  // TODO: [MULTITHREADING] remove if not needed
   auto safe_handle()
   {
     // Protect the the layer lock! Do not ask for a lock if there is nothing to
@@ -324,12 +385,47 @@ public:
     auto lock = read_lock();
     auto layer_lock = !empty() ? hold_layer() : Lock_t{};
     return SafeHandle{[=]() { safe_read_access(); },
-                      [=]() { safe_read_write_access(); }, std::move(layer_lock),
-                      check_other() ? other.first->read_locks()
-                                    : decltype(other.first->read_locks()){}};
+                      [=]() { safe_read_write_access(); },
+                      std::move(layer_lock),
+                      check_other() ? other.get()->read_locks()
+                                    : decltype(other.get()->read_locks()){}};
   }
 
 private:
+  void layer_expired()
+  {
+    if (check_layer(layers.back()))
+      return;
+
+    // TODO: [MULTITHREADING] remove if not needed
+    auto write_lock = std::unique_lock(mtx);
+
+    while (!layers.empty() && !check_layer(layers.back()))
+      layers.pop_back();
+  }
+
+  bool check_layer(const weakly_owned<Layer_t>& layer) const { return check(layer); }
+  bool check_other() const { return check(other); }
+
+  /// The active layer
+  weakly_owned<Layer_t>& active_layer()
+  {
+    assert(check(layers.back()));
+    return layers.back();
+  }
+
+  weakly_owned<maybe_null<const LayerManager>> other;
+
+  // Own one layer. Is this useful? For certain cases yes.
+  std::optional<Lock_t> remanent_lock{};
+
+  // The storage layers
+  std::vector<weakly_owned<Layer_t>> layers;
+
+  // Lifetime information
+  lock_t lifetime{std::make_shared<const bool>(true)};
+
+  // TODO: remove if not needed
   // Protecting read/write
   mutable std::shared_mutex mtx;
 
@@ -358,47 +454,12 @@ private:
     return std::unique_lock(mtx);
   }
 
-  ReadPtr safe_read_access() const
-  {
-    return ReadPtr{this, read_lock()};
-  }
+  ReadPtr safe_read_access() const { return ReadPtr{this, read_lock()}; }
 
   ReadWritePtr safe_read_write_access()
   {
     return ReadWritePtr{this, read_write_lock()};
   }
-
-  void layer_expired()
-  {
-    if (!layers.back().second.expired())
-      return;
-
-    auto write_lock = std::unique_lock(mtx);
-    while (!layers.empty() && layers.back().second.expired())
-      layers.pop_back();
-  }
-
-  bool check_layer(const Layer_t& layer) const { return check(layer); }
-
-  bool check_other() const { return !other.second.expired() && other.first; }
-
-  /// The active layer
-  guarded_obj<Layer_t>& active_layer()
-  {
-    assert(!layers.back().second.expired());
-    return layers.back();
-  }
-
-  guarded_obj<const LayerManager*> other;
-
-  // Own one layer. Is this useful? For certain cases yes.
-  Lock_t remanent_lock{};
-
-  // The storage layers
-  std::vector<guarded_obj<Layer_t>> layers;
-
-  // Lifetime information
-  lock_t lifetime{std::make_shared<const bool>(true)};
 };
 
 } // namespace dolfinx::common::memory
