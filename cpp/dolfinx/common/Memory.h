@@ -11,18 +11,16 @@
 #pragma once
 
 #include <cassert>
+#include <functional>
 #include <memory>
 #include <shared_mutex>
 #include <vector>
-#include <functional>
-
 
 namespace dolfinx::common::memory
 {
 
 using lock_t = std::shared_ptr<const bool>;
 using sentinel_t = std::weak_ptr<const bool>;
-
 
 /// A wrapper for objects with lifetime dependencies without using smart
 /// pointers but mimicking their interface to a certain degree.
@@ -38,10 +36,10 @@ public:
 
   observed() = default;
   observed(const observed& other) = default;
-  explicit observed(observed&& other) = default;
+  explicit observed(observed&& other) noexcept = default;
 
   observed& operator=(const observed& other) = default;
-  observed& operator=(observed&& other) = default;
+  observed& operator=(observed&& other) noexcept = default;
 
   ~observed() = default;
 
@@ -102,61 +100,28 @@ owned<T> make_owned(T obj, lock_t lock)
   return owned<T>{std::forward<T&&>(obj), std::move(lock)};
 }
 
-/// Gives read-only or full access via visitor pattern of the underlying type
-template <typename Accessed_t, typename... Locks_t>
-class DataAccessor
+// template <typename Iterator_t, typename Visitor_t>
+// auto visit(Iterator_t begin, Iterator_t end, Visitor_t&& visitor)
+//{
+//  decltype(visitor(begin->get())) res;
+//  for (auto layer = begin; layer != end; ++layer)
+//  {
+//    assert(check(*layer));
+//    if (res = visitor(layer->get()); res)
+//      return res;
+//  }
+//  return res;
+//}
+
+template <typename Iterator_t, typename Visitor_t, typename... Args_t>
+auto visit(Iterator_t begin, Iterator_t end, Visitor_t&& visitor,
+           Args_t&&... args)
 {
-public:
-  explicit DataAccessor(Accessed_t* accessed, Locks_t... locks)
-      : accessed{accessed}, locks{std::make_tuple(std::move(locks)...)}
-  {
-    // do nothing
-  }
-
-  DataAccessor() = delete;
-  DataAccessor(const DataAccessor& other) = delete;
-  DataAccessor(DataAccessor&& other) = default;
-  DataAccessor& operator=(const DataAccessor& other) = delete;
-  DataAccessor& operator=(DataAccessor&& other) = default;
-  ~DataAccessor() = default;
-
-  Accessed_t* operator->() noexcept { return accessed; }
-  const Accessed_t* operator->() const noexcept { return accessed; }
-
-private:
-  Accessed_t* accessed;
-  std::tuple<Locks_t...> locks;
-};
-
-template <typename Get_Read_t, typename Get_Read_Write_t, typename... Locks_t>
-class SafeHandle
-{
-public:
-  explicit SafeHandle(Get_Read_t get_read, Get_Read_Write_t get_read_write,
-                      Locks_t... locks)
-      : get_read{std::move(get_read)},
-        get_read_write{std::move(get_read_write)}, locks{std::make_tuple(
-          std::move(locks)...)} {
-    // do nothing
-  };
-
-  auto read_access() const { return get_read(); }
-  auto read_write_access() { return get_read_write(); }
-
-private:
-  Get_Read_t get_read{};
-  Get_Read_Write_t get_read_write{};
-  std::tuple<Locks_t...> locks;
-};
-
-template <typename Iterator_t, typename Visitor_t>
-auto visit(Iterator_t begin, Iterator_t end, Visitor_t&& visitor)
-{
-  decltype(visitor(begin->get())) res;
+  decltype(visitor(begin->get(), std::forward<Args_t>(args)...)) res;
   for (auto layer = begin; layer != end; ++layer)
   {
     assert(check(*layer));
-    if (res = visitor(layer->get()); res)
+    if (res = visitor(layer->get(), std::forward<Args_t>(args)...); res)
       return res;
   }
   return res;
@@ -176,25 +141,25 @@ public:
   /// Constructor: require a reference to the guarded layer and a weakly owned
   /// callback that is invoked when the lock is released or destroyed.
   LayerLock(owned<const Layer_t&> layer,
-            weakly_owned<std::function<void()>> on_destruction)
+            weakly_owned<std::function<void(maybe_null<const Layer_t>)>> on_destruction)
       : _layer{std::move(layer)}, _on_destruction{std::move(on_destruction)}
   {
     // do nothing
   }
 
   LayerLock(const LayerLock&) = default;
-  LayerLock(LayerLock&&) = default;
+  LayerLock(LayerLock&&) noexcept = default;
 
   LayerLock& operator=(const LayerLock&) = default;
-  LayerLock& operator=(LayerLock&&) = default;
+  LayerLock& operator=(LayerLock&&) noexcept = default;
 
-  ~LayerLock() { release();};
+  ~LayerLock() { release(); };
 
   /// Returns a pointer to the owned layer. If no layer os owned because
   /// the lock has been released.
   maybe_null<const Layer_t> layer() const
   {
-    return check(_layer) ? &_layer : nullptr;
+    return check(_on_destruction) ? maybe_null<const Layer_t>{&_layer.get()} : maybe_null<const Layer_t>{nullptr};
   }
 
   /// Relases ownership.
@@ -211,7 +176,7 @@ private:
   owned<const Layer_t&> _layer;
 
   // Callback informing that the lock has been released
-  weakly_owned<std::function<void()>> _on_destruction;
+  weakly_owned<std::function<void(maybe_null<const Layer_t>)>> _on_destruction;
 };
 
 // NOTE concerning multithreading: there is a lot to optimize there. The layer
@@ -255,14 +220,6 @@ class LayerManager
 public:
   using Lock_t = LayerLock<Layer_t>;
 
-  // TODO: [MULTITHREADING] remove if not needed
-  using ReadPtr
-  = DataAccessor<const LayerManager,
-      std::vector<std::shared_lock<std::shared_mutex>>>;
-  using ReadWritePtr
-  = DataAccessor<LayerManager, std::unique_lock<std::shared_mutex>,
-      std::vector<std::shared_lock<std::shared_mutex>>>;
-
   /// Create Storage layer
   /// @param[in] remanent if given creates a remanent storage layer of which the
   /// lifetime is bound to this object.
@@ -272,13 +229,14 @@ public:
       : other{make_guarded(other, other->lifetime)}
   {
     if (remanent)
-      remanent_lock = hold_layer(true);
+      remanent_lock.emplace(hold_layer(true));
   }
 
-  LayerManager(bool remanent) : other{make_guarded(nullptr, sentinel_t{})}
+  LayerManager(bool remanent)
+      : other{make_guarded<const LayerManager*>(nullptr, sentinel_t{})}
   {
     if (remanent)
-      remanent_lock = hold_layer(true);
+      remanent_lock.emplace(hold_layer(true));
   }
 
   LayerManager() = default;
@@ -287,7 +245,7 @@ public:
   LayerManager(const LayerManager& other) = delete;
 
   /// Move constructor
-  explicit LayerManager(LayerManager&& other) = default;
+  explicit LayerManager(LayerManager&& other) noexcept = default;
 
   /// Destructor
   ~LayerManager() = default;
@@ -296,7 +254,7 @@ public:
   LayerManager& operator=(const LayerManager& other) = delete;
 
   /// Move assignment
-  LayerManager& operator=(LayerManager&& other) = default;
+  LayerManager& operator=(LayerManager&& other)  noexcept = default;
 
   /// Create a new lock-like handle to keep a storage layer alive. By default,
   /// this returns just is another handle for the current layer. The creation of
@@ -318,9 +276,10 @@ public:
     {
       layers.emplace_back(Layer_t{}, layer_lock);
     }
-    return Lock_t(make_owned<const Layer_t&>(&active_layer().get(),
+    std::function<void(maybe_null<const Layer_t> layer)> callback = [=](maybe_null<const Layer_t> layer) { this->layer_expired(layer); };
+    return Lock_t(make_owned<const Layer_t&>(active_layer().get(),
                                              std::move(layer_lock)),
-                  make_guarded([=]() { this->layer_expired(); }, lifetime));
+                  make_guarded(callback, lifetime));
   }
 
   void push_layer(Layer_t layer) { layers.emplace_back(std::move(layer)); }
@@ -333,72 +292,74 @@ public:
 
   maybe_null<const LayerManager> get_other() const { return other; }
 
-  template <typename Visitor_t>
-  auto visit_from_top(Visitor_t&& visitor) const
+  /// Access alls layers beginning from the top, ie. with the "most recent"
+  /// layer. Return early when visitor returns something that evaluates to true.
+  template <typename Visitor_t, typename... Args_t>
+  auto visit_from_top(Visitor_t&& visitor, Args_t&&... args) const
   {
-    decltype(visitor(rbegin(layers)->get())) res;
+    decltype(visitor(rbegin(layers)->get(), std::forward<Args_t>(args)...)) res;
     if (res
-            = visit(rbegin(layers), rend(layers), std::forward<Visitor_t>(visitor));
+        = visit(rbegin(layers), rend(layers), std::forward<Visitor_t>(visitor),
+                std::forward<Args_t>(args)...);
         res)
       return res;
     if (check_other())
-      res = other.get()->visit_from_top(std::forward<Visitor_t>(visitor));
+      res = other.get()->visit_from_top(std::forward<Visitor_t>(visitor),
+                                        std::forward<Args_t>(args)...);
     return res;
   }
 
-  template <typename Visitor_t>
-  auto visit_from_bottom(Visitor_t&& visitor) const
+  /// Access alls layers beginning from the bottom, ie. with the "oldest" layer.
+  /// Return early when visitor returns true.
+  template <typename Visitor_t, typename... Args_t>
+  bool visit_from_bottom(Visitor_t&& visitor, Args_t&&... args) const
   {
     if (check_other())
-      if (auto res = other.get()->visit_from_bottom(std::forward<Visitor_t>(visitor));
+      if (auto res = other.get()->visit_from_bottom(
+              std::forward<Visitor_t>(visitor), std::forward<Args_t>(args)...);
           res)
         return res;
-    return visit(begin(layers), end(layers), std::forward<Visitor_t>(visitor));
+    return visit(begin(layers), end(layers), std::forward<Visitor_t>(visitor),
+                 std::forward<Args_t>(args)...);
   }
 
-  template <typename Reader_t>
-  auto read(Reader_t&& reader) const
+  /// Read the current state. This walks through all layers beginning with the
+  /// most recent one. THis function returns when reader return something that
+  /// evaluates to true or when there are no layers left to read.
+  template <typename Reader_t, typename... Args_t>
+  auto read(Reader_t&& reader, Args_t&&... args) const
   {
-    return visit_from_top(std::forward<Reader_t>(reader));
+    return visit_from_top(std::forward<Reader_t>(reader),
+                          std::forward<Args_t>(args)...);
   }
 
-  template <typename Writer, typename... Args_t>
-  auto write(Writer&& writer)
+  /// Write to the current writing layer
+  template <typename Writer_t, typename... Args_t>
+  auto write(Writer_t&& writer, Args_t&&... args)
   {
     if (layers.empty())
       throw std::runtime_error("Cannot write to empty (zero layers) cache.");
     assert(check_layer(active_layer()));
-    return writer(active_layer().get());
-  }
-
-  // TODO: [MULTITHREADING] remove if not needed
-  auto safe_handle()
-  {
-    // Protect the the layer lock! Do not ask for a lock if there is nothing to
-    // lock. New layers have to be created by accessors
-    auto lock = read_lock();
-    auto layer_lock = !empty() ? hold_layer() : Lock_t{};
-    return SafeHandle{[=]() { safe_read_access(); },
-                      [=]() { safe_read_write_access(); },
-                      std::move(layer_lock),
-                      check_other() ? other.get()->read_locks()
-                                    : decltype(other.get()->read_locks()){}};
+    return writer(active_layer().get(), std::forward<Args_t>(args)...);
   }
 
 private:
-  void layer_expired()
+
+  /// Trigger cleanup of (removal of unsued) storage layers
+  void layer_expired(maybe_null<const Layer_t> /* currently unused */)
   {
     if (check_layer(layers.back()))
       return;
-
-    // TODO: [MULTITHREADING] remove if not needed
-    auto write_lock = std::unique_lock(mtx);
 
     while (!layers.empty() && !check_layer(layers.back()))
       layers.pop_back();
   }
 
-  bool check_layer(const weakly_owned<Layer_t>& layer) const { return check(layer); }
+  /// Check whether a layer is safe to access
+  bool check_layer(const weakly_owned<Layer_t>& layer) const
+  {
+    return check(layer);
+  }
   bool check_other() const { return check(other); }
 
   /// The active layer
@@ -418,42 +379,6 @@ private:
 
   // Lifetime information
   lock_t lifetime{std::make_shared<const bool>(true)};
-
-  // TODO: remove if not needed
-  // Protecting read/write
-  mutable std::shared_mutex mtx;
-
-  std::shared_lock<std::shared_mutex> read_lock() const
-  {
-    return std::shared_lock(mtx);
-  }
-
-  std::vector<std::shared_lock<std::shared_mutex>> read_locks() const
-  {
-    std::vector<std::shared_lock<std::shared_mutex>> locks;
-    if (check_other())
-      other.first->stack_locks(locks);
-    stack_locks(locks);
-    return locks;
-  };
-
-  void
-  stack_locks(std::vector<std::shared_lock<std::shared_mutex>>& locks) const
-  {
-    locks.push_back(read_lock());
-  }
-
-  std::unique_lock<std::shared_mutex> read_write_lock() const
-  {
-    return std::unique_lock(mtx);
-  }
-
-  ReadPtr safe_read_access() const { return ReadPtr{this, read_lock()}; }
-
-  ReadWritePtr safe_read_write_access()
-  {
-    return ReadWritePtr{this, read_write_lock()};
-  }
 };
 
 } // namespace dolfinx::common::memory

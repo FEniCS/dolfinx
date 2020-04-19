@@ -65,8 +65,6 @@ struct TopologyStorageLayer
 };
 
 /// Set markers for owned facets that are interior in given storage
-/// @param[in,out] storage Object where to store the created entities
-/// @param[in] interior_facets The marker vector
 std::shared_ptr<const std::vector<bool>>
 set_interior_facets(TopologyStorageLayer& storage,
                     std::shared_ptr<const std::vector<bool>> interior_facets);
@@ -82,12 +80,14 @@ std::shared_ptr<const common::IndexMap>
 set_index_map(TopologyStorageLayer& storage,
               std::shared_ptr<const common::IndexMap> index_map, int dim);
 
+/// Set cell permutation information
 std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
 set_cell_permutations(
     TopologyStorageLayer& storage,
     std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
         cell_permutations);
 
+/// Set facet permutation information
 std::shared_ptr<
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
 set_facet_permutations(
@@ -96,71 +96,50 @@ set_facet_permutations(
         const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
         facet_permutations);
 
+/// Get the interior facet from a TopologyStorageLayer
 std::shared_ptr<const std::vector<bool>>
 interior_facets(const TopologyStorageLayer& storage);
 
+/// Get the connectivity for dimensions (d0, d1) from a TopologyStorageLayer
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 connectivity(const TopologyStorageLayer& storage, int d0, int d1);
 
+/// Get the index map for dimensions dim from a TopologyStorageLayer
 std::shared_ptr<const common::IndexMap>
 index_map(const TopologyStorageLayer& storage, int dim);
 
+/// Get the cell permutation information from a TopologyStorageLayer
 std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
 cell_permutations(const TopologyStorageLayer& storage);
 
+/// Get the facet permutation information from a TopologyStorageLayer
 std::shared_ptr<
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
 facet_permutations(const TopologyStorageLayer& storage);
 
-using TopologyStorageManager
+/// Assigns non-empty field from "from" to "to" and return number of assignments
+/// performed. Data is not overwritten by default.
+int assign(TopologyStorageLayer& to, const TopologyStorageLayer& from, bool override=false);
+
+/// Assigns non-empty field from "from" to "to" only if the present field is
+/// empty (holds a nullptr) and return number of assignments performed
+int assign_where_empty(TopologyStorageLayer& to, const TopologyStorageLayer& from);
+
+using TopologyStorage
     = dolfinx::common::memory::LayerManager<TopologyStorageLayer>;
 
-/// Set markers for owned facets that are interior in given storage
-/// @param[in,out] storage Object where to store the created entities
-/// @param[in] interior_facets The marker vector
-std::shared_ptr<const std::vector<bool>>
-set_interior_facets(TopologyStorageManager& storage,
-                    std::shared_ptr<const std::vector<bool>> interior_facets);
+using TopologyStorageLock = TopologyStorage::Lock_t;
 
-/// Set connectivity for given pair of topological dimensions in given storage
-std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-set_connectivity(TopologyStorageManager& storage,
-                 std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c,
-                 int d0, int d1);
+/// Walk through the storage "from" and assigns its layers to "to" beginning
+/// with the oldest layer, ending with the newest one, i.e. it copies over the
+/// current state of "from".
+void assign(TopologyStorageLayer& to, const TopologyStorage& from, bool override=false);
 
-/// Set index map for entities of dimension dim
-std::shared_ptr<const common::IndexMap>
-set_index_map(TopologyStorageManager& storage,
-              std::shared_ptr<const common::IndexMap> index_map, int dim);
+/// Walk through the storage "from" and assigns its layers to the current
+/// writing layer of "to" beginning with the oldest layer, ending with the
+/// newest one, i.e. it copies over the current state of "from".
+void read_from(TopologyStorage& to, const TopologyStorage& from,
+               bool override=false);
 
-std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
-set_cell_permutations(
-    TopologyStorageManager& storage,
-    std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
-        cell_permutations);
-
-std::shared_ptr<
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
-set_facet_permutations(
-    TopologyStorageManager& storage,
-    std::shared_ptr<
-        const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
-        facet_permutations);
-
-std::shared_ptr<const std::vector<bool>>
-interior_facets(const TopologyStorageManager& storage);
-
-std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-connectivity(const TopologyStorageManager& storage, int d0, int d1);
-
-std::shared_ptr<const common::IndexMap>
-index_map(const TopologyStorageManager& storage, int dim);
-
-std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
-cell_permutations(const TopologyStorageManager& storage);
-
-std::shared_ptr<
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
-facet_permutations(const TopologyStorageManager& storage);
 
 } // namespace dolfinx::mesh::storage
