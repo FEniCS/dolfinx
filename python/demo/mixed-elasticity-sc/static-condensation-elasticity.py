@@ -11,20 +11,20 @@
 
 import os
 
-import cffi
 import numba
-import numba.cffi_support
+import numba.core.typing.cffi_utils as cffi_support
 import numpy
-from mpi4py import MPI
-from petsc4py import PETSc
 
+import cffi
 import dolfinx
 import dolfinx.cpp
 import dolfinx.io
 import dolfinx.la
-from dolfinx.mesh import locate_entities_geometrical
-from dolfinx.fem import locate_dofs_topological
 import ufl
+from dolfinx.fem import locate_dofs_topological
+from dolfinx.mesh import locate_entities_geometrical
+from mpi4py import MPI
+from petsc4py import PETSc
 
 filedir = os.path.dirname(__file__)
 infile = dolfinx.io.XDMFFile(MPI.COMM_WORLD,
@@ -105,8 +105,8 @@ kernel10 = ufc_form10.create_cell_integral(-1).tabulate_tensor
 
 ffi = cffi.FFI()
 
-numba.cffi_support.register_type(ffi.typeof('double _Complex'),
-                                 numba.types.complex128)
+cffi_support.register_type(ffi.typeof('double _Complex'),
+                           numba.types.complex128)
 
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
