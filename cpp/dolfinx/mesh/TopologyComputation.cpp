@@ -604,41 +604,41 @@ TopologyComputation::compute_entities(const Topology& topology, int dim)
   const int tdim = topology.dim();
 
   // Return if the triple is there
-  if (topology.data().connectivity(tdim, dim)
-      && topology.data().connectivity(dim, 0)
-      && topology.data().index_map(dim))
+  if (topology.data().read(storage::connectivity, tdim, dim)
+      && topology.data().read(storage::connectivity, dim, 0)
+      && topology.data().read(storage::index_map, dim))
   {
-    return {topology.data().connectivity(topology.dim(), dim),
-            topology.data().connectivity(dim, 0),
-            topology.data().index_map(dim)};
+    return {topology.data().read(storage::connectivity, topology.dim(), dim),
+            topology.data().read(storage::connectivity, dim, 0),
+            topology.data().read(storage::index_map, dim)};
   }
 
   // Check for incomplete data. This should not happen. Index map and the
   // two connectivity belong together.
   // TODO: convert to assertion once things are stable
-  if (topology.data().connectivity(dim, 0)
-      || topology.data().connectivity(tdim, dim)
-      || topology.data().index_map(dim))
+  if (topology.data().read(storage::connectivity, dim, 0)
+      || topology.data().read(storage::connectivity, tdim, dim)
+      || topology.data().read(storage::index_map, dim))
   {
     throw std::runtime_error(
         "The set of entities for dimension " + std::to_string(dim)
         + " is broken:"
           "\n\tcell   - entity:"
-        + std::to_string(topology.data().connectivity(tdim, dim)
+        + std::to_string(topology.data().read(storage::connectivity, tdim, dim)
                          != nullptr)
         + "\n\tentity - vertex:"
-        + std::to_string(topology.data().connectivity(dim, 0) != nullptr)
+        + std::to_string(topology.data().read(storage::connectivity, dim, 0) != nullptr)
         + "\n\tindex map:"
-        + std::to_string(topology.data().index_map(dim) != nullptr));
+        + std::to_string(topology.data().read(storage::index_map, dim) != nullptr));
   }
 
   // present by construction (invariant of Topology)
-  auto cells = topology.data().connectivity(tdim, 0);
+  auto cells = topology.data().read(storage::connectivity, tdim, 0);
   assert(cells);
-  auto vertex_map = topology.data().index_map(0);
-  assert(vertex_map);
-  auto cell_map = topology.data().index_map(tdim);
+  auto cell_map = topology.data().read(storage::index_map, tdim);
   assert(cell_map);
+  auto vertex_map = topology.data().read(storage::index_map, 0);
+  assert(vertex_map);
 
   std::tuple<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
@@ -656,13 +656,13 @@ TopologyComputation::compute_connectivity(const Topology& topology, int d0,
   LOG(INFO) << "Requesting connectivity " << d0 << " - " << d1;
 
   // Return if connectivity has already been computed
-  if (auto cached = topology.data().connectivity(d0, d1); cached)
+  if (auto cached = topology.data().read(storage::connectivity, d0, d1); cached)
     return {cached, nullptr};
 
   // Get entities exist
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d0_0
       = topology.connectivity(d0, 0);
-  if (d0 > 0 and !topology.data().connectivity(d0, 0))
+  if (d0 > 0 and !topology.data().read(storage::connectivity, d0, 0))
   {
     throw std::runtime_error("Missing entities of dimension "
                              + std::to_string(d0) + ".");
@@ -670,7 +670,7 @@ TopologyComputation::compute_connectivity(const Topology& topology, int d0,
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d1_0
       = topology.connectivity(d1, 0);
-  if (d1 > 0 and !topology.data().connectivity(d1, 0))
+  if (d1 > 0 and !topology.data().read(storage::connectivity, d1, 0))
   {
     throw std::runtime_error("Missing entities of dimension "
                              + std::to_string(d1) + ".");
@@ -689,7 +689,7 @@ TopologyComputation::compute_connectivity(const Topology& topology, int d0,
   else if (d0 < d1)
   {
     // Compute connectivity d1 - d0 (if needed), and take transpose
-    if (!topology.data().connectivity(d1, d0))
+    if (!topology.data().read(storage::connectivity, d1, d0))
     {
       auto c_d1_d0 = std::make_shared<const graph::AdjacencyList<std::int32_t>>(
           compute_from_map(*c_d1_0, *c_d0_0,
@@ -701,7 +701,7 @@ TopologyComputation::compute_connectivity(const Topology& topology, int d0,
     else
     {
       assert(c_d0_0);
-      assert(topology.data().connectivity(d1, d0));
+      assert(topology.data().read(storage::connectivity, d1, d0));
       return std::make_shared<const graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*topology.connectivity(d1, d0),
                                  c_d0_0->num_nodes(), d0, d1));
@@ -727,19 +727,19 @@ TopologyComputation::compute_interior_facets(const Topology& topology)
   // and forward scatters. If we can work only with owned facets we
   // would need only a reverse scatter.
 
-  if (auto facets = topology.data().interior_facets(); facets)
+  if (auto facets = topology.data().read(storage::interior_facets); facets)
     return facets;
 
   const int tdim = topology.dim();
 
-  auto c = topology.data().connectivity(tdim - 1, tdim);
+  auto c = topology.data().read(storage::connectivity, tdim - 1, tdim);
   if (!c)
   {
     throw std::runtime_error("Missing facet connectivity, that is ("
                              + std::to_string(tdim - 1) + ","
                              + std::to_string(tdim) + ").");
   }
-  auto map = topology.data().index_map(tdim - 1);
+  auto map = topology.data().read(storage::index_map, tdim - 1);
   // Somethings really wrong when the topoogy is there but not the index map.
   if (!map)
   {

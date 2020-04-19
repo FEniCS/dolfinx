@@ -54,9 +54,6 @@ void mesh(py::module& m)
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
-
-  m.def("compute_interior_facets", &dolfinx::mesh::compute_interior_facets);
-
   m.def("volume_entities", &dolfinx::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
 
@@ -117,8 +114,7 @@ void mesh(py::module& m)
   m.def("compute_entities", [](const MPICommWrapper comm,
                                const dolfinx::mesh::Topology& topology,
                                int dim) {
-    return dolfinx::mesh::TopologyComputation::compute_entities(comm.get(),
-                                                                topology, dim);
+    return dolfinx::mesh::TopologyComputation::compute_entities(topology, dim);
   });
   m.def("compute_connectivity",
         &dolfinx::mesh::TopologyComputation::compute_connectivity);
@@ -130,9 +126,6 @@ void mesh(py::module& m)
                        const dolfinx::mesh::CellType cell_type) {
         return std::make_unique<dolfinx::mesh::Topology>(comm.get(), cell_type);
       }))
-      .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity)
-      .def("set_index_map", &dolfinx::mesh::Topology::set_index_map)
-      .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
       .def("create_entities", &dolfinx::mesh::Topology::create_entities)
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations)

@@ -12,6 +12,7 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/Memory.h>
 #include <memory>
 #include <vector>
 
@@ -84,8 +85,7 @@ class Topology
 {
 
 public:
-
-  using Storage = dolfinx::common::memory::LayerManager<storage::TopologyStorageLayer>;
+  using Storage = storage::TopologyStorage;
 
   /// Create mesh topology with prepared data.
   /// Note that everything beyond the data that defines the topology can be
@@ -100,31 +100,18 @@ public:
   /// correctness. In is safer to only provide the essential data at
   /// construction and create other data, if desired, via "create_XYZ" member
   /// functions.
-  Topology(MPI_Comm comm, mesh::CellType type,
-           Storage&& remanent_storage)
-      : _mpi_comm(comm), _cell_type(type),
-        _remanent_storage{true}, _cache{false, &(this->_remanent_storage)}
-  {
-    // TODO: read safely!
-    auto tmp = check_storage(std::move(remanent_storage), cell_dim(_cell_type));
-    // Make essential data permanent: copy to remanent storage and create a new layer on top
-    storage::set_connectivity(_remanent_storage, storage::connectivity(tmp, dim(), 0), dim(), 0);
-    storage::set_connectivity(_remanent_storage, storage::connectivity(tmp, dim(), 0), dim(), 0);
-    storage::set_index_map(_remanent_storage, storage::index_map(tmp, dim()), dim());
-    storage::set_index_map(_remanent_storage, storage::index_map(tmp, 0), 0);
+  Topology(MPI_Comm comm, mesh::CellType type, const Storage& remanent_storage);
 
-    // This lock creates an unscoped remanent storage layer for the
-    // create_XYZ members that can be discarded manually.
-    // everything written to the underlying layer is permanent.
-    _remanent_lock = std::make_shared<const Storage::Lock_t>(
-        _remanent_storage.hold_layer(true));
-    // FIXME: This does not read from input's read-only layer!
-    // Read all data from the input
-    storage::read_from(_remanent_storage, tmp);
-  }
+  // TODO: added constructor or factory based on index maps and
+  //  adajacency lists. This avoid exposing the storage to python. Would then
+  //  also completely remove the topology storage outside of topology, which is
+  //  weird anyway.
 
-  /// Copy constructor
-  Topology(const Topology& topology) = default;
+  /// Copy constructor. Loses the cache there currently is no automatic cleanup
+  /// once handles are lost.
+  Topology(const Topology& topology)
+      : Topology{topology.mpi_comm(), topology.cell_type(),
+                 topology.remanent_data()} {};
 
   /// Move constructor
   Topology(Topology&& topology) = default;
@@ -254,40 +241,27 @@ public:
   /// i.e., it will shadow any previous cache lock. Howver, data created
   /// explicitly is not affected. The cache only applies to data that is
   /// computed on-the-fly.
-  Storage::Lock_t acquire_cache_lock(bool force_new_layer = false) const
-  {
-    return _cache.hold_layer(force_new_layer);
-  }
+  Storage::Lock_t acquire_cache_lock(bool force_new_layer = false) const;
 
   /// Discard all remanent storage except for essential information. Provides a
   /// new layer to add data which can be discarded again. Note that this only
   /// drops ownership but does not necessarily remove data from storage.
   /// Nevertheless, it is still guaranteed that there is no memory overhead.
-  void discard_remanent_storage()
-  {
-    _remanent_lock = std::make_shared<Storage::Lock_t>(_remanent_storage.hold_layer(true));
-  }
+  void discard_remanent_storage();
 
   /// Get the data that is either permanent or at least remanent, ie. explicitly
   /// created via the create_XYZ members.
-  const Storage& remanent_data() const
-  {
-    return _remanent_storage;
-  }
+  const Storage& remanent_data() const;
 
   /// Get the all stored data, that is permanent, remanent and in cache
-  const Storage& data() const { return _cache; }
+  const Storage& data() const;
 
 private:
-  Topology create_scratch() const
-  {
-    return {mpi_comm(), _cell_type, Storage(&_cache)};
-  }
+  Topology create_scratch() const;
 
-  Storage static check_storage(
-      Storage&& remanent_storage, int tdim);
+  static void check_storage(const Storage& remanent_storage, int tdim);
 
-  std::shared_ptr<const Storage::Lock_t> _remanent_lock;
+  std::optional<const Storage::Lock_t> _remanent_lock;
 
   // Storage for class invariant (permanent) and remanent (discardable
   // persistent) data

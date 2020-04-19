@@ -31,11 +31,6 @@ namespace mesh
 {
 class Topology;
 
-namespace storage
-{
-class TopologyStorage;
-}
-
 // TODO: Make a namespace? It should not be part of the public topology
 // interface probably, i.e. at least marked as internal.
 // TODO: Let topology lock itself such that calls to their getter will return

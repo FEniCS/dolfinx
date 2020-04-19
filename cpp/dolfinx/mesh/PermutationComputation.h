@@ -15,10 +15,6 @@ namespace dolfinx::mesh
 {
 class Topology;
 
-namespace storage
-{
-class TopologyStorage;
-}
 
 /// Tools for computing mesh entity permutations
 

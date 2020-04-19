@@ -390,18 +390,18 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
     mesh::storage::TopologyStorage storage_local(true);
     auto map = std::make_shared<common::IndexMap>(
         comm, cells_local.num_nodes(), std::vector<std::int64_t>(), 1);
-    storage_local.set_index_map(map, tdim);
+    storage_local.write(mesh::storage::set_index_map, map, tdim);
     auto _cells_local
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
-    storage_local.set_connectivity(_cells_local, tdim, 0);
+    storage_local.write(mesh::storage::set_connectivity, _cells_local, tdim, 0);
 
     const int n = local_to_global_vertices.size();
     map = std::make_shared<common::IndexMap>(comm, n,
                                              std::vector<std::int64_t>(), 1);
-    storage_local.set_index_map(map, 0);
+    storage_local.write(mesh::storage::set_index_map, map, 0);
     auto _vertices_local
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(n);
-    storage_local.set_connectivity(_vertices_local, 0, 0);
+    storage_local.write(mesh::storage::set_connectivity, _vertices_local, 0, 0);
 
     // construct local topology
     mesh::Topology topology_local(comm, cell_type, std::move(storage_local));
@@ -421,18 +421,18 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
     // Set vertex IndexMap, and vertex-vertex connectivity
     auto _vertex_map
         = std::make_shared<common::IndexMap>(std::move(vertex_map));
-    storage.set_index_map(_vertex_map, 0);
+    storage.write(mesh::storage::set_index_map, _vertex_map, 0);
     auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         _vertex_map->size_local() + _vertex_map->num_ghosts());
-    storage.set_connectivity(c0, 0, 0);
+    storage.write(mesh::storage::set_connectivity, c0, 0, 0);
 
     // Set cell IndexMap and cell-vertex connectivity
     auto index_map_c = std::make_shared<common::IndexMap>(
         comm, cells_d.num_nodes(), std::vector<std::int64_t>(), 1);
-    storage.set_index_map(index_map_c, tdim);
+    storage.write(mesh::storage::set_index_map, index_map_c, tdim);
     auto _cells_d
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
-    storage.set_connectivity(_cells_d, tdim, 0);
+    storage.write(mesh::storage::set_connectivity, _cells_d, tdim, 0);
   }
 
   mesh::Topology topology(comm, cell_type, std::move(storage));
