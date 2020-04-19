@@ -54,7 +54,7 @@ public:
   const T& get() const
   {
     assert(use_count() != 0);
-    return to_pointer(obj);
+    return obj;
   }
 
   [[nodiscard]] long use_count() const noexcept { return observer.use_count(); }
@@ -149,15 +149,14 @@ private:
   std::tuple<Locks_t...> locks;
 };
 
-template <typename Iterator_t, typename Visitor_t, typename... Args_t>
-auto visit(Iterator_t begin, Iterator_t end, Visitor_t&& visitor,
-           Args_t&&... args)
+template <typename Iterator_t, typename Visitor_t>
+auto visit(Iterator_t begin, Iterator_t end, Visitor_t&& visitor)
 {
-  decltype(visitor(begin->first, std::forward<Args_t>(args)...)) res;
+  decltype(visitor(begin->get())) res;
   for (auto layer = begin; layer != end; ++layer)
   {
     assert(check(*layer));
-    if (res = visitor(layer->first, std::forward<Args_t>(args)...); res)
+    if (res = visitor(layer->get()); res)
       return res;
   }
   return res;
@@ -288,7 +287,7 @@ public:
   LayerManager(const LayerManager& other) = delete;
 
   /// Move constructor
-  LayerManager(LayerManager&& other) = default;
+  explicit LayerManager(LayerManager&& other) = default;
 
   /// Destructor
   ~LayerManager() = default;
@@ -334,47 +333,42 @@ public:
 
   maybe_null<const LayerManager> get_other() const { return other; }
 
-  template <typename Visitor_t, typename... Args_t>
-  auto visit_from_top(Visitor_t&& visitor, Args_t&&... args) const
+  template <typename Visitor_t>
+  auto visit_from_top(Visitor_t&& visitor) const
   {
-    decltype(visitor(rbegin(layers)->get(), std::forward<Args_t>(args)...)) res;
+    decltype(visitor(rbegin(layers)->get())) res;
     if (res
-            = visit(rbegin(layers), rend(layers), std::forward<Visitor_t>(visitor),
-                    std::forward<Args_t>(args)...);
+            = visit(rbegin(layers), rend(layers), std::forward<Visitor_t>(visitor));
         res)
       return res;
     if (check_other())
-      res = other.get()->visit_from_top(std::forward<Visitor_t>(visitor),
-                                        std::forward<Args_t>(args)...);
+      res = other.get()->visit_from_top(std::forward<Visitor_t>(visitor));
     return res;
   }
 
-  template <typename Visitor_t, typename... Args_t>
-  auto visit_from_bottom(Visitor_t&& visitor, Args_t&&... args) const
+  template <typename Visitor_t>
+  auto visit_from_bottom(Visitor_t&& visitor) const
   {
     if (check_other())
-      if (auto res = other.get()->visit_from_bottom(
-            std::forward<Visitor_t>(visitor), std::forward<Args_t>(args)...);
+      if (auto res = other.get()->visit_from_bottom(std::forward<Visitor_t>(visitor));
           res)
         return res;
-    return visit(begin(layers), end(layers), std::forward<Visitor_t>(visitor),
-                 std::forward<Args_t>(args)...);
+    return visit(begin(layers), end(layers), std::forward<Visitor_t>(visitor));
   }
 
-  template <typename Reader_t, typename... Args_t>
-  auto read(Reader_t&& reader, Args_t&&... args) const
+  template <typename Reader_t>
+  auto read(Reader_t&& reader) const
   {
-    return visit_from_top(std::forward<Reader_t>(reader),
-                          std::forward<Args_t>(args)...);
+    return visit_from_top(std::forward<Reader_t>(reader));
   }
 
   template <typename Writer, typename... Args_t>
-  auto write(Writer&& writer, Args_t&&... args)
+  auto write(Writer&& writer)
   {
     if (layers.empty())
       throw std::runtime_error("Cannot write to empty (zero layers) cache.");
     assert(check_layer(active_layer()));
-    return writer(active_layer().get(), std::forward<Args_t>(args)...);
+    return writer(active_layer().get());
   }
 
   // TODO: [MULTITHREADING] remove if not needed

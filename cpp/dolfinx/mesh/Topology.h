@@ -39,8 +39,6 @@ enum class GhostMode : int;
 
 enum class CellType;
 
-class Topology;
-
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities). Note
 /// that the mesh entities don't need to be stored, only the number of
@@ -86,11 +84,14 @@ class Topology
 {
 
 public:
+
+  using Storage = dolfinx::common::memory::LayerManager<storage::TopologyStorageLayer>;
+
   /// Create mesh topology with prepared data.
   /// Note that everything beyond the data that defines the topology can be
   /// computed on-the-fly with possible caching.
   /// @param[in] comm MPI communicator
-  /// @param[in] remanent_storage storage with at least all essential data.
+  /// @param[in] _remanent_storage storage with at least all essential data.
   /// Essential data are
   ///  * the connectivities for (d0, d1) = (tdim, 0) and (d0, d1) = (0, 0) as
   ///    well as
@@ -100,26 +101,26 @@ public:
   /// construction and create other data, if desired, via "create_XYZ" member
   /// functions.
   Topology(MPI_Comm comm, mesh::CellType type,
-           storage::TopologyStorage remanent_storage)
+           Storage&& remanent_storage)
       : _mpi_comm(comm), _cell_type(type),
-        remanent_storage{true}, cache{false, &(this->remanent_storage)}
+        _remanent_storage{true}, _cache{false, &(this->_remanent_storage)}
   {
     // TODO: read safely!
     auto tmp = check_storage(std::move(remanent_storage), cell_dim(_cell_type));
     // Make essential data permanent: copy to remanent storage and create a new layer on top
-    remanent_storage.set_connectivity(tmp.connectivity(dim(), 0), dim(), 0);
-    remanent_storage.set_connectivity(tmp.connectivity(dim(), 0), dim(), 0);
-    remanent_storage.set_index_map(tmp.index_map(dim()), dim());
-    remanent_storage.set_index_map(tmp.index_map(0), 0);
+    storage::set_connectivity(_remanent_storage, storage::connectivity(tmp, dim(), 0), dim(), 0);
+    storage::set_connectivity(_remanent_storage, storage::connectivity(tmp, dim(), 0), dim(), 0);
+    storage::set_index_map(_remanent_storage, storage::index_map(tmp, dim()), dim());
+    storage::set_index_map(_remanent_storage, storage::index_map(tmp, 0), 0);
 
     // This lock creates an unscoped remanent storage layer for the
     // create_XYZ members that can be discarded manually.
     // everything written to the underlying layer is permanent.
-    remanent_lock = std::make_shared<const storage::StorageLock>(
-        remanent_storage.acquire_cache_lock(true));
+    _remanent_lock = std::make_shared<const Storage::Lock_t>(
+        _remanent_storage.hold_layer(true));
     // FIXME: This does not read from input's read-only layer!
     // Read all data from the input
-    remanent_storage.read_from(tmp);
+    storage::read_from(_remanent_storage, tmp);
   }
 
   /// Copy constructor
@@ -253,9 +254,9 @@ public:
   /// i.e., it will shadow any previous cache lock. Howver, data created
   /// explicitly is not affected. The cache only applies to data that is
   /// computed on-the-fly.
-  storage::StorageLock acquire_cache_lock(bool force_new_layer = false) const
+  Storage::Lock_t acquire_cache_lock(bool force_new_layer = false) const
   {
-    return cache.acquire_cache_lock(force_new_layer);
+    return _cache.hold_layer(force_new_layer);
   }
 
   /// Discard all remanent storage except for essential information. Provides a
@@ -264,37 +265,36 @@ public:
   /// Nevertheless, it is still guaranteed that there is no memory overhead.
   void discard_remanent_storage()
   {
-    remanent_lock = std::make_shared<const storage::StorageLock>(
-        remanent_storage.acquire_cache_lock(true));
+    _remanent_lock = std::make_shared<Storage::Lock_t>(_remanent_storage.hold_layer(true));
   }
 
   /// Get the data that is either permanent or at least remanent, ie. explicitly
   /// created via the create_XYZ members.
-  const storage::TopologyStorage& remanent_data() const
+  const Storage& remanent_data() const
   {
-    return remanent_storage;
+    return _remanent_storage;
   }
 
   /// Get the all stored data, that is permanent, remanent and in cache
-  const storage::TopologyStorage& data() const { return cache; }
+  const Storage& data() const { return _cache; }
 
 private:
   Topology create_scratch() const
   {
-    return {mpi_comm(), _cell_type, storage::TopologyStorage(&cache)};
+    return {mpi_comm(), _cell_type, Storage(&_cache)};
   }
 
-  storage::TopologyStorage static check_storage(
-      storage::TopologyStorage remanent_storage, int tdim);
+  Storage static check_storage(
+      Storage&& remanent_storage, int tdim);
 
-  std::shared_ptr<const storage::StorageLock> remanent_lock;
+  std::shared_ptr<const Storage::Lock_t> _remanent_lock;
 
   // Storage for class invariant (permanent) and remanent (discardable
   // persistent) data
-  storage::TopologyStorage remanent_storage;
+  Storage _remanent_storage;
 
   // Caching (only when the user acquired a lock)
-  mutable storage::TopologyStorage cache;
+  mutable Storage _cache;
 
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
