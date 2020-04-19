@@ -84,12 +84,8 @@ public:
   /// The copy from remanent_storage is shallow since storage internally work
   /// via shared_ptr<const T>.
   Topology(MPI_Comm comm, mesh::CellType type, const Storage& remanent_storage);
-
-
-  // TODO: added constructor or factory based on index maps and
-  //  adjacency lists. This avoid exposing the storage to python. Would then
-  //  also completely remove the topology storage outside of topology, which is
-  //  weird anyway.
+  // TODO: Storage&& instead Probably cleaner since Storage actually cannot be
+  // copied?
 
   /// Copy constructor. Loses the cache there currently is no automatic cleanup
   /// once handles are lost.
