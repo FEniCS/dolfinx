@@ -311,35 +311,35 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
                          bool remote)
 {
   assert(V.dofmap());
-  const DofMap& dofmap = *V.dofmap();
+  std::shared_ptr<const DofMap> dofmap = V.dofmap();
   assert(V.mesh());
-  mesh::Mesh mesh = *V.mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = V.mesh();
 
-  const int tdim = mesh.topology().dim();
+  const int tdim = mesh->topology().dim();
 
   // Initialise entity-cell connectivity
   // FIXME: cleanup these calls? Some of the happen internally again.
-  mesh.topology_mutable().create_entities(tdim);
-  mesh.topology_mutable().create_connectivity(entity_dim, tdim);
+  mesh->topology_mutable().create_entities(tdim);
+  mesh->topology_mutable().create_connectivity(entity_dim, tdim);
 
   // Prepare an element - local dof layout for dofs on entities of the
   // entity_dim
   const int num_cell_entities
-      = mesh::cell_num_entities(mesh.topology().cell_type(), entity_dim);
+      = mesh::cell_num_entities(mesh->topology().cell_type(), entity_dim);
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
-        dofmap.element_dof_layout->entity_closure_dofs(entity_dim, i));
+        dofmap->element_dof_layout->entity_closure_dofs(entity_dim, i));
   }
 
-  auto e_to_c = mesh.topology().connectivity(entity_dim, tdim);
+  auto e_to_c = mesh->topology().connectivity(entity_dim, tdim);
   assert(e_to_c);
-  auto c_to_e = mesh.topology().connectivity(tdim, entity_dim);
+  auto c_to_e = mesh->topology().connectivity(tdim, entity_dim);
   assert(c_to_e);
 
   const int num_entity_closure_dofs
-      = dofmap.element_dof_layout->num_entity_closure_dofs(entity_dim);
+      = dofmap->element_dof_layout->num_entity_closure_dofs(entity_dim);
   std::vector<std::int32_t> dofs;
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
@@ -355,7 +355,7 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
     const int entity_local_index = std::distance(entities_d.data(), it);
 
     // Get cell dofmap
-    auto cell_dofs = dofmap.cell_dofs(cell);
+    auto cell_dofs = dofmap->cell_dofs(cell);
 
     // Loop over entity dofs
     for (int j = 0; j < num_entity_closure_dofs; j++)
