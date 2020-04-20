@@ -317,7 +317,7 @@ Topology::acquire_cache_lock(bool force_new_layer) const
 //-----------------------------------------------------------------------------
 Topology Topology::create_scratch() const
 {
-  return {mpi_comm(), _cell_type, Storage(&_cache)};
+  return {mpi_comm(), _cell_type, _cache};
 }
 //-----------------------------------------------------------------------------
 const Topology::Storage& Topology::remanent_data() const
