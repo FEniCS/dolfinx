@@ -86,6 +86,20 @@ public:
   /// Return number of local nonzeros
   std::int64_t num_nonzeros() const;
 
+  /// Fill array with number of nonzeros per row for diagonal block in
+  /// local_range for dimension 0
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros_diagonal() const;
+
+  /// Fill array with number of nonzeros for off-diagonal block in
+  /// local_range for dimension 0. If there is no off-diagonal pattern,
+  /// the returned vector will have zero-length.
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+  num_nonzeros_off_diagonal() const;
+
+  /// Fill vector with number of nonzeros in local_range for
+  /// dimension 0
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_local_nonzeros() const;
+
   /// Sparsity pattern for the owned (diagonal) block. Uses local
   /// indices for the columns.
   const graph::AdjacencyList<std::int32_t>& diagonal_pattern() const;
@@ -96,6 +110,9 @@ public:
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
+
+  /// Return informal string representation (pretty-print)
+  std::string str() const;
 
 private:
   // MPI communicator
