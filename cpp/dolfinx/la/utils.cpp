@@ -127,9 +127,17 @@ Mat dolfinx::la::create_petsc_matrix(
       _nnz_offdiag(nnz_offdiag.size() / bs);
 
   for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
+  {
+    if (nnz_diag[bs * i] % bs != 0)
+      throw std::runtime_error("Ooops (d)");
     _nnz_diag[i] = dolfin_ceil_div(nnz_diag[bs * i], bs);
+  }
   for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
+  {
+    if (nnz_offdiag[bs * i] % bs != 0)
+      throw std::runtime_error("Ooops (d)");
     _nnz_offdiag[i] = dolfin_ceil_div(nnz_offdiag[bs * i], bs);
+  }
 
   // Allocate space for matrix
   ierr = MatXAIJSetPreallocation(A, bs, _nnz_diag.data(), _nnz_offdiag.data(),
@@ -202,7 +210,7 @@ MatNullSpace dolfinx::la::create_petsc_nullspace(
   for (int i = 0; i < nullspace.dim(); ++i)
   {
     assert(nullspace[i]);
-    auto *x = nullspace[i]->vec();
+    auto* x = nullspace[i]->vec();
 
     // Copy vector pointer
     assert(x);
@@ -274,7 +282,7 @@ void dolfinx::la::petsc_error(int error_code, std::string filename,
 }
 //-----------------------------------------------------------------------------
 dolfinx::la::VecWrapper::VecWrapper(Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y),  _ghosted(ghosted)
+    : x(nullptr, 0), _y(y), _ghosted(ghosted)
 {
   assert(_y);
   if (ghosted)
@@ -331,7 +339,7 @@ void dolfinx::la::VecWrapper::restore()
 }
 //-----------------------------------------------------------------------------
 dolfinx::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y),  _ghosted(ghosted)
+    : x(nullptr, 0), _y(y), _ghosted(ghosted)
 {
   assert(_y);
   if (ghosted)

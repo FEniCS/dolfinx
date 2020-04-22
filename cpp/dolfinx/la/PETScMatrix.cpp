@@ -13,9 +13,6 @@
 #include <iostream>
 #include <sstream>
 
-// Ceiling division of nonnegative integers
-#define dolfin_ceil_div(x, y) (x / y + int(x % y != 0))
-
 using namespace dolfinx;
 using namespace dolfinx::la;
 
