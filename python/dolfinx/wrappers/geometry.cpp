@@ -78,7 +78,7 @@ void geometry(py::module& m)
           {
             const std::vector<int> collisions
                 = dolfinx::geometry::compute_collisions(tree,
-                                                       p.row(i).transpose());
+                                                        p.row(i).transpose());
             entities.insert(entities.end(), collisions.begin(),
                             collisions.end());
             offset[i + 1] = offset[i + 1] + collisions.size();
@@ -111,11 +111,12 @@ void geometry(py::module& m)
               py::array_t<int>(entities.size(), entities.data()),
               py::array_t<int>(offset.size(), offset.data()));
         });
-  m.def("compute_entity_collisions_bb",
-        py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
-                          const dolfinx::geometry::BoundingBoxTree&,
-                          const dolfinx::mesh::Mesh&, const dolfinx::mesh::Mesh&>(
-            &dolfinx::geometry::compute_entity_collisions));
+  m.def(
+      "compute_entity_collisions_bb",
+      py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
+                        const dolfinx::geometry::BoundingBoxTree&,
+                        const dolfinx::mesh::Mesh&, const dolfinx::mesh::Mesh&>(
+          &dolfinx::geometry::compute_entity_collisions));
   m.def("squared_distance", &dolfinx::geometry::squared_distance);
 
   // dolfinx::geometry::BoundingBoxTree
@@ -123,8 +124,7 @@ void geometry(py::module& m)
              std::shared_ptr<dolfinx::geometry::BoundingBoxTree>>(
       m, "BoundingBoxTree")
       .def(py::init<const dolfinx::mesh::Mesh&, int>())
-      .def(py::init<const std::vector<Eigen::Vector3d>&>())
-      .def("str", &dolfinx::geometry::BoundingBoxTree::str);
+      .def(py::init<const std::vector<Eigen::Vector3d>&>());
 
   // These classes are wrapped only to be able to write tests in python.
   // They are not imported into the dolfinx namespace in python, but must
@@ -136,9 +136,9 @@ void geometry(py::module& m)
       .def_static(
           "collides_triangle_point_2d",
           &dolfinx::geometry::CollisionPredicates::collides_triangle_point_2d)
-      .def_static(
-          "collides_triangle_triangle_2d",
-          &dolfinx::geometry::CollisionPredicates::collides_triangle_triangle_2d)
+      .def_static("collides_triangle_triangle_2d",
+                  &dolfinx::geometry::CollisionPredicates::
+                      collides_triangle_triangle_2d)
       .def_static(
           "collides_segment_segment_2d",
           &dolfinx::geometry::CollisionPredicates::collides_segment_segment_2d);

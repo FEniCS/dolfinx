@@ -13,12 +13,8 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <memory>
-#include <utility>
-
 #include <petsc.h>
-
-// Ceiling division of nonnegative integers
-#define dolfin_ceil_div(x, y) (x / y + int(x % y != 0))
+#include <utility>
 
 #define CHECK_ERROR(NAME)                                                      \
   do                                                                           \
@@ -111,10 +107,15 @@ Mat dolfinx::la::create_petsc_matrix(
     petsc_error(ierr, __FILE__, "MatSetSizes");
 
   // Get number of nonzeros for each row from sparsity pattern
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> nnz_diag
-      = sparsity_pattern.num_nonzeros_diagonal();
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> nnz_offdiag
-      = sparsity_pattern.num_nonzeros_off_diagonal();
+  const graph::AdjacencyList<std::int32_t>& diagonal_pattern
+      = sparsity_pattern.diagonal_pattern();
+  const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern
+      = sparsity_pattern.off_diagonal_pattern();
+
+  // Eigen::Array<std::int32_t, Eigen::Dynamic, 1> nnz_diag
+  //     = sparsity_pattern.num_nonzeros_diagonal();
+  // Eigen::Array<std::int32_t, Eigen::Dynamic, 1> nnz_offdiag
+  //     = sparsity_pattern.num_nonzeros_off_diagonal();
 
   // Apply PETSc options from the options database to the matrix (this
   // includes changing the matrix type to one specified by the user)
@@ -123,21 +124,16 @@ Mat dolfinx::la::create_petsc_matrix(
     petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
   // Build data to initialise sparsity pattern (modify for block size)
-  std::vector<PetscInt> _nnz_diag(nnz_diag.size() / bs),
-      _nnz_offdiag(nnz_offdiag.size() / bs);
-
+  std::vector<PetscInt> _nnz_diag(index_maps[0]->size_local()),
+      _nnz_offdiag(index_maps[0]->size_local());
   for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
-  {
-    if (nnz_diag[bs * i] % bs != 0)
-      throw std::runtime_error("Ooops (d)");
-    _nnz_diag[i] = dolfin_ceil_div(nnz_diag[bs * i], bs);
-  }
+    _nnz_diag[i] = diagonal_pattern.links(bs * i).rows() / bs;
   for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
-  {
-    if (nnz_offdiag[bs * i] % bs != 0)
-      throw std::runtime_error("Ooops (d)");
-    _nnz_offdiag[i] = dolfin_ceil_div(nnz_offdiag[bs * i], bs);
-  }
+    _nnz_offdiag[i] = off_diagonal_pattern.links(bs * i).rows() / bs;
+  // for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
+  //   _nnz_diag[i] = dolfin_ceil_div(nnz_diag[bs * i] / bs);
+  // for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
+  //   _nnz_offdiag[i] = dolfin_ceil_div(nnz_offdiag[bs * i] / bs);
 
   // Allocate space for matrix
   ierr = MatXAIJSetPreallocation(A, bs, _nnz_diag.data(), _nnz_offdiag.data(),
