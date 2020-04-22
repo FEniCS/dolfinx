@@ -59,7 +59,7 @@ else()
   MESSAGE(STATUS "Asking Python module FFCX for location of UFC...")
   find_package(PythonInterp 3 REQUIRED)
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import ffcx, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
     OUTPUT_VARIABLE UFC_INCLUDE_DIR
     )
 
