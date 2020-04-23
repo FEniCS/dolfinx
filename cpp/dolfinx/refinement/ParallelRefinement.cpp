@@ -408,7 +408,8 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
 
     // Create facets for local topology, and attach to the topology
     // object. This will be used to find possibly shared cells
-      topology_local.create_connectivity(tdim - 1, tdim);
+	topology_local.create_connectivity(tdim, tdim - 1);
+    topology_local.create_connectivity(tdim - 1, tdim);
 
     // Build distributed cell-vertex AdjacencyList, IndexMap for
     // vertices, and map from local index to old global index
@@ -435,9 +436,8 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
     storage.write(mesh::storage::set_connectivity, _cells_d, tdim, 0);
   }
 
-  mesh::Topology topology(comm, cell_type, std::move(storage));
-
-  const mesh::Geometry geometry
+  mesh::Topology topology{comm, cell_type, storage};
+  mesh::Geometry geometry
       = mesh::create_geometry(comm, topology, _mesh.geometry().cmap(), my_cells,
                               _new_vertex_coordinates);
 

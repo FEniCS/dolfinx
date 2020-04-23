@@ -13,12 +13,8 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <memory>
-#include <utility>
-
 #include <petsc.h>
-
-// Ceiling division of nonnegative integers
-#define dolfin_ceil_div(x, y) (x / y + int(x % y != 0))
+#include <utility>
 
 #define CHECK_ERROR(NAME)                                                      \
   do                                                                           \
@@ -44,7 +40,7 @@ Vec dolfinx::la::create_petsc_vector(
 
   // Get local size
   assert(range[1] >= range[0]);
-  const std::size_t local_size = range[1] - range[0];
+  const std::int32_t local_size = range[1] - range[0];
 
   Vec x;
   std::vector<PetscInt> _ghost_indices(ghost_indices.rows());
@@ -60,24 +56,6 @@ Vec dolfinx::la::create_petsc_vector(
   // ierr = VecSetFromOptions(_x);
   // CHECK_ERROR("VecSetFromOptions");
 
-  // NOTE: shouldn't need to do this, but there appears to be an issue
-  // with PETSc
-  // (https://lists.mcs.anl.gov/pipermail/petsc-dev/2018-May/022963.html)
-  // Set local-to-global map
-  std::vector<PetscInt> l2g(local_size + ghost_indices.size());
-  std::iota(l2g.begin(), l2g.begin() + local_size, range[0]);
-  std::copy(ghost_indices.data(), ghost_indices.data() + ghost_indices.size(),
-            l2g.begin() + local_size);
-  ISLocalToGlobalMapping petsc_local_to_global;
-  ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, block_size, l2g.size(),
-                                      l2g.data(), PETSC_COPY_VALUES,
-                                      &petsc_local_to_global);
-  CHECK_ERROR("ISLocalToGlobalMappingCreate");
-  ierr = VecSetLocalToGlobalMapping(x, petsc_local_to_global);
-  CHECK_ERROR("VecSetLocalToGlobalMapping");
-  ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
-  CHECK_ERROR("ISLocalToGlobalMappingDestroy");
-
   return x;
 }
 //-----------------------------------------------------------------------------
@@ -92,15 +70,15 @@ Mat dolfinx::la::create_petsc_matrix(
 
   // Get IndexMaps from sparsity patterm, and block size
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-      = {{sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)}};
+      = {sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)};
   const int bs0 = index_maps[0]->block_size();
   const int bs1 = index_maps[1]->block_size();
 
   // Get global and local dimensions
-  const std::size_t M = bs0 * index_maps[0]->size_global();
-  const std::size_t N = bs1 * index_maps[1]->size_global();
-  const std::size_t m = bs0 * index_maps[0]->size_local();
-  const std::size_t n = bs1 * index_maps[1]->size_local();
+  const std::int64_t M = bs0 * index_maps[0]->size_global();
+  const std::int64_t N = bs1 * index_maps[1]->size_global();
+  const std::int32_t m = bs0 * index_maps[0]->size_local();
+  const std::int32_t n = bs1 * index_maps[1]->size_local();
 
   // Find common block size across rows/columns
   const int bs = (bs0 == bs1 ? bs0 : 1);
@@ -111,10 +89,10 @@ Mat dolfinx::la::create_petsc_matrix(
     petsc_error(ierr, __FILE__, "MatSetSizes");
 
   // Get number of nonzeros for each row from sparsity pattern
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> nnz_diag
-      = sparsity_pattern.num_nonzeros_diagonal();
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> nnz_offdiag
-      = sparsity_pattern.num_nonzeros_off_diagonal();
+  const graph::AdjacencyList<std::int32_t>& diagonal_pattern
+      = sparsity_pattern.diagonal_pattern();
+  const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern
+      = sparsity_pattern.off_diagonal_pattern();
 
   // Apply PETSc options from the options database to the matrix (this
   // includes changing the matrix type to one specified by the user)
@@ -123,13 +101,13 @@ Mat dolfinx::la::create_petsc_matrix(
     petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
   // Build data to initialise sparsity pattern (modify for block size)
-  std::vector<PetscInt> _nnz_diag(nnz_diag.size() / bs),
-      _nnz_offdiag(nnz_offdiag.size() / bs);
+  std::vector<PetscInt> _nnz_diag(index_maps[0]->size_local() * bs0 / bs),
+      _nnz_offdiag(index_maps[0]->size_local() * bs0 / bs);
 
   for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
-    _nnz_diag[i] = dolfin_ceil_div(nnz_diag[bs * i], bs);
+    _nnz_diag[i] = diagonal_pattern.links(bs * i).rows() / bs;
   for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
-    _nnz_offdiag[i] = dolfin_ceil_div(nnz_offdiag[bs * i], bs);
+    _nnz_offdiag[i] = off_diagonal_pattern.links(bs * i).rows() / bs;
 
   // Allocate space for matrix
   ierr = MatXAIJSetPreallocation(A, bs, _nnz_diag.data(), _nnz_offdiag.data(),
@@ -202,7 +180,7 @@ MatNullSpace dolfinx::la::create_petsc_nullspace(
   for (int i = 0; i < nullspace.dim(); ++i)
   {
     assert(nullspace[i]);
-    auto *x = nullspace[i]->vec();
+    Vec x = nullspace[i]->vec();
 
     // Copy vector pointer
     assert(x);
@@ -223,11 +201,11 @@ std::vector<IS> dolfinx::la::create_petsc_index_sets(
     const std::vector<const common::IndexMap*>& maps)
 {
   std::vector<IS> is(maps.size());
-  std::size_t offset = 0;
+  std::int64_t offset = 0;
   for (std::size_t i = 0; i < maps.size(); ++i)
   {
     assert(maps[i]);
-    const int size = maps[i]->size_local() + maps[i]->num_ghosts();
+    const std::int32_t size = maps[i]->size_local() + maps[i]->num_ghosts();
     const int bs = maps[i]->block_size();
     std::vector<PetscInt> index(bs * size);
     std::iota(index.begin(), index.end(), offset);
@@ -235,9 +213,6 @@ std::vector<IS> dolfinx::la::create_petsc_index_sets(
     ISCreateBlock(PETSC_COMM_SELF, 1, index.size(), index.data(),
                   PETSC_COPY_VALUES, &is[i]);
     offset += bs * size;
-    // ISCreateBlock(MPI_COMM_SELF, bs, index.size(), index.data(),
-    //               PETSC_COPY_VALUES, &is[i]);
-    // offset += size;
   }
 
   return is;
@@ -274,7 +249,7 @@ void dolfinx::la::petsc_error(int error_code, std::string filename,
 }
 //-----------------------------------------------------------------------------
 dolfinx::la::VecWrapper::VecWrapper(Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y),  _ghosted(ghosted)
+    : x(nullptr, 0), _y(y), _ghosted(ghosted)
 {
   assert(_y);
   if (ghosted)
@@ -331,7 +306,7 @@ void dolfinx::la::VecWrapper::restore()
 }
 //-----------------------------------------------------------------------------
 dolfinx::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y),  _ghosted(ghosted)
+    : x(nullptr, 0), _y(y), _ghosted(ghosted)
 {
   assert(_y);
   if (ghosted)

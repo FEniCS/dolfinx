@@ -47,14 +47,7 @@ void la(py::module& m)
       .def("local_range", &dolfinx::la::SparsityPattern::local_range)
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
       .def("assemble", &dolfinx::la::SparsityPattern::assemble)
-      .def("str", &dolfinx::la::SparsityPattern::str)
       .def("num_nonzeros", &dolfinx::la::SparsityPattern::num_nonzeros)
-      .def("num_nonzeros_diagonal",
-           &dolfinx::la::SparsityPattern::num_nonzeros_diagonal)
-      .def("num_nonzeros_off_diagonal",
-           &dolfinx::la::SparsityPattern::num_nonzeros_off_diagonal)
-      .def("num_local_nonzeros",
-           &dolfinx::la::SparsityPattern::num_local_nonzeros)
       .def("insert", &dolfinx::la::SparsityPattern::insert)
       .def("insert_diagonal", &dolfinx::la::SparsityPattern::insert_diagonal);
 
