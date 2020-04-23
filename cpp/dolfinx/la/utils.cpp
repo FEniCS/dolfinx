@@ -40,7 +40,7 @@ Vec dolfinx::la::create_petsc_vector(
 
   // Get local size
   assert(range[1] >= range[0]);
-  const std::size_t local_size = range[1] - range[0];
+  const std::int32_t local_size = range[1] - range[0];
 
   Vec x;
   std::vector<PetscInt> _ghost_indices(ghost_indices.rows());
@@ -88,15 +88,15 @@ Mat dolfinx::la::create_petsc_matrix(
 
   // Get IndexMaps from sparsity patterm, and block size
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-      = {{sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)}};
+      = {sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)};
   const int bs0 = index_maps[0]->block_size();
   const int bs1 = index_maps[1]->block_size();
 
   // Get global and local dimensions
-  const std::size_t M = bs0 * index_maps[0]->size_global();
-  const std::size_t N = bs1 * index_maps[1]->size_global();
-  const std::size_t m = bs0 * index_maps[0]->size_local();
-  const std::size_t n = bs1 * index_maps[1]->size_local();
+  const std::int64_t M = bs0 * index_maps[0]->size_global();
+  const std::int64_t N = bs1 * index_maps[1]->size_global();
+  const std::int32_t m = bs0 * index_maps[0]->size_local();
+  const std::int32_t n = bs1 * index_maps[1]->size_local();
 
   // Find common block size across rows/columns
   const int bs = (bs0 == bs1 ? bs0 : 1);
@@ -219,11 +219,11 @@ std::vector<IS> dolfinx::la::create_petsc_index_sets(
     const std::vector<const common::IndexMap*>& maps)
 {
   std::vector<IS> is(maps.size());
-  std::size_t offset = 0;
+  std::int64_t offset = 0;
   for (std::size_t i = 0; i < maps.size(); ++i)
   {
     assert(maps[i]);
-    const int size = maps[i]->size_local() + maps[i]->num_ghosts();
+    const std::int32_t size = maps[i]->size_local() + maps[i]->num_ghosts();
     const int bs = maps[i]->block_size();
     std::vector<PetscInt> index(bs * size);
     std::iota(index.begin(), index.end(), offset);
@@ -231,9 +231,6 @@ std::vector<IS> dolfinx::la::create_petsc_index_sets(
     ISCreateBlock(PETSC_COMM_SELF, 1, index.size(), index.data(),
                   PETSC_COPY_VALUES, &is[i]);
     offset += bs * size;
-    // ISCreateBlock(MPI_COMM_SELF, bs, index.size(), index.data(),
-    //               PETSC_COPY_VALUES, &is[i]);
-    // offset += size;
   }
 
   return is;
