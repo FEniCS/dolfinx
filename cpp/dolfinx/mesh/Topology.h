@@ -85,7 +85,11 @@ public:
   /// via shared_ptr<const T>.
   Topology(MPI_Comm comm, mesh::CellType type, const Storage& remanent_storage);
   // TODO: Storage&& instead Probably cleaner since Storage actually cannot be
-  // copied?
+  // copied? However, we do a "clean" copy afterwards, so from internal side, it
+  // does not matter and with const& the caller does not have to give up on his.
+  // I hesitate to implement the "clean" copy via the copy constructor
+  // because it has some unclear side effects, e.g. difficult to get rid of the
+  // memory which is not bound to Locks/handles any longer.
 
   /// Copy constructor. Loses the cache there currently is no automatic cleanup
   /// once handles are lost.
