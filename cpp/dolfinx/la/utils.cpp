@@ -184,7 +184,7 @@ MatNullSpace dolfinx::la::create_petsc_nullspace(
   for (int i = 0; i < nullspace.dim(); ++i)
   {
     assert(nullspace[i]);
-    auto* x = nullspace[i]->vec();
+    Vec x = nullspace[i]->vec();
 
     // Copy vector pointer
     assert(x);
