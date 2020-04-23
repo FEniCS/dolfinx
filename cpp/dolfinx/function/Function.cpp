@@ -38,11 +38,11 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
 
   // Get dof map
   assert(V.dofmap());
-  const fem::DofMap& dofmap = *(V.dofmap());
+  std::shared_ptr<const fem::DofMap> dofmap = V.dofmap();
 
   // Check that function space is not a subspace (view)
-  assert(dofmap.element_dof_layout);
-  if (dofmap.element_dof_layout->is_view())
+  assert(dofmap->element_dof_layout);
+  if (dofmap->element_dof_layout->is_view())
   {
     throw std::runtime_error(
         "Cannot initialize vector of degrees of freedom for "
@@ -50,8 +50,8 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
         "collapsing the function space");
   }
 
-  assert(dofmap.index_map);
-  la::PETScVector v = la::PETScVector(*dofmap.index_map);
+  assert(dofmap->index_map);
+  la::PETScVector v = la::PETScVector(*(dofmap->index_map));
   la::VecWrapper _v(v.vec());
   _v.x.setZero();
 
