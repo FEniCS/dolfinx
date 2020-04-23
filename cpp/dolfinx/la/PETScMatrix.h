@@ -68,12 +68,12 @@ public:
   void apply(AssemblyType type);
 
   /// Set block of values using global indices
-  void set(const PetscScalar* block, std::size_t m, const PetscInt* rows,
-           std::size_t n, const PetscInt* cols);
+  void set(const PetscScalar* block, int m, const PetscInt* rows, int n,
+           const PetscInt* cols);
 
   /// Add block of values using local indices
-  void add_local(const PetscScalar* block, std::size_t m, const PetscInt* rows,
-                 std::size_t n, const PetscInt* cols);
+  void add_local(const PetscScalar* block, int m, const PetscInt* rows, int n,
+                 const PetscInt* cols);
 
   /// Return norm of matrix
   double norm(la::Norm norm_type) const;

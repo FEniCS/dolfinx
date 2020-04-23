@@ -13,9 +13,6 @@
 #include <iostream>
 #include <sstream>
 
-// Ceiling division of nonnegative integers
-#define dolfin_ceil_div(x, y) (x / y + int(x % y != 0))
-
 using namespace dolfinx;
 using namespace dolfinx::la;
 
@@ -32,8 +29,8 @@ PETScMatrix::PETScMatrix(Mat A, bool inc_ref_count)
   // Reference count to A is incremented in base class
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set(const PetscScalar* block, std::size_t m,
-                      const PetscInt* rows, std::size_t n, const PetscInt* cols)
+void PETScMatrix::set(const PetscScalar* block, int m, const PetscInt* rows,
+                      int n, const PetscInt* cols)
 {
   assert(_matA);
   PetscErrorCode ierr
@@ -42,9 +39,8 @@ void PETScMatrix::set(const PetscScalar* block, std::size_t m,
     petsc_error(ierr, __FILE__, "MatSetValues");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::add_local(const PetscScalar* block, std::size_t m,
-                            const PetscInt* rows, std::size_t n,
-                            const PetscInt* cols)
+void PETScMatrix::add_local(const PetscScalar* block, int m,
+                            const PetscInt* rows, int n, const PetscInt* cols)
 {
   assert(_matA);
   PetscErrorCode ierr
