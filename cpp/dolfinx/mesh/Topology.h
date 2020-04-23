@@ -26,6 +26,7 @@ class IndexMap;
 namespace fem
 {
 class ElementDofLayout;
+class FormIntegrals;
 }
 
 namespace graph
@@ -295,5 +296,12 @@ Topology create_topology(MPI_Comm comm,
 Topology create_topology(MPI_Comm comm, const CellType& cell_type,
     std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps_tdim_0,
                                  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity_tdim_0);
+
+// TODO:What we can't catch is the creation of a dofmap. This could be done in the
+// Python layer where ufl element information is available. Probably, this
+// function is anyway a convenience for the user of the Python interface.
+/// Precomputes topological data based on the types of the integrals provided.
+/// Currently, this happens in create_form on a const mesh via topology_mutable.
+void create_topological_data(Topology& topology, const fem::FormIntegrals& integrals);
 } // namespace mesh
 } // namespace dolfinx

@@ -12,6 +12,7 @@
 #include "TopologyComputation.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/fem/FormIntegrals.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/Partitioning.h>
 #include <numeric>
@@ -806,4 +807,18 @@ Topology mesh::create_topology(
   storage.write(storage::set_index_map, index_maps_tdim_0[1], 0);
   storage.write(storage::set_connectivity, connectivity_tdim_0, tdim, 0);
   return Topology(comm, cell_type, storage);
+}
+//------------------------------------------------------------------------------
+void dolfinx::mesh::create_topological_data(Topology &topology, const fem::FormIntegrals &integrals) {
+  const int tdim = topology.dim();
+
+  // Required for all integral types
+  topology.create_entity_permutations();
+
+  // Required for facet integrals
+  if (!(integrals.num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0 &&
+        integrals.num_integrals(fem::FormIntegrals::Type::interior_facet) > 0))
+    topology.create_connectivity(tdim-1 ,tdim);
+
+
 }
