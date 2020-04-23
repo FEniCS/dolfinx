@@ -420,40 +420,6 @@ std::int64_t SparsityPattern::num_nonzeros() const
   return _diagonal->array().rows() + _off_diagonal->array().rows();
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-SparsityPattern::num_nonzeros_diagonal() const
-{
-  if (!_diagonal)
-    throw std::runtime_error("Sparsity pattern has not been finalised.");
-
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
-      _diagonal->num_nodes());
-  for (int i = 0; i < _diagonal->num_nodes(); ++i)
-    num_nonzeros[i] = _diagonal->num_links(i);
-
-  return num_nonzeros;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-SparsityPattern::num_nonzeros_off_diagonal() const
-{
-  if (!_off_diagonal)
-    throw std::runtime_error("Sparsity pattern has not been finalised.");
-
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
-      _off_diagonal->num_nodes());
-  for (int i = 0; i < _off_diagonal->num_nodes(); ++i)
-    num_nonzeros[i] = _off_diagonal->num_links(i);
-
-  return num_nonzeros;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-SparsityPattern::num_local_nonzeros() const
-{
-  return num_nonzeros_diagonal() + num_nonzeros_off_diagonal();
-}
-//-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>&
 SparsityPattern::diagonal_pattern() const
 {
@@ -471,24 +437,4 @@ SparsityPattern::off_diagonal_pattern() const
 }
 //-----------------------------------------------------------------------------
 MPI_Comm SparsityPattern::mpi_comm() const { return _mpi_comm.comm(); }
-//-----------------------------------------------------------------------------
-std::string SparsityPattern::str() const
-{
-  if (!_diagonal)
-    throw std::runtime_error("Sparsity pattern has not been assembled.");
-  assert(_off_diagonal);
-
-  // Print each row
-  std::stringstream s;
-  assert(_off_diagonal->num_nodes() == _diagonal->num_nodes());
-  for (int i = 0; i < _diagonal->num_nodes(); i++)
-  {
-    s << "Row " << i << ":";
-    s << " " << _diagonal->links(i);
-    s << " " << _off_diagonal->links(i);
-    s << std::endl;
-  }
-
-  return s.str();
-}
 //-----------------------------------------------------------------------------
