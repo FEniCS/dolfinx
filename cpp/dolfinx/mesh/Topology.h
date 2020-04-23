@@ -228,10 +228,24 @@ public:
   /// computed on-the-fly.
   Storage::LayerLock_t acquire_cache_lock(bool force_new_layer = false) const;
 
-  /// Discard all remanent storage except for essential information. Provides a
-  /// new layer to add data which can be discarded again. Note that this only
-  /// drops ownership but does not necessarily remove data from storage.
-  /// Nevertheless, it is still guaranteed that there is no memory overhead.
+  // TODO: decide on actual way to do things: acquire_new_remanent_layer or
+  // discard_remanent_storage or both. The former is more deterministic
+  // alternative to the on-demand caching, where one does not really know
+  // which data is written. However, keep in mind that in the current
+  // implementation, all data that is ever required is stored forever!
+  /// Aqcuire a lock for the current remanent storage layer (default) or for a
+  /// newly created that is bound to the lifetime of the lock returned by this
+  /// function. The stored data can dropped earlier by calling release() on the
+  /// lock.
+  Storage::LayerLock_t acquire_new_remanent_layer(bool force_new_layer = false);
+
+  /// Discard the default remanent storage except for essential information.
+  /// Ensure that there is at least one possibly new layer in place to be
+  /// written to afterwards. Note that this only drops ownership but does not
+  /// necessarily remove data from storage if it has been transferred to or
+  /// stored in antoher layer. Nevertheless, it is still guaranteed that there
+  /// is no memory overhead in the sense that only data that is locked by the
+  /// user remains.
   void discard_remanent_storage();
 
   /// Get the data that is either permanent or at least remanent, ie. explicitly
@@ -248,8 +262,10 @@ private:
 
   std::optional<const Storage::LayerLock_t> _remanent_lock;
 
-  // Storage for class invariant (permanent) and remanent (discardable
-  // persistent) data
+  // Storage for class invariant (permanent) data
+  Storage _permanent_storage;
+
+  // Storage for remanent (discardable persistent) data
   Storage _remanent_storage;
 
   // Caching (only when the user acquired a lock)
@@ -292,7 +308,6 @@ Topology create_topology(MPI_Comm comm,
 /// (tdim, 0).
 /// @return A distributed Topology based on given essential data.
 /// The array keeps the index maps for dim = tdim and dim = 0.
-
 Topology create_topology(MPI_Comm comm, const CellType& cell_type,
     std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps_tdim_0,
                                  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity_tdim_0);

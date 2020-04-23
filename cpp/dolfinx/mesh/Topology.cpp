@@ -117,41 +117,58 @@ send_to_neighbours(MPI_Comm neighbour_comm,
 }
 //-----------------------------------------------------------------------------
 } // namespace
+//
 //-----------------------------------------------------------------------------
 Topology::Topology(MPI_Comm comm, mesh::CellType type,
                    const Storage& remanent_storage)
     : _mpi_comm(comm), _cell_type(type),
-      _remanent_storage{true}, _cache{false, &(this->_remanent_storage)}
+      _permanent_storage{true},
+      _remanent_storage{false, &(this->_permanent_storage)},
+      _cache{false, &(this->_remanent_storage)}
 {
   check_storage(remanent_storage, cell_dim(_cell_type));
-  // Make essential data permanent: copy to remanent storage and create a new
-  // layer on top
-  _remanent_storage.write(storage::set_index_map,
+  // Make essential data permanent
+  _permanent_storage.write(storage::set_index_map,
                           remanent_storage.read(storage::index_map, dim()),
                           dim());
-  _remanent_storage.write(storage::set_index_map,
+  _permanent_storage.write(storage::set_index_map,
                           remanent_storage.read(storage::index_map, 0), 0);
 
-  _remanent_storage.write(
+  _permanent_storage.write(
       storage::set_connectivity,
       remanent_storage.read(storage::connectivity, dim(), 0), dim(), 0);
 
+  // Generate vertex connectivity if not provided
   auto vertex_conn = remanent_storage.read(storage::connectivity, 0, 0);
   if (!vertex_conn)
   {
-    auto vertex_map = _remanent_storage.read(storage::index_map, 0);
+    auto vertex_map = _permanent_storage.read(storage::index_map, 0);
     vertex_conn = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         vertex_map->size_local() + vertex_map->num_ghosts());
   }
-  _remanent_storage.write(storage::set_connectivity, vertex_conn, 0, 0);
+  // Store vertex connectivity
+  _permanent_storage.write(storage::set_connectivity, vertex_conn, 0, 0);
 
   // This lock creates an unscoped remanent storage layer for the
   // create_XYZ members that can be discarded manually.
   // everything written to the underlying layer is permanent.
   _remanent_lock.emplace(_remanent_storage.hold_layer(true));
 
-  // Read all data from the input
+  // Read all data from the input. This copies data that is alredy in the
+  // permanent block, but copies are shallow the remanent storage can be
+  // discarded.
   storage::assign(_remanent_storage, remanent_storage);
+}
+//-----------------------------------------------------------------------------
+void Topology::check_storage(const Topology::Storage& remanent_storage,
+                             int tdim)
+{
+  if (!(remanent_storage.read(storage::index_map, tdim)
+        && remanent_storage.read(storage::index_map, 0)
+        && remanent_storage.read(storage::connectivity, tdim, 0)))
+    throw std::invalid_argument("Storage does not provide all required data: "
+                                "index_map(0), index_map(tdim) and "
+                                "connectivity(tdim, 0).");
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return cell_dim(cell_type()); }
@@ -316,6 +333,12 @@ Topology::acquire_cache_lock(bool force_new_layer) const
   return _cache.hold_layer(force_new_layer);
 }
 //-----------------------------------------------------------------------------
+Topology::Storage::LayerLock_t
+Topology::acquire_new_remanent_layer(bool force_new_layer)
+{
+  return _remanent_storage.hold_layer(force_new_layer);
+}
+//-----------------------------------------------------------------------------
 Topology Topology::create_scratch() const
 {
   return {mpi_comm(), _cell_type, _cache};
@@ -330,18 +353,11 @@ const Topology::Storage& Topology::data() const { return _cache; }
 //-----------------------------------------------------------------------------
 void Topology::discard_remanent_storage()
 {
-  _remanent_lock.emplace(_remanent_storage.hold_layer(true));
-}
-//-----------------------------------------------------------------------------
-void Topology::check_storage(const Topology::Storage& remanent_storage,
-                             int tdim)
-{
-  if (!(remanent_storage.read(storage::index_map, tdim)
-        && remanent_storage.read(storage::index_map, 0)
-        && remanent_storage.read(storage::connectivity, tdim, 0)))
-    throw std::invalid_argument("Storage does not provide all required data: "
-                                "index_map(0), index_map(tdim) and "
-                                "connectivity(tdim, 0).");
+  // drop the lock
+  _remanent_lock.reset();
+  // create a new layer if there is no layer left since one always should be
+  // able to write to remanent storage.
+  _remanent_lock.emplace(_remanent_storage.hold_layer());
 }
 //------------------------------------------------------------------------------
 std::int32_t Topology::create_entities(int dim)
