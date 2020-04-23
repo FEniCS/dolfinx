@@ -60,24 +60,6 @@ Vec dolfinx::la::create_petsc_vector(
   // ierr = VecSetFromOptions(_x);
   // CHECK_ERROR("VecSetFromOptions");
 
-  // NOTE: shouldn't need to do this, but there appears to be an issue
-  // with PETSc
-  // (https://lists.mcs.anl.gov/pipermail/petsc-dev/2018-May/022963.html)
-  // Set local-to-global map
-  std::vector<PetscInt> l2g(local_size + ghost_indices.size());
-  std::iota(l2g.begin(), l2g.begin() + local_size, range[0]);
-  std::copy(ghost_indices.data(), ghost_indices.data() + ghost_indices.size(),
-            l2g.begin() + local_size);
-  ISLocalToGlobalMapping petsc_local_to_global;
-  ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, block_size, l2g.size(),
-                                      l2g.data(), PETSC_COPY_VALUES,
-                                      &petsc_local_to_global);
-  CHECK_ERROR("ISLocalToGlobalMappingCreate");
-  ierr = VecSetLocalToGlobalMapping(x, petsc_local_to_global);
-  CHECK_ERROR("VecSetLocalToGlobalMapping");
-  ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
-  CHECK_ERROR("ISLocalToGlobalMappingDestroy");
-
   return x;
 }
 //-----------------------------------------------------------------------------
@@ -202,7 +184,7 @@ MatNullSpace dolfinx::la::create_petsc_nullspace(
   for (int i = 0; i < nullspace.dim(); ++i)
   {
     assert(nullspace[i]);
-    auto *x = nullspace[i]->vec();
+    Vec x = nullspace[i]->vec();
 
     // Copy vector pointer
     assert(x);
@@ -274,7 +256,7 @@ void dolfinx::la::petsc_error(int error_code, std::string filename,
 }
 //-----------------------------------------------------------------------------
 dolfinx::la::VecWrapper::VecWrapper(Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y),  _ghosted(ghosted)
+    : x(nullptr, 0), _y(y), _ghosted(ghosted)
 {
   assert(_y);
   if (ghosted)
@@ -331,7 +313,7 @@ void dolfinx::la::VecWrapper::restore()
 }
 //-----------------------------------------------------------------------------
 dolfinx::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y),  _ghosted(ghosted)
+    : x(nullptr, 0), _y(y), _ghosted(ghosted)
 {
   assert(_y);
   if (ghosted)
