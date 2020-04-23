@@ -37,8 +37,8 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
   common::Timer timer("Init dof vector");
 
   // Get dof map
-  assert(V.dofmap());
   std::shared_ptr<const fem::DofMap> dofmap = V.dofmap();
+  assert(dofmap);
 
   // Check that function space is not a subspace (view)
   assert(dofmap->element_dof_layout);
