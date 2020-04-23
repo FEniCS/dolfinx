@@ -141,7 +141,8 @@ public:
   /// Constructor: require a reference to the guarded layer and a weakly owned
   /// callback that is invoked when the lock is released or destroyed.
   LayerLock(owned<maybe_null<const Layer_t>> layer,
-            weakly_owned<std::function<void(maybe_null<const Layer_t>)>> on_destruction)
+            weakly_owned<std::function<void(maybe_null<const Layer_t>)>>
+                on_destruction)
       : _layer{std::move(layer)}, _on_destruction{std::move(on_destruction)}
   {
     // do nothing
@@ -159,16 +160,22 @@ public:
   /// the lock has been released.
   maybe_null<const Layer_t> layer() const
   {
-    return check(_on_destruction) ? maybe_null<const Layer_t>{_layer.get()} : maybe_null<const Layer_t>{nullptr};
+    // Check if the user of the object is still there and return nullptr if not
+    return check(_on_destruction) ? maybe_null<const Layer_t>{_layer.get()}
+                                  : maybe_null<const Layer_t>{nullptr};
   }
 
   /// Relases ownership.
   void release()
   {
+    // Retrieve pointer on layer
+    maybe_null<const Layer_t> layer_ptr = layer();
+    // Give it free for cleanup
     _layer.reset();
-    // Signalize to the layer manager that a lock has gone
+    // Signalize to the layer manager that a lock has gone and tell the address
+    // of the layer
     if (check(_on_destruction))
-      _on_destruction.get()(layer());
+      _on_destruction.get()(layer_ptr);
   };
 
 private:
@@ -254,7 +261,7 @@ public:
   LayerManager& operator=(const LayerManager& other) = delete;
 
   /// Move assignment
-  LayerManager& operator=(LayerManager&& other)  noexcept = default;
+  LayerManager& operator=(LayerManager&& other) noexcept = default;
 
   /// Create a new lock-like handle to keep a storage layer alive. By default,
   /// this returns just is another handle for the current layer. The creation of
@@ -276,10 +283,11 @@ public:
     {
       layers.emplace_back(Layer_t{}, layer_lock);
     }
-    std::function<void(maybe_null<const Layer_t> layer)> callback = [=](maybe_null<const Layer_t> layer) { this->layer_expired(layer); };
-    return LayerLock_t(make_owned<maybe_null<const Layer_t>>(&active_layer().get(),
-                                             std::move(layer_lock)),
-                  make_guarded(callback, lifetime));
+    std::function<void(maybe_null<const Layer_t> layer)> callback
+        = [=](maybe_null<const Layer_t> layer) { this->layer_expired(layer); };
+    return LayerLock_t(make_owned<maybe_null<const Layer_t>>(
+                           &active_layer().get(), std::move(layer_lock)),
+                       make_guarded(callback, lifetime));
   }
 
   void push_layer(Layer_t layer) { layers.emplace_back(std::move(layer)); }
@@ -344,7 +352,6 @@ public:
   }
 
 private:
-
   /// Trigger cleanup of (removal of unsued) storage layers
   void layer_expired(maybe_null<const Layer_t> /* currently unused */)
   {
