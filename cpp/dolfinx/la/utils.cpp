@@ -107,15 +107,10 @@ Mat dolfinx::la::create_petsc_matrix(
     petsc_error(ierr, __FILE__, "MatSetSizes");
 
   // Get number of nonzeros for each row from sparsity pattern
-  // const graph::AdjacencyList<std::int32_t>& diagonal_pattern
-  //     = sparsity_pattern.diagonal_pattern();
-  // const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern
-  //     = sparsity_pattern.off_diagonal_pattern();
-
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> nnz_diag
-      = sparsity_pattern.num_nonzeros_diagonal();
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> nnz_offdiag
-      = sparsity_pattern.num_nonzeros_off_diagonal();
+  const graph::AdjacencyList<std::int32_t>& diagonal_pattern
+      = sparsity_pattern.diagonal_pattern();
+  const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern
+      = sparsity_pattern.off_diagonal_pattern();
 
   // Apply PETSc options from the options database to the matrix (this
   // includes changing the matrix type to one specified by the user)
@@ -124,16 +119,13 @@ Mat dolfinx::la::create_petsc_matrix(
     petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
   // Build data to initialise sparsity pattern (modify for block size)
-  std::vector<PetscInt> _nnz_diag(index_maps[0]->size_local()),
-      _nnz_offdiag(index_maps[0]->size_local());
-  // for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
-  //   _nnz_diag[i] = diagonal_pattern.links(bs * i).rows() / bs;
-  // for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
-  //   _nnz_offdiag[i] = off_diagonal_pattern.links(bs * i).rows() / bs;
+  std::vector<PetscInt> _nnz_diag(index_maps[0]->size_local() * bs0 / bs),
+      _nnz_offdiag(index_maps[0]->size_local() * bs0 / bs);
+
   for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
-    _nnz_diag[i] = nnz_diag[bs * i] / bs;
+    _nnz_diag[i] = diagonal_pattern.links(bs * i).rows() / bs;
   for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
-    _nnz_offdiag[i] = nnz_offdiag[bs * i] / bs;
+    _nnz_offdiag[i] = off_diagonal_pattern.links(bs * i).rows() / bs;
 
   // Allocate space for matrix
   ierr = MatXAIJSetPreallocation(A, bs, _nnz_diag.data(), _nnz_offdiag.data(),
