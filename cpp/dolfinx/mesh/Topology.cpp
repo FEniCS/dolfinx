@@ -122,8 +122,8 @@ send_to_neighbours(MPI_Comm neighbour_comm,
 Topology::Topology(MPI_Comm comm, mesh::CellType type,
                    const Storage& remanent_storage)
     : _mpi_comm(comm), _cell_type(type), _permanent_storage{true},
-      _remanent_storage{false, &(this->_permanent_storage)},
-      _cache{false, &(this->_remanent_storage)}
+      _remanent_storage{false, this->_permanent_storage},
+      _cache{false, this->_remanent_storage}
 {
   check_storage(remanent_storage, cell_dim(_cell_type));
   // Make essential data permanent
@@ -361,7 +361,7 @@ const Topology::Storage& Topology::remanent_data() const
 //-----------------------------------------------------------------------------
 const Topology::Storage& Topology::data() const { return _cache; }
 //-----------------------------------------------------------------------------
-void Topology::discard_remanent_storage()
+void Topology::discard_remanent_data()
 {
   // drop the lock
   _remanent_lock.reset();

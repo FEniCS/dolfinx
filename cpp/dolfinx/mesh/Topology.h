@@ -232,7 +232,7 @@ public:
   Storage::LayerLock_t acquire_cache_lock(bool force_new_layer = false) const;
 
   // TODO: decide on actual way to do things: acquire_new_remanent_layer or
-  // discard_remanent_storage or both. The former is more deterministic
+  // discard_remanent_data or both. The former is more deterministic
   // alternative to the on-demand caching, where one does not really know
   // which data is written. However, keep in mind that in the current
   // implementation, all data that is ever required is stored forever!
@@ -250,7 +250,7 @@ public:
   /// stored in antoher layer. Nevertheless, it is still guaranteed that there
   /// is no memory overhead in the sense that only data that is locked by the
   /// user remains.
-  void discard_remanent_storage();
+  void discard_remanent_data();
 
   /// Get the data that is either permanent or at least remanent, ie. explicitly
   /// created via the create_XYZ members.

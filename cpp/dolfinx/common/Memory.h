@@ -233,15 +233,14 @@ public:
   /// lifetime is bound to this object.
   /// @param[in] other points to another LayerManager for read only access.
   /// Its data will not be copied into the new LayerManager.
-  LayerManager(bool remanent, maybe_null<const LayerManager> other)
-      : other{make_guarded(other, other->lifetime)}
+  LayerManager(bool remanent, const LayerManager& other)
+      : other{make_guarded(std::cref(other), other.lifetime)}
   {
     if (remanent)
       remanent_lock.emplace(acquire_layer_lock(true));
   }
 
   LayerManager(bool remanent)
-      : other{make_guarded<const LayerManager*>(nullptr, sentinel_t{})}
   {
     if (remanent)
       remanent_lock.emplace(acquire_layer_lock(true));
@@ -297,7 +296,7 @@ public:
 
   bool has_other() const { return check_other(); }
 
-  maybe_null<const LayerManager> get_other() const { return other; }
+  const std::optional<weakly_owned<std::reference_wrapper<const LayerManager>>>& get_other() const { return other; }
 
   /// Access alls layers beginning from the top, ie. with the "most recent"
   /// layer. Return early when visitor returns something that evaluates to true.
@@ -311,7 +310,7 @@ public:
         res)
       return res;
     if (check_other())
-      res = other.get()->visit_from_top(std::forward<Visitor_t>(visitor),
+      res = other->get().get().visit_from_top(std::forward<Visitor_t>(visitor),
                                         std::forward<Args_t>(args)...);
     return res;
   }
@@ -322,7 +321,7 @@ public:
   bool visit_from_bottom(Visitor_t&& visitor, Args_t&&... args) const
   {
     if (check_other())
-      if (auto res = other.get()->visit_from_bottom(
+      if (auto res = other->get().get().visit_from_bottom(
               std::forward<Visitor_t>(visitor), std::forward<Args_t>(args)...);
           res)
         return res;
@@ -364,7 +363,7 @@ private:
   {
     return check(layer);
   }
-  bool check_other() const { return check(other); }
+  bool check_other() const { return other.has_value() && check(*other); }
 
   /// The active layer
   weakly_owned<Layer_t>& active_layer()
@@ -373,7 +372,8 @@ private:
     return layers.back();
   }
 
-  weakly_owned<maybe_null<const LayerManager>> other;
+  // The background read-only storage
+  std::optional<weakly_owned<std::reference_wrapper<const LayerManager>>> other{};
 
   // Own one layer. Enables remanent storage.
   std::optional<LayerLock_t> remanent_lock{};

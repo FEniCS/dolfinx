@@ -126,6 +126,33 @@ void mesh(py::module& m)
       m, "TopologyLayerLock", "A lock for storage layers of topological data")
       .def("release", &dolfinx::mesh::Topology::Storage::LayerLock_t::release);
 
+  // dolfinx::mesh::Topology::Storage
+  py::class_<dolfinx::mesh::Topology::Storage,
+             std::unique_ptr<dolfinx::mesh::Topology::Storage>>(
+      m, "TopologyStorageView", "View on stored topological data")
+      .def("index_map",
+           [](const dolfinx::mesh::Topology::Storage& self, int dim) {
+             return self.read(dolfinx::mesh::storage::index_map, dim);
+           })
+      .def("connectivity",
+           [](const dolfinx::mesh::Topology::Storage& self, int d0, int d1) {
+             return self.read(dolfinx::mesh::storage::connectivity, d0, d1);
+           })
+      .def("interior_facets",
+           [](const dolfinx::mesh::Topology::Storage& self) {
+             return self.read(dolfinx::mesh::storage::interior_facets);
+           })
+      .def("cell_permutations",
+           [](const dolfinx::mesh::Topology::Storage& self) {
+             return ArrayPtr{
+                 self.read(dolfinx::mesh::storage::cell_permutations)};
+           })
+      .def("facet_permutations",
+           [](const dolfinx::mesh::Topology::Storage& self) {
+             return ArrayPtr{
+                 self.read(dolfinx::mesh::storage::cell_permutations)};
+           });
+
   // dolfinx::mesh::Topology
   py::class_<dolfinx::mesh::Topology, std::shared_ptr<dolfinx::mesh::Topology>>(
       m, "Topology", "Topology object")
@@ -164,7 +191,7 @@ void mesh(py::module& m)
            })
       .def("interior_facets",
            [](const dolfinx::mesh::Topology& self) {
-             return ArrayPtr{self.interior_facets(false)};
+             return self.interior_facets(false);
            })
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
@@ -174,10 +201,19 @@ void mesh(py::module& m)
            })
       .def("hash", &dolfinx::mesh::Topology::hash)
       .def("discard_remanent_storage",
-           &dolfinx::mesh::Topology::discard_remanent_storage)
+           &dolfinx::mesh::Topology::discard_remanent_data)
       .def("acquire_new_remanent_layer",
            &dolfinx::mesh::Topology::acquire_new_remanent_layer)
       .def("acquire_cache_lock", &dolfinx::mesh::Topology::acquire_cache_lock)
+      .def("remanent_data",
+           [](const dolfinx::mesh::Topology& self) {
+             return dolfinx::mesh::Topology::Storage(false,
+                                                     self.remanent_data());
+           })
+      .def("data",
+           [](const dolfinx::mesh::Topology& self) {
+             return dolfinx::mesh::Topology::Storage(false, self.data());
+           })
       .def("on_boundary", [](const dolfinx::mesh::Topology& self,
                              int dim) { return self.on_boundary(dim, false); })
       .def("index_map", [](const dolfinx::mesh::Topology& self,
