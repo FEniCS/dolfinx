@@ -23,7 +23,7 @@ void test_memory_write_read_over_write_remove()
   LayerManager<StorageLayer> layered_memory{false};
 
   // Create first layer and acquire lock
-  LayerLock<StorageLayer> first_layer_lock{layered_memory.hold_layer()};
+  LayerLock<StorageLayer> first_layer_lock{layered_memory.acquire_layer_lock()};
 
   // Write something
   auto write_value = [](StorageLayer& layer, int a) { layer.value = a; };
@@ -47,7 +47,7 @@ void test_memory_write_read_over_write_remove()
 
   { // enter new scope
     // Create second layer above the first and acquire lock
-    LayerLock<StorageLayer> second_layer_lock{layered_memory.hold_layer(true)};
+    LayerLock<StorageLayer> second_layer_lock{layered_memory.acquire_layer_lock(true)};
 
     // Write something
     layered_memory.write(write_value, target * 2);
