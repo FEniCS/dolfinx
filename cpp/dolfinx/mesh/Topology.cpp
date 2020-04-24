@@ -206,7 +206,7 @@ std::vector<bool> Topology::on_boundary(int dim,
   std::vector<bool> marker(
       index_map(dim)->size_local() + index_map(dim)->num_ghosts(), false);
   const int num_facets
-      = index_map(dim - 1)->size_local() + index_map(dim - 1)->num_ghosts();
+      = index_map(tdim - 1)->size_local() + index_map(tdim - 1)->num_ghosts();
 
   // Special case for facets
   if (dim == tdim - 1)
