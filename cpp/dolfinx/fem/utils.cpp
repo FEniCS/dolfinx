@@ -216,7 +216,9 @@ la::PETScMatrix fem::create_matrix_block(
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
       = block_function_spaces(a);
 
-  const mesh::Mesh& mesh = *V[0][0]->mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = V[0][0]->mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
 
   // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
@@ -231,7 +233,7 @@ la::PETScMatrix fem::create_matrix_block(
       {
         // Create sparsity pattern for block
         patterns[row].push_back(
-            std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
+            std::make_unique<la::SparsityPattern>(mesh->mpi_comm(), index_maps));
 
         // Build sparsity pattern for block
         std::array<const DofMap*, 2> dofmaps
@@ -240,23 +242,23 @@ la::PETScMatrix fem::create_matrix_block(
         auto& sp = *patterns[row].back();
         const FormIntegrals& integrals = a(row, col)->integrals();
         if (integrals.num_integrals(FormIntegrals::Type::cell) > 0)
-          SparsityPatternBuilder::cells(sp, mesh.topology(), dofmaps);
+          SparsityPatternBuilder::cells(sp, mesh->topology(), dofmaps);
         if (integrals.num_integrals(FormIntegrals::Type::interior_facet) > 0)
         {
-          mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
-          SparsityPatternBuilder::interior_facets(sp, mesh.topology(), dofmaps);
+          mesh->topology_mutable().create_entities(tdim - 1);
+          SparsityPatternBuilder::interior_facets(sp, mesh->topology(), dofmaps);
         }
         if (integrals.num_integrals(FormIntegrals::Type::exterior_facet) > 0)
         {
-          mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
-          SparsityPatternBuilder::exterior_facets(sp, mesh.topology(), dofmaps);
+          mesh->topology_mutable().create_entities(tdim - 1);
+          SparsityPatternBuilder::exterior_facets(sp, mesh->topology(), dofmaps);
         }
         sp.assemble();
       }
       else
       {
         patterns[row].push_back(
-            std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
+            std::make_unique<la::SparsityPattern>(mesh->mpi_comm(), index_maps));
         patterns[row].back()->assemble();
       }
     }
@@ -267,10 +269,10 @@ la::PETScMatrix fem::create_matrix_block(
   for (std::size_t row = 0; row < V[0].size(); ++row)
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
-  la::SparsityPattern pattern(mesh.mpi_comm(), p);
+  la::SparsityPattern pattern(mesh->mpi_comm(), p);
 
   // Initialise matrix
-  la::PETScMatrix A(mesh.mpi_comm(), pattern);
+  la::PETScMatrix A(mesh->mpi_comm(), pattern);
 
   // Build list of row and column index maps (over each block)
   std::array<std::vector<const common::IndexMap*>, 2> index_maps;
