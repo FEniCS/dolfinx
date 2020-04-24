@@ -81,6 +81,13 @@ public:
   ///   the domain.
   static std::shared_ptr<const std::vector<bool>>
   compute_interior_facets(const Topology& topology);
+
+  /// Compute markers for interior/boundary vertices
+  /// @param[in] topology_local Local topology
+  /// @return Array where the ith entry is true if the ith vertex is on
+  ///   the boundary
+  static std::vector<bool>
+  compute_vertex_exterior_markers(const mesh::Topology& topology_local);
 };
 
 } // namespace mesh
