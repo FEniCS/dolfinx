@@ -463,7 +463,8 @@ def test_topology_storage(cube):
 
     # test cache lock/release (for data created on-demand)
     lock = cube.topology.acquire_cache_lock(False)
-    conn = cube.topology.connectivity(tdim - 1, tdim)
+    # trigger on-demand computation
+    cube.topology.connectivity(tdim - 1, tdim)
     assert cube.topology.data().connectivity(tdim - 1, tdim) is not None
     assert cube.topology.remanent_data().connectivity(tdim - 1, tdim) is None
     lock.release()
