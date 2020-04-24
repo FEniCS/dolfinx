@@ -14,7 +14,7 @@ import os
 import numba
 try:
     import numba.core.typing.cffi_utils as cffi_support
-except ModuleNotFoundError: # numba 0.48 or earlier
+except ModuleNotFoundError:  # numba 0.48 or earlier
     from numba import cffi_support
 import numpy
 
