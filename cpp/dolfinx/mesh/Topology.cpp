@@ -344,9 +344,9 @@ Topology::acquire_cache_lock(bool force_new_layer) const
 }
 //-----------------------------------------------------------------------------
 Topology::Storage::LayerLock_t
-Topology::acquire_new_remanent_layer(bool force_new_layer)
+Topology::acquire_new_remanent_layer()
 {
-  return _remanent_storage.acquire_layer_lock(force_new_layer);
+  return _remanent_storage.acquire_layer_lock(true);
 }
 //-----------------------------------------------------------------------------
 Topology Topology::create_scratch() const

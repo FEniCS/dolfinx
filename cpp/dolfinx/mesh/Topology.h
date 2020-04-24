@@ -241,7 +241,7 @@ public:
   /// newly created that is bound to the lifetime of the lock returned by this
   /// function. The stored data can dropped earlier by calling release() on the
   /// lock.
-  Storage::LayerLock_t acquire_new_remanent_layer(bool force_new_layer = false);
+  Storage::LayerLock_t acquire_new_remanent_layer();
 
   /// Discard the default remanent storage except for essential information.
   /// Ensure that there is at least one possibly new layer in place to be
