@@ -152,8 +152,9 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
           a.function_space(1)->dofmap().get()}};
 
   // Get mesh
-  assert(a.mesh());
-  const mesh::Mesh& mesh = *(a.mesh());
+  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
 
   common::Timer t0("Build sparsity");
 
@@ -162,28 +163,28 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
       = {{dofmaps[0]->index_map, dofmaps[1]->index_map}};
 
   // Create and build sparsity pattern
-  la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
+  la::SparsityPattern pattern(mesh->mpi_comm(), index_maps);
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
   {
-    SparsityPatternBuilder::cells(pattern, mesh.topology(),
+    SparsityPatternBuilder::cells(pattern, mesh->topology(),
                                   {{dofmaps[0], dofmaps[1]}});
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
   {
-  // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
-    mesh.topology_mutable().create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
-    SparsityPatternBuilder::interior_facets(pattern, mesh.topology(),
+    // FIXME: cleanup these calls? Some of the happen internally again.
+    mesh->topology_mutable().create_entities(tdim - 1);
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    SparsityPatternBuilder::interior_facets(pattern, mesh->topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
-    mesh.topology_mutable().create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
-    SparsityPatternBuilder::exterior_facets(pattern, mesh.topology(),
+    mesh->topology_mutable().create_entities(tdim - 1);
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    SparsityPatternBuilder::exterior_facets(pattern, mesh->topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
   t0.stop();
