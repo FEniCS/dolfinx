@@ -270,7 +270,7 @@ void mesh(py::module& m)
 
   // TODO Remove
   m.def("compute_vertex_exterior_markers",
-        &dolfinx::mesh::Partitioning::compute_vertex_exterior_markers);
+        &dolfinx::mesh::TopologyComputation::compute_vertex_exterior_markers);
 
 } // namespace dolfinx_wrappers
 } // namespace dolfinx_wrappers
