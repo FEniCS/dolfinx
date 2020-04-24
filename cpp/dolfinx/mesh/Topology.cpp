@@ -761,7 +761,7 @@ mesh::create_topology(MPI_Comm comm,
   auto [cells_local, local_to_global_vertices]
       = graph::Partitioning::create_local_adjacency_list(cells);
 
-  // TODO: replace the cosntruction via storage with the short create_topology variant?
+  // TODO: replace the construction via storage with the short create_topology variant?
   Topology::Storage storage_local{true};
   const int tdim = cell_dim(cell_type);
 
@@ -795,7 +795,7 @@ mesh::create_topology(MPI_Comm comm,
       = graph::Partitioning::create_distributed_adjacency_list(
           comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
-  // TODO: replace the cosntruction via storage with the short create_topology variant?
+  // TODO: replace the construction via storage with the short create_topology variant?
   Topology::Storage storage(true);
 
   // Set vertex IndexMap, and vertex-vertex connectivity
