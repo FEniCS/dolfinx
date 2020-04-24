@@ -258,33 +258,26 @@ def test_topology_partition(tempdir, shape, order):
     assert len(local_to_global_vertices) == len(np.unique(cells_local.array()))
     assert np.unique(cells_local.array())[-1] == len(local_to_global_vertices) - 1
 
-    # Create (i) local topology object and (ii) IndexMap for cells, and
-    # set cell-vertex topology
-    topology_local = cpp.mesh.Topology(MPI.COMM_SELF, shape)
-    tdim = topology_local.dim
-    map = cpp.common.IndexMap(MPI.COMM_SELF, cells_local.num_nodes, [], 1)
-    topology_local.set_index_map(tdim, map)
-    topology_local.set_connectivity(cells_local, tdim, 0)
-
-    # Attach an IndexMap for vertices to local topology
+    # IndexMap for cell vertices
+    tdim = cpp.mesh.cell_dim(shape)
+    index_map = cpp.common.IndexMap(MPI.COMM_SELF, cells_local.num_nodes, [], 1)
+    # IndexMap for global vertices
     n = len(local_to_global_vertices)
-    index_map = cpp.common.IndexMap(MPI.COMM_SELF, n, [], 1)
-    topology_local.set_index_map(0, index_map)
+    vertex_map = cpp.common.IndexMap(MPI.COMM_SELF, n, [], 1)
+    # Cell-vertex connectivity
+    connectivity_tdim_0 = cells_local
+    # Create local topology object
+    topology_local = cpp.mesh.Topology(MPI.COMM_SELF, shape, [index_map, vertex_map], connectivity_tdim_0)
 
-    # Create facets for local topology, and attach to the topology object
-    cf, fv, map = cpp.mesh.compute_entities(MPI.COMM_SELF,
-                                            topology_local, tdim - 1)
-    topology_local.set_connectivity(cf, tdim, tdim - 1)
-    topology_local.set_index_map(tdim - 1, index_map)
-    if fv is not None:
-        topology_local.set_connectivity(fv, tdim - 1, 0)
-    fc, _ = cpp.mesh.compute_connectivity(topology_local, tdim - 1, tdim)
-    topology_local.set_connectivity(fc, tdim - 1, tdim)
+    # Create facets for local topology
+    topology_local.create_connectivity(tdim - 1, 0)
+    topology_local.create_connectivity(tdim, tdim - 1)
+    topology_local.create_connectivity(tdim - 1, tdim)
 
     # Get facets that are on the boundary of the local topology, i.e are
-    # connect to one cell only
-    boundary = cpp.mesh.compute_interior_facets(topology_local)
-    topology_local.set_interior_facets(boundary)
+    # connected to one cell only
+    # TODO: This is not used -- remove?
+    topology_local.create_interior_facets()
     boundary = topology_local.on_boundary(tdim - 1)
 
     # Build distributed cell-vertex AdjacencyList, IndexMap for
@@ -294,39 +287,17 @@ def test_topology_partition(tempdir, shape, order):
                                                                     local_to_global_vertices, exterior_vertices)
 
     # --- Create distributed topology
-    topology = cpp.mesh.Topology(MPI.COMM_WORLD, shape)
-
-    # Set vertex IndexMap, and vertex-vertex connectivity
-    topology.set_index_map(0, vertex_map)
-    c0 = cpp.graph.AdjacencyList(vertex_map.size_local + vertex_map.num_ghosts)
-    topology.set_connectivity(c0, 0, 0)
-
-    # Set cell IndexMap and cell-vertex connectivity
     index_map = cpp.common.IndexMap(MPI.COMM_WORLD, cells.num_nodes, [], 1)
-    topology.set_index_map(tdim, index_map)
-    topology.set_connectivity(cells, tdim, 0)
+    topology = cpp.mesh.Topology(MPI.COMM_WORLD, shape, [index_map, vertex_map], cells)
 
     # Create facets for topology, and attach to topology object
-    cf, fv, index_map = cpp.mesh.compute_entities(MPI.COMM_WORLD,
-                                                  topology, tdim - 1)
-    if cf is not None:
-        topology.set_connectivity(cf, tdim, tdim - 1)
-    if index_map is not None:
-        topology.set_index_map(tdim - 1, index_map)
-    if fv is not None:
-        topology.set_connectivity(fv, tdim - 1, 0)
-    fc, _ = cpp.mesh.compute_connectivity(topology, tdim - 1, tdim)
-    if fc is not None:
-        topology.set_connectivity(fc, tdim - 1, tdim)
+    topology.create_connectivity(tdim, tdim-1)
+    topology.create_connectivity(tdim-1, tdim)
+    topology.create_connectivity(tdim-1, 0)
 
-    ce, ev, index_map = cpp.mesh.compute_entities(MPI.COMM_WORLD,
-                                                  topology, 1)
-    if ce is not None:
-        topology.set_connectivity(ce, tdim, 1)
-    if index_map is not None:
-        topology.set_index_map(1, index_map)
-    if ev is not None:
-        topology.set_connectivity(ev, 1, 0)
+    # Was there before. What for?
+    topology.create_connectivity(tdim, 1)
+    topology.create_connectivity(1, 0)
 
     # --- Geometry
 

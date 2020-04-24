@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "ArrayWrapper.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <cfloat>
@@ -119,39 +120,77 @@ void mesh(py::module& m)
   m.def("compute_connectivity",
         &dolfinx::mesh::TopologyComputation::compute_connectivity);
 
-  // dolfinx::mesh::Topology class
+  // dolfinx::mesh::Topology::Storage::LayerLock
+  py::class_<dolfinx::mesh::Topology::Storage::LayerLock_t,
+             std::shared_ptr<dolfinx::mesh::Topology::Storage::LayerLock_t>>(
+      m, "TopologyLayerLock", "A lock for storage layers of topological data")
+      .def("release", &dolfinx::mesh::Topology::Storage::LayerLock_t::release);
+
+  // dolfinx::mesh::Topology
   py::class_<dolfinx::mesh::Topology, std::shared_ptr<dolfinx::mesh::Topology>>(
       m, "Topology", "Topology object")
-      .def(py::init([](const MPICommWrapper comm,
-                       const dolfinx::mesh::CellType cell_type) {
-        return std::make_unique<dolfinx::mesh::Topology>(comm.get(), cell_type);
-      }))
+      .def(py::init(
+          [](const MPICommWrapper comm, const dolfinx::mesh::CellType cell_type,
+             std::array<std::shared_ptr<const dolfinx::common::IndexMap>, 2>
+                 index_maps_tdim_0,
+             std::shared_ptr<const dolfinx::graph::AdjacencyList<std::int32_t>>
+                 connectivity_tdim_0) {
+            return std::make_unique<dolfinx::mesh::Topology>(create_topology(
+                comm.get(), cell_type, std::move(index_maps_tdim_0),
+                std::move(connectivity_tdim_0)));
+          }))
       .def("create_entities", &dolfinx::mesh::Topology::create_entities)
       .def("create_entity_permutations",
-           &dolfinx::mesh::Topology::create_entity_permutations)
-      .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity)
+           [](dolfinx::mesh::Topology& self) {
+             self.create_entity_permutations(false);
+           })
+      .def("create_interior_facets",
+           [](dolfinx::mesh::Topology& self) {
+             self.create_interior_facets(false);
+           })
+      .def("create_connectivity",
+           [](dolfinx::mesh::Topology& self, int d0, int d1) {
+             self.create_connectivity(d0, d1, false);
+           })
       .def("create_connectivity_all",
            &dolfinx::mesh::Topology::create_connectivity_all)
       .def("get_facet_permutations",
-           &dolfinx::mesh::Topology::get_facet_permutations)
+           [](const dolfinx::mesh::Topology& self) {
+             return ArrayPtr{self.get_facet_permutations(false)};
+           })
       .def("get_cell_permutation_info",
-           &dolfinx::mesh::Topology::get_cell_permutation_info)
+           [](const dolfinx::mesh::Topology& self) {
+             return ArrayPtr{self.get_cell_permutation_info(false)};
+           })
+      .def("interior_facets",
+           [](const dolfinx::mesh::Topology& self) {
+             return ArrayPtr{self.interior_facets(false)};
+           })
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
       .def("connectivity",
-           py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
-                                       py::const_))
+           [](const dolfinx::mesh::Topology& self, int d0, int d1) {
+             return self.connectivity(d0, d1, false);
+           })
       .def("hash", &dolfinx::mesh::Topology::hash)
-      .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
-      .def("index_map", &dolfinx::mesh::Topology::index_map)
+      .def("discard_remanent_storage",
+           &dolfinx::mesh::Topology::discard_remanent_storage)
+      .def("acquire_new_remanent_layer",
+           &dolfinx::mesh::Topology::acquire_new_remanent_layer)
+      .def("acquire_cache_lock", &dolfinx::mesh::Topology::acquire_cache_lock)
+      .def("on_boundary", [](const dolfinx::mesh::Topology& self,
+                             int dim) { return self.on_boundary(dim, false); })
+      .def("index_map", [](const dolfinx::mesh::Topology& self,
+                           int dim) { return self.index_map(dim, false); })
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
-      .def("cell_name", [](const dolfinx::mesh::Topology& self) {
-        return dolfinx::mesh::to_string(self.cell_type());
-      })
-      .def("mpi_comm",
-           [](dolfinx::mesh::Mesh& self) {
-             return MPICommWrapper(self.mpi_comm());
-       });
+      .def("cell_name",
+           [](const dolfinx::mesh::Topology& self) {
+             return dolfinx::mesh::to_string(self.cell_type());
+           })
+      .def("mpi_comm", [](dolfinx::mesh::Mesh& self) {
+        return MPICommWrapper(self.mpi_comm());
+      });
+  // dolfinx::mesh::Topology class
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
