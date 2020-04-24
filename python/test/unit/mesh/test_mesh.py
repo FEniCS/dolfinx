@@ -8,7 +8,6 @@ import math
 # import os
 import sys
 
-
 import numpy as np
 import pytest
 from mpi4py import MPI
@@ -155,7 +154,6 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
     reason="pymsh calling gmsh fails in container (related to file creation)")
 @skip_in_parallel
 def test_mesh_construction_pygmsh():
-
     pygmsh = pytest.importorskip("pygmsh")
 
     if MPI.COMM_WORLD.rank == 0:
@@ -336,6 +334,7 @@ def test_rmin_rmax(mesh1d, mesh2d, mesh3d):
     # assert round(mesh3d.rmin() - 0.0, 7) == 0
     # assert round(mesh3d.rmax() - math.sqrt(3.0) / 6.0, 7) == 0
 
+
 # - Facilities to run tests on combination of meshes
 
 
@@ -357,7 +356,7 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     if mesh_factory in [UnitSquareMesh, UnitCubeMesh]:
         if ghost_mode == cpp.mesh.GhostMode.shared_vertex:
             pytest.xfail(reason="Missing functionality in '{}' with '' "
-                         "mode".format(mesh_factory, ghost_mode))
+                                "mode".format(mesh_factory, ghost_mode))
 
 
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
@@ -391,11 +390,10 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
             # Get entities of dimension d on the cell
             entities = cell.entities(d)
             if len(entities) == 0:  # Fixup for highest dimension
-                entities = (i, )
+                entities = (i,)
 
             # Loop over all entities of fixed dimension d
             for entity_index, entity_topology in d_topology.items():
-
                 # Check that entity vertices map to cell vertices in correct order
                 entity = MeshEntity(mesh, d, entities[entity_index])
                 vertices_dolfin = np.sort(entity.entities(0))
@@ -450,7 +448,7 @@ def test_UnitHexMesh_assemble():
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
     vol = assemble_scalar(1 * dx(mesh))
     vol = mesh.mpi_comm().allreduce(vol, MPI.SUM)
-    assert(vol == pytest.approx(1, rel=1e-9))
+    assert (vol == pytest.approx(1, rel=1e-9))
 
 
 def test_topology_storage(cube):

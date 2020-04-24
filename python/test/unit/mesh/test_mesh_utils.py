@@ -166,7 +166,7 @@ def get_dof_layout(shape, order):
         entity_dofs = [
             [set([0]), set([1]), set([3]), set([4]), set([9]), set([10]), set([12]), set([13])],
             [set([2]), set([5]), set([11]), set([14]), set([6]), set([7]), set([15]), set([16]),
-                set([18]), set([19]), set([21]), set([22])],
+             set([18]), set([19]), set([21]), set([22])],
             [set([8]), set([17]), set([20]), set([23]), set([24]), set([25])],
             [set([26])]
         ]
@@ -279,6 +279,7 @@ def test_topology_partition(tempdir, shape, order):
     # TODO: This is not used -- remove?
     topology_local.create_interior_facets()
     boundary = topology_local.on_boundary(tdim - 1)
+    assert any(boundary)
 
     # Build distributed cell-vertex AdjacencyList, IndexMap for
     # vertices, and map from local index to old global index
@@ -291,9 +292,9 @@ def test_topology_partition(tempdir, shape, order):
     topology = cpp.mesh.Topology(MPI.COMM_WORLD, shape, [index_map, vertex_map], cells)
 
     # Create facets for topology, and attach to topology object
-    topology.create_connectivity(tdim, tdim-1)
-    topology.create_connectivity(tdim-1, tdim)
-    topology.create_connectivity(tdim-1, 0)
+    topology.create_connectivity(tdim, tdim - 1)
+    topology.create_connectivity(tdim - 1, tdim)
+    topology.create_connectivity(tdim - 1, 0)
 
     # Was there before. What for?
     topology.create_connectivity(tdim, 1)
