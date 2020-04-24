@@ -31,6 +31,7 @@ namespace mesh
 {
 class Topology;
 
+//TODO: why not just a namespace?
 /// This class implements a set of basic algorithms that automate the
 /// computation of mesh entities and connectivity. Members of this class should
 /// should not call back on the corresponding getters of topology. In order to
