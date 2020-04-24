@@ -14,7 +14,10 @@ import pathlib
 import time
 
 import numba
-import numba.core.typing.cffi_utils as cffi_support
+try:
+    import numba.core.typing.cffi_utils as cffi_support
+except ModuleNotFoundError: # numba 0.48 or earlier
+    from numba import cffi_support
 import numpy as np
 
 import cffi
