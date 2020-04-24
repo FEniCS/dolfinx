@@ -71,14 +71,13 @@ set_interior_facets(TopologyStorageLayer& storage,
 
 /// Set connectivity for given pair of topological dimensions in given storage
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-set_connectivity(TopologyStorageLayer& storage,
-                 std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c,
-                 int d0, int d1);
+set_connectivity(TopologyStorageLayer& storage, int d0, int d1,
+                 std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c);
 
 /// Set index map for entities of dimension dim
 std::shared_ptr<const common::IndexMap>
-set_index_map(TopologyStorageLayer& storage,
-              std::shared_ptr<const common::IndexMap> index_map, int dim);
+set_index_map(TopologyStorageLayer& storage, int dim,
+              std::shared_ptr<const common::IndexMap> index_map);
 
 /// Set cell permutation information
 std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
@@ -119,31 +118,32 @@ facet_permutations(const TopologyStorageLayer& storage);
 
 /// Assigns non-empty field from "from" to "to" and return number of assignments
 /// performed. Data is not overwritten by default.
-int assign(TopologyStorageLayer& to, const TopologyStorageLayer& from, bool override=false);
+int assign(TopologyStorageLayer& to, const TopologyStorageLayer& from,
+           bool override = false);
 
 /// Assigns non-empty field from "from" to "to" only if the present field is
 /// empty (holds a nullptr) and return number of assignments performed
-int assign_where_empty(TopologyStorageLayer& to, const TopologyStorageLayer& from);
+int assign_where_empty(TopologyStorageLayer& to,
+                       const TopologyStorageLayer& from);
 
-using TopologyStorage
-    = common::memory::LayerManager<TopologyStorageLayer>;
+using TopologyStorage = common::memory::LayerManager<TopologyStorageLayer>;
 
 using TopologyStorageLock = TopologyStorage::LayerLock_t;
 
 /// Walk through the storage "from" and assigns its layers to "to" beginning
 /// with the oldest layer, ending with the newest one, i.e. it copies over the
 /// current state of "from".
-void assign(TopologyStorageLayer& to, const TopologyStorage& from, bool override=false);
+void assign(TopologyStorageLayer& to, const TopologyStorage& from,
+            bool override = false);
 
 /// Walk through the storage "from" and assigns its layers to the current
 /// writing layer of "to" beginning with the oldest layer, ending with the
 /// newest one, i.e. it copies over the current state of "from".
 void assign(TopologyStorage& to, const TopologyStorage& from,
-               bool override=false);
+            bool override = false);
 
 /// Version of assign that does not throw when "to" is empty (does nothing)
 void assign_if_not_empty(TopologyStorage& to, const TopologyStorage& from,
-            bool override=false);
-
+                         bool override = false);
 
 } // namespace dolfinx::mesh::storage

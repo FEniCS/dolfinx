@@ -180,7 +180,7 @@ public:
   /// @return Vector with length equal to the number of facets owned by
   ///   this process. True if the ith facet (local index) is interior to
   ///   the domain.
-  const std::vector<bool>& interior_facets(bool discard_intermediate
+  std::shared_ptr<const std::vector<bool>> interior_facets(bool discard_intermediate
                                            = false) const;
 
   /// Return hash based on the hash of cell-vertex connectivity
@@ -221,6 +221,7 @@ public:
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
 
+  // TODO: better name than lock?
   /// Enable caching for the lifetime of this lock. If a new layer is forced,
   /// then all new data will be associated to the lifetime of this lock,
   /// i.e., it will shadow any previous cache lock. Howver, data created
@@ -298,6 +299,7 @@ Topology create_topology(MPI_Comm comm,
                          const std::vector<int>& ghost_owners,
                          const CellType& cell_type, mesh::GhostMode ghost_mode);
 
+// TODO: is the 0-0 connectivity always "trivial"? (see also constructor of Topology)
 /// Create a toplogy from essential data.
 /// @param[in] comm MPI communicator across which the topology is
 ///   distributed

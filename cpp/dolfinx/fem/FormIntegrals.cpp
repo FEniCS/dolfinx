@@ -131,13 +131,14 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   if (type == Type::exterior_facet)
   {
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    const std::vector<bool>& interior_facets = topology.interior_facets();
+    std::shared_ptr<const std::vector<bool>> interior_facets = topology.interior_facets();
+    assert(interior_facets);
     for (std::size_t i = 0; i < tagged_entities.size(); ++i)
     {
       const std::int32_t facet_index = tagged_entities[i];
       // Check that facet is an exterior facet (and not just on a
       // process boundary)
-      if (!interior_facets[facet_index])
+      if (! (*interior_facets)[facet_index])
       {
         const auto it = id_to_integral.find(values[i]);
         if (it != id_to_integral.end())
@@ -206,10 +207,11 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
     assert(topology.index_map(tdim - 1));
     const int num_facets = topology.index_map(tdim - 1)->size_local();
-    const std::vector<bool>& interior_facets = topology.interior_facets();
+    std::shared_ptr<const std::vector<bool>> interior_facets = topology.interior_facets();
+    assert(interior_facets);
     for (int f = 0; f < num_facets; ++f)
     {
-      if (!interior_facets[f])
+      if (!(*interior_facets)[f])
         exf_integrals[0].active_entities.push_back(f);
     }
   }

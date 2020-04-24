@@ -15,6 +15,7 @@
 #include <memory>
 #include <shared_mutex>
 #include <vector>
+#include <list>
 
 namespace dolfinx::common::memory
 {
@@ -236,14 +237,14 @@ public:
       : other{make_guarded(other, other->lifetime)}
   {
     if (remanent)
-      remanent_lock.emplace(hold_layer(true));
+      remanent_lock.emplace(acquire_layer_lock(true));
   }
 
   LayerManager(bool remanent)
       : other{make_guarded<const LayerManager*>(nullptr, sentinel_t{})}
   {
     if (remanent)
-      remanent_lock.emplace(hold_layer(true));
+      remanent_lock.emplace(acquire_layer_lock(true));
   }
 
   LayerManager() = default;
@@ -274,9 +275,7 @@ public:
   /// while lower layers cannot be written to, they can be read.
   /// However, that the read-only "other" data may still be changed from
   /// outside.
-  /// [remove if not needed]
-  /// Thread safety: it is only frozen during "safe access".
-  LayerLock_t hold_layer(bool force_new_layer = false)
+  LayerLock_t acquire_layer_lock(bool force_new_layer = false)
   {
     auto layer_lock = std::make_shared<const bool>(true);
     if (layers.empty() or force_new_layer)
@@ -353,13 +352,11 @@ public:
 
 private:
   /// Trigger cleanup of (removal of unsued) storage layers
-  void layer_expired(maybe_null<const Layer_t> /* currently unused */)
+  void layer_expired(maybe_null<const Layer_t> expired /* currently unused */)
   {
-    if (check_layer(layers.back()))
-      return;
-
-    while (!layers.empty() && !check_layer(layers.back()))
-      layers.pop_back();
+    layers.remove_if([](const weakly_owned<Layer_t>& layer) {
+      return layer.use_count() == 0;
+    });
   }
 
   /// Check whether a layer is safe to access
@@ -382,7 +379,7 @@ private:
   std::optional<LayerLock_t> remanent_lock{};
 
   // The storage layers
-  std::vector<weakly_owned<Layer_t>> layers;
+  std::list<weakly_owned<Layer_t>> layers;
 
   // Lifetime information
   lock_t lifetime{std::make_shared<const bool>(true)};

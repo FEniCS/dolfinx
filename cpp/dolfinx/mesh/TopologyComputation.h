@@ -31,11 +31,6 @@ namespace mesh
 {
 class Topology;
 
-// TODO: Make a namespace? It should not be part of the public topology
-// interface probably, i.e. at least marked as internal.
-// TODO: Let topology lock itself such that calls to their getter will return
-// simply the data upon recursion (thread safety issues).
-
 /// This class implements a set of basic algorithms that automate the
 /// computation of mesh entities and connectivity. Members of this class should
 /// should not call back on the corresponding getters of topology. In order to
@@ -43,6 +38,8 @@ class Topology;
 /// Topology::data.
 /// All members should check whether the requiered data is already present and
 /// if it this this simply return the stored data.
+// TODO: This is not really necessary since it could use the topology object
+// to compute the missing bits anyway.
 
 class TopologyComputation
 {

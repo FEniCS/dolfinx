@@ -28,8 +28,8 @@ std::shared_ptr<const std::vector<bool>> storage::set_interior_facets(
 /// Set connectivity for given pair of topological dimensions in given storage
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 storage::set_connectivity(
-    TopologyStorageLayer& storage,
-    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
+    TopologyStorageLayer& storage, int d0, int d1,
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c)
 {
   assert(d0 < storage.connectivity.rows());
   assert(d1 < storage.connectivity.cols());
@@ -37,10 +37,9 @@ storage::set_connectivity(
 }
 //------------------------------------------------------------------------------
 /// Set index map for entities of dimension dim
-std::shared_ptr<const common::IndexMap>
-storage::set_index_map(TopologyStorageLayer& storage,
-                       std::shared_ptr<const common::IndexMap> index_map,
-                       int dim)
+std::shared_ptr<const common::IndexMap> storage::set_index_map(
+    TopologyStorageLayer& storage,
+    int dim, std::shared_ptr<const common::IndexMap> index_map)
 {
   assert(dim < static_cast<int>(storage.index_map.size()));
   return storage.index_map[dim] = index_map;
@@ -116,14 +115,14 @@ int storage::assign(TopologyStorageLayer& to, const TopologyStorageLayer& from,
     if (auto imap = index_map(from, jj);
         imap && (override || index_map(to, jj)))
     {
-      set_index_map(to, imap, jj);
+      set_index_map(to, jj, imap);
       ++count;
     }
     for (int ii = 0; ii < from.connectivity.rows(); ++ii)
       if (auto conn = connectivity(from, ii, jj);
           conn && (override || connectivity(to, ii, jj)))
       {
-        set_connectivity(to, conn, ii, jj);
+        set_connectivity(to, ii, jj, conn);
         ++count;
       }
   }
@@ -145,12 +144,14 @@ int storage::assign(TopologyStorageLayer& to, const TopologyStorageLayer& from,
   return count;
 }
 //------------------------------------------------------------------------------
-int storage::assign_where_empty(TopologyStorageLayer &to, const TopologyStorageLayer &from) {
+int storage::assign_where_empty(TopologyStorageLayer& to,
+                                const TopologyStorageLayer& from)
+{
   return assign(to, from, false);
 }
 //------------------------------------------------------------------------------
-void storage::assign(TopologyStorageLayer& to,
-                     const TopologyStorage& from, bool override)
+void storage::assign(TopologyStorageLayer& to, const TopologyStorage& from,
+                     bool override)
 {
   from.visit_from_bottom([&](const TopologyStorageLayer& other) {
     storage::assign(to, other, override);
@@ -159,8 +160,8 @@ void storage::assign(TopologyStorageLayer& to,
   });
 }
 //------------------------------------------------------------------------------
-void storage::assign(TopologyStorage& to,
-                        const TopologyStorage& from, bool override)
+void storage::assign(TopologyStorage& to, const TopologyStorage& from,
+                     bool override)
 {
   to.write([&](TopologyStorageLayer& target) {
     storage::assign(target, from, override);
@@ -169,7 +170,7 @@ void storage::assign(TopologyStorage& to,
 }
 //------------------------------------------------------------------------------
 void storage::assign_if_not_empty(TopologyStorage& to,
-                     const TopologyStorage& from, bool override)
+                                  const TopologyStorage& from, bool override)
 {
   if (!to.empty())
     assign(to, from, override);

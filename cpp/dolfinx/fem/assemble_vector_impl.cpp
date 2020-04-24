@@ -225,7 +225,7 @@ void _lift_bc_exterior_facets(
   for (int f = 0; f < map->size_local(); ++f)
   {
     // Move to next facet if this one is an interior facet
-    if (topology.interior_facets()[f])
+    if ((*topology.interior_facets())[f])
       continue;
 
     // Create attached cell
