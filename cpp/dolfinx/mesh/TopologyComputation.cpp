@@ -728,20 +728,10 @@ TopologyComputation::compute_interior_facets(const Topology& topology)
 
   const int tdim = topology.dim();
 
-  auto c = topology.data().read(storage::connectivity, tdim - 1, tdim);
-  if (!c)
-  {
-    throw std::runtime_error("Missing facet connectivity, that is ("
-                             + std::to_string(tdim - 1) + ","
-                             + std::to_string(tdim) + ").");
-  }
-  auto map = topology.data().read(storage::index_map, tdim - 1);
-  // Somethings really wrong when the topoogy is there but not the index map.
-  if (!map)
-  {
-    throw std::runtime_error("Missing index map for dimension "
-                             + std::to_string(tdim - 1) + ".");
-  }
+  auto c = topology.connectivity(tdim - 1, tdim);
+  assert(c);
+  auto map = topology.index_map(tdim - 1);
+  assert(map);
 
   // Get number of connected cells for each ghost facet
   std::vector<int> num_cells1(map->num_ghosts(), 0);
