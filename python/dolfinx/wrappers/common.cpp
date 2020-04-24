@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "ArrayWrapper.h"
 #include "MPICommWrapper.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
@@ -135,5 +136,28 @@ void common(py::module& m)
                   &dolfinx::common::SubSystemsManager::mpi_initialized)
       .def_static("mpi_finalized",
                   &dolfinx::common::SubSystemsManager::mpi_finalized);
+
+  // TODO: where to put them?
+  // dolfinx_wrappers::ArrayPtr
+  py::class_<
+      ArrayPtr<
+          const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>,
+      std::unique_ptr<ArrayPtr<
+          const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>>>(
+      m, "ArrayPtr_unint8_dy_dy", "Holds a pointer to an Eigen array")
+      .def("get", &ArrayPtr<
+          const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>::get)
+      ;
+
+  // dolfinx_wrappers::ArrayPtr
+  py::class_<
+      ArrayPtr<
+          const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>,
+      std::unique_ptr<ArrayPtr<
+          const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>>>(
+      m, "ArrayPtr_unint32_dy_1", "Holds a pointer to an Eigen array")
+      .def("get", &ArrayPtr<
+          const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>::get)
+      ;
 }
 } // namespace dolfinx_wrappers
