@@ -453,6 +453,22 @@ def test_UnitHexMesh_assemble():
     assert(vol == pytest.approx(1, rel=1e-9))
 
 
+def test_topology_storage(cube):
+    tdim = cube.topology.dim
+    assert cube.topology.data().connectivity(tdim - 1, tdim) is None
+    cube.topology.create_connectivity(tdim - 1, tdim)
+    assert cube.topology.data().connectivity(tdim - 1, tdim) is not None
+    cube.topology.discard_remanent_storage()
+    assert cube.topology.data().connectivity(tdim - 1, tdim) is None
+
+    lock = cube.topology.acquire_cache_lock(True)
+    conn = cube.topology.connectivity(tdim - 1, tdim)
+    assert cube.topology.data().connectivity(tdim - 1, tdim) is not None
+    assert cube.topology.remanent_data().connectivity(tdim - 1, tdim) is None
+    lock.release()
+    assert cube.topology.data().connectivity(tdim - 1, tdim) is None
+
+
 def xtest_mesh_order_unchanged_triangle():
     points = [[0, 0], [1, 0], [1, 1]]
     cells = [[0, 1, 2]]
