@@ -323,13 +323,13 @@ void VTKWriter::write_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 void VTKWriter::write_cell_data(const function::Function& u,
                                 std::string filename)
 {
-  // For brevity
-  assert(u.function_space()->mesh());
-  assert(u.function_space()->dofmap());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
-  const fem::DofMap& dofmap = *u.function_space()->dofmap();
-  const int tdim = mesh.topology().dim();
-  const std::int32_t num_cells = mesh.topology().index_map(tdim)->size_local();
+  assert(u.function_space());
+  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
+  assert(mesh);
+  std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
+  assert(dofmap);
+  const int tdim = mesh->topology().dim();
+  const std::int32_t num_cells = mesh->topology().index_map(tdim)->size_local();
   std::string encode_string = "ascii";
 
   // Get rank of function::Function
@@ -394,13 +394,12 @@ void VTKWriter::write_cell_data(const function::Function& u,
   std::vector<std::int32_t> dof_set;
   std::vector<std::size_t> offset(size + 1);
   auto cell_offset = offset.begin();
-  assert(dofmap.element_dof_layout);
-  const int num_dofs_cell = dofmap.element_dof_layout->num_dofs();
-
+  assert(dofmap->element_dof_layout);
+  const int num_dofs_cell = dofmap->element_dof_layout->num_dofs();
   for (int c = 0; c < num_cells; ++c)
   {
     // Tabulate dofs
-    auto dofs = dofmap.cell_dofs(c);
+    auto dofs = dofmap->cell_dofs(c);
     for (int i = 0; i < num_dofs_cell; ++i)
       dof_set.push_back(dofs[i]);
 
@@ -418,7 +417,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
     values[i] = _x[dof_set[i]];
 
   // Get cell data
-  fp << ascii_cell_data(mesh, offset, values, data_dim, rank);
+  fp << ascii_cell_data(*mesh, offset, values, data_dim, rank);
   fp << "</DataArray> " << std::endl;
   fp << "</CellData> " << std::endl;
 }

@@ -38,18 +38,18 @@ void _lift_bc_cells(
   assert(a.rank() == 2);
 
   // Get mesh from form
-  assert(a.mesh());
-  const mesh::Mesh& mesh = *a.mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  assert(mesh);
 
-  mesh.topology_mutable().create_entity_permutations();
+  mesh->topology_mutable().create_entity_permutations();
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
-  assert(a.function_space(0)->dofmap());
   assert(a.function_space(1));
-  assert(a.function_space(1)->dofmap());
-  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
-  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap0 = a.function_space(0)->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap1 = a.function_space(1)->dofmap();
+  assert(dofmap0);
+  assert(dofmap1);
 
   // Prepare coefficients
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -61,13 +61,14 @@ void _lift_bc_cells(
       = a.integrals().get_tabulate_tensor(FormIntegrals::Type::cell, 0);
 
   // Prepare cell geometry
-  const int gdim = mesh.geometry().dim();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const int gdim = mesh->geometry().dim();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+      = mesh->geometry().x();
 
   // Data structures used in bc application
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -83,17 +84,17 @@ void _lift_bc_cells(
       = pack_constants(a);
 
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-      = mesh.topology().get_cell_permutation_info();
+      = mesh->topology().get_cell_permutation_info();
 
   // Iterate over all cells
-  const int tdim = mesh.topology().dim();
-  auto map = mesh.topology().index_map(tdim);
+  const int tdim = mesh->topology().dim();
+  auto map = mesh->topology().index_map(tdim);
   assert(map);
   const int num_cells = map->size_local() + map->num_ghosts();
   for (int c = 0; c < num_cells; ++c)
   {
     // Get dof maps for cell
-    auto dmap1 = dofmap1.cell_dofs(c);
+    auto dmap1 = dofmap1->cell_dofs(c);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -115,7 +116,7 @@ void _lift_bc_cells(
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Size data structure for assembly
-    auto dmap0 = dofmap0.cell_dofs(c);
+    auto dmap0 = dofmap0->cell_dofs(c);
 
     auto coeff_array = coeffs.row(c);
     Ae.setZero(dmap0.size(), dmap1.size());
@@ -153,27 +154,27 @@ void _lift_bc_exterior_facets(
   assert(a.rank() == 2);
 
   // Get mesh from form
-  assert(a.mesh());
-  const mesh::Mesh& mesh = *a.mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  assert(mesh);
 
-  mesh.topology_mutable().create_entity_permutations();
+  mesh->topology_mutable().create_entity_permutations();
 
-  const int gdim = mesh.geometry().dim();
-  const int tdim = mesh.topology().dim();
+  const int gdim = mesh->geometry().dim();
+  const int tdim = mesh->topology().dim();
 
   // FIXME: cleanup these calls? Some of the happen internally again.
-  mesh.topology_mutable().create_entities(tdim - 1);
-  mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+  mesh->topology_mutable().create_entities(tdim - 1);
+  mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
   // FIXME: Why again -- appears already See 8 lines above.
-  mesh.topology_mutable().create_entity_permutations();
+  mesh->topology_mutable().create_entity_permutations();
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
-  assert(a.function_space(0)->dofmap());
   assert(a.function_space(1));
-  assert(a.function_space(1)->dofmap());
-  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
-  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap0 = a.function_space(0)->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap1 = a.function_space(1)->dofmap();
+  assert(dofmap0);
+  assert(dofmap1);
 
   // Prepare coefficients
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -186,11 +187,12 @@ void _lift_bc_exterior_facets(
                                           0);
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+      = mesh->geometry().x();
 
   // Data structures used in bc application
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -206,7 +208,7 @@ void _lift_bc_exterior_facets(
       = pack_constants(a);
 
   // Iterate over owned facets
-  const mesh::Topology& topology = mesh.topology();
+  const mesh::Topology& topology = mesh->topology();
   auto connectivity = topology.connectivity(tdim - 1, tdim);
   assert(connectivity);
   auto c_to_f = topology.connectivity(tdim, tdim - 1);
@@ -215,9 +217,9 @@ void _lift_bc_exterior_facets(
   assert(map);
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
-      = mesh.topology().get_facet_permutations();
+      = mesh->topology().get_facet_permutations();
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-      = mesh.topology().get_cell_permutation_info();
+      = mesh->topology().get_cell_permutation_info();
 
   for (int f = 0; f < map->size_local(); ++f)
   {
@@ -238,7 +240,7 @@ void _lift_bc_exterior_facets(
     const std::uint8_t perm = perms(local_facet, cell);
 
     // Get dof maps for cell
-    auto dmap1 = dofmap1.cell_dofs(cell);
+    auto dmap1 = dofmap1->cell_dofs(cell);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -260,7 +262,7 @@ void _lift_bc_exterior_facets(
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Size data structure for assembly
-    auto dmap0 = dofmap0.cell_dofs(cell);
+    auto dmap0 = dofmap0->cell_dofs(cell);
 
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
@@ -295,15 +297,17 @@ void _lift_bc_exterior_facets(
 void fem::impl::assemble_vector(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {
-  assert(L.mesh());
-  const mesh::Mesh& mesh = *L.mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
+  assert(mesh);
 
   // Get dofmap data
-  const fem::DofMap& dofmap = *L.function_space(0)->dofmap();
-  const graph::AdjacencyList<std::int32_t>& dofs = dofmap.list();
+  assert(L.function_space(0));
+  std::shared_ptr<const fem::DofMap> dofmap = L.function_space(0)->dofmap();
+  assert(dofmap);
+  const graph::AdjacencyList<std::int32_t>& dofs = dofmap->list();
 
-  assert(dofmap.element_dof_layout);
-  const int num_dofs_per_cell = dofmap.element_dof_layout->num_dofs();
+  assert(dofmap->element_dof_layout);
+  const int num_dofs_per_cell = dofmap->element_dof_layout->num_dofs();
 
   // Prepare constants
   if (!L.all_constants_set())
@@ -324,7 +328,7 @@ void fem::impl::assemble_vector(
         = integrals.get_tabulate_tensor(FormIntegrals::Type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
-    fem::impl::assemble_cells(b, mesh, active_cells, dofs, num_dofs_per_cell,
+    fem::impl::assemble_cells(b, *mesh, active_cells, dofs, num_dofs_per_cell,
                               fn, coeffs, constant_values);
   }
 
@@ -334,7 +338,7 @@ void fem::impl::assemble_vector(
         = integrals.get_tabulate_tensor(FormIntegrals::Type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
-    fem::impl::assemble_exterior_facets(b, mesh, active_facets, dofmap, fn,
+    fem::impl::assemble_exterior_facets(b, *mesh, active_facets, *dofmap, fn,
                                         coeffs, constant_values);
   }
 
@@ -345,7 +349,7 @@ void fem::impl::assemble_vector(
         = integrals.get_tabulate_tensor(FormIntegrals::Type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
-    fem::impl::assemble_interior_facets(b, mesh, active_facets, dofmap, fn,
+    fem::impl::assemble_interior_facets(b, *mesh, active_facets, *dofmap, fn,
                                         coeffs, c_offsets, constant_values);
   }
 }

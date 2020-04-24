@@ -199,12 +199,12 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
   const function::FunctionSpace& V1 = V.at(1).get();
 
   // Get mesh
-  assert(V0.mesh());
+  std::shared_ptr<const mesh::Mesh> mesh = V0.mesh();
+  assert(mesh);
   assert(V1.mesh());
-  if (V0.mesh() != V1.mesh())
+  if (mesh != V1.mesh())
     throw std::runtime_error("Meshes are not the same.");
-  const mesh::Mesh& mesh = *V0.mesh();
-  const std::size_t tdim = mesh.topology().dim();
+  const int tdim = mesh->topology().dim();
 
   assert(V0.element());
   assert(V1.element());
@@ -215,32 +215,32 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
   }
 
   // Get dofmaps
-  assert(V0.dofmap());
-  assert(V1.dofmap());
-  const DofMap& dofmap0 = *V0.dofmap();
-  const DofMap& dofmap1 = *V1.dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
+  assert(dofmap0);
+  assert(dofmap1);
 
   // Initialise entity-cell connectivity
   // FIXME: cleanup these calls? Some of the happen internally again.
-  mesh.topology_mutable().create_entities(tdim);
-  mesh.topology_mutable().create_connectivity(dim, tdim);
+  mesh->topology_mutable().create_entities(tdim);
+  mesh->topology_mutable().create_connectivity(dim, tdim);
 
   // Allocate space
-  assert(dofmap0.element_dof_layout);
+  assert(dofmap0->element_dof_layout);
   const int num_entity_dofs
-      = dofmap0.element_dof_layout->num_entity_closure_dofs(dim);
+      = dofmap0->element_dof_layout->num_entity_closure_dofs(dim);
 
   // Build vector local dofs for each cell facet
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
-  for (int i = 0; i < mesh::cell_num_entities(mesh.topology().cell_type(), dim);
+  for (int i = 0; i < mesh::cell_num_entities(mesh->topology().cell_type(), dim);
        ++i)
   {
     entity_dofs.push_back(
-        dofmap0.element_dof_layout->entity_closure_dofs(dim, i));
+        dofmap0->element_dof_layout->entity_closure_dofs(dim, i));
   }
-  auto e_to_c = mesh.topology().connectivity(dim, tdim);
+  auto e_to_c = mesh->topology().connectivity(dim, tdim);
   assert(e_to_c);
-  auto c_to_e = mesh.topology().connectivity(tdim, dim);
+  auto c_to_e = mesh->topology().connectivity(tdim, dim);
   assert(c_to_e);
 
   // Iterate over marked facets
@@ -259,8 +259,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
     const int entity_local_index = std::distance(entities_d.data(), it);
 
     // Get cell dofmap
-    auto cell_dofs0 = dofmap0.cell_dofs(cell);
-    auto cell_dofs1 = dofmap1.cell_dofs(cell);
+    auto cell_dofs0 = dofmap0->cell_dofs(cell);
+    auto cell_dofs1 = dofmap1->cell_dofs(cell);
 
     // Loop over facet dofs
     for (int i = 0; i < num_entity_dofs; ++i)
@@ -406,12 +406,12 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
   const function::FunctionSpace& V1 = V.at(1).get();
 
   // Get mesh
-  assert(V0.mesh());
+  std::shared_ptr<const mesh::Mesh> mesh = V0.mesh();
+  assert(mesh);
   assert(V1.mesh());
-  if (V0.mesh() != V1.mesh())
+  if (mesh != V1.mesh())
     throw std::runtime_error("Meshes are not the same.");
-  const mesh::Mesh& mesh = *V1.mesh();
-  const std::size_t tdim = mesh.topology().dim();
+  const int tdim = mesh->topology().dim();
 
   assert(V0.element());
   assert(V1.element());
@@ -430,19 +430,19 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
       = marker(dof_coordinates);
 
   // Get dofmaps
-  assert(V0.dofmap());
-  assert(V1.dofmap());
-  const DofMap& dofmap0 = *V0.dofmap();
-  const DofMap& dofmap1 = *V1.dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
+  assert(dofmap0);
+  assert(dofmap1);
 
   // Iterate over cells
-  const mesh::Topology& topology = mesh.topology();
+  const mesh::Topology& topology = mesh->topology();
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
   for (int c = 0; c < topology.connectivity(tdim, 0)->num_nodes(); ++c)
   {
     // Get cell dofmap
-    auto cell_dofs0 = dofmap0.cell_dofs(c);
-    auto cell_dofs1 = dofmap1.cell_dofs(c);
+    auto cell_dofs0 = dofmap0->cell_dofs(c);
+    auto cell_dofs1 = dofmap1->cell_dofs(c);
 
     // Loop over cell dofs and add to bc_dofs if marked.
     for (Eigen::Index i = 0; i < cell_dofs1.rows(); ++i)
