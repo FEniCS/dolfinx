@@ -184,6 +184,9 @@ Topology::index_map(int dim, bool discard_intermediate /*unused*/) const
   auto scratch = create_scratch();
   scratch.create_entities(dim);
   storage::assign_if_not_empty(_cache, scratch._cache, false);
+  assert(scratch.index_map(dim));
+  assert(scratch.connectivity(this->dim(), dim));
+  assert(scratch.connectivity(dim, 0));
   return scratch.index_map(dim);
 }
 //-----------------------------------------------------------------------------
@@ -273,6 +276,7 @@ Topology::connectivity(int d0, int d1, bool discard_intermediate) const
   auto scratch = create_scratch();
   scratch.create_connectivity(d0, d1, discard_intermediate);
   storage::assign_if_not_empty(_cache, scratch._cache, false);
+  assert(scratch.connectivity(d0, d1));
   return scratch.connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
@@ -286,6 +290,7 @@ Topology::interior_facets(bool discard_intermediate) const
   auto scratch = create_scratch();
   scratch.create_interior_facets(discard_intermediate);
   storage::assign_if_not_empty(_cache, scratch._cache, false);
+  assert(scratch.interior_facets());
   return scratch.interior_facets();
 }
 //-----------------------------------------------------------------------------
@@ -308,6 +313,8 @@ Topology::get_cell_permutation_info(bool discard_intermediate) const
   auto scratch = create_scratch();
   scratch.create_entity_permutations(discard_intermediate);
   storage::assign_if_not_empty(_cache, scratch._cache, false);
+  assert(scratch.get_cell_permutation_info());
+  assert(scratch.get_facet_permutations());
   return scratch.get_cell_permutation_info();
 }
 //-----------------------------------------------------------------------------
@@ -321,6 +328,8 @@ Topology::get_facet_permutations(bool discard_intermediate) const
   auto scratch = create_scratch();
   scratch.create_entity_permutations(discard_intermediate);
   storage::assign_if_not_empty(_cache, scratch._cache, false);
+  assert(scratch.get_cell_permutation_info());
+  assert(scratch.get_facet_permutations());
   return scratch.get_facet_permutations();
 }
 //-----------------------------------------------------------------------------
@@ -416,39 +425,6 @@ void Topology::create_connectivity(int d0, int d1, bool discard_intermediate)
   if (!discard_intermediate)
     storage::assign(_remanent_storage, _cache);
 
-  // TODO: check these thoughts
-  // semantically, it should be safe for compute_connectivity to call
-  // this->getter_XYZ(...). The getter will either return the required data or
-  // obtain a lock, create its own scratch object and work on that.
-
-  // TODO: check/revisit these IMPORTANT thoughts
-  // The danger of losing state: In a multi-threaded environment, it can be that
-  // one obtains a cache lock and another thread as well. This other thread may
-  // even create a new layer. The first thread then reads/write data from/to
-  // a different layer than the one for which he holds the lock. Thus, despite
-  // having a lock, his own write operations are not guaranteed to stay for the
-  // lifetime of his lock! HOW CAN THIS BE AVOIDED?
-  // A) Do not obtain the lock but the layer and read from that instead.
-  // Since a layer always has ownership of all previous layers and does not see
-  // new data, data cannot be lost. Can  a layer be "lost" between dropping and
-  // holding? The layer manager must not allow that. Exposing a layer must block
-  // the cleanup. Either it is safe in that regard or it has to be locked from
-  // outside.
-  // B) Get hold of a mutex before aquiring a cache lock. Note that this mutex
-  // must not be locked when the user obtains a cache lock. Otherwise, there
-  // will be a deadlock on computation. We rather thing here of being the user
-  // of a scratch object, that should be intialized safely.
-  // For such an object, the permanent storage cannot go away, it's an invariant
-  // of it's creator on which it depends. The question is what really lands
-  // in its remanent storage. This involves reads of the cache of the parent
-  // Topology. However, once created, it cannot lose it's remanent data
-  // once possessing it. The dangerous operation is the copy of the first layer.
-  // This is not thread safe on it's own, even it the copying thread owns
-  // a lock. The reason for this is that another lock may end it's life and the
-  // layer gets dropped. The results could be a dangling reference, i.e.
-  // destruction may not even be detected.
-  // "Common knowledge": Anything declared mutable must be thread safe.
-  // The layer-management process must be thread safe.
   _remanent_storage.write(
       storage::set_connectivity, d0, d1,
       TopologyComputation::compute_connectivity(*this, d0, d1));

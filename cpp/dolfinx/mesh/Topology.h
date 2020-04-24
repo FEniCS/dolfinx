@@ -27,7 +27,7 @@ namespace fem
 {
 class ElementDofLayout;
 class FormIntegrals;
-}
+} // namespace fem
 
 namespace graph
 {
@@ -89,8 +89,8 @@ public:
   // copied? However, we do a "clean" copy afterwards, so from internal side, it
   // does not matter and with const& the caller does not have to give up on his.
   // I hesitate to implement the "clean" copy via the copy constructor
-  // because it has some unclear side effects, e.g. difficult to get rid of the
-  // memory which is not bound to Locks/handles any longer.
+  // because of the difficulty to get rid of the memory which is not anymore
+  // bound to the locks/handles of the original storage.
 
   /// Copy constructor. Loses the cache there currently is no automatic cleanup
   /// once handles are lost.
@@ -170,7 +170,8 @@ public:
   /// and does not discard cell permutations which are computed together
   /// but not as a precondition.
   /// @return The permutation numbers
-  std::shared_ptr<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+  std::shared_ptr<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
   get_facet_permutations(bool discard_intermediate = false) const;
 
   /// Gets markers for owned facets that are interior, i.e. are
@@ -180,8 +181,8 @@ public:
   /// @return Vector with length equal to the number of facets owned by
   ///   this process. True if the ith facet (local index) is interior to
   ///   the domain.
-  std::shared_ptr<const std::vector<bool>> interior_facets(bool discard_intermediate
-                                           = false) const;
+  std::shared_ptr<const std::vector<bool>>
+  interior_facets(bool discard_intermediate = false) const;
 
   /// Return hash based on the hash of cell-vertex connectivity
   size_t hash() const;
@@ -222,6 +223,7 @@ public:
   MPI_Comm mpi_comm() const;
 
   // TODO: better name than lock?
+
   /// Enable caching for the lifetime of this lock. If a new layer is forced,
   /// then all new data will be associated to the lifetime of this lock,
   /// i.e., it will shadow any previous cache lock. Howver, data created
@@ -234,6 +236,7 @@ public:
   // alternative to the on-demand caching, where one does not really know
   // which data is written. However, keep in mind that in the current
   // implementation, all data that is ever required is stored forever!
+
   /// Aqcuire a lock for the current remanent storage layer (default) or for a
   /// newly created that is bound to the lifetime of the lock returned by this
   /// function. The stored data can dropped earlier by calling release() on the
@@ -299,7 +302,9 @@ Topology create_topology(MPI_Comm comm,
                          const std::vector<int>& ghost_owners,
                          const CellType& cell_type, mesh::GhostMode ghost_mode);
 
-// TODO: is the 0-0 connectivity always "trivial"? (see also constructor of Topology)
+// TODO: is the 0-0 connectivity always "trivial" such that it does not have to
+//  be given? (see also constructor of Topology)
+
 /// Create a toplogy from essential data.
 /// @param[in] comm MPI communicator across which the topology is
 ///   distributed
@@ -310,15 +315,20 @@ Topology create_topology(MPI_Comm comm,
 /// (tdim, 0).
 /// @return A distributed Topology based on given essential data.
 /// The array keeps the index maps for dim = tdim and dim = 0.
-Topology create_topology(MPI_Comm comm, const CellType& cell_type,
+Topology create_topology(
+    MPI_Comm comm, const CellType& cell_type,
     std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps_tdim_0,
-                                 std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity_tdim_0);
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+        connectivity_tdim_0);
 
-// TODO:What we can't catch is the creation of a dofmap. This could be done in the
-// Python layer where ufl element information is available. Probably, this
+// TODO:What we can't catch is the creation of a dofmap. This could be done in
+// the Python layer where ufl element information is available. Probably, this
 // function is anyway a convenience for the user of the Python interface.
+// NOTE: What the function does currently happens in create_form on a const mesh
+// via topology_mutable.
+
 /// Precomputes topological data based on the types of the integrals provided.
-/// Currently, this happens in create_form on a const mesh via topology_mutable.
-void create_topological_data(Topology& topology, const fem::FormIntegrals& integrals);
+void create_topological_data(Topology& topology,
+                             const fem::FormIntegrals& integrals);
 } // namespace mesh
 } // namespace dolfinx
