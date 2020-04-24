@@ -37,10 +37,8 @@ class Topology;
 /// should not call back on the corresponding getters of topology. In order to
 /// find out whether data is present, investigate the actual storage via
 /// Topology::data.
-/// All members should check whether the requiered data is already present and
+/// All members should check whether the required data is already present and
 /// if it this this simply return the stored data.
-// TODO: This is not really necessary since it could use the topology object
-// to compute the missing bits anyway.
 
 class TopologyComputation
 {

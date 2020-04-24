@@ -664,22 +664,13 @@ TopologyComputation::compute_connectivity(const Topology& topology, int d0,
   if (auto cached = topology.data().read(storage::connectivity, d0, d1); cached)
     return cached;
 
-  // Get entities exist
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d0_0
       = topology.connectivity(d0, 0);
-  if (d0 > 0 and !topology.data().read(storage::connectivity, d0, 0))
-  {
-    throw std::runtime_error("Missing entities of dimension "
-                             + std::to_string(d0) + ".");
-  }
+  assert(c_d0_0);
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d1_0
       = topology.connectivity(d1, 0);
-  if (d1 > 0 and !topology.data().read(storage::connectivity, d1, 0))
-  {
-    throw std::runtime_error("Missing entities of dimension "
-                             + std::to_string(d1) + ".");
-  }
+  assert(c_d1_0);
 
   // Start timer
   common::Timer timer("Compute connectivity " + std::to_string(d0) + "-"
