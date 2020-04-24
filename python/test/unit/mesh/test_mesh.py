@@ -461,11 +461,22 @@ def test_topology_storage(cube):
     cube.topology.discard_remanent_storage()
     assert cube.topology.data().connectivity(tdim - 1, tdim) is None
 
-    lock = cube.topology.acquire_cache_lock(True)
+    # test cache lock/release (for data created on-demand)
+    lock = cube.topology.acquire_cache_lock(False)
     conn = cube.topology.connectivity(tdim - 1, tdim)
     assert cube.topology.data().connectivity(tdim - 1, tdim) is not None
     assert cube.topology.remanent_data().connectivity(tdim - 1, tdim) is None
     lock.release()
+    assert cube.topology.data().connectivity(tdim - 1, tdim) is None
+
+    # test remanent lock/release (for data created explicitly)
+    cube.topology.create_connectivity(tdim - 2, tdim)
+    lock = cube.topology.acquire_new_remanent_layer()
+    cube.topology.create_connectivity(tdim - 1, tdim)
+    assert cube.topology.data().connectivity(tdim - 2, tdim) is not None
+    assert cube.topology.data().connectivity(tdim - 1, tdim) is not None
+    lock.release()
+    assert cube.topology.remanent_data().connectivity(tdim - 2, tdim) is not None
     assert cube.topology.data().connectivity(tdim - 1, tdim) is None
 
 
