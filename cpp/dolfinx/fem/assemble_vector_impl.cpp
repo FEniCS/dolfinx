@@ -38,18 +38,18 @@ void _lift_bc_cells(
   assert(a.rank() == 2);
 
   // Get mesh from form
-  assert(a.mesh());
-  const mesh::Mesh& mesh = *a.mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  assert(mesh);
 
-  mesh.topology_mutable().create_entity_permutations();
+  mesh->topology_mutable().create_entity_permutations();
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
-  assert(a.function_space(0)->dofmap());
   assert(a.function_space(1));
-  assert(a.function_space(1)->dofmap());
-  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
-  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap0 = a.function_space(0)->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap1 = a.function_space(1)->dofmap();
+  assert(dofmap0);
+  assert(dofmap1);
 
   // Prepare coefficients
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -61,13 +61,13 @@ void _lift_bc_cells(
       = a.integrals().get_tabulate_tensor(FormIntegrals::Type::cell, 0);
 
   // Prepare cell geometry
-  const int gdim = mesh.geometry().dim();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const int gdim = mesh->geometry().dim();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh->geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+      = mesh->geometry().x();
 
   // Data structures used in bc application
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -83,17 +83,17 @@ void _lift_bc_cells(
       = pack_constants(a);
 
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-      = mesh.topology().get_cell_permutation_info();
+      = mesh->topology().get_cell_permutation_info();
 
   // Iterate over all cells
-  const int tdim = mesh.topology().dim();
-  auto map = mesh.topology().index_map(tdim);
+  const int tdim = mesh->topology().dim();
+  auto map = mesh->topology().index_map(tdim);
   assert(map);
   const int num_cells = map->size_local() + map->num_ghosts();
   for (int c = 0; c < num_cells; ++c)
   {
     // Get dof maps for cell
-    auto dmap1 = dofmap1.cell_dofs(c);
+    auto dmap1 = dofmap1->cell_dofs(c);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -115,7 +115,7 @@ void _lift_bc_cells(
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Size data structure for assembly
-    auto dmap0 = dofmap0.cell_dofs(c);
+    auto dmap0 = dofmap0->cell_dofs(c);
 
     auto coeff_array = coeffs.row(c);
     Ae.setZero(dmap0.size(), dmap1.size());
