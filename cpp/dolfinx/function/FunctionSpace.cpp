@@ -82,24 +82,22 @@ void FunctionSpace::interpolate_from_any(
   const int tdim = _mesh->topology().dim();
 
   // Get dofmaps
-  assert(_dofmap);
-  const fem::DofMap& dofmap = *_dofmap;
   assert(v.function_space());
-  assert(v.function_space()->dofmap());
-  const fem::DofMap& dofmap_v = *v.function_space()->dofmap();
-
+  std::shared_ptr<const fem::DofMap> dofmap_v = v.function_space()->dofmap();
+  assert(dofmap_v);
   auto map = _mesh->topology().index_map(tdim);
   assert(map);
 
   // Iterate over mesh and interpolate on each cell
+  assert(_dofmap);
   la::VecReadWrapper v_vector_wrap(v.vector().vec());
   Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> v_array
       = v_vector_wrap.x;
   const int num_cells = map->size_local() + map->num_ghosts();
   for (int c = 0; c < num_cells; ++c)
   {
-    auto dofs_v = dofmap_v.cell_dofs(c);
-    auto cell_dofs = dofmap.cell_dofs(c);
+    auto dofs_v = dofmap_v->cell_dofs(c);
+    auto cell_dofs = _dofmap->cell_dofs(c);
     assert(dofs_v.size() == cell_dofs.size());
     for (Eigen::Index i = 0; i < dofs_v.size(); ++i)
       expansion_coefficients[cell_dofs[i]] = v_array[dofs_v[i]];
