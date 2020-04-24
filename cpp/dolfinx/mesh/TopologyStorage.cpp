@@ -104,7 +104,7 @@ int storage::assign(TopologyStorageLayer& to, const TopologyStorageLayer& from,
 {
   int count = 0;
   if (auto facets = interior_facets(from);
-      facets && (override || interior_facets(to)))
+      facets && (override || !interior_facets(to)))
   {
     set_interior_facets(to, facets);
     ++count;
@@ -113,14 +113,14 @@ int storage::assign(TopologyStorageLayer& to, const TopologyStorageLayer& from,
   for (int jj = 0; jj < from.connectivity.cols(); ++jj)
   {
     if (auto imap = index_map(from, jj);
-        imap && (override || index_map(to, jj)))
+        imap && (override || !index_map(to, jj)))
     {
       set_index_map(to, jj, imap);
       ++count;
     }
     for (int ii = 0; ii < from.connectivity.rows(); ++ii)
       if (auto conn = connectivity(from, ii, jj);
-          conn && (override || connectivity(to, ii, jj)))
+          conn && (override || !connectivity(to, ii, jj)))
       {
         set_connectivity(to, ii, jj, conn);
         ++count;
@@ -128,14 +128,14 @@ int storage::assign(TopologyStorageLayer& to, const TopologyStorageLayer& from,
   }
 
   if (auto cpermutations = cell_permutations(from);
-      cpermutations && (override || cell_permutations(to)))
+      cpermutations && (override || !cell_permutations(to)))
   {
     set_cell_permutations(to, cpermutations);
     ++count;
   }
 
   if (auto fpermutations = facet_permutations(from);
-      fpermutations && (override || facet_permutations(to)))
+      fpermutations && (override || !facet_permutations(to)))
   {
     set_facet_permutations(to, fpermutations);
     ++count;
