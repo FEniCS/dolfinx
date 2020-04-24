@@ -233,7 +233,9 @@ std::vector<bool> Topology::on_boundary(int dim,
 
   // Iterate over all facets, selecting only those with one cell
   // attached
-  auto facets = interior_facets(discard_intermediate);
+  std::shared_ptr<const std::vector<bool>> facets = interior_facets(discard_intermediate);
+  assert(facets);
+  auto _facets = *facets;
   assert(num_facets <= static_cast<int>(facets->size()));
 
   for (int i = 0; i < num_facets; ++i)
@@ -284,7 +286,7 @@ Topology::interior_facets(bool discard_intermediate) const
   auto scratch = create_scratch();
   scratch.create_interior_facets(discard_intermediate);
   storage::assign_if_not_empty(_cache, scratch._cache, false);
-  return _cache.read(storage::interior_facets);
+  return scratch.interior_facets();
 }
 //-----------------------------------------------------------------------------
 size_t Topology::hash() const
