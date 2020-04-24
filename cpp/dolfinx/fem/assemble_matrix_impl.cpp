@@ -27,19 +27,21 @@ void fem::impl::assemble_matrix(
         mat_set_values_local,
     const Form& a, const std::vector<bool>& bc0, const std::vector<bool>& bc1)
 {
-  assert(a.mesh());
-  const mesh::Mesh& mesh = *a.mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  assert(mesh);
 
   // Get dofmap data
-  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
-  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
-  const graph::AdjacencyList<std::int32_t>& dofs0 = dofmap0.list();
-  const graph::AdjacencyList<std::int32_t>& dofs1 = dofmap1.list();
+  std::shared_ptr<const fem::DofMap> dofmap0 = a.function_space(0)->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap1 = a.function_space(1)->dofmap();
+  assert(dofmap0);
+  assert(dofmap1);
+  const graph::AdjacencyList<std::int32_t>& dofs0 = dofmap0->list();
+  const graph::AdjacencyList<std::int32_t>& dofs1 = dofmap1->list();
 
-  assert(dofmap0.element_dof_layout);
-  assert(dofmap1.element_dof_layout);
-  const int num_dofs_per_cell0 = dofmap0.element_dof_layout->num_dofs();
-  const int num_dofs_per_cell1 = dofmap1.element_dof_layout->num_dofs();
+  assert(dofmap0->element_dof_layout);
+  assert(dofmap1->element_dof_layout);
+  const int num_dofs_per_cell0 = dofmap0->element_dof_layout->num_dofs();
+  const int num_dofs_per_cell1 = dofmap1->element_dof_layout->num_dofs();
 
   // Prepare constants
   if (!a.all_constants_set())
@@ -61,7 +63,7 @@ void fem::impl::assemble_matrix(
         = integrals.integral_domains(type::cell, i);
 
     fem::impl::assemble_cells<ScalarType>(
-        mat_set_values_local, mesh, active_cells, dofs0, num_dofs_per_cell0,
+        mat_set_values_local, *mesh, active_cells, dofs0, num_dofs_per_cell0,
         dofs1, num_dofs_per_cell1, bc0, bc1, fn, coeffs, constant_values);
   }
 
@@ -71,8 +73,8 @@ void fem::impl::assemble_matrix(
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets<ScalarType>(
-        mat_set_values_local, mesh, active_facets, dofmap0, dofmap1, bc0, bc1,
-        fn, coeffs, constant_values);
+        mat_set_values_local, *mesh, active_facets, *dofmap0, *dofmap1, bc0,
+        bc1, fn, coeffs, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
@@ -82,8 +84,8 @@ void fem::impl::assemble_matrix(
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     fem::impl::assemble_interior_facets<ScalarType>(
-        mat_set_values_local, mesh, active_facets, dofmap0, dofmap1, bc0, bc1,
-        fn, coeffs, c_offsets, constant_values);
+        mat_set_values_local, *mesh, active_facets, *dofmap0, *dofmap1, bc0,
+        bc1, fn, coeffs, c_offsets, constant_values);
   }
 }
 //-----------------------------------------------------------------------------
