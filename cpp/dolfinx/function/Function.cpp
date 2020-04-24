@@ -176,7 +176,8 @@ void Function::eval(
   const int tdim = mesh->topology().dim();
 
   // Get geometry data
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh->geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -247,7 +248,7 @@ void Function::eval(
 
     // Push basis forward to physical element
     element->transform_reference_basis(basis_values, basis_reference_values, X,
-                                      J, detJ, K, cell_info[cell_index]);
+                                       J, detJ, K, cell_info[cell_index]);
 
     // Get degrees of freedom for current cell
     auto dofs = dofmap->cell_dofs(cell_index);
@@ -323,32 +324,31 @@ Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 Function::compute_point_values() const
 {
   assert(_function_space);
-  assert(_function_space->mesh());
-  const mesh::Mesh& mesh = *_function_space->mesh();
-
-  const int tdim = mesh.topology().dim();
+  std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
 
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
 
   // Resize Array for holding point values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      point_values(mesh.geometry().x().rows(), value_size_loc);
+      point_values(mesh->geometry().x().rows(), value_size_loc);
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh->geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+      = mesh->geometry().x();
 
   // Interpolate point values on each cell (using last computed value if
   // not continuous, e.g. discontinuous Galerkin methods)
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(num_dofs_g, 3);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(num_dofs_g, value_size_loc);
-  auto map = mesh.topology().index_map(tdim);
+  auto map = mesh->topology().index_map(tdim);
   assert(map);
   const int num_cells = map->size_local() + map->num_ghosts();
   for (int c = 0; c < num_cells; ++c)

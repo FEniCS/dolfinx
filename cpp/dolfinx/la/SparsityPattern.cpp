@@ -209,14 +209,15 @@ void SparsityPattern::insert(
         "Cannot insert into sparsity pattern. It has already been assembled");
   }
 
-  const common::IndexMap& index_map0 = *_index_maps[0];
-  const int bs0 = index_map0.block_size();
-  const std::int32_t local_size0
-      = bs0 * (index_map0.size_local() + index_map0.num_ghosts());
+  assert(_index_maps[0]);
+  assert(_index_maps[1]);
 
-  const common::IndexMap& index_map1 = *_index_maps[1];
-  const int bs1 = index_map1.block_size();
-  const std::int32_t local_size1 = bs1 * index_map1.size_local();
+  const int bs0 = _index_maps[0]->block_size();
+  const std::int32_t local_size0
+      = bs0 * (_index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
+
+  const int bs1 = _index_maps[1]->block_size();
+  const std::int32_t local_size1 = bs1 * _index_maps[1]->size_local();
 
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
@@ -228,7 +229,7 @@ void SparsityPattern::insert(
           _diagonal_cache[rows[i]].push_back(cols[j]);
         else
         {
-          const std::int64_t J = col_map(cols[j], index_map1);
+          const std::int64_t J = col_map(cols[j], *_index_maps[0]);
           _off_diagonal_cache[rows[i]].push_back(J);
         }
       }
@@ -250,10 +251,9 @@ void SparsityPattern::insert_diagonal(
         "Cannot insert into sparsity pattern. It has already been assembled");
   }
 
-  const common::IndexMap& index_map0 = *_index_maps[0];
-  const int bs0 = index_map0.block_size();
+  const int bs0 = _index_maps[0]->block_size();
   const std::int32_t local_size0
-      = bs0 * (index_map0.size_local() + index_map0.num_ghosts());
+      = bs0 * (_index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
 
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
