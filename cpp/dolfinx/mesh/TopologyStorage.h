@@ -1,6 +1,8 @@
+// Copyright (C) 2020 Matthias Rambausek
 //
-// Created by mrambausek on 12.04.20.
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
