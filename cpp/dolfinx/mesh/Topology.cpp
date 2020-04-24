@@ -212,6 +212,7 @@ std::vector<bool> Topology::on_boundary(int dim,
   if (dim == tdim - 1)
   {
     auto facets = interior_facets(discard_intermediate);
+    assert(facets);
     assert(num_facets <= static_cast<int>(facets->size()));
     assert(num_facets <= static_cast<int>(marker.size()));
     std::transform(begin(*facets), begin(*facets) + num_facets, begin(marker),
@@ -233,9 +234,8 @@ std::vector<bool> Topology::on_boundary(int dim,
 
   // Iterate over all facets, selecting only those with one cell
   // attached
-  std::shared_ptr<const std::vector<bool>> facets = interior_facets(discard_intermediate);
+  auto facets = interior_facets(discard_intermediate);
   assert(facets);
-  auto _facets = *facets;
   assert(num_facets <= static_cast<int>(facets->size()));
 
   for (int i = 0; i < num_facets; ++i)
