@@ -152,8 +152,9 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
           a.function_space(1)->dofmap().get()}};
 
   // Get mesh
-  assert(a.mesh());
-  const mesh::Mesh& mesh = *(a.mesh());
+  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
 
   common::Timer t0("Build sparsity");
 
@@ -162,28 +163,28 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
       = {{dofmaps[0]->index_map, dofmaps[1]->index_map}};
 
   // Create and build sparsity pattern
-  la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
+  la::SparsityPattern pattern(mesh->mpi_comm(), index_maps);
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
   {
-    SparsityPatternBuilder::cells(pattern, mesh.topology(),
+    SparsityPatternBuilder::cells(pattern, mesh->topology(),
                                   {{dofmaps[0], dofmaps[1]}});
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
   {
-  // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
-    mesh.topology_mutable().create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
-    SparsityPatternBuilder::interior_facets(pattern, mesh.topology(),
+    // FIXME: cleanup these calls? Some of the happen internally again.
+    mesh->topology_mutable().create_entities(tdim - 1);
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    SparsityPatternBuilder::interior_facets(pattern, mesh->topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
-    mesh.topology_mutable().create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
-    SparsityPatternBuilder::exterior_facets(pattern, mesh.topology(),
+    mesh->topology_mutable().create_entities(tdim - 1);
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    SparsityPatternBuilder::exterior_facets(pattern, mesh->topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
   t0.stop();
@@ -215,7 +216,9 @@ la::PETScMatrix fem::create_matrix_block(
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
       = block_function_spaces(a);
 
-  const mesh::Mesh& mesh = *V[0][0]->mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = V[0][0]->mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
 
   // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
@@ -229,33 +232,36 @@ la::PETScMatrix fem::create_matrix_block(
       if (a(row, col))
       {
         // Create sparsity pattern for block
-        patterns[row].push_back(
-            std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
+        patterns[row].push_back(std::make_unique<la::SparsityPattern>(
+            mesh->mpi_comm(), index_maps));
 
         // Build sparsity pattern for block
         std::array<const DofMap*, 2> dofmaps
             = {{V[0][row]->dofmap().get(), V[1][col]->dofmap().get()}};
         assert(patterns[row].back());
-        auto& sp = *patterns[row].back();
+        auto& sp = patterns[row].back();
+        assert(sp);
         const FormIntegrals& integrals = a(row, col)->integrals();
         if (integrals.num_integrals(FormIntegrals::Type::cell) > 0)
-          SparsityPatternBuilder::cells(sp, mesh.topology(), dofmaps);
+          SparsityPatternBuilder::cells(*sp, mesh->topology(), dofmaps);
         if (integrals.num_integrals(FormIntegrals::Type::interior_facet) > 0)
         {
-          mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
-          SparsityPatternBuilder::interior_facets(sp, mesh.topology(), dofmaps);
+          mesh->topology_mutable().create_entities(tdim - 1);
+          SparsityPatternBuilder::interior_facets(*sp, mesh->topology(),
+                                                  dofmaps);
         }
         if (integrals.num_integrals(FormIntegrals::Type::exterior_facet) > 0)
         {
-          mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
-          SparsityPatternBuilder::exterior_facets(sp, mesh.topology(), dofmaps);
+          mesh->topology_mutable().create_entities(tdim - 1);
+          SparsityPatternBuilder::exterior_facets(*sp, mesh->topology(),
+                                                  dofmaps);
         }
-        sp.assemble();
+        sp->assemble();
       }
       else
       {
-        patterns[row].push_back(
-            std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
+        patterns[row].push_back(std::make_unique<la::SparsityPattern>(
+            mesh->mpi_comm(), index_maps));
         patterns[row].back()->assemble();
       }
     }
@@ -266,10 +272,10 @@ la::PETScMatrix fem::create_matrix_block(
   for (std::size_t row = 0; row < V[0].size(); ++row)
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
-  la::SparsityPattern pattern(mesh.mpi_comm(), p);
+  la::SparsityPattern pattern(mesh->mpi_comm(), p);
 
   // Initialise matrix
-  la::PETScMatrix A(mesh.mpi_comm(), pattern);
+  la::PETScMatrix A(mesh->mpi_comm(), pattern);
 
   // Build list of row and column index maps (over each block)
   std::array<std::vector<const common::IndexMap*>, 2> index_maps;
@@ -733,9 +739,9 @@ fem::pack_coefficients(const fem::Form& form)
     dofmaps[i] = coefficients.get(i)->function_space()->dofmap().get();
 
   // Get mesh
-  assert(form.mesh());
-  const mesh::Mesh& mesh = *form.mesh();
-  const int tdim = mesh.topology().dim();
+  std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
 
   // Unwrap PETSc vectors
   std::vector<const PetscScalar*> v(coefficients.size(), nullptr);
@@ -748,8 +754,8 @@ fem::pack_coefficients(const fem::Form& form)
     VecGetArrayRead(x_local[i], &v[i]);
   }
 
-  const int num_cells = mesh.topology().index_map(tdim)->size_local()
-                        + mesh.topology().index_map(tdim)->num_ghosts();
+  const int num_cells = mesh->topology().index_map(tdim)->size_local()
+                        + mesh->topology().index_map(tdim)->num_ghosts();
 
   // Copy data into coefficient array
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> c(

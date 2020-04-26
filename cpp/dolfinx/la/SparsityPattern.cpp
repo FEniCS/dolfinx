@@ -60,7 +60,7 @@ SparsityPattern::SparsityPattern(
   {
     assert(patterns[row][0]);
     assert(patterns[row][0]->_index_maps[0]);
-    auto local_range = patterns[row][0]->_index_maps[0]->local_range();
+    const auto local_range = patterns[row][0]->_index_maps[0]->local_range();
     const int bs0 = patterns[row][0]->_index_maps[0]->block_size();
     row_global_offset += bs0 * local_range[0];
     row_local_size += bs0 * (local_range[1] - local_range[0]);
@@ -74,7 +74,7 @@ SparsityPattern::SparsityPattern(
     assert(patterns[0][col]);
     assert(patterns[0][col]->_index_maps[1]);
     cmaps.push_back(patterns[0][col]->_index_maps[1].get());
-    auto local_range = patterns[0][col]->_index_maps[1]->local_range();
+    const auto local_range = patterns[0][col]->_index_maps[1]->local_range();
     const int bs1 = patterns[0][col]->_index_maps[1]->block_size();
     col_process_offset += bs1 * local_range[0];
     col_local_size += bs1 * (local_range[1] - local_range[0]);
@@ -209,14 +209,14 @@ void SparsityPattern::insert(
         "Cannot insert into sparsity pattern. It has already been assembled");
   }
 
-  const common::IndexMap& index_map0 = *_index_maps[0];
-  const int bs0 = index_map0.block_size();
+  assert(_index_maps[0]);
+  const int bs0 = _index_maps[0]->block_size();
   const std::int32_t local_size0
-      = bs0 * (index_map0.size_local() + index_map0.num_ghosts());
+      = bs0 * (_index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
 
-  const common::IndexMap& index_map1 = *_index_maps[1];
-  const int bs1 = index_map1.block_size();
-  const std::int32_t local_size1 = bs1 * index_map1.size_local();
+  assert(_index_maps[1]);
+  const int bs1 = _index_maps[1]->block_size();
+  const std::int32_t local_size1 = bs1 * _index_maps[1]->size_local();
 
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
@@ -228,7 +228,7 @@ void SparsityPattern::insert(
           _diagonal_cache[rows[i]].push_back(cols[j]);
         else
         {
-          const std::int64_t J = col_map(cols[j], index_map1);
+          const std::int64_t J = col_map(cols[j], *_index_maps[1]);
           _off_diagonal_cache[rows[i]].push_back(J);
         }
       }
@@ -406,40 +406,6 @@ std::int64_t SparsityPattern::num_nonzeros() const
   return _diagonal->array().rows() + _off_diagonal->array().rows();
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-SparsityPattern::num_nonzeros_diagonal() const
-{
-  if (!_diagonal)
-    throw std::runtime_error("Sparsity pattern has not been finalised.");
-
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
-      _diagonal->num_nodes());
-  for (int i = 0; i < _diagonal->num_nodes(); ++i)
-    num_nonzeros[i] = _diagonal->num_links(i);
-
-  return num_nonzeros;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-SparsityPattern::num_nonzeros_off_diagonal() const
-{
-  if (!_off_diagonal)
-    throw std::runtime_error("Sparsity pattern has not been finalised.");
-
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
-      _off_diagonal->num_nodes());
-  for (int i = 0; i < _off_diagonal->num_nodes(); ++i)
-    num_nonzeros[i] = _off_diagonal->num_links(i);
-
-  return num_nonzeros;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-SparsityPattern::num_local_nonzeros() const
-{
-  return num_nonzeros_diagonal() + num_nonzeros_off_diagonal();
-}
-//-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>&
 SparsityPattern::diagonal_pattern() const
 {
@@ -457,24 +423,4 @@ SparsityPattern::off_diagonal_pattern() const
 }
 //-----------------------------------------------------------------------------
 MPI_Comm SparsityPattern::mpi_comm() const { return _mpi_comm.comm(); }
-//-----------------------------------------------------------------------------
-std::string SparsityPattern::str() const
-{
-  if (!_diagonal)
-    throw std::runtime_error("Sparsity pattern has not been assembled.");
-  assert(_off_diagonal);
-
-  // Print each row
-  std::stringstream s;
-  assert(_off_diagonal->num_nodes() == _diagonal->num_nodes());
-  for (int i = 0; i < _diagonal->num_nodes(); i++)
-  {
-    s << "Row " << i << ":";
-    s << " " << _diagonal->links(i);
-    s << " " << _off_diagonal->links(i);
-    s << std::endl;
-  }
-
-  return s.str();
-}
 //-----------------------------------------------------------------------------
