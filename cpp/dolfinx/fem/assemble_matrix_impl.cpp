@@ -327,8 +327,6 @@ void fem::impl::assemble_interior_facets(
   assert(c_to_f);
   for (std::int32_t facet_index : active_facets)
   {
-    assert(mesh.topology().interior_facets()[facet_index]);
-
     // Create attached cells
     auto cells = c->links(facet_index);
     assert(cells.rows() == 2);
