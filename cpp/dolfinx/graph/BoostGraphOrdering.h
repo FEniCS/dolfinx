@@ -9,6 +9,7 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <cstdint>
 
 namespace dolfinx::graph
 {
