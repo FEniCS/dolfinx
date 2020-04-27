@@ -672,14 +672,6 @@ mesh::create_topology(MPI_Comm comm,
   Topology topology(comm, cell_type);
   const int tdim = topology.dim();
 
-  // int rank = dolfinx::MPI::rank(comm);
-  // std::stringstream s;
-  // s << "Ghost vertices = " << rank << "] ";
-  // for (auto q : ghost_vertices)
-  //   s << q << " ";
-  // s << "\n";
-  // std::cout << s.str();
-
   // Vertex IndexMap
   auto index_map_v
       = std::make_shared<common::IndexMap>(comm, nlocal, ghost_vertices, 1);
