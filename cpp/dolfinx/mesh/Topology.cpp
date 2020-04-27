@@ -502,7 +502,6 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
   std::int32_t nlocal = c;
-  std::int32_t nghosts = global_to_local_index.size() - nlocal;
 
   // Get global offset for local indices
   std::int64_t global_offset = dolfinx::MPI::global_offset(comm, nlocal, true);
