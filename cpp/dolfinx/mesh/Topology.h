@@ -123,7 +123,7 @@ public:
   /// @param[in] discard_intermediate only has an effect in case of caching
   /// @return Index map for the entities of dimension @p dim
   std::shared_ptr<const common::IndexMap>
-  index_map(int dim, bool discard_intermediate = false) const;
+  index_map(int dim, [[maybe_unused]] bool discard_intermediate = false) const;
 
   /// Computes and returns connectivity from entities of dimension d0 to
   /// entities of dimension d1.
@@ -271,8 +271,11 @@ private:
   // construction
   static void check_storage(const Storage& remanent_storage, int tdim);
 
-  // A lock for remanent storage that can be relased by the user
-  std::optional<const Storage::LayerLock_t> _remanent_lock;
+  // MPI communicator
+  dolfinx::MPI::Comm _mpi_comm;
+
+  // Cell type
+  mesh::CellType _cell_type;
 
   // Storage for class invariant (permanent) data
   Storage _permanent_storage;
@@ -280,14 +283,11 @@ private:
   // Storage for remanent (discardable persistent) data
   Storage _remanent_storage;
 
+  // A lock for remanent storage that can be relased by the user
+  std::optional<const Storage::LayerLock_t> _remanent_lock;
+
   // Caching (only when the user acquired a lock)
   mutable Storage _cache;
-
-  // MPI communicator
-  dolfinx::MPI::Comm _mpi_comm;
-
-  // Cell type
-  mesh::CellType _cell_type;
 };
 
 /// Create distributed topology

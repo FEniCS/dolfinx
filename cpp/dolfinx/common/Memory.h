@@ -391,7 +391,7 @@ public:
 
 private:
   /// Trigger cleanup of (removal of unsued) storage layers
-  void layer_expired(maybe_null<const Layer_t> expired /* currently unused */)
+  void layer_expired([[maybe_unused]] maybe_null<const Layer_t> expired)
   {
     layers.remove_if([](const weakly_owned<Layer_t>& layer) {
       return layer.use_count() == 0;

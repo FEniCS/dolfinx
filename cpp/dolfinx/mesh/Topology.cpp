@@ -5,10 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
-#include "TopologyStorage.h"
 #include "Partitioning.h"
 #include "PermutationComputation.h"
 #include "TopologyComputation.h"
+#include "TopologyStorage.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/FormIntegrals.h>
@@ -172,7 +172,7 @@ void Topology::check_storage(const Topology::Storage& remanent_storage,
 int Topology::dim() const { return cell_dim(cell_type()); }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
-Topology::index_map(int dim, bool discard_intermediate /*unused*/) const
+Topology::index_map(int dim, bool discard_intermediate) const
 {
   // "discard_intermediate" is not used here because the "intermediate results"
   // are logically connect to the index map and thus not truly "intermediate".
@@ -342,8 +342,7 @@ Topology::acquire_cache_lock(bool force_new_layer) const
   return _cache.acquire_layer_lock(force_new_layer);
 }
 //-----------------------------------------------------------------------------
-Topology::Storage::LayerLock_t
-Topology::acquire_new_remanent_layer()
+Topology::Storage::LayerLock_t Topology::acquire_new_remanent_layer()
 {
   return _remanent_storage.acquire_layer_lock(true);
 }
@@ -411,9 +410,9 @@ std::int32_t Topology::create_entities(int dim)
 //--------------------------------------------------------------------------
 void Topology::create_connectivity(int d0, int d1, bool discard_intermediate)
 {
-  if (auto conn = _remanent_storage.write(
-          storage::set_connectivity, d0, d1, _cache.read(storage::connectivity,
-          d0, d1));
+  if (auto conn
+      = _remanent_storage.write(storage::set_connectivity, d0, d1,
+                                _cache.read(storage::connectivity, d0, d1));
       conn)
     return;
 
@@ -738,7 +737,8 @@ mesh::create_topology(MPI_Comm comm,
   auto [cells_local, local_to_global_vertices]
       = graph::Partitioning::create_local_adjacency_list(cells);
 
-  // TODO: replace the construction via storage with the short create_topology variant?
+  // TODO: replace the construction via storage with the short create_topology
+  // variant?
   Topology::Storage storage_local{true};
   const int tdim = cell_dim(cell_type);
 
@@ -772,7 +772,8 @@ mesh::create_topology(MPI_Comm comm,
       = graph::Partitioning::create_distributed_adjacency_list(
           comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
-  // TODO: replace the construction via storage with the short create_topology variant?
+  // TODO: replace the construction via storage with the short create_topology
+  // variant?
   Topology::Storage storage(true);
 
   // Set vertex IndexMap, and vertex-vertex connectivity
