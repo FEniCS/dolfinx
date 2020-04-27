@@ -118,7 +118,8 @@ Mesh mesh::create(MPI_Comm comm,
   }
 
   // FIXME: improve. Clip cell data, removing any unused ghost cells
-  // before sending to create_geometry
+  // before sending to create_geometry. Maybe AdjacencyList can have a "resize"
+  // method?
   int n_cells_local = topology.index_map(tdim)->size_local()
                       + topology.index_map(tdim)->num_ghosts();
   Eigen::Matrix<std::int32_t, Eigen::Dynamic, 1> off1
