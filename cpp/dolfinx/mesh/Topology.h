@@ -67,6 +67,8 @@ class Topology
 {
 
 public:
+
+  /// An alias for the layered topology storage class
   using Storage = storage::TopologyStorage;
 
   /// Create mesh topology with prepared data.
@@ -260,10 +262,15 @@ public:
   const Storage& data() const;
 
 private:
+
+  // Create a special copy for the purpose of computation and caching
   Topology create_scratch() const;
 
+  // A helper that checks whether all rewuired information is present for
+  // construction
   static void check_storage(const Storage& remanent_storage, int tdim);
 
+  // A lock for remanent storage that can be relased by the user
   std::optional<const Storage::LayerLock_t> _remanent_lock;
 
   // Storage for class invariant (permanent) data
