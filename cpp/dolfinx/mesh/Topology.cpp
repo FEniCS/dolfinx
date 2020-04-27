@@ -52,7 +52,7 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
       = dolfinx::MPI::all_to_all(
           comm, graph::AdjacencyList<std::int64_t>(send_indices));
 
-  // Get index sharing - first vector entry (lowest) is owner.
+  // Get index sharing - ownership will be first entry (randomised later)
   std::unordered_map<std::int64_t, std::vector<int>> index_to_owner;
   for (int p = 0; p < recv_indices.num_nodes(); ++p)
   {
