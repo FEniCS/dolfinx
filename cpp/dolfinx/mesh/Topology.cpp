@@ -6,7 +6,6 @@
 
 #include "Topology.h"
 #include "TopologyStorage.h"
-
 #include "Partitioning.h"
 #include "PermutationComputation.h"
 #include "TopologyComputation.h"
