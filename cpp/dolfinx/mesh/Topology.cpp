@@ -430,15 +430,23 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
-  // Get indices of ghost cells
-  const std::vector<std::int64_t> cell_ghost_indices
-      = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,
-                                                   ghost_owners);
-
-  // Cell IndexMap
-  const int num_local_cells = cells.num_nodes() - cell_ghost_indices.size();
-  auto index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells,
-                                                        cell_ghost_indices, 1);
+  // Create cell IndexMap
+  const int num_local_cells = cells.num_nodes() - ghost_owners.size();
+  std::shared_ptr<common::IndexMap> index_map_c;
+  if (ghost_mode == mesh::GhostMode::none)
+  {
+    index_map_c = std::make_shared<common::IndexMap>(
+        comm, num_local_cells, std::vector<std::int64_t>(), 1);
+  }
+  else
+  {
+    // Get indices of ghost cells
+    const std::vector<std::int64_t> cell_ghost_indices
+        = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,
+                                                     ghost_owners);
+    index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells,
+                                                     cell_ghost_indices, 1);
+  }
 
   // Map from existing global vertex index to local index
   // putting ghost indices last
@@ -446,7 +454,7 @@ mesh::create_topology(MPI_Comm comm,
 
   // Any vertices which are in ghost cells set to -1 since we need to
   // determine ownership
-  for (std::size_t i = 0; i < cell_ghost_indices.size(); ++i)
+  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
   {
     auto v = cells.links(num_local_cells + i);
     for (int j = 0; j < v.size(); ++j)
@@ -545,7 +553,6 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
-  // FIXME: make const
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
       = send_to_neighbours(neighbour_comm, send_pairs);
 
@@ -636,9 +643,6 @@ mesh::create_topology(MPI_Comm comm,
       my_local_cells_array[i] = global_to_local_index[cells_array[i]];
     my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         my_local_cells_array, local_offsets);
-
-    index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, std::vector<std::int64_t>(), 1);
   }
   else
   {
