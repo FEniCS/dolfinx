@@ -284,7 +284,7 @@ private:
   Storage _remanent_storage;
 
   // A lock for remanent storage that can be relased by the user
-  std::optional<const Storage::LayerLock_t> _remanent_lock;
+  std::optional<Storage::LayerLock_t> _remanent_lock;
 
   // Caching (only when the user acquired a lock)
   mutable Storage _cache;
