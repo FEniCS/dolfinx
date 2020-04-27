@@ -75,7 +75,8 @@ public:
   /// Note that everything beyond the data that defines the topology can be
   /// computed on-the-fly with possible caching.
   /// @param[in] comm MPI communicator
-  /// @param[in] _remanent_storage storage with at least all essential data.
+  /// @param[in] type of cells
+  /// @param[in] remanent_storage storage with at least all essential data.
   /// Essential data are
   ///  * the connectivities for (d0, d1) = (tdim, 0) and (d0, d1) = (0, 0) as
   ///    well as
