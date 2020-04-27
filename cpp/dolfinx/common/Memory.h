@@ -19,41 +19,59 @@ namespace dolfinx::common::memory
 using lock_t = std::shared_ptr<const bool>;
 using sentinel_t = std::weak_ptr<const bool>;
 
+// TODO: either use a signal/slot lib or rely on weak/shared_ptr without
+//  callbacks.
+
 /// A wrapper for objects with lifetime dependencies without using smart
 /// pointers but mimicking their interface to a certain degree.
 template <typename T, typename observer_t>
 class observed
 {
 public:
+  /// Constructor: taking the object and lifetime information (lock or
+  /// "sentinel")
   observed(T&& obj, observer_t observer)
       : obj{std::move(obj)}, observer{std::move(observer)}
   {
     // do nothing
   }
 
+  /// Default constructor
   observed() = default;
+
+  /// Default copy
   observed(const observed& other) = default;
+
+  /// Default move
   explicit observed(observed&& other) noexcept = default;
 
+  /// Default copy assignemnt
   observed& operator=(const observed& other) = default;
+
+  /// Default move assignemnt
   observed& operator=(observed&& other) noexcept = default;
 
+  /// Default constructor
   ~observed() = default;
 
+  /// Get reference on the object stored
   T& get()
   {
     assert(use_count() != 0);
     return obj;
   }
 
+  /// Get const reference on the object stored
   const T& get() const
   {
     assert(use_count() != 0);
     return obj;
   }
 
+  /// Use count of the observer
   [[nodiscard]] long use_count() const noexcept { return observer.use_count(); }
 
+  /// Reset the observer
   void reset() noexcept { observer.reset(); }
 
 private:
@@ -70,27 +88,34 @@ using weakly_owned = observed<T, sentinel_t>;
 template <typename T>
 using weakly_owned = observed<T, sentinel_t>;
 
+/// Make an object weakly owned (with lifetime information 'sentinel')
 template <typename T>
 weakly_owned<T> make_guarded(T obj, sentinel_t sentinel)
 {
   return weakly_owned<T>{std::forward<T&&>(obj), std::move(sentinel)};
 }
 
+/// Create whether the object is still alive/valid
 template <typename T>
 bool check(const weakly_owned<T>& obj)
 {
   return obj.use_count() != 0;
 }
 
+/// Create whether the object is still alive/valid: overload for pointers.
 template <typename T>
 bool check(const weakly_owned<T*>& obj)
 {
   return obj.use_count() != 0 && obj.get();
 }
 
+/// An owned object: the (shared) owner hols also the attached lifetime
+/// information such that a non-owner can detect its status, e.g. weakly own and
+/// safely use or not use it.
 template <typename T>
 using owned = observed<T, lock_t>;
 
+/// Attach a "liftime" to an object.
 template <typename T>
 owned<T> make_owned(T obj, lock_t lock)
 {
@@ -110,6 +135,9 @@ owned<T> make_owned(T obj, lock_t lock)
 //  return res;
 //}
 
+/// Apply a visitor to each element of a range until the visitor returns true
+/// or the end of the range is reached. Additional args for the visitor can be
+/// provided.
 template <typename Iterator_t, typename Visitor_t, typename... Args_t>
 auto visit(Iterator_t begin, Iterator_t end, Visitor_t&& visitor,
            Args_t&&... args)
@@ -145,12 +173,19 @@ public:
     // do nothing
   }
 
+  /// Default copy constructor
   LayerLock(const LayerLock&) = default;
+
+  /// Default move constructor
   LayerLock(LayerLock&&) noexcept = default;
 
+  /// Default copy assignments
   LayerLock& operator=(const LayerLock&) = default;
+
+  /// Default move assignment
   LayerLock& operator=(LayerLock&&) noexcept = default;
 
+  /// Destructor: do release operation (notify that the lock has gone)
   ~LayerLock() { release(); };
 
   /// Returns a pointer to the owned layer. If no layer os owned because
@@ -222,6 +257,8 @@ template <typename Layer_t>
 class LayerManager
 {
 public:
+
+  /// Alias for the layer lock type
   using LayerLock_t = LayerLock<Layer_t>;
 
   /// Create Storage layer
@@ -236,12 +273,14 @@ public:
       remanent_lock.emplace(acquire_layer_lock(true));
   }
 
+  /// Constructor without background storage
   LayerManager(bool remanent)
   {
     if (remanent)
       remanent_lock.emplace(acquire_layer_lock(true));
   }
 
+  /// Default constructor: No remanent layer, no background storage
   LayerManager() = default;
 
   /// Copy constructor [deleted]
@@ -284,14 +323,19 @@ public:
                        make_guarded(callback, lifetime));
   }
 
+  /// Add a whole new layer from outside
   void push_layer(Layer_t layer) { layers.emplace_back(std::move(layer)); }
 
+  /// Ask whether the storage has a remanent layer
   bool is_remanent() { return remanent_lock.has_value(); }
 
+  /// Ask whether the storage is empty, i.e. does not have ana writable layers.
   bool empty() const { return layers.empty(); }
 
+  /// Ask whether the storage has read-only background storage attached.
   bool has_other() const { return check_other(); }
 
+  /// Get the attached read-only storage
   const std::optional<weakly_owned<std::reference_wrapper<const LayerManager>>>& get_other() const { return other; }
 
   /// Access alls layers beginning from the top, ie. with the "most recent"

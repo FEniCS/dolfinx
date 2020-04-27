@@ -40,29 +40,30 @@ enum class CellType;
 namespace dolfinx::mesh::storage
 {
 
+/// This struct collects (possibly) stored topological data.
 struct TopologyStorageLayer
 {
 
-  // IndexMap to store ghosting for each entity dimension
+  /// IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> index_map;
 
-  // AdjacencyList for pairs of topological dimensions
+  /// AdjacencyList for pairs of topological dimensions
   Eigen::Array<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>, 4, 4,
                Eigen::RowMajor>
       connectivity;
 
-  // The facet permutations
+  /// The facet permutations
   std::shared_ptr<
       const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
       facet_permutations;
 
-  // Cell permutation info. See the documentation for
-  // get_cell_permutation_info for documentation of how this is encoded.
+  /// Cell permutation info. See the documentation for
+  /// get_cell_permutation_info for documentation of how this is encoded.
   std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
       cell_permutations;
 
-  // Marker for owned facets, which evaluates to True for facets that
-  // are interior to the domain
+  /// Marker for owned facets, which evaluates to True for facets that
+  /// are interior to the domain
   std::shared_ptr<const std::vector<bool>> interior_facets;
 };
 
