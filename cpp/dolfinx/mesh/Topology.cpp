@@ -9,6 +9,7 @@
 #include "PermutationComputation.h"
 #include "TopologyComputation.h"
 #include "utils.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -16,6 +17,7 @@
 #include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <numeric>
+#include <random>
 #include <unordered_map>
 
 using namespace dolfinx;
@@ -58,6 +60,16 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
     auto recv_p = recv_indices.links(p);
     for (int j = 0; j < recv_p.rows(); ++j)
       index_to_owner[recv_p[j]].push_back(p);
+  }
+
+  std::random_device rd;
+  std::mt19937 g(rd());
+
+  // Randomise ownership
+  for (auto& map_entry : index_to_owner)
+  {
+    std::vector<int>& procs = map_entry.second;
+    std::shuffle(procs.begin(), procs.end(), g);
   }
 
   // Send index ownership data back to all sharing processes
