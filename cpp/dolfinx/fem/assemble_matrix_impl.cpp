@@ -331,9 +331,12 @@ void fem::impl::assemble_interior_facets(
   assert(c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
+  auto interior_facets = mesh.topology().interior_facets();
+  assert(interior_facets);
+
   for (std::int32_t facet_index : active_facets)
   {
-    assert((*mesh.topology().interior_facets())[facet_index]);
+    assert((*interior_facets)[facet_index]);
 
     // Create attached cells
     auto cells = c->links(facet_index);

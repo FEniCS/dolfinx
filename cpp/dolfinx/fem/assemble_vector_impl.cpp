@@ -83,8 +83,8 @@ void _lift_bc_cells(
   const Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values
       = pack_constants(a);
 
-  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
-      = mesh->topology().get_cell_permutation_info();
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+      cell_info = mesh->topology().get_cell_permutation_info();
   assert(cell_info);
 
   // Iterate over all cells
@@ -217,17 +217,22 @@ void _lift_bc_exterior_facets(
   auto map = topology.index_map(tdim - 1);
   assert(map);
 
-  std::shared_ptr<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>> perms
-      = mesh->topology().get_facet_permutations();
-  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
-      = mesh->topology().get_cell_permutation_info();
+  std::shared_ptr<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      perms = mesh->topology().get_facet_permutations();
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+      cell_info = mesh->topology().get_cell_permutation_info();
   assert(perms);
   assert(cell_info);
+
+  std::shared_ptr<const std::vector<bool>> interior_facets
+      = topology.interior_facets();
+  assert(interior_facets);
 
   for (int f = 0; f < map->size_local(); ++f)
   {
     // Move to next facet if this one is an interior facet
-    if ((*topology.interior_facets())[f])
+    if ((*interior_facets)[f])
       continue;
 
     // Create attached cell
@@ -385,8 +390,8 @@ void fem::impl::assemble_cells(
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be(num_dofs_per_cell);
 
-  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
-      = mesh.topology().get_cell_permutation_info();
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+      cell_info = mesh.topology().get_cell_permutation_info();
   assert(cell_info);
 
   // Iterate over active cells
@@ -442,10 +447,11 @@ void fem::impl::assemble_exterior_facets(
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
-  std::shared_ptr<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>> perms
-      = mesh.topology().get_facet_permutations();
-  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
-      = mesh.topology().get_cell_permutation_info();
+  std::shared_ptr<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      perms = mesh.topology().get_facet_permutations();
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+      cell_info = mesh.topology().get_cell_permutation_info();
   assert(perms);
   assert(cell_info);
 
@@ -521,10 +527,11 @@ void fem::impl::assemble_interior_facets(
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
-  std::shared_ptr<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>> perms
-      = mesh.topology().get_facet_permutations();
-  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> cell_info
-      = mesh.topology().get_cell_permutation_info();
+  std::shared_ptr<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      perms = mesh.topology().get_facet_permutations();
+  std::shared_ptr<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+      cell_info = mesh.topology().get_cell_permutation_info();
   assert(perms);
   assert(cell_info);
 
@@ -550,8 +557,8 @@ void fem::impl::assemble_interior_facets(
     }
 
     // Orientation
-    const std::array<std::uint8_t, 2> perm
-        = {(*perms)(local_facet[0], cells[0]), (*perms)(local_facet[1], cells[1])};
+    const std::array<std::uint8_t, 2> perm = {
+        (*perms)(local_facet[0], cells[0]), (*perms)(local_facet[1], cells[1])};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
