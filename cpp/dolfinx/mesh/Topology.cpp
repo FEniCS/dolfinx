@@ -26,12 +26,14 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // Given a list of indices (unknown_indices) on each process, return a
-// map to sharing processes for each index, taking the owner as the
+// map to sharing processes for each index, with the (random) owner as the
 // first in the list
 std::unordered_map<std::int64_t, std::vector<int>>
 compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 {
   const int mpi_size = dolfinx::MPI::size(comm);
+  // Create a global address space to use with all_to_all post-office
+  // algorithm and find the owner of each index within that space
   std::int64_t global_space = 0;
   std::int64_t max_index = 0;
   if (!unknown_indices.empty())
@@ -471,6 +473,7 @@ mesh::create_topology(MPI_Comm comm,
   }
 
   // Get all vertices which appear in both ghost and non-ghost cells
+  // and vertices which are local
   // FIXME: optimize
   std::set<std::int64_t> ghost_boundary_vertices;
   std::set<std::int64_t> local_vertex_set;
@@ -503,6 +506,7 @@ mesh::create_topology(MPI_Comm comm,
     auto [it_ignore, insert] = global_to_local_index.insert({gi, c++});
     assert(insert);
   }
+
   for (std::int64_t gi : ghost_boundary_vertices)
   {
     const auto it = global_to_procs.find(gi);
@@ -579,8 +583,9 @@ mesh::create_topology(MPI_Comm comm,
 
   if (ghost_mode != mesh::GhostMode::none)
   {
-    // At this point, this process should have indexed all "local" vertices.
-    // Send out to processes which share them.
+    // Receive indexing of ghost vertices which are not on the process
+    // boundary, from the ghost cell owner. NB the ghost cell owner
+    // may not be the same as the vertex owner.
     std::map<std::int32_t, std::set<std::int32_t>> shared_cells
         = index_map_c->compute_shared_indices();
     std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
