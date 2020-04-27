@@ -121,8 +121,10 @@ Mesh mesh::create(MPI_Comm comm,
   // before sending to create_geometry
   int n_cells_local = topology.index_map(tdim)->size_local()
                       + topology.index_map(tdim)->num_ghosts();
-  auto off1 = cell_nodes.offsets().head(n_cells_local + 1);
-  auto data1 = cell_nodes.array().head(off1[n_cells_local]);
+  Eigen::Matrix<std::int32_t, Eigen::Dynamic, 1> off1
+      = cell_nodes.offsets().head(n_cells_local + 1);
+  Eigen::Matrix<std::int64_t, Eigen::Dynamic, 1> data1
+      = cell_nodes.array().head(off1[n_cells_local]);
   graph::AdjacencyList<std::int64_t> cell_nodes_2(data1, off1);
 
   Geometry geometry

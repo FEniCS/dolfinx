@@ -646,7 +646,6 @@ mesh::create_topology(MPI_Comm comm,
   else
   {
     // Convert my_cells (global indexing) to my_local_cells (local indexing)
-
     Eigen::Array<std::int32_t, Eigen::Dynamic, 1> my_local_cells_array(
         cells_array.size());
     for (int i = 0; i < my_local_cells_array.size(); ++i)
