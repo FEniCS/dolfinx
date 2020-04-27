@@ -123,7 +123,7 @@ public:
   /// @param[in] discard_intermediate only has an effect in case of caching
   /// @return Index map for the entities of dimension @p dim
   std::shared_ptr<const common::IndexMap>
-  index_map(int dim, [[maybe_unused]] bool discard_intermediate = false) const;
+  index_map(int dim, bool discard_intermediate = false) const;
 
   /// Computes and returns connectivity from entities of dimension d0 to
   /// entities of dimension d1.

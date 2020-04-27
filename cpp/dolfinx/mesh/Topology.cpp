@@ -172,7 +172,7 @@ void Topology::check_storage(const Topology::Storage& remanent_storage,
 int Topology::dim() const { return cell_dim(cell_type()); }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
-Topology::index_map(int dim, bool discard_intermediate) const
+Topology::index_map(int dim, [[maybe_unused]] bool discard_intermediate) const
 {
   // "discard_intermediate" is not used here because the "intermediate results"
   // are logically connect to the index map and thus not truly "intermediate".
