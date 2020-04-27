@@ -17,7 +17,6 @@
 #include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <numeric>
-#include <random>
 #include <unordered_map>
 
 using namespace dolfinx;
@@ -62,9 +61,7 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
       index_to_owner[recv_p[j]].push_back(p);
   }
 
-  std::random_device rd;
-  std::mt19937 g(rd());
-
+  std::mt19937 g(0);
   // Randomise ownership
   for (auto& map_entry : index_to_owner)
   {
