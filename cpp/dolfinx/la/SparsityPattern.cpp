@@ -250,10 +250,10 @@ void SparsityPattern::insert_diagonal(
         "Cannot insert into sparsity pattern. It has already been assembled");
   }
 
-  const common::IndexMap& index_map0 = *_index_maps[0];
-  const int bs0 = index_map0.block_size();
+  assert(_index_maps[0]);
+  const int bs0 = _index_maps[0]->block_size();
   const std::int32_t local_size0
-      = bs0 * (index_map0.size_local() + index_map0.num_ghosts());
+      = bs0 * (_index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
 
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
