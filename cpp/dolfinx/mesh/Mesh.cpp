@@ -90,6 +90,9 @@ Mesh mesh::create(MPI_Comm comm,
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
       = graph::Partitioning::distribute(comm, cells, dest);
 
+  // Create cells and vertices with the ghosting requested. Input topology
+  // includes cells shared via facet, but output will remove these, if not
+  // required by ghost_mode.
   Topology topology = mesh::create_topology(
       comm,
       mesh::extract_topology(element.cell_shape(), element.dof_layout(),
@@ -114,8 +117,16 @@ Mesh mesh::create(MPI_Comm comm,
     }
   }
 
+  // FIXME: improve. Clip cell data, removing any unused ghost cells
+  // before sending to create_geometry
+  int n_cells_local = topology.index_map(tdim)->size_local()
+                      + topology.index_map(tdim)->num_ghosts();
+  auto off1 = cell_nodes.offsets().head(n_cells_local + 1);
+  auto data1 = cell_nodes.array().head(off1[n_cells_local]);
+  graph::AdjacencyList<std::int64_t> cell_nodes_2(data1, off1);
+
   Geometry geometry
-      = mesh::create_geometry(comm, topology, element, cell_nodes, x);
+      = mesh::create_geometry(comm, topology, element, cell_nodes_2, x);
 
   return Mesh(comm, std::move(topology), std::move(geometry));
 }
