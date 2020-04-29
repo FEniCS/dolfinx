@@ -483,23 +483,24 @@ mesh::create_topology(MPI_Comm comm,
 
   // Number all indices which this process now owns
   std::int32_t c = 0;
-  for (std::int64_t gi : local_vertex_set)
+  for (std::int64_t global_index : local_vertex_set)
   {
     // Locally owned
-    auto [it_ignore, insert] = global_to_local_index.insert({gi, c++});
+    auto [it_ignore, insert]
+        = global_to_local_index.insert({global_index, c++});
     assert(insert);
   }
 
-  for (std::int64_t gi : ghost_boundary_vertices)
+  for (std::int64_t global_index : ghost_boundary_vertices)
   {
-    const auto it = global_to_procs.find(gi);
+    const auto it = global_to_procs.find(global_index);
     assert(it != global_to_procs.end());
 
     // Shared and locally owned
     if (it->second[0] == mpi_rank)
     {
       // Should already be in map, but needs index
-      auto it_gi = global_to_local_index.find(gi);
+      auto it_gi = global_to_local_index.find(global_index);
       assert(it_gi != global_to_local_index.end());
       assert(it_gi->second == -1);
       it_gi->second = c++;
