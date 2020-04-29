@@ -25,9 +25,10 @@ using namespace dolfinx::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Given a list of indices (unknown_indices) on each process, return a
-// map to sharing processes for each index, with the (random) owner as the
-// first in the list
+// Compute list of processes sharing the same index
+// @param unknown_indices List of indices on each process
+// @return a map to sharing processes for each index, with the (random) owner as
+// the first in the list
 std::unordered_map<std::int64_t, std::vector<int>>
 compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 {
@@ -37,8 +38,10 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
   std::int64_t global_space = 0;
   std::int64_t max_index = 0;
   if (!unknown_indices.empty())
+  {
     max_index
         = *std::max_element(unknown_indices.begin(), unknown_indices.end());
+  }
   MPI_Allreduce(&max_index, &global_space, 1, MPI_INT64_T, MPI_SUM, comm);
   global_space += 1;
 
@@ -110,26 +113,6 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 
   return index_to_owner;
 }
-//----------------------------------------------------------------------------------------------
-// Wrapper around neighbor_all_to_all for vector<vector> style input
-Eigen::Array<std::int64_t, Eigen::Dynamic, 1>
-send_to_neighbours(MPI_Comm neighbour_comm,
-                   const std::vector<std::vector<std::int64_t>>& send_data)
-{
-  std::vector<int> qsend_offsets = {0};
-  std::vector<std::int64_t> qsend_data;
-  for (const std::vector<std::int64_t>& q : send_data)
-  {
-    qsend_data.insert(qsend_data.end(), q.begin(), q.end());
-    qsend_offsets.push_back(qsend_data.size());
-  }
-
-  return dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets,
-                                           qsend_data)
-      .array();
-  //----------------------------------------------------------------------------------------------
-}
-
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -459,7 +442,7 @@ mesh::create_topology(MPI_Comm comm,
                                                      cell_ghost_indices, 1);
   }
 
-  // Map from existing global vertex index to local index
+  // Create map from existing global vertex index to local index,
   // putting ghost indices last
   std::unordered_map<std::int64_t, std::int32_t> global_to_local_index;
 
@@ -522,7 +505,7 @@ mesh::create_topology(MPI_Comm comm,
       it_gi->second = c++;
     }
   }
-  std::int32_t nlocal = c;
+  const std::int32_t nlocal = c;
 
   // Get global offset for local indices
   std::int64_t global_offset = dolfinx::MPI::global_offset(comm, nlocal, true);
@@ -566,8 +549,17 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
+  std::vector<int> qsend_offsets = {0};
+  std::vector<std::int64_t> qsend_data;
+  for (const std::vector<std::int64_t>& q : send_pairs)
+  {
+    qsend_data.insert(qsend_data.end(), q.begin(), q.end());
+    qsend_offsets.push_back(qsend_data.size());
+  }
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
-      = send_to_neighbours(neighbour_comm, send_pairs);
+      = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets,
+                                          qsend_data)
+            .array();
 
   std::vector<std::int64_t> ghost_vertices;
   // Unpack received data and make list of ghosts
@@ -606,7 +598,23 @@ mesh::create_topology(MPI_Comm comm,
       }
     }
 
-    send_pairs = std::vector<std::vector<std::int64_t>>(neighbours.size());
+    // Precompute sizes and offsets
+    std::vector<int> send_sizes(neighbours.size());
+    std::vector<int> send_offsets(neighbours.size() + 1);
+    for (const auto& q : fwd_shared_vertices)
+    {
+      for (int p : q.second)
+      {
+        const int np = proc_to_neighbours[p];
+        send_sizes[np] += 2;
+      }
+    }
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     send_offsets.begin() + 1);
+    std::vector<int> tmp_offsets(send_offsets.begin(), send_offsets.end());
+
+    // Fill data for neighbour alltoall
+    std::vector<std::int64_t> send_pair_data(send_offsets.back());
     for (const auto& q : fwd_shared_vertices)
     {
       auto it = global_to_local_index.find(q.first);
@@ -622,11 +630,15 @@ mesh::create_topology(MPI_Comm comm,
       for (int p : q.second)
       {
         const int np = proc_to_neighbours[p];
-        send_pairs[np].push_back(q.first);
-        send_pairs[np].push_back(gi);
+        send_pair_data[tmp_offsets[np]++] = q.first;
+        send_pair_data[tmp_offsets[np]++] = gi;
       }
     }
-    recv_pairs = send_to_neighbours(neighbour_comm, send_pairs);
+
+    Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
+        = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
+                                            send_pair_data)
+              .array();
 
     // Unpack received data and add to ghosts
     for (int i = 0; i < recv_pairs.rows(); i += 2)

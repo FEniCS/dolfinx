@@ -68,6 +68,9 @@ Mesh mesh::create(MPI_Comm comm,
                                      Eigen::RowMajor>& x,
                   mesh::GhostMode ghost_mode)
 {
+  if (ghost_mode == mesh::GhostMode::shared_vertex)
+    throw std::runtime_error("Ghost mode via vertex currently disabled.");
+
   // TODO: This step can be skipped for 'P1' elements
   //
   // Extract topology data, e.g. just the vertices. For P1 geometry this
@@ -117,14 +120,13 @@ Mesh mesh::create(MPI_Comm comm,
     }
   }
 
-  // FIXME: improve. Clip cell data, removing any unused ghost cells
-  // before sending to create_geometry. Maybe AdjacencyList can have a "resize"
-  // method?
   int n_cells_local = topology.index_map(tdim)->size_local()
                       + topology.index_map(tdim)->num_ghosts();
-  Eigen::Matrix<std::int32_t, Eigen::Dynamic, 1> off1
+
+  // Remove ghost cells from geometry data, if not required.
+  const Eigen::Matrix<std::int32_t, Eigen::Dynamic, 1>& off1
       = cell_nodes.offsets().head(n_cells_local + 1);
-  Eigen::Matrix<std::int64_t, Eigen::Dynamic, 1> data1
+  const Eigen::Matrix<std::int64_t, Eigen::Dynamic, 1>& data1
       = cell_nodes.array().head(off1[n_cells_local]);
   graph::AdjacencyList<std::int64_t> cell_nodes_2(data1, off1);
 
