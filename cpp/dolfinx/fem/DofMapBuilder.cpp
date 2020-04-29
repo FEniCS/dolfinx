@@ -56,6 +56,7 @@ build_basic_dofmap(const mesh::Topology& topology,
   {
     if (element_dof_layout.num_entity_dofs(d) > 0)
     {
+      // FIXME: this test is not necessary but possible expensive.
       if (!topology.connectivity(d, 0))
       {
         throw std::runtime_error(

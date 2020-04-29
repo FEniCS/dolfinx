@@ -120,18 +120,18 @@ send_to_neighbours(MPI_Comm neighbour_comm,
 //-----------------------------------------------------------------------------
 Topology::Topology(MPI_Comm comm, mesh::CellType type,
                    const Storage& remanent_storage)
-    : _mpi_comm(comm), _cell_type(type), _permanent_storage{true},
-      _remanent_storage{false, this->_permanent_storage},
-      _cache{false, this->_remanent_storage}
+    : _mpi_comm(comm), _cell_type(type), _permanent_storage{std::make_unique<Storage>(true)},
+      _remanent_storage{std::make_unique<Storage>(false, this->_permanent_storage.get())},
+      _cache{std::make_unique<Storage>(false, this->_remanent_storage.get())}
 {
   check_storage(remanent_storage, cell_dim(_cell_type));
   // Make essential data permanent
-  _permanent_storage.write(storage::set_index_map, dim(),
+  _permanent_storage->write(storage::set_index_map, dim(),
                            remanent_storage.read(storage::index_map, dim()));
-  _permanent_storage.write(storage::set_index_map, 0,
+  _permanent_storage->write(storage::set_index_map, 0,
                            remanent_storage.read(storage::index_map, 0));
 
-  _permanent_storage.write(
+  _permanent_storage->write(
       storage::set_connectivity, dim(), 0,
       remanent_storage.read(storage::connectivity, dim(), 0));
 
@@ -140,22 +140,22 @@ Topology::Topology(MPI_Comm comm, mesh::CellType type,
   auto vertex_conn = remanent_storage.read(storage::connectivity, 0, 0);
   if (!vertex_conn)
   {
-    auto vertex_map = _permanent_storage.read(storage::index_map, 0);
+    auto vertex_map = _permanent_storage->read(storage::index_map, 0);
     vertex_conn = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         vertex_map->size_local() + vertex_map->num_ghosts());
   }
   // Store vertex connectivity
-  _permanent_storage.write(storage::set_connectivity, 0, 0, vertex_conn);
+  _permanent_storage->write(storage::set_connectivity, 0, 0, vertex_conn);
 
   // This lock creates an unscoped remanent storage layer for the
   // create_XYZ members that can be discarded manually.
   // everything written to the underlying layer is permanent.
-  _remanent_lock.emplace(_remanent_storage.acquire_layer_lock(true));
+  _remanent_lock.emplace(_remanent_storage->acquire_layer_lock(true));
 
   // Read all data from the input. This copies data that is alredy in the
   // permanent block, but copies are shallow the remanent storage can be
   // discarded.
-  storage::assign(_remanent_storage, remanent_storage);
+  storage::assign(*_remanent_storage, remanent_storage);
 }
 //-----------------------------------------------------------------------------
 void Topology::check_storage(const Topology::Storage& remanent_storage,
@@ -176,13 +176,13 @@ Topology::index_map(int dim, [[maybe_unused]] bool discard_intermediate) const
 {
   // "discard_intermediate" is not used here because the "intermediate results"
   // are logically connect to the index map and thus not truly "intermediate".
-  if (auto res = _cache.read(storage::index_map, dim); res)
+  if (auto res = _cache->read(storage::index_map, dim); res)
     return res;
 
   // Scratch has read access to cache.
   auto scratch = create_scratch();
   scratch.create_entities(dim);
-  storage::assign_if_not_empty(_cache, scratch._cache, false);
+  storage::assign_if_not_empty(*_cache, *scratch._cache, false);
   assert(scratch.index_map(dim));
   assert(scratch.connectivity(this->dim(), dim));
   assert(scratch.connectivity(dim, 0));
@@ -256,7 +256,7 @@ std::vector<bool> Topology::on_boundary(int dim,
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1, bool discard_intermediate) const
 {
-  if (auto conn = _cache.read(storage::connectivity, d0, d1);
+  if (auto conn = _cache->read(storage::connectivity, d0, d1);
       conn || (d0 == 0 && d1 == 0))
     return conn;
 
@@ -274,7 +274,7 @@ Topology::connectivity(int d0, int d1, bool discard_intermediate) const
   // Scratch has read access to this' storage.
   auto scratch = create_scratch();
   scratch.create_connectivity(d0, d1, discard_intermediate);
-  storage::assign_if_not_empty(_cache, scratch._cache, false);
+  storage::assign_if_not_empty(*_cache, *scratch._cache, false);
   assert(scratch.connectivity(d0, d1));
   return scratch.connectivity(d0, d1);
 }
@@ -282,13 +282,13 @@ Topology::connectivity(int d0, int d1, bool discard_intermediate) const
 std::shared_ptr<const std::vector<bool>>
 Topology::interior_facets(bool discard_intermediate) const
 {
-  if (auto facets = _cache.read(storage::interior_facets); facets)
+  if (auto facets = _cache->read(storage::interior_facets); facets)
     return facets;
 
   // Scratch has read access to this' storage.
   auto scratch = create_scratch();
   scratch.create_interior_facets(discard_intermediate);
-  storage::assign_if_not_empty(_cache, scratch._cache, false);
+  storage::assign_if_not_empty(*_cache, *scratch._cache, false);
   assert(scratch.interior_facets());
   return scratch.interior_facets();
 }
@@ -306,12 +306,12 @@ Topology::get_cell_permutation_info(bool discard_intermediate) const
   // Note: discard_intermediate does not apply to facet_permutations which
   // are computed as well.
 
-  if (auto res = _cache.read(storage::cell_permutations); res)
+  if (auto res = _cache->read(storage::cell_permutations); res)
     return res;
 
   auto scratch = create_scratch();
   scratch.create_entity_permutations(discard_intermediate);
-  storage::assign_if_not_empty(_cache, scratch._cache, false);
+  storage::assign_if_not_empty(*_cache, *scratch._cache, false);
   assert(scratch.get_cell_permutation_info());
   assert(scratch.get_facet_permutations());
   return scratch.get_cell_permutation_info();
@@ -321,12 +321,12 @@ std::shared_ptr<
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
 Topology::get_facet_permutations(bool discard_intermediate) const
 {
-  if (auto res = _cache.read(storage::facet_permutations); res)
+  if (auto res = _cache->read(storage::facet_permutations); res)
     return res;
 
   auto scratch = create_scratch();
   scratch.create_entity_permutations(discard_intermediate);
-  storage::assign_if_not_empty(_cache, scratch._cache, false);
+  storage::assign_if_not_empty(*_cache, *scratch._cache, false);
   assert(scratch.get_cell_permutation_info());
   assert(scratch.get_facet_permutations());
   return scratch.get_facet_permutations();
@@ -339,25 +339,25 @@ MPI_Comm Topology::mpi_comm() const { return _mpi_comm.comm(); }
 Topology::Storage::LayerLock_t
 Topology::acquire_cache_lock(bool force_new_layer) const
 {
-  return _cache.acquire_layer_lock(force_new_layer);
+  return _cache->acquire_layer_lock(force_new_layer);
 }
 //-----------------------------------------------------------------------------
 Topology::Storage::LayerLock_t Topology::acquire_new_remanent_layer()
 {
-  return _remanent_storage.acquire_layer_lock(true);
+  return _remanent_storage->acquire_layer_lock(true);
 }
 //-----------------------------------------------------------------------------
 Topology Topology::create_scratch() const
 {
-  return {mpi_comm(), _cell_type, _cache};
+  return {mpi_comm(), _cell_type, *_cache};
 }
 //-----------------------------------------------------------------------------
 const Topology::Storage& Topology::remanent_data() const
 {
-  return _remanent_storage;
+  return *_remanent_storage;
 }
 //-----------------------------------------------------------------------------
-const Topology::Storage& Topology::data() const { return _cache; }
+const Topology::Storage& Topology::data() const { return *_cache; }
 //-----------------------------------------------------------------------------
 void Topology::discard_remanent_data()
 {
@@ -365,7 +365,7 @@ void Topology::discard_remanent_data()
   _remanent_lock.reset();
   // create a new layer if there is no layer left since one always should be
   // able to write to remanent storage.
-  _remanent_lock.emplace(_remanent_storage.acquire_layer_lock());
+  _remanent_lock.emplace(_remanent_storage->acquire_layer_lock());
 }
 //------------------------------------------------------------------------------
 std::int32_t Topology::create_entities(int dim)
@@ -376,15 +376,15 @@ std::int32_t Topology::create_entities(int dim)
 
   // Transfer from cache. It is guaranteed that entities stay together.
   if (auto conn
-      = _remanent_storage.write(storage::set_connectivity, dim, 0,
-                                _cache.read(storage::connectivity, dim, 0));
+      = _remanent_storage->write(storage::set_connectivity, dim, 0,
+                                _cache->read(storage::connectivity, dim, 0));
       conn)
   {
-    _remanent_storage.write(storage::set_index_map, dim,
-                            _cache.read(storage::index_map, dim));
-    _remanent_storage.write(
+    _remanent_storage->write(storage::set_index_map, dim,
+                            _cache->read(storage::index_map, dim));
+    _remanent_storage->write(
         storage::set_connectivity, this->dim(), dim,
-        _cache.read(storage::connectivity, this->dim(), dim));
+        _cache->read(storage::connectivity, this->dim(), dim));
     return -1;
   }
 
@@ -394,16 +394,16 @@ std::int32_t Topology::create_entities(int dim)
 
   // cell_entitity should not be empty because of the check above
   assert(cell_entity);
-  _remanent_storage.write(storage::set_connectivity, this->dim(), dim,
+  _remanent_storage->write(storage::set_connectivity, this->dim(), dim,
                           cell_entity);
 
   // entity_vertex should not be empty because of the check above
   assert(entity_vertex);
-  _remanent_storage.write(storage::set_connectivity, dim, 0, entity_vertex);
+  _remanent_storage->write(storage::set_connectivity, dim, 0, entity_vertex);
 
   // entity_vertex should not be empty because of the check above
   assert(index_map);
-  _remanent_storage.write(storage::set_index_map, dim, index_map);
+  _remanent_storage->write(storage::set_index_map, dim, index_map);
 
   return index_map->size_local();
 }
@@ -411,8 +411,8 @@ std::int32_t Topology::create_entities(int dim)
 void Topology::create_connectivity(int d0, int d1, bool discard_intermediate)
 {
   if (auto conn
-      = _remanent_storage.write(storage::set_connectivity, d0, d1,
-                                _cache.read(storage::connectivity, d0, d1));
+      = _remanent_storage->write(storage::set_connectivity, d0, d1,
+                                _cache->read(storage::connectivity, d0, d1));
       conn)
     return;
 
@@ -421,9 +421,9 @@ void Topology::create_connectivity(int d0, int d1, bool discard_intermediate)
   index_map(d0, false);
   index_map(d1, false);
   if (!discard_intermediate)
-    storage::assign(_remanent_storage, _cache);
+    storage::assign(*_remanent_storage, *_cache);
 
-  _remanent_storage.write(
+  _remanent_storage->write(
       storage::set_connectivity, d0, d1,
       TopologyComputation::compute_connectivity(*this, d0, d1));
 }
@@ -438,8 +438,8 @@ void Topology::create_connectivity_all()
 //-----------------------------------------------------------------------------
 void Topology::create_interior_facets(bool discard_intermediate)
 {
-  if (auto facets = _remanent_storage.write(
-          storage::set_interior_facets, _cache.read(storage::interior_facets));
+  if (auto facets = _remanent_storage->write(
+          storage::set_interior_facets, _cache->read(storage::interior_facets));
       facets)
     return;
 
@@ -448,22 +448,22 @@ void Topology::create_interior_facets(bool discard_intermediate)
   // Requirements
   connectivity(dim() - 1, dim(), false);
   if (!discard_intermediate)
-    storage::assign(_remanent_storage, _cache);
+    storage::assign(*_remanent_storage, *_cache);
 
-  _remanent_storage.write(storage::set_interior_facets,
+  _remanent_storage->write(storage::set_interior_facets,
                           TopologyComputation::compute_interior_facets(*this));
 }
 //-----------------------------------------------------------------------------
 void Topology::create_entity_permutations(bool discard_intermediate)
 {
   if (auto permutations
-      = _remanent_storage.write(storage::set_cell_permutations,
-                                _cache.read(storage::cell_permutations));
+      = _remanent_storage->write(storage::set_cell_permutations,
+                                _cache->read(storage::cell_permutations));
       permutations)
   {
     // Also copy facet permutations to storage
-    _remanent_storage.write(storage::set_facet_permutations,
-                            _cache.read(storage::facet_permutations));
+    _remanent_storage->write(storage::set_facet_permutations,
+                            _cache->read(storage::facet_permutations));
     return;
   }
 
@@ -480,12 +480,12 @@ void Topology::create_entity_permutations(bool discard_intermediate)
     index_map(d, false);
 
   if (!discard_intermediate)
-    storage::assign(_remanent_storage, _cache);
+    storage::assign(*_remanent_storage, *_cache);
 
   auto [facet_permutations, cell_permutations]
       = PermutationComputation::compute_entity_permutations(*this);
-  _remanent_storage.write(storage::set_facet_permutations, facet_permutations);
-  _remanent_storage.write(storage::set_cell_permutations, cell_permutations);
+  _remanent_storage->write(storage::set_facet_permutations, facet_permutations);
+  _remanent_storage->write(storage::set_cell_permutations, cell_permutations);
 }
 //-----------------------------------------------------------------------------
 Topology

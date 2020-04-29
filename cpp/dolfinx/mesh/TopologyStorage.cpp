@@ -155,7 +155,7 @@ int storage::assign_where_empty(TopologyStorageLayer& to,
 void storage::assign(TopologyStorageLayer& to, const TopologyStorage& from,
                      bool override)
 {
-  from.visit_from_bottom([&](const TopologyStorageLayer& other) {
+  from.read_from_bottom([&](const TopologyStorageLayer& other) -> bool {
     storage::assign(to, other, override);
     // never stop (iterations in visit stop on true)
     return false;

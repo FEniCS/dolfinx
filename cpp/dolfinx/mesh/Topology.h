@@ -41,6 +41,7 @@ enum class GhostMode : int;
 
 enum class CellType;
 
+
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities). Note
 /// that the mesh entities don't need to be stored, only the number of
@@ -278,16 +279,16 @@ private:
   mesh::CellType _cell_type;
 
   // Storage for class invariant (permanent) data
-  Storage _permanent_storage;
+  std::unique_ptr<Storage> _permanent_storage;
 
   // Storage for remanent (discardable persistent) data
-  Storage _remanent_storage;
+  std::unique_ptr<Storage> _remanent_storage;
 
   // A lock for remanent storage that can be relased by the user
   std::optional<Storage::LayerLock_t> _remanent_lock;
 
   // Caching (only when the user acquired a lock)
-  mutable Storage _cache;
+  std::unique_ptr<Storage> _cache;
 };
 
 /// Create distributed topology

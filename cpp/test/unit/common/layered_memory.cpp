@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <catch.hpp>
+#include <iostream>
 #include <dolfinx/common/Memory.h>
 
 using namespace dolfinx;
@@ -14,7 +15,7 @@ namespace
 
 struct StorageLayer
 {
-  int value = 0;
+  int value = 1;
 };
 
 void test_memory_write_read_over_write_remove()
@@ -69,7 +70,7 @@ void test_memory_write_read_over_write_remove()
   CHECK(layer_count == 1);
 
   // Create a memory on top of the first and try to read from the background memory
-  LayerManager<StorageLayer> layered_memory_2{false, layered_memory};
+  LayerManager<StorageLayer> layered_memory_2{false, &layered_memory};
 
   // Now we still have only one layer
   layer_count = 0;

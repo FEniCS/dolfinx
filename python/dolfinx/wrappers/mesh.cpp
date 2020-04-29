@@ -208,11 +208,11 @@ void mesh(py::module& m)
       .def("remanent_data",
            [](const dolfinx::mesh::Topology& self) {
              return dolfinx::mesh::Topology::Storage(false,
-                                                     self.remanent_data());
+                                                     &self.remanent_data());
            })
       .def("data",
            [](const dolfinx::mesh::Topology& self) {
-             return dolfinx::mesh::Topology::Storage(false, self.data());
+             return dolfinx::mesh::Topology::Storage(false, &self.data());
            })
       .def("on_boundary", [](const dolfinx::mesh::Topology& self,
                              int dim) { return self.on_boundary(dim, false); })
