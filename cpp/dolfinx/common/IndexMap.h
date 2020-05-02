@@ -10,12 +10,19 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <functional>
 #include <map>
 #include <set>
 #include <vector>
 
 namespace dolfinx::common
 {
+// Forward declaration
+class IndexMap;
+
+/// Stack index maps
+std::vector<std::vector<std::int64_t>> stack_index_maps(
+    const std::vector<std::reference_wrapper<const IndexMap>>& maps);
 
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of N+1 block
@@ -170,7 +177,7 @@ public:
   /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
-  /// Get process that owns index (global block index)
+  /// Get MPI rank that owns index (global block index)
   int owner(std::int64_t global_index) const;
 
   /// Return array of global indices for all indices on this process,

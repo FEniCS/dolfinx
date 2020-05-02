@@ -267,6 +267,14 @@ la::PETScMatrix fem::create_matrix_block(
     }
   }
 
+  // Testing
+  std::vector<std::reference_wrapper<const common::IndexMap>> maps;
+  for (auto space : V[0])
+  {
+    maps.push_back(*space->dofmap()->index_map.get());
+  }
+  const std::vector<std::vector<std::int64_t>> ghosts = common::stack_index_maps(maps);
+
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
   for (std::size_t row = 0; row < V[0].size(); ++row)

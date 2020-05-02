@@ -55,6 +55,106 @@ void local_to_global_impl(
 } // namespace
 
 //-----------------------------------------------------------------------------
+std::vector<std::vector<std::int64_t>> common::stack_index_maps(
+    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps)
+{
+  for (const common::IndexMap& map : maps)
+  {
+    if (map.block_size() != 1)
+      throw std::runtime_error("Can't handle block size \ne 1 yet");
+  }
+
+  // Get process offset
+  std::int64_t process_offset = 0;
+  for (const common::IndexMap& map : maps)
+    process_offset += map.local_range()[0];
+
+  // Get local map offset
+  std::vector<std::int32_t> local_offset(maps.size() + 1, 0);
+  for (std::size_t f = 1; f < maps.size(); ++f)
+    local_offset[f] = local_offset[f - 1] + maps[f - 1].get().size_local();
+
+  // Pack old and new composite indices for owned entries that are ghost
+  // on other ranks
+  std::vector<std::int64_t> indices;
+  for (std::size_t f = 0; f < maps.size(); ++f)
+  {
+    const std::vector<std::int32_t>& forward_indices
+        = maps[f].get().forward_indices();
+    const std::int64_t offset = maps[f].get().local_range()[0];
+    for (std::int32_t local_index : forward_indices)
+    {
+      // Insert field index, global index, composite global index
+      indices.push_back(f);
+      indices.push_back(local_index + offset);
+      indices.push_back(local_index + local_offset[f] + process_offset);
+    }
+  }
+
+  // Build array of neighbourhood ranks
+  std::set<std::int32_t> neighbour_set;
+  for (const common::IndexMap& map : maps)
+  {
+    const std::vector<std::int32_t>& n = map.neighbours();
+    neighbour_set.insert(n.begin(), n.end());
+  }
+  const std::vector<int> neighbours(neighbour_set.begin(), neighbour_set.end());
+
+  // Create neighbourhood communicator
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(maps.at(0).get().mpi_comm(), neighbours.size(),
+                                 neighbours.data(), MPI_UNWEIGHTED,
+                                 neighbours.size(), neighbours.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+
+  int num_neighbours(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree, &weighted);
+  assert(num_neighbours == outdegree);
+
+  // Figure out how much data to receive from each neighbour
+  const int num_my_rows = indices.size();
+  std::vector<int> num_rows_recv(num_neighbours);
+  MPI_Neighbor_allgather(&num_my_rows, 1, MPI_INT, num_rows_recv.data(), 1,
+                         MPI_INT, comm);
+
+  // Compute displacements for data to receive
+  std::vector<int> disp(num_neighbours + 1, 0);
+  std::partial_sum(num_rows_recv.begin(), num_rows_recv.end(),
+                   disp.begin() + 1);
+
+  // Send data to neighbours, and receive data
+  std::vector<std::int64_t> data_recv(disp.back());
+  MPI_Neighbor_allgatherv(indices.data(), indices.size(), MPI_INT64_T,
+                          data_recv.data(), num_rows_recv.data(), disp.data(),
+                          MPI_INT64_T, comm);
+
+  // Destroy communicator
+  MPI_Comm_free(&comm);
+
+  // Create map (old global index -> new global index) for each field
+  std::vector<std::map<int64_t, std::int64_t>> ghost_maps(maps.size());
+  for (std::size_t i = 0; i < data_recv.size(); i += 3)
+    ghost_maps[data_recv[i]].insert({data_recv[i + 1], data_recv[i + 2]});
+
+  /// Build arrays from old ghost index to composite ghost index for
+  /// each field
+  std::vector<std::vector<std::int64_t>> ghosts_new(maps.size());
+  for (std::size_t i = 0; i < maps.size(); ++i)
+  {
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
+        = maps[i].get().ghosts();
+    for (Eigen::Index j = 0; j < ghosts.rows(); ++j)
+    {
+      auto it = ghost_maps[i].find(ghosts[j]);
+      if (it != ghost_maps[i].end())
+        ghosts_new[i].push_back(it->second);
+    }
+  }
+
+  return ghosts_new;
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<std::int64_t>& ghosts, int block_size)
     : IndexMap(mpi_comm, local_size,

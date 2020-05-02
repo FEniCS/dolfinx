@@ -66,6 +66,9 @@ SparsityPattern::SparsityPattern(
     row_local_size += bs0 * (local_range[1] - local_range[0]);
   }
 
+  // Get global row offset
+
+
   // Get column ranges using row 0
   std::int64_t col_process_offset(0), col_local_size(0);
   std::vector<const common::IndexMap*> cmaps;
@@ -115,6 +118,39 @@ SparsityPattern::SparsityPattern(
 
       auto index_map1 = p->index_map(1);
       assert(index_map1);
+      for (int k = 0; k < p->_diagonal->num_nodes(); ++k)
+      {
+        // Diagonal block
+        auto edges0 = p->_diagonal->links(k);
+
+        // for (std::size_t c : edges0)
+        for (Eigen::Index i = 0; i < edges0.rows(); ++i)
+        {
+          // Get local index and convert to global (for this block)
+          std::int32_t c = edges0[i];
+          const std::int64_t J = col_map(c, *index_map1);
+          assert(J >= 0);
+          // const int rank = MPI::rank(MPI_COMM_WORLD);
+          // assert(index_map1->owner(J / index_map1->block_size()) == rank);
+
+          // Get new index
+          const std::int64_t offset = fem::get_global_offset(cmaps, col, J);
+          const std::int64_t c_new = J + offset - col_process_offset;
+          assert(c_new >= 0);
+          diagonal[k + row_local_offset].push_back(c_new);
+        }
+
+        // Off-diagonal block
+        auto edges1 = p->_off_diagonal->links(k);
+        for (Eigen::Index i = 0; i < edges1.rows(); ++i)
+        {
+          const std::int64_t c = edges1[i];
+          // Get new index
+          const std::int64_t offset = fem::get_global_offset(cmaps, col, c);
+          off_diagonal[k + row_local_offset].push_back(c + offset);
+        }
+      }
+
       for (int k = 0; k < p->_diagonal->num_nodes(); ++k)
       {
         // Diagonal block
