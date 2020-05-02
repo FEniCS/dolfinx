@@ -55,39 +55,45 @@ void local_to_global_impl(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<std::vector<std::int64_t>> common::stack_index_maps(
-    const std::vector<std::reference_wrapper<const IndexMap>>& maps)
+std::tuple<std::int64_t, std::vector<std::int32_t>,
+           std::vector<std::vector<std::int64_t>>>
+common::stack_index_maps(
+    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps)
 {
-  for (const common::IndexMap& map : maps)
-  {
-    if (map.block_size() != 1)
-      throw std::runtime_error("Can't handle block size \ne 1 yet");
-  }
 
   // Get process offset
   std::int64_t process_offset = 0;
   for (const common::IndexMap& map : maps)
-    process_offset += map.local_range()[0];
+    process_offset += map.local_range()[0] * map.block_size();
 
   // Get local map offset
   std::vector<std::int32_t> local_offset(maps.size() + 1, 0);
   for (std::size_t f = 1; f < maps.size(); ++f)
-    local_offset[f] = local_offset[f - 1] + maps[f - 1].get().size_local();
+  {
+    local_offset[f]
+        = local_offset[f - 1]
+          + maps[f - 1].get().size_local() * maps[f - 1].get().block_size();
+  }
 
   // Pack old and new composite indices for owned entries that are ghost
   // on other ranks
   std::vector<std::int64_t> indices;
   for (std::size_t f = 0; f < maps.size(); ++f)
   {
+    const int bs = maps[f].get().block_size();
     const std::vector<std::int32_t>& forward_indices
         = maps[f].get().forward_indices();
-    const std::int64_t offset = maps[f].get().local_range()[0];
+    const std::int64_t offset = bs * maps[f].get().local_range()[0];
     for (std::int32_t local_index : forward_indices)
     {
-      // Insert field index, global index, composite global index
-      indices.push_back(f);
-      indices.push_back(local_index + offset);
-      indices.push_back(local_index + local_offset[f] + process_offset);
+      for (std::int32_t i = 0; i < bs; ++i)
+      {
+        // Insert field index, global index, composite global index
+        indices.push_back(f);
+        indices.push_back(bs * local_index + i + offset);
+        indices.push_back(bs * local_index + i + local_offset[f]
+                          + process_offset);
+      }
     }
   }
 
@@ -139,19 +145,23 @@ std::vector<std::vector<std::int64_t>> common::stack_index_maps(
   /// Build arrays from old ghost index to composite ghost index for
   /// each field
   std::vector<std::vector<std::int64_t>> ghosts_new(maps.size());
-  for (std::size_t i = 0; i < maps.size(); ++i)
+  for (std::size_t f = 0; f < maps.size(); ++f)
   {
+    const int bs = maps[f].get().block_size();
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
-        = maps[i].get().ghosts();
-    for (Eigen::Index j = 0; j < ghosts.rows(); ++j)
+        = maps[f].get().ghosts();
+    for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
     {
-      auto it = ghost_maps[i].find(ghosts[j]);
-      if (it != ghost_maps[i].end())
-        ghosts_new[i].push_back(it->second);
+      for (int j = 0; j < bs; ++j)
+      {
+        auto it = ghost_maps[f].find(bs * ghosts[i] + j);
+        if (it != ghost_maps[f].end())
+          ghosts_new[f].push_back(it->second);
+      }
     }
   }
 
-  return ghosts_new;
+  return {process_offset, std::move(local_offset), std::move(ghosts_new)};
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

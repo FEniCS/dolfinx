@@ -13,6 +13,7 @@
 #include <functional>
 #include <map>
 #include <set>
+#include <tuple>
 #include <vector>
 
 namespace dolfinx::common
@@ -21,8 +22,10 @@ namespace dolfinx::common
 class IndexMap;
 
 /// Stack index maps
-std::vector<std::vector<std::int64_t>> stack_index_maps(
-    const std::vector<std::reference_wrapper<const IndexMap>>& maps);
+std::tuple<std::int64_t, std::vector<std::int32_t>,
+           std::vector<std::vector<std::int64_t>>>
+stack_index_maps(
+    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps);
 
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of N+1 block

@@ -267,11 +267,11 @@ la::PETScMatrix fem::create_matrix_block(
     }
   }
 
-  // Testing
+  // TESTING
   std::vector<std::reference_wrapper<const common::IndexMap>> maps;
   for (auto space : V[0])
     maps.push_back(*space->dofmap()->index_map.get());
-  const std::vector<std::vector<std::int64_t>> ghosts = common::stack_index_maps(maps);
+  auto [rank_offset, local_offset, ghosts] = common::stack_index_maps(maps);
 
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
@@ -296,15 +296,29 @@ la::PETScMatrix fem::create_matrix_block(
     for (std::size_t f = 0; f < V[d].size(); ++f)
     {
       auto map = V[d][f]->dofmap()->index_map;
+      assert(map);
+      const int bs = map->block_size();
+      const std::int32_t size_local = bs * map->size_local();
+
       const std::vector<std::int64_t> global = map->global_indices(false);
-      for (std::int64_t global_index : global)
+      for (std::int32_t i = 0; i < size_local; ++i)
       {
+        const std::int64_t test = i + rank_offset + local_offset[f];
         const std::int64_t offset
-            = get_global_offset(index_maps[d], f, global_index);
-        _maps[d].push_back(global_index + offset);
+            = get_global_offset(index_maps[d], f, global[i]);
+        _maps[d].push_back(global[i] + offset);
+        if (_maps[d].back() != test)
+          throw std::runtime_error("Problems (1)");
       }
-
-
+      for (std::size_t i = size_local; i < global.size(); ++i)
+      {
+        const std::int64_t test = ghosts[f][i - size_local];
+        const std::int64_t offset
+            = get_global_offset(index_maps[d], f, global[i]);
+        _maps[d].push_back(global[i] + offset);
+        if (_maps[d].back() != test)
+          throw std::runtime_error("Problems (2)");
+      }
     }
   }
 
