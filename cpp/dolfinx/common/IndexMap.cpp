@@ -56,7 +56,7 @@ void local_to_global_impl(
 
 //-----------------------------------------------------------------------------
 std::vector<std::vector<std::int64_t>> common::stack_index_maps(
-    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps)
+    const std::vector<std::reference_wrapper<const IndexMap>>& maps)
 {
   for (const common::IndexMap& map : maps)
   {

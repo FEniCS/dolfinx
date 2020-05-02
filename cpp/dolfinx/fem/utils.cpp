@@ -270,9 +270,7 @@ la::PETScMatrix fem::create_matrix_block(
   // Testing
   std::vector<std::reference_wrapper<const common::IndexMap>> maps;
   for (auto space : V[0])
-  {
     maps.push_back(*space->dofmap()->index_map.get());
-  }
   const std::vector<std::vector<std::int64_t>> ghosts = common::stack_index_maps(maps);
 
   // Create merged sparsity pattern
@@ -295,16 +293,18 @@ la::PETScMatrix fem::create_matrix_block(
   std::array<std::vector<PetscInt>, 2> _maps;
   for (int d = 0; d < 2; ++d)
   {
-    for (std::size_t i = 0; i < V[d].size(); ++i)
+    for (std::size_t f = 0; f < V[d].size(); ++f)
     {
-      auto map = V[d][i]->dofmap()->index_map;
+      auto map = V[d][f]->dofmap()->index_map;
       const std::vector<std::int64_t> global = map->global_indices(false);
       for (std::int64_t global_index : global)
       {
         const std::int64_t offset
-            = get_global_offset(index_maps[d], i, global_index);
+            = get_global_offset(index_maps[d], f, global_index);
         _maps[d].push_back(global_index + offset);
       }
+
+
     }
   }
 
