@@ -68,11 +68,13 @@ common::stack_index_maps(
 
   // Get local map offset
   std::vector<std::int32_t> local_offset(maps.size() + 1, 0);
-  for (std::size_t f = 1; f < maps.size(); ++f)
+  for (std::size_t f = 1; f < local_offset.size(); ++f)
   {
     local_offset[f]
         = local_offset[f - 1]
           + maps[f - 1].get().size_local() * maps[f - 1].get().block_size();
+
+    std::cout << "local offs: " << f << ",  " << local_offset[f] << std::endl;
   }
 
   // Pack old and new composite indices for owned entries that are ghost
@@ -155,6 +157,8 @@ common::stack_index_maps(
       for (int j = 0; j < bs; ++j)
       {
         auto it = ghost_maps[f].find(bs * ghosts[i] + j);
+        if (it == ghost_maps[f].end())
+          throw std::runtime_error("Oooops");
         if (it != ghost_maps[f].end())
           ghosts_new[f].push_back(it->second);
       }

@@ -47,7 +47,10 @@ public:
   ///          [ pattern10 ][ pattern 11]
   SparsityPattern(
       MPI_Comm comm,
-      const std::vector<std::vector<const SparsityPattern*>>& patterns);
+      const std::vector<std::vector<const SparsityPattern*>>& patterns,
+      const std::array<
+          std::vector<std::reference_wrapper<const common::IndexMap>>, 2>&
+          maps);
 
   SparsityPattern(const SparsityPattern& pattern) = delete;
 

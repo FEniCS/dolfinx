@@ -278,7 +278,8 @@ la::PETScMatrix fem::create_matrix_block(
   for (std::size_t row = 0; row < V[0].size(); ++row)
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
-  la::SparsityPattern pattern(mesh->mpi_comm(), p);
+  la::SparsityPattern pattern(mesh->mpi_comm(), p, {maps, maps});
+  // pattern.assemble();
 
   // Initialise matrix
   la::PETScMatrix A(mesh->mpi_comm(), pattern);
@@ -321,6 +322,52 @@ la::PETScMatrix fem::create_matrix_block(
       }
     }
   }
+
+  // auto [rank_offset0, local_offset0, ghosts_new0]
+  //     = common::stack_index_maps(maps[0]);
+  // auto [rank_offset1, local_offset1, ghosts_new1]
+  //     = common::stack_index_maps(maps[1]);
+
+  // std::int32_t size = 0;
+  // for (auto& _V : V[0])
+  // {
+  //   auto map = _V->dofmap()->index_map;
+  //   size += map->size_local() * map->block_size();
+  // }
+
+  // std::vector<std::int64_t> ghosts0;
+  // std::vector<std::int32_t> ghost_offsets0(1, 0);
+  // for (auto& _ghosts : ghosts)
+  // {
+  //   ghost_offsets0.push_back(ghost_offsets0.back() + _ghosts.size());
+  //   ghosts0.insert(ghosts0.end(), _ghosts.begin(), _ghosts.end());
+  // }
+
+  // // Create new IndexMaps
+  // common::IndexMap test_map(mesh->mpi_comm(), size, ghosts0, 1);
+
+  // if (MPI::rank(MPI_COMM_WORLD) == 0)
+  // {
+  //   auto map_u = V[0][0]->dofmap()->index_map;
+  //   auto map_p = V[0][1]->dofmap()->index_map;
+
+  //   std::cout << "u, p:" << map_u->size_local() * map_u->block_size()
+  //             << std::endl;
+  //   std::cout << "u, p:" << map_p->size_local() * map_p->block_size()
+  //             << std::endl;
+  //   std::cout << "New:" << test_map.size_local() * test_map.block_size()
+  //             << std::endl;
+
+  //   auto idx = test_map.global_indices(false);
+  //   // auto idx = pattern.index_map(0)->global_indices(false);
+  //   Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> idx_wrap(
+  //       idx.data(), idx.size());
+  //   std::cout << "New:" << idx_wrap << std::endl;
+
+  //   Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>> old_wrap(
+  //       _maps[0].data(), _maps[0].size());
+  //   std::cout << "Old:" << old_wrap.cast<std::int64_t>() << std::endl;
+  // }
 
   // Create PETSc local-to-global map/index sets and attach to matrix
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;

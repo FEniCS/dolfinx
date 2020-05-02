@@ -43,7 +43,9 @@ SparsityPattern::SparsityPattern(
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
-    const std::vector<std::vector<const SparsityPattern*>>& patterns)
+    const std::vector<std::vector<const SparsityPattern*>>& patterns,
+    const std::array<
+        std::vector<std::reference_wrapper<const common::IndexMap>>, 2>&)
     : _mpi_comm(comm)
 {
   // FIXME: - Add range/bound checks for each block
@@ -67,7 +69,6 @@ SparsityPattern::SparsityPattern(
   }
 
   // Get global row offset
-
 
   // Get column ranges using row 0
   std::int64_t col_process_offset(0), col_local_size(0);
@@ -108,8 +109,6 @@ SparsityPattern::SparsityPattern(
       // Get pattern for this block
       const auto* p = patterns[row][col];
       assert(p);
-
-      // Check that
       if (!p->_diagonal)
       {
         throw std::runtime_error("Sub-sparsity pattern has not been finalised "
@@ -118,16 +117,16 @@ SparsityPattern::SparsityPattern(
 
       auto index_map1 = p->index_map(1);
       assert(index_map1);
-      for (int k = 0; k < p->_diagonal->num_nodes(); ++k)
+      for (int i = 0; i < p->_diagonal->num_nodes(); ++i)
       {
         // Diagonal block
-        auto edges0 = p->_diagonal->links(k);
+        auto cols0 = p->_diagonal->links(i);
 
         // for (std::size_t c : edges0)
-        for (Eigen::Index i = 0; i < edges0.rows(); ++i)
+        for (Eigen::Index j = 0; j < cols0.rows(); ++j)
         {
           // Get local index and convert to global (for this block)
-          std::int32_t c = edges0[i];
+          std::int32_t c = cols0[j];
           const std::int64_t J = col_map(c, *index_map1);
           assert(J >= 0);
           // const int rank = MPI::rank(MPI_COMM_WORLD);
@@ -137,50 +136,17 @@ SparsityPattern::SparsityPattern(
           const std::int64_t offset = fem::get_global_offset(cmaps, col, J);
           const std::int64_t c_new = J + offset - col_process_offset;
           assert(c_new >= 0);
-          diagonal[k + row_local_offset].push_back(c_new);
+          diagonal[i + row_local_offset].push_back(c_new);
         }
 
         // Off-diagonal block
-        auto edges1 = p->_off_diagonal->links(k);
-        for (Eigen::Index i = 0; i < edges1.rows(); ++i)
+        auto cols1 = p->_off_diagonal->links(i);
+        for (Eigen::Index j = 0; j < cols1.rows(); ++j)
         {
-          const std::int64_t c = edges1[i];
+          const std::int64_t c = cols1[j];
           // Get new index
           const std::int64_t offset = fem::get_global_offset(cmaps, col, c);
-          off_diagonal[k + row_local_offset].push_back(c + offset);
-        }
-      }
-
-      for (int k = 0; k < p->_diagonal->num_nodes(); ++k)
-      {
-        // Diagonal block
-        auto edges0 = p->_diagonal->links(k);
-
-        // for (std::size_t c : edges0)
-        for (Eigen::Index i = 0; i < edges0.rows(); ++i)
-        {
-          // Get local index and convert to global (for this block)
-          std::int32_t c = edges0[i];
-          const std::int64_t J = col_map(c, *index_map1);
-          assert(J >= 0);
-          // const int rank = MPI::rank(MPI_COMM_WORLD);
-          // assert(index_map1->owner(J / index_map1->block_size()) == rank);
-
-          // Get new index
-          const std::int64_t offset = fem::get_global_offset(cmaps, col, J);
-          const std::int64_t c_new = J + offset - col_process_offset;
-          assert(c_new >= 0);
-          diagonal[k + row_local_offset].push_back(c_new);
-        }
-
-        // Off-diagonal block
-        auto edges1 = p->_off_diagonal->links(k);
-        for (Eigen::Index i = 0; i < edges1.rows(); ++i)
-        {
-          const std::int64_t c = edges1[i];
-          // Get new index
-          const std::int64_t offset = fem::get_global_offset(cmaps, col, c);
-          off_diagonal[k + row_local_offset].push_back(c + offset);
+          off_diagonal[i + row_local_offset].push_back(c + offset);
         }
       }
 
