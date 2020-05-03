@@ -280,6 +280,10 @@ la::PETScMatrix fem::create_matrix_block(
   la::SparsityPattern pattern(mesh->mpi_comm(), p, maps);
   pattern.assemble();
 
+
+  // FIXME: Add option to pass customised local-to-global map to PETSc
+  // Mat constructor.
+
   // Initialise matrix
   la::PETScMatrix A(mesh->mpi_comm(), pattern);
 
