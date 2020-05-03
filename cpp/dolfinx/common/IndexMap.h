@@ -21,7 +21,14 @@ namespace dolfinx::common
 // Forward declaration
 class IndexMap;
 
-/// Stack index maps
+/// Compute layout data and ghost indices for a stacked (concatenated)
+/// index map, i.e. 'splice' multiple maps into one. Communication is
+/// required to compute the new ghost indices.
+///
+/// @param[in] maps List of index maps
+/// @returns The (0) global offset of a stacked map for this rank, (1)
+///   local offset for each submap in the stacked map, and (2) new
+///   indices for the ghosts for each submap.
 std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>>
 stack_index_maps(
