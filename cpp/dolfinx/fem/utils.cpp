@@ -270,6 +270,12 @@ la::PETScMatrix fem::create_matrix_block(
     for (auto space : V[d])
       maps[d].push_back(*space->dofmap()->index_map.get());
   }
+
+
+  // FIXME: This is computed again inside the SparsityPattern
+  // constructor, but we also need to outside to build the PETSc
+  // local-to-global map. Compute outside and pass into SparsityPattern
+  // constructor.
   auto [rank_offset, local_offset, ghosts] = common::stack_index_maps(maps[0]);
 
   // Create merged sparsity pattern
