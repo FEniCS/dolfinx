@@ -80,9 +80,6 @@ Mat dolfinx::la::create_petsc_matrix(
   const std::int32_t m = bs0 * index_maps[0]->size_local();
   const std::int32_t n = bs1 * index_maps[1]->size_local();
 
-  // if (MPI::rank(MPI_COMM_WORLD) == 0)
-  //   std::cout << "Mat offset: " << m << std::endl;
-
   // Find common block size across rows/columns
   const int bs = (bs0 == bs1 ? bs0 : 1);
 

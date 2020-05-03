@@ -50,8 +50,6 @@ SparsityPattern::SparsityPattern(
 {
   // FIXME: - Add range/bound checks for each block
   //        - Check for compatible block sizes for each block
-  //        - Support null blocks (maybe insist on null block having
-  //          common::IndexMaps?)
 
   auto [rank_offset0, local_offset0, ghosts_new0]
       = common::stack_index_maps(maps[0]);
@@ -70,16 +68,13 @@ SparsityPattern::SparsityPattern(
     ghosts1.insert(ghosts1.end(), ghosts.begin(), ghosts.end());
 
   // Create new IndexMaps
-  const auto* p00 = patterns[0][0];
-  assert(p00);
   _index_maps[0] = std::make_shared<common::IndexMap>(
-      p00->mpi_comm(), local_offset0.back(), ghosts0, 1);
+      comm, local_offset0.back(), ghosts0, 1);
   _index_maps[1] = std::make_shared<common::IndexMap>(
-      p00->mpi_comm(), local_offset1.back(), ghosts1, 1);
+      comm, local_offset1.back(), ghosts1, 1);
 
-  // Size cache
-  const std::int32_t size_row
-      = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts();
+  // Size cache arrays
+  const std::int32_t size_row = local_offset0.back() + ghosts0.size();
   _diagonal_cache.resize(size_row);
   _off_diagonal_cache.resize(size_row);
 
@@ -107,17 +102,20 @@ SparsityPattern::SparsityPattern(
   // Iterate over block rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
+    const common::IndexMap& map_row = maps[0][row].get();
     const std::int32_t num_rows_local
-        = maps[0][row].get().size_local() * maps[0][row].get().block_size();
+        = map_row.size_local() * map_row.block_size();
     const std::int32_t num_rows_ghost
-        = maps[0][row].get().num_ghosts() * maps[0][row].get().block_size();
+        = map_row.num_ghosts() * map_row.block_size();
 
     // Iterate over block columns of current row (block)
     for (std::size_t col = 0; col < patterns[row].size(); ++col)
     {
       // Get pattern for this block
-      const auto* p = patterns[row][col];
-      assert(p);
+      const SparsityPattern* p = patterns[row][col];
+      if (!p)
+        continue;
+
       if (p->_diagonal)
       {
         throw std::runtime_error("Sub-sparsity pattern has been finalised. "
@@ -292,10 +290,6 @@ void SparsityPattern::assemble()
         // Convert to global column index
         const std::int64_t J = col_map(cols[c], *_index_maps[1]);
         ghost_data.push_back(J);
-
-        // if (MPI::rank(MPI_COMM_WORLD) == 0)
-        //   std::cout << "Pack: " << i << ", " << row << ", " << J <<
-        //   std::endl;
       }
 
       auto cols_off = _off_diagonal_cache[row_local];
