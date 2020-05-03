@@ -42,14 +42,7 @@ public:
       MPI_Comm comm,
       const std::array<std::shared_ptr<const common::IndexMap>, 2>& index_maps);
 
-  /// Create a new sparsity pattern by adding sub-patterns, e.g.
-  /// pattern =[ pattern00 ][ pattern 01]
-  ///          [ pattern10 ][ pattern 11]
-  SparsityPattern(
-      MPI_Comm comm,
-      const std::vector<std::vector<const SparsityPattern*>>& patterns);
-
-  /// Create a new sparsity pattern by adding sub-patterns, e.g.
+   /// Create a new sparsity pattern by adding sub-patterns, e.g.
   /// pattern =[ pattern00 ][ pattern 01]
   ///          [ pattern10 ][ pattern 11]
   SparsityPattern(

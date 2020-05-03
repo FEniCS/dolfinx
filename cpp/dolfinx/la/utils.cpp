@@ -109,17 +109,9 @@ Mat dolfinx::la::create_petsc_matrix(
 
   // std::cout << "BS: " << bs << std::endl;
   for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
-  {
     _nnz_diag[i] = diagonal_pattern.links(bs * i).rows() / bs;
-    // if (MPI::rank(MPI_COMM_WORLD) == 0)
-    //   std::cout << "Diag nnz:      " << i << ", " <<  _nnz_diag[i] << std::endl;
-  }
   for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
-  {
     _nnz_offdiag[i] = off_diagonal_pattern.links(bs * i).rows() / bs;
-    // if (MPI::rank(MPI_COMM_WORLD) == 0)
-    //   std::cout << "Off-diag nnz: " << i << ", " << _nnz_offdiag[i] << std::endl;
-  }
 
   // Allocate space for matrix
   ierr = MatXAIJSetPreallocation(A, bs, _nnz_diag.data(), _nnz_offdiag.data(),

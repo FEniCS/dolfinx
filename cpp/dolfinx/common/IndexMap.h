@@ -289,12 +289,10 @@ private:
   // excessive)
   int _myrank;
 
-public:
-  // FIXME: This could get big for large process counts
+  // FIXME: This could get big for large process counts. Compute on-demand.
   // Range of ownership of index for all processes
   std::vector<std::int64_t> _all_ranges;
 
-private:
   // Local-to-global map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 

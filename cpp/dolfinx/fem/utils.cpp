@@ -256,13 +256,11 @@ la::PETScMatrix fem::create_matrix_block(
           SparsityPatternBuilder::exterior_facets(*sp, mesh->topology(),
                                                   dofmaps);
         }
-        // sp->assemble();
       }
       else
       {
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
             mesh->mpi_comm(), index_maps));
-        // patterns[row].back()->assemble();
       }
     }
   }
@@ -281,18 +279,6 @@ la::PETScMatrix fem::create_matrix_block(
   la::SparsityPattern pattern(mesh->mpi_comm(), p, {maps, maps});
   pattern.assemble();
 
-  // std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
-  // for (std::size_t row = 0; row < V[0].size(); ++row)
-  //   for (std::size_t col = 0; col < V[1].size(); ++col)
-  //     p[row].push_back(patterns[row][col].get());
-  // la::SparsityPattern pattern(mesh->mpi_comm(), p);
-
-  // if (MPI::rank(MPI_COMM_WORLD) == 0)
-  // {
-  //   std::cout << pattern.diagonal_pattern().str() << std::endl;
-  //   std::cout << pattern.off_diagonal_pattern().str() << std::endl;
-  // }
-
   // Initialise matrix
   la::PETScMatrix A(mesh->mpi_comm(), pattern);
 
@@ -302,7 +288,7 @@ la::PETScMatrix fem::create_matrix_block(
     for (std::size_t j = 0; j < V[i].size(); ++j)
       index_maps[i].push_back(V[i][j]->dofmap()->index_map.get());
 
-  // Create row and column local-to-global maps
+  // Create row and column local-to-global maps (field0, field1, field2, etc)
   std::array<std::vector<PetscInt>, 2> _maps;
   for (int d = 0; d < 2; ++d)
   {
@@ -315,71 +301,11 @@ la::PETScMatrix fem::create_matrix_block(
 
       const std::vector<std::int64_t> global = map->global_indices(false);
       for (std::int32_t i = 0; i < size_local; ++i)
-      {
-        const std::int64_t test = i + rank_offset + local_offset[f];
-        const std::int64_t offset
-            = get_global_offset(index_maps[d], f, global[i]);
-        _maps[d].push_back(global[i] + offset);
-        if (_maps[d].back() != test)
-          throw std::runtime_error("Problems (1)");
-      }
+        _maps[d].push_back(i + rank_offset + local_offset[f]);
       for (std::size_t i = size_local; i < global.size(); ++i)
-      {
-        const std::int64_t test = ghosts[f][i - size_local];
-        const std::int64_t offset
-            = get_global_offset(index_maps[d], f, global[i]);
-        _maps[d].push_back(global[i] + offset);
-        if (_maps[d].back() != test)
-          throw std::runtime_error("Problems (2)");
-      }
+        _maps[d].push_back(ghosts[f][i - size_local]);
     }
   }
-
-  // auto [rank_offset0, local_offset0, ghosts_new0]
-  //     = common::stack_index_maps(maps[0]);
-  // auto [rank_offset1, local_offset1, ghosts_new1]
-  //     = common::stack_index_maps(maps[1]);
-
-  // std::int32_t size = 0;
-  // for (auto& _V : V[0])
-  // {
-  //   auto map = _V->dofmap()->index_map;
-  //   size += map->size_local() * map->block_size();
-  // }
-
-  // std::vector<std::int64_t> ghosts0;
-  // std::vector<std::int32_t> ghost_offsets0(1, 0);
-  // for (auto& _ghosts : ghosts)
-  // {
-  //   ghost_offsets0.push_back(ghost_offsets0.back() + _ghosts.size());
-  //   ghosts0.insert(ghosts0.end(), _ghosts.begin(), _ghosts.end());
-  // }
-
-  // // Create new IndexMaps
-  // common::IndexMap test_map(mesh->mpi_comm(), size, ghosts0, 1);
-
-  // if (MPI::rank(MPI_COMM_WORLD) == 0)
-  // {
-  //   auto map_u = V[0][0]->dofmap()->index_map;
-  //   auto map_p = V[0][1]->dofmap()->index_map;
-
-  //   std::cout << "u, p:" << map_u->size_local() * map_u->block_size()
-  //             << std::endl;
-  //   std::cout << "u, p:" << map_p->size_local() * map_p->block_size()
-  //             << std::endl;
-  //   std::cout << "New:" << test_map.size_local() * test_map.block_size()
-  //             << std::endl;
-
-  //   auto idx = test_map.global_indices(false);
-  //   // auto idx = pattern.index_map(0)->global_indices(false);
-  //   Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> idx_wrap(
-  //       idx.data(), idx.size());
-  //   std::cout << "New:" << idx_wrap << std::endl;
-
-  //   Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>> old_wrap(
-  //       _maps[0].data(), _maps[0].size());
-  //   std::cout << "Old:" << old_wrap.cast<std::int64_t>() << std::endl;
-  // }
 
   // Create PETSc local-to-global map/index sets and attach to matrix
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
@@ -439,34 +365,23 @@ la::PETScMatrix fem::create_matrix_nest(
 }
 //-----------------------------------------------------------------------------
 la::PETScVector
-fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
+// fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
+fem::create_vector_block(
+    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps)
 {
   // FIXME: handle constant block size > 1
 
-  std::size_t local_size = 0;
+  auto [rank_offset, local_offset, ghosts_new] = common::stack_index_maps(maps);
+  std::int32_t local_size = local_offset.back();
   std::vector<std::int64_t> ghosts;
-  for (std::size_t i = 0; i < maps.size(); ++i)
-  {
-    const int bs = maps[i]->block_size();
-    local_size += maps[i]->size_local() * bs;
-
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& field_ghosts
-        = maps[i]->ghosts();
-    for (Eigen::Index j = 0; j < field_ghosts.size(); ++j)
-    {
-      for (int k = 0; k < bs; ++k)
-      {
-        const std::int64_t offset
-            = get_global_offset(maps, i, bs * field_ghosts[j] + k);
-        ghosts.push_back(bs * field_ghosts[j] + k + offset);
-      }
-    }
-  }
+  for (auto& sub_ghost : ghosts_new)
+    ghosts.insert(ghosts.end(), sub_ghost.begin(), sub_ghost.end());
 
   // Create map for combined problem, and create vector
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> _ghosts(
       ghosts.data(), ghosts.size());
-  common::IndexMap index_map(maps[0]->mpi_comm(), local_size, _ghosts, 1);
+  common::IndexMap index_map(maps[0].get().mpi_comm(), local_size, _ghosts, 1);
+
   return la::PETScVector(index_map);
 }
 //-----------------------------------------------------------------------------
@@ -494,37 +409,6 @@ fem::create_vector_nest(const std::vector<const common::IndexMap*>& maps)
   VecCreateNest(vecs[0]->mpi_comm(), petsc_vecs.size(), nullptr,
                 petsc_vecs.data(), &y);
   return la::PETScVector(y, false);
-}
-//-----------------------------------------------------------------------------
-std::int64_t dolfinx::fem::get_global_offset(
-    const std::vector<const common::IndexMap*>& maps, const int field,
-    const std::int64_t index)
-{
-  // FIXME: handle/check block size > 1
-
-  // Get process that owns global index
-  const int bs = maps[field]->block_size();
-  const int owner = maps[field]->owner(index / bs);
-
-  // Offset from lower rank processes
-  std::size_t offset = 0;
-  if (owner > 0)
-  {
-    for (std::size_t j = 0; j < maps.size(); ++j)
-    {
-      if ((int)j != field)
-        offset += maps[j]->_all_ranges[owner] * maps[j]->block_size();
-    }
-  }
-
-  // Local (process) offset
-  for (int i = 0; i < field; ++i)
-  {
-    offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner])
-              * maps[i]->block_size();
-  }
-
-  return offset;
 }
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout
