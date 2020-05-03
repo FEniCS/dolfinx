@@ -47,6 +47,13 @@ public:
   ///          [ pattern10 ][ pattern 11]
   SparsityPattern(
       MPI_Comm comm,
+      const std::vector<std::vector<const SparsityPattern*>>& patterns);
+
+  /// Create a new sparsity pattern by adding sub-patterns, e.g.
+  /// pattern =[ pattern00 ][ pattern 01]
+  ///          [ pattern10 ][ pattern 11]
+  SparsityPattern(
+      MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>>& patterns,
       const std::array<
           std::vector<std::reference_wrapper<const common::IndexMap>>, 2>&

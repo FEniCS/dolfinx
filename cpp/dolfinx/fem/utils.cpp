@@ -256,13 +256,13 @@ la::PETScMatrix fem::create_matrix_block(
           SparsityPatternBuilder::exterior_facets(*sp, mesh->topology(),
                                                   dofmaps);
         }
-        sp->assemble();
+        // sp->assemble();
       }
       else
       {
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
             mesh->mpi_comm(), index_maps));
-        patterns[row].back()->assemble();
+        // patterns[row].back()->assemble();
       }
     }
   }
@@ -279,7 +279,19 @@ la::PETScMatrix fem::create_matrix_block(
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
   la::SparsityPattern pattern(mesh->mpi_comm(), p, {maps, maps});
-  // pattern.assemble();
+  pattern.assemble();
+
+  // std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
+  // for (std::size_t row = 0; row < V[0].size(); ++row)
+  //   for (std::size_t col = 0; col < V[1].size(); ++col)
+  //     p[row].push_back(patterns[row][col].get());
+  // la::SparsityPattern pattern(mesh->mpi_comm(), p);
+
+  // if (MPI::rank(MPI_COMM_WORLD) == 0)
+  // {
+  //   std::cout << pattern.diagonal_pattern().str() << std::endl;
+  //   std::cout << pattern.off_diagonal_pattern().str() << std::endl;
+  // }
 
   // Initialise matrix
   la::PETScMatrix A(mesh->mpi_comm(), pattern);
