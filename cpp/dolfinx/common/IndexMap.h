@@ -10,12 +10,29 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <functional>
 #include <map>
 #include <set>
+#include <tuple>
 #include <vector>
 
 namespace dolfinx::common
 {
+// Forward declaration
+class IndexMap;
+
+/// Compute layout data and ghost indices for a stacked (concatenated)
+/// index map, i.e. 'splice' multiple maps into one. Communication is
+/// required to compute the new ghost indices.
+///
+/// @param[in] maps List of index maps
+/// @returns The (0) global offset of a stacked map for this rank, (1)
+///   local offset for each submap in the stacked map, and (2) new
+///   indices for the ghosts for each submap.
+std::tuple<std::int64_t, std::vector<std::int32_t>,
+           std::vector<std::vector<std::int64_t>>>
+stack_index_maps(
+    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps);
 
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of N+1 block
@@ -170,7 +187,7 @@ public:
   /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
-  /// Get process that owns index (global block index)
+  /// Get MPI rank that owns index (global block index)
   int owner(std::int64_t global_index) const;
 
   /// Return array of global indices for all indices on this process,
@@ -279,12 +296,10 @@ private:
   // excessive)
   int _myrank;
 
-public:
-  // FIXME: This could get big for large process counts
+  // FIXME: This could get big for large process counts. Compute on-demand.
   // Range of ownership of index for all processes
   std::vector<std::int64_t> _all_ranges;
 
-private:
   // Local-to-global map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 
