@@ -42,12 +42,21 @@ public:
       MPI_Comm comm,
       const std::array<std::shared_ptr<const common::IndexMap>, 2>& index_maps);
 
-  /// Create a new sparsity pattern by adding sub-patterns, e.g.
+  /// Create a new sparsity pattern by concatenating sub-patterns, e.g.
   /// pattern =[ pattern00 ][ pattern 01]
   ///          [ pattern10 ][ pattern 11]
+  ///
+  /// @param[in] comm The MPI communicator
+  /// @param[in] patterns Rectangular array of sparsity pattern. The
+  ///   patterns must not be finalised. Null block are permited
+  /// @param[in] maps Index maps for each row block (maps[0]) and column
+  ///   blocks (maps[1])
   SparsityPattern(
       MPI_Comm comm,
-      const std::vector<std::vector<const SparsityPattern*>>& patterns);
+      const std::vector<std::vector<const SparsityPattern*>>& patterns,
+      const std::array<
+          std::vector<std::reference_wrapper<const common::IndexMap>>, 2>&
+          maps);
 
   SparsityPattern(const SparsityPattern& pattern) = delete;
 

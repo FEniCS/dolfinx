@@ -40,9 +40,12 @@ void la(py::module& m)
       .def(py::init(
           [](const MPICommWrapper comm,
              const std::vector<std::vector<const dolfinx::la::SparsityPattern*>>
-                 patterns) {
-            return std::make_unique<dolfinx::la::SparsityPattern>(comm.get(),
-                                                                  patterns);
+                 patterns,
+             const std::array<std::vector<std::reference_wrapper<
+                                  const dolfinx::common::IndexMap>>,
+                              2>& maps) {
+            return std::make_unique<dolfinx::la::SparsityPattern>(
+                comm.get(), patterns, maps);
           }))
       .def("local_range", &dolfinx::la::SparsityPattern::local_range)
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)

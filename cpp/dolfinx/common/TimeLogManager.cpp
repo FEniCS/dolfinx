@@ -6,14 +6,12 @@
 
 #include "TimeLogManager.h"
 
-// Initialise static data
-// FIXME : Logger singleton is initialised here on the first call to logger()
-// to avoid "static initialisation order fiasco". Logger's destructor
-// may therefore never be called.
+// Initialise static data to avoid "static initialisation order fiasco".
+// See also Meyers' singleton.
 
 dolfinx::common::TimeLogger& dolfinx::common::TimeLogManager::logger()
 {
   // NB static - this only allocates a new Logger on the first call to logger()
-  static auto* lg = new (dolfinx::common::TimeLogger);
-  return *lg;
+  static dolfinx::common::TimeLogger lg{};
+  return lg;
 }
