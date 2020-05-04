@@ -30,10 +30,6 @@ def test_compute_collisions_point_1d():
         assert set(entities) == reference[dim]
 
 
-
-# --- compute_collisions with tree ---
-
-
 @skip_in_parallel
 @pytest.mark.parametrize("point,cells", [(numpy.array([0.52, 0, 0]), [
     set([8, 9, 10, 11, 12, 13, 14, 15]),
@@ -70,7 +66,7 @@ def test_compute_collisions_tree_2d(point, cells):
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
     tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
     entities = geometry.compute_collisions(tree_A, tree_B)
-    
+
     entities_A = set([q[0] for q in entities])
     entities_B = set([q[1] for q in entities])
     assert entities_A == set(cells[0])
@@ -102,13 +98,11 @@ def test_compute_collisions_tree_3d():
         tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
         tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
         entities = geometry.compute_collisions(tree_A, tree_B)
- 
+
         entities_A = set([q[0] for q in entities])
         entities_B = set([q[1] for q in entities])
         assert entities_A == references[i][0]
         assert entities_B == references[i][1]
-
-
 
 
 @skip_in_parallel
@@ -161,8 +155,6 @@ def test_compute_first_collision_3d():
         tdim = mesh.topology.dim
         if dim != tdim - 1 and dim != tdim - 2:
             assert first in reference[dim]
-
-
 
 
 @skip_in_parallel

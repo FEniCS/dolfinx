@@ -41,4 +41,3 @@ def compute_collisions_point(tree: BoundingBoxTree, x):
 def compute_collisions(tree0: BoundingBoxTree, tree1: BoundingBoxTree):
     """Compute collisions with the bounding box"""
     return cpp.geometry.compute_collisions(tree0._cpp_object, tree1._cpp_object)
-
