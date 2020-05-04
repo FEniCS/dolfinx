@@ -44,15 +44,6 @@ compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 std::vector<int> compute_collisions(const BoundingBoxTree& tree,
                                     const Eigen::Vector3d& p);
 
-/// Compute all collisions between mesh entities and point
-/// @param[in] tree The bounding box tree
-/// @param[in] p The point
-/// @param[in] mesh The mesh
-/// @return Mesh entities that contain the point
-// std::vector<int> compute_entity_collisions(const BoundingBoxTree& tree,
-//                                            const Eigen::Vector3d& p,
-//                                            const mesh::Mesh& mesh);
-
 /// Compute first collision between bounding boxes and point
 /// @param[in] tree The bounding box tree
 /// @param[in] p The point

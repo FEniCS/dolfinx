@@ -373,25 +373,6 @@ std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
   return entities;
 }
 //-----------------------------------------------------------------------------
-// std::vector<int>
-// geometry::compute_entity_collisions(const BoundingBoxTree& tree,
-//                                     const Eigen::Vector3d& p,
-//                                     const mesh::Mesh& mesh)
-// {
-//   // Point in entity only implemented for cells. Consider extending.
-//   if (tree.tdim() != mesh.topology().dim())
-//   {
-//     throw std::runtime_error(
-//         "Cannot compute collision between point and mesh entities. "
-//         "Point-in-entity is only implemented for cells");
-//   }
-
-//   // Call recursive find function to compute bounding box candidates
-//   std::vector<int> entities;
-//   _compute_collisions_point(tree, p, tree.num_bboxes() - 1, entities);
-//   return entities;
-// }
-//-----------------------------------------------------------------------------
 int geometry::compute_first_collision(const BoundingBoxTree& tree,
                                       const Eigen::Vector3d& p)
 {
