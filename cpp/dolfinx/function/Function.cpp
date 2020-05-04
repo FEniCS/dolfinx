@@ -37,12 +37,12 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
   common::Timer timer("Init dof vector");
 
   // Get dof map
-  assert(V.dofmap());
-  const fem::DofMap& dofmap = *(V.dofmap());
+  std::shared_ptr<const fem::DofMap> dofmap = V.dofmap();
+  assert(dofmap);
 
   // Check that function space is not a subspace (view)
-  assert(dofmap.element_dof_layout);
-  if (dofmap.element_dof_layout->is_view())
+  assert(dofmap->element_dof_layout);
+  if (dofmap->element_dof_layout->is_view())
   {
     throw std::runtime_error(
         "Cannot initialize vector of degrees of freedom for "
@@ -50,8 +50,8 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
         "collapsing the function space");
   }
 
-  assert(dofmap.index_map);
-  la::PETScVector v = la::PETScVector(*dofmap.index_map);
+  assert(dofmap->index_map);
+  la::PETScVector v = la::PETScVector(*(dofmap->index_map));
   la::VecWrapper _v(v.vec());
   _v.x.setZero();
 
@@ -170,30 +170,33 @@ void Function::eval(
 
   // Get mesh
   assert(_function_space);
-  assert(_function_space->mesh());
-  const mesh::Mesh& mesh = *_function_space->mesh();
-  const int gdim = mesh.geometry().dim();
-  const int tdim = mesh.topology().dim();
+  std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
+  assert(mesh);
+  const int gdim = mesh->geometry().dim();
+  const int tdim = mesh->topology().dim();
 
   // Get geometry data
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+      = mesh->geometry().x();
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
   // Get coordinate map
-  const fem::CoordinateElement& cmap = mesh.geometry().cmap();
+  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
   // Get element
   assert(_function_space->element());
-  const fem::FiniteElement& element = *_function_space->element();
-  const int reference_value_size = element.reference_value_size();
-  const int value_size = element.value_size();
-  const int space_dimension = element.space_dimension();
+  std::shared_ptr<const fem::FiniteElement> element
+      = _function_space->element();
+  assert(element);
+  const int reference_value_size = element->reference_value_size();
+  const int value_size = element->value_size();
+  const int space_dimension = element->space_dimension();
 
   // Prepare geometry data structures
   Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
@@ -209,16 +212,15 @@ void Function::eval(
                                                          value_size);
 
   // Create work vector for expansion coefficients
-  Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
-      element.space_dimension());
+  Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(space_dimension);
 
   // Get dofmap
-  assert(_function_space->dofmap());
-  const fem::DofMap& dofmap = *_function_space->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap = _function_space->dofmap();
+  assert(dofmap);
 
-  mesh.topology_mutable().create_entity_permutations();
+  mesh->topology_mutable().create_entity_permutations();
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-      = mesh.topology().get_cell_permutation_info();
+      = mesh->topology().get_cell_permutation_info();
 
   // Loop over points
   u.setZero();
@@ -242,14 +244,14 @@ void Function::eval(
                                     coordinate_dofs);
 
     // Compute basis on reference element
-    element.evaluate_reference_basis(basis_reference_values, X);
+    element->evaluate_reference_basis(basis_reference_values, X);
 
     // Push basis forward to physical element
-    element.transform_reference_basis(basis_values, basis_reference_values, X,
-                                      J, detJ, K, cell_info[cell_index]);
+    element->transform_reference_basis(basis_values, basis_reference_values, X,
+                                       J, detJ, K, cell_info[cell_index]);
 
     // Get degrees of freedom for current cell
-    auto dofs = dofmap.cell_dofs(cell_index);
+    auto dofs = dofmap->cell_dofs(cell_index);
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
       coefficients[i] = _v[dofs[i]];
 
@@ -322,32 +324,31 @@ Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 Function::compute_point_values() const
 {
   assert(_function_space);
-  assert(_function_space->mesh());
-  const mesh::Mesh& mesh = *_function_space->mesh();
-
-  const int tdim = mesh.topology().dim();
+  std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
 
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
 
   // Resize Array for holding point values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      point_values(mesh.geometry().x().rows(), value_size_loc);
+      point_values(mesh->geometry().x().rows(), value_size_loc);
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh->geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+      = mesh->geometry().x();
 
   // Interpolate point values on each cell (using last computed value if
   // not continuous, e.g. discontinuous Galerkin methods)
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(num_dofs_g, 3);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(num_dofs_g, value_size_loc);
-  auto map = mesh.topology().index_map(tdim);
+  auto map = mesh->topology().index_map(tdim);
   assert(map);
   const int num_cells = map->size_local() + map->num_ghosts();
   for (int c = 0; c < num_cells; ++c)

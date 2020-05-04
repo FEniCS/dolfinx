@@ -152,8 +152,9 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
           a.function_space(1)->dofmap().get()}};
 
   // Get mesh
-  assert(a.mesh());
-  const mesh::Mesh& mesh = *(a.mesh());
+  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
 
   common::Timer t0("Build sparsity");
 
@@ -162,28 +163,28 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
       = {{dofmaps[0]->index_map, dofmaps[1]->index_map}};
 
   // Create and build sparsity pattern
-  la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
+  la::SparsityPattern pattern(mesh->mpi_comm(), index_maps);
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
   {
-    SparsityPatternBuilder::cells(pattern, mesh.topology(),
+    SparsityPatternBuilder::cells(pattern, mesh->topology(),
                                   {{dofmaps[0], dofmaps[1]}});
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
   {
-  // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
-    mesh.topology_mutable().create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
-    SparsityPatternBuilder::interior_facets(pattern, mesh.topology(),
+    // FIXME: cleanup these calls? Some of the happen internally again.
+    mesh->topology_mutable().create_entities(tdim - 1);
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    SparsityPatternBuilder::interior_facets(pattern, mesh->topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
-    mesh.topology_mutable().create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
-    SparsityPatternBuilder::exterior_facets(pattern, mesh.topology(),
+    mesh->topology_mutable().create_entities(tdim - 1);
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    SparsityPatternBuilder::exterior_facets(pattern, mesh->topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
   t0.stop();
@@ -215,7 +216,9 @@ la::PETScMatrix fem::create_matrix_block(
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
       = block_function_spaces(a);
 
-  const mesh::Mesh& mesh = *V[0][0]->mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = V[0][0]->mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
 
   // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
@@ -229,68 +232,82 @@ la::PETScMatrix fem::create_matrix_block(
       if (a(row, col))
       {
         // Create sparsity pattern for block
-        patterns[row].push_back(
-            std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
+        patterns[row].push_back(std::make_unique<la::SparsityPattern>(
+            mesh->mpi_comm(), index_maps));
 
         // Build sparsity pattern for block
         std::array<const DofMap*, 2> dofmaps
             = {{V[0][row]->dofmap().get(), V[1][col]->dofmap().get()}};
         assert(patterns[row].back());
-        auto& sp = *patterns[row].back();
+        auto& sp = patterns[row].back();
+        assert(sp);
         const FormIntegrals& integrals = a(row, col)->integrals();
         if (integrals.num_integrals(FormIntegrals::Type::cell) > 0)
-          SparsityPatternBuilder::cells(sp, mesh.topology(), dofmaps);
+          SparsityPatternBuilder::cells(*sp, mesh->topology(), dofmaps);
         if (integrals.num_integrals(FormIntegrals::Type::interior_facet) > 0)
         {
-          mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
-          SparsityPatternBuilder::interior_facets(sp, mesh.topology(), dofmaps);
+          mesh->topology_mutable().create_entities(tdim - 1);
+          SparsityPatternBuilder::interior_facets(*sp, mesh->topology(),
+                                                  dofmaps);
         }
         if (integrals.num_integrals(FormIntegrals::Type::exterior_facet) > 0)
         {
-          mesh.topology_mutable().create_entities(mesh.topology().dim() - 1);
-          SparsityPatternBuilder::exterior_facets(sp, mesh.topology(), dofmaps);
+          mesh->topology_mutable().create_entities(tdim - 1);
+          SparsityPatternBuilder::exterior_facets(*sp, mesh->topology(),
+                                                  dofmaps);
         }
-        sp.assemble();
       }
       else
-      {
-        patterns[row].push_back(
-            std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
-        patterns[row].back()->assemble();
-      }
+        patterns[row].push_back(nullptr);
     }
   }
+
+  // Compute offsets for the fields
+  std::array<std::vector<std::reference_wrapper<const common::IndexMap>>, 2>
+      maps;
+  for (std::size_t d = 0; d < 2; ++d)
+  {
+    for (auto space : V[d])
+      maps[d].push_back(*space->dofmap()->index_map.get());
+  }
+
+
+  // FIXME: This is computed again inside the SparsityPattern
+  // constructor, but we also need to outside to build the PETSc
+  // local-to-global map. Compute outside and pass into SparsityPattern
+  // constructor.
+  auto [rank_offset, local_offset, ghosts] = common::stack_index_maps(maps[0]);
 
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
   for (std::size_t row = 0; row < V[0].size(); ++row)
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
-  la::SparsityPattern pattern(mesh.mpi_comm(), p);
+  la::SparsityPattern pattern(mesh->mpi_comm(), p, maps);
+  pattern.assemble();
+
+
+  // FIXME: Add option to pass customised local-to-global map to PETSc
+  // Mat constructor.
 
   // Initialise matrix
-  la::PETScMatrix A(mesh.mpi_comm(), pattern);
+  la::PETScMatrix A(mesh->mpi_comm(), pattern);
 
-  // Build list of row and column index maps (over each block)
-  std::array<std::vector<const common::IndexMap*>, 2> index_maps;
-  for (std::size_t i = 0; i < 2; ++i)
-    for (std::size_t j = 0; j < V[i].size(); ++j)
-      index_maps[i].push_back(V[i][j]->dofmap()->index_map.get());
-
-  // Create row and column local-to-global maps
+  // Create row and column local-to-global maps (field0, field1, field2,
+  // etc), i.e. ghosts of field0 appear before owned indices of field1
   std::array<std::vector<PetscInt>, 2> _maps;
   for (int d = 0; d < 2; ++d)
   {
-    for (std::size_t i = 0; i < V[d].size(); ++i)
+    for (std::size_t f = 0; f < maps[d].size(); ++f)
     {
-      auto map = V[d][i]->dofmap()->index_map;
-      const std::vector<std::int64_t> global = map->global_indices(false);
-      for (std::int64_t global_index : global)
-      {
-        const std::int64_t offset
-            = get_global_offset(index_maps[d], i, global_index);
-        _maps[d].push_back(global_index + offset);
-      }
+      const common::IndexMap& map = maps[d][f].get();
+      const int bs = map.block_size();
+      const std::int32_t size_local = bs * map.size_local();
+      const std::vector<std::int64_t> global = map.global_indices(false);
+      for (std::int32_t i = 0; i < size_local; ++i)
+        _maps[d].push_back(i + rank_offset + local_offset[f]);
+      for (std::size_t i = size_local; i < global.size(); ++i)
+        _maps[d].push_back(ghosts[f][i - size_local]);
     }
   }
 
@@ -351,35 +368,22 @@ la::PETScMatrix fem::create_matrix_nest(
   return la::PETScMatrix(_A);
 }
 //-----------------------------------------------------------------------------
-la::PETScVector
-fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
+la::PETScVector fem::create_vector_block(
+    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps)
 {
   // FIXME: handle constant block size > 1
 
-  std::size_t local_size = 0;
+  auto [rank_offset, local_offset, ghosts_new] = common::stack_index_maps(maps);
+  std::int32_t local_size = local_offset.back();
   std::vector<std::int64_t> ghosts;
-  for (std::size_t i = 0; i < maps.size(); ++i)
-  {
-    const int bs = maps[i]->block_size();
-    local_size += maps[i]->size_local() * bs;
-
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& field_ghosts
-        = maps[i]->ghosts();
-    for (Eigen::Index j = 0; j < field_ghosts.size(); ++j)
-    {
-      for (int k = 0; k < bs; ++k)
-      {
-        const std::int64_t offset
-            = get_global_offset(maps, i, bs * field_ghosts[j] + k);
-        ghosts.push_back(bs * field_ghosts[j] + k + offset);
-      }
-    }
-  }
+  for (auto& sub_ghost : ghosts_new)
+    ghosts.insert(ghosts.end(), sub_ghost.begin(), sub_ghost.end());
 
   // Create map for combined problem, and create vector
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> _ghosts(
       ghosts.data(), ghosts.size());
-  common::IndexMap index_map(maps[0]->mpi_comm(), local_size, _ghosts, 1);
+  common::IndexMap index_map(maps[0].get().mpi_comm(), local_size, _ghosts, 1);
+
   return la::PETScVector(index_map);
 }
 //-----------------------------------------------------------------------------
@@ -407,37 +411,6 @@ fem::create_vector_nest(const std::vector<const common::IndexMap*>& maps)
   VecCreateNest(vecs[0]->mpi_comm(), petsc_vecs.size(), nullptr,
                 petsc_vecs.data(), &y);
   return la::PETScVector(y, false);
-}
-//-----------------------------------------------------------------------------
-std::int64_t dolfinx::fem::get_global_offset(
-    const std::vector<const common::IndexMap*>& maps, const int field,
-    const std::int64_t index)
-{
-  // FIXME: handle/check block size > 1
-
-  // Get process that owns global index
-  const int bs = maps[field]->block_size();
-  const int owner = maps[field]->owner(index / bs);
-
-  // Offset from lower rank processes
-  std::size_t offset = 0;
-  if (owner > 0)
-  {
-    for (std::size_t j = 0; j < maps.size(); ++j)
-    {
-      if ((int)j != field)
-        offset += maps[j]->_all_ranges[owner] * maps[j]->block_size();
-    }
-  }
-
-  // Local (process) offset
-  for (int i = 0; i < field; ++i)
-  {
-    offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner])
-              * maps[i]->block_size();
-  }
-
-  return offset;
 }
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout
@@ -733,9 +706,9 @@ fem::pack_coefficients(const fem::Form& form)
     dofmaps[i] = coefficients.get(i)->function_space()->dofmap().get();
 
   // Get mesh
-  assert(form.mesh());
-  const mesh::Mesh& mesh = *form.mesh();
-  const int tdim = mesh.topology().dim();
+  std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
 
   // Unwrap PETSc vectors
   std::vector<const PetscScalar*> v(coefficients.size(), nullptr);
@@ -748,8 +721,8 @@ fem::pack_coefficients(const fem::Form& form)
     VecGetArrayRead(x_local[i], &v[i]);
   }
 
-  const int num_cells = mesh.topology().index_map(tdim)->size_local()
-                        + mesh.topology().index_map(tdim)->num_ghosts();
+  const int num_cells = mesh->topology().index_map(tdim)->size_local()
+                        + mesh->topology().index_map(tdim)->num_ghosts();
 
   // Copy data into coefficient array
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> c(

@@ -13,18 +13,18 @@ import os
 import pathlib
 import time
 
-import cffi
 import numba
-import numba.cffi_support
+import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
+
+import cffi
+import dolfinx
 import petsc4py.lib
 import pytest
-from mpi4py import MPI
-from petsc4py import PETSc
-from petsc4py import get_config as PETSc_get_config
-
-import dolfinx
 import ufl
+from mpi4py import MPI
+from petsc4py import get_config as PETSc_get_config
+from petsc4py import PETSc
 from ufl import dx, inner
 
 # Get details of PETSc install
@@ -92,8 +92,8 @@ ADD_VALUES = PETSc.InsertMode.ADD_VALUES
 
 # CFFI - register complex types
 ffi = cffi.FFI()
-numba.cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
-numba.cffi_support.register_type(ffi.typeof('float _Complex'), numba.types.complex64)
+cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
+cffi_support.register_type(ffi.typeof('float _Complex'), numba.types.complex64)
 
 # Get MatSetValuesLocal from PETSc available via cffi in ABI mode
 ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
@@ -147,9 +147,9 @@ if spec is None:
     raise ImportError("Failed to find CFFI generated module")
 module = importlib.util.module_from_spec(spec)
 
-numba.cffi_support.register_module(module)
+cffi_support.register_module(module)
 MatSetValues_api = module.lib.MatSetValuesLocal
-numba.cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba_scalar_t)
+cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba_scalar_t)
 
 
 # See https://github.com/numba/numba/issues/4036 for why we need 'sink'

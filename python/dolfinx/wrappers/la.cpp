@@ -40,21 +40,17 @@ void la(py::module& m)
       .def(py::init(
           [](const MPICommWrapper comm,
              const std::vector<std::vector<const dolfinx::la::SparsityPattern*>>
-                 patterns) {
-            return std::make_unique<dolfinx::la::SparsityPattern>(comm.get(),
-                                                                  patterns);
+                 patterns,
+             const std::array<std::vector<std::reference_wrapper<
+                                  const dolfinx::common::IndexMap>>,
+                              2>& maps) {
+            return std::make_unique<dolfinx::la::SparsityPattern>(
+                comm.get(), patterns, maps);
           }))
       .def("local_range", &dolfinx::la::SparsityPattern::local_range)
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
       .def("assemble", &dolfinx::la::SparsityPattern::assemble)
-      .def("str", &dolfinx::la::SparsityPattern::str)
       .def("num_nonzeros", &dolfinx::la::SparsityPattern::num_nonzeros)
-      .def("num_nonzeros_diagonal",
-           &dolfinx::la::SparsityPattern::num_nonzeros_diagonal)
-      .def("num_nonzeros_off_diagonal",
-           &dolfinx::la::SparsityPattern::num_nonzeros_off_diagonal)
-      .def("num_local_nonzeros",
-           &dolfinx::la::SparsityPattern::num_local_nonzeros)
       .def("insert", &dolfinx::la::SparsityPattern::insert)
       .def("insert_diagonal", &dolfinx::la::SparsityPattern::insert_diagonal);
 
