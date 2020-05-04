@@ -28,11 +28,6 @@ def compute_first_collision(tree: BoundingBoxTree, x):
     return cpp.geometry.compute_first_collision(tree._cpp_object, x)
 
 
-def compute_first_entity_collision(tree: BoundingBoxTree, mesh, x):
-    """Compute fist collision between entities of mesh and the point"""
-    return cpp.geometry.compute_first_entity_collision(tree._cpp_object, mesh, x)
-
-
 def compute_closest_entity(tree: BoundingBoxTree, tree_midpoint, mesh, x):
     """Compute closest entity of the mesh to the point"""
     return cpp.geometry.compute_closest_entity(tree._cpp_object, tree_midpoint._cpp_object, mesh, x)
@@ -43,16 +38,7 @@ def compute_collisions_point(tree: BoundingBoxTree, x):
     return cpp.geometry.compute_collisions_point(tree._cpp_object, x)
 
 
-def compute_collisions_bb(tree0: BoundingBoxTree, tree1: BoundingBoxTree):
+def compute_collisions(tree0: BoundingBoxTree, tree1: BoundingBoxTree):
     """Compute collisions with the bounding box"""
     return cpp.geometry.compute_collisions(tree0._cpp_object, tree1._cpp_object)
 
-
-def compute_entity_collisions_mesh(tree: BoundingBoxTree, mesh, x):
-    """Compute collisions between the point and entities of the mesh"""
-    return cpp.geometry.compute_entity_collisions_mesh(tree._cpp_object, mesh, x)
-
-
-def compute_entity_collisions_bb(tree0: BoundingBoxTree, mesh0, tree1: BoundingBoxTree, mesh1):
-    """Compute collisions between the bounding box and entities of meshes"""
-    return cpp.geometry.compute_entity_collisions_bb(tree0._cpp_object, tree1._cpp_object, mesh0, mesh1)
