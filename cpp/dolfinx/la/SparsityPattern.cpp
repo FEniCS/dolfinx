@@ -78,8 +78,9 @@ SparsityPattern::SparsityPattern(
   _diagonal_cache.resize(size_row);
   _off_diagonal_cache.resize(size_row);
 
-  // NOTE: This could be simplified if we used local column indces
-  // Build map from old column global indices to new column global indices
+  // NOTE: This could be simplified if we used local column indices
+  // Build map from old column global indices to new column global
+  // indices
   std::vector<std::map<std::int64_t, std::int64_t>> col_old_to_new(
       maps[1].size());
   for (std::size_t col = 0; col < maps[1].size(); ++col)
@@ -335,6 +336,7 @@ void SparsityPattern::assemble()
   MPI_Neighbor_allgatherv(ghost_data.data(), ghost_data.size(), MPI_INT64_T,
                           ghost_data_received.data(), num_rows_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
+  MPI_Comm_free(&comm);
 
   // Add data received from the neighbourhood
   for (std::size_t i = 0; i < ghost_data_received.size(); i += 2)
@@ -377,8 +379,6 @@ void SparsityPattern::assemble()
   _off_diagonal = std::make_shared<graph::AdjacencyList<std::int64_t>>(
       _off_diagonal_cache);
   std::vector<std::vector<std::int64_t>>().swap(_off_diagonal_cache);
-
-  // MPI_Comm_free(&comm);
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const

@@ -104,7 +104,6 @@ Mat dolfinx::la::create_petsc_matrix(
   std::vector<PetscInt> _nnz_diag(index_maps[0]->size_local() * bs0 / bs),
       _nnz_offdiag(index_maps[0]->size_local() * bs0 / bs);
 
-  // std::cout << "BS: " << bs << std::endl;
   for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
     _nnz_diag[i] = diagonal_pattern.links(bs * i).rows() / bs;
   for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)

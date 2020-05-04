@@ -155,9 +155,7 @@ common::stack_index_maps(
       for (int j = 0; j < bs; ++j)
       {
         auto it = ghost_maps[f].find(bs * ghosts[i] + j);
-        if (it == ghost_maps[f].end())
-          throw std::runtime_error("Oooops");
-
+        assert(it != ghost_maps[f].end());
         ghosts_new[f].push_back(it->second);
       }
     }
