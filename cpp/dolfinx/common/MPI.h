@@ -47,7 +47,7 @@ public:
     Comm& operator=(const Comm& comm) = delete;
 
     /// Move assignment operator
-    Comm& operator=(Comm&& comm);
+    Comm& operator=(Comm&& comm) noexcept;
 
     /// Destructor (frees wrapped communicator)
     ~Comm();
