@@ -6,7 +6,6 @@
 
 #include "utils.h"
 #include "BoundingBoxTree.h"
-#include "CollisionPredicates.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -131,7 +130,6 @@ _compute_closest_point(const geometry::BoundingBoxTree& tree,
 // Compute collisions with point (recursive)
 void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
                                const Eigen::Vector3d& p, int node,
-                               const mesh::Mesh* mesh,
                                std::vector<int>& entities)
 {
   // Get children of current bounding box node
@@ -149,25 +147,14 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
     // child_1 denotes entity for leaves
     const int entity_index = bbox[1];
 
-    // If we have a mesh, check that the candidate is really a collision
-    if (mesh)
-    {
-      // Get cell
-      mesh::MeshEntity cell(*mesh, mesh->topology().dim(), entity_index);
-      if (geometry::CollisionPredicates::collides(cell, p))
-        entities.push_back(entity_index);
-    }
-    else
-    {
-      // Otherwise, add the candidate
-      entities.push_back(entity_index);
-    }
+    // Add the candidate
+    entities.push_back(entity_index);
   }
   else
   {
     // Check both children
-    _compute_collisions_point(tree, p, bbox[0], mesh, entities);
-    _compute_collisions_point(tree, p, bbox[1], mesh, entities);
+    _compute_collisions_point(tree, p, bbox[0], entities);
+    _compute_collisions_point(tree, p, bbox[1], entities);
   }
 }
 //-----------------------------------------------------------------------------
@@ -229,8 +216,9 @@ int _compute_first_entity_collision(const geometry::BoundingBoxTree& tree,
     mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
 
     // Check entity
-    if (geometry::CollisionPredicates::collides(cell, p))
-      return entity_index;
+    throw std::runtime_error("Not working");
+    // if (geometry::CollisionPredicates::collides(cell, p))
+    //  return entity_index;
   }
   else
   {
@@ -348,61 +336,61 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
   return std::pair(entities_0, entities_1);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<int>, std::vector<int>>
-geometry::compute_entity_collisions(const BoundingBoxTree& tree0,
-                                    const BoundingBoxTree& tree1,
-                                    const mesh::Mesh& mesh0,
-                                    const mesh::Mesh& mesh1)
-{
-  // Call recursive find function
-  std::vector<int> entities_0;
-  std::vector<int> entities_1;
-  _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,
-                           tree1.num_bboxes() - 1, entities_0, entities_1);
+// std::pair<std::vector<int>, std::vector<int>>
+// geometry::compute_entity_collisions(const BoundingBoxTree& tree0,
+//                                     const BoundingBoxTree& tree1,
+//                                     const mesh::Mesh& mesh0,
+//                                     const mesh::Mesh& mesh1)
+// {
+//   // Call recursive find function
+//   std::vector<int> entities_0;
+//   std::vector<int> entities_1;
+//   _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,
+//                            tree1.num_bboxes() - 1, entities_0, entities_1);
 
-  // Check actual collisions with mesh
-  std::vector<int> entities_A, entities_B;
-  for (std::size_t i = 0; i < entities_0.size(); ++i)
-  {
+//   // Check actual collisions with mesh
+//   std::vector<int> entities_A, entities_B;
+//   for (std::size_t i = 0; i < entities_0.size(); ++i)
+//   {
 
-    mesh::MeshEntity cell0(mesh0, mesh0.topology().dim(), entities_0[i]);
-    mesh::MeshEntity cell1(mesh1, mesh1.topology().dim(), entities_1[i]);
-    if (geometry::CollisionPredicates::collides(cell0, cell1))
-    {
-      entities_A.push_back(entities_0[i]);
-      entities_B.push_back(entities_1[i]);
-    }
-  }
+//     mesh::MeshEntity cell0(mesh0, mesh0.topology().dim(), entities_0[i]);
+//     mesh::MeshEntity cell1(mesh1, mesh1.topology().dim(), entities_1[i]);
+//     if (geometry::CollisionPredicates::collides(cell0, cell1))
+//     {
+//       entities_A.push_back(entities_0[i]);
+//       entities_B.push_back(entities_1[i]);
+//     }
+//   }
 
-  return std::pair(entities_A, entities_B);
-}
+//   return std::pair(entities_A, entities_B);
+// }
 //-----------------------------------------------------------------------------
 std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
                                               const Eigen::Vector3d& p)
 {
   std::vector<int> entities;
-  _compute_collisions_point(tree, p, tree.num_bboxes() - 1, nullptr, entities);
+  _compute_collisions_point(tree, p, tree.num_bboxes() - 1, entities);
   return entities;
 }
 //-----------------------------------------------------------------------------
-std::vector<int>
-geometry::compute_entity_collisions(const BoundingBoxTree& tree,
-                                    const Eigen::Vector3d& p,
-                                    const mesh::Mesh& mesh)
-{
-  // Point in entity only implemented for cells. Consider extending.
-  if (tree.tdim() != mesh.topology().dim())
-  {
-    throw std::runtime_error(
-        "Cannot compute collision between point and mesh entities. "
-        "Point-in-entity is only implemented for cells");
-  }
+// std::vector<int>
+// geometry::compute_entity_collisions(const BoundingBoxTree& tree,
+//                                     const Eigen::Vector3d& p,
+//                                     const mesh::Mesh& mesh)
+// {
+//   // Point in entity only implemented for cells. Consider extending.
+//   if (tree.tdim() != mesh.topology().dim())
+//   {
+//     throw std::runtime_error(
+//         "Cannot compute collision between point and mesh entities. "
+//         "Point-in-entity is only implemented for cells");
+//   }
 
-  // Call recursive find function to compute bounding box candidates
-  std::vector<int> entities;
-  _compute_collisions_point(tree, p, tree.num_bboxes() - 1, &mesh, entities);
-  return entities;
-}
+//   // Call recursive find function to compute bounding box candidates
+//   std::vector<int> entities;
+//   _compute_collisions_point(tree, p, tree.num_bboxes() - 1, entities);
+//   return entities;
+// }
 //-----------------------------------------------------------------------------
 int geometry::compute_first_collision(const BoundingBoxTree& tree,
                                       const Eigen::Vector3d& p)

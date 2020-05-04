@@ -4,7 +4,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "BoundingBoxTree.h"
-#include "CollisionPredicates.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -73,8 +72,6 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
   return b;
 }
 //-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // Compute bounding box of points
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
 compute_bbox_of_points(const std::vector<Eigen::Vector3d>& points,
@@ -106,16 +103,12 @@ Eigen::Array<double, 2, 3, Eigen::RowMajor> compute_bbox_of_bboxes(
   // Compute min and max over remaining boxes
   for (auto it = begin; it != end; ++it)
   {
-    const Eigen::Vector3d p0 = leaf_bboxes.row(2 * (*it));
-    const Eigen::Vector3d p1 = leaf_bboxes.row(2 * (*it) + 1);
-
-    b.row(0) = b.row(0).min(p0.transpose().array());
-    b.row(1) = b.row(1).max(p1.transpose().array());
+    b.row(0) = b.row(0).min(leaf_bboxes.row(2 * (*it)));
+    b.row(1) = b.row(1).max(leaf_bboxes.row(2 * (*it) + 1));
   }
 
   return b;
 }
-
 //------------------------------------------------------------------------------
 int _build_from_leaf(
     const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& leaf_bboxes,
@@ -179,7 +172,6 @@ int _build_from_leaf(
     return bboxes.size() - 1;
   }
 }
-
 //-----------------------------------------------------------------------------
 std::tuple<Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor>,
            Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
@@ -209,7 +201,6 @@ build_from_leaf(
 
   return {bbox_array, bbox_coord_array};
 }
-
 //-----------------------------------------------------------------------------
 int _build_from_point(const std::vector<Eigen::Vector3d>& points,
                       const std::vector<int>::iterator begin,
@@ -260,7 +251,6 @@ int _build_from_point(const std::vector<Eigen::Vector3d>& points,
   return bboxes.size() - 1;
 }
 //-----------------------------------------------------------------------------
-
 } // namespace
 
 //-----------------------------------------------------------------------------
