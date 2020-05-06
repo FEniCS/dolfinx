@@ -158,40 +158,6 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
   }
 }
 //-----------------------------------------------------------------------------
-// Compute first collision (recursive)
-int _compute_first_collision(const geometry::BoundingBoxTree& tree,
-                             const Eigen::Vector3d& p, int node)
-{
-  // Get children of current bounding box node
-  const std::array<int, 2> bbox = tree.bbox(node);
-
-  if (!geometry::point_in_bbox(tree.get_bbox(node), p))
-  {
-    // If point is not in bounding box, then don't search further
-    return -1;
-  }
-  else if (is_leaf(bbox, node))
-  {
-    // If box is a leaf (which we know contains the point), then return it
-    return bbox[1]; // child_1 denotes entity for leaves
-  }
-  else
-  {
-    // Check both children
-    int c0 = _compute_first_collision(tree, p, bbox[0]);
-    if (c0 >= 0)
-      return c0;
-
-    // Check second child
-    int c1 = _compute_first_collision(tree, p, bbox[1]);
-    if (c1 >= 0)
-      return c1;
-  }
-
-  // Point not found
-  return -1;
-}
-//-----------------------------------------------------------------------------
 // Compute collisions with tree (recursive)
 void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
                               const geometry::BoundingBoxTree& B, int node_A,
@@ -291,12 +257,6 @@ std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
   std::vector<int> entities;
   _compute_collisions_point(tree, p, tree.num_bboxes() - 1, entities);
   return entities;
-}
-//-----------------------------------------------------------------------------
-int geometry::compute_first_collision(const BoundingBoxTree& tree,
-                                      const Eigen::Vector3d& p)
-{
-  return _compute_first_collision(tree, p, tree.num_bboxes() - 1);
 }
 //-----------------------------------------------------------------------------
 std::vector<int>

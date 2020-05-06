@@ -42,25 +42,11 @@ void geometry(py::module& m)
           }
           return std::make_pair(std::move(entities), std::move(distance));
         });
-  m.def("compute_first_collision",
-        [](const dolfinx::geometry::BoundingBoxTree& tree,
-           const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                               Eigen::RowMajor>>& p) {
-          Eigen::VectorXi entities(p.rows());
-          for (Eigen::Index i = 0; i < p.rows(); ++i)
-          {
-            entities(i) = dolfinx::geometry::compute_first_collision(
-                tree, p.row(i).transpose());
-          }
-          return entities;
-        });
 
   m.def("compute_collisions_point",
-        [](const dolfinx::geometry::BoundingBoxTree& tree,
-           const Eigen::Vector3d& p) {
-          return dolfinx::geometry::compute_collisions(tree, p);
-        });
-
+        py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
+                          const Eigen::Vector3d&>(
+            dolfinx::geometry::compute_collisions));
   m.def("compute_collisions",
         py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
                           const dolfinx::geometry::BoundingBoxTree&>(

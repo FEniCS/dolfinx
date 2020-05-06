@@ -40,13 +40,6 @@ compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 std::vector<int> compute_collisions(const BoundingBoxTree& tree,
                                     const Eigen::Vector3d& p);
 
-/// Compute first collision between bounding boxes and point
-/// @param[in] tree The bounding box tree
-/// @param[in] p The point
-/// @return Index of the first found box that contains the point
-int compute_first_collision(const BoundingBoxTree& tree,
-                            const Eigen::Vector3d& p);
-
 /// Compute all collisions between processes and Point returning a
 /// list of process ranks
 std::vector<int> compute_process_collisions(const BoundingBoxTree& tree,
