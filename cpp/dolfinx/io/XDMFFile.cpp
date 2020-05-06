@@ -7,11 +7,8 @@
 #include "XDMFFile.h"
 #include "HDF5File.h"
 #include "cells.h"
-#include "pugixml.hpp"
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
-#include "xdmf_meshtags.h"
-#include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -20,7 +17,6 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/utils.h>
 
 using namespace dolfinx;
@@ -241,75 +237,6 @@ void XDMFFile::write_function(const function::Function& function,
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
-}
-//-----------------------------------------------------------------------------
-void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
-                              const std::string geometry_xpath,
-                              const std::string xpath)
-{
-  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
-  if (!node)
-    throw std::runtime_error("XML node '" + xpath + "' not found.");
-
-  pugi::xml_node grid_node = node.append_child("Grid");
-  assert(grid_node);
-  grid_node.append_attribute("Name") = meshtags.name.c_str();
-  grid_node.append_attribute("GridType") = "Uniform";
-
-  const std::string geo_ref_path = "xpointer(" + geometry_xpath + ")";
-  pugi::xml_node geo_ref_node = grid_node.append_child("xi:include");
-  geo_ref_node.append_attribute("xpointer") = geo_ref_path.c_str();
-  assert(geo_ref_node);
-  xdmf_meshtags::add_meshtags(_mpi_comm.comm(), meshtags, grid_node, _h5_id,
-                              meshtags.name);
-
-  // Save XML file (on process 0 only)
-  if (MPI::rank(_mpi_comm.comm()) == 0)
-    _xml_doc->save_file(_filename.c_str(), "  ");
-}
-//-----------------------------------------------------------------------------
-mesh::MeshTags<std::int32_t>
-XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
-                        const std::string name, const std::string xpath)
-{
-  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
-  if (!node)
-    throw std::runtime_error("XML node '" + xpath + "' not found.");
-  pugi::xml_node grid_node
-      = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
-  if (!grid_node)
-    throw std::runtime_error("<Grid> with name '" + name + "' not found.");
-
-  pugi::xml_node topology_node = grid_node.child("Topology");
-
-  // Get topology dataset node
-  pugi::xml_node topology_data_node = topology_node.child("DataItem");
-  const std::vector<std::int64_t> tdims
-      = xdmf_utils::get_dataset_shape(topology_data_node);
-
-  // Read topology data
-  const std::vector<std::int64_t> topology_data
-      = xdmf_read::get_dataset<std::int64_t>(_mpi_comm.comm(),
-                                             topology_data_node, _h5_id);
-
-  const std::int32_t num_local_entities
-      = (std::int32_t)topology_data.size() / tdims[1];
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      topology(topology_data.data(), num_local_entities, tdims[1]);
-
-  // Fetch cell type of meshtags and deduce its dimension
-  const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
-  const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
-  pugi::xml_node values_data_node
-      = grid_node.child("Attribute").child("DataItem");
-  std::vector<std::int32_t> values = xdmf_read::get_dataset<std::int32_t>(
-      _mpi_comm.comm(), values_data_node, _h5_id);
-  mesh::MeshTags meshtags = mesh::create_meshtags(
-      _mpi_comm.comm(), mesh, cell_type, topology, std::move(values));
-  meshtags.name = name;
-
-  return meshtags;
 }
 //-----------------------------------------------------------------------------
 MPI_Comm XDMFFile::comm() const { return _mpi_comm.comm(); }

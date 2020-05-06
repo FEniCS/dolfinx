@@ -11,6 +11,8 @@ set(HEADERS_io
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_meshtags.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_read.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_utils.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/pugixml.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pugiconfig.hpp
   PARENT_SCOPE)
 
 target_sources(dolfinx PRIVATE

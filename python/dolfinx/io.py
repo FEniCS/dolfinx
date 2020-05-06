@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data, post-processing and checkpointing"""
+import numpy
 
 import ufl
 from dolfinx import cpp, fem
@@ -56,3 +57,9 @@ class XDMFFile(cpp.io.XDMFFile):
         mesh._ufl_domain = domain
 
         return mesh
+
+    def read_meshtags(self, mesh, name, dtype=numpy.int32, xpath="/Xdmf/Domain"):
+        if dtype == numpy.int32:
+            return super().read_meshtags_int32(mesh, name, xpath)
+        elif dtype == numpy.double:
+            return super().read_meshtags_double(mesh, name, xpath)

@@ -69,12 +69,30 @@ void io(py::module& m)
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("write_function", &dolfinx::io::XDMFFile::write_function,
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
-      .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
+      .def("write_meshtags",
+           py::overload_cast<const dolfinx::mesh::MeshTags<std::int32_t>&,
+                             const std::string, const std::string>(
+               &dolfinx::io::XDMFFile::write_meshtags<std::int32_t>),
            py::arg("meshtags"),
            py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
            py::arg("xpath") = "/Xdmf/Domain")
-      .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
+      .def("write_meshtags",
+           py::overload_cast<const dolfinx::mesh::MeshTags<double>&,
+                             const std::string, const std::string>(
+               &dolfinx::io::XDMFFile::write_meshtags<double>),
+           py::arg("meshtags"),
+           py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
+           py::arg("xpath") = "/Xdmf/Domain")
+      .def("read_meshtags_int32",
+           py::overload_cast<const std::shared_ptr<const dolfinx::mesh::Mesh>&,
+                             const std::string, const std::string>(
+               &dolfinx::io::XDMFFile::read_meshtags<std::int32_t>),
+           py::arg("mesh"), py::arg("name"), py::arg("xpath"))
+      .def("read_meshtags_double",
+           py::overload_cast<const std::shared_ptr<const dolfinx::mesh::Mesh>&,
+                             const std::string, const std::string>(
+               &dolfinx::io::XDMFFile::read_meshtags<double>),
+           py::arg("mesh"), py::arg("name"), py::arg("xpath"))
       .def("comm", [](dolfinx::io::XDMFFile& self) {
         return MPICommWrapper(self.comm());
       });
