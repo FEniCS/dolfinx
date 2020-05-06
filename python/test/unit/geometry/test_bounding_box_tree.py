@@ -26,7 +26,7 @@ def test_compute_collisions_point_1d():
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
     for dim in range(1, 2):
         tree = BoundingBoxTree(mesh, mesh.topology.dim)
-        entities, _ = geometry.compute_collisions_point(tree, p)
+        entities = geometry.compute_collisions_point(tree, p)
         assert set(entities) == reference[dim]
 
 

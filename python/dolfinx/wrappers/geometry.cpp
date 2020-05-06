@@ -57,22 +57,8 @@ void geometry(py::module& m)
 
   m.def("compute_collisions_point",
         [](const dolfinx::geometry::BoundingBoxTree& tree,
-           const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                               Eigen::RowMajor>>& p) {
-          std::vector<int> entities;
-          std::vector<int> offset(p.rows() + 1, 0);
-          for (Eigen::Index i = 0; i < p.rows(); ++i)
-          {
-            const std::vector<int> collisions
-                = dolfinx::geometry::compute_collisions(tree,
-                                                        p.row(i).transpose());
-            entities.insert(entities.end(), collisions.begin(),
-                            collisions.end());
-            offset[i + 1] = offset[i + 1] + collisions.size();
-          }
-          return py::make_tuple(
-              py::array_t<int>(entities.size(), entities.data()),
-              py::array_t<int>(offset.size(), offset.data()));
+           const Eigen::Vector3d& p) {
+          return dolfinx::geometry::compute_collisions(tree, p);
         });
 
   m.def("compute_collisions",
