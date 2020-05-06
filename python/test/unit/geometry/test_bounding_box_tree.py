@@ -9,7 +9,7 @@ import numpy
 import pytest
 from mpi4py import MPI
 
-from dolfinx import (UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp,
+from dolfinx import (UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      geometry)
 from dolfinx.geometry import BoundingBoxTree
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -103,58 +103,6 @@ def test_compute_collisions_tree_3d():
         entities_B = set([q[1] for q in entities])
         assert entities_A == references[i][0]
         assert entities_B == references[i][1]
-
-
-@skip_in_parallel
-def test_compute_first_collision_1d():
-    reference = {1: [4]}
-    p = numpy.array([0.3, 0, 0])
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
-    for dim in range(1, 2):
-        tree = BoundingBoxTree(mesh, dim)
-        first = geometry.compute_first_collision(tree, p)
-        assert first in reference[dim]
-
-
-@skip_in_parallel
-def test_compute_first_collision_2d():
-    # FIXME: This test should not use facet indices as there are no
-    # guarantees on how DOLFINX numbers facets
-    reference = {1: [226], 2: [136, 137]}
-
-    p = numpy.array([0.3, 0.3, 0.0])
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
-    for dim in range(1, 3):
-        tree = BoundingBoxTree(mesh, dim)
-        first = geometry.compute_first_collision(tree, p)
-
-        # FIXME: Facet test is excluded because it mistakenly relies in
-        # the facet indices
-        if dim != mesh.topology.dim - 1:
-            assert first in reference[dim]
-
-
-@skip_in_parallel
-def test_compute_first_collision_3d():
-    # FIXME: This test should not use facet indices as there are no
-    # guarantees on how DOLFINX numbers facets
-    reference = {
-        1: [1364],
-        2: [1967, 1968, 1970, 1972, 1974, 1976],
-        3: [876, 877, 878, 879, 880, 881]
-    }
-
-    p = numpy.array([0.3, 0.3, 0.3])
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
-    for dim in range(1, 4):
-        tree = BoundingBoxTree(mesh, dim)
-        first = cpp.geometry.compute_first_collision(tree._cpp_object, p)
-
-        # FIXME: Face and test is excluded because it mistakenly relies
-        # in the facet indices
-        tdim = mesh.topology.dim
-        if dim != tdim - 1 and dim != tdim - 2:
-            assert first in reference[dim]
 
 
 @skip_in_parallel
