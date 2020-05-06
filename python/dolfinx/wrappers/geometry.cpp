@@ -46,7 +46,7 @@ void geometry(py::module& m)
   m.def("compute_collisions_point",
         py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
                           const Eigen::Vector3d&>(
-            dolfinx::geometry::compute_collisions));
+            &dolfinx::geometry::compute_collisions));
   m.def("compute_collisions",
         py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
                           const dolfinx::geometry::BoundingBoxTree&>(
