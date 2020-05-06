@@ -83,18 +83,12 @@ la::PETScMatrix create_matrix_nest(
                                         Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Initialise monolithic vector. Vector is not zeroed.
-la::PETScVector
-create_vector_block(const std::vector<const common::IndexMap*>& maps);
+la::PETScVector create_vector_block(
+    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps);
 
 /// Create nested (VecNest) vector. Vector is not zeroed.
 la::PETScVector
 create_vector_nest(const std::vector<const common::IndexMap*>& maps);
-
-/// @todo Update name an check efficiency
-///
-/// Get new global offset in 'spliced' indices
-std::int64_t get_global_offset(const std::vector<const common::IndexMap*>& maps,
-                               const int field, const std::int64_t index);
 
 /// Create an ElementDofLayout from a ufc_dofmap
 ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
@@ -144,8 +138,7 @@ create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap);
 /// @param[in] fptr Function Pointer to a ufc_function_coordinate_map
 ///   function
 /// @return A DOLFINX coordinate map
-fem::CoordinateElement
-create_coordinate_map(ufc_coordinate_mapping* (*fptr)());
+fem::CoordinateElement create_coordinate_map(ufc_coordinate_mapping* (*fptr)());
 
 /// Create FunctionSpace from UFC
 /// @param[in] fptr Function Pointer to a ufc_function_space_create

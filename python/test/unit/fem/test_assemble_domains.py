@@ -26,9 +26,6 @@ parametrize_ghost_mode = pytest.mark.parametrize("mode", [
                                           reason="Unghosted interior facets fail in parallel")),
     pytest.param(dolfinx.cpp.mesh.GhostMode.shared_facet,
                  marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size == 1,
-                                          reason="Shared ghost modes fail in serial")),
-    pytest.param(dolfinx.cpp.mesh.GhostMode.shared_vertex,
-                 marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size == 1,
                                           reason="Shared ghost modes fail in serial"))])
 
 
