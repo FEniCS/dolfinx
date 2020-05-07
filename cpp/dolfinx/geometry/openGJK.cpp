@@ -251,7 +251,7 @@ Eigen::Vector3d S3D(Simplex& s)
   s = sTmp[1];
   return vBest;
 }
-
+//--------------------------------------------------------------------------
 Eigen::Vector3d
 support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
         const Eigen::Vector3d& v)
@@ -271,7 +271,7 @@ support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
 }
 
 } // namespace
-//-----------------------------------------------------
+//--------------------------------------------------------------------------
 Eigen::Vector3d geometry::gjk_vector(
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd1,
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd2)

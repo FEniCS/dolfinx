@@ -6,6 +6,7 @@
 
 #include <Eigen/Dense>
 #include <dolfinx/geometry/BoundingBoxTree.h>
+#include <dolfinx/geometry/openGJK.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
@@ -52,6 +53,7 @@ void geometry(py::module& m)
                           const dolfinx::geometry::BoundingBoxTree&>(
             &dolfinx::geometry::compute_collisions));
 
+  m.def("gjk_vector", &dolfinx::geometry::gjk_vector);
   m.def("squared_distance", &dolfinx::geometry::squared_distance);
 
   // dolfinx::geometry::BoundingBoxTree
