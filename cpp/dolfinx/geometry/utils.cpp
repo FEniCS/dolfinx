@@ -398,3 +398,25 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
 
   return geometry::gjk_vector(p.transpose(), v).squaredNorm();
 }
+//-------------------------------------------------------------------------------
+std::vector<int>
+geometry::select_cells_from_candidates(const dolfinx::mesh::Mesh& mesh,
+                                       const std::vector<int>& candidate_cells,
+                                       const Eigen::Vector3d& point, int n)
+{
+  const double eps2 = 1e-20;
+  const int tdim = mesh.topology().dim();
+  std::vector<int> result;
+  for (int c : candidate_cells)
+  {
+    mesh::MeshEntity entity(mesh, tdim, c);
+    const double d2 = squared_distance(entity, point);
+    if (d2 < eps2)
+    {
+      result.push_back(c);
+      if (result.size() == n)
+        return result;
+    }
+  }
+  return result;
+}

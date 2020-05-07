@@ -55,6 +55,8 @@ void geometry(py::module& m)
 
   m.def("gjk_vector", &dolfinx::geometry::gjk_vector);
   m.def("squared_distance", &dolfinx::geometry::squared_distance);
+  m.def("select_cells_from_candidates",
+        &dolfinx::geometry::select_cells_from_candidates);
 
   // dolfinx::geometry::BoundingBoxTree
   py::class_<dolfinx::geometry::BoundingBoxTree,

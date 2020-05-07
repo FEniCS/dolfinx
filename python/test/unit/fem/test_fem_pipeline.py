@@ -233,12 +233,7 @@ def test_manufactured_vector2(family, degree, filename, datadir):
     xp = np.array([0.33, 0.33, 0.0])
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     cell_candidates = geometry.compute_collisions_point(tree, xp)
-    cell = None
-    for c in cell_candidates:
-        d2 = cpp.geometry.squared_distance(MeshEntity(mesh, mesh.topology.dim, c), xp) 
-        if d2 < 1e-12:
-            cell = [c]
-            break
+    cell = cpp.geometry.select_cells_from_candidates(mesh, cell_candidates, xp, 1)
 
     up = uh.eval(xp, cell)
     print("test0:", up)
