@@ -1,7 +1,7 @@
 import numpy
 from mpi4py import MPI
 
-from dolfinx import Mesh, geometry
+from dolfinx import Mesh, MeshEntity, geometry, cpp
 from dolfinx.cpp.mesh import CellType
 from dolfinx.geometry import BoundingBoxTree
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -20,8 +20,21 @@ def test_manifold_point_search():
     bb = BoundingBoxTree(mesh, mesh.topology.dim)
     p = numpy.array([0.5, 0.25, 0.75])
     cell_candidates = geometry.compute_collisions_point(bb, p)
-    assert 0 in cell_candidates
+    cell = None
+    for c in cell_candidates:
+        d2 = cpp.geometry.squared_distance(MeshEntity(mesh, mesh.topology.dim, c), p) 
+        if d2 < 1e-12:
+            cell = c
+            break
+    assert cell == 0
 
     p = numpy.array([0.25, 0.5, 0.75])
     cell_candidates = geometry.compute_collisions_point(bb, p)
-    assert 1 in cell_candidates
+    cell = None
+    for c in cell_candidates:
+        d2 = cpp.geometry.squared_distance(MeshEntity(mesh, mesh.topology.dim, c), p) 
+        if d2 < 1e-12:
+            cell = c
+            break
+    assert cell == 1
+    

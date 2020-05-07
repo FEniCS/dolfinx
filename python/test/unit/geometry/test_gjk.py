@@ -1,3 +1,5 @@
+import dolfinx
+from mpi4py import MPI
 from dolfinx.cpp.geometry import gjk_vector
 from scipy.spatial.transform import Rotation as R
 import numpy as np
@@ -172,3 +174,8 @@ def test_cube_distance(delta, scale):
             distance = np.linalg.norm(gjk_vector(c0rot, c1rot))
             print(distance, delta)
             assert(np.isclose(distance, delta))
+
+
+def test_mesh_gjk():
+    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
+    print(mesh)

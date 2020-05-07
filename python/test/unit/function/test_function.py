@@ -16,7 +16,8 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
+import dolfinx
+from dolfinx import (Function, FunctionSpace, TensorFunctionSpace, MeshEntity,
                      UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
 
 
@@ -170,8 +171,14 @@ def test_eval(R, V, W, Q, mesh):
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     cell_candidates = geometry.compute_collisions_point(tree, x0)
-    cells = [cell_candidates[0]]
-    assert np.allclose(u3.eval(x0, cells)[:3], u2.eval(x0, cells), rtol=1e-15, atol=1e-15)
+    cell = None
+    for c in cell_candidates:
+        d2 = dolfinx.cpp.geometry.squared_distance(MeshEntity(mesh, mesh.topology.dim, c), x0) 
+        if d2 < 1e-12:
+            cell = [c]
+            break
+
+    assert np.allclose(u3.eval(x0, cell)[:3], u2.eval(x0, cell), rtol=1e-15, atol=1e-15)
     with pytest.raises(ValueError):
         u0.eval([0, 0, 0, 0], 0)
     with pytest.raises(ValueError):
@@ -184,12 +191,18 @@ def test_eval_multiple(W):
     mesh = W.mesh
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     x = np.array([x0, x0 + 1.0e8])
-    tree = geometry.BoundingBoxTree(mesh, W.mesh.geometry.dim)
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     cell_candidates = [geometry.compute_collisions_point(tree, xi) for xi in x]
-    print(cell_candidates)
-    cells = [cell_candidates[0][0], []]
-    print(cells)
-    u.eval(x[0], cells[0])
+    assert len(cell_candidates[1]) == 0
+    cell_candidates = cell_candidates[0]
+    cell = []
+    for c in cell_candidates:
+        d2 = dolfinx.cpp.geometry.squared_distance(MeshEntity(mesh, mesh.topology.dim, c), x0) 
+        if d2 < 1e-12:
+            cell = [c]
+            break
+            
+    u.eval(x[0], cell)
 
 
 def test_scalar_conditions(R):
