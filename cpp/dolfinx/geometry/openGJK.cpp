@@ -84,7 +84,6 @@ Eigen::Vector3d S2D(Simplex& s)
   assert(s.nvrtx == 3);
   const Eigen::Vector3d ac = s.vrtx.row(0) - s.vrtx.row(2);
   const Eigen::Vector3d bc = s.vrtx.row(0) - s.vrtx.row(1);
-  const Eigen::Vector3d& a = s.vrtx.row(2);
 
   // Find best axis for projection
   Eigen::Vector3d n = ac.cross(bc);
@@ -96,7 +95,8 @@ Eigen::Vector3d S2D(Simplex& s)
   const double nu_max = n[indexI];
 
   // Renormalise n in plane of ABC
-  n *= n.dot(a) / n.squaredNorm();
+  const Eigen::Vector3d p = s.vrtx.topRows(3).colwise().sum() / 3.0;
+  n *= n.dot(p) / n.squaredNorm();
 
   const int indexJ0 = (indexI + 1) % 3;
   const int indexJ1 = (indexI + 2) % 3;
@@ -280,9 +280,7 @@ Eigen::Vector3d geometry::gjk_vector(
 
   // Tolerances
   const double eps_tot = 1e-12;
-  double eps_rel = 1e-12;
-  // Minimum relative tolerance, after 10 cycles
-  const double eps_rel_min = 1e-6;
+  const double eps_rel = 1e-12;
 
   // Initialise
   Simplex s;
@@ -305,11 +303,6 @@ Eigen::Vector3d geometry::gjk_vector(
         break;
     if (m != s.nvrtx)
       break;
-
-    // If proving hard to converge, relax tolerance
-    // FIXME...
-    if (k > 10 and eps_rel < eps_rel_min)
-      eps_rel *= 10;
 
     // 1st exit condition (v-w).v = 0
     const double vnorm2 = v.squaredNorm();
