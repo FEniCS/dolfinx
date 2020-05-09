@@ -356,8 +356,7 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     """
     if mesh_factory in [UnitSquareMesh, UnitCubeMesh]:
         if ghost_mode == cpp.mesh.GhostMode.shared_vertex:
-            pytest.xfail(reason="Missing functionality in '{}' with '' "
-                         "mode".format(mesh_factory, ghost_mode))
+            pytest.xfail(reason="Missing functionality in \'{}\' with \'{}\' mode".format(mesh_factory, ghost_mode))
 
 
 @pytest.mark.parametrize('mesh_factory', mesh_factories)

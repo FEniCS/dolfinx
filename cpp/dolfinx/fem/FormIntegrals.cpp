@@ -131,13 +131,22 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   if (type == Type::exterior_facet)
   {
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    const std::vector<bool>& interior_facets = topology.interior_facets();
+    std::set<std::int32_t> fwd_shared_facets;
+    // Only need to consider shared facets when there are no ghost cells
+    if (topology.index_map(tdim)->num_ghosts() == 0)
+    {
+      fwd_shared_facets = std::set<std::int32_t>(
+          topology.index_map(tdim - 1)->forward_indices().begin(),
+          topology.index_map(tdim - 1)->forward_indices().end());
+    }
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
     for (std::size_t i = 0; i < tagged_entities.size(); ++i)
     {
       const std::int32_t facet_index = tagged_entities[i];
-      // Check that facet is an exterior facet (and not just on a
-      // process boundary)
-      if (!interior_facets[facet_index])
+      // All "owned" facets connected to one cell, that are not shared,
+      // should be external.
+      if (f_to_c->num_links(facet_index) == 1
+          and fwd_shared_facets.find(facet_index) == fwd_shared_facets.end())
       {
         const auto it = id_to_integral.find(values[i]);
         if (it != id_to_integral.end())
@@ -204,12 +213,22 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
 
     // Get number of facets owned by this process
     mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(topology.index_map(tdim - 1));
+    std::set<std::int32_t> fwd_shared_facets;
+    // Only need to consider shared facets when there are no ghost cells
+    if (topology.index_map(tdim)->num_ghosts() == 0)
+    {
+      fwd_shared_facets = std::set<std::int32_t>(
+          topology.index_map(tdim - 1)->forward_indices().begin(),
+          topology.index_map(tdim - 1)->forward_indices().end());
+    }
+
     const int num_facets = topology.index_map(tdim - 1)->size_local();
-    const std::vector<bool>& interior_facets = topology.interior_facets();
     for (int f = 0; f < num_facets; ++f)
     {
-      if (!interior_facets[f])
+      if (f_to_c->num_links(f) == 1
+          and fwd_shared_facets.find(f) == fwd_shared_facets.end())
         exf_integrals[0].active_entities.push_back(f);
     }
   }
