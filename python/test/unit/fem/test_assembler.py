@@ -10,14 +10,15 @@ import math
 import numpy
 import pytest
 import scipy.sparse.linalg
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
 import ufl
 from dolfinx import function
+from dolfinx.generation import UnitSquareMesh
 from dolfinx.specialfunctions import SpatialCoordinate
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from ufl import derivative, ds, dx, inner
 
 
@@ -35,13 +36,12 @@ def nest_matrix_norm(A):
     return math.sqrt(norm)
 
 
-@pytest.mark.parametrize('mesh', [dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12),
-                                  dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12,
-                                                                    dolfinx.cpp.mesh.CellType.triangle,
-                                                                    dolfinx.cpp.mesh.GhostMode.shared_facet)
-
+@pytest.mark.parametrize('mesh', [UnitSquareMesh(MPI.COMM_WORLD, 12, 12),
+                                  UnitSquareMesh(MPI.COMM_WORLD, 12, 12,
+                                                 dolfinx.cpp.mesh.CellType.triangle,
+                                                 dolfinx.cpp.mesh.GhostMode.shared_facet)
                                   ])
-def test_assemble_functional(mesh):
+def test_assemble_functional_dx(mesh):
     M = 1.0 * dx(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
     value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
@@ -51,6 +51,14 @@ def test_assemble_functional(mesh):
     value = dolfinx.fem.assemble_scalar(M)
     value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
     assert value == pytest.approx(0.5, 1e-12)
+
+
+@pytest.mark.parametrize('mesh', [UnitSquareMesh(MPI.COMM_WORLD, 12, 12),
+                                  UnitSquareMesh(MPI.COMM_WORLD, 12, 12,
+                                                 dolfinx.cpp.mesh.CellType.triangle,
+                                                 dolfinx.cpp.mesh.GhostMode.shared_facet)
+                                  ])
+def test_assemble_functional_ds(mesh):
     M = 1.0 * ds(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
     value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
@@ -61,7 +69,7 @@ def test_assemble_derivatives():
     """This test checks the original_coefficient_positions, which may change
     under differentiation (some coefficients and constants are
     eliminated)"""
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
     Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfinx.Function(Q)
     v = ufl.TestFunction(Q)
@@ -91,7 +99,7 @@ def test_assemble_derivatives():
 @skip_if_complex
 def test_eigen_assembly():
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
     Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
@@ -116,7 +124,7 @@ def test_eigen_assembly():
 
 
 def test_basic_assembly():
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -163,7 +171,7 @@ def test_basic_assembly():
 
 
 def test_assembly_bcs():
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx + inner(u, v) * ds
@@ -239,7 +247,7 @@ def test_matrix_assembly_block():
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
     """
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
 
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -332,7 +340,7 @@ def test_assembly_solve_block():
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same.
     """
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 32, 31)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 31)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V0 = dolfinx.function.FunctionSpace(mesh, P)
     V1 = V0.clone()
@@ -474,8 +482,8 @@ def test_assembly_solve_block():
 
 
 @pytest.mark.parametrize("mesh", [
-    dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11),
-    dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 7, 3)
+    UnitSquareMesh(MPI.COMM_WORLD, 12, 11),
+    UnitCubeMesh(MPI.COMM_WORLD, 3, 7, 3)
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
@@ -691,7 +699,7 @@ def test_basic_assembly_constant():
     matrix-valued constant.
 
     """
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
     V = function.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
