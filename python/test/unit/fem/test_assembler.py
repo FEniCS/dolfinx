@@ -16,7 +16,7 @@ from petsc4py import PETSc
 import dolfinx
 import ufl
 from dolfinx import function
-from dolfinx.generation import UnitSquareMesh
+from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.specialfunctions import SpatialCoordinate
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from ufl import derivative, ds, dx, inner
