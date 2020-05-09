@@ -28,6 +28,12 @@ public:
   /// Constructor
   TimeLogger() = default;
 
+  // This class is used as a singleton and thus should not allow copies.
+  TimeLogger(const TimeLogger&) = delete;
+
+  // This class is used as a singleton and thus should not allow copies.
+  TimeLogger& operator=(const TimeLogger&) = delete;
+
   /// Destructor
   ~TimeLogger() = default;
 

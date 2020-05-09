@@ -181,7 +181,6 @@ public:
   MPI_Comm mpi_comm() const;
 
 private:
-
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 
@@ -214,14 +213,16 @@ private:
 ///   distributed
 /// @param[in] cells The cell topology (list of cell vertices) using
 ///   global indices for the vertices. It contains cells that have been
-///   distributed to this rank, e.g. via a graph partitioner.
+///   distributed to this rank, e.g. via a graph partitioner. It must also
+///   contain all ghost cells via facet, i.e. cells which are on a neighbouring
+///   process and share a facet with a local cell.
 /// @param[in] original_cell_index The original global index associated
 ///   with each cell.
-/// @param[in] ghost_owners The ownership of any ghost cells (ghost
+/// @param[in] ghost_owners The ownership of the ghost cells (ghost
 ///   cells are always at the end of the list of cells, above)
 /// @param[in] cell_type The cell shape
 /// @param[in] ghost_mode How to partition the cell overlap: none,
-/// shared_facet or shared_vertex
+/// shared_facet or shared_vertex.
 /// @return A distributed Topology.
 Topology create_topology(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& cells,

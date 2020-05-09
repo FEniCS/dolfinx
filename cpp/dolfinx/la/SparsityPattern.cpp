@@ -43,147 +43,130 @@ SparsityPattern::SparsityPattern(
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
-    const std::vector<std::vector<const SparsityPattern*>>& patterns)
+    const std::vector<std::vector<const SparsityPattern*>>& patterns,
+    const std::array<
+        std::vector<std::reference_wrapper<const common::IndexMap>>, 2>& maps)
     : _mpi_comm(comm)
 {
   // FIXME: - Add range/bound checks for each block
   //        - Check for compatible block sizes for each block
-  //        - Support null blocks (maybe insist on null block having
-  //          common::IndexMaps?)
 
-  std::vector<std::vector<std::int32_t>> diagonal;
-  std::vector<std::vector<std::int64_t>> off_diagonal;
+  auto [rank_offset0, local_offset0, ghosts_new0]
+      = common::stack_index_maps(maps[0]);
+  auto [rank_offset1, local_offset1, ghosts_new1]
+      = common::stack_index_maps(maps[1]);
 
-  // Get row ranges using column 0
-  std::int64_t row_global_offset(0), row_local_size(0);
-  for (std::size_t row = 0; row < patterns.size(); ++row)
+  std::vector<std::int64_t> ghosts0;
+  std::vector<std::int64_t> ghosts1;
+  std::vector<std::int32_t> ghost_offsets0(1, 0);
+  for (auto& ghosts : ghosts_new0)
   {
-    assert(patterns[row][0]);
-    assert(patterns[row][0]->_index_maps[0]);
-    const auto local_range = patterns[row][0]->_index_maps[0]->local_range();
-    const int bs0 = patterns[row][0]->_index_maps[0]->block_size();
-    row_global_offset += bs0 * local_range[0];
-    row_local_size += bs0 * (local_range[1] - local_range[0]);
+    ghost_offsets0.push_back(ghost_offsets0.back() + ghosts.size());
+    ghosts0.insert(ghosts0.end(), ghosts.begin(), ghosts.end());
   }
+  for (auto& ghosts : ghosts_new1)
+    ghosts1.insert(ghosts1.end(), ghosts.begin(), ghosts.end());
 
-  // Get column ranges using row 0
-  std::int64_t col_process_offset(0), col_local_size(0);
-  std::vector<const common::IndexMap*> cmaps;
-  for (std::size_t col = 0; col < patterns[0].size(); ++col)
+  // Create new IndexMaps
+  _index_maps[0] = std::make_shared<common::IndexMap>(
+      comm, local_offset0.back(), ghosts0, 1);
+  _index_maps[1] = std::make_shared<common::IndexMap>(
+      comm, local_offset1.back(), ghosts1, 1);
+
+  // Size cache arrays
+  const std::int32_t size_row = local_offset0.back() + ghosts0.size();
+  _diagonal_cache.resize(size_row);
+  _off_diagonal_cache.resize(size_row);
+
+  // NOTE: This could be simplified if we used local column indices
+  // Build map from old column global indices to new column global
+  // indices
+  std::vector<std::map<std::int64_t, std::int64_t>> col_old_to_new(
+      maps[1].size());
+  for (std::size_t col = 0; col < maps[1].size(); ++col)
   {
-    assert(patterns[0][col]);
-    assert(patterns[0][col]->_index_maps[1]);
-    cmaps.push_back(patterns[0][col]->_index_maps[1].get());
-    const auto local_range = patterns[0][col]->_index_maps[1]->local_range();
-    const int bs1 = patterns[0][col]->_index_maps[1]->block_size();
-    col_process_offset += bs1 * local_range[0];
-    col_local_size += bs1 * (local_range[1] - local_range[0]);
+    auto map = maps[1][col];
+    const int bs = map.get().block_size();
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts_old
+        = map.get().ghosts();
+    assert(ghosts_new1[col].size() == (std::size_t)(bs * ghosts_old.rows()));
+    for (int i = 0; i < ghosts_old.rows(); ++i)
+    {
+      for (int j = 0; j < bs; ++j)
+      {
+        col_old_to_new[col].insert(
+            {bs * ghosts_old[i] + j, ghosts_new1[col][i * bs + j]});
+      }
+    }
   }
 
   // Iterate over block rows
-  std::int64_t row_local_offset = 0;
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
-    // Increase storage for nodes
-    assert(patterns[row][0]);
-    assert(patterns[row][0]->_index_maps[0]);
-    std::int32_t row_size = patterns[row][0]->_index_maps[0]->size_local();
-    const int bs0 = patterns[row][0]->_index_maps[0]->block_size();
+    const common::IndexMap& map_row = maps[0][row].get();
+    const std::int32_t num_rows_local
+        = map_row.size_local() * map_row.block_size();
+    const std::int32_t num_rows_ghost
+        = map_row.num_ghosts() * map_row.block_size();
 
-    // FIXME: Issue somewhere here when block size > 1
-    assert(bs0 * row_size
-           == (std::int32_t)patterns[row][0]->_diagonal->num_nodes());
-    diagonal.resize(diagonal.size() + bs0 * row_size);
-    assert(bs0 * row_size
-           == (std::int32_t)patterns[row][0]->_off_diagonal->num_nodes());
-    off_diagonal.resize(off_diagonal.size() + bs0 * row_size);
-
-    // Iterate over block columns of current block row
-    std::int64_t col_global_offset = col_process_offset;
+    // Iterate over block columns of current row (block)
     for (std::size_t col = 0; col < patterns[row].size(); ++col)
     {
       // Get pattern for this block
-      const auto* p = patterns[row][col];
-      assert(p);
+      const SparsityPattern* p = patterns[row][col];
+      if (!p)
+        continue;
 
-      // Check that
-      if (!p->_diagonal)
+      if (p->_diagonal)
       {
-        throw std::runtime_error("Sub-sparsity pattern has not been finalised "
-                                 "(assemble needs to be called)");
+        throw std::runtime_error("Sub-sparsity pattern has been finalised. "
+                                 "Cannot compute stacked pattern.");
       }
 
-      auto index_map1 = p->index_map(1);
-      assert(index_map1);
-      for (int k = 0; k < p->_diagonal->num_nodes(); ++k)
+      // Loop over owned rows
+      for (int i = 0; i < num_rows_local; ++i)
       {
-        // Diagonal block
-        auto edges0 = p->_diagonal->links(k);
+        // New local row index
+        const std::int32_t r_new = i + local_offset0[row];
 
-        // for (std::size_t c : edges0)
-        for (Eigen::Index i = 0; i < edges0.rows(); ++i)
+        // Insert diagonal block entries (local column indices)
+        const std::vector<std::int32_t>& cols = p->_diagonal_cache[i];
+        for (std::size_t j = 0; j < cols.size(); ++j)
+          _diagonal_cache[r_new].push_back(cols[j] + local_offset1[col]);
+
+        // Insert Off-diagonal block entries (global column indices)
+        const std::vector<std::int64_t>& cols_off = p->_off_diagonal_cache[i];
+        for (std::size_t j = 0; j < cols_off.size(); ++j)
+        {
+          auto it = col_old_to_new[col].find(cols_off[j]);
+          assert(it != col_old_to_new[col].end());
+          _off_diagonal_cache[r_new].push_back(it->second);
+        }
+      }
+
+      // Loop over ghost rows
+      for (int i = 0; i < num_rows_ghost; ++i)
+      {
+        // New local row index
+        const std::int32_t r_new
+            = i + local_offset0.back() + ghost_offsets0[row];
+
+        // Insert diagonal block entries (local column indices)
+        auto& cols = p->_diagonal_cache[num_rows_local + i];
+        for (std::size_t j = 0; j < cols.size(); ++j)
+          _diagonal_cache[r_new].push_back(cols[j] + local_offset1[col]);
+
+        // Off-diagonal block entries (global column indices)
+        auto& cols_off = p->_off_diagonal_cache[num_rows_local + i];
+        for (std::size_t j = 0; j < cols_off.size(); ++j)
         {
           // Get local index and convert to global (for this block)
-          std::int32_t c = edges0[i];
-          const std::int64_t J = col_map(c, *index_map1);
-          assert(J >= 0);
-          // const int rank = MPI::rank(MPI_COMM_WORLD);
-          // assert(index_map1->owner(J / index_map1->block_size()) == rank);
-
-          // Get new index
-          const std::int64_t offset = fem::get_global_offset(cmaps, col, J);
-          const std::int64_t c_new = J + offset - col_process_offset;
-          assert(c_new >= 0);
-          diagonal[k + row_local_offset].push_back(c_new);
-        }
-
-        // Off-diagonal block
-        auto edges1 = p->_off_diagonal->links(k);
-        for (Eigen::Index i = 0; i < edges1.rows(); ++i)
-        {
-          const std::int64_t c = edges1[i];
-          // Get new index
-          const std::int64_t offset = fem::get_global_offset(cmaps, col, c);
-          off_diagonal[k + row_local_offset].push_back(c + offset);
+          auto it = col_old_to_new[col].find(cols_off[j]);
+          _off_diagonal_cache[r_new].push_back(it->second);
         }
       }
-
-      // Increment global column offset
-      col_global_offset
-          += p->_index_maps[1]->size_local() * p->_index_maps[1]->block_size();
     }
-
-    // Increment local row offset
-    row_local_offset += bs0 * row_size;
   }
-
-  // FIXME: Need to add unowned entries?
-
-  // Initialise common::IndexMaps for merged pattern
-  const auto* p00 = patterns[0][0];
-  assert(p00);
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts;
-  _index_maps[0] = std::make_shared<common::IndexMap>(
-      p00->mpi_comm(), row_local_size, ghosts, 1);
-  _index_maps[1] = std::make_shared<common::IndexMap>(
-      p00->mpi_comm(), col_local_size, ghosts, 1);
-
-  // TODO: Is the erase step required here, or will there be no
-  // duplicates?
-  for (auto& row : diagonal)
-  {
-    std::sort(row.begin(), row.end());
-    row.erase(std::unique(row.begin(), row.end()), row.end());
-  }
-  _diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(diagonal);
-
-  for (auto& row : off_diagonal)
-  {
-    std::sort(row.begin(), row.end());
-    row.erase(std::unique(row.begin(), row.end()), row.end());
-  }
-  _off_diagonal
-      = std::make_shared<graph::AdjacencyList<std::int64_t>>(off_diagonal);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> SparsityPattern::local_range(int dim) const
@@ -211,7 +194,7 @@ void SparsityPattern::insert(
 
   assert(_index_maps[0]);
   const int bs0 = _index_maps[0]->block_size();
-  const std::int32_t local_size0
+  const std::int32_t size0
       = bs0 * (_index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
 
   assert(_index_maps[1]);
@@ -220,7 +203,7 @@ void SparsityPattern::insert(
 
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
-    if (rows[i] < local_size0)
+    if (rows[i] < size0)
     {
       for (Eigen::Index j = 0; j < cols.rows(); ++j)
       {
@@ -250,10 +233,10 @@ void SparsityPattern::insert_diagonal(
         "Cannot insert into sparsity pattern. It has already been assembled");
   }
 
-  const common::IndexMap& index_map0 = *_index_maps[0];
-  const int bs0 = index_map0.block_size();
+  assert(_index_maps[0]);
+  const int bs0 = _index_maps[0]->block_size();
   const std::int32_t local_size0
-      = bs0 * (index_map0.size_local() + index_map0.num_ghosts());
+      = bs0 * (_index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
 
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
@@ -309,6 +292,7 @@ void SparsityPattern::assemble()
         const std::int64_t J = col_map(cols[c], *_index_maps[1]);
         ghost_data.push_back(J);
       }
+
       auto cols_off = _off_diagonal_cache[row_local];
       for (std::size_t c = 0; c < cols_off.size(); ++c)
       {
@@ -352,6 +336,7 @@ void SparsityPattern::assemble()
   MPI_Neighbor_allgatherv(ghost_data.data(), ghost_data.size(), MPI_INT64_T,
                           ghost_data_received.data(), num_rows_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
+  MPI_Comm_free(&comm);
 
   // Add data received from the neighbourhood
   for (std::size_t i = 0; i < ghost_data_received.size(); i += 2)
@@ -394,8 +379,6 @@ void SparsityPattern::assemble()
   _off_diagonal = std::make_shared<graph::AdjacencyList<std::int64_t>>(
       _off_diagonal_cache);
   std::vector<std::vector<std::int64_t>>().swap(_off_diagonal_cache);
-
-  MPI_Comm_free(&comm);
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const

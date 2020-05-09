@@ -80,7 +80,8 @@ void fem(py::module& m)
         });
   m.def(
       "create_vector_block",
-      [](const std::vector<const dolfinx::common::IndexMap*>& maps) {
+      [](const std::vector<
+          std::reference_wrapper<const dolfinx::common::IndexMap>>& maps) {
         dolfinx::la::PETScVector x = dolfinx::fem::create_vector_block(maps);
         Vec _x = x.vec();
         PetscObjectReference((PetscObject)_x);

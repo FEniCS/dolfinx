@@ -54,8 +54,7 @@ def build_nullspace(V):
     basis.orthonormalize()
 
     _x = [basis[i] for i in range(6)]
-    nsp = PETSc.NullSpace()
-    nsp.create(_x)
+    nsp = PETSc.NullSpace().create(vectors=_x)
     return nsp
 
 
