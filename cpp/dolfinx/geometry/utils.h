@@ -45,11 +45,6 @@ std::vector<int> compute_collisions(const BoundingBoxTree& tree,
 std::vector<int> compute_process_collisions(const BoundingBoxTree& tree,
                                             const Eigen::Vector3d& p);
 
-/// Check whether bounding box a collides with bounding box (b)
-bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
-                  const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
-                  double rtol = 1e-14);
-
 /// Compute closest mesh entity and distance to the point. The tree must
 /// have been initialised with topological co-dimension 0.
 std::pair<int, double>
@@ -64,15 +59,6 @@ compute_closest_entity(const BoundingBoxTree& tree,
 /// @return (point index, distance)
 std::pair<int, double> compute_closest_point(const BoundingBoxTree& tree,
                                              const Eigen::Vector3d& p);
-
-/// Check whether point (x) is in bounding box
-/// @param[in] b The bounding box
-/// @param[in] x The point to check
-/// @param[in] rtol Relative tolerance for checking if x is inside the
-///                 bounding box
-/// @return (point index, distance)
-bool point_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
-                   const Eigen::Vector3d& x, double rtol = 1e-14);
 
 /// Compute squared distance between point and bounding box wih index
 /// "node". Returns zero if point is inside box.

@@ -19,6 +19,31 @@ using namespace dolfinx;
 namespace
 {
 //-----------------------------------------------------------------------------
+// Check whether bounding box is a leaf node
+inline bool is_leaf(const std::array<int, 2>& bbox, int node)
+{
+  // Leaf nodes are marked by setting child_0 equal to the node itself
+  return bbox[0] == node;
+}
+//-----------------------------------------------------------------------------
+bool point_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
+                   const Eigen::Vector3d& x)
+{
+  const double rtol = 1e-14;
+  auto eps0 = rtol * (b.row(1) - b.row(0));
+  return (x.transpose().array() >= (b.row(0) - eps0).array()).all()
+         and (x.transpose().array() <= (b.row(1) + eps0).array()).all();
+}
+//-----------------------------------------------------------------------------
+bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
+                  const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b)
+{
+  const double rtol = 1e-14;
+  auto eps0 = rtol * (b.row(1) - b.row(0));
+  return (b.row(0) - eps0 <= a.row(1)).all()
+         and (b.row(1) + eps0 >= a.row(0)).all();
+}
+//-----------------------------------------------------------------------------
 // Check whether point is outside region defined by facet ABC. The
 // fourth vertex is needed to define the orientation.
 bool point_outside_of_plane(const Eigen::Vector3d& p, const Eigen::Vector3d& a,
@@ -31,13 +56,6 @@ bool point_outside_of_plane(const Eigen::Vector3d& p, const Eigen::Vector3d& a,
   const double signp = v.dot(p - a);
   const double signd = v.dot(d - a);
   return signp * signd < 0.0;
-}
-//-----------------------------------------------------------------------------
-// Check whether bounding box is a leaf node
-bool is_leaf(const std::array<int, 2>& bbox, int node)
-{
-  // Leaf nodes are marked by setting child_0 equal to the node itself
-  return bbox[0] == node;
 }
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
@@ -99,7 +117,6 @@ _compute_closest_point(const geometry::BoundingBoxTree& tree,
   // If box is leaf, then compute distance and shrink radius
   if (is_leaf(bbox, node))
   {
-    // const double r2 = tree.compute_squared_distance_point(point, node);
     const double r2 = (tree.get_bbox(node).row(0).transpose().matrix() - point)
                           .squaredNorm();
 
@@ -136,7 +153,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
   // Get children of current bounding box node
   const std::array<int, 2> bbox = tree.bbox(node);
 
-  if (!geometry::point_in_bbox(tree.get_bbox(node), p))
+  if (!point_in_bbox(tree.get_bbox(node), p))
   {
     // If point is not in bounding box, then don't search further
     return;
@@ -166,7 +183,7 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
                               std::vector<std::array<int, 2>>& entities)
 {
   // If bounding boxes don't collide, then don't search further
-  if (!geometry::bbox_in_bbox(A.get_bbox(node_A), B.get_bbox(node_B)))
+  if (!bbox_in_bbox(A.get_bbox(node_A), B.get_bbox(node_B)))
     return;
 
   // Get bounding boxes for current nodes
@@ -275,15 +292,6 @@ geometry::compute_process_collisions(const geometry::BoundingBoxTree& tree,
   }
 }
 //-----------------------------------------------------------------------------
-bool geometry::bbox_in_bbox(
-    const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
-    const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b, double rtol)
-{
-  auto eps0 = rtol * (b.row(1) - b.row(0));
-  return (b.row(0) - eps0 <= a.row(1)).all()
-         and (b.row(1) + eps0 >= a.row(0)).all();
-}
-//-----------------------------------------------------------------------------
 double geometry::compute_squared_distance_bbox(
     const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
     const Eigen::Vector3d& x)
@@ -349,15 +357,6 @@ geometry::compute_closest_point(const BoundingBoxTree& tree,
   _compute_closest_point(tree, p, tree.num_bboxes() - 1, closest_point, R2);
 
   return {closest_point, sqrt(R2)};
-}
-//-----------------------------------------------------------------------------
-bool geometry::point_in_bbox(
-    const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
-    const Eigen::Vector3d& x, double rtol)
-{
-  auto eps0 = rtol * (b.row(1) - b.row(0));
-  return (x.transpose().array() >= (b.row(0) - eps0).array()).all()
-         and (x.transpose().array() <= (b.row(1) + eps0).array()).all();
 }
 //-----------------------------------------------------------------------------
 double geometry::squared_distance(const mesh::MeshEntity& entity,
