@@ -730,8 +730,9 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker,
-    const bool boundary_only)
+    bool boundary_only)
 {
+  boundary_only = false;
   const int tdim = mesh.topology().dim();
 
   // Create entities

@@ -25,12 +25,12 @@ class MeshEntity;
 /// Extract topology from cell data, i.e. extract cell vertices
 /// @param[in] cell_type The cell shape
 /// @param[in] layout The layout of geometry 'degrees-of-freedom' on the
-///     reference cell
+///   reference cell
 /// @param[in] cells List of 'nodes' for each cell using global indices.
-///     The layout must be consistent with \p layout.
+///   The layout must be consistent with \p layout.
 /// @return Cell topology. The global indices will, in general, have
-///     'gaps' due to mid-side and other higher-order nodes being
-///     removed from the input @p cell.
+///   'gaps' due to mid-side and other higher-order nodes being removed
+///   from the input @p cell.
 graph::AdjacencyList<std::int64_t>
 extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
                  const graph::AdjacencyList<std::int64_t>& cells);
@@ -76,17 +76,17 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
 /// @cond Work around doxygen bug for std::function
 /// @param[in] mesh The mesh
 /// @param[in] dim The topological dimension of the entities to be
-///                considered
+///   considered
 /// @param[in] marker The marking function
 /// @returns List of marked entity indices (indices local to the
-/// process)
+///   process)
 /// @endcond
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_geometrical(
     const mesh::Mesh& mesh, const int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker,
-    const bool boundary_only);
+    bool boundary_only);
 
 } // namespace mesh
 } // namespace dolfinx
