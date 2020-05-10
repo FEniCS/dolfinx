@@ -41,7 +41,7 @@ class Topology;
 
 /// Compute marker for owned facets that are interior, i.e. are
 /// connected to two cells, one of which might be on a remote process.
-/// @param[in] topology The topology.
+/// @param[in] topology The topology
 /// @return Vector with length equal to the number of owned facets on
 ///   this this process. True if the ith facet (local index) is interior
 ///   to the domain.
@@ -97,13 +97,13 @@ public:
   /// @return Index map for the entities of dimension @p dim
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// Marker for entities of dimension dim on the boundary. An entity of
-  /// co-dimension < 0 is on the boundary if it is connected to a
-  /// boundary facet. It is not defined for codimension 0.
-  /// @param[in] dim Toplogical dimension of the entities to check. It
-  ///   must be less than the topological dimension.
-  /// @return Vector of length equal to number of local entities, with
-  ///   'true' for entities on the boundary and otherwise 'false'.
+  // Marker for entities of dimension dim on the boundary. An entity of
+  // co-dimension < 0 is on the boundary if it is connected to a
+  // boundary facet. It is not defined for codimension 0.
+  // @param[in] dim Toplogical dimension of the entities to check. It
+  //   must be less than the topological dimension.
+  // @return Vector of length equal to number of local entities, with
+  //   'true' for entities on the boundary and otherwise 'false'.
   // std::vector<bool> on_boundary(int dim) const;
 
   /// Return connectivity from entities of dimension d0 to entities of
