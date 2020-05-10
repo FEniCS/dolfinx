@@ -139,6 +139,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
           topology.index_map(tdim - 1)->forward_indices().begin(),
           topology.index_map(tdim - 1)->forward_indices().end());
     }
+
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     for (std::size_t i = 0; i < tagged_entities.size(); ++i)
     {

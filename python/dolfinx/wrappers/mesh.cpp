@@ -55,7 +55,6 @@ void mesh(py::module& m)
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
-  m.def("compute_interior_facets", &dolfinx::mesh::compute_interior_facets);
 
   m.def("volume_entities", &dolfinx::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
