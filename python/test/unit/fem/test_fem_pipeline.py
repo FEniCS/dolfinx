@@ -9,15 +9,14 @@ import time
 
 import numpy as np
 import pytest
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
-from mpi4py import MPI
-from petsc4py import PETSc
-
 import ufl
-from dolfinx import DirichletBC, Function, FunctionSpace, fem, geometry
+from dolfinx import DirichletBC, Function, FunctionSpace, cpp, fem, geometry
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
@@ -68,7 +67,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     # Create Dirichlet boundary condition
     mesh.topology.create_connectivity_all()
     facetdim = mesh.topology.dim - 1
-    bndry_facets = np.where(np.array(cpp.mesh.compute_boundary_facets()) == 1)[0]
+    bndry_facets = np.where(np.array(cpp.mesh.compute_boundary_facets(mesh.topology)) == 1)[0]
     bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
     assert(len(bdofs) < V.dim())
     bc = DirichletBC(u_bc, bdofs)
