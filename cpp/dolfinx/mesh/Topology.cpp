@@ -140,6 +140,12 @@ std::vector<bool> Topology::on_boundary(int dim) const
                              + std::to_string(dim));
   }
 
+  // if (dim != (tdim - 1))
+  // {
+  //   std::cout << "XXXXX: " << dim << ", " << tdim - 1 << std::endl;
+  //   throw std::runtime_error("Not supported");
+  // }
+
   auto facets = _index_map[tdim - 1];
   if (!facets)
     throw std::runtime_error("Facets have not been computed.");

@@ -732,8 +732,14 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
                                             Eigen::RowMajor>>&)>& marker,
     bool boundary_only)
 {
-  boundary_only = false;
+  // boundary_only = false;
   const int tdim = mesh.topology().dim();
+
+  if (boundary_only and dim != (tdim - 1))
+  {
+    throw std::runtime_error(
+        "Option use boundary_only can only be used for facet entities.");
+  }
 
   // Create entities
   mesh.topology_mutable().create_entities(dim);
@@ -789,7 +795,6 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
 
   // Pack coordinates of all active vertices
   Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_active(3, count);
-
   for (std::int32_t i = 0; i < num_vertices; ++i)
   {
     if (active_vertex[i] != -1)
@@ -824,8 +829,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
 
   std::vector<bool> active_entity(num_entities, false);
 
-  // For boundary marking make active only boundary entities
-  // for all flip all false to true
+  // For boundary marking make active only boundary entities for all
+  // flip all false to true
   if (boundary_only)
     active_entity = mesh.topology().on_boundary(dim);
   else
