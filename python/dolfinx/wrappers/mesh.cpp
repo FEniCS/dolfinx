@@ -55,7 +55,6 @@ void mesh(py::module& m)
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
-
   m.def("volume_entities", &dolfinx::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
 
@@ -65,6 +64,7 @@ void mesh(py::module& m)
   m.def("inradius", &dolfinx::mesh::inradius, "Compute inradius of cells.");
   m.def("radius_ratio", &dolfinx::mesh::radius_ratio);
   m.def("midpoints", &dolfinx::mesh::midpoints);
+  m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
   m.def(
       "create",
@@ -148,16 +148,15 @@ void mesh(py::module& m)
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        py::const_))
       .def("hash", &dolfinx::mesh::Topology::hash)
-    //   .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
       .def("index_map", &dolfinx::mesh::Topology::index_map)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
-      .def("cell_name", [](const dolfinx::mesh::Topology& self) {
-        return dolfinx::mesh::to_string(self.cell_type());
-      })
-      .def("mpi_comm",
-           [](dolfinx::mesh::Mesh& self) {
-             return MPICommWrapper(self.mpi_comm());
-       });
+      .def("cell_name",
+           [](const dolfinx::mesh::Topology& self) {
+             return dolfinx::mesh::to_string(self.cell_type());
+           })
+      .def("mpi_comm", [](dolfinx::mesh::Mesh& self) {
+        return MPICommWrapper(self.mpi_comm());
+      });
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(

@@ -29,7 +29,7 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
     "UnitSquareMesh_triangle.xdmf"
 ])
 @pytest.mark.parametrize("degree", [2, 3, 4])
-def xtest_manufactured_poisson(degree, filename, datadir):
+def test_manufactured_poisson(degree, filename, datadir):
     """ Manufactured Poisson problem, solving u = x[1]**p, where p is the
     degree of the Lagrange function space.
 
@@ -68,8 +68,7 @@ def xtest_manufactured_poisson(degree, filename, datadir):
     # Create Dirichlet boundary condition
     mesh.topology.create_connectivity_all()
     facetdim = mesh.topology.dim - 1
-    bndry_facets = np.where(np.array(
-        mesh.topology.on_boundary(facetdim)) == 1)[0]
+    bndry_facets = np.where(np.array(cpp.mesh.compute_boundary_facets()) == 1)[0]
     bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
     assert(len(bdofs) < V.dim())
     bc = DirichletBC(u_bc, bdofs)

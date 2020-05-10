@@ -63,7 +63,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_geometrical_all(
 
   // Run marker function on vertex coordinates
   const Eigen::Array<bool, Eigen::Dynamic, 1> marked = marker(x_vertices);
-  if (marked.rows() != x_nodes.cols())
+  if (marked.rows() != x_vertices.cols())
     throw std::runtime_error("Length of array of markers is wrong.");
 
   // Iterate over entities to build vector of marked entities
