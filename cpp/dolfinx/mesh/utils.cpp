@@ -16,6 +16,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <stdexcept>
+#include <unordered_set>
 
 using namespace dolfinx;
 
@@ -83,6 +84,127 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_geometrical_all(
       }
     }
 
+    if (all_vertices_marked)
+      entities.push_back(e);
+  }
+
+  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
+      entities.data(), entities.size());
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_geometrical_bdry(
+    const mesh::Mesh& mesh, const int dim,
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker)
+{
+  const mesh::Topology& topology = mesh.topology();
+  const int tdim = topology.dim();
+  if (dim == tdim)
+  {
+    throw std::runtime_error(
+        "Cannot use locate_entities_geometrical (boundary) for cells.");
+  }
+
+  // Compute marker for boundary facets
+  mesh.topology_mutable().create_entities(tdim - 1);
+  mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+  const std::vector<bool> boundary_facet
+      = mesh::compute_boundary_facets(topology);
+
+  // Create entities and connectivities
+  mesh.topology_mutable().create_entities(dim);
+  mesh.topology_mutable().create_connectivity(tdim - 1, dim);
+  mesh.topology_mutable().create_connectivity(tdim - 1, 0);
+  mesh.topology_mutable().create_connectivity(0, tdim);
+  mesh.topology_mutable().create_connectivity(tdim, 0);
+  if (dim < tdim)
+    mesh.topology_mutable().create_connectivity(dim, 0);
+
+  // Build set of vertices on boundary and set of boundary entities
+  auto f_to_v = topology.connectivity(tdim - 1, 0);
+  assert(f_to_v);
+  auto f_to_e = topology.connectivity(tdim - 1, dim);
+  assert(f_to_e);
+  std::unordered_set<std::int32_t> boundary_vertices;
+  std::unordered_set<std::int32_t> facet_entities;
+  for (std::size_t f = 0; f < boundary_facet.size(); ++f)
+  {
+    if (boundary_facet[f])
+    {
+      auto entities = f_to_e->links(f);
+      for (int i = 0; i < entities.size(); ++i)
+        facet_entities.insert(entities[i]);
+
+      auto vertices = f_to_v->links(f);
+      for (int i = 0; i < vertices.size(); ++i)
+        boundary_vertices.insert(vertices[i]);
+    }
+  }
+
+  // Get geometry data
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_nodes
+      = mesh.geometry().x();
+
+  // Build vector of boundary vertices
+  const std::vector<std::int32_t> vertices(boundary_vertices.begin(),
+                                           boundary_vertices.end());
+
+  // Get all vertex 'node' indices
+  auto v_to_c = topology.connectivity(0, tdim);
+  assert(v_to_c);
+  auto c_to_v = topology.connectivity(tdim, 0);
+  assert(c_to_v);
+  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_vertices(
+      3, vertices.size());
+  std::vector<std::int32_t> vertex_to_pos(v_to_c->num_nodes(), -1);
+  for (std::size_t i = 0; i < vertices.size(); ++i)
+  {
+    const std::int32_t v = vertices[i];
+
+    // Get first cell and find position
+    const int c = v_to_c->links(v)[0];
+    auto vertices = c_to_v->links(c);
+    const auto* it
+        = std::find(vertices.data(), vertices.data() + vertices.rows(), v);
+    assert(it != (vertices.data() + vertices.rows()));
+    const int local_pos = std::distance(vertices.data(), it);
+
+    auto dofs = x_dofmap.links(c);
+    x_vertices.col(i) = x_nodes.row(dofs[local_pos]);
+
+    vertex_to_pos[v] = i;
+  }
+
+  // Run marker function on the vertex coordinates
+  const Eigen::Array<bool, Eigen::Dynamic, 1> marked = marker(x_vertices);
+  if (marked.size() != x_vertices.cols())
+    throw std::runtime_error("Length of array of markers is wrong.");
+
+  // Loop over entities and check vertex markers
+  auto e_to_v = topology.connectivity(dim, 0);
+  assert(e_to_v);
+  std::vector<std::int32_t> entities;
+  for (auto e : facet_entities)
+  {
+    // Assume all vertices on this entity are marked
+    bool all_vertices_marked = true;
+
+    // Iterate over entity vertices
+    auto vertices = e_to_v->links(e);
+    for (int i = 0; i < vertices.rows(); ++i)
+    {
+      const std::int32_t idx = vertices[i];
+      const std::int32_t pos = vertex_to_pos[idx];
+      if (!marked[pos])
+      {
+        all_vertices_marked = false;
+        break;
+      }
+    }
+
+    // Mark facet with all vertices marked
     if (all_vertices_marked)
       entities.push_back(e);
   }
@@ -803,159 +925,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
 {
   if (!boundary_only)
     return locate_entities_geometrical_all(mesh, dim, marker);
-
-  const int tdim = mesh.topology().dim();
-
-  // if (boundary_only and dim != (tdim - 1))
-  // {
-  //   throw std::runtime_error(
-  //       "Option use boundary_only is allowed only for facet entities.");
-  // }
-
-  // Create entities and connectivities
-  mesh.topology_mutable().create_entities(dim);
-  mesh.topology_mutable().create_connectivity(0, tdim);
-  mesh.topology_mutable().create_connectivity(tdim, 0);
-
-  if (dim < tdim)
-  {
-    mesh.topology_mutable().create_connectivity(dim, 0);
-    // Additional connectivity for boundary detection
-    // (Topology::on_boundary())
-    mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-  }
-
-  const mesh::Topology& topology = mesh.topology();
-  const std::vector<bool> boundary_facet
-      = mesh::compute_boundary_facets(topology);
-
-  // Find all active vertices. Set all to -1 (inactive) to start
-  // with. If a vertex is active, give it an index from [0,
-  // count)
-  const int num_vertices = topology.index_map(0)->size_local()
-                           + topology.index_map(0)->num_ghosts();
-  std::vector<std::int32_t> active_vertex(num_vertices, -1);
-  int count = 0;
-  if (boundary_only)
-  {
-    // Build list of vertices that belong to a boundary facet
-    mesh.topology_mutable().create_connectivity(tdim - 1, 0);
-    std::vector<bool> on_boundary0(num_vertices, false);
-    auto f_to_v = topology.connectivity(tdim - 1, 0);
-    assert(f_to_v);
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& f_to_v_offsets
-        = f_to_v->offsets();
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& f_to_v_indices
-        = f_to_v->array();
-
-    // Iterate over all facets, selecting only boundary facets
-    for (std::size_t i = 0; i < boundary_facet.size(); ++i)
-    {
-      if (boundary_facet[i])
-      {
-        for (int j = f_to_v_offsets[i]; j < f_to_v_offsets[i + 1]; ++j)
-          on_boundary0[f_to_v_indices[j]] = true;
-      }
-    }
-
-    for (std::size_t i = 0; i < on_boundary0.size(); ++i)
-    {
-      if (on_boundary0[i])
-        active_vertex[i] = count++;
-    }
-  }
   else
-  {
-    // Otherwise all vertices are active (will be checked with marking
-    // function)
-    std::iota(active_vertex.begin(), active_vertex.end(), 0);
-    count = num_vertices;
-  }
-
-  // FIXME: Does this make sense for non-affine elements?
-  // Get all nodes
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_all
-      = mesh.geometry().x();
-  auto v_to_c = mesh.topology().connectivity(0, tdim);
-  assert(v_to_c);
-  auto c_to_v = mesh.topology().connectivity(tdim, 0);
-  assert(c_to_v);
-
-  // Pack coordinates of all active vertices
-  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_active(3, count);
-  for (std::int32_t i = 0; i < num_vertices; ++i)
-  {
-    if (active_vertex[i] != -1)
-    {
-      // Get first cell and find position
-      const int c = v_to_c->links(i)[0];
-      auto vertices = c_to_v->links(c);
-      const auto* it
-          = std::find(vertices.data(), vertices.data() + vertices.rows(), i);
-      assert(it != (vertices.data() + vertices.rows()));
-      const int local_pos = std::distance(vertices.data(), it);
-
-      auto dofs = x_dofmap.links(c);
-      x_active.col(active_vertex[i]) = x_all.row(dofs[local_pos]);
-    }
-  }
-
-  // Run marker function on boundary vertices
-  const Eigen::Array<bool, Eigen::Dynamic, 1> active_marked = marker(x_active);
-  if (active_marked.rows() != x_active.cols())
-    throw std::runtime_error("Length of array of markers is wrong.");
-
-  auto e_to_v = mesh.topology().connectivity(dim, 0);
-  assert(e_to_v);
-
-  // std::cout << " Step H" << std::endl;
-
-  auto map = topology.index_map(dim);
-  assert(map);
-  const int num_entities = map->size_local() + map->num_ghosts();
-
-  std::vector<bool> canidate_entity(num_entities, false);
-
-  // For boundary marking make active only boundary entities for all
-  // flip all false to true
-  if (boundary_only)
-    // active_entity = mesh.topology().on_boundary(dim);
-    canidate_entity = boundary_facet;
-  else
-    canidate_entity.flip();
-
-  // Iterate over candidate entities ti build vector of marked entities
-  std::vector<std::int32_t> entities;
-  for (int e = 0; e < num_entities; ++e)
-  {
-    // Consider candidate entities only
-    if (canidate_entity[e])
-    {
-      // Assume all vertices on this entity are marked
-      bool all_vertices_marked = true;
-
-      // Iterate over entity vertices
-      auto vertices = e_to_v->links(e);
-      for (int i = 0; i < vertices.rows(); ++i)
-      {
-        const std::int32_t idx = vertices[i];
-        assert(active_vertex[idx] < active_marked.rows());
-        assert(active_vertex[idx] != -1);
-        if (!active_marked[active_vertex[idx]])
-        {
-          all_vertices_marked = false;
-          break;
-        }
-      }
-
-      // Mark facet with all vertices marked
-      if (all_vertices_marked)
-        entities.push_back(e);
-    }
-  }
-
-  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-      entities.data(), entities.size());
+    return locate_entities_geometrical_bdry(mesh, dim, marker);
 }
 //-----------------------------------------------------------------------------
