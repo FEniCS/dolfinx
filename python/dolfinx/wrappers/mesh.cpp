@@ -131,7 +131,6 @@ void mesh(py::module& m)
       }))
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity)
       .def("set_index_map", &dolfinx::mesh::Topology::set_index_map)
-      .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
       .def("create_entities", &dolfinx::mesh::Topology::create_entities)
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations)

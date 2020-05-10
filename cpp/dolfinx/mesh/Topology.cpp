@@ -265,18 +265,6 @@ void Topology::set_connectivity(
   _connectivity(d0, d1) = c;
 }
 //-----------------------------------------------------------------------------
-const std::vector<bool>& Topology::interior_facets() const
-{
-  if (!_interior_facets)
-    throw std::runtime_error("Facets marker has not been computed.");
-  return *_interior_facets;
-}
-//-----------------------------------------------------------------------------
-void Topology::set_interior_facets(const std::vector<bool>& interior_facets)
-{
-  _interior_facets = std::make_shared<const std::vector<bool>>(interior_facets);
-}
-//-----------------------------------------------------------------------------
 size_t Topology::hash() const
 {
   if (!this->connectivity(dim(), 0))
