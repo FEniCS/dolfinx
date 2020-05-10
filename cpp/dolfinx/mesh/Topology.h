@@ -39,6 +39,14 @@ enum class GhostMode : int;
 enum class CellType;
 class Topology;
 
+/// Compute marker for owned facets that are interior, i.e. are
+/// connected to two cells, one of which might be on a remote process.
+/// @param[in] topology The topology.
+/// @return Vector with length equal to the number of owned facets on
+///   this this process. True if the ith facet (local index) is interior
+///   to the domain.
+std::vector<bool> compute_boundary_facets(const Topology& topology);
+
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities). Note
 /// that the mesh entities don't need to be stored, only the number of

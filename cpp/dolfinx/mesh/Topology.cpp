@@ -116,6 +116,38 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 } // namespace
 
 //-----------------------------------------------------------------------------
+std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
+{
+  const int tdim = topology.dim();
+
+  auto facets = topology.index_map(tdim - 1);
+  if (!facets)
+    throw std::runtime_error("Facets have not been computed.");
+  std::set<std::int32_t> fwd_shared_facets;
+  if (facets->num_ghosts() == 0)
+  {
+    fwd_shared_facets = std::set<std::int32_t>(
+        facets->forward_indices().begin(), facets->forward_indices().end());
+  }
+
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> fc
+      = topology.connectivity(tdim - 1, tdim);
+  if (!fc)
+    throw std::runtime_error("Facet-cell connectivity missing.");
+  std::vector<bool> _boundary_facet(facets->size_local(), false);
+  for (std::size_t f = 0; f < _boundary_facet.size(); ++f)
+  {
+    if (fc->num_links(f) == 1
+        and fwd_shared_facets.find(f) == fwd_shared_facets.end())
+    {
+      _boundary_facet[f] = true;
+    }
+  }
+
+  return _boundary_facet;
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
@@ -140,39 +172,12 @@ std::vector<bool> Topology::on_boundary(int dim) const
                              + std::to_string(dim));
   }
 
-  // if (dim != (tdim - 1))
-  // {
-  //   std::cout << "XXXXX: " << dim << ", " << tdim - 1 << std::endl;
-  //   throw std::runtime_error("Not supported");
-  // }
-
-  auto facets = _index_map[tdim - 1];
-  if (!facets)
-    throw std::runtime_error("Facets have not been computed.");
-  std::set<std::int32_t> fwd_shared_facets;
-  if (facets->num_ghosts() == 0)
-  {
-    fwd_shared_facets = std::set<std::int32_t>(
-        facets->forward_indices().begin(), facets->forward_indices().end());
-  }
-
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> fc
-      = connectivity(tdim - 1, tdim);
-  if (!fc)
-    throw std::runtime_error("Facet-cell connectivity missing.");
-  std::vector<bool> _exterior_facet(facets->size_local(), false);
-  for (std::size_t f = 0; f < _exterior_facet.size(); ++f)
-  {
-    if (fc->num_links(f) == 1
-        and fwd_shared_facets.find(f) == fwd_shared_facets.end())
-    {
-      _exterior_facet[f] = true;
-    }
-  }
+  // Compute exterior facet markers
+  const std::vector<bool> exterior_facet = mesh::compute_boundary_facets(*this);
 
   // Special case for facets
   if (dim == tdim - 1)
-    return _exterior_facet;
+    return exterior_facet;
 
   // Get connectivity from facet to entities of interest (vertices or
   // edges)
@@ -191,9 +196,9 @@ std::vector<bool> Topology::on_boundary(int dim) const
 
   // Iterate over all facets, selecting only those with one cell
   // attached
-  for (std::size_t i = 0; i < _exterior_facet.size(); ++i)
+  for (std::size_t i = 0; i < exterior_facet.size(); ++i)
   {
-    if (_exterior_facet[i])
+    if (exterior_facet[i])
     {
       for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
         marker[fe_indices[j]] = true;

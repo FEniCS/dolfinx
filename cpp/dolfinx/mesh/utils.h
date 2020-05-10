@@ -77,6 +77,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
 /// @param[in] dim The topological dimension of the entities to be
 ///   considered
 /// @param[in] marker The marking function
+/// @param[in] boundary_only Check boundary facets only
 /// @returns List of marked entity indices (indices local to the
 ///   process)
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_geometrical(
