@@ -22,6 +22,75 @@ using namespace dolfinx;
 namespace
 {
 //-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_geometrical_all(
+    const mesh::Mesh& mesh, const int dim,
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker)
+{
+  const mesh::Topology& topology = mesh.topology();
+  const int tdim = topology.dim();
+
+  // Create entities and connectivities
+  mesh.topology_mutable().create_entities(dim);
+  mesh.topology_mutable().create_connectivity(tdim, 0);
+  if (dim < tdim)
+    mesh.topology_mutable().create_connectivity(dim, 0);
+
+  // Get all vertex 'node' indices
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const std::int32_t num_vertices = topology.index_map(0)->size_local()
+                                    + topology.index_map(0)->num_ghosts();
+  auto c_to_v = topology.connectivity(tdim, 0);
+  assert(c_to_v);
+  std::vector<std::int32_t> vertex_to_node(num_vertices);
+  for (int c = 0; c < c_to_v->num_nodes(); ++c)
+  {
+    auto x_dofs = x_dofmap.links(c);
+    auto vertices = c_to_v->links(c);
+    for (int i = 0; i < vertices.size(); ++i)
+      vertex_to_node[vertices[i]] = x_dofs[i];
+  }
+
+  // Pack coordinates of vertices
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_nodes
+      = mesh.geometry().x();
+  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_vertices(
+      3, vertex_to_node.size());
+  for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
+    x_vertices.col(i) = x_nodes.row(vertex_to_node[i]);
+
+  // Run marker function on vertex coordinates
+  const Eigen::Array<bool, Eigen::Dynamic, 1> marked = marker(x_vertices);
+  if (marked.rows() != x_nodes.cols())
+    throw std::runtime_error("Length of array of markers is wrong.");
+
+  // Iterate over entities to build vector of marked entities
+  auto e_to_v = topology.connectivity(dim, 0);
+  assert(e_to_v);
+  std::vector<std::int32_t> entities;
+  for (int e = 0; e < e_to_v->num_nodes(); ++e)
+  {
+    // Iterate over entity vertices
+    bool all_vertices_marked = true;
+    auto vertices = e_to_v->links(e);
+    for (int i = 0; i < vertices.rows(); ++i)
+    {
+      if (!marked[vertices[i]])
+      {
+        all_vertices_marked = false;
+        break;
+      }
+    }
+
+    if (all_vertices_marked)
+      entities.push_back(e);
+  }
+
+  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
+      entities.data(), entities.size());
+}
+//-----------------------------------------------------------------------------
 template <typename T>
 T volume_interval(const mesh::Mesh& mesh,
                   const Eigen::Ref<const Eigen::ArrayXi>& entities)
@@ -732,21 +801,22 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
                                             Eigen::RowMajor>>&)>& marker,
     bool boundary_only)
 {
-  // boundary_only = false;
+  if (!boundary_only)
+    return locate_entities_geometrical_all(mesh, dim, marker);
+
   const int tdim = mesh.topology().dim();
 
-  if (boundary_only and dim != (tdim - 1))
-  {
-    throw std::runtime_error(
-        "Option use boundary_only is allowed only for facet entities.");
-  }
+  // if (boundary_only and dim != (tdim - 1))
+  // {
+  //   throw std::runtime_error(
+  //       "Option use boundary_only is allowed only for facet entities.");
+  // }
 
-  // Create entities
+  // Create entities and connectivities
   mesh.topology_mutable().create_entities(dim);
-
-  // Compute connectivities
   mesh.topology_mutable().create_connectivity(0, tdim);
   mesh.topology_mutable().create_connectivity(tdim, 0);
+
   if (dim < tdim)
   {
     mesh.topology_mutable().create_connectivity(dim, 0);
@@ -831,13 +901,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
     }
   }
 
-  // std::cout << " Step F (0): " << x_active.rows() << std::endl;
-  // std::cout << " Step F (1): " << x_active.cols() << std::endl;
-  // std::cout << " Step F: " << x_active.transpose() << std::endl;
-
   // Run marker function on boundary vertices
   const Eigen::Array<bool, Eigen::Dynamic, 1> active_marked = marker(x_active);
-  // std::cout << " Step G" << std::endl;
   if (active_marked.rows() != x_active.cols())
     throw std::runtime_error("Length of array of markers is wrong.");
 
@@ -846,32 +911,28 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
 
   // std::cout << " Step H" << std::endl;
 
-  // Iterate over entities and build vector of marked entities
-  std::vector<std::int32_t> entities;
-
-  auto map = mesh.topology().index_map(dim);
+  auto map = topology.index_map(dim);
   assert(map);
   const int num_entities = map->size_local() + map->num_ghosts();
 
-  std::vector<bool> active_entity(num_entities, false);
+  std::vector<bool> canidate_entity(num_entities, false);
 
   // For boundary marking make active only boundary entities for all
   // flip all false to true
   if (boundary_only)
     // active_entity = mesh.topology().on_boundary(dim);
-    active_entity = boundary_facet;
+    canidate_entity = boundary_facet;
   else
-    active_entity.flip();
+    canidate_entity.flip();
 
-
-  // std::cout << " Step G" << std::endl;
-
+  // Iterate over candidate entities ti build vector of marked entities
+  std::vector<std::int32_t> entities;
   for (int e = 0; e < num_entities; ++e)
   {
-    // Consider boundary entities only
-    if (active_entity[e])
+    // Consider candidate entities only
+    if (canidate_entity[e])
     {
-      // Assume all vertices on this facet are marked
+      // Assume all vertices on this entity are marked
       bool all_vertices_marked = true;
 
       // Iterate over entity vertices
@@ -893,8 +954,6 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
         entities.push_back(e);
     }
   }
-
-  // std::cout << " Step I" << std::endl;
 
   return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
       entities.data(), entities.size());
