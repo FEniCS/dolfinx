@@ -427,7 +427,7 @@ def test_small_mesh():
     assert mesh1d.topology.index_map(gdim).size_global == 2
 
 
-def test_topology_surface(cube):
+def xtest_topology_surface(cube):
     tdim = cube.topology.dim
     cube.topology.create_connectivity(tdim - 1, tdim)
 

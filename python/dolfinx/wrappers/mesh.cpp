@@ -148,7 +148,7 @@ void mesh(py::module& m)
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        py::const_))
       .def("hash", &dolfinx::mesh::Topology::hash)
-      .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
+    //   .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
       .def("index_map", &dolfinx::mesh::Topology::index_map)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
       .def("cell_name", [](const dolfinx::mesh::Topology& self) {

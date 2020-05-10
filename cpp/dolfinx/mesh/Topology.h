@@ -104,7 +104,7 @@ public:
   ///   must be less than the topological dimension.
   /// @return Vector of length equal to number of local entities, with
   ///   'true' for entities on the boundary and otherwise 'false'.
-  std::vector<bool> on_boundary(int dim) const;
+  // std::vector<bool> on_boundary(int dim) const;
 
   /// Return connectivity from entities of dimension d0 to entities of
   /// dimension d1

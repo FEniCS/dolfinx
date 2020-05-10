@@ -74,20 +74,19 @@
 #
 # First, the :py:mod:`dolfinx` module is imported: ::
 
-import matplotlib.pyplot as plt
-import numpy as np
-from mpi4py import MPI
-
 import dolfinx
 import dolfinx.plotting
+import matplotlib.pyplot as plt
+import numpy as np
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh,
-                     solve)
+from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh, solve
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_geometrical
 from dolfinx.specialfunctions import SpatialCoordinate
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import ds, dx, grad, inner
 
 # We begin by defining a mesh of the domain and a finite element
@@ -147,7 +146,6 @@ facets = locate_entities_geometrical(mesh, 1,
                                      boundary_only=True)
 bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets))
 
-
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,
 # both living in the function space :math:`V`. We do this by defining a
@@ -184,7 +182,9 @@ L = inner(f, v) * dx + inner(g, v) * ds
 
 # Compute solution
 u = Function(V)
-solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+solve(a == L, u, bc, petsc_options={"ksp_type": "preonly",
+                                    "pc_type": "lu", "pc_factor_mat_solver_type": "superlu_dist"})
+
 
 # The function ``u`` will be modified during the call to solve. The
 # default settings for solving a variational problem have been
@@ -197,6 +197,7 @@ solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 # for later visualization and also plot it using
 # the :py:func:`plot <dolfinx.common.plot.plot>` command: ::
 
+u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
 # Save solution in XDMF format
 with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:

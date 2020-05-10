@@ -738,7 +738,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
   if (boundary_only and dim != (tdim - 1))
   {
     throw std::runtime_error(
-        "Option use boundary_only can only be used for facet entities.");
+        "Option use boundary_only is allowed only for facet entities.");
   }
 
   // Create entities
@@ -755,20 +755,39 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
     mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
   }
 
-  const int num_vertices = mesh.topology().index_map(0)->size_local()
-                           + mesh.topology().index_map(0)->num_ghosts();
+  const mesh::Topology& topology = mesh.topology();
+  const std::vector<bool> boundary_facet
+      = mesh::compute_boundary_facets(topology);
 
   // Find all active vertices. Set all to -1 (inactive) to start
   // with. If a vertex is active, give it an index from [0,
   // count)
+  const int num_vertices = topology.index_map(0)->size_local()
+                           + topology.index_map(0)->num_ghosts();
   std::vector<std::int32_t> active_vertex(num_vertices, -1);
-
   int count = 0;
   if (boundary_only)
   {
-    // If marking only boundary vertices, make active_vertex > -1
-    // only for those
-    const std::vector<bool> on_boundary0 = mesh.topology().on_boundary(0);
+    // Build list of vertices that belong to a boundary facet
+    mesh.topology_mutable().create_connectivity(tdim - 1, 0);
+    std::vector<bool> on_boundary0(num_vertices, false);
+    auto f_to_v = topology.connectivity(tdim - 1, 0);
+    assert(f_to_v);
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& f_to_v_offsets
+        = f_to_v->offsets();
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& f_to_v_indices
+        = f_to_v->array();
+
+    // Iterate over all facets, selecting only boundary facets
+    for (std::size_t i = 0; i < boundary_facet.size(); ++i)
+    {
+      if (boundary_facet[i])
+      {
+        for (int j = f_to_v_offsets[i]; j < f_to_v_offsets[i + 1]; ++j)
+          on_boundary0[f_to_v_indices[j]] = true;
+      }
+    }
+
     for (std::size_t i = 0; i < on_boundary0.size(); ++i)
     {
       if (on_boundary0[i])
@@ -812,13 +831,20 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
     }
   }
 
+  // std::cout << " Step F (0): " << x_active.rows() << std::endl;
+  // std::cout << " Step F (1): " << x_active.cols() << std::endl;
+  // std::cout << " Step F: " << x_active.transpose() << std::endl;
+
   // Run marker function on boundary vertices
   const Eigen::Array<bool, Eigen::Dynamic, 1> active_marked = marker(x_active);
+  // std::cout << " Step G" << std::endl;
   if (active_marked.rows() != x_active.cols())
     throw std::runtime_error("Length of array of markers is wrong.");
 
   auto e_to_v = mesh.topology().connectivity(dim, 0);
   assert(e_to_v);
+
+  // std::cout << " Step H" << std::endl;
 
   // Iterate over entities and build vector of marked entities
   std::vector<std::int32_t> entities;
@@ -832,9 +858,13 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
   // For boundary marking make active only boundary entities for all
   // flip all false to true
   if (boundary_only)
-    active_entity = mesh.topology().on_boundary(dim);
+    // active_entity = mesh.topology().on_boundary(dim);
+    active_entity = boundary_facet;
   else
     active_entity.flip();
+
+
+  // std::cout << " Step G" << std::endl;
 
   for (int e = 0; e < num_entities; ++e)
   {
@@ -863,6 +893,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
         entities.push_back(e);
     }
   }
+
+  // std::cout << " Step I" << std::endl;
 
   return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
       entities.data(), entities.size());

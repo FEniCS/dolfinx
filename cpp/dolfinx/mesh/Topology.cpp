@@ -163,50 +163,50 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
   return _index_map[dim];
 }
 //-----------------------------------------------------------------------------
-std::vector<bool> Topology::on_boundary(int dim) const
-{
-  const int tdim = this->dim();
-  if (dim >= tdim or dim < 0)
-  {
-    throw std::runtime_error("Invalid entity dimension: "
-                             + std::to_string(dim));
-  }
+// std::vector<bool> Topology::on_boundary(int dim) const
+// {
+//   const int tdim = this->dim();
+//   if (dim >= tdim or dim < 0)
+//   {
+//     throw std::runtime_error("Invalid entity dimension: "
+//                              + std::to_string(dim));
+//   }
 
-  // Compute exterior facet markers
-  const std::vector<bool> exterior_facet = mesh::compute_boundary_facets(*this);
+//   // Compute exterior facet markers
+//   const std::vector<bool> exterior_facet = mesh::compute_boundary_facets(*this);
 
-  // Special case for facets
-  if (dim == tdim - 1)
-    return exterior_facet;
+//   // Special case for facets
+//   if (dim == tdim - 1)
+//     return exterior_facet;
 
-  // Get connectivity from facet to entities of interest (vertices or
-  // edges)
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> fe
-      = connectivity(tdim - 1, dim);
-  if (!fe)
-    throw std::runtime_error("Facet-entity connectivity missing");
+//   // Get connectivity from facet to entities of interest (vertices or
+//   // edges)
+//   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> fe
+//       = connectivity(tdim - 1, dim);
+//   if (!fe)
+//     throw std::runtime_error("Facet-entity connectivity missing");
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_offsets
-      = fe->offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_indices = fe->array();
+//   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_offsets
+//       = fe->offsets();
+//   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_indices = fe->array();
 
-  // TODO: figure out if we can/should make this for owned entities only
-  assert(_index_map[dim]);
-  std::vector<bool> marker(_index_map[dim]->size_local(), false);
+//   // TODO: figure out if we can/should make this for owned entities only
+//   assert(_index_map[dim]);
+//   std::vector<bool> marker(_index_map[dim]->size_local(), false);
 
-  // Iterate over all facets, selecting only those with one cell
-  // attached
-  for (std::size_t i = 0; i < exterior_facet.size(); ++i)
-  {
-    if (exterior_facet[i])
-    {
-      for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
-        marker[fe_indices[j]] = true;
-    }
-  }
+//   // Iterate over all facets, selecting only those with one cell
+//   // attached
+//   for (std::size_t i = 0; i < exterior_facet.size(); ++i)
+//   {
+//     if (exterior_facet[i])
+//     {
+//       for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
+//         marker[fe_indices[j]] = true;
+//     }
+//   }
 
-  return marker;
-}
+//   return marker;
+// }
 //-----------------------------------------------------------------------------
 std::int32_t Topology::create_entities(int dim)
 {

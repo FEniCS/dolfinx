@@ -29,7 +29,7 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
     "UnitSquareMesh_triangle.xdmf"
 ])
 @pytest.mark.parametrize("degree", [2, 3, 4])
-def test_manufactured_poisson(degree, filename, datadir):
+def xtest_manufactured_poisson(degree, filename, datadir):
     """ Manufactured Poisson problem, solving u = x[1]**p, where p is the
     degree of the Lagrange function space.
 
