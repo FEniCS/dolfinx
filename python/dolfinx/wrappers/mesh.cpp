@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2020 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -269,8 +269,8 @@ void mesh(py::module& m)
               comm.get(), nparts, cell_type, cells, ghost_mode);
         });
 
-  m.def("locate_entities_geometrical",
-        &dolfinx::mesh::locate_entities_geometrical);
+  m.def("locate_entities", &dolfinx::mesh::locate_entities);
+  m.def("locate_entities_boundary", &dolfinx::mesh::locate_entities_boundary);
 
   // TODO Remove
   m.def("compute_vertex_exterior_markers",

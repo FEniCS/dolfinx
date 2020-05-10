@@ -7,15 +7,14 @@
 import types
 
 import numpy
-
 import ufl
 from dolfinx import cpp, fem
 
 
-def locate_entities_geometrical(mesh: cpp.mesh.Mesh,
-                                dim: int,
-                                marker: types.FunctionType,
-                                boundary_only: bool = False):
+def locate_entities(mesh: cpp.mesh.Mesh,
+                    dim: int,
+                    marker: types.FunctionType,
+                    boundary_only: bool = False):
     """Compute list of mesh entities satisfying a geometric marking function.
 
     Parameters
@@ -37,7 +36,32 @@ def locate_entities_geometrical(mesh: cpp.mesh.Mesh,
 
     """
 
-    return cpp.mesh.locate_entities_geometrical(mesh, dim, marker, boundary_only)
+    return cpp.mesh.locate_entities(mesh, dim, marker)
+
+
+def locate_entities_boundary(mesh: cpp.mesh.Mesh,
+                             dim: int,
+                             marker: types.FunctionType,
+                             boundary_only: bool = False):
+    """Compute list of mesh entities that are attached to an owned boundary facet
+    and satisfy a geometric marking function.
+
+    Parameters
+    ----------
+    mesh The mesh dim The topological dimension of the mesh entities to
+        consider marker A function that takes an array of points `x`
+        with shape ``(gdim, num_points)`` and returns an array of
+        booleans of length ``num_points``, evaluating to `True` for
+        entities whose degree-of-freedom should be returned.
+
+    Returns
+    -------
+    numpy.ndarray Indices (local to the process) of marked mesh
+        entities.
+
+    """
+
+    return cpp.mesh.locate_entities_boundary(mesh, dim, marker)
 
 
 _meshtags_types = {

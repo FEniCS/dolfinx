@@ -22,7 +22,7 @@ import dolfinx.io
 import dolfinx.la
 import ufl
 from dolfinx.fem import locate_dofs_topological
-from dolfinx.mesh import locate_entities_geometrical
+from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -60,7 +60,7 @@ def left(x):
 
 
 # Locate all facets at the free end and assign them value 1
-free_end_facets = locate_entities_geometrical(mesh, 1, free_end, boundary_only=True)
+free_end_facets = locate_entities_boundary(mesh, 1, free_end)
 mt = dolfinx.mesh.MeshTags(mesh, 1, free_end_facets, 1)
 
 ds = ufl.Measure("ds", subdomain_data=mt)
@@ -71,7 +71,7 @@ with u_bc.vector.localForm() as loc:
     loc.set(0.0)
 
 # Displacement BC is applied to the left side
-left_facets = locate_entities_geometrical(mesh, 1, left, boundary_only=True)
+left_facets = locate_entities_boundary(mesh, 1, left)
 bdofs = locate_dofs_topological(U, 1, left_facets)
 bc = dolfinx.fem.DirichletBC(u_bc, bdofs)
 

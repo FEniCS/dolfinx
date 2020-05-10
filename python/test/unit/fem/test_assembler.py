@@ -261,7 +261,7 @@ def test_matrix_assembly_block():
 
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
-    bndry_facets = dolfinx.mesh.locate_entities_geometrical(mesh, facetdim, boundary, boundary_only=True)
+    bndry_facets = dolfinx.mesh.locate_entities_boundary(mesh, facetdim, boundary)
 
     bdofsV1 = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
 
@@ -350,7 +350,7 @@ def test_assembly_solve_block():
 
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
-    bndry_facets = dolfinx.mesh.locate_entities_geometrical(mesh, facetdim, boundary, boundary_only=True)
+    bndry_facets = dolfinx.mesh.locate_entities_boundary(mesh, facetdim, boundary)
 
     bdofsV0 = dolfinx.fem.locate_dofs_topological(V0, facetdim, bndry_facets)
     bdofsV1 = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
@@ -500,8 +500,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # Locate facets on boundaries
     facetdim = mesh.topology.dim - 1
-    bndry_facets0 = dolfinx.mesh.locate_entities_geometrical(mesh, facetdim, boundary0, boundary_only=True)
-    bndry_facets1 = dolfinx.mesh.locate_entities_geometrical(mesh, facetdim, boundary1, boundary_only=True)
+    bndry_facets0 = dolfinx.mesh.locate_entities_boundary(mesh, facetdim, boundary0)
+    bndry_facets1 = dolfinx.mesh.locate_entities_boundary(mesh, facetdim, boundary1)
 
     bdofs0 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets0)
     bdofs1 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets1)

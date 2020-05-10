@@ -11,7 +11,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
-from dolfinx.mesh import locate_entities_geometrical
+from dolfinx.mesh import locate_entities_boundary
 import ufl
 
 
@@ -104,16 +104,16 @@ def test_assembly_ds_domains(mesh):
     def right(x):
         return numpy.isclose(x[0], 1.0)
 
-    bottom_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, bottom, boundary_only=True)
+    bottom_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, bottom)
     bottom_vals = numpy.full(bottom_facets.shape, 1, numpy.intc)
 
-    top_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, top, boundary_only=True)
+    top_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, top)
     top_vals = numpy.full(top_facets.shape, 2, numpy.intc)
 
-    left_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, left, boundary_only=True)
+    left_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, left)
     left_vals = numpy.full(left_facets.shape, 3, numpy.intc)
 
-    right_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, right, boundary_only=True)
+    right_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, right)
     right_vals = numpy.full(right_facets.shape, 6, numpy.intc)
 
     indices = numpy.hstack((bottom_facets, top_facets, left_facets, right_facets))
