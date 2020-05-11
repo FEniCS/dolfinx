@@ -116,61 +116,38 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
+std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
 {
-  // NOTE: Getting markers for owned and unowned facets requires reverse
-  // and forward scatters. If we can work only with owned facets we
-  // would need only a reverse scatter.
-
   const int tdim = topology.dim();
-  auto c = topology.connectivity(tdim - 1, tdim);
-  if (!c)
-    throw std::runtime_error("Facet-cell connectivity has not been computed");
 
-  auto map = topology.index_map(tdim - 1);
-  assert(map);
-
-  // Get number of connected cells for each ghost facet
-  std::vector<int> num_cells1(map->num_ghosts(), 0);
-  for (int f = 0; f < map->num_ghosts(); ++f)
+  auto facets = topology.index_map(tdim - 1);
+  if (!facets)
+    throw std::runtime_error("Facets have not been computed.");
+  std::set<std::int32_t> fwd_shared_facets;
+  if (facets->num_ghosts() == 0)
   {
-    num_cells1[f] = c->num_links(map->size_local() + f);
-    // TEST: For facet-based ghosting, an un-owned facet should be
-    // connected to only one facet
-    // if (num_cells1[f] > 1)
-    // {
-    //   throw std::runtime_error("!!!!!!!!!!");
-    //   std::cout << "!!! Problem with ghosting" << std::endl;
-    // }
-    // else
-    //   std::cout << "Facet as expected" << std::endl;
-    assert(num_cells1[f] == 1 or num_cells1[f] == 2);
+    fwd_shared_facets = std::set<std::int32_t>(
+        facets->forward_indices().begin(), facets->forward_indices().end());
   }
 
-  // Send my ghost data to owner, and receive data for my data from
-  // remote ghosts
-  std::vector<std::int32_t> owned;
-  map->scatter_rev(owned, num_cells1, 1, common::IndexMap::Mode::add);
-
-  // Mark owned facets that are connected to two cells
-  std::vector<int> num_cells0(map->size_local(), 0);
-  for (std::size_t f = 0; f < num_cells0.size(); ++f)
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> fc
+      = topology.connectivity(tdim - 1, tdim);
+  if (!fc)
+    throw std::runtime_error("Facet-cell connectivity missing.");
+  std::vector<bool> _boundary_facet(facets->size_local(), false);
+  for (std::size_t f = 0; f < _boundary_facet.size(); ++f)
   {
-    assert(c->num_links(f) == 1 or c->num_links(f) == 2);
-    num_cells0[f] = (c->num_links(f) + owned[f]) > 1 ? 1 : 0;
+    if (fc->num_links(f) == 1
+        and fwd_shared_facets.find(f) == fwd_shared_facets.end())
+    {
+      _boundary_facet[f] = true;
+    }
   }
 
-  // Send owned data to ghosts, and receive ghost data from owner
-  const std::vector<std::int32_t> ghost_markers
-      = map->scatter_fwd(num_cells0, 1);
-
-  // Copy data, castint 1 -> true and 0 -> false
-  num_cells0.insert(num_cells0.end(), ghost_markers.begin(),
-                    ghost_markers.end());
-  std::vector<bool> interior_facet(num_cells0.begin(), num_cells0.end());
-
-  return interior_facet;
+  return _boundary_facet;
 }
+//-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
@@ -185,71 +162,6 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   assert(dim < (int)_index_map.size());
   return _index_map[dim];
-}
-//-----------------------------------------------------------------------------
-std::vector<bool> Topology::on_boundary(int dim) const
-{
-  const int tdim = this->dim();
-  if (dim >= tdim or dim < 0)
-  {
-    throw std::runtime_error("Invalid entity dimension: "
-                             + std::to_string(dim));
-  }
-
-  if (!_interior_facets)
-  {
-    throw std::runtime_error(
-        "Facets have not been marked for interior/exterior.");
-  }
-
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-      connectivity_facet_cell = connectivity(tdim - 1, tdim);
-  if (!connectivity_facet_cell)
-    throw std::runtime_error("Facet-cell connectivity missing");
-
-  // TODO: figure out if we can/should make this for owned entities only
-  assert(_index_map[dim]);
-  std::vector<bool> marker(
-      _index_map[dim]->size_local() + _index_map[dim]->num_ghosts(), false);
-  const int num_facets
-      = _index_map[tdim - 1]->size_local() + _index_map[tdim - 1]->num_ghosts();
-
-  // Special case for facets
-  if (dim == tdim - 1)
-  {
-    for (int i = 0; i < num_facets; ++i)
-    {
-      assert(i < (int)_interior_facets->size());
-      if (!(*_interior_facets)[i])
-        marker[i] = true;
-    }
-    return marker;
-  }
-
-  // Get connectivity from facet to entities of interest (vertices or edges)
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-      connectivity_facet_entity = connectivity(tdim - 1, dim);
-  if (!connectivity_facet_entity)
-    throw std::runtime_error("Facet-entity connectivity missing");
-
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_offsets
-      = connectivity_facet_entity->offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_indices
-      = connectivity_facet_entity->array();
-
-  // Iterate over all facets, selecting only those with one cell
-  // attached
-  for (int i = 0; i < num_facets; ++i)
-  {
-    assert(i < (int)_interior_facets->size());
-    if (!(*_interior_facets)[i])
-    {
-      for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
-        marker[fe_indices[j]] = true;
-    }
-  }
-
-  return marker;
 }
 //-----------------------------------------------------------------------------
 std::int32_t Topology::create_entities(int dim)
@@ -305,13 +217,6 @@ void Topology::create_connectivity(int d0, int d1)
     set_connectivity(c_d0_d1, d0, d1);
   if (c_d1_d0)
     set_connectivity(c_d1_d0, d1, d0);
-
-  // Special facet handing
-  if (d0 == (this->dim() - 1) and d1 == this->dim())
-  {
-    std::vector<bool> f = compute_interior_facets(*this);
-    set_interior_facets(f);
-  }
 }
 //-----------------------------------------------------------------------------
 void Topology::create_entity_permutations()
@@ -359,18 +264,6 @@ void Topology::set_connectivity(
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
   _connectivity(d0, d1) = c;
-}
-//-----------------------------------------------------------------------------
-const std::vector<bool>& Topology::interior_facets() const
-{
-  if (!_interior_facets)
-    throw std::runtime_error("Facets marker has not been computed.");
-  return *_interior_facets;
-}
-//-----------------------------------------------------------------------------
-void Topology::set_interior_facets(const std::vector<bool>& interior_facets)
-{
-  _interior_facets = std::make_shared<const std::vector<bool>>(interior_facets);
 }
 //-----------------------------------------------------------------------------
 size_t Topology::hash() const

@@ -9,15 +9,14 @@
 from contextlib import ExitStack
 
 import numpy as np
-
 import pytest
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace,
-                     UnitSquareMesh, VectorFunctionSpace)
+from dolfinx import (DirichletBC, Function, FunctionSpace, UnitSquareMesh,
+                     VectorFunctionSpace)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_topological, set_bc)
 from dolfinx.la import VectorSpaceBasis
-from dolfinx.mesh import locate_entities_geometrical
+from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
@@ -102,7 +101,7 @@ def test_krylov_samg_solver_elasticity():
             return np.full(x.shape[1], True)
 
         facetdim = mesh.topology.dim - 1
-        bndry_facets = locate_entities_geometrical(mesh, facetdim, boundary, boundary_only=True)
+        bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
 
         bdofs = locate_dofs_topological(V.sub(0), V, facetdim, bndry_facets)
         bc = DirichletBC(bc0, bdofs, V.sub(0))

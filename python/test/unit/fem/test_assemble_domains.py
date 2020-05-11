@@ -11,7 +11,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
-from dolfinx.mesh import locate_entities_geometrical
+from dolfinx.mesh import locate_entities_boundary
 import ufl
 
 
@@ -29,15 +29,17 @@ parametrize_ghost_mode = pytest.mark.parametrize("mode", [
                                           reason="Shared ghost modes fail in serial"))])
 
 
-def test_assembly_dx_domains(mesh):
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_assembly_dx_domains(mode):
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     # Prepare a marking structures
     # indices cover all cells
     # values are [1, 2, 3, 3, ...]
-    imap = mesh.topology.index_map(mesh.topology.dim)
-    num_cells = imap.size_local + imap.num_ghosts
+    cell_map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = cell_map.size_local + cell_map.num_ghosts
     indices = numpy.arange(0, num_cells)
     values = numpy.full(indices.shape, 3, dtype=numpy.intc)
     values[0] = 1
@@ -49,46 +51,38 @@ def test_assembly_dx_domains(mesh):
         w_local.set(0.5)
 
     # Assemble matrix
-
     a = w * ufl.inner(u, v) * (dx(1) + dx(2) + dx(3))
-
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
-    norm1 = A.norm()
-
     a2 = w * ufl.inner(u, v) * dx
-
     A2 = dolfinx.fem.assemble_matrix(a2)
     A2.assemble()
-    norm2 = A2.norm()
-
-    assert norm1 == pytest.approx(norm2, 1.0e-12)
+    assert (A - A2).norm() < 1.0e-12
 
     # Assemble vector
-
     L = ufl.inner(w, v) * (dx(1) + dx(2) + dx(3))
     b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
     L2 = ufl.inner(w, v) * dx
     b2 = dolfinx.fem.assemble_vector(L2)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
-    assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
+    print(b2.norm())
+    assert (b - b2).norm() < 1.0e-12
 
     # Assemble scalar
-
     L = w * (dx(1) + dx(2) + dx(3))
     s = dolfinx.fem.assemble_scalar(L)
     s = mesh.mpi_comm().allreduce(s, op=MPI.SUM)
-
+    assert s == pytest.approx(0.5, 1.0e-12)
     L2 = w * dx
     s2 = dolfinx.fem.assemble_scalar(L2)
     s2 = mesh.mpi_comm().allreduce(s2, op=MPI.SUM)
-    assert (s == pytest.approx(s2, 1.0e-12) and 0.5 == pytest.approx(s, 1.0e-12))
+    assert s == pytest.approx(s2, 1.0e-12)
 
 
-def test_assembly_ds_domains(mesh):
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_assembly_ds_domains(mode):
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -104,16 +98,16 @@ def test_assembly_ds_domains(mesh):
     def right(x):
         return numpy.isclose(x[0], 1.0)
 
-    bottom_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, bottom, boundary_only=True)
+    bottom_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, bottom)
     bottom_vals = numpy.full(bottom_facets.shape, 1, numpy.intc)
 
-    top_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, top, boundary_only=True)
+    top_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, top)
     top_vals = numpy.full(top_facets.shape, 2, numpy.intc)
 
-    left_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, left, boundary_only=True)
+    left_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, left)
     left_vals = numpy.full(left_facets.shape, 3, numpy.intc)
 
-    right_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, right, boundary_only=True)
+    right_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, right)
     right_vals = numpy.full(right_facets.shape, 6, numpy.intc)
 
     indices = numpy.hstack((bottom_facets, top_facets, left_facets, right_facets))
@@ -159,7 +153,7 @@ def test_assembly_ds_domains(mesh):
 
 
 @parametrize_ghost_mode
-def xtest_assembly_dS_domains(mode):
+def test_assembly_dS_domains(mode):
     N = 10
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, N, N, ghost_mode=mode)
     one = dolfinx.Constant(mesh, 1)
@@ -169,7 +163,7 @@ def xtest_assembly_dS_domains(mode):
 
 
 @parametrize_ghost_mode
-def xtest_additivity(mode):
+def test_additivity(mode):
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
 

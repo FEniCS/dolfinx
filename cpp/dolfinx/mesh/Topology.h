@@ -39,18 +39,17 @@ enum class GhostMode : int;
 enum class CellType;
 class Topology;
 
-/// Compute marker for owned facets that are interior, i.e. are
-/// connected to two cells, one of which might be on a remote process.
-/// @param[in] topology The topology.
-/// @return Vector with length equal to the number of facets on this
-///   this process. True if the ith facet (local index) is interior to
-///   the domain.
-std::vector<bool> compute_interior_facets(const Topology& topology);
+/// Compute marker for owned facets that are on the exterior of the
+/// domain, i.e. are connected to only one cell. The function does not
+/// require parallel communication.
+/// @param[in] topology The topology
+/// @return Vector with length equal to the number of owned facets on
+///   this this process. True if the ith facet (local index) is on the
+///   exterior of the domain.
+std::vector<bool> compute_boundary_facets(const Topology& topology);
 
 /// Topology stores the topology of a mesh, consisting of mesh entities
-/// and connectivity (incidence relations for the mesh entities). Note
-/// that the mesh entities don't need to be stored, only the number of
-/// entities and the connectivity.
+/// and connectivity (incidence relations for the mesh entities).
 ///
 /// A mesh entity e may be identified globally as a pair e = (dim, i),
 /// where dim is the topological dimension and i is the index of the
@@ -97,15 +96,6 @@ public:
   /// @return Index map for the entities of dimension @p dim
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// Marker for entities of dimension dim on the boundary. An entity of
-  /// co-dimension < 0 is on the boundary if it is connected to a
-  /// boundary facet. It is not defined for codimension 0.
-  /// @param[in] dim Toplogical dimension of the entities to check. It
-  ///   must be less than the topological dimension.
-  /// @return Vector of length equal to number of local entities, with
-  ///   'true' for entities on the boundary and otherwise 'false'.
-  std::vector<bool> on_boundary(int dim) const;
-
   /// Return connectivity from entities of dimension d0 to entities of
   /// dimension d1
   /// @param[in] d0
@@ -135,17 +125,6 @@ public:
   /// @return The permutation number
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations() const;
-
-  /// Gets markers for owned facets that are interior, i.e. are
-  /// connected to two cells, one of which might be on a remote process
-  /// @return Vector with length equal to the number of facets owned by
-  ///   this process. True if the ith facet (local index) is interior to
-  ///   the domain.
-  const std::vector<bool>& interior_facets() const;
-
-  /// Set markers for owned facets that are interior
-  /// @param[in] interior_facets The marker vector
-  void set_interior_facets(const std::vector<bool>& interior_facets);
 
   /// Return hash based on the hash of cell-vertex connectivity
   size_t hash() const;
@@ -177,7 +156,7 @@ public:
   void create_connectivity_all();
 
   /// Mesh MPI communicator
-  /// @return The communicator on which the mesh is distributed
+  /// @return The communicator on which the topology is distributed
   MPI_Comm mpi_comm() const;
 
 private:
@@ -202,20 +181,17 @@ private:
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _cell_permutations;
-
-  // Marker for owned facets, which evaluates to True for facets that
-  // are interior to the domain
-  std::shared_ptr<const std::vector<bool>> _interior_facets;
 };
 
 /// Create distributed topology
+///
 /// @param[in] comm MPI communicator across which the topology is
 ///   distributed
 /// @param[in] cells The cell topology (list of cell vertices) using
 ///   global indices for the vertices. It contains cells that have been
-///   distributed to this rank, e.g. via a graph partitioner. It must also
-///   contain all ghost cells via facet, i.e. cells which are on a neighbouring
-///   process and share a facet with a local cell.
+///   distributed to this rank, e.g. via a graph partitioner. It must
+///   also contain all ghost cells via facet, i.e. cells which are on a
+///   neighbouring process and share a facet with a local cell.
 /// @param[in] original_cell_index The original global index associated
 ///   with each cell.
 /// @param[in] ghost_owners The ownership of the ghost cells (ghost
