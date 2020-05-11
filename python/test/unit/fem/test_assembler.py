@@ -38,7 +38,7 @@ def nest_matrix_norm(A):
 
 @pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
 def test_assemble_functional_dx(mode):
-    mesh =UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     M = 1.0 * dx(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
     value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
@@ -52,7 +52,7 @@ def test_assemble_functional_dx(mode):
 
 @pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
 def test_assemble_functional_ds(mode):
-    mesh =UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     M = 1.0 * ds(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
     value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
