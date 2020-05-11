@@ -13,7 +13,7 @@ from mpi4py import MPI
 from dolfinx.cpp.mesh import CellType
 from dolfinx.generation import UnitCubeMesh
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import MeshTags, locate_entities_geometrical
+from dolfinx.mesh import MeshTags, locate_entities
 from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
@@ -34,18 +34,18 @@ def test_3d(tempdir, cell_type, encoding):
     comm = MPI.COMM_WORLD
     mesh = UnitCubeMesh(comm, 4, 4, 4, cell_type)
 
-    bottom_facets = locate_entities_geometrical(mesh, 2, lambda x: np.isclose(x[1], 0.0))
+    bottom_facets = locate_entities(mesh, 2, lambda x: np.isclose(x[1], 0.0))
     bottom_values = np.full(bottom_facets.shape, 1, dtype=np.intc)
-    left_facets = locate_entities_geometrical(mesh, 2, lambda x: np.isclose(x[0], 0.0))
+    left_facets = locate_entities(mesh, 2, lambda x: np.isclose(x[0], 0.0))
     left_values = np.full(left_facets.shape, 2, dtype=np.intc)
 
     indices, pos = np.unique(np.hstack((bottom_facets, left_facets)), return_index=True)
     mt = MeshTags(mesh, 2, indices, np.hstack((bottom_values, left_values))[pos])
     mt.name = "facets"
 
-    top_lines = locate_entities_geometrical(mesh, 1, lambda x: np.isclose(x[2], 1.0))
+    top_lines = locate_entities(mesh, 1, lambda x: np.isclose(x[2], 1.0))
     top_values = np.full(top_lines.shape, 3, dtype=np.intc)
-    right_lines = locate_entities_geometrical(mesh, 1, lambda x: np.isclose(x[0], 1.0))
+    right_lines = locate_entities(mesh, 1, lambda x: np.isclose(x[0], 1.0))
     right_values = np.full(right_lines.shape, 4, dtype=np.intc)
 
     indices, pos = np.unique(np.hstack((top_lines, right_lines)), return_index=True)

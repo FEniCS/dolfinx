@@ -25,12 +25,12 @@ class MeshEntity;
 /// Extract topology from cell data, i.e. extract cell vertices
 /// @param[in] cell_type The cell shape
 /// @param[in] layout The layout of geometry 'degrees-of-freedom' on the
-///     reference cell
+///   reference cell
 /// @param[in] cells List of 'nodes' for each cell using global indices.
-///     The layout must be consistent with \p layout.
+///   The layout must be consistent with \p layout.
 /// @return Cell topology. The global indices will, in general, have
-///     'gaps' due to mid-side and other higher-order nodes being
-///     removed from the input @p cell.
+///   'gaps' due to mid-side and other higher-order nodes being removed
+///   from the input @p cell.
 graph::AdjacencyList<std::int64_t>
 extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
                  const graph::AdjacencyList<std::int64_t>& cells);
@@ -69,24 +69,48 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
     const mesh::Mesh& mesh, int dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities);
 
-/// Compute indicies (local to the process) of all mesh entities that
-/// evaluate to true for the provided marking function. An entity is
-/// considered marked if the marker function evaluates true for all of
-/// the entities vertices.
-/// @cond Work around doxygen bug for std::function
+/// Compute indicies of all mesh entities that evaluate to true for the
+/// provided geometric marking function. An entity is considered marked
+/// if the marker function evaluates true for all of its vertices.
+///
 /// @param[in] mesh The mesh
 /// @param[in] dim The topological dimension of the entities to be
-///                considered
+///   considered
 /// @param[in] marker The marking function
-/// @returns List of marked entity indices (indices local to the
-/// process)
-/// @endcond
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_geometrical(
+/// @returns List of marked entity indices, including any ghost indices
+///   (indices local to the process)
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities(
     const mesh::Mesh& mesh, const int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker,
-    const bool boundary_only);
+                                            Eigen::RowMajor>>&)>& marker);
+
+/// Compute indicies of all mesh entities that are attached to an owned
+/// boundary facet and evaluate to true for the provided geometric
+/// marking function. An entity is considered marked if the marker
+/// function evaluates true for all of its vertices.
+///
+/// @note For vertices and edges, in parallel this function will not
+/// necessarily mark all entities that are on the exterior boundary. For
+/// example, it is possible for a process to have a vertex that lies on
+/// the boundary without any of the attached facets being a boundary
+/// facet. When used to find degrees-of-freedom, e.g. using
+/// fem::locate_dofs_topological, the function that uses the data
+/// returned by this function must typically perform some parallel
+/// communication.
+///
+/// @param[in] mesh The mesh
+/// @param[in] dim The topological dimension of the entities to be
+///   considered. Must be less than the topological dimension of the
+///   mesh.
+/// @param[in] marker The marking function
+/// @returns List of marked entity indices (indices local to the
+///   process)
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_boundary(
+    const mesh::Mesh& mesh, const int dim,
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker);
 
 } // namespace mesh
 } // namespace dolfinx

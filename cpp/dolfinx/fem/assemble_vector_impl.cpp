@@ -90,7 +90,7 @@ void _lift_bc_cells(
   const int tdim = mesh->topology().dim();
   auto map = mesh->topology().index_map(tdim);
   assert(map);
-  const int num_cells = map->size_local() + map->num_ghosts();
+  const int num_cells = map->size_local();
   for (int c = 0; c < num_cells; ++c)
   {
     // Get dof maps for cell
@@ -221,10 +221,22 @@ void _lift_bc_exterior_facets(
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
       = mesh->topology().get_cell_permutation_info();
 
+  std::set<std::int32_t> fwd_shared_facets;
+  // Only need to consider shared facets when there are no ghost cells
+  if (topology.index_map(tdim)->num_ghosts() == 0)
+  {
+    fwd_shared_facets.insert(
+        topology.index_map(tdim - 1)->forward_indices().begin(),
+        topology.index_map(tdim - 1)->forward_indices().end());
+  }
+
   for (int f = 0; f < map->size_local(); ++f)
   {
     // Move to next facet if this one is an interior facet
-    if (topology.interior_facets()[f])
+    // Interior facets have two attached cells. If on a process boundary,
+    // and owned locally, then they are "forward shared".
+    if (connectivity->num_links(f) == 2
+        or fwd_shared_facets.find(f) != fwd_shared_facets.end())
       continue;
 
     // Create attached cell

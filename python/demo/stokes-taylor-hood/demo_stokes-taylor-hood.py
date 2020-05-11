@@ -79,7 +79,7 @@ from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import locate_entities_geometrical
+from dolfinx.mesh import locate_entities_boundary
 from ufl import div, dx, grad, inner
 
 # We create a Mesh and attach a coordinate map to the mesh::
@@ -126,7 +126,7 @@ noslip = Function(V)
 with noslip.vector.localForm() as bc_local:
     bc_local.set(0.0)
 
-facets = locate_entities_geometrical(mesh, 1, noslip_boundary, boundary_only=True)
+facets = locate_entities_boundary(mesh, 1, noslip_boundary)
 bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets))
 
 
@@ -134,7 +134,7 @@ bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets))
 lid_velocity = Function(V)
 lid_velocity.interpolate(lid_velocity_expression)
 
-facets = locate_entities_geometrical(mesh, 1, lid, boundary_only=True)
+facets = locate_entities_boundary(mesh, 1, lid)
 bc1 = DirichletBC(lid_velocity, locate_dofs_topological(V, 1, facets))
 
 # Collect Dirichlet boundary conditions
@@ -401,14 +401,14 @@ W0 = W.sub(0).collapse()
 
 # No slip boundary condition
 noslip = Function(W0)
-facets = locate_entities_geometrical(mesh, 1, noslip_boundary, boundary_only=True)
+facets = locate_entities_boundary(mesh, 1, noslip_boundary)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 bc0 = DirichletBC(noslip, dofs, W.sub(0))
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(W0)
 lid_velocity.interpolate(lid_velocity_expression)
-facets = locate_entities_geometrical(mesh, 1, lid, boundary_only=True)
+facets = locate_entities_boundary(mesh, 1, lid)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
 

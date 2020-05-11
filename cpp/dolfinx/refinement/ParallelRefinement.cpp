@@ -415,12 +415,10 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
     if (fc)
       topology_local.set_connectivity(fc, tdim - 1, tdim);
 
-    // FIXME: This looks weird. Revise.
     // Get facets that are on the boundary of the local topology, i.e
     // are connect to one cell only
-    std::vector<bool> boundary = compute_interior_facets(topology_local);
-    topology_local.set_interior_facets(boundary);
-    boundary = topology_local.on_boundary(tdim - 1);
+    const std::vector<bool> boundary
+        = mesh::compute_boundary_facets(topology_local);
 
     // Build distributed cell-vertex AdjacencyList, IndexMap for
     // vertices, and map from local index to old global index

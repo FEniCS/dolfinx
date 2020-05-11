@@ -10,14 +10,15 @@ import math
 import numpy
 import pytest
 import scipy.sparse.linalg
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
 import ufl
 from dolfinx import function
+from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.specialfunctions import SpatialCoordinate
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from ufl import derivative, ds, dx, inner
 
 
@@ -35,8 +36,9 @@ def nest_matrix_norm(A):
     return math.sqrt(norm)
 
 
-def test_assemble_functional():
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_assemble_functional_dx(mode):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     M = 1.0 * dx(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
     value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
@@ -48,11 +50,20 @@ def test_assemble_functional():
     assert value == pytest.approx(0.5, 1e-12)
 
 
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_assemble_functional_ds(mode):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    M = 1.0 * ds(domain=mesh)
+    value = dolfinx.fem.assemble_scalar(M)
+    value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
+    assert value == pytest.approx(4.0, 1e-12)
+
+
 def test_assemble_derivatives():
     """This test checks the original_coefficient_positions, which may change
     under differentiation (some coefficients and constants are
     eliminated)"""
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
     Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfinx.Function(Q)
     v = ufl.TestFunction(Q)
@@ -82,7 +93,7 @@ def test_assemble_derivatives():
 @skip_if_complex
 def test_eigen_assembly():
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
     Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
@@ -106,8 +117,9 @@ def test_eigen_assembly():
     assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
 
 
-def test_basic_assembly():
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_basic_assembly(mode):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -153,8 +165,9 @@ def test_basic_assembly():
     assert 2.0 * normA == pytest.approx(A.norm())
 
 
-def test_assembly_bcs():
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_assembly_bcs(mode):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx + inner(u, v) * ds
@@ -230,7 +243,7 @@ def test_matrix_assembly_block():
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
     """
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
 
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -244,7 +257,7 @@ def test_matrix_assembly_block():
 
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
-    bndry_facets = dolfinx.mesh.locate_entities_geometrical(mesh, facetdim, boundary, boundary_only=True)
+    bndry_facets = dolfinx.mesh.locate_entities_boundary(mesh, facetdim, boundary)
 
     bdofsV1 = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
 
@@ -323,7 +336,7 @@ def test_assembly_solve_block():
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same.
     """
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 32, 31)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 31)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V0 = dolfinx.function.FunctionSpace(mesh, P)
     V1 = V0.clone()
@@ -333,7 +346,7 @@ def test_assembly_solve_block():
 
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
-    bndry_facets = dolfinx.mesh.locate_entities_geometrical(mesh, facetdim, boundary, boundary_only=True)
+    bndry_facets = dolfinx.mesh.locate_entities_boundary(mesh, facetdim, boundary)
 
     bdofsV0 = dolfinx.fem.locate_dofs_topological(V0, facetdim, bndry_facets)
     bdofsV1 = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
@@ -465,8 +478,8 @@ def test_assembly_solve_block():
 
 
 @pytest.mark.parametrize("mesh", [
-    dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11),
-    dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 7, 3)
+    UnitSquareMesh(MPI.COMM_WORLD, 12, 11),
+    UnitCubeMesh(MPI.COMM_WORLD, 3, 7, 3)
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
@@ -483,8 +496,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # Locate facets on boundaries
     facetdim = mesh.topology.dim - 1
-    bndry_facets0 = dolfinx.mesh.locate_entities_geometrical(mesh, facetdim, boundary0, boundary_only=True)
-    bndry_facets1 = dolfinx.mesh.locate_entities_geometrical(mesh, facetdim, boundary1, boundary_only=True)
+    bndry_facets0 = dolfinx.mesh.locate_entities_boundary(mesh, facetdim, boundary0)
+    bndry_facets1 = dolfinx.mesh.locate_entities_boundary(mesh, facetdim, boundary1)
 
     bdofs0 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets0)
     bdofs1 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets1)
@@ -682,7 +695,7 @@ def test_basic_assembly_constant():
     matrix-valued constant.
 
     """
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
     V = function.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 

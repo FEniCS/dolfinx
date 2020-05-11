@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2020 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -55,8 +55,6 @@ void mesh(py::module& m)
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
-  m.def("compute_interior_facets", &dolfinx::mesh::compute_interior_facets);
-
   m.def("volume_entities", &dolfinx::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
 
@@ -66,6 +64,7 @@ void mesh(py::module& m)
   m.def("inradius", &dolfinx::mesh::inradius, "Compute inradius of cells.");
   m.def("radius_ratio", &dolfinx::mesh::radius_ratio);
   m.def("midpoints", &dolfinx::mesh::midpoints);
+  m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
   m.def(
       "create",
@@ -132,7 +131,6 @@ void mesh(py::module& m)
       }))
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity)
       .def("set_index_map", &dolfinx::mesh::Topology::set_index_map)
-      .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
       .def("create_entities", &dolfinx::mesh::Topology::create_entities)
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations)
@@ -149,16 +147,15 @@ void mesh(py::module& m)
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        py::const_))
       .def("hash", &dolfinx::mesh::Topology::hash)
-      .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
       .def("index_map", &dolfinx::mesh::Topology::index_map)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
-      .def("cell_name", [](const dolfinx::mesh::Topology& self) {
-        return dolfinx::mesh::to_string(self.cell_type());
-      })
-      .def("mpi_comm",
-           [](dolfinx::mesh::Mesh& self) {
-             return MPICommWrapper(self.mpi_comm());
-       });
+      .def("cell_name",
+           [](const dolfinx::mesh::Topology& self) {
+             return dolfinx::mesh::to_string(self.cell_type());
+           })
+      .def("mpi_comm", [](dolfinx::mesh::Mesh& self) {
+        return MPICommWrapper(self.mpi_comm());
+      });
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
@@ -272,8 +269,8 @@ void mesh(py::module& m)
               comm.get(), nparts, cell_type, cells, ghost_mode);
         });
 
-  m.def("locate_entities_geometrical",
-        &dolfinx::mesh::locate_entities_geometrical);
+  m.def("locate_entities", &dolfinx::mesh::locate_entities);
+  m.def("locate_entities_boundary", &dolfinx::mesh::locate_entities_boundary);
 
   // TODO Remove
   m.def("compute_vertex_exterior_markers",
