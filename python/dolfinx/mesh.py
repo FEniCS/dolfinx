@@ -24,9 +24,8 @@ def locate_entities(mesh: cpp.mesh.Mesh,
         The topological dimension of the mesh entities to consider
     marker
         A function that takes an array of points `x` with shape
-        ``(gdim, num_points)`` and returns an array of booleans of
-        length ``num_points``, evaluating to `True` for entities whose
-        degree-of-freedom should be returned.
+        ``(gdim, num_points)`` and returns an array of booleans of length
+        ``num_points``, evaluating to `True` for entities to be located.
 
     Returns
     -------
@@ -44,18 +43,30 @@ def locate_entities_boundary(mesh: cpp.mesh.Mesh,
     """Compute list of mesh entities that are attached to an owned boundary facet
     and satisfy a geometric marking function.
 
+    For vertices and edges, in parallel this function will not necessarily
+    mark all entities that are on the exterior boundary. For example, it is
+    possible for a process to have a vertex that lies on the boundary without
+    any of the attached facets being a boundary facet. When used to find
+    degrees-of-freedom, e.g. using fem.locate_dofs_topological, the function
+    that uses the data returned by this function must typically perform some
+    parallel communication.
+
     Parameters
     ----------
-    mesh The mesh dim The topological dimension of the mesh entities to
-        consider marker A function that takes an array of points `x`
-        with shape ``(gdim, num_points)`` and returns an array of
-        booleans of length ``num_points``, evaluating to `True` for
-        entities whose degree-of-freedom should be returned.
+    mesh
+        The mesh
+    dim
+        The topological dimension of the mesh entities to
+        consider
+    marker
+        A function that takes an array of points `x` with shape
+        ``(gdim, num_points)`` and returns an array of booleans of length
+        ``num_points``, evaluating to `True` for entities to be located.
 
     Returns
     -------
-    numpy.ndarray Indices (local to the process) of marked mesh
-        entities.
+    numpy.ndarray
+        Indices (local to the process) of marked mesh entities.
 
     """
 
