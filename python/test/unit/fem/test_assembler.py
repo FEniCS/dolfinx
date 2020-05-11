@@ -36,12 +36,9 @@ def nest_matrix_norm(A):
     return math.sqrt(norm)
 
 
-@pytest.mark.parametrize('mesh', [UnitSquareMesh(MPI.COMM_WORLD, 12, 12),
-                                  UnitSquareMesh(MPI.COMM_WORLD, 12, 12,
-                                                 dolfinx.cpp.mesh.CellType.triangle,
-                                                 dolfinx.cpp.mesh.GhostMode.shared_facet)
-                                  ])
-def test_assemble_functional_dx(mesh):
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_assemble_functional_dx(mode):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     M = 1.0 * dx(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
     value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
@@ -53,12 +50,9 @@ def test_assemble_functional_dx(mesh):
     assert value == pytest.approx(0.5, 1e-12)
 
 
-@pytest.mark.parametrize('mesh', [UnitSquareMesh(MPI.COMM_WORLD, 12, 12),
-                                  UnitSquareMesh(MPI.COMM_WORLD, 12, 12,
-                                                 dolfinx.cpp.mesh.CellType.triangle,
-                                                 dolfinx.cpp.mesh.GhostMode.shared_facet)
-                                  ])
-def test_assemble_functional_ds(mesh):
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_assemble_functional_ds(mode):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     M = 1.0 * ds(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
     value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
@@ -123,8 +117,9 @@ def test_eigen_assembly():
     assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
 
 
-def test_basic_assembly():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_basic_assembly(mode):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -170,8 +165,9 @@ def test_basic_assembly():
     assert 2.0 * normA == pytest.approx(A.norm())
 
 
-def test_assembly_bcs():
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_assembly_bcs(mode):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx + inner(u, v) * ds
