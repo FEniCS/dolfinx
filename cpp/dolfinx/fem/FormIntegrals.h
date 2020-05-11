@@ -8,7 +8,6 @@
 
 #include <array>
 #include <functional>
-#include <memory>
 #include <petscsys.h>
 #include <vector>
 
@@ -92,8 +91,7 @@ public:
   /// any changes to the integration domain this must be called again.
   /// @param[in] type Integral type
   /// @param[in] marker MeshTags mapping entities to integrals
-  void set_domains(FormIntegrals::Type type,
-                   const mesh::MeshTags<int>& marker);
+  void set_domains(FormIntegrals::Type type, const mesh::MeshTags<int>& marker);
 
   /// If there exists a default integral of any type, set the list of
   /// entities for those integrals from the mesh topology. For cell

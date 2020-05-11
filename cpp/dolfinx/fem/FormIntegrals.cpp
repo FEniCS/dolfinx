@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Chris Richardson and Garth N. Wells
+// Copyright (C) 2018-2020 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -67,7 +67,7 @@ void FormIntegrals::set_tabulate_tensor(
 //-----------------------------------------------------------------------------
 int FormIntegrals::num_integrals(FormIntegrals::Type type) const
 {
-  return _integrals[static_cast<int>(type)].size();
+  return _integrals.at(static_cast<int>(type)).size();
 }
 //-----------------------------------------------------------------------------
 std::vector<int> FormIntegrals::integral_ids(FormIntegrals::Type type) const
@@ -84,7 +84,7 @@ const std::vector<std::int32_t>&
 FormIntegrals::integral_domains(FormIntegrals::Type type, int i) const
 {
   int type_index = static_cast<int>(type);
-  return _integrals[type_index].at(i).active_entities;
+  return _integrals.at(type_index).at(i).active_entities;
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_domains(FormIntegrals::Type type,
@@ -92,8 +92,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 {
   int type_index = static_cast<int>(type);
   std::vector<struct FormIntegrals::Integral>& integrals
-      = _integrals[type_index];
-
+      = _integrals.at(type_index);
   if (integrals.size() == 0)
     return;
 
@@ -102,7 +101,10 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   const int tdim = topology.dim();
   int dim = tdim;
   if (type == Type::exterior_facet or type == Type::interior_facet)
+  {
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     dim = tdim - 1;
+  }
   else if (type == Type::vertex)
     dim = 0;
 
@@ -123,17 +125,16 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
   }
 
-  // Get mesh function data array
+  // Get mesh tag data
   const std::vector<int>& values = marker.values();
   const std::vector<std::int32_t>& tagged_entities = marker.indices();
   assert(topology.index_map(dim));
-  const std::int32_t size_local = topology.index_map(dim)->size_local();
-  const auto entity_end = std::lower_bound(tagged_entities.begin(),
-                                           tagged_entities.end(), size_local);
+  const auto entity_end
+      = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
+                         topology.index_map(dim)->size_local());
 
   if (type == Type::exterior_facet)
   {
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(f_to_c);
 
@@ -196,7 +197,6 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
 {
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
-
   std::vector<struct FormIntegrals::Integral>& cell_integrals
       = _integrals[static_cast<int>(FormIntegrals::Type::cell)];
 
@@ -223,10 +223,11 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(topology.index_map(tdim - 1));
     std::set<std::int32_t> fwd_shared_facets;
+
     // Only need to consider shared facets when there are no ghost cells
     if (topology.index_map(tdim)->num_ghosts() == 0)
     {
-      fwd_shared_facets = std::set<std::int32_t>(
+      fwd_shared_facets.insert(
           topology.index_map(tdim - 1)->forward_indices().begin(),
           topology.index_map(tdim - 1)->forward_indices().end());
     }
