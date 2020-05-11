@@ -13,8 +13,7 @@ from dolfinx import cpp, fem
 
 def locate_entities(mesh: cpp.mesh.Mesh,
                     dim: int,
-                    marker: types.FunctionType,
-                    boundary_only: bool = False):
+                    marker: types.FunctionType):
     """Compute list of mesh entities satisfying a geometric marking function.
 
     Parameters
@@ -41,8 +40,7 @@ def locate_entities(mesh: cpp.mesh.Mesh,
 
 def locate_entities_boundary(mesh: cpp.mesh.Mesh,
                              dim: int,
-                             marker: types.FunctionType,
-                             boundary_only: bool = False):
+                             marker: types.FunctionType):
     """Compute list of mesh entities that are attached to an owned boundary facet
     and satisfy a geometric marking function.
 

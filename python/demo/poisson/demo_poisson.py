@@ -196,13 +196,12 @@ solve(a == L, u, bc, petsc_options={"ksp_type": "preonly",
 # for later visualization and also plot it using
 # the :py:func:`plot <dolfinx.common.plot.plot>` command: ::
 
-u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
 # Save solution in XDMF format
 with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
     file.write_mesh(mesh)
     file.write_function(u)
 
-# Plot solution
+# Update ghost entries and plot
+u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 dolfinx.plotting.plot(u)
 plt.show()

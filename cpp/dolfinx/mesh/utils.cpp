@@ -821,8 +821,6 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
   mesh.topology_mutable().create_connectivity(tdim - 1, 0);
   mesh.topology_mutable().create_connectivity(0, tdim);
   mesh.topology_mutable().create_connectivity(tdim, 0);
-  if (dim < tdim)
-    mesh.topology_mutable().create_connectivity(dim, 0);
 
   // Build set of vertices on boundary and set of boundary entities
   auto f_to_v = topology.connectivity(tdim - 1, 0);
