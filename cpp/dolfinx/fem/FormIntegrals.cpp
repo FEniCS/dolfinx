@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FormIntegrals.h"
+#include <algorithm>
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
@@ -97,10 +98,8 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     return;
 
   std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
-
   const mesh::Topology& topology = mesh->topology();
   const int tdim = topology.dim();
-
   int dim = tdim;
   if (type == Type::exterior_facet or type == Type::interior_facet)
     dim = tdim - 1;
@@ -127,12 +126,18 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   // Get mesh function data array
   const std::vector<int>& values = marker.values();
   const std::vector<std::int32_t>& tagged_entities = marker.indices();
+  assert(topology.index_map(dim));
+  const std::int32_t size_local = topology.index_map(dim)->size_local();
+  auto it = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
+                             size_local);
+  const std::size_t num_entities = std::distance(tagged_entities.cbegin(), it);
 
   if (type == Type::exterior_facet)
   {
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     std::set<std::int32_t> fwd_shared_facets;
     // Only need to consider shared facets when there are no ghost cells
+    assert(topology.index_map(tdim));
     if (topology.index_map(tdim)->num_ghosts() == 0)
     {
       fwd_shared_facets = std::set<std::int32_t>(
@@ -141,7 +146,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
 
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
-    for (std::size_t i = 0; i < tagged_entities.size(); ++i)
+    for (std::size_t i = 0; i < num_entities; ++i)
     {
       const std::int32_t facet_index = tagged_entities[i];
       // All "owned" facets connected to one cell, that are not shared,
@@ -161,7 +166,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
         = topology.connectivity(tdim - 1, tdim);
     assert(connectivity);
-    for (std::size_t i = 0; i < tagged_entities.size(); ++i)
+    for (std::size_t i = 0; i < num_entities; ++i)
     {
       const std::int32_t facet_index = tagged_entities[i];
       if (connectivity->num_links(facet_index) == 2)
@@ -176,7 +181,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   {
     // For cell and vertex integrals use all markers (but not on ghost
     // entities)
-    for (std::size_t i = 0; i < tagged_entities.size(); ++i)
+    for (std::size_t i = 0; i < num_entities; ++i)
     {
       const std::int32_t entity_index = tagged_entities[i];
       const auto it = id_to_integral.find(values[i]);
