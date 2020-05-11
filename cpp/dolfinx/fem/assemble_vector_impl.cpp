@@ -225,7 +225,7 @@ void _lift_bc_exterior_facets(
   // Only need to consider shared facets when there are no ghost cells
   if (topology.index_map(tdim)->num_ghosts() == 0)
   {
-    fwd_shared_facets = std::set<std::int32_t>(
+    fwd_shared_facets.insert(
         topology.index_map(tdim - 1)->forward_indices().begin(),
         topology.index_map(tdim - 1)->forward_indices().end());
   }
