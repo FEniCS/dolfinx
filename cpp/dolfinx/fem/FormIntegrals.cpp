@@ -128,52 +128,53 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   const std::vector<std::int32_t>& tagged_entities = marker.indices();
   assert(topology.index_map(dim));
   const std::int32_t size_local = topology.index_map(dim)->size_local();
-  auto it = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
-                             size_local);
-  const std::size_t num_entities = std::distance(tagged_entities.cbegin(), it);
+  const auto entity_end = std::lower_bound(tagged_entities.begin(),
+                                           tagged_entities.end(), size_local);
 
   if (type == Type::exterior_facet)
   {
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    std::set<std::int32_t> fwd_shared_facets;
-    // Only need to consider shared facets when there are no ghost cells
-    assert(topology.index_map(tdim));
-    if (topology.index_map(tdim)->num_ghosts() == 0)
-    {
-      fwd_shared_facets = std::set<std::int32_t>(
-          topology.index_map(tdim - 1)->forward_indices().begin(),
-          topology.index_map(tdim - 1)->forward_indices().end());
-    }
-
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
-    for (std::size_t i = 0; i < num_entities; ++i)
+    assert(f_to_c);
+
+    if (type == Type::exterior_facet)
     {
-      const std::int32_t facet_index = tagged_entities[i];
-      // All "owned" facets connected to one cell, that are not shared,
-      // should be external.
-      if (f_to_c->num_links(facet_index) == 1
-          and fwd_shared_facets.find(facet_index) == fwd_shared_facets.end())
+      // Only need to consider shared facets when there are no ghost cells
+      assert(topology.index_map(tdim));
+      std::set<std::int32_t> fwd_shared;
+      if (topology.index_map(tdim)->num_ghosts() == 0)
       {
-        const auto it = id_to_integral.find(values[i]);
-        if (it != id_to_integral.end())
-          integrals[it->second].active_entities.push_back(facet_index);
+        fwd_shared.insert(
+            topology.index_map(tdim - 1)->forward_indices().begin(),
+            topology.index_map(tdim - 1)->forward_indices().end());
+      }
+
+      for (auto f = tagged_entities.begin(); f != entity_end; ++f)
+      {
+        const std::size_t i = std::distance(tagged_entities.cbegin(), f);
+
+        // All "owned" facets connected to one cell, that are not shared,
+        // should be external.
+        if (f_to_c->num_links(*f) == 1
+            and fwd_shared.find(*f) == fwd_shared.end())
+        {
+          const auto it = id_to_integral.find(values[i]);
+          if (it != id_to_integral.end())
+            integrals[it->second].active_entities.push_back(*f);
+        }
       }
     }
-  }
-  else if (type == Type::interior_facet)
-  {
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
-        = topology.connectivity(tdim - 1, tdim);
-    assert(connectivity);
-    for (std::size_t i = 0; i < num_entities; ++i)
+    else if (type == Type::interior_facet)
     {
-      const std::int32_t facet_index = tagged_entities[i];
-      if (connectivity->num_links(facet_index) == 2)
+      for (auto f = tagged_entities.begin(); f != entity_end; ++f)
       {
-        const auto it = id_to_integral.find(values[i]);
-        if (it != id_to_integral.end())
-          integrals[it->second].active_entities.push_back(facet_index);
+        if (f_to_c->num_links(*f) == 2)
+        {
+          const std::size_t i = std::distance(tagged_entities.cbegin(), f);
+          const auto it = id_to_integral.find(values[i]);
+          if (it != id_to_integral.end())
+            integrals[it->second].active_entities.push_back(*f);
+        }
       }
     }
   }
@@ -181,12 +182,12 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   {
     // For cell and vertex integrals use all markers (but not on ghost
     // entities)
-    for (std::size_t i = 0; i < num_entities; ++i)
+    for (auto e = tagged_entities.begin(); e != entity_end; ++e)
     {
-      const std::int32_t entity_index = tagged_entities[i];
+      const std::size_t i = std::distance(tagged_entities.cbegin(), e);
       const auto it = id_to_integral.find(values[i]);
       if (it != id_to_integral.end())
-        integrals[it->second].active_entities.push_back(entity_index);
+        integrals[it->second].active_entities.push_back(*e);
     }
   }
 }
