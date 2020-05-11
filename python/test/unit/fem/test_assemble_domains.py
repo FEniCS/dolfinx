@@ -29,7 +29,10 @@ parametrize_ghost_mode = pytest.mark.parametrize("mode", [
                                           reason="Shared ghost modes fail in serial"))])
 
 
-def test_assembly_dx_domains(mesh):
+# @pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none])
+def test_assembly_dx_domains(mode):
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -88,7 +91,9 @@ def test_assembly_dx_domains(mesh):
     assert (s == pytest.approx(s2, 1.0e-12) and 0.5 == pytest.approx(s, 1.0e-12))
 
 
-def test_assembly_ds_domains(mesh):
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_assembly_ds_domains(mode):
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
