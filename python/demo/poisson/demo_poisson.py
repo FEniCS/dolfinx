@@ -179,10 +179,13 @@ L = inner(f, v) * dx + inner(g, v) * ds
 # <dolfinx.fem.solving.solve>` function with the arguments ``a == L``,
 # ``u`` and ``bc`` as follows: ::
 
+opts = PETSc.Options()
+opts["ksp_monitor"] = None
+opts["ksp_view"] = None
+
 # Compute solution
 u = Function(V)
-solve(a == L, u, bc, petsc_options={"ksp_type": "preonly",
-                                    "pc_type": "lu", "pc_factor_mat_solver_type": "superlu_dist"})
+solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 
 # The function ``u`` will be modified during the call to solve. The
