@@ -101,7 +101,7 @@ def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
 
 def BoxMesh(comm, points: typing.List[numpy.array], n: list,
             cell_type=cpp.mesh.CellType.tetrahedron,
-            ghost_mode=cpp.mesh.GhostMode.none):
+            ghost_mode=cpp.mesh.GhostMode.shared_facet):
     """Create box mesh
 
     Parameters
@@ -123,7 +123,7 @@ def BoxMesh(comm, points: typing.List[numpy.array], n: list,
 
 
 def UnitCubeMesh(comm, nx, ny, nz, cell_type=cpp.mesh.CellType.tetrahedron,
-                 ghost_mode=cpp.mesh.GhostMode.none):
+                 ghost_mode=cpp.mesh.GhostMode.shared_facet):
     """Create a mesh of a unit cube
 
     Parameters
