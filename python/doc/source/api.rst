@@ -70,7 +70,6 @@ dolfinx.function module
 
    dolfinx.function
    dolfinx.functionspace
-   dolfinx.specialfunctions
 
 dolfinx.generation module
 ------------------------

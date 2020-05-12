@@ -17,10 +17,11 @@ install-python-components: &install-python-components
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
   command: |
-    python3 -m flake8 python/dolfinx
-    python3 -m flake8 python/dolfinx_utils
-    python3 -m flake8 python/demo
-    python3 -m flake8 python/test
+    cd python/
+    python3 -m flake8 dolfinx
+    python3 -m flake8 dolfinx_utils
+    python3 -m flake8 demo
+    python3 -m flake8 test
 
 build-documentation-cpp: &build-documentation-cpp
   name: Build documentation (C++)
