@@ -162,10 +162,10 @@ public:
   {
     assert(local_index >= 0);
     const std::int32_t local_size
-        = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
+        = static_cast<const int32_t>(_local_range[1] - _local_range[0]);
     if (local_index < local_size)
     {
-      const std::int64_t global_offset = _all_ranges[_myrank];
+      const std::int64_t global_offset = _local_range[0];
       return global_offset + local_index;
     }
     else
@@ -187,9 +187,6 @@ public:
   /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
-  /// Get MPI rank that owns index (global block index)
-  int owner(std::int64_t global_index) const;
-
   /// Return array of global indices for all indices on this process,
   /// including ghosts
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1>
@@ -199,7 +196,7 @@ public:
   /// @return The communicator on which the IndexMap is defined
   MPI_Comm mpi_comm() const;
 
-  /// Neighbors for neigborhood communicator
+  /// Neighbors for neighborhood communicator
   const std::vector<std::int32_t>& neighbours() const;
 
   /// @todo Aim to remove this function
@@ -283,7 +280,11 @@ public:
 private:
   int _block_size;
 
-  // MPI Communicator
+  std::array<std::int64_t , 2> _local_range{{0, 0}};
+
+  std::int64_t _size_global;
+
+    // MPI Communicator
   dolfinx::MPI::Comm _mpi_comm;
 
   // MPI Communicator for neighbourhood only
@@ -295,10 +296,6 @@ private:
   // Cache rank on mpi_comm (otherwise calls to MPI_Comm_rank can be
   // excessive)
   int _myrank;
-
-  // FIXME: This could get big for large process counts. Compute on-demand.
-  // Range of ownership of index for all processes
-  std::vector<std::int64_t> _all_ranges;
 
   // Local-to-global map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
