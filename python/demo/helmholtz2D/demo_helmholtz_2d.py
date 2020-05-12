@@ -18,7 +18,7 @@ from dolfinx import (Function, FunctionSpace, UnitSquareMesh,
                      has_petsc_complex, solve)
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.io import XDMFFile
-from ufl import TestFunction, TrialFunction, dx, grad, inner, FacetNormal
+from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
 
 # wavenumber
 k0 = 4 * np.pi

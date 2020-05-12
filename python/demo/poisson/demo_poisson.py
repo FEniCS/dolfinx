@@ -74,18 +74,19 @@
 #
 # First, the :py:mod:`dolfinx` module is imported: ::
 
-import dolfinx
-import dolfinx.plotting
 import matplotlib.pyplot as plt
 import numpy as np
+from mpi4py import MPI
+from petsc4py import PETSc
+
+import dolfinx
+import dolfinx.plotting
 import ufl
 from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh, solve
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import ds, dx, grad, inner
 
 # We begin by defining a mesh of the domain and a finite element

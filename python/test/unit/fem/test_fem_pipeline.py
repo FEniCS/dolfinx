@@ -9,14 +9,15 @@ import time
 
 import numpy as np
 import pytest
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import ufl
 from dolfinx import DirichletBC, Function, FunctionSpace, cpp, fem, geometry
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
