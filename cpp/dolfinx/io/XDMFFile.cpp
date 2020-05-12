@@ -165,7 +165,7 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
                                const std::string xpath) const
 {
   // Read mesh data
-  auto [cell_type, x, cells] = XDMFFile::read_mesh_data(name, xpath);
+  const auto [cell_type, x, cells] = XDMFFile::read_mesh_data(name, xpath);
 
   // Create mesh
   graph::AdjacencyList<std::int64_t> cells_adj(cells);
