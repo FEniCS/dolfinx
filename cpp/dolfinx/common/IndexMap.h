@@ -63,7 +63,7 @@ public:
   /// @param[in] ghost_owner_global
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<std::int64_t>& ghosts, int block_size,
-           std::vector<int> ghost_owner_global = {});
+           std::vector<int> ghost_owner_global);
 
   /// Create Index map with local_size owned blocks on this process, and
   /// blocks have size block_size.
@@ -79,7 +79,7 @@ public:
       MPI_Comm mpi_comm, std::int32_t local_size,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
           ghosts,
-      int block_size, std::vector<int> ghost_owner_global = {});
+      int block_size, std::vector<int> ghost_owner_global);
 
   /// Copy constructor
   IndexMap(const IndexMap& map) = delete;

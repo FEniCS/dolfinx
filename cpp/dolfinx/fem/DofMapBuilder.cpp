@@ -543,7 +543,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
 
   // Create IndexMap for dofs range on this process
   auto index_map = std::make_unique<common::IndexMap>(
-      comm, num_owned, local_to_global_unowned, block_size);
+      comm, num_owned, local_to_global_unowned, block_size, std::vector<int>());
   assert(index_map);
 
   // FIXME: There is an assumption here on the dof order for an element.

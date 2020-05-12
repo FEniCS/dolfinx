@@ -582,7 +582,8 @@ mesh::create_topology(MPI_Comm comm,
 
   // Vertex IndexMap
   auto index_map_v
-      = std::make_shared<common::IndexMap>(comm, nlocal, ghost_vertices, 1);
+      = std::make_shared<common::IndexMap>(comm, nlocal, ghost_vertices, 1,
+                                           std::vector<int>());
   topology.set_index_map(0, index_map_v);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());

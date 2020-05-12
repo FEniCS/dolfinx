@@ -357,7 +357,8 @@ get_local_indexing(
   MPI_Comm_free(&neighbour_comm);
 
   std::shared_ptr<common::IndexMap> index_map
-      = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
+      = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1,
+                                           std::vector<int>());
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());

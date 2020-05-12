@@ -69,9 +69,9 @@ SparsityPattern::SparsityPattern(
 
   // Create new IndexMaps
   _index_maps[0] = std::make_shared<common::IndexMap>(
-      comm, local_offset0.back(), ghosts0, 1);
+      comm, local_offset0.back(), ghosts0, 1, std::vector<int>());
   _index_maps[1] = std::make_shared<common::IndexMap>(
-      comm, local_offset1.back(), ghosts1, 1);
+      comm, local_offset1.back(), ghosts1, 1, std::vector<int>());
 
   // Size cache arrays
   const std::int32_t size_row = local_offset0.back() + ghosts0.size();
