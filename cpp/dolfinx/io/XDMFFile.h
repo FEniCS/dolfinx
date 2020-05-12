@@ -32,8 +32,9 @@ class Function;
 
 namespace mesh
 {
-class Mesh;
 class Geometry;
+enum class GhostMode : int;
+class Mesh;
 template <typename T>
 class MeshTags;
 } // namespace mesh
@@ -97,12 +98,14 @@ public:
 
   /// Read in Mesh
   /// @param[in] element Element that describes the geometry of a cell
+  /// @param[in] mode The type of ghosting/halo to use for the mesh when
+  ///   distributed in parallel
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
   mesh::Mesh read_mesh(const fem::CoordinateElement& element,
-                       const std::string name,
+                       const mesh::GhostMode& mode, const std::string name,
                        const std::string xpath = "/Xdmf/Domain") const;
 
   /// Read in the data for Mesh
@@ -119,8 +122,8 @@ public:
                  const std::string xpath = "/Xdmf/Domain") const;
 
   /// Write Function
-  /// @param[in] function
-  /// @param[in] t Time
+  /// @param[in] function The Function to write to file
+  /// @param[in] t The time stamp to associate with the Function
   /// @param[in] mesh_xpath XPath for a Grid under which Function will
   ///   be inserted
   void write_function(const function::Function& function, const double t,
@@ -138,7 +141,7 @@ public:
                       const std::string xpath = "/Xdmf/Domain");
 
   /// Read MeshTags
-  /// @param[in] mesh
+  /// @param[in] mesh The Mesh that the data is defined on
   /// @param[in] name
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
   mesh::MeshTags<std::int32_t>
