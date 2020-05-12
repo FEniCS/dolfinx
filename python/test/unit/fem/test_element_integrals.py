@@ -12,12 +12,11 @@ import numpy as np
 import pytest
 from mpi4py import MPI
 
-from dolfinx import (FacetNormal, Function, FunctionSpace, Mesh,
-                     VectorFunctionSpace, fem)
+from dolfinx import Function, FunctionSpace, Mesh, VectorFunctionSpace, fem
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import MeshTags
 from dolfinx_utils.test.skips import skip_in_parallel
-from ufl import TestFunction, TrialFunction, ds, dS, inner
+from ufl import FacetNormal, TestFunction, TrialFunction, ds, dS, inner
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
