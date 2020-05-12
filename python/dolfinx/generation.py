@@ -18,7 +18,7 @@ __all__ = [
 ]
 
 
-def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.none):
+def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.shared_facet):
     """Create an interval mesh
 
     Parameters
