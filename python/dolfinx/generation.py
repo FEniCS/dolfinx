@@ -18,7 +18,7 @@ __all__ = [
 ]
 
 
-def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.shared_facet):
+def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.none):
     """Create an interval mesh
 
     Parameters
@@ -101,7 +101,7 @@ def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
 
 def BoxMesh(comm, points: typing.List[numpy.array], n: list,
             cell_type=cpp.mesh.CellType.tetrahedron,
-            ghost_mode=cpp.mesh.GhostMode.shared_facet):
+            ghost_mode=cpp.mesh.GhostMode.none):
     """Create box mesh
 
     Parameters
@@ -123,7 +123,7 @@ def BoxMesh(comm, points: typing.List[numpy.array], n: list,
 
 
 def UnitCubeMesh(comm, nx, ny, nz, cell_type=cpp.mesh.CellType.tetrahedron,
-                 ghost_mode=cpp.mesh.GhostMode.shared_facet):
+                 ghost_mode=cpp.mesh.GhostMode.none):
     """Create a mesh of a unit cube
 
     Parameters
