@@ -161,8 +161,7 @@ public:
   std::int64_t local_to_global(std::int32_t local_index) const
   {
     assert(local_index >= 0);
-    const std::int32_t local_size
-        = static_cast<const int32_t>(_local_range[1] - _local_range[0]);
+    const std::int32_t local_size = (_local_range[1] - _local_range[0]);
     if (local_index < local_size)
     {
       const std::int64_t global_offset = _local_range[0];

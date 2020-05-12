@@ -310,7 +310,7 @@ IndexMap::IndexMap(
     _ghost_owners[j] = np;
 
     // Local on owning process
-    out_indices[disp[np]] = _ghosts[j] - _local_range[0];
+    out_indices[disp[np]] = _ghosts[j];
     disp[np] += 1;
   }
 
@@ -322,6 +322,8 @@ IndexMap::IndexMap(
       in_edges_num.data(), disp_in.data(), MPI_INT, neighbour_comm);
 
   _forward_indices = std::move(indices_in);
+  for (auto& value : _forward_indices)
+    value -= offset;
   _forward_sizes = std::move(in_edges_num);
 
   MPI_Comm_free(&neighbour_comm);
