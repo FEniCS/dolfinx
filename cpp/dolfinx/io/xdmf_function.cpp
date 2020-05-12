@@ -190,7 +190,6 @@ void xdmf_function::add_function(MPI_Comm comm, const function::Function& u,
     if (ierr != 0)
       la::petsc_error(ierr, __FILE__, "VecRestoreArrayRead");
 
-    const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
 #ifdef PETSC_USE_COMPLEX
     // FIXME: Avoid copies by writing directly a compound data
     std::vector<double> component_local_data(local_data.size());
@@ -209,15 +208,16 @@ void xdmf_function::add_function(MPI_Comm comm, const function::Function& u,
     const std::int64_t offset_data
         = dolfinx::MPI::global_offset(comm, component_local_data.size(), true);
     xdmf_utils::add_data_item(
-        attribute_node, h5_id, dataset_name, component_local_data, offset_data,
-        {(std::int64_t)u_vector.size(), 1}, "Float", use_mpi_io);
+        attribute_node, h5_id, dataset_name + "/values", component_local_data,
+        offset_data, {(std::int64_t)u_vector.size(), 1}, "Float", use_mpi_io);
 #else
     // Add data item
     const std::int64_t offset_real
         = dolfinx::MPI::global_offset(comm, local_data.size(), true);
-    xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name, local_data,
-                              offset_real, {(std::int64_t)u_vector.size(), 1},
-                              "Float", use_mpi_io);
+    xdmf_utils::add_data_item(
+        attribute_node, h5_id, dataset_name + "/values", local_data,
+        offset_real, {(std::int64_t)u_vector.size(), 1}, "Float", use_mpi_io);
+
 #endif
   }
 }
