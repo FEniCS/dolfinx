@@ -334,7 +334,7 @@ IndexMap::IndexMap(
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
 {
-  return {{_local_range[0], _local_range[1]}};
+  return _local_range;
 }
 //-----------------------------------------------------------------------------
 int IndexMap::block_size() const { return _block_size; }
