@@ -19,7 +19,7 @@ def test_RefineUnitSquareMesh():
     assert mesh.topology.index_map(2).size_global == 280
 
 
-def xtest_RefineUnitCubeMesh_repartition():
+def test_RefineUnitCubeMesh_repartition():
     """Refine mesh of unit cube."""
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
