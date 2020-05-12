@@ -122,8 +122,8 @@ public:
                  const std::string xpath = "/Xdmf/Domain") const;
 
   /// Write Function
-  /// @param[in] function
-  /// @param[in] t Time
+  /// @param[in] function The Function to write to file
+  /// @param[in] t The time stamp to associate with the Function
   /// @param[in] mesh_xpath XPath for a Grid under which Function will
   ///   be inserted
   void write_function(const function::Function& function, const double t,
@@ -141,7 +141,7 @@ public:
                       const std::string xpath = "/Xdmf/Domain");
 
   /// Read MeshTags
-  /// @param[in] mesh
+  /// @param[in] mesh The Mesh that the data is defined on
   /// @param[in] name
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
   mesh::MeshTags<std::int32_t>
