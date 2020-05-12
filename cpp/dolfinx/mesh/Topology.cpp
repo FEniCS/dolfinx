@@ -323,7 +323,8 @@ mesh::create_topology(MPI_Comm comm,
   if (ghost_mode == mesh::GhostMode::none)
   {
     index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, std::vector<std::int64_t>(), 1);
+        comm, num_local_cells, std::vector<std::int64_t>(), 1,
+        std::vector<int>());
   }
   else
   {
@@ -332,7 +333,8 @@ mesh::create_topology(MPI_Comm comm,
         = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,
                                                      ghost_owners);
     index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells,
-                                                     cell_ghost_indices, 1);
+                                                     cell_ghost_indices, 1,
+                                                     ghost_owners);
   }
 
   // Create map from existing global vertex index to local index,
