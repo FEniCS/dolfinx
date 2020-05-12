@@ -60,6 +60,7 @@ public:
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] block_size The block size of the IndexMap
+  /// @param[in] ghost_owner_global
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<std::int64_t>& ghosts, int block_size,
            std::vector<int> ghost_owner_global = {});
@@ -73,6 +74,7 @@ public:
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] block_size The block size of the IndexMap
+  /// @param[in] ghost_owner_global
   IndexMap(
       MPI_Comm mpi_comm, std::int32_t local_size,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
