@@ -439,7 +439,7 @@ def test_assembly_solve_block():
     dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
     dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet),
     dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
-    dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, , ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet)
+    dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet)
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
