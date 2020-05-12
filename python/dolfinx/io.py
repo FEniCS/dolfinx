@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2018 Chris N. Richardson, Garth N. Wells and Michal Habera
+# Copyright (C) 2017-2020 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -40,7 +40,7 @@ class XDMFFile(cpp.io.XDMFFile):
         u_cpp = getattr(u, "_cpp_object", u)
         super().write_function(u_cpp, t, mesh_xpath)
 
-    def read_mesh(self, name="mesh", xpath="/Xdmf/Domain"):
+    def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.none, name="mesh", xpath="/Xdmf/Domain"):
         # Read mesh data from file
         cell_type, x, cells = super().read_mesh_data(name, xpath)
 
@@ -50,7 +50,7 @@ class XDMFFile(cpp.io.XDMFFile):
         cmap = fem.create_coordinate_map(domain)
 
         # Build the mesh
-        mesh = cpp.mesh.create(self.comm(), cpp.graph.AdjacencyList64(cells), cmap, x, cpp.mesh.GhostMode.none)
+        mesh = cpp.mesh.create(self.comm(), cpp.graph.AdjacencyList64(cells), cmap, x, ghost_mode)
         mesh.name = name
         domain._ufl_cargo = mesh
         mesh._ufl_domain = domain

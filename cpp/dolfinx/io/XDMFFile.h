@@ -32,8 +32,9 @@ class Function;
 
 namespace mesh
 {
-class Mesh;
 class Geometry;
+enum class GhostMode : int;
+class Mesh;
 template <typename T>
 class MeshTags;
 } // namespace mesh
@@ -102,7 +103,7 @@ public:
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
   mesh::Mesh read_mesh(const fem::CoordinateElement& element,
-                       const std::string name,
+                       const mesh::GhostMode& mode, const std::string name,
                        const std::string xpath = "/Xdmf/Domain") const;
 
   /// Read in the data for Mesh
