@@ -17,7 +17,6 @@ import dolfinx
 import ufl
 from dolfinx import function
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
-from dolfinx.specialfunctions import SpatialCoordinate
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from ufl import derivative, ds, dx, inner
 
@@ -43,7 +42,7 @@ def test_assemble_functional_dx(mode):
     value = dolfinx.fem.assemble_scalar(M)
     value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)
     assert value == pytest.approx(1.0, 1e-12)
-    x = SpatialCoordinate(mesh)
+    x = ufl.SpatialCoordinate(mesh)
     M = x[0] * dx(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
     value = mesh.mpi_comm().allreduce(value, op=MPI.SUM)

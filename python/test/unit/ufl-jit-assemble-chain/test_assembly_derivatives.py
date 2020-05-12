@@ -7,16 +7,16 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import math
+
 import numpy
 import pytest
 from mpi4py import MPI
 
-from dolfinx import FacetNormal, RectangleMesh, UnitIntervalMesh
-from dolfinx.specialfunctions import SpatialCoordinate
-from ufl import (acos, as_matrix, as_vector, asin, atan, cos, cross, det, dev,
-                 diff, div, dot, ds, dx, elem_div, elem_mult, elem_op,
-                 elem_pow, erf, exp, grad, inner, ln, outer, sin, skew, sym,
-                 tan, tr)
+from dolfinx import RectangleMesh, UnitIntervalMesh
+from ufl import (FacetNormal, SpatialCoordinate, acos, as_matrix, as_vector,
+                 asin, atan, cos, cross, det, dev, diff, div, dot, ds, dx,
+                 elem_div, elem_mult, elem_op, elem_pow, erf, exp, grad, inner,
+                 ln, outer, sin, skew, sym, tan, tr)
 
 
 @pytest.mark.skip
