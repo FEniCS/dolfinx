@@ -84,7 +84,6 @@ from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
-from dolfinx.specialfunctions import SpatialCoordinate
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import ds, dx, grad, inner
@@ -163,7 +162,7 @@ bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets))
 # Define variational problem
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
-x = SpatialCoordinate(mesh)
+x = ufl.SpatialCoordinate(mesh)
 f = 10 * ufl.exp(-((x[0] - 0.5)**2 + (x[1] - 0.5)**2) / 0.02)
 g = ufl.sin(5 * x[0])
 a = inner(grad(u), grad(v)) * dx

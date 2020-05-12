@@ -13,7 +13,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import CellDiameter, FacetNormal, Function, FunctionSpace
+from dolfinx import Function, FunctionSpace
 # from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import assemble_matrix, assemble_scalar, assemble_vector
 from dolfinx.io import XDMFFile
@@ -35,6 +35,7 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     degree of the Lagrange function space.
 
     """
+
     with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
 
@@ -54,8 +55,8 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     f = - div(k * grad(u_exact))
 
     # Mesh normals and element size
-    n = FacetNormal(mesh)
-    h = CellDiameter(mesh)
+    n = ufl.FacetNormal(mesh)
+    h = ufl.CellDiameter(mesh)
     h_avg = (h("+") + h("-")) / 2.0
 
     # Penalty parameter
