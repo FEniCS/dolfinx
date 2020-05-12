@@ -191,11 +191,12 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
-                   const std::vector<std::int64_t>& ghosts, int block_size)
+                   const std::vector<std::int64_t>& ghosts, int block_size,
+                   std::vector<int> ghost_owner_global)
     : IndexMap(mpi_comm, local_size,
                Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
                    ghosts.data(), ghosts.size()),
-               block_size)
+               block_size, ghost_owner_global)
 {
   // Do nothing
 }
@@ -204,7 +205,7 @@ IndexMap::IndexMap(
     MPI_Comm mpi_comm, std::int32_t local_size,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
         ghosts,
-    int block_size)
+    int block_size, std::vector<int> ghost_owner_global)
     : _block_size(block_size), _mpi_comm(mpi_comm),
       _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts),
       _ghost_owners(ghosts.size())
@@ -213,7 +214,9 @@ IndexMap::IndexMap(
 
   int mpi_size = -1;
   MPI_Comm_size(_mpi_comm.comm(), &mpi_size);
-  auto ghost_owner_global = get_global_ghost_owners(_mpi_comm, local_size, _ghosts);
+
+  if (ghost_owner_global.empty())
+    ghost_owner_global = get_global_ghost_owners(_mpi_comm, local_size, _ghosts);
 
   std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
   for (int i = 0; i < ghosts.size(); ++i)
