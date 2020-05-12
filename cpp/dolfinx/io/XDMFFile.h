@@ -98,6 +98,8 @@ public:
 
   /// Read in Mesh
   /// @param[in] element Element that describes the geometry of a cell
+  /// @param[in] mode The type of ghosting/halo to use for the mesh when
+  ///   distributed in parallel
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @return A Mesh distributed on the same communicator as the
