@@ -29,7 +29,7 @@ def cell_types_2D():
 def cell_types_3D():
     return [CellType.tetrahedron, CellType.hexahedron]
 
-# VTK file options
+
 @pytest.fixture
 def file_options():
     return ["ascii", "base64", "compressed"]

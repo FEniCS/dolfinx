@@ -161,16 +161,16 @@ void XDMFFile::write_geometry(const mesh::Geometry& geometry,
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
+                               const mesh::GhostMode& mode,
                                const std::string name,
                                const std::string xpath) const
 {
   // Read mesh data
-  auto [cell_type, x, cells] = XDMFFile::read_mesh_data(name, xpath);
+  const auto [cell_type, x, cells] = XDMFFile::read_mesh_data(name, xpath);
 
   // Create mesh
   graph::AdjacencyList<std::int64_t> cells_adj(cells);
-  mesh::Mesh mesh = mesh::create(_mpi_comm.comm(), cells_adj, element, x,
-                                 mesh::GhostMode::none);
+  mesh::Mesh mesh = mesh::create(_mpi_comm.comm(), cells_adj, element, x, mode);
   mesh.name = name;
   return mesh;
 }

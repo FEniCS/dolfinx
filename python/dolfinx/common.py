@@ -7,9 +7,8 @@
 import functools
 
 from dolfinx import cpp
-from dolfinx.cpp.common import (git_commit_hash, has_debug,  # noqa
-                               has_parmetis, has_kahip,
-                               has_petsc_complex)
+from dolfinx.cpp.common import (git_commit_hash, has_debug, has_kahip,  # noqa
+                                has_parmetis, has_petsc_complex)
 
 TimingType = cpp.common.TimingType
 
