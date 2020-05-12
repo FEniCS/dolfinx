@@ -91,9 +91,10 @@ def test_assemble_derivatives():
 
 @skip_in_parallel
 @skip_if_complex
-def test_eigen_assembly():
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_eigen_assembly(mode):
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
@@ -239,11 +240,12 @@ def test_assemble_manifold():
     assert numpy.isclose(A.norm(), 25.0199)
 
 
-def test_matrix_assembly_block():
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
 
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -332,11 +334,12 @@ def test_matrix_assembly_block():
     assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
 
 
-def test_assembly_solve_block():
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same.
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 31)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V0 = dolfinx.function.FunctionSpace(mesh, P)
     V1 = V0.clone()
@@ -478,8 +481,10 @@ def test_assembly_solve_block():
 
 
 @pytest.mark.parametrize("mesh", [
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 11),
-    UnitCubeMesh(MPI.COMM_WORLD, 3, 7, 3)
+    UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
+    UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet),
+    UnitCubeMesh(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
+    UnitCubeMesh(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet)
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
@@ -662,16 +667,12 @@ def test_assembly_solve_taylor_hood(mesh):
 
 
 def test_basic_interior_facet_assembly():
-    ghost_mode = dolfinx.cpp.mesh.GhostMode.none
-    if (MPI.COMM_WORLD.size > 1):
-        ghost_mode = dolfinx.cpp.mesh.GhostMode.shared_facet
-
     mesh = dolfinx.RectangleMesh(MPI.COMM_WORLD,
                                  [numpy.array([0.0, 0.0, 0.0]),
                                   numpy.array([1.0, 1.0, 0.0])],
                                  [5, 5],
                                  cell_type=dolfinx.cpp.mesh.CellType.triangle,
-                                 ghost_mode=ghost_mode)
+                                 ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet)
 
     V = function.FunctionSpace(mesh, ("DG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -688,14 +689,15 @@ def test_basic_interior_facet_assembly():
     assert isinstance(b, PETSc.Vec)
 
 
-def test_basic_assembly_constant():
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_basic_assembly_constant(mode):
     """Tests assembly with Constant
 
     The following test should be sensitive to order of flattening the
     matrix-valued constant.
 
     """
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5, ghost_mode=mode)
     V = function.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
