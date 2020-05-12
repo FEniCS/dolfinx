@@ -51,8 +51,6 @@ from .fem.solving import solve
 
 from .function import (FunctionSpace, VectorFunctionSpace,
                        TensorFunctionSpace, Constant, Function)
-from .specialfunctions import (FacetNormal, CellVolume, CellNormal,
-                               CellDiameter, Circumradius)
 
 from .mesh import MeshTags
 
