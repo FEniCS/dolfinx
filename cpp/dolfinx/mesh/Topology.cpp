@@ -332,9 +332,8 @@ mesh::create_topology(MPI_Comm comm,
     const std::vector<std::int64_t> cell_ghost_indices
         = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,
                                                      ghost_owners);
-    index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells,
-                                                     cell_ghost_indices, 1,
-                                                     ghost_owners);
+    index_map_c = std::make_shared<common::IndexMap>(
+        comm, num_local_cells, cell_ghost_indices, 1, ghost_owners);
   }
 
   // Create map from existing global vertex index to local index,
@@ -452,12 +451,19 @@ mesh::create_topology(MPI_Comm comm,
     qsend_data.insert(qsend_data.end(), q.begin(), q.end());
     qsend_offsets.push_back(qsend_data.size());
   }
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
-      = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets,
-                                          qsend_data)
-            .array();
+  auto recv_data = dolfinx::MPI::neighbor_all_to_all(neighbour_comm,
+                                                     qsend_offsets, qsend_data);
+
+  auto& recv_pairs = recv_data.array();
+  auto& recv_offsets = recv_data.offsets();
+
+  // Convert eigen to std::vector, size equal to the number of
+  // neighbors
+  std::vector<int> offsets(recv_offsets.data(),
+                           recv_offsets.data() + recv_offsets.rows());
 
   std::vector<std::int64_t> ghost_vertices;
+  std::vector<int> ghost_vertices_owners;
   // Unpack received data and make list of ghosts
   for (int i = 0; i < recv_pairs.rows(); i += 2)
   {
@@ -467,6 +473,9 @@ mesh::create_topology(MPI_Comm comm,
     assert(it->second == -1);
     it->second = c++;
     ghost_vertices.push_back(recv_pairs[i + 1]);
+    const auto pos = std::upper_bound(offsets.begin(), offsets.end(), i);
+    const int owner = pos - offsets.begin() - 1;
+    ghost_vertices_owners.push_back(neighbours[owner]);
   }
 
   if (ghost_mode != mesh::GhostMode::none)
@@ -531,10 +540,14 @@ mesh::create_topology(MPI_Comm comm,
       }
     }
 
-    Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
-        = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
-                                            send_pair_data)
-              .array();
+    auto recv_data = dolfinx::MPI::neighbor_all_to_all(
+        neighbour_comm, send_offsets, send_pair_data);
+
+    auto& recv_pairs = recv_data.array();
+    auto& recv_offsets = recv_data.offsets();
+
+    std::vector<int> offsets(recv_offsets.data(),
+                             recv_offsets.data() + recv_offsets.rows());
 
     // Unpack received data and add to ghosts
     for (int i = 0; i < recv_pairs.rows(); i += 2)
@@ -546,6 +559,9 @@ mesh::create_topology(MPI_Comm comm,
       {
         it->second = c++;
         ghost_vertices.push_back(recv_pairs[i + 1]);
+        const auto pos = std::upper_bound(offsets.begin(), offsets.end(), i);
+        const int owner = pos - offsets.begin() - 1;
+        ghost_vertices_owners.push_back(neighbours[owner]);
       }
     }
   }
@@ -581,9 +597,8 @@ mesh::create_topology(MPI_Comm comm,
   const int tdim = topology.dim();
 
   // Vertex IndexMap
-  auto index_map_v
-      = std::make_shared<common::IndexMap>(comm, nlocal, ghost_vertices, 1,
-                                           std::vector<int>());
+  auto index_map_v = std::make_shared<common::IndexMap>(
+      comm, nlocal, ghost_vertices, 1, ghost_vertices_owners);
   topology.set_index_map(0, index_map_v);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());
