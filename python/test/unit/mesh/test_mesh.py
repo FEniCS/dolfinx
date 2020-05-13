@@ -427,24 +427,6 @@ def test_small_mesh():
     assert mesh1d.topology.index_map(gdim).size_global == 2
 
 
-def test_topology_surface(cube):
-    tdim = cube.topology.dim
-    cube.topology.create_connectivity(tdim - 1, tdim)
-
-    surface_vertex_markers = cube.topology.on_boundary(0)
-    assert surface_vertex_markers
-
-    cube.topology.create_entities(1)
-    cube.topology.create_connectivity(2, 1)
-    surface_edge_markers = cube.topology.on_boundary(1)
-    assert surface_edge_markers
-
-    surface_facet_markers = cube.topology.on_boundary(2)
-    sf_count = np.count_nonzero(np.array(surface_facet_markers))
-    n = 3
-    assert cube.mpi_comm().allreduce(sf_count, MPI.SUM) == n * n * 12
-
-
 def test_UnitHexMesh_assemble():
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
     vol = assemble_scalar(1 * dx(mesh))

@@ -71,7 +71,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
         file.write_mesh(mesh)
 
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
-        mesh2 = file.read_mesh("square")
+        mesh2 = file.read_mesh(name="square")
 
     assert mesh2.name == mesh.name
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global

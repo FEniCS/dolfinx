@@ -13,7 +13,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
-from dolfinx.mesh import locate_entities_geometrical
+from dolfinx.mesh import locate_entities_boundary
 import ufl
 from ufl import derivative, dx, inner
 
@@ -59,7 +59,7 @@ def test_matrix_assembly_block():
         return numpy.cos(x[0]) * numpy.cos(x[1])
 
     facetdim = mesh.topology.dim - 1
-    bndry_facets = locate_entities_geometrical(mesh, facetdim, boundary, boundary_only=True)
+    bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
 
     u_bc = dolfinx.function.Function(V1)
     u_bc.interpolate(bc_value)
@@ -266,7 +266,7 @@ def test_assembly_solve_block():
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
     facetdim = mesh.topology.dim - 1
-    bndry_facets = locate_entities_geometrical(mesh, facetdim, boundary, boundary_only=True)
+    bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
 
     u_bc0 = dolfinx.function.Function(V0)
     u_bc0.interpolate(bc_val_0)
@@ -436,8 +436,10 @@ def test_assembly_solve_block():
 
 
 @pytest.mark.parametrize("mesh", [
-    dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11),
-    dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4)
+    dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
+    dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet),
+    dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
+    dolfinx.generation.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet)
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
@@ -470,8 +472,8 @@ def test_assembly_solve_taylor_hood(mesh):
     u_bc_1.interpolate(lambda x: numpy.row_stack(tuple(numpy.sin(x[j]) for j in range(gdim))))
 
     facetdim = mesh.topology.dim - 1
-    bndry_facets0 = locate_entities_geometrical(mesh, facetdim, boundary0, boundary_only=True)
-    bndry_facets1 = locate_entities_geometrical(mesh, facetdim, boundary1, boundary_only=True)
+    bndry_facets0 = locate_entities_boundary(mesh, facetdim, boundary0)
+    bndry_facets1 = locate_entities_boundary(mesh, facetdim, boundary1)
 
     bdofs0 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets0)
     bdofs1 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets1)

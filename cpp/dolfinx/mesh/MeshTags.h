@@ -93,7 +93,8 @@ public:
     return indices;
   }
 
-  /// Indices of tagged mesh entities (local-to-process)
+  /// Indices of tagged mesh entities (local-to-process). The indices
+  /// are sorted.
   const std::vector<std::int32_t>& indices() const { return _indices; }
 
   /// Values attached to mesh entities

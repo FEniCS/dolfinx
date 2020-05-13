@@ -90,7 +90,7 @@ void _lift_bc_cells(
   const int tdim = mesh->topology().dim();
   auto map = mesh->topology().index_map(tdim);
   assert(map);
-  const int num_cells = map->size_local() + map->num_ghosts();
+  const int num_cells = map->size_local();
   for (int c = 0; c < num_cells; ++c)
   {
     // Get dof maps for cell
@@ -225,7 +225,7 @@ void _lift_bc_exterior_facets(
   // Only need to consider shared facets when there are no ghost cells
   if (topology.index_map(tdim)->num_ghosts() == 0)
   {
-    fwd_shared_facets = std::set<std::int32_t>(
+    fwd_shared_facets.insert(
         topology.index_map(tdim - 1)->forward_indices().begin(),
         topology.index_map(tdim - 1)->forward_indices().end());
   }
