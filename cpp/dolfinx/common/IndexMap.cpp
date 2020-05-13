@@ -207,7 +207,7 @@ IndexMap::IndexMap(
     MPI_Comm mpi_comm, std::int32_t local_size,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
         ghosts,
-    int block_size, std::vector<int> ghost_owner_global)
+    int block_size, std::vector<int> ghost_owner_global1)
     : _block_size(block_size), _mpi_comm(mpi_comm),
       _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts),
       _ghost_owners(ghosts.size())
@@ -216,9 +216,11 @@ IndexMap::IndexMap(
   int mpi_size = -1;
   MPI_Comm_size(_mpi_comm.comm(), &mpi_size);
 
-  if (ghost_owner_global.empty())
-    ghost_owner_global
-        = get_global_ghost_owners(_mpi_comm, local_size, _ghosts);
+  // if (ghost_owner_global.empty())
+  auto ghost_owner_global = get_global_ghost_owners(_mpi_comm, local_size, _ghosts);
+
+  if (!ghost_owner_global1.empty())
+    assert(ghost_owner_global1 == ghost_owner_global);
 
   std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
   for (int i = 0; i < ghosts.size(); ++i)
