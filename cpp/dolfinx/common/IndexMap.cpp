@@ -53,28 +53,30 @@ void local_to_global_impl(
 }
 //-----------------------------------------------------------------------------
 std::vector<int> get_global_ghost_owners(
-            dolfinx::MPI::Comm mpi_comm, std::int32_t local_size,
-            const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
+    dolfinx::MPI::Comm mpi_comm, std::int32_t local_size,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
         ghosts)
 {
-    int mpi_size = -1;
-    MPI_Comm_size(mpi_comm.comm(), &mpi_size);
-    std::vector<std::int32_t> local_sizes(mpi_size);
-    MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T, mpi_comm.comm());
+  int mpi_size = -1;
+  MPI_Comm_size(mpi_comm.comm(), &mpi_size);
+  std::vector<std::int32_t> local_sizes(mpi_size);
+  MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
+                mpi_comm.comm());
 
-    std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
-    std::partial_sum (local_sizes.begin(), local_sizes.end(), all_ranges.begin()+ 1);
+  std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
+  std::partial_sum(local_sizes.begin(), local_sizes.end(),
+                   all_ranges.begin() + 1);
 
-    // Compute rank of ghost owners
-    std::vector<int> ghost_owner_global(ghosts.size(), -1);
-    for (int i = 0; i < ghosts.size(); ++i)
-    {
-        auto it = std::upper_bound(all_ranges.begin(), all_ranges.end(), ghosts[i]);
-        const int p = std::distance(all_ranges.begin(), it) - 1;
-        ghost_owner_global[i] = p;
-    }
+  // Compute rank of ghost owners
+  std::vector<int> ghost_owner_global(ghosts.size(), -1);
+  for (int i = 0; i < ghosts.size(); ++i)
+  {
+    auto it = std::upper_bound(all_ranges.begin(), all_ranges.end(), ghosts[i]);
+    const int p = std::distance(all_ranges.begin(), it) - 1;
+    ghost_owner_global[i] = p;
+  }
 
-    return ghost_owner_global;
+  return ghost_owner_global;
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -211,12 +213,12 @@ IndexMap::IndexMap(
       _ghost_owners(ghosts.size())
 {
 
-
   int mpi_size = -1;
   MPI_Comm_size(_mpi_comm.comm(), &mpi_size);
 
   if (ghost_owner_global.empty())
-    ghost_owner_global = get_global_ghost_owners(_mpi_comm, local_size, _ghosts);
+    ghost_owner_global
+        = get_global_ghost_owners(_mpi_comm, local_size, _ghosts);
 
   std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
   for (int i = 0; i < ghosts.size(); ++i)
@@ -238,11 +240,8 @@ IndexMap::IndexMap(
   // Each MPI process sends its local size to reduction
   MPI_Request request;
   std::int64_t size_local = _local_range[1] - _local_range[0];
-  MPI_Iallreduce(&size_local, &_size_global, 1, MPI_INT64_T, MPI_SUM, _mpi_comm.comm(),
-                 &request);
-
-  // Wait for the MPI_Iallreduce to complete
-  MPI_Wait(&request, MPI_STATUS_IGNORE);
+  MPI_Iallreduce(&size_local, &_size_global, 1, MPI_INT64_T, MPI_SUM,
+                 _mpi_comm.comm(), &request);
 
   // Send number of outgoing edges (ghost -> owner) to target processes,
   // and receive number of incoming edges (ghost <- owner) from each
@@ -328,6 +327,9 @@ IndexMap::IndexMap(
   for (auto& value : _forward_indices)
     value -= offset;
   _forward_sizes = std::move(in_edges_num);
+
+  // Wait for the MPI_Iallreduce to complete
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
 
   MPI_Comm_free(&neighbour_comm);
 }
