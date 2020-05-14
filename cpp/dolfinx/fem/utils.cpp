@@ -384,8 +384,8 @@ la::PETScVector fem::create_vector_block(
     ghost_owners.insert(ghost_owners.end(), sub_owner.begin(), sub_owner.end());
 
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(maps[0].get().mpi_comm(), local_size, ghosts, 1,
-                             ghost_owners);
+  common::IndexMap index_map(maps[0].get().mpi_comm(), local_size, ghosts,
+                             ghost_owners, 1);
 
   return la::PETScVector(index_map);
 }

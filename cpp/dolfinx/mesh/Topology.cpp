@@ -323,8 +323,8 @@ mesh::create_topology(MPI_Comm comm,
   if (ghost_mode == mesh::GhostMode::none)
   {
     index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, std::vector<std::int64_t>(), 1,
-        std::vector<int>());
+        comm, num_local_cells, std::vector<std::int64_t>(), std::vector<int>(),
+        1);
   }
   else
   {
@@ -333,7 +333,7 @@ mesh::create_topology(MPI_Comm comm,
         = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,
                                                      ghost_owners);
     index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, cell_ghost_indices, 1, ghost_owners);
+        comm, num_local_cells, cell_ghost_indices, ghost_owners, 1);
   }
 
   // Create map from existing global vertex index to local index,
@@ -551,7 +551,8 @@ mesh::create_topology(MPI_Comm comm,
   }
 
   // Get global onwers of ghost vertices
-  // TODO: Get vertice owner from cell owner? Can use neighborhood communication?
+  // TODO: Get vertice owner from cell owner? Can use neighborhood
+  // communication?
   int mpi_size = -1;
   MPI_Comm_size(neighbour_comm, &mpi_size);
   std::vector<std::int32_t> local_sizes(mpi_size);
@@ -605,7 +606,7 @@ mesh::create_topology(MPI_Comm comm,
 
   // Vertex IndexMap
   auto index_map_v = std::make_shared<common::IndexMap>(
-      comm, nlocal, ghost_vertices, 1, ghost_vertices_owners);
+      comm, nlocal, ghost_vertices, ghost_vertices_owners, 1);
   topology.set_index_map(0, index_map_v);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());

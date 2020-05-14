@@ -199,12 +199,12 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
-                   const std::vector<std::int64_t>& ghosts, int block_size,
-                   std::vector<int> ghost_owner_global)
+                   const std::vector<std::int64_t>& ghosts,
+                   std::vector<int> ghost_owner_global, int block_size)
     : IndexMap(mpi_comm, local_size,
                Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
                    ghosts.data(), ghosts.size()),
-               block_size, ghost_owner_global)
+               ghost_owner_global, block_size)
 {
   // Do nothing
 }
@@ -213,7 +213,7 @@ IndexMap::IndexMap(
     MPI_Comm mpi_comm, std::int32_t local_size,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
         ghosts,
-    int block_size, std::vector<int> ghost_owner_global)
+    std::vector<int> ghost_owner_global, int block_size)
     : _block_size(block_size), _mpi_comm(mpi_comm),
       _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts),
       _ghost_owners(ghosts.size())
