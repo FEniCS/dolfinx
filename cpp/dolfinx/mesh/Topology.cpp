@@ -551,21 +551,25 @@ mesh::create_topology(MPI_Comm comm,
   }
 
   // Get global onwers of ghost vertices
-  // TODO: Get vertice owner from cell owner? Can use
-  std::vector<int> ghost_vertices_owners(ghost_vertices.size(), -1);
-  std::vector<std::int32_t> local_sizes(neighbours.size());
-  MPI_Neighbor_allgather(&nlocal, 1, MPI_INT32_T, local_sizes.data(), 1,
-                         MPI_INT32_T, neighbour_comm);
-  std::vector<std::int64_t> neighbour_ranges(neighbours.size() + 1, 0);
+  // TODO: Get vertice owner from cell owner? Can use neighborhood communication?
+  int mpi_size = -1;
+  MPI_Comm_size(neighbour_comm, &mpi_size);
+  std::vector<std::int32_t> local_sizes(mpi_size);
+  MPI_Allgather(&nlocal, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
+                neighbour_comm);
 
+  std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
   std::partial_sum(local_sizes.begin(), local_sizes.end(),
-                   neighbour_ranges.begin() + 1);
+                   all_ranges.begin() + 1);
+
+  // Compute rank of ghost owners
+  std::vector<int> ghost_vertices_owners(ghost_vertices.size(), -1);
   for (size_t i = 0; i < ghost_vertices.size(); ++i)
   {
-    auto it = std::upper_bound(neighbour_ranges.begin(), neighbour_ranges.end(),
+    auto it = std::upper_bound(all_ranges.begin(), all_ranges.end(),
                                ghost_vertices[i]);
-    const int p = std::distance(neighbour_ranges.begin(), it) - 1;
-    ghost_vertices_owners[i] = neighbours[p];
+    const int p = std::distance(all_ranges.begin(), it) - 1;
+    ghost_vertices_owners[i] = p;
   }
 
   MPI_Comm_free(&neighbour_comm);
