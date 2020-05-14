@@ -1,5 +1,3 @@
-import dolfinx
-from mpi4py import MPI
 from dolfinx.cpp.geometry import gjk_vector
 from scipy.spatial.transform import Rotation as R
 import numpy as np
@@ -149,11 +147,11 @@ def test_cube_distance(delta, scale):
     cubes = [scale * np.array([[-1, -1, -1], [1, -1, -1], [-1, 1, -1], [1, 1, -1],
                                [-1, -1, 1], [1, -1, 1], [-1, 1, 1], [1, 1, 1]],
                               dtype=np.float64)]
-    
+
     # Rotate cube 45 degrees around z, so that an edge faces along x-axis (vertical)
     r = R.from_euler('z', 45, degrees=True)
     cubes.append(r.apply(cubes[0]))
-    # Rotate cube around y, so that a corner faces along the x-axis 
+    # Rotate cube around y, so that a corner faces along the x-axis
     r = R.from_euler('y', np.arctan2(1.0, np.sqrt(2)))
     cubes.append(r.apply(cubes[1]))
     # Rotate cube 45 degrees around y, so that an edge faces along x-axis (horizontal)

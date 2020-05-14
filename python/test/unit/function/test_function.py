@@ -17,7 +17,7 @@ from petsc4py import PETSc
 
 import ufl
 import dolfinx
-from dolfinx import (Function, FunctionSpace, TensorFunctionSpace, MeshEntity,
+from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
                      UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
 
 
@@ -191,7 +191,7 @@ def test_eval_multiple(W):
     assert len(cell_candidates[1]) == 0
     cell_candidates = cell_candidates[0]
     cell = dolfinx.cpp.geometry.select_cells_from_candidates(mesh, cell_candidates, x0, 1)
-            
+
     u.eval(x[0], cell)
 
 
