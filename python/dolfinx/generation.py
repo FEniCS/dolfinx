@@ -18,7 +18,7 @@ __all__ = [
 ]
 
 
-def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.none):
+def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.shared_facet):
     """Create an interval mesh
 
     Parameters
@@ -40,7 +40,7 @@ def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.none
     return mesh
 
 
-def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.none):
+def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.shared_facet):
     """Create a mesh on the unit interval
 
     Parameters
@@ -55,7 +55,7 @@ def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.none):
 
 
 def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp.mesh.CellType.triangle,
-                  ghost_mode=cpp.mesh.GhostMode.none, diagonal: str = "right"):
+                  ghost_mode=cpp.mesh.GhostMode.shared_facet, diagonal: str = "right"):
     """Create rectangle mesh
 
     Parameters
@@ -79,7 +79,7 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp
 
 
 def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
-                   ghost_mode=cpp.mesh.GhostMode.none, diagonal="right"):
+                   ghost_mode=cpp.mesh.GhostMode.shared_facet, diagonal="right"):
     """Create a mesh of a unit square
 
     Parameters
@@ -99,11 +99,9 @@ def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
                          diagonal)
 
 
-def BoxMesh(comm,
-            points: typing.List[numpy.array],
-            n: list,
+def BoxMesh(comm, points: typing.List[numpy.array], n: list,
             cell_type=cpp.mesh.CellType.tetrahedron,
-            ghost_mode=cpp.mesh.GhostMode.none):
+            ghost_mode=cpp.mesh.GhostMode.shared_facet):
     """Create box mesh
 
     Parameters
@@ -125,7 +123,7 @@ def BoxMesh(comm,
 
 
 def UnitCubeMesh(comm, nx, ny, nz, cell_type=cpp.mesh.CellType.tetrahedron,
-                 ghost_mode=cpp.mesh.GhostMode.none):
+                 ghost_mode=cpp.mesh.GhostMode.shared_facet):
     """Create a mesh of a unit cube
 
     Parameters
