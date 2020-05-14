@@ -44,20 +44,6 @@ bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
          and (b.row(1) + eps0 >= a.row(0)).all();
 }
 //-----------------------------------------------------------------------------
-// Check whether point is outside region defined by facet ABC. The
-// fourth vertex is needed to define the orientation.
-bool point_outside_of_plane(const Eigen::Vector3d& p, const Eigen::Vector3d& a,
-                            const Eigen::Vector3d& b, const Eigen::Vector3d& c,
-                            const Eigen::Vector3d& d)
-{
-  // Algorithm from Real-time collision detection by Christer Ericson:
-  // PointOutsideOfPlane on page 144, Section 5.1.6.
-  const Eigen::Vector3d v = (b - a).cross(c - a);
-  const double signp = v.dot(p - a);
-  const double signd = v.dot(d - a);
-  return signp * signd < 0.0;
-}
-//-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
 std::pair<int, double>
 _compute_closest_entity(const geometry::BoundingBoxTree& tree,
@@ -380,7 +366,6 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
   auto cell_vertices = c_to_v->links(c);
 
   auto vertices = entity.entities(0);
-  const mesh::CellType type = entity.mesh().topology().cell_type();
   const mesh::Geometry& geometry = entity.mesh().geometry();
 
   Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> v(vertices.size(),
@@ -413,7 +398,7 @@ geometry::select_cells_from_candidates(const dolfinx::mesh::Mesh& mesh,
     if (d2 < eps2)
     {
       result.push_back(c);
-      if (result.size() == n)
+      if ((int)result.size() == n)
         return result;
     }
   }
