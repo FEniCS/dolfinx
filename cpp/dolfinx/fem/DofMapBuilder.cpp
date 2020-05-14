@@ -458,7 +458,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     std::vector<int>& offsets = recv_offsets[d];
     for (std::size_t j = 0; j < dofs_received.size(); j += 2)
     {
-      const auto pos = std::upper_bound(offsets.begin(), offsets.end(), int(j));
+      const auto pos = std::upper_bound(offsets.begin(), offsets.end(), j);
       const int owner = std::distance(offsets.begin(), pos) - 1;
       global_old_new.insert(
           {dofs_received[j], {dofs_received[j + 1], neighbours[owner]}});

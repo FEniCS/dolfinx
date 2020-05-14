@@ -363,7 +363,7 @@ get_local_indexing(
 
   std::shared_ptr<common::IndexMap> index_map
       = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1,
-                                           std::vector<int>());
+                                           ghost_owners);
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
