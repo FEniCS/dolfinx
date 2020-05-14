@@ -452,18 +452,12 @@ mesh::create_topology(MPI_Comm comm,
     qsend_offsets.push_back(qsend_data.size());
   }
 
-  graph::AdjacencyList<std::int64_t> recv_data
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
       = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets,
-                                          qsend_data);
-
-  auto& recv_pairs = recv_data.array();
-  auto& recv_offsets = recv_data.offsets();
-
-  std::vector<int> offsets(recv_offsets.data(),
-                           recv_offsets.data() + recv_offsets.rows());
+                                          qsend_data)
+            .array();
 
   std::vector<std::int64_t> ghost_vertices;
-  std::vector<int> ghost_vertices_owners;
   // Unpack received data and make list of ghosts
   for (int i = 0; i < recv_pairs.rows(); i += 2)
   {
@@ -473,9 +467,6 @@ mesh::create_topology(MPI_Comm comm,
     assert(it->second == -1);
     it->second = c++;
     ghost_vertices.push_back(recv_pairs[i + 1]);
-    const auto pos = std::upper_bound(offsets.begin(), offsets.end(), i + 1);
-    const int owner = std::distance(offsets.begin(), pos) - 1;
-    ghost_vertices_owners.push_back(neighbours[owner]);
   }
 
   if (ghost_mode != mesh::GhostMode::none)
@@ -540,15 +531,10 @@ mesh::create_topology(MPI_Comm comm,
       }
     }
 
-    graph::AdjacencyList<std::int64_t> recv_data
+    Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
         = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
-                                            send_pair_data);
-
-    auto& recv_pairs = recv_data.array();
-    auto& recv_offsets = recv_data.offsets();
-
-    std::vector<int> offsets(recv_offsets.data(),
-                             recv_offsets.data() + recv_offsets.rows());
+                                            send_pair_data)
+              .array();
 
     // Unpack received data and add to ghosts
     for (int i = 0; i < recv_pairs.rows(); i += 2)
@@ -560,13 +546,28 @@ mesh::create_topology(MPI_Comm comm,
       {
         it->second = c++;
         ghost_vertices.push_back(recv_pairs[i + 1]);
-        const auto pos
-            = std::upper_bound(offsets.begin(), offsets.end(), i + 1);
-        const int owner = std::distance(offsets.begin(), pos) - 1;
-        ghost_vertices_owners.push_back(neighbours[owner]);
       }
     }
   }
+
+  // Get global onwers of ghost vertices
+  // TODO: Get vertice owner from cell owner? Can use
+  std::vector<int> ghost_vertices_owners(ghost_vertices.size(), -1);
+  std::vector<std::int32_t> local_sizes(neighbours.size());
+  MPI_Neighbor_allgather(&nlocal, 1, MPI_INT32_T, local_sizes.data(), 1,
+                         MPI_INT32_T, neighbour_comm);
+  std::vector<std::int64_t> neighbour_ranges(neighbours.size() + 1, 0);
+
+  std::partial_sum(local_sizes.begin(), local_sizes.end(),
+                   neighbour_ranges.begin() + 1);
+  for (size_t i = 0; i < ghost_vertices.size(); ++i)
+  {
+    auto it = std::upper_bound(neighbour_ranges.begin(), neighbour_ranges.end(),
+                               ghost_vertices[i]);
+    const int p = std::distance(neighbour_ranges.begin(), it) - 1;
+    ghost_vertices_owners[i] = neighbours[p];
+  }
+
   MPI_Comm_free(&neighbour_comm);
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& cells_array
@@ -599,9 +600,8 @@ mesh::create_topology(MPI_Comm comm,
   const int tdim = topology.dim();
 
   // Vertex IndexMap
-  // FIXME: fix ghost ownership
   auto index_map_v = std::make_shared<common::IndexMap>(
-      comm, nlocal, ghost_vertices, 1, std::vector<int>());
+      comm, nlocal, ghost_vertices, 1, ghost_vertices_owners);
   topology.set_index_map(0, index_map_v);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());
