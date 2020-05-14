@@ -83,7 +83,8 @@ std::vector<int> get_global_ghost_owners(
 
 //-----------------------------------------------------------------------------
 std::tuple<std::int64_t, std::vector<std::int32_t>,
-           std::vector<std::vector<std::int64_t>>>
+           std::vector<std::vector<std::int64_t>>,
+           std::vector<std::vector<int>>>
 common::stack_index_maps(
     const std::vector<std::reference_wrapper<const common::IndexMap>>& maps)
 {
@@ -172,11 +173,14 @@ common::stack_index_maps(
   /// Build arrays from old ghost index to composite ghost index for
   /// each field
   std::vector<std::vector<std::int64_t>> ghosts_new(maps.size());
+  std::vector<std::vector<int>> ghost_onwers_new(maps.size());
   for (std::size_t f = 0; f < maps.size(); ++f)
   {
     const int bs = maps[f].get().block_size();
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
         = maps[f].get().ghosts();
+    const Eigen::Array<int, Eigen::Dynamic, 1>& ghost_owners
+        = maps[f].get().ghost_owners();
     for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
     {
       for (int j = 0; j < bs; ++j)
@@ -184,11 +188,13 @@ common::stack_index_maps(
         auto it = ghost_maps[f].find(bs * ghosts[i] + j);
         assert(it != ghost_maps[f].end());
         ghosts_new[f].push_back(it->second);
+        ghost_onwers_new[f].push_back(ghost_owners[i]);
       }
     }
   }
 
-  return {process_offset, std::move(local_offset), std::move(ghosts_new)};
+  return {process_offset, std::move(local_offset), std::move(ghosts_new),
+          std::move(ghost_onwers_new)};
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -217,7 +223,8 @@ IndexMap::IndexMap(
   MPI_Comm_size(_mpi_comm.comm(), &mpi_size);
 
   // if (ghost_owner_global.empty())
-  auto ghost_owner_global = get_global_ghost_owners(_mpi_comm, local_size, _ghosts);
+  auto ghost_owner_global
+      = get_global_ghost_owners(_mpi_comm, local_size, _ghosts);
 
   if (!ghost_owner_global1.empty())
     assert(ghost_owner_global1 == ghost_owner_global);

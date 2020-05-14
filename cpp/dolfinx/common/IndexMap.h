@@ -30,7 +30,8 @@ class IndexMap;
 ///   local offset for each submap in the stacked map, and (2) new
 ///   indices for the ghosts for each submap.
 std::tuple<std::int64_t, std::vector<std::int32_t>,
-           std::vector<std::vector<std::int64_t>>>
+           std::vector<std::vector<std::int64_t>>,
+           std::vector<std::vector<int>>>
 stack_index_maps(
     const std::vector<std::reference_wrapper<const common::IndexMap>>& maps);
 
@@ -283,7 +284,7 @@ private:
   int _block_size;
 
   // Range of indices (global) owned by this process
-  std::array<std::int64_t , 2> _local_range{{0, 0}};
+  std::array<std::int64_t, 2> _local_range{{0, 0}};
 
   // Number indices across communicator
   std::int64_t _size_global;
