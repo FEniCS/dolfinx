@@ -451,14 +451,14 @@ mesh::create_topology(MPI_Comm comm,
     qsend_data.insert(qsend_data.end(), q.begin(), q.end());
     qsend_offsets.push_back(qsend_data.size());
   }
-  auto recv_data = dolfinx::MPI::neighbor_all_to_all(neighbour_comm,
-                                                     qsend_offsets, qsend_data);
+
+  graph::AdjacencyList<std::int64_t> recv_data
+      = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets,
+                                          qsend_data);
 
   auto& recv_pairs = recv_data.array();
   auto& recv_offsets = recv_data.offsets();
 
-  // Convert eigen to std::vector, size equal to the number of
-  // neighbors
   std::vector<int> offsets(recv_offsets.data(),
                            recv_offsets.data() + recv_offsets.rows());
 
@@ -473,8 +473,8 @@ mesh::create_topology(MPI_Comm comm,
     assert(it->second == -1);
     it->second = c++;
     ghost_vertices.push_back(recv_pairs[i + 1]);
-    const auto pos = std::upper_bound(offsets.begin(), offsets.end(), i);
-    const int owner = pos - offsets.begin() - 1;
+    const auto pos = std::upper_bound(offsets.begin(), offsets.end(), i + 1);
+    const int owner = std::distance(offsets.begin(), pos) - 1;
     ghost_vertices_owners.push_back(neighbours[owner]);
   }
 
@@ -540,8 +540,9 @@ mesh::create_topology(MPI_Comm comm,
       }
     }
 
-    auto recv_data = dolfinx::MPI::neighbor_all_to_all(
-        neighbour_comm, send_offsets, send_pair_data);
+    graph::AdjacencyList<std::int64_t> recv_data
+        = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
+                                            send_pair_data);
 
     auto& recv_pairs = recv_data.array();
     auto& recv_offsets = recv_data.offsets();
@@ -559,8 +560,9 @@ mesh::create_topology(MPI_Comm comm,
       {
         it->second = c++;
         ghost_vertices.push_back(recv_pairs[i + 1]);
-        const auto pos = std::upper_bound(offsets.begin(), offsets.end(), i);
-        const int owner = pos - offsets.begin() - 1;
+        const auto pos
+            = std::upper_bound(offsets.begin(), offsets.end(), i + 1);
+        const int owner = std::distance(offsets.begin(), pos) - 1;
         ghost_vertices_owners.push_back(neighbours[owner]);
       }
     }
@@ -597,8 +599,9 @@ mesh::create_topology(MPI_Comm comm,
   const int tdim = topology.dim();
 
   // Vertex IndexMap
+  // FIXME: fix ghost ownership
   auto index_map_v = std::make_shared<common::IndexMap>(
-      comm, nlocal, ghost_vertices, 1, ghost_vertices_owners);
+      comm, nlocal, ghost_vertices, 1, std::vector<int>());
   topology.set_index_map(0, index_map_v);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());
