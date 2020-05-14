@@ -2,7 +2,7 @@
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
-// SPDX-License-Identifier:    to be decided
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
