@@ -40,7 +40,7 @@ class XDMFFile(cpp.io.XDMFFile):
         u_cpp = getattr(u, "_cpp_object", u)
         super().write_function(u_cpp, t, mesh_xpath)
 
-    def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.none, name="mesh", xpath="/Xdmf/Domain"):
+    def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"):
         # Read mesh data from file
         cell_type, x, cells = super().read_mesh_data(name, xpath)
 
