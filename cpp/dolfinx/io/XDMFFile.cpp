@@ -298,6 +298,8 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                                 Eigen::RowMajor>>
       topology(topology_data.data(), num_local_entities, tdims[1]);
 
+  const graph::AdjacencyList<std::int64_t> topology_adj(topology);
+
   // Fetch cell type of meshtags and deduce its dimension
   const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
@@ -306,7 +308,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   std::vector<std::int32_t> values = xdmf_read::get_dataset<std::int32_t>(
       _mpi_comm.comm(), values_data_node, _h5_id);
   mesh::MeshTags meshtags = mesh::create_meshtags(
-      _mpi_comm.comm(), mesh, cell_type, topology, std::move(values));
+      mesh, cell_type, topology_adj, std::move(values));
   meshtags.name = name;
 
   return meshtags;

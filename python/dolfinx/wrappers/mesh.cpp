@@ -243,7 +243,19 @@ void mesh(py::module& m)
           "indices", [](dolfinx::mesh::MeshTags<SCALAR>& self) {               \
             return py::array_t<std::int32_t>(                                  \
                 self.indices().size(), self.indices().data(), py::none());     \
-          });
+          });                                                                  \
+                                                                               \
+  m.def("create_meshtags",                                                     \
+        [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,             \
+           const dolfinx::mesh::CellType& tag_cell_type,                       \
+           const dolfinx::graph::AdjacencyList<std::int64_t>& entities,        \
+           const py::array_t<SCALAR>& values) {                                \
+          py::buffer_info buf = values.request();                              \
+          std::vector<SCALAR> vals((SCALAR*)buf.ptr,                           \
+                                   (SCALAR*)buf.ptr + buf.size);               \
+          return dolfinx::mesh::create_meshtags(mesh, tag_cell_type, entities, \
+                                                vals);                       \
+        });
 
   MESHTAGS_MACRO(std::int8_t, int8);
   MESHTAGS_MACRO(int, int);
