@@ -56,8 +56,7 @@ SparsityPattern::SparsityPattern(
   auto [rank_offset1, local_offset1, ghosts_new1, onwers1]
       = common::stack_index_maps(maps[1]);
 
-  std::vector<std::int64_t> ghosts0;
-  std::vector<std::int64_t> ghosts1;
+  std::vector<std::int64_t> ghosts0, ghosts1;
   std::vector<std::int32_t> ghost_offsets0(1, 0);
   for (auto& ghosts : ghosts_new0)
   {
@@ -67,8 +66,7 @@ SparsityPattern::SparsityPattern(
   for (auto& ghosts : ghosts_new1)
     ghosts1.insert(ghosts1.end(), ghosts.begin(), ghosts.end());
 
-  std::vector<int> ghost_owners0;
-  std::vector<int> ghost_owners1;
+  std::vector<int> ghost_owners0, ghost_owners1;
   for (auto& owners : onwers0)
     ghost_owners0.insert(ghost_owners0.end(), owners.begin(), owners.end());
 

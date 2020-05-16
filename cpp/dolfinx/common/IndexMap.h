@@ -28,7 +28,8 @@ class IndexMap;
 /// @param[in] maps List of index maps
 /// @returns The (0) global offset of a stacked map for this rank, (1)
 ///   local offset for each submap in the stacked map, and (2) new
-///   indices for the ghosts for each submap.
+///   indices for the ghosts for each submap (3) owner rank of each ghost
+///   entry for each submap
 std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>,
            std::vector<std::vector<int>>>
@@ -61,10 +62,11 @@ public:
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] block_size The block size of the IndexMap
-  /// @param[in] ghost_owner_global
+  /// @param[in] ghost_ranks Owner rank (on global communicator) of each ghost
+  ///   entry
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<std::int64_t>& ghosts,
-           std::vector<int> ghost_owner_global, int block_size);
+           const std::vector<int>& ghost_ranks, int block_size);
 
   /// Create Index map with local_size owned blocks on this process, and
   /// blocks have size block_size.
@@ -75,12 +77,13 @@ public:
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] block_size The block size of the IndexMap
-  /// @param[in] ghost_owner_global
+  /// @param[in] ghost_ranks Owner rank (on global communicator) of each ghost
+  ///   entry
   IndexMap(
       MPI_Comm mpi_comm, std::int32_t local_size,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
           ghosts,
-      std::vector<int> ghost_owner_global, int block_size);
+      const std::vector<int>& ghost_ranks, int block_size);
 
   /// Copy constructor
   IndexMap(const IndexMap& map) = delete;
@@ -284,7 +287,7 @@ private:
   int _block_size;
 
   // Range of indices (global) owned by this process
-  std::array<std::int64_t, 2> _local_range{{0, 0}};
+  std::array<std::int64_t, 2> _local_range;
 
   // Number indices across communicator
   std::int64_t _size_global;

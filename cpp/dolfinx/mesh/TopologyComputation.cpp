@@ -336,8 +336,11 @@ get_local_indexing(
         = dolfinx::MPI::neighbor_all_to_all(
             neighbour_comm, send_global_index_offsets, send_global_index_data);
 
-    auto& recv_global_index_data = recv_data.array();
-    auto& recv_offsets = recv_data.offsets();
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_global_index_data
+        = recv_data.array();
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& recv_offsets
+        = recv_data.offsets();
+
     assert(recv_global_index_data.size() == (int)recv_index.size());
 
     // Map back received indices
@@ -361,9 +364,8 @@ get_local_indexing(
 
   MPI_Comm_free(&neighbour_comm);
 
-  std::shared_ptr<common::IndexMap> index_map
-      = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices,
-                                           ghost_owners, 1);
+  auto index_map = std::make_shared<common::IndexMap>(
+      comm, num_local, ghost_indices, ghost_owners, 1);
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
