@@ -1,3 +1,5 @@
+# Demonstrate the creation of meshes using pygmsh
+
 import pygmsh
 from mpi4py import MPI
 import numpy as np
