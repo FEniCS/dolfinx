@@ -17,8 +17,14 @@ def get_domain(gmsh_cell, gdim):
     elif gmsh_cell == "tetra10":
         cell_shape = "tetrahedron"
         degree = 2
+    elif gmsh_cell == "hexahedron":
+        cell_shape = "hexahedron"
+        degree = 1
+    elif gmsh_cell == "hexahedron27":
+        cell_shape = "hexahedron"
+        degree = 2
     else:
-        raise RuntimeError("gmsh cell type not recognised")
+        raise RuntimeError("gmsh cell type '{}' not recognised".format(gmsh_cell))
 
     cell = ufl.Cell(cell_shape, geometric_dimension=gdim)
     return ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
@@ -80,5 +86,35 @@ cells = cpp.io.permute_cell_ordering(cells, cpp.io.permutation_vtk_to_dolfin(cel
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "ball_d2"
+with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
+    file.write_mesh(mesh)
+
+
+if MPI.COMM_WORLD.rank == 0:
+    lbw = [2, 3, 5]
+    points = [geom.add_point([x, 0.0, 0.0], 1.0) for x in [0.0, lbw[0]]]
+    line = geom.add_line(*points)
+    _, rectangle, _ = geom.extrude(line, translation_axis=[0.0, lbw[1], 0.0], num_layers=lbw[1], recombine=True)
+    geom.extrude(rectangle, translation_axis=[0.0, 0.0, lbw[2]], num_layers=lbw[2], recombine=True)
+
+    pygmsh_mesh = pygmsh.generate_mesh(geom, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
+    print(pygmsh_mesh.cells[-1].data)
+    # pygmsh_mesh.prune()
+
+    cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
+    cell_type = MPI.COMM_WORLD.bcast(pygmsh_mesh.cells[-1].type, root=0)
+    gdim = MPI.COMM_WORLD.bcast(x.shape[1], root=0)
+else:
+    cell_type = MPI.COMM_WORLD.bcast(None, root=0)
+    gdim = MPI.COMM_WORLD.bcast(None, root=0)
+    cells, x = np.empty([0, 0]), np.empty([0, gdim])
+
+# Permute the topology from VTK to DOLFIN-X ordering
+domain = get_domain(cell_type, gdim)
+cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
+cells = cpp.io.permute_cell_ordering(cells, cpp.io.permutation_vtk_to_dolfin(cell_type, cells.shape[1]))
+
+mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+mesh.name = "hex_d2"
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
     file.write_mesh(mesh)
