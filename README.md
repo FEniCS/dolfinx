@@ -1,9 +1,7 @@
-=======
-DOLFINX
-=======
+# DOLFINX
 
-.. image:: https://circleci.com/gh/FEniCS/dolfinx.svg?style=shield
-    :target: https://circleci.com/gh/FEniCS/dolfinx
+[![CircleCI](https://circleci.com/gh/FEniCS/dolfinx.svg?style=svg)](https://circleci.com/gh/FEniCS/dolfinx)
+![DOLFINX GitHub Actions](https://github.com/FEniCS/dolfinx/workflows/DOLFINX%20CI%20tests/badge.svg)
 
 DOLFINX is a new version of DOLFIN. It is being actively developed, but
 is **not ready for production use**. New experimental features may come
@@ -13,8 +11,7 @@ DOLFINX is the computational backend of FEniCS and implements the FEniCS
 Problem Solving Environment in Python and C++.
 
 
-Documentation
-=============
+## Documentation
 
 Documentation can be viewed at:
 
@@ -22,11 +19,9 @@ Documentation can be viewed at:
 - https://fenicsproject.org/docs/dolfinx/dev/python/
 
 
-Installation
-============
+## Installation
 
-C++ core
---------
+### C++ core
 
 To build and install the C++ core, in the ``cpp/`` directory, run::
 
@@ -35,8 +30,7 @@ To build and install the C++ core, in the ``cpp/`` directory, run::
   cmake ..
   make install
 
-Python interface
-----------------
+### Python interface
 
 To install the Python interface, first install the C++ core, and then
 in the ``python/`` directory run::
@@ -48,8 +42,7 @@ in the ``python/`` directory run::
 For detailed instructions, see the file INSTALL.
 
 
-License
-=======
+## License
 
 DOLFIN-X is free software: you can redistribute it and/or modify it
 under the terms of the GNU Lesser General Public License as published
@@ -66,8 +59,15 @@ License along with DOLFIN-X. If not, see
 <http://www.gnu.org/licenses/>.
 
 
-Contact
-=======
+## Contact
+
+For questions about using DOLFIN-X, visit the FEniCS Discourse page:
+
+https://fenicsproject.discourse.group/
+
+For bug reports, visit the DOLFIN-X GitHub page:
+
+https://github.com/FEniCS/dolfinx
 
 For comments and requests, send an email to the FEniCS mailing list:
 
@@ -78,10 +78,3 @@ send an email to the FEniCS support mailing list:
 
 fenics-support@googlegroups.com
 
-For questions about using DOLFIN-X, visit the FEniCS Discourse page:
-
-https://fenicsproject.discourse.group/
-
-For bug reports, visit the DOLFIN-X GitHub page:
-
-https://github.com/FEniCS/dolfinx
