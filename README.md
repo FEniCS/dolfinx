@@ -4,12 +4,12 @@
 ![DOLFINX CI tests](https://github.com/FEniCS/dolfinx/workflows/DOLFINX%20CI%20tests/badge.svg)
 ![Build and push Docker CI test image](https://github.com/FEniCS/dolfinx/workflows/Build%20and%20push%20Docker%20CI%20test%20image/badge.svg)
 
-DOLFINX is a new version of DOLFIN. It is being actively developed, but
-is **not ready for production use**. New experimental features may come
-and go as development proceeds.
+DOLFINX is a new version of DOLFIN. It is being actively developed and
+features may come and go as development proceeds.
 
-DOLFINX is the computational backend of FEniCS and implements the FEniCS
-Problem Solving Environment in Python and C++.
+DOLFINX is the computational environment of FEniCS and implements the
+[FEniCS](https://fenicsproject.org) Problem Solving Environment in
+Python and C++.
 
 
 ## Documentation
