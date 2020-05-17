@@ -114,11 +114,12 @@ def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostM
     cell = ufl.Cell(cpp.mesh.to_string(cell_type), geometric_dimension=x.shape[1])
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
     cmap = fem.create_coordinate_map(domain)
+    return create(comm, cells, cmap, x, ghost_mode)
 
-    mesh = cpp.mesh.Mesh(comm, cell_type, x, cells, cmap, ghosts, ghost_mode)
-    domain._ufl_cargo = mesh
-    mesh._ufl_domain = domain
-    return mesh
+    # mesh = cpp.mesh.Mesh(comm, cell_type, x, cells, cmap, ghosts, ghost_mode)
+    # domain._ufl_cargo = mesh
+    # mesh._ufl_domain = domain
+    # return mesh
 
 
 def MeshTags(mesh, dim, indices, values):
