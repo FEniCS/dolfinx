@@ -25,6 +25,49 @@ using namespace dolfinx::refinement;
 namespace
 {
 
+/// Compute markers for interior/boundary vertices
+/// @param[in] topology_local Local topology
+/// @return Array where the ith entry is true if the ith vertex is on
+///   the boundary
+std::vector<bool>
+compute_vertex_exterior_markers(const mesh::Topology& topology_local)
+{
+  // Get list of boundary vertices
+  const int dim = topology_local.dim();
+  auto facet_cell = topology_local.connectivity(dim - 1, dim);
+  if (!facet_cell)
+  {
+    throw std::runtime_error(
+        "Need facet-cell connectivity to build distributed adjacency list.");
+  }
+
+  auto facet_vertex = topology_local.connectivity(dim - 1, 0);
+  if (!facet_vertex)
+  {
+    throw std::runtime_error(
+        "Need facet-vertex connectivity to build distributed adjacency list.");
+  }
+
+  auto map_vertex = topology_local.index_map(0);
+  if (!map_vertex)
+    throw std::runtime_error("Need vertex IndexMap from topology.");
+  assert(map_vertex->num_ghosts() == 0);
+
+  std::vector<bool> exterior_vertex(map_vertex->size_local(), false);
+  for (int f = 0; f < facet_cell->num_nodes(); ++f)
+  {
+    if (facet_cell->num_links(f) == 1)
+    {
+      auto vertices = facet_vertex->links(f);
+      for (int j = 0; j < vertices.rows(); ++j)
+        exterior_vertex[vertices[j]] = true;
+    }
+  }
+
+  return exterior_vertex;
+}
+//-------------------------------------------------------------
+
 std::int64_t local_to_global(std::int32_t local_index,
                              const common::IndexMap& map)
 {
@@ -445,7 +488,7 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
     // Build distributed cell-vertex AdjacencyList, IndexMap for
     // vertices, and map from local index to old global index
     const std::vector<bool>& exterior_vertices
-        = mesh::Partitioning::compute_vertex_exterior_markers(topology_local);
+        = compute_vertex_exterior_markers(topology_local);
     auto [cells_d, vertex_map]
         = graph::Partitioning::create_distributed_adjacency_list(
             comm, *_cells_local, local_to_global_vertices, exterior_vertices);

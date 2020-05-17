@@ -26,15 +26,6 @@ enum class GhostMode : int;
 class Partitioning
 {
 public:
-  /// @todo Move elsewhere
-  ///
-  /// Compute markers for interior/boundary vertices
-  /// @param[in] topology_local Local topology
-  /// @return Array where the ith entry is true if the ith vertex is on
-  ///   the boundary
-  static std::vector<bool>
-  compute_vertex_exterior_markers(const mesh::Topology& topology_local);
-
   /// Compute destination rank for mesh cells in this rank using a graph
   /// partitioner
   ///
