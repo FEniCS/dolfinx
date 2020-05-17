@@ -91,7 +91,7 @@ Mat dolfinx::la::create_petsc_matrix(
   // Get number of nonzeros for each row from sparsity pattern
   const graph::AdjacencyList<std::int32_t>& diagonal_pattern
       = sparsity_pattern.diagonal_pattern();
-  const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern
+  const graph::AdjacencyList<std::int32_t>& off_diagonal_pattern
       = sparsity_pattern.off_diagonal_pattern();
 
   // Apply PETSc options from the options database to the matrix (this
