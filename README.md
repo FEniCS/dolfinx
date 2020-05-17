@@ -7,10 +7,9 @@
 DOLFINX is a new version of DOLFIN. It is being actively developed and
 features may come and go as development proceeds.
 
-DOLFINX is the computational environment of FEniCS and implements the
-[FEniCS](https://fenicsproject.org) Problem Solving Environment in
-Python and C++.
-
+DOLFINX is the computational environment of
+[FEniCS](https://fenicsproject.org) and implements the FEniCS Problem
+Solving Environment in Python and C++.
 
 ## Documentation
 
@@ -18,7 +17,6 @@ Documentation can be viewed at:
 
 - https://fenicsproject.org/docs/dolfinx/dev/cpp/
 - https://fenicsproject.org/docs/dolfinx/dev/python/
-
 
 ## Installation
 
@@ -43,6 +41,9 @@ pip install .
 
 For detailed instructions, see the file INSTALL.
 
+## Docker
+
+Nightly Docker images are available at https://hub.docker.com/u/dolfinx.
 
 ## License
 
@@ -59,7 +60,6 @@ Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public
 License along with DOLFIN-X. If not, see
 <http://www.gnu.org/licenses/>.
-
 
 ## Contact
 
