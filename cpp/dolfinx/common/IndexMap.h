@@ -163,24 +163,6 @@ public:
   /// process, including ghosts
   std::vector<std::int64_t> global_indices(bool blocked = true) const;
 
-  /// @todo Remove this function
-  /// Get global index for local index i (index of the block)
-  // std::int64_t local_to_global(std::int32_t local_index) const
-  // {
-  //   assert(local_index >= 0);
-  //   const std::int32_t local_size = (_local_range[1] - _local_range[0]);
-  //   if (local_index < local_size)
-  //   {
-  //     const std::int64_t global_offset = _local_range[0];
-  //     return global_offset + local_index;
-  //   }
-  //   else
-  //   {
-  //     assert((local_index - local_size) < _ghosts.size());
-  //     return _ghosts[local_index - local_size];
-  //   }
-  // }
-
   /// @todo Reconsider name
   /// Local (owned) indices shared with neighbour processes, i.e. are
   /// ghosts on other processes

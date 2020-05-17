@@ -15,19 +15,6 @@
 using namespace dolfinx;
 using namespace dolfinx::la;
 
-// namespace
-// {
-// const auto col_map = [](const std::int32_t j_index,
-//                         const common::IndexMap& index_map1) -> std::int64_t {
-//   const int bs = index_map1.block_size();
-//   const std::div_t div = std::div(j_index, bs);
-//   const int component = div.rem;
-//   const int index = div.quot;
-//   return bs * index_map1.local_to_global(index) + component;
-// };
-
-// } // namespace
-
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
@@ -371,10 +358,11 @@ void SparsityPattern::assemble()
       else
       {
         assert(row_local < (std::int32_t)_off_diagonal_cache.size());
-        auto it = std::find(ghosts1.data(), ghosts1.data() + ghosts1.size(), col);
-        assert(it !=ghosts1.data() + ghosts1.size());
+        auto it
+            = std::find(ghosts1.data(), ghosts1.data() + ghosts1.size(), col);
+        assert(it != ghosts1.data() + ghosts1.size());
         const std::int32_t pos = std::distance(ghosts1.data(), it);
-        const std::size_t c = local_size0 *bs0 + pos;
+        const std::size_t c = local_size0 * bs0 + pos;
         _off_diagonal_cache[row_local].push_back(c);
 
         // _off_diagonal_cache[row_local].push_back(col);
