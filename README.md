@@ -24,19 +24,20 @@ Documentation can be viewed at:
 ### C++ core
 
 To build and install the C++ core, in the ``cpp/`` directory, run::
-
-  mkdir build
-  cd build
-  cmake ..
-  make install
+```
+mkdir build
+cd build
+cmake ..
+make install
+```
 
 ### Python interface
 
 To install the Python interface, first install the C++ core, and then
 in the ``python/`` directory run::
-
-  pip install .
-
+```
+pip install .
+```
 (you may need to use ``pip3``, depending on your system).
 
 For detailed instructions, see the file INSTALL.
