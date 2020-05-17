@@ -205,7 +205,9 @@ void SparsityPattern::insert(
 
   assert(_index_maps[1]);
   const int bs1 = _index_maps[1]->block_size();
-  const std::int32_t local_size1 = bs1 * _index_maps[1]->size_local();
+  const std::int32_t local_size1 = _index_maps[1]->size_local();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
+      = _index_maps[1]->ghosts();
 
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
@@ -213,12 +215,13 @@ void SparsityPattern::insert(
     {
       for (Eigen::Index j = 0; j < cols.rows(); ++j)
       {
-        if (cols[j] < local_size1)
+        if (cols[j] < bs1 * local_size1)
           _diagonal_cache[rows[i]].push_back(cols[j]);
         else
         {
-          const std::int64_t J = col_map(cols[j], *_index_maps[1]);
-          _off_diagonal_cache[rows[i]].push_back(J);
+          const std::div_t div = std::div(cols[j], bs1);
+          const std::int64_t block_global = ghosts1[div.quot - local_size1];
+          _off_diagonal_cache[rows[i]].push_back(bs1 * block_global + div.rem);
         }
       }
     }
