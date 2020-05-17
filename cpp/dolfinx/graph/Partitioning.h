@@ -46,7 +46,8 @@ public:
   ///   computed from a process scan. Indices [n0, ..., N) are owned by
   ///   a remote process and the ghosts return vector maps [n0, ..., N)
   ///   to global indices.
-  static std::pair<std::vector<std::int32_t>, std::vector<std::int64_t>>
+  static std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>,
+                    std::vector<int>>
   reorder_global_indices(MPI_Comm comm,
                          const std::vector<std::int64_t>& global_indices,
                          const std::vector<bool>& shared_indices);
