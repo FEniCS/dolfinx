@@ -38,9 +38,9 @@ SparsityPattern::SparsityPattern(
   // FIXME: - Add range/bound checks for each block
   //        - Check for compatible block sizes for each block
 
-  auto [rank_offset0, local_offset0, ghosts_new0, onwers0]
+  const auto [rank_offset0, local_offset0, ghosts_new0, onwers0]
       = common::stack_index_maps(maps[0]);
-  auto [rank_offset1, local_offset1, ghosts_new1, onwers1]
+  const auto [rank_offset1, local_offset1, ghosts_new1, onwers1]
       = common::stack_index_maps(maps[1]);
 
   std::vector<std::int64_t> ghosts0, ghosts1;
@@ -56,7 +56,6 @@ SparsityPattern::SparsityPattern(
   std::vector<int> ghost_owners0, ghost_owners1;
   for (auto& owners : onwers0)
     ghost_owners0.insert(ghost_owners0.end(), owners.begin(), owners.end());
-
   for (auto& owners : onwers1)
     ghost_owners1.insert(ghost_owners1.end(), owners.begin(), owners.end());
 
@@ -78,7 +77,7 @@ SparsityPattern::SparsityPattern(
       maps[1].size());
   for (std::size_t col = 0; col < maps[1].size(); ++col)
   {
-    auto map = maps[1][col];
+    auto& map = maps[1][col];
     const int bs = map.get().block_size();
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts_old
         = map.get().ghosts();
@@ -145,12 +144,14 @@ SparsityPattern::SparsityPattern(
             = i + local_offset0.back() + ghost_offsets0[row];
 
         // Insert diagonal block entries (local column indices)
-        auto& cols = p->_diagonal_cache[num_rows_local + i];
+        const std::vector<std::int32_t>& cols
+            = p->_diagonal_cache[num_rows_local + i];
         for (std::size_t j = 0; j < cols.size(); ++j)
           _diagonal_cache[r_new].push_back(cols[j] + local_offset1[col]);
 
         // Off-diagonal block entries (global column indices)
-        auto& cols_off = p->_off_diagonal_cache[num_rows_local + i];
+        const std::vector<std::int64_t>& cols_off
+            = p->_off_diagonal_cache[num_rows_local + i];
         for (std::size_t j = 0; j < cols_off.size(); ++j)
         {
           // Get local index and convert to global (for this block)
@@ -275,30 +276,30 @@ void SparsityPattern::assemble()
   std::vector<std::int64_t> ghost_data;
   for (int i = 0; i < num_ghosts0; ++i)
   {
-    const std::int64_t row_node = ghosts0[i];
+    const std::int64_t row_node_global = ghosts0[i];
     const std::int32_t row_node_local = local_size0 + i;
     for (int j = 0; j < bs0; ++j)
     {
-      const std::int64_t row = bs0 * row_node + j;
+      const std::int64_t row_global = bs0 * row_node_global + j;
       const std::int32_t row_local = bs0 * row_node_local + j;
       assert((std::size_t)row_local < _diagonal_cache.size());
-      auto cols = _diagonal_cache[row_local];
+      const std::vector<std::int32_t>& cols = _diagonal_cache[row_local];
       for (std::size_t c = 0; c < cols.size(); ++c)
       {
-        ghost_data.push_back(row);
+        ghost_data.push_back(row_global);
 
         // Convert to global column index
-        // const std::int64_t J = col_map(cols[c], *_index_maps[1]);
         const std::div_t div = std::div(cols[j], bs1);
         const std::int64_t block_global = ghosts1[div.quot - local_size1];
         const std::int64_t J = bs1 * block_global + div.rem;
         ghost_data.push_back(J);
       }
 
-      auto cols_off = _off_diagonal_cache[row_local];
+      const std::vector<std::int64_t>& cols_off
+          = _off_diagonal_cache[row_local];
       for (std::size_t c = 0; c < cols_off.size(); ++c)
       {
-        ghost_data.push_back(row);
+        ghost_data.push_back(row_global);
         ghost_data.push_back(cols_off[c]);
       }
     }
