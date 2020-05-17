@@ -128,7 +128,7 @@ SparsityPattern::SparsityPattern(
           _diagonal_cache[r_new].push_back(cols[j] + local_offset1[col]);
 
         // Insert Off-diagonal block entries (global column indices)
-        const std::vector<std::int32_t>& cols_off = p->_off_diagonal_cache[i];
+        const std::vector<std::int64_t>& cols_off = p->_off_diagonal_cache[i];
         for (std::size_t j = 0; j < cols_off.size(); ++j)
         {
           auto it = col_old_to_new[col].find(cols_off[j]);
@@ -192,7 +192,9 @@ void SparsityPattern::insert(
 
   assert(_index_maps[1]);
   const int bs1 = _index_maps[1]->block_size();
-  const std::int32_t local_size1 = bs1 * _index_maps[1]->size_local();
+  const std::int32_t local_size1 = _index_maps[1]->size_local();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
+      = _index_maps[1]->ghosts();
 
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
@@ -200,13 +202,14 @@ void SparsityPattern::insert(
     {
       for (Eigen::Index j = 0; j < cols.rows(); ++j)
       {
-        if (cols[j] < local_size1)
+        if (cols[j] < bs1 * local_size1)
           _diagonal_cache[rows[i]].push_back(cols[j]);
         else
         {
-          // const std::int64_t J = col_map(cols[j], *_index_maps[1]);
-          // _off_diagonal_cache[rows[i]].push_back(J);
-          _off_diagonal_cache[rows[i]].push_back(cols[j]);
+          const std::div_t div = std::div(cols[j], bs1);
+          const std::int64_t block_global = ghosts1[div.quot - local_size1];
+          const std::int64_t J = bs1 * block_global + div.rem;
+          _off_diagonal_cache[rows[i]].push_back(J);
         }
       }
     }
@@ -253,49 +256,49 @@ void SparsityPattern::assemble()
   assert(_index_maps[0]);
   const int bs0 = _index_maps[0]->block_size();
   const std::int32_t local_size0 = _index_maps[0]->size_local();
-  // const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
+  const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
   const std::array<std::int64_t, 2> local_range0
       = _index_maps[0]->local_range();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts0
+      = _index_maps[0]->ghosts();
 
   assert(_index_maps[1]);
   const int bs1 = _index_maps[1]->block_size();
+  const std::int32_t local_size1 = _index_maps[1]->size_local();
   const std::array<std::int64_t, 2> local_range1
       = _index_maps[1]->local_range();
-
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
-      = _index_maps[0]->ghosts();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
+      = _index_maps[1]->ghosts();
 
   // For each ghost row, pack and send (global row, global col) pairs to
   // send to neighborhood
   std::vector<std::int64_t> ghost_data;
-  for (int i = 0; i < _index_maps[0]->num_ghosts(); ++i)
+  for (int i = 0; i < num_ghosts0; ++i)
   {
-    const std::int64_t row_node_global = ghosts[i];
+    const std::int64_t row_node = ghosts0[i];
     const std::int32_t row_node_local = local_size0 + i;
     for (int j = 0; j < bs0; ++j)
     {
-      const std::int64_t row_global = bs0 * row_node_global + j;
+      const std::int64_t row = bs0 * row_node + j;
       const std::int32_t row_local = bs0 * row_node_local + j;
       assert((std::size_t)row_local < _diagonal_cache.size());
-      // auto cols = _diagonal_cache[row_local];
-      const std::vector<std::int32_t>& cols = _diagonal_cache[row_local];
+      auto cols = _diagonal_cache[row_local];
       for (std::size_t c = 0; c < cols.size(); ++c)
       {
-        ghost_data.push_back(row_global);
-        ghost_data.push_back(cols[c]);
+        ghost_data.push_back(row);
 
         // Convert to global column index
         // const std::int64_t J = col_map(cols[c], *_index_maps[1]);
-        // ghost_data.push_back(J);
+        const std::div_t div = std::div(cols[j], bs1);
+        const std::int64_t block_global = ghosts1[div.quot - local_size1];
+        const std::int64_t J = bs1 * block_global + div.rem;
+        ghost_data.push_back(J);
       }
 
-      const std::vector<std::int32_t>& cols_off
-          = _off_diagonal_cache[row_local];
+      auto cols_off = _off_diagonal_cache[row_local];
       for (std::size_t c = 0; c < cols_off.size(); ++c)
       {
-        ghost_data.push_back(row_global);
-        // const std::int64_t J = col_map(cols_off[c], *_index_maps[1]);
-        // ghost_data.push_back(J);
+        ghost_data.push_back(row);
         ghost_data.push_back(cols_off[c]);
       }
     }
@@ -337,10 +340,6 @@ void SparsityPattern::assemble()
                           disp.data(), MPI_INT64_T, comm);
   MPI_Comm_free(&comm);
 
-  // Get column ghosts
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
-      = _index_maps[1]->ghosts();
-
   // Add data received from the neighbourhood
   for (std::size_t i = 0; i < ghost_data_received.size(); i += 2)
   {
@@ -358,14 +357,7 @@ void SparsityPattern::assemble()
       else
       {
         assert(row_local < (std::int32_t)_off_diagonal_cache.size());
-        auto it
-            = std::find(ghosts1.data(), ghosts1.data() + ghosts1.size(), col);
-        assert(it != ghosts1.data() + ghosts1.size());
-        const std::int32_t pos = std::distance(ghosts1.data(), it);
-        const std::size_t c = local_size0 * bs0 + pos;
-        _off_diagonal_cache[row_local].push_back(c);
-
-        // _off_diagonal_cache[row_local].push_back(col);
+        _off_diagonal_cache[row_local].push_back(col);
       }
     }
   }
@@ -386,9 +378,9 @@ void SparsityPattern::assemble()
     std::sort(row.begin(), row.end());
     row.erase(std::unique(row.begin(), row.end()), row.end());
   }
-  _off_diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+  _off_diagonal = std::make_shared<graph::AdjacencyList<std::int64_t>>(
       _off_diagonal_cache);
-  std::vector<std::vector<std::int32_t>>().swap(_off_diagonal_cache);
+  std::vector<std::vector<std::int64_t>>().swap(_off_diagonal_cache);
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const
@@ -407,7 +399,7 @@ SparsityPattern::diagonal_pattern() const
   return *_diagonal;
 }
 //-----------------------------------------------------------------------------
-const graph::AdjacencyList<std::int32_t>&
+const graph::AdjacencyList<std::int64_t>&
 SparsityPattern::off_diagonal_pattern() const
 {
   if (!_off_diagonal)
