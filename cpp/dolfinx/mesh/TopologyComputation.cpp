@@ -133,7 +133,7 @@ get_local_indexing(
 
   //---------
   // Create an expanded neighbour_comm from shared_vertices
-  std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
+  const std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
       = vertex_indexmap->compute_shared_indices();
 
   std::set<std::int32_t> neighbour_set;
@@ -173,8 +173,7 @@ get_local_indexing(
     for (int j = 0; j < num_vertices; ++j)
     {
       const int v = entity_list(i, j);
-      const auto it = shared_vertices.find(v);
-      if (it != shared_vertices.end())
+      if (auto it = shared_vertices.find(v); it != shared_vertices.end())
       {
         for (std::int32_t p : it->second)
           ++procs[p];
@@ -246,9 +245,8 @@ get_local_indexing(
     {
       recv_vec.assign(recv_entities_data.data() + j,
                       recv_entities_data.data() + j + num_vertices);
-
-      auto it = global_entity_to_entity_index.find(recv_vec);
-      if (it != global_entity_to_entity_index.end())
+      if (auto it = global_entity_to_entity_index.find(recv_vec);
+          it != global_entity_to_entity_index.end())
       {
         shared_entities[it->second].insert(p);
         recv_index.push_back(it->second);
@@ -268,7 +266,7 @@ get_local_indexing(
     // Index non-ghost entities
     for (int i = 0; i < entity_count; ++i)
     {
-      const auto it = shared_entities.find(i);
+      auto it = shared_entities.find(i);
       std::int8_t gs = ghost_status[i];
       assert(gs > 0);
       // Definitely ghost
