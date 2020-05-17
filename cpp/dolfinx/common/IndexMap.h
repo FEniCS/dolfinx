@@ -28,9 +28,11 @@ class IndexMap;
 /// @param[in] maps List of index maps
 /// @returns The (0) global offset of a stacked map for this rank, (1)
 ///   local offset for each submap in the stacked map, and (2) new
-///   indices for the ghosts for each submap.
+///   indices for the ghosts for each submap (3) owner rank of each ghost
+///   entry for each submap
 std::tuple<std::int64_t, std::vector<std::int32_t>,
-           std::vector<std::vector<std::int64_t>>>
+           std::vector<std::vector<std::int64_t>>,
+           std::vector<std::vector<int>>>
 stack_index_maps(
     const std::vector<std::reference_wrapper<const common::IndexMap>>& maps);
 
@@ -60,8 +62,11 @@ public:
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] block_size The block size of the IndexMap
+  /// @param[in] ghost_ranks Owner rank (on global communicator) of each ghost
+  ///   entry
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
-           const std::vector<std::int64_t>& ghosts, int block_size);
+           const std::vector<std::int64_t>& ghosts,
+           const std::vector<int>& ghost_ranks, int block_size);
 
   /// Create Index map with local_size owned blocks on this process, and
   /// blocks have size block_size.
@@ -72,11 +77,13 @@ public:
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] block_size The block size of the IndexMap
+  /// @param[in] ghost_ranks Owner rank (on global communicator) of each ghost
+  ///   entry
   IndexMap(
       MPI_Comm mpi_comm, std::int32_t local_size,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
           ghosts,
-      int block_size);
+      const std::vector<int>& ghost_ranks, int block_size);
 
   /// Copy constructor
   IndexMap(const IndexMap& map) = delete;
@@ -161,11 +168,10 @@ public:
   std::int64_t local_to_global(std::int32_t local_index) const
   {
     assert(local_index >= 0);
-    const std::int32_t local_size
-        = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
+    const std::int32_t local_size = (_local_range[1] - _local_range[0]);
     if (local_index < local_size)
     {
-      const std::int64_t global_offset = _all_ranges[_myrank];
+      const std::int64_t global_offset = _local_range[0];
       return global_offset + local_index;
     }
     else
@@ -187,9 +193,6 @@ public:
   /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
-  /// Get MPI rank that owns index (global block index)
-  int owner(std::int64_t global_index) const;
-
   /// Return array of global indices for all indices on this process,
   /// including ghosts
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1>
@@ -199,7 +202,7 @@ public:
   /// @return The communicator on which the IndexMap is defined
   MPI_Comm mpi_comm() const;
 
-  /// Neighbors for neigborhood communicator
+  /// Neighbors for neighborhood communicator
   const std::vector<std::int32_t>& neighbours() const;
 
   /// @todo Aim to remove this function
@@ -283,6 +286,12 @@ public:
 private:
   int _block_size;
 
+  // Range of indices (global) owned by this process
+  std::array<std::int64_t, 2> _local_range;
+
+  // Number indices across communicator
+  std::int64_t _size_global;
+
   // MPI Communicator
   dolfinx::MPI::Comm _mpi_comm;
 
@@ -295,10 +304,6 @@ private:
   // Cache rank on mpi_comm (otherwise calls to MPI_Comm_rank can be
   // excessive)
   int _myrank;
-
-  // FIXME: This could get big for large process counts. Compute on-demand.
-  // Range of ownership of index for all processes
-  std::vector<std::int64_t> _all_ranges;
 
   // Local-to-global map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;

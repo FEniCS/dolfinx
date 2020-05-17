@@ -30,8 +30,11 @@ void test_scatter_fwd()
   for (int i = 0; i < num_ghosts; ++i)
     ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
 
+  std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
+
   // Create an IndexMap
-  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts, 1);
+  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts,
+                           global_ghost_owner, 1);
 
   // Create some data to scatter
   const std::int64_t val = 11;
@@ -61,8 +64,11 @@ void test_scatter_rev()
   for (int i = 0; i < num_ghosts; ++i)
     ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
 
+  std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
+
   // Create an IndexMap
-  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts, 1);
+  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts,
+                           global_ghost_owner, 1);
 
   // Create some data, setting ghost values
   std::int64_t value = 15;

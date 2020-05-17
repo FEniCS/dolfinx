@@ -306,6 +306,7 @@ get_local_indexing(
 
   //---------
   // Communicate global indices to other processes
+  std::vector<int> ghost_owners(entity_count - num_local, -1);
   std::vector<std::int64_t> ghost_indices(entity_count - num_local, -1);
   {
     const std::int64_t local_offset
@@ -331,11 +332,14 @@ get_local_indexing(
 
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
-
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_global_index_data
+    const graph::AdjacencyList<std::int64_t> recv_data
         = dolfinx::MPI::neighbor_all_to_all(
-              neighbour_comm, send_global_index_offsets, send_global_index_data)
-              .array();
+            neighbour_comm, send_global_index_offsets, send_global_index_data);
+
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_global_index_data
+        = recv_data.array();
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& recv_offsets
+        = recv_data.offsets();
 
     assert(recv_global_index_data.size() == (int)recv_index.size());
 
@@ -348,6 +352,10 @@ get_local_indexing(
       {
         assert(local_index[idx] >= num_local);
         ghost_indices[local_index[idx] - num_local] = gi;
+        const auto pos = std::upper_bound(
+            recv_offsets.data(), recv_offsets.data() + recv_offsets.rows(), j);
+        const int owner = std::distance(recv_offsets.data(), pos) - 1;
+        ghost_owners[local_index[idx] - num_local] = neighbours[owner];
       }
     }
     for (std::int64_t idx : ghost_indices)
@@ -356,8 +364,8 @@ get_local_indexing(
 
   MPI_Comm_free(&neighbour_comm);
 
-  std::shared_ptr<common::IndexMap> index_map
-      = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
+  auto index_map = std::make_shared<common::IndexMap>(
+      comm, num_local, ghost_indices, ghost_owners, 1);
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
