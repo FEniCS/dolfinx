@@ -170,9 +170,8 @@ bool ParallelRefinement::mark(std::int32_t edge_index)
   _marked_edges[edge_index] = true;
 
   // If it is a shared edge, add all sharing neighbours to update set
-  auto map_it = _shared_edges.find(edge_index);
-
-  if (map_it != _shared_edges.end())
+  if (auto map_it = _shared_edges.find(edge_index);
+      map_it != _shared_edges.end())
   {
     const std::int64_t global_index = local_to_global(edge_index, *map1);
     for (int p : map_it->second)
@@ -276,8 +275,9 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
   {
     const std::size_t local_i = local_edge.first;
     // shared, but locally owned : remote owned are not in list.
-    auto shared_edge_i = _shared_edges.find(local_i);
-    if (shared_edge_i != _shared_edges.end())
+
+    if (auto shared_edge_i = _shared_edges.find(local_i);
+        shared_edge_i != _shared_edges.end())
     {
       for (int remote_process : shared_edge_i->second)
       {

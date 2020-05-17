@@ -486,9 +486,11 @@ mesh::create_topology(MPI_Comm comm,
         auto v = cells.links(i);
         for (int j = 0; j < v.size(); ++j)
         {
-          auto vit = fwd_shared_vertices.find(v[j]);
-          if (vit == fwd_shared_vertices.end())
+          if (auto vit = fwd_shared_vertices.find(v[j]);
+              vit == fwd_shared_vertices.end())
+          {
             fwd_shared_vertices.insert({v[j], it->second});
+          }
           else
             vit->second.insert(it->second.begin(), it->second.end());
         }
