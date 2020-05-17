@@ -1,4 +1,4 @@
-name: DOLFINX CI tests
+name: DOLFINX CI
 
 on:
   push:
