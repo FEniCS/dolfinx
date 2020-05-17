@@ -225,7 +225,6 @@ Partitioning::reorder_global_indices(
     // Get old global -> local
     auto it = global_to_local.find(indices_send[i]);
     assert(it != global_to_local.end());
-
     if (sharing_processes->num_links(i) == 1
         and sharing_processes->links(i).minCoeff() == rank)
     {
@@ -240,9 +239,11 @@ Partitioning::reorder_global_indices(
   std::sort(neighbours.begin(), neighbours.end());
   neighbours.erase(std::unique(neighbours.begin(), neighbours.end()),
                    neighbours.end());
-  auto it = std::find(neighbours.begin(), neighbours.end(), rank);
-  if (it != neighbours.end())
+  if (auto it = std::find(neighbours.begin(), neighbours.end(), rank);
+      it != neighbours.end())
+  {
     neighbours.erase(it);
+  }
 
   // Create neighbourhood communicator
   MPI_Comm comm_n;
@@ -339,8 +340,8 @@ Partitioning::reorder_global_indices(
   for (auto it = global_to_local_unowned.begin();
        it != global_to_local_unowned.end(); ++it)
   {
-    auto pair = global_old_new.find(it->first);
-    if (pair != global_old_new.end())
+    if (auto pair = global_old_new.find(it->first);
+        pair != global_old_new.end())
     {
       assert(it->second < (int)local_to_local_new.size());
       local_to_original.push_back(it->first);

@@ -218,10 +218,9 @@ FunctionSpace::sub(const std::vector<int>& component) const
   assert(_dofmap);
 
   // Check if sub space is already in the cache and not expired
-  auto subspace_it = _subspaces.find(component);
-  if (subspace_it != _subspaces.end())
+  if (auto it = _subspaces.find(component); it != _subspaces.end())
   {
-    if (auto s = subspace_it->second.lock())
+    if (auto s = it->second.lock())
       return s;
   }
 

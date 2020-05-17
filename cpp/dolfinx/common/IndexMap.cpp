@@ -447,9 +447,11 @@ std::vector<std::int32_t> IndexMap::global_to_local(
     else
     {
       const std::int64_t index_block = index / bs;
-      auto it = global_to_local.find(index_block);
-      if (it != global_to_local.end())
+      if (auto it = global_to_local.find(index_block);
+          it != global_to_local.end())
+      {
         local.push_back(it->second * bs + index % bs);
+      }
       else
         local.push_back(-1);
     }
