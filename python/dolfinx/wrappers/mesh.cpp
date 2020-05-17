@@ -257,9 +257,5 @@ void mesh(py::module& m)
   m.def("locate_entities", &dolfinx::mesh::locate_entities);
   m.def("locate_entities_boundary", &dolfinx::mesh::locate_entities_boundary);
 
-  // TODO Remove
-  m.def("compute_vertex_exterior_markers",
-        &dolfinx::mesh::Partitioning::compute_vertex_exterior_markers);
-
 } // namespace dolfinx_wrappers
 } // namespace dolfinx_wrappers

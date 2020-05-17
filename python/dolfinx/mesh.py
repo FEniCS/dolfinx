@@ -93,16 +93,12 @@ def refine(mesh, cell_markers=None, redistribute=True):
 
 def create(comm, cells, x, domain, ghost_mode=cpp.mesh.GhostMode.shared_facet):
     """Crete a mesh from topology and geometry data"""
-    # cell = ufl.Cell(cpp.mesh.to_string(cell_type), geometric_dimension=x.shape[1])
-    # domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
     cmap = fem.create_coordinate_map(domain)
-
     try:
         mesh = cpp.mesh.create(comm, cells, cmap, x, ghost_mode)
     except TypeError:
         mesh = cpp.mesh.create(comm, cpp.graph.AdjacencyList64(numpy.cast['int64'](cells)),
                                cmap, x, ghost_mode)
-
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
 
@@ -113,8 +109,7 @@ def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostM
     """Crete a mesh from topology and geometry data"""
     cell = ufl.Cell(cpp.mesh.to_string(cell_type), geometric_dimension=x.shape[1])
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
-    cmap = fem.create_coordinate_map(domain)
-    return create(comm, cells, cmap, x, ghost_mode)
+    return create(comm, cells, x, domain, ghost_mode)
 
     # mesh = cpp.mesh.Mesh(comm, cell_type, x, cells, cmap, ghosts, ghost_mode)
     # domain._ufl_cargo = mesh

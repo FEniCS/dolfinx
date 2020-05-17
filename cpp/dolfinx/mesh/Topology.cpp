@@ -359,9 +359,11 @@ mesh::create_topology(MPI_Comm comm,
     auto v = cells.links(i);
     for (int j = 0; j < v.size(); ++j)
     {
-      auto it = global_to_local_index.find(v[j]);
-      if (it != global_to_local_index.end())
+      if (auto it = global_to_local_index.find(v[j]);
+          it != global_to_local_index.end())
+      {
         ghost_boundary_vertices.insert(v[j]);
+      }
       else
         local_vertex_set.insert(v[j]);
     }
@@ -479,15 +481,16 @@ mesh::create_topology(MPI_Comm comm,
     std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
     for (int i = 0; i < index_map_c->size_local(); ++i)
     {
-      auto it = shared_cells.find(i);
-      if (it != shared_cells.end())
+      if (auto it = shared_cells.find(i); it != shared_cells.end())
       {
         auto v = cells.links(i);
         for (int j = 0; j < v.size(); ++j)
         {
-          auto vit = fwd_shared_vertices.find(v[j]);
-          if (vit == fwd_shared_vertices.end())
+          if (auto vit = fwd_shared_vertices.find(v[j]);
+              vit == fwd_shared_vertices.end())
+          {
             fwd_shared_vertices.insert({v[j], it->second});
+          }
           else
             vit->second.insert(it->second.begin(), it->second.end());
         }

@@ -159,9 +159,11 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
         if (f_to_c->num_links(*f) == 1
             and fwd_shared.find(*f) == fwd_shared.end())
         {
-          const auto it = id_to_integral.find(values[i]);
-          if (it != id_to_integral.end())
+          if (auto it = id_to_integral.find(values[i]);
+              it != id_to_integral.end())
+          {
             integrals[it->second].active_entities.push_back(*f);
+          }
         }
       }
     }
@@ -172,9 +174,11 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
         if (f_to_c->num_links(*f) == 2)
         {
           const std::size_t i = std::distance(tagged_entities.cbegin(), f);
-          const auto it = id_to_integral.find(values[i]);
-          if (it != id_to_integral.end())
+          if (const auto it = id_to_integral.find(values[i]);
+              it != id_to_integral.end())
+          {
             integrals[it->second].active_entities.push_back(*f);
+          }
         }
       }
     }
@@ -186,9 +190,11 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     for (auto e = tagged_entities.begin(); e != entity_end; ++e)
     {
       const std::size_t i = std::distance(tagged_entities.cbegin(), e);
-      const auto it = id_to_integral.find(values[i]);
-      if (it != id_to_integral.end())
+      if (const auto it = id_to_integral.find(values[i]);
+          it != id_to_integral.end())
+      {
         integrals[it->second].active_entities.push_back(*e);
+      }
     }
   }
 }
