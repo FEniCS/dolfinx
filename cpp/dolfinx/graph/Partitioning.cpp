@@ -240,9 +240,11 @@ Partitioning::reorder_global_indices(
   std::sort(neighbours.begin(), neighbours.end());
   neighbours.erase(std::unique(neighbours.begin(), neighbours.end()),
                    neighbours.end());
-  auto it = std::find(neighbours.begin(), neighbours.end(), rank);
-  if (it != neighbours.end())
+  if (auto it = std::find(neighbours.begin(), neighbours.end(), rank);
+      it != neighbours.end())
+  {
     neighbours.erase(it);
+  }
 
   // Create neighbourhood communicator
   MPI_Comm comm_n;

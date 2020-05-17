@@ -159,8 +159,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
     while (std::getline(keys_stream, key[0], '\0'),
            std::getline(keys_stream, key[1], '\0'))
     {
-      const auto it = dvalues_all.find(key);
-      if (it != dvalues_all.end())
+      if (auto it = dvalues_all.find(key); it != dvalues_all.end())
         it->second = op_impl(it->second, *(values_ptr++));
       else
         dvalues_all[key] = *(values_ptr++);
