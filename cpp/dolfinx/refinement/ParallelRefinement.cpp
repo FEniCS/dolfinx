@@ -412,7 +412,7 @@ mesh::Mesh ParallelRefinement::build_local(
 //-----------------------------------------------------------------------------
 mesh::Mesh
 ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
-                              bool redistribute) const
+                              int num_ghost_cells, bool redistribute) const
 {
   const int num_vertices_per_cell
       = mesh::cell_num_entities(_mesh.topology().cell_type(), 0);
@@ -425,19 +425,24 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
   for (std::int32_t i = 0; i < num_local_cells; i++)
     global_cell_indices[i] = idx_global_offset + i;
 
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      cells(cell_topology.data(), num_local_cells, num_vertices_per_cell);
-
   // Build mesh
   if (redistribute)
   {
-    return mesh::create(_mesh.mpi_comm(),
-                        graph::AdjacencyList<std::int64_t>(cells),
-                        _mesh.geometry().cmap(), _new_vertex_coordinates,
-                        mesh::GhostMode::none);
+    mesh::GhostMode ghost_mode;
+    if (num_ghost_cells > 0)
+      ghost_mode = mesh::GhostMode::shared_facet;
+    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        cells(cell_topology.data(), num_local_cells - num_ghost_cells,
+              num_vertices_per_cell);
+    return mesh::create(
+        _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells),
+        _mesh.geometry().cmap(), _new_vertex_coordinates, ghost_mode);
   }
 
+  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      cells(cell_topology.data(), num_local_cells, num_vertices_per_cell);
   MPI_Comm comm = _mesh.mpi_comm();
   mesh::Topology topology(comm, _mesh.geometry().cmap().cell_shape());
   const graph::AdjacencyList<std::int64_t> my_cells(cells);

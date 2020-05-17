@@ -80,10 +80,12 @@ public:
 
   /// Use vertex and topology data to partition new mesh across processes
   /// @param[in] cell_topology Topology of cells, (vertex indices)
+  /// @param[in] num_ghost_cells Number of cells which are ghost (at end of
+  /// list)
   /// @param[in] redistribute Flag, calls partitioner if true
   /// @return New mesh
   mesh::Mesh partition(const std::vector<std::int64_t>& cell_topology,
-                       bool redistribute) const;
+                       int num_ghost_cells, bool redistribute) const;
 
   /// Build local mesh from internal data when not running in parallel
   /// @param[in] cell_topology

@@ -89,7 +89,6 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
   auto map_c = mesh.topology().index_map(tdim);
   assert(map_c);
-  const int num_cells = map_c->size_local() + map_c->num_ghosts();
 
   auto c_to_v = mesh.topology().connectivity(tdim, 0);
   assert(c_to_v);
@@ -106,8 +105,11 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   std::vector<std::int64_t> global_indices = ParallelRefinement::adjust_indices(
       mesh.topology().index_map(0), num_new_vertices_local);
 
+  const int num_cells = map_c->size_local();
+  const int num_ghost_cells = map_c->num_ghosts();
   std::vector<std::int64_t> cell_topology;
-  for (int c = 0; c < num_cells; ++c)
+  int num_new_ghost_cells = 0;
+  for (int c = 0; c < num_cells + num_ghost_cells; ++c)
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
@@ -176,6 +178,10 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
       for (std::int32_t i = 0; i < ncells; ++i)
         parent_cell.push_back(c);
 
+      // Count up new ghost cells
+      if (c >= num_cells)
+        num_new_ghost_cells += ncells;
+
       // Convert from cell local index to mesh index and add to cells
       for (std::int32_t v : simplex_set)
         cell_topology.push_back(indices[v]);
@@ -186,7 +192,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   if (serial)
     return p_ref.build_local(cell_topology);
   else
-    return p_ref.partition(cell_topology, redistribute);
+    return p_ref.partition(cell_topology, num_new_ghost_cells, redistribute);
 }
 //-----------------------------------------------------------------------------
 // 2D version of subdivision allowing for uniform subdivision (flag)
@@ -234,9 +240,9 @@ get_tetrahedra(const std::vector<bool>& marked_edges,
                const std::vector<std::int32_t>& longest_edge)
 {
   // Connectivity matrix for ten possible points (4 vertices + 6 edge
-  // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only need upper
-  // triangle, but sometimes it is easier just to insert both entries (j,i) and
-  // (i,j).
+  // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only need
+  // upper triangle, but sometimes it is easier just to insert both entries
+  // (j,i) and (i,j).
   bool conn[10][10] = {};
 
   // Edge connectivity to vertices (and by extension facets)
