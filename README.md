@@ -1,7 +1,8 @@
 # DOLFINX
 
 [![CircleCI](https://circleci.com/gh/FEniCS/dolfinx.svg?style=svg)](https://circleci.com/gh/FEniCS/dolfinx)
-![DOLFINX GitHub Actions](https://github.com/FEniCS/dolfinx/workflows/DOLFINX%20CI%20tests/badge.svg)
+![DOLFINX CI tests](https://github.com/FEniCS/dolfinx/workflows/DOLFINX%20CI%20tests/badge.svg)
+![Build and push Docker CI test image](https://github.com/FEniCS/dolfinx/workflows/Build%20and%20push%20Docker%20CI%20test%20image/badge.svg)
 
 DOLFINX is a new version of DOLFIN. It is being actively developed, but
 is **not ready for production use**. New experimental features may come
@@ -37,7 +38,7 @@ To install the Python interface, first install the C++ core, and then
 in the ``python/`` directory run::
 ```
 pip install .
-```
+
 (you may need to use ``pip3``, depending on your system).
 
 For detailed instructions, see the file INSTALL.
