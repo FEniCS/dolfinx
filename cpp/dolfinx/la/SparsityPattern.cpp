@@ -208,11 +208,8 @@ void SparsityPattern::insert(
         else
         {
           const std::div_t div = std::div(cols[j], bs1);
-          assert(div.quot - local_size1 >= 0);
-          assert(div.quot - local_size1 < ghosts1.rows());
           const std::int64_t block_global = ghosts1[div.quot - local_size1];
-          const std::int64_t J = bs1 * block_global + div.rem;
-          _off_diagonal_cache[rows[i]].push_back(J);
+          _off_diagonal_cache[rows[i]].push_back(bs1 * block_global + div.rem);
         }
       }
     }
@@ -296,11 +293,8 @@ void SparsityPattern::assemble()
         else
         {
           const std::div_t div = std::div(cols[c], bs1);
-          assert(div.quot - local_size1 >= 0);
-          assert(div.quot - local_size1 < ghosts1.rows());
           const std::int64_t block_global = ghosts1[div.quot - local_size1];
-          const std::int64_t J = bs1 * block_global + div.rem;
-          ghost_data.push_back(J);
+          ghost_data.push_back(bs1 * block_global + div.rem);
         }
       }
 
