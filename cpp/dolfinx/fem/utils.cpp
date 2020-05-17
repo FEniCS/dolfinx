@@ -271,12 +271,12 @@ la::PETScMatrix fem::create_matrix_block(
       maps[d].push_back(*space->dofmap()->index_map.get());
   }
 
-
   // FIXME: This is computed again inside the SparsityPattern
   // constructor, but we also need to outside to build the PETSc
   // local-to-global map. Compute outside and pass into SparsityPattern
   // constructor.
-  auto [rank_offset, local_offset, ghosts] = common::stack_index_maps(maps[0]);
+  auto [rank_offset, local_offset, ghosts, owner]
+      = common::stack_index_maps(maps[0]);
 
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
@@ -285,7 +285,6 @@ la::PETScMatrix fem::create_matrix_block(
       p[row].push_back(patterns[row][col].get());
   la::SparsityPattern pattern(mesh->mpi_comm(), p, maps);
   pattern.assemble();
-
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
   // Mat constructor.
@@ -373,16 +372,20 @@ la::PETScVector fem::create_vector_block(
 {
   // FIXME: handle constant block size > 1
 
-  auto [rank_offset, local_offset, ghosts_new] = common::stack_index_maps(maps);
+  auto [rank_offset, local_offset, ghosts_new, ghost_new_owners]
+      = common::stack_index_maps(maps);
   std::int32_t local_size = local_offset.back();
   std::vector<std::int64_t> ghosts;
   for (auto& sub_ghost : ghosts_new)
     ghosts.insert(ghosts.end(), sub_ghost.begin(), sub_ghost.end());
 
+  std::vector<int> ghost_owners;
+  for (auto& sub_owner : ghost_new_owners)
+    ghost_owners.insert(ghost_owners.end(), sub_owner.begin(), sub_owner.end());
+
   // Create map for combined problem, and create vector
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> _ghosts(
-      ghosts.data(), ghosts.size());
-  common::IndexMap index_map(maps[0].get().mpi_comm(), local_size, _ghosts, 1);
+  common::IndexMap index_map(maps[0].get().mpi_comm(), local_size, ghosts,
+                             ghost_owners, 1);
 
   return la::PETScVector(index_map);
 }

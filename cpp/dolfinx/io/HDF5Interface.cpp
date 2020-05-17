@@ -317,7 +317,6 @@ void HDF5Interface::add_group(const hid_t hdf5_file_handle,
     pos++;
     pos = _group_name.find('/', pos);
     const std::string parent_name(_group_name, 0, pos);
-
     if (!has_group(hdf5_file_handle, parent_name))
     {
       const hid_t group_id_vis

@@ -59,6 +59,7 @@ public:
   }
 
   /// @todo Remove this constructor once the creation of
+  ///
   /// ElementDofLayout and coordinate maps is make straightforward
   ///
   /// Construct a Mesh from topological and geometric data.
