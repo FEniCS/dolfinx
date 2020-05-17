@@ -25,6 +25,26 @@ using namespace dolfinx::refinement;
 namespace
 {
 
+std::int64_t local_to_global(std::int32_t local_index,
+                             const common::IndexMap& map)
+{
+  const std::array<std::int64_t, 2> local_range = map.local_range();
+
+  assert(local_index >= 0);
+  const std::int32_t local_size = (local_range[1] - local_range[0]);
+  if (local_index < local_size)
+  {
+    const std::int64_t global_offset = local_range[0];
+    return global_offset + local_index;
+  }
+  else
+  {
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map.ghosts();
+    assert((local_index - local_size) < ghosts.size());
+    return ghosts[local_index - local_size];
+  }
+}
+
 //-----------------------------------------------------------------------------
 // Create geometric points of new Mesh, from current Mesh and a edge_to_vertex
 // map listing the new local points (midpoints of those edges)
@@ -150,10 +170,10 @@ bool ParallelRefinement::mark(std::int32_t edge_index)
   _marked_edges[edge_index] = true;
 
   // If it is a shared edge, add all sharing neighbours to update set
-  auto map_it = _shared_edges.find(edge_index);
-  if (map_it != _shared_edges.end())
+  if (auto map_it = _shared_edges.find(edge_index);
+      map_it != _shared_edges.end())
   {
-    const std::int64_t global_index = map1->local_to_global(edge_index);
+    const std::int64_t global_index = local_to_global(edge_index, *map1);
     for (int p : map_it->second)
       _marked_for_update[p].push_back(global_index);
   }
@@ -255,14 +275,15 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
   {
     const std::size_t local_i = local_edge.first;
     // shared, but locally owned : remote owned are not in list.
-    auto shared_edge_i = _shared_edges.find(local_i);
-    if (shared_edge_i != _shared_edges.end())
+
+    if (auto shared_edge_i = _shared_edges.find(local_i);
+        shared_edge_i != _shared_edges.end())
     {
       for (int remote_process : shared_edge_i->second)
       {
         // send map from global edge index to new global vertex index
         values_to_send[remote_process].push_back(
-            edge_index_map->local_to_global(local_edge.first));
+            local_to_global(local_edge.first, *edge_index_map));
         values_to_send[remote_process].push_back(local_edge.second);
       }
     }
