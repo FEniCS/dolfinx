@@ -1,7 +1,6 @@
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
+from dolfinx.generation import UnitCubeMesh
 from dolfinx.mesh import locate_entities
 from dolfinx.cpp.mesh import CellType
-from dolfinx.io import XDMFFile
 from dolfinx import cpp
 import pytest
 
