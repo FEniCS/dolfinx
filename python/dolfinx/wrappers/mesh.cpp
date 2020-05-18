@@ -167,21 +167,6 @@ void mesh(py::module& m)
         return std::make_unique<dolfinx::mesh::Mesh>(comm.get(), topology,
                                                      geometry);
       }))
-      .def(py::init(
-          [](const MPICommWrapper comm, dolfinx::mesh::CellType type,
-             const Eigen::Ref<const Eigen::Array<
-                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
-                 geometry,
-             const Eigen::Ref<
-                 const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                    Eigen::Dynamic, Eigen::RowMajor>>& topology,
-             const dolfinx::fem::CoordinateElement& element,
-             const std::vector<std::int64_t>& global_cell_indices,
-             const dolfinx::mesh::GhostMode ghost_mode) {
-            return std::make_unique<dolfinx::mesh::Mesh>(
-                comm.get(), type, geometry, topology, element,
-                global_cell_indices, ghost_mode);
-          }))
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
@@ -284,10 +269,6 @@ void mesh(py::module& m)
 
   m.def("locate_entities", &dolfinx::mesh::locate_entities);
   m.def("locate_entities_boundary", &dolfinx::mesh::locate_entities_boundary);
-
-  // TODO Remove
-  m.def("compute_vertex_exterior_markers",
-        &dolfinx::mesh::Partitioning::compute_vertex_exterior_markers);
 
 } // namespace dolfinx_wrappers
 } // namespace dolfinx_wrappers

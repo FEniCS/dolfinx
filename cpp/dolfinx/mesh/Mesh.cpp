@@ -138,20 +138,6 @@ Mesh mesh::create(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh(
-    MPI_Comm comm, mesh::CellType,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x,
-    const Eigen::Ref<const Eigen::Array<
-        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const fem::CoordinateElement& element, const std::vector<std::int64_t>&,
-    const GhostMode ghost_mode, std::int32_t)
-    : Mesh(mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells),
-                        element, x, ghost_mode))
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 Topology& Mesh::topology() { return _topology; }
 //-----------------------------------------------------------------------------
 const Topology& Mesh::topology() const { return _topology; }

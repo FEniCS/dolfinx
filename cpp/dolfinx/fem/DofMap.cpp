@@ -108,20 +108,23 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   // receive new global indices from owner
   std::vector<std::int64_t> global_index_remote
       = dofmap_view.index_map->scatter_fwd(global_index, 1);
+  auto ghost_owner_old = dofmap_view.index_map->ghost_owners();
 
   // Compute ghosts for collapsed dofmap
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(num_unowned);
+  std::vector<int> ghost_owners(num_unowned);
   for (auto it = it_unowned0; it != dofs_view.end(); ++it)
   {
     const std::int32_t index = std::distance(it_unowned0, it) / bs;
     const std::int32_t index_old = *it / bs_view - num_owned_view;
     assert(global_index_remote[index_old] >= 0);
     ghosts[index] = global_index_remote[index_old];
+    ghost_owners[index] = ghost_owner_old[index_old];
   }
 
   // Create new index map
-  auto index_map
-      = std::make_shared<common::IndexMap>(comm, num_owned, ghosts, bs);
+  auto index_map = std::make_shared<common::IndexMap>(comm, num_owned, ghosts,
+                                                      ghost_owners, bs);
 
   // Create array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);

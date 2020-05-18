@@ -6,6 +6,7 @@
 
 #include "DofMapBuilder.h"
 #include "ElementDofLayout.h"
+#include <algorithm>
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -16,6 +17,7 @@
 #include <dolfinx/graph/BoostGraphOrdering.h>
 #include <dolfinx/graph/SCOTCH.h>
 #include <dolfinx/mesh/Topology.h>
+#include <iterator>
 #include <memory>
 #include <random>
 #include <unordered_map>
@@ -30,7 +32,7 @@ namespace
 
 /// Build a simple dofmap from ElementDofmap based on mesh entity
 /// indices (local and global)
-/// @todo Remove mesh argument
+///
 /// @param [in] mesh The mesh to build the dofmap on
 /// @param [in] topology The mesh topology
 /// @param [in] element_dof_layout The layout of dofs on a cell
@@ -332,7 +334,9 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 /// @param [in] dof_entity The ith entry gives (topological dim, local
 ///   index) of the mesh entity to which node i (old local index) is
 ///   associated
-std::vector<std::int64_t> get_global_indices(
+/// @returns The (0) global indices for unowned dofs, (1) onwer rank of each
+///   unowned dof
+std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     const mesh::Topology& topology, const std::int32_t num_owned,
     const std::int64_t process_offset,
     const std::vector<std::int64_t>& global_indices_old,
@@ -381,6 +385,7 @@ std::vector<std::int64_t> get_global_indices(
   std::vector<MPI_Request> requests(D + 1);
   std::vector<MPI_Comm> comm(D + 1, MPI_COMM_NULL);
   std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
+  std::vector<std::vector<int>> recv_offsets(D + 1);
   for (int d = 0; d <= D; ++d)
   {
     // FIXME: This should check which dimension are needed by the dofmap
@@ -407,7 +412,8 @@ std::vector<std::int64_t> get_global_indices(
 
       // Compute displacements for data to receive. Last entry has total
       // number of received items.
-      std::vector<int> disp(num_neighbours + 1, 0);
+      std::vector<int>& disp = recv_offsets[d];
+      disp.resize(num_neighbours + 1);
       std::partial_sum(num_indices_recv.begin(), num_indices_recv.end(),
                        disp.begin() + 1);
 
@@ -438,17 +444,27 @@ std::vector<std::int64_t> get_global_indices(
   }
 
   std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
+  std::vector<int> local_to_global_new_owner(old_to_new.size() - num_owned);
   for (std::size_t i = 0; i < requests_dim.size(); ++i)
   {
     int idx, d;
     MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
     d = requests_dim[idx];
 
+    auto map = topology.index_map(d);
+    const std::vector<std::int32_t>& neighbours = map->neighbours();
+
     // Build (global old, global new) map for dofs of dimension d
-    std::unordered_map<std::int64_t, std::int64_t> global_old_new;
+    std::unordered_map<std::int64_t, std::pair<int64_t, int>> global_old_new;
     std::vector<std::int64_t>& dofs_received = all_dofs_received[d];
+    std::vector<int>& offsets = recv_offsets[d];
     for (std::size_t j = 0; j < dofs_received.size(); j += 2)
-      global_old_new.insert({dofs_received[j], dofs_received[j + 1]});
+    {
+      const auto pos = std::upper_bound(offsets.begin(), offsets.end(), j);
+      const int owner = std::distance(offsets.begin(), pos) - 1;
+      global_old_new.insert(
+          {dofs_received[j], {dofs_received[j + 1], neighbours[owner]}});
+    }
 
     // Build the dimension d part of local_to_global_new vector
     std::vector<std::int64_t>& local_new_to_global_old_d
@@ -457,7 +473,9 @@ std::vector<std::int64_t> get_global_indices(
     {
       auto it = global_old_new.find(local_new_to_global_old_d[i]);
       assert(it != global_old_new.end());
-      local_to_global_new[local_new_to_global_old_d[i + 1]] = it->second;
+      local_to_global_new[local_new_to_global_old_d[i + 1]] = it->second.first;
+      local_to_global_new_owner[local_new_to_global_old_d[i + 1]]
+          = it->second.second;
     }
   }
 
@@ -468,7 +486,7 @@ std::vector<std::int64_t> get_global_indices(
       MPI_Comm_free(&comm[d]);
   }
 
-  return local_to_global_new;
+  return {local_to_global_new, local_to_global_new_owner};
 }
 //-----------------------------------------------------------------------------
 
@@ -537,13 +555,15 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
       = dolfinx::MPI::global_offset(comm, num_owned, true);
 
   // Get global indices for unowned dofs
-  const std::vector<std::int64_t> local_to_global_unowned
+  const auto [local_to_global_unowned, local_to_global_owner]
       = get_global_indices(topology, num_owned, process_offset,
                            local_to_global0, old_to_new, dof_entity0);
+  assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
   // Create IndexMap for dofs range on this process
   auto index_map = std::make_unique<common::IndexMap>(
-      comm, num_owned, local_to_global_unowned, block_size);
+      comm, num_owned, local_to_global_unowned, local_to_global_owner,
+      block_size);
   assert(index_map);
 
   // FIXME: There is an assumption here on the dof order for an element.

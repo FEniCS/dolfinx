@@ -50,9 +50,9 @@ void common(py::module& m)
           [](const MPICommWrapper comm, std::int32_t local_size,
              const Eigen::Ref<
                  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>& ghosts,
-             int block_size) {
+             std::vector<int> ghost_owners, int block_size) {
             return std::make_shared<dolfinx::common::IndexMap>(
-                comm.get(), local_size, ghosts, block_size);
+                comm.get(), local_size, ghosts, ghost_owners, block_size);
           }))
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMap::size_local)

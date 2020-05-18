@@ -133,7 +133,7 @@ get_local_indexing(
 
   //---------
   // Create an expanded neighbour_comm from shared_vertices
-  std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
+  const std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
       = vertex_indexmap->compute_shared_indices();
 
   std::set<std::int32_t> neighbour_set;
@@ -173,8 +173,7 @@ get_local_indexing(
     for (int j = 0; j < num_vertices; ++j)
     {
       const int v = entity_list(i, j);
-      const auto it = shared_vertices.find(v);
-      if (it != shared_vertices.end())
+      if (auto it = shared_vertices.find(v); it != shared_vertices.end())
       {
         for (std::int32_t p : it->second)
           ++procs[p];
@@ -246,9 +245,8 @@ get_local_indexing(
     {
       recv_vec.assign(recv_entities_data.data() + j,
                       recv_entities_data.data() + j + num_vertices);
-
-      auto it = global_entity_to_entity_index.find(recv_vec);
-      if (it != global_entity_to_entity_index.end())
+      if (auto it = global_entity_to_entity_index.find(recv_vec);
+          it != global_entity_to_entity_index.end())
       {
         shared_entities[it->second].insert(p);
         recv_index.push_back(it->second);
@@ -268,7 +266,7 @@ get_local_indexing(
     // Index non-ghost entities
     for (int i = 0; i < entity_count; ++i)
     {
-      const auto it = shared_entities.find(i);
+      auto it = shared_entities.find(i);
       std::int8_t gs = ghost_status[i];
       assert(gs > 0);
       // Definitely ghost
@@ -306,6 +304,7 @@ get_local_indexing(
 
   //---------
   // Communicate global indices to other processes
+  std::vector<int> ghost_owners(entity_count - num_local, -1);
   std::vector<std::int64_t> ghost_indices(entity_count - num_local, -1);
   {
     const std::int64_t local_offset
@@ -331,11 +330,14 @@ get_local_indexing(
 
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
-
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_global_index_data
+    const graph::AdjacencyList<std::int64_t> recv_data
         = dolfinx::MPI::neighbor_all_to_all(
-              neighbour_comm, send_global_index_offsets, send_global_index_data)
-              .array();
+            neighbour_comm, send_global_index_offsets, send_global_index_data);
+
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_global_index_data
+        = recv_data.array();
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& recv_offsets
+        = recv_data.offsets();
 
     assert(recv_global_index_data.size() == (int)recv_index.size());
 
@@ -348,6 +350,10 @@ get_local_indexing(
       {
         assert(local_index[idx] >= num_local);
         ghost_indices[local_index[idx] - num_local] = gi;
+        const auto pos = std::upper_bound(
+            recv_offsets.data(), recv_offsets.data() + recv_offsets.rows(), j);
+        const int owner = std::distance(recv_offsets.data(), pos) - 1;
+        ghost_owners[local_index[idx] - num_local] = neighbours[owner];
       }
     }
     for (std::int64_t idx : ghost_indices)
@@ -356,8 +362,8 @@ get_local_indexing(
 
   MPI_Comm_free(&neighbour_comm);
 
-  std::shared_ptr<common::IndexMap> index_map
-      = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
+  auto index_map = std::make_shared<common::IndexMap>(
+      comm, num_local, ghost_indices, ghost_owners, 1);
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
