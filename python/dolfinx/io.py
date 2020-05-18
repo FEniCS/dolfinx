@@ -42,7 +42,9 @@ class XDMFFile(cpp.io.XDMFFile):
 
     def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"):
         # Read mesh data from file
-        cell_type, x, cells = super().read_mesh_data(name, xpath)
+        cell_type = super().read_cell_type(name, xpath)
+        cells = super().read_topology_data(name, xpath)
+        x = super().read_geometry_data(name, xpath)
 
         # Construct the geometry map
         cell = ufl.Cell(cpp.mesh.to_string(cell_type[0]), geometric_dimension=x.shape[1])
@@ -50,9 +52,21 @@ class XDMFFile(cpp.io.XDMFFile):
         cmap = fem.create_coordinate_map(domain)
 
         # Build the mesh
-        mesh = cpp.mesh.create(self.comm(), cpp.graph.AdjacencyList64(cells), cmap, x, ghost_mode)
+        mesh = cpp.mesh.create(self.comm(), cpp.graph.AdjacencyList_int64(cells), cmap, x, ghost_mode)
         mesh.name = name
         domain._ufl_cargo = mesh
         mesh._ufl_domain = domain
 
         return mesh
+
+    def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
+        cell_type = super().read_cell_type(name, xpath)
+
+        # Construct the coordinate map
+        cell = ufl.Cell(cpp.mesh.to_string(cell_type[0]))
+        domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_type[1]))
+        cmap = fem.create_coordinate_map(domain)
+
+        mt = super().read_meshtags(mesh, cmap, name, xpath)
+
+        return mt

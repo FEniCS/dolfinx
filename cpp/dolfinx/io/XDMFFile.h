@@ -108,18 +108,28 @@ public:
                        const mesh::GhostMode& mode, const std::string name,
                        const std::string xpath = "/Xdmf/Domain") const;
 
-  /// Read in the data for Mesh
-  /// @param[in] name
+  /// Read Topology data for Mesh
+  /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
-  /// @return (Cell type, degree), points on each process, and cells
-  ///   topology (global node indexing)
-  std::tuple<
-      std::pair<mesh::CellType, int>,
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-      Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                   Eigen::RowMajor>>
-  read_mesh_data(const std::string name = "mesh",
-                 const std::string xpath = "/Xdmf/Domain") const;
+  /// @return (Cell type, degree), and cells topology (global node indexing)
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  read_topology_data(const std::string name = "mesh",
+                     const std::string xpath = "/Xdmf/Domain") const;
+
+  /// Read Geometry data for Mesh
+  /// @param[in] name Name of the mesh (Grid)
+  /// @param[in] xpath XPath where Mesh Grid data is located
+  /// @return points on each process
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  read_geometry_data(const std::string name = "mesh",
+                     const std::string xpath = "/Xdmf/Domain") const;
+
+  /// Read information about cell type
+  /// @param[in] grid_name Name of Grid for which cell type is needed
+  /// @param[in] xpath XPath where Grid is stored
+  std::pair<mesh::CellType, int> read_cell_type(const std::string grid_name,
+                                                const std::string xpath
+                                                = "/Xdmf/Domain");
 
   /// Write Function
   /// @param[in] function The Function to write to file
@@ -142,11 +152,12 @@ public:
 
   /// Read MeshTags
   /// @param[in] mesh The Mesh that the data is defined on
+  /// @param[in] element Coordinate element for the entities of MeshTags
   /// @param[in] name
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
   mesh::MeshTags<std::int32_t>
   read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
-                const std::string name,
+                const fem::CoordinateElement& element, const std::string name,
                 const std::string xpath = "/Xdmf/Domain");
 
   /// Get the MPI communicator

@@ -48,6 +48,7 @@ void mesh(py::module& m)
   m.def("to_type", &dolfinx::mesh::to_type);
   m.def("is_simplex", &dolfinx::mesh::is_simplex);
 
+  m.def("cell_entity_type", &dolfinx::mesh::cell_entity_type);
   m.def("cell_dim", &dolfinx::mesh::cell_dim);
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
@@ -248,7 +249,7 @@ void mesh(py::module& m)
   m.def("create_meshtags",                                                     \
         [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,             \
            const dolfinx::mesh::CellType& tag_cell_type,                       \
-           const dolfinx::graph::AdjacencyList<std::int64_t>& entities,        \
+           const dolfinx::graph::AdjacencyList<std::int32_t>& entities,        \
            const py::array_t<SCALAR>& values) {                                \
           py::buffer_info buf = values.request();                              \
           std::vector<SCALAR> vals((SCALAR*)buf.ptr,                           \

@@ -10,6 +10,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
@@ -17,6 +18,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/utils.h>
 #include <map>
 
 using namespace dolfinx;
@@ -315,5 +317,190 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
     throw std::runtime_error("Could not find VTK string for cell order.");
 
   return cell_str->second;
+}
+//-----------------------------------------------------------------------------
+std::pair<
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::vector<std::int32_t>>
+xdmf_utils::extract_local_entities(
+    const mesh::Mesh& mesh, const fem::CoordinateElement& element,
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& entities,
+    const std::vector<std::int32_t>& values)
+{
+  if ((std::size_t)entities.rows() != values.size())
+    throw std::runtime_error("Number of entities and values must match");
+
+  const mesh::CellType cell_type = element.cell_shape();
+
+  // Extract nodes which correspond to vertices only
+  const graph::AdjacencyList<std::int64_t> topology_igi
+      = mesh::extract_topology(cell_type, element.dof_layout(),
+                               graph::AdjacencyList<std::int64_t>(entities));
+
+  // -------------------
+  // 1. Send this rank's global "input" nodes indices to the
+  //    'postmaster' rank, and receive global "input" nodes for which
+  //    this rank is the postmaster
+
+  // Get "input" global node indices (as in the input file before any
+  // internal re-ordering)
+  const std::vector<std::int64_t>& nodes_g
+      = mesh.geometry().input_global_indices();
+
+  // Send input global indices to 'post master' rank, based on input
+  // global index value
+  const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
+  const MPI_Comm comm = mesh.mpi_comm();
+  const int comm_size = MPI::size(comm);
+  // NOTE: could make this int32_t be sending: index <- index - dest_rank_offset
+  std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
+  for (std::int64_t node : nodes_g)
+  {
+    // TODO: Optimise this call by adding 'vectorised verion of
+    //       MPI::index_owner
+    // Figure out which process is the postmaster for the input global index
+    const std::int32_t p
+        = dolfinx::MPI::index_owner(comm_size, node, num_nodes_g);
+    nodes_g_send[p].push_back(node);
+  }
+
+  // Send/receive
+  const graph::AdjacencyList<std::int64_t> nodes_g_recv
+      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
+
+  // -------------------
+  // 2. Send the entity key (nodes list) and tag to the postmaster based
+  //    on the lowest index node in the entity 'key'
+  //
+  //    NOTE: Stage 2 doesn't depend on the data received in Step 1, so
+  //    data (i) the communication could be combined, or (ii) the
+  //    communication in Step 1 could be make non-blocking.
+
+  std::vector<std::vector<std::int64_t>> entities_send(comm_size);
+  std::vector<std::vector<std::int32_t>> values_send(comm_size);
+  const int num_vertices_per_entity = topology_igi.num_links(0);
+  std::vector<std::int64_t> entity(num_vertices_per_entity);
+  for (std::int32_t e = 0; e < topology_igi.num_nodes(); ++e)
+  {
+    // Copy vertices for entity and sort
+    std::copy(topology_igi.links(e).data(),
+              topology_igi.links(e).data() + topology_igi.num_links(e),
+              entity.begin());
+    std::sort(entity.begin(), entity.end());
+
+    // Determine postmaster based on lowest entity node
+    const std::int32_t p
+        = dolfinx::MPI::index_owner(comm_size, entity.front(), num_nodes_g);
+    entities_send[p].insert(entities_send[p].end(), entity.begin(),
+                            entity.end());
+    values_send[p].push_back(values[e]);
+  }
+
+  // TODO: Pack into one MPI call
+  const graph::AdjacencyList<std::int64_t> entities_recv = MPI::all_to_all(
+      comm, graph::AdjacencyList<std::int64_t>(entities_send));
+  const graph::AdjacencyList<std::int32_t> values_recv
+      = MPI::all_to_all(comm, graph::AdjacencyList<std::int32_t>(values_send));
+
+  // -------------------
+  // 3. As 'postmaster', send back the entity key (vertex list) and tag
+  //    value to ranks that possibly need the data. Do this based on the
+  //    first node index in the entity key.
+
+  // NOTE: Could: (i) use a std::unordered_multimap, or (ii) only send
+  // owned nodes to the postmaster and use map, unordered_map or
+  // std::vector<pair>>, followed by a neighbourhood all_to_all at the
+  // end.
+  //
+  // Build map from global node index to ranks that have the node
+  std::multimap<std::int64_t, int> node_to_rank;
+  for (int p = 0; p < nodes_g_recv.num_nodes(); ++p)
+  {
+    auto nodes = nodes_g_recv.links(p);
+    for (int i = 0; i < nodes.rows(); ++i)
+      node_to_rank.insert({nodes(i), p});
+  }
+
+  // Figure out which processes are owners of received nodes
+  std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
+  std::vector<std::vector<std::int32_t>> send_vals_owned(comm_size);
+
+  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>
+      _entities_recv(entities_recv.array().data(),
+                     entities_recv.array().rows() / num_vertices_per_entity,
+                     num_vertices_per_entity);
+  auto _values_recv = values_recv.array();
+  assert(_values_recv.rows() == _entities_recv.rows());
+  for (int e = 0; e < _entities_recv.rows(); ++e)
+  {
+    // Find ranks that have node0
+    auto [it0, it1] = node_to_rank.equal_range(_entities_recv(e, 0));
+    for (auto it = it0; it != it1; ++it)
+    {
+      const int p1 = it->second;
+      send_nodes_owned[p1].insert(
+          send_nodes_owned[p1].end(), _entities_recv.row(e).data(),
+          _entities_recv.row(e).data() + _entities_recv.cols());
+      send_vals_owned[p1].push_back(_values_recv(e));
+    }
+  }
+
+  // TODO: Pack into one MPI call
+  const graph::AdjacencyList<std::int64_t> recv_ents = MPI::all_to_all(
+      comm, graph::AdjacencyList<std::int64_t>(send_nodes_owned));
+  const graph::AdjacencyList<std::int32_t> recv_vals = MPI::all_to_all(
+      comm, graph::AdjacencyList<std::int32_t>(send_vals_owned));
+
+  // -------------------
+  // 4. From the received (key, value) data, determine which keys
+  //    (entities) are on this process.
+
+  // TODO: Rather than using std::map<std::vector<std::int64_t>,
+  //       std::int32_t>, use a rectangular Eigen::Array to avoid the
+  //       cost of std::vector<std::int64_t> allocations, and sort the
+  //       Array by row.
+  //
+  // TODO: We have already received possibly tagged entities from other
+  //       ranks, so we could use the received data to avoid creating
+  //       the std::map for *all* entities and just for candidate
+  //       entities.
+
+  // Build map from input global indices to local vertex numbers
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh.geometry().dofmap();
+  std::map<std::int64_t, std::int32_t> igi_to_vertex;
+  auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
+  if (!c_to_v)
+    throw std::runtime_error("Missing cell-vertex connectivity.");
+  for (int c = 0; c < c_to_v->num_nodes(); ++c)
+  {
+    auto vertices = c_to_v->links(c);
+    auto x_dofs = x_dofmap.links(c);
+    for (int v = 0; v < vertices.rows(); ++v)
+      igi_to_vertex[nodes_g[x_dofs[v]]] = vertices[v];
+  }
+
+  // Apply map and obtain entities defined with local vertex numbers
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      entities_local(recv_ents.array().rows() / num_vertices_per_entity,
+                     num_vertices_per_entity);
+
+  std::vector<std::int32_t> values_new(recv_vals.array().data(),
+                                       recv_vals.array().data()
+                                           + recv_vals.array().rows());
+  assert(recv_vals.array().rows() == entities_local.rows());
+
+  for (Eigen::Index e = 0; e < entities_local.rows(); ++e)
+  {
+    for (Eigen::Index i = 0; i < entities_local.cols(); ++i)
+    {
+      entities_local(e, i)
+          = igi_to_vertex[recv_ents.array()[e * num_vertices_per_entity + i]];
+    }
+  }
+
+  return {entities_local, values_new};
 }
 //-----------------------------------------------------------------------------

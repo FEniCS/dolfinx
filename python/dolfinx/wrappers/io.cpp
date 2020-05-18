@@ -65,8 +65,11 @@ void io(py::module& m)
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
-      .def("read_mesh_data", &dolfinx::io::XDMFFile::read_mesh_data,
+      .def("read_topology_data", &dolfinx::io::XDMFFile::read_topology_data,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+      .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
+           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+      .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type)
       .def("write_function", &dolfinx::io::XDMFFile::write_function,
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
@@ -74,7 +77,8 @@ void io(py::module& m)
            py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
            py::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
+           py::arg("mesh"), py::arg("element"), py::arg("name"),
+           py::arg("xpath"))
       .def("comm", [](dolfinx::io::XDMFFile& self) {
         return MPICommWrapper(self.comm());
       });

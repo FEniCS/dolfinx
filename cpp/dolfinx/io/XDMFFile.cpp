@@ -166,7 +166,10 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
                                const std::string xpath) const
 {
   // Read mesh data
-  const auto [cell_type, x, cells] = XDMFFile::read_mesh_data(name, xpath);
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
+      cells = XDMFFile::read_topology_data(name, xpath);
+  const auto x = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
   graph::AdjacencyList<std::int64_t> cells_adj(cells);
@@ -175,11 +178,9 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
   return mesh;
 }
 //-----------------------------------------------------------------------------
-std::tuple<
-    std::pair<mesh::CellType, int>,
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-XDMFFile::read_mesh_data(const std::string name, const std::string xpath) const
+Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+XDMFFile::read_topology_data(const std::string name,
+                             const std::string xpath) const
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -190,7 +191,23 @@ XDMFFile::read_mesh_data(const std::string name, const std::string xpath) const
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
-  return xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _h5_id, grid_node);
+  return xdmf_mesh::read_topology_data(_mpi_comm.comm(), _h5_id, grid_node);
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+XDMFFile::read_geometry_data(const std::string name,
+                             const std::string xpath) const
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+
+  pugi::xml_node grid_node
+      = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
+  if (!grid_node)
+    throw std::runtime_error("<Grid> with name '" + name + "' not found.");
+
+  return xdmf_mesh::read_geometry_data(_mpi_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_function(const function::Function& function,
@@ -270,6 +287,7 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
+                        const fem::CoordinateElement& element,
                         const std::string name, const std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
@@ -280,38 +298,59 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
-  pugi::xml_node topology_node = grid_node.child("Topology");
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
+      entities = read_topology_data(name, xpath);
 
-  // Get topology dataset node
-  pugi::xml_node topology_data_node = topology_node.child("DataItem");
-  const std::vector<std::int64_t> tdims
-      = xdmf_utils::get_dataset_shape(topology_data_node);
-
-  // Read topology data
-  const std::vector<std::int64_t> topology_data
-      = xdmf_read::get_dataset<std::int64_t>(_mpi_comm.comm(),
-                                             topology_data_node, _h5_id);
-
-  const std::int32_t num_local_entities
-      = (std::int32_t)topology_data.size() / tdims[1];
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      topology(topology_data.data(), num_local_entities, tdims[1]);
-
-  const graph::AdjacencyList<std::int64_t> topology_adj(topology);
-
-  // Fetch cell type of meshtags and deduce its dimension
-  const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
-  const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
   std::vector<std::int32_t> values = xdmf_read::get_dataset<std::int32_t>(
       _mpi_comm.comm(), values_data_node, _h5_id);
+
+  const std::pair<std::string, int> cell_type_str
+      = xdmf_utils::get_cell_type(grid_node.child("Topology"));
+  mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
+
+  // Permute entities from VTK to DOLFINX ordering
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      entities1 = io::cells::permute_ordering(
+          entities, io::cells::vtk_to_dolfin(cell_type, entities.cols()));
+
+  const auto [entities_local, values_local]
+      = xdmf_utils::extract_local_entities(*mesh, element, entities1,
+                                           values);
+
   mesh::MeshTags meshtags = mesh::create_meshtags(
-      mesh, cell_type, topology_adj, std::move(values));
+      mesh, cell_type, graph::AdjacencyList<std::int32_t>(entities_local),
+      std::move(values_local));
   meshtags.name = name;
 
   return meshtags;
+}
+//-----------------------------------------------------------------------------
+std::pair<mesh::CellType, int>
+XDMFFile::read_cell_type(const std::string grid_name, const std::string xpath)
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+  pugi::xml_node grid_node
+      = node.select_node(("Grid[@Name='" + grid_name + "']").c_str()).node();
+  if (!grid_node)
+    throw std::runtime_error("<Grid> with name '" + grid_name + "' not found.");
+
+  // Get topology node
+  pugi::xml_node topology_node = grid_node.child("Topology");
+  assert(topology_node);
+
+  // Get cell type
+  const std::pair<std::string, int> cell_type_str
+      = xdmf_utils::get_cell_type(topology_node);
+
+  // Get toplogical dimensions
+  mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
+
+  return {cell_type, cell_type_str.second};
 }
 //-----------------------------------------------------------------------------
 MPI_Comm XDMFFile::comm() const { return _mpi_comm.comm(); }
