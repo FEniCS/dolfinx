@@ -5,11 +5,89 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "cells.h"
+#include <dolfinx/common/log.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <numeric>
 #include <stdexcept>
 
 using namespace dolfinx;
+
+namespace
+{
+int cell_degree(mesh::CellType type, int num_nodes)
+{
+  switch (type)
+  {
+  case mesh::CellType::point:
+    return 1;
+  case mesh::CellType::interval:
+    return num_nodes - 1;
+  case mesh::CellType::triangle:
+    switch (num_nodes)
+    {
+    case 3:
+      return 1;
+    case 6:
+      return 2;
+    case 10:
+      return 3;
+    case 15:
+      return 4;
+    case 21:
+      return 5;
+    case 28:
+      return 6;
+    case 36:
+      return 7;
+    case 45:
+      LOG(WARNING) << "8th order mesh is untested";
+      return 8;
+    case 55:
+      LOG(WARNING) << "9th order mesh is untested";
+      return 9;
+    default:
+      throw std::runtime_error("Unknown triangle layout.");
+    }
+  case mesh::CellType::tetrahedron:
+    switch (num_nodes)
+    {
+    case 4:
+      return 1;
+    case 10:
+      return 2;
+    case 20:
+      return 3;
+    default:
+      throw std::runtime_error("Unknown tetrahedron layout.");
+    }
+  case mesh::CellType::quadrilateral:
+  {
+    const int n = std::sqrt(num_nodes);
+    if (num_nodes != n * n)
+    {
+      throw std::runtime_error("Quadrilateral of order "
+                               + std::to_string(num_nodes) + " not supported");
+    }
+    return n - 1;
+  }
+  case mesh::CellType::hexahedron:
+    switch (num_nodes)
+    {
+    case 8:
+      return 1;
+    case 27:
+      return 2;
+    default:
+      throw std::runtime_error("Unsupported hexahedron layout");
+      return 1;
+    }
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+}
+//-----------------------------------------------------------------------------
+
+} // namespace
 
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
@@ -35,7 +113,7 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
     permutation[2] = 2;
 
     int j = 3;
-    const int degree = mesh::cell_degree(type, num_nodes);
+    const int degree = cell_degree(type, num_nodes);
     for (int k = 1; k < degree; ++k)
       permutation[j++] = 3 + 2 * (degree - 1) + k - 1;
     for (int k = 1; k < degree; ++k)

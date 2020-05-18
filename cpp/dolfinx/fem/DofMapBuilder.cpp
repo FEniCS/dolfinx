@@ -32,7 +32,7 @@ namespace
 
 /// Build a simple dofmap from ElementDofmap based on mesh entity
 /// indices (local and global)
-/// @todo Remove mesh argument
+///
 /// @param [in] mesh The mesh to build the dofmap on
 /// @param [in] topology The mesh topology
 /// @param [in] element_dof_layout The layout of dofs on a cell
