@@ -12,8 +12,7 @@ import pytest
 from mpi4py import MPI
 
 import ufl
-from dolfinx import FunctionSpace, Mesh, fem
-from dolfinx.cpp.mesh import CellType
+from dolfinx import FunctionSpace, fem
 from dolfinx.mesh import create as create_mesh
 
 xfail = pytest.mark.xfail(strict=True)
@@ -236,7 +235,7 @@ def test_quadrilateral_dof_ordering(space_type):
                 edges[i] = j
 
 
-@pytest.mark.parametrize('space_type', [("P", 1), ("P", 2), ("P", 3), ("P", 4),])
+@pytest.mark.parametrize('space_type', [("P", 1), ("P", 2), ("P", 3), ("P", 4), ])
 def test_hexahedron_dof_ordering(space_type):
     """Checks that dofs on shared hexahedron edges match up"""
 
