@@ -93,7 +93,7 @@ public:
   /// @param[in] name
   /// @param[in] xpath XPath of a node where Geometry will be inserted
   void write_geometry(const mesh::Geometry& geometry,
-                      const std::string name = "geometry",
+                      const std::string name,
                       const std::string xpath = "/Xdmf/Domain");
 
   /// Read in Mesh
@@ -113,7 +113,7 @@ public:
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return (Cell type, degree), and cells topology (global node indexing)
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  read_topology_data(const std::string name = "mesh",
+  read_topology_data(const std::string name,
                      const std::string xpath = "/Xdmf/Domain") const;
 
   /// Read Geometry data for Mesh
@@ -121,7 +121,7 @@ public:
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return points on each process
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  read_geometry_data(const std::string name = "mesh",
+  read_geometry_data(const std::string name,
                      const std::string xpath = "/Xdmf/Domain") const;
 
   /// Read information about cell type
@@ -146,8 +146,7 @@ public:
   ///   in file
   /// @param[in] xpath XPath where MeshTags Grid will be inserted
   void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
-                      const std::string geometry_xpath
-                      = "/Xdmf/Domain/Geometry",
+                      const std::string geometry_xpath,
                       const std::string xpath = "/Xdmf/Domain");
 
   /// Read MeshTags

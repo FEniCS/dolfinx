@@ -56,7 +56,8 @@ def test_read_mesh_data(tempdir, tdim, n):
         file.write_mesh(mesh)
 
     with XDMFFile(MPI.COMM_WORLD, filename, "r") as file:
-        cell_type, cells = file.read_topology_data()
+        cell_type = file.read_cell_type()
+        cells = file.read_topology_data()
         x = file.read_geometry_data()
 
     assert cell_type[0] == mesh.topology.cell_type
