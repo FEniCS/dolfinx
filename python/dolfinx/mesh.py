@@ -97,7 +97,7 @@ def create(comm, cells, x, domain, ghost_mode=cpp.mesh.GhostMode.shared_facet):
     try:
         mesh = cpp.mesh.create(comm, cells, cmap, x, ghost_mode)
     except TypeError:
-        mesh = cpp.mesh.create(comm, cpp.graph.AdjacencyList64(numpy.cast['int64'](cells)),
+        mesh = cpp.mesh.create(comm, cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
                                cmap, x, ghost_mode)
 
     # Attach UFL data (used when passing a mesh into UFL functions)
