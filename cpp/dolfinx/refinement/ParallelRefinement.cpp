@@ -428,7 +428,7 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
   // Build mesh
   if (redistribute)
   {
-    mesh::GhostMode ghost_mode;
+    mesh::GhostMode ghost_mode = mesh::GhostMode::none;
     if (num_ghost_cells > 0)
       ghost_mode = mesh::GhostMode::shared_facet;
     Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
@@ -442,7 +442,8 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
 
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      cells(cell_topology.data(), num_local_cells, num_vertices_per_cell);
+      cells(cell_topology.data(), num_local_cells - num_ghost_cells,
+            num_vertices_per_cell);
   MPI_Comm comm = _mesh.mpi_comm();
   mesh::Topology topology(comm, _mesh.geometry().cmap().cell_shape());
   const graph::AdjacencyList<std::int64_t> my_cells(cells);
