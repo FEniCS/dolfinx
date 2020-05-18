@@ -129,11 +129,7 @@ private:
   std::vector<T> _values;
 };
 
-/// @todo Generalise to create multiple MeshTags as some of the data sent
-/// (expensively) via MPI re-used.
-///
 /// Create MeshTags from arrays
-/// @param[in] comm The MPI communicator
 /// @param[in] mesh The Mesh that the tags are associated with
 /// @param[in] tag_cell_type Cell type of entities which are being
 ///   tagged
