@@ -3,7 +3,7 @@
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for the fem interface"""
+"""Unit tests for dofmap construction"""
 
 from random import shuffle
 
@@ -11,8 +11,9 @@ import numpy as np
 import pytest
 from mpi4py import MPI
 
-from dolfinx import FunctionSpace, Mesh, fem
-from dolfinx.cpp.mesh import CellType
+import ufl
+from dolfinx import FunctionSpace, fem
+from dolfinx.mesh import create as create_mesh
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -26,7 +27,9 @@ xfail = pytest.mark.xfail(strict=True)
 ])
 def test_triangle_dof_ordering(space_type):
     """Checks that dofs on shared triangle edges match up"""
-    # Create a triangle mesh
+
+    # Create a mesh
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 1))
     if MPI.COMM_WORLD.rank == 0:
         N = 6
         # Create a grid of points [0, 0.5, ..., 9.5]**2, then order them
@@ -54,10 +57,9 @@ def test_triangle_dof_ordering(space_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, np.array(cells), [])
+        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     else:
-        # On other processes, accept distributed data
-        mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, np.ndarray((0, 2)), np.ndarray((0, 3)), [])
+        mesh = create_mesh(MPI.COMM_WORLD, np.ndarray((0, 3)), np.ndarray((0, 2)), domain)
 
     V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap
@@ -99,8 +101,9 @@ def test_triangle_dof_ordering(space_type):
 ])
 def test_tetrahedron_dof_ordering(space_type):
     """Checks that dofs on shared tetrahedron edges and faces match up"""
+
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "tetrahedron", 1))
     if MPI.COMM_WORLD.rank == 0:
-        # Create simple tetrahedron mesh
         N = 3
         temp_points = np.array([[x / 2, y / 2, z / 2] for x in range(N) for y in range(N) for z in range(N)])
 
@@ -126,10 +129,9 @@ def test_tetrahedron_dof_ordering(space_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        mesh = Mesh(MPI.COMM_WORLD, CellType.tetrahedron, points, np.array(cells), [])
+        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     else:
-        # On other processes, accept distributed data
-        mesh = Mesh(MPI.COMM_WORLD, CellType.tetrahedron, np.ndarray((0, 3)), np.ndarray((0, 4)), [])
+        mesh = create_mesh(MPI.COMM_WORLD, np.ndarray((0, 4)), np.ndarray((0, 3)), domain)
 
     V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap
@@ -173,11 +175,11 @@ def test_tetrahedron_dof_ordering(space_type):
                 faces[i] = j
 
 
-@pytest.mark.parametrize('space_type', [
-    ("P", 1), ("P", 2), ("P", 3), ("P", 4),
-])
+@pytest.mark.parametrize('space_type', [("P", 1), ("P", 2), ("P", 3), ("P", 4), ])
 def test_quadrilateral_dof_ordering(space_type):
     """Checks that dofs on shared quadrilateral edges match up"""
+
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
     if MPI.COMM_WORLD.rank == 0:
         # Create a quadrilateral mesh
         N = 10
@@ -198,10 +200,9 @@ def test_quadrilateral_dof_ordering(space_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, np.array(cells), [])
+        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     else:
-        # On other processes, accept distributed data
-        mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, np.ndarray((0, 2)), np.ndarray((0, 4)), [])
+        mesh = create_mesh(MPI.COMM_WORLD, np.ndarray((0, 4)), np.ndarray((0, 2)), domain)
 
     V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap
@@ -234,13 +235,12 @@ def test_quadrilateral_dof_ordering(space_type):
                 edges[i] = j
 
 
-@pytest.mark.parametrize('space_type', [
-    ("P", 1), ("P", 2), ("P", 3), ("P", 4),
-])
+@pytest.mark.parametrize('space_type', [("P", 1), ("P", 2), ("P", 3), ("P", 4), ])
 def test_hexahedron_dof_ordering(space_type):
     """Checks that dofs on shared hexahedron edges match up"""
+
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "hexahedron", 1))
     if MPI.COMM_WORLD.rank == 0:
-        # Create a hexahedron mesh
         N = 5
         temp_points = np.array([[x / 2, y / 2, z / 2] for x in range(N) for y in range(N) for z in range(N)])
 
@@ -262,10 +262,9 @@ def test_hexahedron_dof_ordering(space_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        mesh = Mesh(MPI.COMM_WORLD, CellType.hexahedron, points, np.array(cells), [])
+        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     else:
-        # On other processes, accept distributed data
-        mesh = Mesh(MPI.COMM_WORLD, CellType.hexahedron, np.ndarray((0, 3)), np.ndarray((0, 8)), [])
+        mesh = create_mesh(MPI.COMM_WORLD, np.ndarray((0, 8)), np.ndarray((0, 3)), domain)
 
     V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap
