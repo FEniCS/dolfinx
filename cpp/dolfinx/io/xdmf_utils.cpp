@@ -378,7 +378,7 @@ xdmf_utils::extract_local_entities(
 
   std::vector<std::vector<std::int64_t>> entities_send(comm_size);
   std::vector<std::vector<std::int32_t>> values_send(comm_size);
-  const int num_vertices_per_entity = topology_igi.num_links(0);
+  const int num_vertices_per_entity = mesh::num_cell_vertices(cell_type);
   std::vector<std::int64_t> entity(num_vertices_per_entity);
   for (std::int32_t e = 0; e < topology_igi.num_nodes(); ++e)
   {

@@ -131,8 +131,7 @@ private:
 
 /// Create MeshTags from arrays
 /// @param[in] mesh The Mesh that the tags are associated with
-/// @param[in] tag_cell_type Cell type of entities which are being
-///   tagged
+/// @param[in] dim Topological dimension of tagged entities
 /// @param[in] entities Local vertex indices for tagged entities.
 /// @param[in] values Tag values for each entity in @ entities. The
 ///   length of @ values  must be equal to number of rows in @ entities.

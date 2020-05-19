@@ -127,19 +127,20 @@ if MPI.COMM_WORLD.rank == 0:
     values = pygmsh_mesh.cell_data["gmsh:physical"][-2]
 
     # Broadcast cell type data and geometric dimension
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_mesh.cells[-1].type, x.shape[1],
-                                                       cells.shape[1]], root=0)
+    num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
 else:
     # Receive cell type data and geometric dimension
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([None, None, None], root=0)
-    cells, x = np.empty([0, num_nodes]), np.empty([0, gdim])
+    num_nodes = MPI.COMM_WORLD.bcast(None, root=0)
+    cells, x = np.empty((0, num_nodes)), np.empty((0, 3))
+    marked_entities, values = np.empty((0, 9)), np.empty((0,))
 
 gmsh_to_vtk = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 13, 9, 16, 18, 19,
                         17, 10, 12, 14, 15, 22, 23, 21, 24, 20, 25, 26])
 vtk_to_gmsh = np.argsort(gmsh_to_vtk)
 
 # Permute the mesh topology from VTK ordering to DOLFIN-X ordering
-domain = get_domain(cell_type, gdim)
+cell_type = "hexahedron27"
+domain = get_domain(cell_type, 3)
 cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
 dolfin_to_vtk = permutation_vtk_to_dolfin(cell_type, cells.shape[1])
 
@@ -156,8 +157,8 @@ cmap = create_coordinate_map(domain)
 
 quad9 = permutation_vtk_to_dolfin(cpp.mesh.to_type("quadrilateral"), 9)
 marked_entities = cpp.io.permute_cell_ordering(marked_entities, quad9)
-
 local_entities, local_values = extract_local_entities(mesh, cmap, marked_entities, values)
+
 mt = create_meshtags(mesh, 2, cpp.graph.AdjacencyList_int32(local_entities), np.int32(local_values))
 mt.name = "tags"
 
