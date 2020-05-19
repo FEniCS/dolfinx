@@ -151,7 +151,7 @@ mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "hex_d2"
 
 # Construct the coordinate map
-cell = ufl.Cell("quadrilateral", geometric_dimension=3)
+cell = ufl.Cell("quadrilateral")
 domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
 cmap = create_coordinate_map(domain)
 
