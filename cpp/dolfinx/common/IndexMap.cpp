@@ -711,35 +711,27 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
 
   MPI_Comm neighbour_comm;
   MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED,
-      _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &neighbour_comm);
-
-#ifdef DEBUG
-  // Check size of neighbourhood
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(neighbour_comm, &indegree, &outdegree,
-                                 &weighted);
-  assert(indegree == outdegree);
-  assert(indegree == (int)_forward_sizes.size());
-#endif
-  const int num_neighbours = _forward_sizes.size();
+      _mpi_comm.comm(), _reverse_neighbours.size(), _reverse_neighbours.data(),
+      MPI_UNWEIGHTED, _forward_neighbours.size(), _forward_neighbours.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbour_comm);
 
   // Compute number of items to send to each process
-  std::vector<std::int32_t> send_sizes(num_neighbours, 0);
+  std::vector<std::int32_t> send_sizes(_forward_neighbours.size(), 0);
+  std::vector<std::int32_t> recv_sizes(_reverse_neighbours.size(), 0);
   for (std::int32_t i = 0; i < _ghosts.size(); ++i)
     send_sizes[_ghost_owners[i]] += n;
 
   // Create displacement vectors
-  std::vector<std::int32_t> displs_send(num_neighbours + 1, 0);
-  std::vector<std::int32_t> displs_recv(num_neighbours + 1, 0);
-  std::vector<std::int32_t> recv_sizes(num_neighbours, 0);
-  for (std::int32_t i = 0; i < num_neighbours; ++i)
+  std::vector<std::int32_t> displs_send(send_sizes.size() + 1, 0);
+  std::vector<std::int32_t> displs_recv(recv_sizes.size() + 1, 0);
+  for (size_t i = 0; i < _reverse_neighbours.size(); ++i)
   {
     recv_sizes[i] = _forward_sizes[i] * n;
-    displs_send[i + 1] = displs_send[i] + send_sizes[i];
     displs_recv[i + 1] = displs_recv[i] + recv_sizes[i];
   }
+
+  for (size_t i = 0; i < _forward_neighbours.size(); ++i)
+    displs_send[i + 1] = displs_send[i] + send_sizes[i];
 
   // Fill sending data
   std::vector<T> send_data(displs_send.back());
