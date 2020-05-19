@@ -8,13 +8,14 @@
 # Mesh generation using Gmsh and pygmsh
 # =====================================
 
-import numpy as np
+# import numpy as np
 import pygmsh
 from mpi4py import MPI
 
 import ufl
-from dolfinx import cpp
-from dolfinx.cpp.io import permutation_vtk_to_dolfin, permutation_dolfin_to_vtk, permute_cell_ordering
+# from dolfinx import cpp
+# from dolfinx.cpp.io import permutation_vtk_to_dolfin, permutation_dolfin_to_vtk
+from dolfinx.cpp.io import permute_cell_ordering
 from dolfinx.io import XDMFFile, VTKFile
 from dolfinx.mesh import create as create_mesh
 
