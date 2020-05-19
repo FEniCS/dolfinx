@@ -647,8 +647,8 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
 {
   MPI_Comm neighbour_comm;
   MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _reverse_neighbours.size(), _reverse_neighbours.data(),
-      MPI_UNWEIGHTED, _forward_neighbours.size(), _forward_neighbours.data(),
+      _mpi_comm.comm(), _forward_neighbours.size(), _forward_neighbours.data(),
+      MPI_UNWEIGHTED, _reverse_neighbours.size(), _reverse_neighbours.data(),
       MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbour_comm);
 
   const std::int32_t _size_local = size_local();
@@ -656,20 +656,20 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
   remote_data.resize(n * _ghosts.size());
 
   // Create displacement vectors
-  std::vector<std::int32_t> sizes_recv(_reverse_neighbours.size(), 0);
+  std::vector<std::int32_t> sizes_recv(_forward_neighbours.size(), 0);
   for (std::int32_t i = 0; i < _ghosts.size(); ++i)
     sizes_recv[_ghost_owners[i]] += n;
 
-  std::vector<std::int32_t> displs_send(_forward_neighbours.size() + 1, 0);
-  std::vector<std::int32_t> displs_recv(_reverse_neighbours.size() + 1, 0);
-  std::vector<std::int32_t> sizes_send(_forward_neighbours.size(), 0);
-  for (size_t i = 0; i < _forward_neighbours.size(); ++i)
+  std::vector<std::int32_t> displs_send(_reverse_neighbours.size() + 1, 0);
+  std::vector<std::int32_t> displs_recv(_forward_neighbours.size() + 1, 0);
+  std::vector<std::int32_t> sizes_send(_reverse_neighbours.size(), 0);
+  for (size_t i = 0; i < _reverse_neighbours.size(); ++i)
   {
     sizes_send[i] = _forward_sizes[i] * n;
     displs_send[i + 1] = displs_send[i] + sizes_send[i];
   }
 
-  for (size_t i = 0; i < _reverse_neighbours.size(); ++i)
+  for (size_t i = 0; i < _forward_neighbours.size(); ++i)
     displs_recv[i + 1] = displs_recv[i] + sizes_recv[i];
 
   // Copy into sending buffer
