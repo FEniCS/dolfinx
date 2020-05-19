@@ -18,6 +18,12 @@ namespace dolfinx::io::cells
 /// non-simplices (quadrilaterals and hexahedrons) a tensor product
 /// ordering, as specified in FIAT, is used.
 
+/// Determine the degree fo the cell given the type and number of nodes
+/// @param[in] type The cell shape
+/// @param[in] num_nodes The number of cell 'nodes'
+/// @return The degree of the cell
+int cell_degree(mesh::CellType type, int num_nodes);
+
 /// Map from VTK node indices to DOLFINX node indicies
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'

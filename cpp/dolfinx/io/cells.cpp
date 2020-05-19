@@ -12,9 +12,7 @@
 
 using namespace dolfinx;
 
-namespace
-{
-int cell_degree(mesh::CellType type, int num_nodes)
+int io::cells::cell_degree(mesh::CellType type, int num_nodes)
 {
   switch (type)
   {
@@ -86,8 +84,6 @@ int cell_degree(mesh::CellType type, int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-
-} // namespace
 
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
