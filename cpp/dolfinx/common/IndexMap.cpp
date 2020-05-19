@@ -519,9 +519,9 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
 
   MPI_Comm neighbour_comm;
   MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED,
-      _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &neighbour_comm);
+      _mpi_comm.comm(), _reverse_neighbours.size(), _reverse_neighbours.data(),
+      MPI_UNWEIGHTED, _forward_neighbours.size(), _forward_neighbours.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbour_comm);
 
   // Get neighbour processes
   int indegree(-1), outdegree(-2), weighted(-1);
@@ -533,7 +533,7 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
                            MPI_UNWEIGHTED, outdegree, neighbours1.data(),
                            MPI_UNWEIGHTED);
 
-  assert(neighbours.size() == _forward_sizes.size());
+  assert(_forward_neighbours.size() == _forward_sizes.size());
 
   // Get sharing of all owned indices
   int c = 0;
@@ -647,38 +647,30 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
 {
   MPI_Comm neighbour_comm;
   MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED,
-      _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &neighbour_comm);
-
-#ifdef DEBUG
-  // Check size of neighbourhood
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(neighbour_comm, &indegree, &outdegree,
-                                 &weighted);
-  assert(indegree == outdegree);
-  assert(indegree == (int)_forward_sizes.size());
-#endif
-  const int num_neighbours = _forward_sizes.size();
+      _mpi_comm.comm(), _reverse_neighbours.size(), _reverse_neighbours.data(),
+      MPI_UNWEIGHTED, _forward_neighbours.size(), _forward_neighbours.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbour_comm);
 
   const std::int32_t _size_local = size_local();
   assert((int)local_data.size() == n * _size_local);
   remote_data.resize(n * _ghosts.size());
 
   // Create displacement vectors
-  std::vector<std::int32_t> sizes_recv(num_neighbours, 0);
+  std::vector<std::int32_t> sizes_recv(_reverse_neighbours.size(), 0);
   for (std::int32_t i = 0; i < _ghosts.size(); ++i)
     sizes_recv[_ghost_owners[i]] += n;
 
-  std::vector<std::int32_t> displs_send(num_neighbours + 1, 0);
-  std::vector<std::int32_t> displs_recv(num_neighbours + 1, 0);
-  std::vector<std::int32_t> sizes_send(num_neighbours, 0);
-  for (std::int32_t i = 0; i < num_neighbours; ++i)
+  std::vector<std::int32_t> displs_send(_forward_neighbours.size() + 1, 0);
+  std::vector<std::int32_t> displs_recv(_reverse_neighbours.size() + 1, 0);
+  std::vector<std::int32_t> sizes_send(_forward_neighbours.size(), 0);
+  for (size_t i = 0; i < _forward_neighbours.size(); ++i)
   {
     sizes_send[i] = _forward_sizes[i] * n;
     displs_send[i + 1] = displs_send[i] + sizes_send[i];
-    displs_recv[i + 1] = displs_recv[i] + sizes_recv[i];
   }
+
+  for (size_t i = 0; i < _reverse_neighbours.size(); ++i)
+    displs_recv[i + 1] = displs_recv[i] + sizes_recv[i];
 
   // Copy into sending buffer
   std::vector<T> data_to_send(displs_send.back());
