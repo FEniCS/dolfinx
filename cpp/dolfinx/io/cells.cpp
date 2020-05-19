@@ -213,12 +213,6 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
     case 8:
       return {0, 4, 6, 2, 1, 5, 7, 3};
     case 27:
-      // // TODO: change permutation when paraview issue 19433 is resolved
-      // // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-      // return {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-      //         22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
-
-      // This is the documented VTK ordering
       return {0,  9, 12, 3,  1,  10, 13, 4,  18, 15, 21, 6,  19, 16,
               22, 7, 2,  11, 14, 5,  8,  17, 20, 23, 24, 25, 26};
     default:

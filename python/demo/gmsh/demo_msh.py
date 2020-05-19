@@ -14,20 +14,28 @@ from mpi4py import MPI
 
 import ufl
 from dolfinx import cpp
-from dolfinx.cpp.io import permutation_vtk_to_dolfin, permute_cell_ordering
+from dolfinx.cpp.io import permutation_vtk_to_dolfin, permutation_dolfin_to_vtk, permute_cell_ordering
 from dolfinx.io import XDMFFile, VTKFile
 from dolfinx.mesh import create as create_mesh
 
 
 def dolfin_to_gmsh(gmsh_cell):
     if gmsh_cell == "tetra":
-        return
+        return [0, 1, 2, 3]
     elif gmsh_cell == "tetra10":
-        return
+        return [0, 1, 2, 3, 9, 6, 8, 7, 4, 5]
+    elif gmsh_cell == "tetra20":
+        # NOTE: Same issues with paraview as Triangle10
+        # NOTE: according to the documentation, I would have thought
+        # it should have been
+        # return [0, 1, 2, 3, 14, 15, 8, 9, 12, 13, 10,
+        #         11, 4, 5, 6, 7, 19, 17, 18, 16]
+        return [0, 1, 2, 3, 14, 15, 8, 9, 13, 12, 10,
+                11, 4, 5, 6, 7, 19, 18, 17, 16]
     elif gmsh_cell == "hexahedron":
-        return
+        return [0, 4, 6, 2, 1, 5, 7, 3]
     elif gmsh_cell == "hexahedron27":
-        return
+        return [0, 9, 12, 3, 1, 10, 13, 4, 18, 6, 2, 15, 11, 21, 14, 5, 19, 7, 16, 22, 24, 20, 8, 17, 23, 25, 26]
     elif gmsh_cell == "triangle":
         return [0, 1, 2]
     elif gmsh_cell == "triangle6":
@@ -42,7 +50,7 @@ def dolfin_to_gmsh(gmsh_cell):
     elif gmsh_cell == "quad9":
         return [0, 3, 4, 1, 6, 5, 7, 2, 8]
     elif gmsh_cell == "quad16":
-        # NOTE: Same issues with paraview as Triangle1-
+        # NOTE: Same issues with paraview as Triangle10
         # NOTE: according to the documentation, I would have thought
         # it should have been
         # https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering
@@ -60,6 +68,9 @@ def get_domain(gmsh_cell, gdim):
     elif gmsh_cell == "tetra10":
         cell_shape = "tetrahedron"
         degree = 2
+    elif gmsh_cell == "tetra20":
+        cell_shape = "tetrahedron"
+        degree = 3
     elif gmsh_cell == "hexahedron":
         cell_shape = "hexahedron"
         degree = 1
@@ -117,116 +128,79 @@ def mesh_2D(quad, order):
 
 for i in ["1", "2", "3"]:
     mesh_2D(False, i)
-    print(i)
     mesh_2D(True, i)
 
-# Generate a mesh on each rank with pygmsh, and create a DOLFIN-X mesh
-# on each rank
 
-geom = pygmsh.opencascade.Geometry()
-geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
-pygmsh_mesh = pygmsh.generate_mesh(geom)
-cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
-gmsh_celltype = pygmsh_mesh.cells[-1].type
-mesh = create_mesh(MPI.COMM_SELF, cells, x,
-                   get_domain(gmsh_celltype, x.shape[1]))
-with XDMFFile(MPI.COMM_SELF, "mesh_rank_{}.xdmf"
-              .format(MPI.COMM_WORLD.rank), "w") as file:
-    file.write_mesh(mesh)
-
-# Generate mesh on rank 0, then build a distributed mesh
-if MPI.COMM_WORLD.rank == 0:
-    # Generate a mesh
+def mesh_tetra(order):
     geom = pygmsh.opencascade.Geometry()
     geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
-    pygmsh_mesh = pygmsh.generate_mesh(geom)
-
-    # Extract the topology and geometry data
-    cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
+    pygmsh_mesh = pygmsh.generate_mesh(geom,
+                                       extra_gmsh_arguments=["-order", order])
     gmsh_celltype = pygmsh_mesh.cells[-1].type
-    # Broadcast cell type data and geometric dimension
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([gmsh_celltype,
-                                                       x.shape[1],
-                                                       cells.shape[1]], root=0)
-else:
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([None, None, None],
-                                                      root=0)
-    cells, x = np.empty([0, num_nodes]), np.empty([0, gdim])
+    cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
+    cells_dolfin = permute_cell_ordering(cells, dolfin_to_gmsh(gmsh_celltype))
+    mesh = create_mesh(MPI.COMM_SELF, cells_dolfin, x,
+                       get_domain(gmsh_celltype, x.shape[1]))
 
-mesh = create_mesh(MPI.COMM_WORLD, cells, x, get_domain(cell_type, gdim))
-mesh.name = "ball_d1"
-with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
-    file.write_mesh(mesh)
+    file = VTKFile("{}_mesh_rank_{}.pvd".format(gmsh_celltype,
+                                                MPI.COMM_WORLD.rank))
+    file.write(mesh)
+
+    with XDMFFile(MPI.COMM_SELF, "{}_mesh_rank_{}.xdmf"
+                  .format(gmsh_celltype, MPI.COMM_WORLD.rank), "w") as file:
+        file.write_mesh(mesh)
 
 
-# Generate mesh with quadratic geometry on rank 0, then build a
-# distributed mesh
-if MPI.COMM_WORLD.rank == 0:
+def mesh_hex(order):
     geom = pygmsh.opencascade.Geometry()
-    geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
-    pygmsh_mesh = pygmsh.generate_mesh(geom, mesh_file_type="vtk",
-                                       extra_gmsh_arguments=["-order", "2"])
+    rect = geom.add_rectangle([0, 0, 0], 1, 1, char_length=1)
+    geom.add_raw_code("Mesh.RecombinationAlgorithm = 2;")
+    geom.add_raw_code("Recombine Surface {:};")
+    geom.extrude(rect, translation_axis=[0, 0, 1],
+                 num_layers=1, recombine=True)
 
-    # Extract the topology and geometry data
-    cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
-
-    # Broadcast cell type data and geometric dimension
+    pygmsh_mesh = pygmsh.generate_mesh(geom,
+                                       extra_gmsh_arguments=["-order", order])
     gmsh_celltype = pygmsh_mesh.cells[-1].type
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([gmsh_celltype,
-                                                       x.shape[1],
-                                                       cells.shape[1]], root=0)
-else:
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([None, None, None],
-                                                      root=0)
-    cells, x = np.empty([0, num_nodes]), np.empty([0, gdim])
-
-# Permute the topology from VTK to DOLFIN-X ordering
-domain = get_domain(cell_type, gdim)
-cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
-cells = cpp.io.permute_cell_ordering(cells,
-                                     permutation_vtk_to_dolfin(cell_type,
-                                                               cells.shape[1]))
-
-mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
-mesh.name = "ball_d2"
-with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
-    file.write_mesh(mesh)
-
-
-if MPI.COMM_WORLD.rank == 0:
-    # Generate a mesh with 2nd-order hexahedral cells using pygmsh
-    lbw = [2, 3, 5]
-    points = [geom.add_point([x, 0.0, 0.0], 1.0) for x in [0.0, lbw[0]]]
-    line = geom.add_line(*points)
-    _, rectangle, _ = geom.extrude(line, translation_axis=[0.0, lbw[1], 0.0],
-                                   num_layers=lbw[1], recombine=True)
-    geom.extrude(rectangle, translation_axis=[0.0, 0.0, lbw[2]],
-                 num_layers=lbw[2], recombine=True)
-    pygmsh_mesh = pygmsh.generate_mesh(geom, mesh_file_type="vtk",
-                                       extra_gmsh_arguments=["-order", "2"])
-
-    # Extract the topology and geometry data
     cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
-    gmsh_celltype = pygmsh_mesh.cells[-1].type
+    cells_dolfin = permute_cell_ordering(cells, dolfin_to_gmsh(gmsh_celltype))
+    # cells_vtk = permute_cell_ordering(cells_dolfin, permutation_dolfin_to_vtk(cpp.mesh.CellType.hexahedron,
+    #                                                                           cells.shape[1]))
+    # print("np.array([[")
+    # first_cell = np.zeros((27, 3))
+    # for i, c in enumerate(cells_vtk[0]):
+    #     print("[", end="")
+    #     for j in range(3):
+    #         first_cell[i, j] = x[c, j]
+    #         print(x[c][j], end="")
+    #         if j == 2:
+    #             print("],")
+    #         else:
+    #             print(", ", end="")
+    # print(")")
+    # import matplotlib.pyplot as plt
+    # from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(first_cell[:, 0], first_cell[:, 1], first_cell[:, 2])
 
-    # Broadcast cell type data and geometric dimension
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([gmsh_celltype,
-                                                       x.shape[1],
-                                                       cells.shape[1]], root=0)
-else:
-    # Receive cell type data and geometric dimension
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([None, None, None],
-                                                      root=0)
-    cells, x = np.empty([0, num_nodes]), np.empty([0, gdim])
+    # for i in range(27):
+    #     ax.text(first_cell[i, 0], first_cell[i, 1], first_cell[i, 2], i)
+    # plt.savefig("test.png")
+    # assert(False)
+    mesh = create_mesh(MPI.COMM_SELF, cells_dolfin, x,
+                       get_domain(gmsh_celltype, x.shape[1]))
 
-# Permute the mesh topology from VTK ordering to DOLFIN-X ordering
-domain = get_domain(cell_type, gdim)
-cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
-cells = cpp.io.permute_cell_ordering(cells,
-                                     permutation_vtk_to_dolfin(cell_type,
-                                                               cells.shape[1]))
+    file = VTKFile("{}_mesh_rank_{}.pvd".format(gmsh_celltype,
+                                                MPI.COMM_WORLD.rank))
+    file.write(mesh)
 
-mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
-mesh.name = "hex_d2"
-with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
-    file.write_mesh(mesh)
+    with XDMFFile(MPI.COMM_SELF, "{}_mesh_rank_{}.xdmf"
+                  .format(gmsh_celltype, MPI.COMM_WORLD.rank), "w") as file:
+        file.write_mesh(mesh)
+
+
+for i in ["1", "2", "3"]:
+    mesh_tetra(i)
+for i in ["1", "2"]:
+    mesh_hex(i)

@@ -188,11 +188,19 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     // elements)
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh.geometry().dofmap();
-    // FIXME: USe better way to get number of nods
+    // FIXME: Use better way to get number of nods
     num_nodes = x_dofmap.num_links(0);
 
-    const std::vector<std::uint8_t> perm
+    std::vector<std::uint8_t> perm
         = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
+    if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
+        && num_nodes == 27)
+    {
+      // TODO: Remove when when paraview issue 19433 is resolved
+      // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
+      perm = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+              22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+    }
     for (int c = 0; c < x_dofmap.num_nodes(); ++c)
     {
       auto x_dofs = x_dofmap.links(c);

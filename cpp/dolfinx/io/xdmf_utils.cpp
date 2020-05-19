@@ -306,7 +306,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
         {9, "Quadrilateral_9"},
         {16, "Quadrilateral_16"}}},
       {mesh::CellType::tetrahedron,
-       {{4, "Tetrahedron"}, {10, "Tetrahedron_10"}}},
+       {{4, "Tetrahedron"}, {10, "Tetrahedron_10"}, {20, "Tetrahedron_20"}}},
       {mesh::CellType::hexahedron, {{8, "Hexahedron"}, {27, "Hexahedron_27"}}}};
 
   // Get cell family
