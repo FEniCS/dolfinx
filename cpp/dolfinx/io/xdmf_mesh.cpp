@@ -77,38 +77,34 @@ void xdmf_mesh::add_topology_data(
   }
   else
   {
-    auto e_to_v = topology.connectivity(dim, 0);
-    if (!e_to_v)
-      throw std::runtime_error("Mesh is missing entitiy-vertex connectivity.");
-
     auto e_to_c = topology.connectivity(dim, tdim);
     if (!e_to_c)
       throw std::runtime_error("Mesh is missing entitiy-cell connectivity.");
+    auto c_to_e = topology.connectivity(tdim, dim);
+    if (!c_to_e)
+      throw std::runtime_error("Mesh is missing cell-entity connectivity.");
 
-    auto c_to_v = topology.connectivity(tdim, 0);
-    if (!c_to_v)
-      throw std::runtime_error("Mesh is missing cell-vertex connectivity.");
-
-    // FIXME: This will not work for higher-order cells. Need to use
-    // ElementDofLayout to loop over all nodes
     for (std::int32_t e : active_entities)
     {
       // Get first attached cell
       std::int32_t c = e_to_c->links(e)[0];
-      auto cell_vertices = c_to_v->links(c);
-      auto nodes = cells_g.links(c);
-      auto vertices = e_to_v->links(e);
-      for (int v = 0; v < vertices.rows(); ++v)
-      {
-        const int v_index = perm[v];
-        const int vertex = vertices[v_index];
-        const auto* it
-            = std::find(cell_vertices.data(),
-                        cell_vertices.data() + cell_vertices.rows(), vertex);
-        assert(it != (cell_vertices.data() + cell_vertices.rows()));
-        const int local_cell_vertex = std::distance(cell_vertices.data(), it);
 
-        std::int64_t global_index = nodes[local_cell_vertex];
+      // Find local number of entity wrt. cell
+      auto cell_entities = c_to_e->links(c);
+      const auto* it0 = std::find(
+          cell_entities.data(), cell_entities.data() + cell_entities.rows(), e);
+      assert(it0 != (cell_entities.data() + cell_entities.rows()));
+      const int local_cell_entity = std::distance(cell_entities.data(), it0);
+
+      // Tabulate geometry dofs for the entity
+      const Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs
+          = geometry.cmap().dof_layout().entity_closure_dofs(dim,
+                                                             local_cell_entity);
+
+      auto nodes = cells_g.links(c);
+      for (Eigen::Index i = 0; i < entity_dofs.rows(); ++i)
+      {
+        std::int64_t global_index = nodes[entity_dofs[perm[i]]];
         if (global_index < map_g->size_local())
           global_index += offset_g;
         else
@@ -301,6 +297,6 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
 
   //  Permute cells from VTK to DOLFINX ordering
   return io::cells::permute_ordering(
-          cells, io::cells::vtk_to_dolfin(cell_type, cells.cols()));
+      cells, io::cells::vtk_to_dolfin(cell_type, cells.cols()));
 }
 //----------------------------------------------------------------------------

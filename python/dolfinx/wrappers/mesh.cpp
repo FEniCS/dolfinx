@@ -233,14 +233,13 @@ void mesh(py::module& m)
                                                                                \
   m.def("create_meshtags",                                                     \
         [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,             \
-           const dolfinx::mesh::CellType& tag_cell_type,                       \
+           const int dim,                                                      \
            const dolfinx::graph::AdjacencyList<std::int32_t>& entities,        \
            const py::array_t<SCALAR>& values) {                                \
           py::buffer_info buf = values.request();                              \
           std::vector<SCALAR> vals((SCALAR*)buf.ptr,                           \
                                    (SCALAR*)buf.ptr + buf.size);               \
-          return dolfinx::mesh::create_meshtags(mesh, tag_cell_type, entities, \
-                                                vals);                       \
+          return dolfinx::mesh::create_meshtags(mesh, dim, entities, vals);    \
         });
 
   MESHTAGS_MACRO(std::int8_t, int8);

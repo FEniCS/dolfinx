@@ -138,8 +138,7 @@ private:
 ///   length of @ values  must be equal to number of rows in @ entities.
 template <typename T>
 mesh::MeshTags<T>
-create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
-                const mesh::CellType& tag_cell_type,
+create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
                 const graph::AdjacencyList<std::int32_t>& entities,
                 const std::vector<T>& values)
 {
@@ -148,11 +147,10 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
     throw std::runtime_error("Number of entities and values must match");
 
   // Tagged entity topological dimension
-  const int e_dim = mesh::cell_dim(tag_cell_type);
-  const auto map_e = mesh->topology().index_map(e_dim);
+  const auto map_e = mesh->topology().index_map(dim);
   assert(map_e);
 
-  auto e_to_v = mesh->topology().connectivity(e_dim, 0);
+  auto e_to_v = mesh->topology().connectivity(dim, 0);
   if (!e_to_v)
     throw std::runtime_error("Missing entity-vertex connectivity.");
 
@@ -183,7 +181,8 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
     // This would fail for mixed cell type meshes
     assert(num_vertices_per_entity == entities.num_links(e));
     std::copy(entities.links(e).data(),
-              entities.links(e).data() + num_vertices_per_entity, entity.begin());
+              entities.links(e).data() + num_vertices_per_entity,
+              entity.begin());
     std::sort(entity.begin(), entity.end());
 
     if (const auto it = entity_key_to_index.find(entity);
@@ -196,8 +195,8 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
 
   auto [indices_sorted, values_sorted]
       = common::sort_unique(indices_new, values_new);
-  return mesh::MeshTags<T>(mesh, e_dim, std::move(indices_sorted),
-                       std::move(values_sorted));
+  return mesh::MeshTags<T>(mesh, dim, std::move(indices_sorted),
+                           std::move(values_sorted));
 }
 } // namespace mesh
 } // namespace dolfinx

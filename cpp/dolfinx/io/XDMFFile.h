@@ -92,8 +92,7 @@ public:
   /// @param[in] geometry
   /// @param[in] name
   /// @param[in] xpath XPath of a node where Geometry will be inserted
-  void write_geometry(const mesh::Geometry& geometry,
-                      const std::string name,
+  void write_geometry(const mesh::Geometry& geometry, const std::string name,
                       const std::string xpath = "/Xdmf/Domain");
 
   /// Read in Mesh
@@ -151,12 +150,13 @@ public:
 
   /// Read MeshTags
   /// @param[in] mesh The Mesh that the data is defined on
-  /// @param[in] element Coordinate element for the entities of MeshTags
+  /// @param[in] entity_element Coordinate element for the entities of MeshTags
   /// @param[in] name
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
   mesh::MeshTags<std::int32_t>
   read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
-                const fem::CoordinateElement& element, const std::string name,
+                const fem::CoordinateElement& entity_element,
+                const std::string name,
                 const std::string xpath = "/Xdmf/Domain");
 
   /// Get the MPI communicator

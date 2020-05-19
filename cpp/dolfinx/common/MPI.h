@@ -176,11 +176,6 @@ inline MPI_Datatype MPI::mpi_type<bool>()
 {
   return MPI_C_BOOL;
 }
-template <>
-inline MPI_Datatype MPI::mpi_type<int8_t>()
-{
-  return MPI_INT8_T;
-}
 /// @endcond
 //---------------------------------------------------------------------------
 template <typename T>

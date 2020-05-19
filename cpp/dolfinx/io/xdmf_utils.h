@@ -78,7 +78,7 @@ std::pair<
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     std::vector<std::int32_t>>
 extract_local_entities(
-    const mesh::Mesh& mesh, const fem::CoordinateElement& element,
+    const mesh::Mesh& mesh, const fem::CoordinateElement& entity_element,
     const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& entities,
     const std::vector<std::int32_t>& values);

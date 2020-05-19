@@ -323,7 +323,7 @@ std::pair<
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     std::vector<std::int32_t>>
 xdmf_utils::extract_local_entities(
-    const mesh::Mesh& mesh, const fem::CoordinateElement& element,
+    const mesh::Mesh& mesh, const fem::CoordinateElement& entity_element,
     const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& entities,
     const std::vector<std::int32_t>& values)
@@ -331,11 +331,10 @@ xdmf_utils::extract_local_entities(
   if ((std::size_t)entities.rows() != values.size())
     throw std::runtime_error("Number of entities and values must match");
 
-  const mesh::CellType cell_type = element.cell_shape();
-
+  const mesh::CellType cell_type = entity_element.cell_shape();
   // Extract nodes which correspond to vertices only
   const graph::AdjacencyList<std::int64_t> topology_igi
-      = mesh::extract_topology(cell_type, element.dof_layout(),
+      = mesh::extract_topology(cell_type, entity_element.dof_layout(),
                                graph::AdjacencyList<std::int64_t>(entities));
 
   // -------------------
@@ -468,18 +467,29 @@ xdmf_utils::extract_local_entities(
   //       entities.
 
   // Build map from input global indices to local vertex numbers
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   std::map<std::int64_t, std::int32_t> igi_to_vertex;
   auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
   if (!c_to_v)
     throw std::runtime_error("Missing cell-vertex connectivity.");
+
+  // Use ElementDofLayout to get vertex dof indices (local to a cell)
+  const int num_vertices_per_cell = c_to_v->num_links(0);
+  std::vector<int> local_vertices(num_vertices_per_cell);
+  for (int i = 0; i < num_vertices_per_cell; ++i)
+  {
+    const Eigen::Array<int, Eigen::Dynamic, 1> local_index
+        = mesh.geometry().cmap().dof_layout().entity_dofs(0, i);
+    assert(local_index.rows() == 1);
+    local_vertices[i] = local_index[0];
+  }
+
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
     auto vertices = c_to_v->links(c);
     auto x_dofs = x_dofmap.links(c);
     for (int v = 0; v < vertices.rows(); ++v)
-      igi_to_vertex[nodes_g[x_dofs[v]]] = vertices[v];
+      igi_to_vertex[nodes_g[x_dofs[local_vertices[v]]]] = vertices[v];
   }
 
   // Apply map and obtain entities defined with local vertex numbers

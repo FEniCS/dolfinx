@@ -23,5 +23,5 @@ def test_create(cell_type):
     entities = cpp.graph.AdjacencyList_int32(f_v[marked_lines])
     values = numpy.full(marked_lines.shape[0], 2, dtype=numpy.int32)
 
-    mt = cpp.mesh.create_meshtags(mesh, cpp.mesh.CellType.interval, entities, values)
+    mt = cpp.mesh.create_meshtags(mesh, 1, entities, values)
     assert mt.indices.shape == marked_lines.shape

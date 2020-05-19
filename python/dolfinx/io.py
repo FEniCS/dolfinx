@@ -68,5 +68,4 @@ class XDMFFile(cpp.io.XDMFFile):
         cmap = fem.create_coordinate_map(domain)
 
         mt = super().read_meshtags(mesh, cmap, name, xpath)
-
         return mt

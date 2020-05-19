@@ -12,6 +12,7 @@
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
@@ -35,6 +36,20 @@ void io(py::module& m)
   m.def("permutation_vtk_to_dolfin", &dolfinx::io::cells::vtk_to_dolfin);
   m.def("permutation_dolfin_to_vtk", &dolfinx::io::cells::dolfin_to_vtk);
   m.def("permute_cell_ordering", &dolfinx::io::cells::permute_ordering);
+
+  // TODO: Template for different values dtypes
+  m.def("extract_local_entities",
+        [](const dolfinx::mesh::Mesh& mesh,
+           const dolfinx::fem::CoordinateElement& entity_element,
+           const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                              Eigen::RowMajor>& entities,
+           const py::array_t<std::int32_t>& values) {
+          py::buffer_info buf = values.request();
+          std::vector<std::int32_t> vals((std::int32_t*)buf.ptr,
+                                         (std::int32_t*)buf.ptr + buf.size);
+          return dolfinx::io::xdmf_utils::extract_local_entities(
+              mesh, entity_element, entities, vals);
+        });
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
