@@ -264,40 +264,38 @@ IndexMap::IndexMap(
   std::vector<std::int32_t> in_edges_num, out_edges_num;
   for (std::int32_t i = 0; i < mpi_size; ++i)
   {
-    if (num_edges_out_per_proc[i] > 0 or num_edges_in_per_proc[i] > 0)
+    if (num_edges_out_per_proc[i])
     {
-      _neighbours.push_back(i);
-      in_edges_num.push_back(num_edges_in_per_proc[i]);
       out_edges_num.push_back(num_edges_out_per_proc[i]);
+      _forward_neighbours.push_back(i);
+    }
+    if (num_edges_in_per_proc[i])
+    {
+      in_edges_num.push_back(num_edges_in_per_proc[i]);
+      _reverse_neighbours.push_back(i);
     }
   }
 
+  std::set_union(_forward_neighbours.begin(), _forward_neighbours.end(),
+                 _reverse_neighbours.begin(), _reverse_neighbours.end(),
+                 std::back_inserter(_neighbours));
+
+  std::sort(_neighbours.begin(), _neighbours.end());
+  _neighbours.erase(std::unique(_neighbours.begin(), _neighbours.end()),
+                    _neighbours.end());
+
   // Create neighbourhood communicator. No communication is needed to
   // build the graph with complete adjacency information
-  MPI_Comm neighbour_comm;
+  MPI_Comm forward_comm;
+
   MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED,
-      _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &neighbour_comm);
-
-  // Size of neighbourhood
-  const int num_neighbours = _neighbours.size();
-
-  // Check for 'symmetry' of the graph
-#if DEBUG
-  {
-    std::vector<int> sources(num_neighbours), dests(num_neighbours);
-    MPI_Dist_graph_neighbors(neighbour_comm, num_neighbours, sources.data(),
-                             MPI_UNWEIGHTED, num_neighbours, dests.data(),
-                             MPI_UNWEIGHTED);
-    assert(sources == dests);
-    assert(sources == _neighbours);
-  }
-#endif
+      _mpi_comm.comm(), _reverse_neighbours.size(), _reverse_neighbours.data(),
+      MPI_UNWEIGHTED, _forward_neighbours.size(), _forward_neighbours.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &forward_comm);
 
   // Create displacement vectors
-  std::vector<std::int32_t> disp_out(num_neighbours + 1, 0),
-      disp_in(num_neighbours + 1, 0);
+  std::vector<std::int32_t> disp_out(_forward_neighbours.size() + 1, 0);
+  std::vector<std::int32_t> disp_in(_reverse_neighbours.size() + 1, 0);
   std::partial_sum(out_edges_num.begin(), out_edges_num.end(),
                    disp_out.begin() + 1);
   std::partial_sum(in_edges_num.begin(), in_edges_num.end(),
@@ -313,9 +311,10 @@ IndexMap::IndexMap(
     const int p = ghost_ranks[j];
 
     // Get rank of owner on neighbourhood communicator
-    const auto it = std::find(_neighbours.begin(), _neighbours.end(), p);
-    assert(it != _neighbours.end());
-    const int np = std::distance(_neighbours.begin(), it);
+    const auto it
+        = std::find(_forward_neighbours.begin(), _forward_neighbours.end(), p);
+    assert(it != _forward_neighbours.end());
+    const int np = std::distance(_forward_neighbours.begin(), it);
 
     // Store owner neighbourhood rank for each ghost
     _ghost_owners[j] = np;
@@ -330,7 +329,7 @@ IndexMap::IndexMap(
   MPI_Neighbor_alltoallv(
       out_indices.data(), out_edges_num.data(), disp_out.data(), MPI_INT,
       indices_in.data(), // out
-      in_edges_num.data(), disp_in.data(), MPI_INT, neighbour_comm);
+      in_edges_num.data(), disp_in.data(), MPI_INT, forward_comm);
 
   _forward_indices = std::move(indices_in);
   for (auto& value : _forward_indices)
@@ -340,7 +339,7 @@ IndexMap::IndexMap(
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 
-  MPI_Comm_free(&neighbour_comm);
+  MPI_Comm_free(&forward_comm);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const

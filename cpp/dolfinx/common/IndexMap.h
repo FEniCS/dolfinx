@@ -12,7 +12,6 @@
 #include <dolfinx/common/MPI.h>
 #include <functional>
 #include <map>
-#include <set>
 #include <tuple>
 #include <vector>
 
@@ -277,11 +276,10 @@ private:
   // MPI Communicator
   dolfinx::MPI::Comm _mpi_comm;
 
-  // MPI Communicator for neighbourhood only
-  // mutable MPI_Comm _neighbour_comm;
-
   // Store neighbours so neighbourhood communicator can be re-built
   std::vector<std::int32_t> _neighbours;
+  std::vector<std::int32_t> _forward_neighbours;
+  std::vector<std::int32_t> _reverse_neighbours;
 
   // Cache rank on mpi_comm (otherwise calls to MPI_Comm_rank can be
   // excessive)
