@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Garth N. Wells
+# Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #

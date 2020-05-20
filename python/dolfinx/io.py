@@ -1,4 +1,5 @@
-# Copyright (C) 2017-2020 Chris N. Richardson, Garth N. Wells and Michal Habera
+# Copyright (C) 2017-2020 Chris N. Richardson, Garth N. Wells, Michal Habera
+# and Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
