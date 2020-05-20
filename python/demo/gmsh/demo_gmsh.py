@@ -14,7 +14,7 @@ from mpi4py import MPI
 
 import ufl
 from dolfinx import cpp
-from dolfinx.cpp.io import permutation_vtk_to_dolfin
+from dolfinx.cpp.io import map_vtk_to_dolfin
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create as create_mesh
 
@@ -93,7 +93,7 @@ else:
 # Permute the topology from VTK to DOLFIN-X ordering
 domain = get_domain(cell_type, gdim)
 cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
-cells = cpp.io.compute_cell_reordering(cells, permutation_vtk_to_dolfin(cell_type, cells.shape[1]))
+cells = cpp.io.compute_cell_reordering(cells, map_vtk_to_dolfin(cell_type, cells.shape[1]))
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "ball_d2"
@@ -124,7 +124,7 @@ else:
 # Permute the mesh topology from VTK ordering to DOLFIN-X ordering
 domain = get_domain(cell_type, gdim)
 cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
-cells = cpp.io.compute_cell_reordering(cells, permutation_vtk_to_dolfin(cell_type, cells.shape[1]))
+cells = cpp.io.compute_cell_reordering(cells, map_vtk_to_dolfin(cell_type, cells.shape[1]))
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "hex_d2"
