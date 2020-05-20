@@ -79,7 +79,7 @@ void xdmf_mesh::add_topology_data(
   {
     auto e_to_c = topology.connectivity(dim, tdim);
     if (!e_to_c)
-      throw std::runtime_error("Mesh is missing entitiy-cell connectivity.");
+      throw std::runtime_error("Mesh is missing entity-cell connectivity.");
     auto c_to_e = topology.connectivity(tdim, dim);
     if (!c_to_e)
       throw std::runtime_error("Mesh is missing cell-entity connectivity.");

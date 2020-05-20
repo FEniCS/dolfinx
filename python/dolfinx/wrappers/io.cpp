@@ -39,8 +39,7 @@ void io(py::module& m)
 
   // TODO: Template for different values dtypes
   m.def("extract_local_entities",
-        [](const dolfinx::mesh::Mesh& mesh,
-           const dolfinx::fem::CoordinateElement& entity_element,
+        [](const dolfinx::mesh::Mesh& mesh, const int entity_dim,
            const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>& entities,
            const py::array_t<std::int32_t>& values) {
@@ -48,7 +47,7 @@ void io(py::module& m)
           std::vector<std::int32_t> vals((std::int32_t*)buf.ptr,
                                          (std::int32_t*)buf.ptr + buf.size);
           return dolfinx::io::xdmf_utils::extract_local_entities(
-              mesh, entity_element, entities, vals);
+              mesh, entity_dim, entities, vals);
         });
 
   // dolfinx::io::XDMFFile
@@ -93,8 +92,7 @@ void io(py::module& m)
            py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
            py::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           py::arg("mesh"), py::arg("element"), py::arg("name"),
-           py::arg("xpath"))
+           py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
       .def("comm", [](dolfinx::io::XDMFFile& self) {
         return MPICommWrapper(self.comm());
       });

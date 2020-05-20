@@ -287,7 +287,6 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
-                        const fem::CoordinateElement& entity_element,
                         const std::string name, const std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
@@ -317,8 +316,8 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
           entities, io::cells::vtk_to_dolfin(cell_type, entities.cols()));
 
   const auto [entities_local, values_local]
-      = xdmf_utils::extract_local_entities(*mesh, entity_element, entities1,
-                                           values);
+      = xdmf_utils::extract_local_entities(*mesh, mesh::cell_dim(cell_type),
+                                           entities1, values);
 
   mesh::MeshTags meshtags = mesh::create_meshtags(
       mesh, mesh::cell_dim(cell_type),

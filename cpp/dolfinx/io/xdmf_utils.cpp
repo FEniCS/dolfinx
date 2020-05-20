@@ -323,7 +323,7 @@ std::pair<
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     std::vector<std::int32_t>>
 xdmf_utils::extract_local_entities(
-    const mesh::Mesh& mesh, const fem::CoordinateElement& entity_element,
+    const mesh::Mesh& mesh, const int entity_dim,
     const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& entities,
     const std::vector<std::int32_t>& values)
@@ -331,15 +331,49 @@ xdmf_utils::extract_local_entities(
   if ((std::size_t)entities.rows() != values.size())
     throw std::runtime_error("Number of entities and values must match");
 
-  const mesh::CellType cell_type = entity_element.cell_shape();
+  // Get layout of dofs on 0th entity
+  const Eigen::Array<int, Eigen::Dynamic, 1> entity_layout
+      = mesh.geometry().cmap().dof_layout().entity_closure_dofs(entity_dim, 0);
+  assert(entity_layout.rows() == entities.cols());
 
-  // Find which geometry dofs lying on entity of given dimension
-  // are lying also on vertices
-  // This is needed to filter out input global indices which are not
-  // associated with vertices
-  const graph::AdjacencyList<std::int64_t> topology_igi
-      = mesh::extract_topology(cell_type, entity_element.dof_layout(),
-                               graph::AdjacencyList<std::int64_t>(entities));
+  auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
+  if (!c_to_v)
+    throw std::runtime_error("Missing cell-vertex connectivity.");
+
+  // Use ElementDofLayout to get vertex dof indices (local to a cell)
+  // i.e. find a map from local vertex index to associated local dof index
+  const int num_vertices_per_cell = c_to_v->num_links(0);
+  std::vector<int> cell_vertex_dofs(num_vertices_per_cell);
+  for (int i = 0; i < num_vertices_per_cell; ++i)
+  {
+    const Eigen::Array<int, Eigen::Dynamic, 1> local_index
+        = mesh.geometry().cmap().dof_layout().entity_dofs(0, i);
+    assert(local_index.rows() == 1);
+    cell_vertex_dofs[i] = local_index[0];
+  }
+
+  std::vector<int> entity_vertex_dofs;
+  for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
+  {
+    const auto* it = std::find(entity_layout.data(),
+                               entity_layout.data() + entity_layout.rows(),
+                               cell_vertex_dofs[i]);
+    if (it != (entity_layout.data() + entity_layout.rows()))
+      entity_vertex_dofs.push_back(std::distance(entity_layout.data(), it));
+  }
+
+  const mesh::CellType entity_type
+      = mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim);
+  const int num_vertices_per_entity = mesh::cell_num_entities(entity_type, 0);
+  assert(entity_vertex_dofs.size() == (std::size_t)num_vertices_per_entity);
+
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      topology_igi(entities.rows(), num_vertices_per_entity);
+  for (Eigen::Index e = 0; e < topology_igi.rows(); ++e)
+  {
+    for (Eigen::Index i = 0; i < topology_igi.cols(); ++i)
+      topology_igi(e, i) = entities(e, entity_vertex_dofs[i]);
+  }
 
   // -------------------
   // 1. Send this rank's global "input" nodes indices to the
@@ -382,13 +416,12 @@ xdmf_utils::extract_local_entities(
 
   std::vector<std::vector<std::int64_t>> entities_send(comm_size);
   std::vector<std::vector<std::int32_t>> values_send(comm_size);
-  const int num_vertices_per_entity = mesh::num_cell_vertices(cell_type);
   std::vector<std::int64_t> entity(num_vertices_per_entity);
-  for (std::int32_t e = 0; e < topology_igi.num_nodes(); ++e)
+  for (std::int32_t e = 0; e < topology_igi.rows(); ++e)
   {
     // Copy vertices for entity and sort
-    std::copy(topology_igi.links(e).data(),
-              topology_igi.links(e).data() + topology_igi.num_links(e),
+    std::copy(topology_igi.row(e).data(),
+              topology_igi.row(e).data() + topology_igi.cols(),
               entity.begin());
     std::sort(entity.begin(), entity.end());
 
@@ -473,28 +506,13 @@ xdmf_utils::extract_local_entities(
   // Build map from input global indices to local vertex numbers
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   std::map<std::int64_t, std::int32_t> igi_to_vertex;
-  auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
-  if (!c_to_v)
-    throw std::runtime_error("Missing cell-vertex connectivity.");
-
-  // Use ElementDofLayout to get vertex dof indices (local to a cell)
-  // i.e. find out which geometry dofs belong to vertices
-  const int num_vertices_per_cell = c_to_v->num_links(0);
-  std::vector<int> local_vertices(num_vertices_per_cell);
-  for (int i = 0; i < num_vertices_per_cell; ++i)
-  {
-    const Eigen::Array<int, Eigen::Dynamic, 1> local_index
-        = mesh.geometry().cmap().dof_layout().entity_dofs(0, i);
-    assert(local_index.rows() == 1);
-    local_vertices[i] = local_index[0];
-  }
 
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
     auto vertices = c_to_v->links(c);
     auto x_dofs = x_dofmap.links(c);
     for (int v = 0; v < vertices.rows(); ++v)
-      igi_to_vertex[nodes_g[x_dofs[local_vertices[v]]]] = vertices[v];
+      igi_to_vertex[nodes_g[x_dofs[cell_vertex_dofs[v]]]] = vertices[v];
   }
 
   // Apply map and obtain entities defined with local vertex numbers

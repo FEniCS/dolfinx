@@ -150,12 +150,10 @@ public:
 
   /// Read MeshTags
   /// @param[in] mesh The Mesh that the data is defined on
-  /// @param[in] entity_element Coordinate element for the entities of MeshTags
   /// @param[in] name
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
   mesh::MeshTags<std::int32_t>
   read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
-                const fem::CoordinateElement& entity_element,
                 const std::string name,
                 const std::string xpath = "/Xdmf/Domain");
 

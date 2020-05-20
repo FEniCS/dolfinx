@@ -58,14 +58,3 @@ class XDMFFile(cpp.io.XDMFFile):
         mesh._ufl_domain = domain
 
         return mesh
-
-    def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
-        cell_type = super().read_cell_type(name, xpath)
-
-        # Construct the coordinate map
-        cell = ufl.Cell(cpp.mesh.to_string(cell_type[0]))
-        domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_type[1]))
-        cmap = fem.create_coordinate_map(domain)
-
-        mt = super().read_meshtags(mesh, cmap, name, xpath)
-        return mt
