@@ -113,9 +113,9 @@ if MPI.COMM_WORLD.rank == 0:
     geom.add_raw_code("Mesh.CharacteristicLengthFactor = 1.0;")
     geom.add_raw_code("Mesh.RecombinationAlgorithm = 2;")
     circle = geom.add_disk([0.0, 0.0, 0.0], 1.0)
-    rectangle = geom.add_disk([0.0, 0.0, 0.0], 0.5)
+    circle_inner = geom.add_disk([0.0, 0.0, 0.0], 0.5)
 
-    cut = geom.boolean_difference([circle], [rectangle])
+    cut = geom.boolean_difference([circle], [circle_inner])
     _, box, _ = geom.extrude(cut, translation_axis=[0.0, 0.0, 5], num_layers=5, recombine=True)
 
     geom.add_physical(cut, label=1)
