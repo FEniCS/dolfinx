@@ -15,7 +15,7 @@ from mpi4py import MPI
 from sympy.vector import CoordSys3D, matrix_to_vector
 
 from dolfinx import Function, FunctionSpace
-from dolfinx.cpp.io import (permutation_dolfin_to_vtk,
+from dolfinx.cpp.io import (map_dolfin_to_vtk,
                             map_vtk_to_dolfin, compute_cell_reordering)
 from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_scalar
@@ -82,7 +82,7 @@ def test_permute_vtk_to_dolfin(vtk, dolfin, cell_type):
     # print(dolfin)
     assert (cell_p == dolfin).all()
 
-    p = permutation_dolfin_to_vtk(cell_type, len(vtk))
+    p = map_dolfin_to_vtk(cell_type, len(vtk))
     cell_p = compute_cell_reordering([dolfin], p)
     assert (cell_p == vtk).all()
 
