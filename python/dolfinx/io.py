@@ -4,6 +4,8 @@
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+# flake8: noqa
+
 """IO module for input data, post-processing and checkpointing"""
 
 import ufl
@@ -216,8 +218,8 @@ def dolfin_to_gmsh(gmsh_cell):
     |\     ^   |\          |\         |\
     | \    |   | \         | 5    23  | 14
     |  \   |   |  \        6  \ 24    15 \
-    |   3------+---7       |   4----22+---13
-    |   |  +-- |-- | -> u  | 8 |  26  | 17|
+    |   3------+---7       |   4----22+---13 
+    |   |  +-- |-- | -> u  | 8 |  26  | 17| 
     0---+---\--4   |       0---+18----9   |
      \  |    \  \  |        \  7     25\ 16
       \ |     \  \ |         2 |   20   11|
