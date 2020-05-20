@@ -32,8 +32,7 @@ void io(py::module& m)
 {
 
   // dolfinx::io::cell permutation functions
-  m.def("cell_map_from_vtk", &dolfinx::io::cells::vtk_to_dolfin);
-  m.def("compute_cell_reordering", &dolfinx::io::cells::compute_reordering);
+  m.def("cell_perm_vtk", &dolfinx::io::cells::perm_vtk);
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>

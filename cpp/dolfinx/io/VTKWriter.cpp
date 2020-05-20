@@ -232,7 +232,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
 
     // Get map from VTK index i to DOLFIN index j
     const std::vector<std::uint8_t> map
-        = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
+        = io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes);
     for (int c = 0; c < x_dofmap.num_nodes(); ++c)
     {
       auto x_dofs = x_dofmap.links(c);
@@ -275,7 +275,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     // extended to have connections to facets.
     const int num_vertices = mesh::num_cell_vertices(e_type);
     const std::vector<std::uint8_t> map_vtk
-        = io::cells::vtk_to_dolfin(e_type, num_vertices);
+        = io::cells::perm_vtk(e_type, num_vertices);
     auto e_to_v = mesh.topology().connectivity(cell_dim, 0);
     assert(e_to_v);
     for (int e = 0; e < e_to_v->num_nodes(); ++e)

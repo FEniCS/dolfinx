@@ -228,8 +228,8 @@ std::vector<std::uint8_t> vtk_hexahedron(int num_nodes)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
-                                                   int num_nodes)
+std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
+                                              int num_nodes)
 {
   std::vector<std::uint8_t> map;
   switch (type)
@@ -268,7 +268,7 @@ io::cells::transpose(const std::vector<std::uint8_t>& map)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-io::cells::compute_reordering(
+io::cells::compute_permutation(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::uint8_t>& map)

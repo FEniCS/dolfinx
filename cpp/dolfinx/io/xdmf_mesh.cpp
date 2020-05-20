@@ -53,7 +53,7 @@ void xdmf_mesh::add_topology_data(
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map_g->ghosts();
 
   const std::vector<std::uint8_t> vtk_map
-      = io::cells::vtk_to_dolfin(entity_cell_type, num_nodes_per_entity);
+      = io::cells::perm_vtk(entity_cell_type, num_nodes_per_entity);
   auto map_e = topology.index_map(dim);
   assert(map_e);
   if (dim == tdim)
@@ -297,8 +297,8 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, const hid_t h5_id,
 
   //  Permute cells from VTK to DOLFINX ordering
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells = io::cells::compute_reordering(
-          cells_vtk, io::cells::vtk_to_dolfin(cell_type, cells_vtk.cols()));
+      cells = io::cells::compute_permutation(
+          cells_vtk, io::cells::perm_vtk(cell_type, cells_vtk.cols()));
 
   return {
       {cell_type, cell_type_str.second}, std::move(points), std::move(cells)};
