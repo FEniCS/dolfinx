@@ -75,7 +75,7 @@ def sympy_scipy(points, nodes, L, H):
     ([0, 1, 2, 3], [0, 3, 1, 2], CellType.quadrilateral),
     ([0, 1, 2, 3, 4, 5, 6, 7], [0, 4, 3, 7, 1, 5, 2, 6], CellType.hexahedron)
 ])
-def test_permute_vtk_to_dolfin(vtk, dolfin, cell_type):
+def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
     p = vtk_to_dolfin_map(cell_type, len(vtk))
     cell_p = compute_cell_reordering([vtk], p)
     # print(cell_p)
@@ -563,7 +563,8 @@ def xtest_gmsh_input_quad(order):
     msh = pygmsh.generate_mesh(geo, verbose=True, dim=2)
 
     if order > 2:
-        # Quads order > 3 have a gmsh specific ordering, and has to be permuted.
+        # Quads order > 3 have a gmsh specific ordering, and has to be
+        # re-mapped
         msh_to_dolfin = np.array([0, 3, 11, 10, 1, 2, 6, 7, 4, 9, 12, 15, 5, 8, 13, 14])
         cells = np.zeros(msh.cells_dict[element].shape)
         for i in range(len(cells)):
