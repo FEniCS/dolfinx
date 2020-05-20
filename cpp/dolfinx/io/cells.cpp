@@ -166,15 +166,15 @@ std::vector<std::uint8_t> vtk_tetrahedron(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
 {
-  std::vector<std::uint8_t> map(num_nodes);
-
   // Check that num_nodes is a square integer (since quadrilaterals are
   // tensorproducts of intervals, the number of nodes for each interval
   // should be an integer)
   assert((std::sqrt(num_nodes) - std::floor(std::sqrt(num_nodes))) == 0);
+
   // Number of nodes in each direction
   const int n = sqrt(num_nodes);
-  map.resize(num_nodes);
+
+  std::vector<std::uint8_t> map(num_nodes);
 
   // Vertices
   map[0] = 0;
@@ -198,7 +198,6 @@ std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
   for (int k = 2; k < n; ++k)
     for (int l = 2; l < n; ++l)
       map[j++] = l * n + k;
-
   assert(j == num_nodes);
 
   return map;
