@@ -89,9 +89,8 @@ int cell_degree(mesh::CellType type, int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> vtk_triangle(int num_nodes)
 {
-  std::vector<std::uint8_t> map(num_nodes);
-
   // Vertices
+  std::vector<std::uint8_t> map(num_nodes);
   std::iota(map.begin(), map.begin() + 3, 0);
 
   int j = 3;
@@ -150,7 +149,6 @@ std::vector<std::uint8_t> vtk_triangle(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> vtk_tetrahedron(int num_nodes)
 {
-  std::vector<std::uint8_t> map;
   switch (num_nodes)
   {
   case 4:
@@ -174,7 +172,6 @@ std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
 
   // Number of nodes in each direction
   const int n = sqrt(num_nodes);
-
   std::vector<std::uint8_t> map(num_nodes);
 
   // Vertices
@@ -224,7 +221,6 @@ std::vector<std::uint8_t> vtk_hexahedron(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-
 } // namespace
 
 //-----------------------------------------------------------------------------
