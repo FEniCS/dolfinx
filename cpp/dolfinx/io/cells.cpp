@@ -234,15 +234,13 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
-                                                   int num_nodes)
+std::vector<std::uint8_t>
+io::cells::transpose(const std::vector<std::uint8_t>& map)
 {
-  const std::vector<std::uint8_t> reversed
-      = io::cells::vtk_to_dolfin(type, num_nodes);
-  std::vector<std::uint8_t> map(num_nodes);
-  for (int i = 0; i < num_nodes; ++i)
-    map[reversed[i]] = i;
-  return map;
+  std::vector<std::uint8_t> transpose(map.size());
+  for (int i = 0; i < map.size(); ++i)
+    transpose[map[i]] = i;
+  return transpose;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

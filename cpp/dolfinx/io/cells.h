@@ -32,14 +32,12 @@ namespace dolfinx::io::cells
 ///   [10, 4, 3, 7]`.
 std::vector<std::uint8_t> vtk_to_dolfin(mesh::CellType type, int num_nodes);
 
-/// Map from DOLFINX local indices to VTK local indices. It is the
-/// transpose of vtk_to_dolfin()
+/// Compute the transpose of a re-ordering map
 ///
-/// @param[in] type The cell shape
-/// @param[in] num_nodes The number of cell 'nodes'
-/// @return Map p from the position i in the DOLFINX array to position
-///   `p[i] = j` in the VTK array, i.e. `a_vtk[p[i]] = a_dolfin[i]`.
-std::vector<std::uint8_t> dolfin_to_vtk(mesh::CellType type, int num_nodes);
+/// @param[in] map A re-ordering map
+/// @return Transpose of the @p map. E.g., is `map = {1, 2, 3, 0}`, the
+///   transpose will be `{3 , 0, 1, 2 }`.
+std::vector<std::uint8_t> transpose(const std::vector<std::uint8_t>& map);
 
 /// Re-order a collection of cell topology by applying a re-mapping
 /// array
