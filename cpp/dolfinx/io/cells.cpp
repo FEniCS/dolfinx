@@ -238,7 +238,7 @@ std::vector<std::uint8_t>
 io::cells::transpose(const std::vector<std::uint8_t>& map)
 {
   std::vector<std::uint8_t> transpose(map.size());
-  for (int i = 0; i < map.size(); ++i)
+  for (std::size_t i = 0; i < map.size(); ++i)
     transpose[map[i]] = i;
   return transpose;
 }
