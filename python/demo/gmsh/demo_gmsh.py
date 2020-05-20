@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Garth N. Wells
+# Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -13,10 +13,9 @@ import pygmsh
 from mpi4py import MPI
 
 from dolfinx import cpp
-from dolfinx.cpp.io import permutation_vtk_to_dolfin
-from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
+from dolfinx.cpp.io import cell_perm_gmsh, cell_perm_vtk
+from dolfinx.io import VTKFile, XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import create as create_mesh
-
 
 # Generate a mesh on each rank with pygmsh, and create a DOLFIN-X mesh
 # on each rank
@@ -80,9 +79,7 @@ else:
 # Permute the topology from VTK to DOLFIN-X ordering
 domain = ufl_mesh_from_gmsh(cell_type, gdim)
 cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
-cells = cpp.io.permute_cell_ordering(cells,
-                                     permutation_vtk_to_dolfin(cell_type,
-                                                               cells.shape[1]))
+cells = cells[:, cell_perm_vtk(cell_type, cells.shape[1])]
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "ball_d2"
@@ -117,11 +114,135 @@ else:
 # Permute the mesh topology from VTK ordering to DOLFIN-X ordering
 domain = ufl_mesh_from_gmsh(cell_type, gdim)
 cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
-cells = cpp.io.permute_cell_ordering(cells,
-                                     permutation_vtk_to_dolfin(cell_type,
-                                                               cells.shape[1]))
+cells = cells[:, cell_perm_vtk(cell_type, cells.shape[1])]
+
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "hex_d2"
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
     file.write_mesh(mesh)
+
+
+def mesh_2D(quad, order):
+    """
+    Function returning a mesh of a disk.
+    Input:
+       quad (bool): Mesh consisting of quadrilateral (True)
+                    or triangular (False) cells
+       order (str): "1", "2," or ", "3" describing the order for the cell.
+    """
+    geom = pygmsh.opencascade.Geometry()
+    geom.add_disk([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+    if quad:
+        geom.add_raw_code("Recombine Surface {:};")
+        geom.add_raw_code("Mesh.RecombinationAlgorithm = 2;")
+    pygmsh_mesh = pygmsh.generate_mesh(geom,
+                                       extra_gmsh_arguments=["-order", order])
+
+    # Extract the topology and geometry data
+    cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
+    pygmsh_cell = pygmsh_mesh.cells[-1].type
+
+    # Broadcast cell type data and geometric dimension
+    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_cell, x.shape[1],
+                                                       cells.shape[1]], root=0)
+    # Permute the mesh topology from VTK ordering to DOLFIN-X ordering
+    cells_dolfin = cells[:, cell_perm_gmsh(cell_type)]
+    mesh = create_mesh(MPI.COMM_SELF, cells_dolfin, x,
+                       ufl_mesh_from_gmsh(cell_type, x.shape[1]))
+
+    # Write mesh to file for visualization with VTK
+    file = VTKFile("{}_mesh_rank_{}.pvd".format(pygmsh_cell,
+                                                MPI.COMM_WORLD.rank))
+    file.write(mesh)
+    # Write mesh to file for visualization with XDMF
+    with XDMFFile(MPI.COMM_SELF, "{}_mesh_rank_{}.xdmf"
+                  .format(pygmsh_cell, MPI.COMM_WORLD.rank), "w") as file:
+        file.write_mesh(mesh)
+
+
+def mesh_tetra(order):
+    """
+    Returns a mesh consisting of tetrahedral cells of specified order.
+    Mesh is a unit ball, subtracted the upper first quadrant.
+    Input:
+       order (str): "1", "2," describing the order for the cell.
+    """
+    geom = pygmsh.opencascade.Geometry()
+    ball = geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+    box = geom.add_box([0.0, 0.0, 0.0], [1.0, 1.0, 1.0])
+    geom.boolean_difference([ball], [box])
+    pygmsh_mesh = pygmsh.generate_mesh(geom,
+                                       extra_gmsh_arguments=["-order", order])
+
+    # Extract the topology and geometry data
+    cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
+    pygmsh_cell = pygmsh_mesh.cells[-1].type
+
+    # Broadcast cell type data and geometric dimension
+    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_cell, x.shape[1],
+                                                       cells.shape[1]], root=0)
+    # Permute the mesh topology from VTK ordering to DOLFIN-X ordering
+    cells = cells[:, cell_perm_gmsh(cell_type)]
+
+    mesh = create_mesh(MPI.COMM_SELF, cells, x,
+                       ufl_mesh_from_gmsh(pygmsh_cell, x.shape[1]))
+
+    file = VTKFile("{}_mesh_rank_{}.pvd".format(pygmsh_cell,
+                                                MPI.COMM_WORLD.rank))
+    file.write(mesh)
+    # Write mesh to file for visualization with XDMF
+    with XDMFFile(MPI.COMM_SELF, "{}_mesh_rank_{}.xdmf"
+                  .format(cell_type, MPI.COMM_WORLD.rank), "w") as file:
+        file.write_mesh(mesh)
+
+
+def mesh_hex(order):
+    """
+    Returns a hexahedral mesh of specified order.
+    Mesh is a cylinder.
+    Input:
+       order (str): "1", "2," describing the order for the cell.
+    """
+    geom = pygmsh.opencascade.Geometry()
+    disk = geom.add_disk([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+    geom.add_raw_code("Mesh.RecombinationAlgorithm = 2;")
+    geom.add_raw_code("Recombine Surface {:};")
+    geom.extrude(disk, translation_axis=[0, 0, 1],
+                 num_layers=2, recombine=True)
+
+    pygmsh_mesh = pygmsh.generate_mesh(geom,
+                                       extra_gmsh_arguments=["-order", order])
+
+    # Extract the topology and geometry data
+    cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
+    pygmsh_cell = pygmsh_mesh.cells[-1].type
+
+    # Broadcast cell type data and geometric dimension
+    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_cell, x.shape[1],
+                                                       cells.shape[1]], root=0)
+    # Permute the mesh topology from VTK ordering to DOLFIN-X ordering
+    cells = cells[:, cell_perm_gmsh(cell_type)]
+
+    mesh = create_mesh(MPI.COMM_SELF, cells, x,
+                       ufl_mesh_from_gmsh(pygmsh_cell, x.shape[1]))
+    # Write mesh to file for visualization with VTK
+    file = VTKFile("{}_mesh_rank_{}.pvd".format(pygmsh_cell,
+                                                MPI.COMM_WORLD.rank))
+    file.write(mesh)
+    # Write mesh to file for visualization with XDMF
+    with XDMFFile(MPI.COMM_SELF, "{}_mesh_rank_{}.xdmf"
+                  .format(pygmsh_cell, MPI.COMM_WORLD.rank), "w") as file:
+        file.write_mesh(mesh)
+
+
+# Generate all supported 2D meshes
+for i in ["1", "2", "3"]:
+    mesh_2D(False, i)
+    mesh_2D(True, i)
+# Generate tetrahedron meshes for all supported orders
+for i in ["1", "2", "3"]:
+    mesh_tetra(i)
+# Generate hexahedron meshes for all supported orders
+for i in ["1", "2"]:
+    mesh_hex(i)

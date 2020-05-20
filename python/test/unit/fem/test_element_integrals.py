@@ -151,7 +151,8 @@ def test_facet_integral(cell_type):
         elif cell_type == CellType.hexahedron:
             v.interpolate(lambda x: x[0] * (1 - x[0]) + x[1] * (1 - x[1]) + x[2] * (1 - x[2]))
 
-        # assert that the integral of these functions over each face are equal
+        # assert that the integral of these functions over each face are
+        # equal
         out = []
         for j in range(num_facets):
             a = v * ds(subdomain_data=marker, subdomain_id=j)
@@ -179,35 +180,37 @@ def test_facet_normals(cell_type):
         marker = MeshTags(mesh, tdim - 1, indices, values)
 
         # For each facet, check that the inner product of the normal and
-        # the vector that has a positive normal component on only that facet
-        # is positive
+        # the vector that has a positive normal component on only that
+        # facet is positive
         for i in range(num_facets):
             if cell_type == CellType.interval:
                 co = mesh.geometry.x[i]
                 v.interpolate(lambda x: x[0] - co[0])
             if cell_type == CellType.triangle:
                 co = mesh.geometry.x[i]
-                # Vector function that is zero at `co` and points away from `co`
-                # so that there is no normal component on two edges and the integral
-                # over the other edge is 1
+                # Vector function that is zero at `co` and points away
+                # from `co` so that there is no normal component on two
+                # edges and the integral over the other edge is 1
                 v.interpolate(lambda x: ((x[0] - co[0]) / 2, (x[1] - co[1]) / 2))
             elif cell_type == CellType.tetrahedron:
                 co = mesh.geometry.x[i]
-                # Vector function that is zero at `co` and points away from `co`
-                # so that there is no normal component on three faces and the integral
-                # over the other edge is 1
+                # Vector function that is zero at `co` and points away
+                # from `co` so that there is no normal component on
+                # three faces and the integral over the other edge is 1
                 v.interpolate(lambda x: ((x[0] - co[0]) / 3, (x[1] - co[1]) / 3, (x[2] - co[2]) / 3))
             elif cell_type == CellType.quadrilateral:
-                # function that is 0 on one edge and points away from that edge
-                # so that there is no normal component on three edges
+                # function that is 0 on one edge and points away from
+                # that edge so that there is no normal component on
+                # three edges
                 v.interpolate(lambda x: tuple(x[j] - i % 2 if j == i // 2 else 0 * x[j] for j in range(2)))
             elif cell_type == CellType.hexahedron:
-                # function that is 0 on one face and points away from that face
-                # so that there is no normal component on five faces
+                # function that is 0 on one face and points away from
+                # that face so that there is no normal component on five
+                # faces
                 v.interpolate(lambda x: tuple(x[j] - i % 2 if j == i // 3 else 0 * x[j] for j in range(3)))
 
-            # assert that the integrals these functions dotted with the normal over a face
-            # is 1 on one face and 0 on the others
+            # assert that the integrals these functions dotted with the
+            # normal over a face is 1 on one face and 0 on the others
             ones = 0
             for j in range(num_facets):
                 a = inner(v, normal) * ds(subdomain_data=marker, subdomain_id=j)
@@ -257,7 +260,8 @@ def test_plus_minus_simple_vector(cell_type, pm):
             else:
                 V = FunctionSpace(mesh, ("DQ", 1))
 
-            # Assemble vectors v['+'] * dS and v['-'] * dS for a few different numberings
+            # Assemble vectors v['+'] * dS and v['-'] * dS for a few
+            # different numberings
             v = TestFunction(V)
             a = inner(1, v(pm)) * dS
             result = fem.assemble_vector(a)
@@ -266,8 +270,8 @@ def test_plus_minus_simple_vector(cell_type, pm):
             results.append(result)
             orders.append(order)
 
-    # Check that the above vectors all have the same values as the first one,
-    # but permuted due to differently ordered dofs
+    # Check that the above vectors all have the same values as the first
+    # one, but permuted due to differently ordered dofs
     dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
@@ -308,7 +312,8 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             else:
                 V = FunctionSpace(mesh, ("DQ", 1))
 
-            # Assemble vectors with combinations of + and - for a few different numberings
+            # Assemble vectors with combinations of + and - for a few
+            # different numberings
             f = Function(V)
             f.interpolate(lambda x: x[0] - 2 * x[1])
             v = TestFunction(V)
@@ -359,7 +364,8 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
             V = FunctionSpace(mesh, ("DG", 1))
             u, v = TrialFunction(V), TestFunction(V)
 
-            # Assemble matrices with combinations of + and - for a few different numberings
+            # Assemble matrices with combinations of + and - for a few
+            # different numberings
             a = inner(u(pm1), v(pm2)) * dS
             result = fem.assemble_matrix(a, [])
             result.assemble()
@@ -367,8 +373,8 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
             results.append(result)
             orders.append(order)
 
-    # Check that the above matrices all have the same values, but permuted due to differently
-    # ordered dofs
+    # Check that the above matrices all have the same values, but
+    # permuted due to differently ordered dofs
     dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results

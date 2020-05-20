@@ -95,9 +95,8 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                      Eigen::RowMajor>
-      cells_reordered = io::cells::permute_ordering(
-          cells,
-          io::cells::vtk_to_dolfin(mesh::CellType::triangle, cells.cols()));
+      cells_reordered = io::cells::compute_permutation(
+          cells, io::cells::perm_vtk(mesh::CellType::triangle, cells.cols()));
 
   return mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells_reordered),
                       element, points, ghost_mode);

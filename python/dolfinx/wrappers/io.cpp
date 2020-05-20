@@ -32,11 +32,8 @@ void io(py::module& m)
 {
 
   // dolfinx::io::cell permutation functions
-  m.def("permutation_gmsh_to_dolfin", &dolfinx::io::cells::gmsh_to_dolfin);
-  m.def("permutation_dolfin_to_gmsh", &dolfinx::io::cells::dolfin_to_gmsh);
-  m.def("permutation_vtk_to_dolfin", &dolfinx::io::cells::vtk_to_dolfin);
-  m.def("permutation_dolfin_to_vtk", &dolfinx::io::cells::dolfin_to_vtk);
-  m.def("permute_cell_ordering", &dolfinx::io::cells::permute_ordering);
+  m.def("cell_perm_vtk", &dolfinx::io::cells::perm_vtk);
+  m.def("cell_perm_gmsh", &dolfinx::io::cells::perm_gmsh);
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
