@@ -52,12 +52,10 @@ void xdmf_mesh::add_topology_data(
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map_g->ghosts();
 
-  const std::vector<std::uint8_t> perm
-      = io::cells::vtk_to_dolfin(entity_cell_type, num_nodes_per_entity);
-
+  const std::vector<std::uint8_t> vtk_map = io::cells::transpose(
+      io::cells::perm_vtk(entity_cell_type, num_nodes_per_entity));
   auto map_e = topology.index_map(dim);
   assert(map_e);
-
   if (dim == tdim)
   {
     for (std::int32_t c : active_entities)
@@ -66,7 +64,7 @@ void xdmf_mesh::add_topology_data(
       auto nodes = cells_g.links(c);
       for (int i = 0; i < nodes.rows(); ++i)
       {
-        std::int64_t global_index = nodes[perm[i]];
+        std::int64_t global_index = nodes[vtk_map[i]];
         if (global_index < map_g->size_local())
           global_index += offset_g;
         else
@@ -100,8 +98,8 @@ void xdmf_mesh::add_topology_data(
       auto vertices = e_to_v->links(e);
       for (int v = 0; v < vertices.rows(); ++v)
       {
-        const int v_index = perm[v];
-        const int vertex = vertices[v_index];
+        const int v_index = vtk_map[v];
+        const std::int32_t vertex = vertices[v_index];
         const auto* it
             = std::find(cell_vertices.data(),
                         cell_vertices.data() + cell_vertices.rows(), vertex);
@@ -295,14 +293,14 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, const hid_t h5_id,
   const int num_local_cells = topology_data.size() / npoint_per_cell;
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      cells(topology_data.data(), num_local_cells, npoint_per_cell);
+      cells_vtk(topology_data.data(), num_local_cells, npoint_per_cell);
 
   //  Permute cells from VTK to DOLFINX ordering
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells1 = io::cells::permute_ordering(
-          cells, io::cells::vtk_to_dolfin(cell_type, cells.cols()));
+      cells = io::cells::compute_permutation(
+          cells_vtk, io::cells::perm_vtk(cell_type, cells_vtk.cols()));
 
   return {
-      {cell_type, cell_type_str.second}, std::move(points), std::move(cells1)};
+      {cell_type, cell_type_str.second}, std::move(points), std::move(cells)};
 }
 //----------------------------------------------------------------------------

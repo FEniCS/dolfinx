@@ -11,39 +11,44 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <vector>
 
+/// Functions for the re-ordering of input mesh topology to the DOLFINX
+/// ordering, and transpose orderings for file output.
 namespace dolfinx::io::cells
 {
-/// For simplices the FEniCS ordering follows the UFC convention, see:
-/// https://fossies.org/linux/ufc/doc/manual/ufc-user-manual.pdf For
-/// non-simplices (quadrilaterals and hexahedrons) a tensor product
-/// ordering, as specified in FIAT, is used.
 
-/// Map from VTK node indices to DOLFINX node indicies
+// For simplices the FEniCS ordering follows the UFC convention, see:
+// https://fossies.org/linux/ufc/doc/manual/ufc-user-manual.pdf For
+// non-simplices (quadrilaterals and hexahedrons) a tensor product
+// ordering, as specified in FIAT, is used.
+
+/// Permutation array to map from VTK to DOLFINX node ordering
+///
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
-/// @return Map from local VTK index to the DOLFINX local index, i.e.
-/// map[i] is the position of the ith VTK index in the DOLFINX ordering
-std::vector<std::uint8_t> vtk_to_dolfin(mesh::CellType type, int num_nodes);
+/// @return Permutation array @p for permuting from VTK ordering to
+///   DOLFIN ordering, i.e. `a_dolfin[i] = a_vtk[p[i]]
+/// @details If `p = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p =[a[p[0]],
+///   a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`
+std::vector<std::uint8_t> perm_vtk(mesh::CellType type, int num_nodes);
 
-/// Map from DOLFINX local indices to VTK local indices. It is the
-/// transpose of vtk_to_dolfin
-/// @param[in] type The cell shape
-/// @param[in] num_nodes The number of cell 'nodes'
-/// @return Map from local DOLFINX index to the VTK local index, i.e.
-/// map[i] is the position of the ith DOLFNX index in the VTK ordering
-std::vector<std::uint8_t> dolfin_to_vtk(mesh::CellType type, int num_nodes);
+/// Compute the transpose of a re-ordering map
+///
+/// @param[in] map A re-ordering map
+/// @return Transpose of the @p map. E.g., is `map = {1, 2, 3, 0}`, the
+///   transpose will be `{3 , 0, 1, 2 }`.
+std::vector<std::uint8_t> transpose(const std::vector<std::uint8_t>& map);
 
-/// Re-order a collection of cell connections by applying a permutation
-/// array
+/// Permute cell topology by applying a permutation array for each cell
 /// @param[in] cells Array of cell topologies, with each row
-///     representing a cell
-/// @param[in] permutation The permutation array to map to
-/// @return Permted cell topology, where for a cell
-///     v_new[permutation[i]] = v_old[i]
+///   representing a cell
+/// @param[in] p The permutation array that maps `a_p[i] = a[p[i]]`,
+///   where `a_p` is the permuted array
+/// @return Permuted cell topology, where for a cell `v_new[i] =
+///   v_old[map[i]]`
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-permute_ordering(
+compute_permutation(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::uint8_t>& permutation);
+    const std::vector<std::uint8_t>& p);
 
 } // namespace dolfinx::io::cells
