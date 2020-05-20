@@ -235,6 +235,62 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
   return perm;
 }
 //-----------------------------------------------------------------------------
+std::vector<std::uint8_t> io::cells::gmsh_to_dolfin(std::string type)
+{
+
+  if (type == "tetra")
+  {
+    return std::vector<std::uint8_t>{0, 1, 2, 3};
+  }
+  else if (type == "tetra10")
+  {
+    // NOTE: GMSH DOCUMENTATION IS WRONG, it would have the following
+    // permutation:
+    // return std::vector<std::uint8_t>{0, 1, 2, 3, 9, 6, 8, 7, 4, 5};
+    // This is the one returned by pygmsh
+    return std::vector<std::uint8_t>{0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
+  }
+  else if (type == "tetra20")
+  {
+    return std::vector<std::uint8_t>{0,  1,  2, 3, 14, 15, 8,  9,  13, 12,
+                                     11, 10, 5, 4, 7,  6,  19, 18, 17, 16};
+  }
+  else if (type == "hexahedron")
+    return std::vector<std::uint8_t>{0, 4, 6, 2, 1, 5, 7, 3};
+  else if (type == "hexahedron27")
+  {
+    return std::vector<std::uint8_t>{0,  9,  12, 3,  1,  10, 13, 4,  18,
+                                     6,  2,  15, 11, 21, 14, 5,  19, 7,
+                                     16, 22, 24, 20, 8,  17, 23, 25, 26};
+  }
+  else if (type == "triangle")
+    return std::vector<std::uint8_t>{0, 1, 2};
+  else if (type == "triangle6")
+    return std::vector<std::uint8_t>{0, 1, 2, 5, 3, 4};
+  else if (type == "triangle10")
+    return std::vector<std::uint8_t>{0, 1, 2, 7, 8, 3, 4, 6, 5, 9};
+  else if (type == "quad")
+    return std::vector<std::uint8_t>{0, 2, 3, 1};
+  else if (type == "quad9")
+    return std::vector<std::uint8_t>{0, 3, 4, 1, 6, 5, 7, 2, 8};
+  else if (type == "quad16")
+  {
+    return std::vector<std::uint8_t>{0,  4, 5, 1, 8,  12, 6,  7,
+                                     13, 9, 3, 2, 10, 14, 15, 11};
+  }
+  else
+    throw std::runtime_error("Gmsh cell type not recognized");
+}
+//-----------------------------------------------------------------------------
+std::vector<std::uint8_t> io::cells::dolfin_to_gmsh(std::string type)
+{
+  const std::vector<std::uint8_t> reversed = io::cells::gmsh_to_dolfin(type);
+  std::vector<std::uint8_t> perm(reversed.size());
+  for (std::size_t i = 0; i < perm.size(); ++i)
+    perm[reversed[i]] = i;
+  return perm;
+}
+//-----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 io::cells::permute_ordering(
     const Eigen::Ref<const Eigen::Array<
