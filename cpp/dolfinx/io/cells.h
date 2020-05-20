@@ -77,11 +77,6 @@ namespace dolfinx::io::cells
        \|      w  \|          \|         \|
        1----------5           1----19----10
 */
-/// Determine the degree fo the cell given the type and number of nodes
-/// @param[in] type The cell shape
-/// @param[in] num_nodes The number of cell 'nodes'
-/// @return The degree of the cell
-int cell_degree(mesh::CellType type, int num_nodes);
 
 /// Permutation array to map from VTK to DOLFINX node ordering
 ///
