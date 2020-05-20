@@ -46,7 +46,8 @@ int cell_degree(mesh::CellType type, int num_nodes)
       LOG(WARNING) << "9th order mesh is untested";
       return 9;
     default:
-      throw std::runtime_error("Unknown triangle layout.");
+      throw std::runtime_error("Unknown triangle layout. Number of nodes: "
+                               + std::to_string(num_nodes));
     }
   case mesh::CellType::tetrahedron:
     switch (num_nodes)
@@ -235,9 +236,11 @@ std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
   {
   case mesh::CellType::point:
     map = {0};
+    break;
   case mesh::CellType::interval:
     map.resize(num_nodes);
     std::iota(map.begin(), map.end(), 0);
+    break;
   case mesh::CellType::triangle:
     map = vtk_triangle(num_nodes);
     break;
