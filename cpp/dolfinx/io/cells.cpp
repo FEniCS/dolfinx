@@ -102,6 +102,9 @@ std::vector<std::uint8_t> vtk_triangle(int num_nodes)
   for (int k = 1; k < degree; ++k)
     map[j++] = 2 * degree - (k - 1);
 
+  if (degree < 3)
+    return map;
+
   // Interior VTK is ordered as a lower order triangle, while FEniCS
   // orders them lexicographically.
   // FIXME: Should be possible to generalize with some recursive
@@ -134,12 +137,12 @@ std::vector<std::uint8_t> vtk_triangle(int num_nodes)
                   22, 18, 13, 7, 8, 11, 23, 9, 10, 16, 20, 19, 14, 15};
     break;
   default:
-    throw std::runtime_error("Unknown triangle layout");
-    // return io::cells::transpose(permutation);
+    throw std::runtime_error("Unknown triangle layout: "
+                             + std::to_string(degree));
   }
 
   for (std::size_t k = 0; k < remainders.size(); ++k)
-    map[j++] = base + remainders[k];
+    map[j + k] = base + remainders[k];
 
   return map;
 }
@@ -165,9 +168,9 @@ std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
 {
   std::vector<std::uint8_t> map(num_nodes);
 
-  // Check that num_nodes is a square integer (since quadrilaterals
-  // are tensorproducts of intervals, the number of nodes for each
-  // interval should be an integer)
+  // Check that num_nodes is a square integer (since quadrilaterals are
+  // tensorproducts of intervals, the number of nodes for each interval
+  // should be an integer)
   assert((std::sqrt(num_nodes) - std::floor(std::sqrt(num_nodes))) == 0);
   // Number of nodes in each direction
   const int n = sqrt(num_nodes);

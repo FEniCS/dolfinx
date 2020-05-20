@@ -21,10 +21,13 @@ namespace dolfinx::io::cells
 // non-simplices (quadrilaterals and hexahedrons) a tensor product
 // ordering, as specified in FIAT, is used.
 
-/// Map from VTK node indices to DOLFINX node indicies
+/// Permutation array to map from VTK to DOLFINX node ordering
 ///
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
+/// @return Permutation array @p, where
+///
+///
 /// @return Map `p` from the position i in the VTK array to position
 ///   `p[i] = j` in the  DOLFINX array, i.e. `a_dolfin[p[i]] =
 ///   a_vtk[i]`.
