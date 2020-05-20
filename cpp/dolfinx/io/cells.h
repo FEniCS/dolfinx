@@ -44,7 +44,7 @@ std::vector<std::uint8_t> dolfin_to_vtk(mesh::CellType type, int num_nodes);
 /// @param[in] cells Array of cell topologies, with each row
 ///     representing a cell
 /// @param[in] permutation The permutation array to map to
-/// @return Permted cell topology, where for a cell
+/// @return Permuted cell topology, where for a cell
 ///     v_new[permutation[i]] = v_old[i]
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 permute_ordering(
