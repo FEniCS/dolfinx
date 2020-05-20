@@ -108,9 +108,7 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
     std::vector<std::uint8_t> permutation(num_nodes);
 
     // Vertices
-    permutation[0] = 0;
-    permutation[1] = 1;
-    permutation[2] = 2;
+    std::iota(permutation.begin(), permutation.begin() + 3, 0);
 
     int j = 3;
     const int degree = cell_degree(type, num_nodes);
@@ -223,8 +221,9 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
       //         22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
 
       // This is the documented VTK ordering
-      return {0,  9, 12, 3,  1,  10, 13, 4,  18, 15, 21, 6,  19, 16,
-              22, 7, 2,  11, 14, 5,  8,  17, 20, 23, 24, 25, 26};
+      return io::cells::transpose({0,  9,  12, 3,  1,  10, 13, 4,  18,
+                                   15, 21, 6,  19, 16, 22, 7,  2,  11,
+                                   14, 5,  8,  17, 20, 23, 24, 25, 26});
     default:
       throw std::runtime_error("Higher order hexahedron not supported.");
     }
