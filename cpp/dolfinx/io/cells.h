@@ -19,20 +19,23 @@ namespace dolfinx::io::cells
 /// ordering, as specified in FIAT, is used.
 
 /// Map from VTK node indices to DOLFINX node indicies
+///
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
 /// @return Map p from the position i in the VTK array to position p[i]
-///   = j in the  DOLFINX array, i.e. a_p[p[i]] = a[i].
+///   = j in the  DOLFINX array, i.e. a_dolfin[p[i]] = a_vtk[i].
 ///
-///   If p = [0, 2, 1, 3] and a = [10, 3, 4, 7], then a_p = [10, 4, 3, 7]
+///   If p = [0, 2, 1, 3] and a = [10, 3, 4, 7], then a_p = [10, 4, 3,
+///   7]
 std::vector<std::uint8_t> vtk_to_dolfin(mesh::CellType type, int num_nodes);
 
 /// Map from DOLFINX local indices to VTK local indices. It is the
-/// transpose of vtk_to_dolfin
+/// transpose of @pvtk_to_dolfin
+///
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
-/// @return Map from local DOLFINX index to the VTK local index, i.e.
-/// map[i] is the position of the ith DOLFNX index in the VTK ordering
+/// @return Map p from the position i in the DOLFINX array to position
+///   p[i] = j in the VTK array, i.e. a_vtk[p[i]] = a_dolfin[i].
 std::vector<std::uint8_t> dolfin_to_vtk(mesh::CellType type, int num_nodes);
 
 /// Re-order a collection of cell connections by applying a permutation
