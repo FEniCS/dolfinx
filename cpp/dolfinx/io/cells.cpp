@@ -271,7 +271,7 @@ Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 io::cells::compute_permutation(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::uint8_t>& map)
+    const std::vector<std::uint8_t>& p)
 {
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cells_new(cells.rows(), cells.cols());
@@ -280,7 +280,7 @@ io::cells::compute_permutation(
     auto cell = cells.row(c);
     auto cell_new = cells_new.row(c);
     for (Eigen::Index i = 0; i < cell_new.size(); ++i)
-      cell_new(i) = cell(map[i]);
+      cell_new(i) = cell(p[i]);
   }
   return cells_new;
 }

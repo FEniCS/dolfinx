@@ -49,6 +49,6 @@ Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 compute_permutation(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::uint8_t>& map);
+    const std::vector<std::uint8_t>& p);
 
 } // namespace dolfinx::io::cells
