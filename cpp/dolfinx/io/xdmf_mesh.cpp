@@ -299,7 +299,7 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, const hid_t h5_id,
 
   //  Permute cells from VTK to DOLFINX ordering
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells1 = io::cells::permute_ordering(
+      cells1 = io::cells::compute_reordering(
           cells, io::cells::vtk_to_dolfin(cell_type, cells.cols()));
 
   return {

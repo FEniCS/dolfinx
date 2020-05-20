@@ -239,24 +239,26 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
 {
   const std::vector<std::uint8_t> reversed
       = io::cells::vtk_to_dolfin(type, num_nodes);
-  std::vector<std::uint8_t> perm(num_nodes);
+  std::vector<std::uint8_t> map(num_nodes);
   for (int i = 0; i < num_nodes; ++i)
-    perm[reversed[i]] = i;
-  return perm;
+    map[reversed[i]] = i;
+  return map;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-io::cells::permute_ordering(
+io::cells::compute_reordering(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::uint8_t>& permutation)
+    const std::vector<std::uint8_t>& map)
 {
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cells_new(cells.rows(), cells.cols());
   for (Eigen::Index c = 0; c < cells_new.rows(); ++c)
   {
-    for (Eigen::Index v = 0; v < cells_new.cols(); ++v)
-      cells_new(c, permutation[v]) = cells(c, v);
+    auto cell = cells.row(c);
+    auto cell_new = cells_new.row(c);
+    for (Eigen::Index i = 0; i < cell_new.size(); ++i)
+      cell_new(map[i]) = cell(i);
   }
   return cells_new;
 }

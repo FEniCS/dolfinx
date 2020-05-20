@@ -95,7 +95,7 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                      Eigen::RowMajor>
-      cells_reordered = io::cells::permute_ordering(
+      cells_reordered = io::cells::compute_reordering(
           cells,
           io::cells::vtk_to_dolfin(mesh::CellType::triangle, cells.cols()));
 

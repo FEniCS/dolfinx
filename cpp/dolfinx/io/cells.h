@@ -44,14 +44,15 @@ std::vector<std::uint8_t> dolfin_to_vtk(mesh::CellType type, int num_nodes);
 /// Re-order a collection of cell connections by applying a permutation
 /// array
 /// @param[in] cells Array of cell topologies, with each row
-///     representing a cell
-/// @param[in] permutation The permutation array to map to
-/// @return Permted cell topology, where for a cell
-///     v_new[permutation[i]] = v_old[i]
+///   representing a cell
+/// @param[in] map The map from the index in the cell array @p cell to
+///   the position in the reorderd cell array, i.e. cell to to from
+/// @return Permted cell topology, where for a cell `v_new[map[i]] =
+///   v_old[i]`
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-permute_ordering(
+compute_reordering(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::uint8_t>& permutation);
+    const std::vector<std::uint8_t>& map);
 
 } // namespace dolfinx::io::cells
