@@ -101,7 +101,7 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
   {
     std::vector<std::uint8_t> permutation(num_nodes);
     std::iota(permutation.begin(), permutation.end(), 0);
-    return permutation;
+    return io::cells::transpose(permutation);
   }
   case mesh::CellType::triangle:
   {
@@ -153,24 +153,24 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
                     22, 18, 13, 7, 8, 11, 23, 9, 10, 16, 20, 19, 14, 15};
       break;
     default:
-      return permutation;
+      return io::cells::transpose(permutation);
     }
 
     for (std::size_t k = 0; k < remainders.size(); ++k)
       permutation[j++] = base + remainders[k];
 
-    return permutation;
+    return io::cells::transpose(permutation);
   }
   case mesh::CellType::tetrahedron:
     switch (num_nodes)
     {
     case 4:
-      return {0, 1, 2, 3};
+      return io::cells::transpose({0, 1, 2, 3});
     case 10:
-      return {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
+      return io::cells::transpose({0, 1, 2, 3, 9, 6, 8, 7, 5, 4});
     case 20:
-      return {0,  1,  2, 3, 14, 15, 8,  9,  13, 12,
-              10, 11, 6, 7, 4,  5,  18, 16, 17, 19};
+      return io::cells::transpose({0,  1,  2, 3, 14, 15, 8,  9,  13, 12,
+                                   10, 11, 6, 7, 4,  5,  18, 16, 17, 19});
     default:
       throw std::runtime_error("Unknown tetrahedron layout");
     }
@@ -208,14 +208,14 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
         permutation[j++] = l * n + k;
 
     assert(j == num_nodes);
-    return permutation;
+    return io::cells::transpose(permutation);
   }
   case mesh::CellType::hexahedron:
   {
     switch (num_nodes)
     {
     case 8:
-      return {0, 4, 6, 2, 1, 5, 7, 3};
+      return io::cells::transpose({0, 4, 6, 2, 1, 5, 7, 3});
     case 27:
       // // TODO: change permutation when paraview issue 19433 is resolved
       // // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
@@ -256,7 +256,7 @@ io::cells::compute_reordering(
     auto cell = cells.row(c);
     auto cell_new = cells_new.row(c);
     for (Eigen::Index i = 0; i < cell_new.size(); ++i)
-      cell_new(map[i]) = cell(i);
+      cell_new(i) = cell(map[i]);
   }
   return cells_new;
 }
