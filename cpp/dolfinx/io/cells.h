@@ -41,7 +41,7 @@ std::vector<std::uint8_t> vtk_to_dolfin(mesh::CellType type, int num_nodes);
 ///   `p[i] = j` in the VTK array, i.e. `a_vtk[p[i]] = a_dolfin[i]`.
 std::vector<std::uint8_t> dolfin_to_vtk(mesh::CellType type, int num_nodes);
 
-/// Re-order a collection of cell connections by applying a permutation
+/// Re-order a collection of cell topology by applying a re-mapping
 /// array
 /// @param[in] cells Array of cell topologies, with each row
 ///   representing a cell
