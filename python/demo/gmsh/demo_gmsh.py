@@ -109,14 +109,17 @@ with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
 if MPI.COMM_WORLD.rank == 0:
     # Generate a mesh with 2nd-order hexahedral cells using pygmsh
     geom = pygmsh.opencascade.Geometry()
+    geom.add_raw_code("Mesh.RecombineAll = 1;")
+    geom.add_raw_code("Mesh.CharacteristicLengthFactor = 1.0;")
+    geom.add_raw_code("Mesh.RecombinationAlgorithm = 2;")
     circle = geom.add_disk([0.0, 0.0, 0.0], 1.0)
-    geom.add_raw_code("Recombine Surface {%s};" % circle.id)
+    rectangle = geom.add_disk([0.0, 0.0, 0.0], 0.5)
 
-    _, box, _ = geom.extrude(circle, translation_axis=[0.0, 0.0, 5], num_layers=5, recombine=True)
+    cut = geom.boolean_difference([circle], [rectangle])
+    _, box, _ = geom.extrude(cut, translation_axis=[0.0, 0.0, 5], num_layers=5, recombine=True)
 
-    geom.add_physical(circle, label=1)
+    geom.add_physical(cut, label=1)
     geom.add_physical(box, label=2)
-
     pygmsh_mesh = pygmsh.generate_mesh(geom, mesh_file_type="msh", extra_gmsh_arguments=["-order", "2"])
 
     # Extract the topology and geometry data

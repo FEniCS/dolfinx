@@ -332,7 +332,11 @@ xdmf_utils::extract_local_entities(
     throw std::runtime_error("Number of entities and values must match");
 
   const mesh::CellType cell_type = entity_element.cell_shape();
-  // Extract nodes which correspond to vertices only
+
+  // Find which geometry dofs lying on entity of given dimension
+  // are lying also on vertices
+  // This is needed to filter out input global indices which are not
+  // associated with vertices
   const graph::AdjacencyList<std::int64_t> topology_igi
       = mesh::extract_topology(cell_type, entity_element.dof_layout(),
                                graph::AdjacencyList<std::int64_t>(entities));
@@ -474,6 +478,7 @@ xdmf_utils::extract_local_entities(
     throw std::runtime_error("Missing cell-vertex connectivity.");
 
   // Use ElementDofLayout to get vertex dof indices (local to a cell)
+  // i.e. find out which geometry dofs belong to vertices
   const int num_vertices_per_cell = c_to_v->num_links(0);
   std::vector<int> local_vertices(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)

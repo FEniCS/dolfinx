@@ -70,10 +70,13 @@ std::vector<PetscScalar> get_cell_data_values(const function::Function& u);
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 
 /// Extract local entities and associated values from global input indices
-/// @param[in] geometry
-/// @param[in] element
+/// @param[in] mesh
+/// @param[in] entity_element CoordinateElement for the entities. Provides
+///   information which global input indices are associated with mesh
+///   vertices.
 /// @param[in] entities Entities defined with global input indices
 /// @param[in] values
+/// @return (mesh entities defined with local vertex indices, associated values)
 std::pair<
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     std::vector<std::int32_t>>
