@@ -8,7 +8,6 @@
 """IO module for input data, post-processing and checkpointing"""
 
 import ufl
-import numpy
 from dolfinx import cpp, fem
 
 
