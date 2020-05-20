@@ -12,7 +12,6 @@ import numpy as np
 import pygmsh
 from mpi4py import MPI
 
-import ufl
 from dolfinx import cpp
 from dolfinx.cpp.io import permutation_vtk_to_dolfin
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh

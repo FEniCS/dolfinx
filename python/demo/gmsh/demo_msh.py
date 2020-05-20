@@ -11,7 +11,6 @@
 import pygmsh
 from mpi4py import MPI
 
-import ufl
 from dolfinx.io import gmsh_to_dolfin, ufl_mesh_from_gmsh
 from dolfinx.cpp.io import permute_cell_ordering
 from dolfinx.io import XDMFFile, VTKFile
