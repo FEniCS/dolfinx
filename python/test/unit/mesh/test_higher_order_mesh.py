@@ -15,8 +15,7 @@ from mpi4py import MPI
 from sympy.vector import CoordSys3D, matrix_to_vector
 
 from dolfinx import Function, FunctionSpace
-from dolfinx.cpp.io import (permutation_dolfin_to_vtk,
-                            permutation_vtk_to_dolfin, permute_cell_ordering)
+from dolfinx.cpp.io import cell_perm_vtk
 from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_scalar
 from dolfinx.io import XDMFFile
@@ -75,15 +74,13 @@ def sympy_scipy(points, nodes, L, H):
     ([0, 1, 2, 3], [0, 3, 1, 2], CellType.quadrilateral),
     ([0, 1, 2, 3, 4, 5, 6, 7], [0, 4, 3, 7, 1, 5, 2, 6], CellType.hexahedron)
 ])
-def test_permute_vtk_to_dolfin(vtk, dolfin, cell_type):
-    p = permutation_vtk_to_dolfin(cell_type, len(vtk))
-    cell_p = permute_cell_ordering([vtk], p)
-    # print(cell_p)
-    # print(dolfin)
+def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
+    p = cell_perm_vtk(cell_type, len(vtk))
+    cell_p = np.array(vtk)[p]
     assert (cell_p == dolfin).all()
 
-    p = permutation_dolfin_to_vtk(cell_type, len(vtk))
-    cell_p = permute_cell_ordering([dolfin], p)
+    p = np.argsort(cell_perm_vtk(cell_type, len(vtk)))
+    cell_p = np.array(dolfin)[p]
     assert (cell_p == vtk).all()
 
 
@@ -106,7 +103,7 @@ def test_second_order_tri():
 
             cells = np.array([[0, 1, 3, 4, 8, 7],
                               [1, 2, 3, 5, 6, 8]])
-            cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
+            cells = cells[:, cell_perm_vtk(CellType.triangle, cells.shape[1])]
             mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], degree=2)
 
             def e2(x):
@@ -146,7 +143,7 @@ def xtest_third_order_tri():
                                [2 * L / 3, 2 * H / 3, 0]])            # 15
             cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 14],
                               [1, 2, 3, 12, 13, 10, 11, 7, 6, 15]])
-            cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
+            cells = cells[:, cell_perm_vtk(CellType.triangle, cells.shape[1])]
             mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], degree=3)
 
             def e2(x):
@@ -194,7 +191,7 @@ def xtest_fourth_order_tri():
 
             cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                               [1, 2, 3, 16, 17, 18, 19, 20, 21, 9, 8, 7, 22, 23, 24]])
-            cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
+            cells = cells[:, cell_perm_vtk(CellType.triangle, cells.shape[1])]
             mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], degree=4)
 
             def e2(x):
@@ -250,7 +247,7 @@ def scipy_one_cell(points, nodes):
 def test_nth_order_triangle(order):
     num_nodes = (order + 1) * (order + 2) / 2
     cells = np.array([range(int(num_nodes))])
-    cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
+    cells = cells[:, cell_perm_vtk(CellType.triangle, cells.shape[1])]
 
     if order == 1:
         points = np.array([[0.00000, 0.00000, 0.00000], [1.00000, 0.00000, 0.00000],
@@ -404,8 +401,7 @@ def test_second_order_quad(L, H, Z):
                        [L / 2, H / 2, 0],
                        [2 * L, 0, 0], [2 * L, H, Z]])
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8]])
-    cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
-
+    cells = cells[:, cell_perm_vtk(CellType.quadrilateral, cells.shape[1])]
     mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells, [], degree=2)
 
     def e2(x):
@@ -458,8 +454,7 @@ def xtest_third_order_quad(L, H, Z):
     # Change to multiple cells when matthews dof-maps work for quads
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                       [1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
-
-    cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
+    cells = cells[:, cell_perm_vtk(CellType.quadrilateral, cells.shape[1])]
     mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells, [])
 
     def e2(x):
@@ -523,10 +518,8 @@ def xtest_fourth_order_quad(L, H, Z):
     cells = np.array([[0, 4, 24, 20, 1, 2, 3, 9, 14, 19, 21, 22, 23, 5, 10, 15, 6, 7, 8, 11, 12, 13, 16, 17, 18],
                       [4, 28, 44, 24, 25, 26, 27, 32, 36, 40, 41, 42, 43, 9, 14, 19,
                        29, 30, 31, 33, 34, 35, 37, 38, 39]])
-
-    cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
-    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells,
-                [], GhostMode.none)
+    cells = cells[:, cell_perm_vtk(CellType.quadrilateral, cells.shape[1])]
+    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells, [], GhostMode.none)
 
     def e2(x):
         return x[2] + x[0] * x[1]
@@ -559,11 +552,11 @@ def test_gmsh_input_quad(order):
     geo.add_ball([0, 0, 0], R, char_length=res)
     geo.add_raw_code("Recombine Surface {1};")
     geo.add_raw_code("Mesh.Algorithm = {0:d};".format(algorithm))
-
     msh = pygmsh.generate_mesh(geo, verbose=True, dim=2)
 
     if order > 2:
-        # Quads order > 3 have a gmsh specific ordering, and has to be permuted.
+        # Quads order > 3 have a gmsh specific ordering, and has to be
+        # re-mapped
         msh_to_dolfin = np.array([0, 3, 11, 10, 1, 2, 6, 7, 4, 9, 12, 15, 5, 8, 13, 14])
         cells = np.zeros(msh.cells_dict[element].shape)
         for i in range(len(cells)):
@@ -571,8 +564,7 @@ def test_gmsh_input_quad(order):
                 cells[i, j] = msh.cells_dict[element][i, msh_to_dolfin[j]]
     else:
         # XDMF does not support higher order quads
-        cells = permute_cell_ordering(msh.cells_dict[element], permutation_vtk_to_dolfin(
-            CellType.quadrilateral, msh.cells_dict[element].shape[1]))
+        cells = msh.cells_dict[element][:, cell_perm_vtk(CellType.quadrilateral, msh.cells_dict[element].shape[1])]
 
     mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, msh.points, cells,
                 [], degree=order)

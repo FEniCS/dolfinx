@@ -312,8 +312,8 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
 
   // Permute entities from VTK to DOLFINX ordering
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entities1 = io::cells::permute_ordering(
-          entities, io::cells::vtk_to_dolfin(cell_type, entities.cols()));
+      entities1 = io::cells::compute_permutation(
+          entities, io::cells::perm_vtk(cell_type, entities.cols()));
 
   const auto [entities_local, values_local]
       = xdmf_utils::extract_local_entities(*mesh, mesh::cell_dim(cell_type),

@@ -1,4 +1,4 @@
-name: Build and push Docker CI test image
+name: CI Docker images
 
 on:
   # Uncomment the below to trigger 'docker build' on push

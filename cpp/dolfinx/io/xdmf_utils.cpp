@@ -50,7 +50,7 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
   pugi::xml_attribute type_attr = topology_node.attribute("TopologyType");
   assert(type_attr);
 
-  const std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
+  const static std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
       = {{"polyvertex", {"point", 1}},
          {"polyline", {"interval", 1}},
          {"edge_3", {"interval", 2}},
@@ -59,11 +59,14 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
          {"tetrahedron", {"tetrahedron", 1}},
          {"tetrahedron_10", {"tetrahedron", 2}},
          {"quadrilateral", {"quadrilateral", 1}},
+         {"quadrilateral_9", {"quadrilateral", 2}},
+         {"quadrilateral_16", {"quadrilateral", 3}},
          {"hexahedron", {"hexahedron", 1}}};
 
   // Convert XDMF cell type string to DOLFINX cell type string
   std::string cell_type = type_attr.as_string();
-  boost::algorithm::to_lower(cell_type);
+  std::transform(cell_type.begin(), cell_type.end(), cell_type.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
   auto it = xdmf_to_dolfin.find(cell_type);
   if (it == xdmf_to_dolfin.end())
   {
@@ -299,11 +302,14 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
   static const std::map<mesh::CellType, std::map<int, std::string>> vtk_map = {
       {mesh::CellType::point, {{1, "PolyVertex"}}},
       {mesh::CellType::interval, {{2, "PolyLine"}, {3, "Edge_3"}}},
-      {mesh::CellType::triangle, {{3, "Triangle"}, {6, "Triangle_6"}}},
+      {mesh::CellType::triangle,
+       {{3, "Triangle"}, {6, "Triangle_6"}, {10, "Triangle_10"}}},
       {mesh::CellType::quadrilateral,
-       {{4, "Quadrilateral"}, {9, "Quadrilateral_9"}}},
+       {{4, "Quadrilateral"},
+        {9, "Quadrilateral_9"},
+        {16, "Quadrilateral_16"}}},
       {mesh::CellType::tetrahedron,
-       {{4, "Tetrahedron"}, {10, "Tetrahedron_10"}}},
+       {{4, "Tetrahedron"}, {10, "Tetrahedron_10"}, {20, "Tetrahedron_20"}}},
       {mesh::CellType::hexahedron, {{8, "Hexahedron"}, {27, "Hexahedron_27"}}}};
 
   // Get cell family

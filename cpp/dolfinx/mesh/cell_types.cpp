@@ -224,25 +224,22 @@ std::string mesh::to_string(mesh::CellType type)
   }
 }
 //-----------------------------------------------------------------------------
-mesh::CellType mesh::to_type(const std::string& type)
+mesh::CellType mesh::to_type(const std::string& cell)
 {
-  if (type == "point")
+  if (cell == "point")
     return mesh::CellType::point;
-  else if (type == "interval")
+  else if (cell == "interval")
     return mesh::CellType::interval;
-  else if (type == "triangle")
+  else if (cell == "triangle")
     return mesh::CellType::triangle;
-  else if (type == "tetrahedron")
+  else if (cell == "tetrahedron")
     return mesh::CellType::tetrahedron;
-  else if (type == "quadrilateral")
+  else if (cell == "quadrilateral")
     return mesh::CellType::quadrilateral;
-  else if (type == "hexahedron")
+  else if (cell == "hexahedron")
     return mesh::CellType::hexahedron;
   else
-    throw std::runtime_error("Unknown cell type (" + type + ")");
-
-  // Should no reach this point
-  return mesh::CellType::interval;
+    throw std::runtime_error("Unknown cell type (" + cell + ")");
 }
 //-----------------------------------------------------------------------------
 mesh::CellType mesh::cell_entity_type(mesh::CellType type, int d)
