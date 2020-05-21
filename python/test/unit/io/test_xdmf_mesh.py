@@ -6,16 +6,16 @@
 
 import os
 
+import numpy as np
 import pytest
 from mpi4py import MPI
 
-import ufl
-from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp, fem
+from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 from dolfinx.cpp.io import cell_perm_vtk
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
-from dolfinx_utils.test.fixtures import tempdir
 from dolfinx.mesh import create as create_mesh
+from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
 
