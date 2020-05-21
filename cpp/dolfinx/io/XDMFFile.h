@@ -157,6 +157,19 @@ public:
                 const std::string name,
                 const std::string xpath = "/Xdmf/Domain");
 
+  /// Write Information
+  /// @param[in] name
+  /// @param[in] value String to store into Information tag
+  /// @param[in] xpath XPath where Information will be inserted
+  void write_information(const std::string name, const std::string value,
+                         const std::string xpath = "/Xdmf/Domain/");
+
+  /// Read Information
+  /// @param[in] name
+  /// @param[in] xpath XPath where Information is stored in file
+  std::string read_information(const std::string name,
+                               const std::string xpath = "/Xdmf/Domain/");
+
   /// Get the MPI communicator
   /// @return The MPI communicator for the file object
   MPI_Comm comm() const;

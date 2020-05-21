@@ -92,6 +92,10 @@ void io(py::module& m)
            py::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
            py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
+      .def("write_information", &dolfinx::io::XDMFFile::write_information,
+           py::arg("name"), py::arg("value"), py::arg("xpath") = "/Xdmf/Domain")
+      .def("read_information", &dolfinx::io::XDMFFile::read_information,
+           py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
       .def("comm", [](dolfinx::io::XDMFFile& self) {
         return MPICommWrapper(self.comm());
       });
