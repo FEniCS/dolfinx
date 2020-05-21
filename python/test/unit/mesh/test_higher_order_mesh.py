@@ -538,7 +538,7 @@ def xtest_fourth_order_quad(L, H, Z):
 
 @skip_in_parallel
 @pytest.mark.parametrize('order', [2, 3])
-def xtest_gmsh_input_quad(order):
+def test_gmsh_input_quad(order):
     pygmsh = pytest.importorskip("pygmsh")
 
     # Parameterize test if gmsh gets wider support
@@ -566,7 +566,8 @@ def xtest_gmsh_input_quad(order):
         # XDMF does not support higher order quads
         cells = msh.cells_dict[element][:, cell_perm_vtk(CellType.quadrilateral, msh.cells_dict[element].shape[1])]
 
-    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, msh.points, cells, [], GhostMode.none)
+    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, msh.points, cells,
+                [], degree=order)
     surface = assemble_scalar(1 * dx(mesh))
 
     assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi * R * R, rel=1e-5)

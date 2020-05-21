@@ -13,9 +13,10 @@ import pygmsh
 from mpi4py import MPI
 
 from dolfinx import cpp
-from dolfinx.cpp.io import cell_perm_vtk
+from dolfinx.cpp.io import cell_perm_gmsh, extract_local_entities
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import create as create_mesh
+from dolfinx.cpp.mesh import create_meshtags
 
 # Generating a mesh on each process rank
 # ======================================
@@ -42,23 +43,42 @@ with XDMFFile(MPI.COMM_SELF, "mesh_rank_{}.xdmf".format(MPI.COMM_WORLD.rank), "w
 if MPI.COMM_WORLD.rank == 0:
     # Generate a mesh
     geom = pygmsh.opencascade.Geometry()
-    geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+    ball = geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+    box = geom.add_box([0.0, 0.0, 0.0], [1.0, 1.0, 1.0])
+
+    cut = geom.boolean_difference([ball], [box])
+    geom.add_raw_code("Physical Surface(1) = {1};")
+    geom.add_physical(cut, 2)
+
     pygmsh_mesh = pygmsh.generate_mesh(geom)
 
     # Extract the topology and geometry data
     cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
-    pygmsh_cell = pygmsh_mesh.cells[-1].type
-    # Broadcast cell type data and geometric dimension
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_cell, x.shape[1], cells.shape[1]], root=0)
-else:
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([None, None, None], root=0)
-    cells, x = np.empty([0, num_nodes]), np.empty([0, gdim])
 
-mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(cell_type, gdim))
+    # Extract marked facets
+    marked_entities = pygmsh_mesh.cells[-2].data
+    values = pygmsh_mesh.cell_data["gmsh:physical"][-2]
+
+    # Broadcast cell type data and geometric dimension
+    num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
+else:
+    num_nodes = MPI.COMM_WORLD.bcast(None, root=0)
+    cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
+    marked_entities, values = np.empty((0, 3)), np.empty((0,))
+
+mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh("tetra", 3))
 mesh.name = "ball_d1"
+
+local_entities, local_values = extract_local_entities(mesh, 2, marked_entities, values)
+mesh.topology.create_connectivity(2, 0)
+mt = create_meshtags(mesh, 2, cpp.graph.AdjacencyList_int32(local_entities), np.int32(local_values))
+mt.name = "ball_d1_surface"
+
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
     file.write_mesh(mesh)
 
+    mesh.topology.create_connectivity(2, 3)
+    file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='ball_d1']/Geometry")
 
 # Create a distributed (parallel) mesh with quadratic geometry
 # ============================================================
@@ -67,56 +87,105 @@ with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
 
 if MPI.COMM_WORLD.rank == 0:
     geom = pygmsh.opencascade.Geometry()
-    geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
-    pygmsh_mesh = pygmsh.generate_mesh(geom, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
+    ball = geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+    box = geom.add_box([0.0, 0.0, 0.0], [1.0, 1.0, 1.0])
+
+    cut = geom.boolean_difference([ball], [box])
+    geom.add_raw_code("Physical Surface(1) = {1};")
+    geom.add_physical(cut, 2)
+
+    pygmsh_mesh = pygmsh.generate_mesh(geom, extra_gmsh_arguments=["-order", "2"])
 
     # Extract the topology and geometry data
     cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
     pygmsh_cell = pygmsh_mesh.cells[-1].type
 
-    # Broadcast cell type data and geometric dimension
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_cell, x.shape[1], cells.shape[1]], root=0)
-else:
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([None, None, None], root=0)
-    cells, x = np.empty([0, num_nodes]), np.empty([0, gdim])
+    # Extract marked facets
+    marked_entities = pygmsh_mesh.cells[-2].data
+    values = pygmsh_mesh.cell_data["gmsh:physical"][-2]
 
-# Permute the topology from VTK to DOLFIN-X ordering
-domain = ufl_mesh_from_gmsh(cell_type, gdim)
-cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
-cells = cells[:, cell_perm_vtk(cell_type, cells.shape[1])]
+    # Broadcast cell type data and geometric dimension
+    num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
+else:
+    num_nodes = MPI.COMM_WORLD.bcast(None, root=0)
+    cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
+    marked_entities, values = np.empty((0, 6)), np.empty((0,))
+
+# Permute the topology from GMSH to DOLFIN-X ordering
+domain = ufl_mesh_from_gmsh("tetra10", 3)
+gmsh_tetra10 = cell_perm_gmsh("tetra10")
+cells = cells[:, gmsh_tetra10]
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "ball_d2"
+
+# Permute also entities which are tagged
+gmsh_triangle6 = cell_perm_gmsh("triangle6")
+marked_entities = marked_entities[:, gmsh_triangle6]
+
+local_entities, local_values = extract_local_entities(mesh, 2, marked_entities, values)
+mesh.topology.create_connectivity(2, 0)
+mt = create_meshtags(mesh, 2, cpp.graph.AdjacencyList_int32(local_entities), np.int32(local_values))
+mt.name = "ball_d2_surface"
+
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
     file.write_mesh(mesh)
+
+    mesh.topology.create_connectivity(2, 3)
+    file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='ball_d2']/Geometry")
 
 
 if MPI.COMM_WORLD.rank == 0:
     # Generate a mesh with 2nd-order hexahedral cells using pygmsh
-    lbw = [2, 3, 5]
-    points = [geom.add_point([x, 0.0, 0.0], 1.0) for x in [0.0, lbw[0]]]
-    line = geom.add_line(*points)
-    _, rectangle, _ = geom.extrude(line, translation_axis=[0.0, lbw[1], 0.0], num_layers=lbw[1], recombine=True)
-    geom.extrude(rectangle, translation_axis=[0.0, 0.0, lbw[2]], num_layers=lbw[2], recombine=True)
-    pygmsh_mesh = pygmsh.generate_mesh(geom, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
+    geom = pygmsh.opencascade.Geometry()
+    geom.add_raw_code("Mesh.RecombineAll = 1;")
+    geom.add_raw_code("Mesh.CharacteristicLengthFactor = 1.0;")
+    geom.add_raw_code("Mesh.RecombinationAlgorithm = 2;")
+    circle = geom.add_disk([0.0, 0.0, 0.0], 1.0)
+    circle_inner = geom.add_disk([0.0, 0.0, 0.0], 0.5)
+
+    cut = geom.boolean_difference([circle], [circle_inner])
+    _, box, _ = geom.extrude(cut, translation_axis=[0.0, 0.0, 5], num_layers=5, recombine=True)
+
+    geom.add_physical(cut, label=1)
+    geom.add_physical(box, label=2)
+    pygmsh_mesh = pygmsh.generate_mesh(geom, extra_gmsh_arguments=["-order", "2"])
 
     # Extract the topology and geometry data
     cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
     pygmsh_cell = pygmsh_mesh.cells[-1].type
 
+    # Extract marked facets
+    marked_entities = pygmsh_mesh.cells[-2].data
+    values = pygmsh_mesh.cell_data["gmsh:physical"][-2]
+
     # Broadcast cell type data and geometric dimension
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_cell, x.shape[1], cells.shape[1]], root=0)
+    num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
 else:
     # Receive cell type data and geometric dimension
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([None, None, None], root=0)
-    cells, x = np.empty([0, num_nodes]), np.empty([0, gdim])
+    num_nodes = MPI.COMM_WORLD.bcast(None, root=0)
+    cells, x = np.empty((0, num_nodes)), np.empty((0, 3))
+    marked_entities, values = np.empty((0, 9)), np.empty((0,))
 
-# Permute the mesh topology from VTK ordering to DOLFIN-X ordering
-domain = ufl_mesh_from_gmsh(cell_type, gdim)
-cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
-cells = cells[:, cell_perm_vtk(cell_type, cells.shape[1])]
+# Permute the mesh topology from GMSH ordering to DOLFIN-X ordering
+domain = ufl_mesh_from_gmsh("hexahedron27", 3)
+gmsh_hex27 = cell_perm_gmsh("hexahedron27")
+cells = cells[:, gmsh_hex27]
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "hex_d2"
+
+# Permute also entities which are tagged
+gmsh_quad9 = cell_perm_gmsh("quad9")
+marked_entities = marked_entities[:, gmsh_quad9]
+
+local_entities, local_values = extract_local_entities(mesh, 2, marked_entities, values)
+mesh.topology.create_connectivity(2, 0)
+mt = create_meshtags(mesh, 2, cpp.graph.AdjacencyList_int32(local_entities), np.int32(local_values))
+mt.name = "hex_d2_surface"
+
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
     file.write_mesh(mesh)
+
+    mesh.topology.create_connectivity(2, 3)
+    file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='hex_d2']/Geometry")
