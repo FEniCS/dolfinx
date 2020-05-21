@@ -353,5 +353,42 @@ XDMFFile::read_cell_type(const std::string grid_name, const std::string xpath)
   return {cell_type, cell_type_str.second};
 }
 //-----------------------------------------------------------------------------
+void XDMFFile::write_information(const std::string name,
+                                 const std::string value,
+                                 const std::string xpath)
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+
+  pugi::xml_node info_node = node.append_child("Information");
+  assert(info_node);
+  info_node.append_attribute("Name") = name.c_str();
+  info_node.append_child(pugi::node_pcdata).set_value(value.c_str());
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
+std::string XDMFFile::read_information(const std::string name,
+                                        const std::string xpath)
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+  pugi::xml_node info_node
+      = node.select_node(("Information[@Name='" + name + "']").c_str()).node();
+  if (!info_node)
+    throw std::runtime_error("<Information> with name '" + name + "' not found.");
+
+  // Read data and trim any leading/trailing whitespace
+  pugi::xml_node data_node = info_node.first_child();
+  assert(data_node);
+  std::string data_str = data_node.value();
+
+  return data_str;
+}
+//-----------------------------------------------------------------------------
 MPI_Comm XDMFFile::comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
