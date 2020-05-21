@@ -30,8 +30,6 @@ using namespace dolfinx::io;
 
 namespace
 {
-namespace
-{
 int cell_degree(mesh::CellType type, int num_nodes)
 {
   switch (type)
@@ -103,7 +101,6 @@ int cell_degree(mesh::CellType type, int num_nodes)
   default:
     throw std::runtime_error("Unknown cell type.");
   }
-}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -264,14 +261,16 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     // Get map from VTK index i to DOLFIN index j
     std::vector<std::uint8_t> map = io::cells::transpose(
         io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
+
+    // TODO: Remove when when paraview issue 19433 is resolved
+    // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
     if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
-        && num_nodes == 27)
+        and num_nodes == 27)
     {
-      // TODO: Remove when when paraview issue 19433 is resolved
-      // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
       map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
              22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
     }
+
     for (int c = 0; c < x_dofmap.num_nodes(); ++c)
     {
       auto x_dofs = x_dofmap.links(c);
@@ -284,7 +283,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   else
   {
     // Check that cell type is supported
-    const std::set<std::int8_t> supported_cells = {1, 3, 5, 9, 10, 12};
+    const static std::set<std::int8_t> supported_cells = {1, 3, 5, 9, 10, 12};
     if (supported_cells.find(vtk_cell_type) == supported_cells.end())
     {
       throw std::runtime_error("VTK outout for higher-order mesh entities for "
