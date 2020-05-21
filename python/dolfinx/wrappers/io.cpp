@@ -33,6 +33,7 @@ void io(py::module& m)
 
   // dolfinx::io::cell permutation functions
   m.def("cell_perm_vtk", &dolfinx::io::cells::perm_vtk);
+  m.def("cell_perm_gmsh", &dolfinx::io::cells::perm_gmsh);
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>

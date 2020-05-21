@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Garth N. Wells
+# Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -12,45 +12,33 @@ import numpy as np
 import pygmsh
 from mpi4py import MPI
 
-import ufl
 from dolfinx import cpp
 from dolfinx.cpp.io import cell_perm_vtk
-from dolfinx.io import XDMFFile
+from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import create as create_mesh
 
-
-def get_domain(gmsh_cell, gdim):
-    if gmsh_cell == "tetra":
-        cell_shape = "tetrahedron"
-        degree = 1
-    elif gmsh_cell == "tetra10":
-        cell_shape = "tetrahedron"
-        degree = 2
-    elif gmsh_cell == "hexahedron":
-        cell_shape = "hexahedron"
-        degree = 1
-    elif gmsh_cell == "hexahedron27":
-        cell_shape = "hexahedron"
-        degree = 2
-    else:
-        raise RuntimeError("gmsh cell type '{}' not recognised".format(gmsh_cell))
-
-    cell = ufl.Cell(cell_shape, geometric_dimension=gdim)
-    return ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
-
-
+# Generating a mesh on each process rank
+# --------------------------------------
+#
 # Generate a mesh on each rank with pygmsh, and create a DOLFIN-X mesh
 # on each rank
+
 geom = pygmsh.opencascade.Geometry()
 geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
 pygmsh_mesh = pygmsh.generate_mesh(geom)
 cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
-mesh = create_mesh(MPI.COMM_SELF, cells, x, get_domain(pygmsh_mesh.cells[-1].type, x.shape[1]))
+pygmsh_cell = pygmsh_mesh.cells[-1].type
+mesh = create_mesh(MPI.COMM_SELF, cells, x,
+                   ufl_mesh_from_gmsh(pygmsh_cell, x.shape[1]))
 
 with XDMFFile(MPI.COMM_SELF, "mesh_rank_{}.xdmf".format(MPI.COMM_WORLD.rank), "w") as file:
     file.write_mesh(mesh)
 
+# Create a distributed (parallel) mesh with affine geometry
+# ---------------------------------------------------------
+#
 # Generate mesh on rank 0, then build a distributed mesh
+
 if MPI.COMM_WORLD.rank == 0:
     # Generate a mesh
     geom = pygmsh.opencascade.Geometry()
@@ -59,22 +47,24 @@ if MPI.COMM_WORLD.rank == 0:
 
     # Extract the topology and geometry data
     cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
-
+    pygmsh_cell = pygmsh_mesh.cells[-1].type
     # Broadcast cell type data and geometric dimension
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_mesh.cells[-1].type, x.shape[1],
-                                                       cells.shape[1]], root=0)
+    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_cell, x.shape[1], cells.shape[1]], root=0)
 else:
     cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([None, None, None], root=0)
     cells, x = np.empty([0, num_nodes]), np.empty([0, gdim])
 
-mesh = create_mesh(MPI.COMM_WORLD, cells, x, get_domain(cell_type, gdim))
+mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(cell_type, gdim))
 mesh.name = "ball_d1"
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
     file.write_mesh(mesh)
 
 
-# Generate mesh with quadratic geometry on rank 0, then build a
-# distributed mesh
+# Create a distributed (parallel) mesh with quadratic geometry
+# ------------------------------------------------------------
+#
+# Generate mesh on rank 0, then build a distributed mesh
+
 if MPI.COMM_WORLD.rank == 0:
     geom = pygmsh.opencascade.Geometry()
     geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
@@ -82,16 +72,16 @@ if MPI.COMM_WORLD.rank == 0:
 
     # Extract the topology and geometry data
     cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
+    pygmsh_cell = pygmsh_mesh.cells[-1].type
 
     # Broadcast cell type data and geometric dimension
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_mesh.cells[-1].type, x.shape[1],
-                                                       cells.shape[1]], root=0)
+    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_cell, x.shape[1], cells.shape[1]], root=0)
 else:
     cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([None, None, None], root=0)
     cells, x = np.empty([0, num_nodes]), np.empty([0, gdim])
 
 # Permute the topology from VTK to DOLFIN-X ordering
-domain = get_domain(cell_type, gdim)
+domain = ufl_mesh_from_gmsh(cell_type, gdim)
 cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
 cells = cells[:, cell_perm_vtk(cell_type, cells.shape[1])]
 
@@ -112,20 +102,19 @@ if MPI.COMM_WORLD.rank == 0:
 
     # Extract the topology and geometry data
     cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
+    pygmsh_cell = pygmsh_mesh.cells[-1].type
 
     # Broadcast cell type data and geometric dimension
-    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_mesh.cells[-1].type, x.shape[1],
-                                                       cells.shape[1]], root=0)
+    cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([pygmsh_cell, x.shape[1], cells.shape[1]], root=0)
 else:
     # Receive cell type data and geometric dimension
     cell_type, gdim, num_nodes = MPI.COMM_WORLD.bcast([None, None, None], root=0)
     cells, x = np.empty([0, num_nodes]), np.empty([0, gdim])
 
 # Permute the mesh topology from VTK ordering to DOLFIN-X ordering
-domain = get_domain(cell_type, gdim)
+domain = ufl_mesh_from_gmsh(cell_type, gdim)
 cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
 cells = cells[:, cell_perm_vtk(cell_type, cells.shape[1])]
-
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "hex_d2"
