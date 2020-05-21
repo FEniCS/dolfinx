@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 #
-#
+# =====================================
 # Mesh generation using Gmsh and pygmsh
 # =====================================
 
@@ -18,7 +18,7 @@ from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import create as create_mesh
 
 # Generating a mesh on each process rank
-# --------------------------------------
+# ======================================
 #
 # Generate a mesh on each rank with pygmsh, and create a DOLFIN-X mesh
 # on each rank
@@ -35,7 +35,7 @@ with XDMFFile(MPI.COMM_SELF, "mesh_rank_{}.xdmf".format(MPI.COMM_WORLD.rank), "w
     file.write_mesh(mesh)
 
 # Create a distributed (parallel) mesh with affine geometry
-# ---------------------------------------------------------
+# =========================================================
 #
 # Generate mesh on rank 0, then build a distributed mesh
 
@@ -61,7 +61,7 @@ with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
 
 
 # Create a distributed (parallel) mesh with quadratic geometry
-# ------------------------------------------------------------
+# ============================================================
 #
 # Generate mesh on rank 0, then build a distributed mesh
 
