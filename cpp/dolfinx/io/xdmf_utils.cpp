@@ -63,7 +63,8 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
 
   // Convert XDMF cell type string to DOLFINX cell type string
   std::string cell_type = type_attr.as_string();
-  boost::algorithm::to_lower(cell_type);
+  std::transform(cell_type.begin(), cell_type.end(), cell_type.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
   auto it = xdmf_to_dolfin.find(cell_type);
   if (it == xdmf_to_dolfin.end())
   {
