@@ -461,28 +461,11 @@ std::vector<std::int32_t> IndexMap::global_to_local(
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> IndexMap::ghost_owners() const
 {
-  MPI_Comm neighbour_comm;
-  MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED,
-      _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &neighbour_comm);
-
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(neighbour_comm, &indegree, &outdegree,
-                                 &weighted);
-  assert(indegree == outdegree);
-  std::vector<int> neighbours(indegree), neighbours1(indegree);
-
-  MPI_Dist_graph_neighbors(neighbour_comm, indegree, neighbours.data(),
-                           MPI_UNWEIGHTED, outdegree, neighbours1.data(),
-                           MPI_UNWEIGHTED);
-
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> proc_owners(
       _ghost_owners.size());
-  for (int i = 0; i < proc_owners.size(); ++i)
-    proc_owners[i] = neighbours[_ghost_owners[i]];
 
-  MPI_Comm_free(&neighbour_comm);
+  for (int i = 0; i < proc_owners.size(); ++i)
+    proc_owners[i] = _forward_neighbours[_ghost_owners[i]];
 
   return proc_owners;
 }
