@@ -340,8 +340,8 @@ xdmf_utils::extract_local_entities(
   if (!c_to_v)
     throw std::runtime_error("Missing cell-vertex connectivity.");
 
-  // Use ElementDofLayout to get vertex dof indices (local to a cell)
-  // i.e. find a map from local vertex index to associated local dof index
+  // Use ElementDofLayout of the cell to get vertex dof indices (local to a
+  // cell) i.e. find a map from local vertex index to associated local dof index
   const int num_vertices_per_cell = c_to_v->num_links(0);
   std::vector<int> cell_vertex_dofs(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
@@ -352,6 +352,9 @@ xdmf_utils::extract_local_entities(
     cell_vertex_dofs[i] = local_index[0];
   }
 
+  // Find map from entity vertex to local (wrt. dof numbering on the entity) dof
+  // number E.g. if there are dofs on entity [0 3 6 7 9] and dofs 3 and 7 belong
+  // to vertices, then this produces map [1, 3]
   std::vector<int> entity_vertex_dofs;
   for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
   {
@@ -367,12 +370,15 @@ xdmf_utils::extract_local_entities(
   const int num_vertices_per_entity = mesh::cell_num_entities(entity_type, 0);
   assert(entity_vertex_dofs.size() == (std::size_t)num_vertices_per_entity);
 
+
+  // Throw away input global indices which do not belong to entity vertices
+  // This decreases the amount of data needed in parallel communication 
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      topology_igi(entities.rows(), num_vertices_per_entity);
-  for (Eigen::Index e = 0; e < topology_igi.rows(); ++e)
+      entities_vertices(entities.rows(), num_vertices_per_entity);
+  for (Eigen::Index e = 0; e < entities_vertices.rows(); ++e)
   {
-    for (Eigen::Index i = 0; i < topology_igi.cols(); ++i)
-      topology_igi(e, i) = entities(e, entity_vertex_dofs[i]);
+    for (Eigen::Index i = 0; i < entities_vertices.cols(); ++i)
+      entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
   }
 
   // -------------------
@@ -417,11 +423,11 @@ xdmf_utils::extract_local_entities(
   std::vector<std::vector<std::int64_t>> entities_send(comm_size);
   std::vector<std::vector<std::int32_t>> values_send(comm_size);
   std::vector<std::int64_t> entity(num_vertices_per_entity);
-  for (std::int32_t e = 0; e < topology_igi.rows(); ++e)
+  for (std::int32_t e = 0; e < entities_vertices.rows(); ++e)
   {
     // Copy vertices for entity and sort
-    std::copy(topology_igi.row(e).data(),
-              topology_igi.row(e).data() + topology_igi.cols(),
+    std::copy(entities_vertices.row(e).data(),
+              entities_vertices.row(e).data() + entities_vertices.cols(),
               entity.begin());
     std::sort(entity.begin(), entity.end());
 
