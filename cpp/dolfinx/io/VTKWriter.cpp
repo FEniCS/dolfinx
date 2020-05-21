@@ -108,7 +108,7 @@ int cell_degree(mesh::CellType type, int num_nodes)
 
 //-----------------------------------------------------------------------------
 // Get VTK cell type
-std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
+std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, int cell_dim)
 {
   const int cell_order
       = cell_degree(mesh.geometry().cmap().cell_shape(),
@@ -129,7 +129,6 @@ std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
     default:
       return 71;
     }
-
   case mesh::CellType::hexahedron:
     switch (cell_order)
     {
@@ -139,7 +138,6 @@ std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
       return 72;
     }
   case mesh::CellType::quadrilateral:
-  {
     switch (cell_order)
     {
     case 1:
@@ -147,9 +145,7 @@ std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
     default:
       return 70;
     }
-  }
   case mesh::CellType::triangle:
-  {
     switch (cell_order)
     {
     case 1:
@@ -157,7 +153,6 @@ std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
     default:
       return 69;
     }
-  }
   case mesh::CellType::interval:
     return 3;
   case mesh::CellType::point:
