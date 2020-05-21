@@ -17,6 +17,9 @@ from dolfinx.cpp.io import cell_perm_vtk
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import create as create_mesh
 
+# Generating a mesh on each process rank
+# --------------------------------------
+#
 # Generate a mesh on each rank with pygmsh, and create a DOLFIN-X mesh
 # on each rank
 geom = pygmsh.opencascade.Geometry()
@@ -27,8 +30,7 @@ pygmsh_cell = pygmsh_mesh.cells[-1].type
 mesh = create_mesh(MPI.COMM_SELF, cells, x,
                    ufl_mesh_from_gmsh(pygmsh_cell, x.shape[1]))
 
-with XDMFFile(MPI.COMM_SELF, "mesh_rank_{}.xdmf"
-              .format(MPI.COMM_WORLD.rank), "w") as file:
+with XDMFFile(MPI.COMM_SELF, "mesh_rank_{}.xdmf".format(MPI.COMM_WORLD.rank), "w") as file:
     file.write_mesh(mesh)
 
 # Generate mesh on rank 0, then build a distributed mesh
