@@ -510,6 +510,7 @@ MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
 //----------------------------------------------------------------------------
 const std::vector<std::int32_t>& IndexMap::neighbours() const
 {
+  // FIXME: use set_union of different forward and reverse neighbors
   return _neighbours;
 }
 //----------------------------------------------------------------------------
@@ -527,13 +528,12 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(neighbour_comm, &indegree, &outdegree,
                                  &weighted);
-  assert(indegree == outdegree);
   std::vector<int> neighbours(indegree), neighbours1(indegree);
   MPI_Dist_graph_neighbors(neighbour_comm, indegree, neighbours.data(),
                            MPI_UNWEIGHTED, outdegree, neighbours1.data(),
                            MPI_UNWEIGHTED);
 
-  assert(_forward_neighbours.size() == _forward_sizes.size());
+  assert(_reverse_neighbours.size() == _forward_sizes.size());
 
   // Get sharing of all owned indices
   int c = 0;
@@ -568,21 +568,21 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
 
   graph::AdjacencyList<std::int64_t> sharing = MPI::neighbor_all_to_all(
       neighbour_comm, fwd_sharing_offsets, fwd_sharing_data);
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> recv_sharing_offsets
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& recv_sharing_offsets
       = sharing.offsets();
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_sharing_data
       = sharing.array();
 
-  // FIXME: The below is confusing and the std::set<int> inside the loop
-  // should be avoided
+  // // FIXME: The below is confusing and the std::set<int> inside the loop
+  // // should be avoided
 
   // Unpack
   for (int i = 0; i < _ghosts.size(); ++i)
   {
     int idx = size_local() + i;
     const int np = _ghost_owners[i];
-    int p = neighbours[np];
-    int& rp = recv_sharing_offsets[np];
+    int p = neighbours1[np];
+    int rp = recv_sharing_offsets[np];
     int ns = recv_sharing_data[rp];
     ++rp;
     std::set<int> procs(recv_sharing_data.data() + rp,
