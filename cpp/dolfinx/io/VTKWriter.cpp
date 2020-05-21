@@ -230,13 +230,14 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     // FIXME: USe better way to get number of nods
     num_nodes = x_dofmap.num_links(0);
 
-    const std::vector<std::uint8_t> perm
-        = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
+    // Get map from VTK index i to DOLFIN index j
+    const std::vector<std::uint8_t> map = io::cells::transpose(
+        io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
     for (int c = 0; c < x_dofmap.num_nodes(); ++c)
     {
       auto x_dofs = x_dofmap.links(c);
       for (int i = 0; i < x_dofs.rows(); ++i)
-        file << x_dofs(perm[i]) << " ";
+        file << x_dofs(map[i]) << " ";
       file << " ";
     }
     file << "</DataArray>" << std::endl;
@@ -269,19 +270,19 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
 
     mesh::CellType e_type
         = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
-    // FIXME : Need to implement permutations for higher order
+    // FIXME : Need to implement re-mapping for higher order
     // geometries (aka line segments). CoordinateDofs needs to be
     // extended to have connections to facets.
     const int num_vertices = mesh::num_cell_vertices(e_type);
-    const std::vector<std::uint8_t> perm
-        = io::cells::vtk_to_dolfin(e_type, num_vertices);
+    const std::vector<std::uint8_t> map_vtk
+        = io::cells::transpose(io::cells::perm_vtk(e_type, num_vertices));
     auto e_to_v = mesh.topology().connectivity(cell_dim, 0);
     assert(e_to_v);
     for (int e = 0; e < e_to_v->num_nodes(); ++e)
     {
       auto vertices = e_to_v->links(e);
       for (int i = 0; i < num_vertices; ++i)
-        file << vertex_to_node[vertices(perm[i])] << " ";
+        file << vertex_to_node[vertices(map_vtk[i])] << " ";
       file << " ";
     }
     file << "</DataArray>" << std::endl;
