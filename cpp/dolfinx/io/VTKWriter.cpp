@@ -108,9 +108,12 @@ int cell_degree(mesh::CellType type, int num_nodes)
 
 //-----------------------------------------------------------------------------
 // Get VTK cell type
-std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim,
-                              std::size_t cell_order)
+std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
 {
+  const int cell_order
+      = cell_degree(mesh.geometry().cmap().cell_shape(),
+                    mesh.geometry().cmap().dof_layout().num_dofs());
+
   // Get cell type
   mesh::CellType cell_type
       = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
@@ -161,7 +164,6 @@ std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim,
     return 1;
   default:
     throw std::runtime_error("Unknown cell type");
-    return 0;
   }
 }
 //----------------------------------------------------------------------------
@@ -216,12 +218,9 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
                       std::string filename)
 {
   const int num_cells = mesh.topology().index_map(cell_dim)->size_local();
-  const int degree
-      = cell_degree(mesh.geometry().cmap().cell_shape(),
-                    mesh.geometry().cmap().dof_layout().num_dofs());
 
   // Get VTK cell type
-  const std::int8_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim, degree);
+  const std::int8_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -289,22 +288,24 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   }
   else
   {
-    // const int degree = mesh.geometry().cmap().dof_layout().degree();
-
-    if (degree > 1)
-      throw std::runtime_error("Higher order mesh entities not implemented.");
+    // Check that cell type is supported
+    const std::set<std::int8_t> supported_cells = {1, 3, 5, 9, 10, 12};
+    if (supported_cells.find(vtk_cell_type) == supported_cells.end())
+    {
+      throw std::runtime_error("VTK outout for higher-order mesh entities for "
+                               "dim < tdim not implemented yet.");
+    }
 
     // Build a map from topology to geometry
     auto c_to_v = mesh.topology().connectivity(tdim, 0);
     assert(c_to_v);
-
     auto map = mesh.topology().index_map(0);
     assert(map);
     const std::int32_t num_mesh_vertices
         = map->size_local() + map->num_ghosts();
 
-    std::vector<std::int32_t> vertex_to_node(num_mesh_vertices);
     auto x_dofmap = mesh.geometry().dofmap();
+    std::vector<std::int32_t> vertex_to_node(num_mesh_vertices);
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
       auto vertices = c_to_v->links(c);
@@ -313,7 +314,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
         vertex_to_node[vertices[i]] = x_dofs(i);
     }
 
-    mesh::CellType e_type
+    const mesh::CellType e_type
         = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
     // FIXME : Need to implement re-mapping for higher order
     // geometries (aka line segments). CoordinateDofs needs to be
@@ -354,7 +355,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
 
   // Close file
   file.close();
-} // namespace
+}
 //-----------------------------------------------------------------------------
 
 } // namespace
