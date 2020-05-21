@@ -60,46 +60,15 @@ class XDMFFile(cpp.io.XDMFFile):
         return mesh
 
 
-def ufl_mesh_from_gmsh(gmsh_cell, gdim):
-    """
-    return a UFL mesh given a gmsh cell string and the geometric dimension.
-    """
-    if gmsh_cell == "tetra":
-        cell_shape = "tetrahedron"
-        degree = 1
-    elif gmsh_cell == "tetra10":
-        cell_shape = "tetrahedron"
-        degree = 2
-    elif gmsh_cell == "tetra20":
-        cell_shape = "tetrahedron"
-        degree = 3
-    elif gmsh_cell == "hexahedron":
-        cell_shape = "hexahedron"
-        degree = 1
-    elif gmsh_cell == "hexahedron27":
-        cell_shape = "hexahedron"
-        degree = 2
-    elif gmsh_cell == "triangle":
-        cell_shape = "triangle"
-        degree = 1
-    elif gmsh_cell == "triangle6":
-        cell_shape = "triangle"
-        degree = 2
-    elif gmsh_cell == "triangle10":
-        cell_shape = "triangle"
-        degree = 3
-    elif gmsh_cell == "quad":
-        cell_shape = "quadrilateral"
-        degree = 1
-    elif gmsh_cell == "quad9":
-        cell_shape = "quadrilateral"
-        degree = 2
-    elif gmsh_cell == "quad16":
-        cell_shape = "quadrilateral"
-        degree = 3
-    else:
-        raise RuntimeError("gmsh cell type '{}' not recognised".
-                           format(gmsh_cell))
+# Map from Gmsh string to DOLFIN cell type and degree
+_gmsh_cells = dict(tetra=(tetrahedron, 1), tetra10=(tetrahedron, 2), tetra20=(tetrahedron, 3),
+                   hexahedron=(hexahedron, 1), hexahedron27=(hexahedron, 2),
+                   triangle=(triangle, 1), triangle6=(triangle, 2), triangle10=(triangle, 3),
+                   quad=(quadrilateral, 1), quad9=(quadrilateral, 2), quad16=(quadrilateral, 3))
 
-    cell = ufl.Cell(cell_shape, geometric_dimension=gdim)
+
+def ufl_mesh_from_gmsh(gmsh_cell, gdim):
+    """Create a UFL mesh from a Gmsh cell string and the geometric dimension."""
+    shape, degree = _gmsh_cells[gmsh_cell]
+    cell = ufl.Cell(shape, geometric_dimension=gdim)
     return ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
