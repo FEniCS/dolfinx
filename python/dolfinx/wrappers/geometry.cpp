@@ -6,7 +6,7 @@
 
 #include <Eigen/Dense>
 #include <dolfinx/geometry/BoundingBoxTree.h>
-#include <dolfinx/geometry/openGJK.h>
+#include <dolfinx/geometry/GJK.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
