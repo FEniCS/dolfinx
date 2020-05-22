@@ -11,7 +11,7 @@ import pytest
 from mpi4py import MPI
 
 from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
-from dolfinx.cpp.io import cell_perm_vtk
+from dolfinx.cpp.io import perm_vtk
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import create as create_mesh
@@ -115,7 +115,7 @@ def test_read_write_p2_mesh(tempdir, encoding):
 
     domain = ufl_mesh_from_gmsh(cell_type, gdim)
     cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
-    cells = cells[:, cell_perm_vtk(cell_type, cells.shape[1])]
+    cells = cells[:, perm_vtk(cell_type, cells.shape[1])]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 
     filename = os.path.join(tempdir, "tet10_mesh.xdmf")
