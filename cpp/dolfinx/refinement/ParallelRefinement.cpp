@@ -25,6 +25,69 @@ using namespace dolfinx::refinement;
 namespace
 {
 
+/// Compute markers for interior/boundary vertices
+/// @param[in] topology_local Local topology
+/// @return Array where the ith entry is true if the ith vertex is on
+///   the boundary
+std::vector<bool>
+compute_vertex_exterior_markers(const mesh::Topology& topology_local)
+{
+  // Get list of boundary vertices
+  const int dim = topology_local.dim();
+  auto facet_cell = topology_local.connectivity(dim - 1, dim);
+  if (!facet_cell)
+  {
+    throw std::runtime_error(
+        "Need facet-cell connectivity to build distributed adjacency list.");
+  }
+
+  auto facet_vertex = topology_local.connectivity(dim - 1, 0);
+  if (!facet_vertex)
+  {
+    throw std::runtime_error(
+        "Need facet-vertex connectivity to build distributed adjacency list.");
+  }
+
+  auto map_vertex = topology_local.index_map(0);
+  if (!map_vertex)
+    throw std::runtime_error("Need vertex IndexMap from topology.");
+  assert(map_vertex->num_ghosts() == 0);
+
+  std::vector<bool> exterior_vertex(map_vertex->size_local(), false);
+  for (int f = 0; f < facet_cell->num_nodes(); ++f)
+  {
+    if (facet_cell->num_links(f) == 1)
+    {
+      auto vertices = facet_vertex->links(f);
+      for (int j = 0; j < vertices.rows(); ++j)
+        exterior_vertex[vertices[j]] = true;
+    }
+  }
+
+  return exterior_vertex;
+}
+//-------------------------------------------------------------
+
+std::int64_t local_to_global(std::int32_t local_index,
+                             const common::IndexMap& map)
+{
+  const std::array<std::int64_t, 2> local_range = map.local_range();
+
+  assert(local_index >= 0);
+  const std::int32_t local_size = (local_range[1] - local_range[0]);
+  if (local_index < local_size)
+  {
+    const std::int64_t global_offset = local_range[0];
+    return global_offset + local_index;
+  }
+  else
+  {
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map.ghosts();
+    assert((local_index - local_size) < ghosts.size());
+    return ghosts[local_index - local_size];
+  }
+}
+
 //-----------------------------------------------------------------------------
 // Create geometric points of new Mesh, from current Mesh and a edge_to_vertex
 // map listing the new local points (midpoints of those edges)
@@ -150,10 +213,10 @@ bool ParallelRefinement::mark(std::int32_t edge_index)
   _marked_edges[edge_index] = true;
 
   // If it is a shared edge, add all sharing neighbours to update set
-  auto map_it = _shared_edges.find(edge_index);
-  if (map_it != _shared_edges.end())
+  if (auto map_it = _shared_edges.find(edge_index);
+      map_it != _shared_edges.end())
   {
-    const std::int64_t global_index = map1->local_to_global(edge_index);
+    const std::int64_t global_index = local_to_global(edge_index, *map1);
     for (int p : map_it->second)
       _marked_for_update[p].push_back(global_index);
   }
@@ -255,14 +318,15 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
   {
     const std::size_t local_i = local_edge.first;
     // shared, but locally owned : remote owned are not in list.
-    auto shared_edge_i = _shared_edges.find(local_i);
-    if (shared_edge_i != _shared_edges.end())
+
+    if (auto shared_edge_i = _shared_edges.find(local_i);
+        shared_edge_i != _shared_edges.end())
     {
       for (int remote_process : shared_edge_i->second)
       {
         // send map from global edge index to new global vertex index
         values_to_send[remote_process].push_back(
-            edge_index_map->local_to_global(local_edge.first));
+            local_to_global(local_edge.first, *edge_index_map));
         values_to_send[remote_process].push_back(local_edge.second);
       }
     }
@@ -385,16 +449,17 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
     // set cell-vertex topology
     mesh::Topology topology_local(comm, _mesh.geometry().cmap().cell_shape());
     const int tdim = topology_local.dim();
-    auto map = std::make_shared<common::IndexMap>(
-        comm, cells_local.num_nodes(), std::vector<std::int64_t>(), 1);
+    auto map = std::make_shared<common::IndexMap>(comm, cells_local.num_nodes(),
+                                                  std::vector<std::int64_t>(),
+                                                  std::vector<int>(), 1);
     topology_local.set_index_map(tdim, map);
     auto _cells_local
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
     topology_local.set_connectivity(_cells_local, tdim, 0);
 
     const int n = local_to_global_vertices.size();
-    map = std::make_shared<common::IndexMap>(comm, n,
-                                             std::vector<std::int64_t>(), 1);
+    map = std::make_shared<common::IndexMap>(
+        comm, n, std::vector<std::int64_t>(), std::vector<int>(), 1);
     topology_local.set_index_map(0, map);
     auto _vertices_local
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(n);
@@ -423,7 +488,7 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
     // Build distributed cell-vertex AdjacencyList, IndexMap for
     // vertices, and map from local index to old global index
     const std::vector<bool>& exterior_vertices
-        = mesh::Partitioning::compute_vertex_exterior_markers(topology_local);
+        = compute_vertex_exterior_markers(topology_local);
     auto [cells_d, vertex_map]
         = graph::Partitioning::create_distributed_adjacency_list(
             comm, *_cells_local, local_to_global_vertices, exterior_vertices);
@@ -438,7 +503,8 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
 
     // Set cell IndexMap and cell-vertex connectivity
     auto index_map_c = std::make_shared<common::IndexMap>(
-        comm, cells_d.num_nodes(), std::vector<std::int64_t>(), 1);
+        comm, cells_d.num_nodes(), std::vector<std::int64_t>(),
+        std::vector<int>(), 1);
     topology.set_index_map(tdim, index_map_c);
     auto _cells_d
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);

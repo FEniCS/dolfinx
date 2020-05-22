@@ -1,8 +1,10 @@
-# Copyright (C) 2017-2020 Chris N. Richardson, Garth N. Wells and Michal Habera
+# Copyright (C) 2017-2020 Chris N. Richardson, Garth N. Wells, Michal Habera
+# and Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+
 """IO module for input data, post-processing and checkpointing"""
 
 import ufl
@@ -40,9 +42,11 @@ class XDMFFile(cpp.io.XDMFFile):
         u_cpp = getattr(u, "_cpp_object", u)
         super().write_function(u_cpp, t, mesh_xpath)
 
-    def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.none, name="mesh", xpath="/Xdmf/Domain"):
+    def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"):
         # Read mesh data from file
-        cell_type, x, cells = super().read_mesh_data(name, xpath)
+        cell_type = super().read_cell_type(name, xpath)
+        cells = super().read_topology_data(name, xpath)
+        x = super().read_geometry_data(name, xpath)
 
         # Construct the geometry map
         cell = ufl.Cell(cpp.mesh.to_string(cell_type[0]), geometric_dimension=x.shape[1])
@@ -50,9 +54,23 @@ class XDMFFile(cpp.io.XDMFFile):
         cmap = fem.create_coordinate_map(domain)
 
         # Build the mesh
-        mesh = cpp.mesh.create(self.comm(), cpp.graph.AdjacencyList64(cells), cmap, x, ghost_mode)
+        mesh = cpp.mesh.create(self.comm(), cpp.graph.AdjacencyList_int64(cells), cmap, x, ghost_mode)
         mesh.name = name
         domain._ufl_cargo = mesh
         mesh._ufl_domain = domain
 
         return mesh
+
+
+# Map from Gmsh string to DOLFIN cell type and degree
+_gmsh_cells = dict(tetra=("tetrahedron", 1), tetra10=("tetrahedron", 2), tetra20=("tetrahedron", 3),
+                   hexahedron=("hexahedron", 1), hexahedron27=("hexahedron", 2),
+                   triangle=("triangle", 1), triangle6=("triangle", 2), triangle10=("triangle", 3),
+                   quad=("quadrilateral", 1), quad9=("quadrilateral", 2), quad16=("quadrilateral", 3))
+
+
+def ufl_mesh_from_gmsh(gmsh_cell, gdim):
+    """Create a UFL mesh from a Gmsh cell string and the geometric dimension."""
+    shape, degree = _gmsh_cells[gmsh_cell]
+    cell = ufl.Cell(shape, geometric_dimension=gdim)
+    return ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))

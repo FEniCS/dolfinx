@@ -323,7 +323,8 @@ mesh::create_topology(MPI_Comm comm,
   if (ghost_mode == mesh::GhostMode::none)
   {
     index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, std::vector<std::int64_t>(), 1);
+        comm, num_local_cells, std::vector<std::int64_t>(), std::vector<int>(),
+        1);
   }
   else
   {
@@ -331,8 +332,8 @@ mesh::create_topology(MPI_Comm comm,
     const std::vector<std::int64_t> cell_ghost_indices
         = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,
                                                      ghost_owners);
-    index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells,
-                                                     cell_ghost_indices, 1);
+    index_map_c = std::make_shared<common::IndexMap>(
+        comm, num_local_cells, cell_ghost_indices, ghost_owners, 1);
   }
 
   // Create map from existing global vertex index to local index,
@@ -358,9 +359,11 @@ mesh::create_topology(MPI_Comm comm,
     auto v = cells.links(i);
     for (int j = 0; j < v.size(); ++j)
     {
-      auto it = global_to_local_index.find(v[j]);
-      if (it != global_to_local_index.end())
+      if (auto it = global_to_local_index.find(v[j]);
+          it != global_to_local_index.end())
+      {
         ghost_boundary_vertices.insert(v[j]);
+      }
       else
         local_vertex_set.insert(v[j]);
     }
@@ -450,6 +453,7 @@ mesh::create_topology(MPI_Comm comm,
     qsend_data.insert(qsend_data.end(), q.begin(), q.end());
     qsend_offsets.push_back(qsend_data.size());
   }
+
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
       = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets,
                                           qsend_data)
@@ -477,15 +481,16 @@ mesh::create_topology(MPI_Comm comm,
     std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
     for (int i = 0; i < index_map_c->size_local(); ++i)
     {
-      auto it = shared_cells.find(i);
-      if (it != shared_cells.end())
+      if (auto it = shared_cells.find(i); it != shared_cells.end())
       {
         auto v = cells.links(i);
         for (int j = 0; j < v.size(); ++j)
         {
-          auto vit = fwd_shared_vertices.find(v[j]);
-          if (vit == fwd_shared_vertices.end())
+          if (auto vit = fwd_shared_vertices.find(v[j]);
+              vit == fwd_shared_vertices.end())
+          {
             fwd_shared_vertices.insert({v[j], it->second});
+          }
           else
             vit->second.insert(it->second.begin(), it->second.end());
         }
@@ -547,6 +552,30 @@ mesh::create_topology(MPI_Comm comm,
       }
     }
   }
+
+  // Get global onwers of ghost vertices
+  // TODO: Get vertice owner from cell owner? Can use neighborhood
+  // communication?
+  int mpi_size = -1;
+  MPI_Comm_size(neighbour_comm, &mpi_size);
+  std::vector<std::int32_t> local_sizes(mpi_size);
+  MPI_Allgather(&nlocal, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
+                neighbour_comm);
+
+  std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
+  std::partial_sum(local_sizes.begin(), local_sizes.end(),
+                   all_ranges.begin() + 1);
+
+  // Compute rank of ghost owners
+  std::vector<int> ghost_vertices_owners(ghost_vertices.size(), -1);
+  for (size_t i = 0; i < ghost_vertices.size(); ++i)
+  {
+    auto it = std::upper_bound(all_ranges.begin(), all_ranges.end(),
+                               ghost_vertices[i]);
+    const int p = std::distance(all_ranges.begin(), it) - 1;
+    ghost_vertices_owners[i] = p;
+  }
+
   MPI_Comm_free(&neighbour_comm);
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& cells_array
@@ -579,8 +608,8 @@ mesh::create_topology(MPI_Comm comm,
   const int tdim = topology.dim();
 
   // Vertex IndexMap
-  auto index_map_v
-      = std::make_shared<common::IndexMap>(comm, nlocal, ghost_vertices, 1);
+  auto index_map_v = std::make_shared<common::IndexMap>(
+      comm, nlocal, ghost_vertices, ghost_vertices_owners, 1);
   topology.set_index_map(0, index_map_v);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());

@@ -17,7 +17,8 @@ using namespace dolfinx;
 using namespace dolfinx::graph;
 
 //-----------------------------------------------------------------------------
-std::pair<std::vector<std::int32_t>, std::vector<std::int64_t>>
+std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>,
+           std::vector<int>>
 Partitioning::reorder_global_indices(
     MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
     const std::vector<bool>& shared_indices)
@@ -224,7 +225,6 @@ Partitioning::reorder_global_indices(
     // Get old global -> local
     auto it = global_to_local.find(indices_send[i]);
     assert(it != global_to_local.end());
-
     if (sharing_processes->num_links(i) == 1
         and sharing_processes->links(i).minCoeff() == rank)
     {
@@ -239,9 +239,11 @@ Partitioning::reorder_global_indices(
   std::sort(neighbours.begin(), neighbours.end());
   neighbours.erase(std::unique(neighbours.begin(), neighbours.end()),
                    neighbours.end());
-  auto it = std::find(neighbours.begin(), neighbours.end(), rank);
-  if (it != neighbours.end())
+  if (auto it = std::find(neighbours.begin(), neighbours.end(), rank);
+      it != neighbours.end())
+  {
     neighbours.erase(it);
+  }
 
   // Create neighbourhood communicator
   MPI_Comm comm_n;
@@ -318,30 +320,39 @@ Partitioning::reorder_global_indices(
   MPI_Comm_free(&comm_n);
 
   // Unpack received (global old, global new) pairs
-  std::map<std::int64_t, std::int64_t> global_old_new;
+  std::map<std::int64_t, std::pair<std::int64_t, int>> global_old_new;
   for (std::size_t i = 0; i < data_recv_neigh.size(); i += 2)
   {
     if (data_recv_neigh[i + 1] >= 0)
-      global_old_new.insert({data_recv_neigh[i], data_recv_neigh[i + 1]});
+    {
+      const auto pos = std::upper_bound(disp_recv_neigh.begin(),
+                                        disp_recv_neigh.end(), i + 1);
+      const int owner = std::distance(disp_recv_neigh.begin(), pos) - 1;
+      global_old_new.insert(
+          {data_recv_neigh[i], {data_recv_neigh[i + 1], neighbours[owner]}});
+    }
   }
 
   // Build array of ghost indices (indices owned and numbered by another
   // process)
   std::vector<std::int64_t> ghosts;
+  std::vector<int> ghost_owners;
   for (auto it = global_to_local_unowned.begin();
        it != global_to_local_unowned.end(); ++it)
   {
-    auto pair = global_old_new.find(it->first);
-    if (pair != global_old_new.end())
+    if (auto pair = global_old_new.find(it->first);
+        pair != global_old_new.end())
     {
       assert(it->second < (int)local_to_local_new.size());
       local_to_original.push_back(it->first);
       local_to_local_new[it->second] = p++;
-      ghosts.push_back(pair->second);
+      ghosts.push_back(pair->second.first);
+      ghost_owners.push_back(pair->second.second);
     }
   }
 
-  return {std::move(local_to_local_new), std::move(ghosts)};
+  return {std::move(local_to_local_new), std::move(ghosts),
+          std::move(ghost_owners)};
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
@@ -385,7 +396,7 @@ Partitioning::create_distributed_adjacency_list(
   common::Timer timer("Create distributed AdjacencyList");
 
   // Compute new local and global indices
-  const auto [local_to_local_new, ghosts]
+  const auto [local_to_local_new, ghosts, ghost_owners]
       = reorder_global_indices(comm, local_to_global_links, shared_links);
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old
@@ -397,7 +408,7 @@ Partitioning::create_distributed_adjacency_list(
   const int num_owned_vertices = local_to_local_new.size() - ghosts.size();
   return {graph::AdjacencyList<std::int32_t>(std::move(data_new),
                                              list_local.offsets()),
-          common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
+          common::IndexMap(comm, num_owned_vertices, ghosts, ghost_owners, 1)};
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
@@ -554,8 +565,8 @@ std::vector<std::int64_t> Partitioning::compute_ghost_indices(
   }
 
   // NB - this assumes a symmetry, i.e. that if one process shares an index
-  // owned by another process, then the same is true vice versa. This assumption
-  // is valid for meshes with cells shared via facet or vertex.
+  // owned by another process, then the same is true vice versa. This
+  // assumption is valid for meshes with cells shared via facet or vertex.
   MPI_Comm neighbour_comm;
   MPI_Dist_graph_create_adjacent(comm, neighbours.size(), neighbours.data(),
                                  MPI_UNWEIGHTED, neighbours.size(),

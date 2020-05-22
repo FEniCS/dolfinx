@@ -30,6 +30,16 @@ namespace function
 class Function;
 } // namespace function
 
+namespace fem
+{
+class CoordinateElement;
+}
+
+namespace mesh
+{
+class Mesh;
+}
+
 namespace io::xdmf_utils
 {
 
@@ -58,6 +68,21 @@ std::vector<PetscScalar> get_cell_data_values(const function::Function& u);
 
 /// Get the VTK string identifier
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
+
+/// Extract local entities and associated values from global input indices
+/// @param[in] mesh
+/// @param[in] entity_dim Topological dimension of entities to extract
+/// @param[in] entities Entities defined with global input indices
+/// @param[in] values
+/// @return (mesh entities defined with local vertex indices, associated values)
+std::pair<
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::vector<std::int32_t>>
+extract_local_entities(
+    const mesh::Mesh& mesh, const int entity_dim,
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& entities,
+    const std::vector<std::int32_t>& values);
 
 /// TODO: Document
 template <typename T>

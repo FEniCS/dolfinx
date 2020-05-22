@@ -91,16 +91,29 @@ def refine(mesh, cell_markers=None, redistribute=True):
     return mesh_refined
 
 
-def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostMode.none):
-    """Crete a mesh from topology and geometry data"""
-    cell = ufl.Cell(cpp.mesh.to_string(cell_type), geometric_dimension=x.shape[1])
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
+def create(comm, cells, x, domain, ghost_mode=cpp.mesh.GhostMode.shared_facet):
+    """Create a mesh from topology and geometry data"""
     cmap = fem.create_coordinate_map(domain)
+    try:
+        mesh = cpp.mesh.create(comm, cells, cmap, x, ghost_mode)
+    except TypeError:
+        mesh = cpp.mesh.create(comm, cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
+                               cmap, x, ghost_mode)
 
-    mesh = cpp.mesh.Mesh(comm, cell_type, x, cells, cmap, ghosts, ghost_mode)
+    # Attach UFL data (used when passing a mesh into UFL functions)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
     return mesh
+
+
+def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostMode.none):
+    """Create a mesh from topology and geometry data
+
+    Note: this function is deprecated in favour of mesh.create
+    """
+    cell = ufl.Cell(cpp.mesh.to_string(cell_type), geometric_dimension=x.shape[1])
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
+    return create(comm, cells, x, domain, ghost_mode)
 
 
 def MeshTags(mesh, dim, indices, values):

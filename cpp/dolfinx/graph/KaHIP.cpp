@@ -166,8 +166,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
   for (std::int32_t i = 0; i < ncells; ++i)
   {
     dests.push_back(part[i]);
-    const auto it = local_node_to_dests.find(i);
-    if (it != local_node_to_dests.end())
+    if (auto it = local_node_to_dests.find(i); it != local_node_to_dests.end())
       dests.insert(dests.end(), it->second.begin(), it->second.end());
     offsets.push_back(dests.size());
   }

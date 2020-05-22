@@ -11,7 +11,6 @@
 #include <dolfinx/generation/BoxMesh.h>
 #include <dolfinx/generation/IntervalMesh.h>
 #include <dolfinx/generation/RectangleMesh.h>
-#include <dolfinx/generation/UnitDiscMesh.h>
 #include <iostream>
 #include <memory>
 #include <pybind11/eigen.h>
@@ -57,19 +56,6 @@ void generation(py::module& m)
           },
           py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("element"),
           py::arg("ghost_mode"), py::arg("diagonal") = "right");
-
-  // dolfinx::UnitDiscMesh
-  py::class_<dolfinx::generation::UnitDiscMesh>(m, "UnitDiscMesh")
-      .def_static(
-          "create",
-          [](const MPICommWrapper comm, std::size_t n,
-             const dolfinx::fem::CoordinateElement& element,
-             dolfinx::mesh::GhostMode ghost_mode) {
-            return dolfinx::generation::UnitDiscMesh::create(
-                comm.get(), n, element, ghost_mode);
-          },
-          py::arg("comm"), py::arg("n"), py::arg("element"),
-          py::arg("ghost_mode"));
 
   // dolfinx::BoxMesh
   py::class_<dolfinx::generation::BoxMesh,

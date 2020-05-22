@@ -58,36 +58,6 @@ public:
     // Do nothing
   }
 
-  /// @todo Remove this constructor once the creation of
-  /// ElementDofLayout and coordinate maps is make straightforward
-  ///
-  /// Construct a Mesh from topological and geometric data.
-  ///
-  /// @param[in] comm MPI Communicator
-  /// @param[in] type Cell type
-  /// @param[in] x Array of geometric points, arranged in global index
-  ///   order
-  /// @param[in] cells Array of cells (containing the global point
-  ///   indices for each cell)
-  /// @param[in] element Element that describes the geometry of a cell
-  /// @param[in] global_cell_indices Array of global cell indices. If
-  ///   not empty, this must be same size as the number of rows in
-  ///   cells. If empty, global cell indices will be constructed,
-  ///   beginning from 0 on process 0.
-  /// @param[in] ghost_mode The ghost mode
-  /// @param[in] num_ghost_cells Number of ghost cells on this process
-  ///   (must be at end of list of cells)
-  [[deprecated]] Mesh(
-      MPI_Comm comm, mesh::CellType type,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
-      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&
-          cells,
-      const fem::CoordinateElement& element,
-      const std::vector<std::int64_t>& global_cell_indices,
-      const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
-
   /// Copy constructor
   /// @param[in] mesh Mesh to be copied
   Mesh(const Mesh& mesh) = default;

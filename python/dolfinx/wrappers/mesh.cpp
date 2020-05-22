@@ -48,6 +48,7 @@ void mesh(py::module& m)
   m.def("to_type", &dolfinx::mesh::to_type);
   m.def("is_simplex", &dolfinx::mesh::is_simplex);
 
+  m.def("cell_entity_type", &dolfinx::mesh::cell_entity_type);
   m.def("cell_dim", &dolfinx::mesh::cell_dim);
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
@@ -166,21 +167,6 @@ void mesh(py::module& m)
         return std::make_unique<dolfinx::mesh::Mesh>(comm.get(), topology,
                                                      geometry);
       }))
-      .def(py::init(
-          [](const MPICommWrapper comm, dolfinx::mesh::CellType type,
-             const Eigen::Ref<const Eigen::Array<
-                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
-                 geometry,
-             const Eigen::Ref<
-                 const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                    Eigen::Dynamic, Eigen::RowMajor>>& topology,
-             const dolfinx::fem::CoordinateElement& element,
-             const std::vector<std::int64_t>& global_cell_indices,
-             const dolfinx::mesh::GhostMode ghost_mode) {
-            return std::make_unique<dolfinx::mesh::Mesh>(
-                comm.get(), type, geometry, topology, element,
-                global_cell_indices, ghost_mode);
-          }))
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
@@ -243,7 +229,18 @@ void mesh(py::module& m)
           "indices", [](dolfinx::mesh::MeshTags<SCALAR>& self) {               \
             return py::array_t<std::int32_t>(                                  \
                 self.indices().size(), self.indices().data(), py::none());     \
-          });
+          });                                                                  \
+                                                                               \
+  m.def("create_meshtags",                                                     \
+        [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,             \
+           const int dim,                                                      \
+           const dolfinx::graph::AdjacencyList<std::int32_t>& entities,        \
+           const py::array_t<SCALAR>& values) {                                \
+          py::buffer_info buf = values.request();                              \
+          std::vector<SCALAR> vals((SCALAR*)buf.ptr,                           \
+                                   (SCALAR*)buf.ptr + buf.size);               \
+          return dolfinx::mesh::create_meshtags(mesh, dim, entities, vals);    \
+        });
 
   MESHTAGS_MACRO(std::int8_t, int8);
   MESHTAGS_MACRO(int, int);
@@ -271,10 +268,6 @@ void mesh(py::module& m)
 
   m.def("locate_entities", &dolfinx::mesh::locate_entities);
   m.def("locate_entities_boundary", &dolfinx::mesh::locate_entities_boundary);
-
-  // TODO Remove
-  m.def("compute_vertex_exterior_markers",
-        &dolfinx::mesh::Partitioning::compute_vertex_exterior_markers);
 
 } // namespace dolfinx_wrappers
 } // namespace dolfinx_wrappers

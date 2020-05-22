@@ -12,6 +12,7 @@
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
@@ -32,9 +33,21 @@ void io(py::module& m)
 {
 
   // dolfinx::io::cell permutation functions
-  m.def("permutation_vtk_to_dolfin", &dolfinx::io::cells::vtk_to_dolfin);
-  m.def("permutation_dolfin_to_vtk", &dolfinx::io::cells::dolfin_to_vtk);
-  m.def("permute_cell_ordering", &dolfinx::io::cells::permute_ordering);
+  m.def("cell_perm_vtk", &dolfinx::io::cells::perm_vtk);
+  m.def("cell_perm_gmsh", &dolfinx::io::cells::perm_gmsh);
+
+  // TODO: Template for different values dtypes
+  m.def("extract_local_entities",
+        [](const dolfinx::mesh::Mesh& mesh, const int entity_dim,
+           const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                              Eigen::RowMajor>& entities,
+           const py::array_t<std::int32_t>& values) {
+          py::buffer_info buf = values.request();
+          std::vector<std::int32_t> vals((std::int32_t*)buf.ptr,
+                                         (std::int32_t*)buf.ptr + buf.size);
+          return dolfinx::io::xdmf_utils::extract_local_entities(
+              mesh, entity_dim, entities, vals);
+        });
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
@@ -65,7 +78,11 @@ void io(py::module& m)
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
-      .def("read_mesh_data", &dolfinx::io::XDMFFile::read_mesh_data,
+      .def("read_topology_data", &dolfinx::io::XDMFFile::read_topology_data,
+           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+      .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
+           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+      .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("write_function", &dolfinx::io::XDMFFile::write_function,
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
@@ -75,6 +92,10 @@ void io(py::module& m)
            py::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
            py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
+      .def("write_information", &dolfinx::io::XDMFFile::write_information,
+           py::arg("name"), py::arg("value"), py::arg("xpath") = "/Xdmf/Domain")
+      .def("read_information", &dolfinx::io::XDMFFile::read_information,
+           py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
       .def("comm", [](dolfinx::io::XDMFFile& self) {
         return MPICommWrapper(self.comm());
       });

@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Garth N. Wells
+// Copyright (C) 2019-2020 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -21,7 +21,7 @@ namespace mesh
 /// Cell type identifier
 enum class CellType : int
 {
-  // NOTE: Simplex cells have index > 0, see mesh::is_simplex.
+  // NOTE: Simplex cells have index > 0, see mesh::is_simplex
   point = 1,
   interval = 2,
   triangle = 3,
@@ -30,16 +30,22 @@ enum class CellType : int
   hexahedron = -8
 };
 
-/// Convert from cell type to string
+/// Get the cell string type for a cell type
+/// @param[in] type The cell type
+/// @return The cell type string
 std::string to_string(CellType type);
 
-/// Convert from string to cell type
-CellType to_type(const std::string& type);
+/// Get the cell type from a cell string
+/// @param[in] cell Cell shape string
+/// @return The cell type
+CellType to_type(const std::string& cell);
 
 /// Return type of cell for entity of dimension d
 CellType cell_entity_type(CellType type, int d);
 
 /// Return facet type of cell
+/// @param[in] type The cell type
+/// @return The type of the cell's facets
 CellType cell_facet_type(CellType type);
 
 /// Return array entities(num entities, num vertices per entity), where
@@ -79,26 +85,6 @@ int num_cell_vertices(CellType type);
 /// closure{sub_dim, (sub_entities)}
 std::map<std::array<int, 2>, std::vector<std::set<int>>>
 cell_entity_closure(mesh::CellType cell_type);
-
-/// @todo Remove
-///
-/// Find the order of a cell given the number of nodes in the element
-int cell_degree(CellType type, int num_nodes);
-
-/// @todo Remove
-///
-/// Return the indices of the nodes corresponding to the vertices of a
-/// cell. For higher order cells, a cell is defined by more nodes than
-/// the vertices.
-/// @param[in] type The cell shape
-/// @param[in] num_nodes The number of nodes defining the cell
-/// @return List of vertex indices
-std::vector<int> cell_vertex_indices(mesh::CellType type, int num_nodes);
-
-/// @todo Remove
-///
-/// Number of nodes of a given cell type and order
-int num_cell_nodes(mesh::CellType type, int degree);
 
 } // namespace mesh
 } // namespace dolfinx
