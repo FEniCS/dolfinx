@@ -20,7 +20,22 @@ std::pair<Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>,
 NearestSimplex(
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& s)
 {
-  if (s.rows() == 4)
+  if (s.rows() == 2)
+  {
+    const Eigen::Vector3d ab = s.row(1) - s.row(0);
+    const double lm = -s.row(0).dot(ab) / ab.squaredNorm();
+    if (lm >= 0.0 and lm <= 1.0)
+    {
+      // The origin is between A and B
+      Eigen::Vector3d v = s.row(0).transpose() + lm * ab;
+      return {s.topRows(2), v};
+    }
+    if (lm < 0.0)
+      return {s.row(0), s.row(0)};
+    else
+      return {s.row(1), s.row(1)};
+  }
+  else if (s.rows() == 4)
   {
     Eigen::Vector4d B;
     const Eigen::Vector3d W1 = s.row(0).cross(s.row(1));
@@ -67,39 +82,21 @@ NearestSimplex(
     return {smin, vmin};
   }
 
+  assert(s.rows() == 3);
   const Eigen::Vector3d& a = s.row(0);
   const Eigen::Vector3d& b = s.row(1);
-  const double ab2 = (a - b).squaredNorm();
-  double lm[3] = {a.dot(a - b) / ab2, 0, 0};
-
-  if (s.rows() == 2)
-  {
-    // 1D case
-    if (lm[0] > 0.0 and lm[0] < 1.0)
-    {
-      // The origin is between A and B
-      Eigen::Vector3d v = a + lm[0] * (b - a);
-      return {s.topRows(2), v};
-    }
-    if (lm[0] <= 0.0)
-      return {s.row(0), s.row(0)};
-    else
-      return {s.row(1), s.row(1)};
-  }
-
   const Eigen::Vector3d& c = s.row(2);
+  const double ab2 = (a - b).squaredNorm();
   const double ac2 = (a - c).squaredNorm();
   const double bc2 = (b - c).squaredNorm();
-  lm[1] = a.dot(a - c) / ac2;
-  lm[2] = b.dot(b - c) / bc2;
+  const double lm[3]
+      = {a.dot(a - b) / ab2, a.dot(a - c) / ac2, b.dot(b - c) / bc2};
 
   // Calculate triangle ABC
   const double caba = (c - a).dot(b - a);
-  double lbb = lm[0] - lm[1] * caba / ab2;
-  double lcc = lm[1] - lm[0] * caba / ac2;
-  double c2 = 1 - caba * caba / (ab2 * ac2);
-  lbb /= c2;
-  lcc /= c2;
+  const double c2 = 1 - caba * caba / (ab2 * ac2);
+  const double lbb = (lm[0] - lm[1] * caba / ab2) / c2;
+  const double lcc = (lm[1] - lm[0] * caba / ac2) / c2;
 
   // Intersects triangle
   if (lbb >= 0.0 and lcc >= 0.0 and (lbb + lcc) <= 1.0)
@@ -169,7 +166,7 @@ Eigen::Vector3d geometry::gjk_vector(
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& q)
 {
-  const int maxk = 50; // Maximum number of iterations of the GJK algorithm
+  const int maxk = 10; // Maximum number of iterations of the GJK algorithm
 
   // Tolerance
   const double eps = 1e-12;
