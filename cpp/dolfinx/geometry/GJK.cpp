@@ -11,6 +11,8 @@
 #include <iostream>
 #include <stdexcept>
 
+using namespace dolfinx;
+
 namespace
 {
 std::pair<Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>,
@@ -100,7 +102,7 @@ NearestSimplex(
   lcc /= c2;
 
   // Intersects triangle
-  if (lbb > 0.0 and lcc > 0.0 and (lbb + lcc) < 1.0)
+  if (lbb >= 0.0 and lcc >= 0.0 and (lbb + lcc) <= 1.0)
   {
     // Calculate intersection more accurately
     Eigen::Vector3d v = (c - a).cross(b - a);
@@ -163,9 +165,9 @@ support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
 
 } // namespace
 //-----------------------------------------------------
-Eigen::Vector3d
-gjk_vector(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
-           const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& q)
+Eigen::Vector3d geometry::gjk_vector(
+    const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
+    const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& q)
 {
   const int maxk = 50; // Maximum number of iterations of the GJK algorithm
 
