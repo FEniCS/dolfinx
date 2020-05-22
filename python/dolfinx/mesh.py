@@ -9,7 +9,7 @@ import types
 import numpy
 import ufl
 from dolfinx import cpp, fem
-from cpp.mesh import create_meshtags
+from dolfinx.cpp.mesh import create_meshtags
 
 __all__ = [
     "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags"
