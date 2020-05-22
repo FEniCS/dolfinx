@@ -222,12 +222,17 @@ dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
                                   const std::vector<int>& send_offsets,
                                   const std::vector<T>& send_data)
 {
+  // Get neighbour processes
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
+                                 &weighted);
+
   assert((int)send_data.size() == send_offsets.back());
   assert(send_offsets[0] == 0);
 
   // Get receive sizes
-  std::vector<int> send_sizes(send_offsets.size() - 1, 0);
-  std::vector<int> recv_sizes(send_sizes.size());
+  std::vector<int> send_sizes(outdegree, 0);
+  std::vector<int> recv_sizes(indegree);
   std::adjacent_difference(send_offsets.begin() + 1, send_offsets.end(),
                            send_sizes.begin());
   MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI::mpi_type<int>(),

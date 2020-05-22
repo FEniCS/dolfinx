@@ -503,30 +503,27 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
 
   MPI_Comm neighbour_comm;
   MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _reverse_neighbours.size(), _reverse_neighbours.data(),
-      MPI_UNWEIGHTED, _forward_neighbours.size(), _forward_neighbours.data(),
+      _mpi_comm.comm(), _forward_neighbours.size(), _forward_neighbours.data(),
+      MPI_UNWEIGHTED, _reverse_neighbours.size(), _reverse_neighbours.data(),
       MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbour_comm);
 
   // Get neighbour processes
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(neighbour_comm, &indegree, &outdegree,
                                  &weighted);
-  std::vector<int> neighbours(indegree), neighbours1(indegree);
-  MPI_Dist_graph_neighbors(neighbour_comm, indegree, neighbours.data(),
-                           MPI_UNWEIGHTED, outdegree, neighbours1.data(),
+  std::vector<int> neighbours_in(indegree), neighbours_out(outdegree);
+  MPI_Dist_graph_neighbors(neighbour_comm, indegree, neighbours_in.data(),
+                           MPI_UNWEIGHTED, outdegree, neighbours_out.data(),
                            MPI_UNWEIGHTED);
 
-  assert(_reverse_neighbours.size() == _forward_sizes.size());
-
   // Get sharing of all owned indices
-  int c = 0;
-  for (std::size_t i = 0; i < _forward_sizes.size(); ++i)
+  for (std::size_t i = 0, c = 0; i < _forward_sizes.size(); ++i)
   {
-    int p = neighbours[i];
+    int dest_rank = neighbours_out[i];
     for (int j = 0; j < _forward_sizes[i]; ++j)
     {
       int idx = _forward_indices[c];
-      shared_indices[idx].insert(p);
+      shared_indices[idx].insert(dest_rank);
       ++c;
     }
   }
@@ -534,8 +531,7 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
   // Send forward
   std::vector<std::int64_t> fwd_sharing_data;
   std::vector<int> fwd_sharing_offsets = {0};
-  c = 0;
-  for (std::size_t i = 0; i < _forward_sizes.size(); ++i)
+  for (std::size_t i = 0, c = 0; i < _forward_sizes.size(); ++i)
   {
     for (int j = 0; j < _forward_sizes[i]; ++j)
     {
@@ -564,7 +560,7 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
   {
     int idx = size_local() + i;
     const int np = _ghost_owners[i];
-    int p = neighbours1[np];
+    int p = neighbours_in[np];
     int rp = recv_sharing_offsets[np];
     int ns = recv_sharing_data[rp];
     ++rp;
