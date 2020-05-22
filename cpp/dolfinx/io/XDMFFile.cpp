@@ -166,20 +166,22 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
                                const std::string xpath) const
 {
   // Read mesh data
-  const auto [cell_type, x, cells] = XDMFFile::read_mesh_data(name, xpath);
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
+      cells = XDMFFile::read_topology_data(name, xpath);
+  const auto x = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
   graph::AdjacencyList<std::int64_t> cells_adj(cells);
-  mesh::Mesh mesh = mesh::create(_mpi_comm.comm(), cells_adj, element, x, mode);
+  mesh::Mesh mesh
+      = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x, mode);
   mesh.name = name;
   return mesh;
 }
 //-----------------------------------------------------------------------------
-std::tuple<
-    std::pair<mesh::CellType, int>,
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-XDMFFile::read_mesh_data(const std::string name, const std::string xpath) const
+Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+XDMFFile::read_topology_data(const std::string name,
+                             const std::string xpath) const
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -190,7 +192,23 @@ XDMFFile::read_mesh_data(const std::string name, const std::string xpath) const
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
-  return xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _h5_id, grid_node);
+  return xdmf_mesh::read_topology_data(_mpi_comm.comm(), _h5_id, grid_node);
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+XDMFFile::read_geometry_data(const std::string name,
+                             const std::string xpath) const
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+
+  pugi::xml_node grid_node
+      = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
+  if (!grid_node)
+    throw std::runtime_error("<Grid> with name '" + name + "' not found.");
+
+  return xdmf_mesh::read_geometry_data(_mpi_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_function(const function::Function& function,
@@ -280,36 +298,98 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
-  pugi::xml_node topology_node = grid_node.child("Topology");
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
+      entities = read_topology_data(name, xpath);
 
-  // Get topology dataset node
-  pugi::xml_node topology_data_node = topology_node.child("DataItem");
-  const std::vector<std::int64_t> tdims
-      = xdmf_utils::get_dataset_shape(topology_data_node);
-
-  // Read topology data
-  const std::vector<std::int64_t> topology_data
-      = xdmf_read::get_dataset<std::int64_t>(_mpi_comm.comm(),
-                                             topology_data_node, _h5_id);
-
-  const std::int32_t num_local_entities
-      = (std::int32_t)topology_data.size() / tdims[1];
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      topology(topology_data.data(), num_local_entities, tdims[1]);
-
-  // Fetch cell type of meshtags and deduce its dimension
-  const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
-  const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
   std::vector<std::int32_t> values = xdmf_read::get_dataset<std::int32_t>(
       _mpi_comm.comm(), values_data_node, _h5_id);
+
+  const std::pair<std::string, int> cell_type_str
+      = xdmf_utils::get_cell_type(grid_node.child("Topology"));
+  mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
+
+  // Permute entities from VTK to DOLFINX ordering
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      entities1 = io::cells::compute_permutation(
+          entities, io::cells::perm_vtk(cell_type, entities.cols()));
+
+  const auto [entities_local, values_local]
+      = xdmf_utils::extract_local_entities(*mesh, mesh::cell_dim(cell_type),
+                                           entities1, values);
+
   mesh::MeshTags meshtags = mesh::create_meshtags(
-      _mpi_comm.comm(), mesh, cell_type, topology, std::move(values));
+      mesh, mesh::cell_dim(cell_type),
+      graph::AdjacencyList<std::int32_t>(entities_local),
+      std::move(values_local));
   meshtags.name = name;
 
   return meshtags;
+}
+//-----------------------------------------------------------------------------
+std::pair<mesh::CellType, int>
+XDMFFile::read_cell_type(const std::string grid_name, const std::string xpath)
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+  pugi::xml_node grid_node
+      = node.select_node(("Grid[@Name='" + grid_name + "']").c_str()).node();
+  if (!grid_node)
+    throw std::runtime_error("<Grid> with name '" + grid_name + "' not found.");
+
+  // Get topology node
+  pugi::xml_node topology_node = grid_node.child("Topology");
+  assert(topology_node);
+
+  // Get cell type
+  const std::pair<std::string, int> cell_type_str
+      = xdmf_utils::get_cell_type(topology_node);
+
+  // Get toplogical dimensions
+  mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
+
+  return {cell_type, cell_type_str.second};
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write_information(const std::string name,
+                                 const std::string value,
+                                 const std::string xpath)
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+
+  pugi::xml_node info_node = node.append_child("Information");
+  assert(info_node);
+  info_node.append_attribute("Name") = name.c_str();
+  info_node.append_child(pugi::node_pcdata).set_value(value.c_str());
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
+std::string XDMFFile::read_information(const std::string name,
+                                       const std::string xpath)
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+  pugi::xml_node info_node
+      = node.select_node(("Information[@Name='" + name + "']").c_str()).node();
+  if (!info_node)
+    throw std::runtime_error("<Information> with name '" + name
+                             + "' not found.");
+
+  // Read data and trim any leading/trailing whitespace
+  pugi::xml_node data_node = info_node.first_child();
+  assert(data_node);
+  std::string data_str = data_node.value();
+
+  return data_str;
 }
 //-----------------------------------------------------------------------------
 MPI_Comm XDMFFile::comm() const { return _mpi_comm.comm(); }
