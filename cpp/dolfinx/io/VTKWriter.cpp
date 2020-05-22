@@ -30,130 +30,31 @@ using namespace dolfinx::io;
 
 namespace
 {
-int cell_degree(mesh::CellType type, int num_nodes)
-{
-  switch (type)
-  {
-  case mesh::CellType::point:
-    return 1;
-  case mesh::CellType::interval:
-    return num_nodes - 1;
-  case mesh::CellType::triangle:
-    switch (num_nodes)
-    {
-    case 3:
-      return 1;
-    case 6:
-      return 2;
-    case 10:
-      return 3;
-    case 15:
-      return 4;
-    case 21:
-      return 5;
-    case 28:
-      return 6;
-    case 36:
-      return 7;
-    case 45:
-      LOG(WARNING) << "8th order mesh is untested";
-      return 8;
-    case 55:
-      LOG(WARNING) << "9th order mesh is untested";
-      return 9;
-    default:
-      throw std::runtime_error("Unknown triangle layout. Number of nodes: "
-                               + std::to_string(num_nodes));
-    }
-  case mesh::CellType::tetrahedron:
-    switch (num_nodes)
-    {
-    case 4:
-      return 1;
-    case 10:
-      return 2;
-    case 20:
-      return 3;
-    default:
-      throw std::runtime_error("Unknown tetrahedron layout.");
-    }
-  case mesh::CellType::quadrilateral:
-  {
-    const int n = std::sqrt(num_nodes);
-    if (num_nodes != n * n)
-    {
-      throw std::runtime_error("Quadrilateral of order "
-                               + std::to_string(num_nodes) + " not supported");
-    }
-    return n - 1;
-  }
-  case mesh::CellType::hexahedron:
-    switch (num_nodes)
-    {
-    case 8:
-      return 1;
-    case 27:
-      return 2;
-    default:
-      throw std::runtime_error("Unsupported hexahedron layout");
-      return 1;
-    }
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-} // namespace
-
 //-----------------------------------------------------------------------------
 // Get VTK cell type
 std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, int cell_dim)
 {
-  const int cell_order
-      = cell_degree(mesh.geometry().cmap().cell_shape(),
-                    mesh.geometry().cmap().dof_layout().num_dofs());
 
   // Get cell type
   mesh::CellType cell_type
       = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
 
-  // Determine VTK cell type
+  // Determine VTK cell type (Using arbitrary Lagrange elements)
+  // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
   switch (cell_type)
   {
-  case mesh::CellType::tetrahedron:
-    switch (cell_order)
-    {
-    case 1:
-      return 10;
-    default:
-      return 71;
-    }
-  case mesh::CellType::hexahedron:
-    switch (cell_order)
-    {
-    case 1:
-      return 12;
-    default:
-      return 72;
-    }
-  case mesh::CellType::quadrilateral:
-    switch (cell_order)
-    {
-    case 1:
-      return 9;
-    default:
-      return 70;
-    }
-  case mesh::CellType::triangle:
-    switch (cell_order)
-    {
-    case 1:
-      return 5;
-    default:
-      return 69;
-    }
-  case mesh::CellType::interval:
-    return 3;
   case mesh::CellType::point:
     return 1;
+  case mesh::CellType::interval:
+    return 68;
+  case mesh::CellType::triangle:
+    return 69;
+  case mesh::CellType::quadrilateral:
+    return 70;
+  case mesh::CellType::tetrahedron:
+    return 71;
+  case mesh::CellType::hexahedron:
+    return 72;
   default:
     throw std::runtime_error("Unknown cell type");
   }
@@ -282,13 +183,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   }
   else
   {
-    // Check that cell type is supported
-    const static std::set<std::int8_t> supported_cells = {1, 3, 5, 9, 10, 12};
-    if (supported_cells.find(vtk_cell_type) == supported_cells.end())
-    {
-      throw std::runtime_error("VTK outout for higher-order mesh entities for "
-                               "dim < tdim not implemented yet.");
-    }
+    throw std::runtime_error(
+        "VTK outout for mesh_entities for dim<tdim is not implemented yet.");
 
     // Build a map from topology to geometry
     auto c_to_v = mesh.topology().connectivity(tdim, 0);
