@@ -528,48 +528,52 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
     }
   }
 
-  // Send forward
+  // Pack shared indices that are ghost in more than one rank
+  // and send forward
   std::vector<std::int64_t> fwd_sharing_data;
-  std::vector<int> fwd_sharing_offsets = {0};
+  std::vector<int> fwd_sharing_offsets{0};
   for (std::size_t i = 0, c = 0; i < _forward_sizes.size(); ++i)
   {
-    for (int j = 0; j < _forward_sizes[i]; ++j)
+    for (int j = 0; j < _forward_sizes[i]; ++j, ++c)
     {
       int idx = _forward_indices[c];
-      fwd_sharing_data.push_back(shared_indices[idx].size());
-      fwd_sharing_data.insert(fwd_sharing_data.end(),
-                              shared_indices[idx].begin(),
-                              shared_indices[idx].end());
-      ++c;
+      if (shared_indices[idx].size() > 1)
+      {
+        fwd_sharing_data.push_back(idx);
+        fwd_sharing_data.push_back(shared_indices[idx].size());
+        fwd_sharing_data.insert(fwd_sharing_data.end(),
+                                shared_indices[idx].begin(),
+                                shared_indices[idx].end());
+      }
     }
     fwd_sharing_offsets.push_back(fwd_sharing_data.size());
   }
 
-  graph::AdjacencyList<std::int64_t> sharing = MPI::neighbor_all_to_all(
-      neighbour_comm, fwd_sharing_offsets, fwd_sharing_data);
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& recv_sharing_offsets
-      = sharing.offsets();
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_sharing_data
-      = sharing.array();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_sharing_data
+      = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, fwd_sharing_offsets,
+                                          fwd_sharing_data)
+            .array();
 
-  // // FIXME: The below is confusing and the std::set<int> inside the loop
-  // // should be avoided
-
-  // Unpack
+  // Add ghost indices to map
   for (int i = 0; i < _ghosts.size(); ++i)
   {
-    int idx = size_local() + i;
+    const std::int32_t idx = size_local() + i;
     const int np = _ghost_owners[i];
-    int p = neighbours_in[np];
-    int rp = recv_sharing_offsets[np];
-    int ns = recv_sharing_data[rp];
-    ++rp;
-    std::set<int> procs(recv_sharing_data.data() + rp,
-                        recv_sharing_data.data() + rp + ns);
-    rp += ns;
-    procs.insert(p);
-    procs.erase(_myrank);
-    shared_indices.insert({idx, procs});
+    shared_indices[idx].insert(neighbours_in[np]);
+  }
+
+  // Finally add ranks that share same ghost
+  for (int i = 0; i < recv_sharing_data.size();)
+  {
+    auto it = std::find(_ghosts.data(), _ghosts.data() + _ghosts.size(),
+                        recv_sharing_data[i]);
+    const int idx = std::distance(_ghosts.data(), it) + size_local();
+    int set_size = recv_sharing_data[i + 1];
+    int set_pos = i + 2;
+    for (int j = 0; j < set_size; j++)
+      if (recv_sharing_data[set_pos + j] != _myrank)
+        shared_indices[idx].insert(recv_sharing_data[set_pos + j]);
+    i += set_size + 2;
   }
 
   MPI_Comm_free(&neighbour_comm);
