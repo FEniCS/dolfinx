@@ -68,14 +68,15 @@ void mesh(py::module& m)
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
   m.def(
-      "create",
+      "create_mesh",
       [](const MPICommWrapper comm,
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
          const dolfinx::fem::CoordinateElement& element,
          const Eigen::Ref<const Eigen::Array<
              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
          dolfinx::mesh::GhostMode ghost_mode) {
-        return dolfinx::mesh::create(comm.get(), cells, element, x, ghost_mode);
+        return dolfinx::mesh::create_mesh(comm.get(), cells, element, x,
+                                          ghost_mode);
       },
       "Helper function for creating meshes.");
 

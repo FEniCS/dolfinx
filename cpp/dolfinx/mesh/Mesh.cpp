@@ -61,12 +61,12 @@ Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
 } // namespace
 
 //-----------------------------------------------------------------------------
-Mesh mesh::create(MPI_Comm comm,
-                  const graph::AdjacencyList<std::int64_t>& cells,
-                  const fem::CoordinateElement& element,
-                  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                     Eigen::RowMajor>& x,
-                  mesh::GhostMode ghost_mode)
+Mesh mesh::create_mesh(MPI_Comm comm,
+                       const graph::AdjacencyList<std::int64_t>& cells,
+                       const fem::CoordinateElement& element,
+                       const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>& x,
+                       mesh::GhostMode ghost_mode)
 {
   if (ghost_mode == mesh::GhostMode::shared_vertex)
     throw std::runtime_error("Ghost mode via vertex currently disabled.");
