@@ -6,7 +6,7 @@
 
 #include "utils.h"
 #include "BoundingBoxTree.h"
-#include "openGJK.h"
+#include "GJK.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
