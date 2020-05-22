@@ -173,7 +173,8 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
 
   // Create mesh
   graph::AdjacencyList<std::int64_t> cells_adj(cells);
-  mesh::Mesh mesh = mesh::create(_mpi_comm.comm(), cells_adj, element, x, mode);
+  mesh::Mesh mesh
+      = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x, mode);
   mesh.name = name;
   return mesh;
 }
@@ -372,7 +373,7 @@ void XDMFFile::write_information(const std::string name,
 }
 //-----------------------------------------------------------------------------
 std::string XDMFFile::read_information(const std::string name,
-                                        const std::string xpath)
+                                       const std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -380,7 +381,8 @@ std::string XDMFFile::read_information(const std::string name,
   pugi::xml_node info_node
       = node.select_node(("Information[@Name='" + name + "']").c_str()).node();
   if (!info_node)
-    throw std::runtime_error("<Information> with name '" + name + "' not found.");
+    throw std::runtime_error("<Information> with name '" + name
+                             + "' not found.");
 
   // Read data and trim any leading/trailing whitespace
   pugi::xml_node data_node = info_node.first_child();
