@@ -9,6 +9,11 @@ import types
 import numpy
 import ufl
 from dolfinx import cpp, fem
+from cpp.mesh import create_meshtags
+
+__all__ = [
+    "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags"
+]
 
 
 def locate_entities(mesh: cpp.mesh.Mesh,
@@ -91,14 +96,14 @@ def refine(mesh, cell_markers=None, redistribute=True):
     return mesh_refined
 
 
-def create(comm, cells, x, domain, ghost_mode=cpp.mesh.GhostMode.shared_facet):
+def create_mesh(comm, cells, x, domain, ghost_mode=cpp.mesh.GhostMode.shared_facet):
     """Create a mesh from topology and geometry data"""
     cmap = fem.create_coordinate_map(domain)
     try:
-        mesh = cpp.mesh.create(comm, cells, cmap, x, ghost_mode)
+        mesh = cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode)
     except TypeError:
-        mesh = cpp.mesh.create(comm, cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
-                               cmap, x, ghost_mode)
+        mesh = cpp.mesh.create_mesh(comm, cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
+                                    cmap, x, ghost_mode)
 
     # Attach UFL data (used when passing a mesh into UFL functions)
     domain._ufl_cargo = mesh
@@ -113,7 +118,7 @@ def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostM
     """
     cell = ufl.Cell(cpp.mesh.to_string(cell_type), geometric_dimension=x.shape[1])
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
-    return create(comm, cells, x, domain, ghost_mode)
+    return create_mesh(comm, cells, x, domain, ghost_mode)
 
 
 def MeshTags(mesh, dim, indices, values):

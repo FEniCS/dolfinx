@@ -13,10 +13,9 @@ import pygmsh
 from mpi4py import MPI
 
 from dolfinx import cpp
-from dolfinx.cpp.io import cell_perm_gmsh, extract_local_entities
+from dolfinx.cpp.io import perm_gmsh, extract_local_entities
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
-from dolfinx.mesh import create as create_mesh
-from dolfinx.cpp.mesh import create_meshtags
+from dolfinx.mesh import create_mesh, create_meshtags
 
 # Generating a mesh on each process rank
 # ======================================
@@ -113,14 +112,14 @@ else:
 
 # Permute the topology from GMSH to DOLFIN-X ordering
 domain = ufl_mesh_from_gmsh("tetra10", 3)
-gmsh_tetra10 = cell_perm_gmsh("tetra10")
+gmsh_tetra10 = perm_gmsh(cpp.mesh.CellType.tetrahedron, 10)
 cells = cells[:, gmsh_tetra10]
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "ball_d2"
 
 # Permute also entities which are tagged
-gmsh_triangle6 = cell_perm_gmsh("triangle6")
+gmsh_triangle6 = perm_gmsh(cpp.mesh.CellType.triangle, 6)
 marked_entities = marked_entities[:, gmsh_triangle6]
 
 local_entities, local_values = extract_local_entities(mesh, 2, marked_entities, values)
@@ -169,14 +168,14 @@ else:
 
 # Permute the mesh topology from GMSH ordering to DOLFIN-X ordering
 domain = ufl_mesh_from_gmsh("hexahedron27", 3)
-gmsh_hex27 = cell_perm_gmsh("hexahedron27")
+gmsh_hex27 = perm_gmsh(cpp.mesh.CellType.hexahedron, 27)
 cells = cells[:, gmsh_hex27]
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "hex_d2"
 
 # Permute also entities which are tagged
-gmsh_quad9 = cell_perm_gmsh("quad9")
+gmsh_quad9 = perm_gmsh(cpp.mesh.CellType.quadrilateral, 9)
 marked_entities = marked_entities[:, gmsh_quad9]
 
 local_entities, local_values = extract_local_entities(mesh, 2, marked_entities, values)
