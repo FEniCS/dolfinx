@@ -160,11 +160,9 @@ io::VTKFileNew::~VTKFileNew()
     _pvd_xml.save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void io::VTKFileNew::write(const mesh::Mesh& mesh)
+void io::VTKFileNew::write(const mesh::Mesh& mesh, double time)
 {
   const int rank = MPI::rank(_comm.comm());
-
-  double time = 0.15;
 
   boost::filesystem::path p(_filename);
 
@@ -184,7 +182,6 @@ void io::VTKFileNew::write(const mesh::Mesh& mesh)
   std::string counter_str = std::to_string(n);
   counter_str
       = std::string(num_digits - counter_str.size(), '0').append(counter_str);
-  // std::cout << "Counter: " << counter_str << std::endl;
 
   // Write VTU file
   boost::filesystem::path p_vtu = p.stem();
@@ -197,23 +194,48 @@ void io::VTKFileNew::write(const mesh::Mesh& mesh)
   p_pvtu += counter_str;
   p_pvtu.replace_extension("pvtu");
 
+  pugi::xml_document xml_pvtu;
+  pugi::xml_node vtk_node = xml_pvtu.append_child("VTKFile");
+  vtk_node.append_attribute("type") = "PUnstructuredGrid";
+  vtk_node.append_attribute("version") = "0.1";
+  pugi::xml_node grid_node = vtk_node.append_child("PUnstructuredGrid");
+  grid_node.append_attribute("GhostLevel") = 0;
+
+  // Mesh geometry data
+  pugi::xml_node vertex_data_node = grid_node.append_child("PPoints");
+  pugi::xml_node data_node = vertex_data_node.append_child("PDataArray");
+  data_node.append_attribute("type") = "Float64";
+  data_node.append_attribute("NumberOfComponents") = "3";
+
+  pugi::xml_node cell_data_node = grid_node.append_child("PCellData");
+  data_node = cell_data_node.append_child("PDataArray");
+  data_node.append_attribute("type") = "Int32";
+  data_node.append_attribute("Name") = "connectivity";
+  data_node = cell_data_node.append_child("PDataArray");
+  data_node.append_attribute("type") = "Int32";
+  data_node.append_attribute("Name") = "offsets";
+  data_node = cell_data_node.append_child("PDataArray");
+  data_node.append_attribute("type") = "Int8";
+  data_node.append_attribute("Name") = "types";
+
+  const int mpi_size = MPI::size(_comm.comm());
+  for (int i = 0; i < mpi_size; ++i)
+  {
+    boost::filesystem::path p_vtu = p.stem();
+    p_vtu += "_p" + std::to_string(i) + "_" + counter_str;
+    p_vtu.replace_extension("vtu");
+    pugi::xml_node piece_node = grid_node.append_child("Piece");
+    piece_node.append_attribute("Source") = p_vtu.c_str();
+  }
+
+  if (MPI::rank(_comm.comm()) == 0)
+    xml_pvtu.save_file(p_pvtu.c_str(), "  ");
+
+  // Append PVD file
   pugi::xml_node dataset_node = xml_collections.append_child("DataSet");
   dataset_node.append_attribute("timestep") = time;
   dataset_node.append_attribute("part") = "0";
   dataset_node.append_attribute("file") = p_pvtu.c_str();
-
-  std::cout << "Length test: " << n << std::endl;
-
-  // // Write PVTU file
-  // pugi::xml_document xml_pvtu;
-  // pugi::xml_node vtk_node = xml_pvtu.append_child("VTKFile");
-  // vtk_node.append_attribute("type") = "PUnstructuredGrid";
-  // vtk_node.append_attribute("version") = "0.1";
-  // pugi::xml_node grid_node = vtk_node.append_child("PUnstructuredGrid");
-  // grid_node.append_attribute("GhostLevel") = 0;
-
-  // // if (MPI::rank(_comm.comm()) == 0)
-  // xml_pvtu.save_file(_filename.c_str(), "  ");
 }
 // //----------------------------------------------------------------------------
 // void VTKFile::write(const function::Function& u)

@@ -123,12 +123,12 @@ int main(int argc, char* argv[])
   std::array<Eigen::Vector3d, 2> pt{Eigen::Vector3d(0.0, 0.0, 0.0),
                                     Eigen::Vector3d(1.0, 1.0, 0.0)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, pt, {{128, 512}}, cmap, mesh::GhostMode::none));
+      MPI_COMM_WORLD, pt, {{32, 32}}, cmap, mesh::GhostMode::none));
 
   // Save solution in VTK format
   {
     boost::timer::auto_cpu_timer t;
-    io::VTKFile tfile("u.pvd");
+    io::VTKFile tfile("mesh.pvd");
     tfile.write(*mesh);
   }
 
@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
     tfile_new.write_mesh(*mesh);
   }
 
-  exit(0);
+  // exit(0);
 
   auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
                                      mesh);
@@ -255,10 +255,10 @@ int main(int argc, char* argv[])
   file.write(u);
   file.write(u);
 
-  io::VTKFileNew file_new(MPI_COMM_WORLD, "test.pvd", "w");
-  file_new.write(*mesh);
-  file_new.write(*mesh);
-  file_new.write(*mesh);
+  // io::VTKFileNew file_new(MPI_COMM_WORLD, "test.pvd", "w");
+  // file_new.write(*mesh);
+  // file_new.write(*mesh);
+  // file_new.write(*mesh);
   // file.write(u);
 
   return 0;

@@ -48,14 +48,13 @@ public:
   /// Destructor
   ~VTKFileNew();
 
-  /// Output mesh
-  void write(const mesh::Mesh& mesh);
+  /// Write mesh to file. Supports arbitrary order Lagrange
+  /// isoparametric cells.
+  /// @param[in] mesh The mesh to write to file
+  void write(const mesh::Mesh& mesh, double time = 0.0);
 
   /// Output function::Function
   // void write(const function::Function& u);
-
-  // /// Output mesh::Mesh and timestep
-  // void write(const mesh::Mesh& mesh, double t);
 
   // /// Output function::Function and timestep
   // void write(const function::Function& u, double t);
