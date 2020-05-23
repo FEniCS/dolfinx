@@ -13,6 +13,24 @@ using namespace dolfinx::common;
 
 namespace
 {
+template <class T>
+void debug_print(T& seq)
+{
+  MPI_Barrier(MPI_COMM_WORLD);
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  for (int i = 0; i < mpi_size; i++)
+  {
+    if (mpi_rank == i)
+    {
+      int n = seq.size();
+      for (int j = 0; j < n; j++)
+        std::cout << seq[j] << " ";
+      std::cout << std::endl;
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+}
 //-----------------------------------------------------------------------------
 void local_to_global_impl(
     Eigen::Ref<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> global,
@@ -539,7 +557,7 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
       int idx = _forward_indices[c];
       if (shared_indices[idx].size() > 1)
       {
-        fwd_sharing_data.push_back(idx);
+        fwd_sharing_data.push_back(idx + _local_range[0]);
         fwd_sharing_data.push_back(shared_indices[idx].size());
         fwd_sharing_data.insert(fwd_sharing_data.end(),
                                 shared_indices[idx].begin(),
