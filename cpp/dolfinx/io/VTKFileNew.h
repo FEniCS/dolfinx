@@ -51,6 +51,7 @@ public:
   /// Write mesh to file. Supports arbitrary order Lagrange
   /// isoparametric cells.
   /// @param[in] mesh The mesh to write to file
+  /// @param[in] time Time parameter to associate with the @p mesh
   void write(const mesh::Mesh& mesh, double time = 0.0);
 
   /// Output function::Function
