@@ -13,24 +13,6 @@ using namespace dolfinx::common;
 
 namespace
 {
-template <class T>
-void debug_print(T& seq)
-{
-  MPI_Barrier(MPI_COMM_WORLD);
-  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
-  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-  for (int i = 0; i < mpi_size; i++)
-  {
-    if (mpi_rank == i)
-    {
-      int n = seq.size();
-      for (int j = 0; j < n; j++)
-        std::cout << seq[j] << " ";
-      std::cout << std::endl;
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-  }
-}
 //-----------------------------------------------------------------------------
 void local_to_global_impl(
     Eigen::Ref<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> global,
