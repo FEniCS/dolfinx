@@ -14,9 +14,21 @@
 using namespace dolfinx;
 using namespace dolfinx::io;
 
+namespace
+{
+herr_t attribute_iteration_function(hid_t, const char* name, const H5A_info_t*,
+                                    void* str)
+{
+  auto* s = (std::vector<std::string>*)str;
+  std::string attr_name(name);
+  s->push_back(name);
+  return 0;
+}
+} // namespace
+
 //-----------------------------------------------------------------------------
-hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
-                               const std::string mode, const bool use_mpi_io)
+hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string& filename,
+                               const std::string& mode, const bool use_mpi_io)
 {
   // Set parallel access with communicator
   const hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
@@ -73,22 +85,22 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
   return file_id;
 }
 //-----------------------------------------------------------------------------
-void HDF5Interface::close_file(const hid_t hdf5_file_handle)
+void HDF5Interface::close_file(const hid_t handle)
 {
-  if (H5Fclose(hdf5_file_handle) < 0)
+  if (H5Fclose(handle) < 0)
     throw std::runtime_error("Failed to close HDF5 file.");
 }
 //-----------------------------------------------------------------------------
-void HDF5Interface::flush_file(const hid_t hdf5_file_handle)
+void HDF5Interface::flush_file(const hid_t handle)
 {
-  if (H5Fflush(hdf5_file_handle, H5F_SCOPE_GLOBAL) < 0)
+  if (H5Fflush(handle, H5F_SCOPE_GLOBAL) < 0)
     throw std::runtime_error("Failed to flush HDF5 file.");
 }
 //-----------------------------------------------------------------------------
-std::string HDF5Interface::get_filename(hid_t hdf5_file_handle)
+std::string HDF5Interface::get_filename(hid_t handle)
 {
   // Get length of filename
-  const ssize_t length = H5Fget_name(hdf5_file_handle, nullptr, 0);
+  const ssize_t length = H5Fget_name(handle, nullptr, 0);
   if (length < 0)
     throw std::runtime_error("Failed to get HDF5 filename from handle.");
 
@@ -96,20 +108,19 @@ std::string HDF5Interface::get_filename(hid_t hdf5_file_handle)
   std::vector<char> name(length + 1);
 
   // Retrieve filename
-  if (H5Fget_name(hdf5_file_handle, name.data(), length + 1) < 0)
+  if (H5Fget_name(handle, name.data(), length + 1) < 0)
     throw std::runtime_error("Failed to get HDF5 filename from handle.");
 
   return std::string(name.begin(), name.end());
 }
 //-----------------------------------------------------------------------------
 const std::string
-HDF5Interface::get_attribute_type(const hid_t hdf5_file_handle,
-                                  const std::string dataset_path,
-                                  const std::string attribute_name)
+HDF5Interface::get_attribute_type(const hid_t handle,
+                                  const std::string& dataset_path,
+                                  const std::string& attribute_name)
 {
   // Open dataset or group by name
-  const hid_t dset_id
-      = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
+  const hid_t dset_id = H5Oopen(handle, dataset_path.c_str(), H5P_DEFAULT);
   if (dset_id < 0)
     throw std::runtime_error("Failed to open HDF5 dataset.");
 
@@ -170,13 +181,12 @@ HDF5Interface::get_attribute_type(const hid_t hdf5_file_handle,
   return attribute_type_description;
 }
 //-----------------------------------------------------------------------------
-void HDF5Interface::delete_attribute(const hid_t hdf5_file_handle,
-                                     const std::string dataset_path,
-                                     const std::string attribute_name)
+void HDF5Interface::delete_attribute(const hid_t handle,
+                                     const std::string& dataset_path,
+                                     const std::string& attribute_name)
 {
   // Open dataset or group by name
-  const hid_t dset_id
-      = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
+  const hid_t dset_id = H5Oopen(handle, dataset_path.c_str(), H5P_DEFAULT);
   if (dset_id < 0)
     throw std::runtime_error("Failed to open HDF5 dataset");
 
@@ -189,22 +199,12 @@ void HDF5Interface::delete_attribute(const hid_t hdf5_file_handle,
     throw std::runtime_error("Call to H5Oclose unsuccessful");
 }
 //-----------------------------------------------------------------------------
-herr_t HDF5Interface::attribute_iteration_function(hid_t, const char* name,
-                                                   const H5A_info_t*, void* str)
-{
-  auto* s = (std::vector<std::string>*)str;
-  std::string attr_name(name);
-  s->push_back(name);
-  return 0;
-}
-//-----------------------------------------------------------------------------
 const std::vector<std::string>
-HDF5Interface::list_attributes(const hid_t hdf5_file_handle,
-                               const std::string dataset_path)
+HDF5Interface::list_attributes(const hid_t handle,
+                               const std::string& dataset_path)
 {
   // Open dataset or group by name
-  const hid_t dset_id
-      = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
+  const hid_t dset_id = H5Oopen(handle, dataset_path.c_str(), H5P_DEFAULT);
   if (dset_id < 0)
     throw std::runtime_error("Failed to open HDF5 dataset");
 
@@ -224,13 +224,12 @@ HDF5Interface::list_attributes(const hid_t hdf5_file_handle,
   return out_string;
 }
 //-----------------------------------------------------------------------------
-bool HDF5Interface::has_attribute(const hid_t hdf5_file_handle,
-                                  const std::string dataset_path,
-                                  const std::string attribute_name)
+bool HDF5Interface::has_attribute(const hid_t handle,
+                                  const std::string& dataset_path,
+                                  const std::string& attribute_name)
 {
   // Open dataset or group by name
-  const hid_t dset_id
-      = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
+  const hid_t dset_id = H5Oopen(handle, dataset_path.c_str(), H5P_DEFAULT);
   if (dset_id < 0)
     throw std::runtime_error("Failed to open HDF5 dataset");
 
@@ -243,17 +242,16 @@ bool HDF5Interface::has_attribute(const hid_t hdf5_file_handle,
   if (H5Oclose(dset_id) < 0)
     throw std::runtime_error("Call to H5Oclose unsuccessful");
 
-  return (has_attr > 0);
+  return has_attr > 0;
 }
 //-----------------------------------------------------------------------------
-bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
-                              const std::string group_name)
+bool HDF5Interface::has_group(const hid_t handle, const std::string& group_name)
 {
   const hid_t lapl_id = H5Pcreate(H5P_LINK_ACCESS);
   if (lapl_id < 0)
     throw std::runtime_error("Failed to create HDF5 property list");
 
-  htri_t link_status = H5Lexists(hdf5_file_handle, group_name.c_str(), lapl_id);
+  htri_t link_status = H5Lexists(handle, group_name.c_str(), lapl_id);
   if (link_status < 0)
     throw std::runtime_error("Failed to check existence of HDF5 link in group");
 
@@ -266,9 +264,11 @@ bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
 
   H5O_info_t object_info;
 #if H5_VERSION_GE(1, 12, 0)
-  herr_t err = H5Oget_info_by_name(hdf5_file_handle, group_name.c_str(), &object_info, H5O_INFO_ALL, lapl_id);
+  herr_t err = H5Oget_info_by_name(handle, group_name.c_str(), &object_info,
+                                   H5O_INFO_ALL, lapl_id);
 #else
-  herr_t err = H5Oget_info_by_name(hdf5_file_handle, group_name.c_str(), &object_info, lapl_id);
+  herr_t err
+      = H5Oget_info_by_name(handle, group_name.c_str(), &object_info, lapl_id);
 #endif
   if (err < 0)
     throw std::runtime_error("Call to H5Oget_info_by_name unsuccessful");
@@ -276,18 +276,17 @@ bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
   if (H5Pclose(lapl_id) < 0)
     throw std::runtime_error("Call to H5Pclose unsuccessful");
 
-  return (object_info.type == H5O_TYPE_GROUP);
+  return object_info.type == H5O_TYPE_GROUP;
 }
 //-----------------------------------------------------------------------------
-bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
-                                const std::string dataset_path)
+bool HDF5Interface::has_dataset(const hid_t handle,
+                                const std::string& dataset_path)
 {
   const hid_t lapl_id = H5Pcreate(H5P_LINK_ACCESS);
   if (lapl_id < 0)
     throw std::runtime_error("Failed to create HDF5 property list");
 
-  const htri_t link_status
-      = H5Lexists(hdf5_file_handle, dataset_path.c_str(), lapl_id);
+  const htri_t link_status = H5Lexists(handle, dataset_path.c_str(), lapl_id);
   if (link_status < 0)
     throw std::runtime_error("Failed to check existence of HDF5 link in group");
 
@@ -297,13 +296,12 @@ bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
   return link_status;
 }
 //-----------------------------------------------------------------------------
-void HDF5Interface::add_group(const hid_t hdf5_file_handle,
-                              const std::string group_name)
+void HDF5Interface::add_group(const hid_t handle, const std::string& group_name)
 {
   std::string _group_name(group_name);
 
   // Cannot create the root level group
-  if (_group_name.size() == 0 || _group_name == "/")
+  if (_group_name.size() == 0 or _group_name == "/")
     return;
 
   // Prepend a slash if missing
@@ -317,11 +315,10 @@ void HDF5Interface::add_group(const hid_t hdf5_file_handle,
     pos++;
     pos = _group_name.find('/', pos);
     const std::string parent_name(_group_name, 0, pos);
-    if (!has_group(hdf5_file_handle, parent_name))
+    if (!has_group(handle, parent_name))
     {
-      const hid_t group_id_vis
-          = H5Gcreate2(hdf5_file_handle, parent_name.c_str(), H5P_DEFAULT,
-                       H5P_DEFAULT, H5P_DEFAULT);
+      const hid_t group_id_vis = H5Gcreate2(
+          handle, parent_name.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       if (group_id_vis < 0)
         throw std::runtime_error("Failed to add HDF5 group");
 
@@ -331,12 +328,11 @@ void HDF5Interface::add_group(const hid_t hdf5_file_handle,
   }
 }
 //-----------------------------------------------------------------------------
-int HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
-                                const std::string dataset_path)
+int HDF5Interface::dataset_rank(const hid_t handle,
+                                const std::string& dataset_path)
 {
   // Open dataset
-  const hid_t dset_id
-      = H5Dopen2(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
+  const hid_t dset_id = H5Dopen2(handle, dataset_path.c_str(), H5P_DEFAULT);
   if (dset_id < 0)
     throw std::runtime_error("");
 
@@ -360,12 +356,11 @@ int HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
-HDF5Interface::get_dataset_shape(const hid_t hdf5_file_handle,
-                                 const std::string dataset_path)
+HDF5Interface::get_dataset_shape(const hid_t handle,
+                                 const std::string& dataset_path)
 {
   // Open named dataset
-  const hid_t dset_id
-      = H5Dopen2(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
+  const hid_t dset_id = H5Dopen2(handle, dataset_path.c_str(), H5P_DEFAULT);
   if (dset_id < 0)
     throw std::runtime_error("Failed to open HDF5 dataset by name");
 
@@ -394,8 +389,8 @@ HDF5Interface::get_dataset_shape(const hid_t hdf5_file_handle,
   return std::vector<std::int64_t>(size.begin(), size.end());
 }
 //-----------------------------------------------------------------------------
-int HDF5Interface::num_datasets_in_group(const hid_t hdf5_file_handle,
-                                         const std::string group_name)
+int HDF5Interface::num_datasets_in_group(const hid_t handle,
+                                         const std::string& group_name)
 {
   // Get group info by name
   H5G_info_t group_info;
@@ -403,25 +398,20 @@ int HDF5Interface::num_datasets_in_group(const hid_t hdf5_file_handle,
   if (lapl_id < 0)
     throw std::runtime_error("Failed to create HDF5 property list");
 
-  if (H5Gget_info_by_name(hdf5_file_handle, group_name.c_str(), &group_info,
-                          lapl_id)
-      < 0)
-  {
+  if (H5Gget_info_by_name(handle, group_name.c_str(), &group_info, lapl_id) < 0)
     throw std::runtime_error("Call to H5Gget_info_by_name unsuccessful");
-  }
 
   return group_info.nlinks;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::string>
-HDF5Interface::dataset_list(const hid_t hdf5_file_handle,
-                            const std::string group_name)
+HDF5Interface::dataset_list(const hid_t handle, const std::string& group_name)
 {
   // List all member datasets of a group by name
   char namebuf[HDF5_MAXSTRLEN];
 
   // Open group by name group_name
-  hid_t group_id = H5Gopen2(hdf5_file_handle, group_name.c_str(), H5P_DEFAULT);
+  hid_t group_id = H5Gopen2(handle, group_name.c_str(), H5P_DEFAULT);
   if (group_id < 0)
     throw std::runtime_error("Failed to open HDF5 group by name");
 
@@ -446,22 +436,48 @@ HDF5Interface::dataset_list(const hid_t hdf5_file_handle,
   return list_of_datasets;
 }
 //-----------------------------------------------------------------------------
-void HDF5Interface::set_mpi_atomicity(const hid_t hdf5_file_handle,
-                                      const bool atomic)
+void HDF5Interface::set_mpi_atomicity(const hid_t handle, const bool atomic)
 {
 #ifdef H5_HAVE_PARALLEL
-  if (H5Fset_mpi_atomicity(hdf5_file_handle, atomic) < 0)
+  if (H5Fset_mpi_atomicity(handle, atomic) < 0)
     throw std::runtime_error("Setting the MPI atomicity flag failed");
 #endif
 }
 //-----------------------------------------------------------------------------
-bool HDF5Interface::get_mpi_atomicity(const hid_t hdf5_file_handle)
+bool HDF5Interface::get_mpi_atomicity(const hid_t handle)
 {
   hbool_t atomic = false;
 #ifdef H5_HAVE_PARALLEL
-  if (H5Fget_mpi_atomicity(hdf5_file_handle, &atomic) < 0)
+  if (H5Fget_mpi_atomicity(handle, &atomic) < 0)
     throw std::runtime_error("Getting the MPI atomicity flag failed");
 #endif
   return static_cast<bool>(atomic);
+}
+//-----------------------------------------------------------------------------
+std::string HDF5Interface::get_attribute_str(const hid_t attr_type,
+                                             const hid_t attr_id)
+{
+  // Check this attribute is a string
+  assert(H5Tget_class(attr_type) == H5T_STRING);
+
+  // Copy string type from HDF5 types and set length accordingly
+  const hid_t memtype = H5Tcopy(H5T_C_S1);
+  const int string_length = H5Tget_size(attr_type) + 1;
+  herr_t status = H5Tset_size(memtype, string_length);
+  assert(status != HDF5_FAIL);
+
+  // FIXME: messy
+
+  // Copy string value into temporary vector. std::vector::data can be
+  // copied into (std::string::data cannot)
+  std::vector<char> attribute_data(string_length);
+  status = H5Aread(attr_id, memtype, attribute_data.data());
+  assert(status != HDF5_FAIL);
+
+  // Close memory type
+  status = H5Tclose(memtype);
+  assert(status != HDF5_FAIL);
+
+  return attribute_data.data();
 }
 //-----------------------------------------------------------------------------
