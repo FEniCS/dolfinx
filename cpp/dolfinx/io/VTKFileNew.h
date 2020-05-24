@@ -33,10 +33,15 @@ class Mesh;
 namespace io
 {
 
-/// Output of meshes and functions in VTK format
+/// Output of meshes and functions in VTK/ParaView format. Isoparametric
+/// meshes of arbitrary degree are supported. For finite element
+/// functions, cell-based (DG0) and Lagrange (point-based) functions can
+/// be saved. For vertex-based functions the output must be
+/// isoparametic, i.e. the geometry and the finite element functions
+/// must be defined using the same basis.
 
-/// XML format is suitable for visualisation of higher order geometries.
-/// It is not suitable to checkpointing as it may decimate some data.
+/// This format if It is not suitable to checkpointing as it may
+/// decimate some data.
 
 class VTKFileNew
 {

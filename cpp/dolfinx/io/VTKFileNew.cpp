@@ -76,10 +76,10 @@ std::string eigen_to_string(const T& x, int precision)
 
 void write_mesh_vtu(const mesh::Mesh& mesh, std::string filename)
 {
+  // Extract some mesh data
   const mesh::Topology& topology = mesh.topology();
   const mesh::Geometry& geometry = mesh.geometry();
   const int tdim = topology.dim();
-
   const std::int32_t num_points
       = geometry.index_map()->size_local() + geometry.index_map()->num_ghosts();
   const std::int32_t num_cells = topology.index_map(tdim)->size_local()
@@ -157,6 +157,7 @@ void write_mesh_vtu(const mesh::Mesh& mesh, std::string filename)
     s << celltype << " ";
   type_node.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
+  // Save file
   xml.save_file(filename.c_str(), "  ");
 }
 } // namespace
