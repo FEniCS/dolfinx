@@ -8,6 +8,7 @@
 #include "cells.h"
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Function.h>
@@ -30,102 +31,32 @@ using namespace dolfinx::io;
 namespace
 {
 //-----------------------------------------------------------------------------
-int get_degree(const mesh::CellType& cell_type, int num_dofs)
-{
-  switch (cell_type)
-  {
-  case mesh::CellType::interval:
-    if (num_dofs == 2)
-      return 1;
-    else if (num_dofs == 3)
-      return 2;
-    break;
-  case mesh::CellType::triangle:
-    if (num_dofs == 3)
-      return 1;
-    else if (num_dofs == 6)
-      return 2;
-    break;
-  case mesh::CellType::quadrilateral:
-    if (num_dofs == 4)
-      return 1;
-    else if (num_dofs == 9)
-      return 2;
-    break;
-  case mesh::CellType::tetrahedron:
-    if (num_dofs == 4)
-      return 1;
-    else if (num_dofs == 10)
-      return 2;
-    break;
-  case mesh::CellType::hexahedron:
-    if (num_dofs == 8)
-      return 1;
-    else if (num_dofs == 27)
-      return 2;
-    break;
-  default:
-    throw std::runtime_error("Unknown cell type");
-  }
-
-  throw std::runtime_error("Cannot determine degree");
-}
-//-----------------------------------------------------------------------------
 // Get VTK cell type
-std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim,
-                              std::size_t cell_order)
+std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, int cell_dim)
 {
+
   // Get cell type
   mesh::CellType cell_type
       = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
 
-  // Determine VTK cell type
+  // Determine VTK cell type (Using arbitrary Lagrange elements)
+  // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
   switch (cell_type)
   {
-  case mesh::CellType::tetrahedron:
-    switch (cell_order)
-    {
-    case 1:
-      return 10;
-    default:
-      return 71;
-    }
-
-  case mesh::CellType::hexahedron:
-    switch (cell_order)
-    {
-    case 1:
-      return 12;
-    default:
-      return 72;
-    }
-  case mesh::CellType::quadrilateral:
-  {
-    switch (cell_order)
-    {
-    case 1:
-      return 9;
-    default:
-      return 70;
-    }
-  }
-  case mesh::CellType::triangle:
-  {
-    switch (cell_order)
-    {
-    case 1:
-      return 5;
-    default:
-      return 69;
-    }
-  }
-  case mesh::CellType::interval:
-    return 3;
   case mesh::CellType::point:
     return 1;
+  case mesh::CellType::interval:
+    return 68;
+  case mesh::CellType::triangle:
+    return 69;
+  case mesh::CellType::quadrilateral:
+    return 70;
+  case mesh::CellType::tetrahedron:
+    return 71;
+  case mesh::CellType::hexahedron:
+    return 72;
   default:
     throw std::runtime_error("Unknown cell type");
-    return 0;
   }
 }
 //----------------------------------------------------------------------------
@@ -180,11 +111,9 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
                       std::string filename)
 {
   const int num_cells = mesh.topology().index_map(cell_dim)->size_local();
-  const int degree = get_degree(mesh.geometry().cmap().cell_shape(),
-                                mesh.geometry().cmap().dof_layout().num_dofs());
 
   // Get VTK cell type
-  const std::int8_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim, degree);
+  const std::int8_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -227,12 +156,22 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     // elements)
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh.geometry().dofmap();
-    // FIXME: USe better way to get number of nods
+    // FIXME: Use better way to get number of nods
     num_nodes = x_dofmap.num_links(0);
 
     // Get map from VTK index i to DOLFIN index j
-    const std::vector<std::uint8_t> map = io::cells::transpose(
+    std::vector<std::uint8_t> map = io::cells::transpose(
         io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
+
+    // TODO: Remove when when paraview issue 19433 is resolved
+    // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
+    if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
+        and num_nodes == 27)
+    {
+      map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+             22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+    }
+
     for (int c = 0; c < x_dofmap.num_nodes(); ++c)
     {
       auto x_dofs = x_dofmap.links(c);
@@ -244,22 +183,19 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   }
   else
   {
-    // const int degree = mesh.geometry().cmap().dof_layout().degree();
-
-    if (degree > 1)
-      throw std::runtime_error("Higher order mesh entities not implemented.");
+    throw std::runtime_error(
+        "VTK outout for mesh_entities for dim<tdim is not implemented yet.");
 
     // Build a map from topology to geometry
     auto c_to_v = mesh.topology().connectivity(tdim, 0);
     assert(c_to_v);
-
     auto map = mesh.topology().index_map(0);
     assert(map);
     const std::int32_t num_mesh_vertices
         = map->size_local() + map->num_ghosts();
 
-    std::vector<std::int32_t> vertex_to_node(num_mesh_vertices);
     auto x_dofmap = mesh.geometry().dofmap();
+    std::vector<std::int32_t> vertex_to_node(num_mesh_vertices);
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
       auto vertices = c_to_v->links(c);
@@ -268,7 +204,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
         vertex_to_node[vertices[i]] = x_dofs(i);
     }
 
-    mesh::CellType e_type
+    const mesh::CellType e_type
         = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
     // FIXME : Need to implement re-mapping for higher order
     // geometries (aka line segments). CoordinateDofs needs to be
@@ -309,7 +245,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
 
   // Close file
   file.close();
-} // namespace
+}
 //-----------------------------------------------------------------------------
 
 } // namespace

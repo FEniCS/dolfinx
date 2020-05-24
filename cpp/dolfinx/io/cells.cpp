@@ -11,7 +11,6 @@
 #include <stdexcept>
 
 using namespace dolfinx;
-
 namespace
 {
 int cell_degree(mesh::CellType type, int num_nodes)
@@ -208,11 +207,6 @@ std::vector<std::uint8_t> vtk_hexahedron(int num_nodes)
   case 8:
     return {0, 4, 6, 2, 1, 5, 7, 3};
   case 27:
-    // // TODO: change permutation when paraview issue 19433 is resolved
-    // // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-    // return {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-    //         22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
-
     // This is the documented VTK ordering
     return {0,  9, 12, 3,  1,  10, 13, 4,  18, 15, 21, 6,  19, 16,
             22, 7, 2,  11, 14, 5,  8,  17, 20, 23, 24, 25, 26};
@@ -221,8 +215,68 @@ std::vector<std::uint8_t> vtk_hexahedron(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
+std::vector<std::uint8_t> gmsh_triangle(int num_nodes)
+{
+  switch (num_nodes)
+  {
+  case 3:
+    return {0, 1, 2};
+  case 6:
+    return {0, 1, 2, 5, 3, 4};
+  default:
+    throw std::runtime_error("Higher order GMSH triangle not supported");
+  }
+}
+//-----------------------------------------------------------------------------
+std::vector<std::uint8_t> gmsh_tetrahedron(int num_nodes)
+{
+  switch (num_nodes)
+  {
+  case 4:
+    return {0, 1, 2, 3};
+  case 10:
+    // NOTE: GMSH DOCUMENTATION IS WRONG, it would have the following
+    // permutation:
+    // return std::vector<std::uint8_t>{0, 1, 2, 3, 9, 6, 8, 7, 4, 5};
+    // This is the one returned by pygmsh
+    return {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
+  case 20:
+    return {0,  1,  2, 3, 14, 15, 8,  9,  13, 12,
+            11, 10, 5, 4, 7,  6,  19, 18, 17, 16};
+  default:
+    throw std::runtime_error("Higher order GMSH tetrahedron not supported");
+  }
+}
+//-----------------------------------------------------------------------------
+std::vector<std::uint8_t> gmsh_hexahedron(int num_nodes)
+{
+  switch (num_nodes)
+  {
+  case 8:
+    return {0, 4, 6, 2, 1, 5, 7, 3};
+  case 27:
+    return {0,  9, 12, 3, 1,  10, 13, 4,  18, 6,  2,  15, 11, 21,
+            14, 5, 19, 7, 16, 22, 24, 20, 8,  17, 23, 25, 26};
+  default:
+    throw std::runtime_error("Higher order GMSH hexahedron not supported");
+  }
+}
+//-----------------------------------------------------------------------------
+std::vector<std::uint8_t> gmsh_quadrilateral(int num_nodes)
+{
+  switch (num_nodes)
+  {
+  case 4:
+    return {0, 2, 3, 1};
+  case 9:
+    return {0, 3, 4, 1, 6, 5, 7, 2, 8};
+  case 16:
+    return {0, 4, 5, 1, 8, 12, 6, 7, 13, 9, 3, 2, 10, 14, 15, 11};
+  default:
+    throw std::runtime_error("Higher order GMSH quadrilateral not supported");
+  }
+}
 } // namespace
-
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
                                               int num_nodes)
@@ -248,6 +302,38 @@ std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
     break;
   case mesh::CellType::hexahedron:
     map = vtk_hexahedron(num_nodes);
+    break;
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+
+  return io::cells::transpose(map);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::uint8_t> io::cells::perm_gmsh(const mesh::CellType type,
+                                               const int num_nodes)
+{
+  std::vector<std::uint8_t> map;
+  switch (type)
+  {
+  case mesh::CellType::point:
+    map = {0};
+    break;
+  case mesh::CellType::interval:
+    map.resize(num_nodes);
+    std::iota(map.begin(), map.end(), 0);
+    break;
+  case mesh::CellType::triangle:
+    map = gmsh_triangle(num_nodes);
+    break;
+  case mesh::CellType::tetrahedron:
+    map = gmsh_tetrahedron(num_nodes);
+    break;
+  case mesh::CellType::quadrilateral:
+    map = gmsh_quadrilateral(num_nodes);
+    break;
+  case mesh::CellType::hexahedron:
+    map = gmsh_hexahedron(num_nodes);
     break;
   default:
     throw std::runtime_error("Unknown cell type.");

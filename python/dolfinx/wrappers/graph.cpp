@@ -50,57 +50,34 @@ void graph(py::module& m)
   m.def("compute_local_to_local",
         &dolfinx::graph::Partitioning::compute_local_to_local);
 
-  // TODO: Use macro to handle different types
+#define ADJACENCYLIST_MACRO(SCALAR, SCALAR_NAME)                               \
+  py::class_<dolfinx::graph::AdjacencyList<SCALAR>,                            \
+             std::shared_ptr<dolfinx::graph::AdjacencyList<SCALAR>>>(          \
+      m, "AdjacencyList_" #SCALAR_NAME, "Adjacency list")                    \
+      .def(py::init<std::int32_t>())                                           \
+      .def(py::init<const Eigen::Ref<const Eigen::Array<                       \
+               SCALAR, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&>())  \
+      .def(                                                                    \
+          "links",                                                             \
+          [](const dolfinx::graph::AdjacencyList<SCALAR>& self, int i) {       \
+            return self.links(i);                                              \
+          },                                                                   \
+          "Links (edges) of a node",                                           \
+          py::return_value_policy::reference_internal)                         \
+      .def("array", &dolfinx::graph::AdjacencyList<SCALAR>::array,             \
+           py::return_value_policy::reference_internal)                        \
+      .def("offsets", &dolfinx::graph::AdjacencyList<SCALAR>::offsets,         \
+           "Index to each node in the links array",                            \
+           py::return_value_policy::reference_internal)                        \
+      .def_property_readonly(                                                  \
+          "num_nodes", &dolfinx::graph::AdjacencyList<SCALAR>::num_nodes)      \
+      .def("__eq__", &dolfinx::graph::AdjacencyList<SCALAR>::operator==,       \
+           py::is_operator())                                                  \
+      .def("__repr__", &dolfinx::graph::AdjacencyList<SCALAR>::str)            \
+      .def("__len__", &dolfinx::graph::AdjacencyList<SCALAR>::num_nodes);
 
-  // dolfinx::graph::AdjacencyList class
-  py::class_<dolfinx::graph::AdjacencyList<std::int64_t>,
-             std::shared_ptr<dolfinx::graph::AdjacencyList<std::int64_t>>>(
-      m, "AdjacencyList64", "Adjacency list")
-      .def(py::init<std::int32_t>())
-      .def(py::init<const Eigen::Ref<
-               const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>&>())
-      .def(
-          "links",
-          [](const dolfinx::graph::AdjacencyList<std::int64_t>& self, int i) {
-            return self.links(i);
-          },
-          "Links (edges) of a node",
-          py::return_value_policy::reference_internal)
-      .def("array", &dolfinx::graph::AdjacencyList<std::int64_t>::array,
-           py::return_value_policy::reference_internal)
-      .def("offsets", &dolfinx::graph::AdjacencyList<std::int64_t>::offsets,
-           "Index to each node in the links array",
-           py::return_value_policy::reference_internal)
-      .def_property_readonly(
-          "num_nodes", &dolfinx::graph::AdjacencyList<std::int64_t>::num_nodes)
-      .def("__eq__", &dolfinx::graph::AdjacencyList<std::int64_t>::operator==,
-           py::is_operator())
-      .def("__repr__", &dolfinx::graph::AdjacencyList<std::int64_t>::str)
-      .def("__len__", &dolfinx::graph::AdjacencyList<std::int64_t>::num_nodes);
-
-  // dolfinx::graph::AdjacencyList class
-  py::class_<dolfinx::graph::AdjacencyList<std::int32_t>,
-             std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>>(
-      m, "AdjacencyList", "Adjacency list")
-      .def(py::init<std::int32_t>())
-      .def(
-          "links",
-          [](const dolfinx::graph::AdjacencyList<std::int32_t>& self, int i) {
-            return self.links(i);
-          },
-          "Links (edges) of a node",
-          py::return_value_policy::reference_internal)
-      .def("array", &dolfinx::graph::AdjacencyList<std::int32_t>::array,
-           "All edges", py::return_value_policy::reference_internal)
-      .def("offsets", &dolfinx::graph::AdjacencyList<std::int32_t>::offsets,
-           "Index to each node in the links array",
-           py::return_value_policy::reference_internal)
-      .def_property_readonly(
-          "num_nodes", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes)
-      .def("__eq__", &dolfinx::graph::AdjacencyList<std::int32_t>::operator==,
-           py::is_operator())
-      .def("__repr__", &dolfinx::graph::AdjacencyList<std::int32_t>::str)
-      .def("__len__", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes);
+  ADJACENCYLIST_MACRO(std::int64_t, int64);
+  ADJACENCYLIST_MACRO(std::int32_t, int32);
+#undef ADJACENCYLIST_MACRO
 }
 } // namespace dolfinx_wrappers

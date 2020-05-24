@@ -15,7 +15,7 @@ from mpi4py import MPI
 from sympy.vector import CoordSys3D, matrix_to_vector
 
 from dolfinx import Function, FunctionSpace
-from dolfinx.cpp.io import cell_perm_vtk
+from dolfinx.cpp.io import perm_vtk
 from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_scalar
 from dolfinx.io import XDMFFile
@@ -75,11 +75,11 @@ def sympy_scipy(points, nodes, L, H):
     ([0, 1, 2, 3, 4, 5, 6, 7], [0, 4, 3, 7, 1, 5, 2, 6], CellType.hexahedron)
 ])
 def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
-    p = cell_perm_vtk(cell_type, len(vtk))
+    p = perm_vtk(cell_type, len(vtk))
     cell_p = np.array(vtk)[p]
     assert (cell_p == dolfin).all()
 
-    p = np.argsort(cell_perm_vtk(cell_type, len(vtk)))
+    p = np.argsort(perm_vtk(cell_type, len(vtk)))
     cell_p = np.array(dolfin)[p]
     assert (cell_p == vtk).all()
 
@@ -103,7 +103,7 @@ def test_second_order_tri():
 
             cells = np.array([[0, 1, 3, 4, 8, 7],
                               [1, 2, 3, 5, 6, 8]])
-            cells = cells[:, cell_perm_vtk(CellType.triangle, cells.shape[1])]
+            cells = cells[:, perm_vtk(CellType.triangle, cells.shape[1])]
             mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], degree=2)
 
             def e2(x):
@@ -143,7 +143,7 @@ def xtest_third_order_tri():
                                [2 * L / 3, 2 * H / 3, 0]])            # 15
             cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 14],
                               [1, 2, 3, 12, 13, 10, 11, 7, 6, 15]])
-            cells = cells[:, cell_perm_vtk(CellType.triangle, cells.shape[1])]
+            cells = cells[:, perm_vtk(CellType.triangle, cells.shape[1])]
             mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], degree=3)
 
             def e2(x):
@@ -191,7 +191,7 @@ def xtest_fourth_order_tri():
 
             cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                               [1, 2, 3, 16, 17, 18, 19, 20, 21, 9, 8, 7, 22, 23, 24]])
-            cells = cells[:, cell_perm_vtk(CellType.triangle, cells.shape[1])]
+            cells = cells[:, perm_vtk(CellType.triangle, cells.shape[1])]
             mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], degree=4)
 
             def e2(x):
@@ -247,7 +247,7 @@ def scipy_one_cell(points, nodes):
 def test_nth_order_triangle(order):
     num_nodes = (order + 1) * (order + 2) / 2
     cells = np.array([range(int(num_nodes))])
-    cells = cells[:, cell_perm_vtk(CellType.triangle, cells.shape[1])]
+    cells = cells[:, perm_vtk(CellType.triangle, cells.shape[1])]
 
     if order == 1:
         points = np.array([[0.00000, 0.00000, 0.00000], [1.00000, 0.00000, 0.00000],
@@ -401,7 +401,7 @@ def test_second_order_quad(L, H, Z):
                        [L / 2, H / 2, 0],
                        [2 * L, 0, 0], [2 * L, H, Z]])
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8]])
-    cells = cells[:, cell_perm_vtk(CellType.quadrilateral, cells.shape[1])]
+    cells = cells[:, perm_vtk(CellType.quadrilateral, cells.shape[1])]
     mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells, [], degree=2)
 
     def e2(x):
@@ -454,7 +454,7 @@ def xtest_third_order_quad(L, H, Z):
     # Change to multiple cells when matthews dof-maps work for quads
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                       [1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
-    cells = cells[:, cell_perm_vtk(CellType.quadrilateral, cells.shape[1])]
+    cells = cells[:, perm_vtk(CellType.quadrilateral, cells.shape[1])]
     mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells, [])
 
     def e2(x):
@@ -518,7 +518,7 @@ def xtest_fourth_order_quad(L, H, Z):
     cells = np.array([[0, 4, 24, 20, 1, 2, 3, 9, 14, 19, 21, 22, 23, 5, 10, 15, 6, 7, 8, 11, 12, 13, 16, 17, 18],
                       [4, 28, 44, 24, 25, 26, 27, 32, 36, 40, 41, 42, 43, 9, 14, 19,
                        29, 30, 31, 33, 34, 35, 37, 38, 39]])
-    cells = cells[:, cell_perm_vtk(CellType.quadrilateral, cells.shape[1])]
+    cells = cells[:, perm_vtk(CellType.quadrilateral, cells.shape[1])]
     mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells, [], GhostMode.none)
 
     def e2(x):
@@ -538,7 +538,7 @@ def xtest_fourth_order_quad(L, H, Z):
 
 @skip_in_parallel
 @pytest.mark.parametrize('order', [2, 3])
-def xtest_gmsh_input_quad(order):
+def test_gmsh_input_quad(order):
     pygmsh = pytest.importorskip("pygmsh")
 
     # Parameterize test if gmsh gets wider support
@@ -564,9 +564,10 @@ def xtest_gmsh_input_quad(order):
                 cells[i, j] = msh.cells_dict[element][i, msh_to_dolfin[j]]
     else:
         # XDMF does not support higher order quads
-        cells = msh.cells_dict[element][:, cell_perm_vtk(CellType.quadrilateral, msh.cells_dict[element].shape[1])]
+        cells = msh.cells_dict[element][:, perm_vtk(CellType.quadrilateral, msh.cells_dict[element].shape[1])]
 
-    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, msh.points, cells, [], GhostMode.none)
+    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, msh.points, cells,
+                [], degree=order)
     surface = assemble_scalar(1 * dx(mesh))
 
     assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi * R * R, rel=1e-5)

@@ -10,6 +10,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
@@ -17,6 +18,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/utils.h>
 #include <map>
 
 using namespace dolfinx;
@@ -48,7 +50,7 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
   pugi::xml_attribute type_attr = topology_node.attribute("TopologyType");
   assert(type_attr);
 
-  const std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
+  const static std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
       = {{"polyvertex", {"point", 1}},
          {"polyline", {"interval", 1}},
          {"edge_3", {"interval", 2}},
@@ -57,11 +59,14 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
          {"tetrahedron", {"tetrahedron", 1}},
          {"tetrahedron_10", {"tetrahedron", 2}},
          {"quadrilateral", {"quadrilateral", 1}},
+         {"quadrilateral_9", {"quadrilateral", 2}},
+         {"quadrilateral_16", {"quadrilateral", 3}},
          {"hexahedron", {"hexahedron", 1}}};
 
   // Convert XDMF cell type string to DOLFINX cell type string
   std::string cell_type = type_attr.as_string();
-  boost::algorithm::to_lower(cell_type);
+  std::transform(cell_type.begin(), cell_type.end(), cell_type.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
   auto it = xdmf_to_dolfin.find(cell_type);
   if (it == xdmf_to_dolfin.end())
   {
@@ -297,11 +302,14 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
   static const std::map<mesh::CellType, std::map<int, std::string>> vtk_map = {
       {mesh::CellType::point, {{1, "PolyVertex"}}},
       {mesh::CellType::interval, {{2, "PolyLine"}, {3, "Edge_3"}}},
-      {mesh::CellType::triangle, {{3, "Triangle"}, {6, "Triangle_6"}}},
+      {mesh::CellType::triangle,
+       {{3, "Triangle"}, {6, "Triangle_6"}, {10, "Triangle_10"}}},
       {mesh::CellType::quadrilateral,
-       {{4, "Quadrilateral"}, {9, "Quadrilateral_9"}}},
+       {{4, "Quadrilateral"},
+        {9, "Quadrilateral_9"},
+        {16, "Quadrilateral_16"}}},
       {mesh::CellType::tetrahedron,
-       {{4, "Tetrahedron"}, {10, "Tetrahedron_10"}}},
+       {{4, "Tetrahedron"}, {10, "Tetrahedron_10"}, {20, "Tetrahedron_20"}}},
       {mesh::CellType::hexahedron, {{8, "Hexahedron"}, {27, "Hexahedron_27"}}}};
 
   // Get cell family
@@ -315,5 +323,229 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
     throw std::runtime_error("Could not find VTK string for cell order.");
 
   return cell_str->second;
+}
+//-----------------------------------------------------------------------------
+std::pair<
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::vector<std::int32_t>>
+xdmf_utils::extract_local_entities(
+    const mesh::Mesh& mesh, const int entity_dim,
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& entities,
+    const std::vector<std::int32_t>& values)
+{
+  if ((std::size_t)entities.rows() != values.size())
+    throw std::runtime_error("Number of entities and values must match");
+
+  // Get layout of dofs on 0th entity
+  const Eigen::Array<int, Eigen::Dynamic, 1> entity_layout
+      = mesh.geometry().cmap().dof_layout().entity_closure_dofs(entity_dim, 0);
+  assert(entity_layout.rows() == entities.cols());
+
+  auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
+  if (!c_to_v)
+    throw std::runtime_error("Missing cell-vertex connectivity.");
+
+  // Use ElementDofLayout of the cell to get vertex dof indices (local to a
+  // cell) i.e. find a map from local vertex index to associated local dof index
+  const int num_vertices_per_cell = c_to_v->num_links(0);
+  std::vector<int> cell_vertex_dofs(num_vertices_per_cell);
+  for (int i = 0; i < num_vertices_per_cell; ++i)
+  {
+    const Eigen::Array<int, Eigen::Dynamic, 1> local_index
+        = mesh.geometry().cmap().dof_layout().entity_dofs(0, i);
+    assert(local_index.rows() == 1);
+    cell_vertex_dofs[i] = local_index[0];
+  }
+
+  // Find map from entity vertex to local (wrt. dof numbering on the entity) dof
+  // number E.g. if there are dofs on entity [0 3 6 7 9] and dofs 3 and 7 belong
+  // to vertices, then this produces map [1, 3]
+  std::vector<int> entity_vertex_dofs;
+  for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
+  {
+    const auto* it = std::find(entity_layout.data(),
+                               entity_layout.data() + entity_layout.rows(),
+                               cell_vertex_dofs[i]);
+    if (it != (entity_layout.data() + entity_layout.rows()))
+      entity_vertex_dofs.push_back(std::distance(entity_layout.data(), it));
+  }
+
+  const mesh::CellType entity_type
+      = mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim);
+  const int num_vertices_per_entity = mesh::cell_num_entities(entity_type, 0);
+  assert(entity_vertex_dofs.size() == (std::size_t)num_vertices_per_entity);
+
+
+  // Throw away input global indices which do not belong to entity vertices
+  // This decreases the amount of data needed in parallel communication 
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      entities_vertices(entities.rows(), num_vertices_per_entity);
+  for (Eigen::Index e = 0; e < entities_vertices.rows(); ++e)
+  {
+    for (Eigen::Index i = 0; i < entities_vertices.cols(); ++i)
+      entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
+  }
+
+  // -------------------
+  // 1. Send this rank's global "input" nodes indices to the
+  //    'postmaster' rank, and receive global "input" nodes for which
+  //    this rank is the postmaster
+
+  // Get "input" global node indices (as in the input file before any
+  // internal re-ordering)
+  const std::vector<std::int64_t>& nodes_g
+      = mesh.geometry().input_global_indices();
+
+  // Send input global indices to 'post master' rank, based on input
+  // global index value
+  const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
+  const MPI_Comm comm = mesh.mpi_comm();
+  const int comm_size = MPI::size(comm);
+  // NOTE: could make this int32_t be sending: index <- index - dest_rank_offset
+  std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
+  for (std::int64_t node : nodes_g)
+  {
+    // TODO: Optimise this call by adding 'vectorised verion of
+    //       MPI::index_owner
+    // Figure out which process is the postmaster for the input global index
+    const std::int32_t p
+        = dolfinx::MPI::index_owner(comm_size, node, num_nodes_g);
+    nodes_g_send[p].push_back(node);
+  }
+
+  // Send/receive
+  const graph::AdjacencyList<std::int64_t> nodes_g_recv
+      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
+
+  // -------------------
+  // 2. Send the entity key (nodes list) and tag to the postmaster based
+  //    on the lowest index node in the entity 'key'
+  //
+  //    NOTE: Stage 2 doesn't depend on the data received in Step 1, so
+  //    data (i) the communication could be combined, or (ii) the
+  //    communication in Step 1 could be make non-blocking.
+
+  std::vector<std::vector<std::int64_t>> entities_send(comm_size);
+  std::vector<std::vector<std::int32_t>> values_send(comm_size);
+  std::vector<std::int64_t> entity(num_vertices_per_entity);
+  for (std::int32_t e = 0; e < entities_vertices.rows(); ++e)
+  {
+    // Copy vertices for entity and sort
+    std::copy(entities_vertices.row(e).data(),
+              entities_vertices.row(e).data() + entities_vertices.cols(),
+              entity.begin());
+    std::sort(entity.begin(), entity.end());
+
+    // Determine postmaster based on lowest entity node
+    const std::int32_t p
+        = dolfinx::MPI::index_owner(comm_size, entity.front(), num_nodes_g);
+    entities_send[p].insert(entities_send[p].end(), entity.begin(),
+                            entity.end());
+    values_send[p].push_back(values[e]);
+  }
+
+  // TODO: Pack into one MPI call
+  const graph::AdjacencyList<std::int64_t> entities_recv = MPI::all_to_all(
+      comm, graph::AdjacencyList<std::int64_t>(entities_send));
+  const graph::AdjacencyList<std::int32_t> values_recv
+      = MPI::all_to_all(comm, graph::AdjacencyList<std::int32_t>(values_send));
+
+  // -------------------
+  // 3. As 'postmaster', send back the entity key (vertex list) and tag
+  //    value to ranks that possibly need the data. Do this based on the
+  //    first node index in the entity key.
+
+  // NOTE: Could: (i) use a std::unordered_multimap, or (ii) only send
+  // owned nodes to the postmaster and use map, unordered_map or
+  // std::vector<pair>>, followed by a neighbourhood all_to_all at the
+  // end.
+  //
+  // Build map from global node index to ranks that have the node
+  std::multimap<std::int64_t, int> node_to_rank;
+  for (int p = 0; p < nodes_g_recv.num_nodes(); ++p)
+  {
+    auto nodes = nodes_g_recv.links(p);
+    for (int i = 0; i < nodes.rows(); ++i)
+      node_to_rank.insert({nodes(i), p});
+  }
+
+  // Figure out which processes are owners of received nodes
+  std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
+  std::vector<std::vector<std::int32_t>> send_vals_owned(comm_size);
+
+  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>
+      _entities_recv(entities_recv.array().data(),
+                     entities_recv.array().rows() / num_vertices_per_entity,
+                     num_vertices_per_entity);
+  auto _values_recv = values_recv.array();
+  assert(_values_recv.rows() == _entities_recv.rows());
+  for (int e = 0; e < _entities_recv.rows(); ++e)
+  {
+    // Find ranks that have node0
+    auto [it0, it1] = node_to_rank.equal_range(_entities_recv(e, 0));
+    for (auto it = it0; it != it1; ++it)
+    {
+      const int p1 = it->second;
+      send_nodes_owned[p1].insert(
+          send_nodes_owned[p1].end(), _entities_recv.row(e).data(),
+          _entities_recv.row(e).data() + _entities_recv.cols());
+      send_vals_owned[p1].push_back(_values_recv(e));
+    }
+  }
+
+  // TODO: Pack into one MPI call
+  const graph::AdjacencyList<std::int64_t> recv_ents = MPI::all_to_all(
+      comm, graph::AdjacencyList<std::int64_t>(send_nodes_owned));
+  const graph::AdjacencyList<std::int32_t> recv_vals = MPI::all_to_all(
+      comm, graph::AdjacencyList<std::int32_t>(send_vals_owned));
+
+  // -------------------
+  // 4. From the received (key, value) data, determine which keys
+  //    (entities) are on this process.
+
+  // TODO: Rather than using std::map<std::vector<std::int64_t>,
+  //       std::int32_t>, use a rectangular Eigen::Array to avoid the
+  //       cost of std::vector<std::int64_t> allocations, and sort the
+  //       Array by row.
+  //
+  // TODO: We have already received possibly tagged entities from other
+  //       ranks, so we could use the received data to avoid creating
+  //       the std::map for *all* entities and just for candidate
+  //       entities.
+
+  // Build map from input global indices to local vertex numbers
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  std::map<std::int64_t, std::int32_t> igi_to_vertex;
+
+  for (int c = 0; c < c_to_v->num_nodes(); ++c)
+  {
+    auto vertices = c_to_v->links(c);
+    auto x_dofs = x_dofmap.links(c);
+    for (int v = 0; v < vertices.rows(); ++v)
+      igi_to_vertex[nodes_g[x_dofs[cell_vertex_dofs[v]]]] = vertices[v];
+  }
+
+  // Apply map and obtain entities defined with local vertex numbers
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      entities_local(recv_ents.array().rows() / num_vertices_per_entity,
+                     num_vertices_per_entity);
+
+  std::vector<std::int32_t> values_new(recv_vals.array().data(),
+                                       recv_vals.array().data()
+                                           + recv_vals.array().rows());
+  assert(recv_vals.array().rows() == entities_local.rows());
+
+  for (Eigen::Index e = 0; e < entities_local.rows(); ++e)
+  {
+    for (Eigen::Index i = 0; i < entities_local.cols(); ++i)
+    {
+      entities_local(e, i)
+          = igi_to_vertex[recv_ents.array()[e * num_vertices_per_entity + i]];
+    }
+  }
+
+  return {entities_local, values_new};
 }
 //-----------------------------------------------------------------------------
