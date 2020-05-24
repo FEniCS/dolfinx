@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "VTKFileNew.h"
+#include "cells.h"
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -114,10 +115,28 @@ void write_mesh_vtu(const mesh::Mesh& mesh, std::string filename)
   connectivity_node.append_attribute("type") = "Int32";
   connectivity_node.append_attribute("Name") = "connectivity";
   connectivity_node.append_attribute("format") = "ascii";
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& connectivity
-      = x_dofmap.array();
-  connectivity_node.append_child(pugi::node_pcdata)
-      .set_value(eigen_to_string(connectivity, 0).c_str());
+
+  // Get map from VTK index i to DOLFIN index j
+  int num_nodes = geometry.cmap().dof_layout().num_dofs();
+
+  std::vector<std::uint8_t> map = io::cells::transpose(
+      io::cells::perm_vtk(topology.cell_type(), num_nodes));
+  // TODO: Remove when when paraview issue 19433 is resolved
+  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
+  if (topology.cell_type() == mesh::CellType::hexahedron and num_nodes == 27)
+  {
+    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+  }
+
+  std::stringstream ss;
+  for (int c = 0; c < x_dofmap.num_nodes(); ++c)
+  {
+    auto cell = x_dofmap.links(c);
+    for (int i = 0; i < cell.size(); ++i)
+      ss << cell(map[i]) << " ";
+  }
+  connectivity_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
 
   pugi::xml_node offsets_node = cells_node.append_child("DataArray");
   offsets_node.append_attribute("type") = "Int32";
