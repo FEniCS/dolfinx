@@ -365,7 +365,7 @@ void XDMFFile::write_information(const std::string name,
   pugi::xml_node info_node = node.append_child("Information");
   assert(info_node);
   info_node.append_attribute("Name") = name.c_str();
-  info_node.append_child(pugi::node_pcdata).set_value(value.c_str());
+  info_node.append_attribute("Value") = value.c_str();
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
@@ -385,11 +385,8 @@ std::string XDMFFile::read_information(const std::string name,
                              + "' not found.");
 
   // Read data and trim any leading/trailing whitespace
-  pugi::xml_node data_node = info_node.first_child();
-  assert(data_node);
-  std::string data_str = data_node.value();
-
-  return data_str;
+  std::string value_str = info_node.attribute("Value").as_string();
+  return value_str;
 }
 //-----------------------------------------------------------------------------
 MPI_Comm XDMFFile::comm() const { return _mpi_comm.comm(); }
