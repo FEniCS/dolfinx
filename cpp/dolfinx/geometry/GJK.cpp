@@ -15,10 +15,13 @@ using namespace dolfinx;
 
 namespace
 {
+// Find the resulting sub-simplex of the input simplex which is nearest to the
+// origin. Also, return the vector from the origin to the nearest point of the
+// result.
 std::pair<Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>,
           Eigen::Vector3d>
-NearestSimplex(
-    const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& s)
+nearest_simplex(
+    const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor, 4, 3>& s)
 {
   if (s.rows() == 2)
   {
@@ -55,7 +58,7 @@ NearestSimplex(
         return {s, Eigen::Vector3d::Zero()};
 
       // The origin projection P faces BCD
-      return NearestSimplex(s.topRows(3));
+      return nearest_simplex(s.topRows(3));
     }
 
     // Test ACD, ABD and/or ABC.
@@ -69,7 +72,7 @@ NearestSimplex(
       {
         Eigen::Matrix<double, 3, 3, Eigen::RowMajor> M;
         M << s.row(facets[i][0]), s.row(facets[i][1]), s.row(facets[i][2]);
-        auto [snew, v] = NearestSimplex(M);
+        auto [snew, v] = nearest_simplex(M);
         const double q = v.squaredNorm();
         if (q < qmin)
         {
@@ -83,13 +86,13 @@ NearestSimplex(
   }
 
   assert(s.rows() == 3);
-  const Eigen::Vector3d& a = s.row(0);
-  const Eigen::Vector3d& b = s.row(1);
-  const Eigen::Vector3d& c = s.row(2);
+  const auto a = s.row(0);
+  const auto b = s.row(1);
+  const auto c = s.row(2);
   const double ab2 = (a - b).squaredNorm();
   const double ac2 = (a - c).squaredNorm();
   const double bc2 = (b - c).squaredNorm();
-  const double lm[3]
+  const std::array<double, 3> lm
       = {a.dot(a - b) / ab2, a.dot(a - c) / ac2, b.dot(b - c) / bc2};
 
   // Calculate triangle ABC
@@ -125,7 +128,7 @@ NearestSimplex(
   {
     if (lm[i] > 0 and lm[i] < 1)
     {
-      Eigen::Vector3d v
+      const Eigen::Vector3d v
           = s.row(f[i][0]) + lm[i] * (s.row(f[i][1]) - s.row(f[i][0]));
       const double qnorm = v.squaredNorm();
       if (qnorm < qmin)
@@ -159,7 +162,6 @@ support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
   }
   return bd.row(i);
 }
-
 } // namespace
 //-----------------------------------------------------
 Eigen::Vector3d geometry::gjk_vector(
@@ -201,7 +203,7 @@ Eigen::Vector3d geometry::gjk_vector(
     s.bottomRows(1) = w.transpose();
 
     // Find nearest subset of simplex
-    std::tie(s, v) = NearestSimplex(s);
+    std::tie(s, v) = nearest_simplex(s);
 
     // 2nd exit condition - intersecting or touching
     if (v.squaredNorm() < eps * eps)

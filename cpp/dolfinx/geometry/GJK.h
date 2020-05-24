@@ -13,9 +13,10 @@ namespace dolfinx
 namespace geometry
 {
 
-/// Calculate the distance between two convex bodies bd1 and bd2
-/// @param[in] p Body 1 list of vertices
-/// @param[in] q Body 2 list of vertices
+/// Calculate the distance between two convex bodies p and q, each defined by a
+/// set of points, using the Gilbert–Johnson–Keerthi (GJK) distance algorithm.
+/// @param[in] p Body 1 list of points
+/// @param[in] q Body 2 list of points
 /// @return shortest vector between bodies
 Eigen::Vector3d
 gjk_vector(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
