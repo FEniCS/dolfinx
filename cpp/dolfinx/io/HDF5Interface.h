@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <cstdint>
 #include <dolfinx/common/log.h>
 #include <hdf5.h>
@@ -80,35 +81,11 @@ public:
                                      const std::string& dataset_path,
                                      const std::array<std::int64_t, 2>& range);
 
-  /// Check for existence of group in HDF5 file
-  /// @param[in] handle HDF5 file handle
-  /// @param[in] group_name Name of the group to check
-  /// @return True if @p group_name is in the file
-  static bool has_group(const hid_t handle, const std::string& group_name);
-
   /// Check for existence of dataset in HDF5 file
   /// @param[in] handle HDF5 file handle
   /// @param[in] dataset_path Data set path
   /// @return True if @p dataset_path is in the file
   static bool has_dataset(const hid_t handle, const std::string& dataset_path);
-
-  /// Add group to HDF5 file
-  /// @param[in] handle HDF5 file handle
-  /// @param[in] dataset_path Data set path to add
-  static void add_group(const hid_t handle, const std::string& dataset_path);
-
-  /// Get dataset rank
-  /// @param[in] handle HDF5 file handle
-  /// @param[in] dataset_path Data set path
-  /// @return The rank of the data set
-  static int dataset_rank(const hid_t handle, const std::string& dataset_path);
-
-  /// Return number of data sets in a group
-  /// @param[in] handle HDF5 file handle
-  /// @param[in] group_name Group name
-  /// @return Number of data sets in the group
-  static int num_datasets_in_group(const hid_t handle,
-                                   const std::string& group_name);
 
   /// Get dataset shape (size of each dimension)
   /// @param[in] handle HDF5 file handle
@@ -116,15 +93,6 @@ public:
   /// @return The shape of the dataset (row-major)
   static std::vector<std::int64_t>
   get_dataset_shape(const hid_t handle, const std::string& dataset_path);
-
-  /// Return list all datasets in named group of file
-  static std::vector<std::string> dataset_list(const hid_t handle,
-                                               const std::string& group_name);
-
-  /// Get type of attribute
-  static const std::string
-  get_attribute_type(const hid_t handle, const std::string& dataset_path,
-                     const std::string& attribute_name);
 
   /// Get a named attribute of a dataset of known type
   template <typename T>
@@ -137,18 +105,9 @@ public:
                             const std::string& attribute_name,
                             const T& attribute_value);
 
-  /// Delete an attribute from a dataset or group
-  static void delete_attribute(const hid_t handle,
-                               const std::string& dataset_path,
-                               const std::string& attribute_name);
-
   /// Check if an attribute exists on a dataset or group
   static bool has_attribute(const hid_t handle, const std::string& dataset_path,
                             const std::string& attribute_name);
-
-  /// List attributes of dataset or group
-  static const std::vector<std::string>
-  list_attributes(const hid_t handle, const std::string& dataset_path);
 
   /// Set MPI atomicity. See
   /// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-SetMpiAtomicity
@@ -165,6 +124,11 @@ public:
   static bool get_mpi_atomicity(const hid_t handle);
 
 private:
+  /// Add group to HDF5 file
+  /// @param[in] handle HDF5 file handle
+  /// @param[in] dataset_path Data set path to add
+  static void add_group(const hid_t handle, const std::string& dataset_path);
+
   template <typename T>
   static void add_attribute_value(const hid_t dset_id,
                                   const std::string& attribute_name,
