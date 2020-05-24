@@ -144,27 +144,6 @@ std::string HDF5Interface::get_filename(hid_t handle)
   return std::string(name.begin(), name.end());
 }
 //-----------------------------------------------------------------------------
-bool HDF5Interface::has_attribute(const hid_t handle,
-                                  const std::string& dataset_path,
-                                  const std::string& attribute_name)
-{
-  // Open dataset or group by name
-  const hid_t dset_id = H5Oopen(handle, dataset_path.c_str(), H5P_DEFAULT);
-  if (dset_id < 0)
-    throw std::runtime_error("Failed to open HDF5 dataset");
-
-  // Check for attribute by name
-  htri_t has_attr = H5Aexists(dset_id, attribute_name.c_str());
-  if (has_attr < 0)
-    throw std::runtime_error("Failed to check HDF5 attribute existence");
-
-  // Close dataset or group
-  if (H5Oclose(dset_id) < 0)
-    throw std::runtime_error("Call to H5Oclose unsuccessful");
-
-  return has_attr > 0;
-}
-//-----------------------------------------------------------------------------
 bool HDF5Interface::has_dataset(const hid_t handle,
                                 const std::string& dataset_path)
 {
@@ -264,32 +243,5 @@ bool HDF5Interface::get_mpi_atomicity(const hid_t handle)
     throw std::runtime_error("Getting the MPI atomicity flag failed");
 #endif
   return static_cast<bool>(atomic);
-}
-//-----------------------------------------------------------------------------
-std::string HDF5Interface::get_attribute_str(const hid_t attr_type,
-                                             const hid_t attr_id)
-{
-  // Check this attribute is a string
-  assert(H5Tget_class(attr_type) == H5T_STRING);
-
-  // Copy string type from HDF5 types and set length accordingly
-  const hid_t memtype = H5Tcopy(H5T_C_S1);
-  const int string_length = H5Tget_size(attr_type) + 1;
-  herr_t status = H5Tset_size(memtype, string_length);
-  assert(status != HDF5_FAIL);
-
-  // FIXME: messy
-
-  // Copy string value into temporary vector. std::vector::data can be
-  // copied into (std::string::data cannot)
-  std::vector<char> attribute_data(string_length);
-  status = H5Aread(attr_id, memtype, attribute_data.data());
-  assert(status != HDF5_FAIL);
-
-  // Close memory type
-  status = H5Tclose(memtype);
-  assert(status != HDF5_FAIL);
-
-  return attribute_data.data();
 }
 //-----------------------------------------------------------------------------
