@@ -16,8 +16,8 @@ using namespace dolfinx;
 namespace
 {
 // Find the resulting sub-simplex of the input simplex which is nearest to the
-// origin. Also, return the vector from the origin to the nearest point of the
-// result.
+// origin. Also, return the shortest vector from the origin to the resulting
+// simplex.
 std::pair<Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>,
           Eigen::Vector3d>
 nearest_simplex(
@@ -47,8 +47,8 @@ nearest_simplex(
     B[1] = -s.row(3) * W1;
     B[2] = s.row(0) * W2;
     B[3] = -s.row(1) * W2;
-    bool signDetM = std::signbit(B.sum());
 
+    bool signDetM = std::signbit(B.sum());
     Eigen::Array<bool, 4, 1> f_inside = B.unaryExpr(
         [&signDetM](double b) { return (std::signbit(b) == signDetM); });
 
@@ -92,7 +92,7 @@ nearest_simplex(
   const double ab2 = (a - b).squaredNorm();
   const double ac2 = (a - c).squaredNorm();
   const double bc2 = (b - c).squaredNorm();
-  const std::array<double, 3> lm
+  const Eigen::Vector3d lm
       = {a.dot(a - b) / ab2, a.dot(a - c) / ac2, b.dot(b - c) / bc2};
 
   // Calculate triangle ABC
@@ -122,7 +122,7 @@ nearest_simplex(
   Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> smin
       = vmin.transpose();
 
-  // Check edges
+  // Check if edges are closer
   static const int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
   for (int i = 0; i < s.rows(); ++i)
   {
@@ -145,6 +145,7 @@ nearest_simplex(
   return {smin, vmin};
 }
 //-------------------------------------------------------------------------------
+// Support function, finds point p in bd which maximises p.v
 Eigen::Vector3d
 support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
         const Eigen::Vector3d& v)
@@ -175,7 +176,8 @@ Eigen::Vector3d geometry::gjk_vector(
 
   // Initialise vector and simplex
   Eigen::Vector3d v = p.row(0) - q.row(0);
-  Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> s = v.transpose();
+  Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor, 4, 3> s
+      = v.transpose();
 
   // Begin GJK iteration
   int k;
@@ -187,8 +189,10 @@ Eigen::Vector3d geometry::gjk_vector(
     // Break if any existing points are the same as w
     int m;
     for (m = 0; m < s.rows(); ++m)
+    {
       if (s(m, 0) == w[0] and s(m, 1) == w[1] and s(m, 2) == w[2])
         break;
+    }
     if (m != s.rows())
       break;
 
