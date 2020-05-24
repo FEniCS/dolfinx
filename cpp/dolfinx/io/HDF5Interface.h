@@ -42,7 +42,7 @@ public:
   static void close_file(const hid_t handle);
 
   /// Flush data to file to improve data integrity after interruption
-  /// @param[in] file_handle HDF5 file handle
+  /// @param[in] handle HDF5 file handle
   static void flush_file(const hid_t handle);
 
   /// Get filename
