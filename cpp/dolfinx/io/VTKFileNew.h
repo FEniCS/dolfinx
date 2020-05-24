@@ -52,7 +52,7 @@ public:
   void write(const mesh::Mesh& mesh, double time = 0.0);
 
   /// Output function::Function and timestep
-  void write(const function::Function& u, double t);
+  void write(const function::Function& u, double time = 0.0);
 
   /// Output function::Function
   // void write(const function::Function& u);

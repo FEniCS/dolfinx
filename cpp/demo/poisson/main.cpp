@@ -125,27 +125,27 @@ int main(int argc, char* argv[])
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
       MPI_COMM_WORLD, pt, {{32, 32}}, cmap, mesh::GhostMode::none));
 
-  // Save solution in VTK format
-  {
-    boost::timer::auto_cpu_timer t;
-    io::VTKFile tfile("mesh.pvd");
-    tfile.write(*mesh);
-  }
+  // // Save solution in VTK format
+  // {
+  //   boost::timer::auto_cpu_timer t;
+  //   io::VTKFile tfile("mesh.pvd");
+  //   tfile.write(*mesh);
+  // }
 
-  {
-    boost::timer::auto_cpu_timer t;
-    io::VTKFileNew tfile_new(MPI_COMM_WORLD, "test.pvd", "w");
-    tfile_new.write(*mesh);
-  }
-  // file_new.write(*mesh);
-  // file_new.write(*mesh);
-  // file.write(u);
+  // {
+  //   boost::timer::auto_cpu_timer t;
+  //   io::VTKFileNew tfile_new(MPI_COMM_WORLD, "test.pvd", "w");
+  //   tfile_new.write(*mesh);
+  // }
+  // // file_new.write(*mesh);
+  // // file_new.write(*mesh);
+  // // file.write(u);
 
-  {
-    boost::timer::auto_cpu_timer t;
-    io::XDMFFile tfile_new(MPI_COMM_WORLD, "test.xdmf", "w");
-    tfile_new.write_mesh(*mesh);
-  }
+  // {
+  //   boost::timer::auto_cpu_timer t;
+  //   io::XDMFFile tfile_new(MPI_COMM_WORLD, "test.xdmf", "w");
+  //   tfile_new.write_mesh(*mesh);
+  // }
 
   // exit(0);
 
@@ -253,10 +253,10 @@ int main(int argc, char* argv[])
   // Save solution in VTK format
   io::VTKFile file("u.pvd");
   file.write(u);
-  file.write(u);
+  // file.write(u);
 
-  // io::VTKFileNew file_new(MPI_COMM_WORLD, "test.pvd", "w");
-  // file_new.write(*mesh);
+  io::VTKFileNew file_new(MPI_COMM_WORLD, "test.pvd", "w");
+  file_new.write(u);
   // file_new.write(*mesh);
   // file_new.write(*mesh);
   // file.write(u);
