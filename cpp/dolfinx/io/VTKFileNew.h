@@ -8,15 +8,7 @@
 
 #include "pugixml.hpp"
 #include <dolfinx/common/MPI.h>
-#include <fstream>
 #include <string>
-#include <utility>
-#include <vector>
-
-// namespace pugi
-// {
-// class xml_node;
-// }
 
 namespace dolfinx
 {
@@ -58,6 +50,9 @@ public:
   /// @param[in] mesh The mesh to write to file
   /// @param[in] time Time parameter to associate with the @p mesh
   void write(const mesh::Mesh& mesh, double time = 0.0);
+
+  /// Output function::Function and timestep
+  void write(const function::Function& u, double t);
 
   /// Output function::Function
   // void write(const function::Function& u);
