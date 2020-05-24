@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "HDF5File.h"
 #include "pugixml.hpp"
 #include "xdmf_utils.h"
 #include <Eigen/Dense>
