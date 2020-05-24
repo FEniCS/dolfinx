@@ -20,11 +20,8 @@ namespace dolfinx
 
 namespace io
 {
-class HDF5File;
 
-/// This class wraps HDF5 function calls. HDF5 function calls should
-/// only appear in a member function of this class and not elsewhere
-/// in the library.
+/// This class provides an interface to some HDF5 functionality
 
 class HDF5Interface
 {

@@ -23,10 +23,12 @@ class HDF5File
 {
 
 public:
-  /// Constructor. file_mode should be "a" (append), "w" (write) or "r"
-  /// (read).
-  HDF5File(MPI_Comm comm, const std::string& filename,
-           const std::string& file_mode);
+  /// Open/create a HDF5 file
+  /// @param[in] comm MPI communicator for the file
+  /// @param[in] filename Name of the file
+  /// @param[in] mode Mode in which to open the file - "a" (append), "w"
+  ///   (write) or "r" (read).
+  HDF5File(MPI_Comm comm, const std::string& filename, const std::string& mode);
 
   /// Destructor
   ~HDF5File();

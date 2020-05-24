@@ -6,7 +6,6 @@
 
 #include "HDF5File.h"
 #include "HDF5Interface.h"
-#include <Eigen/Dense>
 #include <boost/filesystem.hpp>
 #include <fstream>
 #include <iomanip>
@@ -18,7 +17,7 @@ using namespace dolfinx::io;
 
 //-----------------------------------------------------------------------------
 HDF5File::HDF5File(MPI_Comm comm, const std::string& filename,
-                   const std::string& file_mode)
+                   const std::string& mode)
     : _hdf5_file_id(0), _mpi_comm(comm)
 {
   // See https://www.hdfgroup.org/hdf5-quest.html#gzero on zero for
@@ -29,7 +28,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string& filename,
   {
     const boost::filesystem::path path(filename);
     if (path.has_parent_path()
-        && !boost::filesystem::is_directory(path.parent_path()))
+        and !boost::filesystem::is_directory(path.parent_path()))
     {
       boost::filesystem::create_directories(path.parent_path());
       if (!boost::filesystem::is_directory(path.parent_path()))
@@ -53,7 +52,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string& filename,
   }
 #endif
   _hdf5_file_id
-      = HDF5Interface::open_file(_mpi_comm.comm(), filename, file_mode, mpi_io);
+      = HDF5Interface::open_file(_mpi_comm.comm(), filename, mode, mpi_io);
   assert(_hdf5_file_id > 0);
 }
 //-----------------------------------------------------------------------------
@@ -61,7 +60,6 @@ HDF5File::~HDF5File() { close(); }
 //-----------------------------------------------------------------------------
 void HDF5File::close()
 {
-  // Close HDF5 file
   if (_hdf5_file_id > 0)
     HDF5Interface::close_file(_hdf5_file_id);
   _hdf5_file_id = 0;

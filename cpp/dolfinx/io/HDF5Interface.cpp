@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "HDF5Interface.h"
-#include "HDF5File.h"
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/MPI.h>
 
