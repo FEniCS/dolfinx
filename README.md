@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/FEniCS/dolfinx.svg?style=svg)](https://circleci.com/gh/FEniCS/dolfinx)
 ![DOLFINX CI tests](https://github.com/FEniCS/dolfinx/workflows/DOLFINX%20CI%20tests/badge.svg)
-![Build and push Docker CI test image](https://github.com/FEniCS/dolfinx/workflows/Build%20and%20push%20Docker%20CI%20test%20image/badge.svg)
+![CI Docker images](https://github.com/FEniCS/dolfinx/workflows/CI%20Docker%20images/badge.svg)
 
 DOLFINX is a new version of DOLFIN. It is being actively developed and
 features may come and go as development proceeds.
