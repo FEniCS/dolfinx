@@ -1,7 +1,6 @@
 set(HEADERS_io
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_io.h
   ${CMAKE_CURRENT_SOURCE_DIR}/cells.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5File.h
   ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pugiconfig.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pugixml.hpp
@@ -18,7 +17,6 @@ set(HEADERS_io
 
 target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/cells.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5File.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pugixml.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.cpp

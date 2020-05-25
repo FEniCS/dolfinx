@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "HDF5File.h"
 #include "pugixml.hpp"
 #include "xdmf_utils.h"
 #include <Eigen/Dense>
@@ -47,10 +46,10 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
   const std::string format = format_attr.as_string();
   std::vector<T> data_vector;
   // Only read ASCII on process 0
-  const int rank = dolfinx::MPI::rank(comm);
+  const int mpi_rank = dolfinx::MPI::rank(comm);
   if (format == "XML")
   {
-    if (rank == 0)
+    if (mpi_rank == 0)
     {
       // Read data and trim any leading/trailing whitespace
       pugi::xml_node data_node = dataset_node.first_child();
@@ -96,7 +95,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     {
       if (shape_xml == shape_hdf5)
       {
-        range = dolfinx::MPI::local_range(rank, shape_hdf5[0],
+        range = dolfinx::MPI::local_range(mpi_rank, shape_hdf5[0],
                                           dolfinx::MPI::size(comm));
       }
       else if (!shape_xml.empty() and shape_hdf5.size() == 1)
@@ -113,7 +112,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
         }
 
         // Compute data range to read
-        range = dolfinx::MPI::local_range(rank, shape_xml[0],
+        range = dolfinx::MPI::local_range(mpi_rank, shape_xml[0],
                                           dolfinx::MPI::rank(comm));
         range[0] *= d;
         range[1] *= d;

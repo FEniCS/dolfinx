@@ -41,7 +41,6 @@ class MeshTags;
 
 namespace io
 {
-class HDF5File;
 
 /// Read and write mesh::Mesh, function::Function and other objects in
 /// XDMF.

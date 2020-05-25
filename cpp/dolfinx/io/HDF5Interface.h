@@ -7,128 +7,89 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <cstdint>
-#include <string>
-#include <vector>
-
-// Note: dolfin/common/MPI.h is included before hdf5.h to avoid the
-// MPICH_IGNORE_CXX_SEEK issue
-#include <dolfinx/common/MPI.h>
-
 #include <dolfinx/common/log.h>
 #include <hdf5.h>
+#include <mpi.h>
+#include <string>
+#include <vector>
 
 namespace dolfinx
 {
 
 namespace io
 {
-class HDF5File;
 
-/// This class wraps HDF5 function calls. HDF5 function calls should
-/// only appear in a member function of this class and not elsewhere
-/// in the library.
+/// This class provides an interface to some HDF5 functionality
 
 class HDF5Interface
 {
 #define HDF5_FAIL -1
 public:
   /// Open HDF5 and return file descriptor
-  static hid_t open_file(MPI_Comm mpi_comm, const std::string filename,
-                         const std::string mode, const bool use_mpi_io);
+  /// @param[in] mpi_comm MPI communicator
+  /// @param[in] filename Name of the HDF5 file to open
+  /// @param[in] mode Mode in which to open the file (w, r, a)
+  /// @param[in] use_mpi_io True if MPI-IO should be used
+  static hid_t open_file(MPI_Comm mpi_comm, const std::string& filename,
+                         const std::string& mode, const bool use_mpi_io);
 
   /// Close HDF5 file
-  static void close_file(const hid_t hdf5_file_handle);
+  /// @param[in] handle HDF5 file handle
+  static void close_file(const hid_t handle);
 
-  /// Flush data to file to improve data integrity after
-  /// interruption
-  static void flush_file(const hid_t hdf5_file_handle);
+  /// Flush data to file to improve data integrity after interruption
+  /// @param[in] handle HDF5 file handle
+  static void flush_file(const hid_t handle);
 
   /// Get filename
-  static std::string get_filename(hid_t hdf5_file_handle);
+  /// @param[in] handle HDF5 file handle
+  /// return The filename
+  static std::string get_filename(hid_t handle);
 
-  /// Write data to existing HDF file as defined by range blocks on
-  /// each process
-  /// data: data to be written, flattened into 1D vector
-  /// range: the local range on this processor
-  /// global_size: the global multidimensional shape of the array
-  /// use_mpio: whether using MPI or not
-  /// use_chunking: whether using chunking or not
+  /// Write data to existing HDF file as defined by range blocks on each
+  /// process
+  /// @param[in] handle HDF5 file handle
+  /// @param[in] dataset_path Path for the dataset in the HDF5 file
+  /// @param[in] data Data to be written, flattened into 1D vector
+  ///   (row-major storage)
+  /// @param[in] range The local range on this processor
+  /// @param[in] global_size The global shape shape of the array
+  /// @param[in] use_mpi_io True if MPI-IO should be used
+  /// @param[in] use_chunking True if chunking should be used
   template <typename T>
-  static void write_dataset(const hid_t file_handle,
-                            const std::string dataset_path, const T* data,
-                            const std::array<std::int64_t, 2> range,
-                            const std::vector<std::int64_t> global_size,
-                            bool use_mpio, bool use_chunking);
+  static void write_dataset(const hid_t handle, const std::string& dataset_path,
+                            const T* data,
+                            const std::array<std::int64_t, 2>& range,
+                            const std::vector<std::int64_t>& global_size,
+                            bool use_mpi_io, bool use_chunking);
 
-  /// Read data from a HDF5 dataset "dataset_path" as defined by
-  /// range blocks on each process range: the local range on this
-  /// processor data: a flattened 1D array of values. If range = {-1, -1},
-  /// then all data is read on this process.
+  /// Read data from a HDF5 dataset "dataset_path" as defined by range
+  /// blocks on each process.
+  ///
+  /// @param[in] handle HDF5 file handle
+  /// @param[in] dataset_path Path for the dataset in the HDF5 file
+  /// @param[in] range The local range on this processor
+  /// @return Flattened 1D array of values. If range = {-1, -1}, then
+  ///   all data is read on this process.
   template <typename T>
-  static std::vector<T> read_dataset(const hid_t file_handle,
-                                     const std::string dataset_path,
-                                     const std::array<std::int64_t, 2> range);
-
-  /// Check for existence of group in HDF5 file
-  static bool has_group(const hid_t hdf5_file_handle,
-                        const std::string group_name);
+  static std::vector<T> read_dataset(const hid_t handle,
+                                     const std::string& dataset_path,
+                                     const std::array<std::int64_t, 2>& range);
 
   /// Check for existence of dataset in HDF5 file
-  static bool has_dataset(const hid_t hdf5_file_handle,
-                          const std::string dataset_path);
-
-  /// Add group to HDF5 file
-  static void add_group(const hid_t hdf5_file_handle,
-                        const std::string dataset_path);
-
-  /// Get dataset rank
-  static int dataset_rank(const hid_t hdf5_file_handle,
-                          const std::string dataset_path);
-
-  /// Return number of data sets in a group
-  static int num_datasets_in_group(const hid_t hdf5_file_handle,
-                                   const std::string group_name);
+  /// @param[in] handle HDF5 file handle
+  /// @param[in] dataset_path Data set path
+  /// @return True if @p dataset_path is in the file
+  static bool has_dataset(const hid_t handle, const std::string& dataset_path);
 
   /// Get dataset shape (size of each dimension)
+  /// @param[in] handle HDF5 file handle
+  /// @param[in] dataset_path Dataset path
+  /// @return The shape of the dataset (row-major)
   static std::vector<std::int64_t>
-  get_dataset_shape(const hid_t hdf5_file_handle,
-                    const std::string dataset_path);
-
-  /// Return list all datasets in named group of file
-  static std::vector<std::string> dataset_list(const hid_t hdf5_file_handle,
-                                               const std::string group_name);
-
-  /// Get type of attribute
-  static const std::string get_attribute_type(const hid_t hdf5_file_handle,
-                                              const std::string dataset_path,
-                                              const std::string attribute_name);
-
-  /// Get a named attribute of a dataset of known type
-  template <typename T>
-  static T get_attribute(const hid_t hdf5_file_handle,
-                         const std::string dataset_path,
-                         const std::string attribute_name);
-
-  /// Add attribute to dataset or group
-  template <typename T>
-  static void
-  add_attribute(const hid_t hdf5_file_handle, const std::string dataset_path,
-                const std::string attribute_name, const T& attribute_value);
-
-  /// Delete an attribute from a dataset or group
-  static void delete_attribute(const hid_t hdf5_file_handle,
-                               const std::string dataset_path,
-                               const std::string attribute_name);
-
-  /// Check if an attribute exists on a dataset or group
-  static bool has_attribute(const hid_t hdf5_file_handle,
-                            const std::string dataset_path,
-                            const std::string attribute_name);
-
-  /// List attributes of dataset or group
-  static const std::vector<std::string>
-  list_attributes(const hid_t hdf5_file_handle, const std::string dataset_path);
+  get_dataset_shape(const hid_t handle, const std::string& dataset_path);
 
   /// Set MPI atomicity. See
   /// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-SetMpiAtomicity
@@ -136,36 +97,19 @@ public:
   /// https://www.open-mpi.org/doc/v2.0/man3/MPI_File_set_atomicity.3.php
   /// Writes must be followed by an MPI_Barrier on the communicator before
   /// any subsequent reads are guaranteed to return the same data.
-  static void set_mpi_atomicity(const hid_t hdf5_file_handle,
-                                const bool atomic);
+  static void set_mpi_atomicity(const hid_t handle, const bool atomic);
 
   /// Get MPI atomicity. See
   /// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-GetMpiAtomicity
   /// and
   /// https://www.open-mpi.org/doc/v2.0/man3/MPI_File_get_atomicity.3.php
-  static bool get_mpi_atomicity(const hid_t hdf5_file_handle);
+  static bool get_mpi_atomicity(const hid_t handle);
 
 private:
-  static herr_t attribute_iteration_function(hid_t loc_id, const char* name,
-                                             const H5A_info_t* info, void* str);
-
-  template <typename T>
-  static void add_attribute_value(const hid_t dset_id,
-                                  const std::string attribute_name,
-                                  const T& attribute_value);
-
-  template <typename T>
-  static void add_attribute_value(const hid_t dset_id,
-                                  const std::string attribute_name,
-                                  const std::vector<T>& attribute_value);
-
-  template <typename T>
-  static void get_attribute_value(const hid_t attr_type, const hid_t attr_id,
-                                  T& attribute_value);
-
-  template <typename T>
-  static void get_attribute_value(const hid_t attr_type, const hid_t attr_id,
-                                  std::vector<T>& attribute_value);
+  /// Add group to HDF5 file
+  /// @param[in] handle HDF5 file handle
+  /// @param[in] dataset_path Data set path to add
+  static void add_group(const hid_t handle, const std::string& dataset_path);
 
   // Return HDF5 data type
   template <typename T>
@@ -173,7 +117,6 @@ private:
   {
     throw std::runtime_error("Cannot get HDF5 primitive data type. "
                              "No specialised function for this data type");
-    return 0;
   }
 };
 /// @cond
@@ -209,16 +152,16 @@ inline hid_t HDF5Interface::hdf5_type<std::size_t>()
     return H5T_NATIVE_ULONG;
   else if (sizeof(std::size_t) == sizeof(unsigned int))
     return H5T_NATIVE_UINT;
+
   throw std::runtime_error("Cannot determine size of std::size_t. "
                            "std::size_t is not the same size as long or int");
-  return 0;
 }
 //---------------------------------------------------------------------------
 template <typename T>
 inline void HDF5Interface::write_dataset(
-    const hid_t file_handle, const std::string dataset_path, const T* data,
-    const std::array<std::int64_t, 2> range,
-    const std::vector<int64_t> global_size, bool use_mpi_io, bool use_chunking)
+    const hid_t file_handle, const std::string& dataset_path, const T* data,
+    const std::array<std::int64_t, 2>& range,
+    const std::vector<int64_t>& global_size, bool use_mpi_io, bool use_chunking)
 {
   // Data rank
   const std::size_t rank = global_size.size();
@@ -336,8 +279,8 @@ inline void HDF5Interface::write_dataset(
 template <typename T>
 inline std::vector<T>
 HDF5Interface::read_dataset(const hid_t file_handle,
-                            const std::string dataset_path,
-                            const std::array<std::int64_t, 2> range)
+                            const std::string& dataset_path,
+                            const std::array<std::int64_t, 2>& range)
 {
   // Open the dataset
   const hid_t dset_id
@@ -408,249 +351,6 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   assert(status != HDF5_FAIL);
 
   return data;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-inline T HDF5Interface::get_attribute(hid_t hdf5_file_handle,
-                                      const std::string dataset_path,
-                                      const std::string attribute_name)
-{
-  herr_t status;
-
-  // Open dataset or group by name
-  const hid_t dset_id
-      = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
-  assert(dset_id != HDF5_FAIL);
-
-  // Open attribute by name and get its type
-  const hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
-  assert(attr_id != HDF5_FAIL);
-  const hid_t attr_type = H5Aget_type(attr_id);
-  assert(attr_type != HDF5_FAIL);
-
-  // Specific code for each type of data template
-  T attribute_value;
-  get_attribute_value(attr_type, attr_id, attribute_value);
-
-  // Close attribute type
-  status = H5Tclose(attr_type);
-  assert(status != HDF5_FAIL);
-
-  // Close attribute
-  status = H5Aclose(attr_id);
-  assert(status != HDF5_FAIL);
-
-  // Close dataset or group
-  status = H5Oclose(dset_id);
-  assert(status != HDF5_FAIL);
-
-  return attribute_value;
-}
-//--------------------------------------------------------------------------
-template <typename T>
-inline void HDF5Interface::add_attribute(const hid_t hdf5_file_handle,
-                                         const std::string dataset_path,
-                                         const std::string attribute_name,
-                                         const T& attribute_value)
-{
-
-  // Open named dataset or group
-  hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
-  assert(dset_id != HDF5_FAIL);
-
-  // Check if attribute already exists and delete if so
-  htri_t has_attr = H5Aexists(dset_id, attribute_name.c_str());
-  assert(has_attr != HDF5_FAIL);
-  if (has_attr > 0)
-  {
-    herr_t status = H5Adelete(dset_id, attribute_name.c_str());
-    assert(status != HDF5_FAIL);
-  }
-
-  // Add attribute of appropriate type
-  add_attribute_value(dset_id, attribute_name, attribute_value);
-
-  // Close dataset or group
-  herr_t status = H5Oclose(dset_id);
-  assert(status != HDF5_FAIL);
-}
-//---------------------------------------------------------------------------
-// Specialised member functions (must be inlined to avoid link errors)
-//---------------------------------------------------------------------------
-
-// Template for simple types (e.g. size_t, double, int etc.) and
-// vectors of these
-// Specialization below for string
-template <typename T>
-inline void HDF5Interface::add_attribute_value(const hid_t dset_id,
-                                               const std::string attribute_name,
-                                               const T& attribute_value)
-{
-  // Create a scalar dataspace
-  hid_t dataspace_id = H5Screate(H5S_SCALAR);
-  assert(dataspace_id != HDF5_FAIL);
-
-  const hid_t h5type = hdf5_type<T>();
-
-  // Create attribute of type std::size_t
-  hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(), h5type,
-                                  dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
-  assert(attribute_id != HDF5_FAIL);
-
-  // Write attribute to dataset
-  herr_t status = H5Awrite(attribute_id, h5type, &attribute_value);
-  assert(status != HDF5_FAIL);
-
-  // Close dataspace
-  status = H5Sclose(dataspace_id);
-  assert(status != HDF5_FAIL);
-
-  // Close attribute
-  status = H5Aclose(attribute_id);
-  assert(status != HDF5_FAIL);
-}
-//---------------------------------------------------------------------------
-template <typename T>
-inline void
-HDF5Interface::add_attribute_value(const hid_t dset_id,
-                                   const std::string attribute_name,
-                                   const std::vector<T>& attribute_value)
-{
-
-  const hid_t h5type = hdf5_type<T>();
-
-  // Create a vector dataspace
-  const hsize_t dimsf = attribute_value.size();
-  const hid_t dataspace_id = H5Screate_simple(1, &dimsf, nullptr);
-  assert(dataspace_id != HDF5_FAIL);
-
-  // Create an attribute of type size_t in the dataspace
-  const hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(), h5type,
-                                        dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
-  assert(attribute_id != HDF5_FAIL);
-
-  // Write attribute to dataset
-  herr_t status = H5Awrite(attribute_id, h5type, attribute_value.data());
-  assert(status != HDF5_FAIL);
-
-  // Close dataspace
-  status = H5Sclose(dataspace_id);
-  assert(status != HDF5_FAIL);
-
-  // Close attribute
-  status = H5Aclose(attribute_id);
-  assert(status != HDF5_FAIL);
-}
-//---------------------------------------------------------------------------
-template <>
-inline void
-HDF5Interface::add_attribute_value(const hid_t dset_id,
-                                   const std::string attribute_name,
-                                   const std::string& attribute_value)
-{
-  // Create a scalar dataspace
-  const hid_t dataspace_id = H5Screate(H5S_SCALAR);
-  assert(dataspace_id != HDF5_FAIL);
-
-  // Copy basic string type from HDF5 types and set string length
-  const hid_t datatype_id = H5Tcopy(H5T_C_S1);
-  herr_t status = H5Tset_size(datatype_id, attribute_value.size());
-  assert(status != HDF5_FAIL);
-
-  // Create attribute in the dataspace with the given string
-  const hid_t attribute_id
-      = H5Acreate2(dset_id, attribute_name.c_str(), datatype_id, dataspace_id,
-                   H5P_DEFAULT, H5P_DEFAULT);
-  assert(attribute_id != HDF5_FAIL);
-
-  // Write attribute to dataset
-  status = H5Awrite(attribute_id, datatype_id, attribute_value.c_str());
-  assert(status != HDF5_FAIL);
-
-  // Close dataspace
-  status = H5Sclose(dataspace_id);
-  assert(status != HDF5_FAIL);
-
-  // Close string type
-  status = H5Tclose(datatype_id);
-  assert(status != HDF5_FAIL);
-
-  // Close attribute
-  status = H5Aclose(attribute_id);
-  assert(status != HDF5_FAIL);
-}
-//--------------------------------------------------------------------------
-template <typename T>
-inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
-                                               const hid_t attr_id,
-                                               T& attribute_value)
-{
-  const hid_t h5type = hdf5_type<T>();
-
-  // FIXME: more complete check of type
-  assert(H5Tget_class(attr_type) == H5Tget_class(h5type));
-
-  // Read value
-  herr_t status = H5Aread(attr_id, h5type, &attribute_value);
-  assert(status != HDF5_FAIL);
-}
-//---------------------------------------------------------------------------
-template <typename T>
-inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
-                                               const hid_t attr_id,
-                                               std::vector<T>& attribute_value)
-{
-  const hid_t h5type = hdf5_type<T>();
-
-  // FIXME: more complete check of type
-  assert(H5Tget_class(attr_type) == H5Tget_class(h5type));
-
-  // get dimensions of attribute array, check it is one-dimensional
-  const hid_t dataspace = H5Aget_space(attr_id);
-  assert(dataspace != HDF5_FAIL);
-
-  hsize_t cur_size[10];
-  hsize_t max_size[10];
-  const int ndims = H5Sget_simple_extent_dims(dataspace, cur_size, max_size);
-  assert(ndims == 1);
-
-  attribute_value.resize(cur_size[0]);
-
-  // Read value to vector
-  herr_t status = H5Aread(attr_id, h5type, attribute_value.data());
-  assert(status != HDF5_FAIL);
-
-  // Close dataspace
-  status = H5Sclose(dataspace);
-  assert(status != HDF5_FAIL);
-}
-//---------------------------------------------------------------------------
-template <>
-inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
-                                               const hid_t attr_id,
-                                               std::string& attribute_value)
-{
-  // Check this attribute is a string
-  assert(H5Tget_class(attr_type) == H5T_STRING);
-
-  // Copy string type from HDF5 types and set length accordingly
-  const hid_t memtype = H5Tcopy(H5T_C_S1);
-  const int string_length = H5Tget_size(attr_type) + 1;
-  herr_t status = H5Tset_size(memtype, string_length);
-  assert(status != HDF5_FAIL);
-
-  // FIXME: messy
-  // Copy string value into temporary vector std::vector::data can
-  // be copied into (std::string::data cannot)
-  std::vector<char> attribute_data(string_length);
-  status = H5Aread(attr_id, memtype, attribute_data.data());
-  assert(status != HDF5_FAIL);
-
-  attribute_value.assign(attribute_data.data());
-
-  // Close memory type
-  status = H5Tclose(memtype);
-  assert(status != HDF5_FAIL);
 }
 //---------------------------------------------------------------------------
 /// @endcond
