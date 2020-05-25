@@ -148,6 +148,7 @@ void add_point_data(const function::Function& u, pugi::xml_node& node)
           ss << values(i, j) << " ";
         ss << 0.0 << " ";
       }
+      field_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
     }
     else
     {
