@@ -54,6 +54,7 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
 
+    MPI.COMM_WORLD.Barrier()
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
         mesh2 = file.read_mesh()
 
@@ -72,6 +73,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
 
+    MPI.COMM_WORLD.Barrier()
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
         mesh2 = file.read_mesh(name="square")
 
@@ -89,6 +91,7 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
 
+    MPI.COMM_WORLD.Barrier()
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
         mesh2 = file.read_mesh()
 
@@ -121,6 +124,8 @@ def test_read_write_p2_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "tet10_mesh.xdmf")
     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as xdmf:
         xdmf.write_mesh(mesh)
+
+    MPI.COMM_WORLD.Barrier()
     with XDMFFile(mesh.mpi_comm(), filename, "r", encoding=encoding) as xdmf:
         mesh2 = xdmf.read_mesh()
 
