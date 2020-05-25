@@ -13,27 +13,6 @@ using namespace dolfinx::common;
 
 namespace
 {
-template <class T>
-void debug_print(T& seq)
-{
-  MPI_Barrier(MPI_COMM_WORLD);
-  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
-  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-  for (int i = 0; i < mpi_size; i++)
-  {
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (mpi_rank == i)
-    {
-      int n = seq.size();
-      std::cout << mpi_rank << " - ";
-      for (int j = 0; j < n; j++)
-        std::cout << seq[j] << " ";
-      std::cout << std::endl;
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-  }
-  MPI_Barrier(MPI_COMM_WORLD);
-}
 //-----------------------------------------------------------------------------
 void local_to_global_impl(
     Eigen::Ref<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> global,
@@ -280,8 +259,7 @@ IndexMap::IndexMap(
   MPI_Alltoall(num_edges_out_per_proc.data(), 1, MPI_INT32_T,
                num_edges_in_per_proc.data(), 1, MPI_INT32_T, _mpi_comm.comm());
 
-  // Store number of out- and in-edges, and ranks of neighbourhood
-  // processes
+  // Store number of out- and in-edges, and ranks of neighbourhood processes
   std::vector<std::int32_t> in_edges_num, out_edges_num;
   for (std::int32_t i = 0; i < mpi_size; ++i)
   {
@@ -296,10 +274,12 @@ IndexMap::IndexMap(
       _reverse_neighbours.push_back(i);
     }
   }
+
+  // OpenMPI workaround to empty vectors
   if (in_edges_num.empty())
-    in_edges_num.push_back(0);
+    in_edges_num.reserve(1);
   if (out_edges_num.empty())
-    out_edges_num.push_back(0);
+    out_edges_num.reserve(1);
 
   std::set_union(_forward_neighbours.begin(), _forward_neighbours.end(),
                  _reverse_neighbours.begin(), _reverse_neighbours.end(),
