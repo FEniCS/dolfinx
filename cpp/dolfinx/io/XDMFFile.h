@@ -169,6 +169,11 @@ public:
   std::string read_information(const std::string name,
                                const std::string xpath = "/Xdmf/Domain/");
 
+  /// Flush XML and HDF files
+  /// Call this explicitly after each write operation to assure integrity of
+  /// files in case of interruption
+  void flush() const;
+
   /// Get the MPI communicator
   /// @return The MPI communicator for the file object
   MPI_Comm comm() const;

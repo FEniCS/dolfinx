@@ -95,6 +95,7 @@ void io(py::module& m)
            py::arg("name"), py::arg("value"), py::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
            py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
+      .def("flush", &dolfinx::io::XDMFFile::flush)
       .def("comm", [](dolfinx::io::XDMFFile& self) {
         return MPICommWrapper(self.comm());
       });

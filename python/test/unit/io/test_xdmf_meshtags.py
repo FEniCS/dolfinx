@@ -59,6 +59,7 @@ def test_3d(tempdir, cell_type, encoding):
         file.write_meshtags(mt_lines)
         file.write_information("units", "mm")
 
+    MPI.COMM_WORLD.Barrier()
     with XDMFFile(comm, filename, "r", encoding=encoding) as file:
         mesh_in = file.read_mesh()
         mesh_in.topology.create_connectivity_all()
