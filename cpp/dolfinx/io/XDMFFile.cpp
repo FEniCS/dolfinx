@@ -119,7 +119,12 @@ XDMFFile::~XDMFFile() { close(); }
 //-----------------------------------------------------------------------------
 void XDMFFile::close()
 {
-  flush();
+  if (_file_mode == "a" or _file_mode == "w")
+  {
+    // Save XML file (on process 0 only)
+    if (MPI::rank(_mpi_comm.comm()) == 0)
+      _xml_doc->save_file(_filename.c_str(), "  ");
+  }
 
   if (_h5_id > 0)
     HDF5Interface::close_file(_h5_id);
