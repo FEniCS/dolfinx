@@ -296,6 +296,10 @@ IndexMap::IndexMap(
       _reverse_neighbours.push_back(i);
     }
   }
+  if (in_edges_num.empty())
+    in_edges_num.push_back(0);
+  if (out_edges_num.empty())
+    out_edges_num.push_back(0);
 
   std::set_union(_forward_neighbours.begin(), _forward_neighbours.end(),
                  _reverse_neighbours.begin(), _reverse_neighbours.end(),
@@ -348,19 +352,17 @@ IndexMap::IndexMap(
     out_indices[disp[np]] = _ghosts[j];
     disp[np] += 1;
   }
-  
+
   // debug_print(indices_in);
   debug_print(in_edges_num);
   debug_print(disp_in);
-  
+
   //  May have repeated shared indices with different processes
   std::vector<std::int32_t> indices_in(disp_in.back());
   MPI_Neighbor_alltoallv(out_indices.data(), out_edges_num.data(),
                          disp_out.data(), MPI_INT32_T, indices_in.data(),
                          in_edges_num.data(), disp_in.data(), MPI_INT32_T,
                          forward_comm);
-
-  
 
   _forward_indices = std::move(indices_in);
   for (auto& value : _forward_indices)
