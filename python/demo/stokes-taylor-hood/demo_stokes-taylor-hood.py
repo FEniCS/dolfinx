@@ -78,7 +78,7 @@ import ufl
 from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
-from dolfinx.io import XDMFFile
+from dolfinx.io import XDMFFile, VTKFile
 from dolfinx.mesh import locate_entities_boundary
 from ufl import div, dx, grad, inner
 
@@ -475,3 +475,6 @@ with XDMFFile(MPI.COMM_WORLD, "new_pressure.xdmf", "w") as pfile_xdmf:
     p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     ufile_xdmf.write_mesh(mesh)
     ufile_xdmf.write_function(p)
+
+file = VTKFile("test.pvd")
+file.write(U)

@@ -45,6 +45,9 @@ public:
   /// Destructor
   ~VTKFileNew();
 
+  /// Close file
+  void close();
+
   /// Write mesh to file. Supports arbitrary order Lagrange
   /// isoparametric cells.
   /// @param[in] mesh The mesh to write to file

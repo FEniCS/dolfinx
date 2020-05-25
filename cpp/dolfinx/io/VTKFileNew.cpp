@@ -13,6 +13,8 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <sstream>
+#include <string>
 
 // #include "VTKWriter.h"
 // #include "pugixml.hpp"
@@ -32,14 +34,27 @@
 // #include <dolfinx/mesh/MeshEntity.h>
 // #include <iomanip>
 // #include <ostream>
-// #include <sstream>
 // #include <vector>
 
 using namespace dolfinx;
-// using namespace dolfinx::io;
 
 namespace
 {
+
+/// Get counter string to include in filename
+std::string get_counter(const pugi::xml_node& node, const std::string& name)
+{
+  // Count number of entries
+  const size_t n = std::distance(node.children(name.c_str()).begin(),
+                                 node.children(name.c_str()).end());
+
+  // Compute counter string
+  const int num_digits = 6;
+  std::string counter = std::to_string(n);
+  return std::string(num_digits - counter.size(), '0').append(counter);
+}
+
+/// Get the VTK cell type integer
 std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim)
 {
   // Get cell type
@@ -66,6 +81,7 @@ std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim)
   }
 }
 
+/// Convert and Eigen array/matrix to a std::string
 template <typename T>
 std::string eigen_to_string(const T& x, int precision)
 {
@@ -76,6 +92,76 @@ std::string eigen_to_string(const T& x, int precision)
   return s.str();
 }
 
+void add_pvtu_mesh(pugi::xml_node& node)
+{
+  pugi::xml_node vertex_data_node = node.append_child("PPoints");
+  pugi::xml_node data_node = vertex_data_node.append_child("PDataArray");
+  data_node.append_attribute("type") = "Float64";
+  data_node.append_attribute("NumberOfComponents") = "3";
+
+  // pugi::xml_node cell_data_node = node.append_child("PCellData");
+  // data_node = cell_data_node.append_child("PDataArray");
+  // data_node.append_attribute("type") = "Int32";
+  // data_node.append_attribute("Name") = "connectivity";
+  // data_node = cell_data_node.append_child("PDataArray");
+  // data_node.append_attribute("type") = "Int32";
+  // data_node.append_attribute("Name") = "offsets";
+  // data_node = cell_data_node.append_child("PDataArray");
+  // data_node.append_attribute("type") = "Int8";
+  // data_node.append_attribute("Name") = "types";
+}
+
+//----------------------------------------------------------------------------
+/// At mesh point data to a pugixml node.
+void add_point_data(const function::Function& u, pugi::xml_node& node)
+{
+  const int rank = u.value_rank();
+  const int dim = u.value_size();
+
+  pugi::xml_node pointdata_node = node.append_child("PointData");
+
+  pugi::xml_node field_node = pointdata_node.append_child("DataArray");
+  field_node.append_attribute("type") = "Float64";
+  field_node.append_attribute("Name") = u.name.c_str();
+  field_node.append_attribute("format") = "ascii";
+
+  const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
+      values = u.compute_point_values();
+  if (rank == 0)
+  {
+    pointdata_node.append_attribute("Scalars") = u.name.c_str();
+    field_node.append_child(pugi::node_pcdata)
+        .set_value(eigen_to_string(values, 16).c_str());
+  }
+  else if (rank == 1)
+  {
+    pointdata_node.append_attribute("Vectors") = u.name.c_str();
+    field_node.append_attribute("NumberOfComponents") = 3;
+    if (dim == 2)
+    {
+      assert(values.cols() == 2);
+      std::stringstream ss;
+      for (int i = 0; i < values.rows(); ++i)
+      {
+        for (int j = 0; j < 2; ++j)
+          ss << values(i, j) << " ";
+        ss << 0.0 << " ";
+      }
+    }
+    else
+    {
+      assert(values.cols() == 3);
+      field_node.append_child(pugi::node_pcdata)
+          .set_value(eigen_to_string(values, 16).c_str());
+    }
+  }
+  else
+    throw std::runtime_error("Tensors not support yet");
+}
+//----------------------------------------------------------------------------
+/// At mesh geometry and topology data to a pugixml node. The function /
+/// adds the Points and Cells nodes to the input node/
 void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
 {
   const mesh::Topology& topology = mesh.topology();
@@ -85,6 +171,7 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
                                  + topology.index_map(tdim)->num_ghosts();
 
   // Add geometry (points)
+
   pugi::xml_node points_node = piece_node.append_child("Points");
   pugi::xml_node x_node = points_node.append_child("DataArray");
   x_node.append_attribute("type") = "Float64";
@@ -96,6 +183,7 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
       .set_value(eigen_to_string(x, 16).c_str());
 
   // Add topology(cells)
+
   pugi::xml_node cells_node = piece_node.append_child("Cells");
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
@@ -151,7 +239,6 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
 io::VTKFileNew::VTKFileNew(MPI_Comm comm, const std::string filename,
                            const std::string)
     : _filename(filename), _comm(comm)
-//, _counter(0)
 {
   pugi::xml_node vtk_node = _pvd_xml.append_child("VTKFile");
   vtk_node.append_attribute("type") = "Collection";
@@ -165,27 +252,26 @@ io::VTKFileNew::~VTKFileNew()
     _pvd_xml.save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
+void io::VTKFileNew::close()
+{
+  if (MPI::rank(_comm.comm()) == 0)
+    _pvd_xml.save_file(_filename.c_str(), "  ");
+}
+//----------------------------------------------------------------------------
 void io::VTKFileNew::write(const mesh::Mesh& mesh, double time)
 {
-  const int rank = MPI::rank(_comm.comm());
+  const int mpi_rank = MPI::rank(_comm.comm());
   boost::filesystem::path p(_filename);
 
-  // Write to the PVD file
+  // Get the PVD "Collection" node
   pugi::xml_node xml_collections
       = _pvd_xml.child("VTKFile").child("Collection");
   assert(xml_collections);
 
-  // Count number of data sets
-  const size_t n = std::distance(xml_collections.children("DataSet").begin(),
-                                 xml_collections.children("DataSet").end());
-
   // Compute counter string
-  const int num_digits = 6;
-  std::string counter_str = std::to_string(n);
-  counter_str
-      = std::string(num_digits - counter_str.size(), '0').append(counter_str);
+  const std::string counter_str = get_counter(xml_collections, "DataSet");
 
-  // Write VTU file
+  // Get mesh data for this rank
   const mesh::Topology& topology = mesh.topology();
   const mesh::Geometry& geometry = mesh.geometry();
   const int tdim = topology.dim();
@@ -194,63 +280,57 @@ void io::VTKFileNew::write(const mesh::Mesh& mesh, double time)
   const std::int32_t num_cells = topology.index_map(tdim)->size_local()
                                  + topology.index_map(tdim)->num_ghosts();
 
+  // Create a VTU XML object
   pugi::xml_document xml_vtu;
   pugi::xml_node vtk_node_vtu = xml_vtu.append_child("VTKFile");
   vtk_node_vtu.append_attribute("type") = "UnstructuredGrid";
   vtk_node_vtu.append_attribute("version") = "0.1";
   pugi::xml_node grid_node_vtu = vtk_node_vtu.append_child("UnstructuredGrid");
 
+  // Add "Piece" node and required metadata
   pugi::xml_node piece_node = grid_node_vtu.append_child("Piece");
   piece_node.append_attribute("NumberOfPoints") = num_points;
   piece_node.append_attribute("NumberOfCells") = num_cells;
+
+  // Add mesh data to "Piece" node
   add_mesh(mesh, piece_node);
 
+  // Save VTU XML to file
   boost::filesystem::path p_vtu = p.stem();
-  p_vtu += "_p" + std::to_string(rank) + "_" + counter_str;
+  p_vtu += "_p" + std::to_string(mpi_rank) + "_" + counter_str;
   p_vtu.replace_extension("vtu");
   xml_vtu.save_file(p_vtu.c_str(), "  ");
 
-  // Write PVTU file
+  // Create a PVTU XML object on rank 0
   boost::filesystem::path p_pvtu = p.stem();
   p_pvtu += counter_str;
   p_pvtu.replace_extension("pvtu");
-
-  pugi::xml_document xml_pvtu;
-  pugi::xml_node vtk_node = xml_pvtu.append_child("VTKFile");
-  vtk_node.append_attribute("type") = "PUnstructuredGrid";
-  vtk_node.append_attribute("version") = "0.1";
-  pugi::xml_node grid_node = vtk_node.append_child("PUnstructuredGrid");
-  grid_node.append_attribute("GhostLevel") = 0;
-
-  // Mesh geometry data
-  pugi::xml_node vertex_data_node = grid_node.append_child("PPoints");
-  pugi::xml_node data_node = vertex_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "Float64";
-  data_node.append_attribute("NumberOfComponents") = "3";
-
-  pugi::xml_node cell_data_node = grid_node.append_child("PCellData");
-  data_node = cell_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "Int32";
-  data_node.append_attribute("Name") = "connectivity";
-  data_node = cell_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "Int32";
-  data_node.append_attribute("Name") = "offsets";
-  data_node = cell_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "Int8";
-  data_node.append_attribute("Name") = "types";
-
-  const int mpi_size = MPI::size(_comm.comm());
-  for (int i = 0; i < mpi_size; ++i)
+  if (mpi_rank == 0)
   {
-    boost::filesystem::path p_vtu = p.stem();
-    p_vtu += "_p" + std::to_string(i) + "_" + counter_str;
-    p_vtu.replace_extension("vtu");
-    pugi::xml_node piece_node = grid_node.append_child("Piece");
-    piece_node.append_attribute("Source") = p_vtu.c_str();
-  }
+    pugi::xml_document xml_pvtu;
+    pugi::xml_node vtk_node = xml_pvtu.append_child("VTKFile");
+    vtk_node.append_attribute("type") = "PUnstructuredGrid";
+    vtk_node.append_attribute("version") = "0.1";
+    pugi::xml_node grid_node = vtk_node.append_child("PUnstructuredGrid");
+    grid_node.append_attribute("GhostLevel") = 0;
 
-  if (MPI::rank(_comm.comm()) == 0)
+    // Add mesh metadata to PVTU object
+    add_pvtu_mesh(grid_node);
+
+    // Add data for each process to the PVTU object
+    const int mpi_size = MPI::size(_comm.comm());
+    for (int i = 0; i < mpi_size; ++i)
+    {
+      boost::filesystem::path vtu = p.stem();
+      vtu += "_p" + std::to_string(i) + "_" + counter_str;
+      vtu.replace_extension("vtu");
+      pugi::xml_node piece_node = grid_node.append_child("Piece");
+      piece_node.append_attribute("Source") = vtu.c_str();
+    }
+
+    // Write PVTU file
     xml_pvtu.save_file(p_pvtu.c_str(), "  ");
+  }
 
   // Append PVD file
   pugi::xml_node dataset_node = xml_collections.append_child("DataSet");
@@ -258,32 +338,26 @@ void io::VTKFileNew::write(const mesh::Mesh& mesh, double time)
   dataset_node.append_attribute("part") = "0";
   dataset_node.append_attribute("file") = p_pvtu.c_str();
 }
-// //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 void io::VTKFileNew::write(const function::Function& u, double time)
 {
-  const int rank = MPI::rank(_comm.comm());
+  const int mpi_rank = MPI::rank(_comm.comm());
   boost::filesystem::path p(_filename);
 
+  // Get the mesh
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
   assert(mesh);
 
-  // Write to the PVD file
+  // Get the PVD "Collection" node
   pugi::xml_node xml_collections
       = _pvd_xml.child("VTKFile").child("Collection");
   assert(xml_collections);
 
-  // Count number of data sets
-  const size_t n = std::distance(xml_collections.children("DataSet").begin(),
-                                 xml_collections.children("DataSet").end());
-
   // Compute counter string
-  const int num_digits = 6;
-  std::string counter_str = std::to_string(n);
-  counter_str
-      = std::string(num_digits - counter_str.size(), '0').append(counter_str);
+  const std::string counter_str = get_counter(xml_collections, "DataSet");
 
-  // Prepare VTU node
+  // Get mesh data for this rank
   const mesh::Topology& topology = mesh->topology();
   const mesh::Geometry& geometry = mesh->geometry();
   const int tdim = topology.dim();
@@ -292,86 +366,68 @@ void io::VTKFileNew::write(const function::Function& u, double time)
   const std::int32_t num_cells = topology.index_map(tdim)->size_local()
                                  + topology.index_map(tdim)->num_ghosts();
 
+  // Create a VTU XML object
   pugi::xml_document xml_vtu;
   pugi::xml_node vtk_node_vtu = xml_vtu.append_child("VTKFile");
   vtk_node_vtu.append_attribute("type") = "UnstructuredGrid";
   vtk_node_vtu.append_attribute("version") = "0.1";
   pugi::xml_node grid_node_vtu = vtk_node_vtu.append_child("UnstructuredGrid");
 
+  // Add "Piece" node and required metadata
   pugi::xml_node piece_node = grid_node_vtu.append_child("Piece");
   piece_node.append_attribute("NumberOfPoints") = num_points;
   piece_node.append_attribute("NumberOfCells") = num_cells;
 
-  // Add mesh to VTU node
+  // Add mesh data to "Piece" node
   add_mesh(*mesh, piece_node);
 
   // Add cell/point data to VTU node
-  pugi::xml_node pointdata_node = piece_node.append_child("PointData");
-  pointdata_node.append_attribute("Scalars") = u.name.c_str();
-  pugi::xml_node field_node = pointdata_node.append_child("DataArray");
-  field_node.append_attribute("type") = "Float64";
-  field_node.append_attribute("Name") = u.name.c_str();
-  field_node.append_attribute("format") = "ascii";
+  add_point_data(u, piece_node);
 
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values = u.compute_point_values();
+  // Save VTU XML to file
+  boost::filesystem::path vtu = p.stem();
+  vtu += "_p" + std::to_string(mpi_rank) + "_" + counter_str;
+  vtu.replace_extension("vtu");
+  xml_vtu.save_file(vtu.c_str(), "  ");
 
-  field_node.append_child(pugi::node_pcdata)
-      .set_value(eigen_to_string(values, 16).c_str());
-
-  boost::filesystem::path p_vtu = p.stem();
-  p_vtu += "_p" + std::to_string(rank) + "_" + counter_str;
-  p_vtu.replace_extension("vtu");
-  xml_vtu.save_file(p_vtu.c_str(), "  ");
-
-  // Write PVTU file
+  // Create a PVTU XML object on rank 0
   boost::filesystem::path p_pvtu = p.stem();
   p_pvtu += counter_str;
   p_pvtu.replace_extension("pvtu");
-
-  pugi::xml_document xml_pvtu;
-  pugi::xml_node vtk_node = xml_pvtu.append_child("VTKFile");
-  vtk_node.append_attribute("type") = "PUnstructuredGrid";
-  vtk_node.append_attribute("version") = "0.1";
-  pugi::xml_node grid_node = vtk_node.append_child("PUnstructuredGrid");
-  grid_node.append_attribute("GhostLevel") = 0;
-
-  // Mesh geometry data
-  pugi::xml_node vertex_data_node = grid_node.append_child("PPoints");
-  pugi::xml_node data_node = vertex_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "Float64";
-  data_node.append_attribute("NumberOfComponents") = "3";
-
-  pugi::xml_node cell_data_node = grid_node.append_child("PCellData");
-  data_node = cell_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "Int32";
-  data_node.append_attribute("Name") = "connectivity";
-  data_node = cell_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "Int32";
-  data_node.append_attribute("Name") = "offsets";
-  data_node = cell_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "Int8";
-  data_node.append_attribute("Name") = "types";
-
-  pugi::xml_node pointdata_pnode = grid_node.append_child("PPointData");
-  pointdata_pnode.append_attribute("Scalars") = u.name.c_str();
-  data_node = pointdata_pnode.append_child("PDataArray");
-  data_node.append_attribute("type") = "Float64";
-  data_node.append_attribute("Name") = u.name.c_str();
-  data_node.append_attribute("NumberOfComponents") = 0;
-
-  const int mpi_size = MPI::size(_comm.comm());
-  for (int i = 0; i < mpi_size; ++i)
+  if (mpi_rank == 0)
   {
-    boost::filesystem::path p_vtu = p.stem();
-    p_vtu += "_p" + std::to_string(i) + "_" + counter_str;
-    p_vtu.replace_extension("vtu");
-    pugi::xml_node piece_node = grid_node.append_child("Piece");
-    piece_node.append_attribute("Source") = p_vtu.c_str();
-  }
+    pugi::xml_document xml_pvtu;
+    pugi::xml_node vtk_node = xml_pvtu.append_child("VTKFile");
+    vtk_node.append_attribute("type") = "PUnstructuredGrid";
+    vtk_node.append_attribute("version") = "0.1";
+    pugi::xml_node grid_node = vtk_node.append_child("PUnstructuredGrid");
+    grid_node.append_attribute("GhostLevel") = 0;
 
-  if (MPI::rank(_comm.comm()) == 0)
+    // Add mesh metadata to PVTU object
+    add_pvtu_mesh(grid_node);
+
+    // Add field data
+    pugi::xml_node pointdata_pnode = grid_node.append_child("PPointData");
+    pointdata_pnode.append_attribute("Scalars") = u.name.c_str();
+    pugi::xml_node data_node = pointdata_pnode.append_child("PDataArray");
+    data_node.append_attribute("type") = "Float64";
+    data_node.append_attribute("Name") = u.name.c_str();
+    data_node.append_attribute("NumberOfComponents") = 0;
+
+    // Add data for each process to the PVTU object
+    const int mpi_size = MPI::size(_comm.comm());
+    for (int i = 0; i < mpi_size; ++i)
+    {
+      boost::filesystem::path vtu = p.stem();
+      vtu += "_p" + std::to_string(i) + "_" + counter_str;
+      vtu.replace_extension("vtu");
+      pugi::xml_node piece_node = grid_node.append_child("Piece");
+      piece_node.append_attribute("Source") = vtu.c_str();
+    }
+
+    // Write PVTU file
     xml_pvtu.save_file(p_pvtu.c_str(), "  ");
+  }
 
   // Append PVD file
   pugi::xml_node dataset_node = xml_collections.append_child("DataSet");

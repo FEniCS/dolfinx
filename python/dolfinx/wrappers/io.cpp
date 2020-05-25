@@ -9,6 +9,7 @@
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/io/VTKFile.h>
+#include <dolfinx/io/VTKFileNew.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/io/xdmf_utils.h>
@@ -116,5 +117,29 @@ void io(py::module& m)
            py::overload_cast<const dolfinx::mesh::Mesh&>(
                &dolfinx::io::VTKFile::write),
            py::arg("mesh"));
+
+  // dolfinx::io::VTKFileNew
+  py::class_<dolfinx::io::VTKFileNew, std::shared_ptr<dolfinx::io::VTKFileNew>>(
+      m, "VTKFileNew")
+      .def(py::init([](const MPICommWrapper comm, const std::string& filename,
+                       const std::string& mode) {
+             return std::make_unique<dolfinx::io::VTKFileNew>(comm.get(),
+                                                              filename, mode);
+           }),
+           py::arg("comm"), py::arg("filename"), py::arg("mode"))
+      .def("__enter__",
+           [](std::shared_ptr<dolfinx::io::VTKFileNew>& self) { return self; })
+      .def("__exit__",
+           [](dolfinx::io::VTKFileNew& self, py::object exc_type,
+              py::object exc_value, py::object traceback) { self.close(); })
+      .def("close", &dolfinx::io::VTKFileNew::close)
+      .def("write",
+           py::overload_cast<const dolfinx::function::Function&, double>(
+               &dolfinx::io::VTKFileNew::write),
+           py::arg("u"), py::arg("t"))
+      .def("write",
+           py::overload_cast<const dolfinx::mesh::Mesh&, double>(
+               &dolfinx::io::VTKFileNew::write),
+           py::arg("mesh"), py::arg("t"));
 }
 } // namespace dolfinx_wrappers
