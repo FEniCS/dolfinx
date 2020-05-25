@@ -119,16 +119,11 @@ XDMFFile::~XDMFFile() { close(); }
 //-----------------------------------------------------------------------------
 void XDMFFile::close()
 {
+  flush();
+
   if (_h5_id > 0)
     HDF5Interface::close_file(_h5_id);
   _h5_id = -1;
-
-  if (_file_mode == "a" or _file_mode == "w")
-  {
-    // Save XML file (on process 0 only)
-    if (MPI::rank(_mpi_comm.comm()) == 0)
-      _xml_doc->save_file(_filename.c_str(), "  ");
-  }
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_mesh(const mesh::Mesh& mesh, const std::string xpath)
@@ -374,6 +369,19 @@ std::string XDMFFile::read_information(const std::string name,
   // Read data and trim any leading/trailing whitespace
   std::string value_str = info_node.attribute("Value").as_string();
   return value_str;
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::flush() const
+{
+  if (_file_mode == "a" or _file_mode == "w")
+  {
+    if (_h5_id > 0)
+      HDF5Interface::flush_file(_h5_id);
+
+    // Save XML file (on process 0 only)
+    if (MPI::rank(_mpi_comm.comm()) == 0)
+      _xml_doc->save_file(_filename.c_str(), "  ");
+  }
 }
 //-----------------------------------------------------------------------------
 MPI_Comm XDMFFile::comm() const { return _mpi_comm.comm(); }
