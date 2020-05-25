@@ -8,7 +8,6 @@
 #include "VTKWriter.h"
 #include "pugixml.hpp"
 #include <boost/cstdint.hpp>
-#include <boost/detail/endian.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>

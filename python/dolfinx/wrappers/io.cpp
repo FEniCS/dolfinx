@@ -8,7 +8,6 @@
 #include "caster_petsc.h"
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
-#include <dolfinx/io/HDF5File.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
@@ -96,6 +95,7 @@ void io(py::module& m)
            py::arg("name"), py::arg("value"), py::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
            py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
+      .def("flush", &dolfinx::io::XDMFFile::flush)
       .def("comm", [](dolfinx::io::XDMFFile& self) {
         return MPICommWrapper(self.comm());
       });
