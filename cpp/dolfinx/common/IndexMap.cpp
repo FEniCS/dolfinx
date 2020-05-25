@@ -13,6 +13,27 @@ using namespace dolfinx::common;
 
 namespace
 {
+template <class T>
+void debug_print(T& seq)
+{
+  MPI_Barrier(MPI_COMM_WORLD);
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  for (int i = 0; i < mpi_size; i++)
+  {
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (mpi_rank == i)
+    {
+      int n = seq.size();
+      std::cout << mpi_rank << " - ";
+      for (int j = 0; j < n; j++)
+        std::cout << seq[j] << " ";
+      std::cout << std::endl;
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+}
 //-----------------------------------------------------------------------------
 void local_to_global_impl(
     Eigen::Ref<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> global,
@@ -264,12 +285,12 @@ IndexMap::IndexMap(
   std::vector<std::int32_t> in_edges_num, out_edges_num;
   for (std::int32_t i = 0; i < mpi_size; ++i)
   {
-    if (num_edges_out_per_proc[i])
+    if (num_edges_out_per_proc[i] > 0)
     {
       out_edges_num.push_back(num_edges_out_per_proc[i]);
       _forward_neighbours.push_back(i);
     }
-    if (num_edges_in_per_proc[i])
+    if (num_edges_in_per_proc[i] > 0)
     {
       in_edges_num.push_back(num_edges_in_per_proc[i]);
       _reverse_neighbours.push_back(i);
@@ -287,15 +308,19 @@ IndexMap::IndexMap(
   // Create neighbourhood communicator. No communication is needed to
   // build the graph with complete adjacency information
   MPI_Comm forward_comm;
-
   MPI_Dist_graph_create_adjacent(
       _mpi_comm.comm(), _reverse_neighbours.size(), _reverse_neighbours.data(),
       MPI_UNWEIGHTED, _forward_neighbours.size(), _forward_neighbours.data(),
       MPI_UNWEIGHTED, MPI_INFO_NULL, false, &forward_comm);
 
+  // Get neighbour processes
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(forward_comm, &indegree, &outdegree,
+                                 &weighted);
+
   // Create displacement vectors
-  std::vector<std::int32_t> disp_out(_forward_neighbours.size() + 1, 0);
-  std::vector<std::int32_t> disp_in(_reverse_neighbours.size() + 1, 0);
+  std::vector<std::int32_t> disp_out(outdegree + 1, 0);
+  std::vector<std::int32_t> disp_in(indegree + 1, 0);
   std::partial_sum(out_edges_num.begin(), out_edges_num.end(),
                    disp_out.begin() + 1);
   std::partial_sum(in_edges_num.begin(), in_edges_num.end(),
@@ -323,13 +348,19 @@ IndexMap::IndexMap(
     out_indices[disp[np]] = _ghosts[j];
     disp[np] += 1;
   }
-
+  
+  // debug_print(indices_in);
+  debug_print(in_edges_num);
+  debug_print(disp_in);
+  
   //  May have repeated shared indices with different processes
   std::vector<std::int32_t> indices_in(disp_in.back());
-  MPI_Neighbor_alltoallv(
-      out_indices.data(), out_edges_num.data(), disp_out.data(), MPI_INT,
-      indices_in.data(), // out
-      in_edges_num.data(), disp_in.data(), MPI_INT, forward_comm);
+  MPI_Neighbor_alltoallv(out_indices.data(), out_edges_num.data(),
+                         disp_out.data(), MPI_INT32_T, indices_in.data(),
+                         in_edges_num.data(), disp_in.data(), MPI_INT32_T,
+                         forward_comm);
+
+  
 
   _forward_indices = std::move(indices_in);
   for (auto& value : _forward_indices)
