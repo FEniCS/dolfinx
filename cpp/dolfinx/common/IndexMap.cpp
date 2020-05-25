@@ -333,10 +333,6 @@ IndexMap::IndexMap(
     disp[np] += 1;
   }
 
-  // debug_print(indices_in);
-  debug_print(in_edges_num);
-  debug_print(disp_in);
-
   //  May have repeated shared indices with different processes
   std::vector<std::int32_t> indices_in(disp_in.back());
   MPI_Neighbor_alltoallv(out_indices.data(), out_edges_num.data(),
