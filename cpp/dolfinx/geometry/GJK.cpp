@@ -165,7 +165,7 @@ support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
 }
 } // namespace
 //-----------------------------------------------------
-Eigen::Vector3d geometry::gjk_vector(
+Eigen::Vector3d geometry::compute_distance_gjk(
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& q)
 {

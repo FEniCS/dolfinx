@@ -53,7 +53,7 @@ void geometry(py::module& m)
                           const dolfinx::geometry::BoundingBoxTree&>(
             &dolfinx::geometry::compute_collisions));
 
-  m.def("gjk_vector", &dolfinx::geometry::gjk_vector);
+  m.def("compute_distance_gjk", &dolfinx::geometry::compute_distance_gjk);
   m.def("squared_distance", &dolfinx::geometry::squared_distance);
   m.def("select_cells_from_candidates",
         &dolfinx::geometry::select_cells_from_candidates);

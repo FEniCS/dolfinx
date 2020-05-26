@@ -68,7 +68,7 @@ double compute_squared_distance_bbox(
 
 /// Compute squared distance from a given point to the nearest point on
 /// a cell (only first order convex cells are supported at this stage)
-/// Uses the GJK algorithm, see geometry::gjk_vector for details.
+/// Uses the GJK algorithm, see geometry::compute_distance_gjk for details.
 /// @param[in] entity MeshEntity
 /// @param[in] p Point
 /// @return shortest squared distance from p to entity

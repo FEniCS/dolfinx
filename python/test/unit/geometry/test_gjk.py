@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfinx.cpp.geometry import gjk_vector
+from dolfinx.cpp.geometry import compute_distance_gjk
 from scipy.spatial.transform import Rotation as R
 import numpy as np
 import pytest
@@ -31,7 +31,7 @@ def test_line_point_distance(delta):
     point_on_line = line[0] + 0.27 * (line[1] - line[0])
     normal = np.cross(line[0], line[1])
     point = point_on_line + delta * normal
-    distance = np.linalg.norm(gjk_vector(line, point))
+    distance = np.linalg.norm(compute_distance_gjk(line, point))
     actual_distance = distance_point_to_line_3D(
         line[0], line[1], point)
     print(distance, actual_distance)
@@ -45,7 +45,7 @@ def test_line_line_distance(delta):
     normal = np.cross(line[0], line[1])
     point = point_on_line + delta * normal
     line_2 = np.array([point, [2, 5, 6]], dtype=np.float64)
-    distance = np.linalg.norm(gjk_vector(line, line_2))
+    distance = np.linalg.norm(compute_distance_gjk(line, line_2))
     actual_distance = distance_point_to_line_3D(
         line[0], line[1], line_2[0])
     print(distance, actual_distance)
@@ -61,7 +61,7 @@ def test_tri_distance(delta):
     P2 = tri_1[1]
     point = tri_2[0]
     actual_distance = distance_point_to_line_3D(P1, P2, point)
-    distance = np.linalg.norm(gjk_vector(tri_1, tri_2))
+    distance = np.linalg.norm(compute_distance_gjk(tri_1, tri_2))
     print("Computed distance ", distance, "Actual distance ", actual_distance)
 
     assert(np.isclose(distance, actual_distance, atol=1e-15))
@@ -77,7 +77,7 @@ def test_quad_distance2d(delta):
     P2 = quad_1[3]
     point = quad_2[0]
     actual_distance = distance_point_to_line_3D(P1, P2, point)
-    distance = np.linalg.norm(gjk_vector(quad_1, quad_2))
+    distance = np.linalg.norm(compute_distance_gjk(quad_1, quad_2))
     print("Computed distance ", distance, "Actual distance ", actual_distance)
 
     assert(np.isclose(distance, actual_distance, atol=1e-15))
@@ -91,7 +91,7 @@ def test_tetra_distance_3d(delta):
                         [0.5, 0.3, -delta]], dtype=np.float64)
     actual_distance = distance_point_to_plane_3D(tetra_1[0], tetra_1[1],
                                                  tetra_1[2], tetra_2[3])
-    distance = np.linalg.norm(gjk_vector(tetra_1, tetra_2))
+    distance = np.linalg.norm(compute_distance_gjk(tetra_1, tetra_2))
     print("Computed distance ", distance, "Actual distance ", actual_distance)
 
     assert(np.isclose(distance, actual_distance, atol=1e-15))
@@ -106,7 +106,7 @@ def test_tetra_collision_3d(delta):
                         [0.5, 0.3, -delta]], dtype=np.float64)
     actual_distance = distance_point_to_plane_3D(tetra_1[0], tetra_1[1],
                                                  tetra_1[2], tetra_2[3])
-    distance = np.linalg.norm(gjk_vector(tetra_1, tetra_2))
+    distance = np.linalg.norm(compute_distance_gjk(tetra_1, tetra_2))
 
     if delta < 0:
         assert(np.isclose(distance, 0, atol=1e-15))
@@ -136,7 +136,7 @@ def test_hex_collision_3d(delta):
     hex_2[4:, :] = quad_2
     actual_distance = np.linalg.norm(
         np.array([1, 1, P0[2]], dtype=np.float64) - hex_2[0])
-    distance = np.linalg.norm(gjk_vector(hex_1, hex_2))
+    distance = np.linalg.norm(compute_distance_gjk(hex_1, hex_2))
 
     if P0[0] < 1:
         assert(np.isclose(distance, 0, atol=1e-15))
@@ -175,6 +175,6 @@ def test_cube_distance(delta, scale):
             cube1 = cubes[c1] + np.array([dx + delta, 0, 0])
             c0rot = r.apply(cube0)
             c1rot = r.apply(cube1)
-            distance = np.linalg.norm(gjk_vector(c0rot, c1rot))
+            distance = np.linalg.norm(compute_distance_gjk(c0rot, c1rot))
             print(distance, delta)
             assert(np.isclose(distance, delta))

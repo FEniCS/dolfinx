@@ -380,7 +380,7 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
     v.row(i) = geometry.node(dofs(local_vertex));
   }
 
-  return geometry::gjk_vector(p.transpose(), v).squaredNorm();
+  return geometry::compute_distance_gjk(p.transpose(), v).squaredNorm();
 }
 //-------------------------------------------------------------------------------
 std::vector<int>
