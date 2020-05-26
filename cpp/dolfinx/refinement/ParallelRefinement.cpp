@@ -403,7 +403,7 @@ mesh::Mesh ParallelRefinement::build_local(
                                 Eigen::RowMajor>>
       cells(cell_topology.data(), num_cells, num_cell_vertices);
 
-  mesh::Mesh mesh = mesh::create(
+  mesh::Mesh mesh = mesh::create_mesh(
       _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells),
       _mesh.geometry().cmap(), _new_vertex_coordinates, mesh::GhostMode::none);
 
@@ -435,7 +435,7 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
                                   Eigen::RowMajor>>
         cells(cell_topology.data(), num_local_cells - num_ghost_cells,
               num_vertices_per_cell);
-    return mesh::create(
+    return mesh::create_mesh(
         _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells),
         _mesh.geometry().cmap(), _new_vertex_coordinates, ghost_mode);
   }

@@ -13,7 +13,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import DirichletBC, Function, FunctionSpace, cpp, fem, geometry
+from dolfinx import DirichletBC, Function, FunctionSpace, fem, geometry, cpp
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
@@ -170,7 +170,7 @@ def test_manufactured_vector1(family, degree, filename, datadir):
 
     xp = np.array([0.33, 0.33, 0.0])
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
+    cells = geometry.compute_collisions_point(tree, xp)
 
     up = uh.eval(xp, cells[0])
     print("test0:", up)
@@ -231,8 +231,10 @@ def test_manufactured_vector2(family, degree, filename, datadir):
 
     xp = np.array([0.33, 0.33, 0.0])
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
-    up = uh.eval(xp, cells[0])
+    cell_candidates = geometry.compute_collisions_point(tree, xp)
+    cell = cpp.geometry.select_colliding_cells(mesh, cell_candidates, xp, 1)
+
+    up = uh.eval(xp, cell)
     print("test0:", up)
     print("test1:", xp[0]**degree)
 

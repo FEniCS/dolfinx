@@ -1,55 +1,51 @@
-=======
-DOLFINX
-=======
+# DOLFINX
 
-.. image:: https://circleci.com/gh/FEniCS/dolfinx.svg?style=shield
-    :target: https://circleci.com/gh/FEniCS/dolfinx
+[![CircleCI](https://circleci.com/gh/FEniCS/dolfinx.svg?style=shield)](https://circleci.com/gh/FEniCS/dolfinx)
+![DOLFINX CI tests](https://github.com/FEniCS/dolfinx/workflows/DOLFINX%20CI%20tests/badge.svg)
+![CI Docker images](https://github.com/FEniCS/dolfinx/workflows/CI%20Docker%20images/badge.svg)
 
-DOLFINX is a new version of DOLFIN. It is being actively developed, but
-is **not ready for production use**. New experimental features may come
-and go as development proceeds.
+DOLFINX is a new version of DOLFIN. It is being actively developed and
+features may come and go as development proceeds.
 
-DOLFINX is the computational backend of FEniCS and implements the FEniCS
-Problem Solving Environment in Python and C++.
+DOLFINX is the computational environment of
+[FEniCS](https://fenicsproject.org) and implements the FEniCS Problem
+Solving Environment in Python and C++.
 
-
-Documentation
-=============
+## Documentation
 
 Documentation can be viewed at:
 
 - https://fenicsproject.org/docs/dolfinx/dev/cpp/
 - https://fenicsproject.org/docs/dolfinx/dev/python/
 
+## Installation
 
-Installation
-============
-
-C++ core
---------
+### C++ core
 
 To build and install the C++ core, in the ``cpp/`` directory, run::
+```
+mkdir build
+cd build
+cmake ..
+make install
+```
 
-  mkdir build
-  cd build
-  cmake ..
-  make install
-
-Python interface
-----------------
+### Python interface
 
 To install the Python interface, first install the C++ core, and then
 in the ``python/`` directory run::
-
-  pip install .
-
+```
+pip install .
+```
 (you may need to use ``pip3``, depending on your system).
 
 For detailed instructions, see the file INSTALL.
 
+## Docker
 
-License
-=======
+Nightly Docker images are available at https://hub.docker.com/u/dolfinx.
+
+## License
 
 DOLFIN-X is free software: you can redistribute it and/or modify it
 under the terms of the GNU Lesser General Public License as published
@@ -65,9 +61,15 @@ You should have received a copy of the GNU Lesser General Public
 License along with DOLFIN-X. If not, see
 <http://www.gnu.org/licenses/>.
 
+## Contact
 
-Contact
-=======
+For questions about using DOLFIN-X, visit the FEniCS Discourse page:
+
+https://fenicsproject.discourse.group/
+
+For bug reports, visit the DOLFIN-X GitHub page:
+
+https://github.com/FEniCS/dolfinx
 
 For comments and requests, send an email to the FEniCS mailing list:
 
@@ -78,10 +80,3 @@ send an email to the FEniCS support mailing list:
 
 fenics-support@googlegroups.com
 
-For questions about using DOLFIN-X, visit the FEniCS Discourse page:
-
-https://fenicsproject.discourse.group/
-
-For bug reports, visit the DOLFIN-X GitHub page:
-
-https://github.com/FEniCS/dolfinx

@@ -48,6 +48,7 @@ void mesh(py::module& m)
   m.def("to_type", &dolfinx::mesh::to_type);
   m.def("is_simplex", &dolfinx::mesh::is_simplex);
 
+  m.def("cell_entity_type", &dolfinx::mesh::cell_entity_type);
   m.def("cell_dim", &dolfinx::mesh::cell_dim);
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
@@ -67,14 +68,15 @@ void mesh(py::module& m)
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
   m.def(
-      "create",
+      "create_mesh",
       [](const MPICommWrapper comm,
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
          const dolfinx::fem::CoordinateElement& element,
          const Eigen::Ref<const Eigen::Array<
              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
          dolfinx::mesh::GhostMode ghost_mode) {
-        return dolfinx::mesh::create(comm.get(), cells, element, x, ghost_mode);
+        return dolfinx::mesh::create_mesh(comm.get(), cells, element, x,
+                                          ghost_mode);
       },
       "Helper function for creating meshes.");
 
@@ -228,7 +230,18 @@ void mesh(py::module& m)
           "indices", [](dolfinx::mesh::MeshTags<SCALAR>& self) {               \
             return py::array_t<std::int32_t>(                                  \
                 self.indices().size(), self.indices().data(), py::none());     \
-          });
+          });                                                                  \
+                                                                               \
+  m.def("create_meshtags",                                                     \
+        [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,             \
+           const int dim,                                                      \
+           const dolfinx::graph::AdjacencyList<std::int32_t>& entities,        \
+           const py::array_t<SCALAR>& values) {                                \
+          py::buffer_info buf = values.request();                              \
+          std::vector<SCALAR> vals((SCALAR*)buf.ptr,                           \
+                                   (SCALAR*)buf.ptr + buf.size);               \
+          return dolfinx::mesh::create_meshtags(mesh, dim, entities, vals);    \
+        });
 
   MESHTAGS_MACRO(std::int8_t, int8);
   MESHTAGS_MACRO(int, int);

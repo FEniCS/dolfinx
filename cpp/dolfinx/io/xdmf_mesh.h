@@ -62,13 +62,17 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const hid_t h5_id, const std::string path_prefix,
                        const mesh::Geometry& geometry);
 
-/// Read Topology and Geometry arrays
-/// @returns ((cell type, degree), geometry, topology)
-std::tuple<
-    std::pair<mesh::CellType, int>,
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-read_mesh_data(MPI_Comm comm, const hid_t h5_id, const pugi::xml_node& node);
+/// Read Geometry data
+/// @returns geometry
+Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+read_geometry_data(MPI_Comm comm, const hid_t h5_id,
+                   const pugi::xml_node& node);
+
+/// Read Topology data
+/// @returns ((cell type, degree), topology)
+Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+read_topology_data(MPI_Comm comm, const hid_t h5_id,
+                   const pugi::xml_node& node);
 
 } // namespace io::xdmf_mesh
 } // namespace dolfinx

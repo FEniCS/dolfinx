@@ -13,7 +13,7 @@ from mpi4py import MPI
 
 import ufl
 from dolfinx import FunctionSpace, fem
-from dolfinx.mesh import create as create_mesh
+from dolfinx.mesh import create_mesh
 
 xfail = pytest.mark.xfail(strict=True)
 
