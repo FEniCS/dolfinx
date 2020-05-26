@@ -1,3 +1,9 @@
+# Copyright (C) 2020 Jørgen S. Dokken and Chris N. Richardson
+#
+# This file is part of DOLFINX (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
 from dolfinx.cpp.geometry import gjk_vector
 from scipy.spatial.transform import Rotation as R
 import numpy as np
