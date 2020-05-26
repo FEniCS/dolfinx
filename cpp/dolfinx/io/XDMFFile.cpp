@@ -118,13 +118,6 @@ XDMFFile::~XDMFFile() { close(); }
 //-----------------------------------------------------------------------------
 void XDMFFile::close()
 {
-  if (_file_mode == "a" or _file_mode == "w")
-  {
-    // Save XML file (on process 0 only)
-    if (MPI::rank(_mpi_comm.comm()) == 0)
-      _xml_doc->save_file(_filename.c_str(), "  ");
-  }
-
   if (_h5_id > 0)
     HDF5Interface::close_file(_h5_id);
   _h5_id = -1;
@@ -138,6 +131,10 @@ void XDMFFile::write_mesh(const mesh::Mesh& mesh, const std::string xpath)
 
   // Add the mesh Grid to the domain
   xdmf_mesh::add_mesh(_mpi_comm.comm(), node, _h5_id, mesh, mesh.name);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_geometry(const mesh::Geometry& geometry,
@@ -156,6 +153,10 @@ void XDMFFile::write_geometry(const mesh::Geometry& geometry,
   const std::string path_prefix = "/Geometry/" + name;
   xdmf_mesh::add_geometry_data(_mpi_comm.comm(), grid_node, _h5_id, path_prefix,
                                geometry);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
@@ -253,6 +254,10 @@ void XDMFFile::write_function(const function::Function& function,
 
   // Add the mesh Grid to the domain
   xdmf_function::add_function(_mpi_comm.comm(), function, t, grid_node, _h5_id);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
@@ -274,6 +279,10 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
   assert(geo_ref_node);
   xdmf_meshtags::add_meshtags(_mpi_comm.comm(), meshtags, grid_node, _h5_id,
                               meshtags.name);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t>
@@ -356,6 +365,10 @@ void XDMFFile::write_information(const std::string name,
   assert(info_node);
   info_node.append_attribute("Name") = name.c_str();
   info_node.append_attribute("Value") = value.c_str();
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 std::string XDMFFile::read_information(const std::string name,
@@ -373,19 +386,6 @@ std::string XDMFFile::read_information(const std::string name,
   // Read data and trim any leading/trailing whitespace
   std::string value_str = info_node.attribute("Value").as_string();
   return value_str;
-}
-//-----------------------------------------------------------------------------
-void XDMFFile::flush() const
-{
-  if (_file_mode == "a" or _file_mode == "w")
-  {
-    if (_h5_id > 0)
-      HDF5Interface::flush_file(_h5_id);
-
-    // Save XML file (on process 0 only)
-    if (MPI::rank(_mpi_comm.comm()) == 0)
-      _xml_doc->save_file(_filename.c_str(), "  ");
-  }
 }
 //-----------------------------------------------------------------------------
 MPI_Comm XDMFFile::comm() const { return _mpi_comm.comm(); }
