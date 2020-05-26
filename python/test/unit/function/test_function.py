@@ -11,14 +11,15 @@ import math
 import cffi
 import numpy as np
 import pytest
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
 
-import ufl
 import dolfinx
+import ufl
 from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
-                     UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
+                     UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
+                     geometry)
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 
 
 @pytest.fixture
@@ -171,9 +172,11 @@ def test_eval(R, V, W, Q, mesh):
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     cell_candidates = geometry.compute_collisions_point(tree, x0)
-    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
+    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates,
+                                                       x0, 1)
 
-    assert np.allclose(u3.eval(x0, cell)[:3], u2.eval(x0, cell), rtol=1e-15, atol=1e-15)
+    assert np.allclose(u3.eval(x0, cell)[:3], u2.eval(x0, cell),
+                       rtol=1e-15, atol=1e-15)
     with pytest.raises(ValueError):
         u0.eval([0, 0, 0, 0], 0)
     with pytest.raises(ValueError):
@@ -190,7 +193,8 @@ def test_eval_multiple(W):
     cell_candidates = [geometry.compute_collisions_point(tree, xi) for xi in x]
     assert len(cell_candidates[1]) == 0
     cell_candidates = cell_candidates[0]
-    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
+    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates,
+                                                       x0, 1)
 
     u.eval(x[0], cell)
 
@@ -269,12 +273,14 @@ def xtest_near_evaluations(R, mesh):
     offset = 0.99 * np.finfo(float).eps
 
     a_shift_x = np.array([a[0] - offset, a[1], a[2]])
-    assert u0.eval(a, bb_tree)[0] == pytest.approx(u0.eval(a_shift_x, bb_tree)[0])
+    assert u0.eval(a, bb_tree)[0] == pytest.approx(u0.eval(a_shift_x,
+                                                           bb_tree)[0])
 
     a_shift_xyz = np.array([a[0] - offset / math.sqrt(3),
                             a[1] - offset / math.sqrt(3),
                             a[2] - offset / math.sqrt(3)])
-    assert u0.eval(a, bb_tree)[0] == pytest.approx(u0.eval(a_shift_xyz, bb_tree)[0])
+    assert u0.eval(a, bb_tree)[0] == pytest.approx(u0.eval(a_shift_xyz,
+                                                           bb_tree)[0])
 
 
 def test_interpolation_rank1(W):
@@ -361,3 +367,68 @@ def test_interpolation_function(mesh):
     uh = Function(Vh)
     uh.interpolate(u)
     assert np.allclose(uh.vector.array, 1)
+
+
+@pytest.mark.parametrize("ct, tdim", [(cpp.mesh.CellType.triangle, 2),
+                                      (cpp.mesh.CellType.quadrilateral, 2),
+                                      (cpp.mesh.CellType.tetrahedron, 3),
+                                      (cpp.mesh.CellType.hexahedron, 3)])
+def test_eval_parallel(ct, tdim):
+    if tdim == 2:
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, 7, 7, cell_type=ct)
+    else:
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, 7, 7, 7, cell_type=ct)
+    V = FunctionSpace(mesh, ("CG", 1))
+
+    def func(x):
+        if tdim == 2:
+            return x[0] + x[1]
+        else:
+            return x[0] + 2 * x[1] - 3 * x[2]
+
+    u = Function(V)
+    u.interpolate(func)
+
+    # Sample points along an interior line of the domain
+    n_points = 11
+    x_line = np.linspace(0, 1, n_points)
+    y_line = np.linspace(0, 0.9, n_points)
+    if tdim == 2:
+        z_line = np.zeros(n_points)
+    else:
+        z_line = np.linspace(0, 0.7, n_points)
+    points = np.vstack((x_line, y_line, z_line))
+
+    # Create boundingboxtree, find candidates for the cell collision,
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cell_candidates = [geometry.compute_collisions_point(tree, xi)
+                       for xi in points.T]
+
+    # Refine this search by selecting one of the cells that are actually
+    # colliding
+    actual_cells = np.zeros(n_points, dtype=np.int32)
+    for i, (candidate, point) in enumerate(zip(cell_candidates, points.T)):
+        actual_cell = dolfinx.cpp.geometry.select_cells_from_candidates(
+            mesh, candidate, point, 1)
+        # If cell not on process insert -1 such that eval returns 0
+        if len(actual_cell) == 0:
+            actual_cells[i] = -1
+        else:
+            actual_cells[i] = actual_cell[0]
+
+    # Evaluate function at points, and create the exact solution
+    u_eval = u.eval(points.T, actual_cells)
+    exact = func(points)
+
+    # Gather all cell data. As eval does not distinguish between ghost and non
+    # ghost cells, divide by the number of appearances on the different
+    # processors
+    local_cells = np.argwhere(actual_cells != -1).T[0]
+    on_proc = np.zeros(actual_cells.shape[0])
+    on_proc[local_cells] = 1
+    u_g = MPI.COMM_WORLD.allgather(u_eval)
+    num_proc = MPI.COMM_WORLD.allgather(on_proc)
+    u_global = (sum(u_g).T / sum(num_proc).T)[0]
+
+    # Check against exact solution
+    assert np.allclose(u_global, exact)
