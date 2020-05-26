@@ -20,10 +20,10 @@ def test_manifold_point_search():
     bb = BoundingBoxTree(mesh, mesh.topology.dim)
     p = numpy.array([0.5, 0.25, 0.75])
     cell_candidates = geometry.compute_collisions_point(bb, p)
-    cell = cpp.geometry.select_cells_from_candidates(mesh, cell_candidates, p, 1)
+    cell = cpp.geometry.select_colliding_cells(mesh, cell_candidates, p, 1)
     assert cell[0] == 0
 
     p = numpy.array([0.25, 0.5, 0.75])
     cell_candidates = geometry.compute_collisions_point(bb, p)
-    cell = cpp.geometry.select_cells_from_candidates(mesh, cell_candidates, p, 1)
+    cell = cpp.geometry.select_colliding_cells(mesh, cell_candidates, p, 1)
     assert cell[0] == 1

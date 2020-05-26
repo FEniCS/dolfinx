@@ -75,12 +75,16 @@ double compute_squared_distance_bbox(
 double squared_distance(const mesh::MeshEntity& entity,
                         const Eigen::Vector3d& p);
 
-/// From the given Mesh, select up to n cells from the list of candidates which
+/// From the given Mesh, select up to n cells from the list which actually
 /// collide with point p. n may be zero (selects all valid cells). Less than n
 /// cells may be returned.
-std::vector<int>
-select_cells_from_candidates(const dolfinx::mesh::Mesh& mesh,
-                             const std::vector<int>& candidate_cells,
-                             const Eigen::Vector3d& point, int n);
+/// @param[in] mesh Mesh
+/// @param[in] candidate_cells List of cell indices to test
+/// @param[in] point Point to check for collision
+/// @param[in] n Maximum number of positive results to return
+/// @return List of cells which collide with point
+std::vector<int> select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
+                                        const std::vector<int>& candidate_cells,
+                                        const Eigen::Vector3d& point, int n);
 } // namespace geometry
 } // namespace dolfinx

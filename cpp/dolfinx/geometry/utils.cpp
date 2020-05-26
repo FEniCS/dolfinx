@@ -384,9 +384,9 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
 }
 //-------------------------------------------------------------------------------
 std::vector<int>
-geometry::select_cells_from_candidates(const dolfinx::mesh::Mesh& mesh,
-                                       const std::vector<int>& candidate_cells,
-                                       const Eigen::Vector3d& point, int n)
+geometry::select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
+                                 const std::vector<int>& candidate_cells,
+                                 const Eigen::Vector3d& point, int n)
 {
   const double eps2 = 1e-20;
   const int tdim = mesh.topology().dim();

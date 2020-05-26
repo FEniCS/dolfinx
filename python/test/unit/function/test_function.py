@@ -171,7 +171,7 @@ def test_eval(R, V, W, Q, mesh):
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     cell_candidates = geometry.compute_collisions_point(tree, x0)
-    cell = dolfinx.cpp.geometry.select_cells_from_candidates(mesh, cell_candidates, x0, 1)
+    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
 
     assert np.allclose(u3.eval(x0, cell)[:3], u2.eval(x0, cell), rtol=1e-15, atol=1e-15)
     with pytest.raises(ValueError):
@@ -190,7 +190,7 @@ def test_eval_multiple(W):
     cell_candidates = [geometry.compute_collisions_point(tree, xi) for xi in x]
     assert len(cell_candidates[1]) == 0
     cell_candidates = cell_candidates[0]
-    cell = dolfinx.cpp.geometry.select_cells_from_candidates(mesh, cell_candidates, x0, 1)
+    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
 
     u.eval(x[0], cell)
 
