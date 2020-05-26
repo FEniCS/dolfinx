@@ -223,6 +223,8 @@ std::vector<std::uint8_t> gmsh_triangle(int num_nodes)
     return {0, 1, 2};
   case 6:
     return {0, 1, 2, 5, 3, 4};
+  case 10:
+    return {0, 1, 2, 7, 8, 3, 4, 6, 5, 9};
   default:
     throw std::runtime_error("Higher order GMSH triangle not supported");
   }

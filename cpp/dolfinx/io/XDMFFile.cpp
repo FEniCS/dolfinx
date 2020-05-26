@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "XDMFFile.h"
-#include "HDF5File.h"
 #include "cells.h"
 #include "pugixml.hpp"
 #include "xdmf_function.h"
