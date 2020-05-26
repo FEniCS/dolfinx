@@ -1,6 +1,6 @@
 # DOLFINX
 
-[![CircleCI](https://circleci.com/gh/FEniCS/dolfinx.svg?style=svg)](https://circleci.com/gh/FEniCS/dolfinx)
+[![CircleCI](https://circleci.com/gh/FEniCS/dolfinx.svg?style=shield)](https://circleci.com/gh/FEniCS/dolfinx)
 ![DOLFINX CI tests](https://github.com/FEniCS/dolfinx/workflows/DOLFINX%20CI%20tests/badge.svg)
 ![CI Docker images](https://github.com/FEniCS/dolfinx/workflows/CI%20Docker%20images/badge.svg)
 
