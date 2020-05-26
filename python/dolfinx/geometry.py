@@ -36,7 +36,7 @@ def compute_collisions_point(tree: BoundingBoxTree, x):
 def compute_colliding_cells(tree: BoundingBoxTree, mesh, x, n=1):
     """Return cells which the point x lies within"""
     candidate_cells = cpp.geometry.compute_collisions_point(tree._cpp_object, x)
-    return cpp.geometry.select_cells_from_candidates(mesh, candidate_cells, x, n)
+    return cpp.geometry.select_colliding_cells(mesh, candidate_cells, x, n)
 
 
 def compute_collisions(tree0: BoundingBoxTree, tree1: BoundingBoxTree):

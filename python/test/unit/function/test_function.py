@@ -399,17 +399,14 @@ def test_eval_parallel(ct, tdim):
         z_line = np.linspace(0, 0.7, n_points)
     points = np.vstack((x_line, y_line, z_line))
 
-    # Create boundingboxtree, find candidates for the cell collision,
+    # Create boundingboxtree
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cell_candidates = [geometry.compute_collisions_point(tree, xi)
-                       for xi in points.T]
-
-    # Refine this search by selecting one of the cells that are actually
-    # colliding
     actual_cells = np.zeros(n_points, dtype=np.int32)
-    for i, (candidate, point) in enumerate(zip(cell_candidates, points.T)):
-        actual_cell = dolfinx.cpp.geometry.select_cells_from_candidates(
-            mesh, candidate, point, 1)
+
+    # Find first colliding cell
+    for i, point in enumerate(points.T):
+        actual_cell = dolfinx.geometry.compute_colliding_cells(tree, mesh,
+                                                               point, 1)
         # If cell not on process insert -1 such that eval returns 0
         if len(actual_cell) == 0:
             actual_cells[i] = -1
