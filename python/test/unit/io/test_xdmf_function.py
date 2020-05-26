@@ -150,7 +150,6 @@ def test_save_3d_vector_series(tempdir, encoding, cell_type):
         u.vector.set(2.0 + (2j if has_petsc_complex else 0))
         file.write_function(u, 0.2)
 
-    mesh.mpi_comm().Barrier()
     with XDMFFile(mesh.mpi_comm(), filename, "a", encoding=encoding) as file:
         u.vector.set(3.0 + (3j if has_petsc_complex else 0))
         file.write_function(u, 0.3)
