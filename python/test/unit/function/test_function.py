@@ -6,11 +6,11 @@
 """Unit tests for the Function class"""
 
 import importlib
+import math
 
 import cffi
 import numpy as np
 import pytest
-import math
 from mpi4py import MPI
 from petsc4py import PETSc
 
