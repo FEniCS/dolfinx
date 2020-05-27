@@ -10,6 +10,7 @@ import importlib
 import cffi
 import numpy as np
 import pytest
+import math
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -261,23 +262,29 @@ def test_interpolation_rank0(V):
 
 
 @skip_in_parallel
-def xtest_near_evaluations(R, mesh):
+def test_near_evaluations(R, mesh):
     # Test that we allow point evaluation that are slightly outside
-    bb_tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    bb_tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     u0 = Function(R)
     u0.vector.set(1.0)
-    a = mesh.geometry.x(0)
+    a = mesh.geometry.x[0]
     offset = 0.99 * np.finfo(float).eps
 
     a_shift_x = np.array([a[0] - offset, a[1], a[2]])
-    assert u0.eval(a, bb_tree)[0] == pytest.approx(u0.eval(a_shift_x,
-                                                           bb_tree)[0])
+    colliding_cell = geometry.compute_colliding_cells(bb_tree, mesh, a_shift_x)
+    u0_eval_outside_x = u0.eval(a_shift_x, colliding_cell)
+
+    colliding_cell_x = geometry.compute_colliding_cells(bb_tree, mesh, a)
+    u0_eval_inside = u0.eval(a, colliding_cell_x)
+    assert np.allclose(u0_eval_inside, u0_eval_outside_x)
 
     a_shift_xyz = np.array([a[0] - offset / math.sqrt(3),
                             a[1] - offset / math.sqrt(3),
                             a[2] - offset / math.sqrt(3)])
-    assert u0.eval(a, bb_tree)[0] == pytest.approx(u0.eval(a_shift_xyz,
-                                                           bb_tree)[0])
+    colliding_cell_xyz = geometry.compute_colliding_cells(bb_tree, mesh, a_shift_xyz)
+    u0_eval_outside_xyz = u0.eval(a, colliding_cell_xyz)
+    print(u0_eval_inside, u0_eval_outside_xyz)
+    assert np.allclose(u0_eval_inside, u0_eval_outside_xyz)
 
 
 def test_interpolation_rank1(W):
