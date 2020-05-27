@@ -6,7 +6,6 @@
 """Unit tests for the Function class"""
 
 import importlib
-import math
 
 import cffi
 import numpy as np
@@ -14,11 +13,11 @@ import pytest
 from mpi4py import MPI
 from petsc4py import PETSc
 
-import dolfinx
 import ufl
 from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
                      UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
                      geometry)
+from dolfinx.cpp.mesh import CellType
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 
 
@@ -172,8 +171,7 @@ def test_eval(R, V, W, Q, mesh):
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     cell_candidates = geometry.compute_collisions_point(tree, x0)
-    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates,
-                                                       x0, 1)
+    cell = cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
 
     assert np.allclose(u3.eval(x0, cell)[:3], u2.eval(x0, cell),
                        rtol=1e-15, atol=1e-15)
@@ -193,8 +191,7 @@ def test_eval_multiple(W):
     cell_candidates = [geometry.compute_collisions_point(tree, xi) for xi in x]
     assert len(cell_candidates[1]) == 0
     cell_candidates = cell_candidates[0]
-    cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates,
-                                                       x0, 1)
+    cell = cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
 
     u.eval(x[0], cell)
 
@@ -369,15 +366,15 @@ def test_interpolation_function(mesh):
     assert np.allclose(uh.vector.array, 1)
 
 
-@pytest.mark.parametrize("ct, tdim", [(cpp.mesh.CellType.triangle, 2),
-                                      (cpp.mesh.CellType.quadrilateral, 2),
-                                      (cpp.mesh.CellType.tetrahedron, 3),
-                                      (cpp.mesh.CellType.hexahedron, 3)])
-def test_eval_parallel(ct, tdim):
+@pytest.mark.parametrize("cell_type, tdim", [(CellType.triangle, 2),
+                                             (CellType.quadrilateral, 2),
+                                             (CellType.tetrahedron, 3),
+                                             (CellType.hexahedron, 3)])
+def test_eval_parallel(cell_type, tdim):
     if tdim == 2:
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, 7, 7, cell_type=ct)
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, 7, 7, cell_type=cell_type)
     else:
-        mesh = UnitCubeMesh(MPI.COMM_WORLD, 7, 7, 7, cell_type=ct)
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, 7, 7, 7, cell_type=cell_type)
     V = FunctionSpace(mesh, ("CG", 1))
 
     def func(x):
@@ -401,31 +398,19 @@ def test_eval_parallel(ct, tdim):
 
     # Create boundingboxtree
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    actual_cells = np.zeros(n_points, dtype=np.int32)
 
-    # Find first colliding cell
+    num_local_cells = mesh.topology.index_map(tdim).size_local
+
+    colliding_cells = -np.ones(n_points, dtype=np.int32)
     for i, point in enumerate(points.T):
-        actual_cell = dolfinx.geometry.compute_colliding_cells(tree, mesh,
-                                                               point, 1)
-        # If cell not on process insert -1 such that eval returns 0
-        if len(actual_cell) == 0:
-            actual_cells[i] = -1
-        else:
-            actual_cells[i] = actual_cell[0]
+        # Find first colliding cell
+        colliding_cell = geometry.compute_colliding_cells(tree, mesh, point, 1)
+        # Only add cell to list if it is owned by the processor
+        if len(colliding_cell) > 0 and colliding_cell[0] < num_local_cells:
+            colliding_cells[i] = colliding_cell[0]
 
     # Evaluate function at points, and create the exact solution
-    u_eval = u.eval(points.T, actual_cells)
+    u_eval = u.eval(points.T, colliding_cells)
+    u_global = sum(MPI.COMM_WORLD.allgather(u_eval)).T
     exact = func(points)
-
-    # Gather all cell data. As eval does not distinguish between ghost and non
-    # ghost cells, divide by the number of appearances on the different
-    # processors
-    local_cells = np.argwhere(actual_cells != -1).T[0]
-    on_proc = np.zeros(actual_cells.shape[0])
-    on_proc[local_cells] = 1
-    u_g = MPI.COMM_WORLD.allgather(u_eval)
-    num_proc = MPI.COMM_WORLD.allgather(on_proc)
-    u_global = (sum(u_g).T / sum(num_proc).T)[0]
-
-    # Check against exact solution
     assert np.allclose(u_global, exact)
