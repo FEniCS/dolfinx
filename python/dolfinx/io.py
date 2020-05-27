@@ -61,9 +61,6 @@ class XDMFFile(cpp.io.XDMFFile):
 
         return mesh
 
-    def __exit__(self, type, value, tb):
-        super().close()
-
 
 # Map from Gmsh string to DOLFIN cell type and degree
 _gmsh_cells = dict(tetra=("tetrahedron", 1), tetra10=("tetrahedron", 2), tetra20=("tetrahedron", 3),
