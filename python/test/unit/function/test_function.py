@@ -13,7 +13,6 @@ import numpy as np
 import pytest
 from mpi4py import MPI
 from petsc4py import PETSc
-
 import ufl
 from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
                      UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
@@ -415,9 +414,8 @@ def test_eval_parallel(cell_type, tdim):
         # Only add cell to list if it is owned by the processor
         if len(colliding_cell) > 0 and colliding_cell[0] < num_local_cells:
             colliding_cells[i] = colliding_cell[0]
-
     # Evaluate function at points, and create the exact solution
-    u_eval = u.eval(points.T, colliding_cells)
-    u_global = sum(MPI.COMM_WORLD.allgather(u_eval)).T
+    u_eval = u.eval(points.T, colliding_cells).T[0]
     exact = func(points)
-    assert np.allclose(u_global, exact)
+    # Local comparison
+    assert np.allclose(u_eval[colliding_cells != -1], exact[colliding_cells != -1])
