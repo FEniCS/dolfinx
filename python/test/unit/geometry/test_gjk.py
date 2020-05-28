@@ -4,10 +4,16 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfinx.cpp.geometry import compute_distance_gjk
-from scipy.spatial.transform import Rotation as R
 import numpy as np
 import pytest
+from mpi4py import MPI
+from scipy.spatial.transform import Rotation as R
+
+import ufl
+from dolfinx import cpp, geometry
+from dolfinx.cpp.geometry import compute_distance_gjk
+from dolfinx.mesh import create_mesh
+from dolfinx_utils.test.skips import skip_in_parallel
 
 
 def distance_point_to_line_3D(P1, P2, point):
@@ -178,3 +184,36 @@ def test_cube_distance(delta, scale):
             distance = np.linalg.norm(compute_distance_gjk(c0rot, c1rot))
             print(distance, delta)
             assert(np.isclose(distance, delta))
+
+
+@skip_in_parallel
+def test_collision_2nd_order_triangle():
+    points = np.array([[0, 0], [1, 0], [0, 1], [0.65, 0.65], [0, 0.5], [0.5, 0]])
+    cells = np.array([[0, 1, 2, 3, 4, 5]])
+    cell = ufl.Cell("triangle", geometric_dimension=2)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+
+    # Sample points along an interior line of the domain
+    # The last point is outside the simplex made by the vertices
+    sample_points = np.array([[0.1, 0.3, 0], [0.2, 0.5, 0], [0.6, 0.6, 0]])
+
+    # Create boundingboxtree
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    for point in sample_points:
+        colliding_cell = geometry.compute_colliding_cells(tree, mesh, point, 1)
+        assert(len(colliding_cell) == 1)
+
+    # Check if there is a point on the linear approximation of the curved facet
+    def line_through_points(p0, p1):
+        return lambda x: (p1[1] - p0[1]) / (p1[0] - p0[0]) * (x - p0[0]) + p0[1]
+    line_func = line_through_points(points[2], points[3])
+    point = np.array([0.2, line_func(0.2), 0])
+    # Point inside 2nd order geometry, outside linear approximation
+    # Usefull for debugging on a later stage
+    # point = np.array([0.25, 0.89320760, 0])
+    print(point)
+    tdim = mesh.topology.dim
+    curved_facet = cpp.mesh.MeshEntity(mesh, tdim - 1, 2)
+    distance = cpp.geometry.squared_distance(curved_facet, point)
+    assert np.isclose(distance, 0)

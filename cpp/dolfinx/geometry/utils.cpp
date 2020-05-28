@@ -1,4 +1,5 @@
-// Copyright (C) 2006-2020 Chris N. Richardson, Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2020 Chris N. Richardson, Anders Logg, Garth N. Wells and
+// Jørgen S. Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -350,8 +351,6 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
 {
   const int dim = entity.dim();
   const int tdim = entity.mesh().topology().dim();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = entity.mesh().geometry().dofmap();
 
   // Find attached cell
   entity.mesh().topology_mutable().create_connectivity(dim, tdim);
@@ -360,27 +359,48 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
   assert(e_to_c->num_links(entity.index()) > 0);
   const std::int32_t c = e_to_c->links(entity.index())[0];
 
-  auto dofs = x_dofmap.links(c);
-  auto c_to_v = entity.mesh().topology().connectivity(tdim, 0);
-  assert(c_to_v);
-  auto cell_vertices = c_to_v->links(c);
-
-  auto vertices = entity.entities(0);
+  // Get list of all nodes on cell
   const mesh::Geometry& geometry = entity.mesh().geometry();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  auto dofs = x_dofmap.links(c);
 
-  Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> v(vertices.size(),
-                                                              3);
-  for (int i = 0; i < vertices.size(); ++i)
+  // Find all geometrical nodes for the entity!=vertices for higher order
+  // elements (Currently convex hull approximation of linearized geometry)
+  if (dim == tdim)
   {
-    const std::int32_t* it
-        = std::find(cell_vertices.data(),
-                    cell_vertices.data() + cell_vertices.rows(), vertices[i]);
-    assert(it != (cell_vertices.data() + cell_vertices.rows()));
-    const int local_vertex = std::distance(cell_vertices.data(), it);
-    v.row(i) = geometry.node(dofs(local_vertex));
-  }
 
-  return geometry::compute_distance_gjk(p.transpose(), v).squaredNorm();
+    Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(dofs.size(),
+                                                                    3);
+    for (int i = 0; i < dofs.size(); i++)
+    {
+      nodes.row(i) = geometry.node(dofs(i));
+    }
+    return geometry::compute_distance_gjk(p.transpose(), nodes).squaredNorm();
+  }
+  else
+  {
+    // Find local number of entity wrt. cell
+    entity.mesh().topology_mutable().create_connectivity(tdim, dim);
+    auto c_to_e = entity.mesh().topology_mutable().connectivity(tdim, dim);
+    assert(c_to_e);
+    auto cell_entities = c_to_e->links(c);
+    const auto* it0 = std::find(cell_entities.data(),
+                                cell_entities.data() + cell_entities.rows(),
+                                entity.index());
+    assert(it0 != (cell_entities.data() + cell_entities.rows()));
+    const int local_cell_entity = std::distance(cell_entities.data(), it0);
+    // Tabulate geometry dofs for the entity
+    const Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs
+        = geometry.cmap().dof_layout().entity_closure_dofs(dim,
+                                                           local_cell_entity);
+    Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(
+        entity_dofs.size(), 3);
+    for (int i = 0; i < entity_dofs.size(); i++)
+    {
+      nodes.row(i) = geometry.node(dofs(entity_dofs(i)));
+    }
+    return geometry::compute_distance_gjk(p.transpose(), nodes).squaredNorm();
+  }
 }
 //-------------------------------------------------------------------------------
 std::vector<int>
