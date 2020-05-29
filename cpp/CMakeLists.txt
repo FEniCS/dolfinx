@@ -126,7 +126,7 @@ endif()
 # Run tests to find required packages
 
 # Find Python3 and define Python3_EXECUTABLE
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 # Check for Boost
 set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
@@ -258,7 +258,7 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfinx.conf
 # Copy data in demo/test direcories to the build directories
 
 set(GENERATE_DEMO_TEST_DATA FALSE)
-if (PYTHONINTERP_FOUND AND (${DOLFINX_SOURCE_DIR}/demo IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/demo OR ${DOLFINX_SOURCE_DIR}/test IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/test))
+if (Python3_Interpreter_FOUND AND (${DOLFINX_SOURCE_DIR}/demo IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/demo OR ${DOLFINX_SOURCE_DIR}/test IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/test))
   file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/demo ${CMAKE_CURRENT_BINARY_DIR}/test)
   set(GENERATE_DEMO_TEST_DATA TRUE)
 endif()
