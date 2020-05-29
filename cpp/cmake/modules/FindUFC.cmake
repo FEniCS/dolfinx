@@ -57,7 +57,6 @@ if (DEFINED ENV{UFC_INCLUDE_DIR})
    endif()
 else()
   MESSAGE(STATUS "Asking Python module FFCX for location of UFC...")
-  find_package(Python3 COMPONENTS Interpreter REQUIRED)
   execute_process(
     COMMAND ${Python3_EXECUTABLE} -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
     OUTPUT_VARIABLE UFC_INCLUDE_DIR
