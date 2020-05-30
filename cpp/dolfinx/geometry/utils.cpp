@@ -300,22 +300,18 @@ std::pair<int, double> geometry::compute_closest_entity(
   }
 
   // Search point cloud to get a good starting guess
-  std::pair<int, double> guess = compute_closest_point(tree_midpoint, p);
-  const double r = guess.second;
+  const auto [index0, distance0] = compute_closest_point(tree_midpoint, p);
 
   // Return if we have found the point
-  if (r == 0.0)
-    return guess;
+  if (distance0 == 0.0)
+    return {index0, distance0};
 
   // Call recursive find function
-  std::pair<int, double> e = _compute_closest_entity(
-      tree, p, tree.num_bboxes() - 1, mesh, guess.first, r * r);
+  const auto [index1, distance1] = _compute_closest_entity(
+      tree, p, tree.num_bboxes() - 1, mesh, index0, distance0 * distance0);
+  assert(index1 >= 0);
 
-  // Sanity check
-  assert(e.first >= 0);
-
-  e.second = sqrt(e.second);
-  return e;
+  return {index1, std::sqrt(distance1)};
 }
 //-----------------------------------------------------------------------------
 std::pair<int, double>
