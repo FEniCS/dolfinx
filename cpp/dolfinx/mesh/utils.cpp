@@ -6,7 +6,6 @@
 
 #include "utils.h"
 #include "Geometry.h"
-#include "MeshEntity.h"
 #include "MeshTags.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
@@ -480,8 +479,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
     for (int i = 0; i < num_cells; ++i)
     {
       // Get the two vertices as points
-      const mesh::MeshEntity e(mesh, 1, i);
-      auto vertices = e.entities(0);
+      auto vertices = mesh.topology().connectivity(1, 0)->links(i);
       Eigen::Vector3d p0 = geometry.node(vertices[0]);
       Eigen::Vector3d p1 = geometry.node(vertices[1]);
 
@@ -500,8 +498,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
     for (int i = 0; i < num_cells; ++i)
     {
       // Get the three vertices as points
-      const mesh::MeshEntity e(mesh, 2, i);
-      auto vertices = e.entities(0);
+      auto vertices = mesh.topology().connectivity(2, 0)->links(i);
       const Eigen::Vector3d p0 = geometry.node(vertices[0]);
       const Eigen::Vector3d p1 = geometry.node(vertices[1]);
       const Eigen::Vector3d p2 = geometry.node(vertices[2]);
@@ -521,8 +518,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
     for (int i = 0; i < num_cells; ++i)
     {
       // Get three vertices as points
-      const mesh::MeshEntity e(mesh, 2, i);
-      auto vertices = e.entities(0);
+      auto vertices = mesh.topology().connectivity(2, 0)->links(i);
       const Eigen::Vector3d p0 = geometry.node(vertices[0]);
       const Eigen::Vector3d p1 = geometry.node(vertices[1]);
       const Eigen::Vector3d p2 = geometry.node(vertices[2]);
@@ -537,130 +533,6 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
         "cell_normal not supported for this cell type.");
   }
   return Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>();
-}
-//-----------------------------------------------------------------------------
-Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
-{
-  const mesh::Geometry& geometry = cell.mesh().geometry();
-  const mesh::CellType type = cell.mesh().topology().cell_type();
-  const int tdim = cell.mesh().topology().dim();
-  assert(cell.dim() == tdim);
-
-  switch (type)
-  {
-  case (mesh::CellType::interval):
-  {
-    auto vertices = cell.entities(0);
-    Eigen::Vector3d n = geometry.node(vertices[0]) - geometry.node(vertices[1]);
-    n.normalize();
-    if (facet_local == 1)
-      return -1.0 * n;
-    else
-      return n;
-  }
-  case (mesh::CellType::triangle):
-  {
-    // The normal vector is currently only defined for a triangle in R^2
-    // MER: This code is super for a triangle in R^3 too, this error
-    // could be removed, unless it is here for some other reason.
-    if (geometry.dim() != 2)
-      throw std::runtime_error("Illegal geometric dimension");
-
-    cell.mesh().topology_mutable().create_connectivity(2, 1);
-    mesh::MeshEntity f(cell.mesh(), tdim - 1, cell.entities(1)[facet_local]);
-
-    // Get global index of opposite vertex
-    const std::int32_t v0 = cell.entities(0)[facet_local];
-
-    // Get global index of vertices on the facet
-    const std::int32_t v1 = f.entities(0)[0];
-    const std::int32_t v2 = f.entities(0)[1];
-
-    // Get the coordinates of the three vertices
-    const Eigen::Vector3d p0 = geometry.node(v0);
-    const Eigen::Vector3d p1 = geometry.node(v1);
-    const Eigen::Vector3d p2 = geometry.node(v2);
-
-    // Subtract projection of p2 - p0 onto p2 - p1
-    Eigen::Vector3d t = p2 - p1;
-    Eigen::Vector3d n = p2 - p0;
-    t.normalize();
-    n.normalize();
-    n -= t * n.dot(t);
-    n.normalize();
-    return n;
-  }
-  case (mesh::CellType::quadrilateral):
-  {
-    if (cell.mesh().geometry().dim() != 2)
-      throw std::runtime_error("Illegal geometric dimension");
-
-    // Make sure we have facets
-    cell.mesh().topology_mutable().create_connectivity(2, 1);
-
-    // Create facet from the mesh and local facet number
-    MeshEntity f(cell.mesh(), tdim - 1, cell.entities(1)[facet_local]);
-
-    // Get global index of opposite vertex
-    const std::int32_t v0 = cell.entities(0)[facet_local];
-
-    // Get global index of vertices on the facet
-    const std::int32_t v1 = f.entities(0)[0];
-    const std::int32_t v2 = f.entities(0)[1];
-
-    // Get the coordinates of the three vertices
-    const Eigen::Vector3d p0 = geometry.node(v0);
-    const Eigen::Vector3d p1 = geometry.node(v1);
-    const Eigen::Vector3d p2 = geometry.node(v2);
-
-    // Subtract projection of p2 - p0 onto p2 - p1
-    Eigen::Vector3d t = p2 - p1;
-    t.normalize();
-    Eigen::Vector3d n = p2 - p0;
-    n -= t * n.dot(t);
-    n.normalize();
-    return n;
-  }
-  case (mesh::CellType::tetrahedron):
-  {
-    // Make sure we have facets
-    cell.mesh().topology_mutable().create_connectivity(3, 2);
-
-    // Create facet from the mesh and local facet number
-    MeshEntity f(cell.mesh(), tdim - 1, cell.entities(2)[facet_local]);
-
-    // Get global index of opposite vertex
-    const std::int32_t v0 = cell.entities(0)[facet_local];
-
-    // Get global index of vertices on the facet
-    const std::int32_t v1 = f.entities(0)[0];
-    const std::int32_t v2 = f.entities(0)[1];
-    const std::int32_t v3 = f.entities(0)[2];
-
-    // Get the coordinates of the four vertices
-    const Eigen::Vector3d p0 = geometry.node(v0);
-    const Eigen::Vector3d p1 = geometry.node(v1);
-    const Eigen::Vector3d p2 = geometry.node(v2);
-    const Eigen::Vector3d p3 = geometry.node(v3);
-
-    // Compute normal vector
-    Eigen::Vector3d n = (p2 - p1).cross(p3 - p1);
-
-    // Normalize
-    n.normalize();
-
-    // Flip direction of normal so it points outward
-    if (n.dot(p0 - p1) > 0)
-      n *= -1.0;
-
-    return n;
-  }
-  // case (mesh::CellType::hexahedron):
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-
-  return Eigen::Vector3d();
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
