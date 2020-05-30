@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFIN
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 
 #------------------------------------------------------------------------------
 # Set project name and version number
@@ -10,7 +10,7 @@ project(DOLFINX VERSION 2019.2.9.99)
 #------------------------------------------------------------------------------
 # Set CMake options, see `cmake --help-policy CMP000x`
 
-cmake_policy(VERSION 3.10)
+cmake_policy(VERSION 3.12)
 if (POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
@@ -124,6 +124,9 @@ endif()
 
 #------------------------------------------------------------------------------
 # Run tests to find required packages
+
+# Find Python3 and define Python3_EXECUTABLE
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 # Check for Boost
 set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
@@ -255,7 +258,7 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfinx.conf
 # Copy data in demo/test direcories to the build directories
 
 set(GENERATE_DEMO_TEST_DATA FALSE)
-if (PYTHONINTERP_FOUND AND (${DOLFINX_SOURCE_DIR}/demo IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/demo OR ${DOLFINX_SOURCE_DIR}/test IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/test))
+if (Python3_Interpreter_FOUND AND (${DOLFINX_SOURCE_DIR}/demo IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/demo OR ${DOLFINX_SOURCE_DIR}/test IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/test))
   file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/demo ${CMAKE_CURRENT_BINARY_DIR}/test)
   set(GENERATE_DEMO_TEST_DATA TRUE)
 endif()
@@ -265,7 +268,7 @@ if (GENERATE_DEMO_TEST_DATA)
   message(STATUS "Copying demo and test data to build directory.")
   message(STATUS "----------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFINX_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR} ${PETSC_SCALAR_COMPLEX}
+    COMMAND ${Python3_EXECUTABLE} "-B" "-u" ${DOLFINX_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR} ${PETSC_SCALAR_COMPLEX}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     RESULT_VARIABLE COPY_DEMO_DATA_RESULT
     OUTPUT_VARIABLE COPY_DEMO_DATA_OUTPUT
@@ -283,7 +286,7 @@ if (GENERATE_DEMO_TEST_DATA)
   message(STATUS "Generating form files in demo and test directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-form-files.py ${PETSC_SCALAR_COMPLEX}
+    COMMAND ${Python3_EXECUTABLE} "-B" "-u" ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-form-files.py ${PETSC_SCALAR_COMPLEX}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     RESULT_VARIABLE FORM_GENERATION_RESULT
     OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
@@ -308,7 +311,7 @@ if (GENERATE_DEMO_TEST_DATA)
   message(STATUS "-------------------------------------------------------------------")
   # Generate CMakeLists.txt files in build directory
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
+    COMMAND ${Python3_EXECUTABLE} ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     RESULT_VARIABLE CMAKE_GENERATION_RESULT
     OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT
@@ -322,7 +325,7 @@ if (GENERATE_DEMO_TEST_DATA)
     # Generate CMakeLists.txt files in source directory as well, as developers might find it
     # easier to run in-place demo builds while preparing new demos or modifying existing ones
     execute_process(
-      COMMAND ${PYTHON_EXECUTABLE} ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
+      COMMAND ${Python3_EXECUTABLE} ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       RESULT_VARIABLE CMAKE_GENERATION_RESULT
       OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT

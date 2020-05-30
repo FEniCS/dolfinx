@@ -20,6 +20,8 @@ using namespace dolfinx::refinement;
 
 namespace
 {
+
+//-----------------------------------------------------------------------------
 // Propagate edge markers according to rules (longest edge of each
 // face must be marked, if any edge of face is marked)
 void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
@@ -68,127 +70,6 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-// Convenient interface for both uniform and marker refinement
-mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
-                              const std::vector<std::int32_t>& long_edge,
-                              const std::vector<bool>& edge_ratio_ok,
-                              bool redistribute)
-{
-  const std::int32_t tdim = mesh.topology().dim();
-  const std::int32_t num_cell_edges = tdim * 3 - 3;
-  const std::int32_t num_cell_vertices = tdim + 1;
-
-  // Make new vertices in parallel
-  const std::map<std::int32_t, std::int64_t> new_vertex_map
-      = p_ref.create_new_vertices();
-
-  std::vector<std::size_t> parent_cell;
-  std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
-  std::vector<int> marked_edge_list;
-  std::vector<std::int32_t> simplex_set;
-
-  auto map_c = mesh.topology().index_map(tdim);
-  assert(map_c);
-  const int num_cells = map_c->size_local() + map_c->num_ghosts();
-
-  auto c_to_v = mesh.topology().connectivity(tdim, 0);
-  assert(c_to_v);
-  auto c_to_e = mesh.topology().connectivity(tdim, 1);
-  assert(c_to_e);
-  auto c_to_f = mesh.topology().connectivity(tdim, 2);
-  assert(c_to_f);
-
-  const std::vector<bool>& marked_edges = p_ref.marked_edges();
-  std::int32_t num_new_vertices_local = std::count(
-      marked_edges.begin(),
-      marked_edges.begin() + mesh.topology().index_map(1)->size_local(), true);
-
-  std::vector<std::int64_t> global_indices = ParallelRefinement::adjust_indices(
-      mesh.topology().index_map(0), num_new_vertices_local);
-
-  std::vector<std::int64_t> cell_topology;
-  for (int c = 0; c < num_cells; ++c)
-  {
-    // Create vector of indices in the order [vertices][edges], 3+3 in
-    // 2D, 4+6 in 3D
-
-    // Copy vertices
-    auto vertices = c_to_v->links(c);
-    for (int v = 0; v < vertices.rows(); ++v)
-      indices[v] = global_indices[vertices[v]];
-
-    // Get cell-local indices of marked edges
-    marked_edge_list.clear();
-    auto edges = c_to_e->links(c);
-    for (int ei = 0; ei < edges.rows(); ++ei)
-      if (marked_edges[edges[ei]])
-        marked_edge_list.push_back(ei);
-
-    if (marked_edge_list.empty())
-    {
-      // Copy over existing Cell to new topology
-      for (int v = 0; v < vertices.rows(); ++v)
-        cell_topology.push_back(global_indices[vertices[v]]);
-      parent_cell.push_back(c);
-    }
-    else
-    {
-      // Get the marked edge indices for new vertices and make bool
-      // vector of marked edges
-      std::vector<bool> markers(num_cell_edges, false);
-      for (int p : marked_edge_list)
-      {
-        markers[p] = true;
-        auto it = new_vertex_map.find(edges[p]);
-        assert(it != new_vertex_map.end());
-        indices[num_cell_vertices + p] = it->second;
-      }
-
-      // Need longest edges of each face in cell local indexing
-      // NB in 2D the face is the cell itself, and there is just one entry
-      std::vector<std::int32_t> longest_edge;
-      auto faces = c_to_f->links(c);
-      for (int f = 0; f < faces.rows(); ++f)
-        longest_edge.push_back(long_edge[faces(f)]);
-
-      // Convert to cell local index
-      auto edges = c_to_e->links(c);
-      for (std::int32_t& p : longest_edge)
-      {
-        for (int ej = 0; ej < edges.rows(); ++ej)
-        {
-          if (p == edges[ej])
-          {
-            p = ej;
-            break;
-          }
-        }
-      }
-
-      const bool uniform = (tdim == 2) ? edge_ratio_ok[c] : false;
-
-      // FIXME: this has an expensive dynamic memory allocation
-      simplex_set = PlazaRefinementND::get_simplices(markers, longest_edge,
-                                                     tdim, uniform);
-
-      // Save parent index
-      const std::int32_t ncells = simplex_set.size() / num_cell_vertices;
-      for (std::int32_t i = 0; i < ncells; ++i)
-        parent_cell.push_back(c);
-
-      // Convert from cell local index to mesh index and add to cells
-      for (std::int32_t v : simplex_set)
-        cell_topology.push_back(indices[v]);
-    }
-  }
-
-  const bool serial = (dolfinx::MPI::size(mesh.mpi_comm()) == 1);
-  if (serial)
-    return p_ref.build_local(cell_topology);
-  else
-    return p_ref.partition(cell_topology, redistribute);
-}
-//-----------------------------------------------------------------------------
 // 2D version of subdivision allowing for uniform subdivision (flag)
 std::vector<std::int32_t> get_triangles(const std::vector<bool>& marked_edges,
                                         const std::int32_t longest_edge,
@@ -234,9 +115,9 @@ get_tetrahedra(const std::vector<bool>& marked_edges,
                const std::vector<std::int32_t>& longest_edge)
 {
   // Connectivity matrix for ten possible points (4 vertices + 6 edge
-  // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only need upper
-  // triangle, but sometimes it is easier just to insert both entries (j,i) and
-  // (i,j).
+  // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only need
+  // upper triangle, but sometimes it is easier just to insert both entries
+  // (j,i) and (i,j).
   bool conn[10][10] = {};
 
   // Edge connectivity to vertices (and by extension facets)
@@ -329,6 +210,38 @@ get_tetrahedra(const std::vector<bool>& marked_edges,
   return tet_set;
 }
 //-----------------------------------------------------------------------------
+/// Get the subdivision of an original simplex into smaller simplices,
+/// for a given set of marked edges, and the longest edge of each facet
+/// (cell local indexing). A flag indicates if a uniform subdivision is
+/// preferable in 2D.
+///
+/// @param[in] marked_edges Vector indicating which edges are to be
+///   split
+/// @param[in] longest_edge Vector indicating the longest edge for each
+///   triangle. For tdim=2, one entry, for tdim=3, four entries.
+/// @param[in] tdim Topological dimension (2 or 3)
+/// @param[in] uniform Make a "uniform" subdivision with all triangles
+///   being similar shape
+/// @return
+std::vector<std::int32_t>
+get_simplices(const std::vector<bool>& marked_edges,
+              const std::vector<std::int32_t>& longest_edge, std::int32_t tdim,
+              bool uniform)
+{
+  if (tdim == 2)
+  {
+    assert(longest_edge.size() == 1);
+    return get_triangles(marked_edges, longest_edge[0], uniform);
+  }
+  else if (tdim == 3)
+  {
+    assert(longest_edge.size() == 4);
+    return get_tetrahedra(marked_edges, longest_edge);
+  }
+  else
+    throw std::runtime_error("Topological dimension not supported");
+}
+
 // Get the longest edge of each face (using local mesh index)
 std::pair<std::vector<std::int32_t>, std::vector<bool>>
 face_long_edge(const mesh::Mesh& mesh)
@@ -442,8 +355,135 @@ face_long_edge(const mesh::Mesh& mesh)
   return std::pair(std::move(long_edge), std::move(edge_ratio_ok));
 }
 //-----------------------------------------------------------------------------
+// Convenient interface for both uniform and marker refinement
+mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
+                              const std::vector<std::int32_t>& long_edge,
+                              const std::vector<bool>& edge_ratio_ok,
+                              bool redistribute)
+{
+  const std::int32_t tdim = mesh.topology().dim();
+  const std::int32_t num_cell_edges = tdim * 3 - 3;
+  const std::int32_t num_cell_vertices = tdim + 1;
 
+  // Make new vertices in parallel
+  const std::map<std::int32_t, std::int64_t> new_vertex_map
+      = p_ref.create_new_vertices();
+
+  std::vector<std::size_t> parent_cell;
+  std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
+  std::vector<int> marked_edge_list;
+  std::vector<std::int32_t> simplex_set;
+
+  auto map_c = mesh.topology().index_map(tdim);
+  assert(map_c);
+
+  auto c_to_v = mesh.topology().connectivity(tdim, 0);
+  assert(c_to_v);
+  auto c_to_e = mesh.topology().connectivity(tdim, 1);
+  assert(c_to_e);
+  auto c_to_f = mesh.topology().connectivity(tdim, 2);
+  assert(c_to_f);
+
+  const std::vector<bool>& marked_edges = p_ref.marked_edges();
+  std::int32_t num_new_vertices_local = std::count(
+      marked_edges.begin(),
+      marked_edges.begin() + mesh.topology().index_map(1)->size_local(), true);
+
+  std::vector<std::int64_t> global_indices = ParallelRefinement::adjust_indices(
+      mesh.topology().index_map(0), num_new_vertices_local);
+
+  const int num_cells = map_c->size_local();
+  const int num_ghost_cells = map_c->num_ghosts();
+  std::vector<std::int64_t> cell_topology;
+  int num_new_ghost_cells = 0;
+  for (int c = 0; c < num_cells + num_ghost_cells; ++c)
+  {
+    // Create vector of indices in the order [vertices][edges], 3+3 in
+    // 2D, 4+6 in 3D
+
+    // Copy vertices
+    auto vertices = c_to_v->links(c);
+    for (int v = 0; v < vertices.rows(); ++v)
+      indices[v] = global_indices[vertices[v]];
+
+    // Get cell-local indices of marked edges
+    marked_edge_list.clear();
+    auto edges = c_to_e->links(c);
+    for (int ei = 0; ei < edges.rows(); ++ei)
+      if (marked_edges[edges[ei]])
+        marked_edge_list.push_back(ei);
+
+    if (marked_edge_list.empty())
+    {
+      // Copy over existing Cell to new topology
+      for (int v = 0; v < vertices.rows(); ++v)
+        cell_topology.push_back(global_indices[vertices[v]]);
+      parent_cell.push_back(c);
+    }
+    else
+    {
+      // Get the marked edge indices for new vertices and make bool
+      // vector of marked edges
+      std::vector<bool> markers(num_cell_edges, false);
+      for (int p : marked_edge_list)
+      {
+        markers[p] = true;
+        auto it = new_vertex_map.find(edges[p]);
+        assert(it != new_vertex_map.end());
+        indices[num_cell_vertices + p] = it->second;
+      }
+
+      // Need longest edges of each face in cell local indexing.
+      // NB in 2D the face is the cell itself, and there is just one
+      // entry
+      std::vector<std::int32_t> longest_edge;
+      auto faces = c_to_f->links(c);
+      for (int f = 0; f < faces.rows(); ++f)
+        longest_edge.push_back(long_edge[faces(f)]);
+
+      // Convert to cell local index
+      auto edges = c_to_e->links(c);
+      for (std::int32_t& p : longest_edge)
+      {
+        for (int ej = 0; ej < edges.rows(); ++ej)
+        {
+          if (p == edges[ej])
+          {
+            p = ej;
+            break;
+          }
+        }
+      }
+
+      const bool uniform = (tdim == 2) ? edge_ratio_ok[c] : false;
+
+      // FIXME: this has an expensive dynamic memory allocation
+      simplex_set = get_simplices(markers, longest_edge, tdim, uniform);
+
+      // Save parent index
+      const std::int32_t ncells = simplex_set.size() / num_cell_vertices;
+      for (std::int32_t i = 0; i < ncells; ++i)
+        parent_cell.push_back(c);
+
+      // Count up new ghost cells
+      if (c >= num_cells)
+        num_new_ghost_cells += ncells;
+
+      // Convert from cell local index to mesh index and add to cells
+      for (std::int32_t v : simplex_set)
+        cell_topology.push_back(indices[v]);
+    }
+  }
+
+  const bool serial = (dolfinx::MPI::size(mesh.mpi_comm()) == 1);
+  if (serial)
+    return p_ref.build_local(cell_topology);
+  else
+    return p_ref.partition(cell_topology, num_new_ghost_cells, redistribute);
+}
+//-----------------------------------------------------------------------------
 } // namespace
+
 //-----------------------------------------------------------------------------
 mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
 {
@@ -484,24 +524,5 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
 
   return compute_refinement(mesh, p_ref, long_edge, edge_ratio_ok,
                             redistribute);
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-PlazaRefinementND::get_simplices(const std::vector<bool>& marked_edges,
-                                 const std::vector<std::int32_t>& longest_edge,
-                                 std::int32_t tdim, bool uniform)
-{
-  if (tdim == 2)
-  {
-    assert(longest_edge.size() == 1);
-    return get_triangles(marked_edges, longest_edge[0], uniform);
-  }
-  else if (tdim == 3)
-  {
-    assert(longest_edge.size() == 4);
-    return get_tetrahedra(marked_edges, longest_edge);
-  }
-  else
-    throw std::runtime_error("Topological dimension not supported");
 }
 //-----------------------------------------------------------------------------
