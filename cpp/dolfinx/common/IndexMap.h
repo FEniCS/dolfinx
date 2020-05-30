@@ -163,7 +163,7 @@ public:
   std::vector<std::int64_t> global_indices(bool blocked = true) const;
 
   /// @todo Reconsider name
-  /// Local (owned) indices shared with neighbour processes, i.e. are
+  /// Local (owned) indices shared with neighbor processes, i.e. are
   /// ghosts on other processes
   /// @return List of indices that are ghosted on other processes
   const std::vector<std::int32_t>& forward_indices() const
@@ -184,7 +184,7 @@ public:
   MPI_Comm mpi_comm() const;
 
   /// Neighbors for neighborhood communicator
-  const std::vector<std::int32_t> neighbours() const;
+  std::tuple<std::vector<int>, std::vector<int>> neighbors() const;
 
   /// @todo Aim to remove this function
   ///
@@ -276,10 +276,6 @@ private:
   // MPI Communicator
   dolfinx::MPI::Comm _mpi_comm;
 
-  // Store neighbours so neighbourhood communicator can be re-built
-  std::vector<std::int32_t> _forward_neighbours;
-  std::vector<std::int32_t> _reverse_neighbours;
-
   // Cache rank on mpi_comm (otherwise calls to MPI_Comm_rank can be
   // excessive)
   int _myrank;
@@ -287,14 +283,23 @@ private:
   // Local-to-global map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 
-  // Owning neighbour for each ghost index
+  // Owning neighbor for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
-  // Number of indices to send to each neighbour process (ghost ->
+  // FIXME: Give more informative names!
+  // Store neighbors so neighborhood communicator can be re-built
+  // _forward_neighbors - neighbors who own indices that
+  // are ghosts in this rank.
+  std::vector<std::int32_t> _forward_neighbors;
+  // _reverse_neighbors - neighbors that have ghost indices that
+  // are owned by this rank
+  std::vector<std::int32_t> _reverse_neighbors;
+
+  // Number of indices to send to each neighbor process (ghost ->
   // owner, i.e. forward mode scatter)
   std::vector<std::int32_t> _forward_sizes;
 
-  // "Owned" local indices shared with neighbour processes
+  // "Owned" local indices shared with neighbor processes
   std::vector<std::int32_t> _forward_indices;
 
   template <typename T>

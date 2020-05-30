@@ -348,7 +348,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   const int D = topology.dim();
 
   // Build list flag for owned mesh entities that are shared, i.e. are a
-  // ghost on a neighbour
+  // ghost on a neighbor
   std::vector<std::vector<bool>> shared_entity(D + 1);
   for (std::size_t d = 0; d < shared_entity.size(); ++d)
   {
@@ -392,33 +392,43 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     auto map = topology.index_map(d);
     if (map)
     {
-      // Get number of processes in neighbourhood
-      const std::vector<std::int32_t>& neighbours = map->neighbours();
+      // Get number of processes in neighborhood
+      auto [fwd_neighbors, rev_neighbors] = map->neighbors();
+
+      std::vector<int> neighbors;
+      std::set_union(fwd_neighbors.begin(), fwd_neighbors.end(),
+                     rev_neighbors.begin(), rev_neighbors.end(),
+                     std::back_inserter(neighbors));
+
+      std::sort(neighbors.begin(), neighbors.end());
+      neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
+                       neighbors.end());
+
       MPI_Dist_graph_create_adjacent(
-          map->mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
-          neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+          map->mpi_comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
+          neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
           false, &comm[d]);
 
-      int num_neighbours(-1), outdegree(-2), weighted(-1);
-      MPI_Dist_graph_neighbors_count(comm[d], &num_neighbours, &outdegree,
+      int num_neighbors(-1), outdegree(-2), weighted(-1);
+      MPI_Dist_graph_neighbors_count(comm[d], &num_neighbors, &outdegree,
                                      &weighted);
-      assert(num_neighbours == outdegree);
+      assert(num_neighbors == outdegree);
 
       // Number and values to send and receive
       const int num_indices = global[d].size();
-      std::vector<int> num_indices_recv(num_neighbours);
+      std::vector<int> num_indices_recv(num_neighbors);
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, num_indices_recv.data(),
                              1, MPI_INT, comm[d]);
 
       // Compute displacements for data to receive. Last entry has total
       // number of received items.
       std::vector<int>& disp = recv_offsets[d];
-      disp.resize(num_neighbours + 1);
+      disp.resize(num_neighbors + 1);
       std::partial_sum(num_indices_recv.begin(), num_indices_recv.end(),
                        disp.begin() + 1);
 
       // TODO: use MPI_Ineighbor_alltoallv
-      // Send global index of dofs with bcs to all neighbours
+      // Send global index of dofs with bcs to all neighbors
       std::vector<std::int64_t>& dofs_received = all_dofs_received[d];
       dofs_received.resize(disp.back());
       MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
@@ -452,7 +462,16 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     d = requests_dim[idx];
 
     auto map = topology.index_map(d);
-    const std::vector<std::int32_t>& neighbours = map->neighbours();
+
+    auto [fwd_neighbors, rev_neighbors] = map->neighbors();
+    std::vector<int> neighbors;
+    std::set_union(fwd_neighbors.begin(), fwd_neighbors.end(),
+                   rev_neighbors.begin(), rev_neighbors.end(),
+                   std::back_inserter(neighbors));
+
+    std::sort(neighbors.begin(), neighbors.end());
+    neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
+                     neighbors.end());
 
     // Build (global old, global new) map for dofs of dimension d
     std::unordered_map<std::int64_t, std::pair<int64_t, int>> global_old_new;
@@ -463,7 +482,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       const auto pos = std::upper_bound(offsets.begin(), offsets.end(), j);
       const int owner = std::distance(offsets.begin(), pos) - 1;
       global_old_new.insert(
-          {dofs_received[j], {dofs_received[j + 1], neighbours[owner]}});
+          {dofs_received[j], {dofs_received[j + 1], neighbors[owner]}});
     }
 
     // Build the dimension d part of local_to_global_new vector
