@@ -348,8 +348,6 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
   const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
-  // Find all geometrical nodes for the entity!=vertices for higher
-  // order elements
   if (dim == tdim)
   {
     auto dofs = x_dofmap.links(index);
@@ -369,7 +367,7 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     assert(e_to_c->num_links(index) > 0);
     const std::int32_t c = e_to_c->links(index)[0];
 
-    // Find local number of entity wrt. cell
+    // Find local number of entity wrt cell
     mesh.topology_mutable().create_connectivity(tdim, dim);
     auto c_to_e = mesh.topology_mutable().connectivity(tdim, dim);
     assert(c_to_e);
