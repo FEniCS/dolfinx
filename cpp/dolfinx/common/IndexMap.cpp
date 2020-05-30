@@ -281,14 +281,6 @@ IndexMap::IndexMap(
   if (out_edges_num.empty())
     out_edges_num.reserve(1);
 
-  std::set_union(_forward_neighbours.begin(), _forward_neighbours.end(),
-                 _reverse_neighbours.begin(), _reverse_neighbours.end(),
-                 std::back_inserter(_neighbours));
-
-  std::sort(_neighbours.begin(), _neighbours.end());
-  _neighbours.erase(std::unique(_neighbours.begin(), _neighbours.end()),
-                    _neighbours.end());
-
   // Create neighbourhood communicator. No communication is needed to
   // build the graph with complete adjacency information
   MPI_Comm forward_comm;
@@ -341,9 +333,9 @@ IndexMap::IndexMap(
                          forward_comm);
 
   _forward_indices = std::move(indices_in);
+  _forward_sizes = std::move(in_edges_num);
   for (auto& value : _forward_indices)
     value -= offset;
-  _forward_sizes = std::move(in_edges_num);
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -500,10 +492,18 @@ IndexMap::indices(bool unroll_block) const
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
 //----------------------------------------------------------------------------
-const std::vector<std::int32_t>& IndexMap::neighbours() const
+const std::vector<std::int32_t> IndexMap::neighbours() const
 {
-  // FIXME: use set_union of different forward and reverse neighbors
-  return _neighbours;
+  std::vector<std::int32_t> neighbours;
+
+  std::set_union(_forward_neighbours.begin(), _forward_neighbours.end(),
+                 _reverse_neighbours.begin(), _reverse_neighbours.end(),
+                 std::back_inserter(neighbours));
+
+  std::sort(neighbours.begin(), neighbours.end());
+  neighbours.erase(std::unique(neighbours.begin(), neighbours.end()),
+                   neighbours.end());
+  return neighbours;
 }
 //----------------------------------------------------------------------------
 std::map<int, std::set<int>> IndexMap::compute_shared_indices() const

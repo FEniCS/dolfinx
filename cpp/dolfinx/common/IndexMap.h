@@ -184,7 +184,7 @@ public:
   MPI_Comm mpi_comm() const;
 
   /// Neighbors for neighborhood communicator
-  const std::vector<std::int32_t>& neighbours() const;
+  const std::vector<std::int32_t> neighbours() const;
 
   /// @todo Aim to remove this function
   ///
@@ -277,7 +277,6 @@ private:
   dolfinx::MPI::Comm _mpi_comm;
 
   // Store neighbours so neighbourhood communicator can be re-built
-  std::vector<std::int32_t> _neighbours;
   std::vector<std::int32_t> _forward_neighbours;
   std::vector<std::int32_t> _reverse_neighbours;
 
