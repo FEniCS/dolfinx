@@ -12,8 +12,6 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshQuality.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
@@ -187,20 +185,6 @@ void mesh(py::module& m)
       .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
       .def_readwrite("name", &dolfinx::mesh::Mesh::name);
 
-  // dolfinx::mesh::MeshEntity class
-  py::class_<dolfinx::mesh::MeshEntity,
-             std::shared_ptr<dolfinx::mesh::MeshEntity>>(m, "MeshEntity",
-                                                         "MeshEntity object")
-      .def(py::init<const dolfinx::mesh::Mesh&, std::size_t, std::size_t>())
-      .def_property_readonly("dim", &dolfinx::mesh::MeshEntity::dim,
-                             "Topological dimension")
-      .def("mesh", &dolfinx::mesh::MeshEntity::mesh, "Associated mesh")
-      .def("index",
-           py::overload_cast<>(&dolfinx::mesh::MeshEntity::index, py::const_),
-           "Entity index")
-      .def("entities", &dolfinx::mesh::MeshEntity::entities,
-           py::return_value_policy::reference_internal);
-
 // dolfinx::mesh::MeshTags
 #define MESHTAGS_MACRO(SCALAR, SCALAR_NAME)                                    \
   py::class_<dolfinx::mesh::MeshTags<SCALAR>,                                  \
@@ -248,14 +232,6 @@ void mesh(py::module& m)
   MESHTAGS_MACRO(double, double);
   MESHTAGS_MACRO(std::int64_t, int64);
 #undef MESHTAGS_MACRO
-
-  // dolfinx::mesh::MeshQuality
-  py::class_<dolfinx::mesh::MeshQuality>(m, "MeshQuality", "MeshQuality class")
-      .def_static("dihedral_angle_histogram_data",
-                  &dolfinx::mesh::MeshQuality::dihedral_angle_histogram_data,
-                  py::arg("mesh"), py::arg("num_bins") = 50)
-      .def_static("dihedral_angles_min_max",
-                  &dolfinx::mesh::MeshQuality::dihedral_angles_min_max);
 
   // Partitioning interface
   m.def("partition_cells",
