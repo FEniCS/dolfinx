@@ -286,9 +286,9 @@ def test_GetCoordinates():
 
 @skip_in_parallel
 def xtest_cell_inradius(c0, c1, c5):
-    assert cpp.mesh.inradius(c0[0], c0[2]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
-    assert cpp.mesh.inradius(c1[0], c1[2]) == pytest.approx(0.0)
-    assert cpp.mesh.inradius(c5[0], c5[2]) == pytest.approx(math.sqrt(3.0) / 6.0)
+    assert cpp.mesh.inradius(c0[0], [c0[2]]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
+    assert cpp.mesh.inradius(c1[0], [c1[2]]) == pytest.approx(0.0)
+    assert cpp.mesh.inradius(c5[0], [c5[2]]) == pytest.approx(math.sqrt(3.0) / 6.0)
 
 
 @skip_in_parallel
