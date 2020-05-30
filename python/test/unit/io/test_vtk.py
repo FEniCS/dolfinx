@@ -94,7 +94,7 @@ def test_save_1d_scalar(tempfile, file_options):
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_2d_scalar(tempfile, file_options):
+def test_save_2d_scalar_old(tempfile, file_options):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0)
@@ -144,7 +144,7 @@ def test_save_1d_vector(tempfile, file_options):
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_2d_vector(tempfile, file_options):
+def test_save_2d_vector_old(tempfile, file_options):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     u.vector.set(1)
