@@ -12,7 +12,6 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/utils.h>
 
 using namespace dolfinx;
@@ -69,7 +68,6 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
     // Get entity (child_1 denotes entity index for leaves)
     assert(tree.tdim() == mesh.topology().dim());
     const int entity_index = bbox[1];
-    mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
 
     // If entity is closer than best result so far, then return it
     const double r2 = geometry::squared_distance(mesh, mesh.topology().dim(),
@@ -354,8 +352,8 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
   const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
-  // Find all geometrical nodes for the entity!=vertices for higher order
-  // elements (Currently convex hull approximation of linearized geometry)
+  // Find all geometrical nodes for the entity!=vertices for higher
+  // order elements
   if (dim == tdim)
   {
     auto dofs = x_dofmap.links(index);
@@ -386,9 +384,8 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     assert(it0 != (cell_entities.data() + cell_entities.rows()));
     const int local_cell_entity = std::distance(cell_entities.data(), it0);
 
-    auto dofs = x_dofmap.links(c);
-
     // Tabulate geometry dofs for the entity
+    auto dofs = x_dofmap.links(c);
     const Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs
         = geometry.cmap().dof_layout().entity_closure_dofs(dim,
                                                            local_cell_entity);
