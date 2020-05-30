@@ -8,7 +8,6 @@
 #include "caster_petsc.h"
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
-#include <dolfinx/io/HDF5File.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
@@ -33,8 +32,8 @@ void io(py::module& m)
 {
 
   // dolfinx::io::cell permutation functions
-  m.def("cell_perm_vtk", &dolfinx::io::cells::perm_vtk);
-  m.def("cell_perm_gmsh", &dolfinx::io::cells::perm_gmsh);
+  m.def("perm_vtk", &dolfinx::io::cells::perm_vtk);
+  m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh);
 
   // TODO: Template for different values dtypes
   m.def("extract_local_entities",

@@ -28,8 +28,8 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
-                        geom, ghost_mode);
+    return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
+                             element, geom, ghost_mode);
   }
 
   // Check options
@@ -192,8 +192,8 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     }
   }
 
-  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
-                      geom, ghost_mode);
+  return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
+                           element, geom, ghost_mode);
 }
 
 } // namespace
@@ -208,8 +208,8 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(0, 4);
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
-                        geom, ghost_mode);
+    return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
+                             element, geom, ghost_mode);
   }
 
   const std::size_t nx = n[0];
@@ -253,8 +253,8 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
       ++cell;
     }
 
-  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
-                      geom, ghost_mode);
+  return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
+                           element, geom, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,

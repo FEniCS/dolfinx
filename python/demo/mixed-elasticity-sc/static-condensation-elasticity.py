@@ -164,10 +164,12 @@ A.assemble()
 bb_tree = dolfinx.cpp.geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
-p = [48.0, 52.0, 0.0]
-cell = dolfinx.cpp.geometry.compute_first_collision(bb_tree, p)
-if cell >= 0:
-    value = uc.eval(p, numpy.asarray(cell))
+p = numpy.array([48.0, 52.0, 0.0], dtype=numpy.float64)
+cell_candidates = dolfinx.cpp.geometry.compute_collisions_point(bb_tree, p)
+cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, p, 1)
+
+if len(cell) > 0:
+    value = uc.eval(p, cell)
     print(value[1])
     assert numpy.isclose(value[1], 23.95, rtol=1.e-2)
 

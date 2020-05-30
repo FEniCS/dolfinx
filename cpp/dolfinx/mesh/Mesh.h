@@ -155,11 +155,11 @@ private:
 };
 
 /// Create a mesh
-Mesh create(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const fem::CoordinateElement& element,
-            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>& x,
-            GhostMode ghost_mode);
+Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+                 const fem::CoordinateElement& element,
+                 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>& x,
+                 GhostMode ghost_mode);
 
 } // namespace mesh
 } // namespace dolfinx
