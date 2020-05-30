@@ -18,7 +18,6 @@ namespace dolfinx
 namespace mesh
 {
 class Mesh;
-class MeshEntity;
 } // namespace mesh
 
 namespace geometry
@@ -83,9 +82,10 @@ public:
 
 private:
   // Constructor
-  BoundingBoxTree(const std::vector<double>& leaf_bboxes,
-                  const std::vector<int>::iterator partition_begin,
-                  const std::vector<int>::iterator partition_end);
+  BoundingBoxTree(
+      const Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor>& bboxes,
+      const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
+          bbox_coords);
 
   // Topological dimension of leaf entities
   int _tdim;

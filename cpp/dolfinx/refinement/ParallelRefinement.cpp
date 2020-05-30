@@ -220,6 +220,7 @@ bool ParallelRefinement::mark(std::int32_t edge_index)
     for (int p : map_it->second)
       _marked_for_update[p].push_back(global_index);
   }
+
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -366,8 +367,8 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
 std::vector<std::int64_t> ParallelRefinement::adjust_indices(
     const std::shared_ptr<const common::IndexMap>& index_map, std::int32_t n)
 {
-  // Add in an extra "n" indices at the end of the current local_range of
-  // "index_map", and adjust existing indices to match.
+  // Add in an extra "n" indices at the end of the current local_range
+  // of "index_map", and adjust existing indices to match.
 
   // Get number of new indices on all processes
   int mpi_size = dolfinx::MPI::size(index_map->mpi_comm());
@@ -412,7 +413,7 @@ mesh::Mesh ParallelRefinement::build_local(
 //-----------------------------------------------------------------------------
 mesh::Mesh
 ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
-                              bool redistribute) const
+                              int num_ghost_cells, bool redistribute) const
 {
   const int num_vertices_per_cell
       = mesh::cell_num_entities(_mesh.topology().cell_type(), 0);
@@ -425,19 +426,45 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
   for (std::int32_t i = 0; i < num_local_cells; i++)
     global_cell_indices[i] = idx_global_offset + i;
 
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      cells(cell_topology.data(), num_local_cells, num_vertices_per_cell);
+  // Check if mesh has ghost cells on any rank
+  int max_ghost_cells = 0;
+  MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
+                _mesh.mpi_comm());
 
   // Build mesh
   if (redistribute)
   {
-    return mesh::create_mesh(_mesh.mpi_comm(),
-                             graph::AdjacencyList<std::int64_t>(cells),
-                             _mesh.geometry().cmap(), _new_vertex_coordinates,
-                             mesh::GhostMode::none);
+    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        cells(cell_topology.data(), num_local_cells - num_ghost_cells,
+              num_vertices_per_cell);
+
+    if (max_ghost_cells == 0)
+    {
+      return mesh::create_mesh(_mesh.mpi_comm(),
+                               graph::AdjacencyList<std::int64_t>(cells),
+                               _mesh.geometry().cmap(), _new_vertex_coordinates,
+                               mesh::GhostMode::none);
+    }
+    else
+    {
+      return mesh::create_mesh(_mesh.mpi_comm(),
+                               graph::AdjacencyList<std::int64_t>(cells),
+                               _mesh.geometry().cmap(), _new_vertex_coordinates,
+                               mesh::GhostMode::shared_facet);
+    }
   }
 
+  if (max_ghost_cells > 0)
+  {
+    throw std::runtime_error("Refinement of ghosted meshes without "
+                             "re-partitioning is not supported yet.");
+  }
+
+  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      cells(cell_topology.data(), num_local_cells - num_ghost_cells,
+            num_vertices_per_cell);
   MPI_Comm comm = _mesh.mpi_comm();
   mesh::Topology topology(comm, _mesh.geometry().cmap().cell_shape());
   const graph::AdjacencyList<std::int64_t> my_cells(cells);
