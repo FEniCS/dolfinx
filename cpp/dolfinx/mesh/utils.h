@@ -20,7 +20,6 @@ namespace mesh
 {
 enum class CellType;
 class Mesh;
-class MeshEntity;
 
 /// Extract topology from cell data, i.e. extract cell vertices
 /// @param[in] cell_type The cell shape
@@ -62,7 +61,8 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 cell_normals(const Mesh& mesh, int dim);
 
 /// Compute of given facet with respect to the cell
-Eigen::Vector3d normal(const MeshEntity& cell, int facet_local);
+// Eigen::Vector3d normal(const Mesh& mesh, std::int32_t cell_index,
+//                        int facet_local);
 
 /// Compute midpoints or mesh entities of a given dimension
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
