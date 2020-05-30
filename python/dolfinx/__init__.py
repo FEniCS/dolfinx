@@ -41,7 +41,7 @@ from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
 from dolfinx.mesh import Mesh
-from .cpp.mesh import Topology, Geometry, MeshEntity, MeshQuality
+from .cpp.mesh import Topology, Geometry, MeshEntity
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)
 

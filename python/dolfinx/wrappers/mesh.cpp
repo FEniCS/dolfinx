@@ -13,7 +13,6 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshQuality.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
@@ -248,14 +247,6 @@ void mesh(py::module& m)
   MESHTAGS_MACRO(double, double);
   MESHTAGS_MACRO(std::int64_t, int64);
 #undef MESHTAGS_MACRO
-
-  // dolfinx::mesh::MeshQuality
-  py::class_<dolfinx::mesh::MeshQuality>(m, "MeshQuality", "MeshQuality class")
-      .def_static("dihedral_angle_histogram_data",
-                  &dolfinx::mesh::MeshQuality::dihedral_angle_histogram_data,
-                  py::arg("mesh"), py::arg("num_bins") = 50)
-      .def_static("dihedral_angles_min_max",
-                  &dolfinx::mesh::MeshQuality::dihedral_angles_min_max);
 
   // Partitioning interface
   m.def("partition_cells",

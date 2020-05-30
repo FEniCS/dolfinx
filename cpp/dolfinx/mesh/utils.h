@@ -60,10 +60,6 @@ Eigen::ArrayXd radius_ratio(const Mesh& mesh,
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 cell_normals(const Mesh& mesh, int dim);
 
-/// Compute of given facet with respect to the cell
-// Eigen::Vector3d normal(const Mesh& mesh, std::int32_t cell_index,
-//                        int facet_local);
-
 /// Compute midpoints or mesh entities of a given dimension
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
     const mesh::Mesh& mesh, int dim,
