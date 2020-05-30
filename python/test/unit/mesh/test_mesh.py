@@ -377,16 +377,13 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     map = mesh.topology.index_map(mesh.topology.dim)
     num_cells = map.size_local + map.num_ghosts
     for i in range(num_cells):
-        # cell = MeshEntity(mesh, mesh.topology.dim, i)
-        # Get mesh-global (MPI-local) indices of cell vertices
-        # vertex_global_indices = cell.entities(0)
+        # Get indices of cell vertices
         vertex_global_indices = mesh.topology.connectivity(mesh.topology.dim, 0).links(i)
 
         # Loop over all dimensions of reference cell topology
         for d, d_topology in fiat_cell.get_topology().items():
 
             # Get entities of dimension d on the cell
-            # entities = cell.entities(d)
             entities = mesh.topology.connectivity(mesh.topology.dim, d).links(i)
             if len(entities) == 0:  # Fixup for highest dimension
                 entities = (i, )
