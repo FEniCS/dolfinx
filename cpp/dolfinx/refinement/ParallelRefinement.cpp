@@ -220,6 +220,7 @@ bool ParallelRefinement::mark(std::int32_t edge_index)
     for (int p : map_it->second)
       _marked_for_update[p].push_back(global_index);
   }
+
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -428,16 +429,28 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
   // Build mesh
   if (redistribute)
   {
-    mesh::GhostMode ghost_mode = mesh::GhostMode::none;
-    if (num_ghost_cells > 0)
-      ghost_mode = mesh::GhostMode::shared_facet;
     Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
         cells(cell_topology.data(), num_local_cells - num_ghost_cells,
               num_vertices_per_cell);
-    return mesh::create_mesh(
-        _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells),
-        _mesh.geometry().cmap(), _new_vertex_coordinates, ghost_mode);
+
+    int max_ghost_cells = 0;
+    MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
+                  _mesh.mpi_comm());
+    if (max_ghost_cells == 0)
+    {
+      return mesh::create_mesh(_mesh.mpi_comm(),
+                               graph::AdjacencyList<std::int64_t>(cells),
+                               _mesh.geometry().cmap(), _new_vertex_coordinates,
+                               mesh::GhostMode::none);
+    }
+    else
+    {
+      return mesh::create_mesh(_mesh.mpi_comm(),
+                               graph::AdjacencyList<std::int64_t>(cells),
+                               _mesh.geometry().cmap(), _new_vertex_coordinates,
+                               mesh::GhostMode::shared_facet);
+    }
   }
 
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,

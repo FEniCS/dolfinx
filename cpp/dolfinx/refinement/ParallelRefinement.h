@@ -33,9 +33,9 @@ namespace refinement
 /// Data structure and methods for refining meshes in parallel
 
 /// ParallelRefinement encapsulates two main features: a distributed
-/// MeshTags defined over the mesh edges, which can be updated
-/// across processes, and storage for local mesh data, which can be used
-/// to construct the new Mesh
+/// MeshTags defined over the mesh edges, which can be updated across
+/// processes, and storage for local mesh data, which can be used to
+/// construct the new Mesh
 
 class ParallelRefinement
 {
@@ -78,11 +78,12 @@ public:
   /// @return edge_to_new_vertex map
   std::map<std::int32_t, std::int64_t> create_new_vertices();
 
-  /// Use vertex and topology data to partition new mesh across processes
+  /// Use vertex and topology data to partition new mesh across
+  /// processes
   /// @param[in] cell_topology Topology of cells, (vertex indices)
-  /// @param[in] num_ghost_cells Number of cells which are ghost (at end of
-  /// list)
-  /// @param[in] redistribute Flag, calls partitioner if true
+  /// @param[in] num_ghost_cells Number of cells which are ghost (at end
+  ///   of list)
+  /// @param[in] redistribute Call graph partitioner if true
   /// @return New mesh
   mesh::Mesh partition(const std::vector<std::int64_t>& cell_topology,
                        int num_ghost_cells, bool redistribute) const;
@@ -92,13 +93,14 @@ public:
   /// @return A Mesh
   mesh::Mesh build_local(const std::vector<std::int64_t>& cell_topology) const;
 
-  /// Adjust indices to account for extra n values on each process
-  /// This is a utility to help add new topological vertices on each process
+  /// Adjust indices to account for extra n values on each process This
+  /// is a utility to help add new topological vertices on each process
   /// into the space of the index map.
   ///
   /// @param index_map IndexMap of current mesh vertices
   /// @param n Number of new entries to be accommodated on this process
-  /// @return Global indices as if "n" extra values are appended on each process
+  /// @return Global indices as if "n" extra values are appended on each
+  ///   process
   static std::vector<std::int64_t>
   adjust_indices(const std::shared_ptr<const common::IndexMap>& index_map,
                  std::int32_t n);
