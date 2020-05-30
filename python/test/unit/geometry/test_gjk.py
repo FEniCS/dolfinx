@@ -214,6 +214,5 @@ def test_collision_2nd_order_triangle():
     # point = np.array([0.25, 0.89320760, 0])
     print(point)
     tdim = mesh.topology.dim
-    curved_facet = cpp.mesh.MeshEntity(mesh, tdim - 1, 2)
-    distance = cpp.geometry.squared_distance(curved_facet, point)
+    distance = cpp.geometry.squared_distance(mesh, tdim - 1, 2, point)
     assert np.isclose(distance, 0)

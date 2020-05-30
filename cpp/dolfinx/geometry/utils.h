@@ -68,11 +68,16 @@ double compute_squared_distance_bbox(
 
 /// Compute squared distance from a given point to the nearest point on
 /// a cell (only first order convex cells are supported at this stage)
-/// Uses the GJK algorithm, see geometry::compute_distance_gjk for details.
-/// @param[in] entity MeshEntity
-/// @param[in] p Point
+/// Uses the GJK algorithm, see geometry::compute_distance_gjk for
+/// details.
+///
+/// @param[in] mesh Mesh containing the mesh entity
+/// @param[in] dim The topological dimension of the mesh entity
+/// @param[in] index The index of the mesh entity
+/// @param[in] p The point from which to compouted the shortest distance
+///    to the mesh to compute the Point
 /// @return shortest squared distance from p to entity
-double squared_distance(const mesh::MeshEntity& entity,
+double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
                         const Eigen::Vector3d& p);
 
 /// From the given Mesh, select up to n cells from the list which actually
