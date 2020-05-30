@@ -402,28 +402,26 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
       std::sort(neighbors.begin(), neighbors.end());
       neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                       neighbors.end());
+                      neighbors.end());
 
       MPI_Dist_graph_create_adjacent(
           map->mpi_comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
           neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
           false, &comm[d]);
 
-      int num_neighbors(-1), outdegree(-2), weighted(-1);
-      MPI_Dist_graph_neighbors_count(comm[d], &num_neighbors, &outdegree,
-                                     &weighted);
-      assert(num_neighbors == outdegree);
+      int indegree(-1), outdegree(-2), weighted(-1);
+      MPI_Dist_graph_neighbors_count(comm[d], &indegree, &outdegree, &weighted);
 
       // Number and values to send and receive
       const int num_indices = global[d].size();
-      std::vector<int> num_indices_recv(num_neighbors);
+      std::vector<int> num_indices_recv(indegree);
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, num_indices_recv.data(),
                              1, MPI_INT, comm[d]);
 
       // Compute displacements for data to receive. Last entry has total
       // number of received items.
       std::vector<int>& disp = recv_offsets[d];
-      disp.resize(num_neighbors + 1);
+      disp.resize(indegree + 1);
       std::partial_sum(num_indices_recv.begin(), num_indices_recv.end(),
                        disp.begin() + 1);
 
@@ -471,7 +469,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
     std::sort(neighbors.begin(), neighbors.end());
     neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                     neighbors.end());
+                    neighbors.end());
 
     // Build (global old, global new) map for dofs of dimension d
     std::unordered_map<std::int64_t, std::pair<int64_t, int>> global_old_new;

@@ -126,34 +126,36 @@ common::stack_index_maps(
   }
 
   // Build array of neighborhood ranks
-  std::set<std::int32_t> neighbor_set;
+  std::set<std::int32_t> in_neighbor_set, out_neighbor_set;
   for (const common::IndexMap& map : maps)
   {
     auto [fwd_neighbors, rev_neighbors] = map.neighbors();
-    neighbor_set.insert(fwd_neighbors.begin(), fwd_neighbors.end());
-    neighbor_set.insert(rev_neighbors.begin(), rev_neighbors.end());
+    in_neighbor_set.insert(rev_neighbors.begin(), rev_neighbors.end());
+    out_neighbor_set.insert(fwd_neighbors.begin(), fwd_neighbors.end());
   }
-  const std::vector<int> neighbors(neighbor_set.begin(), neighbor_set.end());
+  const std::vector<int> in_neighbors(in_neighbor_set.begin(),
+                                      in_neighbor_set.end());
+  const std::vector<int> out_neighbors(out_neighbor_set.begin(),
+                                       out_neighbor_set.end());
 
   // Create neighborhood communicator
   MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(maps.at(0).get().mpi_comm(), neighbors.size(),
-                                 neighbors.data(), MPI_UNWEIGHTED,
-                                 neighbors.size(), neighbors.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  MPI_Dist_graph_create_adjacent(
+      maps.at(0).get().mpi_comm(), in_neighbors.size(), in_neighbors.data(),
+      MPI_UNWEIGHTED, out_neighbors.size(), out_neighbors.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
-  int num_neighbors(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
-  assert(num_neighbors == outdegree);
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
 
   // Figure out how much data to receive from each neighbor
   const int num_my_rows = indices.size();
-  std::vector<int> num_rows_recv(num_neighbors);
+  std::vector<int> num_rows_recv(indegree);
   MPI_Neighbor_allgather(&num_my_rows, 1, MPI_INT, num_rows_recv.data(), 1,
                          MPI_INT, comm);
 
   // Compute displacements for data to receive
-  std::vector<int> disp(num_neighbors + 1, 0);
+  std::vector<int> disp(indegree + 1, 0);
   std::partial_sum(num_rows_recv.begin(), num_rows_recv.end(),
                    disp.begin() + 1);
 
@@ -699,10 +701,10 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
 
   // Send/receive data
   std::vector<T> data_to_recv(displs_recv.back());
-  MPI_Neighbor_alltoallv(
-      data_to_send.data(), sizes_send.data(), displs_send.data(),
-      MPI::mpi_type<T>(), data_to_recv.data(), sizes_recv.data(),
-      displs_recv.data(), MPI::mpi_type<T>(), neighbor_comm);
+  MPI_Neighbor_alltoallv(data_to_send.data(), sizes_send.data(),
+                         displs_send.data(), MPI::mpi_type<T>(),
+                         data_to_recv.data(), sizes_recv.data(),
+                         displs_recv.data(), MPI::mpi_type<T>(), neighbor_comm);
 
   // Copy into ghost area ("remote_data")
   std::vector<std::int32_t> displs(displs_recv);
@@ -771,10 +773,10 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
 
   // Send and receive data
   std::vector<T> recv_data(displs_recv.back());
-  MPI_Neighbor_alltoallv(
-      send_data.data(), send_sizes.data(), displs_send.data(),
-      MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
-      displs_recv.data(), MPI::mpi_type<T>(), neighbor_comm);
+  MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
+                         displs_send.data(), MPI::mpi_type<T>(),
+                         recv_data.data(), recv_sizes.data(),
+                         displs_recv.data(), MPI::mpi_type<T>(), neighbor_comm);
 
   // Copy or accumulate into "local_data"
   if (op == Mode::insert)
