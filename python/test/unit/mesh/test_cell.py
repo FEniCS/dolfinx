@@ -8,37 +8,37 @@ import mpi4py
 import numpy
 import pytest
 from mpi4py import MPI
-from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfinx import (Mesh, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, cpp)
+from dolfinx import Mesh, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 from dolfinx.cpp.mesh import CellType
+from dolfinx_utils.test.skips import skip_in_parallel
 
 
 @skip_in_parallel
 def test_distance_interval():
     mesh = UnitIntervalMesh(MPI.COMM_SELF, 1)
-    cell = MeshEntity(mesh, mesh.topology.dim, 0)
-    assert cpp.geometry.squared_distance(cell, numpy.array([-1.0, 0, 0])) == pytest.approx(1.0)
-    assert cpp.geometry.squared_distance(cell, numpy.array([0.5, 0, 0])) == pytest.approx(0.0)
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 0, numpy.array([-1.0, 0, 0])) == pytest.approx(1.0)
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 0, numpy.array([0.5, 0, 0])) == pytest.approx(0.0)
 
 
 @skip_in_parallel
 def test_distance_triangle():
     mesh = UnitSquareMesh(MPI.COMM_SELF, 1, 1)
-    cell = MeshEntity(mesh, mesh.topology.dim, 1)
-    assert cpp.geometry.squared_distance(cell, numpy.array([-1.0, -1.0, 0.0])) == pytest.approx(2.0)
-    assert cpp.geometry.squared_distance(cell, numpy.array([-1.0, 0.5, 0.0])) == pytest.approx(1.0)
-    assert cpp.geometry.squared_distance(cell, numpy.array([0.5, 0.5, 0.0])) == pytest.approx(0.0)
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 1,
+                                         numpy.array([-1.0, -1.0, 0.0])) == pytest.approx(2.0)
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 1,
+                                         numpy.array([-1.0, 0.5, 0.0])) == pytest.approx(1.0)
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 1, numpy.array([0.5, 0.5, 0.0])) == pytest.approx(0.0)
 
 
 @skip_in_parallel
 def test_distance_tetrahedron():
     mesh = UnitCubeMesh(MPI.COMM_SELF, 1, 1, 1)
-    cell = MeshEntity(mesh, mesh.topology.dim, 5)
-    assert cpp.geometry.squared_distance(cell, numpy.array([-1.0, -1.0, -1.0])) == pytest.approx(3.0)
-    assert cpp.geometry.squared_distance(cell, numpy.array([-1.0, 0.5, 0.5])) == pytest.approx(1.0)
-    assert cpp.geometry.squared_distance(cell, numpy.array([0.5, 0.5, 0.5])) == pytest.approx(0.0)
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 5,
+                                         numpy.array([-1.0, -1.0, -1.0])) == pytest.approx(3.0)
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 5,
+                                         numpy.array([-1.0, 0.5, 0.5])) == pytest.approx(1.0)
+    assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 5, numpy.array([0.5, 0.5, 0.5])) == pytest.approx(0.0)
 
 
 @pytest.mark.parametrize(

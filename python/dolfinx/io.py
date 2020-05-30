@@ -66,7 +66,9 @@ class XDMFFile(cpp.io.XDMFFile):
 _gmsh_cells = dict(tetra=("tetrahedron", 1), tetra10=("tetrahedron", 2), tetra20=("tetrahedron", 3),
                    hexahedron=("hexahedron", 1), hexahedron27=("hexahedron", 2),
                    triangle=("triangle", 1), triangle6=("triangle", 2), triangle10=("triangle", 3),
-                   quad=("quadrilateral", 1), quad9=("quadrilateral", 2), quad16=("quadrilateral", 3))
+                   quad=("quadrilateral", 1), quad9=("quadrilateral", 2), quad16=("quadrilateral", 3),
+                   line=("interval", 1), line3=("interval", 2), line4=("interval", 3),
+                   vertex=("point", 1))
 
 
 def ufl_mesh_from_gmsh(gmsh_cell, gdim):

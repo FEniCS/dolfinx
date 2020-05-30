@@ -1,4 +1,5 @@
-// Copyright (C) 2006-2020 Chris N. Richardson, Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2020 Chris N. Richardson, Anders Logg, Garth N. Wells and
+// Jørgen S. Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -11,7 +12,6 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/utils.h>
 
 using namespace dolfinx;
@@ -68,10 +68,10 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
     // Get entity (child_1 denotes entity index for leaves)
     assert(tree.tdim() == mesh.topology().dim());
     const int entity_index = bbox[1];
-    mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
 
     // If entity is closer than best result so far, then return it
-    const double r2 = geometry::squared_distance(cell, point);
+    const double r2 = geometry::squared_distance(mesh, mesh.topology().dim(),
+                                                 entity_index, point);
     if (r2 < R2)
     {
       closest_entity = entity_index;
@@ -300,22 +300,18 @@ std::pair<int, double> geometry::compute_closest_entity(
   }
 
   // Search point cloud to get a good starting guess
-  std::pair<int, double> guess = compute_closest_point(tree_midpoint, p);
-  const double r = guess.second;
+  const auto [index0, distance0] = compute_closest_point(tree_midpoint, p);
 
   // Return if we have found the point
-  if (r == 0.0)
-    return guess;
+  if (distance0 == 0.0)
+    return {index0, distance0};
 
   // Call recursive find function
-  std::pair<int, double> e = _compute_closest_entity(
-      tree, p, tree.num_bboxes() - 1, mesh, guess.first, r * r);
+  const auto [index1, distance1] = _compute_closest_entity(
+      tree, p, tree.num_bboxes() - 1, mesh, index0, distance0 * distance0);
+  assert(index1 >= 0);
 
-  // Sanity check
-  assert(e.first >= 0);
-
-  e.second = sqrt(e.second);
-  return e;
+  return {index1, std::sqrt(distance1)};
 }
 //-----------------------------------------------------------------------------
 std::pair<int, double>
@@ -345,42 +341,55 @@ geometry::compute_closest_point(const BoundingBoxTree& tree,
   return {closest_point, sqrt(R2)};
 }
 //-----------------------------------------------------------------------------
-double geometry::squared_distance(const mesh::MeshEntity& entity,
-                                  const Eigen::Vector3d& p)
+double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
+                                  std::int32_t index, const Eigen::Vector3d& p)
 {
-  const int dim = entity.dim();
-  const int tdim = entity.mesh().topology().dim();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = entity.mesh().geometry().dofmap();
+  const int tdim = mesh.topology().dim();
+  const mesh::Geometry& geometry = mesh.geometry();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
-  // Find attached cell
-  entity.mesh().topology_mutable().create_connectivity(dim, tdim);
-  auto e_to_c = entity.mesh().topology().connectivity(dim, tdim);
-  assert(e_to_c);
-  assert(e_to_c->num_links(entity.index()) > 0);
-  const std::int32_t c = e_to_c->links(entity.index())[0];
-
-  auto dofs = x_dofmap.links(c);
-  auto c_to_v = entity.mesh().topology().connectivity(tdim, 0);
-  assert(c_to_v);
-  auto cell_vertices = c_to_v->links(c);
-
-  auto vertices = entity.entities(0);
-  const mesh::Geometry& geometry = entity.mesh().geometry();
-
-  Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> v(vertices.size(),
-                                                              3);
-  for (int i = 0; i < vertices.size(); ++i)
+  if (dim == tdim)
   {
-    const std::int32_t* it
-        = std::find(cell_vertices.data(),
-                    cell_vertices.data() + cell_vertices.rows(), vertices[i]);
-    assert(it != (cell_vertices.data() + cell_vertices.rows()));
-    const int local_vertex = std::distance(cell_vertices.data(), it);
-    v.row(i) = geometry.node(dofs(local_vertex));
-  }
+    auto dofs = x_dofmap.links(index);
+    Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(dofs.size(),
+                                                                    3);
+    for (int i = 0; i < dofs.size(); i++)
+      nodes.row(i) = geometry.node(dofs(i));
 
-  return geometry::compute_distance_gjk(p.transpose(), v).squaredNorm();
+    return geometry::compute_distance_gjk(p.transpose(), nodes).squaredNorm();
+  }
+  else
+  {
+    // Find attached cell
+    mesh.topology_mutable().create_connectivity(dim, tdim);
+    auto e_to_c = mesh.topology().connectivity(dim, tdim);
+    assert(e_to_c);
+    assert(e_to_c->num_links(index) > 0);
+    const std::int32_t c = e_to_c->links(index)[0];
+
+    // Find local number of entity wrt cell
+    mesh.topology_mutable().create_connectivity(tdim, dim);
+    auto c_to_e = mesh.topology_mutable().connectivity(tdim, dim);
+    assert(c_to_e);
+    auto cell_entities = c_to_e->links(c);
+    const auto* it0
+        = std::find(cell_entities.data(),
+                    cell_entities.data() + cell_entities.rows(), index);
+    assert(it0 != (cell_entities.data() + cell_entities.rows()));
+    const int local_cell_entity = std::distance(cell_entities.data(), it0);
+
+    // Tabulate geometry dofs for the entity
+    auto dofs = x_dofmap.links(c);
+    const Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs
+        = geometry.cmap().dof_layout().entity_closure_dofs(dim,
+                                                           local_cell_entity);
+    Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(
+        entity_dofs.size(), 3);
+    for (int i = 0; i < entity_dofs.size(); i++)
+      nodes.row(i) = geometry.node(dofs(entity_dofs(i)));
+
+    return geometry::compute_distance_gjk(p.transpose(), nodes).squaredNorm();
+  }
 }
 //-------------------------------------------------------------------------------
 std::vector<int>
@@ -393,8 +402,7 @@ geometry::select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
   std::vector<int> result;
   for (int c : candidate_cells)
   {
-    mesh::MeshEntity entity(mesh, tdim, c);
-    const double d2 = squared_distance(entity, point);
+    const double d2 = squared_distance(mesh, tdim, c, point);
     if (d2 < eps2)
     {
       result.push_back(c);
@@ -404,3 +412,4 @@ geometry::select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
   }
   return result;
 }
+//-------------------------------------------------------------------------------
