@@ -10,7 +10,6 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/utils.h>
 
 using namespace dolfinx;
@@ -21,28 +20,26 @@ namespace
 //-----------------------------------------------------------------------------
 // Compute bounding box of mesh entity
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
-compute_bbox_of_entity(const mesh::MeshEntity& entity)
+compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get mesh entity data
-  const int tdim = entity.mesh().topology().dim();
-  const int dim = entity.dim();
-  const mesh::Geometry& geometry = entity.mesh().geometry();
+  const int tdim = mesh.topology().dim();
+  const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-
-  entity.mesh().topology_mutable().create_connectivity(dim, tdim);
+  mesh.topology_mutable().create_connectivity(dim, tdim);
 
   // Find attached cell
-  auto e_to_c = entity.mesh().topology().connectivity(dim, tdim);
+  auto e_to_c = mesh.topology().connectivity(dim, tdim);
   assert(e_to_c);
-  assert(e_to_c->num_links(entity.index()) > 0);
-  const std::int32_t c = e_to_c->links(entity.index())[0];
+  assert(e_to_c->num_links(index) > 0);
+  const std::int32_t c = e_to_c->links(index)[0];
 
   auto dofs = x_dofmap.links(c);
-  auto c_to_v = entity.mesh().topology().connectivity(tdim, 0);
+  auto c_to_v = mesh.topology().connectivity(tdim, 0);
   assert(c_to_v);
   auto cell_vertices = c_to_v->links(c);
 
-  auto vertices = entity.entities(0);
+  auto vertices = mesh.topology().connectivity(dim, 0)->links(index);
   assert(vertices.rows() >= 2);
   const auto* it
       = std::find(cell_vertices.data(),
@@ -281,10 +278,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> leaf_bboxes(
       2 * num_leaves, 3);
   for (int e = 0; e < num_leaves; ++e)
-  {
-    leaf_bboxes.block<2, 3>(2 * e, 0)
-        = compute_bbox_of_entity(mesh::MeshEntity(mesh, tdim, e));
-  }
+    leaf_bboxes.block<2, 3>(2 * e, 0) = compute_bbox_of_entity(mesh, tdim, e);
 
   // Recursively build the bounding box tree from the leaves
   std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);

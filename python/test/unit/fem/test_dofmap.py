@@ -7,14 +7,14 @@
 
 import sys
 
-from mpi4py import MPI
 import numpy as np
 import pytest
-from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 
-from dolfinx import (FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
-                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, fem)
+from dolfinx import (FunctionSpace, Mesh, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, VectorFunctionSpace, fem)
 from dolfinx.cpp.mesh import CellType
+from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement
 
 xfail = pytest.mark.xfail(strict=True)

@@ -6,7 +6,6 @@
 
 #include "utils.h"
 #include "Geometry.h"
-#include "MeshEntity.h"
 #include "MeshTags.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
@@ -480,8 +479,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
     for (int i = 0; i < num_cells; ++i)
     {
       // Get the two vertices as points
-      const mesh::MeshEntity e(mesh, 1, i);
-      auto vertices = e.entities(0);
+      auto vertices = mesh.topology().connectivity(1, 0)->links(i);
       Eigen::Vector3d p0 = geometry.node(vertices[0]);
       Eigen::Vector3d p1 = geometry.node(vertices[1]);
 
@@ -500,8 +498,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
     for (int i = 0; i < num_cells; ++i)
     {
       // Get the three vertices as points
-      const mesh::MeshEntity e(mesh, 2, i);
-      auto vertices = e.entities(0);
+      auto vertices = mesh.topology().connectivity(2, 0)->links(i);
       const Eigen::Vector3d p0 = geometry.node(vertices[0]);
       const Eigen::Vector3d p1 = geometry.node(vertices[1]);
       const Eigen::Vector3d p2 = geometry.node(vertices[2]);
@@ -521,8 +518,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
     for (int i = 0; i < num_cells; ++i)
     {
       // Get three vertices as points
-      const mesh::MeshEntity e(mesh, 2, i);
-      auto vertices = e.entities(0);
+      auto vertices = mesh.topology().connectivity(2, 0)->links(i);
       const Eigen::Vector3d p0 = geometry.node(vertices[0]);
       const Eigen::Vector3d p1 = geometry.node(vertices[1]);
       const Eigen::Vector3d p2 = geometry.node(vertices[2]);
