@@ -18,7 +18,6 @@ namespace dolfinx
 namespace mesh
 {
 class Mesh;
-class MeshEntity;
 } // namespace mesh
 
 namespace geometry

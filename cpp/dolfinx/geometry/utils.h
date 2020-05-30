@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "BoundingBoxTree.h"
 #include <Eigen/Dense>
 #include <utility>
 #include <vector>
@@ -16,11 +15,12 @@ namespace dolfinx
 namespace mesh
 {
 class Mesh;
-class MeshEntity;
 } // namespace mesh
 
 namespace geometry
 {
+class BoundingBoxTree;
+
 /// Create a boundary box tree for cell midpoints
 /// @param[in] mesh The mesh build tree of cell midpoints from
 /// @return Bounding box tree for mesh cell midpoints
@@ -54,7 +54,7 @@ compute_closest_entity(const BoundingBoxTree& tree,
 
 /// Compute closest point and distance to a given point
 /// @param[in] tree The bounding box tree. It must have been initialised
-///                  with topological dimension 0.
+///   with topological dimension 0.
 /// @param[in] p The point to compute the distance from
 /// @return (point index, distance)
 std::pair<int, double> compute_closest_point(const BoundingBoxTree& tree,
@@ -68,11 +68,18 @@ double compute_squared_distance_bbox(
 
 /// Compute squared distance from a given point to the nearest point on
 /// a cell (only first order convex cells are supported at this stage)
-/// Uses the GJK algorithm, see geometry::compute_distance_gjk for details.
-/// @param[in] entity MeshEntity
-/// @param[in] p Point
+/// Uses the GJK algorithm, see geometry::compute_distance_gjk for
+/// details.
+///
+/// @note Currently a convex hull approximation of linearized geometry.
+///
+/// @param[in] mesh Mesh containing the mesh entity
+/// @param[in] dim The topological dimension of the mesh entity
+/// @param[in] index The index of the mesh entity
+/// @param[in] p The point from which to compouted the shortest distance
+///    to the mesh to compute the Point
 /// @return shortest squared distance from p to entity
-double squared_distance(const mesh::MeshEntity& entity,
+double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
                         const Eigen::Vector3d& p);
 
 /// From the given Mesh, select up to n cells from the list which actually
