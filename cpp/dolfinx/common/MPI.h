@@ -84,7 +84,8 @@ public:
 
   /// Return list of neighbours for a neighbourhood communicator
   /// @param[in] neighbor_comm Neighborhood communicator
-  static std::vector<int> neighbors(MPI_Comm neighbor_comm);
+  static std::tuple<std::vector<int>, std::vector<int>>
+  neighbors(MPI_Comm neighbor_comm);
 
   /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM
   /// as reduction op)

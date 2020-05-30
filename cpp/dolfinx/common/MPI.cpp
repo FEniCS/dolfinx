@@ -51,7 +51,8 @@ dolfinx::MPI::Comm::~Comm()
   }
 }
 //-----------------------------------------------------------------------------
-dolfinx::MPI::Comm& dolfinx::MPI::Comm::operator=(dolfinx::MPI::Comm&& comm) noexcept
+dolfinx::MPI::Comm&
+dolfinx::MPI::Comm::operator=(dolfinx::MPI::Comm&& comm) noexcept
 {
   // Free the currently held comm
   if (this->_comm != MPI_COMM_NULL)
@@ -132,17 +133,18 @@ int dolfinx::MPI::index_owner(int size, std::size_t index, std::size_t N)
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------
-std::vector<int> dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
+std::tuple<std::vector<int>, std::vector<int>>
+dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
 {
   // Get list of neighbours
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
                                  &weighted);
-  assert(indegree == outdegree);
-  std::vector<int> neighbors(indegree), neighbors1(indegree);
-  MPI_Dist_graph_neighbors(neighbor_comm, indegree, neighbors.data(),
-                           MPI_UNWEIGHTED, outdegree, neighbors1.data(),
+
+  std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
+  MPI_Dist_graph_neighbors(neighbor_comm, indegree, neighbors_in.data(),
+                           MPI_UNWEIGHTED, outdegree, neighbors_out.data(),
                            MPI_UNWEIGHTED);
-  return neighbors;
+  return {neighbors_in, neighbors_out};
 }
 //-----------------------------------------------------------------------------
