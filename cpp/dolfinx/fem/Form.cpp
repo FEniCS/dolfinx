@@ -13,7 +13,6 @@
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <memory>
 #include <string>

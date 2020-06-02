@@ -9,7 +9,6 @@
 #include <dolfinx/geometry/GJK.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
