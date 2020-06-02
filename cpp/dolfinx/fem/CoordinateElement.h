@@ -33,6 +33,7 @@ public:
   ///   reference to physical coordinates
   /// @param[in] evaluate_reference_basis
   /// @param[in] evaluate_reference_basis_derivatives
+  /// @param[in] reference_midpoint
   /// @param[in] compute_reference_geometry Pull-back function from
   ///   physical coordinates to reference coordinates
   CoordinateElement(
