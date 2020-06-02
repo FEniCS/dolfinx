@@ -41,7 +41,10 @@ public:
           compute_physical_coordinates,
       std::function<void(double*, double*, double*, double*, int, const double*,
                          const double*)>
-          compute_reference_geometry);
+          compute_reference_geometry,
+      std::function<int(double*, int, const double*)> evaluate_reference_basis,
+      std::function<int(double*, int, int, const double*)>
+          evaluate_reference_basis_derivatives);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -106,5 +109,11 @@ private:
   std::function<void(double*, double*, double*, double*, int, const double*,
                      const double*)>
       _compute_reference_geometry;
+
+  // Functions for basis and derivatives evaluation
+  std::function<int(double*, int, const double*)> _evaluate_reference_basis;
+
+  std::function<int(double*, int, int, const double*)>
+      _evaluate_reference_basis_derivatives;
 };
 } // namespace dolfinx::fem

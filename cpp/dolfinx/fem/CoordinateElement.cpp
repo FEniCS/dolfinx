@@ -19,11 +19,18 @@ CoordinateElement::CoordinateElement(
         compute_physical_coordinates,
     std::function<void(double*, double*, double*, double*, int, const double*,
                        const double*)>
-        compute_reference_geometry)
+        compute_reference_geometry,
+    std::function<int(double*, int, const double*)> evaluate_reference_basis,
+    std::function<int(double*, int, int, const double*)>
+        evaluate_reference_basis_derivatives)
     : _tdim(topological_dimension), _gdim(geometric_dimension),
       _cell(cell_type), _signature(signature), _dof_layout(dof_layout),
       _compute_physical_coordinates(compute_physical_coordinates),
-      _compute_reference_geometry(compute_reference_geometry)
+      _compute_reference_geometry(compute_reference_geometry),
+      _evaluate_reference_basis(evaluate_reference_basis),
+      _evaluate_reference_basis_derivatives(
+          evaluate_reference_basis_derivatives)
+
 {
 }
 //-----------------------------------------------------------------------------
@@ -57,6 +64,9 @@ void CoordinateElement::push_forward(
                                 cell_geometry.data());
 }
 //-----------------------------------------------------------------------------
+
+#include <iostream>
+
 void CoordinateElement::compute_reference_geometry(
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
     Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
@@ -86,8 +96,52 @@ void CoordinateElement::compute_reference_geometry(
   assert(K.dimension(1) == this->topological_dimension());
   assert(K.dimension(2) == this->geometric_dimension());
 
-  assert(_compute_reference_geometry);
-  _compute_reference_geometry(X.data(), J.data(), detJ.data(), K.data(),
-                              num_points, x.data(), cell_geometry.data());
+  // assert(_compute_reference_geometry);
+  // _compute_reference_geometry(X.data(), J.data(), detJ.data(), K.data(),
+  //                             num_points, x.data(), cell_geometry.data());
+
+  // Newton's method
+  Eigen::VectorXd xk(x.cols());
+  const int d = cell_geometry.rows();
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
+      d, _gdim);
+  Eigen::VectorXd phi(d);
+  for (int ip = 0; ip < num_points; ++ip)
+  {
+    Eigen::Map<
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        Jview(J.data() + ip * _gdim * _tdim, _gdim, _tdim);
+    Eigen::Map<
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        Kview(K.data() + ip * _gdim * _tdim, _tdim, _gdim);
+    Eigen::VectorXd Xk(_tdim);
+    Xk.setZero(); // Is it better to use midpoint? - expose X(mid) from ufc?
+    const int max_its = 10;
+    int k;
+    for (k = 0; k < max_its; ++k)
+    {
+      // Compute physical coordinates
+      _evaluate_reference_basis(phi.data(), 1, Xk.data());
+      xk = cell_geometry.matrix().transpose() * phi;
+      // Compute Jacobian and inverse
+      _evaluate_reference_basis_derivatives(dphi.data(), 1, 1, Xk.data());
+
+      Jview = cell_geometry.matrix().transpose() * dphi;
+      Kview = Jview.inverse();
+
+      // Increment to new point in reference
+      Eigen::VectorXd dX = Kview * (x.row(ip).matrix().transpose() - xk);
+      if (dX.squaredNorm() < 1e-12)
+        break;
+      Xk += dX;
+    }
+    if (k == max_its)
+    {
+      throw std::runtime_error(
+          "Iterations exceeded in Newton iteration for cmap");
+    }
+    X.row(ip) = Xk;
+    detJ.row(ip) = Jview.determinant();
+  }
 }
 //-----------------------------------------------------------------------------
