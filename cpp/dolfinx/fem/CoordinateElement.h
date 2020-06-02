@@ -46,7 +46,8 @@ public:
           compute_reference_geometry,
       std::function<int(double*, int, const double*)> evaluate_reference_basis,
       std::function<int(double*, int, int, const double*)>
-          evaluate_reference_basis_derivatives);
+          evaluate_reference_basis_derivatives,
+      Eigen::Vector3d reference_midpoint);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -117,5 +118,7 @@ private:
 
   std::function<int(double*, int, int, const double*)>
       _evaluate_reference_basis_derivatives;
+
+  Eigen::Vector3d _reference_midpoint;
 };
 } // namespace dolfinx::fem

@@ -22,15 +22,16 @@ CoordinateElement::CoordinateElement(
         compute_reference_geometry,
     std::function<int(double*, int, const double*)> evaluate_reference_basis,
     std::function<int(double*, int, int, const double*)>
-        evaluate_reference_basis_derivatives)
+        evaluate_reference_basis_derivatives,
+    Eigen::Vector3d reference_midpoint)
     : _tdim(topological_dimension), _gdim(geometric_dimension),
       _cell(cell_type), _signature(signature), _dof_layout(dof_layout),
       _compute_physical_coordinates(compute_physical_coordinates),
       _compute_reference_geometry(compute_reference_geometry),
       _evaluate_reference_basis(evaluate_reference_basis),
       _evaluate_reference_basis_derivatives(
-          evaluate_reference_basis_derivatives)
-
+          evaluate_reference_basis_derivatives),
+      _reference_midpoint(reference_midpoint)
 {
 }
 //-----------------------------------------------------------------------------
@@ -115,7 +116,7 @@ void CoordinateElement::compute_reference_geometry(
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         Kview(K.data() + ip * _gdim * _tdim, _tdim, _gdim);
     Eigen::VectorXd Xk(_tdim);
-    Xk.setZero(); // Is it better to use midpoint? - expose X(mid) from ufc?
+    Xk = _reference_midpoint.head(_tdim);
     const int max_its = 10;
     int k;
     for (k = 0; k < max_its; ++k)

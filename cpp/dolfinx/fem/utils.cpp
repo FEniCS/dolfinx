@@ -664,11 +664,15 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
   std::free(dmap);
 
+  Eigen::Vector3d reference_midpoint
+      = {ufc_cmap.reference_midpoint[0], ufc_cmap.reference_midpoint[1],
+         ufc_cmap.reference_midpoint[2]};
+
   return fem::CoordinateElement(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
       ufc_cmap.signature, dof_layout, ufc_cmap.compute_physical_coordinates,
       ufc_cmap.compute_reference_geometry, ufc_cmap.evaluate_reference_basis,
-      ufc_cmap.evaluate_reference_basis_derivatives);
+      ufc_cmap.evaluate_reference_basis_derivatives, reference_midpoint);
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement
