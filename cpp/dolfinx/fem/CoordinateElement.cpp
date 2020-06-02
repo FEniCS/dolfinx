@@ -116,7 +116,9 @@ void CoordinateElement::compute_reference_geometry(
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         Kview(K.data() + ip * _gdim * _tdim, _tdim, _gdim);
     Eigen::VectorXd Xk(_tdim);
-    Xk = _reference_midpoint.head(_tdim);
+    // Xk = _reference_midpoint.head(_tdim);
+    // or Xk.setZero() ?
+    Xk.setZero();
     const int max_its = 10;
     int k;
     for (k = 0; k < max_its; ++k)
