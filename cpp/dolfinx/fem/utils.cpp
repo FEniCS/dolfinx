@@ -664,9 +664,8 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
   std::free(dmap);
 
-  Eigen::Vector3d reference_midpoint
-      = {ufc_cmap.reference_midpoint[0], ufc_cmap.reference_midpoint[1],
-         ufc_cmap.reference_midpoint[2]};
+  // FIXME: get the proper midpoint for celltype
+  Eigen::Vector3d reference_midpoint = {0, 0, 0};
 
   return fem::CoordinateElement(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
