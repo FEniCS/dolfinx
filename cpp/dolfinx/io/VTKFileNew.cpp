@@ -310,6 +310,12 @@ void io::VTKFileNew::close()
     _pvd_xml.save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
+void io::VTKFileNew::flush()
+{
+  if (MPI::rank(_comm.comm()) == 0)
+    _pvd_xml.save_file(_filename.c_str(), "  ");
+}
+//----------------------------------------------------------------------------
 void io::VTKFileNew::write(const mesh::Mesh& mesh, double time)
 {
   const int mpi_rank = MPI::rank(_comm.comm());

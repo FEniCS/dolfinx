@@ -48,6 +48,9 @@ public:
   /// Close file
   void close();
 
+  /// Flushes XML files to disk
+  void flush();
+
   /// Write mesh to file. Supports arbitrary order Lagrange
   /// isoparametric cells.
   /// @param[in] mesh The mesh to write to file
