@@ -117,6 +117,30 @@ void add_point_data(const function::Function& u, pugi::xml_node& node)
 {
   const int rank = u.value_rank();
   const int dim = u.value_size();
+  if (rank == 1)
+  {
+    if (!(dim == 2 or dim == 3))
+    {
+      throw std::runtime_error(
+          "Cannot write data to VTK file. Don't know how to handle vector "
+          "function with dimension other than 2 or 3");
+    }
+  }
+  else if (rank == 2)
+  {
+    if (!(dim == 4 or dim == 9))
+    {
+      throw std::runtime_error(
+          "Cannot write data to VTK file. Don't know how to handle tensor "
+          "function with dimension other than 4 or 9");
+    }
+  }
+  else if (rank > 2)
+  {
+    throw std::runtime_error(
+        "Cannot write data to VTK file. "
+        "Only scalar, vector and tensor functions can be saved in VTK format");
+  }
 
   pugi::xml_node pointdata_node = node.append_child("PointData");
 
@@ -157,9 +181,36 @@ void add_point_data(const function::Function& u, pugi::xml_node& node)
           .set_value(eigen_to_string(values, 16).c_str());
     }
   }
-  else
-    throw std::runtime_error("Tensors not support yet");
+  else if (rank == 2)
+  {
+    pointdata_node.append_attribute("Tensors") = u.name.c_str();
+    field_node.append_attribute("NumberOfComponents") = 9;
+    if (dim == 2)
+    {
+      // Pad 2D tensors with 0.0 to make them 3D
+      std::stringstream ss;
+      for (int i = 0; i < values.rows(); ++i)
+      {
+        for (int j = 0; j < 2; ++j)
+        {
+          ss << values(i, (2 * j + 0)) << " ";
+          ss << values(i, (2 * j + 1)) << " ";
+          ss << 0.0 << " ";
+        }
+        ss << 0.0 << " ";
+        ss << 0.0 << " ";
+        ss << 0.0 << "  ";
+      }
+      field_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+    }
+    else
+    {
+      field_node.append_child(pugi::node_pcdata)
+          .set_value(eigen_to_string(values, 16).c_str());
+    }
+  }
 }
+
 //----------------------------------------------------------------------------
 /// At mesh geometry and topology data to a pugixml node. The function /
 /// adds the Points and Cells nodes to the input node/
