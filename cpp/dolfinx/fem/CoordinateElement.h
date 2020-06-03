@@ -32,14 +32,8 @@ public:
   /// @param[in] geometric_dimension
   /// @param[in] signature
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  /// @param[in] compute_physical_coordinates Push-forward function from
-  ///   reference to physical coordinates
-  /// @param[in] evaluate_reference_basis
-  /// @param[in] evaluate_reference_basis_derivatives
   /// @param[in] reference_midpoint
   /// @param[in] element FiniteElement
-  /// @param[in] compute_reference_geometry Pull-back function from
-  ///   physical coordinates to reference coordinates
   CoordinateElement(mesh::CellType cell_type, int topological_dimension,
                     int geometric_dimension, const std::string& signature,
                     const ElementDofLayout& dof_layout,
