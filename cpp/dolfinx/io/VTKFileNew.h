@@ -6,9 +6,14 @@
 
 #pragma once
 
-#include "pugixml.hpp"
 #include <dolfinx/common/MPI.h>
+#include <memory>
 #include <string>
+
+namespace pugi
+{
+class xml_document;
+}
 
 namespace dolfinx
 {
@@ -53,29 +58,22 @@ public:
 
   /// Write mesh to file. Supports arbitrary order Lagrange
   /// isoparametric cells.
-  /// @param[in] mesh The mesh to write to file
+  /// @param[in] mesh The Mesh to write to file
   /// @param[in] time Time parameter to associate with the @p mesh
   void write(const mesh::Mesh& mesh, double time = 0.0);
 
-  /// Output function::Function and timestep
+  /// Write a Function to a VTK file for visualisation
+  /// @param[in] u The Function to write to file
+  /// @param[in] time Time parameter to associate with the @p mesh
   void write(const function::Function& u, double time = 0.0);
 
-  /// Output function::Function
-  // void write(const function::Function& u);
-
-  // /// Output function::Function and timestep
-  // void write(const function::Function& u, double t);
-
 private:
-  pugi::xml_document _pvd_xml;
+  std::unique_ptr<pugi::xml_document> _pvd_xml;
 
   std::string _filename;
 
   // MPI communicator
   dolfinx::MPI::Comm _comm;
-
-  // Counter for the number of times various data has been written
-  // std::size_t _counter;
 };
 } // namespace io
 } // namespace dolfinx

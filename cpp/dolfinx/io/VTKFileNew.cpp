@@ -6,6 +6,7 @@
 
 #include "VTKFileNew.h"
 #include "cells.h"
+#include "pugixml.hpp"
 #include "xdmf_utils.h"
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -284,7 +285,9 @@ io::VTKFileNew::VTKFileNew(MPI_Comm comm, const std::string filename,
                            const std::string)
     : _filename(filename), _comm(comm)
 {
-  pugi::xml_node vtk_node = _pvd_xml.append_child("VTKFile");
+  _pvd_xml = std::make_unique<pugi::xml_document>();
+  assert(_pvd_xml);
+  pugi::xml_node vtk_node = _pvd_xml->append_child("VTKFile");
   vtk_node.append_attribute("type") = "Collection";
   vtk_node.append_attribute("version") = "0.1";
   vtk_node.append_child("Collection");
@@ -292,30 +295,36 @@ io::VTKFileNew::VTKFileNew(MPI_Comm comm, const std::string filename,
 //----------------------------------------------------------------------------
 io::VTKFileNew::~VTKFileNew()
 {
-  if (MPI::rank(_comm.comm()) == 0)
-    _pvd_xml.save_file(_filename.c_str(), "  ");
+  if (_pvd_xml and MPI::rank(_comm.comm()) == 0)
+    _pvd_xml->save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
 void io::VTKFileNew::close()
 {
-  if (MPI::rank(_comm.comm()) == 0)
-    _pvd_xml.save_file(_filename.c_str(), "  ");
+  if (_pvd_xml and MPI::rank(_comm.comm()) == 0)
+    _pvd_xml->save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
 void io::VTKFileNew::flush()
 {
+  if (!_pvd_xml and MPI::rank(_comm.comm()) == 0)
+    throw std::runtime_error("VTKFile has already been closed");
+
   if (MPI::rank(_comm.comm()) == 0)
-    _pvd_xml.save_file(_filename.c_str(), "  ");
+    _pvd_xml->save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
 void io::VTKFileNew::write(const mesh::Mesh& mesh, double time)
 {
+  if (!_pvd_xml)
+    throw std::runtime_error("VTKFile has already been closed");
+
   const int mpi_rank = MPI::rank(_comm.comm());
   boost::filesystem::path p(_filename);
 
   // Get the PVD "Collection" node
   pugi::xml_node xml_collections
-      = _pvd_xml.child("VTKFile").child("Collection");
+      = _pvd_xml->child("VTKFile").child("Collection");
   assert(xml_collections);
 
   // Compute counter string
@@ -391,6 +400,9 @@ void io::VTKFileNew::write(const mesh::Mesh& mesh, double time)
 //----------------------------------------------------------------------------
 void io::VTKFileNew::write(const function::Function& u, double time)
 {
+  if (!_pvd_xml)
+    throw std::runtime_error("VTKFile has already been closed");
+
   const int mpi_rank = MPI::rank(_comm.comm());
   boost::filesystem::path p(_filename);
 
@@ -401,7 +413,7 @@ void io::VTKFileNew::write(const function::Function& u, double time)
 
   // Get the PVD "Collection" node
   pugi::xml_node xml_collections
-      = _pvd_xml.child("VTKFile").child("Collection");
+      = _pvd_xml->child("VTKFile").child("Collection");
   assert(xml_collections);
 
   // Compute counter string

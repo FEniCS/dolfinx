@@ -136,10 +136,10 @@ void io(py::module& m)
       .def("write",
            py::overload_cast<const dolfinx::function::Function&, double>(
                &dolfinx::io::VTKFileNew::write),
-           py::arg("u"), py::arg("t"))
+           py::arg("u"), py::arg("t") = 0.0)
       .def("write",
            py::overload_cast<const dolfinx::mesh::Mesh&, double>(
                &dolfinx::io::VTKFileNew::write),
-           py::arg("mesh"), py::arg("t"));
+           py::arg("mesh"), py::arg("t") = 0.0);
 }
 } // namespace dolfinx_wrappers
