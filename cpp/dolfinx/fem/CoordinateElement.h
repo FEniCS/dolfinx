@@ -33,6 +33,7 @@ public:
   /// @param[in] signature
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   /// @param[in] reference_midpoint
+  /// @param[in] is_affine Boolean flag indicating affine mapping
   /// @param[in] element FiniteElement
   CoordinateElement(mesh::CellType cell_type, int topological_dimension,
                     int geometric_dimension, const std::string& signature,
