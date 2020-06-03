@@ -96,6 +96,12 @@ void CoordinateElement::compute_reference_geometry(
   assert(K.dimension(1) == this->topological_dimension());
   assert(K.dimension(2) == this->geometric_dimension());
 
+  if (_gdim != _tdim)
+  {
+    throw std::runtime_error(
+        "Compute_reference_geometry not yet implemented for tdim != gdim");
+  }
+
   if (_is_affine)
   {
     const int d = cell_geometry.rows();
@@ -125,24 +131,25 @@ void CoordinateElement::compute_reference_geometry(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> K0(
         _tdim, _gdim);
     K0 = J0.inverse();
+
+    // Fill result for J, K and detJ
+    Eigen::Map<
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        Jview(J.data(), _gdim * num_points, _tdim);
+    Jview = J0.replicate(num_points, 1);
+    Eigen::Map<
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        Kview(K.data(), _tdim * num_points, _gdim);
+    Kview = K0.replicate(num_points, 1);
     detJ.fill(J0.determinant());
 
+    // Calculate X for each point
     for (int ip = 0; ip < num_points; ++ip)
-    {
-      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>>
-          Jview(J.data() + ip * _gdim * _tdim, _gdim, _tdim);
-      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>>
-          Kview(K.data() + ip * _gdim * _tdim, _tdim, _gdim);
-      Jview = J0;
-      Kview = K0;
       X.row(ip) = K0 * (x.row(ip).matrix().transpose() - x0);
-    }
   }
   else
   {
-    // Newton's method
+    // Newton's method for non-affine geometry
     Eigen::VectorXd xk(x.cols());
     const int d = cell_geometry.rows();
 
