@@ -124,7 +124,7 @@ void FiniteElement::evaluate_reference_basis(
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis_derivatives(
-    Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values, int order,
+    Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values, int order,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {

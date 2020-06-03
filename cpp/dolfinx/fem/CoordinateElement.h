@@ -40,20 +40,11 @@ public:
   /// @param[in] element FiniteElement
   /// @param[in] compute_reference_geometry Pull-back function from
   ///   physical coordinates to reference coordinates
-  CoordinateElement(
-      mesh::CellType cell_type, int topological_dimension,
-      int geometric_dimension, const std::string& signature,
-      const ElementDofLayout& dof_layout,
-      std::function<void(double*, int, const double*, const double*)>
-          compute_physical_coordinates,
-      std::function<void(double*, double*, double*, double*, int, const double*,
-                         const double*)>
-          compute_reference_geometry,
-      std::function<int(double*, int, const double*)> evaluate_reference_basis,
-      std::function<int(double*, int, int, const double*)>
-          evaluate_reference_basis_derivatives,
-      Eigen::Vector3d reference_midpoint,
-      std::shared_ptr<const FiniteElement> element);
+  CoordinateElement(mesh::CellType cell_type, int topological_dimension,
+                    int geometric_dimension, const std::string& signature,
+                    const ElementDofLayout& dof_layout,
+                    Eigen::Vector3d reference_midpoint,
+                    std::shared_ptr<const FiniteElement> element);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -111,19 +102,6 @@ private:
   std::string _signature;
 
   ElementDofLayout _dof_layout;
-
-  std::function<void(double*, int, const double*, const double*)>
-      _compute_physical_coordinates;
-
-  std::function<void(double*, double*, double*, double*, int, const double*,
-                     const double*)>
-      _compute_reference_geometry;
-
-  // Functions for basis and derivatives evaluation
-  std::function<int(double*, int, const double*)> _evaluate_reference_basis;
-
-  std::function<int(double*, int, int, const double*)>
-      _evaluate_reference_basis_derivatives;
 
   Eigen::Vector3d _reference_midpoint;
 

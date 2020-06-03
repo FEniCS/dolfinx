@@ -16,24 +16,10 @@ using namespace dolfinx::fem;
 CoordinateElement::CoordinateElement(
     mesh::CellType cell_type, int topological_dimension,
     int geometric_dimension, const std::string& signature,
-    const ElementDofLayout& dof_layout,
-    std::function<void(double*, int, const double*, const double*)>
-        compute_physical_coordinates,
-    std::function<void(double*, double*, double*, double*, int, const double*,
-                       const double*)>
-        compute_reference_geometry,
-    std::function<int(double*, int, const double*)> evaluate_reference_basis,
-    std::function<int(double*, int, int, const double*)>
-        evaluate_reference_basis_derivatives,
-    Eigen::Vector3d reference_midpoint,
+    const ElementDofLayout& dof_layout, Eigen::Vector3d reference_midpoint,
     std::shared_ptr<const FiniteElement> element)
     : _tdim(topological_dimension), _gdim(geometric_dimension),
       _cell(cell_type), _signature(signature), _dof_layout(dof_layout),
-      _compute_physical_coordinates(compute_physical_coordinates),
-      _compute_reference_geometry(compute_reference_geometry),
-      _evaluate_reference_basis(evaluate_reference_basis),
-      _evaluate_reference_basis_derivatives(
-          evaluate_reference_basis_derivatives),
       _reference_midpoint(reference_midpoint), _finite_element(element)
 {
 }
@@ -60,7 +46,7 @@ void CoordinateElement::push_forward(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& cell_geometry) const
 {
-  assert(_compute_physical_coordinates);
+  assert(_finite_element);
   assert(x.rows() == X.rows());
   assert(x.cols() == _gdim);
   assert(X.cols() == _tdim);
@@ -86,6 +72,8 @@ void CoordinateElement::compute_reference_geometry(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& cell_geometry) const
 {
+  assert(_finite_element);
+
   // Number of points
   int num_points = x.rows();
 
@@ -105,18 +93,19 @@ void CoordinateElement::compute_reference_geometry(
   assert(K.dimension(1) == this->topological_dimension());
   assert(K.dimension(2) == this->geometric_dimension());
 
-  assert(_finite_element);
-
   // Newton's method
   Eigen::VectorXd xk(x.cols());
   const int d = cell_geometry.rows();
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
-      d, _gdim);
 
   Eigen::Tensor<double, 3, Eigen::RowMajor> phi_tensor(1, 1, d);
   Eigen::Map<
       Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
       phi(phi_tensor.data(), d, 1);
+
+  Eigen::Tensor<double, 4, Eigen::RowMajor> dphi_tensor(1, 1, d, _gdim);
+  Eigen::Map<
+      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      dphi(dphi_tensor.data(), d, _gdim);
 
   for (int ip = 0; ip < num_points; ++ip)
   {
@@ -137,9 +126,9 @@ void CoordinateElement::compute_reference_geometry(
       // Compute physical coordinates
       _finite_element->evaluate_reference_basis(phi_tensor, Xk);
       xk = cell_geometry.matrix().transpose() * phi;
-      // Compute Jacobian and inverse
-      _evaluate_reference_basis_derivatives(dphi.data(), 1, 1, Xk.data());
 
+      // Compute Jacobian and inverse
+      _finite_element->evaluate_reference_basis_derivatives(dphi_tensor, 1, Xk);
       Jview = cell_geometry.matrix().transpose() * dphi;
       Kview = Jview.inverse();
 
