@@ -107,7 +107,7 @@ void add_pvtu_mesh(pugi::xml_node& node)
 }
 //----------------------------------------------------------------------------
 /// At data to a pugixml node
-void add_point_data(
+void add_data(
     const function::Function& u,
     const Eigen::Ref<const Eigen::Array<
         PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values,
@@ -441,7 +441,7 @@ void io::VTKFileNew::write(const function::Function& u, double time)
                                   Eigen::RowMajor>>
         _values(values.data(), values.size() / value_size, value_size);
     pugi::xml_node data_node = piece_node.append_child("CellData");
-    add_point_data(u, _values, data_node);
+    add_data(u, _values, data_node);
   }
   else
   {
@@ -449,7 +449,7 @@ void io::VTKFileNew::write(const function::Function& u, double time)
                        Eigen::RowMajor>
         values = u.compute_point_values();
     pugi::xml_node data_node = piece_node.append_child("PointData");
-    add_point_data(u, values, data_node);
+    add_data(u, values, data_node);
   }
 
   // Save VTU XML to file
