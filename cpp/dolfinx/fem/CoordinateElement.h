@@ -37,7 +37,7 @@ public:
   CoordinateElement(mesh::CellType cell_type, int topological_dimension,
                     int geometric_dimension, const std::string& signature,
                     const ElementDofLayout& dof_layout,
-                    Eigen::Vector3d reference_midpoint,
+                    Eigen::Vector3d reference_midpoint, bool is_affine,
                     std::shared_ptr<const FiniteElement> element);
 
   /// Destructor
@@ -98,6 +98,8 @@ private:
   ElementDofLayout _dof_layout;
 
   Eigen::Vector3d _reference_midpoint;
+
+  bool _is_affine;
 
   std::shared_ptr<const FiniteElement> _finite_element;
 };

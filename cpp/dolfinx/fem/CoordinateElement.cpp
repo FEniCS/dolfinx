@@ -17,10 +17,11 @@ CoordinateElement::CoordinateElement(
     mesh::CellType cell_type, int topological_dimension,
     int geometric_dimension, const std::string& signature,
     const ElementDofLayout& dof_layout, Eigen::Vector3d reference_midpoint,
-    std::shared_ptr<const FiniteElement> element)
+    bool is_affine, std::shared_ptr<const FiniteElement> element)
     : _tdim(topological_dimension), _gdim(geometric_dimension),
       _cell(cell_type), _signature(signature), _dof_layout(dof_layout),
-      _reference_midpoint(reference_midpoint), _finite_element(element)
+      _reference_midpoint(reference_midpoint), _is_affine(is_affine),
+      _finite_element(element)
 {
 }
 //-----------------------------------------------------------------------------
@@ -76,6 +77,8 @@ void CoordinateElement::compute_reference_geometry(
 
   // Number of points
   int num_points = x.rows();
+  if (num_points == 0)
+    return;
 
   // in-argument checks
   assert(x.cols() == this->geometric_dimension());
@@ -93,58 +96,106 @@ void CoordinateElement::compute_reference_geometry(
   assert(K.dimension(1) == this->topological_dimension());
   assert(K.dimension(2) == this->geometric_dimension());
 
-  // Newton's method
-  Eigen::VectorXd xk(x.cols());
-  const int d = cell_geometry.rows();
-
-  Eigen::Tensor<double, 3, Eigen::RowMajor> phi_tensor(1, 1, d);
-  Eigen::Map<
-      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      phi(phi_tensor.data(), d, 1);
-
-  Eigen::Tensor<double, 4, Eigen::RowMajor> dphi_tensor(1, 1, d, _gdim);
-  Eigen::Map<
-      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      dphi(dphi_tensor.data(), d, _gdim);
-
-  for (int ip = 0; ip < num_points; ++ip)
+  if (_is_affine)
   {
+    const int d = cell_geometry.rows();
+
+    Eigen::Tensor<double, 3, Eigen::RowMajor> phi_tensor(1, 1, d);
     Eigen::Map<
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        Jview(J.data() + ip * _gdim * _tdim, _gdim, _tdim);
+        phi(phi_tensor.data(), d, 1);
+
+    Eigen::Tensor<double, 4, Eigen::RowMajor> dphi_tensor(1, 1, d, _gdim);
     Eigen::Map<
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        Kview(K.data() + ip * _gdim * _tdim, _tdim, _gdim);
-    Eigen::RowVectorXd Xk(_tdim);
-    // Xk = _reference_midpoint.head(_tdim);
-    // or Xk.setZero() ?
-    Xk.setZero();
-    const int max_its = 10;
-    int k;
-    for (k = 0; k < max_its; ++k)
-    {
-      // Compute physical coordinates
-      _finite_element->evaluate_reference_basis(phi_tensor, Xk);
-      xk = cell_geometry.matrix().transpose() * phi;
+        dphi(dphi_tensor.data(), d, _gdim);
 
-      // Compute Jacobian and inverse
-      _finite_element->evaluate_reference_basis_derivatives(dphi_tensor, 1, Xk);
-      Jview = cell_geometry.matrix().transpose() * dphi;
-      Kview = Jview.inverse();
+    Eigen::RowVectorXd X0(_tdim);
+    X0.setZero();
+    Eigen::VectorXd x0(x.cols());
+    // Compute physical coordinates at X=0.
+    _finite_element->evaluate_reference_basis(phi_tensor, X0);
+    x0 = cell_geometry.matrix().transpose() * phi;
 
-      // Increment to new point in reference
-      Eigen::VectorXd dX = Kview * (x.row(ip).matrix().transpose() - xk);
-      if (dX.squaredNorm() < 1e-12)
-        break;
-      Xk += dX;
-    }
-    if (k == max_its)
+    // Compute Jacobian and inverse
+    _finite_element->evaluate_reference_basis_derivatives(dphi_tensor, 1, X0);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> J0(
+        _gdim, _tdim);
+    J0 = cell_geometry.matrix().transpose() * dphi;
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> K0(
+        _tdim, _gdim);
+    K0 = J0.inverse();
+    detJ.fill(J0.determinant());
+
+    for (int ip = 0; ip < num_points; ++ip)
     {
-      throw std::runtime_error(
-          "Iterations exceeded in Newton iteration for cmap");
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+          Jview(J.data() + ip * _gdim * _tdim, _gdim, _tdim);
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+          Kview(K.data() + ip * _gdim * _tdim, _tdim, _gdim);
+      Jview = J0;
+      Kview = K0;
+      X.row(ip) = K0 * (x.row(ip).matrix().transpose() - x0);
     }
-    X.row(ip) = Xk;
-    detJ.row(ip) = Jview.determinant();
+  }
+  else
+  {
+    // Newton's method
+    Eigen::VectorXd xk(x.cols());
+    const int d = cell_geometry.rows();
+
+    Eigen::Tensor<double, 3, Eigen::RowMajor> phi_tensor(1, 1, d);
+    Eigen::Map<
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        phi(phi_tensor.data(), d, 1);
+
+    Eigen::Tensor<double, 4, Eigen::RowMajor> dphi_tensor(1, 1, d, _gdim);
+    Eigen::Map<
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        dphi(dphi_tensor.data(), d, _gdim);
+
+    for (int ip = 0; ip < num_points; ++ip)
+    {
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+          Jview(J.data() + ip * _gdim * _tdim, _gdim, _tdim);
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+          Kview(K.data() + ip * _gdim * _tdim, _tdim, _gdim);
+      Eigen::RowVectorXd Xk(_tdim);
+      // Xk = _reference_midpoint.head(_tdim);
+      // or Xk.setZero() ?
+      Xk.setZero();
+      const int max_its = 10;
+      int k;
+      for (k = 0; k < max_its; ++k)
+      {
+        // Compute physical coordinates
+        _finite_element->evaluate_reference_basis(phi_tensor, Xk);
+        xk = cell_geometry.matrix().transpose() * phi;
+
+        // Compute Jacobian and inverse
+        _finite_element->evaluate_reference_basis_derivatives(dphi_tensor, 1,
+                                                              Xk);
+        Jview = cell_geometry.matrix().transpose() * dphi;
+        Kview = Jview.inverse();
+
+        // Increment to new point in reference
+        Eigen::VectorXd dX = Kview * (x.row(ip).matrix().transpose() - xk);
+        if (dX.squaredNorm() < 1e-12)
+          break;
+        Xk += dX;
+      }
+      if (k == max_its)
+      {
+        throw std::runtime_error(
+            "Iterations exceeded in Newton iteration for cmap");
+      }
+      X.row(ip) = Xk;
+      detJ.row(ip) = Jview.determinant();
+    }
   }
 }
 //-----------------------------------------------------------------------------
