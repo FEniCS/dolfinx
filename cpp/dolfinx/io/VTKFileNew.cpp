@@ -6,8 +6,10 @@
 
 #include "VTKFileNew.h"
 #include "cells.h"
+#include "xdmf_utils.h"
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/fem/DofMap.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -16,31 +18,35 @@
 #include <sstream>
 #include <string>
 
-// #include "VTKWriter.h"
-// #include "pugixml.hpp"
-// #include <boost/cstdint.hpp>
-// #include <boost/detail/endian.hpp>
-// #include <dolfinx/common/IndexMap.h>
-// #include <dolfinx/common/MPI.h>
-// #include <dolfinx/common/Timer.h>
-// #include <dolfinx/common/log.h>
-// #include <dolfinx/fem/DofMap.h>
-// #include <dolfinx/fem/FiniteElement.h>
-// #include <dolfinx/function/Function.h>
-// #include <dolfinx/function/FunctionSpace.h>
-// #include <dolfinx/la/PETScVector.h>
-// #include <dolfinx/mesh/Geometry.h>
-// #include <dolfinx/mesh/Mesh.h>
-// #include <dolfinx/mesh/MeshEntity.h>
-// #include <iomanip>
-// #include <ostream>
-// #include <vector>
-
 using namespace dolfinx;
 
 namespace
 {
+//----------------------------------------------------------------------------
+/// Return true if Function is a cell-wise constant, otherwise false
+bool is_cellwise(const function::Function& u)
+{
+  assert(u.function_space());
+  assert(u.function_space()->element());
+  const int rank = u.function_space()->element()->value_rank();
 
+  assert(u.function_space()->mesh());
+  const int tdim = u.function_space()->mesh()->topology().dim();
+  int cell_based_dim = 1;
+  for (int i = 0; i < rank; ++i)
+    cell_based_dim *= tdim;
+
+  assert(u.function_space()->dofmap());
+  assert(u.function_space()->dofmap()->element_dof_layout);
+  if (u.function_space()->dofmap()->element_dof_layout->num_dofs()
+      == cell_based_dim)
+  {
+    return true;
+  }
+  else
+    return false;
+}
+//----------------------------------------------------------------------------
 /// Get counter string to include in filename
 std::string get_counter(const pugi::xml_node& node, const std::string& name)
 {
@@ -98,22 +104,14 @@ void add_pvtu_mesh(pugi::xml_node& node)
   pugi::xml_node data_node = vertex_data_node.append_child("PDataArray");
   data_node.append_attribute("type") = "Float64";
   data_node.append_attribute("NumberOfComponents") = "3";
-
-  // pugi::xml_node cell_data_node = node.append_child("PCellData");
-  // data_node = cell_data_node.append_child("PDataArray");
-  // data_node.append_attribute("type") = "Int32";
-  // data_node.append_attribute("Name") = "connectivity";
-  // data_node = cell_data_node.append_child("PDataArray");
-  // data_node.append_attribute("type") = "Int32";
-  // data_node.append_attribute("Name") = "offsets";
-  // data_node = cell_data_node.append_child("PDataArray");
-  // data_node.append_attribute("type") = "Int8";
-  // data_node.append_attribute("Name") = "types";
 }
-
 //----------------------------------------------------------------------------
-/// At mesh point data to a pugixml node.
-void add_point_data(const function::Function& u, pugi::xml_node& node)
+/// At data to a pugixml node
+void add_point_data(
+    const function::Function& u,
+    const Eigen::Ref<const Eigen::Array<
+        PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values,
+    pugi::xml_node& data_node)
 {
   const int rank = u.value_rank();
   const int dim = u.value_size();
@@ -142,25 +140,20 @@ void add_point_data(const function::Function& u, pugi::xml_node& node)
         "Only scalar, vector and tensor functions can be saved in VTK format");
   }
 
-  pugi::xml_node pointdata_node = node.append_child("PointData");
-
-  pugi::xml_node field_node = pointdata_node.append_child("DataArray");
+  pugi::xml_node field_node = data_node.append_child("DataArray");
   field_node.append_attribute("type") = "Float64";
   field_node.append_attribute("Name") = u.name.c_str();
   field_node.append_attribute("format") = "ascii";
 
-  const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                     Eigen::RowMajor>
-      values = u.compute_point_values();
   if (rank == 0)
   {
-    pointdata_node.append_attribute("Scalars") = u.name.c_str();
+    data_node.append_attribute("Scalars") = u.name.c_str();
     field_node.append_child(pugi::node_pcdata)
         .set_value(eigen_to_string(values, 16).c_str());
   }
   else if (rank == 1)
   {
-    pointdata_node.append_attribute("Vectors") = u.name.c_str();
+    data_node.append_attribute("Vectors") = u.name.c_str();
     field_node.append_attribute("NumberOfComponents") = 3;
     if (dim == 2)
     {
@@ -183,7 +176,7 @@ void add_point_data(const function::Function& u, pugi::xml_node& node)
   }
   else if (rank == 2)
   {
-    pointdata_node.append_attribute("Tensors") = u.name.c_str();
+    data_node.append_attribute("Tensors") = u.name.c_str();
     field_node.append_attribute("NumberOfComponents") = 9;
     if (dim == 2)
     {
@@ -210,7 +203,6 @@ void add_point_data(const function::Function& u, pugi::xml_node& node)
     }
   }
 }
-
 //----------------------------------------------------------------------------
 /// At mesh geometry and topology data to a pugixml node. The function /
 /// adds the Points and Cells nodes to the input node/
@@ -440,7 +432,25 @@ void io::VTKFileNew::write(const function::Function& u, double time)
   add_mesh(*mesh, piece_node);
 
   // Add cell/point data to VTU node
-  add_point_data(u, piece_node);
+  if (is_cellwise(u))
+  {
+    const std::vector<PetscScalar> values = xdmf_utils::get_cell_data_values(u);
+    const int value_size = u.value_size();
+    assert(values.size() % value_size == 0);
+    Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        _values(values.data(), values.size() / value_size, value_size);
+    pugi::xml_node data_node = piece_node.append_child("CellData");
+    add_point_data(u, _values, data_node);
+  }
+  else
+  {
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>
+        values = u.compute_point_values();
+    pugi::xml_node data_node = piece_node.append_child("PointData");
+    add_point_data(u, values, data_node);
+  }
 
   // Save VTU XML to file
   boost::filesystem::path vtu = p.stem();

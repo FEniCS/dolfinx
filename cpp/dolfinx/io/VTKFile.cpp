@@ -576,7 +576,6 @@ void pvtu_write(const function::Function& u, const std::string filename,
   // Test for cell-based element type
   std::string data_type = "point";
   int cell_based_dim = 1;
-  assert(u.function_space()->dofmap());
   for (int i = 0; i < rank; i++)
     cell_based_dim *= mesh->topology().dim();
   assert(u.function_space()->dofmap());
