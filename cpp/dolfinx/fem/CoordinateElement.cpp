@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CoordinateElement.h"
+#include <iostream>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace dolfinx;
@@ -23,7 +24,8 @@ CoordinateElement::CoordinateElement(
     std::function<int(double*, int, const double*)> evaluate_reference_basis,
     std::function<int(double*, int, int, const double*)>
         evaluate_reference_basis_derivatives,
-    Eigen::Vector3d reference_midpoint)
+    Eigen::Vector3d reference_midpoint,
+    std::shared_ptr<const FiniteElement> element)
     : _tdim(topological_dimension), _gdim(geometric_dimension),
       _cell(cell_type), _signature(signature), _dof_layout(dof_layout),
       _compute_physical_coordinates(compute_physical_coordinates),
@@ -31,7 +33,7 @@ CoordinateElement::CoordinateElement(
       _evaluate_reference_basis(evaluate_reference_basis),
       _evaluate_reference_basis_derivatives(
           evaluate_reference_basis_derivatives),
-      _reference_midpoint(reference_midpoint)
+      _reference_midpoint(reference_midpoint), _finite_element(element)
 {
 }
 //-----------------------------------------------------------------------------
@@ -61,13 +63,16 @@ void CoordinateElement::push_forward(
   assert(x.rows() == X.rows());
   assert(x.cols() == _gdim);
   assert(X.cols() == _tdim);
-  _compute_physical_coordinates(x.data(), X.rows(), X.data(),
-                                cell_geometry.data());
+  //  _compute_physical_coordinates(x.data(), X.rows(), X.data(),
+  //                                cell_geometry.data());
+
+  // Compute physical coordinates
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi(
+      X.rows(), cell_geometry.rows());
+  _evaluate_reference_basis(phi.data(), X.rows(), X.data());
+  x = phi * cell_geometry.matrix();
 }
 //-----------------------------------------------------------------------------
-
-#include <iostream>
-
 void CoordinateElement::compute_reference_geometry(
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
     Eigen::Tensor<double, 3, Eigen::RowMajor>& J,

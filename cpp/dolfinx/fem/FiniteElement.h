@@ -76,6 +76,14 @@ public:
       const Eigen::Ref<const Eigen::Array<
           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
 
+  /// Evaluate all basis function derivatives of order order at given point in
+  /// reference cell
+  // reference_value_derivatives[num_points][num_dofs][reference_value_size][num_derivatives]
+  void evaluate_reference_basis_derivatives(
+      Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values, int order,
+      const Eigen::Ref<const Eigen::Array<
+          double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
+
   /// Push basis functions forward to physical element
   void transform_reference_basis(
       Eigen::Tensor<double, 3, Eigen::RowMajor>& values,

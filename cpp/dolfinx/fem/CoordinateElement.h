@@ -11,11 +11,14 @@
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
+#include <memory>
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 namespace dolfinx::fem
 {
+
+class FiniteElement;
 
 // FIXME: A dof layout on a reference cell needs to be defined.
 /// This class manages coordinate mappings for isoparametric cells.
@@ -34,6 +37,7 @@ public:
   /// @param[in] evaluate_reference_basis
   /// @param[in] evaluate_reference_basis_derivatives
   /// @param[in] reference_midpoint
+  /// @param[in] element FiniteElement
   /// @param[in] compute_reference_geometry Pull-back function from
   ///   physical coordinates to reference coordinates
   CoordinateElement(
@@ -48,7 +52,8 @@ public:
       std::function<int(double*, int, const double*)> evaluate_reference_basis,
       std::function<int(double*, int, int, const double*)>
           evaluate_reference_basis_derivatives,
-      Eigen::Vector3d reference_midpoint);
+      Eigen::Vector3d reference_midpoint,
+      std::shared_ptr<const FiniteElement> element);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -121,5 +126,7 @@ private:
       _evaluate_reference_basis_derivatives;
 
   Eigen::Vector3d _reference_midpoint;
+
+  std::shared_ptr<const FiniteElement> _finite_element;
 };
 } // namespace dolfinx::fem

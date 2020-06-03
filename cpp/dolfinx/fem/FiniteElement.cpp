@@ -123,6 +123,22 @@ void FiniteElement::evaluate_reference_basis(
   }
 }
 //-----------------------------------------------------------------------------
+void FiniteElement::evaluate_reference_basis_derivatives(
+    Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values, int order,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& X) const
+{
+  assert(_evaluate_reference_basis_derivatives);
+  const int num_points = X.rows();
+  int ret = _evaluate_reference_basis_derivatives(reference_values.data(),
+                                                  order, num_points, X.data());
+  if (ret == -1)
+  {
+    throw std::runtime_error("Generated code returned error "
+                             "in evaluate_reference_basis_derivatives");
+  }
+}
+//-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
     Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,

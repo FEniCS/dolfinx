@@ -667,11 +667,17 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   // FIXME: get the proper midpoint for celltype
   Eigen::Vector3d reference_midpoint = {0, 0, 0};
 
+  ufc_finite_element* ufc_element = ufc_cmap.create_element();
+  std::shared_ptr<fem::FiniteElement> element
+      = std::make_shared<fem::FiniteElement>(*ufc_element);
+  std::free(ufc_element);
+
   return fem::CoordinateElement(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
       ufc_cmap.signature, dof_layout, ufc_cmap.compute_physical_coordinates,
       ufc_cmap.compute_reference_geometry, ufc_cmap.evaluate_reference_basis,
-      ufc_cmap.evaluate_reference_basis_derivatives, reference_midpoint);
+      ufc_cmap.evaluate_reference_basis_derivatives, reference_midpoint,
+      element);
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement
