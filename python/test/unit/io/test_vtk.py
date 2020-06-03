@@ -107,7 +107,7 @@ def test_save_2d_scalar_old(tempfile, file_options):
 
 
 def test_save_2d_scalar(tempfile):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 1, 1)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0)
     # VTKFileNeww(tempfile + "u.pvd").write(u)
