@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CoordinateElement.h"
+#include "FiniteElement.h"
 #include <iostream>
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -63,14 +64,16 @@ void CoordinateElement::push_forward(
   assert(x.rows() == X.rows());
   assert(x.cols() == _gdim);
   assert(X.cols() == _tdim);
-  //  _compute_physical_coordinates(x.data(), X.rows(), X.data(),
-  //                                cell_geometry.data());
 
   // Compute physical coordinates
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi(
-      X.rows(), cell_geometry.rows());
-  _evaluate_reference_basis(phi.data(), X.rows(), X.data());
-  x = phi * cell_geometry.matrix();
+  Eigen::Tensor<double, 3, Eigen::RowMajor> phi(1, X.rows(),
+                                                cell_geometry.rows());
+  Eigen::Map<
+      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      phi_mat(phi.data(), X.rows(), cell_geometry.rows());
+
+  _finite_element->evaluate_reference_basis(phi, X);
+  x = phi_mat * cell_geometry.matrix();
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
@@ -102,16 +105,19 @@ void CoordinateElement::compute_reference_geometry(
   assert(K.dimension(1) == this->topological_dimension());
   assert(K.dimension(2) == this->geometric_dimension());
 
-  // assert(_compute_reference_geometry);
-  // _compute_reference_geometry(X.data(), J.data(), detJ.data(), K.data(),
-  //                             num_points, x.data(), cell_geometry.data());
+  assert(_finite_element);
 
   // Newton's method
   Eigen::VectorXd xk(x.cols());
   const int d = cell_geometry.rows();
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
       d, _gdim);
-  Eigen::VectorXd phi(d);
+
+  Eigen::Tensor<double, 3, Eigen::RowMajor> phi_tensor(1, 1, d);
+  Eigen::Map<
+      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      phi(phi_tensor.data(), d, 1);
+
   for (int ip = 0; ip < num_points; ++ip)
   {
     Eigen::Map<
@@ -120,7 +126,7 @@ void CoordinateElement::compute_reference_geometry(
     Eigen::Map<
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         Kview(K.data() + ip * _gdim * _tdim, _tdim, _gdim);
-    Eigen::VectorXd Xk(_tdim);
+    Eigen::RowVectorXd Xk(_tdim);
     // Xk = _reference_midpoint.head(_tdim);
     // or Xk.setZero() ?
     Xk.setZero();
@@ -129,7 +135,7 @@ void CoordinateElement::compute_reference_geometry(
     for (k = 0; k < max_its; ++k)
     {
       // Compute physical coordinates
-      _evaluate_reference_basis(phi.data(), 1, Xk.data());
+      _finite_element->evaluate_reference_basis(phi_tensor, Xk);
       xk = cell_geometry.matrix().transpose() * phi;
       // Compute Jacobian and inverse
       _evaluate_reference_basis_derivatives(dphi.data(), 1, 1, Xk.data());
