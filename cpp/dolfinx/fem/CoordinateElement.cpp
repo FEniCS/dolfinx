@@ -82,7 +82,6 @@ void CoordinateElement::compute_reference_geometry(
 
   // in-argument checks
   assert(x.cols() == this->geometric_dimension());
-  // assert(cell_geometry.rows() == space_dimension);
   assert(cell_geometry.cols() == this->geometric_dimension());
 
   // In/out size checks
@@ -96,26 +95,19 @@ void CoordinateElement::compute_reference_geometry(
   assert(K.dimension(1) == this->topological_dimension());
   assert(K.dimension(2) == this->geometric_dimension());
 
-  if (_gdim != _tdim)
-  {
-    throw std::runtime_error(
-        "Compute_reference_geometry not yet implemented for tdim != gdim");
-  }
+  const int d = cell_geometry.rows();
+  Eigen::Tensor<double, 3, Eigen::RowMajor> phi_tensor(1, 1, d);
+  Eigen::Map<
+      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      phi(phi_tensor.data(), d, 1);
+
+  Eigen::Tensor<double, 4, Eigen::RowMajor> dphi_tensor(1, 1, d, _tdim);
+  Eigen::Map<
+      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      dphi(dphi_tensor.data(), d, _tdim);
 
   if (_is_affine)
   {
-    const int d = cell_geometry.rows();
-
-    Eigen::Tensor<double, 3, Eigen::RowMajor> phi_tensor(1, 1, d);
-    Eigen::Map<
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        phi(phi_tensor.data(), d, 1);
-
-    Eigen::Tensor<double, 4, Eigen::RowMajor> dphi_tensor(1, 1, d, _gdim);
-    Eigen::Map<
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        dphi(dphi_tensor.data(), d, _gdim);
-
     Eigen::RowVectorXd X0(_tdim);
     X0.setZero();
     Eigen::VectorXd x0(x.cols());
@@ -130,7 +122,17 @@ void CoordinateElement::compute_reference_geometry(
     J0 = cell_geometry.matrix().transpose() * dphi;
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> K0(
         _tdim, _gdim);
-    K0 = J0.inverse();
+    if (_gdim == _tdim)
+    {
+      K0 = J0.inverse();
+      detJ.fill(J0.determinant());
+    }
+    else
+    {
+      // Penrose-Moore pseudo-inverse
+      K0 = (J0.transpose() * J0).inverse() * J0.transpose();
+      detJ.fill(std::sqrt((J0.transpose() * J0).determinant()));
+    }
 
     // Fill result for J, K and detJ
     Eigen::Map<
@@ -141,7 +143,6 @@ void CoordinateElement::compute_reference_geometry(
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         Kview(K.data(), _tdim * num_points, _gdim);
     Kview = K0.replicate(num_points, 1);
-    detJ.fill(J0.determinant());
 
     // Calculate X for each point
     for (int ip = 0; ip < num_points; ++ip)
@@ -151,17 +152,6 @@ void CoordinateElement::compute_reference_geometry(
   {
     // Newton's method for non-affine geometry
     Eigen::VectorXd xk(x.cols());
-    const int d = cell_geometry.rows();
-
-    Eigen::Tensor<double, 3, Eigen::RowMajor> phi_tensor(1, 1, d);
-    Eigen::Map<
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        phi(phi_tensor.data(), d, 1);
-
-    Eigen::Tensor<double, 4, Eigen::RowMajor> dphi_tensor(1, 1, d, _gdim);
-    Eigen::Map<
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        dphi(dphi_tensor.data(), d, _gdim);
 
     for (int ip = 0; ip < num_points; ++ip)
     {
@@ -187,7 +177,10 @@ void CoordinateElement::compute_reference_geometry(
         _finite_element->evaluate_reference_basis_derivatives(dphi_tensor, 1,
                                                               Xk);
         Jview = cell_geometry.matrix().transpose() * dphi;
-        Kview = Jview.inverse();
+        if (_gdim == _tdim)
+          Kview = Jview.inverse();
+        else
+          Kview = (Jview.transpose() * Jview).inverse() * Jview.transpose();
 
         // Increment to new point in reference
         Eigen::VectorXd dX = Kview * (x.row(ip).matrix().transpose() - xk);
@@ -201,7 +194,10 @@ void CoordinateElement::compute_reference_geometry(
             "Iterations exceeded in Newton iteration for cmap");
       }
       X.row(ip) = Xk;
-      detJ.row(ip) = Jview.determinant();
+      if (_gdim == _tdim)
+        detJ.row(ip) = Jview.determinant();
+      else
+        detJ.row(ip) = std::sqrt((Jview.transpose() * Jview).determinant());
     }
   }
 }
