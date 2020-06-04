@@ -19,7 +19,6 @@
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
