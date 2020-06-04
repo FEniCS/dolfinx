@@ -6,7 +6,6 @@
 
 #include "CoordinateElement.h"
 #include "FiniteElement.h"
-#include <iostream>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace dolfinx;
@@ -16,12 +15,11 @@ using namespace dolfinx::fem;
 CoordinateElement::CoordinateElement(
     mesh::CellType cell_type, int topological_dimension,
     int geometric_dimension, const std::string& signature,
-    const ElementDofLayout& dof_layout, Eigen::Vector3d reference_midpoint,
-    bool is_affine, std::shared_ptr<const FiniteElement> element)
+    const ElementDofLayout& dof_layout, bool is_affine,
+    std::shared_ptr<const FiniteElement> element)
     : _tdim(topological_dimension), _gdim(geometric_dimension),
       _cell(cell_type), _signature(signature), _dof_layout(dof_layout),
-      _reference_midpoint(reference_midpoint), _is_affine(is_affine),
-      _finite_element(element)
+      _is_affine(is_affine), _finite_element(element)
 {
 }
 //-----------------------------------------------------------------------------
@@ -53,14 +51,14 @@ void CoordinateElement::push_forward(
   assert(X.cols() == _tdim);
 
   // Compute physical coordinates
-  Eigen::Tensor<double, 3, Eigen::RowMajor> phi(1, X.rows(),
-                                                cell_geometry.rows());
+  Eigen::Tensor<double, 3, Eigen::RowMajor> phi_tensor(1, X.rows(),
+                                                       cell_geometry.rows());
   Eigen::Map<
       Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      phi_mat(phi.data(), X.rows(), cell_geometry.rows());
+      phi(phi_tensor.data(), X.rows(), cell_geometry.rows());
 
-  _finite_element->evaluate_reference_basis(phi, X);
-  x = phi_mat * cell_geometry.matrix();
+  _finite_element->evaluate_reference_basis(phi_tensor, X);
+  x = phi * cell_geometry.matrix();
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
@@ -180,6 +178,7 @@ void CoordinateElement::compute_reference_geometry(
         if (_gdim == _tdim)
           Kview = Jview.inverse();
         else
+          // Penrose-Moore pseudo-inverse
           Kview = (Jview.transpose() * Jview).inverse() * Jview.transpose();
 
         // Increment to new point in reference
@@ -191,7 +190,7 @@ void CoordinateElement::compute_reference_geometry(
       if (k == max_its)
       {
         throw std::runtime_error(
-            "Iterations exceeded in Newton iteration for cmap");
+            "Newton method failed to converge for non-affine geometry");
       }
       X.row(ip) = Xk;
       if (_gdim == _tdim)

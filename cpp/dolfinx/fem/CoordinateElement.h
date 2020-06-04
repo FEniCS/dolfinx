@@ -27,18 +27,16 @@ class CoordinateElement
 {
 public:
   /// Create a coordinate element
-  /// @param[in] cell_type
-  /// @param[in] topological_dimension
-  /// @param[in] geometric_dimension
-  /// @param[in] signature
+  /// @param[in] cell_type Cell type
+  /// @param[in] topological_dimension Topological dimension
+  /// @param[in] geometric_dimension Geometric dimension
+  /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  /// @param[in] reference_midpoint
   /// @param[in] is_affine Boolean flag indicating affine mapping
-  /// @param[in] element FiniteElement
+  /// @param[in] element FiniteElement which the CoordinateElement is based upon
   CoordinateElement(mesh::CellType cell_type, int topological_dimension,
                     int geometric_dimension, const std::string& signature,
-                    const ElementDofLayout& dof_layout,
-                    Eigen::Vector3d reference_midpoint, bool is_affine,
+                    const ElementDofLayout& dof_layout, bool is_affine,
                     std::shared_ptr<const FiniteElement> element);
 
   /// Destructor

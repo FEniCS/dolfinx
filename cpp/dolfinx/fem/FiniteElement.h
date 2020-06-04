@@ -69,14 +69,14 @@ public:
   /// @return The string of the finite element family
   std::string family() const;
 
-  /// Evaluate all basis functions at given point in reference cell
+  /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(
       Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
       const Eigen::Ref<const Eigen::Array<
           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
 
-  /// Evaluate all basis function derivatives of order order at given point in
+  /// Evaluate all basis function derivatives of given order at given points in
   /// reference cell
   // reference_value_derivatives[num_points][num_dofs][reference_value_size][num_derivatives]
   void evaluate_reference_basis_derivatives(
