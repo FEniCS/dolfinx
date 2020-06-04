@@ -107,11 +107,11 @@ void CoordinateElement::compute_reference_geometry(
 
     // Compute Jacobian and inverse
     _evaluate_basis_derivatives(dphi.data(), 1, 1, X0.data());
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> J0(
-        _gdim, _tdim);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
+        J0(_gdim, _tdim);
     J0 = cell_geometry.matrix().transpose() * dphi;
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> K0(
-        _tdim, _gdim);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
+        K0(_tdim, _gdim);
     if (_gdim == _tdim)
     {
       K0 = J0.inverse();
@@ -141,8 +141,10 @@ void CoordinateElement::compute_reference_geometry(
   else
   {
     // Newton's method for non-affine geometry
-    Eigen::VectorXd xk(x.cols());
-    Eigen::RowVectorXd Xk(_tdim);
+    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> xk(x.cols(),
+                                                                       1);
+    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> Xk(_tdim,
+                                                                       1);
 
     for (int ip = 0; ip < num_points; ++ip)
     {
