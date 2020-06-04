@@ -174,7 +174,8 @@ void CoordinateElement::compute_reference_geometry(
           Kview = (Jview.transpose() * Jview).inverse() * Jview.transpose();
 
         // Increment to new point in reference
-        Eigen::VectorXd dX = Kview * (x.row(ip).matrix().transpose() - xk);
+        Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> dX
+            = Kview * (x.row(ip).matrix().transpose() - xk);
         if (dX.squaredNorm() < 1e-12)
           break;
         Xk += dX;
