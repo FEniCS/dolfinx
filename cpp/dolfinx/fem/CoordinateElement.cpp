@@ -98,9 +98,9 @@ void CoordinateElement::compute_reference_geometry(
 
   if (_is_affine)
   {
-    Eigen::RowVectorXd X0(_tdim);
+    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> x0(_gdim);
+    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> X0(_tdim);
     X0.setZero();
-    Eigen::VectorXd x0(x.cols());
     // Compute physical coordinates at X=0.
     _evaluate_basis_derivatives(phi.data(), 0, 1, X0.data());
     x0 = cell_geometry.matrix().transpose() * phi;
