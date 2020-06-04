@@ -33,11 +33,12 @@ public:
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   /// @param[in] is_affine Boolean flag indicating affine mapping
-  /// @param[in] element FiniteElement which the CoordinateElement is based upon
+  /// @param[in] evaluate_basis_derivatives
   CoordinateElement(mesh::CellType cell_type, int topological_dimension,
                     int geometric_dimension, const std::string& signature,
                     const ElementDofLayout& dof_layout, bool is_affine,
-                    std::shared_ptr<const FiniteElement> element);
+                    std::function<int(double*, int, int, const double*)>
+                        evaluate_basis_derivatives);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -100,6 +101,7 @@ private:
 
   bool _is_affine;
 
-  std::shared_ptr<const FiniteElement> _finite_element;
+  std::function<int(double*, int, int, const double*)>
+      _evaluate_basis_derivatives;
 };
 } // namespace dolfinx::fem

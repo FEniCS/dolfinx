@@ -664,14 +664,10 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
   std::free(dmap);
 
-  ufc_finite_element* ufc_element = ufc_cmap.create_element();
-  std::shared_ptr<fem::FiniteElement> element
-      = std::make_shared<fem::FiniteElement>(*ufc_element);
-  std::free(ufc_element);
-
   return fem::CoordinateElement(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
-      ufc_cmap.signature, dof_layout, ufc_cmap.is_affine, element);
+      ufc_cmap.signature, dof_layout, ufc_cmap.is_affine,
+      ufc_cmap.evaluate_reference_basis_derivatives);
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement

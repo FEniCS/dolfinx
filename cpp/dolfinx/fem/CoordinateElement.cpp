@@ -16,10 +16,12 @@ CoordinateElement::CoordinateElement(
     mesh::CellType cell_type, int topological_dimension,
     int geometric_dimension, const std::string& signature,
     const ElementDofLayout& dof_layout, bool is_affine,
-    std::shared_ptr<const FiniteElement> element)
+    std::function<int(double*, int, int, const double*)>
+        evaluate_basis_derivatives)
     : _tdim(topological_dimension), _gdim(geometric_dimension),
       _cell(cell_type), _signature(signature), _dof_layout(dof_layout),
-      _is_affine(is_affine), _finite_element(element)
+      _is_affine(is_affine),
+      _evaluate_basis_derivatives(evaluate_basis_derivatives)
 {
 }
 //-----------------------------------------------------------------------------
@@ -45,19 +47,15 @@ void CoordinateElement::push_forward(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& cell_geometry) const
 {
-  assert(_finite_element);
   assert(x.rows() == X.rows());
   assert(x.cols() == _gdim);
   assert(X.cols() == _tdim);
 
   // Compute physical coordinates
-  Eigen::Tensor<double, 3, Eigen::RowMajor> phi_tensor(1, X.rows(),
-                                                       cell_geometry.rows());
-  Eigen::Map<
-      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      phi(phi_tensor.data(), X.rows(), cell_geometry.rows());
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi(
+      X.rows(), cell_geometry.rows());
 
-  _finite_element->evaluate_reference_basis(phi_tensor, X);
+  _evaluate_basis_derivatives(phi.data(), 0, X.rows(), X.data());
   x = phi * cell_geometry.matrix();
 }
 //-----------------------------------------------------------------------------
@@ -71,8 +69,6 @@ void CoordinateElement::compute_reference_geometry(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& cell_geometry) const
 {
-  assert(_finite_element);
-
   // Number of points
   int num_points = x.rows();
   if (num_points == 0)
@@ -94,15 +90,11 @@ void CoordinateElement::compute_reference_geometry(
   assert(K.dimension(2) == this->geometric_dimension());
 
   const int d = cell_geometry.rows();
-  Eigen::Tensor<double, 3, Eigen::RowMajor> phi_tensor(1, 1, d);
-  Eigen::Map<
-      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      phi(phi_tensor.data(), d, 1);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi(d,
+                                                                             1);
 
-  Eigen::Tensor<double, 4, Eigen::RowMajor> dphi_tensor(1, 1, d, _tdim);
-  Eigen::Map<
-      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      dphi(dphi_tensor.data(), d, _tdim);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
+      d, _tdim);
 
   if (_is_affine)
   {
@@ -110,11 +102,11 @@ void CoordinateElement::compute_reference_geometry(
     X0.setZero();
     Eigen::VectorXd x0(x.cols());
     // Compute physical coordinates at X=0.
-    _finite_element->evaluate_reference_basis(phi_tensor, X0);
+    _evaluate_basis_derivatives(phi.data(), 0, 1, X0.data());
     x0 = cell_geometry.matrix().transpose() * phi;
 
     // Compute Jacobian and inverse
-    _finite_element->evaluate_reference_basis_derivatives(dphi_tensor, 1, X0);
+    _evaluate_basis_derivatives(dphi.data(), 1, 1, X0.data());
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> J0(
         _gdim, _tdim);
     J0 = cell_geometry.matrix().transpose() * dphi;
@@ -150,6 +142,7 @@ void CoordinateElement::compute_reference_geometry(
   {
     // Newton's method for non-affine geometry
     Eigen::VectorXd xk(x.cols());
+    Eigen::RowVectorXd Xk(_tdim);
 
     for (int ip = 0; ip < num_points; ++ip)
     {
@@ -159,21 +152,18 @@ void CoordinateElement::compute_reference_geometry(
       Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                Eigen::RowMajor>>
           Kview(K.data() + ip * _gdim * _tdim, _tdim, _gdim);
-      Eigen::RowVectorXd Xk(_tdim);
-      // Xk = _reference_midpoint.head(_tdim);
-      // or Xk.setZero() ?
+      // TODO: Xk - use cell midpoint instead?
       Xk.setZero();
       const int max_its = 10;
       int k;
       for (k = 0; k < max_its; ++k)
       {
         // Compute physical coordinates
-        _finite_element->evaluate_reference_basis(phi_tensor, Xk);
+        _evaluate_basis_derivatives(phi.data(), 0, 1, Xk.data());
         xk = cell_geometry.matrix().transpose() * phi;
 
         // Compute Jacobian and inverse
-        _finite_element->evaluate_reference_basis_derivatives(dphi_tensor, 1,
-                                                              Xk);
+        _evaluate_basis_derivatives(dphi.data(), 1, 1, Xk.data());
         Jview = cell_geometry.matrix().transpose() * dphi;
         if (_gdim == _tdim)
           Kview = Jview.inverse();
