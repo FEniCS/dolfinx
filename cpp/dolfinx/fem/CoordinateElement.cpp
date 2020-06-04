@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CoordinateElement.h"
-#include "FiniteElement.h"
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace dolfinx;

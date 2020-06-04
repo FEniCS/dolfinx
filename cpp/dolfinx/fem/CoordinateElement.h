@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Garth N. Wells
+// Copyright (C) 2018-2020 Garth N. Wells and Chris N. Richardson
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -11,14 +11,11 @@
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
-#include <memory>
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 namespace dolfinx::fem
 {
-
-class FiniteElement;
 
 // FIXME: A dof layout on a reference cell needs to be defined.
 /// This class manages coordinate mappings for isoparametric cells.
@@ -89,18 +86,26 @@ public:
           cell_geometry) const;
 
 private:
+  // Topological and geometric dimensions
   int _tdim, _gdim;
 
+  // Cell type
   mesh::CellType _cell;
 
+  // Signature, usually from UFC
   std::string _signature;
 
+  // Layout of dofs on element
   ElementDofLayout _dof_layout;
 
-  Eigen::Vector3d _reference_midpoint;
-
+  // Flag denoting affine map
   bool _is_affine;
 
+  // Function to evaluate the basis on the underlying element
+  // @param basis_values Returned values
+  // @param order
+  // @param num_points
+  // @param reference points
   std::function<int(double*, int, int, const double*)>
       _evaluate_basis_derivatives;
 };
