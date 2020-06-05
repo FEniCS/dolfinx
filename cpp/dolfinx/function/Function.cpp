@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Function.h"
+#include "FunctionSpace.h"
 #include <cfloat>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
@@ -13,7 +14,6 @@
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
@@ -21,7 +21,6 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
 
@@ -65,7 +64,6 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
     : _id(common::UniqueIdGenerator::id()), _function_space(V),
       _vector(create_vector(*V))
 {
-  // Check that we don't have a subspace
   if (!V->component().empty())
   {
     throw std::runtime_error("Cannot create Function from subspace. Consider "

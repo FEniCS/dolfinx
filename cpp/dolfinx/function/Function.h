@@ -6,10 +6,8 @@
 
 #pragma once
 
-#include "FunctionSpace.h"
 #include <Eigen/Dense>
 #include <dolfinx/common/types.h>
-#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>
 #include <functional>
 #include <memory>
@@ -20,10 +18,6 @@
 namespace dolfinx
 {
 
-namespace geometry
-{
-class BoundingBoxTree;
-}
 namespace mesh
 {
 class Mesh;
@@ -31,6 +25,8 @@ class Mesh;
 
 namespace function
 {
+class FunctionSpace;
+
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
 ///
@@ -110,8 +106,12 @@ public:
   /// expression function is a pure function, i.e. the expression values
   /// are the return argument, should be preferred.
   /// @param[in] f The expression to be interpolated
-  void interpolate_c(const FunctionSpace::interpolation_function& f);
-
+  void interpolate_c(
+      const std::function<
+          void(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                       Eigen::Dynamic, Eigen::RowMajor>>,
+               const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                                   Eigen::RowMajor>>&)>& f);
 
   /// Evaluate the Function at points
   /// @param[in] x The coordinates of the points. It has shape
