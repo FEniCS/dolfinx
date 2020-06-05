@@ -60,11 +60,6 @@ public:
   /// Return the dimension of the value space for axis i
   int value_dimension(int i) const;
 
-  // FIXME: Is this well-defined? What does it do on non-simplex
-  // elements?
-  /// Return the maximum polynomial degree
-  int degree() const;
-
   /// The finite element family
   /// @return The string of the finite element family
   std::string family() const;
@@ -141,7 +136,7 @@ private:
 
   mesh::CellType _cell_shape;
 
-  int _tdim, _space_dim, _value_size, _reference_value_size, _degree;
+  int _tdim, _space_dim, _value_size, _reference_value_size;
 
   // Dof coordinates on the reference element
   bool _has_refX;

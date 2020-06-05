@@ -21,8 +21,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _tdim(ufc_element.topological_dimension),
       _space_dim(ufc_element.space_dimension),
       _value_size(ufc_element.value_size),
-      _reference_value_size(ufc_element.reference_value_size),
-      _degree(ufc_element.degree), _has_refX(false),
+      _reference_value_size(ufc_element.reference_value_size), _has_refX(false),
       _hash(std::hash<std::string>{}(_signature)),
       _evaluate_reference_basis(ufc_element.evaluate_reference_basis),
       _evaluate_reference_basis_derivatives(
@@ -103,7 +102,7 @@ int FiniteElement::value_dimension(int i) const
   return _value_dimension.at(i);
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::degree() const { return _degree; }
+// int FiniteElement::degree() const { return _degree; }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::family() const { return _family; }
 //-----------------------------------------------------------------------------
