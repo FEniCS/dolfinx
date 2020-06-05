@@ -269,7 +269,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   std::string encode_string = "ascii";
 
   // Get rank of function::Function
-  const int rank = u.value_rank();
+  const int rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
     throw std::runtime_error("Don't know how to handle vector function with "
@@ -277,7 +277,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   }
 
   // Get number of components
-  const int data_dim = u.value_size();
+  const int data_dim = u.function_space()->element()->value_size();
 
   // Open file
   std::ofstream fp(filename.c_str(), std::ios_base::app);

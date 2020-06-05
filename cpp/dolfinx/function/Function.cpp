@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Function.h"
+#include "FunctionSpace.h"
 #include <cfloat>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
@@ -13,7 +14,6 @@
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
@@ -21,7 +21,6 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
 
@@ -65,7 +64,6 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
     : _id(common::UniqueIdGenerator::id()), _function_space(V),
       _vector(create_vector(*V))
 {
-  // Check that we don't have a subspace
   if (!V->component().empty())
   {
     throw std::runtime_error("Cannot create Function from subspace. Consider "
@@ -290,36 +288,6 @@ void Function::interpolate_c(const FunctionSpace::interpolation_function& f)
   _function_space->interpolate_c(x.x, f);
 }
 //-----------------------------------------------------------------------------
-int Function::value_rank() const
-{
-  assert(_function_space);
-  assert(_function_space->element());
-  return _function_space->element()->value_rank();
-}
-//-----------------------------------------------------------------------------
-int Function::value_size() const
-{
-  int size = 1;
-  for (int i = 0; i < value_rank(); ++i)
-    size *= value_dimension(i);
-  return size;
-}
-//-----------------------------------------------------------------------------
-int Function::value_dimension(int i) const
-{
-  assert(_function_space);
-  assert(_function_space->element());
-  return _function_space->element()->value_dimension(i);
-}
-//-----------------------------------------------------------------------------
-std::vector<int> Function::value_shape() const
-{
-  std::vector<int> _shape(this->value_rank(), 1);
-  for (std::size_t i = 0; i < _shape.size(); ++i)
-    _shape[i] = this->value_dimension(i);
-  return _shape;
-}
-//-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 Function::compute_point_values() const
 {
@@ -329,14 +297,15 @@ Function::compute_point_values() const
   const int tdim = mesh->topology().dim();
 
   // Compute in tensor (one for scalar function, . . .)
-  const std::size_t value_size_loc = value_size();
+  const int value_size_loc = _function_space->element()->value_size();
 
   // Resize Array for holding point values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       point_values(mesh->geometry().x().rows(), value_size_loc);
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh->geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -350,8 +319,8 @@ Function::compute_point_values() const
       values(num_dofs_g, value_size_loc);
   auto map = mesh->topology().index_map(tdim);
   assert(map);
-  const int num_cells = map->size_local() + map->num_ghosts();
-  for (int c = 0; c < num_cells; ++c)
+  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get coordinates for all points in cell
     auto dofs = x_dofmap.links(c);

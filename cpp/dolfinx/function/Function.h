@@ -6,31 +6,23 @@
 
 #pragma once
 
-#include "FunctionSpace.h"
 #include <Eigen/Dense>
 #include <dolfinx/common/types.h>
-#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>
 #include <functional>
 #include <memory>
 #include <petscsys.h>
 #include <petscvec.h>
+#include <string>
 #include <vector>
 
 namespace dolfinx
 {
 
-namespace geometry
-{
-class BoundingBoxTree;
-}
-namespace mesh
-{
-class Mesh;
-} // namespace mesh
-
 namespace function
 {
+class FunctionSpace;
+
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
 ///
@@ -75,6 +67,7 @@ public:
 
   /// Collapse a subfunction (view into the Function) to a stand-alone
   /// Function
+  /// @return New collapsed Function
   Function collapse() const;
 
   /// Return shared pointer to function space
@@ -110,21 +103,12 @@ public:
   /// expression function is a pure function, i.e. the expression values
   /// are the return argument, should be preferred.
   /// @param[in] f The expression to be interpolated
-  void interpolate_c(const FunctionSpace::interpolation_function& f);
-
-  /// Return value rank
-  int value_rank() const;
-
-  /// Return value size
-  int value_size() const;
-
-  /// Return value dimension for given axis
-  /// @param[in] i The index of the axis
-  /// @returns The value dimension.
-  int value_dimension(int i) const;
-
-  /// Return value shape
-  std::vector<int> value_shape() const;
+  void interpolate_c(
+      const std::function<
+          void(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                       Eigen::Dynamic, Eigen::RowMajor>>,
+               const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                                   Eigen::RowMajor>>&)>& f);
 
   /// Evaluate the Function at points
   /// @param[in] x The coordinates of the points. It has shape
