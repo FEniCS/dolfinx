@@ -134,8 +134,9 @@ void io(py::module& m)
               py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::VTKFileNew::close)
       .def("write",
-           py::overload_cast<const dolfinx::function::Function&, double>(
-               &dolfinx::io::VTKFileNew::write),
+           py::overload_cast<const std::vector<std::function_wrapper<
+                                 const dolfinx::function::Function>>&,
+                             double>(&dolfinx::io::VTKFileNew::write),
            py::arg("u"), py::arg("t") = 0.0)
       .def("write",
            py::overload_cast<const dolfinx::mesh::Mesh&, double>(

@@ -398,8 +398,12 @@ void io::VTKFileNew::write(const mesh::Mesh& mesh, double time)
   dataset_node.append_attribute("file") = p_pvtu.c_str();
 }
 //----------------------------------------------------------------------------
-void io::VTKFileNew::write(const function::Function& u, double time)
+void io::VTKFileNew::write(
+    const std::vector<std::reference_wrapper<const function::Function>>& _u,
+    double time)
 {
+  const function::Function& u = _u[0].get();
+
   if (!_pvd_xml)
     throw std::runtime_error("VTKFile has already been closed");
 

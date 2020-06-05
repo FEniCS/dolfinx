@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -65,7 +66,9 @@ public:
   /// Write a Function to a VTK file for visualisation
   /// @param[in] u The Function to write to file
   /// @param[in] time Time parameter to associate with the @p mesh
-  void write(const function::Function& u, double time = 0.0);
+  void
+  write(const std::vector<std::reference_wrapper<const function::Function>>& u,
+        double time = 0.0);
 
 private:
   std::unique_ptr<pugi::xml_document> _pvd_xml;
