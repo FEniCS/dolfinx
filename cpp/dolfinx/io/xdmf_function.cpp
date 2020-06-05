@@ -11,6 +11,7 @@
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
+#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>

@@ -13,15 +13,11 @@
 #include <memory>
 #include <petscsys.h>
 #include <petscvec.h>
+#include <string>
 #include <vector>
 
 namespace dolfinx
 {
-
-namespace mesh
-{
-class Mesh;
-} // namespace mesh
 
 namespace function
 {

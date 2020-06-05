@@ -269,6 +269,11 @@ FunctionSpace::collapse() const
   return std::pair(std::move(collapsed_sub_space), std::move(collapsed_dofs));
 }
 //-----------------------------------------------------------------------------
+bool FunctionSpace::has_element(const fem::FiniteElement& element) const
+{
+  return element.hash() == this->_element->hash();
+}
+//-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
