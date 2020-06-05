@@ -27,7 +27,7 @@ class FiniteElement
 public:
   /// Create finite element from UFC finite element
   /// @param[in] ufc_element UFC finite element
-  FiniteElement(const ufc_finite_element& ufc_element);
+  explicit FiniteElement(const ufc_finite_element& ufc_element);
 
   /// Destructor
   virtual ~FiniteElement() = default;

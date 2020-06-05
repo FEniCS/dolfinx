@@ -67,6 +67,7 @@ public:
 
   /// Collapse a subfunction (view into the Function) to a stand-alone
   /// Function
+  /// @return New collapsed Function
   Function collapse() const;
 
   /// Return shared pointer to function space
