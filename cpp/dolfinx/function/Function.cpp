@@ -290,18 +290,6 @@ void Function::interpolate_c(const FunctionSpace::interpolation_function& f)
   _function_space->interpolate_c(x.x, f);
 }
 //-----------------------------------------------------------------------------
-int Function::value_size() const
-{
-  assert(_function_space);
-  auto element = _function_space->element();
-  assert(element);
-
-  int size = 1;
-  for (int i = 0; i < element->value_rank(); ++i)
-    size *= element->value_dimension(i);
-  return size;
-}
-//-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 Function::compute_point_values() const
 {

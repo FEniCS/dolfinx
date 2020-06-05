@@ -112,8 +112,6 @@ public:
   /// @param[in] f The expression to be interpolated
   void interpolate_c(const FunctionSpace::interpolation_function& f);
 
-  /// Return value size
-  int value_size() const;
 
   /// Evaluate the Function at points
   /// @param[in] x The coordinates of the points. It has shape
