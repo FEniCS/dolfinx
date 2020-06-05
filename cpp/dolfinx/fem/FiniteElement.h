@@ -101,12 +101,10 @@ public:
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
       const std::uint32_t permutation_info) const;
 
-  /// Check if reference coordinates for dofs are defined
-  /// @return True if the dof coordinates are available
-  bool has_dof_reference_coordinates() const noexcept;
-
   /// Tabulate the reference coordinates of all dofs on an element
   /// @return The coordinates of all dofs on the reference cell
+  ///
+  /// @note Throws an exception if dofs cannot be associated with points
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
   dof_reference_coordinates() const;
 
@@ -139,7 +137,6 @@ private:
   int _tdim, _space_dim, _value_size, _reference_value_size;
 
   // Dof coordinates on the reference element
-  bool _has_refX;
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _refX;
 
   // List of sub-elements (if any)
