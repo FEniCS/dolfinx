@@ -113,11 +113,12 @@ void FunctionSpace::interpolate(
   assert(_element);
 
   // Check that function ranks match
-  if (_element->value_rank() != v.value_rank())
+  if (int rank_v = v.function_space()->element()->value_rank();
+      _element->value_rank() != rank_v)
   {
     throw std::runtime_error("Cannot interpolate function into function space. "
                              "Rank of function ("
-                             + std::to_string(v.value_rank())
+                             + std::to_string(rank_v)
                              + ") does not match rank of function space ("
                              + std::to_string(_element->value_rank()) + ")");
   }
@@ -125,15 +126,16 @@ void FunctionSpace::interpolate(
   // Check that function dimension match
   for (int i = 0; i < _element->value_rank(); ++i)
   {
-    if (_element->value_dimension(i) != v.value_dimension(i))
+    if (int v_dim = v.function_space()->element()->value_dimension(i);
+        _element->value_dimension(i) != v_dim)
     {
       throw std::runtime_error(
           "Cannot interpolate function into function space. "
           "Dimension "
-          + std::to_string(i) + " of function ("
-          + std::to_string(v.value_dimension(i)) + ") does not match dimension "
-          + std::to_string(i) + " of function space("
-          + std::to_string(_element->value_dimension(i)) + ")");
+          + std::to_string(i) + " of function (" + std::to_string(v_dim)
+          + ") does not match dimension " + std::to_string(i)
+          + " of function space(" + std::to_string(_element->value_dimension(i))
+          + ")");
     }
   }
 
@@ -265,6 +267,11 @@ FunctionSpace::collapse() const
       = std::make_shared<FunctionSpace>(_mesh, _element, collapsed_dofmap);
 
   return std::pair(std::move(collapsed_sub_space), std::move(collapsed_dofs));
+}
+//-----------------------------------------------------------------------------
+bool FunctionSpace::has_element(const fem::FiniteElement& element) const
+{
+  return element.hash() == this->_element->hash();
 }
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }

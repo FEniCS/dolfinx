@@ -243,7 +243,7 @@ void write_mesh(const mesh::Mesh& mesh, const std::string filename,
 void results_write(const function::Function& u, std::string vtu_filename)
 {
   // Get rank of function::Function
-  const std::size_t rank = u.value_rank();
+  const int rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
     throw std::runtime_error(
@@ -252,7 +252,7 @@ void results_write(const function::Function& u, std::string vtu_filename)
   }
 
   // Get number of components
-  const std::size_t dim = u.value_size();
+  const int dim = u.function_space()->element()->value_size();
 
   // Check that function type can be handled
   if (rank == 1)
@@ -280,7 +280,7 @@ void results_write(const function::Function& u, std::string vtu_filename)
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
   int cell_based_dim = 1;
-  for (std::size_t i = 0; i < rank; i++)
+  for (int i = 0; i < rank; i++)
     cell_based_dim *= mesh->topology().dim();
 
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
@@ -295,10 +295,10 @@ void results_write(const function::Function& u, std::string vtu_filename)
 void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
                       std::string vtu_filename)
 {
-  const std::size_t rank = u.value_rank();
+  const int rank = u.function_space()->element()->value_rank();
 
   // Get number of components
-  const std::size_t dim = u.value_size();
+  const int dim = u.function_space()->element()->value_size();
 
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
@@ -352,14 +352,14 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
     if (rank == 1 and dim == 2)
     {
       // Append 0.0 to 2D vectors to make them 3D
-      for (std::size_t j = 0; j < 2; j++)
+      for (int j = 0; j < 2; j++)
         ss << values(i, j) << " ";
       ss << 0.0 << "  ";
     }
     else if (rank == 2 and dim == 4)
     {
       // Pad 2D tensors with 0.0 to make them 3D
-      for (std::size_t j = 0; j < 2; j++)
+      for (int j = 0; j < 2; j++)
       {
         ss << values(i, (2 * j + 0)) << " ";
         ss << values(i, (2 * j + 1)) << " ";
@@ -372,7 +372,7 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
     else
     {
       // Write all components
-      for (std::size_t j = 0; j < dim; j++)
+      for (int j = 0; j < dim; j++)
         ss << values(i, j) << " ";
       ss << " ";
     }
@@ -566,7 +566,7 @@ void pvtu_write(const function::Function& u, const std::string filename,
   }
 
   // Get number of components
-  const int dim = u.value_size();
+  const int dim = u.function_space()->element()->value_size();
 
   // Get mesh
   assert(u.function_space());

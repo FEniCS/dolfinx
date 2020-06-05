@@ -20,14 +20,15 @@ class Constant
 
 public:
   /// Create a rank-0 (scalar-valued) constant
-  Constant(PetscScalar c);
+  explicit Constant(PetscScalar c);
 
   /// Create a rank-1 (vector-valued) constant
-  Constant(const std::vector<PetscScalar>& c);
+  explicit Constant(const std::vector<PetscScalar>& c);
 
   /// Create a rank-2 constant
-  Constant(const Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                         Eigen::Dynamic, Eigen::RowMajor>>& c);
+  explicit Constant(
+      const Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>>& c);
 
   /// Create an arbitrary rank constant. Data layout is row-major (C style).
   Constant(std::vector<int> shape, std::vector<PetscScalar> value);
