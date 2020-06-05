@@ -21,7 +21,7 @@ namespace fem
 {
 class DofMap;
 class FiniteElement;
-}
+} // namespace fem
 
 namespace mesh
 {
