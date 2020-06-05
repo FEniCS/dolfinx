@@ -126,15 +126,16 @@ void FunctionSpace::interpolate(
   // Check that function dimension match
   for (int i = 0; i < _element->value_rank(); ++i)
   {
-    if (_element->value_dimension(i) != v.value_dimension(i))
+    if (int v_dim = v.function_space()->element()->value_dimension(i);
+        _element->value_dimension(i) != v_dim)
     {
       throw std::runtime_error(
           "Cannot interpolate function into function space. "
           "Dimension "
-          + std::to_string(i) + " of function ("
-          + std::to_string(v.value_dimension(i)) + ") does not match dimension "
-          + std::to_string(i) + " of function space("
-          + std::to_string(_element->value_dimension(i)) + ")");
+          + std::to_string(i) + " of function (" + std::to_string(v_dim)
+          + ") does not match dimension " + std::to_string(i)
+          + " of function space(" + std::to_string(_element->value_dimension(i))
+          + ")");
     }
   }
 

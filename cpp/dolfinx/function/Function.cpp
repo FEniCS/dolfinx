@@ -302,19 +302,14 @@ int Function::value_size() const
   return size;
 }
 //-----------------------------------------------------------------------------
-int Function::value_dimension(int i) const
-{
-  assert(_function_space);
-  assert(_function_space->element());
-  return _function_space->element()->value_dimension(i);
-}
-//-----------------------------------------------------------------------------
 std::vector<int> Function::value_shape() const
 {
-  const int rank = _function_space->element()->value_rank();
+  auto e = _function_space->element();
+  assert(e);
+  const int rank = e->value_rank();
   std::vector<int> _shape(rank, 1);
   for (std::size_t i = 0; i < _shape.size(); ++i)
-    _shape[i] = this->value_dimension(i);
+    _shape[i] = e->value_dimension(i);
   return _shape;
 }
 //-----------------------------------------------------------------------------

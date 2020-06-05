@@ -133,7 +133,7 @@ def mplot_function(ax, f, **kwargs):
                 'Matplotlib plotting backend only supports 2D mesh for scalar functions.'
             )
 
-    elif f.value_rank == 0:
+    elif f.function_space.element.value_rank == 0:
         # Scalar function, interpolated to vertices
         # TODO: Handle DG1?
         C = f.compute_point_values()
@@ -197,7 +197,7 @@ def mplot_function(ax, f, **kwargs):
                 'Matplotlib plotting backend only supports 2D mesh for scalar functions.'
             )
 
-    elif f.value_rank == 1:
+    elif f.function_space.element.value_rank  == 1:
         # Vector function, interpolated to vertices
         w0 = f.compute_point_values()
         if (w0.dtype.type is np.complex128):

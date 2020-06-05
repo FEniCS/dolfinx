@@ -115,11 +115,6 @@ public:
   /// Return value size
   int value_size() const;
 
-  /// Return value dimension for given axis
-  /// @param[in] i The index of the axis
-  /// @returns The value dimension.
-  int value_dimension(int i) const;
-
   /// Return value shape
   std::vector<int> value_shape() const;
 
