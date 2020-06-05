@@ -400,21 +400,31 @@ void io::VTKFileNew::write(const mesh::Mesh& mesh, double time)
 }
 //----------------------------------------------------------------------------
 void io::VTKFileNew::write(
-    const std::vector<std::reference_wrapper<const function::Function>>& _u,
+    const std::vector<std::reference_wrapper<const function::Function>>& u,
     double time)
 {
-  const function::Function& u = _u[0].get();
+  if (u.empty())
+    return;
+
+  // Extract mesh
+  assert(u.front().get().function_space());
+  std::shared_ptr<const mesh::Mesh> mesh
+      = u.front().get().function_space()->mesh();
+  assert(mesh);
+  for (std::size_t i = 1; i < u.size(); ++i)
+  {
+    if (u[i].get().function_space()->mesh() != mesh)
+    {
+      throw std::runtime_error(
+          "Meshes for Functions to write to VTK file do not match.");
+    }
+  }
 
   if (!_pvd_xml)
     throw std::runtime_error("VTKFile has already been closed");
 
   const int mpi_rank = MPI::rank(_comm.comm());
   boost::filesystem::path p(_filename);
-
-  // Get the mesh
-  assert(u.function_space());
-  auto mesh = u.function_space()->mesh();
-  assert(mesh);
 
   // Get the PVD "Collection" node
   pugi::xml_node xml_collections
@@ -449,24 +459,28 @@ void io::VTKFileNew::write(
   add_mesh(*mesh, piece_node);
 
   // Add cell/point data to VTU node
-  if (is_cellwise(u))
+  for (auto _u : u)
   {
-    const std::vector<PetscScalar> values = xdmf_utils::get_cell_data_values(u);
-    const int value_size = u.function_space()->element()->value_size();
-    assert(values.size() % value_size == 0);
-    Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        _values(values.data(), values.size() / value_size, value_size);
-    pugi::xml_node data_node = piece_node.append_child("CellData");
-    add_data(u, _values, data_node);
-  }
-  else
-  {
-    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                       Eigen::RowMajor>
-        values = u.compute_point_values();
-    pugi::xml_node data_node = piece_node.append_child("PointData");
-    add_data(u, values, data_node);
+    if (is_cellwise(_u))
+    {
+      const std::vector<PetscScalar> values
+          = xdmf_utils::get_cell_data_values(_u);
+      const int value_size = _u.get().function_space()->element()->value_size();
+      assert(values.size() % value_size == 0);
+      Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>>
+          _values(values.data(), values.size() / value_size, value_size);
+      pugi::xml_node data_node = piece_node.append_child("CellData");
+      add_data(_u, _values, data_node);
+    }
+    else
+    {
+      const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                         Eigen::RowMajor>
+          values = _u.get().compute_point_values();
+      pugi::xml_node data_node = piece_node.append_child("PointData");
+      add_data(_u, values, data_node);
+    }
   }
 
   // Save VTU XML to file
@@ -493,11 +507,14 @@ void io::VTKFileNew::write(
 
     // Add field data
     pugi::xml_node pointdata_pnode = grid_node.append_child("PPointData");
-    pointdata_pnode.append_attribute("Scalars") = u.name.c_str();
-    pugi::xml_node data_node = pointdata_pnode.append_child("PDataArray");
-    data_node.append_attribute("type") = "Float64";
-    data_node.append_attribute("Name") = u.name.c_str();
-    data_node.append_attribute("NumberOfComponents") = 0;
+    for (auto _u : u)
+    {
+      pointdata_pnode.append_attribute("Scalars") = _u.get().name.c_str();
+      pugi::xml_node data_node = pointdata_pnode.append_child("PDataArray");
+      data_node.append_attribute("type") = "Float64";
+      data_node.append_attribute("Name") = _u.get().name.c_str();
+      data_node.append_attribute("NumberOfComponents") = 0;
+    }
 
     // Add data for each process to the PVTU object
     const int mpi_size = MPI::size(_comm.comm());
