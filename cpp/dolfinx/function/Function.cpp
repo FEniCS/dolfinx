@@ -290,18 +290,15 @@ void Function::interpolate_c(const FunctionSpace::interpolation_function& f)
   _function_space->interpolate_c(x.x, f);
 }
 //-----------------------------------------------------------------------------
-int Function::value_rank() const
-{
-  assert(_function_space);
-  assert(_function_space->element());
-  return _function_space->element()->value_rank();
-}
-//-----------------------------------------------------------------------------
 int Function::value_size() const
 {
+  assert(_function_space);
+  auto element = _function_space->element();
+  assert(element);
+
   int size = 1;
-  for (int i = 0; i < value_rank(); ++i)
-    size *= value_dimension(i);
+  for (int i = 0; i < element->value_rank(); ++i)
+    size *= element->value_dimension(i);
   return size;
 }
 //-----------------------------------------------------------------------------
@@ -314,7 +311,8 @@ int Function::value_dimension(int i) const
 //-----------------------------------------------------------------------------
 std::vector<int> Function::value_shape() const
 {
-  std::vector<int> _shape(this->value_rank(), 1);
+  const int rank = _function_space->element()->value_rank();
+  std::vector<int> _shape(rank, 1);
   for (std::size_t i = 0; i < _shape.size(); ++i)
     _shape[i] = this->value_dimension(i);
   return _shape;
@@ -336,7 +334,8 @@ Function::compute_point_values() const
       point_values(mesh->geometry().x().rows(), value_size_loc);
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh->geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);

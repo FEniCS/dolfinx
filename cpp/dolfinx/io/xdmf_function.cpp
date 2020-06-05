@@ -45,7 +45,8 @@ std::string rank_to_string(int value_rank)
 bool has_cell_centred_data(const function::Function& u)
 {
   int cell_based_dim = 1;
-  for (int i = 0; i < u.value_rank(); i++)
+  const int rank = u.function_space()->element()->value_rank();
+  for (int i = 0; i < rank; i++)
     cell_based_dim *= u.function_space()->mesh()->topology().dim();
 
   assert(u.function_space());
@@ -61,7 +62,8 @@ bool has_cell_centred_data(const function::Function& u)
 int get_padded_width(const function::Function& u)
 {
   const int width = u.value_size();
-  const int rank = u.value_rank();
+  const int rank = u.function_space()->element()->value_rank();
+
   if (rank == 1 and width == 2)
     return 3;
   else if (rank == 2 and width == 4)
@@ -104,6 +106,8 @@ void xdmf_function::add_function(MPI_Comm comm, const function::Function& u,
   const int num_values
       = cell_centred ? map_c->size_global() : map_v->size_global();
 
+  const int value_rank = u.function_space()->element()->value_rank();
+
 #ifdef PETSC_USE_COMPLEX
   const std::vector<std::string> components = {"real", "imag"};
 #else
@@ -132,7 +136,7 @@ void xdmf_function::add_function(MPI_Comm comm, const function::Function& u,
     assert(attribute_node);
     attribute_node.append_attribute("Name") = attr_name.c_str();
     attribute_node.append_attribute("AttributeType")
-        = rank_to_string(u.value_rank()).c_str();
+        = rank_to_string(value_rank).c_str();
     attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
     const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);

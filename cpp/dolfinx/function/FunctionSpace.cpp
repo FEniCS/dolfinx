@@ -113,11 +113,12 @@ void FunctionSpace::interpolate(
   assert(_element);
 
   // Check that function ranks match
-  if (_element->value_rank() != v.value_rank())
+  if (int rank_v = v.function_space()->element()->value_rank();
+      _element->value_rank() != rank_v)
   {
     throw std::runtime_error("Cannot interpolate function into function space. "
                              "Rank of function ("
-                             + std::to_string(v.value_rank())
+                             + std::to_string(rank_v)
                              + ") does not match rank of function space ("
                              + std::to_string(_element->value_rank()) + ")");
   }

@@ -30,13 +30,15 @@ namespace
 // 2D vector/tensor because XDMF presents everything as 3D
 std::int64_t get_padded_width(const function::Function& u)
 {
-  std::int64_t width = u.value_size();
-  std::int64_t rank = u.value_rank();
+  const int width = u.value_size();
+  const int rank = u.function_space()->element()->value_rank();
+
   if (rank == 1 and width == 2)
     return 3;
   else if (rank == 2 and width == 4)
     return 9;
-  return width;
+  else
+    return width;
 }
 //-----------------------------------------------------------------------------
 
@@ -201,7 +203,7 @@ xdmf_utils::get_point_data_values(const function::Function& u)
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
   std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
-  const int value_rank = u.value_rank();
+  const int value_rank = u.function_space()->element()->value_rank();
   if (value_rank > 0)
   {
     // Transpose vector/tensor data arrays
@@ -232,7 +234,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   assert(u.function_space()->dofmap());
   const auto mesh = u.function_space()->mesh();
   const int value_size = u.value_size();
-  const int value_rank = u.value_rank();
+  const int value_rank = u.function_space()->element()->value_rank();
 
   // Allocate memory for function values at cell centres
   const int tdim = mesh->topology().dim();
@@ -376,9 +378,8 @@ xdmf_utils::extract_local_entities(
   const int num_vertices_per_entity = mesh::cell_num_entities(entity_type, 0);
   assert(entity_vertex_dofs.size() == (std::size_t)num_vertices_per_entity);
 
-
   // Throw away input global indices which do not belong to entity vertices
-  // This decreases the amount of data needed in parallel communication 
+  // This decreases the amount of data needed in parallel communication
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entities_vertices(entities.rows(), num_vertices_per_entity);
   for (Eigen::Index e = 0; e < entities_vertices.rows(); ++e)

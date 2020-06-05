@@ -112,9 +112,6 @@ public:
   /// @param[in] f The expression to be interpolated
   void interpolate_c(const FunctionSpace::interpolation_function& f);
 
-  /// Return value rank
-  int value_rank() const;
-
   /// Return value size
   int value_size() const;
 

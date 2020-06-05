@@ -243,7 +243,7 @@ void write_mesh(const mesh::Mesh& mesh, const std::string filename,
 void results_write(const function::Function& u, std::string vtu_filename)
 {
   // Get rank of function::Function
-  const std::size_t rank = u.value_rank();
+  const int rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
     throw std::runtime_error(
@@ -280,7 +280,7 @@ void results_write(const function::Function& u, std::string vtu_filename)
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
   int cell_based_dim = 1;
-  for (std::size_t i = 0; i < rank; i++)
+  for (int i = 0; i < rank; i++)
     cell_based_dim *= mesh->topology().dim();
 
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
@@ -295,7 +295,7 @@ void results_write(const function::Function& u, std::string vtu_filename)
 void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
                       std::string vtu_filename)
 {
-  const std::size_t rank = u.value_rank();
+  const int rank = u.function_space()->element()->value_rank();
 
   // Get number of components
   const std::size_t dim = u.value_size();
