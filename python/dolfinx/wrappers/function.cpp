@@ -78,8 +78,6 @@ void function(py::module& m)
           "Return the vector associated with the finite element Function")
       .def_property_readonly("value_size",
                              &dolfinx::function::Function::value_size)
-      .def_property_readonly("value_shape",
-                             &dolfinx::function::Function::value_shape)
       .def("eval", &dolfinx::function::Function::eval, py::arg("x"),
            py::arg("cells"), py::arg("values"), "Evaluate Function")
       .def("compute_point_values",

@@ -115,9 +115,6 @@ public:
   /// Return value size
   int value_size() const;
 
-  /// Return value shape
-  std::vector<int> value_shape() const;
-
   /// Evaluate the Function at points
   /// @param[in] x The coordinates of the points. It has shape
   ///              (num_points, 3).
