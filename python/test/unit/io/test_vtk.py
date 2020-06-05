@@ -113,7 +113,7 @@ def test_save_2d_scalar(tempfile):
     # VTKFileNeww(tempfile + "u.pvd").write(u)
     # f = VTKFileNew(mesh.mpi_comm(), tempfile + "u.pvd", "w")
     f = VTKFileNew(mesh.mpi_comm(), "u.pvd", "w")
-    f.write(u._cpp_object, 0.)
+    f.write([u._cpp_object], 0.)
     # f.write(u, 1.)
     # for file_option in file_options:
     #     VTKFile(tempfile + "u.pvd", file_option).write(u)
@@ -161,7 +161,7 @@ def test_save_2d_vector(tempfile):
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1)
     f = VTKFileNew(mesh.mpi_comm(), "u2.pvd", "w")
-    f.write(u._cpp_object, 0.)
+    f.write([u._cpp_object], 0.)
 
     fold = VTKFile("u2-old.pvd")
     fold.write(u)
