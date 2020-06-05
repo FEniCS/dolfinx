@@ -89,9 +89,7 @@ void CoordinateElement::compute_reference_geometry(
   assert(K.dimension(2) == this->geometric_dimension());
 
   const int d = cell_geometry.rows();
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi(d,
-                                                                             1);
-
+  Eigen::VectorXd phi(d);
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
       d, _tdim);
 
