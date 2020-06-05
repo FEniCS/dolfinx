@@ -256,7 +256,7 @@ int main(int argc, char* argv[])
   // file.write(u);
 
   io::VTKFileNew file_new(MPI_COMM_WORLD, "test.pvd", "w");
-  file_new.write(u);
+  file_new.write({u});
   // file_new.write(*mesh);
   // file_new.write(*mesh);
   // file.write(u);

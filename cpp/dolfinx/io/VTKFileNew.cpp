@@ -11,6 +11,7 @@
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
+#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -114,8 +115,8 @@ void add_data(
         PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values,
     pugi::xml_node& data_node)
 {
-  const int rank = u.value_rank();
-  const int dim = u.value_size();
+  const int rank = u.function_space()->element()->value_rank();
+  const int dim = u.function_space()->element()->value_size();
   if (rank == 1)
   {
     if (!(dim == 2 or dim == 3))
@@ -451,7 +452,7 @@ void io::VTKFileNew::write(
   if (is_cellwise(u))
   {
     const std::vector<PetscScalar> values = xdmf_utils::get_cell_data_values(u);
-    const int value_size = u.value_size();
+    const int value_size = u.function_space()->element()->value_size();
     assert(values.size() % value_size == 0);
     Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
