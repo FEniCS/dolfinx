@@ -299,7 +299,7 @@ Function::compute_point_values() const
   const int tdim = mesh->topology().dim();
 
   // Compute in tensor (one for scalar function, . . .)
-  const std::size_t value_size_loc = value_size();
+  const int value_size_loc = _function_space->element()->value_size();
 
   // Resize Array for holding point values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -321,8 +321,8 @@ Function::compute_point_values() const
       values(num_dofs_g, value_size_loc);
   auto map = mesh->topology().index_map(tdim);
   assert(map);
-  const int num_cells = map->size_local() + map->num_ghosts();
-  for (int c = 0; c < num_cells; ++c)
+  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get coordinates for all points in cell
     auto dofs = x_dofmap.links(c);

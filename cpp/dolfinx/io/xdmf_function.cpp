@@ -61,7 +61,7 @@ bool has_cell_centred_data(const function::Function& u)
 // 2D vector/tensor because XDMF presents everything as 3D
 int get_padded_width(const function::Function& u)
 {
-  const int width = u.value_size();
+  const int width = u.function_space()->element()->value_size();
   const int rank = u.function_space()->element()->value_rank();
 
   if (rank == 1 and width == 2)

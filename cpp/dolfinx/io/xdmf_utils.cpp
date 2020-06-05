@@ -30,7 +30,7 @@ namespace
 // 2D vector/tensor because XDMF presents everything as 3D
 std::int64_t get_padded_width(const function::Function& u)
 {
-  const int width = u.value_size();
+  const int width = u.function_space()->element()->value_size();
   const int rank = u.function_space()->element()->value_rank();
 
   if (rank == 1 and width == 2)
@@ -207,7 +207,7 @@ xdmf_utils::get_point_data_values(const function::Function& u)
   if (value_rank > 0)
   {
     // Transpose vector/tensor data arrays
-    const int value_size = u.value_size();
+    const int value_size = u.function_space()->element()->value_size();
     for (int i = 0; i < num_local_points; i++)
     {
       for (int j = 0; j < value_size; j++)
@@ -233,7 +233,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
 {
   assert(u.function_space()->dofmap());
   const auto mesh = u.function_space()->mesh();
-  const int value_size = u.value_size();
+  const int value_size = u.function_space()->element()->value_size();
   const int value_rank = u.function_space()->element()->value_rank();
 
   // Allocate memory for function values at cell centres

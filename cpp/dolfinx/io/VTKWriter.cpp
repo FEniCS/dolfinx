@@ -277,7 +277,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   }
 
   // Get number of components
-  const int data_dim = u.value_size();
+  const int data_dim = u.function_space()->element()->value_size();
 
   // Open file
   std::ofstream fp(filename.c_str(), std::ios_base::app);
