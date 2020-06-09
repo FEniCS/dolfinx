@@ -249,6 +249,10 @@ WORKDIR /root
 FROM dev-env as dolfinx-onbuild
 LABEL description="DOLFIN-X in real and complex modes (onbuild)"
 
+ADD dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
+ADD dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
+RUN chmod +x /usr/local/bin/dolfinx-*-mode
+
 ONBUILD ARG MAKEFLAGS
 
 ONBUILD WORKDIR /tmp
@@ -259,7 +263,6 @@ ONBUILD RUN pip3 install --no-cache-dir ipython && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
-
 
 ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
@@ -275,9 +278,9 @@ ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
     mkdir build && \
     cd build && \
-    PYTHONPATH=/usr/local/lib/python3.8/dist-packages-complex PETSC_DIR=/usr/local/petsc-complex SLEPC_DIR=/usr/local/slepc-complex cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfin-complex ../cpp && \
+    PYTHONPATH=/usr/local/lib/python3.8/dist-packages-complex PETSC_DIR=/usr/local/petsc-complex SLEPC_DIR=/usr/local/slepc-complex cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
     ninja ${MAKEFLAGS} install && \
-    . /usr/local/dolfin-complex/share/dolfinx/dolfinx.conf && \
+    . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
     cd ../python && \
     PETSC_DIR=/usr/local/petsc-complex pip3 install --target /usr/local/lib/python3.8/dist-packages-complex --no-dependencies --ignore-installed . && \
     rm -rf /tmp/*

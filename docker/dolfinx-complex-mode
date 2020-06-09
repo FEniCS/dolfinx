@@ -1,0 +1,5 @@
+#!/bin/bash
+source /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf
+export PYTHONPATH=/usr/local/lib/python3.8/dist-packages-complex:$PYTHONPATH
+export PETSC_DIR=/usr/local/petsc-complex
+export SLEPC_DIR=/usr/local/slepc-complex
