@@ -34,12 +34,9 @@ ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
 ARG PETSC_SLEPC_DEBUGGING="yes"
 
-
-WORKDIR /root
-
 ########################################
 
-FROM ubuntu:20.04 as base
+FROM ubuntu:20.04 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS development environment with PETSc real and complex modes"
 
@@ -152,6 +149,7 @@ ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
 
 # Add gmsh python API
 ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
+
 WORKDIR /tmp
 
 # Install PETSc and SLEPc with real types
@@ -195,8 +193,7 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install petsc4py and slepc4py with real types
-RUN PETSC_DIR=/usr/local/petsc-real pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
-    PETSC_DIR=/usr/local/petsc-real SLEPC_DIR=/usr/local/slepc-real pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
+RUN PETSC_DIR=/usr/local/petsc-real SLEPC_DIR=/usr/local/slepc-real pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} slepc4py==${SLEPC4PY_VERSION}
 
 # Install PETSc and SLEPc with complex scalar types
 RUN apt-get -qq update && \
@@ -237,11 +234,11 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install petsc4py and slepc4py with complex types
-RUN PETSC_DIR=/usr/local/petsc-complex pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
-    PETSC_DIR=/usr/local/petsc-complex SLEPC_DIR=/usr/local/slepc-real pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
+RUN mkdir -p /usr/local/lib/python3.8/dist-packages-complex && \
+    PETSC_DIR=/usr/local/petsc-complex SLEPC_DIR=/usr/local/slepc-real pip3 install --no-cache-dir --no-dependencies --ignore-installed --target /usr/local/lib/python3.8/dist-packages-complex petsc4py==${PETSC4PY_VERSION} slepc4py==${SLEPC4PY_VERSION}
 
 # Default is to use real version of PETSc
-# petsc4py and slepc4py build against real PETSc are found automatically in the default sitepackages path
+# petsc4py and slepc4py build against real PETSc are found automatically in the default PYTHONPATH
 # User must set PYTHONPATH to use complex version of petsc4py and slepc4py
 ENV PETSC_DIR=/usr/local/petsc-real SLEPC_DIR=/usr/local/slepc-real
 
@@ -250,7 +247,7 @@ WORKDIR /root
 ########################################
 
 FROM dev-env as dolfinx-onbuild
-LABEL description="DOLFIN-X user environment in real and complex modes"
+LABEL description="DOLFIN-X in real and complex modes (onbuild)"
 
 ONBUILD ARG MAKEFLAGS
 
@@ -263,7 +260,7 @@ ONBUILD RUN pip3 install --no-cache-dir ipython && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
 
-# Install dolfinx real mode
+
 ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
     mkdir build && \
@@ -274,17 +271,28 @@ ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
     pip3 install . && \
     rm -rf /tmp/*
 
+ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
+    cd dolfinx && \
+    mkdir build && \
+    cd build && \
+    PYTHONPATH=/usr/local/lib/python3.8/dist-packages-complex PETSC_DIR=/usr/local/petsc-complex SLEPC_DIR=/usr/local/slepc-complex cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfin-complex ../cpp && \
+    ninja ${MAKEFLAGS} install && \
+    . /usr/local/dolfin-complex/share/dolfinx/dolfinx.conf && \
+    cd ../python && \
+    PETSC_DIR=/usr/local/petsc-complex pip3 install --target /usr/local/lib/python3.8/dist-packages-complex --no-dependencies --ignore-installed . && \
+    rm -rf /tmp/*
+
 ONBUILD WORKDIR /root
 
 ########################################
 
 FROM dolfinx-onbuild as dolfinx
-LABEL description="DOLFIN-X in real mode"
+LABEL description="DOLFIN-X in real and complex modes"
 
 ########################################
 
 FROM dolfinx as lab
-LABEL description="DOLFIN-X Jupyter Notebook"
+LABEL description="DOLFIN-X Jupyter Lab"
 WORKDIR /root
 
 ARG TINI_VERSION
