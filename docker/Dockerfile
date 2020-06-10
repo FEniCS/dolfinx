@@ -20,13 +20,13 @@
 #    docker run -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
 #
 
-ARG TINI_VERSION=v0.18.0
-ARG GMSH_VERSION=4.5.5
-ARG PYBIND11_VERSION=2.4.3
-ARG PETSC_VERSION=3.12.4
-ARG SLEPC_VERSION=3.12.2
-ARG PETSC4PY_VERSION=3.12.0
-ARG SLEPC4PY_VERSION=3.12.0
+ARG TINI_VERSION=v0.19.0
+ARG GMSH_VERSION=4.5.6
+ARG PYBIND11_VERSION=2.5.0
+ARG PETSC_VERSION=3.13.2
+ARG SLEPC_VERSION=3.13.2
+ARG PETSC4PY_VERSION=3.13.0
+ARG SLEPC4PY_VERSION=3.13.0
 # Should be updated upon a new KaHIP release
 ARG KAHIP_VERSION=14be06c
 
@@ -150,15 +150,16 @@ ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
 # Add gmsh python API
 ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
 
-WORKDIR /tmp
+WORKDIR /
 
-# Install PETSc and SLEPc with real types
+# Install PETSc with real and complex types
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
-    mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
-    cd petsc-src && \
+    mkdir -p petsc && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc --strip-components 1 && \
+    cd petsc && \
     python3 ./configure \
+    --PETSC_ARCH=linux-gnu-real-32 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
@@ -175,33 +176,9 @@ RUN apt-get -qq update && \
     --download-superlu \
     --download-superlu_dist \
     --with-scalar-type=real \
-    --prefix=/usr/local/petsc-real && \
     make ${MAKEFLAGS} && \
-    make install && \
-    export PETSC_DIR=/usr/local/petsc-real && \
-    cd /tmp && \
-    wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
-    mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
-    cd slepc-src && \
-    python3 ./configure --prefix=/usr/local/slepc-real && \
-    make ${MAKEFLAGS} && \
-    make install && \
-    apt-get -y purge bison flex python && \
-    apt-get -y autoremove && \
-    apt-get clean && \
-    rm -rf /tmp/* && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Install petsc4py and slepc4py with real types
-RUN PETSC_DIR=/usr/local/petsc-real SLEPC_DIR=/usr/local/slepc-real pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} slepc4py==${SLEPC4PY_VERSION}
-
-# Install PETSc and SLEPc with complex scalar types
-RUN apt-get -qq update && \
-    apt-get -y install bison flex && \
-    wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
-    mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
-    cd petsc-src && \
     python3 ./configure \
+    --PETSC_ARCH=linux-gnu-complex-32 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
@@ -216,31 +193,41 @@ RUN apt-get -qq update && \
     --download-superlu \
     --download-superlu_dist \
     --with-scalar-type=complex \
-    --prefix=/usr/local/petsc-complex && \
     make ${MAKEFLAGS} && \
-    make install && \
-    export PETSC_DIR=/usr/local/petsc-complex && \
-    cd /tmp && \
-    wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
-    mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
-    cd slepc-src && \
-    python3  ./configure --prefix=/usr/local/slepc-complex && \
-    make ${MAKEFLAGS} && \
-    make install && \
     apt-get -y purge bison flex python && \
     apt-get -y autoremove && \
     apt-get clean && \
-    rm -rf /tmp/* && \
+    PETSC_DIR=/usr/local/petsc rm -rf \
+    ${PETSC_DIR}/**/tests/ \
+    ${PETSC_DIR}/**/obj/ \
+    ${PETSC_DIR}/**/externalpackages/  \
+    ${PETSC_DIR}/CTAGS \
+    ${PETSC_DIR}/RDict.log \
+    ${PETSC_DIR}/TAGS \
+    ${PETSC_DIR}/docs/ \
+    ${PETSC_DIR}/share/ \
+    ${PETSC_DIR}/src/ \
+    ${PETSC_DIR}/systems/ \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install petsc4py and slepc4py with complex types
-RUN mkdir -p /usr/local/lib/python3.8/dist-packages-complex && \
-    PETSC_DIR=/usr/local/petsc-complex SLEPC_DIR=/usr/local/slepc-real pip3 install --no-cache-dir --no-dependencies --ignore-installed --target /usr/local/lib/python3.8/dist-packages-complex petsc4py==${PETSC4PY_VERSION} slepc4py==${SLEPC4PY_VERSION}
+RUN cd /tmp && \
+    wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
+    mkdir -p slepc && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc --strip-components 1 && \
+    cd slepc && \
+    export PETSC_DIR=/usr/local/petsc && \
+    export PETSC_ARCH=linux-gnu-real-32 && \
+    python3 ./configure && \
+    make && \
+    export PETSC_ARCH=linux-gnu-complex-32 && \
+    python3 ./configure && \
+    make && \
+    rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
+    rm -rf /tmp/*
 
-# Default is to use real version of PETSc
-# petsc4py and slepc4py build against real PETSc are found automatically in the default PYTHONPATH
-# User must set PYTHONPATH to use complex version of petsc4py and slepc4py
-ENV PETSC_DIR=/usr/local/petsc-real SLEPC_DIR=/usr/local/slepc-real
+ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
+
+# Install petsc4py and slepc4py with real and complex types
+RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32 pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} slepc4py==${SLEPC4PY_VERSION}
 
 WORKDIR /root
 
@@ -268,21 +255,19 @@ ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
     mkdir build && \
     cd build && \
-    cmake -G Ninja ../cpp && \
+    PETSC_ARCH=linux-gnu-real-32 -G Ninja ../cpp && \
     ninja ${MAKEFLAGS} install && \
     cd ../python && \
-    pip3 install . && \
-    rm -rf /tmp/*
-
-ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
-    cd dolfinx && \
+    PETSC_ARCH=linux-gnu-real-32 pip3 install . && \
+    cd ../ && \
+    git clean -fdx && \
     mkdir build && \
     cd build && \
-    PYTHONPATH=/usr/local/lib/python3.8/dist-packages-complex PETSC_DIR=/usr/local/petsc-complex SLEPC_DIR=/usr/local/slepc-complex cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
+    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
     ninja ${MAKEFLAGS} install && \
     . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_DIR=/usr/local/petsc-complex pip3 install --target /usr/local/lib/python3.8/dist-packages-complex --no-dependencies --ignore-installed . && \
+    PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed . && \
     rm -rf /tmp/*
 
 ONBUILD WORKDIR /root
