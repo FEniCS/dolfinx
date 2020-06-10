@@ -49,6 +49,12 @@ A Docker image with DOLFINX built nightly:
 docker run -ti dolfinx/dolfinx
 ```
 
+To switch between real and complex builds of DOLFINX.
+```
+source /usr/local/bin/dolfinx-complex-mode
+source /usr/local/bin/dolfinx-real-mode
+```
+
 A Jupyter Lab environment with DOLFINX built nightly:
 
 ```
