@@ -150,21 +150,22 @@ ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
 # Add gmsh python API
 ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
 
-WORKDIR /
-
 # Install PETSc with real and complex types
+ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
+WORKDIR /tmp
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
-    mkdir -p petsc && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc --strip-components 1 && \
-    cd petsc && \
+    mkdir -p ${PETSC_DIR} && tar -xf petsc-${PETSC_VERSION}.tar.gz -C ${PETSC_DIR} --strip-components 1 && \
+    cd ${PETSC_DIR} && \
     python3 ./configure \
-    --PETSC_ARCH=linux-gnu-real-32 \
+    PETSC_ARCH=linux-gnu-real-32 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
+    --with-shared-libraries \
     --download-blacs \
     --download-hypre \
     --download-metis \
@@ -175,15 +176,16 @@ RUN apt-get -qq update && \
     --download-suitesparse \
     --download-superlu \
     --download-superlu_dist \
-    --with-scalar-type=real \
-    make ${MAKEFLAGS} && \
+    --with-scalar-type=real && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 ${MAKEFLAGS} all && \
     python3 ./configure \
-    --PETSC_ARCH=linux-gnu-complex-32 \
+    PETSC_ARCH=linux-gnu-complex-32 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
+    --with-shared-libraries \
     --download-blacs \
     --download-metis \
     --download-mumps \
@@ -192,12 +194,12 @@ RUN apt-get -qq update && \
     --download-suitesparse \
     --download-superlu \
     --download-superlu_dist \
-    --with-scalar-type=complex \
-    make ${MAKEFLAGS} && \
-    apt-get -y purge bison flex python && \
+    --with-scalar-type=complex && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 ${MAKEFLAGS} all && \
+    apt-get -y purge bison flex && \
     apt-get -y autoremove && \
     apt-get clean && \
-    PETSC_DIR=/usr/local/petsc rm -rf \
+    rm -rf \
     ${PETSC_DIR}/**/tests/ \
     ${PETSC_DIR}/**/obj/ \
     ${PETSC_DIR}/**/externalpackages/  \
@@ -210,11 +212,11 @@ RUN apt-get -qq update && \
     ${PETSC_DIR}/systems/ \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN cd /tmp && \
-    wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
-    mkdir -p slepc && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc --strip-components 1 && \
-    cd slepc && \
-    export PETSC_DIR=/usr/local/petsc && \
+# Install SLEPc
+WORKDIR /tmp
+RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
+    mkdir -p ${SLEPC_DIR} && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
+    cd ${SLEPC_DIR} && \
     export PETSC_ARCH=linux-gnu-real-32 && \
     python3 ./configure && \
     make && \
@@ -223,8 +225,6 @@ RUN cd /tmp && \
     make && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
-
-ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 
 # Install petsc4py and slepc4py with real and complex types
 RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32 pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} slepc4py==${SLEPC4PY_VERSION}
@@ -251,11 +251,11 @@ ONBUILD RUN pip3 install --no-cache-dir ipython && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
 
-ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
+ONBUILD RUN git clone --depth 1 https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-real-32 -G Ninja ../cpp && \
+    PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja ../cpp && \
     ninja ${MAKEFLAGS} install && \
     cd ../python && \
     PETSC_ARCH=linux-gnu-real-32 pip3 install . && \
@@ -287,5 +287,6 @@ ARG TINI_VERSION
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
     pip3 install --no-cache-dir jupyter jupyterlab
+EXPOSE 8888/tcp
 
 ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
