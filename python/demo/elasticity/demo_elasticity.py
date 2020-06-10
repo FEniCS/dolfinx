@@ -117,8 +117,9 @@ with u0.vector.localForm() as bc_local:
 # Set up boundary condition on inner surface
 bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
 
-# Assemble system, applying boundary conditions and preserving symmetry)
-A = assemble_matrix(a, [bc])
+# Assemble system, applying boundary conditions and preserving symmetry
+# Passing extra arguments to control JIT
+A = assemble_matrix(a, [bc], jit_parameters={"cffi_extra_compile_args": "-Ofast -march=native", "cffi_verbose": True})
 A.assemble()
 
 b = assemble_vector(L)

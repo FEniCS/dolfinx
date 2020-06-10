@@ -12,7 +12,7 @@ from dolfinx import cpp, jit
 
 
 class Form:
-    def __init__(self, form: ufl.Form, form_compiler_parameters: dict = None):
+    def __init__(self, form: ufl.Form, form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
         """Create dolfinx Form
 
         Parameters
@@ -20,7 +20,10 @@ class Form:
         form
             Pure UFL form
         form_compiler_parameters
-            Parameters used in JIT FFCX compilation of this form
+            Parameters used in FFCX compilation of this form. Run `ffcx --help` in the commandline
+            to see all available options.
+        jit_parameters
+            Parameters controlling JIT compilation of C code.
 
         Note
         ----
@@ -29,6 +32,7 @@ class Form:
         C++ Form.
         """
         self.form_compiler_parameters = form_compiler_parameters
+        self.jit_parameters = jit_parameters
 
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
@@ -40,6 +44,7 @@ class Form:
         ufc_form = jit.ffcx_jit(
             form,
             form_compiler_parameters=self.form_compiler_parameters,
+            jit_parameters=self.jit_parameters,
             mpi_comm=mesh.mpi_comm())
 
         # For every argument in form extract its function space
