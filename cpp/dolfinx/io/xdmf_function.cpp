@@ -98,8 +98,7 @@ void xdmf_function::add_function(MPI_Comm comm, const function::Function& u,
   auto map_c = mesh->topology().index_map(mesh->topology().dim());
   assert(map_c);
 
-  // FIXME: Should this be the geometry map?
-  auto map_v = mesh->topology().index_map(0);
+  auto map_v = mesh->geometry().index_map();
   assert(map_v);
 
   // Add attribute DataItem node and write data
