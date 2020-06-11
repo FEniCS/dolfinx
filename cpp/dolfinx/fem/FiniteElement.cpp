@@ -22,7 +22,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _space_dim(ufc_element.space_dimension),
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
-      _degree(ufc_element.degree), _has_refX(false),
       _hash(std::hash<std::string>{}(_signature)),
       _evaluate_reference_basis(ufc_element.evaluate_reference_basis),
       _evaluate_reference_basis_derivatives(
@@ -34,13 +33,10 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   // Store dof coordinates on reference element if they exist
   assert(ufc_element.tabulate_reference_dof_coordinates);
   _refX.resize(_space_dim, _tdim);
-  if (ufc_element.tabulate_reference_dof_coordinates(_refX.data()) == -1)
-  {
-    _refX.resize(0, 0);
-    _has_refX = false;
-  }
-  else
-    _has_refX = true;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(
+      _space_dim, _tdim);
+  if (ufc_element.tabulate_reference_dof_coordinates(X.data()) != -1)
+    _refX = X;
 
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
@@ -83,8 +79,6 @@ std::string FiniteElement::signature() const { return _signature; }
 //-----------------------------------------------------------------------------
 mesh::CellType FiniteElement::cell_shape() const { return _cell_shape; }
 //-----------------------------------------------------------------------------
-// std::size_t FiniteElement::topological_dimension() const { return _tdim; }
-//-----------------------------------------------------------------------------
 int FiniteElement::space_dimension() const { return _space_dim; }
 //-----------------------------------------------------------------------------
 int FiniteElement::value_size() const { return _value_size; }
@@ -103,8 +97,6 @@ int FiniteElement::value_dimension(int i) const
   return _value_dimension.at(i);
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::degree() const { return _degree; }
-//-----------------------------------------------------------------------------
 std::string FiniteElement::family() const { return _family; }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis(
@@ -120,6 +112,22 @@ void FiniteElement::evaluate_reference_basis(
   {
     throw std::runtime_error("Generated code returned error "
                              "in evaluate_reference_basis");
+  }
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::evaluate_reference_basis_derivatives(
+    Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values, int order,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& X) const
+{
+  assert(_evaluate_reference_basis_derivatives);
+  const int num_points = X.rows();
+  int ret = _evaluate_reference_basis_derivatives(reference_values.data(),
+                                                  order, num_points, X.data());
+  if (ret == -1)
+  {
+    throw std::runtime_error("Generated code returned error "
+                             "in evaluate_reference_basis_derivatives");
   }
 }
 //-----------------------------------------------------------------------------
@@ -167,15 +175,10 @@ void FiniteElement::transform_reference_basis_derivatives(
   }
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::has_dof_reference_coordinates() const noexcept
-{
-  return _has_refX;
-}
-//-----------------------------------------------------------------------------
 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
 FiniteElement::dof_reference_coordinates() const
 {
-  if (!_has_refX)
+  if (_refX.size() == 0)
   {
     throw std::runtime_error(
         "Dof reference coordinates do not exist for this element.");

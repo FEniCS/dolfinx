@@ -200,6 +200,8 @@ void fem(py::module& m)
       .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
       .def("dof_reference_coordinates",
            &dolfinx::fem::FiniteElement::dof_reference_coordinates)
+      .def_property_readonly("value_rank",
+                             &dolfinx::fem::FiniteElement::value_rank)
       .def("space_dimension", &dolfinx::fem::FiniteElement::space_dimension)
       .def("value_dimension", &dolfinx::fem::FiniteElement::value_dimension)
       .def("signature", &dolfinx::fem::FiniteElement::signature);

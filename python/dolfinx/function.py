@@ -76,16 +76,6 @@ class Function(ufl.Coefficient):
         """Return the FunctionSpace"""
         return self._V
 
-    @property
-    def value_rank(self) -> int:
-        return self._cpp_object.value_rank
-
-    def value_dimension(self, i) -> int:
-        return self._cpp_object.value_dimension(i)
-
-    def value_shape(self):
-        return self._cpp_object.value_shape
-
     def ufl_evaluate(self, x, component, derivatives):
         """Function used by ufl to evaluate the Expression"""
         # FIXME: same as dolfinx.expression.Expression version. Find way

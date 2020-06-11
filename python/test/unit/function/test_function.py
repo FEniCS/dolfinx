@@ -196,6 +196,22 @@ def test_eval_multiple(W):
     u.eval(x[0], cell)
 
 
+@skip_in_parallel
+def test_eval_manifold():
+    # Simple two-triangle surface in 3d
+    vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
+                                                                    0.0)]
+    cells = [(0, 1, 2), (0, 1, 3)]
+    mesh = Mesh(MPI.COMM_WORLD, cpp.mesh.CellType.triangle,
+                np.array(vertices, dtype=np.float64),
+                np.array(cells, dtype=np.int32), [])
+
+    Q = FunctionSpace(mesh, ("CG", 1))
+    u = Function(Q)
+    u.interpolate(lambda x: x[0] + x[1])
+    assert np.isclose(u.eval([0.75, 0.25, 0.5], 0)[0], 1.0)
+
+
 def test_scalar_conditions(R):
     c = Function(R)
     c.vector.set(1.5)
