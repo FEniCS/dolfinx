@@ -144,7 +144,8 @@ create_new_geometry(
       = mesh::midpoints(mesh, 1, edges);
   new_vertex_coordinates.bottomRows(num_new_vertices) = midpoints;
 
-  return new_vertex_coordinates;
+  const int gdim = mesh.geometry().dim();
+  return new_vertex_coordinates.leftCols(gdim);
 }
 } // namespace
 
