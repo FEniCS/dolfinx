@@ -112,8 +112,8 @@ def test_eigen_assembly(mode):
     A1 = dolfinx.fem.assemble_matrix(a, [bc])
     A1.assemble()
 
-    cpp_form = dolfinx.Form(a)._cpp_object
-    A2 = dolfinx.fem.assemble_csr_matrix(cpp_form, [bc])
+    A2 = dolfinx.fem.assemble_csr_matrix(a, [bc])
+
     assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
 
 
