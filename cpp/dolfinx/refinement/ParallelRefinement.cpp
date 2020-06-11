@@ -144,7 +144,8 @@ create_new_geometry(
       = mesh::midpoints(mesh, 1, edges);
   new_vertex_coordinates.bottomRows(num_new_vertices) = midpoints;
 
-  return new_vertex_coordinates;
+  const int gdim = mesh.geometry().dim();
+  return new_vertex_coordinates.leftCols(gdim);
 }
 } // namespace
 
@@ -407,7 +408,7 @@ mesh::Mesh ParallelRefinement::build_local(
   mesh::Mesh mesh = mesh::create_mesh(
       _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells),
       _mesh.geometry().cmap(), _new_vertex_coordinates, mesh::GhostMode::none);
-
+  assert(mesh.geometry().dim() == _mesh.geometry().dim());
   return mesh;
 }
 //-----------------------------------------------------------------------------

@@ -27,7 +27,7 @@ class FiniteElement
 public:
   /// Create finite element from UFC finite element
   /// @param[in] ufc_element UFC finite element
-  FiniteElement(const ufc_finite_element& ufc_element);
+  explicit FiniteElement(const ufc_finite_element& ufc_element);
 
   /// Destructor
   virtual ~FiniteElement() = default;
@@ -60,19 +60,22 @@ public:
   /// Return the dimension of the value space for axis i
   int value_dimension(int i) const;
 
-  // FIXME: Is this well-defined? What does it do on non-simplex
-  // elements?
-  /// Return the maximum polynomial degree
-  int degree() const;
-
   /// The finite element family
   /// @return The string of the finite element family
   std::string family() const;
 
-  /// Evaluate all basis functions at given point in reference cell
+  /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(
       Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+      const Eigen::Ref<const Eigen::Array<
+          double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
+
+  /// Evaluate all basis function derivatives of given order at given points in
+  /// reference cell
+  // reference_value_derivatives[num_points][num_dofs][reference_value_size][num_derivatives]
+  void evaluate_reference_basis_derivatives(
+      Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values, int order,
       const Eigen::Ref<const Eigen::Array<
           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
 
@@ -98,12 +101,10 @@ public:
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
       const std::uint32_t permutation_info) const;
 
-  /// Check if reference coordinates for dofs are defined
-  /// @return True if the dof coordinates are available
-  bool has_dof_reference_coordinates() const noexcept;
-
   /// Tabulate the reference coordinates of all dofs on an element
   /// @return The coordinates of all dofs on the reference cell
+  ///
+  /// @note Throws an exception if dofs cannot be associated with points
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
   dof_reference_coordinates() const;
 
@@ -133,10 +134,9 @@ private:
 
   mesh::CellType _cell_shape;
 
-  int _tdim, _space_dim, _value_size, _reference_value_size, _degree;
+  int _tdim, _space_dim, _value_size, _reference_value_size;
 
   // Dof coordinates on the reference element
-  bool _has_refX;
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _refX;
 
   // List of sub-elements (if any)

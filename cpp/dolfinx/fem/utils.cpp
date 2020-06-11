@@ -13,6 +13,7 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/DofMapBuilder.h>
+#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/SparsityPatternBuilder.h>
 #include <dolfinx/function/Constant.h>
@@ -666,8 +667,8 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
 
   return fem::CoordinateElement(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
-      ufc_cmap.signature, dof_layout, ufc_cmap.compute_physical_coordinates,
-      ufc_cmap.compute_reference_geometry);
+      ufc_cmap.signature, dof_layout, ufc_cmap.is_affine,
+      ufc_cmap.evaluate_basis_derivatives);
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement
