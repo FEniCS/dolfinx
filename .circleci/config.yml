@@ -135,7 +135,7 @@ commands:
 jobs:
   build-real:
     docker:
-      - image: dolfinx/dolfinx:latest
+      - image: dolfinx/dev-env:latest
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
@@ -171,7 +171,7 @@ jobs:
 
   build-complex:
     docker:
-      - image: dolfinx/dolfinx:latest
+      - image: dolfinx/dev-env:latest
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
