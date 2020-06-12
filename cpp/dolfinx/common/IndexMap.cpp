@@ -130,8 +130,8 @@ common::stack_index_maps(
   for (const common::IndexMap& map : maps)
   {
     auto [fwd_neighbors, rev_neighbors] = map.neighbors();
-    in_neighbor_set.insert(rev_neighbors.begin(), rev_neighbors.end());
-    out_neighbor_set.insert(fwd_neighbors.begin(), fwd_neighbors.end());
+    in_neighbor_set.insert(fwd_neighbors.begin(), fwd_neighbors.end());
+    out_neighbor_set.insert(rev_neighbors.begin(), rev_neighbors.end());
   }
 
   const std::vector<int> in_neighbors(in_neighbor_set.begin(),
