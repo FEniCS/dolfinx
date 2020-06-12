@@ -96,10 +96,12 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
     p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
     p.update(form_compiler_parameters)
 
+    cache_dir_default = Path.joinpath(Path.home(), ".cache", "fenics")
+
     # CFFI compiler options/flags
-    jit_params = {"cffi_extra_compile_args": ["-O3", "-g0", "-march=native"],
+    jit_params = {"cffi_extra_compile_args": ["-O2", "-g0"],
                   "cffi_debug": False, "cffi_verbose": False,
-                  "cffi_libraries": None, "cache_dir": "~/.cache/fenics", "timeout": 10}
+                  "cffi_libraries": None, "cache_dir": cache_dir_default, "timeout": 10}
 
     jit_params.update(jit_parameters)
 

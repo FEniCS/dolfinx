@@ -221,7 +221,9 @@ class FunctionSpace(ufl.FunctionSpace):
     def __init__(self,
                  mesh: cpp.mesh.Mesh,
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData],
-                 cppV: typing.Optional[cpp.function.FunctionSpace] = None):
+                 cppV: typing.Optional[cpp.function.FunctionSpace] = None,
+                 form_compiler_parameters: dict = {},
+                 jit_parameters: dict = {}):
         """Create a finite element function space."""
 
         # Create function space from a UFL element and existing cpp
@@ -243,7 +245,8 @@ class FunctionSpace(ufl.FunctionSpace):
 
         # Compile dofmap and element and create DOLFIN objects
         ufc_element, ufc_dofmap_ptr = jit.ffcx_jit(
-            self.ufl_element(), mpi_comm=mesh.mpi_comm())
+            self.ufl_element(), mpi_comm=mesh.mpi_comm(), form_compiler_parameters=form_compiler_parameters,
+            jit_parameters=jit_parameters)
 
         ffi = cffi.FFI()
         cpp_element = cpp.fem.FiniteElement(ffi.cast("uintptr_t", ufc_element))

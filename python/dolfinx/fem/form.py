@@ -31,8 +31,6 @@ class Form:
         and attaching coefficients and domains specific data to the underlying
         C++ Form.
         """
-        self.form_compiler_parameters = form_compiler_parameters
-        self.jit_parameters = jit_parameters
 
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
@@ -43,8 +41,8 @@ class Form:
         # Compile UFL form with JIT
         ufc_form = jit.ffcx_jit(
             form,
-            form_compiler_parameters=self.form_compiler_parameters,
-            jit_parameters=self.jit_parameters,
+            form_compiler_parameters=form_compiler_parameters,
+            jit_parameters=jit_parameters,
             mpi_comm=mesh.mpi_comm())
 
         # For every argument in form extract its function space
