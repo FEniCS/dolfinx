@@ -110,7 +110,7 @@ private:
   const mesh::Mesh& _mesh;
 
   // New storage for all coordinates when creating new vertices
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _new_vertex_coordinates;
 
   // Management of marked edges
