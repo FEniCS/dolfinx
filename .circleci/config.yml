@@ -233,27 +233,11 @@ jobs:
           name: Login to Dockerhub
           command: echo ${DH_TOKEN} | sudo docker login -u ${DH_USERNAME} --password-stdin
       - build-and-push-target:
-          docker-target: "base"
+          docker-target: "dev-env"
       - build-and-push-target:
-          docker-target: "dev-env-real"
-      - build-and-push-target:
-          docker-target: "dev-env-complex"
-      - build-and-push-target:
-          docker-target: "real-onbuild"
-      - build-and-push-target:
-          docker-target: "complex-onbuild"
-      - build-and-push-target:
-          docker-target: "real"
-      - build-and-push-target:
-          docker-target: "complex"
-      - build-and-push-target:
-          docker-target: "notebook"
-      - build-and-push-target:
-          docker-target: "notebook-complex"
+          docker-target: "dolfinx"
       - build-and-push-target:
           docker-target: "lab"
-      - build-and-push-target:
-          docker-target: "lab-complex"
 
 workflows:
   build-and-pushdoc:

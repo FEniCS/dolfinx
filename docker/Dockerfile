@@ -9,30 +9,24 @@
 #
 # To run a nightly build:
 #
-#    docker run -ti dolfinx/real
-#    docker run -ti dolfinx/complex
+#    docker run -ti dolfinx/dolfinx
 #
-# To build a new FEniCS-X image from master (real or complex version):
+# To run a Jupyter lab session:
 #
-#    docker build --target real-onbuild .
-#    docker build --target complex-onbuild .
-#
-# To run a notebook:
-#
-#    docker run -p 8888:8888 dolfinx/notebook
+#    docker run -p 8888:8888 dolfinx/lab
 #
 # To run and share the current host directory with the container:
 #
-#    docker run -p 8888:8888 -v "$(pwd)":/tmp dolfinx/notebook
+#    docker run -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
 #
 
-ARG TINI_VERSION=v0.18.0
-ARG GMSH_VERSION=4.5.5
-ARG PYBIND11_VERSION=2.4.3
-ARG PETSC_VERSION=3.12.4
-ARG SLEPC_VERSION=3.12.2
-ARG PETSC4PY_VERSION=3.12.0
-ARG SLEPC4PY_VERSION=3.12.0
+ARG TINI_VERSION=v0.19.0
+ARG GMSH_VERSION=4.5.6
+ARG PYBIND11_VERSION=2.5.0
+ARG PETSC_VERSION=3.13.2
+ARG SLEPC_VERSION=3.13.2
+ARG PETSC4PY_VERSION=3.13.0
+ARG SLEPC4PY_VERSION=3.13.0
 # Should be updated upon a new KaHIP release
 ARG KAHIP_VERSION=14be06c
 
@@ -40,12 +34,22 @@ ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
 ARG PETSC_SLEPC_DEBUGGING="yes"
 
-FROM ubuntu:20.04 as base
+########################################
+
+FROM ubuntu:20.04 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
-LABEL description="Base image for real and complex FEniCS test environments"
+LABEL description="FEniCS development environment with PETSc real and complex modes"
 
 ARG GMSH_VERSION
 ARG PYBIND11_VERSION
+ARG PETSC_VERSION
+ARG PETSC4PY_VERSION
+ARG SLEPC_VERSION
+ARG SLEPC4PY_VERSION
+
+ARG MAKEFLAGS
+ARG PETSC_SLEPC_OPTFLAGS
+ARG PETSC_SLEPC_DEBUGGING
 
 WORKDIR /tmp
 
@@ -146,37 +150,22 @@ ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
 # Add gmsh python API
 ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
 
-WORKDIR /root
-
-########################################
-
-FROM base as dev-env-real
-LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
-LABEL description="FEniCS development environment with PETSc real mode"
-
-ARG PETSC_VERSION
-ARG PETSC4PY_VERSION
-ARG SLEPC_VERSION
-ARG SLEPC4PY_VERSION
-
-ARG MAKEFLAGS
-ARG PETSC_SLEPC_OPTFLAGS
-ARG PETSC_SLEPC_DEBUGGING
-
+# Install PETSc with real and complex types
+ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 WORKDIR /tmp
-
-# Install PETSc and SLEPc with real types
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
-    mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
-    cd petsc-src && \
+    mkdir -p ${PETSC_DIR} && tar -xf petsc-${PETSC_VERSION}.tar.gz -C ${PETSC_DIR} --strip-components 1 && \
+    cd ${PETSC_DIR} && \
     python3 ./configure \
+    PETSC_ARCH=linux-gnu-real-32 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
+    --with-shared-libraries \
     --download-blacs \
     --download-hypre \
     --download-metis \
@@ -187,60 +176,16 @@ RUN apt-get -qq update && \
     --download-suitesparse \
     --download-superlu \
     --download-superlu_dist \
-    --with-scalar-type=real \
-    --prefix=/usr/local/petsc && \
-    make ${MAKEFLAGS} && \
-    make install && \
-    export PETSC_DIR=/usr/local/petsc && \
-    cd /tmp && \
-    wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
-    mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
-    cd slepc-src && \
-    python3 ./configure --prefix=/usr/local/slepc && \
-    make ${MAKEFLAGS} && \
-    make install && \
-    apt-get -y purge bison flex python && \
-    apt-get -y autoremove && \
-    apt-get clean && \
-    rm -rf /tmp/* && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
-
-# Install petsc4py and slepc4py
-RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
-    pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
-
-WORKDIR /root
-
-########################################
-
-FROM base as dev-env-complex
-LABEL description="FEniCS development environment with PETSc complex mode"
-
-ARG PETSC_VERSION
-ARG PETSC4PY_VERSION
-ARG SLEPC_VERSION
-ARG SLEPC4PY_VERSION
-
-ARG MAKEFLAGS
-ARG PETSC_SLEPC_OPTFLAGS
-ARG PETSC_SLEPC_DEBUGGING
-
-WORKDIR /tmp
-
-# Install PETSc and SLEPc with complex scalar types
-RUN apt-get -qq update && \
-    apt-get -y install bison flex && \
-    wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
-    mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
-    cd petsc-src && \
+    --with-scalar-type=real && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 ${MAKEFLAGS} all && \
     python3 ./configure \
+    PETSC_ARCH=linux-gnu-complex-32 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
+    --with-shared-libraries \
     --download-blacs \
     --download-metis \
     --download-mumps \
@@ -249,36 +194,51 @@ RUN apt-get -qq update && \
     --download-suitesparse \
     --download-superlu \
     --download-superlu_dist \
-    --with-scalar-type=complex \
-    --prefix=/usr/local/petsc && \
-    make ${MAKEFLAGS} && \
-    make install && \
-    export PETSC_DIR=/usr/local/petsc && \
-    cd /tmp && \
-    wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
-    mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
-    cd slepc-src && \
-    python3  ./configure --prefix=/usr/local/slepc && \
-    make ${MAKEFLAGS} && \
-    make install && \
-    apt-get -y purge bison flex python && \
+    --with-scalar-type=complex && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 ${MAKEFLAGS} all && \
+    apt-get -y purge bison flex && \
     apt-get -y autoremove && \
     apt-get clean && \
-    rm -rf /tmp/* && \
+    rm -rf \
+    ${PETSC_DIR}/**/tests/ \
+    ${PETSC_DIR}/**/obj/ \
+    ${PETSC_DIR}/**/externalpackages/  \
+    ${PETSC_DIR}/CTAGS \
+    ${PETSC_DIR}/RDict.log \
+    ${PETSC_DIR}/TAGS \
+    ${PETSC_DIR}/docs/ \
+    ${PETSC_DIR}/share/ \
+    ${PETSC_DIR}/src/ \
+    ${PETSC_DIR}/systems/ \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
+# Install SLEPc
+WORKDIR /tmp
+RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
+    mkdir -p ${SLEPC_DIR} && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
+    cd ${SLEPC_DIR} && \
+    export PETSC_ARCH=linux-gnu-real-32 && \
+    python3 ./configure && \
+    make && \
+    export PETSC_ARCH=linux-gnu-complex-32 && \
+    python3 ./configure && \
+    make && \
+    rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
+    rm -rf /tmp/*
 
-# Install complex petsc4py and slepc4py
-RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
-    pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
+# Install petsc4py and slepc4py with real and complex types
+RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32 pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} slepc4py==${SLEPC4PY_VERSION}
 
 WORKDIR /root
 
 ########################################
 
-FROM dev-env-real as real-onbuild
-LABEL description="DOLFIN-X in real mode (ONBUILD)"
+FROM dev-env as dolfinx-onbuild
+LABEL description="DOLFIN-X in real and complex modes (onbuild)"
+
+ADD dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
+ADD dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
+RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
 ONBUILD ARG MAKEFLAGS
 
@@ -291,96 +251,49 @@ ONBUILD RUN pip3 install --no-cache-dir ipython && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
 
-# Install dolfinx
-ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
+ONBUILD RUN git clone --depth 1 https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
     mkdir build && \
     cd build && \
-    cmake -G Ninja ../cpp && \
+    PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real ../cpp && \
     ninja ${MAKEFLAGS} install && \
     cd ../python && \
-    pip3 install . && \
+    PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies --ignore-installed . && \
+    cd ../ && \
+    git clean -fdx && \
+    mkdir build && \
+    cd build && \
+    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
+    ninja ${MAKEFLAGS} install && \
+    . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
+    cd ../python && \
+    PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed . && \
     rm -rf /tmp/*
+
+# Real by default.
+ONBUILD ENV LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
+        PATH=/usr/local/dolfinx-real/bin:$PATH \
+        PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
+        PETSC_ARCH=linux-gnu-real-32 \
+        PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH
 
 ONBUILD WORKDIR /root
 
 ########################################
 
-FROM real-onbuild as real
-LABEL description="DOLFIN-X in real mode"
+FROM dolfinx-onbuild as dolfinx
+LABEL description="DOLFIN-X in real and complex modes"
 
 ########################################
 
-FROM dev-env-complex as complex-onbuild
-LABEL description="DOLFIN-X in complex mode (ONBUILD)"
-
-ONBUILD ARG MAKEFLAGS
-
-ONBUILD WORKDIR /tmp
-
-# Install ipython (optional), FIAT, UFL and FFCX (development versions,
-# master branch)
-ONBUILD RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
-
-# Install dolfinx
-ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
-    cd dolfinx && \
-    mkdir build && \
-    cd build && \
-    cmake -G Ninja ../cpp && \
-    ninja ${MAKEFLAGS} install && \
-    cd ../python && \
-    pip3 install . && \
-    rm -rf /tmp/*
-
-ONBUILD WORKDIR /root
-
-########################################
-
-FROM complex-onbuild as complex
-LABEL description="DOLFIN-X in real mode"
-
-########################################
-
-FROM real as notebook
-LABEL description="DOLFIN-X Jupyter Notebook"
-WORKDIR /root
-
-ARG TINI_VERSION
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini && \
-    pip3 install --no-cache-dir jupyter jupyterlab
-
-ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
-
-########################################
-
-FROM complex as notebook-complex
-LABEL description="DOLFIN-X (complex mode) Jupyter Notebook"
-
-ARG TINI_VERSION
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini && \
-    pip3 install --no-cache-dir jupyter jupyterlab
-
-WORKDIR /root
-ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
-
-########################################
-
-FROM notebook as lab
+FROM dolfinx as lab
 LABEL description="DOLFIN-X Jupyter Lab"
-
 WORKDIR /root
-ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
 
-########################################
+ARG TINI_VERSION
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini && \
+    pip3 install --no-cache-dir jupyter jupyterlab
+EXPOSE 8888/tcp
 
-FROM notebook-complex as lab-complex
-LABEL description="DOLFIN-X (complex mode) Jupyter Lab"
-
-WORKDIR /root
 ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]

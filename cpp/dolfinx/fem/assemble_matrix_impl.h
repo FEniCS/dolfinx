@@ -15,11 +15,6 @@
 namespace dolfinx
 {
 
-namespace function
-{
-class Function;
-}
-
 namespace graph
 {
 template <typename T>
@@ -59,15 +54,15 @@ void assemble_cells(
                             const std::int32_t*, const ScalarType*)>&
         mat_set_values_local,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap0, int num_dofs_per_cell0,
-    const graph::AdjacencyList<std::int32_t>& dofmap1, int num_dofs_per_cell1,
+    const graph::AdjacencyList<std::int32_t>& dofmap0,
+    const graph::AdjacencyList<std::int32_t>& dofmap1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(ScalarType*, const ScalarType*, const ScalarType*,
                              const double*, const int*, const std::uint8_t*,
                              const std::uint32_t)>& kernel,
     const Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const Eigen::Array<ScalarType, Eigen::Dynamic, 1>& constant_values);
+    const Eigen::Array<ScalarType, Eigen::Dynamic, 1>& constants);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
 template <typename ScalarType>
@@ -83,7 +78,7 @@ void assemble_exterior_facets(
                              const std::uint32_t)>& fn,
     const Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const Eigen::Array<ScalarType, Eigen::Dynamic, 1> constant_values);
+    const Eigen::Array<ScalarType, Eigen::Dynamic, 1> constants);
 
 /// Execute kernel over interior facets and  accumulate result in Mat
 template <typename ScalarType>
@@ -100,7 +95,7 @@ void assemble_interior_facets(
     const Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const Eigen::Array<ScalarType, Eigen::Dynamic, 1>& constant_values);
+    const Eigen::Array<ScalarType, Eigen::Dynamic, 1>& constants);
 
 } // namespace impl
 } // namespace fem

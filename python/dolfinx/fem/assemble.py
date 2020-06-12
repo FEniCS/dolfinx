@@ -7,6 +7,7 @@
 
 import functools
 import typing
+import scipy.sparse
 
 from petsc4py import PETSc
 
@@ -189,7 +190,7 @@ def _(b: PETSc.Vec,
 
 def assemble_csr_matrix(a: typing.Union[Form, cpp.fem.Form],
                         bcs: typing.List[DirichletBC] = [],
-                        diagonal: float = 1.0) -> PETSc.Mat:
+                        diagonal: float = 1.0) -> scipy.sparse.csr_matrix:
     """Assemble bilinear form into an Scipy CSR matrix, in serial.
     """
     _a = _create_cpp_form(a)
@@ -199,8 +200,7 @@ def assemble_csr_matrix(a: typing.Union[Form, cpp.fem.Form],
         for bc in bcs:
             if _a.function_space(0).contains(bc.function_space):
                 bc_dofs = bc.dof_indices[:, 0]
-                for i in bc_dofs:
-                    A[i, i] = 1.0
+                A[bc_dofs, bc_dofs] = diagonal
     return A
 
 
