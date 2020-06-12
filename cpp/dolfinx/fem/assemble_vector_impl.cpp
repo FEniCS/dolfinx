@@ -12,7 +12,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/function/Constant.h>
-#include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -318,9 +317,6 @@ void fem::impl::assemble_vector(
   assert(dofmap);
   const graph::AdjacencyList<std::int32_t>& dofs = dofmap->list();
 
-  assert(dofmap->element_dof_layout);
-  const int num_dofs_per_cell = dofmap->element_dof_layout->num_dofs();
-
   // Prepare constants
   if (!L.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
@@ -340,8 +336,8 @@ void fem::impl::assemble_vector(
         = integrals.get_tabulate_tensor(FormIntegrals::Type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
-    fem::impl::assemble_cells(b, *mesh, active_cells, dofs, num_dofs_per_cell,
-                              fn, coeffs, constant_values);
+    fem::impl::assemble_cells(b, *mesh, active_cells, dofs, fn, coeffs,
+                              constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
@@ -369,7 +365,7 @@ void fem::impl::assemble_vector(
 void fem::impl::assemble_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap, int num_dofs_per_cell,
+    const graph::AdjacencyList<std::int32_t>& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
@@ -378,7 +374,6 @@ void fem::impl::assemble_cells(
     const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
-
   mesh.topology_mutable().create_entity_permutations();
 
   // Prepare cell geometry
@@ -392,7 +387,7 @@ void fem::impl::assemble_cells(
   // Create data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
-  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be(num_dofs_per_cell);
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
       = mesh.topology().get_cell_permutation_info();
@@ -405,15 +400,16 @@ void fem::impl::assemble_cells(
     for (int i = 0; i < num_dofs_g; ++i)
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
+    auto dofs = dofmap.links(c);
+
     // Tabulate vector for cell
     auto coeff_cell = coeffs.row(c);
-    be.setZero();
+    be.setZero(dofs.size());
     kernel(be.data(), coeff_cell.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Scatter cell vector to 'global' vector array
-    auto dofs = dofmap.links(c);
-    for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
+    for (Eigen::Index i = 0; i < dofs.size(); ++i)
       b[dofs[i]] += be[i];
   }
 }

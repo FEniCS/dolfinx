@@ -16,11 +16,6 @@
 namespace dolfinx
 {
 
-namespace function
-{
-class Function;
-}
-
 namespace graph
 {
 template <typename T>
@@ -43,8 +38,8 @@ namespace impl
 {
 
 /// Assemble linear form into an Eigen vector
-/// @param[in,out] b The vector to be assembled. It will not be zeroed
-///                  before assembly.
+/// @param[in,out] b The vector to be assembled. It will not be zeroed before
+///   assembly.
 /// @param[in] L The linear forms to assemble into b
 void assemble_vector(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L);
@@ -53,7 +48,7 @@ void assemble_vector(
 void assemble_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap, int num_dofs_per_cell,
+    const graph::AdjacencyList<std::int32_t>& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
