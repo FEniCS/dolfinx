@@ -48,7 +48,7 @@ elif index_size == 4:
     c_int_t = "int32_t"
     ctypes_index = ctypes.c_int32
 else:
-    raise RecursionError("Unknown PETSc index type.")
+    raise TypeError("Unknown PETSc index type.")
 
 if complex and scalar_size == 16:
     c_scalar_t = "double _Complex"
