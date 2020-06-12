@@ -5,13 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "assemble_scalar_impl.h"
-#include "DofMap.h"
 #include "Form.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/function/Constant.h>
-#include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
