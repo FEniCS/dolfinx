@@ -255,10 +255,10 @@ ONBUILD RUN git clone --depth 1 https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja ../cpp && \
+    PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real ../cpp && \
     ninja ${MAKEFLAGS} install && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-real-32 pip3 install . && \
+    PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies --ignore-installed . && \
     cd ../ && \
     git clean -fdx && \
     mkdir build && \
@@ -269,6 +269,13 @@ ONBUILD RUN git clone --depth 1 https://github.com/fenics/dolfinx.git && \
     cd ../python && \
     PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed . && \
     rm -rf /tmp/*
+
+# Real by default.
+ONBUILD ENV LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
+        PATH=/usr/local/dolfinx-real/bin:$PATH \
+        PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
+        PETSC_ARCH=linux-gnu-real-32 \
+        PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH
 
 ONBUILD WORKDIR /root
 
