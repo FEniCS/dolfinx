@@ -288,11 +288,11 @@ private:
 
   // FIXME: Give more informative names!
   // Store neighbors so neighborhood communicator can be re-built
-  // _forward_neighbors - neighbors who own indices that
-  // are ghosts in this rank.
+  // _forward_neighbors: neighbors that own indices that are ghosts in this
+  // rank.
   std::vector<std::int32_t> _forward_neighbors;
-  // _reverse_neighbors - neighbors that have ghost indices that
-  // are owned by this rank
+  // _reverse_neighbors - neighbors that have ghost indices that are owned by
+  // this rank
   std::vector<std::int32_t> _reverse_neighbors;
 
   // Number of indices to send to each neighbor process (ghost ->

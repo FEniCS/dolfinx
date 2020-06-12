@@ -125,7 +125,7 @@ common::stack_index_maps(
     }
   }
 
-  // Build arrays of neighborhood ranks
+  // Build arrays of incoming and outcoming neighborhood ranks
   std::set<std::int32_t> in_neighbor_set, out_neighbor_set;
   for (const common::IndexMap& map : maps)
   {
@@ -279,12 +279,6 @@ IndexMap::IndexMap(
     }
   }
 
-  // OpenMPI workaround to empty vectors
-  if (in_edges_num.empty())
-    in_edges_num.reserve(1);
-  if (out_edges_num.empty())
-    out_edges_num.reserve(1);
-
   // Create neighborhood communicator. No communication is needed to
   // build the graph with complete adjacency information
   MPI_Comm neighbor_comm;
@@ -311,13 +305,13 @@ IndexMap::IndexMap(
   std::partial_sum(in_edges_num.begin(), in_edges_num.end(),
                    disp_in.begin() + 1);
 
-  // Get rank on neighborhood communicator for each ghost, and for each
+  // Get rank on neighborhood communicator for each ghost onwer, and for each
   // ghost compute the local index on the owning process
   std::vector<std::int32_t> out_indices(disp_out.back());
   std::vector<std::int32_t> disp(disp_out);
   for (int j = 0; j < _ghosts.size(); ++j)
   {
-    // Get rank of owner process rank on global communicator
+    // Get rank of owner process on global communicator
     const int p = ghost_ranks[j];
 
     // Get rank of owner on neighborhood communicator
@@ -332,6 +326,13 @@ IndexMap::IndexMap(
     out_indices[disp[np]] = _ghosts[j];
     disp[np] += 1;
   }
+
+  // A rank in the neighborhood communicator can have no incoming or
+  // outcoming edges. This may cause OpenMPI to crash. Workaround:
+  if (in_edges_num.empty())
+    in_edges_num.reserve(1);
+  if (out_edges_num.empty())
+    out_edges_num.reserve(1);
 
   //  May have repeated shared indices with different processes
   std::vector<std::int32_t> indices_in(disp_in.back());
@@ -581,7 +582,7 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
                                           fwd_sharing_data)
             .array();
 
-  // Add ghost indices to map
+  // Add ghost indices and onwers to map
   for (int i = 0; i < _ghosts.size(); ++i)
   {
     const std::int32_t idx = size_local() + i;
@@ -589,7 +590,7 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
     shared_indices[idx].insert(neighbors_in[np]);
   }
 
-  // Finally add ranks that share same ghost
+  // Add ranks (outside neighborhood) that share ghosts
   for (int i = 0; i < recv_sharing_data.size();)
   {
     auto it = std::find(_ghosts.data(), _ghosts.data() + _ghosts.size(),
