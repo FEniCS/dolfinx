@@ -125,7 +125,7 @@ common::stack_index_maps(
     }
   }
 
-  // Build array of neighborhood ranks
+  // Build arrays of neighborhood ranks
   std::set<std::int32_t> in_neighbor_set, out_neighbor_set;
   for (const common::IndexMap& map : maps)
   {
@@ -133,6 +133,7 @@ common::stack_index_maps(
     in_neighbor_set.insert(rev_neighbors.begin(), rev_neighbors.end());
     out_neighbor_set.insert(fwd_neighbors.begin(), fwd_neighbors.end());
   }
+
   const std::vector<int> in_neighbors(in_neighbor_set.begin(),
                                       in_neighbor_set.end());
   const std::vector<int> out_neighbors(out_neighbor_set.begin(),
