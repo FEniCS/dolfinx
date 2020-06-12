@@ -135,10 +135,11 @@ commands:
 jobs:
   build-real:
     docker:
-      - image: dolfinx/dev-env-real:latest
+      - image: dolfinx/dolfinx:latest
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
+      PETSC_ARCH: "linux-gnu-real-32"
     steps:
       - checkout
       - run: *install-python-components
@@ -170,10 +171,11 @@ jobs:
 
   build-complex:
     docker:
-      - image: dolfinx/dev-env-complex:latest
+      - image: dolfinx/dolfinx:latest
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
+      PETSC_ARCH: "linux-gnu-complex-32"
     steps:
       - checkout
       - run: *install-python-components
