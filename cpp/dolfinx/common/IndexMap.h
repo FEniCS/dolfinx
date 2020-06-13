@@ -45,6 +45,14 @@ stack_index_maps(
 class IndexMap
 {
 public:
+
+  /// Compute a map from owned local index to the set of ranks (global)
+  /// that have the index as a ghost
+  static std::map<std::int32_t, std::set<int>>
+  compute_forward_ranks(MPI_Comm comm, std::int32_t local_size,
+                        const std::vector<std::int64_t>& ghosts,
+                        const std::vector<int>& ghost_ranks);
+
   /// Mode for reverse scatter operation
   enum class Mode
   {
@@ -282,6 +290,7 @@ private:
   // Local-to-global map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 
+  // FIXME: which neighborhood communicator?
   // Owning rank on a neighborhood communicator for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 

@@ -52,16 +52,18 @@ void local_to_global_impl(
   }
 }
 //-----------------------------------------------------------------------------
+
+/// Compute the owning rank of ghost indices
 std::vector<int> get_ghost_ranks(
-    dolfinx::MPI::Comm mpi_comm, std::int32_t local_size,
+    MPI_Comm comm, std::int32_t local_size,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
         ghosts)
 {
   int mpi_size = -1;
-  MPI_Comm_size(mpi_comm.comm(), &mpi_size);
+  MPI_Comm_size(comm, &mpi_size);
   std::vector<std::int32_t> local_sizes(mpi_size);
   MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
-                mpi_comm.comm());
+                comm);
 
   std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
   std::partial_sum(local_sizes.begin(), local_sizes.end(),
@@ -202,6 +204,46 @@ common::stack_index_maps(
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+std::map<std::int32_t, std::set<int>>
+IndexMap::compute_forward_ranks(MPI_Comm comm, std::int32_t local_size,
+                                const std::vector<std::int64_t>& ghosts,
+                                const std::vector<int>& ghost_ranks)
+{
+#ifdef DEBUG
+  assert(ghost_ranks == get_ghost_ranks(comm, local_size, _ghosts));
+#endif
+
+  int mpi_size = -1;
+  MPI_Comm_size(comm, &mpi_size);
+  int my_rank = -1;
+  MPI_Comm_rank(comm, &my_rank);
+
+  // FIXME: creating an array of size 'mpi_size' isn't scalable
+  std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
+  for (int i = 0; i < ghosts.size(); ++i)
+  {
+    const int p = ghost_ranks[i];
+    if (p == my_rank)
+    {
+      throw std::runtime_error("IndexMap Error: Ghost in local range. Rank = "
+                               + std::to_string(my_rank)
+                               + ", ghost = " + std::to_string(ghosts[i]));
+    }
+    num_edges_out_per_proc[p] += 1;
+  }
+
+  // Send number of outgoing edges (ghost -> owner) to target processes,
+  // and receive number of incoming edges (ghost <- owner) from each
+  // source process
+  std::vector<std::int32_t> num_edges_in_per_proc(mpi_size);
+  MPI_Alltoall(num_edges_out_per_proc.data(), 1, MPI_INT32_T,
+               num_edges_in_per_proc.data(), 1, MPI_INT32_T, comm);
+
+  // TODO: complete this function
+
+  return std::map<std::int32_t, std::set<int>>();
+}
+//-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<std::int64_t>& ghosts,
                    const std::vector<int>& ghost_ranks, int block_size)
@@ -280,6 +322,7 @@ IndexMap::IndexMap(
     }
   }
 
+  // FIXME: is this a symmetric communicator?
   // Create neighborhood communicator. No communication is needed to
   // build the graph with complete adjacency information
   MPI_Comm neighbor_comm;
