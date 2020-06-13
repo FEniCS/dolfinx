@@ -222,7 +222,6 @@ IndexMap::IndexMap(
       _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts),
       _ghost_owners(ghosts.size())
 {
-
   assert(size_t(ghosts.size()) == ghost_ranks.size());
 
   int mpi_size = -1;
@@ -232,10 +231,11 @@ IndexMap::IndexMap(
   assert(ghost_ranks == get_ghost_ranks(_mpi_comm, local_size, _ghosts));
 #endif
 
+  // FIXME: creating an array of size 'mpi_size' isn't scalable
   std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
   for (int i = 0; i < ghosts.size(); ++i)
   {
-    auto p = ghost_ranks[i];
+    const int p = ghost_ranks[i];
     if (p == _myrank)
     {
       throw std::runtime_error("IndexMap Error: Ghost in local range. Rank = "
@@ -246,12 +246,13 @@ IndexMap::IndexMap(
   }
 
   // Get global offset (index), using partial exclusive reduction
-  std::int64_t offset = 0;
-  std::int64_t size_local = (std::int64_t)local_size;
-  MPI_Exscan(&size_local, &offset, 1, MPI_INT64_T, MPI_SUM, _mpi_comm.comm());
-  _local_range = {offset, offset + local_size};
+  std::int64_t offset = -1;
+  const std::int64_t size_local = (std::int64_t)local_size;
+  MPI_Request request_scan;
+  MPI_Iexscan(&size_local, &offset, 1, MPI_INT64_T, MPI_SUM, _mpi_comm.comm(),
+              &request_scan);
 
-  // Each MPI process sends its local size to reduction
+  // Send local size to sum reduction to get global size
   MPI_Request request;
   MPI_Iallreduce(&size_local, &_size_global, 1, MPI_INT64_T, MPI_SUM,
                  _mpi_comm.comm(), &request);
@@ -341,10 +342,14 @@ IndexMap::IndexMap(
                          in_edges_num.data(), disp_in.data(), MPI_INT32_T,
                          neighbor_comm);
 
+  // Wait for MPI_Iexscan to complete (get offset)
+  MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
+  _local_range = {offset, offset + local_size};
+
   _forward_indices = std::move(indices_in);
   _forward_sizes = std::move(in_edges_num);
-  for (auto& value : _forward_indices)
-    value -= offset;
+  std::for_each(_forward_indices.begin(), _forward_indices.end(),
+                [offset](auto& n) { n -= offset; });
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);

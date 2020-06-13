@@ -52,32 +52,31 @@ public:
     add
   };
 
-  /// Create Index map with local_size owned blocks on this process, and
+  /// Create an index map with local_size owned blocks on this process, and
   /// blocks have size block_size.
   ///
-  /// Collective
+  /// @note Collective
   /// @param[in] mpi_comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] block_size The block size of the IndexMap
   /// @param[in] ghost_ranks Owner rank (on global communicator) of each ghost
   ///   entry
+  /// @param[in] block_size The block size of the IndexMap
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<std::int64_t>& ghosts,
            const std::vector<int>& ghost_ranks, int block_size);
 
-  /// Create Index map with local_size owned blocks on this process, and
-  /// blocks have size block_size.
+  /// Create an index map
   ///
-  /// Collective
+  /// @note Collective
   /// @param[in] mpi_comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
+  /// @param[in] ghost_ranks Owner rank (on global communicator) of each
+  ///   ghost entry
   /// @param[in] block_size The block size of the IndexMap
-  /// @param[in] ghost_ranks Owner rank (on global communicator) of each ghost
-  ///   entry
   IndexMap(
       MPI_Comm mpi_comm, std::int32_t local_size,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
@@ -141,7 +140,7 @@ public:
   /// @param[in] blocked If true work with blocked indices. If false the
   ///   input indices are not block-wise.
   /// @return The local of the corresponding global index in indices.
-  ///   Return -1 if the local index does not exist on this process.
+  ///   Returns -1 if the local index does not exist on this process.
   std::vector<std::int32_t>
   global_to_local(const std::vector<std::int64_t>& indices,
                   bool blocked = true) const;
@@ -183,6 +182,8 @@ public:
   /// @return The communicator on which the IndexMap is defined
   MPI_Comm mpi_comm() const;
 
+  /// @todo Remove this function?
+  ///
   /// Neighbors for neighborhood communicator
   std::tuple<std::vector<int>, std::vector<int>> neighbors() const;
 
@@ -286,13 +287,10 @@ private:
   // Owning neighbor for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
-  // FIXME: Give more informative names!
-  // Store neighbors so neighborhood communicator can be re-built
-  // _forward_neighbors: neighbors that own indices that are ghosts in this
-  // rank.
+  // Ranks of neighbours that own indices that are ghosts on this rank
   std::vector<std::int32_t> _forward_neighbors;
-  // _reverse_neighbors - neighbors that have ghost indices that are owned by
-  // this rank
+
+  // Ranks of neighbours that have ghost indices that are owned by this rank
   std::vector<std::int32_t> _reverse_neighbors;
 
   // Number of indices to send to each neighbor process (ghost ->
