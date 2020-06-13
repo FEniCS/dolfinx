@@ -210,7 +210,7 @@ IndexMap::compute_forward_ranks(MPI_Comm comm, std::int32_t local_size,
                                 const std::vector<int>& ghost_ranks)
 {
 #ifdef DEBUG
-  assert(ghost_ranks == get_ghost_ranks(comm, local_size, _ghosts));
+  assert(ghost_ranks == get_ghost_ranks(comm, local_size, ghosts));
 #endif
 
   int mpi_size = -1;
