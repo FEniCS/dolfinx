@@ -473,9 +473,9 @@ mesh::create_topology(MPI_Comm comm,
 
   if (ghost_mode != mesh::GhostMode::none)
   {
-    // Receive indexing of ghost vertices which are not on the process
-    // boundary, from the ghost cell owner. NB the ghost cell owner
-    // may not be the same as the vertex owner.
+    // Receive index of ghost vertices that are not on the process
+    // boundary from the ghost cell owner. Note: the ghost cell owner
+    // might not be the same as the vertex owner.
     std::map<std::int32_t, std::set<std::int32_t>> shared_cells
         = index_map_c->compute_shared_indices();
     std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;

@@ -165,13 +165,10 @@ public:
   /// Local (owned) indices shared with neighbor processes, i.e. are
   /// ghosts on other processes
   /// @return List of indices that are ghosted on other processes
-  const std::vector<std::int32_t>& forward_indices() const
-  {
-    return _forward_indices;
-  }
+  const std::vector<std::int32_t>& forward_indices() const;
 
   /// Owner rank (on global communicator) of each ghost entry
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owner_rank() const;
 
   /// Return array of global indices for all indices on this process,
   /// including ghosts
@@ -182,15 +179,16 @@ public:
   /// @return The communicator on which the IndexMap is defined
   MPI_Comm mpi_comm() const;
 
-  /// @todo Remove this function?
+  /// @todo Remove this function. If not, improve documentation
   ///
   /// Neighbors for neighborhood communicator
-  std::tuple<std::vector<int>, std::vector<int>> neighbors() const;
+  std::array<std::vector<int>, 2> neighbors() const;
 
-  /// @todo Aim to remove this function
+  /// @todo Aim to remove this function? If it's kept, should it work
+  /// with neighborhood ranks?
   ///
-  /// Compute map from each local index to the complete set of sharing processes
-  /// for that index
+  /// Compute map from each local (owned) index to the set of ranks that
+  /// have the index as a ghost
   /// @return shared indices
   std::map<std::int32_t, std::set<std::int32_t>> compute_shared_indices() const;
 
@@ -284,7 +282,7 @@ private:
   // Local-to-global map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 
-  // Owning neighbor for each ghost index
+  // Owning rank on a neighborhood communicator for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
   // Ranks of neighbours that own indices that are ghosts on this rank

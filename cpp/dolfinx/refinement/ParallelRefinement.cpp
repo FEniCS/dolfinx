@@ -383,7 +383,8 @@ std::vector<std::int64_t> ParallelRefinement::adjust_indices(
 
   std::vector<std::int64_t> global_indices = index_map->global_indices(true);
 
-  Eigen::Array<int, Eigen::Dynamic, 1> ghost_owners = index_map->ghost_owners();
+  Eigen::Array<int, Eigen::Dynamic, 1> ghost_owners
+      = index_map->ghost_owner_rank();
   int local_size = index_map->size_local();
   for (int i = 0; i < local_size; ++i)
     global_indices[i] += global_offsets[mpi_rank];
