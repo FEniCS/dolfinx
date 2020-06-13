@@ -246,7 +246,7 @@ IndexMap::IndexMap(
   }
 
   // Get global offset (index), using partial exclusive reduction
-  std::int64_t offset = -1;
+  std::int64_t offset = 0;
   const std::int64_t size_local = (std::int64_t)local_size;
   MPI_Request request_scan;
   MPI_Iexscan(&size_local, &offset, 1, MPI_INT64_T, MPI_SUM, _mpi_comm.comm(),
