@@ -209,9 +209,11 @@ IndexMap::compute_forward_ranks(MPI_Comm comm, std::int32_t local_size,
                                 const std::vector<std::int64_t>& ghosts,
                                 const std::vector<int>& ghost_ranks)
 {
-#ifdef DEBUG
-  assert(ghost_ranks == get_ghost_ranks(comm, local_size, ghosts));
-#endif
+  assert(ghost_ranks
+         == get_ghost_ranks(
+             comm, local_size,
+             Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
+                 ghosts.data(), ghosts.size())));
 
   int mpi_size = -1;
   MPI_Comm_size(comm, &mpi_size);
@@ -220,7 +222,7 @@ IndexMap::compute_forward_ranks(MPI_Comm comm, std::int32_t local_size,
 
   // FIXME: creating an array of size 'mpi_size' isn't scalable
   std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
-  for (int i = 0; i < ghosts.size(); ++i)
+  for (std::size_t i = 0; i < ghosts.size(); ++i)
   {
     const int p = ghost_ranks[i];
     if (p == my_rank)
@@ -269,9 +271,7 @@ IndexMap::IndexMap(
   int mpi_size = -1;
   MPI_Comm_size(_mpi_comm.comm(), &mpi_size);
 
-#ifdef DEBUG
-  assert(ghost_ranks == get_ghost_ranks(_mpi_comm, local_size, _ghosts));
-#endif
+  assert(ghost_ranks == get_ghost_ranks(mpi_comm, local_size, _ghosts));
 
   // FIXME: creating an array of size 'mpi_size' isn't scalable
   std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
