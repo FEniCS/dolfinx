@@ -297,14 +297,16 @@ private:
   // Local-to-global map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 
-  // FIXME: on which neighborhood communicator?
-  // Owning rank on a neighborhood communicator for each ghost index
+  // Owning rank on '_comm_owner_to_ghost' neighborhood communicator for
+  // each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
-  // Ranks of neighbours that own indices that are ghosts on this rank
+  // Ranks on full communicator of neighbours that own indices that are
+  // ghosts on this rank
   std::vector<std::int32_t> _forward_neighbors;
 
-  // Ranks of neighbours that have ghost indices that are owned by this rank
+  // Ranks on full communicator of neighbours that have ghost indices
+  // that are owned by this rank
   std::vector<std::int32_t> _reverse_neighbors;
 
   // Number of indices to send to each neighbor process (ghost ->
