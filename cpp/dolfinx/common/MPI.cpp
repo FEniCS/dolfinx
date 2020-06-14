@@ -10,10 +10,10 @@
 #include <numeric>
 
 //-----------------------------------------------------------------------------
-dolfinx::MPI::Comm::Comm(MPI_Comm comm)
+dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)
 {
   // Duplicate communicator
-  if (comm != MPI_COMM_NULL)
+  if (duplicate and comm != MPI_COMM_NULL)
   {
     // int status;
     // MPI_Topo_test(comm, &status);
@@ -26,7 +26,7 @@ dolfinx::MPI::Comm::Comm(MPI_Comm comm)
     }
   }
   else
-    _comm = MPI_COMM_NULL;
+    _comm = comm;
 }
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(const Comm& comm) : Comm(comm._comm)

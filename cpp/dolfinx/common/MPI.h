@@ -35,7 +35,7 @@ public:
   {
   public:
     /// Duplicate communicator and wrap duplicate
-    explicit Comm(MPI_Comm comm);
+    explicit Comm(MPI_Comm comm, bool duplicate = true);
 
     /// Copy constructor
     Comm(const Comm& comm);

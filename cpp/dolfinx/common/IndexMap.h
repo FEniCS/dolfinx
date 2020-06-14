@@ -193,6 +193,9 @@ public:
   /// @todo Remove this function. If not, improve documentation
   ///
   /// Neighbors for neighborhood communicator
+  /// @returns [0] Ranks of neighbours that own indices that are ghosts
+  ///   on this rank and [1] ranks of neighbours that have ghost indices
+  ///   that this rank owns
   std::array<std::vector<int>, 2> neighbors() const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
@@ -291,14 +294,10 @@ private:
   dolfinx::MPI::Comm _comm_ghost_to_owner;
   dolfinx::MPI::Comm _comm_symmetric;
 
-  // Cache rank on mpi_comm (otherwise calls to MPI_Comm_rank can be
-  // excessive)
-  int _myrank;
-
   // Local-to-global map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 
-  // FIXME: which neighborhood communicator?
+  // FIXME: on which neighborhood communicator?
   // Owning rank on a neighborhood communicator for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
