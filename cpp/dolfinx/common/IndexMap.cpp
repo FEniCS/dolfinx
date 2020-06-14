@@ -375,11 +375,11 @@ IndexMap::IndexMap(
   std::partial_sum(in_edges_num.begin(), in_edges_num.end(),
                    disp_in.begin() + 1);
 
-  // For each ghost, get rank of  owner on neighborhood communicator
+  // For each ghost, get rank of owner on neighborhood communicator
   // (_comm_owner_to_ghost) for (_ghost_owners), and for each ghost get
   // its local index on the owning rank
-  std::vector<std::int32_t> out_indices(disp_out.back());
-  std::vector<std::int32_t> disp(disp_out);
+  std::vector<std::int64_t> out_indices(disp_out.back());
+  std::vector<int> disp(disp_out);
   for (int j = 0; j < _ghosts.size(); ++j)
   {
     // Get rank of owner on the neighborhood communicator
@@ -404,25 +404,25 @@ IndexMap::IndexMap(
     out_edges_num.reserve(1);
 
   // May have repeated shared indices with different processes
-  std::vector<std::int32_t> indices_in(disp_in.back());
+  std::vector<std::int64_t> indices_in(disp_in.back());
   MPI_Neighbor_alltoallv(out_indices.data(), out_edges_num.data(),
-                         disp_out.data(), MPI_INT, indices_in.data(),
-                         in_edges_num.data(), disp_in.data(), MPI_INT,
+                         disp_out.data(), MPI_INT64_T, indices_in.data(),
+                         in_edges_num.data(), disp_in.data(), MPI_INT64_T,
                          _comm_owner_to_ghost.comm());
 
   // Wait for MPI_Iexscan to complete (get offset)
   MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
   _local_range = {offset, offset + local_size};
 
-  _forward_indices = std::move(indices_in);
+  _forward_indices.resize(indices_in.size());
+  for (std::size_t i = 0; i < _forward_indices.size(); ++i)
+    _forward_indices[i] = indices_in[i] - offset;
+
   _forward_sizes = std::move(in_edges_num);
-  std::for_each(_forward_indices.begin(), _forward_indices.end(),
-                [offset](auto& n) { n -= offset; });
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 
-  // MPI_Comm_free(&neighbor_comm);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
