@@ -286,6 +286,11 @@ private:
   // MPI Communicator
   dolfinx::MPI::Comm _mpi_comm;
 
+  // MPI neighbourhood communicators
+  dolfinx::MPI::Comm _comm_owner_to_ghost;
+  dolfinx::MPI::Comm _comm_ghost_to_owner;
+  dolfinx::MPI::Comm _comm_symmetric;
+
   // Cache rank on mpi_comm (otherwise calls to MPI_Comm_rank can be
   // excessive)
   int _myrank;

@@ -254,8 +254,9 @@ IndexMap::IndexMap(
         ghosts,
     const std::vector<int>& ghost_owner_rank, int block_size)
     : _block_size(block_size), _mpi_comm(mpi_comm),
-      _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts),
-      _ghost_owners(ghosts.size())
+      _comm_owner_to_ghost(MPI_COMM_NULL), _comm_ghost_to_owner(MPI_COMM_NULL),
+      _comm_symmetric(MPI_COMM_NULL), _myrank(MPI::rank(mpi_comm)),
+      _ghosts(ghosts), _ghost_owners(ghosts.size())
 {
   assert(size_t(ghosts.size()) == ghost_owner_rank.size());
 
@@ -271,16 +272,48 @@ IndexMap::IndexMap(
   MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
                  _mpi_comm.comm(), &request);
 
+  // Use (i) the (remote) owner ranks for ghosts on this rank to (ii)
+  // compute ranks that hold ghosts that this rank owns
+  const std::set<int> owner_ranks_set(ghost_owner_rank.begin(),
+                                      ghost_owner_rank.end());
+  const std::vector<int> target_ranks
+      = compute_source_ranks(mpi_comm, owner_ranks_set);
+  std::vector<int> owner_ranks(owner_ranks_set.begin(), owner_ranks_set.end());
+
+  MPI_Comm neighbor_comm;
+
+  // Create owner (sources) -> ghost (destinations) communicator
+  // MPI_Dist_graph_create_adjacent(
+  //     _mpi_comm.comm(), target_ranks.size(), target_ranks.data(),
+  //     MPI_UNWEIGHTED, owner_ranks.size(), owner_ranks.data(), MPI_UNWEIGHTED,
+  //     MPI_INFO_NULL, false, &neighbor_comm);
+  // _comm_owner_to_ghost = dolfinx::MPI::Comm(neighbor_comm);
+  // MPI_Comm_free(&neighbor_comm);
+
+  // // Create ghost (sources) -> owner (destinations) communicator
+  MPI_Dist_graph_create_adjacent(
+      _mpi_comm.comm(), owner_ranks.size(), owner_ranks.data(), MPI_UNWEIGHTED,
+      target_ranks.size(), target_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+      false, &neighbor_comm);
+  // _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm);
+
+  MPI_Comm neighbor_comm2;
+  MPI_Comm_dup(neighbor_comm, &neighbor_comm2);
+  MPI_Comm_free(&neighbor_comm);
+
+  // int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
+  //                                    int indegree, const int sources[],
+  //                                    const int sourceweights[],
+  //                                    int outdegree, const int destinations[],
+  //                                    const int destweights[],
+  //                                    MPI_Info info, int reorder, MPI_Comm *
+  //                                    comm_dist_graph)
+
   int mpi_size = -1;
   MPI_Comm_size(_mpi_comm.comm(), &mpi_size);
 
   assert(ghost_owner_rank == get_ghost_ranks(mpi_comm, local_size, _ghosts));
 
-  // Use (i) the remote owner ranks for ghosts on this rank to (ii)
-  // compute ranks that hold ghosts that this rank owns
-  const std::vector<int> dest
-      = compute_source_ranks(mpi_comm, std::set<int>(ghost_owner_rank.begin(),
-                                                     ghost_owner_rank.end()));
   // std::cout << "Dest ranks: "
 
   // FIXME: creating an array of size 'mpi_size' isn't scalable
@@ -330,7 +363,7 @@ IndexMap::IndexMap(
   // FIXME: is this a symmetric communicator?
   // Create neighborhood communicator. No communication is needed to
   // build the graph with complete adjacency information
-  MPI_Comm neighbor_comm;
+  // MPI_Comm neighbor_comm;
   MPI_Dist_graph_create_adjacent(
       _mpi_comm.comm(), _reverse_neighbors.size(), _reverse_neighbors.data(),
       MPI_UNWEIGHTED, _forward_neighbors.size(), _forward_neighbors.data(),

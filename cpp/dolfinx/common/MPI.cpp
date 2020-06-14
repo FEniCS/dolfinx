@@ -15,6 +15,9 @@ dolfinx::MPI::Comm::Comm(MPI_Comm comm)
   // Duplicate communicator
   if (comm != MPI_COMM_NULL)
   {
+    // int status;
+    // MPI_Topo_test(comm, &status);
+    // if (status == MPI_DIST_GRAPH)
     int err = MPI_Comm_dup(comm, &_comm);
     if (err != MPI_SUCCESS)
     {
