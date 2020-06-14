@@ -207,8 +207,10 @@ common::stack_index_maps(
 std::vector<int>
 IndexMap::compute_source_ranks(MPI_Comm comm, const std::set<int>& destinations)
 {
-  const std::vector<int> dest(destinations.begin(), destinations.end());
+  std::vector<int> dest(destinations.begin(), destinations.end());
   const int degrees = dest.size();
+  if (dest.empty())
+    dest.push_back(0);
 
   // Create graph communicator
   int my_rank = -1;
@@ -279,6 +281,7 @@ IndexMap::IndexMap(
   const std::vector<int> dest
       = compute_source_ranks(mpi_comm, std::set<int>(ghost_owner_rank.begin(),
                                                      ghost_owner_rank.end()));
+  // std::cout << "Dest ranks: "
 
   // FIXME: creating an array of size 'mpi_size' isn't scalable
   std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
