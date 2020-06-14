@@ -303,12 +303,10 @@ private:
 
   // Ranks (on full communicator) that own indices that are ghosts on
   // this rank
-  // std::vector<std::int32_t> _forward_neighbors;
   std::vector<std::int32_t> _halo_src_ranks;
 
   // Ranks (on full communicator) that have ghost indices that are owned
   // by this rank
-  // std::vector<std::int32_t> _reverse_neighbors;
   std::vector<std::int32_t> _halo_dest_ranks;
 
   // Number of indices to send to each neighbor process (ghost ->
