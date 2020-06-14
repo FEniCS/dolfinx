@@ -204,55 +204,44 @@ common::stack_index_maps(
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<int>>
-IndexMap::compute_forward_ranks(MPI_Comm comm, std::int32_t local_size,
-                                const std::vector<std::int64_t>& ghosts,
-                                const std::vector<int>& ghost_ranks)
+std::vector<int>
+IndexMap::compute_source_ranks(MPI_Comm comm, const std::set<int>& destinations)
 {
-  assert(ghost_ranks
-         == get_ghost_ranks(
-             comm, local_size,
-             Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
-                 ghosts.data(), ghosts.size())));
+  const std::vector<int> dest(destinations.begin(), destinations.end());
+  const int degrees = dest.size();
 
-  int mpi_size = -1;
-  MPI_Comm_size(comm, &mpi_size);
+  // Create graph communicator
   int my_rank = -1;
   MPI_Comm_rank(comm, &my_rank);
+  MPI_Comm comm_graph;
+  MPI_Dist_graph_create(comm, 1, &my_rank, &degrees, dest.data(),
+                        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm_graph);
 
-  // FIXME: creating an array of size 'mpi_size' isn't scalable
-  std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
-  for (std::size_t i = 0; i < ghosts.size(); ++i)
-  {
-    const int p = ghost_ranks[i];
-    if (p == my_rank)
-    {
-      throw std::runtime_error("IndexMap Error: Ghost in local range. Rank = "
-                               + std::to_string(my_rank)
-                               + ", ghost = " + std::to_string(ghosts[i]));
-    }
-    num_edges_out_per_proc[p] += 1;
-  }
+  // Get number of neighbours
+  int indegree(-1), outdegree(-1), weighted(-1);
+  MPI_Dist_graph_neighbors_count(comm_graph, &indegree, &outdegree, &weighted);
+  // std::cout << "Rank, in/out: " << my_rank << ", " << indegree << ", "
+  //           << outdegree << std::endl;
 
-  // Send number of outgoing edges (ghost -> owner) to target processes,
-  // and receive number of incoming edges (ghost <- owner) from each
-  // source process
-  std::vector<std::int32_t> num_edges_in_per_proc(mpi_size);
-  MPI_Alltoall(num_edges_out_per_proc.data(), 1, MPI_INT32_T,
-               num_edges_in_per_proc.data(), 1, MPI_INT32_T, comm);
+  std::vector<int> _sources(indegree), _destinations(outdegree);
+  MPI_Dist_graph_neighbors(comm_graph, indegree, _sources.data(),
+                           MPI_UNWEIGHTED, outdegree, _destinations.data(),
+                           MPI_UNWEIGHTED);
+  assert(destinations
+         == std::set<int>(_destinations.begin(), _destinations.end()));
 
-  // TODO: complete this function
+  MPI_Comm_free(&comm_graph);
 
-  return std::map<std::int32_t, std::set<int>>();
+  return _sources;
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<std::int64_t>& ghosts,
-                   const std::vector<int>& ghost_ranks, int block_size)
+                   const std::vector<int>& ghost_owner_rank, int block_size)
     : IndexMap(mpi_comm, local_size,
                Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
                    ghosts.data(), ghosts.size()),
-               ghost_ranks, block_size)
+               ghost_owner_rank, block_size)
 {
   // Do nothing
 }
@@ -261,23 +250,41 @@ IndexMap::IndexMap(
     MPI_Comm mpi_comm, std::int32_t local_size,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
         ghosts,
-    const std::vector<int>& ghost_ranks, int block_size)
+    const std::vector<int>& ghost_owner_rank, int block_size)
     : _block_size(block_size), _mpi_comm(mpi_comm),
       _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts),
       _ghost_owners(ghosts.size())
 {
-  assert(size_t(ghosts.size()) == ghost_ranks.size());
+  assert(size_t(ghosts.size()) == ghost_owner_rank.size());
+
+  // Get global offset (index), using partial exclusive reduction
+  std::int64_t offset = 0;
+  const std::int64_t local_size_tmp = (std::int64_t)local_size;
+  MPI_Request request_scan;
+  MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM,
+              _mpi_comm.comm(), &request_scan);
+
+  // Send local size to sum reduction to get global size
+  MPI_Request request;
+  MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
+                 _mpi_comm.comm(), &request);
 
   int mpi_size = -1;
   MPI_Comm_size(_mpi_comm.comm(), &mpi_size);
 
-  assert(ghost_ranks == get_ghost_ranks(mpi_comm, local_size, _ghosts));
+  assert(ghost_owner_rank == get_ghost_ranks(mpi_comm, local_size, _ghosts));
+
+  // Use (i) the remote owner ranks for ghosts on this rank to (ii)
+  // compute ranks that hold ghosts that this rank owns
+  const std::vector<int> dest
+      = compute_source_ranks(mpi_comm, std::set<int>(ghost_owner_rank.begin(),
+                                                     ghost_owner_rank.end()));
 
   // FIXME: creating an array of size 'mpi_size' isn't scalable
   std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
   for (int i = 0; i < ghosts.size(); ++i)
   {
-    const int p = ghost_ranks[i];
+    const int p = ghost_owner_rank[i];
     if (p == _myrank)
     {
       throw std::runtime_error("IndexMap Error: Ghost in local range. Rank = "
@@ -286,18 +293,6 @@ IndexMap::IndexMap(
     }
     num_edges_out_per_proc[p] += 1;
   }
-
-  // Get global offset (index), using partial exclusive reduction
-  std::int64_t offset = 0;
-  const std::int64_t size_local = (std::int64_t)local_size;
-  MPI_Request request_scan;
-  MPI_Iexscan(&size_local, &offset, 1, MPI_INT64_T, MPI_SUM, _mpi_comm.comm(),
-              &request_scan);
-
-  // Send local size to sum reduction to get global size
-  MPI_Request request;
-  MPI_Iallreduce(&size_local, &_size_global, 1, MPI_INT64_T, MPI_SUM,
-                 _mpi_comm.comm(), &request);
 
   // Send number of outgoing edges (ghost -> owner) to target processes,
   // and receive number of incoming edges (ghost <- owner) from each
@@ -321,6 +316,13 @@ IndexMap::IndexMap(
       _reverse_neighbors.push_back(i);
     }
   }
+
+  // _forward_neighbors = dest;
+  // _reverse_neighbors = ghost_owner_rank;
+  // std::sort(_reverse_neighbors.begin(), _reverse_neighbors.end());
+  // _reverse_neighbors.erase(
+  //     std::unique(_reverse_neighbors.begin(), _reverse_neighbors.end()),
+  //     _reverse_neighbors.end());
 
   // FIXME: is this a symmetric communicator?
   // Create neighborhood communicator. No communication is needed to
@@ -356,7 +358,7 @@ IndexMap::IndexMap(
   for (int j = 0; j < _ghosts.size(); ++j)
   {
     // Get rank of owner process on global communicator
-    const int p = ghost_ranks[j];
+    const int p = ghost_owner_rank[j];
 
     // Get rank of owner on neighborhood communicator
     const auto it = std::find(neighbors_out.begin(), neighbors_out.end(), p);

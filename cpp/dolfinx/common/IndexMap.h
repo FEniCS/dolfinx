@@ -45,13 +45,16 @@ stack_index_maps(
 class IndexMap
 {
 public:
-
-  /// Compute a map from owned local index to the set of ranks (global)
-  /// that have the index as a ghost
-  static std::map<std::int32_t, std::set<int>>
-  compute_forward_ranks(MPI_Comm comm, std::int32_t local_size,
-                        const std::vector<std::int64_t>& ghosts,
-                        const std::vector<int>& ghost_ranks);
+  /// @note Experimental. Maybe be moved or removed
+  ///
+  /// Compute the MPI source ranks for this rank, i.e. ranks that will
+  /// send data to this rank.
+  ///
+  /// @param[in] comm MPI communicator
+  /// @param[in] destinations Ranks that this rank will send data to
+  /// @return Ranks that this rank will receive data from
+  static std::vector<int>
+  compute_source_ranks(MPI_Comm comm, const std::set<int>& destinations);
 
   /// Mode for reverse scatter operation
   enum class Mode
@@ -68,12 +71,12 @@ public:
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] ghost_ranks Owner rank (on global communicator) of each ghost
-  ///   entry
+  /// @param[in] ghost_owner_ranks Owner rank (on global communicator)
+  ///   of each ghost entry
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<std::int64_t>& ghosts,
-           const std::vector<int>& ghost_ranks, int block_size);
+           const std::vector<int>& ghost_owner_rank, int block_size);
 
   /// Create an index map
   ///
@@ -82,14 +85,14 @@ public:
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] ghost_ranks Owner rank (on global communicator) of each
-  ///   ghost entry
+  /// @param[in] ghost_owner_rank Owner rank (on global communicator) of
+  ///   each ghost entry
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(
       MPI_Comm mpi_comm, std::int32_t local_size,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
           ghosts,
-      const std::vector<int>& ghost_ranks, int block_size);
+      const std::vector<int>& ghost_owner_rank, int block_size);
 
   /// Copy constructor
   IndexMap(const IndexMap& map) = delete;
