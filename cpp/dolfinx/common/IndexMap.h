@@ -71,12 +71,12 @@ public:
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] ghost_owner_rank Owner rank (on global communicator)
+  /// @param[in] ghost_src_rank Owner rank (on global communicator)
   ///   of each ghost entry
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<std::int64_t>& ghosts,
-           const std::vector<int>& ghost_owner_rank, int block_size);
+           const std::vector<int>& ghost_src_rank, int block_size);
 
   /// Create an index map
   ///
@@ -301,13 +301,15 @@ private:
   // each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
-  // Ranks on full communicator of neighbours that own indices that are
-  // ghosts on this rank
-  std::vector<std::int32_t> _forward_neighbors;
+  // Ranks (on full communicator) that own indices that are ghosts on
+  // this rank
+  // std::vector<std::int32_t> _forward_neighbors;
+  std::vector<std::int32_t> _halo_src_ranks;
 
-  // Ranks on full communicator of neighbours that have ghost indices
-  // that are owned by this rank
-  std::vector<std::int32_t> _reverse_neighbors;
+  // Ranks (on full communicator) that have ghost indices that are owned
+  // by this rank
+  // std::vector<std::int32_t> _reverse_neighbors;
+  std::vector<std::int32_t> _halo_dest_ranks;
 
   // Number of indices to send to each neighbor process (ghost ->
   // owner, i.e. forward mode scatter)
