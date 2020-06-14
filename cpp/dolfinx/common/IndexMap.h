@@ -71,7 +71,7 @@ public:
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] ghost_owner_ranks Owner rank (on global communicator)
+  /// @param[in] ghost_owner_rank Owner rank (on global communicator)
   ///   of each ghost entry
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
