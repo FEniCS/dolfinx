@@ -367,19 +367,23 @@ IndexMap::IndexMap(
   std::vector<int> neighbors_in = target_ranks;
   std::vector<int> neighbors_out = owner_ranks;
 
+  // For each ghost, send its index to the owner rank. The purpose is
+  // such that a rank knows which of its owned indices are ghost on
+  // other ranks
+
   // Create displacement vectors for XXXXX
-  std::vector<int> disp_out(neighbors_out.size() + 1, 0);
-  std::vector<int> disp_in(neighbors_in.size() + 1, 0);
+  std::vector<int> send_disp(neighbors_out.size() + 1, 0);
+  std::vector<int> recv_disp(neighbors_in.size() + 1, 0);
   std::partial_sum(out_edges_num.begin(), out_edges_num.end(),
-                   disp_out.begin() + 1);
+                   send_disp.begin() + 1);
   std::partial_sum(in_edges_num.begin(), in_edges_num.end(),
-                   disp_in.begin() + 1);
+                   recv_disp.begin() + 1);
 
   // For each ghost, get rank of owner on neighborhood communicator
   // (_comm_owner_to_ghost) for (_ghost_owners), and for each ghost get
   // its local index on the owning rank
-  std::vector<std::int64_t> out_indices(disp_out.back());
-  std::vector<int> disp(disp_out);
+  std::vector<std::int64_t> send_indices(send_disp.back());
+  std::vector<int> disp(send_disp);
   for (int j = 0; j < _ghosts.size(); ++j)
   {
     // Get rank of owner on the neighborhood communicator
@@ -392,37 +396,34 @@ IndexMap::IndexMap(
     _ghost_owners[j] = p_neighbour;
 
     // Local on owning process
-    out_indices[disp[p_neighbour]] = _ghosts[j];
+    send_indices[disp[p_neighbour]] = _ghosts[j];
     disp[p_neighbour] += 1;
   }
 
   // A rank in the neighborhood communicator can have no incoming or
   // outcoming edges. This may cause OpenMPI to crash. Workaround:
-  if (in_edges_num.empty())
-    in_edges_num.reserve(1);
-  if (out_edges_num.empty())
-    out_edges_num.reserve(1);
+  in_edges_num.reserve(1);
+  out_edges_num.reserve(1);
 
   // May have repeated shared indices with different processes
-  std::vector<std::int64_t> indices_in(disp_in.back());
-  MPI_Neighbor_alltoallv(out_indices.data(), out_edges_num.data(),
-                         disp_out.data(), MPI_INT64_T, indices_in.data(),
-                         in_edges_num.data(), disp_in.data(), MPI_INT64_T,
+  std::vector<std::int64_t> recv_indices(recv_disp.back());
+  MPI_Neighbor_alltoallv(send_indices.data(), out_edges_num.data(),
+                         send_disp.data(), MPI_INT64_T, recv_indices.data(),
+                         in_edges_num.data(), recv_disp.data(), MPI_INT64_T,
                          _comm_owner_to_ghost.comm());
 
   // Wait for MPI_Iexscan to complete (get offset)
   MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
   _local_range = {offset, offset + local_size};
 
-  _forward_indices.resize(indices_in.size());
+  _forward_indices.resize(recv_indices.size());
   for (std::size_t i = 0; i < _forward_indices.size(); ++i)
-    _forward_indices[i] = indices_in[i] - offset;
+    _forward_indices[i] = recv_indices[i] - offset;
 
   _forward_sizes = std::move(in_edges_num);
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
-
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
