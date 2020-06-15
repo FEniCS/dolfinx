@@ -63,6 +63,14 @@ public:
     add
   };
 
+  /// Edge directions of neighborhood communicator
+  enum class Direction
+  {
+    ghost_to_owner,
+    onwer_to_ghost,
+    two_way // symmetric
+  };
+
   /// Create an index map with local_size owned blocks on this process, and
   /// blocks have size block_size.
   ///
@@ -121,6 +129,10 @@ public:
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts() const;
+
+  /// Local-to-global map for ghosts (local indexing beyond end of local
+  /// range)
+  MPI_Comm get_comm(Direction dir) const;
 
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
@@ -301,6 +313,7 @@ private:
   // each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
+  // --> Remove
   // Ranks (on full communicator) that own indices that are ghosts on
   // this rank
   std::vector<std::int32_t> _halo_src_ranks;
@@ -308,6 +321,7 @@ private:
   // Ranks (on full communicator) that have ghost indices that are owned
   // by this rank
   std::vector<std::int32_t> _halo_dest_ranks;
+  // <-- Remove
 
   // Number of indices to send to each neighbor process (ghost ->
   // owner, i.e. forward mode scatter)

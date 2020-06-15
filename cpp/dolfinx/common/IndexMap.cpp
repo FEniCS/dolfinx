@@ -187,6 +187,12 @@ common::stack_index_maps(
     auto [fwd_neighbors, rev_neighbors] = map.neighbors();
     in_neighbor_set.insert(fwd_neighbors.begin(), fwd_neighbors.end());
     out_neighbor_set.insert(rev_neighbors.begin(), rev_neighbors.end());
+    // MPI_Comm neighbor_comm
+    //     = map.get_comm(common::IndexMap::Direction::onwer_to_ghost);
+    // auto [source, dest] = dolfinx::MPI::neighbors(neighbor_comm);
+    // in_neighbor_set.insert(source.begin(), source.end());
+    // out_neighbor_set.insert(dest.begin(), dest.end());
+    // MPI_Comm_free(&neighbor_comm);
   }
 
   const std::vector<int> in_neighbors(in_neighbor_set.begin(),
@@ -353,6 +359,24 @@ IndexMap::IndexMap(
       MPI_UNWEIGHTED, _halo_src_ranks.size(), _halo_src_ranks.data(),
       MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm1);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm1, false);
+
+  // Create communicator two-way edges
+  // TODO: Aim to remove? used for compatibility
+  std::vector<int> neighbors;
+  std::set_union(_halo_dest_ranks.begin(), _halo_dest_ranks.end(),
+                 _halo_src_ranks.begin(), _halo_src_ranks.end(),
+                 std::back_inserter(neighbors));
+
+  std::sort(neighbors.begin(), neighbors.end());
+  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
+                  neighbors.end());
+
+  MPI_Comm neighbor_comm2;
+  MPI_Dist_graph_create_adjacent(
+      _mpi_comm.comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
+      neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
+      &neighbor_comm2);
+  _comm_symmetric = dolfinx::MPI::Comm(neighbor_comm2, false);
 
   // Map ghost owner rank to rank on neighborhood communicator
   for (int j = 0; j < _ghosts.size(); ++j)
@@ -561,6 +585,16 @@ std::array<std::vector<int>, 2> IndexMap::neighbors() const
   return {_halo_src_ranks, _halo_dest_ranks};
 }
 //----------------------------------------------------------------------------
+MPI_Comm IndexMap::get_comm(Direction dir) const
+{
+  if (dir == Direction::ghost_to_owner)
+    return _comm_ghost_to_owner.comm();
+  else if (dir == Direction::ghost_to_owner)
+    return _comm_owner_to_ghost.comm();
+  else
+    return _comm_symmetric.comm();
+}
+//----------------------------------------------------------------------------
 std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
 {
   std::map<int, std::set<int>> shared_indices;
@@ -623,7 +657,7 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
   }
 
   int myrank = -1;
-  MPI_Comm_rank(_mpi_comm.comm(), &myrank);
+  MPI_Comm_rank(_comm_owner_to_ghost.comm(), &myrank);
 
   // Add ranks (outside neighborhood) that share ghosts
   for (int i = 0; i < recv_sharing_data.size();)
