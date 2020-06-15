@@ -307,22 +307,10 @@ void SparsityPattern::assemble()
     }
   }
 
-  // Get number of processes in neighborhood
-  auto [fwd_neighbors, rev_neighbors] = _index_maps[0]->neighbors();
-
-  std::vector<int> neighbors;
-  std::set_union(fwd_neighbors.begin(), fwd_neighbors.end(),
-                 rev_neighbors.begin(), rev_neighbors.end(),
-                 std::back_inserter(neighbors));
-
-  std::sort(neighbors.begin(), neighbors.end());
-  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                  neighbors.end());
+  dolfinx::MPI::Comm neighbor_comm
+      = _index_maps[0]->get_comm(common::IndexMap::Direction::two_way);
   MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(_mpi_comm.comm(), neighbors.size(),
-                                 neighbors.data(), MPI_UNWEIGHTED,
-                                 neighbors.size(), neighbors.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  MPI_Comm_dup(neighbor_comm.comm(), &comm);
 
   int num_neighbors(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);

@@ -38,22 +38,11 @@ std::vector<std::int32_t>
 get_remote_bcs1(const common::IndexMap& map,
                 const std::vector<std::int32_t>& dofs_local)
 {
-  auto [fwd_neighbors, rev_neighbors] = map.neighbors();
-
-  std::vector<int> neighbors;
-  std::set_union(fwd_neighbors.begin(), fwd_neighbors.end(),
-                 rev_neighbors.begin(), rev_neighbors.end(),
-                 std::back_inserter(neighbors));
-
-  std::sort(neighbors.begin(), neighbors.end());
-  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                   neighbors.end());
+  dolfinx::MPI::Comm neighbor_comm
+      = map.get_comm(common::IndexMap::Direction::two_way);
 
   MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(map.mpi_comm(), neighbors.size(),
-                                 neighbors.data(), MPI_UNWEIGHTED,
-                                 neighbors.size(), neighbors.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  MPI_Comm_dup(neighbor_comm.comm(), &comm);
 
   // Get number of processes in neighborhood
   int num_neighbors(-1), outdegree(-2), weighted(-1);
@@ -116,22 +105,11 @@ std::vector<std::array<std::int32_t, 2>>
 get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
 {
-  auto [fwd_neighbors, rev_neighbors] = map0.neighbors();
-
-  std::vector<int> neighbors;
-  std::set_union(fwd_neighbors.begin(), fwd_neighbors.end(),
-                 rev_neighbors.begin(), rev_neighbors.end(),
-                 std::back_inserter(neighbors));
-
-  std::sort(neighbors.begin(), neighbors.end());
-  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                   neighbors.end());
+  dolfinx::MPI::Comm neighbor_comm
+      = map0.get_comm(common::IndexMap::Direction::two_way);
 
   MPI_Comm comm0;
-  MPI_Dist_graph_create_adjacent(map0.mpi_comm(), neighbors.size(),
-                                 neighbors.data(), MPI_UNWEIGHTED,
-                                 neighbors.size(), neighbors.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+  MPI_Comm_dup(neighbor_comm.comm(), &comm0);
 
   int num_neighbors(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm0, &num_neighbors, &outdegree, &weighted);

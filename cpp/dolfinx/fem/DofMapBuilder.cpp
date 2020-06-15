@@ -447,17 +447,12 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
     d = requests_dim[idx];
 
-    auto map = topology.index_map(d);
+    dolfinx::MPI::Comm neighbor_comm
+        = topology.index_map(d)->get_comm(common::IndexMap::Direction::two_way);
+    auto [neighbors, neighbors1]
+        = dolfinx::MPI::neighbors(neighbor_comm.comm());
 
-    auto [fwd_neighbors, rev_neighbors] = map->neighbors();
-    std::vector<int> neighbors;
-    std::set_union(fwd_neighbors.begin(), fwd_neighbors.end(),
-                   rev_neighbors.begin(), rev_neighbors.end(),
-                   std::back_inserter(neighbors));
-
-    std::sort(neighbors.begin(), neighbors.end());
-    neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                    neighbors.end());
+    assert(neighbors == neighbors1);
 
     // Build (global old, global new) map for dofs of dimension d
     std::unordered_map<std::int64_t, std::pair<int64_t, int>> global_old_new;
