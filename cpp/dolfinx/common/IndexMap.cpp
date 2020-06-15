@@ -354,6 +354,7 @@ IndexMap::IndexMap(
       MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm1);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm1, false);
 
+  // Map ghost owner rank to rank on neighborhood communicator
   for (int j = 0; j < _ghosts.size(); ++j)
   {
     // Get rank of owner on the neighborhood communicator
@@ -375,6 +376,7 @@ IndexMap::IndexMap(
   }
 
   // TODO: Can be computed on demand?
+  //       Use an adjacency graph?
   auto [fwd_ind, fwd_sizes] = compute_forward_indices(
       _comm_ghost_to_owner.comm(), _ghosts, _ghost_owners);
 
@@ -516,28 +518,6 @@ const std::vector<std::int32_t>& IndexMap::forward_indices() const
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> IndexMap::ghost_owner_rank() const
 {
-  // MPI_Dist_graph_create_adjacent(
-  //     _mpi_comm.comm(), target_ranks.size(), target_ranks.data(),
-  //     MPI_UNWEIGHTED, owner_ranks.size(), owner_ranks.data(), MPI_UNWEIGHTED,
-  //     MPI_INFO_NULL, false, &neighbor_comm0);
-  // _comm_owner_to_ghost = dolfinx::MPI::Comm(neighbor_comm0, false);
-
-  // // Create ghost (sources) -> owner (destinations) communicator
-  // MPI_Comm neighbor_comm1;
-  // MPI_Dist_graph_create_adjacent(
-  //     _mpi_comm.comm(), owner_ranks.size(), owner_ranks.data(),
-  //     MPI_UNWEIGHTED, target_ranks.size(), target_ranks.data(),
-  //     MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm1);
-  // _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm1, false);
-
-  // Create neighborhood communicator. No communication is needed to
-  // build the graph with complete adjacency information
-  // MPI_Comm comm;
-  // MPI_Dist_graph_create_adjacent(
-  //     _mpi_comm.comm(), _halo_dest_ranks.size(), _halo_dest_ranks.data(),
-  //     MPI_UNWEIGHTED, _halo_src_ranks.size(), _halo_src_ranks.data(),
-  //     MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-
   // Get neighbor processes
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
@@ -550,9 +530,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> IndexMap::ghost_owner_rank() const
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> owners(_ghost_owners.size());
   for (int i = 0; i < owners.size(); ++i)
-    owners[i] = neighbors_out[_ghost_owners[i]];
-
-  // MPI_Comm_free(&comm);
+    owners[i] = neighbors_in[_ghost_owners[i]];
 
   return owners;
 }
@@ -587,18 +565,16 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
 {
   std::map<int, std::set<int>> shared_indices;
 
-  MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _halo_src_ranks.size(), _halo_src_ranks.data(),
-      MPI_UNWEIGHTED, _halo_dest_ranks.size(), _halo_dest_ranks.data(),
-      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  // Get number of neighbours
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
+                                 &outdegree, &weighted);
 
   // Get neighbor processes
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
   std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
-  MPI_Dist_graph_neighbors(comm, indegree, neighbors_in.data(), MPI_UNWEIGHTED,
-                           outdegree, neighbors_out.data(), MPI_UNWEIGHTED);
+  MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
+                           neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
+                           neighbors_out.data(), MPI_UNWEIGHTED);
 
   // Get sharing of all owned indices
   for (std::size_t i = 0, c = 0; i < _forward_sizes.size(); ++i)
@@ -634,8 +610,8 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
   }
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_sharing_data
-      = dolfinx::MPI::neighbor_all_to_all(comm, fwd_sharing_offsets,
-                                          fwd_sharing_data)
+      = dolfinx::MPI::neighbor_all_to_all(_comm_owner_to_ghost.comm(),
+                                          fwd_sharing_offsets, fwd_sharing_data)
             .array();
 
   // Add ghost indices and onwers to map
@@ -662,8 +638,6 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
         shared_indices[idx].insert(recv_sharing_data[set_pos + j]);
     i += set_size + 2;
   }
-
-  MPI_Comm_free(&comm);
 
   return shared_indices;
 }
@@ -714,18 +688,17 @@ template <typename T>
 void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
                                 std::vector<T>& remote_data, int n) const
 {
-  MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _halo_src_ranks.size(), _halo_src_ranks.data(),
-      MPI_UNWEIGHTED, _halo_dest_ranks.size(), _halo_dest_ranks.data(),
-      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+
+  // Get number of neighbours
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
+                                 &outdegree, &weighted);
 
   // Get neighbor processes
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
   std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
-  MPI_Dist_graph_neighbors(comm, indegree, neighbors_in.data(), MPI_UNWEIGHTED,
-                           outdegree, neighbors_out.data(), MPI_UNWEIGHTED);
+  MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
+                           neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
+                           neighbors_out.data(), MPI_UNWEIGHTED);
 
   const std::int32_t _size_local = size_local();
   assert((int)local_data.size() == n * _size_local);
@@ -759,10 +732,10 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
 
   // Send/receive data
   std::vector<T> data_to_recv(displs_recv.back());
-  MPI_Neighbor_alltoallv(data_to_send.data(), sizes_send.data(),
-                         displs_send.data(), MPI::mpi_type<T>(),
-                         data_to_recv.data(), sizes_recv.data(),
-                         displs_recv.data(), MPI::mpi_type<T>(), comm);
+  MPI_Neighbor_alltoallv(
+      data_to_send.data(), sizes_send.data(), displs_send.data(),
+      MPI::mpi_type<T>(), data_to_recv.data(), sizes_recv.data(),
+      displs_recv.data(), MPI::mpi_type<T>(), _comm_owner_to_ghost.comm());
 
   // Copy into ghost area ("remote_data")
   std::vector<std::int32_t> displs(displs_recv);
@@ -773,8 +746,6 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
       remote_data[i * n + j] = data_to_recv[displs[np] + j];
     displs[np] += n;
   }
-
-  MPI_Comm_free(&comm);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -785,18 +756,16 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
   assert((std::int32_t)remote_data.size() == n * num_ghosts());
   local_data.resize(n * size_local(), 0);
 
-  MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(_mpi_comm.comm(), _halo_dest_ranks.size(),
-                                 _halo_dest_ranks.data(), MPI_UNWEIGHTED,
-                                 _halo_src_ranks.size(), _halo_src_ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  // Get number of neighbours
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_comm_ghost_to_owner.comm(), &indegree,
+                                 &outdegree, &weighted);
 
   // Get neighbor processes
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
   std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
-  MPI_Dist_graph_neighbors(comm, indegree, neighbors_in.data(), MPI_UNWEIGHTED,
-                           outdegree, neighbors_out.data(), MPI_UNWEIGHTED);
+  MPI_Dist_graph_neighbors(_comm_ghost_to_owner.comm(), indegree,
+                           neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
+                           neighbors_out.data(), MPI_UNWEIGHTED);
 
   // Compute number of items to send to each process
   std::vector<std::int32_t> send_sizes(outdegree, 0);
@@ -829,10 +798,10 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
 
   // Send and receive data
   std::vector<T> recv_data(displs_recv.back());
-  MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
-                         displs_send.data(), MPI::mpi_type<T>(),
-                         recv_data.data(), recv_sizes.data(),
-                         displs_recv.data(), MPI::mpi_type<T>(), comm);
+  MPI_Neighbor_alltoallv(
+      send_data.data(), send_sizes.data(), displs_send.data(),
+      MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
+      displs_recv.data(), MPI::mpi_type<T>(), _comm_ghost_to_owner.comm());
 
   // Copy or accumulate into "local_data"
   if (op == Mode::insert)
@@ -853,7 +822,5 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
         local_data[index * n + j] += recv_data[i * n + j];
     }
   }
-
-  MPI_Comm_free(&comm);
 }
 //-----------------------------------------------------------------------------

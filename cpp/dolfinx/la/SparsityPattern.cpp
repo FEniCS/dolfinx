@@ -317,7 +317,7 @@ void SparsityPattern::assemble()
 
   std::sort(neighbors.begin(), neighbors.end());
   neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                   neighbors.end());
+                  neighbors.end());
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(_mpi_comm.comm(), neighbors.size(),
                                  neighbors.data(), MPI_UNWEIGHTED,
