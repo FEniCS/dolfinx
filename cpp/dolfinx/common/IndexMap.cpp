@@ -306,10 +306,9 @@ IndexMap::IndexMap(
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
         ghosts,
     const std::vector<int>& ghost_src_rank, int block_size)
-    : _block_size(block_size), _mpi_comm(mpi_comm),
-      _comm_owner_to_ghost(MPI_COMM_NULL), _comm_ghost_to_owner(MPI_COMM_NULL),
-      _comm_symmetric(MPI_COMM_NULL), _ghosts(ghosts),
-      _ghost_owners(ghosts.size())
+    : _block_size(block_size), _comm_owner_to_ghost(MPI_COMM_NULL),
+      _comm_ghost_to_owner(MPI_COMM_NULL), _comm_symmetric(MPI_COMM_NULL),
+      _ghosts(ghosts), _ghost_owners(ghosts.size())
 {
   assert(size_t(ghosts.size()) == ghost_src_rank.size());
   assert(ghost_src_rank == get_ghost_ranks(mpi_comm, local_size, _ghosts));
@@ -321,13 +320,13 @@ IndexMap::IndexMap(
   std::int64_t offset = 0;
   const std::int64_t local_size_tmp = (std::int64_t)local_size;
   MPI_Request request_scan;
-  MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM,
-              _mpi_comm.comm(), &request_scan);
+  MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM, mpi_comm,
+              &request_scan);
 
   // Send local size to sum reduction to get global size
   MPI_Request request;
   MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
-                 _mpi_comm.comm(), &request);
+                 mpi_comm, &request);
 
   // Use (i) the (remote) owner ranks for ghosts on this rank to (ii)
   // compute ranks that hold ghosts that this rank owns
@@ -346,7 +345,7 @@ IndexMap::IndexMap(
     std::vector<int> sourceweights(halo_src_ranks.size(), 1);
     std::vector<int> destweights(halo_dest_ranks.size(), 1);
     MPI_Dist_graph_create_adjacent(
-        _mpi_comm.comm(), halo_src_ranks.size(), halo_src_ranks.data(),
+        mpi_comm, halo_src_ranks.size(), halo_src_ranks.data(),
         sourceweights.data(), halo_dest_ranks.size(), halo_dest_ranks.data(),
         destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
     _comm_owner_to_ghost = dolfinx::MPI::Comm(neighbor_comm, false);
@@ -359,7 +358,7 @@ IndexMap::IndexMap(
     std::vector<int> destweights(halo_src_ranks.size(), 1);
 
     MPI_Dist_graph_create_adjacent(
-        _mpi_comm.comm(), halo_dest_ranks.size(), halo_dest_ranks.data(),
+        mpi_comm, halo_dest_ranks.size(), halo_dest_ranks.data(),
         sourceweights.data(), halo_src_ranks.size(), halo_src_ranks.data(),
         destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
     _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm, false);
@@ -379,10 +378,10 @@ IndexMap::IndexMap(
     std::vector<int> sourceweights(neighbors.size(), 1);
     std::vector<int> destweights(neighbors.size(), 1);
     MPI_Comm neighbor_comm;
-    MPI_Dist_graph_create_adjacent(
-        _mpi_comm.comm(), neighbors.size(), neighbors.data(),
-        sourceweights.data(), neighbors.size(), neighbors.data(),
-        destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
+    MPI_Dist_graph_create_adjacent(mpi_comm, neighbors.size(), neighbors.data(),
+                                   sourceweights.data(), neighbors.size(),
+                                   neighbors.data(), destweights.data(),
+                                   MPI_INFO_NULL, false, &neighbor_comm);
     _comm_symmetric = dolfinx::MPI::Comm(neighbor_comm, false);
   }
 
@@ -585,7 +584,7 @@ IndexMap::indices(bool unroll_block) const
   return indx;
 }
 //----------------------------------------------------------------------------
-MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
+MPI_Comm IndexMap::mpi_comm() const { return _comm_symmetric.comm(); }
 //----------------------------------------------------------------------------
 dolfinx::MPI::Comm IndexMap::get_comm(Direction dir) const
 {

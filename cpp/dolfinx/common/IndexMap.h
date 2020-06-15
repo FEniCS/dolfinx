@@ -290,9 +290,6 @@ private:
   // Number indices across communicator
   std::int64_t _size_global;
 
-  // MPI Communicator
-  dolfinx::MPI::Comm _mpi_comm;
-
   // MPI neighbourhood communicators
   dolfinx::MPI::Comm _comm_owner_to_ghost;
   dolfinx::MPI::Comm _comm_ghost_to_owner;
