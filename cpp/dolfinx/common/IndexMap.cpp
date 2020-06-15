@@ -81,6 +81,57 @@ std::vector<int> get_ghost_ranks(
   return ghost_ranks;
 }
 //-----------------------------------------------------------------------------
+std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>>
+compute_forward_indices(
+    MPI_Comm comm, const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts,
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& ghost_src_ranks)
+{
+  auto [neighbors_in, neighbors_out] = dolfinx::MPI::neighbors(comm);
+  assert(ghosts.size() == ghost_src_ranks.size());
+
+  std::vector<int> out_edges_num(neighbors_out.size(), 0);
+  for (int i = 0; i < ghost_src_ranks.size(); ++i)
+  {
+    const int owner_rank = ghost_src_ranks[i];
+    out_edges_num[owner_rank]++;
+  }
+
+  std::vector<int> in_edges_num(neighbors_in.size());
+  MPI_Neighbor_alltoall(out_edges_num.data(), 1, MPI_INT, in_edges_num.data(),
+                        1, MPI_INT, comm);
+
+  std::vector<int> send_disp(neighbors_out.size() + 1, 0);
+  std::vector<int> recv_disp(neighbors_in.size() + 1, 0);
+
+  std::partial_sum(out_edges_num.begin(), out_edges_num.end(),
+                   send_disp.begin() + 1);
+  std::partial_sum(in_edges_num.begin(), in_edges_num.end(),
+                   recv_disp.begin() + 1);
+
+  std::vector<std::int64_t> send_indices(send_disp.back());
+  std::vector<int> insert_disp(send_disp);
+  for (int i = 0; i < ghosts.size(); ++i)
+  {
+    const int owner_rank = ghost_src_ranks[i];
+    send_indices[insert_disp[owner_rank]] = ghosts[i];
+    insert_disp[owner_rank]++;
+  }
+
+  // A rank in the neighborhood communicator can have no incoming or
+  // outcoming edges. This may cause OpenMPI to crash. Workaround:
+  in_edges_num.reserve(1);
+  out_edges_num.reserve(1);
+
+  // May have repeated shared indices with different processes
+  std::vector<std::int64_t> recv_indices(recv_disp.back());
+  MPI_Neighbor_alltoallv(send_indices.data(), out_edges_num.data(),
+                         send_disp.data(), MPI_INT64_T, recv_indices.data(),
+                         in_edges_num.data(), recv_disp.data(), MPI_INT64_T,
+                         comm);
+
+  return {recv_indices, in_edges_num};
+}
+//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -259,6 +310,7 @@ IndexMap::IndexMap(
       _ghost_owners(ghosts.size())
 {
   assert(size_t(ghosts.size()) == ghost_src_rank.size());
+  assert(ghost_src_rank == get_ghost_ranks(mpi_comm, local_size, _ghosts));
 
   int myrank = -1;
   MPI_Comm_rank(mpi_comm, &myrank);
@@ -302,134 +354,39 @@ IndexMap::IndexMap(
       MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm1);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm1, false);
 
-  int mpi_size = -1;
-  MPI_Comm_size(_mpi_comm.comm(), &mpi_size);
-
-  assert(ghost_src_rank == get_ghost_ranks(mpi_comm, local_size, _ghosts));
-
-  // --------------
-
-  // TODO: remove this block
-
-  // FIXME: creating an array of size 'mpi_size' isn't scalable
-  std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
-  for (int i = 0; i < ghosts.size(); ++i)
-  {
-    const int p = ghost_src_rank[i];
-    if (p == myrank)
-    {
-      throw std::runtime_error("IndexMap Error: Ghost in local range. Rank = "
-                               + std::to_string(myrank)
-                               + ", ghost = " + std::to_string(ghosts[i]));
-    }
-    num_edges_out_per_proc[p] += 1;
-  }
-
-  // Send number of outgoing edges (ghost -> owner) to target processes,
-  // and receive number of incoming edges (ghost <- owner) from each
-  // source process
-  std::vector<std::int32_t> num_edges_in_per_proc(mpi_size);
-  MPI_Alltoall(num_edges_out_per_proc.data(), 1, MPI_INT32_T,
-               num_edges_in_per_proc.data(), 1, MPI_INT32_T, _mpi_comm.comm());
-
-  // Store number of out- and in-edges
-  std::vector<std::int32_t> in_edges_num, out_edges_num;
-  for (std::int32_t i = 0; i < mpi_size; ++i)
-  {
-    if (num_edges_out_per_proc[i] > 0)
-      out_edges_num.push_back(num_edges_out_per_proc[i]);
-    if (num_edges_in_per_proc[i] > 0)
-      in_edges_num.push_back(num_edges_in_per_proc[i]);
-  }
-
-  // --------------
-
-
-  // Note: _halo_src_ranks == owner_ranks (ranks that own my ghosts)
-  // Note: _halo_dest_ranks == target_ranks (ranks that ghost my owned
-  // indices)
-  // _halo_src_ranks = owner_ranks;
-  // _halo_dest_ranks = target_ranks;
-
-  // Create owner (sources) -> ghost (destinations) communicator
-
-  // FIXME: is this a symmetric communicator?
-  // Create neighborhood communicator. No communication is needed to
-  // build the graph with complete adjacency information
-
-  // MPI_Comm neighbor_comm;
-  // MPI_Dist_graph_create_adjacent(
-  //     _mpi_comm.comm(), _halo_dest_ranks.size(), _halo_dest_ranks.data(),
-  //     MPI_UNWEIGHTED, _halo_src_ranks.size(), _halo_src_ranks.data(),
-  //     MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
-
-  // Get neighbor processes
-  // int indegree(-1), outdegree(-2), weighted(-1);
-  // MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
-  //                                &outdegree, &weighted);
-
-  // std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
-  // MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
-  //                          neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
-  //                          neighbors_out.data(), MPI_UNWEIGHTED);
-
-  std::vector<int> neighbors_in = _halo_dest_ranks;
-  std::vector<int> neighbors_out = _halo_src_ranks;
-
-  // For each ghost, send its index to the owner rank. The purpose is
-  // such that a rank knows which of its owned indices are ghost on
-  // other ranks
-
-  // Create displacement vectors for XXXXX
-  std::vector<int> send_disp(neighbors_out.size() + 1, 0);
-  std::vector<int> recv_disp(neighbors_in.size() + 1, 0);
-  std::partial_sum(out_edges_num.begin(), out_edges_num.end(),
-                   send_disp.begin() + 1);
-  std::partial_sum(in_edges_num.begin(), in_edges_num.end(),
-                   recv_disp.begin() + 1);
-
-  // For each ghost, get rank of owner on neighborhood communicator
-  // (_comm_owner_to_ghost) for (_ghost_owners), and for each ghost get
-  // its local index on the owning rank
-  std::vector<std::int64_t> send_indices(send_disp.back());
-  std::vector<int> disp(send_disp);
   for (int j = 0; j < _ghosts.size(); ++j)
   {
     // Get rank of owner on the neighborhood communicator
     const int p = ghost_src_rank[j];
-    const auto it = std::find(neighbors_out.begin(), neighbors_out.end(), p);
-    assert(it != neighbors_out.end());
-    const int p_neighbour = std::distance(neighbors_out.begin(), it);
+    const auto it
+        = std::find(_halo_src_ranks.begin(), _halo_src_ranks.end(), p);
+    assert(it != _halo_src_ranks.end());
+    const int p_neighbour = std::distance(_halo_src_ranks.begin(), it);
+
+    if (p == myrank)
+    {
+      throw std::runtime_error("IndexMap Error: Ghost in local range. Rank = "
+                               + std::to_string(myrank)
+                               + ", ghost = " + std::to_string(ghosts[j]));
+    }
 
     // Store owner neighborhood rank for each ghost
     _ghost_owners[j] = p_neighbour;
-
-    // Local on owning process
-    send_indices[disp[p_neighbour]] = _ghosts[j];
-    disp[p_neighbour] += 1;
   }
 
-  // A rank in the neighborhood communicator can have no incoming or
-  // outcoming edges. This may cause OpenMPI to crash. Workaround:
-  in_edges_num.reserve(1);
-  out_edges_num.reserve(1);
-
-  // May have repeated shared indices with different processes
-  std::vector<std::int64_t> recv_indices(recv_disp.back());
-  MPI_Neighbor_alltoallv(send_indices.data(), out_edges_num.data(),
-                         send_disp.data(), MPI_INT64_T, recv_indices.data(),
-                         in_edges_num.data(), recv_disp.data(), MPI_INT64_T,
-                         _comm_owner_to_ghost.comm());
+  // TODO: Can be computed on demand?
+  auto [fwd_ind, fwd_sizes] = compute_forward_indices(
+      _comm_owner_to_ghost.comm(), _ghosts, _ghost_owners);
 
   // Wait for MPI_Iexscan to complete (get offset)
   MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
   _local_range = {offset, offset + local_size};
 
-  _forward_indices.resize(recv_indices.size());
+  _forward_indices.resize(fwd_ind.size());
   for (std::size_t i = 0; i < _forward_indices.size(); ++i)
-    _forward_indices[i] = recv_indices[i] - offset;
+    _forward_indices[i] = fwd_ind[i] - offset;
 
-  _forward_sizes = std::move(in_edges_num);
+  _forward_sizes = std::move(fwd_sizes);
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);

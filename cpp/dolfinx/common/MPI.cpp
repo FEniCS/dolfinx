@@ -139,6 +139,10 @@ int dolfinx::MPI::index_owner(int size, std::size_t index, std::size_t N)
 std::tuple<std::vector<int>, std::vector<int>>
 dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
 {
+  int status;
+  MPI_Topo_test(neighbor_comm, &status);
+  assert(status != MPI_UNDEFINED);
+
   // Get list of neighbours
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
@@ -148,6 +152,7 @@ dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
   MPI_Dist_graph_neighbors(neighbor_comm, indegree, neighbors_in.data(),
                            MPI_UNWEIGHTED, outdegree, neighbors_out.data(),
                            MPI_UNWEIGHTED);
+
   return {neighbors_in, neighbors_out};
 }
 //-----------------------------------------------------------------------------
