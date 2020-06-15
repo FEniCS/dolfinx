@@ -352,7 +352,7 @@ IndexMap::IndexMap(
         _mpi_comm.comm(), _halo_src_ranks.size(), _halo_src_ranks.data(),
         sourceweights.data(), _halo_dest_ranks.size(), _halo_dest_ranks.data(),
         destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
-    _comm_owner_to_ghost = dolfinx::MPI::Comm(neighbor_comm);
+    _comm_owner_to_ghost = dolfinx::MPI::Comm(neighbor_comm, false);
   }
 
   // Create communicator with ghost (sources) -> owner (destinations) edges
@@ -365,7 +365,7 @@ IndexMap::IndexMap(
         _mpi_comm.comm(), _halo_dest_ranks.size(), _halo_dest_ranks.data(),
         sourceweights.data(), _halo_src_ranks.size(), _halo_src_ranks.data(),
         destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
-    _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm);
+    _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm, false);
   }
   // Create communicator two-way edges
   // TODO: Aim to remove? used for compatibility
@@ -386,7 +386,7 @@ IndexMap::IndexMap(
         _mpi_comm.comm(), neighbors.size(), neighbors.data(),
         sourceweights.data(), neighbors.size(), neighbors.data(),
         destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
-    _comm_symmetric = dolfinx::MPI::Comm(neighbor_comm);
+    _comm_symmetric = dolfinx::MPI::Comm(neighbor_comm, false);
   }
 
   // Map ghost owner rank to rank on neighborhood communicator
