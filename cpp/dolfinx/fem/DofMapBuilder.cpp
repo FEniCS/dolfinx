@@ -392,23 +392,11 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     auto map = topology.index_map(d);
     if (map)
     {
-      // Get number of processes in neighborhood
-      auto [fwd_neighbors, rev_neighbors] = map->neighbors();
+      dolfinx::MPI::Comm neighbor_comm
+          = map->get_comm(common::IndexMap::Direction::two_way);
+      MPI_Comm_dup(neighbor_comm.comm(), &comm[d]);
 
-      std::vector<int> neighbors;
-      std::set_union(fwd_neighbors.begin(), fwd_neighbors.end(),
-                     rev_neighbors.begin(), rev_neighbors.end(),
-                     std::back_inserter(neighbors));
-
-      std::sort(neighbors.begin(), neighbors.end());
-      neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                      neighbors.end());
-
-      MPI_Dist_graph_create_adjacent(
-          map->mpi_comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
-          neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-          false, &comm[d]);
-
+      // Get number of neighbours
       int indegree(-1), outdegree(-2), weighted(-1);
       MPI_Dist_graph_neighbors_count(comm[d], &indegree, &outdegree, &weighted);
 

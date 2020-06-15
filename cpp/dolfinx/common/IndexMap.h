@@ -132,7 +132,7 @@ public:
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  MPI_Comm get_comm(Direction dir) const;
+  dolfinx::MPI::Comm get_comm(Direction dir) const;
 
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices

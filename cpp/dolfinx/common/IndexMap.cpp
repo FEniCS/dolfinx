@@ -344,22 +344,29 @@ IndexMap::IndexMap(
 
   // Create communicator with owner (sources) -> ghost (destinations)
   // edges
-  MPI_Comm neighbor_comm0;
-  MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _halo_src_ranks.size(), _halo_src_ranks.data(),
-      MPI_UNWEIGHTED, _halo_dest_ranks.size(), _halo_dest_ranks.data(),
-      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm0);
-  _comm_owner_to_ghost = dolfinx::MPI::Comm(neighbor_comm0, false);
+  {
+    MPI_Comm neighbor_comm;
+    std::vector<int> sourceweights(_halo_src_ranks.size(), 1);
+    std::vector<int> destweights(_halo_dest_ranks.size(), 1);
+    MPI_Dist_graph_create_adjacent(
+        _mpi_comm.comm(), _halo_src_ranks.size(), _halo_src_ranks.data(),
+        sourceweights.data(), _halo_dest_ranks.size(), _halo_dest_ranks.data(),
+        destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
+    _comm_owner_to_ghost = dolfinx::MPI::Comm(neighbor_comm);
+  }
 
-  // Create communicator with ghost (sources) -> owner (destinations)
-  // edges
-  MPI_Comm neighbor_comm1;
-  MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _halo_dest_ranks.size(), _halo_dest_ranks.data(),
-      MPI_UNWEIGHTED, _halo_src_ranks.size(), _halo_src_ranks.data(),
-      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm1);
-  _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm1, false);
+  // Create communicator with ghost (sources) -> owner (destinations) edges
+  {
+    MPI_Comm neighbor_comm;
+    std::vector<int> sourceweights(_halo_dest_ranks.size(), 1);
+    std::vector<int> destweights(_halo_src_ranks.size(), 1);
 
+    MPI_Dist_graph_create_adjacent(
+        _mpi_comm.comm(), _halo_dest_ranks.size(), _halo_dest_ranks.data(),
+        sourceweights.data(), _halo_src_ranks.size(), _halo_src_ranks.data(),
+        destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
+    _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm);
+  }
   // Create communicator two-way edges
   // TODO: Aim to remove? used for compatibility
   std::vector<int> neighbors;
@@ -371,12 +378,16 @@ IndexMap::IndexMap(
   neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
                   neighbors.end());
 
-  MPI_Comm neighbor_comm2;
-  MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
-      neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
-      &neighbor_comm2);
-  _comm_symmetric = dolfinx::MPI::Comm(neighbor_comm2, false);
+  {
+    std::vector<int> sourceweights(neighbors.size(), 1);
+    std::vector<int> destweights(neighbors.size(), 1);
+    MPI_Comm neighbor_comm;
+    MPI_Dist_graph_create_adjacent(
+        _mpi_comm.comm(), neighbors.size(), neighbors.data(),
+        sourceweights.data(), neighbors.size(), neighbors.data(),
+        destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
+    _comm_symmetric = dolfinx::MPI::Comm(neighbor_comm);
+  }
 
   // Map ghost owner rank to rank on neighborhood communicator
   for (int j = 0; j < _ghosts.size(); ++j)
@@ -585,14 +596,14 @@ std::array<std::vector<int>, 2> IndexMap::neighbors() const
   return {_halo_src_ranks, _halo_dest_ranks};
 }
 //----------------------------------------------------------------------------
-MPI_Comm IndexMap::get_comm(Direction dir) const
+dolfinx::MPI::Comm IndexMap::get_comm(Direction dir) const
 {
   if (dir == Direction::ghost_to_owner)
-    return _comm_ghost_to_owner.comm();
-  else if (dir == Direction::ghost_to_owner)
-    return _comm_owner_to_ghost.comm();
+    return _comm_ghost_to_owner;
+  else if (dir == Direction::onwer_to_ghost)
+    return _comm_owner_to_ghost;
   else
-    return _comm_symmetric.comm();
+    return _comm_symmetric;
 }
 //----------------------------------------------------------------------------
 std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
