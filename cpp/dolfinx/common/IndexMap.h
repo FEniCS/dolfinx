@@ -202,14 +202,6 @@ public:
   /// @return The communicator on which the IndexMap is defined
   MPI_Comm mpi_comm() const;
 
-  /// @todo Remove this function. If not, improve documentation
-  ///
-  /// Neighbors for neighborhood communicator
-  /// @returns [0] Ranks of neighbours that own indices that are ghosts
-  ///   on this rank and [1] ranks of neighbours that have ghost indices
-  ///   that this rank owns
-  std::array<std::vector<int>, 2> neighbors() const;
-
   /// @todo Aim to remove this function? If it's kept, should it work
   /// with neighborhood ranks?
   ///
@@ -312,16 +304,6 @@ private:
   // Owning rank on '_comm_owner_to_ghost' neighborhood communicator for
   // each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
-
-  // --> Remove
-  // Ranks (on full communicator) that own indices that are ghosts on
-  // this rank
-  std::vector<std::int32_t> _halo_src_ranks;
-
-  // Ranks (on full communicator) that have ghost indices that are owned
-  // by this rank
-  std::vector<std::int32_t> _halo_dest_ranks;
-  // <-- Remove
 
   // Number of indices to send to each neighbor process (ghost ->
   // owner, i.e. forward mode scatter)

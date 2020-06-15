@@ -184,15 +184,11 @@ common::stack_index_maps(
   std::set<std::int32_t> in_neighbor_set, out_neighbor_set;
   for (const common::IndexMap& map : maps)
   {
-    auto [fwd_neighbors, rev_neighbors] = map.neighbors();
-    in_neighbor_set.insert(fwd_neighbors.begin(), fwd_neighbors.end());
-    out_neighbor_set.insert(rev_neighbors.begin(), rev_neighbors.end());
-    // MPI_Comm neighbor_comm
-    //     = map.get_comm(common::IndexMap::Direction::onwer_to_ghost);
-    // auto [source, dest] = dolfinx::MPI::neighbors(neighbor_comm);
-    // in_neighbor_set.insert(source.begin(), source.end());
-    // out_neighbor_set.insert(dest.begin(), dest.end());
-    // MPI_Comm_free(&neighbor_comm);
+    dolfinx::MPI::Comm neighbor_comm
+        = map.get_comm(common::IndexMap::Direction::onwer_to_ghost);
+    auto [source, dest] = dolfinx::MPI::neighbors(neighbor_comm.comm());
+    in_neighbor_set.insert(source.begin(), source.end());
+    out_neighbor_set.insert(dest.begin(), dest.end());
   }
 
   const std::vector<int> in_neighbors(in_neighbor_set.begin(),
@@ -337,20 +333,21 @@ IndexMap::IndexMap(
   // compute ranks that hold ghosts that this rank owns
   const std::set<int> owner_ranks_set(ghost_src_rank.begin(),
                                       ghost_src_rank.end());
-  _halo_dest_ranks = compute_source_ranks(mpi_comm, owner_ranks_set);
-  std::sort(_halo_dest_ranks.begin(), _halo_dest_ranks.end());
-  _halo_src_ranks
+  std::vector<std::int32_t> halo_dest_ranks
+      = compute_source_ranks(mpi_comm, owner_ranks_set);
+  std::sort(halo_dest_ranks.begin(), halo_dest_ranks.end());
+  std::vector<std::int32_t> halo_src_ranks
       = std::vector<int>(owner_ranks_set.begin(), owner_ranks_set.end());
 
   // Create communicator with owner (sources) -> ghost (destinations)
   // edges
   {
     MPI_Comm neighbor_comm;
-    std::vector<int> sourceweights(_halo_src_ranks.size(), 1);
-    std::vector<int> destweights(_halo_dest_ranks.size(), 1);
+    std::vector<int> sourceweights(halo_src_ranks.size(), 1);
+    std::vector<int> destweights(halo_dest_ranks.size(), 1);
     MPI_Dist_graph_create_adjacent(
-        _mpi_comm.comm(), _halo_src_ranks.size(), _halo_src_ranks.data(),
-        sourceweights.data(), _halo_dest_ranks.size(), _halo_dest_ranks.data(),
+        _mpi_comm.comm(), halo_src_ranks.size(), halo_src_ranks.data(),
+        sourceweights.data(), halo_dest_ranks.size(), halo_dest_ranks.data(),
         destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
     _comm_owner_to_ghost = dolfinx::MPI::Comm(neighbor_comm, false);
   }
@@ -358,20 +355,20 @@ IndexMap::IndexMap(
   // Create communicator with ghost (sources) -> owner (destinations) edges
   {
     MPI_Comm neighbor_comm;
-    std::vector<int> sourceweights(_halo_dest_ranks.size(), 1);
-    std::vector<int> destweights(_halo_src_ranks.size(), 1);
+    std::vector<int> sourceweights(halo_dest_ranks.size(), 1);
+    std::vector<int> destweights(halo_src_ranks.size(), 1);
 
     MPI_Dist_graph_create_adjacent(
-        _mpi_comm.comm(), _halo_dest_ranks.size(), _halo_dest_ranks.data(),
-        sourceweights.data(), _halo_src_ranks.size(), _halo_src_ranks.data(),
+        _mpi_comm.comm(), halo_dest_ranks.size(), halo_dest_ranks.data(),
+        sourceweights.data(), halo_src_ranks.size(), halo_src_ranks.data(),
         destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
     _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm, false);
   }
   // Create communicator two-way edges
   // TODO: Aim to remove? used for compatibility
   std::vector<int> neighbors;
-  std::set_union(_halo_dest_ranks.begin(), _halo_dest_ranks.end(),
-                 _halo_src_ranks.begin(), _halo_src_ranks.end(),
+  std::set_union(halo_dest_ranks.begin(), halo_dest_ranks.end(),
+                 halo_src_ranks.begin(), halo_src_ranks.end(),
                  std::back_inserter(neighbors));
 
   std::sort(neighbors.begin(), neighbors.end());
@@ -394,10 +391,9 @@ IndexMap::IndexMap(
   {
     // Get rank of owner on the neighborhood communicator
     const int p = ghost_src_rank[j];
-    const auto it
-        = std::find(_halo_src_ranks.begin(), _halo_src_ranks.end(), p);
-    assert(it != _halo_src_ranks.end());
-    const int p_neighbour = std::distance(_halo_src_ranks.begin(), it);
+    const auto it = std::find(halo_src_ranks.begin(), halo_src_ranks.end(), p);
+    assert(it != halo_src_ranks.end());
+    const int p_neighbour = std::distance(halo_src_ranks.begin(), it);
 
     if (p == myrank)
     {
@@ -590,11 +586,6 @@ IndexMap::indices(bool unroll_block) const
 }
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
-//----------------------------------------------------------------------------
-std::array<std::vector<int>, 2> IndexMap::neighbors() const
-{
-  return {_halo_src_ranks, _halo_dest_ranks};
-}
 //----------------------------------------------------------------------------
 dolfinx::MPI::Comm IndexMap::get_comm(Direction dir) const
 {
