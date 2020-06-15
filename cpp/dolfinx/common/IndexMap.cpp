@@ -81,6 +81,8 @@ std::vector<int> get_ghost_ranks(
   return ghost_ranks;
 }
 //-----------------------------------------------------------------------------
+// Compute (owned) indices shared with neighbor processes using global
+// numbering
 std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>>
 compute_forward_indices(
     MPI_Comm comm, const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts,
@@ -273,8 +275,6 @@ IndexMap::compute_source_ranks(MPI_Comm comm, const std::set<int>& destinations)
   // Get number of neighbours
   int indegree(-1), outdegree(-1), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm_graph, &indegree, &outdegree, &weighted);
-  // std::cout << "Rank, in/out: " << my_rank << ", " << indegree << ", "
-  //           << outdegree << std::endl;
 
   std::vector<int> _sources(indegree), _destinations(outdegree);
   MPI_Dist_graph_neighbors(comm_graph, indegree, _sources.data(),
@@ -340,8 +340,8 @@ IndexMap::IndexMap(
   // edges
   MPI_Comm neighbor_comm0;
   MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _halo_dest_ranks.size(), _halo_dest_ranks.data(),
-      MPI_UNWEIGHTED, _halo_src_ranks.size(), _halo_src_ranks.data(),
+      _mpi_comm.comm(), _halo_src_ranks.size(), _halo_src_ranks.data(),
+      MPI_UNWEIGHTED, _halo_dest_ranks.size(), _halo_dest_ranks.data(),
       MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm0);
   _comm_owner_to_ghost = dolfinx::MPI::Comm(neighbor_comm0, false);
 
@@ -349,8 +349,8 @@ IndexMap::IndexMap(
   // edges
   MPI_Comm neighbor_comm1;
   MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), _halo_src_ranks.size(), _halo_src_ranks.data(),
-      MPI_UNWEIGHTED, _halo_dest_ranks.size(), _halo_dest_ranks.data(),
+      _mpi_comm.comm(), _halo_dest_ranks.size(), _halo_dest_ranks.data(),
+      MPI_UNWEIGHTED, _halo_src_ranks.size(), _halo_src_ranks.data(),
       MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm1);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm1, false);
 
@@ -376,7 +376,7 @@ IndexMap::IndexMap(
 
   // TODO: Can be computed on demand?
   auto [fwd_ind, fwd_sizes] = compute_forward_indices(
-      _comm_owner_to_ghost.comm(), _ghosts, _ghost_owners);
+      _comm_ghost_to_owner.comm(), _ghosts, _ghost_owners);
 
   // Wait for MPI_Iexscan to complete (get offset)
   MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
