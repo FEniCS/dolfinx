@@ -81,8 +81,7 @@ std::vector<int> get_ghost_ranks(
   return ghost_ranks;
 }
 //-----------------------------------------------------------------------------
-// Compute (owned) indices shared with neighbor processes using global
-// numbering
+// Compute (owned) global indices shared with neighbor processes
 std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>>
 compute_forward_indices(
     MPI_Comm comm, const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts,
@@ -132,6 +131,58 @@ compute_forward_indices(
                          comm);
 
   return {recv_indices, in_edges_num};
+}
+//-----------------------------------------------------------------------------
+std::array<MPI_Comm, 3>
+compute_asymmetric_communicators(MPI_Comm mpi_comm,
+                                 std::vector<std::int32_t>& halo_src_ranks,
+                                 std::vector<std::int32_t>& halo_dest_ranks)
+{
+  std::array<MPI_Comm, 3> comm{MPI_COMM_NULL, MPI_COMM_NULL, MPI_COMM_NULL};
+
+  // Create communicator with owner (sources) -> ghost (destinations)
+  // edges
+  {
+    std::vector<int> sourceweights(halo_src_ranks.size(), 1);
+    std::vector<int> destweights(halo_dest_ranks.size(), 1);
+    MPI_Dist_graph_create_adjacent(
+        mpi_comm, halo_src_ranks.size(), halo_src_ranks.data(),
+        sourceweights.data(), halo_dest_ranks.size(), halo_dest_ranks.data(),
+        destweights.data(), MPI_INFO_NULL, false, &comm[0]);
+  }
+
+  // Create communicator with ghost (sources) -> owner (destinations) edges
+  {
+    std::vector<int> sourceweights(halo_dest_ranks.size(), 1);
+    std::vector<int> destweights(halo_src_ranks.size(), 1);
+
+    MPI_Dist_graph_create_adjacent(
+        mpi_comm, halo_dest_ranks.size(), halo_dest_ranks.data(),
+        sourceweights.data(), halo_src_ranks.size(), halo_src_ranks.data(),
+        destweights.data(), MPI_INFO_NULL, false, &comm[1]);
+  }
+
+  // Create communicator two-way edges
+  // TODO: Aim to remove? used for compatibility
+  std::vector<int> neighbors;
+  std::set_union(halo_dest_ranks.begin(), halo_dest_ranks.end(),
+                 halo_src_ranks.begin(), halo_src_ranks.end(),
+                 std::back_inserter(neighbors));
+
+  std::sort(neighbors.begin(), neighbors.end());
+  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
+                  neighbors.end());
+
+  {
+    std::vector<int> sourceweights(neighbors.size(), 1);
+    std::vector<int> destweights(neighbors.size(), 1);
+    MPI_Dist_graph_create_adjacent(mpi_comm, neighbors.size(), neighbors.data(),
+                                   sourceweights.data(), neighbors.size(),
+                                   neighbors.data(), destweights.data(),
+                                   MPI_INFO_NULL, false, &comm[2]);
+  }
+
+  return comm;
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -338,53 +389,6 @@ IndexMap::IndexMap(
   std::vector<std::int32_t> halo_src_ranks
       = std::vector<int>(owner_ranks_set.begin(), owner_ranks_set.end());
 
-  // Create communicator with owner (sources) -> ghost (destinations)
-  // edges
-  {
-    MPI_Comm neighbor_comm;
-    std::vector<int> sourceweights(halo_src_ranks.size(), 1);
-    std::vector<int> destweights(halo_dest_ranks.size(), 1);
-    MPI_Dist_graph_create_adjacent(
-        mpi_comm, halo_src_ranks.size(), halo_src_ranks.data(),
-        sourceweights.data(), halo_dest_ranks.size(), halo_dest_ranks.data(),
-        destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
-    _comm_owner_to_ghost = dolfinx::MPI::Comm(neighbor_comm, false);
-  }
-
-  // Create communicator with ghost (sources) -> owner (destinations) edges
-  {
-    MPI_Comm neighbor_comm;
-    std::vector<int> sourceweights(halo_dest_ranks.size(), 1);
-    std::vector<int> destweights(halo_src_ranks.size(), 1);
-
-    MPI_Dist_graph_create_adjacent(
-        mpi_comm, halo_dest_ranks.size(), halo_dest_ranks.data(),
-        sourceweights.data(), halo_src_ranks.size(), halo_src_ranks.data(),
-        destweights.data(), MPI_INFO_NULL, false, &neighbor_comm);
-    _comm_ghost_to_owner = dolfinx::MPI::Comm(neighbor_comm, false);
-  }
-  // Create communicator two-way edges
-  // TODO: Aim to remove? used for compatibility
-  std::vector<int> neighbors;
-  std::set_union(halo_dest_ranks.begin(), halo_dest_ranks.end(),
-                 halo_src_ranks.begin(), halo_src_ranks.end(),
-                 std::back_inserter(neighbors));
-
-  std::sort(neighbors.begin(), neighbors.end());
-  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                  neighbors.end());
-
-  {
-    std::vector<int> sourceweights(neighbors.size(), 1);
-    std::vector<int> destweights(neighbors.size(), 1);
-    MPI_Comm neighbor_comm;
-    MPI_Dist_graph_create_adjacent(mpi_comm, neighbors.size(), neighbors.data(),
-                                   sourceweights.data(), neighbors.size(),
-                                   neighbors.data(), destweights.data(),
-                                   MPI_INFO_NULL, false, &neighbor_comm);
-    _comm_symmetric = dolfinx::MPI::Comm(neighbor_comm, false);
-  }
-
   // Map ghost owner rank to rank on neighborhood communicator
   for (int j = 0; j < _ghosts.size(); ++j)
   {
@@ -405,8 +409,15 @@ IndexMap::IndexMap(
     _ghost_owners[j] = p_neighbour;
   }
 
-  // TODO: Can be computed on demand?
-  //       Use an adjacency graph?
+  // Initialize communicators with directional edges:
+  // (0) owner -> ghost, (1) ghost -> onwer, (2) two-way
+  std::array<MPI_Comm, 3> comm_array = compute_asymmetric_communicators(
+      mpi_comm, halo_src_ranks, halo_dest_ranks);
+  _comm_owner_to_ghost = dolfinx::MPI::Comm(comm_array[0], false);
+  _comm_ghost_to_owner = dolfinx::MPI::Comm(comm_array[1], false);
+  _comm_symmetric = dolfinx::MPI::Comm(comm_array[2], false);
+
+  // Compute onwed forward  (forward) indices
   auto [fwd_ind, fwd_sizes] = compute_forward_indices(
       _comm_ghost_to_owner.comm(), _ghosts, _ghost_owners);
 
