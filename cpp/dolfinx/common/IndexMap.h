@@ -118,8 +118,11 @@ public:
   /// range)
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts() const;
 
-  /// Local-to-global map for ghosts (local indexing beyond end of local
-  /// range)
+  /// Return a MPI communicator with atached distributed graph topology
+  /// information
+  /// @param[in] dir Edge direction of communicator (forward, reverse,
+  /// symmetric)
+  /// @return A neighborhood communicator for the specified edge direction
   MPI_Comm comm(Direction dir = Direction::symmetric) const;
 
   /// Compute global indices for array of local indices
