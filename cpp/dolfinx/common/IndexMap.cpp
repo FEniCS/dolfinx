@@ -578,9 +578,6 @@ MPI_Comm IndexMap::comm(Direction dir) const
     return _comm_owner_to_ghost.comm();
   case Direction::symmetric:
     return _comm_symmetric.comm();
-  default:
-    throw std::runtime_error(
-        "Unknown edge direction for neighborhood communicator.");
   }
 }
 //----------------------------------------------------------------------------

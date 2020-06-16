@@ -56,7 +56,7 @@ public:
   {
     reverse,  // Ghost to owner
     forward,  // Owner to ghost
-    symmetric // Symmetric
+    symmetric // Symmetric. NOTE: To be removed
   };
 
   /// Create an index map with local_size owned blocks on this process, and
@@ -81,14 +81,14 @@ public:
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] ghost_owner_rank Owner rank (on global communicator) of
+  /// @param[in] ghost_src_rank Owner rank (on global communicator) of
   ///   each ghost entry
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(
       MPI_Comm mpi_comm, std::int32_t local_size,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
           ghosts,
-      const std::vector<int>& ghost_owner_rank, int block_size);
+      const std::vector<int>& ghost_src_rank, int block_size);
 
   /// Copy constructor
   IndexMap(const IndexMap& map) = delete;
