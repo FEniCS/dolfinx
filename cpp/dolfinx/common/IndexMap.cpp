@@ -147,8 +147,8 @@ compute_asymmetric_communicators(MPI_Comm comm,
 {
   std::array<MPI_Comm, 3> comms{MPI_COMM_NULL, MPI_COMM_NULL, MPI_COMM_NULL};
 
-  // Create communicator owner (sources) -> ghost (destinations)
-  // edges
+  // Create communicator with edges owner (sources) -> ghost
+  // (destinations)
   {
     std::vector<int> sourceweights(halo_src_ranks.size(), 1);
     std::vector<int> destweights(halo_dest_ranks.size(), 1);
@@ -158,11 +158,11 @@ compute_asymmetric_communicators(MPI_Comm comm,
         destweights.data(), MPI_INFO_NULL, false, &comms[0]);
   }
 
-  // Create communicator with ghost (sources) -> owner (destinations) edges
+  // Create communicator with edges ghost (sources) -> owner
+  // (destinations)
   {
     std::vector<int> sourceweights(halo_dest_ranks.size(), 1);
     std::vector<int> destweights(halo_src_ranks.size(), 1);
-
     MPI_Dist_graph_create_adjacent(
         comm, halo_dest_ranks.size(), halo_dest_ranks.data(),
         sourceweights.data(), halo_src_ranks.size(), halo_src_ranks.data(),
@@ -241,9 +241,8 @@ common::stack_index_maps(
   std::set<std::int32_t> in_neighbor_set, out_neighbor_set;
   for (const common::IndexMap& map : maps)
   {
-    dolfinx::MPI::Comm neighbor_comm
-        = map.get_comm(common::IndexMap::Direction::owner_to_ghost);
-    auto [source, dest] = dolfinx::MPI::neighbors(neighbor_comm.comm());
+    MPI_Comm neighbor_comm = map.get_comm(IndexMap::Direction::forward);
+    auto [source, dest] = dolfinx::MPI::neighbors(neighbor_comm);
     in_neighbor_set.insert(source.begin(), source.end());
     out_neighbor_set.insert(dest.begin(), dest.end());
   }
@@ -255,10 +254,10 @@ common::stack_index_maps(
 
   // Create neighborhood communicator
   MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(
-      maps.at(0).get().mpi_comm(), in_neighbors.size(), in_neighbors.data(),
-      MPI_UNWEIGHTED, out_neighbors.size(), out_neighbors.data(),
-      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  MPI_Dist_graph_create_adjacent(maps.at(0).get().comm(), in_neighbors.size(),
+                                 in_neighbors.data(), MPI_UNWEIGHTED,
+                                 out_neighbors.size(), out_neighbors.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
@@ -399,8 +398,8 @@ IndexMap::IndexMap(
   _ghost_owners.resize(ghosts.size());
   for (int j = 0; j < _ghosts.size(); ++j)
   {
-    // FIXME: add which communicator
-    // Get rank of owner on the neighborhood communicator
+    // Get rank of owner on the neighborhood communicator (rank of out
+    // edge on _comm_owner_to_ghost)
     const auto it = std::find(halo_src_ranks.begin(), halo_src_ranks.end(),
                               ghost_src_rank[j]);
     assert(it != halo_src_ranks.end());
@@ -594,24 +593,25 @@ IndexMap::indices(bool unroll_block) const
                                                      + num_ghosts() * bs);
   std::iota(indx.data(), indx.data() + size_local, bs * local_range[0]);
   for (Eigen::Index i = 0; i < num_ghosts(); ++i)
-  {
     for (Eigen::Index j = 0; j < bs; ++j)
       indx[size_local + bs * i + j] = bs * _ghosts[i] + j;
-  }
 
   return indx;
 }
 //----------------------------------------------------------------------------
-MPI_Comm IndexMap::mpi_comm() const { return _comm_symmetric.comm(); }
+MPI_Comm IndexMap::comm() const { return _comm_symmetric.comm(); }
 //----------------------------------------------------------------------------
-dolfinx::MPI::Comm IndexMap::get_comm(Direction dir) const
+MPI_Comm IndexMap::get_comm(Direction dir) const
 {
-  if (dir == Direction::ghost_to_owner)
-    return _comm_ghost_to_owner;
-  else if (dir == Direction::owner_to_ghost)
-    return _comm_owner_to_ghost;
-  else
-    return _comm_symmetric;
+  switch (dir)
+  {
+  case Direction::reverse:
+    return _comm_ghost_to_owner.comm();
+  case Direction::forward:
+    return _comm_owner_to_ghost.comm();
+  case Direction::two_way:
+    return _comm_symmetric.comm();
+  }
 }
 //----------------------------------------------------------------------------
 std::map<int, std::set<int>> IndexMap::compute_shared_indices() const

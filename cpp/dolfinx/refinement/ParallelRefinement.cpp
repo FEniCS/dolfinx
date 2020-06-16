@@ -372,11 +372,11 @@ std::vector<std::int64_t> ParallelRefinement::adjust_indices(
   // of "index_map", and adjust existing indices to match.
 
   // Get number of new indices on all processes
-  int mpi_size = dolfinx::MPI::size(index_map->mpi_comm());
-  int mpi_rank = dolfinx::MPI::rank(index_map->mpi_comm());
+  int mpi_size = dolfinx::MPI::size(index_map->comm());
+  int mpi_rank = dolfinx::MPI::rank(index_map->comm());
   std::vector<std::int32_t> recvn(mpi_size);
   MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T,
-                index_map->mpi_comm());
+                index_map->comm());
   std::vector<std::int64_t> global_offsets = {0};
   for (std::int32_t r : recvn)
     global_offsets.push_back(global_offsets.back() + r);

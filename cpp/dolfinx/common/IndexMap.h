@@ -65,9 +65,9 @@ public:
   /// Edge directions of neighborhood communicator
   enum class Direction
   {
-    ghost_to_owner,
-    owner_to_ghost,
-    two_way // symmetric
+    reverse, // Ghost to owner
+    forward, // Owner to ghost
+    two_way  // Symmetric
   };
 
   /// Create an index map with local_size owned blocks on this process, and
@@ -131,7 +131,7 @@ public:
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  dolfinx::MPI::Comm get_comm(Direction dir) const;
+  MPI_Comm get_comm(Direction dir) const;
 
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
@@ -199,7 +199,7 @@ public:
 
   /// Return MPI communicator
   /// @return The communicator on which the IndexMap is defined
-  MPI_Comm mpi_comm() const;
+  MPI_Comm comm() const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
   /// with neighborhood ranks?
@@ -249,7 +249,8 @@ public:
   scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const;
 
   /// Send n values for each index that is owned to processes that have
-  /// the index as a ghost.
+  /// the index as a ghost
+  ///
   /// @param[in] local_data Local data associated with each owned local
   ///   index to be sent to process where the data is ghosted. Size must
   ///   be n * size_local().
@@ -259,7 +260,8 @@ public:
   std::vector<std::int32_t>
   scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const;
 
-  /// Send n values for each ghost index to owning to the process.
+  /// Send n values for each ghost index to owning to the process
+  ///
   /// @param[in,out] local_data Local data associated with each owned
   ///   local index to be sent to process where the data is ghosted.
   ///   Size must be n * size_local().
@@ -271,7 +273,8 @@ public:
                    const std::vector<std::int64_t>& remote_data, int n,
                    IndexMap::Mode op) const;
 
-  /// Send n values for each ghost index to owning to the process.
+  /// Send n values for each ghost index to owning to the process
+  ///
   /// @param[in,out] local_data Local data associated with each owned
   ///   local index to be sent to process where the data is ghosted.
   ///   Size must be n * size_local().
@@ -300,15 +303,16 @@ private:
   // Local-to-global map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 
-  // Owning rank on '_comm_owner_to_ghost' neighborhood communicator for
-  // each ghost index
+  // Owning neighborhood rank (out edge) on '_comm_owner_to_ghost'
+  // communicator for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
-  // Number of indices to send to each neighbor process (ghost ->
-  // owner, i.e. forward mode scatter)
+  // Number of owned indices to send to each outgoing (rank) edge on
+  // _comm_owner_to_ghost when scattering owner -> ghosts
   std::vector<std::int32_t> _forward_sizes;
 
-  // "Owned" local indices shared with neighbor processes
+  // Owned local indices that are in the halo (ghost) region on other
+  // ranks
   std::vector<std::int32_t> _forward_indices;
 
   template <typename T>

@@ -392,9 +392,10 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     auto map = topology.index_map(d);
     if (map)
     {
-      dolfinx::MPI::Comm neighbor_comm
+      // FIXME: Why is the comm being duplicated?
+      MPI_Comm neighbor_comm
           = map->get_comm(common::IndexMap::Direction::two_way);
-      MPI_Comm_dup(neighbor_comm.comm(), &comm[d]);
+      MPI_Comm_dup(neighbor_comm, &comm[d]);
 
       // Get number of neighbours
       int indegree(-1), outdegree(-2), weighted(-1);
@@ -447,11 +448,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
     d = requests_dim[idx];
 
-    dolfinx::MPI::Comm neighbor_comm
+    MPI_Comm neighbor_comm
         = topology.index_map(d)->get_comm(common::IndexMap::Direction::two_way);
-    auto [neighbors, neighbors1]
-        = dolfinx::MPI::neighbors(neighbor_comm.comm());
-
+    auto [neighbors, neighbors1] = dolfinx::MPI::neighbors(neighbor_comm);
     assert(neighbors == neighbors1);
 
     // Build (global old, global new) map for dofs of dimension d

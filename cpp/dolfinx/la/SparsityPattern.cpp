@@ -307,10 +307,11 @@ void SparsityPattern::assemble()
     }
   }
 
-  dolfinx::MPI::Comm neighbor_comm
+  // FIXME: Why is the comm being duplicated?
+  MPI_Comm neighbor_comm
       = _index_maps[0]->get_comm(common::IndexMap::Direction::two_way);
   MPI_Comm comm;
-  MPI_Comm_dup(neighbor_comm.comm(), &comm);
+  MPI_Comm_dup(neighbor_comm, &comm);
 
   int num_neighbors(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
