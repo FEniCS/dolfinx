@@ -307,10 +307,7 @@ void SparsityPattern::assemble()
     }
   }
 
-  // FIXME: Why is the comm being duplicated?
-  MPI_Comm comm
-      = _index_maps[0]->get_comm(common::IndexMap::Direction::two_way);
-
+  MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::symmetric);
   int num_neighbors(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
   assert(num_neighbors == outdegree);

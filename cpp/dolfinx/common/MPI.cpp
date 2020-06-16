@@ -136,6 +136,38 @@ int dolfinx::MPI::index_owner(int size, std::size_t index, std::size_t N)
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------
+std::vector<int>
+dolfinx::MPI::compute_source_ranks(MPI_Comm comm,
+                                   const std::set<int>& destinations)
+{
+  std::vector<int> dest(destinations.begin(), destinations.end());
+  const int degrees = dest.size();
+  if (dest.empty())
+    dest.push_back(0);
+
+  // Create graph communicator
+  int my_rank = -1;
+  MPI_Comm_rank(comm, &my_rank);
+  MPI_Comm comm_graph;
+  MPI_Dist_graph_create(comm, 1, &my_rank, &degrees, dest.data(),
+                        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm_graph);
+
+  // Get number of neighbours
+  int indegree(-1), outdegree(-1), weighted(-1);
+  MPI_Dist_graph_neighbors_count(comm_graph, &indegree, &outdegree, &weighted);
+
+  std::vector<int> _sources(indegree), _destinations(outdegree);
+  MPI_Dist_graph_neighbors(comm_graph, indegree, _sources.data(),
+                           MPI_UNWEIGHTED, outdegree, _destinations.data(),
+                           MPI_UNWEIGHTED);
+  assert(destinations
+         == std::set<int>(_destinations.begin(), _destinations.end()));
+
+  MPI_Comm_free(&comm_graph);
+
+  return _sources;
+}
+//-----------------------------------------------------------------------------
 std::tuple<std::vector<int>, std::vector<int>>
 dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
 {

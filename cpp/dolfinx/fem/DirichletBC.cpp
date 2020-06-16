@@ -38,7 +38,7 @@ std::vector<std::int32_t>
 get_remote_bcs1(const common::IndexMap& map,
                 const std::vector<std::int32_t>& dofs_local)
 {
-  MPI_Comm comm = map.get_comm(common::IndexMap::Direction::two_way);
+  MPI_Comm comm = map.comm(common::IndexMap::Direction::symmetric);
 
   // Get number of processes in neighborhood
   int num_neighbors(-1), outdegree(-2), weighted(-1);
@@ -99,8 +99,7 @@ std::vector<std::array<std::int32_t, 2>>
 get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
 {
-  // FIXME: Why is the comm being duplicated?
-  MPI_Comm comm0 = map0.get_comm(common::IndexMap::Direction::two_way);
+  MPI_Comm comm0 = map0.comm(common::IndexMap::Direction::symmetric);
 
   int num_neighbors(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm0, &num_neighbors, &outdegree, &weighted);

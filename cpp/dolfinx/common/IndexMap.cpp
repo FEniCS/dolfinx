@@ -241,7 +241,7 @@ common::stack_index_maps(
   std::set<std::int32_t> in_neighbor_set, out_neighbor_set;
   for (const common::IndexMap& map : maps)
   {
-    MPI_Comm neighbor_comm = map.get_comm(IndexMap::Direction::forward);
+    MPI_Comm neighbor_comm = map.comm(IndexMap::Direction::forward);
     auto [source, dest] = dolfinx::MPI::neighbors(neighbor_comm);
     in_neighbor_set.insert(source.begin(), source.end());
     out_neighbor_set.insert(dest.begin(), dest.end());
@@ -315,37 +315,6 @@ common::stack_index_maps(
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-std::vector<int>
-IndexMap::compute_source_ranks(MPI_Comm comm, const std::set<int>& destinations)
-{
-  std::vector<int> dest(destinations.begin(), destinations.end());
-  const int degrees = dest.size();
-  if (dest.empty())
-    dest.push_back(0);
-
-  // Create graph communicator
-  int my_rank = -1;
-  MPI_Comm_rank(comm, &my_rank);
-  MPI_Comm comm_graph;
-  MPI_Dist_graph_create(comm, 1, &my_rank, &degrees, dest.data(),
-                        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm_graph);
-
-  // Get number of neighbours
-  int indegree(-1), outdegree(-1), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm_graph, &indegree, &outdegree, &weighted);
-
-  std::vector<int> _sources(indegree), _destinations(outdegree);
-  MPI_Dist_graph_neighbors(comm_graph, indegree, _sources.data(),
-                           MPI_UNWEIGHTED, outdegree, _destinations.data(),
-                           MPI_UNWEIGHTED);
-  assert(destinations
-         == std::set<int>(_destinations.begin(), _destinations.end()));
-
-  MPI_Comm_free(&comm_graph);
-
-  return _sources;
-}
-//-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<std::int64_t>& ghosts,
                    const std::vector<int>& ghost_src_rank, int block_size)
@@ -387,7 +356,7 @@ IndexMap::IndexMap(
   const std::set<int> owner_ranks_set(ghost_src_rank.begin(),
                                       ghost_src_rank.end());
   std::vector<std::int32_t> halo_dest_ranks
-      = compute_source_ranks(mpi_comm, owner_ranks_set);
+      = dolfinx::MPI::compute_source_ranks(mpi_comm, owner_ranks_set);
   std::sort(halo_dest_ranks.begin(), halo_dest_ranks.end());
   std::vector<std::int32_t> halo_src_ranks
       = std::vector<int>(owner_ranks_set.begin(), owner_ranks_set.end());
@@ -599,9 +568,7 @@ IndexMap::indices(bool unroll_block) const
   return indx;
 }
 //----------------------------------------------------------------------------
-MPI_Comm IndexMap::comm() const { return _comm_symmetric.comm(); }
-//----------------------------------------------------------------------------
-MPI_Comm IndexMap::get_comm(Direction dir) const
+MPI_Comm IndexMap::comm(Direction dir) const
 {
   switch (dir)
   {
@@ -609,7 +576,7 @@ MPI_Comm IndexMap::get_comm(Direction dir) const
     return _comm_ghost_to_owner.comm();
   case Direction::forward:
     return _comm_owner_to_ghost.comm();
-  case Direction::two_way:
+  case Direction::symmetric:
     return _comm_symmetric.comm();
   }
 }

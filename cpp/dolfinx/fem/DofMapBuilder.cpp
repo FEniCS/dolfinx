@@ -392,7 +392,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     auto map = topology.index_map(d);
     if (map)
     {
-      comm[d] = map->get_comm(common::IndexMap::Direction::two_way);
+      comm[d] = map->comm(common::IndexMap::Direction::symmetric);
 
       // Get number of neighbours
       int indegree(-1), outdegree(-2), weighted(-1);
@@ -446,7 +446,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     d = requests_dim[idx];
 
     MPI_Comm neighbor_comm
-        = topology.index_map(d)->get_comm(common::IndexMap::Direction::two_way);
+        = topology.index_map(d)->comm(common::IndexMap::Direction::symmetric);
     auto [neighbors, neighbors1] = dolfinx::MPI::neighbors(neighbor_comm);
     assert(neighbors == neighbors1);
 

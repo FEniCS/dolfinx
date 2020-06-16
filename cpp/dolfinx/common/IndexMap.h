@@ -44,17 +44,6 @@ stack_index_maps(
 class IndexMap
 {
 public:
-  /// @note Experimental. Maybe be moved or removed
-  ///
-  /// Compute the MPI source ranks for this rank, i.e. ranks that will
-  /// send data to this rank.
-  ///
-  /// @param[in] comm MPI communicator
-  /// @param[in] destinations Ranks that this rank will send data to
-  /// @return Ranks that this rank will receive data from
-  static std::vector<int>
-  compute_source_ranks(MPI_Comm comm, const std::set<int>& destinations);
-
   /// Mode for reverse scatter operation
   enum class Mode
   {
@@ -65,9 +54,9 @@ public:
   /// Edge directions of neighborhood communicator
   enum class Direction
   {
-    reverse, // Ghost to owner
-    forward, // Owner to ghost
-    two_way  // Symmetric
+    reverse,  // Ghost to owner
+    forward,  // Owner to ghost
+    symmetric // Symmetric
   };
 
   /// Create an index map with local_size owned blocks on this process, and
@@ -131,7 +120,7 @@ public:
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  MPI_Comm get_comm(Direction dir) const;
+  MPI_Comm comm(Direction dir = Direction::symmetric) const;
 
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
@@ -196,10 +185,6 @@ public:
   /// including ghosts
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1>
   indices(bool unroll_block) const;
-
-  /// Return MPI communicator
-  /// @return The communicator on which the IndexMap is defined
-  MPI_Comm comm() const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
   /// with neighborhood ranks?

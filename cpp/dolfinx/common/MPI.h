@@ -14,6 +14,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <iostream>
 #include <numeric>
+#include <set>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -73,6 +74,19 @@ public:
   static graph::AdjacencyList<T>
   all_to_all(MPI_Comm comm, const graph::AdjacencyList<T>& send_data);
 
+  /// @todo Experimental. Maybe be moved or removed.
+  ///
+  /// Compute the MPI source ranks for this rank, i.e. ranks that will
+  /// send data to this rank.
+  ///
+  /// @note This function involves global communication
+  /// @param[in] comm MPI communicator
+  /// @param[in] destinations Ranks for which this rank is the source,
+  ///   i.e. will send data to ranks that the caller will send data to
+  /// @return Ranks that this rank will receive data from
+  static std::vector<int>
+  compute_source_ranks(MPI_Comm comm, const std::set<int>& destinations);
+
   /// Neighbourhood all-to-all. Send data to neighbours using offsets
   /// into contiguous data array. Offset array should contain
   /// (num_neighbours + 1) entries, starting from zero.
@@ -82,6 +96,8 @@ public:
                       const std::vector<int>& send_offsets,
                       const std::vector<T>& send_data);
 
+  /// @todo Clarify directions
+  ///
   /// Return list of neighbours for a neighbourhood communicator
   /// @param[in] neighbor_comm Neighborhood communicator
   static std::tuple<std::vector<int>, std::vector<int>>
