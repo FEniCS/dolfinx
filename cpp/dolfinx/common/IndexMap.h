@@ -10,7 +10,6 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <functional>
 #include <map>
 #include <tuple>
 #include <vector>
@@ -67,7 +66,7 @@ public:
   enum class Direction
   {
     ghost_to_owner,
-    onwer_to_ghost,
+    owner_to_ghost,
     two_way // symmetric
   };
 
@@ -213,6 +212,7 @@ public:
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
   /// be the same as n * size_local().
+  ///
   /// @param[in] local_data Local data associated with each owned local
   ///   index to be sent to process where the data is ghosted. Size must
   ///   be n * size_local().
@@ -225,6 +225,7 @@ public:
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
   /// be the same as n * size_local().
+  ///
   /// @param[in] local_data Local data associated with each owned local
   ///   index to be sent to process where the data is ghosted. Size must
   ///   be n * size_local().
@@ -237,6 +238,7 @@ public:
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
   /// be the same as n * size_local().
+  ///
   /// @param[in] local_data Local data associated with each owned local
   ///   index to be sent to process where the data is ghosted. Size must
   ///   be n * size_local().
