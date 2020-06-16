@@ -392,10 +392,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     auto map = topology.index_map(d);
     if (map)
     {
-      // FIXME: Why is the comm being duplicated?
-      MPI_Comm neighbor_comm
-          = map->get_comm(common::IndexMap::Direction::two_way);
-      MPI_Comm_dup(neighbor_comm, &comm[d]);
+      comm[d] = map->get_comm(common::IndexMap::Direction::two_way);
 
       // Get number of neighbours
       int indegree(-1), outdegree(-2), weighted(-1);
@@ -476,13 +473,6 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       local_to_global_new_owner[local_new_to_global_old_d[i + 1]]
           = it->second.second;
     }
-  }
-
-  // Free the communicator
-  for (std::size_t d = 0; d < comm.size(); ++d)
-  {
-    if (comm[d] != MPI_COMM_NULL)
-      MPI_Comm_free(&comm[d]);
   }
 
   return {local_to_global_new, local_to_global_new_owner};

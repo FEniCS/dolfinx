@@ -38,10 +38,7 @@ std::vector<std::int32_t>
 get_remote_bcs1(const common::IndexMap& map,
                 const std::vector<std::int32_t>& dofs_local)
 {
-  // FIXME: why is the comm being duplicated?
-  MPI_Comm neighbor_comm = map.get_comm(common::IndexMap::Direction::two_way);
-  MPI_Comm comm;
-  MPI_Comm_dup(neighbor_comm, &comm);
+  MPI_Comm comm = map.get_comm(common::IndexMap::Direction::two_way);
 
   // Get number of processes in neighborhood
   int num_neighbors(-1), outdegree(-2), weighted(-1);
@@ -86,8 +83,6 @@ get_remote_bcs1(const common::IndexMap& map,
   std::vector<std::int32_t> dofs = map.global_to_local(dofs_received, false);
   dofs.erase(std::remove(dofs.begin(), dofs.end(), -1), dofs.end());
 
-  MPI_Comm_free(&comm);
-
   return dofs;
 }
 //-----------------------------------------------------------------------------
@@ -105,9 +100,7 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
 {
   // FIXME: Why is the comm being duplicated?
-  MPI_Comm neighbor_comm = map0.get_comm(common::IndexMap::Direction::two_way);
-  MPI_Comm comm0;
-  MPI_Comm_dup(neighbor_comm, &comm0);
+  MPI_Comm comm0 = map0.get_comm(common::IndexMap::Direction::two_way);
 
   int num_neighbors(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm0, &num_neighbors, &outdegree, &weighted);
@@ -178,8 +171,6 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   dofs.reserve(dofs0.size());
   for (std::size_t i = 0; i < dofs0.size(); ++i)
     dofs.push_back({dofs0[i], dofs1[i]});
-
-  MPI_Comm_free(&comm0);
 
   return dofs;
 }

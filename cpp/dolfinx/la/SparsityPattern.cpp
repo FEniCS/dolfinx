@@ -308,10 +308,8 @@ void SparsityPattern::assemble()
   }
 
   // FIXME: Why is the comm being duplicated?
-  MPI_Comm neighbor_comm
+  MPI_Comm comm
       = _index_maps[0]->get_comm(common::IndexMap::Direction::two_way);
-  MPI_Comm comm;
-  MPI_Comm_dup(neighbor_comm, &comm);
 
   int num_neighbors(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
@@ -339,7 +337,6 @@ void SparsityPattern::assemble()
   MPI_Neighbor_allgatherv(ghost_data.data(), ghost_data.size(), MPI_INT64_T,
                           ghost_data_received.data(), num_rows_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
-  MPI_Comm_free(&comm);
 
   // Add data received from the neighborhood
   for (std::size_t i = 0; i < ghost_data_received.size(); i += 2)
