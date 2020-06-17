@@ -38,25 +38,19 @@ std::vector<std::int32_t>
 get_remote_bcs1(const common::IndexMap& map,
                 const std::vector<std::int32_t>& dofs_local)
 {
-  const std::vector<std::int32_t>& neighbours = map.neighbours();
-  MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(map.mpi_comm(), neighbours.size(),
-                                 neighbours.data(), MPI_UNWEIGHTED,
-                                 neighbours.size(), neighbours.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  MPI_Comm comm = map.comm(common::IndexMap::Direction::symmetric);
 
-  // Get number of processes in neighbourhood
-  int num_neighbours(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree, &weighted);
-  assert(num_neighbours == outdegree);
+  // Get number of processes in neighborhood
+  int num_neighbors(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
 
-  // Return early if there are no neighbours
-  if (num_neighbours == 0)
+  // Return early if there are no neighbors
+  if (num_neighbors == 0)
     return std::vector<std::int32_t>();
 
-  // Figure out how many entries to receive from each neighbour
+  // Figure out how many entries to receive from each neighbor
   const int num_dofs = dofs_local.size();
-  std::vector<int> num_dofs_recv(num_neighbours);
+  std::vector<int> num_dofs_recv(num_neighbors);
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                          MPI_INT, comm);
 
@@ -68,7 +62,7 @@ get_remote_bcs1(const common::IndexMap& map,
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
   // Note: std::inclusive_scan would be better, but requires gcc >= 9.2.1
-  std::vector<int> disp(num_neighbours + 1, 0);
+  std::vector<int> disp(num_neighbors + 1, 0);
   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
                    disp.begin() + 1);
   // std::inclusive_scan(num_dofs_recv.begin(), num_dofs_recv.end(),
@@ -77,7 +71,7 @@ get_remote_bcs1(const common::IndexMap& map,
   // NOTE: we could use MPI_Neighbor_alltoallv to send only to relevant
   // processes
 
-  // Send/receive global index of dofs with bcs to all neighbours
+  // Send/receive global index of dofs with bcs to all neighbors
   std::vector<std::int64_t> dofs_received(disp.back());
   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                           dofs_received.data(), num_dofs_recv.data(),
@@ -88,8 +82,6 @@ get_remote_bcs1(const common::IndexMap& map,
   // process
   std::vector<std::int32_t> dofs = map.global_to_local(dofs_received, false);
   dofs.erase(std::remove(dofs.begin(), dofs.end(), -1), dofs.end());
-
-  MPI_Comm_free(&comm);
 
   return dofs;
 }
@@ -107,25 +99,19 @@ std::vector<std::array<std::int32_t, 2>>
 get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
 {
-  // Get number of processes in neighbourhood
-  const std::vector<std::int32_t>& neighbours = map0.neighbours();
-  MPI_Comm comm0;
-  MPI_Dist_graph_create_adjacent(map0.mpi_comm(), neighbours.size(),
-                                 neighbours.data(), MPI_UNWEIGHTED,
-                                 neighbours.size(), neighbours.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+  MPI_Comm comm0 = map0.comm(common::IndexMap::Direction::symmetric);
 
-  int num_neighbours(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm0, &num_neighbours, &outdegree, &weighted);
-  assert(num_neighbours == outdegree);
+  int num_neighbors(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(comm0, &num_neighbors, &outdegree, &weighted);
+  assert(num_neighbors == outdegree);
 
-  // Return early if there are no neighbours
-  if (num_neighbours == 0)
+  // Return early if there are no neighbors
+  if (num_neighbors == 0)
     return std::vector<std::array<std::int32_t, 2>>();
 
-  // Figure out how many entries to receive from each neighbour
+  // Figure out how many entries to receive from each neighbor
   const int num_dofs = 2 * dofs_local.size();
-  std::vector<int> num_dofs_recv(num_neighbours);
+  std::vector<int> num_dofs_recv(num_neighbors);
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                          MPI_INT, comm0);
 
@@ -147,7 +133,7 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
   // Note: std::inclusive_scan would be better, but requires gcc >= 9.2.1
-  std::vector<int> disp(num_neighbours + 1, 0);
+  std::vector<int> disp(num_neighbors + 1, 0);
   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
                    disp.begin() + 1);
   // std::inclusive_scan(num_dofs_recv.begin(), num_dofs_recv.end(),
@@ -156,7 +142,7 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   // NOTE: we could use MPI_Neighbor_alltoallv to send only to relevant
   // processes
 
-  // Send/receive global index of dofs with bcs to all neighbours
+  // Send/receive global index of dofs with bcs to all neighbors
   // std::vector<std::int64_t> dofs_received(disp.back());
   assert(disp.back() % 2 == 0);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> dofs_received(
@@ -184,8 +170,6 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   dofs.reserve(dofs0.size());
   for (std::size_t i = 0; i < dofs0.size(); ++i)
     dofs.push_back({dofs0[i], dofs1[i]});
-
-  MPI_Comm_free(&comm0);
 
   return dofs;
 }
@@ -232,8 +216,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
 
   // Build vector local dofs for each cell facet
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
-  for (int i = 0; i < mesh::cell_num_entities(mesh->topology().cell_type(), dim);
-       ++i)
+  for (int i = 0;
+       i < mesh::cell_num_entities(mesh->topology().cell_type(), dim); ++i)
   {
     entity_dofs.push_back(
         dofmap0->element_dof_layout->entity_closure_dofs(dim, i));
@@ -253,8 +237,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
-    const auto *it = std::find(entities_d.data(),
-                        entities_d.data() + entities_d.rows(), entities[e]);
+    const auto* it = std::find(
+        entities_d.data(), entities_d.data() + entities_d.rows(), entities[e]);
     assert(it != (entities_d.data() + entities_d.rows()));
     const int entity_local_index = std::distance(entities_d.data(), it);
 
@@ -349,8 +333,8 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
-    const auto *it = std::find(entities_d.data(),
-                        entities_d.data() + entities_d.rows(), entities[i]);
+    const auto* it = std::find(
+        entities_d.data(), entities_d.data() + entities_d.rows(), entities[i]);
     assert(it != (entities_d.data() + entities_d.rows()));
     const int entity_local_index = std::distance(entities_d.data(), it);
 
@@ -545,8 +529,8 @@ DirichletBC::DirichletBC(
 
   const int owned_size = _function_space->dofmap()->index_map->block_size()
                          * _function_space->dofmap()->index_map->size_local();
-  auto *it = std::lower_bound(_dofs.col(0).data(),
-                             _dofs.col(0).data() + _dofs.rows(), owned_size);
+  auto* it = std::lower_bound(_dofs.col(0).data(),
+                              _dofs.col(0).data() + _dofs.rows(), owned_size);
   _owned_indices = std::distance(_dofs.col(0).data(), it);
 }
 //-----------------------------------------------------------------------------
@@ -559,8 +543,8 @@ DirichletBC::DirichletBC(
 {
   const int owned_size = _function_space->dofmap()->index_map->block_size()
                          * _function_space->dofmap()->index_map->size_local();
-  auto *it = std::lower_bound(_dofs.col(0).data(),
-                             _dofs.col(0).data() + _dofs.rows(), owned_size);
+  auto* it = std::lower_bound(_dofs.col(0).data(),
+                              _dofs.col(0).data() + _dofs.rows(), owned_size);
   _owned_indices = std::distance(_dofs.col(0).data(), it);
 }
 //-----------------------------------------------------------------------------
