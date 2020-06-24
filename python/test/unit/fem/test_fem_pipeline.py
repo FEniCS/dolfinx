@@ -251,7 +251,7 @@ def test_manufactured_vector2(family, degree, filename, datadir):
     # "UnitSquareMesh_quad.xdmf",
     # "UnitCubeMesh_hexahedron.xdmf"
 ])
-@pytest.mark.parametrize("degree", [1])
+@pytest.mark.parametrize("degree", [1, 2, 3])
 def test_manufactured_vector_function_space(degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
