@@ -44,6 +44,10 @@ public:
   /// @return Dimension of the finite element space
   int space_dimension() const;
 
+  /// Block size of the finite element function space
+  /// @return Block size of the finite element space
+  int block_size() const;
+
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
   /// @return The value size
   int value_size() const;
@@ -167,5 +171,8 @@ private:
   std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*,
                     const ufc_coordinate_mapping*)>
       _transform_values;
+
+  // Block size for VectorElement
+  int _block_size;
 };
 } // namespace dolfinx::fem

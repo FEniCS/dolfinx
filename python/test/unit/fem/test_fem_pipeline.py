@@ -13,7 +13,8 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import DirichletBC, Function, FunctionSpace, fem, geometry, cpp
+from dolfinx import (DirichletBC, Function, FunctionSpace, fem, geometry, cpp,
+                     VectorFunctionSpace)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
@@ -235,6 +236,61 @@ def test_manufactured_vector2(family, degree, filename, datadir):
     cell = cpp.geometry.select_colliding_cells(mesh, cell_candidates, xp, 1)
 
     up = uh.eval(xp, cell)
+    print("test0:", up)
+    print("test1:", xp[0]**degree)
+
+    u_exact = np.zeros(mesh.geometry.dim)
+    u_exact[0] = xp[0]**degree
+    assert np.allclose(up, u_exact)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize("filename", [
+    "UnitSquareMesh_triangle.xdmf",
+    "UnitCubeMesh_tetra.xdmf",
+    # "UnitSquareMesh_quad.xdmf",
+    # "UnitCubeMesh_hexahedron.xdmf"
+])
+@pytest.mark.parametrize("degree", [1])
+def test_manufactured_vector_function_space(degree, filename, datadir):
+    """Projection into H(div/curl) spaces"""
+
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
+
+    V = VectorFunctionSpace(mesh, ("Lagrange", degree))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = inner(u, v) * dx
+
+    # Source term
+    x = SpatialCoordinate(mesh)
+    u_ref = x[0]**degree
+    L = inner(u_ref, v[0]) * dx
+
+    b = assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    A = assemble_matrix(a)
+    A.assemble()
+
+    # Create LU linear solver (Note: need to use a solver that
+    # re-orders to handle pivots, e.g. not the PETSc built-in LU
+    # solver)
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
+    solver.setType("preonly")
+    solver.getPC().setType('lu')
+    solver.setOperators(A)
+
+    # Solve
+    uh = Function(V)
+    solver.solve(b, uh.vector)
+    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+    xp = np.array([0.33, 0.33, 0.0])
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cells = geometry.compute_collisions_point(tree, xp)
+
+    up = uh.eval(xp, cells[0])
     print("test0:", up)
     print("test1:", xp[0]**degree)
 

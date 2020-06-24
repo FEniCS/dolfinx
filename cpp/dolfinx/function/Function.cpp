@@ -195,6 +195,7 @@ void Function::eval(
   const int reference_value_size = element->reference_value_size();
   const int value_size = element->value_size();
   const int space_dimension = element->space_dimension();
+  const int block_size = element->block_size();
 
   // Prepare geometry data structures
   Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
@@ -254,6 +255,9 @@ void Function::eval(
       coefficients[i] = _v[dofs[i]];
 
     // Compute expansion
+    std::cout << block_size << ' ' << space_dimension << ' ' << value_size
+              << std::endl;
+    // TODO: loop through block_size here
     for (int i = 0; i < space_dimension; ++i)
     {
       for (int j = 0; j < value_size; ++j)

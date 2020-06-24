@@ -28,7 +28,8 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
           ufc_element.evaluate_reference_basis_derivatives),
       _transform_reference_basis_derivatives(
           ufc_element.transform_reference_basis_derivatives),
-      _transform_values(ufc_element.transform_values)
+      _transform_values(ufc_element.transform_values),
+      _block_size(ufc_element.block_size)
 {
   // Store dof coordinates on reference element if they exist
   assert(ufc_element.tabulate_reference_dof_coordinates);
@@ -90,6 +91,8 @@ int FiniteElement::reference_value_size() const
 //-----------------------------------------------------------------------------
 int FiniteElement::value_rank() const { return _value_dimension.size(); }
 //-----------------------------------------------------------------------------
+int FiniteElement::block_size() const { return _block_size; }
+//-----------------------------------------------------------------------------
 int FiniteElement::value_dimension(int i) const
 {
   if (i >= (int)_value_dimension.size())
@@ -106,12 +109,25 @@ void FiniteElement::evaluate_reference_basis(
 {
   assert(_evaluate_reference_basis);
   const int num_points = X.rows();
-  int ret = _evaluate_reference_basis(reference_values.data(), num_points,
-                                      X.data());
+  // int ret = _evaluate_reference_basis(reference_values.data(), num_points,
+  //                                    X.data());
+  const int dim = _space_dim / _block_size;
+  Eigen::Tensor<double, 3, Eigen::RowMajor> temp_values(1, dim, 1);
+  int ret = _evaluate_reference_basis(temp_values.data(), num_points, X.data());
   if (ret == -1)
   {
     throw std::runtime_error("Generated code returned error "
                              "in evaluate_reference_basis");
+  }
+  for (int block = 0; block < _block_size; ++block)
+  {
+    for (int i = 0; i < dim; ++i)
+    {
+      // Change this from AAAAAABBBBBB to ABABABABAB
+      // reference_values(block * _space_dim + i + block * dim)
+      reference_values(i * _block_size + block + block * _space_dim)
+          = temp_values(i);
+    }
   }
 }
 //-----------------------------------------------------------------------------
