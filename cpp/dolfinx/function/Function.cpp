@@ -192,10 +192,10 @@ void Function::eval(
   std::shared_ptr<const fem::FiniteElement> element
       = _function_space->element();
   assert(element);
-  const int reference_value_size = element->reference_value_size();
-  const int value_size = element->value_size();
-  const int space_dimension = element->space_dimension();
   const int block_size = element->block_size();
+  const int reference_value_size = element->reference_value_size() / block_size;
+  const int value_size = element->value_size() / block_size;
+  const int space_dimension = element->space_dimension() / block_size;
 
   // Prepare geometry data structures
   Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
@@ -211,7 +211,8 @@ void Function::eval(
                                                          value_size);
 
   // Create work vector for expansion coefficients
-  Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(space_dimension);
+  Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(space_dimension
+                                                             * block_size);
 
   // Get dofmap
   std::shared_ptr<const fem::DofMap> dofmap = _function_space->dofmap();
@@ -255,15 +256,17 @@ void Function::eval(
       coefficients[i] = _v[dofs[i]];
 
     // Compute expansion
-    std::cout << block_size << ' ' << space_dimension << ' ' << value_size
-              << std::endl;
-    // TODO: loop through block_size here
-    for (int i = 0; i < space_dimension; ++i)
+    for (int block = 0; block < block_size; ++block)
     {
-      for (int j = 0; j < value_size; ++j)
+      for (int i = 0; i < space_dimension; ++i)
       {
-        // TODO: Find an Eigen shortcut for this operation
-        u.row(p)[j] += coefficients[i] * basis_values(0, i, j);
+        for (int j = 0; j < value_size; ++j)
+        {
+          // TODO: Find an Eigen shortcut for this operation
+          u.row(p)[j + block * value_size]
+              += coefficients[i + block * space_dimension]
+                 * basis_values(0, i, j);
+        }
       }
     }
   }
