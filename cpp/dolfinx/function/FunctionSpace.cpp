@@ -464,7 +464,7 @@ void FunctionSpace::interpolate(
   // E.g., for a vector Lagrange element the vector-valued expression is
   // evaluted three times at the some point.
 
-  const int value_size = values.cols();
+  // const int value_size = values.cols();
 
   // FIXME: Dummy coordinate dofs - should limit the interpolation to
   // Lagrange, in which case we don't need coordinate dofs in
@@ -478,9 +478,8 @@ void FunctionSpace::interpolate(
   // Expresion::eval.
 
   // Loop over cells
-  const int ndofs = _element->space_dimension();
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values_cell(ndofs, value_size);
+  const int block_size = _element->block_size();
+  const int ndofs = _element->space_dimension() / block_size;
   assert(_dofmap->element_dof_layout);
   std::vector<PetscScalar> cell_coefficients(
       _dofmap->element_dof_layout->num_dofs());
@@ -492,20 +491,17 @@ void FunctionSpace::interpolate(
   {
     // Get dofmap for cell
     auto cell_dofs = _dofmap->cell_dofs(c);
-    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
+    // FIXME: For vector-valued Lagrange, this function 'throws away'
+    // the redundant expression evaluations. It should really be made
+    // not necessary.
+    // Copy into expansion coefficient array
+    for (int block = 0; block < block_size; ++block)
     {
-      for (Eigen::Index j = 0; j < value_size; ++j)
-        values_cell(i, j) = values(cell_dofs[i], j);
-
-      // FIXME: For vector-valued Lagrange, this function 'throws away'
-      // the redundant expression evaluations. It should really be made
-      // not necessary.
-      _element->transform_values(cell_coefficients.data(), values_cell,
-                                 coordinate_dofs);
-
-      // Copy into expansion coefficient array
-      for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
-        coefficients[cell_dofs[i]] = cell_coefficients[i];
+      for (int i = 0; i < ndofs; ++i)
+      {
+        const int dof = block_size * i + block;
+        coefficients[cell_dofs[dof]] = values(cell_dofs[dof], block);
+      }
     }
   }
 }

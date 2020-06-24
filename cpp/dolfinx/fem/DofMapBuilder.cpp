@@ -570,7 +570,9 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
       const std::int32_t new_node = old_to_new[old_node];
       for (std::int32_t block = 0; block < block_size; ++block)
       {
-        dofmap[cell * block_size * local_dim0 + block * local_dim0 + j]
+        // FIXME: this should be [cell * block_size * local_dim0 + block *
+        // local_dim0 + j] if XXXYYYZZZ order is chosen
+        dofmap[cell * block_size * local_dim0 + block + block_size * j]
             = block_size * new_node + block;
       }
     }
