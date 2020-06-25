@@ -280,81 +280,6 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
     s << celltype << " ";
   type_node.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 }
-// // int cell_degree(mesh::CellType type, int num_nodes)
-// // {
-// //   switch (type)
-// //   {
-// //   case mesh::CellType::point:
-// //     return 1;
-// //   case mesh::CellType::interval:
-// //     return num_nodes - 1;
-// //   case mesh::CellType::triangle:
-// //     switch (num_nodes)
-// //     {
-// //     case 3:
-// //       return 1;
-// //     case 6:
-// //       return 2;
-// //     case 10:
-// //       return 3;
-// //     case 15:
-// //       return 4;
-// //     case 21:
-// //       return 5;
-// //     case 28:
-// //       return 6;
-// //     case 36:
-// //       return 7;
-// //     case 45:
-// //       LOG(WARNING) << "8th order mesh is untested";
-// //       return 8;
-// //     case 55:
-// //       LOG(WARNING) << "9th order mesh is untested";
-// //       return 9;
-// //     default:
-// //       throw std::runtime_error("Unknown triangle layout. Number of nodes:
-// "
-// //                                + std::to_string(num_nodes));
-// //     }
-// //   case mesh::CellType::tetrahedron:
-// //     switch (num_nodes)
-// //     {
-// //     case 4:
-// //       return 1;
-// //     case 10:
-// //       return 2;
-// //     case 20:
-// //       return 3;
-// //     default:
-// //       throw std::runtime_error("Unknown tetrahedron layout.");
-// //     }
-// //   case mesh::CellType::quadrilateral:
-// //   {
-// //     const int n = std::sqrt(num_nodes);
-// //     if (num_nodes != n * n)
-// //     {
-// //       throw std::runtime_error("Quadrilateral of order "
-// //                                + std::to_string(num_nodes) + " not
-// supported");
-// //     }
-// //     return n - 1;
-// //   }
-// //   case mesh::CellType::hexahedron:
-// //     switch (num_nodes)
-// //     {
-// //     case 8:
-// //       return 1;
-// //     case 27:
-// //       return 2;
-// //     default:
-// //       throw std::runtime_error("Unsupported hexahedron layout");
-// //       return 1;
-// //     }
-// //   default:
-// //     throw std::runtime_error("Unknown cell type.");
-// //   }
-// }
-
 } // namespace
 
 //----------------------------------------------------------------------------
@@ -551,74 +476,73 @@ void io::VTKFileNew::write(
     }
     else
     {
-      // Analyze function space and mesh to determine if they have the same
-      // number of nodes
+      // Check if the function space is Lagrangian
+      // NOTE: This should be changed if we add option to solve DG
       std::shared_ptr<const dolfinx::fem::FiniteElement> element
           = _u.get().function_space()->element();
       if (element->family().compare("Lagrange") == 0)
       {
-        // FIXME: Need to check that all sub elements are the same
-        int space_dim = element->space_dimension();
-        // int num_subs = element->num_sub_elements();
-        // int nodes_per_sub_space = space_dim / num_subs;
-        // int function_order
-        //     = cell_degree(element->cell_shape(), nodes_per_sub_space);
+        // Extract mesh data
+        int tdim = mesh->topology().dim();
+        int gdim = mesh->geometry().dim();
 
-        // Extract data from mesh geometry
         auto cmap = mesh->geometry().cmap();
-        int num_mesh_cell_dofs = cmap.dof_layout().num_dofs();
+        auto geometry_layout = cmap.dof_layout();
 
-        // Compare mesh num dofs with function space num dofs per element
-        if (num_mesh_cell_dofs * cmap.geometric_dimension() == space_dim)
+        // Fetch function array from PETSc
+        auto func_values = _u.get().vector().vec();
+        PetscScalar arr;
+        PetscScalar* arr_ptr = &arr;
+        VecGetArray(func_values, &arr_ptr);
+
+        // Compute in tensor (one for scalar function, . . .)
+        const int value_size_loc = element->value_size();
+
+        // FIXME: Add proper interface for num coordinate dofs
+        const graph::AdjacencyList<std::int32_t>& x_dofmap
+            = mesh->geometry().dofmap();
+        const int num_dofs_g = x_dofmap.num_links(0);
+
+        auto map = mesh->topology().index_map(tdim);
+        assert(map);
+        const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+
+        // Resize array for holding point values
+        Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
+            point_values(mesh->geometry().x().rows(), value_size_loc);
+
+        // Loop through each vector component
+        for (std::int32_t k = 0; k < element->num_sub_elements(); k++)
         {
-          // Fetch function array from PETSc
-          auto func_values = _u.get().vector().vec();
-          PetscScalar arr;
-          PetscScalar* arr_ptr = &arr;
-          VecGetArray(func_values, &arr_ptr);
+          auto dofmap = _u.get().function_space()->sub({k})->dofmap();
+          auto element_layout = dofmap->element_dof_layout;
 
-          // Compute in tensor (one for scalar function, . . .)
-          const int value_size_loc = element->value_size();
-
-          // FIXME: Add proper interface for num coordinate dofs
-          const graph::AdjacencyList<std::int32_t>& x_dofmap
-              = mesh->geometry().dofmap();
-          const int num_dofs_g = x_dofmap.num_links(0);
-
-          int tdim = mesh->topology().dim();
-          auto map = mesh->topology().index_map(tdim);
-          assert(map);
-          const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-
-          // Resize Array for holding point values
-          Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                       Eigen::RowMajor>
-              point_values(mesh->geometry().x().rows(), value_size_loc);
-
-          // Loop through each vector component
-          for (std::int32_t k = 0; k < element->num_sub_elements(); k++)
+          for (std::int32_t i = 0; i <= tdim; i++)
           {
-            auto dofmap = _u.get().function_space()->sub({k})->dofmap();
-            // Loop through cells
-            for (std::int32_t c = 0; c < num_cells; ++c)
+            // Check that subelement layout matches geometry layout
+            if (geometry_layout.num_entity_dofs(i)
+                != element_layout->num_entity_dofs(i))
             {
-              // Get local to global dof ordering for geometry and function
-              auto dofs = x_dofmap.links(c);
-              auto cell_dofs = dofmap->cell_dofs(c);
-              for (std::int32_t i = 0; i < num_dofs_g; i++)
-              {
-                point_values(dofs[i], k) = arr_ptr[cell_dofs[i]];
-              }
+              throw std::runtime_error("Can only save Lagrange finite element "
+                                       "functions of same order "
+                                       "as the mesh geometry");
             }
           }
-          pugi::xml_node data_node = piece_node.append_child("PointData");
-          add_data(_u, point_values, data_node);
+          // Loop through cells
+          for (std::int32_t c = 0; c < num_cells; ++c)
+          {
+            // Get local to global dof ordering for geometry and function
+            auto dofs = x_dofmap.links(c);
+            auto cell_dofs = dofmap->cell_dofs(c);
+            for (std::int32_t i = 0; i < num_dofs_g; i++)
+            {
+              point_values(dofs[i], k) = arr_ptr[cell_dofs[i]];
+            }
+          }
         }
-        else
-        {
-          throw std::runtime_error(
-              "Mesh and function element order has to be equal");
-        }
+        pugi::xml_node data_node = piece_node.append_child("PointData");
+        add_data(_u, point_values, data_node);
       }
       else
       {
