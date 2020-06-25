@@ -39,6 +39,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   if (ufc_element.tabulate_reference_dof_coordinates(X.data()) != -1)
     _refX = X;
 
+  // FIXME: this should really be fixed in ffcx.
+  _refX.conservativeResize(_space_dim / _block_size, _tdim);
+
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
   {
