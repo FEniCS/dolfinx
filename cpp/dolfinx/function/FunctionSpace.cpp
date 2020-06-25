@@ -499,7 +499,7 @@ void FunctionSpace::interpolate(
     {
       for (int i = 0; i < ndofs; ++i)
       {
-        const int dof = block_size * i + block;
+        const int dof = ndofs * block + i;
         coefficients[cell_dofs[dof]] = values(cell_dofs[dof], block);
       }
     }

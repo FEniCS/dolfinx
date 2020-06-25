@@ -77,7 +77,6 @@ PetscScalar dolfinx::fem::impl::assemble_scalar(const dolfinx::fem::Form& M)
     value += fem::impl::assemble_interior_facets(
         *mesh, active_facets, fn, coeffs, c_offsets, constant_values);
   }
-
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -116,14 +115,14 @@ PetscScalar fem::impl::assemble_cells(
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
+
     for (int i = 0; i < num_dofs_g; ++i)
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
-
     auto coeff_cell = coeffs.row(c);
+
     fn(&value, coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
   }
-
   return value;
 }
 //-----------------------------------------------------------------------------

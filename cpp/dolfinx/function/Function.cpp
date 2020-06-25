@@ -266,7 +266,8 @@ void Function::eval(
           // FIXME: this should be coefficients[block * space_dimension + i] if
           // XXXYYYZZZ order is chosen
           u.row(p)[j + block * value_size]
-              += coefficients[block + i * block_size] * basis_values(0, i, j);
+              += coefficients[block * space_dimension + i]
+                 * basis_values(0, i, j);
         }
       }
     }
