@@ -181,7 +181,7 @@ void add_data(
   {
     data_node.append_attribute("Tensors") = u.name.c_str();
     field_node.append_attribute("NumberOfComponents") = 9;
-    if (dim == 2)
+    if (dim == 4)
     {
       // Pad 2D tensors with 0.0 to make them 3D
       std::stringstream ss;
@@ -587,6 +587,11 @@ void io::VTKFileNew::write(
       {
         ncomps = 3;
         pointdata_pnode.append_attribute("Vectors") = _u.get().name.c_str();
+      }
+      else if (rank == 2)
+      {
+        ncomps = 9;
+        pointdata_pnode.append_attribute("Tensors") = _u.get().name.c_str();
       }
       // FIXME add tensor handling
 
