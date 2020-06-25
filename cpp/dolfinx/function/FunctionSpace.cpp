@@ -508,7 +508,13 @@ void FunctionSpace::interpolate(
       for (int i = 0; i < ndofs; ++i)
       {
         const int dof = ndofs * block + i;
-        coefficients[cell_dofs[dof]] = values(cell_dofs[dof], block);
+        std::cout << "dof: " << dof <<  std::endl;
+        std::cout << "block: " << block <<  std::endl;
+        std::cout << "i: " << i <<  std::endl;
+        std::cout << "cell_dofs: " << cell_dofs <<  std::endl;
+        std::cout << "coefficients: " << coefficients <<  std::endl;
+        std::cout << "values: " << values <<  std::endl;
+        coefficients[cell_dofs[dof]] = values(dof % block_size, block);
       }
     }
   }
