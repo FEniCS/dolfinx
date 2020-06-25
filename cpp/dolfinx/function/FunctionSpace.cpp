@@ -296,8 +296,9 @@ FunctionSpace::tabulate_dof_coordinates() const
   std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;
   assert(index_map);
   int bs = index_map->block_size();
+  int ebs = _element->block_size();
   std::int32_t local_size
-      = bs * (index_map->size_local() + index_map->num_ghosts());
+      = bs * (index_map->size_local() + index_map->num_ghosts()) / ebs;
 
   // Dof coordinate on reference element
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
@@ -323,7 +324,7 @@ FunctionSpace::tabulate_dof_coordinates() const
 
   // Loop over cells and tabulate dofs
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinates(_element->space_dimension(), gdim);
+      coordinates(_element->space_dimension() / ebs, gdim);
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
@@ -344,9 +345,10 @@ FunctionSpace::tabulate_dof_coordinates() const
     cmap.push_forward(coordinates, X, coordinate_dofs);
 
     // Copy dof coordinates into vector
-    for (Eigen::Index i = 0; i < dofs.size(); ++i)
+    for (Eigen::Index i = 0; i < dofs.size() / ebs; ++i)
     {
-      const std::int32_t dof = dofs[i];
+      // FIXME: this depends on the dof layout
+      const std::int32_t dof = dofs[i * ebs] / ebs;
       x.row(dof).head(gdim) = coordinates.row(i);
     }
   }
@@ -458,6 +460,16 @@ void FunctionSpace::interpolate(
   assert(_element);
   assert(_dofmap);
   const int tdim = _mesh->topology().dim();
+
+  std::cout << "coefficients.size = " << coefficients.rows() << "x"
+            << coefficients.cols() << "\n";
+  std::cout << "values.size = " << values.rows() << "x" << values.cols()
+            << "\n";
+
+  // Just reshape the array
+  coefficients = Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(
+      values.data(), coefficients.rows());
+  return;
 
   // Note: the following does not exploit any block structure, e.g. for
   // vector Lagrange, which leads to a lot of redundant evaluations.
