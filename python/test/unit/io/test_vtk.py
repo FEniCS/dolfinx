@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Garth N. Wells
+# Copyright (C) 2011-2020 Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -6,11 +6,12 @@
 
 import os
 
+import numpy as np
 import pytest
+import ufl
 from mpi4py import MPI
 
-import ufl
-from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
+from dolfinx import (Function, FunctionSpace, Mesh, TensorFunctionSpace,
                      UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      VectorFunctionSpace)
 from dolfinx.cpp.io import VTKFileNew
@@ -106,6 +107,7 @@ def test_save_2d_scalar_old(tempfile, file_options):
         VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 
+@pytest.mark.xfail(reason="P2->P1 interpolation not implemented")
 def test_save_2d_scalar(tempfile):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
@@ -157,10 +159,18 @@ def test_save_2d_vector_old(tempfile, file_options):
 
 
 def test_save_2d_vector(tempfile):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 2, 2)
+    points = np.array([[0, 0], [1, 0], [1, 2], [0, 2],
+                       [1 / 2, 0], [1, 2 / 2], [1 / 2, 2],
+                       [0, 2 / 2], [1 / 2, 2 / 2]])
+    points = np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0],
+                       [1, 2], [0.5, 2], [1, 1]])
+
+    cells = np.array([[0, 1, 2, 3, 4, 5],
+                      [1, 6, 2, 7, 3, 8]])
+    mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], degree=2)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1)
-    f = VTKFileNew(mesh.mpi_comm(), "u2.pvd", "w")
+    f = VTKFileNew(mesh.mpi_comm(), "u2-new.pvd", "w")
     f.write([u._cpp_object], 0.)
 
     fold = VTKFile("u2-old.pvd")
@@ -188,7 +198,7 @@ def xtest_save_2d_mixed(tempfile):
     fold.write(U)
 
 
-@pytest.mark.xfail(reason="file_option not added to VTK initializer")
+@ pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_3d_vector(tempfile, file_options):
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
@@ -201,8 +211,8 @@ def test_save_3d_vector(tempfile, file_options):
         VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 
-@pytest.mark.xfail(reason="FFCX fails for tensor spaces in 1D")
-@skip_in_parallel
+@ pytest.mark.xfail(reason="FFCX fails for tensor spaces in 1D")
+@ skip_in_parallel
 def test_save_1d_tensor(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
@@ -212,7 +222,7 @@ def test_save_1d_tensor(tempfile, file_options):
         VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 
-@pytest.mark.xfail(reason="file_option not added to VTK initializer")
+@ pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_2d_tensor(tempfile, file_options):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
@@ -225,7 +235,7 @@ def test_save_2d_tensor(tempfile, file_options):
         VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 
-@pytest.mark.xfail(reason="file_option not added to VTK initializer")
+@ pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_3d_tensor(tempfile, file_options):
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
