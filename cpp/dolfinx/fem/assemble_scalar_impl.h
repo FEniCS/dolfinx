@@ -15,11 +15,6 @@
 namespace dolfinx
 {
 
-namespace function
-{
-class Function;
-}
-
 namespace mesh
 {
 class Mesh;
@@ -27,9 +22,7 @@ class Mesh;
 
 namespace fem
 {
-class DirichletBC;
 class Form;
-class DofMap;
 
 namespace impl
 {

@@ -66,8 +66,7 @@ void common(py::module& m)
       .def_property_readonly("local_range",
                              &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
-      .def("ghost_owners", &dolfinx::common::IndexMap::ghost_owners,
-           py::return_value_policy::reference_internal,
+      .def("ghost_owner_rank", &dolfinx::common::IndexMap::ghost_owner_rank,
            "Return owning process for each ghost index")
       .def_property_readonly("ghosts", &dolfinx::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,

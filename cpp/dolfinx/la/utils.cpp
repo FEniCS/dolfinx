@@ -26,7 +26,7 @@
 //-----------------------------------------------------------------------------
 Vec dolfinx::la::create_petsc_vector(const dolfinx::common::IndexMap& map)
 {
-  return dolfinx::la::create_petsc_vector(map.mpi_comm(), map.local_range(),
+  return dolfinx::la::create_petsc_vector(map.comm(), map.local_range(),
                                           map.ghosts(), map.block_size());
 }
 //-----------------------------------------------------------------------------

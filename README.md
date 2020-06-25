@@ -43,7 +43,32 @@ For detailed instructions, see the file INSTALL.
 
 ## Docker
 
-Nightly Docker images are available at https://hub.docker.com/u/dolfinx.
+A Docker image with DOLFINX built nightly:
+
+```
+docker run -ti dolfinx/dolfinx
+```
+
+To switch between real and complex builds of DOLFINX.
+```
+source /usr/local/bin/dolfinx-complex-mode
+source /usr/local/bin/dolfinx-real-mode
+```
+
+A Jupyter Lab environment with DOLFINX built nightly:
+
+```
+docker run -ti -p 8888:8888 dolfinx/lab # Access at http://localhost:8888
+```
+
+A development image with all of the dependencies required
+to build DOLFINX:
+
+```
+docker run -ti dolfinx/dev-env
+```
+
+For more information, see https://hub.docker.com/u/dolfinx
 
 ## License
 

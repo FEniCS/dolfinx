@@ -70,7 +70,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     facetdim = mesh.topology.dim - 1
     bndry_facets = np.where(np.array(cpp.mesh.compute_boundary_facets(mesh.topology)) == 1)[0]
     bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
-    assert(len(bdofs) < V.dim())
+    assert(len(bdofs) < V.dim)
     bc = DirichletBC(u_bc, bdofs)
 
     t0 = time.time()
