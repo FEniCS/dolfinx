@@ -484,7 +484,6 @@ void io::VTKFileNew::write(
       {
         // Extract mesh data
         int tdim = mesh->topology().dim();
-        int gdim = mesh->geometry().dim();
 
         auto cmap = mesh->geometry().cmap();
         auto geometry_layout = cmap.dof_layout();
