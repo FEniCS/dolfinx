@@ -551,14 +551,15 @@ void io::VTKFileNew::write(
   }
 
   // Save VTU XML to file
-  boost::filesystem::path vtu = p.stem();
-  vtu += "_p" + std::to_string(mpi_rank) + "_" + counter_str;
+  boost::filesystem::path vtu(p.parent_path());
+  vtu += "/" + p.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
+         + counter_str;
   vtu.replace_extension("vtu");
   xml_vtu.save_file(vtu.c_str(), "  ");
 
   // Create a PVTU XML object on rank 0
-  boost::filesystem::path p_pvtu = p.stem();
-  p_pvtu += counter_str;
+  boost::filesystem::path p_pvtu(p.parent_path());
+  p_pvtu += "/" + p.stem().string() + counter_str;
   p_pvtu.replace_extension("pvtu");
   if (mpi_rank == 0)
   {
@@ -609,7 +610,8 @@ void io::VTKFileNew::write(
       vtu += "_p" + std::to_string(i) + "_" + counter_str;
       vtu.replace_extension("vtu");
       pugi::xml_node piece_node = grid_node.append_child("Piece");
-      piece_node.append_attribute("Source") = vtu.c_str();
+      piece_node.append_attribute("Source")
+          = vtu.stem().replace_extension("vtu").c_str();
     }
 
     // Write PVTU file
@@ -620,6 +622,7 @@ void io::VTKFileNew::write(
   pugi::xml_node dataset_node = xml_collections.append_child("DataSet");
   dataset_node.append_attribute("timestep") = time;
   dataset_node.append_attribute("part") = "0";
-  dataset_node.append_attribute("file") = p_pvtu.c_str();
+  dataset_node.append_attribute("file")
+      = p_pvtu.stem().replace_extension("pvtu").c_str();
 }
 //----------------------------------------------------------------------------

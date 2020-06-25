@@ -170,10 +170,10 @@ def test_save_2d_vector(tempfile):
     mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], degree=2)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1)
-    f = VTKFileNew(mesh.mpi_comm(), "u2-new.pvd", "w")
+    f = VTKFileNew(mesh.mpi_comm(), tempfile + "u2-new.pvd", "w")
     f.write([u._cpp_object], 0.)
 
-    fold = VTKFile("u2-old.pvd")
+    fold = VTKFile(tempfile + "u2-old.pvd")
     fold.write(u)
 
     # f.write(u, 1.)
@@ -222,17 +222,26 @@ def test_save_1d_tensor(tempfile, file_options):
         VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 
-@ pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_2d_tensor(tempfile, file_options):
+def test_save_2d_tensor(tempfile):
+    import time
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
-    u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
+    u = Function(TensorFunctionSpace(mesh, ("Lagrange", 1)))
     u.vector.set(1)
-    VTKFile(tempfile + "u.pvd").write(u)
-    f = VTKFile(tempfile + "u.pvd")
-    f.write(u, 0.)
-    f.write(u, 1.)
-    for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option).write(u)
+    f = VTKFileNew(MPI.COMM_WORLD, tempfile + "u.pvd", "w")
+    start = time.time()
+    f.write([u._cpp_object], 0.)
+    u.vector.set(2)
+    f.write([u._cpp_object], 1.)
+    end = time.time()
+    print("NEW: {0:.2e}".format(end - start))
+
+    f = VTKFile(tempfile + "u_old.pvd")
+    start = time.time()
+    f.write(u)
+    u.vector.set(2)
+    f.write(u)
+    end = time.time()
+    print("OLD: {0:.2e}".format(end - start))
 
 
 @ pytest.mark.xfail(reason="file_option not added to VTK initializer")
