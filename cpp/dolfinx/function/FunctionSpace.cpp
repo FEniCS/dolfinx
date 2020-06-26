@@ -493,8 +493,10 @@ void FunctionSpace::interpolate(
     // Get dofmap for cell
     auto cell_dofs = _dofmap->cell_dofs(c);
     for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
+    {
       for (Eigen::Index j = 0; j < value_size; ++j)
         values_cell(i, j) = values(cell_dofs[i], j);
+    }
 
     // FIXME: For vector-valued Lagrange, this function 'throws away'
     // the redundant expression evaluations. It should really be made
