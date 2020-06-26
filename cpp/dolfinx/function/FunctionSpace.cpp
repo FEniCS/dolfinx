@@ -456,67 +456,7 @@ void FunctionSpace::interpolate(
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         values) const
 {
-  assert(_mesh);
-  assert(_element);
-  assert(_dofmap);
-  const int tdim = _mesh->topology().dim();
-
-  // Just reshape the array
-  // TODO: This function should just do this, but changes in FFC are needed first
-  // coefficients = Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(
-  //    values.data(), coefficients.rows());
-  // return;
-
-  // Note: the following does not exploit any block structure, e.g. for
-  // vector Lagrange, which leads to a lot of redundant evaluations.
-  // E.g., for a vector Lagrange element the vector-valued expression is
-  // evaluted three times at the some point.
-
-  // const int value_size = values.cols();
-
-  // FIXME: Dummy coordinate dofs - should limit the interpolation to
-  // Lagrange, in which case we don't need coordinate dofs in
-  // FiniteElement::transform_values.
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
-
-  // FIXME: It would be far more elegant and efficient to avoid the need
-  // to loop over cells to set the expansion corfficients. Would be much
-  // better if the expansion coefficients could be passed straight into
-  // Expresion::eval.
-
-  // Loop over cells
-  const int block_size = _element->block_size();
-  const int ndofs = _element->space_dimension() / block_size;
-  assert(_dofmap->element_dof_layout);
-  std::vector<PetscScalar> cell_coefficients(
-      _dofmap->element_dof_layout->num_dofs());
-
-  auto map = _mesh->topology().index_map(tdim);
-  assert(map);
-  const int num_cells = map->size_local() + map->num_ghosts();
-  for (int c = 0; c < num_cells; ++c)
-  {
-    // Get dofmap for cell
-    auto cell_dofs = _dofmap->cell_dofs(c);
-    // FIXME: For vector-valued Lagrange, this function 'throws away'
-    // the redundant expression evaluations. It should really be made
-    // not necessary.
-    // Copy into expansion coefficient array
-    for (int block = 0; block < block_size; ++block)
-    {
-      for (int i = 0; i < ndofs; ++i)
-      {
-        const int dof = ndofs * block + i;
-        std::cout << "dof: " << dof <<  std::endl;
-        std::cout << "block: " << block <<  std::endl;
-        std::cout << "i: " << i <<  std::endl;
-        std::cout << "cell_dofs: " << cell_dofs <<  std::endl;
-        std::cout << "coefficients: " << coefficients <<  std::endl;
-        std::cout << "values: " << values <<  std::endl;
-        coefficients[cell_dofs[dof]] = values(dof % block_size, block);
-      }
-    }
-  }
+  coefficients = Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(
+      values.data(), coefficients.rows());
 }
 //-----------------------------------------------------------------------------
