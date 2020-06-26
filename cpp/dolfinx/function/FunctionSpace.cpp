@@ -496,17 +496,17 @@ void FunctionSpace::interpolate(
     {
       for (Eigen::Index j = 0; j < value_size; ++j)
         values_cell(i, j) = values(cell_dofs[i], j);
-
-      // FIXME: For vector-valued Lagrange, this function 'throws away'
-      // the redundant expression evaluations. It should really be made
-      // not necessary.
-      _element->transform_values(cell_coefficients.data(), values_cell,
-                                 coordinate_dofs);
-
-      // Copy into expansion coefficient array
-      for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
-        coefficients[cell_dofs[i]] = cell_coefficients[i];
     }
+
+    // FIXME: For vector-valued Lagrange, this function 'throws away'
+    // the redundant expression evaluations. It should really be made
+    // not necessary.
+    _element->transform_values(cell_coefficients.data(), values_cell,
+                               coordinate_dofs);
+
+    // Copy into expansion coefficient array
+    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
+      coefficients[cell_dofs[i]] = cell_coefficients[i];
   }
 }
 //-----------------------------------------------------------------------------
