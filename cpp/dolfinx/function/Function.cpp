@@ -265,9 +265,13 @@ void Function::eval(
           // TODO: Find an Eigen shortcut for this operation
           // FIXME: this should be coefficients[block * space_dimension + i] if
           // XXXYYYZZZ order is chosen
-          u.row(p)[j + block * value_size]
-              += coefficients[block * space_dimension + i]
+          u.row(p)[j * block_size + block]
+              += coefficients[block_size * value_size * i + block * value_size
+                              + j]
                  * basis_values(0, i, j);
+          // u.row(p)[j + block * value_size]
+          //    += coefficients[block * space_dimension + i]
+          //       * basis_values(0, i, j);
         }
       }
     }
