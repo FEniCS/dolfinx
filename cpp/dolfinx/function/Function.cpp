@@ -254,7 +254,6 @@ void Function::eval(
     auto dofs = dofmap->cell_dofs(cell_index);
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
       coefficients[i] = _v[dofs[i]];
-
     // Compute expansion
     for (int block = 0; block < block_size; ++block)
     {
@@ -264,8 +263,7 @@ void Function::eval(
         {
           // TODO: Find an Eigen shortcut for this operation
           u.row(p)[j * block_size + block]
-              += coefficients[value_size * (block_size * i + block) + j]
-                 * basis_values(0, i, j);
+              += coefficients[block_size * i + block] * basis_values(0, i, j);
         }
       }
     }
