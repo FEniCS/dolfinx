@@ -109,14 +109,14 @@ void function(py::module& m)
            &dolfinx::function::FunctionSpace::tabulate_dof_coordinates);
 
   // dolfinx::function::Constant
-  py::class_<dolfinx::function::Constant,
-             std::shared_ptr<dolfinx::function::Constant>>(
+  py::class_<dolfinx::function::Constant<PetscScalar>,
+             std::shared_ptr<dolfinx::function::Constant<PetscScalar>>>(
       m, "Constant", "A value constant with respect to integration domain")
       .def(py::init<std::vector<int>, std::vector<PetscScalar>>(),
            "Create a constant from a scalar value array")
       .def(
           "value",
-          [](dolfinx::function::Constant& self) {
+          [](dolfinx::function::Constant<PetscScalar>& self) {
             return py::array(self.shape, self.value.data(), py::none());
           },
           py::return_value_policy::reference_internal);

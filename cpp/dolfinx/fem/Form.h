@@ -24,6 +24,7 @@ namespace dolfinx
 
 namespace function
 {
+template <typename T>
 class Constant;
 class FunctionSpace;
 } // namespace function
@@ -76,8 +77,8 @@ public:
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
        const FormIntegrals& integrals, const FormCoefficients& coefficients,
-       const std::vector<
-           std::pair<std::string, std::shared_ptr<const function::Constant>>>
+       const std::vector<std::pair<
+           std::string, std::shared_ptr<const function::Constant<PetscScalar>>>>
            constants);
 
   /// Create form (no UFC integrals). Integrals can be attached later
@@ -127,7 +128,8 @@ public:
   ///
   /// Names of the constants must agree with their names in UFL file.
   void
-  set_constants(std::map<std::string, std::shared_ptr<const function::Constant>>
+  set_constants(std::map<std::string,
+                         std::shared_ptr<const function::Constant<PetscScalar>>>
                     constants);
 
   /// Set constants based on their order (without names)
@@ -139,7 +141,8 @@ public:
   /// The order of constants must match their order in original ufl
   /// Form.
   void set_constants(
-      std::vector<std::shared_ptr<const function::Constant>> constants);
+      std::vector<std::shared_ptr<const function::Constant<PetscScalar>>>
+          constants);
 
   /// Check if all constants associated with the form have been set
   /// @return True if all Form constants have been set
@@ -203,8 +206,8 @@ public:
   ///         used to set constants in user's c++ code. Index in the
   ///         vector is the position of the constant in the original
   ///         (nonsimplified) form.
-  const std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant>>>&
+  const std::vector<std::pair<
+      std::string, std::shared_ptr<const function::Constant<PetscScalar>>>>&
   constants() const;
 
 private:
@@ -215,7 +218,8 @@ private:
   FormCoefficients _coefficients;
 
   // Constants associated with the Form
-  std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
+  std::vector<std::pair<std::string,
+                        std::shared_ptr<const function::Constant<PetscScalar>>>>
       _constants;
 
   // Function spaces (one for each argument)

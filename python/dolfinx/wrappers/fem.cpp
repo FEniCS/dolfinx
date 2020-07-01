@@ -445,10 +445,11 @@ void fem(py::module& m)
               std::shared_ptr<const dolfinx::function::Function> f) {
              self.coefficients().set(i, f);
            })
-      .def("set_constants",
-           py::overload_cast<
-               std::vector<std::shared_ptr<const dolfinx::function::Constant>>>(
-               &dolfinx::fem::Form::set_constants))
+      .def(
+          "set_constants",
+          py::overload_cast<std::vector<
+              std::shared_ptr<const dolfinx::function::Constant<PetscScalar>>>>(
+              &dolfinx::fem::Form::set_constants))
       .def("set_mesh", &dolfinx::fem::Form::set_mesh)
       .def("set_cell_domains", &dolfinx::fem::Form::set_cell_domains)
       .def("set_exterior_facet_domains",
@@ -473,5 +474,5 @@ void fem(py::module& m)
         py::arg("V"), py::arg("dim"), py::arg("entities"),
         py::arg("remote") = true);
   m.def("locate_dofs_geometrical", &dolfinx::fem::locate_dofs_geometrical);
-} // namespace dolfinx_wrappers
+}
 } // namespace dolfinx_wrappers

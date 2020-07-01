@@ -6,7 +6,6 @@ set(HEADERS_function
   PARENT_SCOPE)
 
 target_sources(dolfinx PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/Constant.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Function.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.cpp
 )
