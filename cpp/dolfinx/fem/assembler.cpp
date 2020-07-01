@@ -83,13 +83,13 @@ PetscScalar fem::assemble_scalar(const Form& M)
 void fem::assemble_vector(Vec b, const Form& L)
 {
   la::VecWrapper _b(b);
-  fem::impl::assemble_vector(_b.x, L);
+  fem::impl::assemble_vector<PetscScalar>(_b.x, L);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {
-  fem::impl::assemble_vector(b, L);
+  fem::impl::assemble_vector<PetscScalar>(b, L);
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
@@ -99,7 +99,7 @@ void fem::apply_lifting(
 {
   la::VecWrapper _b(b);
   if (x0.empty())
-    fem::impl::apply_lifting(_b.x, a, bcs1, {}, scale);
+    fem::impl::apply_lifting<PetscScalar>(_b.x, a, bcs1, {}, scale);
   else
   {
     std::vector<la::VecReadWrapper> x0_wrapper;
@@ -112,7 +112,7 @@ void fem::apply_lifting(
       x0_ref.emplace_back(x0_wrapper.back().x);
     }
 
-    fem::impl::apply_lifting(_b.x, a, bcs1, x0_ref, scale);
+    fem::impl::apply_lifting<PetscScalar>(_b.x, a, bcs1, x0_ref, scale);
   }
 }
 //-----------------------------------------------------------------------------
