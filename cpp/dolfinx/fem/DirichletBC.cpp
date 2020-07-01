@@ -570,45 +570,6 @@ DirichletBC::dofs_owned() const
   return _dofs.block<Eigen::Dynamic, 2>(0, 0, _owned_indices, 2);
 }
 // -----------------------------------------------------------------------------
-void DirichletBC::set(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
-    double scale) const
-{
-  // FIXME: This one excludes ghosts. Need to straighten out.
-  assert(_g);
-  la::VecReadWrapper g(_g->vector().vec(), false);
-  for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
-  {
-    if (_dofs(i, 0) < x.rows())
-      x[_dofs(i, 0)] = scale * g.x[_dofs(i, 1)];
-  }
-}
-//-----------------------------------------------------------------------------
-void DirichletBC::set(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
-    double scale) const
-{
-  // FIXME: This one excludes ghosts. Need to straighten out.
-  assert(_g);
-  assert(x.rows() <= x0.rows());
-  la::VecReadWrapper g(_g->vector().vec(), false);
-  for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
-  {
-    if (_dofs(i, 0) < x.rows())
-      x[_dofs(i, 0)] = scale * (g.x[_dofs(i, 1)] - x0[_dofs(i, 0)]);
-  }
-}
-//-----------------------------------------------------------------------------
-void DirichletBC::dof_values(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> values) const
-{
-  assert(_g);
-  la::VecReadWrapper g(_g->vector().vec());
-  for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
-    values[_dofs(i, 0)] = g.x[_dofs(i, 1)];
-}
-//-----------------------------------------------------------------------------
 void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 {
   for (Eigen::Index i = 0; i < _dofs.rows(); ++i)

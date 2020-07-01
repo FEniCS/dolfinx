@@ -7,9 +7,10 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <dolfinx/function/Function.h>
+#include <dolfinx/la/utils.h>
 #include <functional>
 #include <memory>
-#include <petscsys.h>
 #include <vector>
 
 namespace dolfinx
@@ -163,21 +164,49 @@ public:
 
   /// Set bc entries in x to scale*x_bc
   /// @todo Clarify w.r.t ghosts
-  void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
-           double scale = 1.0) const;
+  template <typename T>
+  void set(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> x,
+           double scale = 1.0) const
+  {
+    // FIXME: This one excludes ghosts. Need to straighten out.
+    assert(_g);
+    la::VecReadWrapper g(_g->vector().vec(), false);
+    for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
+    {
+      if (_dofs(i, 0) < x.rows())
+        x[_dofs(i, 0)] = scale * g.x[_dofs(i, 1)];
+    }
+  }
 
   /// Set bc entries in x to scale*(x0 - x_bc).
   /// @todo Clarify w.r.t ghosts
-  void
-  set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
-      const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
-      double scale = 1.0) const;
+  template <typename T>
+  void set(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> x,
+           const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
+           double scale = 1.0) const
+  {
+    // FIXME: This one excludes ghosts. Need to straighten out.
+    assert(_g);
+    assert(x.rows() <= x0.rows());
+    la::VecReadWrapper g(_g->vector().vec(), false);
+    for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
+    {
+      if (_dofs(i, 0) < x.rows())
+        x[_dofs(i, 0)] = scale * (g.x[_dofs(i, 1)] - x0[_dofs(i, 0)]);
+    }
+  }
 
   /// Set boundary condition value for entres with an applied boundary
   /// condition. Other entries are not modified.
   /// @todo Clarify w.r.t ghosts
-  void dof_values(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> values) const;
+  template <typename T>
+  void dof_values(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> values) const
+  {
+    assert(_g);
+    la::VecReadWrapper g(_g->vector().vec());
+    for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
+      values[_dofs(i, 0)] = g.x[_dofs(i, 1)];
+  }
 
   /// Set markers[i] = true if dof i has a boundary condition applied.
   /// Value of markers[i] is not changed otherwise.
