@@ -31,6 +31,7 @@ class IndexMap;
 
 namespace function
 {
+template <typename T>
 class Constant;
 class Function;
 class FunctionSpace;
@@ -125,7 +126,8 @@ std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
 get_coeffs_from_ufc_form(const ufc_form& ufc_form);
 
 /// Extract coefficients from a UFC form
-std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
+std::vector<std::pair<std::string,
+                      std::shared_ptr<const function::Constant<PetscScalar>>>>
 get_constants_from_ufc_form(const ufc_form& ufc_form);
 
 /// Create a CoordinateElement from ufc

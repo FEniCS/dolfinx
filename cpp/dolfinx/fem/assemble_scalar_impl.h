@@ -66,10 +66,7 @@ T assemble_scalar(const fem::Form& M)
   // Prepare constants
   if (!M.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
-  const std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant>>>&
-      constants
-      = M.constants();
+  auto constants = M.constants();
 
   std::vector<T> constant_values;
   for (auto const& constant : constants)

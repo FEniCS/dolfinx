@@ -532,10 +532,12 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
   return coeffs;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
+std::vector<std::pair<std::string,
+                      std::shared_ptr<const function::Constant<PetscScalar>>>>
 fem::get_constants_from_ufc_form(const ufc_form& ufc_form)
 {
-  std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
+  std::vector<std::pair<std::string,
+                        std::shared_ptr<const function::Constant<PetscScalar>>>>
       constants;
   const char** names = ufc_form.constant_name_map();
   for (int i = 0; i < ufc_form.num_constants; ++i)
@@ -758,8 +760,8 @@ fem::pack_coefficients(const fem::Form& form)
 Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
 fem::pack_constants(const fem::Form& form)
 {
-  const std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant>>>
+  const std::vector<std::pair<
+      std::string, std::shared_ptr<const function::Constant<PetscScalar>>>>
       constants = form.constants();
   std::vector<PetscScalar> constant_values;
   for (const auto& constant : constants)

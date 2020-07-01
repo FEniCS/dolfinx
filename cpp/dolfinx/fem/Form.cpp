@@ -26,8 +26,8 @@ Form::Form(
     const std::vector<std::shared_ptr<const function::FunctionSpace>>&
         function_spaces,
     const FormIntegrals& integrals, const FormCoefficients& coefficients,
-    const std::vector<
-        std::pair<std::string, std::shared_ptr<const function::Constant>>>
+    const std::vector<std::pair<
+        std::string, std::shared_ptr<const function::Constant<PetscScalar>>>>
         constants)
     : _integrals(integrals), _coefficients(coefficients), _constants(constants),
       _function_spaces(function_spaces)
@@ -49,8 +49,9 @@ Form::Form(
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces)
     : Form(function_spaces, FormIntegrals(), FormCoefficients({}),
-           std::vector<std::pair<std::string,
-                                 std::shared_ptr<const function::Constant>>>())
+           std::vector<std::pair<
+               std::string,
+               std::shared_ptr<const function::Constant<PetscScalar>>>>())
 {
   // Do nothing
 }
@@ -79,7 +80,9 @@ int Form::original_coefficient_position(int i) const
 }
 //-----------------------------------------------------------------------------
 void Form::set_constants(
-    std::map<std::string, std::shared_ptr<const function::Constant>> constants)
+    std::map<std::string,
+             std::shared_ptr<const function::Constant<PetscScalar>>>
+        constants)
 {
   for (auto const& constant : constants)
   {
@@ -88,8 +91,9 @@ void Form::set_constants(
     // Find matching string in existing constants
     const auto it = std::find_if(
         _constants.begin(), _constants.end(),
-        [&](const std::pair<std::string,
-                            std::shared_ptr<const function::Constant>>& q) {
+        [&](const std::pair<
+            std::string,
+            std::shared_ptr<const function::Constant<PetscScalar>>>& q) {
           return (q.first == name);
         });
 
@@ -101,7 +105,8 @@ void Form::set_constants(
 }
 //-----------------------------------------------------------------------------
 void Form::set_constants(
-    std::vector<std::shared_ptr<const function::Constant>> constants)
+    std::vector<std::shared_ptr<const function::Constant<PetscScalar>>>
+        constants)
 {
   if (constants.size() != _constants.size())
     throw std::runtime_error("Incorrect number of constants.");
@@ -195,8 +200,8 @@ const fem::FormCoefficients& Form::coefficients() const
   return _coefficients;
 }
 //-----------------------------------------------------------------------------
-const std::vector<
-    std::pair<std::string, std::shared_ptr<const function::Constant>>>&
+const std::vector<std::pair<
+    std::string, std::shared_ptr<const function::Constant<PetscScalar>>>>&
 Form::constants() const
 {
   return _constants;
