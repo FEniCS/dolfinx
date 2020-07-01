@@ -22,7 +22,6 @@ set(HEADERS_fem
 
 target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/assembler.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/assemble_matrix_impl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateElement.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DirichletBC.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DiscreteOperators.cpp
