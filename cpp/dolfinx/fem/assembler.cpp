@@ -77,7 +77,7 @@ make_petsc_lambda(Mat A, std::vector<PetscInt>&)
 //-----------------------------------------------------------------------------
 PetscScalar fem::assemble_scalar(const Form& M)
 {
-  return fem::impl::assemble_scalar(M);
+  return fem::impl::assemble_scalar<PetscScalar>(M);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(Vec b, const Form& L)
