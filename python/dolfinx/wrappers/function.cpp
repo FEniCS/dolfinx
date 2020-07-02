@@ -74,8 +74,7 @@ void function(py::module& m)
           "Interpolate using a pointer to an expression with a C signature")
       .def_property_readonly(
           "vector",
-          [](const dolfinx::function::Function&
-                 self) { return self.vector().vec(); },
+          [](const dolfinx::function::Function& self) { return self.vector(); },
           "Return the vector associated with the finite element Function")
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::function::Function::x),

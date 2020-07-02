@@ -170,7 +170,7 @@ public:
   {
     // FIXME: This one excludes ghosts. Need to straighten out.
     assert(_g);
-    la::VecReadWrapper g(_g->vector().vec(), false);
+    la::VecReadWrapper g(_g->vector(), false);
     for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
     {
       if (_dofs(i, 0) < x.rows())
@@ -188,7 +188,7 @@ public:
     // FIXME: This one excludes ghosts. Need to straighten out.
     assert(_g);
     assert(x.rows() <= x0.rows());
-    la::VecReadWrapper g(_g->vector().vec(), false);
+    la::VecReadWrapper g(_g->vector(), false);
     for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
     {
       if (_dofs(i, 0) < x.rows())
@@ -203,7 +203,7 @@ public:
   void dof_values(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> values) const
   {
     assert(_g);
-    la::VecReadWrapper g(_g->vector().vec());
+    la::VecReadWrapper g(_g->vector());
     for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
       values[_dofs(i, 0)] = g.x[_dofs(i, 1)];
   }

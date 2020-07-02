@@ -84,8 +84,7 @@ Vec create_ghosted_vector(
 Function::Function(std::shared_ptr<const FunctionSpace> V)
     : _id(common::UniqueIdGenerator::id()), _function_space(V),
       _x(std::make_shared<la::Vector<PetscScalar>>(V->dofmap()->index_map)),
-      _vector(create_ghosted_vector(*V->dofmap()->index_map, _x->array()),
-              false)
+      _vector(create_ghosted_vector(*V->dofmap()->index_map, _x->array()))
 {
   if (!V->component().empty())
   {
@@ -99,17 +98,16 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 Function::Function(std::shared_ptr<const FunctionSpace> V,
                    std::shared_ptr<la::Vector<PetscScalar>> x)
     : _id(common::UniqueIdGenerator::id()), _function_space(V), _x(x),
-      _vector(create_ghosted_vector(*V->dofmap()->index_map, _x->array()),
-              false)
+      _vector(create_ghosted_vector(*V->dofmap()->index_map, _x->array()))
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
 
   // Assertion uses '<=' to deal with sub-functions
-  assert(V->dofmap());
-  assert(V->dofmap()->index_map->size_global()
-             * V->dofmap()->index_map->block_size()
-         <= _vector.size());
+  // assert(V->dofmap());
+  // assert(V->dofmap()->index_map->size_global()
+  //            * V->dofmap()->index_map->block_size()
+  //        <= _vector.size());
 }
 //-----------------------------------------------------------------------------
 Function Function::sub(int i) const
@@ -160,23 +158,27 @@ std::shared_ptr<const FunctionSpace> Function::function_space() const
   return _function_space;
 }
 //-----------------------------------------------------------------------------
-la::PETScVector& Function::vector()
+Vec Function::vector() const
 {
   // Check that this is not a sub function.
   assert(_function_space->dofmap());
   assert(_function_space->dofmap()->index_map);
-  if (_vector.size()
-      != _function_space->dofmap()->index_map->size_global()
-             * _function_space->dofmap()->index_map->block_size())
-  {
-    throw std::runtime_error(
-        "Cannot access a non-const vector from a subfunction");
-  }
+  // if (_vector.size()
+  //     != _function_space->dofmap()->index_map->size_global()
+  //            * _function_space->dofmap()->index_map->block_size())
+  // {
+  //   throw std::runtime_error(
+  //       "Cannot access a non-const vector from a subfunction");
+  // }
+
+  if (!_vector)
+    _vector = create_ghosted_vector(*_function_space->dofmap()->index_map,
+                                    _x->array());
 
   return _vector;
 }
 //-----------------------------------------------------------------------------
-const la::PETScVector& Function::vector() const { return _vector; }
+// const la::PETScVector& Function::vector() const { return _vector; }
 //-----------------------------------------------------------------------------
 void Function::eval(
     const Eigen::Ref<
@@ -256,7 +258,7 @@ void Function::eval(
 
   // Loop over points
   u.setZero();
-  la::VecReadWrapper v(_vector.vec());
+  la::VecReadWrapper v(_vector);
   Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
   for (Eigen::Index p = 0; p < cells.rows(); ++p)
   {
@@ -302,7 +304,7 @@ void Function::eval(
 void Function::interpolate(const Function& v)
 {
   assert(_function_space);
-  la::VecWrapper x(_vector.vec());
+  la::VecWrapper x(_vector);
   _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
@@ -312,13 +314,13 @@ void Function::interpolate(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& f)
 {
-  la::VecWrapper x(_vector.vec());
+  la::VecWrapper x(_vector);
   _function_space->interpolate(x.x, f);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate_c(const FunctionSpace::interpolation_function& f)
 {
-  la::VecWrapper x(_vector.vec());
+  la::VecWrapper x(_vector);
   _function_space->interpolate_c(x.x, f);
 }
 //-----------------------------------------------------------------------------

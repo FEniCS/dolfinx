@@ -722,7 +722,7 @@ fem::pack_coefficients(const fem::Form& form)
       x_local(coefficients.size(), nullptr);
   for (std::size_t i = 0; i < v.size(); ++i)
   {
-    x[i] = coefficients.get(i)->vector().vec();
+    x[i] = coefficients.get(i)->vector();
     VecGhostGetLocalForm(x[i], &x_local[i]);
     VecGetArrayRead(x_local[i], &v[i]);
   }

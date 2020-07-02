@@ -8,7 +8,6 @@
 
 #include <Eigen/Dense>
 #include <dolfinx/common/types.h>
-#include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/Vector.h>
 #include <functional>
 #include <memory>
@@ -76,11 +75,11 @@ public:
 
   /// Return vector of expansion coefficients (non-const version)
   /// @return The vector of expansion coefficients
-  la::PETScVector& vector();
+  Vec vector() const;
 
   /// Return vector of expansion coefficients (const version)
   /// @return The vector of expansion coefficients
-  const la::PETScVector& vector() const;
+  // const la::PETScVector& vector() const;
 
   /// Underlying vector
   std::shared_ptr<const la::Vector<PetscScalar>> x() const { return _x; }
@@ -156,6 +155,6 @@ private:
   std::shared_ptr<la::Vector<PetscScalar>> _x;
 
   // The vector of expansion coefficients (local)
-  la::PETScVector _vector;
+  mutable Vec _vector = nullptr;
 };
 } // namespace dolfinx::function
