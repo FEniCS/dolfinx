@@ -252,6 +252,7 @@ void Function::eval(
 
     // Get degrees of freedom for current cell
     auto dofs = dofmap->cell_dofs(cell_index);
+
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
       coefficients[i] = _v[dofs[i]];
 
@@ -264,8 +265,7 @@ void Function::eval(
         {
           // TODO: Find an Eigen shortcut for this operation
           u.row(p)[j * block_size + block]
-              += coefficients[value_size * (i * block_size + block) + j]
-                 * basis_values(0, i, j);
+              += coefficients[i * block_size + block] * basis_values(0, i, j);
         }
       }
     }
