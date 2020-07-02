@@ -289,9 +289,7 @@ void fem::set_bc(Vec b,
     set_bc(_b.x, bcs, _x0.x, scale);
   }
   else
-  {
     set_bc(_b.x, bcs, scale);
-  }
 }
 //-----------------------------------------------------------------------------
 void fem::set_bc(
