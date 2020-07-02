@@ -82,6 +82,12 @@ public:
   /// @return The vector of expansion coefficients
   const la::PETScVector& vector() const;
 
+  /// Underlying vector
+  std::shared_ptr<const la::Vector<PetscScalar>> x() const { return _x; }
+
+  /// Underlying vector
+  std::shared_ptr<la::Vector<PetscScalar>> x() { return _x; }
+
   /// Interpolate a Function (on possibly non-matching meshes)
   /// @param[in] v The function to be interpolated.
   void interpolate(const Function& v);

@@ -49,7 +49,7 @@ class Function(ufl.Coefficient):
 
     def __init__(self,
                  V: "FunctionSpace",
-                 x: typing.Optional[PETSc.Vec] = None,
+                 x: typing.Optional[cpp.la.Vector] = None,
                  name: typing.Optional[str] = None):
         """Initialize finite element Function."""
 
@@ -161,6 +161,11 @@ class Function(ufl.Coefficient):
         return self._cpp_object.vector
 
     @property
+    def x(self):
+        """Return the vector holding Function degrees-of-freedom."""
+        return self._cpp_object.x
+
+    @property
     def name(self) -> str:
         """Name of the Function."""
         return self._cpp_object.name
@@ -185,8 +190,7 @@ class Function(ufl.Coefficient):
         total number of sub spaces.
 
         """
-        return Function(
-            self._V.sub(i), self.vector, name="{}-{}".format(str(self), i))
+        return Function(self._V.sub(i), self.x, name="{}-{}".format(str(self), i))
 
     def split(self):
         """Extract any sub functions.
@@ -205,7 +209,7 @@ class Function(ufl.Coefficient):
         u_collapsed = self._cpp_object.collapse()
         V_collapsed = function.FunctionSpace(None, self.ufl_element(),
                                              u_collapsed.function_space)
-        return Function(V_collapsed, u_collapsed.vector)
+        return Function(V_collapsed, u_collapsed.x)
 
 
 class ElementMetaData(typing.NamedTuple):

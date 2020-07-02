@@ -9,6 +9,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/la/Vector.h>
 #include <dolfinx/la/VectorSpaceBasis.h>
 #include <dolfinx/la/utils.h>
 #include <memory>
@@ -80,6 +81,32 @@ void la(py::module& m)
       .def("__getitem__", [](const dolfinx::la::VectorSpaceBasis& self, int i) {
         return self[i]->vec();
       });
+
+  // dolfinx::la::VectorSpaceBasis
+  py::class_<dolfinx::la::Vector<PetscScalar>,
+             std::shared_ptr<dolfinx::la::Vector<PetscScalar>>>(m, "Vector");
+  // .def(py::init([](const std::vector<Vec> x) {
+  //   std::vector<std::shared_ptr<dolfinx::la::PETScVector>> _x;
+  //   for (std::size_t i = 0; i < x.size(); ++i)
+  //   {
+  //     assert(x[i]);
+  //     _x.push_back(std::make_shared<dolfinx::la::PETScVector>(x[i], true));
+  //   }
+  //   return dolfinx::la::VectorSpaceBasis(_x);
+  // }))
+  // .def("is_orthonormal", &dolfinx::la::VectorSpaceBasis::is_orthonormal,
+  //      py::arg("tol") = 1.0e-10)
+  // .def("is_orthogonal", &dolfinx::la::VectorSpaceBasis::is_orthogonal,
+  //      py::arg("tol") = 1.0e-10)
+  // .def("in_nullspace", &dolfinx::la::VectorSpaceBasis::in_nullspace,
+  //      py::arg("A"), py::arg("tol") = 1.0e-10)
+  // .def("orthogonalize", &dolfinx::la::VectorSpaceBasis::orthogonalize)
+  // .def("orthonormalize", &dolfinx::la::VectorSpaceBasis::orthonormalize,
+  //      py::arg("tol") = 1.0e-10)
+  // .def("dim", &dolfinx::la::VectorSpaceBasis::dim)
+  // .def("__getitem__", [](const dolfinx::la::VectorSpaceBasis& self, int i) {
+  //   return self[i]->vec();
+  // });
 
   // utils
   m.def("create_vector",
