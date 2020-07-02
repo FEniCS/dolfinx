@@ -155,8 +155,6 @@ void FunctionSpace::interpolate(
   const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                      Eigen::RowMajor>
       values = f(x);
-  std::cout << "FS::x = [" << x << "]" << std::endl;
-  std::cout << "FS::values = [" << values << "]" << std::endl;
 
   assert(_element);
   std::vector<int> vshape(_element->value_rank(), 1);
@@ -306,8 +304,6 @@ FunctionSpace::tabulate_dof_coordinates() const
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = _element->dof_reference_coordinates();
 
-  std::cout << "(d_r_c)X = [" << X << "]\n";
-
   // Get coordinate map
   const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
 
@@ -356,8 +352,6 @@ FunctionSpace::tabulate_dof_coordinates() const
       x.row(dof).head(gdim) = coordinates.row(i);
     }
   }
-
-  std::cout << "tdc::x = [\n" << x << "]" << std::endl;
 
   return x;
 }
@@ -464,8 +458,5 @@ void FunctionSpace::interpolate(
 {
   coefficients = Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(
       values.data(), coefficients.rows());
-  std::cout << "interpolate::values = [" << values << "]" << std::endl;
-  std::cout << "interpolate::coefficients = [" << coefficients << "]"
-            << std::endl;
 }
 //-----------------------------------------------------------------------------

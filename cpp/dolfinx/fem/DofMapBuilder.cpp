@@ -508,7 +508,6 @@ std::pair<std::shared_ptr<common::IndexMap>, graph::AdjacencyList<std::int32_t>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                      const ElementDofLayout& element_dof_layout, int block_size)
 {
-  std::cout << std::endl << std::endl;
   common::Timer t0("Init dofmap");
 
   if (element_dof_layout.block_size() != 1)
@@ -539,11 +538,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   // nodes
   const auto [old_to_new, num_owned]
       = compute_reordering_map(node_graph0, dof_entity0, topology);
-
-  std::cout << "old_to_new = [";
-  for (std::size_t i = 0; i < old_to_new.size(); ++i)
-    std::cout << old_to_new[i] << " ";
-  std::cout << "]" << std::endl;
 
   // Compute process offset for owned nodes
   const std::int64_t process_offset
@@ -578,12 +572,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
       {
         dofmap[cell * block_size * local_dim0 + block_size * j + block]
             = block_size * new_node + block;
-        std::cout << "-=-=-> " << cell << " " << j << " " << block << " "
-                  << old_node << " " << new_node << " "
-                  << "dofmap["
-                  << cell * block_size * local_dim0 + block_size * j + block
-                  << "] = " << block_size * new_node + block << ";"
-                  << std::endl;
       }
     }
   }

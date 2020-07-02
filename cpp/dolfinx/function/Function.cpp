@@ -252,22 +252,8 @@ void Function::eval(
 
     // Get degrees of freedom for current cell
     auto dofs = dofmap->cell_dofs(cell_index);
-    std::cout << std::endl << std::endl;
-    std::cout << "dofs = [" << dofs << "]" << std::endl;
-    std::cout << "_v = [" << _v << "]" << std::endl;
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
       coefficients[i] = _v[dofs[i]];
-    //    for (int block = 0; block < block_size; ++block)
-    //      for (Eigen::Index i = 0; i < space_dimension; ++i)
-    //        coefficients[i * block_size + block] = _v[dofs[space_dimension *
-    //        block + i]];
-    std::cout << "coefficients = [" << coefficients << "]" << std::endl;
-
-    std::cout << std::endl;
-    std::cout << coordinate_dofs << std::endl;
-    std::cout << X << std::endl;
-    std::cout << "basis_values = [" << basis_values << "]" << std::endl;
-    std::cout << "coefficients = [" << coefficients << "]" << std::endl;
 
     // Compute expansion
     for (int block = 0; block < block_size; ++block)
@@ -276,25 +262,13 @@ void Function::eval(
       {
         for (int j = 0; j < value_size; ++j)
         {
-          std::cout << "u.row(" << p << ")[" << j * block_size + block
-                    << "] += coefficients["
-                    << value_size * (i * block_size + block) + j
-                    << "] * basis_values(0, " << i << ", " << j << ");"
-                    << std::endl;
-          std::cout << "u.row(" << p << ")[" << j * block_size + block
-                    << "] += coefficients["
-                    << value_size * (i * block_size + block) + j
-                    << "] * basis_values(0, " << i << ", " << j << ");"
-                    << std::endl;
           // TODO: Find an Eigen shortcut for this operation
           u.row(p)[j * block_size + block]
               += coefficients[value_size * (i * block_size + block) + j]
                  * basis_values(0, i, j);
-          std::cout << "u.row(" << p << ") = [" << u.row(p) << "]" << std::endl;
         }
       }
     }
-    std::cout << "u.row(" << p << ") = [" << u.row(p) << "]" << std::endl;
   }
 }
 //-----------------------------------------------------------------------------
