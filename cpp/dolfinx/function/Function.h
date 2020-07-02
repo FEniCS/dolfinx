@@ -73,13 +73,9 @@ public:
   /// @return The function space
   std::shared_ptr<const FunctionSpace> function_space() const;
 
-  /// Return vector of expansion coefficients (non-const version)
+  /// Return vector of expansion coefficients at as PETSc Vec
   /// @return The vector of expansion coefficients
   Vec vector() const;
-
-  /// Return vector of expansion coefficients (const version)
-  /// @return The vector of expansion coefficients
-  // const la::PETScVector& vector() const;
 
   /// Underlying vector
   std::shared_ptr<const la::Vector<PetscScalar>> x() const { return _x; }
@@ -154,7 +150,7 @@ private:
   // The vector of expansion coefficients (local)
   std::shared_ptr<la::Vector<PetscScalar>> _x;
 
-  // The vector of expansion coefficients (local)
+  // The vector of expansion coefficients
   mutable Vec _vector = nullptr;
 };
 } // namespace dolfinx::function

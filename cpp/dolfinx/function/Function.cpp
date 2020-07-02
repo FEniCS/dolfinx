@@ -30,33 +30,7 @@ using namespace dolfinx::function;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Create a vector with layout from dofmap, and zero.
-// la::PETScVector create_vector(const function::FunctionSpace& V)
-// {
-//   common::Timer timer("Init dof vector");
-
-//   // Get dof map
-//   std::shared_ptr<const fem::DofMap> dofmap = V.dofmap();
-//   assert(dofmap);
-
-//   // Check that function space is not a subspace (view)
-//   assert(dofmap->element_dof_layout);
-//   if (dofmap->element_dof_layout->is_view())
-//   {
-//     throw std::runtime_error(
-//         "Cannot initialize vector of degrees of freedom for "
-//         "function. Cannot be created from subspace. Consider "
-//         "collapsing the function space");
-//   }
-
-//   assert(dofmap->index_map);
-//   la::PETScVector v = la::PETScVector(*(dofmap->index_map));
-//   la::VecWrapper _v(v.vec());
-//   _v.x.setZero();
-
-//   return v;
-// }
-//-----------------------------------------------------------------------------
+/// Create a ghosted PETSc Vec that wraps the Eigen data
 Vec create_ghosted_vector(
     const common::IndexMap& map,
     const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x)
@@ -83,8 +57,7 @@ Vec create_ghosted_vector(
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
     : _id(common::UniqueIdGenerator::id()), _function_space(V),
-      _x(std::make_shared<la::Vector<PetscScalar>>(V->dofmap()->index_map)),
-      _vector(create_ghosted_vector(*V->dofmap()->index_map, _x->array()))
+      _x(std::make_shared<la::Vector<PetscScalar>>(V->dofmap()->index_map))
 {
   if (!V->component().empty())
   {
@@ -97,17 +70,16 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
                    std::shared_ptr<la::Vector<PetscScalar>> x)
-    : _id(common::UniqueIdGenerator::id()), _function_space(V), _x(x),
-      _vector(create_ghosted_vector(*V->dofmap()->index_map, _x->array()))
+    : _id(common::UniqueIdGenerator::id()), _function_space(V), _x(x)
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
 
   // Assertion uses '<=' to deal with sub-functions
-  // assert(V->dofmap());
-  // assert(V->dofmap()->index_map->size_global()
-  //            * V->dofmap()->index_map->block_size()
-  //        <= _vector.size());
+  assert(V->dofmap());
+  assert(V->dofmap()->index_map->size_global()
+             * V->dofmap()->index_map->block_size()
+         <= _x->map()->block_size() * _x->map()->size_global());
 }
 //-----------------------------------------------------------------------------
 Function Function::sub(int i) const
@@ -130,19 +102,9 @@ Function Function::collapse() const
   auto vector_new = std::make_shared<la::Vector<PetscScalar>>(
       function_space_new->dofmap()->index_map);
 
-  // la::PETScVector vector_new = create_vector(*function_space_new);
-
-  // // Wrap PETSc vectors using Eigen
-  // la::VecReadWrapper v_wrap(_vector.vec());
-  // Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_old
-  //     = v_wrap.x;
-  // la::VecWrapper v_new(vector_new.vec());
-  // Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_new = v_new.x;
-
+  // Copy values into new vector
   const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x_old = _x->array();
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x_new = vector_new->array();
-
-  // Copy values into new vector
   for (std::size_t i = 0; i < collapsed_map.size(); ++i)
   {
     assert((int)i < x_new.size());
@@ -163,22 +125,22 @@ Vec Function::vector() const
   // Check that this is not a sub function.
   assert(_function_space->dofmap());
   assert(_function_space->dofmap()->index_map);
-  // if (_vector.size()
-  //     != _function_space->dofmap()->index_map->size_global()
-  //            * _function_space->dofmap()->index_map->block_size())
-  // {
-  //   throw std::runtime_error(
-  //       "Cannot access a non-const vector from a subfunction");
-  // }
+  if (_x->map()->block_size() * _x->map()->size_global()
+      != _function_space->dofmap()->index_map->size_global()
+             * _function_space->dofmap()->index_map->block_size())
+  {
+    throw std::runtime_error(
+        "Cannot access a non-const vector from a subfunction");
+  }
 
   if (!_vector)
+  {
     _vector = create_ghosted_vector(*_function_space->dofmap()->index_map,
                                     _x->array());
+  }
 
   return _vector;
 }
-//-----------------------------------------------------------------------------
-// const la::PETScVector& Function::vector() const { return _vector; }
 //-----------------------------------------------------------------------------
 void Function::eval(
     const Eigen::Ref<
@@ -258,8 +220,7 @@ void Function::eval(
 
   // Loop over points
   u.setZero();
-  la::VecReadWrapper v(_vector);
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
+  const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& _v = _x->array();
   for (Eigen::Index p = 0; p < cells.rows(); ++p)
   {
     const int cell_index = cells(p);
@@ -304,8 +265,7 @@ void Function::eval(
 void Function::interpolate(const Function& v)
 {
   assert(_function_space);
-  la::VecWrapper x(_vector);
-  _function_space->interpolate(x.x, v);
+  _function_space->interpolate(_x->array(), v);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(
@@ -314,14 +274,12 @@ void Function::interpolate(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& f)
 {
-  la::VecWrapper x(_vector);
-  _function_space->interpolate(x.x, f);
+  _function_space->interpolate(_x->array(), f);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate_c(const FunctionSpace::interpolation_function& f)
 {
-  la::VecWrapper x(_vector);
-  _function_space->interpolate_c(x.x, f);
+  _function_space->interpolate_c(_x->array(), f);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

@@ -263,9 +263,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   // Get values
   std::vector<PetscScalar> data_values(dof_set.size());
   {
-    la::VecReadWrapper u_wrapper(u.vector());
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
-        = u_wrapper.x;
+    const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x = u.x()->array();
     for (std::size_t i = 0; i < dof_set.size(); ++i)
       data_values[i] = x[dof_set[i]];
   }

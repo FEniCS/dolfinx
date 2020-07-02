@@ -170,11 +170,10 @@ public:
   {
     // FIXME: This one excludes ghosts. Need to straighten out.
     assert(_g);
-    la::VecReadWrapper g(_g->vector(), false);
     for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
     {
       if (_dofs(i, 0) < x.rows())
-        x[_dofs(i, 0)] = scale * g.x[_dofs(i, 1)];
+        x[_dofs(i, 0)] = scale * _g->x()->array()[_dofs(i, 1)];
     }
   }
 
@@ -188,11 +187,13 @@ public:
     // FIXME: This one excludes ghosts. Need to straighten out.
     assert(_g);
     assert(x.rows() <= x0.rows());
-    la::VecReadWrapper g(_g->vector(), false);
     for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
     {
       if (_dofs(i, 0) < x.rows())
-        x[_dofs(i, 0)] = scale * (g.x[_dofs(i, 1)] - x0[_dofs(i, 0)]);
+      {
+        x[_dofs(i, 0)]
+            = scale * (_g->x()->array()[_dofs(i, 1)] - x0[_dofs(i, 0)]);
+      }
     }
   }
 
@@ -203,9 +204,8 @@ public:
   void dof_values(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> values) const
   {
     assert(_g);
-    la::VecReadWrapper g(_g->vector());
     for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
-      values[_dofs(i, 0)] = g.x[_dofs(i, 1)];
+      values[_dofs(i, 0)] = _g->x()->array()[_dofs(i, 1)];
   }
 
   /// Set markers[i] = true if dof i has a boundary condition applied.

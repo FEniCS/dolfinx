@@ -91,9 +91,7 @@ void FunctionSpace::interpolate_from_any(
 
   // Iterate over mesh and interpolate on each cell
   assert(_dofmap);
-  la::VecReadWrapper v_vector_wrap(v.vector());
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> v_array
-      = v_vector_wrap.x;
+  const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& v_array = v.x()->array();
   const int num_cells = map->size_local() + map->num_ghosts();
   for (int c = 0; c < num_cells; ++c)
   {

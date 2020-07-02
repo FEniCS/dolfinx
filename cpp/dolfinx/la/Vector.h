@@ -44,6 +44,9 @@ public:
   Vector& operator=(Vector&& x) = default;
 
   /// Get local part of the vector (const version)
+  std::shared_ptr<const common::IndexMap> map() const { return _map; }
+
+  /// Get local part of the vector (const version)
   const Eigen::Matrix<T, Eigen::Dynamic, 1>& array() const { return _x; }
 
   /// Get local part of the vector
