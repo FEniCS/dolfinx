@@ -57,8 +57,9 @@ namespace
 //   return v;
 // }
 //-----------------------------------------------------------------------------
-Vec create_ghosted_vector(const common::IndexMap& map,
-                          Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x)
+Vec create_ghosted_vector(
+    const common::IndexMap& map,
+    const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x)
 {
   const int bs = map.block_size();
   std::int32_t size_local = bs * map.size_local();
@@ -85,7 +86,6 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
       _x(std::make_shared<la::Vector<PetscScalar>>(V->dofmap()->index_map)),
       _vector(create_ghosted_vector(*V->dofmap()->index_map, _x->array()),
               false)
-// _vector(create_vector(*V))
 {
   if (!V->component().empty())
   {
@@ -94,24 +94,6 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
   }
 
   _x->array().setZero();
-
-  // auto map = V->dofmap()->index_map;
-  // const int bs = map->block_size();
-  // std::int32_t size_local = bs * map->size_local();
-  // std::int32_t num_ghosts = bs * map->num_ghosts();
-  // const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts =
-  // map->ghosts(); Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts(bs *
-  // ghosts.rows()); for (int i = 0; i < ghosts.rows(); ++i)
-  // {
-  //   for (int j = 0; j < bs; ++j)
-  //     _ghosts[i * bs + j] = bs * ghosts[i] + j;
-  // }
-
-  // Vec test;
-  // VecCreateGhostWithArray(map->comm(), size_local, PETSC_DECIDE, num_ghosts,
-  //                         _ghosts.data(), _x.array().data(), &test);
-  // la::PETScVector x(test, false);
-  // _vector = std::move(x);
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
