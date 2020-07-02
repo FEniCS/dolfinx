@@ -31,31 +31,31 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // Create a vector with layout from dofmap, and zero.
-la::PETScVector create_vector(const function::FunctionSpace& V)
-{
-  common::Timer timer("Init dof vector");
+// la::PETScVector create_vector(const function::FunctionSpace& V)
+// {
+//   common::Timer timer("Init dof vector");
 
-  // Get dof map
-  std::shared_ptr<const fem::DofMap> dofmap = V.dofmap();
-  assert(dofmap);
+//   // Get dof map
+//   std::shared_ptr<const fem::DofMap> dofmap = V.dofmap();
+//   assert(dofmap);
 
-  // Check that function space is not a subspace (view)
-  assert(dofmap->element_dof_layout);
-  if (dofmap->element_dof_layout->is_view())
-  {
-    throw std::runtime_error(
-        "Cannot initialize vector of degrees of freedom for "
-        "function. Cannot be created from subspace. Consider "
-        "collapsing the function space");
-  }
+//   // Check that function space is not a subspace (view)
+//   assert(dofmap->element_dof_layout);
+//   if (dofmap->element_dof_layout->is_view())
+//   {
+//     throw std::runtime_error(
+//         "Cannot initialize vector of degrees of freedom for "
+//         "function. Cannot be created from subspace. Consider "
+//         "collapsing the function space");
+//   }
 
-  assert(dofmap->index_map);
-  la::PETScVector v = la::PETScVector(*(dofmap->index_map));
-  la::VecWrapper _v(v.vec());
-  _v.x.setZero();
+//   assert(dofmap->index_map);
+//   la::PETScVector v = la::PETScVector(*(dofmap->index_map));
+//   la::VecWrapper _v(v.vec());
+//   _v.x.setZero();
 
-  return v;
-}
+//   return v;
+// }
 //-----------------------------------------------------------------------------
 Vec create_ghosted_vector(const common::IndexMap& map,
                           Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x)
@@ -92,6 +92,8 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
     throw std::runtime_error("Cannot create Function from subspace. Consider "
                              "collapsing the function space");
   }
+
+  _x->array().setZero();
 
   // auto map = V->dofmap()->index_map;
   // const int bs = map->block_size();
@@ -145,7 +147,8 @@ Function Function::collapse() const
 
   // Create new vector
   assert(function_space_new);
-  auto vector_new = std::make_shared<la::Vector<PetscScalar>>(function_space_new->dofmap()->index_map);
+  auto vector_new = std::make_shared<la::Vector<PetscScalar>>(
+      function_space_new->dofmap()->index_map);
 
   // la::PETScVector vector_new = create_vector(*function_space_new);
 
