@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <dolfinx/common/types.h>
 #include <dolfinx/la/PETScVector.h>
+#include <dolfinx/la/Vector.h>
 #include <functional>
 #include <memory>
 #include <petscsys.h>
@@ -16,11 +17,9 @@
 #include <string>
 #include <vector>
 
-namespace dolfinx
+namespace dolfinx::function
 {
 
-namespace function
-{
 class FunctionSpace;
 
 /// This class represents a function \f$ u_h \f$ in a finite
@@ -43,7 +42,8 @@ public:
   ///
   /// @param[in] V The function space
   /// @param[in] x The vector
-  Function(std::shared_ptr<const FunctionSpace> V, Vec x);
+  Function(std::shared_ptr<const FunctionSpace> V,
+           std::shared_ptr<la::Vector<PetscScalar>> x);
 
   // Copy constructor
   Function(const Function& v) = delete;
@@ -147,7 +147,9 @@ private:
   std::shared_ptr<const FunctionSpace> _function_space;
 
   // The vector of expansion coefficients (local)
+  std::shared_ptr<la::Vector<PetscScalar>> _x;
+
+  // The vector of expansion coefficients (local)
   la::PETScVector _vector;
 };
-} // namespace function
-} // namespace dolfinx
+} // namespace dolfinx::function

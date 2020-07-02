@@ -36,7 +36,7 @@ void function(py::module& m)
       m, "Function", "A finite element function")
       .def(py::init<std::shared_ptr<const dolfinx::function::FunctionSpace>>(),
            "Create a function on the given function space")
-      .def(py::init<std::shared_ptr<dolfinx::function::FunctionSpace>, Vec>())
+     //  .def(py::init<std::shared_ptr<dolfinx::function::FunctionSpace>, Vec>())
       .def_readwrite("name", &dolfinx::function::Function::name)
       .def_property_readonly("id", &dolfinx::function::Function::id)
       .def("sub", &dolfinx::function::Function::sub,

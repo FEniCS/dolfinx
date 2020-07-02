@@ -57,22 +57,66 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
   return v;
 }
 //-----------------------------------------------------------------------------
+Vec create_ghosted_vector(const common::IndexMap& map,
+                          Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x)
+{
+  const int bs = map.block_size();
+  std::int32_t size_local = bs * map.size_local();
+  std::int32_t num_ghosts = bs * map.num_ghosts();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map.ghosts();
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts(bs * ghosts.rows());
+  for (int i = 0; i < ghosts.rows(); ++i)
+  {
+    for (int j = 0; j < bs; ++j)
+      _ghosts[i * bs + j] = bs * ghosts[i] + j;
+  }
+
+  Vec vec;
+  VecCreateGhostWithArray(map.comm(), size_local, PETSC_DECIDE, num_ghosts,
+                          _ghosts.data(), x.array().data(), &vec);
+  return vec;
+}
+//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
     : _id(common::UniqueIdGenerator::id()), _function_space(V),
-      _vector(create_vector(*V))
+      _x(std::make_shared<la::Vector<PetscScalar>>(V->dofmap()->index_map)),
+      _vector(create_ghosted_vector(*V->dofmap()->index_map, _x->array()),
+              false)
+// _vector(create_vector(*V))
 {
   if (!V->component().empty())
   {
     throw std::runtime_error("Cannot create Function from subspace. Consider "
                              "collapsing the function space");
   }
+
+  // auto map = V->dofmap()->index_map;
+  // const int bs = map->block_size();
+  // std::int32_t size_local = bs * map->size_local();
+  // std::int32_t num_ghosts = bs * map->num_ghosts();
+  // const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts =
+  // map->ghosts(); Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts(bs *
+  // ghosts.rows()); for (int i = 0; i < ghosts.rows(); ++i)
+  // {
+  //   for (int j = 0; j < bs; ++j)
+  //     _ghosts[i * bs + j] = bs * ghosts[i] + j;
+  // }
+
+  // Vec test;
+  // VecCreateGhostWithArray(map->comm(), size_local, PETSC_DECIDE, num_ghosts,
+  //                         _ghosts.data(), _x.array().data(), &test);
+  // la::PETScVector x(test, false);
+  // _vector = std::move(x);
 }
 //-----------------------------------------------------------------------------
-Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
-    : _id(common::UniqueIdGenerator::id()), _function_space(V), _vector(x, true)
+Function::Function(std::shared_ptr<const FunctionSpace> V,
+                   std::shared_ptr<la::Vector<PetscScalar>> x)
+    : _id(common::UniqueIdGenerator::id()), _function_space(V), _x(x),
+      _vector(create_ghosted_vector(*V->dofmap()->index_map, _x->array()),
+              false)
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
@@ -91,7 +135,7 @@ Function Function::sub(int i) const
 
   // Return sub-function
   assert(sub_space);
-  return Function(sub_space, _vector.vec());
+  return Function(sub_space, _x);
 }
 //-----------------------------------------------------------------------------
 Function Function::collapse() const
@@ -101,14 +145,19 @@ Function Function::collapse() const
 
   // Create new vector
   assert(function_space_new);
-  la::PETScVector vector_new = create_vector(*function_space_new);
+  auto vector_new = std::make_shared<la::Vector<PetscScalar>>(function_space_new->dofmap()->index_map);
 
-  // Wrap PETSc vectors using Eigen
-  la::VecReadWrapper v_wrap(_vector.vec());
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_old
-      = v_wrap.x;
-  la::VecWrapper v_new(vector_new.vec());
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_new = v_new.x;
+  // la::PETScVector vector_new = create_vector(*function_space_new);
+
+  // // Wrap PETSc vectors using Eigen
+  // la::VecReadWrapper v_wrap(_vector.vec());
+  // Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_old
+  //     = v_wrap.x;
+  // la::VecWrapper v_new(vector_new.vec());
+  // Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_new = v_new.x;
+
+  const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x_old = _x->array();
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x_new = vector_new->array();
 
   // Copy values into new vector
   for (std::size_t i = 0; i < collapsed_map.size(); ++i)
@@ -118,7 +167,7 @@ Function Function::collapse() const
     x_new[i] = x_old[collapsed_map[i]];
   }
 
-  return Function(function_space_new, vector_new.vec());
+  return Function(function_space_new, vector_new);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FunctionSpace> Function::function_space() const
