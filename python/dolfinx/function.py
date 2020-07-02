@@ -10,7 +10,6 @@ from functools import singledispatch
 
 import cffi
 import numpy as np
-from petsc4py import PETSc
 
 import ufl
 from dolfinx import common, cpp, fem, function, jit
