@@ -66,11 +66,14 @@ public:
   /// @param[in] mpi_comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
+  /// @param[in] dest_ranks Ranks that ghost indices owned by the
+  ///   calling rank
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] ghost_src_rank Owner rank (on global communicator)
   ///   of each ghost entry
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+           const std::vector<int>& dest_ranks,
            const std::vector<std::int64_t>& ghosts,
            const std::vector<int>& ghost_src_rank, int block_size);
 
@@ -80,12 +83,15 @@ public:
   /// @param[in] mpi_comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
+  /// @param[in] dest_ranks Ranks that ghost indices owned by the
+  ///   calling rank
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] ghost_src_rank Owner rank (on global communicator) of
   ///   each ghost entry
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(
       MPI_Comm mpi_comm, std::int32_t local_size,
+      const std::vector<int>& dest_ranks,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
           ghosts,
       const std::vector<int>& ghost_src_rank, int block_size);
@@ -181,8 +187,11 @@ public:
   /// @return List of indices that are ghosted on other processes
   const std::vector<std::int32_t>& forward_indices() const;
 
+  /// Ranks with ghost indices that are owned by the caller
+  std::vector<int> dest_ranks() const;
+
   /// Owner rank (on global communicator) of each ghost entry
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owner_rank() const;
+  Eigen::Array<int, Eigen::Dynamic, 1> ghost_owner_rank() const;
 
   /// Return array of global indices for all indices on this process,
   /// including ghosts
@@ -284,8 +293,16 @@ private:
   std::int64_t _size_global;
 
   // MPI neighbourhood communicators
+
+  // Communicator where the source ranks own the indices in the callers
+  // halo, and the destination ranks ghost indices owned by the caller
   dolfinx::MPI::Comm _comm_owner_to_ghost;
+
+  // Communicator where the source ranks have ghost indices that are
+  // owned by the caller, and the destination are the owners of indices
+  // in the callers halo region
   dolfinx::MPI::Comm _comm_ghost_to_owner;
+
   dolfinx::MPI::Comm _comm_symmetric;
 
   // Local-to-global map for ghost indices

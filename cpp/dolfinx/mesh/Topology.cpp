@@ -323,8 +323,8 @@ mesh::create_topology(MPI_Comm comm,
   if (ghost_mode == mesh::GhostMode::none)
   {
     index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, std::vector<std::int64_t>(), std::vector<int>(),
-        1);
+        comm, num_local_cells, std::vector<int>(), std::vector<std::int64_t>(),
+        std::vector<int>(), 1);
   }
   else
   {
@@ -333,7 +333,10 @@ mesh::create_topology(MPI_Comm comm,
         = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,
                                                      ghost_owners);
     index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, cell_ghost_indices, ghost_owners, 1);
+        comm, num_local_cells,
+        dolfinx::MPI::compute_graph_edges(
+            comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
+        cell_ghost_indices, ghost_owners, 1);
   }
 
   // Create map from existing global vertex index to local index,
@@ -609,7 +612,11 @@ mesh::create_topology(MPI_Comm comm,
 
   // Vertex IndexMap
   auto index_map_v = std::make_shared<common::IndexMap>(
-      comm, nlocal, ghost_vertices, ghost_vertices_owners, 1);
+      comm, nlocal,
+      dolfinx::MPI::compute_graph_edges(
+          comm, std::set<int>(ghost_vertices_owners.begin(),
+                              ghost_vertices_owners.end())),
+      ghost_vertices, ghost_vertices_owners, 1);
   topology.set_index_map(0, index_map_v);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());

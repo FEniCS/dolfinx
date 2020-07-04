@@ -363,7 +363,10 @@ get_local_indexing(
   MPI_Comm_free(&neighbour_comm);
 
   auto index_map = std::make_shared<common::IndexMap>(
-      comm, num_local, ghost_indices, ghost_owners, 1);
+      comm, num_local,
+      dolfinx::MPI::compute_graph_edges(
+          comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
+      ghost_indices, ghost_owners, 1);
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());

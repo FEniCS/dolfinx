@@ -551,8 +551,11 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
 
   // Create IndexMap for dofs range on this process
   auto index_map = std::make_unique<common::IndexMap>(
-      comm, num_owned, local_to_global_unowned, local_to_global_owner,
-      block_size);
+      comm, num_owned,
+      dolfinx::MPI::compute_graph_edges(
+          comm, std::set<int>(local_to_global_owner.begin(),
+                              local_to_global_owner.end())),
+      local_to_global_unowned, local_to_global_owner, block_size);
   assert(index_map);
 
   // FIXME: There is an assumption here on the dof order for an element.

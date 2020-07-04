@@ -139,7 +139,7 @@ compute_forward_indices(
 /// @param[in] halo_src_ranks Ranks that own indices in the halo (ghost
 ///   region) of the calling rank
 /// @param[in] halo_dest_ranks Ranks that have indices owned by the
-///   calling process own indices in their halo (ghost region)
+///   calling process own in their halo (ghost region)
 std::array<MPI_Comm, 3>
 compute_asymmetric_communicators(MPI_Comm comm,
                                  std::vector<int>& halo_src_ranks,
@@ -316,9 +316,10 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+                   const std::vector<int>& dest_ranks,
                    const std::vector<std::int64_t>& ghosts,
                    const std::vector<int>& ghost_src_rank, int block_size)
-    : IndexMap(mpi_comm, local_size,
+    : IndexMap(mpi_comm, local_size, dest_ranks,
                Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
                    ghosts.data(), ghosts.size()),
                ghost_src_rank, block_size)
@@ -328,6 +329,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(
     MPI_Comm mpi_comm, std::int32_t local_size,
+    const std::vector<int>& dest_ranks,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
         ghosts,
     const std::vector<int>& ghost_src_rank, int block_size)
@@ -355,8 +357,9 @@ IndexMap::IndexMap(
   // compute ranks that hold ghosts that this rank owns
   const std::set<int> owner_ranks_set(ghost_src_rank.begin(),
                                       ghost_src_rank.end());
-  std::vector<std::int32_t> halo_dest_ranks
-      = dolfinx::MPI::compute_graph_edges(mpi_comm, owner_ranks_set);
+  // std::vector<std::int32_t> halo_dest_ranks
+  //     = dolfinx::MPI::compute_graph_edges(mpi_comm, owner_ranks_set);
+  std::vector<int> halo_dest_ranks = dest_ranks;
 
   std::sort(halo_dest_ranks.begin(), halo_dest_ranks.end());
   std::vector<std::int32_t> halo_src_ranks
@@ -533,13 +536,23 @@ const std::vector<std::int32_t>& IndexMap::forward_indices() const
   return _forward_indices;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> IndexMap::ghost_owner_rank() const
+std::vector<int> IndexMap::dest_ranks() const
 {
-  // Get neighbor processes
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
                                  &outdegree, &weighted);
-
+  std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
+  MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
+                           neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
+                           neighbors_out.data(), MPI_UNWEIGHTED);
+  return neighbors_out;
+}
+//----------------------------------------------------------------------------
+Eigen::Array<int, Eigen::Dynamic, 1> IndexMap::ghost_owner_rank() const
+{
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
+                                 &outdegree, &weighted);
   std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
   MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
                            neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
