@@ -393,9 +393,9 @@ IndexMap::IndexMap(
 
   // Compute owned indices which are ghosted by other ranks, and how
   // many of my indices each neighbour ghosts
-  const auto [fwd_ind, forward_sizes] = compute_forward_indices(
+  const auto [fwd_ind, shared_sizes] = compute_forward_indices(
       _comm_ghost_to_owner.comm(), _ghosts, _ghost_owners);
-  _forward_sizes = std::move(forward_sizes);
+  _shared_sizes = std::move(shared_sizes);
 
   // Wait for MPI_Iexscan to complete (get offset)
   MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
@@ -442,7 +442,6 @@ Eigen::Array<std::int64_t, Eigen::Dynamic, 1> IndexMap::local_to_global(
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> global(indices.rows());
   local_to_global_impl(global, indices, global_offset, local_size, _block_size,
                        _ghosts, blocked);
-
   return global;
 }
 //-----------------------------------------------------------------------------
@@ -596,8 +595,6 @@ MPI_Comm IndexMap::comm(Direction dir) const
 //----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
 {
-  std::map<std::int32_t, std::set<int>> shared_indices;
-
   // Get number of neighbours
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
@@ -609,14 +606,16 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
                            neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
                            neighbors_out.data(), MPI_UNWEIGHTED);
 
+  std::map<std::int32_t, std::set<int>> shared_indices;
+
   // Get sharing of all owned indices
-  for (std::size_t i = 0, c = 0; i < _forward_sizes.size(); ++i)
+  for (std::size_t i = 0, c = 0; i < _shared_sizes.size(); ++i)
   {
-    int dest_rank = neighbors_out[i];
-    for (int j = 0; j < _forward_sizes[i]; ++j)
+    int dest_rank_global = neighbors_out[i];
+    for (int j = 0; j < _shared_sizes[i]; ++j)
     {
       int idx = _shared_indices[c];
-      shared_indices[idx].insert(dest_rank);
+      shared_indices[idx].insert(dest_rank_global);
       ++c;
     }
   }
@@ -625,9 +624,9 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   // forward
   std::vector<std::int64_t> fwd_sharing_data;
   std::vector<int> fwd_sharing_offsets{0};
-  for (std::size_t i = 0, c = 0; i < _forward_sizes.size(); ++i)
+  for (std::size_t i = 0, c = 0; i < _shared_sizes.size(); ++i)
   {
-    for (int j = 0; j < _forward_sizes[i]; ++j, ++c)
+    for (int j = 0; j < _shared_sizes[i]; ++j, ++c)
     {
       int idx = _shared_indices[c];
       if (shared_indices[idx].size() > 1)
@@ -747,7 +746,7 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
   std::vector<std::int32_t> sizes_send(outdegree, 0);
   for (int i = 0; i < outdegree; ++i)
   {
-    sizes_send[i] = _forward_sizes[i] * n;
+    sizes_send[i] = _shared_sizes[i] * n;
     displs_send[i + 1] = displs_send[i] + sizes_send[i];
   }
 
@@ -811,7 +810,7 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
   std::vector<std::int32_t> displs_recv(indegree + 1, 0);
   for (int i = 0; i < indegree; ++i)
   {
-    recv_sizes[i] = _forward_sizes[i] * n;
+    recv_sizes[i] = _shared_sizes[i] * n;
     displs_recv[i + 1] = displs_recv[i] + recv_sizes[i];
   }
 

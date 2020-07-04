@@ -314,7 +314,7 @@ private:
 
   // Number of owned indices to send to each outgoing (rank) edge on
   // _comm_owner_to_ghost when scattering owner -> ghosts
-  std::vector<std::int32_t> _forward_sizes;
+  std::vector<std::int32_t> _shared_sizes;
 
   // Owned local indices that are in the halo (ghost) region on other
   // ranks

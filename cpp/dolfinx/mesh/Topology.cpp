@@ -30,7 +30,8 @@ namespace
 // @return a map to sharing processes for each index, with the (random) owner as
 // the first in the list
 std::unordered_map<std::int64_t, std::vector<int>>
-compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
+compute_index_sharing(MPI_Comm comm,
+                      const std::vector<std::int64_t>& unknown_indices)
 {
   const int mpi_size = dolfinx::MPI::size(comm);
   // Create a global address space to use with all_to_all post-office
@@ -152,10 +153,10 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
-                             std::shared_ptr<const common::IndexMap> index_map)
+                             const std::shared_ptr<const common::IndexMap>& map)
 {
   assert(dim < (int)_index_map.size());
-  _index_map[dim] = index_map;
+  _index_map[dim] = map;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
@@ -306,15 +307,13 @@ mesh::create_topology(MPI_Comm comm,
                       const std::vector<int>& ghost_owners,
                       const CellType& cell_type, mesh::GhostMode ghost_mode)
 {
-  if (cells.num_nodes() > 0)
+  if (cells.num_nodes() > 0
+      and cells.num_links(0) != mesh::num_cell_vertices(cell_type))
   {
-    if (cells.num_links(0) != mesh::num_cell_vertices(cell_type))
-    {
-      throw std::runtime_error(
-          "Inconsistent number of cell vertices. Got "
-          + std::to_string(cells.num_links(0)) + ", expected "
-          + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
-    }
+    throw std::runtime_error(
+        "Inconsistent number of cell vertices. Got "
+        + std::to_string(cells.num_links(0)) + ", expected "
+        + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
   }
 
   // Create cell IndexMap
@@ -557,7 +556,7 @@ mesh::create_topology(MPI_Comm comm,
   }
 
   // Get global owners of ghost vertices
-  // TODO: Get vertice owner from cell owner? Can use neighborhood
+  // TODO: Get vertex owner from cell owner? Can use neighborhood
   // communication?
   int mpi_size = -1;
   MPI_Comm_size(neighbour_comm, &mpi_size);

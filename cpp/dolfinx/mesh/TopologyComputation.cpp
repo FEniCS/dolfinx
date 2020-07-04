@@ -203,7 +203,6 @@ get_local_indexing(
           // Entity entity_index[i] may be shared with process p
           send_entities[np].insert(send_entities[np].end(), vglobal.begin(),
                                    vglobal.end());
-
           send_index[np].push_back(entity_index[i]);
         }
       }

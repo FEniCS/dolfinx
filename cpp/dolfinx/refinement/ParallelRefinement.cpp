@@ -185,10 +185,9 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh) : _mesh(mesh)
 
   for (auto& q : shared_edges)
   {
-    std::set<int> neighbor_set;
+    auto p = _shared_edges[q.first];
     for (int r : q.second)
-      neighbor_set.insert(proc_to_neighbor[r]);
-    _shared_edges.insert({q.first, std::move(neighbor_set)});
+      p.insert(proc_to_neighbor[r]);
   }
 
   _marked_for_update.resize(neighbors.size());
@@ -275,7 +274,7 @@ void ParallelRefinement::update_logical_edgefunction()
             .array();
 
   // Flatten received values and set _marked_edges at each index received
-  std::vector<std::int32_t> local_indices
+  const std::vector<std::int32_t> local_indices
       = _mesh.topology().index_map(1)->global_to_local(data_to_recv);
   for (std::int32_t local_index : local_indices)
     _marked_edges[local_index] = true;
@@ -304,8 +303,9 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
       = MPI::global_offset(_mesh.mpi_comm(), num_new_vertices, true)
         + _mesh.topology().index_map(0)->local_range()[1];
 
-  for (auto& e : local_edge_to_new_vertex)
-    e.second += global_offset;
+  std::for_each(local_edge_to_new_vertex.begin(),
+                local_edge_to_new_vertex.end(),
+                [=](auto& e) { e.second += global_offset; });
 
   // Create actual points
   _new_vertex_coordinates
