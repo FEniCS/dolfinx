@@ -81,6 +81,10 @@ std::vector<int> get_ghost_ranks(
   return ghost_ranks;
 }
 //-----------------------------------------------------------------------------
+
+// FIXME: This functions returns with a special ordering that is not
+// documented. Document properly.
+
 // Compute (owned) global indices shared with neighbor processes
 std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>>
 compute_forward_indices(
@@ -120,8 +124,10 @@ compute_forward_indices(
 
   // A rank in the neighborhood communicator can have no incoming or
   // outcoming edges. This may cause OpenMPI to crash. Workaround:
-  in_edges_num.reserve(1);
-  out_edges_num.reserve(1);
+  if (in_edges_num.empty())
+    in_edges_num.reserve(1);
+  if (out_edges_num.empty())
+    out_edges_num.reserve(1);
 
   // May have repeated shared indices with different processes
   std::vector<std::int64_t> recv_indices(recv_disp.back());
@@ -595,12 +601,10 @@ MPI_Comm IndexMap::comm(Direction dir) const
 //----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
 {
-  // Get number of neighbours
+  // Get number of neighbours and neighbor ranks
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
                                  &outdegree, &weighted);
-
-  // Get neighbor processes
   std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
   MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
                            neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
@@ -612,6 +616,8 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   for (std::size_t i = 0, c = 0; i < _shared_sizes.size(); ++i)
   {
     int dest_rank_global = neighbors_out[i];
+
+    // Loop over . . .
     for (int j = 0; j < _shared_sizes[i]; ++j)
     {
       int idx = _shared_indices[c];

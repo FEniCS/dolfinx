@@ -239,7 +239,6 @@ get_local_indexing(
   for (int np = 0; np < neighbour_size; ++np)
   {
     const int p = neighbours[np];
-
     for (int j = recv_offsets[np]; j < recv_offsets[np + 1]; j += num_vertices)
     {
       recv_vec.assign(recv_entities_data.data() + j,
@@ -320,10 +319,9 @@ get_local_indexing(
       for (std::int32_t index : send_index[np])
       {
         // If not in our local range, send -1.
-        std::int64_t gi = (local_index[index] < num_local)
-                              ? (local_offset + local_index[index])
-                              : -1;
-
+        const std::int64_t gi = (local_index[index] < num_local)
+                                    ? (local_offset + local_index[index])
+                                    : -1;
         send_global_index_data.push_back(gi);
       }
 
@@ -466,7 +464,7 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-  auto [local_index, index_map] = get_local_indexing(
+  const auto [local_index, index_map] = get_local_indexing(
       comm, cell_index_map, vertex_index_map, entity_list, entity_index);
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
