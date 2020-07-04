@@ -136,13 +136,13 @@ int dolfinx::MPI::index_owner(int size, std::size_t index, std::size_t N)
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------
-std::set<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
-                                                const std::set<int>& edges)
+std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
+                                                   const std::set<int>& edges)
 {
-  std::vector<int> dest(edges.begin(), edges.end());
+  const std::vector<int> dest(edges.begin(), edges.end());
   const int degrees = dest.size();
-  if (dest.empty())
-    dest.push_back(0);
+  // if (dest.empty())
+  //   dest.push_back(0);
 
   // Create graph communicator
   int my_rank = -1;

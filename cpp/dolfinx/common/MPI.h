@@ -86,8 +86,8 @@ public:
   /// @param[in] edges Communication edges between the caller and the
   ///   ranks in @p edges.
   /// @return Ranks that have defined edges from them to this rank
-  static std::set<int> compute_graph_edges(MPI_Comm comm,
-                                           const std::set<int>& edges);
+  static std::vector<int> compute_graph_edges(MPI_Comm comm,
+                                              const std::set<int>& edges);
 
   /// Neighbourhood all-to-all. Send data to neighbours using offsets
   /// into contiguous data array. Offset array should contain
