@@ -180,11 +180,11 @@ dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
   MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
                                  &weighted);
 
-  std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
-  MPI_Dist_graph_neighbors(neighbor_comm, indegree, neighbors_in.data(),
-                           MPI_UNWEIGHTED, outdegree, neighbors_out.data(),
+  std::vector<int> sources(indegree), destinations(outdegree);
+  MPI_Dist_graph_neighbors(neighbor_comm, indegree, sources.data(),
+                           MPI_UNWEIGHTED, outdegree, destinations.data(),
                            MPI_UNWEIGHTED);
 
-  return {neighbors_in, neighbors_out};
+  return {std::move(sources), std::move(destinations)};
 }
 //-----------------------------------------------------------------------------

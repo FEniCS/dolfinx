@@ -91,22 +91,23 @@ compute_forward_indices(
     MPI_Comm comm, const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts,
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& ghost_src_ranks)
 {
-  auto [neighbors_in, neighbors_out] = dolfinx::MPI::neighbors(comm);
+  auto [neighbors_src, neighbors_dest] = dolfinx::MPI::neighbors(comm);
   assert(ghosts.size() == ghost_src_ranks.size());
 
-  std::vector<int> out_edges_num(neighbors_out.size(), 0);
+  // Compute number of src indices for each src edge
+  std::vector<int> out_edges_num(neighbors_dest.size(), 0);
   for (int i = 0; i < ghost_src_ranks.size(); ++i)
   {
     const int owner_rank = ghost_src_ranks[i];
     out_edges_num[owner_rank]++;
   }
 
-  std::vector<int> in_edges_num(neighbors_in.size());
+  std::vector<int> in_edges_num(neighbors_src.size());
   MPI_Neighbor_alltoall(out_edges_num.data(), 1, MPI_INT, in_edges_num.data(),
                         1, MPI_INT, comm);
 
-  std::vector<int> send_disp(neighbors_out.size() + 1, 0);
-  std::vector<int> recv_disp(neighbors_in.size() + 1, 0);
+  std::vector<int> send_disp(neighbors_dest.size() + 1, 0);
+  std::vector<int> recv_disp(neighbors_src.size() + 1, 0);
 
   std::partial_sum(out_edges_num.begin(), out_edges_num.end(),
                    send_disp.begin() + 1);
