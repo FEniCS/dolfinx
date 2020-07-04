@@ -121,7 +121,7 @@ private:
   std::vector<std::vector<std::int64_t>> _marked_for_update;
 
   // Shared edges between processes
-  std::map<std::int32_t, std::set<std::int32_t>> _shared_edges;
+  std::map<std::int32_t, std::set<int>> _shared_edges;
 
   // Neighbourhood communicator
   MPI_Comm _neighbour_comm;

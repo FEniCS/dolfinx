@@ -185,7 +185,7 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh) : _mesh(mesh)
 
   for (auto& q : shared_edges)
   {
-    auto p = _shared_edges[q.first];
+    std::set<int>& p = _shared_edges[q.first];
     for (int r : q.second)
       p.insert(proc_to_neighbor[r]);
   }
