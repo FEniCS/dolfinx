@@ -76,16 +76,18 @@ public:
 
   /// @todo Experimental. Maybe be moved or removed.
   ///
-  /// Compute the MPI source ranks for this rank, i.e. ranks that will
-  /// send data to this rank.
+  /// Compute communication graph edges. The caller provides edges that
+  /// it can define, and will receive edges to it that are defined by
+  /// other ranks.
   ///
   /// @note This function involves global communication
-  /// @param[in] comm MPI communicator
-  /// @param[in] destinations Ranks for which this rank is the source,
-  ///   i.e. will send data to ranks that the caller will send data to
-  /// @return Ranks that this rank will receive data from
-  static std::vector<int>
-  compute_source_ranks(MPI_Comm comm, const std::set<int>& destinations);
+  ///
+  /// @param[in] comm The MPI communicator
+  /// @param[in] edges Communication edges between the caller and the
+  ///   ranks in @p edges.
+  /// @return Ranks that have defined edges from them to this rank
+  static std::set<int> compute_graph_edges(MPI_Comm comm,
+                                           const std::set<int>& edges);
 
   /// Neighbourhood all-to-all. Send data to neighbours using offsets
   /// into contiguous data array. Offset array should contain

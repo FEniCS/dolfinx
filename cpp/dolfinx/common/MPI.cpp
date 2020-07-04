@@ -136,11 +136,10 @@ int dolfinx::MPI::index_owner(int size, std::size_t index, std::size_t N)
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------
-std::vector<int>
-dolfinx::MPI::compute_source_ranks(MPI_Comm comm,
-                                   const std::set<int>& destinations)
+std::set<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
+                                                const std::set<int>& edges)
 {
-  std::vector<int> dest(destinations.begin(), destinations.end());
+  std::vector<int> dest(edges.begin(), edges.end());
   const int degrees = dest.size();
   if (dest.empty())
     dest.push_back(0);
@@ -160,9 +159,7 @@ dolfinx::MPI::compute_source_ranks(MPI_Comm comm,
   MPI_Dist_graph_neighbors(comm_graph, indegree, _sources.data(),
                            MPI_UNWEIGHTED, outdegree, _destinations.data(),
                            MPI_UNWEIGHTED);
-  assert(destinations
-         == std::set<int>(_destinations.begin(), _destinations.end()));
-
+  assert(edges == std::set<int>(_destinations.begin(), _destinations.end()));
   MPI_Comm_free(&comm_graph);
 
   return _sources;

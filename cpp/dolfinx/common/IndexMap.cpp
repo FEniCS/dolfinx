@@ -356,7 +356,8 @@ IndexMap::IndexMap(
   const std::set<int> owner_ranks_set(ghost_src_rank.begin(),
                                       ghost_src_rank.end());
   std::vector<std::int32_t> halo_dest_ranks
-      = dolfinx::MPI::compute_source_ranks(mpi_comm, owner_ranks_set);
+      = dolfinx::MPI::compute_graph_edges(mpi_comm, owner_ranks_set);
+
   std::sort(halo_dest_ranks.begin(), halo_dest_ranks.end());
   std::vector<std::int32_t> halo_src_ranks
       = std::vector<int>(owner_ranks_set.begin(), owner_ranks_set.end());
