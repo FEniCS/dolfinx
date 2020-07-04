@@ -139,17 +139,19 @@ int dolfinx::MPI::index_owner(int size, std::size_t index, std::size_t N)
 std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
                                                    const std::set<int>& edges)
 {
-  const std::vector<int> dest(edges.begin(), edges.end());
-  const int degrees = dest.size();
-  // if (dest.empty())
-  //   dest.push_back(0);
+  std::vector<int> e(edges.begin(), edges.end());
+  const int degrees = e.size();
+
+  // OpenMPI doesn't like empty array
+  if (e.empty())
+    e.push_back(0);
 
   // Create graph communicator
   int my_rank = -1;
   MPI_Comm_rank(comm, &my_rank);
   MPI_Comm comm_graph;
-  MPI_Dist_graph_create(comm, 1, &my_rank, &degrees, dest.data(),
-                        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm_graph);
+  MPI_Dist_graph_create(comm, 1, &my_rank, &degrees, e.data(), MPI_UNWEIGHTED,
+                        MPI_INFO_NULL, false, &comm_graph);
 
   // Get number of neighbours
   int indegree(-1), outdegree(-1), weighted(-1);
