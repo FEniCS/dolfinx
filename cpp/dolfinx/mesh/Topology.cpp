@@ -126,8 +126,8 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
   std::set<std::int32_t> fwd_shared_facets;
   if (facets->num_ghosts() == 0)
   {
-    fwd_shared_facets = std::set<std::int32_t>(
-        facets->forward_indices().begin(), facets->forward_indices().end());
+    fwd_shared_facets = std::set<std::int32_t>(facets->shared_indices().begin(),
+                                               facets->shared_indices().end());
   }
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> fc
@@ -479,9 +479,9 @@ mesh::create_topology(MPI_Comm comm,
     // Receive index of ghost vertices that are not on the process
     // boundary from the ghost cell owner. Note: the ghost cell owner
     // might not be the same as the vertex owner.
-    std::map<std::int32_t, std::set<std::int32_t>> shared_cells
+    const std::map<std::int32_t, std::set<int>> shared_cells
         = index_map_c->compute_shared_indices();
-    std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
+    std::map<std::int64_t, std::set<int>> fwd_shared_vertices;
     for (int i = 0; i < index_map_c->size_local(); ++i)
     {
       if (auto it = shared_cells.find(i); it != shared_cells.end())
@@ -556,7 +556,7 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
-  // Get global onwers of ghost vertices
+  // Get global owners of ghost vertices
   // TODO: Get vertice owner from cell owner? Can use neighborhood
   // communication?
   int mpi_size = -1;

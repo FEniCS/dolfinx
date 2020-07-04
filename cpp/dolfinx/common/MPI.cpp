@@ -164,6 +164,7 @@ std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
   assert(edges == std::set<int>(_destinations.begin(), _destinations.end()));
   MPI_Comm_free(&comm_graph);
 
+  std::sort(_sources.begin(), _sources.end());
   return _sources;
 }
 //-----------------------------------------------------------------------------

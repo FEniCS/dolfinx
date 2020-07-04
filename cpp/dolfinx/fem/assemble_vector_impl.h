@@ -327,8 +327,8 @@ void _lift_bc_exterior_facets(
   if (topology.index_map(tdim)->num_ghosts() == 0)
   {
     fwd_shared_facets.insert(
-        topology.index_map(tdim - 1)->forward_indices().begin(),
-        topology.index_map(tdim - 1)->forward_indices().end());
+        topology.index_map(tdim - 1)->shared_indices().begin(),
+        topology.index_map(tdim - 1)->shared_indices().end());
   }
 
   for (int f = 0; f < map->size_local(); ++f)

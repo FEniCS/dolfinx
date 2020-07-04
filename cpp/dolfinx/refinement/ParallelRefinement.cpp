@@ -28,7 +28,7 @@ namespace
 /// Compute markers for interior/boundary vertices
 /// @param[in] topology_local Local topology
 /// @return Array where the ith entry is true if the ith vertex is on
-///   the boundary
+/// the boundary
 std::vector<bool>
 compute_vertex_exterior_markers(const mesh::Topology& topology_local)
 {
@@ -144,8 +144,7 @@ create_new_geometry(
       = mesh::midpoints(mesh, 1, edges);
   new_vertex_coordinates.bottomRows(num_new_vertices) = midpoints;
 
-  const int gdim = mesh.geometry().dim();
-  return new_vertex_coordinates.leftCols(gdim);
+  return new_vertex_coordinates.leftCols(mesh.geometry().dim());
 }
 } // namespace
 
@@ -160,38 +159,39 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh) : _mesh(mesh)
   const std::int32_t num_edges = map_e->size_local() + map_e->num_ghosts();
   _marked_edges = std::vector<bool>(num_edges, false);
 
-  // Create shared edges, for both owned and ghost indices
-  // returning edge -> set(global process numbers)
-  std::map<std::int32_t, std::set<int>> shared_edges
+  // Create shared edges, for both owned and ghost indices returning
+  // edge -> set(global process numbers)
+  const std::map<std::int32_t, std::set<int>> shared_edges
       = _mesh.topology().index_map(1)->compute_shared_indices();
 
-  // Compute a slightly wider neighbourhood for direct communication of shared
-  // edges
-  std::set<int> all_neighbour_set;
+  // Compute a slightly wider neighbourhood for direct communication of
+  // shared edges
+  std::vector<int> neighbors;
   for (const auto& q : shared_edges)
-    all_neighbour_set.insert(q.second.begin(), q.second.end());
-  std::vector<int> neighbours(all_neighbour_set.begin(),
-                              all_neighbour_set.end());
+    neighbors.insert(neighbors.end(), q.second.begin(), q.second.end());
+  std::sort(neighbors.begin(), neighbors.begin());
+  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
+                  neighbors.end());
 
   MPI_Dist_graph_create_adjacent(
-      mesh.mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
-      neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &_neighbour_comm);
+      mesh.mpi_comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
+      neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
+      &_neighbour_comm);
 
   // Create a "shared_edge to neighbour map"
-  std::map<int, int> proc_to_neighbour;
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
-    proc_to_neighbour.insert({neighbours[i], i});
+  std::map<int, int> proc_to_neighbor;
+  for (std::size_t i = 0; i < neighbors.size(); ++i)
+    proc_to_neighbor.insert({neighbors[i], i});
 
   for (auto& q : shared_edges)
   {
-    std::set<int> neighbour_set;
+    std::set<int> neighbor_set;
     for (int r : q.second)
-      neighbour_set.insert(proc_to_neighbour[r]);
-    _shared_edges.insert({q.first, neighbour_set});
+      neighbor_set.insert(proc_to_neighbor[r]);
+    _shared_edges.insert({q.first, std::move(neighbor_set)});
   }
 
-  _marked_for_update.resize(neighbours.size());
+  _marked_for_update.resize(neighbors.size());
 }
 //-----------------------------------------------------------------------------
 ParallelRefinement::~ParallelRefinement() { MPI_Comm_free(&_neighbour_comm); }
