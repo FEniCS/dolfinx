@@ -319,11 +319,7 @@ mesh::create_topology(MPI_Comm comm,
   const int num_local_cells = cells.num_nodes() - ghost_owners.size();
   std::shared_ptr<common::IndexMap> index_map_c;
   if (ghost_mode == mesh::GhostMode::none)
-  {
-    index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, std::vector<int>(), std::vector<std::int64_t>(),
-        std::vector<int>(), 1);
-  }
+    index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells, 1);
   else
   {
     // Get indices of ghost cells
