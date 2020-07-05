@@ -295,7 +295,7 @@ private:
   // MPI neighbourhood communicators
 
   // Communicator where the source ranks own the indices in the callers
-  // halo, and the destination ranks ghost indices owned by the caller
+  // halo, and the destination ranks 'ghost' indices owned by the caller
   dolfinx::MPI::Comm _comm_owner_to_ghost;
 
   // Communicator where the source ranks have ghost indices that are
