@@ -85,42 +85,55 @@ std::vector<int> get_ghost_ranks(
 // FIXME: This functions returns with a special ordering that is not
 // documented. Document properly.
 
-// Compute (owned) global indices shared with neighbor processes
+/// Compute (owned) global indices shared with neighbor processes
+///
+/// @param[in] comm MPI communicator where the neighbourhood sources are
+///   the owning ranks of the callers ghosts (comm_ghost_to_owner)
+/// @param[in] ghosts Global index of ghosts indices on the caller
+/// @param[in] ghost_src_ranks The src rank on @p comm for each ghost on
+///   the caller
+/// @return ???
 std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>>
 compute_forward_indices(
     MPI_Comm comm, const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts,
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& ghost_src_ranks)
 {
-  auto [neighbors_src, neighbors_dest] = dolfinx::MPI::neighbors(comm);
   assert(ghosts.size() == ghost_src_ranks.size());
 
-  // Compute number of src indices for each src edge
-  std::vector<int> out_edges_num(neighbors_dest.size(), 0);
-  for (int i = 0; i < ghost_src_ranks.size(); ++i)
-  {
-    const int owner_rank = ghost_src_ranks[i];
-    out_edges_num[owner_rank]++;
-  }
+  // Send global index of my ghost indices to the owning rank
 
-  std::vector<int> in_edges_num(neighbors_src.size());
+  // src ranks have ghosts, dest ranks hold the index owner
+  const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
+
+  // Compute number of ghost indices to send to each owning rank
+  std::vector<int> out_edges_num(dest_ranks.size(), 0);
+  for (int i = 0; i < ghost_src_ranks.size(); ++i)
+    out_edges_num[ghost_src_ranks[i]]++;
+
+  // Send number of my ghost indices to each owner, and receive number
+  // of my owned indices that are ghosted on other ranks
+  std::vector<int> in_edges_num(src_ranks.size());
   MPI_Neighbor_alltoall(out_edges_num.data(), 1, MPI_INT, in_edges_num.data(),
                         1, MPI_INT, comm);
 
-  std::vector<int> send_disp(neighbors_dest.size() + 1, 0);
-  std::vector<int> recv_disp(neighbors_src.size() + 1, 0);
-
+  // Prepare communication displacements
+  std::vector<int> send_disp(dest_ranks.size() + 1, 0),
+      recv_disp(src_ranks.size() + 1, 0);
   std::partial_sum(out_edges_num.begin(), out_edges_num.end(),
                    send_disp.begin() + 1);
   std::partial_sum(in_edges_num.begin(), in_edges_num.end(),
                    recv_disp.begin() + 1);
 
+  // Pack the ghost indices to send the owning rank
   std::vector<std::int64_t> send_indices(send_disp.back());
-  std::vector<int> insert_disp(send_disp);
-  for (int i = 0; i < ghosts.size(); ++i)
   {
-    const int owner_rank = ghost_src_ranks[i];
-    send_indices[insert_disp[owner_rank]] = ghosts[i];
-    insert_disp[owner_rank]++;
+    std::vector<int> insert_disp(send_disp);
+    for (int i = 0; i < ghosts.size(); ++i)
+    {
+      const int owner_rank = ghost_src_ranks[i];
+      send_indices[insert_disp[owner_rank]] = ghosts[i];
+      insert_disp[owner_rank]++;
+    }
   }
 
   // A rank in the neighborhood communicator can have no incoming or
@@ -137,6 +150,9 @@ compute_forward_indices(
                          in_edges_num.data(), recv_disp.data(), MPI_INT64_T,
                          comm);
 
+  // Return global indices received from each rank that ghost my owned
+  // indiced, and return how many global indices are received from each
+  // neighbourhood rank
   return {recv_indices, in_edges_num};
 }
 //-----------------------------------------------------------------------------

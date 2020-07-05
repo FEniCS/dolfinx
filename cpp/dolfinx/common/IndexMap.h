@@ -66,11 +66,12 @@ public:
   /// @param[in] mpi_comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
-  /// @param[in] dest_ranks Ranks that ghost indices owned by the
-  ///   calling rank
+  /// @param[in] dest_ranks Ranks that 'ghost' indices that are owned by
+  ///   the calling rank. I.e., ranks that the caller will send data to
+  ///   when updating ghost values.
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] ghost_src_rank Owner rank (on global communicator)
-  ///   of each ghost entry
+  ///   of each entry in @p ghosts
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<int>& dest_ranks,
@@ -124,7 +125,7 @@ public:
   /// range)
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts() const;
 
-  /// Return a MPI communicator with atached distributed graph topology
+  /// Return a MPI communicator with attached distributed graph topology
   /// information
   /// @param[in] dir Edge direction of communicator (forward, reverse,
   /// symmetric)
@@ -204,7 +205,7 @@ public:
   /// Compute map from each local (owned) index to the set of ranks that
   /// have the index as a ghost
   /// @return shared indices
-  std::map<std::int32_t, std::set<std::int32_t>> compute_shared_indices() const;
+  std::map<std::int32_t, std::set<int>> compute_shared_indices() const;
 
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
