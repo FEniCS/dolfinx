@@ -786,17 +786,15 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
   for (std::int32_t i = 0; i < _ghosts.size(); ++i)
     sizes_recv[_ghost_owners[i]] += n;
 
-  std::vector<std::int32_t> displs_send(outdegree + 1, 0);
-  std::vector<std::int32_t> displs_recv(indegree + 1, 0);
+  std::vector<std::int32_t> displs_send = _shared_disp;
+  std::transform(displs_send.begin(), displs_send.end(), displs_send.begin(),
+                 std::bind(std::multiplies<T>(), std::placeholders::_1, n));
   std::vector<std::int32_t> sizes_send(outdegree, 0);
-  for (int i = 0; i < outdegree; ++i)
-  {
-    sizes_send[i] = (_shared_disp[i + 1] - _shared_disp[i]) * n;
-    displs_send[i + 1] = displs_send[i] + sizes_send[i];
-  }
-
-  for (int i = 0; i < indegree; ++i)
-    displs_recv[i + 1] = displs_recv[i] + sizes_recv[i];
+  std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
+                           sizes_send.begin());
+  std::vector<std::int32_t> displs_recv(indegree + 1, 0);
+  std::partial_sum(sizes_recv.begin(), sizes_recv.end(),
+                   displs_recv.begin() + 1);
 
   // Copy into sending buffer
   std::vector<T> data_to_send(displs_send.back());
