@@ -186,10 +186,10 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh) : _mesh(mesh)
 
   for (auto& q : shared_edges)
   {
-    std::set<int> neighbour_set;
+    std::set<int> neighbor_set;
     for (int r : q.second)
-      neighbour_set.insert(proc_to_neighbour[r]);
-    _shared_edges.insert({q.first, neighbour_set});
+      neighbor_set.insert(proc_to_neighbor[r]);
+    _shared_edges.insert({q.first, neighbor_set});
   }
 
   _marked_for_update.resize(neighbors.size());
