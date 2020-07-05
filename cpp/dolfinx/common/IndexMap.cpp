@@ -142,8 +142,8 @@ compute_forward_indices(
 ///   calling process own in their halo (ghost region)
 std::array<MPI_Comm, 3>
 compute_asymmetric_communicators(MPI_Comm comm,
-                                 std::vector<int>& halo_src_ranks,
-                                 std::vector<int>& halo_dest_ranks)
+                                 const std::vector<int>& halo_src_ranks,
+                                 const std::vector<int>& halo_dest_ranks)
 {
   std::array<MPI_Comm, 3> comms{MPI_COMM_NULL, MPI_COMM_NULL, MPI_COMM_NULL};
 

@@ -167,10 +167,12 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh) : _mesh(mesh)
 
   // Compute a slightly wider neighborhood for direct communication of shared
   // edges
-  std::set<int> all_neighbor_set;
+  std::vector<int> neighbors;
   for (const auto& q : shared_edges)
-    all_neighbor_set.insert(q.second.begin(), q.second.end());
-  std::vector<int> neighbors(all_neighbor_set.begin(), all_neighbor_set.end());
+    neighbors.insert(neighbors.end(), q.second.begin(), q.second.end());
+  std::sort(neighbors.begin(), neighbors.begin());
+  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
+                  neighbors.end());
 
   MPI_Dist_graph_create_adjacent(
       mesh.mpi_comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
@@ -184,10 +186,9 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh) : _mesh(mesh)
 
   for (auto& q : shared_edges)
   {
-    std::set<int> neighbor_set;
+    std::set<int>& neighbor_set = _shared_edges[q.first];
     for (int r : q.second)
       neighbor_set.insert(proc_to_neighbor[r]);
-    _shared_edges.insert({q.first, neighbor_set});
   }
 
   _marked_for_update.resize(neighbors.size());
