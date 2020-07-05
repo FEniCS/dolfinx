@@ -107,10 +107,10 @@ public:
   ~IndexMap() = default;
 
   /// Range of indices (global) owned by this process
-  std::array<std::int64_t, 2> local_range() const;
+  std::array<std::int64_t, 2> local_range() const noexcept;
 
   /// Block size
-  int block_size() const;
+  int block_size() const noexcept;
 
   /// Number of ghost indices on this process
   std::int32_t num_ghosts() const;
@@ -296,14 +296,18 @@ private:
   // MPI neighbourhood communicators
 
   // Communicator where the source ranks own the indices in the callers
-  // halo, and the destination ranks ghost indices owned by the caller
+  // halo, and the destination ranks 'ghost' indices owned by the
+  // caller. I.e.,
+  // - in-edges (src) are from ranks that own my ghosts
+  // - out-edges (dest) go to ranks that 'ghost' my owned indices
   dolfinx::MPI::Comm _comm_owner_to_ghost;
 
   // Communicator where the source ranks have ghost indices that are
-  // owned by the caller, and the destination are the owners of indices
-  // in the callers halo region
+  // owned by the caller, and the destination ranks are the owners of
+  // indices in the callers halo region. I.e.,
+  // - in-edges (src) are from ranks that 'ghost' my owned indicies
+  // - out-edges (dest) are to the owning ranks of my ghost indices
   dolfinx::MPI::Comm _comm_ghost_to_owner;
-
 
   // TODO: remove
   dolfinx::MPI::Comm _comm_symmetric;
@@ -314,6 +318,14 @@ private:
   // Owning neighborhood rank (out edge) on '_comm_owner_to_ghost'
   // communicator for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
+
+  // TODO: replace _shared_disp and _shared_disp by an AdjacencyList
+
+  // TODO: _shared_indices are received on _comm_ghost_to_owner, and
+  // _shared_indices is the recv_disp on _comm_ghost_to_owner. Check for
+  // corect use on _comm_owner_to_ghost. Can guarantee that
+  // _comm_owner_to_ghost and _comm_ghost_to_owner are the transpose of
+  // each other?
 
   // Owned local indices that are in the halo (ghost) region on other
   // ranks

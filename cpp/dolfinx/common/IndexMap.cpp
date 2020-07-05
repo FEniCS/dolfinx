@@ -95,9 +95,9 @@ std::vector<int> get_ghost_ranks(
 ///   the caller
 /// @return  (i) For each neighborhood rank (destination ranks on comm)
 ///   a list of my global indices that are ghost on the rank and (ii)
-///   number of global indices for each rank
+///   displacement vector for each rank
 std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>>
-compute_forward_indices(
+compute_owned_shared(
     MPI_Comm comm, const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts,
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& ghost_src_ranks)
 {
@@ -153,11 +153,9 @@ compute_forward_indices(
                          in_edges_num.data(), recv_disp.data(), MPI_INT64_T,
                          comm);
 
-  // TODO: return recv_disp instead of in_edges_num
   // Return global indices received from each rank that ghost my owned
   // indices, and return how many global indices are received from each
   // neighbourhood rank
-  // return {recv_indices, recv_disp};
   return {recv_indices, recv_disp};
 }
 //-----------------------------------------------------------------------------
@@ -421,7 +419,7 @@ IndexMap::IndexMap(
 
   // Compute owned indices which are ghosted by other ranks, and how
   // many of my indices each neighbour ghosts
-  const auto [fwd_ind, shared_disp] = compute_forward_indices(
+  const auto [shared_ind, shared_disp] = compute_owned_shared(
       _comm_ghost_to_owner.comm(), _ghosts, _ghost_owners);
   _shared_disp = std::move(shared_disp);
 
@@ -431,21 +429,21 @@ IndexMap::IndexMap(
 
   // Convert owned global indices that are ghosts on another rank to
   // local indexing
-  _shared_indices.resize(fwd_ind.size());
+  _shared_indices.resize(shared_ind.size());
   std::transform(
-      fwd_ind.begin(), fwd_ind.end(), _shared_indices.begin(),
+      shared_ind.begin(), shared_ind.end(), _shared_indices.begin(),
       [offset = offset](std::int64_t x) -> std::int32_t { return x - offset; });
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> IndexMap::local_range() const
+std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
 {
   return _local_range;
 }
 //-----------------------------------------------------------------------------
-int IndexMap::block_size() const { return _block_size; }
+int IndexMap::block_size() const noexcept { return _block_size; }
 //-----------------------------------------------------------------------------
 std::int32_t IndexMap::num_ghosts() const { return _ghosts.rows(); }
 //-----------------------------------------------------------------------------
