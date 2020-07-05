@@ -478,18 +478,15 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
     // set cell-vertex topology
     mesh::Topology topology_local(comm, _mesh.geometry().cmap().cell_shape());
     const int tdim = topology_local.dim();
-    auto map = std::make_shared<common::IndexMap>(
-        comm, cells_local.num_nodes(), std::vector<int>(),
-        std::vector<std::int64_t>(), std::vector<int>(), 1);
+    auto map
+        = std::make_shared<common::IndexMap>(comm, cells_local.num_nodes(), 1);
     topology_local.set_index_map(tdim, map);
     auto _cells_local
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
     topology_local.set_connectivity(_cells_local, tdim, 0);
 
     const int n = local_to_global_vertices.size();
-    map = std::make_shared<common::IndexMap>(comm, n, std::vector<int>(),
-                                             std::vector<std::int64_t>(),
-                                             std::vector<int>(), 1);
+    map = std::make_shared<common::IndexMap>(comm, n, 1);
     topology_local.set_index_map(0, map);
     auto _vertices_local
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(n);
@@ -532,9 +529,8 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
     topology.set_connectivity(c0, 0, 0);
 
     // Set cell IndexMap and cell-vertex connectivity
-    auto index_map_c = std::make_shared<common::IndexMap>(
-        comm, cells_d.num_nodes(), std::vector<int>(),
-        std::vector<std::int64_t>(), std::vector<int>(), 1);
+    auto index_map_c
+        = std::make_shared<common::IndexMap>(comm, cells_d.num_nodes(), 1);
     topology.set_index_map(tdim, index_map_c);
     auto _cells_d
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
