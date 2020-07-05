@@ -127,7 +127,7 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
   if (facets->num_ghosts() == 0)
   {
     fwd_shared_facets = std::set<std::int32_t>(
-        facets->forward_indices().begin(), facets->forward_indices().end());
+        facets->shared_indices().begin(), facets->shared_indices().end());
   }
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> fc

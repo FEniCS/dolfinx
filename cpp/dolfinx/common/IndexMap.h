@@ -185,7 +185,7 @@ public:
   /// Local (owned) indices shared with neighbor processes, i.e. are
   /// ghosts on other processes
   /// @return List of indices that are ghosted on other processes
-  const std::vector<std::int32_t>& forward_indices() const;
+  const std::vector<std::int32_t>& shared_indices() const;
 
   /// Ranks with ghost indices that are owned by the caller
   std::vector<int> dest_ranks() const;
@@ -314,11 +314,11 @@ private:
 
   // Number of owned indices to send to each outgoing (rank) edge on
   // _comm_owner_to_ghost when scattering owner -> ghosts
-  std::vector<std::int32_t> _forward_sizes;
+  std::vector<std::int32_t> _shared_sizes;
 
   // Owned local indices that are in the halo (ghost) region on other
   // ranks
-  std::vector<std::int32_t> _forward_indices;
+  std::vector<std::int32_t> _shared_indices;
 
   template <typename T>
   void scatter_fwd_impl(const std::vector<T>& local_data,
