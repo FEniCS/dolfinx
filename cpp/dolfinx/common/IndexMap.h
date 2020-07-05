@@ -63,11 +63,11 @@ public:
   /// process.
   ///
   /// @note Collective
-  /// @param[in] mpi_comm The MPI communicator
+  /// @param[in] comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
   /// @param[in] block_size The block size of the IndexMap
-  IndexMap(MPI_Comm mpi_comm, std::int32_t local_size, int block_size);
+  IndexMap(MPI_Comm comm, std::int32_t local_size, int block_size);
 
   /// Create an index map with local_size owned blocks on this process, and
   /// blocks have size block_size.

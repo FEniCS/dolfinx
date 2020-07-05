@@ -341,7 +341,7 @@ common::stack_index_maps(
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size, int block_size)
+IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size, int block_size)
     : _block_size(block_size), _comm_owner_to_ghost(MPI_COMM_NULL),
       _comm_ghost_to_owner(MPI_COMM_NULL), _comm_symmetric(MPI_COMM_NULL)
 {
@@ -349,26 +349,44 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size, int block_size)
   std::int64_t offset = 0;
   const std::int64_t local_size_tmp = (std::int64_t)local_size;
   MPI_Request request_scan;
-  MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM, mpi_comm,
+  MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_scan);
 
   // Send local size to sum reduction to get global size
   MPI_Request request;
-  MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
-                 mpi_comm, &request);
+  MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM, comm,
+                 &request);
 
   MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
   _local_range = {offset, offset + local_size};
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
+
+  // FIXME: Remove need to do thos
+  // Create communicators with empty neighborhoods
+  MPI_Comm comm0, comm1, comm2;
+  std::vector<int> ranks(0);
+  std::vector<int> weights(ranks.size(), 1);
+  MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
+                                 weights.data(), ranks.size(), ranks.data(),
+                                 weights.data(), MPI_INFO_NULL, false, &comm0);
+  MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
+                                 weights.data(), ranks.size(), ranks.data(),
+                                 weights.data(), MPI_INFO_NULL, false, &comm1);
+  MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
+                                 weights.data(), ranks.size(), ranks.data(),
+                                 weights.data(), MPI_INFO_NULL, false, &comm2);
+  _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
+  _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
+  _comm_symmetric = dolfinx::MPI::Comm(comm2, false);
 }
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    const std::vector<int>& dest_ranks,
                    const std::vector<std::int64_t>& ghosts,
                    const std::vector<int>& ghost_src_rank, int block_size)
-    : IndexMap(mpi_comm, local_size, dest_ranks,
+    : IndexMap(comm, local_size, dest_ranks,
                Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
                    ghosts.data(), ghosts.size()),
                ghost_src_rank, block_size)
