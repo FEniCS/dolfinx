@@ -422,8 +422,6 @@ IndexMap::IndexMap(
   // many of my indices each neighbour ghosts
   const auto [fwd_ind, shared_disp] = compute_forward_indices(
       _comm_ghost_to_owner.comm(), _ghosts, _ghost_owners);
-  std::adjacent_difference(shared_disp.begin() + 1, shared_disp.end(),
-                           std::back_inserter(_shared_sizes));
   _shared_disp = std::move(shared_disp);
 
   // Wait for MPI_Iexscan to complete (get offset)
@@ -636,30 +634,39 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
 
   std::map<std::int32_t, std::set<int>> shared_indices;
 
-  // Get sharing of all owned indices
-  for (std::size_t i = 0, c = 0; i < _shared_sizes.size(); ++i)
+  // Build map from owned local index to ranks that ghost the index
+  for (std::size_t p = 0; p < _shared_disp.size() - 1; ++p)
   {
-    int dest_rank_global = neighbors_out[i];
-
-    // Loop over . . .
-    for (int j = 0; j < _shared_sizes[i]; ++j)
+    const int rank_global = neighbors_out[p];
+    for (int i = _shared_disp[p]; i < _shared_disp[p + 1]; ++i)
     {
-      int idx = _shared_indices[c];
-      shared_indices[idx].insert(dest_rank_global);
-      ++c;
+      int idx = _shared_indices[i];
+      shared_indices[idx].insert(rank_global);
     }
   }
 
-  // Pack shared indices that are ghost in more than one rank and send
-  // forward
+  // for (std::size_t i = 0, c = 0; i < _shared_sizes.size(); ++i)
+  // {
+  //   int dest_rank_global = neighbors_out[i];
+
+  //   // Loop over . . .
+  //   for (int j = 0; j < _shared_sizes[i]; ++j)
+  //   {
+  //     int idx = _shared_indices[c];
+  //     shared_indices[idx].insert(dest_rank_global);
+  //     ++c;
+  //   }
+  // }
+
   std::vector<std::int64_t> fwd_sharing_data;
   std::vector<int> fwd_sharing_offsets{0};
-  for (std::size_t i = 0, c = 0; i < _shared_sizes.size(); ++i)
+  for (std::size_t p = 0; p < _shared_disp.size() - 1; ++p)
   {
-    for (int j = 0; j < _shared_sizes[i]; ++j, ++c)
+    for (int i = _shared_disp[p]; i < _shared_disp[p + 1]; ++i)
     {
-      int idx = _shared_indices[c];
-      if (shared_indices[idx].size() > 1)
+      int idx = _shared_indices[i];
+      assert(shared_indices.find(idx) != shared_indices.end());
+      if (auto it = shared_indices.find(idx); it->second.size() > 1)
       {
         fwd_sharing_data.push_back(idx + _local_range[0]);
         fwd_sharing_data.push_back(shared_indices[idx].size());
@@ -670,6 +677,27 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
     }
     fwd_sharing_offsets.push_back(fwd_sharing_data.size());
   }
+
+  // Pack shared indices that are ghost in more than one rank and send
+  // forward
+  // std::vector<std::int64_t> fwd_sharing_data;
+  // std::vector<int> fwd_sharing_offsets{0};
+  // for (std::size_t i = 0, c = 0; i < _shared_sizes.size(); ++i)
+  // {
+  //   for (int j = 0; j < _shared_sizes[i]; ++j, ++c)
+  //   {
+  //     int idx = _shared_indices[c];
+  //     if (shared_indices[idx].size() > 1)
+  //     {
+  //       fwd_sharing_data.push_back(idx + _local_range[0]);
+  //       fwd_sharing_data.push_back(shared_indices[idx].size());
+  //       fwd_sharing_data.insert(fwd_sharing_data.end(),
+  //                               shared_indices[idx].begin(),
+  //                               shared_indices[idx].end());
+  //     }
+  //   }
+  //   fwd_sharing_offsets.push_back(fwd_sharing_data.size());
+  // }
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_sharing_data
       = dolfinx::MPI::neighbor_all_to_all(_comm_owner_to_ghost.comm(),
@@ -776,7 +804,7 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
   std::vector<std::int32_t> sizes_send(outdegree, 0);
   for (int i = 0; i < outdegree; ++i)
   {
-    sizes_send[i] = _shared_sizes[i] * n;
+    sizes_send[i] = (_shared_disp[i + 1] - _shared_disp[i]) * n;
     displs_send[i + 1] = displs_send[i] + sizes_send[i];
   }
 
@@ -840,7 +868,7 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
   std::vector<std::int32_t> displs_recv(indegree + 1, 0);
   for (int i = 0; i < indegree; ++i)
   {
-    recv_sizes[i] = _shared_sizes[i] * n;
+    recv_sizes[i] = (_shared_disp[i + 1] - _shared_disp[i]) * n;
     displs_recv[i + 1] = displs_recv[i] + recv_sizes[i];
   }
 

@@ -319,7 +319,6 @@ private:
 
   // Number of owned indices to send to each outgoing (rank) edge on
   // _comm_owner_to_ghost when scattering owner -> ghosts
-  std::vector<std::int32_t> _shared_sizes;
   std::vector<std::int32_t> _shared_disp;
 
   template <typename T>
