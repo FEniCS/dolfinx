@@ -66,12 +66,11 @@ public:
   /// @param[in] mpi_comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
-  /// @param[in] dest_ranks Ranks that 'ghost' indices that are owned by
-  ///   the calling rank. I.e., ranks that the caller will send data to
-  ///   when updating ghost values.
+  /// @param[in] dest_ranks Ranks that ghost indices owned by the
+  ///   calling rank
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] ghost_src_rank Owner rank (on global communicator)
-  ///   of each entry in @p ghosts.
+  ///   of each ghost entry
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<int>& dest_ranks,
@@ -125,7 +124,7 @@ public:
   /// range)
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts() const;
 
-  /// Return a MPI communicator with attached distributed graph topology
+  /// Return a MPI communicator with atached distributed graph topology
   /// information
   /// @param[in] dir Edge direction of communicator (forward, reverse,
   /// symmetric)
@@ -182,12 +181,13 @@ public:
   /// process, including ghosts
   std::vector<std::int64_t> global_indices(bool blocked = true) const;
 
+  /// @todo Reconsider name
   /// Local (owned) indices shared with neighbor processes, i.e. are
-  ///   ghosts on other processes
-  /// @return List of owned indices that are ghosted on other processes
+  /// ghosts on other processes
+  /// @return List of indices that are ghosted on other processes
   const std::vector<std::int32_t>& shared_indices() const;
 
-  /// Ranks that 'ghost' indices that are owned by the caller
+  /// Ranks with ghost indices that are owned by the caller
   std::vector<int> dest_ranks() const;
 
   /// Owner rank (on global communicator) of each ghost entry
@@ -204,7 +204,7 @@ public:
   /// Compute map from each local (owned) index to the set of ranks that
   /// have the index as a ghost
   /// @return shared indices
-  std::map<std::int32_t, std::set<int>> compute_shared_indices() const;
+  std::map<std::int32_t, std::set<std::int32_t>> compute_shared_indices() const;
 
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
@@ -295,7 +295,7 @@ private:
   // MPI neighbourhood communicators
 
   // Communicator where the source ranks own the indices in the callers
-  // halo, and the destination ranks 'ghost' indices owned by the caller
+  // halo, and the destination ranks ghost indices owned by the caller
   dolfinx::MPI::Comm _comm_owner_to_ghost;
 
   // Communicator where the source ranks have ghost indices that are
