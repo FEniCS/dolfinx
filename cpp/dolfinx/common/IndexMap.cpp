@@ -92,7 +92,9 @@ std::vector<int> get_ghost_ranks(
 /// @param[in] ghosts Global index of ghosts indices on the caller
 /// @param[in] ghost_src_ranks The src rank on @p comm for each ghost on
 ///   the caller
-/// @return ???
+/// @return  (i) For each neighborhood rank (destination ranks on comm)
+///   a list of my global indices that are ghost on the rank and (ii)
+///   number of global indices for each rank
 std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>>
 compute_forward_indices(
     MPI_Comm comm, const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts,
@@ -150,8 +152,9 @@ compute_forward_indices(
                          in_edges_num.data(), recv_disp.data(), MPI_INT64_T,
                          comm);
 
+  // TODO: return recv_disp instead of in_edges_num
   // Return global indices received from each rank that ghost my owned
-  // indiced, and return how many global indices are received from each
+  // indices, and return how many global indices are received from each
   // neighbourhood rank
   return {recv_indices, in_edges_num};
 }
