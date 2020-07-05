@@ -341,6 +341,29 @@ common::stack_index_maps(
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size, int block_size)
+    : _block_size(block_size), _comm_owner_to_ghost(MPI_COMM_NULL),
+      _comm_ghost_to_owner(MPI_COMM_NULL), _comm_symmetric(MPI_COMM_NULL)
+{
+  // Get global offset (index), using partial exclusive reduction
+  std::int64_t offset = 0;
+  const std::int64_t local_size_tmp = (std::int64_t)local_size;
+  MPI_Request request_scan;
+  MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM, mpi_comm,
+              &request_scan);
+
+  // Send local size to sum reduction to get global size
+  MPI_Request request;
+  MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
+                 mpi_comm, &request);
+
+  MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
+  _local_range = {offset, offset + local_size};
+
+  // Wait for the MPI_Iallreduce to complete
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
+}
+//-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<int>& dest_ranks,
                    const std::vector<std::int64_t>& ghosts,
@@ -690,6 +713,12 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    recv_offsets.begin() + 1);
   std::vector<std::int64_t> recv_data(recv_offsets.back());
+
+  // Work-around for OpenMPI
+  send_sizes.reserve(1);
+  recv_sizes.reserve(1);
+
+  // Start data exchange
   MPI_Request request;
   MPI_Ineighbor_alltoallv(
       fwd_sharing_data.data(), send_sizes.data(), fwd_sharing_offsets.data(),
