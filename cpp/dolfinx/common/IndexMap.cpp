@@ -676,19 +676,30 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   }
 
   // Send sharing rank data from owner to ghosts
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_sharing_data
-      = dolfinx::MPI::neighbor_all_to_all(_comm_owner_to_ghost.comm(),
-                                          fwd_sharing_offsets, fwd_sharing_data)
-            .array();
+
+  // Send data size to send, and get to-receive sizes
+  std::vector<int> send_sizes(outdegree, 0);
+  std::vector<int> recv_sizes(indegree);
+  std::adjacent_difference(fwd_sharing_offsets.begin() + 1,
+                           fwd_sharing_offsets.end(), send_sizes.begin());
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                        MPI_INT, _comm_owner_to_ghost.comm());
+
+  // Work out recv offsets and send/receive
+  std::vector<int> recv_offsets(recv_sizes.size() + 1, 0);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   recv_offsets.begin() + 1);
+  std::vector<std::int64_t> recv_data(recv_offsets.back());
+  MPI_Request request;
+  MPI_Ineighbor_alltoallv(
+      fwd_sharing_data.data(), send_sizes.data(), fwd_sharing_offsets.data(),
+      MPI_INT64_T, recv_data.data(), recv_sizes.data(), recv_offsets.data(),
+      MPI_INT64_T, _comm_owner_to_ghost.comm(), &request);
 
   // For my ghosts, add owning rank to list of sharing ranks
   const std::int32_t size_local = this->size_local();
   for (int i = 0; i < _ghosts.size(); ++i)
-  {
-    const std::int32_t idx = size_local + i;
-    const int p = _ghost_owners[i];
-    shared_indices[idx].insert(neighbors_in[p]);
-  }
+    shared_indices[size_local + i].insert(neighbors_in[_ghost_owners[i]]);
 
   // Build map from global index to local index for ghosts
   std::unordered_map<std::int64_t, std::int32_t> ghosts;
@@ -696,20 +707,22 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   for (int i = 0; i < _ghosts.size(); ++i)
     ghosts.emplace(_ghosts[i], i + size_local);
 
+  // Wait for all-to-all to complete
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
+
   // Add other ranks that also 'ghost' my ghost indices
   int myrank = -1;
   MPI_Comm_rank(_comm_owner_to_ghost.comm(), &myrank);
-  for (int i = 0; i < recv_sharing_data.size();)
+  for (std::size_t i = 0; i < recv_data.size();)
   {
-    auto it = ghosts.find(recv_sharing_data[i]);
+    auto it = ghosts.find(recv_data[i]);
     assert(it != ghosts.end());
     const std::int32_t idx = it->second;
-    const int set_size = recv_sharing_data[i + 1];
-    const int set_pos = i + 2;
+    const int set_size = recv_data[i + 1];
     for (int j = 0; j < set_size; j++)
     {
-      if (recv_sharing_data[set_pos + j] != myrank)
-        shared_indices[idx].insert(recv_sharing_data[set_pos + j]);
+      if (recv_data[i + 2 + j] != myrank)
+        shared_indices[idx].insert(recv_data[i + 2 + +j]);
     }
     i += set_size + 2;
   }
