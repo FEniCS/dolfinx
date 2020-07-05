@@ -126,8 +126,8 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
   std::set<std::int32_t> fwd_shared_facets;
   if (facets->num_ghosts() == 0)
   {
-    fwd_shared_facets = std::set<std::int32_t>(
-        facets->shared_indices().begin(), facets->shared_indices().end());
+    fwd_shared_facets = std::set<std::int32_t>(facets->shared_indices().begin(),
+                                               facets->shared_indices().end());
   }
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> fc
@@ -306,15 +306,13 @@ mesh::create_topology(MPI_Comm comm,
                       const std::vector<int>& ghost_owners,
                       const CellType& cell_type, mesh::GhostMode ghost_mode)
 {
-  if (cells.num_nodes() > 0)
+  if (cells.num_nodes() > 0
+      and cells.num_links(0) != mesh::num_cell_vertices(cell_type))
   {
-    if (cells.num_links(0) != mesh::num_cell_vertices(cell_type))
-    {
-      throw std::runtime_error(
-          "Inconsistent number of cell vertices. Got "
-          + std::to_string(cells.num_links(0)) + ", expected "
-          + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
-    }
+    throw std::runtime_error(
+        "Inconsistent number of cell vertices. Got "
+        + std::to_string(cells.num_links(0)) + ", expected "
+        + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
   }
 
   // Create cell IndexMap
