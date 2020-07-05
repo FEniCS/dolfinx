@@ -139,33 +139,22 @@ int dolfinx::MPI::index_owner(int size, std::size_t index, std::size_t N)
 std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
                                                    const std::set<int>& edges)
 {
-  std::vector<int> e(edges.begin(), edges.end());
-  const int degrees = e.size();
+  // Send '1' to ranks that I have a edge to
+  std::vector<std::uint8_t> edge_count(dolfinx::MPI::size(comm), 0);
+  for (auto e : edges)
+    edge_count[e] = 1;
+  std::vector<std::uint8_t> in_edge_count(dolfinx::MPI::size(comm), -1);
+  MPI_Alltoall(edge_count.data(), 1, MPI_UINT8_T, in_edge_count.data(), 1,
+               MPI_UINT8_T, comm);
 
-  // OpenMPI doesn't like empty array
-  if (e.empty())
-    e.push_back(0);
-
-  // Create graph communicator
-  int my_rank = -1;
-  MPI_Comm_rank(comm, &my_rank);
-  MPI_Comm comm_graph;
-  MPI_Dist_graph_create(comm, 1, &my_rank, &degrees, e.data(), MPI_UNWEIGHTED,
-                        MPI_INFO_NULL, false, &comm_graph);
-
-  // Get number of neighbours
-  int indegree(-1), outdegree(-1), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm_graph, &indegree, &outdegree, &weighted);
-
-  std::vector<int> _sources(indegree), _destinations(outdegree);
-  MPI_Dist_graph_neighbors(comm_graph, indegree, _sources.data(),
-                           MPI_UNWEIGHTED, outdegree, _destinations.data(),
-                           MPI_UNWEIGHTED);
-  assert(edges == std::set<int>(_destinations.begin(), _destinations.end()));
-  MPI_Comm_free(&comm_graph);
-
-  std::sort(_sources.begin(), _sources.end());
-  return _sources;
+  // Build list of rank that had an edge to me
+  std::vector<int> edges1;
+  for (std::size_t i = 0; i < in_edge_count.size(); ++i)
+  {
+    if (in_edge_count[i] > 0)
+      edges1.push_back(i);
+  }
+  return edges1;
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<int>, std::vector<int>>

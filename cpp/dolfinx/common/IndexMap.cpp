@@ -363,19 +363,20 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size, int block_size)
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 
-  // FIXME: Remove need to do this
+  // FIXME: Remove need to do thos
   // Create communicators with empty neighborhoods
   MPI_Comm comm0, comm1, comm2;
   std::vector<int> ranks(0);
+  std::vector<int> weights(ranks.size(), 1);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+                                 weights.data(), ranks.size(), ranks.data(),
+                                 weights.data(), MPI_INFO_NULL, false, &comm0);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+                                 weights.data(), ranks.size(), ranks.data(),
+                                 weights.data(), MPI_INFO_NULL, false, &comm1);
   MPI_Dist_graph_create_adjacent(comm, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm2);
+                                 weights.data(), ranks.size(), ranks.data(),
+                                 weights.data(), MPI_INFO_NULL, false, &comm2);
   _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   _comm_symmetric = dolfinx::MPI::Comm(comm2, false);
