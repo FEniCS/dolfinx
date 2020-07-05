@@ -342,8 +342,8 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size, int block_size)
-    : _block_size(block_size), _comm_owner_to_ghost(mpi_comm),
-      _comm_ghost_to_owner(mpi_comm), _comm_symmetric(mpi_comm)
+    : _block_size(block_size), _comm_owner_to_ghost(MPI_COMM_NULL),
+      _comm_ghost_to_owner(MPI_COMM_NULL), _comm_symmetric(MPI_COMM_NULL)
 {
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -359,6 +359,8 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size, int block_size)
 
   MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
   _local_range = {offset, offset + local_size};
+
+  // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 }
 //-----------------------------------------------------------------------------
