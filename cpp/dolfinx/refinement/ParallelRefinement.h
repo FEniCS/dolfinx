@@ -121,10 +121,10 @@ private:
   std::vector<std::vector<std::int64_t>> _marked_for_update;
 
   // Shared edges between processes
-  std::map<std::int32_t, std::set<int>> _shared_edges;
+  std::map<std::int32_t, std::set<std::int32_t>> _shared_edges;
 
-  // Neighborhood communicator
-  MPI_Comm _neighbor_comm;
+  // Neighbourhood communicator
+  MPI_Comm _neighbour_comm;
 };
 } // namespace refinement
 } // namespace dolfinx

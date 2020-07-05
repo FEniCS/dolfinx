@@ -160,42 +160,41 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh) : _mesh(mesh)
   const std::int32_t num_edges = map_e->size_local() + map_e->num_ghosts();
   _marked_edges = std::vector<bool>(num_edges, false);
 
-  // Create shared edges, for both owned and ghost indices returning
-  // edge -> set(global process numbers)
-  const std::map<std::int32_t, std::set<int>> shared_edges
+  // Create shared edges, for both owned and ghost indices
+  // returning edge -> set(global process numbers)
+  std::map<std::int32_t, std::set<int>> shared_edges
       = _mesh.topology().index_map(1)->compute_shared_indices();
 
-  // Compute a slightly wider neighborhood for direct communication of shared
+  // Compute a slightly wider neighbourhood for direct communication of shared
   // edges
-  std::vector<int> neighbors;
+  std::set<int> all_neighbour_set;
   for (const auto& q : shared_edges)
-    neighbors.insert(neighbors.end(), q.second.begin(), q.second.end());
-  std::sort(neighbors.begin(), neighbors.begin());
-  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                  neighbors.end());
+    all_neighbour_set.insert(q.second.begin(), q.second.end());
+  std::vector<int> neighbours(all_neighbour_set.begin(),
+                              all_neighbour_set.end());
 
   MPI_Dist_graph_create_adjacent(
-      mesh.mpi_comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
-      neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
-      &_neighbor_comm);
+      mesh.mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
+      neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+      false, &_neighbour_comm);
 
-  // Create a "shared_edge to neighbor map"
-  std::map<int, int> proc_to_neighbor;
-  for (std::size_t i = 0; i < neighbors.size(); ++i)
-    proc_to_neighbor.insert({neighbors[i], i});
+  // Create a "shared_edge to neighbour map"
+  std::map<int, int> proc_to_neighbour;
+  for (std::size_t i = 0; i < neighbours.size(); ++i)
+    proc_to_neighbour.insert({neighbours[i], i});
 
   for (auto& q : shared_edges)
   {
-    std::set<int> neighbor_set;
+    std::set<int> neighbour_set;
     for (int r : q.second)
-      neighbor_set.insert(proc_to_neighbor[r]);
-    _shared_edges.insert({q.first, neighbor_set});
+      neighbour_set.insert(proc_to_neighbour[r]);
+    _shared_edges.insert({q.first, neighbour_set});
   }
 
-  _marked_for_update.resize(neighbors.size());
+  _marked_for_update.resize(neighbours.size());
 }
 //-----------------------------------------------------------------------------
-ParallelRefinement::~ParallelRefinement() { MPI_Comm_free(&_neighbor_comm); }
+ParallelRefinement::~ParallelRefinement() { MPI_Comm_free(&_neighbour_comm); }
 //-----------------------------------------------------------------------------
 const std::vector<bool>& ParallelRefinement::marked_edges() const
 {
@@ -214,7 +213,7 @@ bool ParallelRefinement::mark(std::int32_t edge_index)
 
   _marked_edges[edge_index] = true;
 
-  // If it is a shared edge, add all sharing neighbors to update set
+  // If it is a shared edge, add all sharing neighbours to update set
   if (auto map_it = _shared_edges.find(edge_index);
       map_it != _shared_edges.end())
   {
@@ -260,8 +259,8 @@ void ParallelRefinement::update_logical_edgefunction()
 {
   std::vector<std::int32_t> send_offsets = {0};
   std::vector<std::int64_t> data_to_send;
-  int num_neighbors = _marked_for_update.size();
-  for (int i = 0; i < num_neighbors; ++i)
+  int num_neighbours = _marked_for_update.size();
+  for (int i = 0; i < num_neighbours; ++i)
   {
     data_to_send.insert(data_to_send.end(), _marked_for_update[i].begin(),
                         _marked_for_update[i].end());
@@ -272,7 +271,7 @@ void ParallelRefinement::update_logical_edgefunction()
   // Send all shared edges marked for update and receive from other
   // processes
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> data_to_recv
-      = MPI::neighbor_all_to_all(_neighbor_comm, send_offsets, data_to_send)
+      = MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, data_to_send)
             .array();
 
   // Flatten received values and set _marked_edges at each index received
@@ -315,8 +314,8 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.
 
-  int num_neighbors = _marked_for_update.size();
-  std::vector<std::vector<std::int64_t>> values_to_send(num_neighbors);
+  int num_neighbours = _marked_for_update.size();
+  std::vector<std::vector<std::int64_t>> values_to_send(num_neighbours);
   for (auto& local_edge : local_edge_to_new_vertex)
   {
     const std::size_t local_i = local_edge.first;
@@ -335,10 +334,10 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
     }
   }
 
-  // Send new vertex indices to edge neighbors and receive
+  // Send new vertex indices to edge neighbours and receive
   std::vector<std::int64_t> send_values;
   std::vector<int> send_offsets = {0};
-  for (int i = 0; i < num_neighbors; ++i)
+  for (int i = 0; i < num_neighbours; ++i)
   {
     send_values.insert(send_values.end(), values_to_send[i].begin(),
                        values_to_send[i].end());
@@ -346,7 +345,7 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
   }
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> received_values
-      = MPI::neighbor_all_to_all(_neighbor_comm, send_offsets, send_values)
+      = MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, send_values)
             .array();
 
   // Add received remote global vertex indices to map
