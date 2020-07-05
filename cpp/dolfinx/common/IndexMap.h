@@ -313,13 +313,14 @@ private:
   // communicator for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
-  // Number of owned indices to send to each outgoing (rank) edge on
-  // _comm_owner_to_ghost when scattering owner -> ghosts
-  std::vector<std::int32_t> _shared_sizes;
-
   // Owned local indices that are in the halo (ghost) region on other
   // ranks
   std::vector<std::int32_t> _shared_indices;
+
+  // Number of owned indices to send to each outgoing (rank) edge on
+  // _comm_owner_to_ghost when scattering owner -> ghosts
+  std::vector<std::int32_t> _shared_sizes;
+  std::vector<std::int32_t> _shared_disp;
 
   template <typename T>
   void scatter_fwd_impl(const std::vector<T>& local_data,

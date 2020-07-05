@@ -156,7 +156,7 @@ compute_forward_indices(
   // Return global indices received from each rank that ghost my owned
   // indices, and return how many global indices are received from each
   // neighbourhood rank
-  return {recv_indices, in_edges_num};
+  return {recv_indices, recv_disp};
 }
 //-----------------------------------------------------------------------------
 /// Create neighbourhood communicators
@@ -419,15 +419,17 @@ IndexMap::IndexMap(
 
   // Compute owned indices which are ghosted by other ranks, and how
   // many of my indices each neighbour ghosts
-  const auto [fwd_ind, shared_sizes] = compute_forward_indices(
+  const auto [fwd_ind, shared_disp] = compute_forward_indices(
       _comm_ghost_to_owner.comm(), _ghosts, _ghost_owners);
-  _shared_sizes = std::move(shared_sizes);
+  std::adjacent_difference(_shared_disp.begin(), _shared_disp.end(),
+                           std::back_inserter(_shared_sizes));
 
   // Wait for MPI_Iexscan to complete (get offset)
   MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
   _local_range = {offset, offset + local_size};
 
-  // Convert owned indices are ghosts on another rank to local indexing
+  // Convert owned global indices that are ghosts on another rank to
+  // local indexing
   _shared_indices.resize(fwd_ind.size());
   std::transform(
       fwd_ind.begin(), fwd_ind.end(), _shared_indices.begin(),
