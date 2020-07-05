@@ -304,6 +304,8 @@ private:
   // in the callers halo region
   dolfinx::MPI::Comm _comm_ghost_to_owner;
 
+
+  // TODO: remove
   dolfinx::MPI::Comm _comm_symmetric;
 
   // Local-to-global map for ghost indices
@@ -317,8 +319,10 @@ private:
   // ranks
   std::vector<std::int32_t> _shared_indices;
 
-  // Number of owned indices to send to each outgoing (rank) edge on
-  // _comm_owner_to_ghost when scattering owner -> ghosts
+  // FIXME: explain better the ranks
+  // Displacement vector for _shared_indices. _shared_indices[i] is the
+  // starting postion in _shared_indices for data that is ghosted on
+  // rank i, where i is the ith outgoing edge on _comm_owner_to_ghost.
   std::vector<std::int32_t> _shared_disp;
 
   template <typename T>

@@ -7,6 +7,7 @@
 #include "IndexMap.h"
 #include <algorithm>
 #include <numeric>
+#include <unordered_map>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
@@ -645,18 +646,10 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
     }
   }
 
-  // for (std::size_t i = 0, c = 0; i < _shared_sizes.size(); ++i)
-  // {
-  //   int dest_rank_global = neighbors_out[i];
-
-  //   // Loop over . . .
-  //   for (int j = 0; j < _shared_sizes[i]; ++j)
-  //   {
-  //     int idx = _shared_indices[c];
-  //     shared_indices[idx].insert(dest_rank_global);
-  //     ++c;
-  //   }
-  // }
+  // Ghost indices know the owner rank, but they don't know about other
+  // ranks that also ghost the index. If an index is a ghost on more
+  // than one rank, we need to send each rank that ghosts the index the
+  // other ranks which also ghost the index.
 
   std::vector<std::int64_t> fwd_sharing_data;
   std::vector<int> fwd_sharing_offsets{0};
@@ -668,64 +661,58 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
       assert(shared_indices.find(idx) != shared_indices.end());
       if (auto it = shared_indices.find(idx); it->second.size() > 1)
       {
+        // Add global index
         fwd_sharing_data.push_back(idx + _local_range[0]);
+
+        // Add number of sharing ranks
         fwd_sharing_data.push_back(shared_indices[idx].size());
-        fwd_sharing_data.insert(fwd_sharing_data.end(),
-                                shared_indices[idx].begin(),
-                                shared_indices[idx].end());
+
+        // Add sharing ranks
+        fwd_sharing_data.insert(fwd_sharing_data.end(), it->second.begin(),
+                                it->second.end());
       }
     }
+
+    // Add process offset
     fwd_sharing_offsets.push_back(fwd_sharing_data.size());
   }
 
-  // Pack shared indices that are ghost in more than one rank and send
-  // forward
-  // std::vector<std::int64_t> fwd_sharing_data;
-  // std::vector<int> fwd_sharing_offsets{0};
-  // for (std::size_t i = 0, c = 0; i < _shared_sizes.size(); ++i)
-  // {
-  //   for (int j = 0; j < _shared_sizes[i]; ++j, ++c)
-  //   {
-  //     int idx = _shared_indices[c];
-  //     if (shared_indices[idx].size() > 1)
-  //     {
-  //       fwd_sharing_data.push_back(idx + _local_range[0]);
-  //       fwd_sharing_data.push_back(shared_indices[idx].size());
-  //       fwd_sharing_data.insert(fwd_sharing_data.end(),
-  //                               shared_indices[idx].begin(),
-  //                               shared_indices[idx].end());
-  //     }
-  //   }
-  //   fwd_sharing_offsets.push_back(fwd_sharing_data.size());
-  // }
-
+  // Send sharing rank data from owner to ghosts
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_sharing_data
       = dolfinx::MPI::neighbor_all_to_all(_comm_owner_to_ghost.comm(),
                                           fwd_sharing_offsets, fwd_sharing_data)
             .array();
 
-  // Add ghost indices and owners to map
+  // For my ghosts, add owning rank to list of sharing ranks
+  const std::int32_t size_local = this->size_local();
   for (int i = 0; i < _ghosts.size(); ++i)
   {
-    const std::int32_t idx = size_local() + i;
-    const int np = _ghost_owners[i];
-    shared_indices[idx].insert(neighbors_in[np]);
+    const std::int32_t idx = size_local + i;
+    const int p = _ghost_owners[i];
+    shared_indices[idx].insert(neighbors_in[p]);
   }
 
+  // Build map from global index to local index for ghosts
+  std::unordered_map<std::int64_t, std::int32_t> ghosts;
+  ghosts.reserve(_ghosts.size());
+  for (int i = 0; i < _ghosts.size(); ++i)
+    ghosts.emplace(_ghosts[i], i + size_local);
+
+  // Add other ranks that also 'ghost' my ghost indices
   int myrank = -1;
   MPI_Comm_rank(_comm_owner_to_ghost.comm(), &myrank);
-
-  // Add ranks (outside neighborhood) that share ghosts
   for (int i = 0; i < recv_sharing_data.size();)
   {
-    auto it = std::find(_ghosts.data(), _ghosts.data() + _ghosts.size(),
-                        recv_sharing_data[i]);
-    const int idx = std::distance(_ghosts.data(), it) + size_local();
-    int set_size = recv_sharing_data[i + 1];
-    int set_pos = i + 2;
+    auto it = ghosts.find(recv_sharing_data[i]);
+    assert(it != ghosts.end());
+    const std::int32_t idx = it->second;
+    const int set_size = recv_sharing_data[i + 1];
+    const int set_pos = i + 2;
     for (int j = 0; j < set_size; j++)
+    {
       if (recv_sharing_data[set_pos + j] != myrank)
         shared_indices[idx].insert(recv_sharing_data[set_pos + j]);
+    }
     i += set_size + 2;
   }
 
