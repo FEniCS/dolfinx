@@ -152,10 +152,10 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
-                             std::shared_ptr<const common::IndexMap> index_map)
+                             const std::shared_ptr<const common::IndexMap>& map)
 {
   assert(dim < (int)_index_map.size());
-  _index_map[dim] = index_map;
+  _index_map[dim] = map;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const

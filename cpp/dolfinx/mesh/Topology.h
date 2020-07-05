@@ -88,7 +88,7 @@ public:
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
   void set_index_map(int dim,
-                     std::shared_ptr<const common::IndexMap> index_map);
+                     const std::shared_ptr<const common::IndexMap>& map);
 
   /// Get the IndexMap that described the parallel distribution of the
   /// mesh entities
