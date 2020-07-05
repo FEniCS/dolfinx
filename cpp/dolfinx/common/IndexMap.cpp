@@ -156,6 +156,7 @@ compute_forward_indices(
   // Return global indices received from each rank that ghost my owned
   // indices, and return how many global indices are received from each
   // neighbourhood rank
+  // return {recv_indices, recv_disp};
   return {recv_indices, recv_disp};
 }
 //-----------------------------------------------------------------------------
@@ -421,8 +422,9 @@ IndexMap::IndexMap(
   // many of my indices each neighbour ghosts
   const auto [fwd_ind, shared_disp] = compute_forward_indices(
       _comm_ghost_to_owner.comm(), _ghosts, _ghost_owners);
-  std::adjacent_difference(_shared_disp.begin(), _shared_disp.end(),
+  std::adjacent_difference(shared_disp.begin() + 1, shared_disp.end(),
                            std::back_inserter(_shared_sizes));
+  _shared_disp = std::move(shared_disp);
 
   // Wait for MPI_Iexscan to complete (get offset)
   MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
