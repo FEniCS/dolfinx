@@ -86,9 +86,12 @@ std::vector<int> get_ghost_ranks(
 // documented. Document properly.
 
 /// Compute (owned) global indices shared with neighbor processes
-/// @param[in] comm Which comm?
-/// @param[in] ghosts ?
-/// @param[in] ghost_src_ranks On which comm? Neighbour?
+///
+/// @param[in] comm MPI communicator where the neighbourhood sources are
+///   the owning ranks of the callers ghosts (comm_owner_to_ghost)
+/// @param[in] ghosts Global index of ghosts indices on the caller
+/// @param[in] ghost_src_ranks The src rank on @p comm for each ghost on
+///   the caller
 /// @return ???
 std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>>
 compute_forward_indices(
@@ -105,7 +108,6 @@ compute_forward_indices(
   auto [neighbors_src, neighbors_dest] = dolfinx::MPI::neighbors(comm);
 
   // Compute number of ghost for each src rank
-  // std::vector<int> out_edges_num(neighbors_dest.size(), 0);
   std::vector<int> src_rank_num(neighbors_src.size(), 0);
   for (int i = 0; i < ghost_src_ranks.size(); ++i)
     src_rank_num[ghost_src_ranks[i]]++;
@@ -113,7 +115,6 @@ compute_forward_indices(
   // Send number of my ghost indicies to the src ranks, and receive
   // number my indices
 
-  // std::vector<int> in_edges_num(neighbors_src.size());
   std::vector<int> dest_rank_num(neighbors_dest.size());
   MPI_Neighbor_alltoall(src_rank_num.data(), 1, MPI_INT, dest_rank_num.data(),
                         1, MPI_INT, comm);
