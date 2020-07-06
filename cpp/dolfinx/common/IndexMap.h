@@ -80,13 +80,13 @@ public:
   ///   the calling rank. I.e., ranks that the caller will send data to
   ///   when updating ghost values.
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] ghost_src_rank Owner rank (on global communicator)
-  ///   of each entry in @p ghosts
+  /// @param[in] src_ranks Owner rank (on global communicator) of each
+  ///   entry in @p ghosts
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<int>& dest_ranks,
            const std::vector<std::int64_t>& ghosts,
-           const std::vector<int>& ghost_src_rank, int block_size);
+           const std::vector<int>& src_ranks, int block_size);
 
   /// Create an index map
   ///
@@ -97,15 +97,15 @@ public:
   /// @param[in] dest_ranks Ranks that ghost indices owned by the
   ///   calling rank
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] ghost_src_rank Owner rank (on global communicator) of
-  ///   each ghost entry
+  /// @param[in] src_ranks Owner rank (on global communicator) of each
+  ///   ghost entry
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(
       MPI_Comm mpi_comm, std::int32_t local_size,
       const std::vector<int>& dest_ranks,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
           ghosts,
-      const std::vector<int>& ghost_src_rank, int block_size);
+      const std::vector<int>& src_ranks, int block_size);
 
   /// Copy constructor
   IndexMap(const IndexMap& map) = delete;
@@ -188,8 +188,8 @@ public:
       bool blocked = true) const;
 
   /// Global indices
-  /// @return The global index for all local indices (0, 1, 2, ...) on this
-  /// process, including ghosts
+  /// @return The global index for all local indices (0, 1, 2, ...) on
+  ///   this process, including ghosts
   std::vector<std::int64_t> global_indices(bool blocked = true) const;
 
   /// @todo Reconsider name
@@ -197,9 +197,6 @@ public:
   /// ghosts on other processes
   /// @return List of indices that are ghosted on other processes
   const std::vector<std::int32_t>& shared_indices() const;
-
-  /// Ranks with ghost indices that are owned by the caller
-  std::vector<int> dest_ranks() const;
 
   /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<int, Eigen::Dynamic, 1> ghost_owner_rank() const;

@@ -385,11 +385,11 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size, int block_size)
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    const std::vector<int>& dest_ranks,
                    const std::vector<std::int64_t>& ghosts,
-                   const std::vector<int>& ghost_src_rank, int block_size)
+                   const std::vector<int>& src_ranks, int block_size)
     : IndexMap(comm, local_size, dest_ranks,
                Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
                    ghosts.data(), ghosts.size()),
-               ghost_src_rank, block_size)
+               src_ranks, block_size)
 {
   // Do nothing
 }
@@ -399,13 +399,13 @@ IndexMap::IndexMap(
     const std::vector<int>& dest_ranks,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
         ghosts,
-    const std::vector<int>& ghost_src_rank, int block_size)
+    const std::vector<int>& src_ranks, int block_size)
     : _block_size(block_size), _comm_owner_to_ghost(MPI_COMM_NULL),
       _comm_ghost_to_owner(MPI_COMM_NULL), _comm_symmetric(MPI_COMM_NULL),
       _ghosts(ghosts)
 {
-  assert(size_t(ghosts.size()) == ghost_src_rank.size());
-  assert(ghost_src_rank == get_ghost_ranks(mpi_comm, local_size, _ghosts));
+  assert(size_t(ghosts.size()) == src_ranks.size());
+  assert(src_ranks == get_ghost_ranks(mpi_comm, local_size, _ghosts));
 
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -421,7 +421,7 @@ IndexMap::IndexMap(
 
   // Build vector of src ranks for ghosts, i.e. the ranks that own the
   // callers ghosts
-  std::vector<std::int32_t> halo_src_ranks = ghost_src_rank;
+  std::vector<std::int32_t> halo_src_ranks = src_ranks;
   std::sort(halo_src_ranks.begin(), halo_src_ranks.end());
   halo_src_ranks.erase(
       std::unique(halo_src_ranks.begin(), halo_src_ranks.end()),
@@ -435,11 +435,11 @@ IndexMap::IndexMap(
   {
     // Get rank of owner on the neighborhood communicator (rank of out
     // edge on _comm_owner_to_ghost)
-    const auto it = std::find(halo_src_ranks.begin(), halo_src_ranks.end(),
-                              ghost_src_rank[j]);
+    const auto it
+        = std::find(halo_src_ranks.begin(), halo_src_ranks.end(), src_ranks[j]);
     assert(it != halo_src_ranks.end());
     const int p_neighbour = std::distance(halo_src_ranks.begin(), it);
-    if (ghost_src_rank[j] == myrank)
+    if (src_ranks[j] == myrank)
     {
       throw std::runtime_error("IndexMap Error: Ghost in local range. Rank = "
                                + std::to_string(myrank)
@@ -600,18 +600,6 @@ const std::vector<std::int32_t>& IndexMap::shared_indices() const
   return _shared_indices;
 }
 //-----------------------------------------------------------------------------
-std::vector<int> IndexMap::dest_ranks() const
-{
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
-                                 &outdegree, &weighted);
-  std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
-  MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
-                           neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
-                           neighbors_out.data(), MPI_UNWEIGHTED);
-  return neighbors_out;
-}
-//----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, 1> IndexMap::ghost_owner_rank() const
 {
   int indegree(-1), outdegree(-2), weighted(-1);
@@ -842,20 +830,17 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
   // Create displacement vectors
   std::vector<std::int32_t> sizes_recv(indegree, 0);
   for (std::int32_t i = 0; i < _ghosts.size(); ++i)
-    sizes_recv[_ghost_owners[i]] += n;
+    sizes_recv[_ghost_owners[i]] += 1;
 
-  std::vector<std::int32_t> displs_send = _shared_disp;
-  std::transform(displs_send.begin(), displs_send.end(), displs_send.begin(),
-                 std::bind(std::multiplies<T>(), std::placeholders::_1, n));
   std::vector<std::int32_t> sizes_send(outdegree, 0);
-  std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
+  std::adjacent_difference(_shared_disp.begin() + 1, _shared_disp.end(),
                            sizes_send.begin());
   std::vector<std::int32_t> displs_recv(indegree + 1, 0);
   std::partial_sum(sizes_recv.begin(), sizes_recv.end(),
                    displs_recv.begin() + 1);
 
   // Copy into sending buffer
-  std::vector<T> data_to_send(displs_send.back());
+  std::vector<T> data_to_send(_shared_disp.back());
   for (std::size_t i = 0; i < _shared_indices.size(); ++i)
   {
     const int index = _shared_indices[i];
@@ -863,12 +848,16 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
       data_to_send[i * n + j] = local_data[index * n + j];
   }
 
+  MPI_Datatype compound_type;
+  MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &compound_type);
+  MPI_Type_commit(&compound_type);
+
   // Send/receive data
   std::vector<T> data_to_recv(displs_recv.back());
   MPI_Neighbor_alltoallv(
-      data_to_send.data(), sizes_send.data(), displs_send.data(),
-      MPI::mpi_type<T>(), data_to_recv.data(), sizes_recv.data(),
-      displs_recv.data(), MPI::mpi_type<T>(), _comm_owner_to_ghost.comm());
+      data_to_send.data(), sizes_send.data(), _shared_disp.data(),
+      compound_type, data_to_recv.data(), sizes_recv.data(), displs_recv.data(),
+      compound_type, _comm_owner_to_ghost.comm());
 
   // Copy into ghost area ("remote_data")
   std::vector<std::int32_t> displs(displs_recv);
@@ -902,39 +891,42 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
 
   // Compute number of items to send to each process
   std::vector<std::int32_t> send_sizes(outdegree, 0);
-  std::vector<std::int32_t> recv_sizes(indegree, 0);
   for (int i = 0; i < _ghosts.size(); ++i)
-    send_sizes[_ghost_owners[i]] += n;
+    send_sizes[_ghost_owners[i]] += 1;
 
   // Create displacement vectors
+  const std::vector<std::int32_t>& displs_recv = _shared_disp;
+  std::vector<std::int32_t> recv_sizes(indegree, 0);
+  std::adjacent_difference(_shared_disp.begin() + 1, _shared_disp.end(),
+                           recv_sizes.begin());
+
   std::vector<std::int32_t> displs_send(outdegree + 1, 0);
-  std::vector<std::int32_t> displs_recv(indegree + 1, 0);
-  for (int i = 0; i < indegree; ++i)
-  {
-    recv_sizes[i] = (_shared_disp[i + 1] - _shared_disp[i]) * n;
-    displs_recv[i + 1] = displs_recv[i] + recv_sizes[i];
-  }
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   displs_send.begin() + 1);
 
-  for (int i = 0; i < outdegree; ++i)
-    displs_send[i + 1] = displs_send[i] + send_sizes[i];
-
-  // Fill sending data
+  // Fill send data
   std::vector<T> send_data(displs_send.back());
-  std::vector<std::int32_t> displs(displs_send);
-  for (std::int32_t i = 0; i < _ghosts.size(); ++i)
   {
-    const int np = _ghost_owners[i];
-    for (std::int32_t j = 0; j < n; ++j)
-      send_data[displs[np] + j] = remote_data[i * n + j];
-    displs[np] += n;
+    std::vector<std::int32_t> displs(displs_send);
+    for (std::int32_t i = 0; i < _ghosts.size(); ++i)
+    {
+      const int np = _ghost_owners[i];
+      for (std::int32_t j = 0; j < n; ++j)
+        send_data[displs[np] + j] = remote_data[i * n + j];
+      displs[np] += n;
+    }
   }
+
+  MPI_Datatype compound_type;
+  MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &compound_type);
+  MPI_Type_commit(&compound_type);
 
   // Send and receive data
   std::vector<T> recv_data(displs_recv.back());
-  MPI_Neighbor_alltoallv(
-      send_data.data(), send_sizes.data(), displs_send.data(),
-      MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
-      displs_recv.data(), MPI::mpi_type<T>(), _comm_ghost_to_owner.comm());
+  MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
+                         displs_send.data(), compound_type, recv_data.data(),
+                         recv_sizes.data(), displs_recv.data(), compound_type,
+                         _comm_ghost_to_owner.comm());
 
   // Copy or accumulate into "local_data"
   if (op == Mode::insert)

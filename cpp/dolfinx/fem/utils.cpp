@@ -388,7 +388,8 @@ la::PETScVector fem::create_vector_block(
   std::vector<int> dest_ranks;
   for (auto& map : maps)
   {
-    std::vector<int> ranks = map.get().dest_ranks();
+    const auto [_, ranks] = dolfinx::MPI::neighbors(
+        map.get().comm(common::IndexMap::Direction::forward));
     dest_ranks.insert(dest_ranks.end(), ranks.begin(), ranks.end());
   }
   std::sort(dest_ranks.begin(), dest_ranks.end());
