@@ -186,7 +186,7 @@ def assemble_vector(b, mesh, dofmap):
 def assemble_vector_ufc(b, kernel, mesh, dofmap):
     """Assemble provided FFCX/UFC kernel over a mesh into the array b"""
     pos, x_dofmap, x = mesh
-    entity_local_index = np.array([0], dtype=np.int32)
+    entity_local_index = np.array([0], dtype=np.intc)
     perm = np.array([0], dtype=np.uint8)
     geometry = np.zeros((3, 2))
     coeffs = np.zeros(1, dtype=PETSc.ScalarType)
