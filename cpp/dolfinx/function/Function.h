@@ -73,7 +73,7 @@ public:
   /// @return The function space
   std::shared_ptr<const FunctionSpace> function_space() const;
 
-  /// Return vector of expansion coefficients at as PETSc Vec
+  /// Return vector of expansion coefficients as a PETSc Vec
   /// @return The vector of expansion coefficients
   Vec vector() const;
 
