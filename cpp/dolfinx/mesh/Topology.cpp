@@ -126,8 +126,8 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
   std::set<std::int32_t> fwd_shared_facets;
   if (facets->num_ghosts() == 0)
   {
-    fwd_shared_facets = std::set<std::int32_t>(
-        facets->forward_indices().begin(), facets->forward_indices().end());
+    fwd_shared_facets = std::set<std::int32_t>(facets->shared_indices().begin(),
+                                               facets->shared_indices().end());
   }
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> fc
@@ -152,10 +152,10 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
-                             std::shared_ptr<const common::IndexMap> index_map)
+                             const std::shared_ptr<const common::IndexMap>& map)
 {
   assert(dim < (int)_index_map.size());
-  _index_map[dim] = index_map;
+  _index_map[dim] = map;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
@@ -306,26 +306,20 @@ mesh::create_topology(MPI_Comm comm,
                       const std::vector<int>& ghost_owners,
                       const CellType& cell_type, mesh::GhostMode ghost_mode)
 {
-  if (cells.num_nodes() > 0)
+  if (cells.num_nodes() > 0
+      and cells.num_links(0) != mesh::num_cell_vertices(cell_type))
   {
-    if (cells.num_links(0) != mesh::num_cell_vertices(cell_type))
-    {
-      throw std::runtime_error(
-          "Inconsistent number of cell vertices. Got "
-          + std::to_string(cells.num_links(0)) + ", expected "
-          + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
-    }
+    throw std::runtime_error(
+        "Inconsistent number of cell vertices. Got "
+        + std::to_string(cells.num_links(0)) + ", expected "
+        + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
   }
 
   // Create cell IndexMap
   const int num_local_cells = cells.num_nodes() - ghost_owners.size();
   std::shared_ptr<common::IndexMap> index_map_c;
   if (ghost_mode == mesh::GhostMode::none)
-  {
-    index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, std::vector<std::int64_t>(), std::vector<int>(),
-        1);
-  }
+    index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells, 1);
   else
   {
     // Get indices of ghost cells
@@ -333,7 +327,10 @@ mesh::create_topology(MPI_Comm comm,
         = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,
                                                      ghost_owners);
     index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, cell_ghost_indices, ghost_owners, 1);
+        comm, num_local_cells,
+        dolfinx::MPI::compute_graph_edges(
+            comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
+        cell_ghost_indices, ghost_owners, 1);
   }
 
   // Create map from existing global vertex index to local index,
@@ -609,7 +606,11 @@ mesh::create_topology(MPI_Comm comm,
 
   // Vertex IndexMap
   auto index_map_v = std::make_shared<common::IndexMap>(
-      comm, nlocal, ghost_vertices, ghost_vertices_owners, 1);
+      comm, nlocal,
+      dolfinx::MPI::compute_graph_edges(
+          comm, std::set<int>(ghost_vertices_owners.begin(),
+                              ghost_vertices_owners.end())),
+      ghost_vertices, ghost_vertices_owners, 1);
   topology.set_index_map(0, index_map_v);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());

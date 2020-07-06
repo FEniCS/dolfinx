@@ -376,6 +376,7 @@ la::PETScVector fem::create_vector_block(
   auto [rank_offset, local_offset, ghosts_new, ghost_new_owners]
       = common::stack_index_maps(maps);
   std::int32_t local_size = local_offset.back();
+
   std::vector<std::int64_t> ghosts;
   for (auto& sub_ghost : ghosts_new)
     ghosts.insert(ghosts.end(), sub_ghost.begin(), sub_ghost.end());
@@ -384,9 +385,20 @@ la::PETScVector fem::create_vector_block(
   for (auto& sub_owner : ghost_new_owners)
     ghost_owners.insert(ghost_owners.end(), sub_owner.begin(), sub_owner.end());
 
+  std::vector<int> dest_ranks;
+  for (auto& map : maps)
+  {
+    const auto [_, ranks] = dolfinx::MPI::neighbors(
+        map.get().comm(common::IndexMap::Direction::forward));
+    dest_ranks.insert(dest_ranks.end(), ranks.begin(), ranks.end());
+  }
+  std::sort(dest_ranks.begin(), dest_ranks.end());
+  dest_ranks.erase(std::unique(dest_ranks.begin(), dest_ranks.end()),
+                   dest_ranks.end());
+
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(maps[0].get().comm(), local_size, ghosts,
-                             ghost_owners, 1);
+  common::IndexMap index_map(maps[0].get().comm(), local_size, dest_ranks,
+                             ghosts, ghost_owners, 1);
 
   return la::PETScVector(index_map);
 }
