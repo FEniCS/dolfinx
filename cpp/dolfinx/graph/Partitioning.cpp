@@ -408,7 +408,11 @@ Partitioning::create_distributed_adjacency_list(
   const int num_owned_vertices = local_to_local_new.size() - ghosts.size();
   return {graph::AdjacencyList<std::int32_t>(std::move(data_new),
                                              list_local.offsets()),
-          common::IndexMap(comm, num_owned_vertices, ghosts, ghost_owners, 1)};
+          common::IndexMap(comm, num_owned_vertices,
+                           dolfinx::MPI::compute_graph_edges(
+                               comm, std::set<int>(ghost_owners.begin(),
+                                                   ghost_owners.end())),
+                           ghosts, ghost_owners, 1)};
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
