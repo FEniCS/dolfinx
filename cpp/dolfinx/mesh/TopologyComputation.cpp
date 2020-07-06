@@ -321,9 +321,9 @@ get_local_indexing(
       for (std::int32_t index : send_index[np])
       {
         // If not in our local range, send -1.
-        std::int64_t gi = (local_index[index] < num_local)
-                              ? (local_offset + local_index[index])
-                              : -1;
+        const std::int64_t gi = (local_index[index] < num_local)
+                                    ? (local_offset + local_index[index])
+                                    : -1;
 
         send_global_index_data.push_back(gi);
       }
@@ -363,7 +363,10 @@ get_local_indexing(
   MPI_Comm_free(&neighbour_comm);
 
   auto index_map = std::make_shared<common::IndexMap>(
-      comm, num_local, ghost_indices, ghost_owners, 1);
+      comm, num_local,
+      dolfinx::MPI::compute_graph_edges(
+          comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
+      ghost_indices, ghost_owners, 1);
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
@@ -464,7 +467,7 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-  auto [local_index, index_map] = get_local_indexing(
+  const auto [local_index, index_map] = get_local_indexing(
       comm, cell_index_map, vertex_index_map, entity_list, entity_index);
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
