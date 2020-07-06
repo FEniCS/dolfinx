@@ -435,8 +435,8 @@ IndexMap::IndexMap(
   {
     // Get rank of owner on the neighborhood communicator (rank of out
     // edge on _comm_owner_to_ghost)
-    const auto it
-        = std::find(halo_src_ranks.begin(), halo_src_ranks.end(), src_ranks[j]);
+    const auto it = std::find(halo_src_ranks.begin(), halo_src_ranks.end(),
+                              src_ranks[j]);
     assert(it != halo_src_ranks.end());
     const int p_neighbour = std::distance(halo_src_ranks.begin(), it);
     if (src_ranks[j] == myrank)
@@ -830,17 +830,20 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
   // Create displacement vectors
   std::vector<std::int32_t> sizes_recv(indegree, 0);
   for (std::int32_t i = 0; i < _ghosts.size(); ++i)
-    sizes_recv[_ghost_owners[i]] += 1;
+    sizes_recv[_ghost_owners[i]] += n;
 
+  std::vector<std::int32_t> displs_send = _shared_disp;
+  std::transform(displs_send.begin(), displs_send.end(), displs_send.begin(),
+                 std::bind(std::multiplies<T>(), std::placeholders::_1, n));
   std::vector<std::int32_t> sizes_send(outdegree, 0);
-  std::adjacent_difference(_shared_disp.begin() + 1, _shared_disp.end(),
+  std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
                            sizes_send.begin());
   std::vector<std::int32_t> displs_recv(indegree + 1, 0);
   std::partial_sum(sizes_recv.begin(), sizes_recv.end(),
                    displs_recv.begin() + 1);
 
   // Copy into sending buffer
-  std::vector<T> data_to_send(_shared_disp.back());
+  std::vector<T> data_to_send(displs_send.back());
   for (std::size_t i = 0; i < _shared_indices.size(); ++i)
   {
     const int index = _shared_indices[i];
@@ -848,16 +851,12 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
       data_to_send[i * n + j] = local_data[index * n + j];
   }
 
-  MPI_Datatype compound_type;
-  MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &compound_type);
-  MPI_Type_commit(&compound_type);
-
   // Send/receive data
   std::vector<T> data_to_recv(displs_recv.back());
   MPI_Neighbor_alltoallv(
-      data_to_send.data(), sizes_send.data(), _shared_disp.data(),
-      compound_type, data_to_recv.data(), sizes_recv.data(), displs_recv.data(),
-      compound_type, _comm_owner_to_ghost.comm());
+      data_to_send.data(), sizes_send.data(), displs_send.data(),
+      MPI::mpi_type<T>(), data_to_recv.data(), sizes_recv.data(),
+      displs_recv.data(), MPI::mpi_type<T>(), _comm_owner_to_ghost.comm());
 
   // Copy into ghost area ("remote_data")
   std::vector<std::int32_t> displs(displs_recv);
@@ -891,42 +890,39 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
 
   // Compute number of items to send to each process
   std::vector<std::int32_t> send_sizes(outdegree, 0);
+  std::vector<std::int32_t> recv_sizes(indegree, 0);
   for (int i = 0; i < _ghosts.size(); ++i)
-    send_sizes[_ghost_owners[i]] += 1;
+    send_sizes[_ghost_owners[i]] += n;
 
   // Create displacement vectors
-  const std::vector<std::int32_t>& displs_recv = _shared_disp;
-  std::vector<std::int32_t> recv_sizes(indegree, 0);
-  std::adjacent_difference(_shared_disp.begin() + 1, _shared_disp.end(),
-                           recv_sizes.begin());
-
   std::vector<std::int32_t> displs_send(outdegree + 1, 0);
-  std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                   displs_send.begin() + 1);
-
-  // Fill send data
-  std::vector<T> send_data(displs_send.back());
+  std::vector<std::int32_t> displs_recv(indegree + 1, 0);
+  for (int i = 0; i < indegree; ++i)
   {
-    std::vector<std::int32_t> displs(displs_send);
-    for (std::int32_t i = 0; i < _ghosts.size(); ++i)
-    {
-      const int np = _ghost_owners[i];
-      for (std::int32_t j = 0; j < n; ++j)
-        send_data[displs[np] + j] = remote_data[i * n + j];
-      displs[np] += n;
-    }
+    recv_sizes[i] = (_shared_disp[i + 1] - _shared_disp[i]) * n;
+    displs_recv[i + 1] = displs_recv[i] + recv_sizes[i];
   }
 
-  MPI_Datatype compound_type;
-  MPI_Type_contiguous(n, dolfinx::MPI::mpi_type<T>(), &compound_type);
-  MPI_Type_commit(&compound_type);
+  for (int i = 0; i < outdegree; ++i)
+    displs_send[i + 1] = displs_send[i] + send_sizes[i];
+
+  // Fill sending data
+  std::vector<T> send_data(displs_send.back());
+  std::vector<std::int32_t> displs(displs_send);
+  for (std::int32_t i = 0; i < _ghosts.size(); ++i)
+  {
+    const int np = _ghost_owners[i];
+    for (std::int32_t j = 0; j < n; ++j)
+      send_data[displs[np] + j] = remote_data[i * n + j];
+    displs[np] += n;
+  }
 
   // Send and receive data
   std::vector<T> recv_data(displs_recv.back());
-  MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
-                         displs_send.data(), compound_type, recv_data.data(),
-                         recv_sizes.data(), displs_recv.data(), compound_type,
-                         _comm_ghost_to_owner.comm());
+  MPI_Neighbor_alltoallv(
+      send_data.data(), send_sizes.data(), displs_send.data(),
+      MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
+      displs_recv.data(), MPI::mpi_type<T>(), _comm_ghost_to_owner.comm());
 
   // Copy or accumulate into "local_data"
   if (op == Mode::insert)
