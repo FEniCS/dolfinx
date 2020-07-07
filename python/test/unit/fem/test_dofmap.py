@@ -92,7 +92,7 @@ def test_entity_dofs(mesh):
     # Note this numbering is dependent on FFCX and can change This test
     # is here just to check that we get correct numbers mapped from ufc
     # generated code to dolfinx
-    for i, cdofs in enumerate([[0, 3], [1, 4], [2, 5]]):
+    for i, cdofs in enumerate([[0, 1], [2, 3], [4, 5]]):
         dofs = V.dofmap.dof_layout.entity_dofs(0, i)
         assert all(d == cd for d, cd in zip(dofs, cdofs))
 
