@@ -331,6 +331,10 @@ FunctionSpace::tabulate_dof_coordinates() const
   auto map = _mesh->topology().index_map(tdim);
   assert(map);
   const int num_cells = map->size_local() + map->num_ghosts();
+
+  std::cout << "num_dofs_g = " << num_dofs_g << "\n";
+  std::cout << "x_g = [" << x_g << "]\n";
+
   for (int c = 0; c < num_cells; ++c)
   {
     // Update cell
