@@ -122,7 +122,7 @@ std::shared_ptr<const FunctionSpace> Function::function_space() const
 //-----------------------------------------------------------------------------
 Vec Function::vector() const
 {
-  // Check that this is not a sub function.
+  // Check that this is not a sub function
   assert(_function_space->dofmap());
   assert(_function_space->dofmap()->index_map);
   if (_x->map()->block_size() * _x->map()->size_global()
@@ -133,13 +133,21 @@ Vec Function::vector() const
         "Cannot access a non-const vector from a subfunction");
   }
 
+  // Check that data type is the same as the PETSc build
+  // if constexpr (std::is_same<T, PetscScalar>::value)
+  // {
   if (!_vector)
   {
     _vector = create_ghosted_vector(*_function_space->dofmap()->index_map,
                                     _x->array());
   }
-
   return _vector;
+  // }
+  // else
+  // {
+  //   throw std::runtime_error(
+  //       "Cannot return PETSc vector wrapper. Type mismatch");
+  // }
 }
 //-----------------------------------------------------------------------------
 void Function::eval(
