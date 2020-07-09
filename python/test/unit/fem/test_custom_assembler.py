@@ -27,6 +27,7 @@ from petsc4py import get_config as PETSc_get_config
 from petsc4py import PETSc
 from ufl import dx, inner
 
+
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
 petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
@@ -85,9 +86,6 @@ MatSetValues_ctypes = petsc_lib_ctypes.MatSetValuesLocal
 MatSetValues_ctypes.argtypes = (ctypes.c_void_p, ctypes_index, ctypes.POINTER(
     ctypes_index), ctypes_index, ctypes.POINTER(ctypes_index), ctypes.c_void_p, ctypes.c_int)
 del petsc_lib_ctypes
-
-
-ADD_VALUES = PETSc.InsertMode.ADD_VALUES
 
 
 # CFFI - register complex types
@@ -170,22 +168,20 @@ def area(x0, x1, x2) -> float:
 @numba.njit
 def assemble_vector(b, mesh, dofmap):
     """Assemble simple linear form over a mesh into the array b"""
-    pos, x_dofmap, x = mesh
+    v, x = mesh
     q0, q1 = 1 / 3.0, 1 / 3.0
-    for i, cell in enumerate(pos[:-1]):
-        num_vertices = pos[i + 1] - pos[i]
+    for cell in range(dofmap.shape[0]):
         # FIXME: This assumes a particular geometry dof layout
-        c = x_dofmap[cell:cell + num_vertices]
-        A = area(x[c[0]], x[c[1]], x[c[2]])
-        b[dofmap[i * 3 + 0]] += A * (1.0 - q0 - q1)
-        b[dofmap[i * 3 + 1]] += A * q0
-        b[dofmap[i * 3 + 2]] += A * q1
+        A = area(x[v[cell, 0]], x[v[cell, 1]], x[v[cell, 2]])
+        b[dofmap[cell, 0]] += A * (1.0 - q0 - q1)
+        b[dofmap[cell, 1]] += A * q0
+        b[dofmap[cell, 2]] += A * q1
 
 
 @numba.njit
 def assemble_vector_ufc(b, kernel, mesh, dofmap):
     """Assemble provided FFCX/UFC kernel over a mesh into the array b"""
-    pos, x_dofmap, x = mesh
+    v, x = mesh
     entity_local_index = np.array([0], dtype=np.intc)
     perm = np.array([0], dtype=np.uint8)
     geometry = np.zeros((3, 2))
@@ -193,20 +189,17 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap):
     constants = np.zeros(1, dtype=PETSc.ScalarType)
 
     b_local = np.zeros(3, dtype=PETSc.ScalarType)
-    for i, cell in enumerate(pos[:-1]):
-        num_vertices = pos[i + 1] - pos[i]
+    for cell in range(dofmap.shape[0]):
         # FIXME: This assumes a particular geometry dof layout
-        c = x_dofmap[cell:cell + num_vertices]
         for j in range(3):
-            for k in range(2):
-                geometry[j, k] = x[c[j], k]
+            geometry[j] = x[v[cell, j], 0:2]
         b_local.fill(0.0)
         kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
                ffi.from_buffer(constants),
                ffi.from_buffer(geometry), ffi.from_buffer(entity_local_index),
                ffi.from_buffer(perm), 0)
         for j in range(3):
-            b[dofmap[i * 3 + j]] += b_local[j]
+            b[dofmap[cell, j]] += b_local[j]
 
 
 @numba.njit(fastmath=True)
@@ -278,10 +271,9 @@ def test_custom_mesh_loop_rank1():
 
     # Unpack mesh and dofmap data
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    pos = mesh.geometry.dofmap.offsets()[:num_cells + 1]
-    x_dofs = mesh.geometry.dofmap.array()
+    x_dofs = mesh.geometry.dofmap.array().reshape(num_cells, 3)
     x = mesh.geometry.x
-    dofs = V.dofmap.list.array()
+    dofmap = V.dofmap.list.array().reshape(num_cells, 3)
 
     # Assemble with pure Numba function (two passes, first will include JIT overhead)
     b0 = dolfinx.Function(V)
@@ -289,7 +281,7 @@ def test_custom_mesh_loop_rank1():
         with b0.vector.localForm() as b:
             b.set(0.0)
             start = time.time()
-            assemble_vector(np.asarray(b), (pos, x_dofs, x), dofs)
+            assemble_vector(np.asarray(b), (x_dofs, x), dofmap)
             end = time.time()
             print("Time (numba, pass {}): {}".format(i, end - start))
 
@@ -299,19 +291,16 @@ def test_custom_mesh_loop_rank1():
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
     L = inner(1.0, v) * dx
-
     start = time.time()
     b1 = dolfinx.fem.assemble_vector(L)
     end = time.time()
     print("Time (C++, pass 1):", end - start)
-
     with b1.localForm() as b_local:
         b_local.set(0.0)
     start = time.time()
     dolfinx.fem.assemble_vector(b1, L)
     end = time.time()
     print("Time (C++, pass 2):", end - start)
-
     b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert((b1 - b0.vector).norm() == pytest.approx(0.0))
 
@@ -323,7 +312,7 @@ def test_custom_mesh_loop_rank1():
         with b3.vector.localForm() as b:
             b.set(0.0)
             start = time.time()
-            assemble_vector_ufc(np.asarray(b), kernel, (pos, x_dofs, x), dofs)
+            assemble_vector_ufc(np.asarray(b), kernel, (x_dofs, x), dofmap)
             end = time.time()
             print("Time (numba/cffi, pass {}): {}".format(i, end - start))
 
