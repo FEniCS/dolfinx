@@ -53,14 +53,9 @@ public:
   /// Compute F at current point x
   Vec F(const Vec x) final
   {
-    // Assemble b
-    // la::VecWrapper b_wrapper(_b_petsc);
-    // b_wrapper.x.setZero();
-    // b_wrapper.restore();
-
+    // Assemble b and update ghosts
     _b.array().setZero();
     fem::assemble_vector(_b.array(), *_l);
-    // _b_petsc.apply_ghosts();
     VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
     VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
 
@@ -73,15 +68,7 @@ public:
     VecGetArrayRead(x_local, &array);
     Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x(array,
                                                                        n);
-
-    // _b.array().setZero();
-    // assemble_vector<PetscScalar>(_b.array(), *_l);
-
-    // VecRestoreArray(b_local, &array);
-    // VecGhostRestoreLocalForm(b, &b_local);
-
     set_bc(_b.array(), _bcs, _x, -1);
-
     VecRestoreArrayRead(x, &array);
 
     return _b_petsc;
@@ -102,7 +89,6 @@ private:
   std::shared_ptr<fem::Form> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC>> _bcs;
 
-  // la::PETScVector _b;
   la::Vector<PetscScalar> _b;
   Vec _b_petsc = nullptr;
   la::PETScMatrix _matA;
