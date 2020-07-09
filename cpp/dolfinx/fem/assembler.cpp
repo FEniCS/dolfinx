@@ -82,8 +82,18 @@ PetscScalar fem::assemble_scalar(const Form& M)
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(Vec b, const Form& L)
 {
-  la::VecWrapper _b(b);
-  fem::impl::assemble_vector<PetscScalar>(_b.x, L);
+  Vec b_local;
+  VecGhostGetLocalForm(b, &b_local);
+  PetscInt n = 0;
+  VecGetSize(b_local, &n);
+  PetscScalar* array = nullptr;
+  VecGetArray(b_local, &array);
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
+
+  fem::impl::assemble_vector<PetscScalar>(_b, L);
+
+  VecRestoreArray(b_local, &array);
+  VecGhostRestoreLocalForm(b, &b_local);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(
@@ -97,9 +107,17 @@ void fem::apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
     const std::vector<Vec>& x0, double scale)
 {
-  la::VecWrapper _b(b);
+
+  Vec b_local;
+  VecGhostGetLocalForm(b, &b_local);
+  PetscInt n = 0;
+  VecGetSize(b_local, &n);
+  PetscScalar* array = nullptr;
+  VecGetArray(b_local, &array);
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
+
   if (x0.empty())
-    fem::impl::apply_lifting<PetscScalar>(_b.x, a, bcs1, {}, scale);
+    fem::impl::apply_lifting<PetscScalar>(_b, a, bcs1, {}, scale);
   else
   {
     std::vector<la::VecReadWrapper> x0_wrapper;
@@ -112,8 +130,11 @@ void fem::apply_lifting(
       x0_ref.emplace_back(x0_wrapper.back().x);
     }
 
-    fem::impl::apply_lifting<PetscScalar>(_b.x, a, bcs1, x0_ref, scale);
+    fem::impl::apply_lifting<PetscScalar>(_b, a, bcs1, x0_ref, scale);
   }
+
+  VecRestoreArray(b_local, &array);
+  VecGhostRestoreLocalForm(b, &b_local);
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
@@ -282,14 +303,22 @@ void fem::set_bc(Vec b,
                  const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
                  const Vec x0, double scale)
 {
-  la::VecWrapper _b(b, false);
+  // VecGhostGetLocalForm(b, &b_local);
+  PetscInt n = 0;
+  VecGetLocalSize(b, &n);
+  PetscScalar* array = nullptr;
+  VecGetArray(b, &array);
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
+
   if (x0)
   {
     la::VecReadWrapper _x0(x0, false);
-    set_bc(_b.x, bcs, _x0.x, scale);
+    set_bc(_b, bcs, _x0.x, scale);
   }
   else
-    set_bc(_b.x, bcs, scale);
+    set_bc(_b, bcs, scale);
+
+  VecRestoreArray(b, &array);
 }
 //-----------------------------------------------------------------------------
 void fem::set_bc(
