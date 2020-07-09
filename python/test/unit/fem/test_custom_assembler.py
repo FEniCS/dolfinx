@@ -202,11 +202,11 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
 
 
 @numba.njit(fastmath=True)
-def assemble_matrix_cffi(A, mesh, dofmap, set_vals, mode):
+def assemble_matrix_cffi(A, mesh, dofmap, num_cells, set_vals, mode):
     """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
 
     # Mesh data
-    cell_ptr, x_dofmap, x = mesh
+    v, x = mesh
 
     # Quadrature points and weights
     q = np.array([[0.5, 0.0], [0.5, 0.5], [0.0, 0.5]], dtype=np.double)
@@ -215,10 +215,8 @@ def assemble_matrix_cffi(A, mesh, dofmap, set_vals, mode):
     # Loop over cells
     N = np.empty(3, dtype=np.double)
     A_local = np.empty((3, 3), dtype=PETSc.ScalarType)
-    for i, cell in enumerate(cell_ptr[:-1]):
-        num_vertices = cell_ptr[i + 1] - cell_ptr[i]
-        c = x_dofmap[cell:cell + num_vertices]
-        cell_area = area(x[c[0]], x[c[1]], x[c[2]])
+    for cell in range(num_cells):
+        cell_area = area(x[v[cell, 0]], x[v[cell, 1]], x[v[cell, 2]])
 
         # Loop over quadrature points
         A_local[:] = 0.0
@@ -229,26 +227,24 @@ def assemble_matrix_cffi(A, mesh, dofmap, set_vals, mode):
                     A_local[row, col] += weights[j] * cell_area * N[row] * N[col]
 
         # Add to global tensor
-        pos = dofmap[3 * i:3 * i + 3]
+        pos = dofmap[cell, :]
         set_vals(A, 3, ffi.from_buffer(pos), 3, ffi.from_buffer(pos), ffi.from_buffer(A_local), mode)
     sink(A_local, dofmap)
 
 
 @numba.njit
-def assemble_matrix_ctypes(A, mesh, dofmap, set_vals, mode):
+def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
     """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
-    cell_ptr, x_dofmap, x = mesh
+    v, x = mesh
     q = np.array([[0.5, 0.0], [0.5, 0.5], [0.0, 0.5]], dtype=np.double)
     weights = np.full(3, 1.0 / 3.0, dtype=np.double)
 
     # Loop over cells
     N = np.empty(3, dtype=np.double)
     A_local = np.empty((3, 3), dtype=PETSc.ScalarType)
-    for i, cell in enumerate(cell_ptr[:-1]):
-        num_vertices = cell_ptr[i + 1] - cell_ptr[i]
+    for cell in range(num_cells):
         # FIXME: This assumes a particular geometry dof layout
-        c = x_dofmap[cell:cell + num_vertices]
-        cell_area = area(x[c[0]], x[c[1]], x[c[2]])
+        cell_area = area(x[v[cell, 0]], x[v[cell, 1]], x[v[cell, 2]])
 
         # Loop over quadrature points
         A_local[:] = 0.0
@@ -258,7 +254,7 @@ def assemble_matrix_ctypes(A, mesh, dofmap, set_vals, mode):
                 for col in range(3):
                     A_local[row, col] += weights[j] * cell_area * N[row] * N[col]
 
-        rows = cols = dofmap[3 * i:3 * i + 3]
+        rows = cols = dofmap[cell, :]
         set_vals(A, 3, rows.ctypes, 3, cols.ctypes, A_local.ctypes, mode)
 
 
@@ -328,11 +324,11 @@ def test_custom_mesh_loop_ctypes_rank2():
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Extract mesh and dofmap data
-    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    pos = mesh.geometry.dofmap.offsets()[:num_cells + 1]
-    x_dofs = mesh.geometry.dofmap.array()
+    num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    num_cells = num_owned_cells + mesh.topology.index_map(mesh.topology.dim).num_ghosts
+    x_dofs = mesh.geometry.dofmap.array().reshape(num_cells, 3)
     x = mesh.geometry.x
-    dofs = np.array(V.dofmap.list.array(), dtype=np.dtype(PETSc.IntType))
+    dofmap = V.dofmap.list.array().reshape(num_cells, 3).astype(np.dtype(PETSc.IntType))
 
     # Generated case with general assembler
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -353,7 +349,8 @@ def test_custom_mesh_loop_ctypes_rank2():
         A1.zeroEntries()
         mat = A1.handle
         start = time.time()
-        assemble_matrix_ctypes(mat, (pos, x_dofs, x), dofs, MatSetValues_ctypes, PETSc.InsertMode.ADD_VALUES)
+        assemble_matrix_ctypes(mat, (x_dofs, x), dofmap, num_owned_cells,
+                               MatSetValues_ctypes, PETSc.InsertMode.ADD_VALUES)
         end = time.time()
         print("Time (numba, pass {}): {}".format(i, end - start))
         A1.assemble()
@@ -382,17 +379,17 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
     A0.assemble()
 
     # Unpack mesh and dofmap data
-    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    pos = mesh.geometry.dofmap.offsets()[:num_cells + 1]
-    x_dofs = mesh.geometry.dofmap.array()
+    num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    num_cells = num_owned_cells + mesh.topology.index_map(mesh.topology.dim).num_ghosts
+    x_dofs = mesh.geometry.dofmap.array().reshape(num_cells, 3)
     x = mesh.geometry.x
-    dofs = np.array(V.dofmap.list.array(), dtype=np.dtype(PETSc.IntType))
+    dofmap = V.dofmap.list.array().reshape(num_cells, 3).astype(np.dtype(PETSc.IntType))
 
     A1 = A0.copy()
     for i in range(2):
         A1.zeroEntries()
         start = time.time()
-        assemble_matrix_cffi(A1.handle, (pos, x_dofs, x), dofs, set_vals, PETSc.InsertMode.ADD_VALUES)
+        assemble_matrix_cffi(A1.handle, (x_dofs, x), dofmap, num_owned_cells, set_vals, PETSc.InsertMode.ADD_VALUES)
         end = time.time()
         print("Time (Numba, pass {}): {}".format(i, end - start))
         A1.assemble()
