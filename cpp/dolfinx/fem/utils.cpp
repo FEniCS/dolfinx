@@ -721,8 +721,7 @@ fem::pack_coefficients(const fem::Form& form)
   const std::vector<int>& offsets = coefficients.offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
 
-  std::vector<
-      const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
       v;
   for (int i = 0; i < coefficients.size(); ++i)
   {
