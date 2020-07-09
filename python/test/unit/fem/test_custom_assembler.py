@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Garth N. Wells
+# Copyright (C) 2019-2020 Garth N. Wells
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -121,8 +121,8 @@ if MPI.COMM_WORLD.Get_rank() == 0:
         typedef ... PetscScalar;
         typedef int... InsertMode;
         int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
-                                PetscInt ncol, const PetscInt* icol,
-                                const PetscScalar* y, InsertMode addv);
+                              PetscInt ncol, const PetscInt* icol,
+                              const PetscScalar* y, InsertMode addv);
     """)
     ffibuilder.set_source(module_name, """
         # include "petscmat.h"
@@ -155,7 +155,7 @@ def sink(*args):
     pass
 
 
-@numba.njit
+@numba.njit(fastmath=True)
 def area(x0, x1, x2) -> float:
     """Compute the area of a triangle embedded in 2D from the three vertices"""
     a = (x1[0] - x2[0])**2 + (x1[1] - x2[1])**2
@@ -164,7 +164,7 @@ def area(x0, x1, x2) -> float:
     return math.sqrt(2 * (a * b + a * c + b * c) - (a**2 + b**2 + c**2)) / 4.0
 
 
-@numba.njit
+@numba.njit(fastmath=True)
 def assemble_vector(b, mesh, dofmap, num_cells):
     """Assemble simple linear form over a mesh into the array b"""
     v, x = mesh
