@@ -13,20 +13,19 @@ import os
 import pathlib
 import time
 
+import cffi
 import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
-
-import cffi
-import dolfinx
 import petsc4py.lib
 import pytest
-import ufl
 from mpi4py import MPI
-from petsc4py import get_config as PETSc_get_config
 from petsc4py import PETSc
-from ufl import dx, inner
+from petsc4py import get_config as PETSc_get_config
 
+import dolfinx
+import ufl
+from ufl import dx, inner
 
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
@@ -166,11 +165,11 @@ def area(x0, x1, x2) -> float:
 
 
 @numba.njit
-def assemble_vector(b, mesh, dofmap):
+def assemble_vector(b, mesh, dofmap, num_cells):
     """Assemble simple linear form over a mesh into the array b"""
     v, x = mesh
     q0, q1 = 1 / 3.0, 1 / 3.0
-    for cell in range(dofmap.shape[0]):
+    for cell in range(num_cells):
         # FIXME: This assumes a particular geometry dof layout
         A = area(x[v[cell, 0]], x[v[cell, 1]], x[v[cell, 2]])
         b[dofmap[cell, 0]] += A * (1.0 - q0 - q1)
@@ -179,7 +178,7 @@ def assemble_vector(b, mesh, dofmap):
 
 
 @numba.njit
-def assemble_vector_ufc(b, kernel, mesh, dofmap):
+def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
     """Assemble provided FFCX/UFC kernel over a mesh into the array b"""
     v, x = mesh
     entity_local_index = np.array([0], dtype=np.intc)
@@ -189,7 +188,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap):
     constants = np.zeros(1, dtype=PETSc.ScalarType)
 
     b_local = np.zeros(3, dtype=PETSc.ScalarType)
-    for cell in range(dofmap.shape[0]):
+    for cell in range(num_cells):
         # FIXME: This assumes a particular geometry dof layout
         for j in range(3):
             geometry[j] = x[v[cell, j], 0:2]
@@ -270,7 +269,8 @@ def test_custom_mesh_loop_rank1():
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
-    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    num_cells = num_owned_cells + mesh.topology.index_map(mesh.topology.dim).num_ghosts
     x_dofs = mesh.geometry.dofmap.array().reshape(num_cells, 3)
     x = mesh.geometry.x
     dofmap = V.dofmap.list.array().reshape(num_cells, 3)
@@ -281,7 +281,7 @@ def test_custom_mesh_loop_rank1():
         with b0.vector.localForm() as b:
             b.set(0.0)
             start = time.time()
-            assemble_vector(np.asarray(b), (x_dofs, x), dofmap)
+            assemble_vector(np.asarray(b), (x_dofs, x), dofmap, num_owned_cells)
             end = time.time()
             print("Time (numba, pass {}): {}".format(i, end - start))
 
@@ -312,7 +312,7 @@ def test_custom_mesh_loop_rank1():
         with b3.vector.localForm() as b:
             b.set(0.0)
             start = time.time()
-            assemble_vector_ufc(np.asarray(b), kernel, (x_dofs, x), dofmap)
+            assemble_vector_ufc(np.asarray(b), kernel, (x_dofs, x), dofmap, num_owned_cells)
             end = time.time()
             print("Time (numba/cffi, pass {}): {}".format(i, end - start))
 
