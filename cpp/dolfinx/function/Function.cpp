@@ -6,6 +6,7 @@
 
 #include "Function.h"
 #include "FunctionSpace.h"
+#include "interpolate.h"
 #include <cfloat>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
@@ -272,8 +273,7 @@ void Function::eval(
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)
 {
-  assert(_function_space);
-  _function_space->interpolate(_x->array(), v);
+  function::interpolate(*this, v);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(
@@ -282,12 +282,7 @@ void Function::interpolate(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& f)
 {
-  _function_space->interpolate(_x->array(), f);
-}
-//-----------------------------------------------------------------------------
-void Function::interpolate_c(const FunctionSpace::interpolation_function& f)
-{
-  _function_space->interpolate_c(_x->array(), f);
+  function::interpolate(*this, f);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

@@ -11,6 +11,7 @@
 #include <dolfinx/function/Constant.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/function/interpolate.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -69,7 +70,7 @@ void function(py::module& m)
                            double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x) {
                     f(values.data(), values.rows(), values.cols(), x.data());
                   };
-            self.interpolate_c(_f);
+            dolfinx::function::interpolate_c(self, _f);
           },
           "Interpolate using a pointer to an expression with a C signature")
       .def_property_readonly(
