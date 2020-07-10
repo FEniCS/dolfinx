@@ -196,10 +196,7 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh) : _mesh(mesh)
 //-----------------------------------------------------------------------------
 ParallelRefinement::~ParallelRefinement() { MPI_Comm_free(&_neighbour_comm); }
 //-----------------------------------------------------------------------------
-const std::vector<bool>& ParallelRefinement::marked_edges() const
-{
-  return _marked_edges;
-}
+std::vector<bool>& ParallelRefinement::marked_edges() { return _marked_edges; }
 //-----------------------------------------------------------------------------
 bool ParallelRefinement::mark(std::int32_t edge_index)
 {
@@ -255,30 +252,32 @@ void ParallelRefinement::mark(
   }
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::update_logical_edgefunction()
+void ParallelRefinement::update_logical_edgefunction(
+    const MPI_Comm& neighbour_comm,
+    const std::vector<std::vector<std::int32_t>>& marked_for_update,
+    std::vector<bool>& marked_edges, const common::IndexMap& map_e)
 {
   std::vector<std::int32_t> send_offsets = {0};
   std::vector<std::int64_t> data_to_send;
-  int num_neighbours = _marked_for_update.size();
+  int num_neighbours = marked_for_update.size();
   for (int i = 0; i < num_neighbours; ++i)
   {
-    data_to_send.insert(data_to_send.end(), _marked_for_update[i].begin(),
-                        _marked_for_update[i].end());
-    _marked_for_update[i].clear();
+    for (std::int32_t q : marked_for_update[i])
+      data_to_send.push_back(local_to_global(q, map_e));
+
     send_offsets.push_back(data_to_send.size());
   }
 
   // Send all shared edges marked for update and receive from other
   // processes
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> data_to_recv
-      = MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, data_to_send)
+      = MPI::neighbor_all_to_all(neighbour_comm, send_offsets, data_to_send)
             .array();
 
   // Flatten received values and set _marked_edges at each index received
-  std::vector<std::int32_t> local_indices
-      = _mesh.topology().index_map(1)->global_to_local(data_to_recv);
+  std::vector<std::int32_t> local_indices = map_e.global_to_local(data_to_recv);
   for (std::int32_t local_index : local_indices)
-    _marked_edges[local_index] = true;
+    marked_edges[local_index] = true;
 }
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()

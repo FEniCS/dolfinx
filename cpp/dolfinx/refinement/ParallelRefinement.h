@@ -54,7 +54,7 @@ public:
 
   /// Return markers for all edges
   /// @returns array of markers
-  const std::vector<bool>& marked_edges() const;
+  std::vector<bool>& marked_edges();
 
   /// Mark edge by index
   /// @param[in] edge_index Index of edge to mark
@@ -70,7 +70,10 @@ public:
   void mark(const mesh::MeshTags<std::int8_t>& refinement_marker);
 
   /// Transfer marked edges between processes
-  void update_logical_edgefunction();
+  static void update_logical_edgefunction(
+      const MPI_Comm& neighbour_comm,
+      const std::vector<std::vector<std::int32_t>>& marked_for_update,
+      std::vector<bool>& marked_edges, const common::IndexMap& map_e);
 
   /// Add new vertex for each marked edge, and create
   /// new_vertex_coordinates and global_edge->new_vertex map.
@@ -104,6 +107,13 @@ public:
   static std::vector<std::int64_t>
   adjust_indices(const std::shared_ptr<const common::IndexMap>& index_map,
                  std::int32_t n);
+
+  MPI_Comm& neighbour_comm() { return _neighbour_comm; }
+
+  std::map<std::int32_t, std::set<std::int32_t>>& shared_edges()
+  {
+    return _shared_edges;
+  }
 
 private:
   // Mesh

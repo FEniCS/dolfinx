@@ -32,6 +32,8 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
   // Enforce rule, that if any edge of a face is marked, longest edge
   // must also be marked
 
+  auto map_e = mesh.topology().index_map(1);
+  assert(map_e);
   auto map_f = mesh.topology().index_map(2);
   assert(map_f);
   const std::int32_t num_faces = map_f->size_local() + map_f->num_ghosts();
@@ -39,12 +41,23 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
   auto f_to_e = mesh.topology().connectivity(2, 1);
   assert(f_to_e);
 
-  const std::vector<bool>& marked_edges = p_ref.marked_edges();
+  MPI_Comm& neighbour_comm = p_ref.neighbour_comm();
+  std::vector<bool>& marked_edges = p_ref.marked_edges();
+  std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
+      = p_ref.shared_edges();
+
+  int num_neighbours = 0;
+  std::vector<std::vector<std::int32_t>> marked_for_update(num_neighbours);
+
   std::int32_t update_count = 1;
   while (update_count > 0)
   {
     update_count = 0;
-    p_ref.update_logical_edgefunction();
+    ParallelRefinement::update_logical_edgefunction(
+        neighbour_comm, marked_for_update, marked_edges, *map_e);
+    for (int i = 0; i < num_neighbours; ++i)
+      marked_for_update[i].clear();
+
     for (int f = 0; f < num_faces; ++f)
     {
       const std::int32_t long_e = long_edge[f];
@@ -58,6 +71,18 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
 
       if (any_marked)
       {
+        if (!marked_edges[long_e])
+        {
+          marked_edges[long_e] = true;
+
+          // If it is a shared edge, add all sharing neighbours to update set
+          if (auto map_it = shared_edges.find(long_e);
+              map_it != shared_edges.end())
+          {
+            for (int p : map_it->second)
+              marked_for_update[p].push_back(long_e);
+          }
+        }
         p_ref.mark(long_e);
         ++update_count;
       }
