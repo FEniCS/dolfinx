@@ -8,7 +8,6 @@ import os
 
 import numpy as np
 import pytest
-from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -21,9 +20,6 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, avg, div, ds,
                  dS, dx, grad, inner, jump)
 
 
-# TODO: Remove this skip in parallel once ghosting if fixed
-# (see https://github.com/FEniCS/dolfinx/pull/746)
-@skip_in_parallel
 # @pytest.mark.parametrize("degree", [2, 3])
 @pytest.mark.parametrize("degree", [1, 2])
 @pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
