@@ -209,7 +209,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
     }
   }
 
-  detail::interpolate_from_any<T>(u, v);
+  detail::interpolate_from_any(u, v);
 }
 //----------------------------------------------------------------------------
 template <typename T>

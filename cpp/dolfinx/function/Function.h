@@ -184,7 +184,7 @@ public:
 
   /// Interpolate a Function (on possibly non-matching meshes)
   /// @param[in] v The function to be interpolated.
-  void interpolate(const Function<T>& v) { function::interpolate<T>(*this, v); }
+  void interpolate(const Function<T>& v) { function::interpolate(*this, v); }
 
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
@@ -194,7 +194,7 @@ public:
                   const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                       Eigen::RowMajor>>&)>& f)
   {
-    function::interpolate<T>(*this, f);
+    function::interpolate(*this, f);
   }
 
   /// Evaluate the Function at points
