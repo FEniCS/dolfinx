@@ -319,7 +319,13 @@ ParallelRefinement::create_new_vertices(
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.
 
-  int num_neighbours = 0; // marked_for_update.size();
+  // Get number of neighbours
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(neighbour_comm, &indegree, &outdegree,
+                                 &weighted);
+  assert(indegree == outdegree);
+  const int num_neighbours = indegree;
+
   std::vector<std::vector<std::int64_t>> values_to_send(num_neighbours);
   for (auto& local_edge : local_edge_to_new_vertex)
   {
