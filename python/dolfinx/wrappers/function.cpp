@@ -106,7 +106,6 @@ void function(py::module& m)
       .def_property_readonly("mesh", &dolfinx::function::FunctionSpace::mesh)
       .def_property_readonly("dofmap",
                              &dolfinx::function::FunctionSpace::dofmap)
-      .def("set_x", &dolfinx::function::FunctionSpace::set_x)
       .def("sub", &dolfinx::function::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",
            &dolfinx::function::FunctionSpace::tabulate_dof_coordinates);

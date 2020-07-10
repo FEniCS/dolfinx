@@ -202,64 +202,6 @@ FunctionSpace::tabulate_dof_coordinates() const
   return x;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::set_x(Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> x,
-                          double value, int component) const
-{
-  assert(_mesh);
-  assert(_dofmap);
-  assert(_element);
-
-  const int gdim = _mesh->geometry().dim();
-  const int tdim = _mesh->topology().dim();
-  std::vector<double> x_values;
-
-  // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = _mesh->geometry().dofmap();
-
-  // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-      x_g
-      = _mesh->geometry().x();
-
-  // Dof coordinate on reference element
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
-      = _element->dof_reference_coordinates();
-
-  // Get coordinate map
-  const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
-
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinates(_element->space_dimension(), _mesh->geometry().dim());
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
-
-  auto map = _mesh->topology().index_map(tdim);
-  assert(map);
-  const int num_cells = map->size_local() + map->num_ghosts();
-  for (int c = 0; c < num_cells; ++c)
-  {
-    // Update UFC cell
-    auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
-
-    // Get cell local-to-global map
-    auto dofs = _dofmap->cell_dofs(c);
-
-    // Tabulate dof coordinates
-    cmap.push_forward(coordinates, X, coordinate_dofs);
-
-    assert(coordinates.rows() == dofs.size());
-    assert(component < (int)coordinates.cols());
-
-    // Copy coordinate (it may be possible to avoid this)
-    for (Eigen::Index i = 0; i < coordinates.rows(); ++i)
-      x[dofs[i]] = value * coordinates(i, component);
-  }
-}
-//-----------------------------------------------------------------------------
 std::size_t FunctionSpace::id() const { return _id; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::Mesh> FunctionSpace::mesh() const { return _mesh; }

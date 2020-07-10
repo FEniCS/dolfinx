@@ -42,12 +42,15 @@ def build_nullspace(V):
             basis[i][V.sub(i).dofmap.list.array()] = 1.0
 
         # Build rotational null space basis
-        V.sub(0).set_x(basis[3], -1.0, 1)
-        V.sub(1).set_x(basis[3], 1.0, 0)
-        V.sub(0).set_x(basis[4], 1.0, 2)
-        V.sub(2).set_x(basis[4], -1.0, 0)
-        V.sub(2).set_x(basis[5], 1.0, 1)
-        V.sub(1).set_x(basis[5], -1.0, 2)
+        x = V.tabulate_dof_coordinates()
+        dofs = [V.sub(i).dofmap.list.array() for i in range(3)]
+        dofs = [V.sub(i).dofmap.list.array() for i in range(3)]
+        basis[3][dofs[0]] = -x[dofs[0], 1]
+        basis[3][dofs[1]] = x[dofs[1], 0]
+        basis[4][dofs[0]] = x[dofs[0], 2]
+        basis[4][dofs[2]] = -x[dofs[2], 0]
+        basis[5][dofs[2]] = x[dofs[2], 1]
+        basis[5][dofs[1]] = -x[dofs[1], 2]
 
     # Create vector space basis and orthogonalize
     basis = VectorSpaceBasis(nullspace_basis)

@@ -349,9 +349,6 @@ class FunctionSpace(ufl.FunctionSpace):
         """Return the mesh on which the function space is defined."""
         return self._cpp_object.mesh
 
-    def set_x(self, basis, x, component) -> None:
-        return self._cpp_object.set_x(basis, x, component)
-
     def collapse(self, collapsed_dofs: bool = False):
         """Collapse a subspace and return a new function space and a map from
         new to old dofs.

@@ -104,18 +104,6 @@ public:
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
   tabulate_dof_coordinates() const;
 
-  /// Set dof entries in vector to value*x[i], where [x][i] is the
-  /// coordinate of the dof spatial coordinate. Parallel layout of
-  /// vector must be consistent with dof map range This function is
-  /// typically used to construct the null space of a matrix operator,
-  /// e.g. rigid body rotations.
-  ///
-  /// @param[in,out] x The vector to set
-  /// @param[in] value The value to multiply to coordinate by
-  /// @param[in] component The coordinate index
-  void set_x(Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> x,
-             double value, int component) const;
-
   /// Unique identifier
   std::size_t id() const;
 
