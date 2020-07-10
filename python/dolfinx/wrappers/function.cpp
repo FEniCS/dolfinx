@@ -70,7 +70,7 @@ void function(py::module& m)
                            double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x) {
                     f(values.data(), values.rows(), values.cols(), x.data());
                   };
-            dolfinx::function::interpolate_c(self, _f);
+            dolfinx::function::interpolate_c<PetscScalar>(self, _f);
           },
           "Interpolate using a pointer to an expression with a C signature")
       .def_property_readonly(

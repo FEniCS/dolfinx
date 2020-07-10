@@ -22,11 +22,11 @@ namespace detail
 
 // Interpolate data. Fills coefficients using 'values', which are the
 // values of an expression at each dof.
+template <typename T>
 void interpolate(
     Function& u,
-    // Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
-    const Eigen::Ref<const Eigen::Array<
-        PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values)
+    const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& values)
 {
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
@@ -55,16 +55,15 @@ void interpolate(
   auto element = u.function_space()->element();
   assert(element);
   const int ndofs = element->space_dimension();
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values_cell(ndofs, value_size);
+  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values_cell(
+      ndofs, value_size);
 
   auto dofmap = u.function_space()->dofmap();
   assert(dofmap);
   assert(dofmap->element_dof_layout);
-  std::vector<PetscScalar> cell_coefficients(
-      dofmap->element_dof_layout->num_dofs());
+  std::vector<T> cell_coefficients(dofmap->element_dof_layout->num_dofs());
 
-  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& coefficients = u.x()->array();
+  Eigen::Matrix<T, Eigen::Dynamic, 1>& coefficients = u.x()->array();
 
   auto map = mesh->topology().index_map(tdim);
   assert(map);
@@ -91,10 +90,8 @@ void interpolate(
   }
 }
 
-void interpolate_from_any(
-    // Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
-    //     expansion_coefficients,
-    Function& u, const Function& v)
+template <typename T>
+void interpolate_from_any(Function& u, const Function& v)
 {
   assert(v.function_space());
   const auto element = u.function_space()->element();
@@ -122,12 +119,11 @@ void interpolate_from_any(
   auto map = mesh->topology().index_map(tdim);
   assert(map);
 
-  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& expansion_coefficients
-      = u.x()->array();
+  Eigen::Matrix<T, Eigen::Dynamic, 1>& expansion_coefficients = u.x()->array();
 
   // Iterate over mesh and interpolate on each cell
   const auto dofmap_u = u.function_space()->dofmap();
-  const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& v_array = v.x()->array();
+  const Eigen::Matrix<T, Eigen::Dynamic, 1>& v_array = v.x()->array();
   const int num_cells = map->size_local() + map->num_ghosts();
   for (int c = 0; c < num_cells; ++c)
   {
@@ -144,6 +140,7 @@ void interpolate_from_any(
 /// Interpolate a Function (on possibly non-matching meshes)
 /// @param[in,out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
+template <typename T>
 void interpolate(Function& u, const Function& v)
 {
   assert(u.function_space());
@@ -177,18 +174,19 @@ void interpolate(Function& u, const Function& v)
     }
   }
 
-  detail::interpolate_from_any(u, v);
+  detail::interpolate_from_any<T>(u, v);
 }
 
 /// Interpolate an expression
 /// @param[in,out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
+template <typename T>
 void interpolate(
     Function& u,
-    const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                     Eigen::Dynamic, Eigen::RowMajor>(
-        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& f)
+    const std::function<
+        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
+            const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                                Eigen::RowMajor>>&)>& f)
 {
   // u.function_space()->interpolate(u.x()->array(), f);
   assert(u.function_space());
@@ -196,9 +194,8 @@ void interpolate(
   // Evaluate expression at dof points
   const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
       = u.function_space()->tabulate_dof_coordinates().transpose();
-  const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                     Eigen::RowMajor>
-      values = f(x);
+  const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values
+      = f(x);
 
   const auto element = u.function_space()->element();
   assert(element);
@@ -209,7 +206,7 @@ void interpolate(
                                          1, std::multiplies<>());
 
   // Note: pybind11 maps 1D NumPy arrays to column vectors for
-  // Eigen::Array<PetscScalar, Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>
+  // Eigen::Array<T, Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>
   // types, therefore we need to handle vectors as a special case.
   if (values.cols() == 1 and values.rows() != 1)
   {
@@ -218,20 +215,19 @@ void interpolate(
       throw std::runtime_error("Number of computed values is not equal to the "
                                "number of evaluation points. (1)");
     }
-    detail::interpolate(u, values);
+    detail::interpolate<T>(u, values);
   }
   else
   {
     if (values.rows() != value_size)
       throw std::runtime_error("Values shape is incorrect. (2)");
-
     if (values.cols() != x.cols())
     {
       throw std::runtime_error("Number of computed values is not equal to the "
                                "number of evaluation points. (2)");
     }
 
-    detail::interpolate(u, values.transpose());
+    detail::interpolate<T>(u, values.transpose());
   }
 }
 
@@ -243,13 +239,14 @@ void interpolate(
 /// are the return argument, should be preferred.
 /// @param[in,out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
+template <typename T>
 void interpolate_c(
     Function& u,
-    const std::function<
-        void(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                     Eigen::Dynamic, Eigen::RowMajor>>,
-             const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                                 Eigen::RowMajor>>&)>& f)
+    const std::function<void(
+        Eigen::Ref<
+            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                            Eigen::RowMajor>>&)>& f)
 {
   // u.function_space()->interpolate_c(u.x()->array(), f);
   // Build list of points at which to evaluate the Expression
@@ -264,11 +261,11 @@ void interpolate_c(
     vshape[i] = element->value_dimension(i);
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values(x.rows(), value_size);
+  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
+      x.rows(), value_size);
   f(values, x);
 
-  detail::interpolate(u, values);
+  detail::interpolate<T>(u, values);
 }
 
 } // namespace dolfinx::function

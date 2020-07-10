@@ -273,7 +273,7 @@ void Function::eval(
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)
 {
-  function::interpolate(*this, v);
+  function::interpolate<PetscScalar>(*this, v);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(
@@ -282,7 +282,7 @@ void Function::interpolate(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& f)
 {
-  function::interpolate(*this, f);
+  function::interpolate<PetscScalar>(*this, f);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
