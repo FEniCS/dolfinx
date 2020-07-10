@@ -255,16 +255,17 @@ void fem(py::module& m)
           "Object for representing Dirichlet (essential) boundary conditions");
 
   dirichletbc
-      .def(py::init<std::shared_ptr<const dolfinx::function::Function>,
-                    const Eigen::Ref<
-                        const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>&,
-                    std::shared_ptr<const dolfinx::function::FunctionSpace>>(),
+      .def(py::init<
+               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>,
+               const Eigen::Ref<
+                   const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>&,
+               std::shared_ptr<const dolfinx::function::FunctionSpace>>(),
            py::arg("V"), py::arg("g"), py::arg("V_g_dofs"))
-      .def(
-          py::init<std::shared_ptr<const dolfinx::function::Function>,
-                   const Eigen::Ref<
-                       const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&>(),
-          py::arg("g"), py::arg("dofs"))
+      .def(py::init<
+               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>,
+               const Eigen::Ref<
+                   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&>(),
+           py::arg("g"), py::arg("dofs"))
       .def_property_readonly("dof_indices", &dolfinx::fem::DirichletBC::dofs)
       .def_property_readonly("function_space",
                              &dolfinx::fem::DirichletBC::function_space)
@@ -442,9 +443,8 @@ void fem(py::module& m)
            &dolfinx::fem::Form::original_coefficient_position)
       .def("set_coefficient",
            [](dolfinx::fem::Form& self, std::size_t i,
-              std::shared_ptr<const dolfinx::function::Function> f) {
-             self.coefficients().set(i, f);
-           })
+              std::shared_ptr<const dolfinx::function::Function<PetscScalar>>
+                  f) { self.coefficients().set(i, f); })
       .def(
           "set_constants",
           py::overload_cast<std::vector<

@@ -26,6 +26,8 @@ namespace function
 {
 template <typename T>
 class Constant;
+template <typename T>
+class Function;
 class FunctionSpace;
 } // namespace function
 
@@ -105,14 +107,16 @@ public:
   /// @param[in] coefficients Map from coefficient index to the
   ///                         coefficient
   void set_coefficients(
-      std::map<std::size_t, std::shared_ptr<const function::Function>>
+      std::map<std::size_t,
+               std::shared_ptr<const function::Function<PetscScalar>>>
           coefficients);
 
   /// Set coefficient with given name (shared pointer version)
   /// @param[in] coefficients Map from coefficient name to the
   ///                         coefficient
   void set_coefficients(
-      std::map<std::string, std::shared_ptr<const function::Function>>
+      std::map<std::string,
+               std::shared_ptr<const function::Function<PetscScalar>>>
           coefficients);
 
   /// Return original coefficient position for each coefficient (0 <= i
