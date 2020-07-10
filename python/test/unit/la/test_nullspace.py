@@ -69,9 +69,10 @@ def build_broken_elastic_nullspace(V):
         vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
         basis = [np.asarray(x) for x in vec_local]
 
-        # Build translational null space basis
-        basis[0][V.sub(0).dofmap.list.array()] = 1.0
-        basis[1][V.sub(1).dofmap.list.array()] = 1.0
+        x = V.tabulate_dof_coordinates()
+        dofs = [V.sub(i).dofmap.list.array() for i in range(2)]
+        basis[0][dofs[0]] = 1.0
+        basis[1][dofs[1]] = 1.0
 
         # Build rotational null space basis
         V.sub(0).set_x(basis[2], -1.0, 1)
