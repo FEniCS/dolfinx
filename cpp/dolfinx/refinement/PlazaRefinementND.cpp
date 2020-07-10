@@ -24,7 +24,8 @@ namespace
 //-----------------------------------------------------------------------------
 // Propagate edge markers according to rules (longest edge of each
 // face must be marked, if any edge of face is marked)
-void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
+void enforce_rules(ParallelRefinement& p_ref, std::vector<bool>& marked_edges,
+                   const mesh::Mesh& mesh,
                    const std::vector<std::int32_t>& long_edge)
 {
   common::Timer t0("PLAZA: Enforce rules");
@@ -42,8 +43,7 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
   assert(f_to_e);
 
   MPI_Comm& neighbour_comm = p_ref.neighbour_comm();
-  std::vector<bool>& marked_edges = p_ref.marked_edges();
-  std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
       = p_ref.shared_edges();
 
   int num_neighbours = 0;
@@ -83,12 +83,10 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
               marked_for_update[p].push_back(long_e);
           }
         }
-        p_ref.mark(long_e);
         ++update_count;
       }
     }
 
-    // FIXME: MPI call inside loop is bad. How big can loop be?
     const std::int32_t update_count_old = update_count;
     MPI_Allreduce(&update_count_old, &update_count, 1, MPI_INT32_T, MPI_SUM,
                   mesh.mpi_comm());
@@ -390,9 +388,15 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   const std::int32_t num_cell_edges = tdim * 3 - 3;
   const std::int32_t num_cell_vertices = tdim + 1;
 
+  const std::vector<bool>& marked_edges = p_ref.marked_edges();
+  const std::map<std::int32_t, std::set<std::int32_t>> shared_edges
+      = p_ref.shared_edges();
+  const MPI_Comm& neighbour_comm = p_ref.neighbour_comm();
+
   // Make new vertices in parallel
-  const std::map<std::int32_t, std::int64_t> new_vertex_map
-      = p_ref.create_new_vertices();
+  const auto [new_vertex_map, new_vertex_coordinates]
+      = ParallelRefinement::create_new_vertices(neighbour_comm, shared_edges,
+                                                mesh, marked_edges);
 
   std::vector<std::size_t> parent_cell;
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
@@ -409,7 +413,6 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   auto c_to_f = mesh.topology().connectivity(tdim, 2);
   assert(c_to_f);
 
-  const std::vector<bool>& marked_edges = p_ref.marked_edges();
   std::int32_t num_new_vertices_local = std::count(
       marked_edges.begin(),
       marked_edges.begin() + mesh.topology().index_map(1)->size_local(), true);
@@ -502,9 +505,10 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
   const bool serial = (dolfinx::MPI::size(mesh.mpi_comm()) == 1);
   if (serial)
-    return p_ref.build_local(cell_topology);
+    return p_ref.build_local(cell_topology, new_vertex_coordinates);
   else
-    return p_ref.partition(cell_topology, num_new_ghost_cells, redistribute);
+    return p_ref.partition(cell_topology, num_new_ghost_cells,
+                           new_vertex_coordinates, redistribute);
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -545,7 +549,9 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   ParallelRefinement p_ref(mesh);
   p_ref.mark(refinement_marker);
 
-  enforce_rules(p_ref, mesh, long_edge);
+  std::vector<bool>& marked_edges = p_ref.marked_edges();
+
+  enforce_rules(p_ref, marked_edges, mesh, long_edge);
 
   return compute_refinement(mesh, p_ref, long_edge, edge_ratio_ok,
                             redistribute);

@@ -79,7 +79,20 @@ public:
   /// new_vertex_coordinates and global_edge->new_vertex map.
   /// Communicate new vertices with MPI to all affected processes.
   /// @return edge_to_new_vertex map
-  std::map<std::int32_t, std::int64_t> create_new_vertices();
+  std::pair<
+      std::map<std::int32_t, std::int64_t>,
+      Eigen::Array<
+          double, Eigen::Dynamic, Eigen::Dynamic,
+          Eigen::RowMajor>> static create_new_vertices(const MPI_Comm&
+                                                           neighbour_comm,
+                                                       const std::map<
+                                                           std::int32_t,
+                                                           std::set<
+                                                               std::int32_t>>&
+                                                           shared_edges,
+                                                       const mesh::Mesh& mesh,
+                                                       const std::vector<bool>&
+                                                           marked_edges);
 
   /// Use vertex and topology data to partition new mesh across
   /// processes
@@ -88,13 +101,19 @@ public:
   ///   of list)
   /// @param[in] redistribute Call graph partitioner if true
   /// @return New mesh
-  mesh::Mesh partition(const std::vector<std::int64_t>& cell_topology,
-                       int num_ghost_cells, bool redistribute) const;
+  mesh::Mesh
+  partition(const std::vector<std::int64_t>& cell_topology, int num_ghost_cells,
+            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>& new_vertex_coordinates,
+            bool redistribute) const;
 
   /// Build local mesh from internal data when not running in parallel
   /// @param[in] cell_topology
   /// @return A Mesh
-  mesh::Mesh build_local(const std::vector<std::int64_t>& cell_topology) const;
+  mesh::Mesh build_local(
+      const std::vector<std::int64_t>& cell_topology,
+      const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                         Eigen::RowMajor>& new_vertex_coordinates) const;
 
   /// Adjust indices to account for extra n values on each process This
   /// is a utility to help add new topological vertices on each process
@@ -118,10 +137,6 @@ public:
 private:
   // Mesh
   const mesh::Mesh& _mesh;
-
-  // New storage for all coordinates when creating new vertices
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      _new_vertex_coordinates;
 
   // Management of marked edges
   std::vector<bool> _marked_edges;
