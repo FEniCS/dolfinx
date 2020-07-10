@@ -78,7 +78,6 @@ def build_broken_elastic_nullspace(V):
         basis[2][dofs[0]] = -x[dofs[0], 1]
         basis[2][dofs[1]] = x[dofs[1], 0]
 
-
         # Add vector that is not in nullspace
         basis[3][dofs[1]] = x[dofs[1], 1]
 
