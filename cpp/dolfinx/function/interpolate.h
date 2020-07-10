@@ -54,23 +54,6 @@ void interpolate_c(
         const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                             Eigen::RowMajor>>&)>& f);
 
-/// Interpolate an expression f(x). This interface uses an expression
-/// function f that has an in/out argument for the expression values. It
-/// is primarily to support C code implementations of the expression,
-/// e.g. using Numba. Generally the interface where the expression
-/// function is a pure function, i.e. the expression values are the
-/// return argument, should be preferred.
-/// @param[in,out] u The Function to interpolate into
-/// @param[in] f The expression to be interpolated
-template <typename T>
-void interpolate_c(
-    Function<T>& u,
-    const std::function<void(
-        Eigen::Ref<
-            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
-        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                            Eigen::RowMajor>>&)>& f);
-
 namespace detail
 {
 
@@ -289,7 +272,6 @@ void interpolate_c(
         const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                             Eigen::RowMajor>>&)>& f)
 {
-  // u.function_space()->interpolate_c(u.x()->array(), f);
   // Build list of points at which to evaluate the Expression
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = u.function_space()->tabulate_dof_coordinates();
