@@ -82,7 +82,7 @@ void la(py::module& m)
         return self[i]->vec();
       });
 
-  // dolfinx::la::VectorSpaceBasis
+  // dolfinx::la::Vector
   py::class_<dolfinx::la::Vector<PetscScalar>,
              std::shared_ptr<dolfinx::la::Vector<PetscScalar>>>(m, "Vector")
       .def("array",
