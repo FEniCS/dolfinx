@@ -17,13 +17,64 @@
 namespace dolfinx::function
 {
 
+/// Interpolate a Function (on possibly non-matching meshes)
+/// @param[in,out] u The function to interpolate into
+/// @param[in] v The function to be interpolated
+template <typename T>
+void interpolate(Function& u, const Function& v);
+
+/// Interpolate an expression
+/// @param[in,out] u The function to interpolate into
+/// @param[in] f The expression to be interpolated
+template <typename T>
+void interpolate(
+    Function& u,
+    const std::function<
+        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
+            const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                                Eigen::RowMajor>>&)>& f);
+
+/// Interpolate an expression f(x). This interface uses an expression
+/// function f that has an in/out argument for the expression values. It
+/// is primarily to support C code implementations of the expression,
+/// e.g. using Numba. Generally the interface where the expression
+/// function is a pure function, i.e. the expression values
+/// are the return argument, should be preferred.
+/// @param[in,out] u The function to interpolate into
+/// @param[in] f The expression to be interpolated
+template <typename T>
+void interpolate_c(
+    Function& u,
+    const std::function<void(
+        Eigen::Ref<
+            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                            Eigen::RowMajor>>&)>& f);
+
+/// Interpolate an expression f(x). This interface uses an expression
+/// function f that has an in/out argument for the expression values. It
+/// is primarily to support C code implementations of the expression,
+/// e.g. using Numba. Generally the interface where the expression
+/// function is a pure function, i.e. the expression values are the
+/// return argument, should be preferred.
+/// @param[in,out] u The Function to interpolate into
+/// @param[in] f The expression to be interpolated
+template <typename T>
+void interpolate_c(
+    Function& u,
+    const std::function<void(
+        Eigen::Ref<
+            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                            Eigen::RowMajor>>&)>& f);
+
 namespace detail
 {
 
 // Interpolate data. Fills coefficients using 'values', which are the
 // values of an expression at each dof.
 template <typename T>
-void interpolate(
+void interpolate_values(
     Function& u,
     const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& values)
@@ -137,9 +188,7 @@ void interpolate_from_any(Function& u, const Function& v)
 
 } // namespace detail
 
-/// Interpolate a Function (on possibly non-matching meshes)
-/// @param[in,out] u The function to interpolate into
-/// @param[in] v The function to be interpolated
+//----------------------------------------------------------------------------
 template <typename T>
 void interpolate(Function& u, const Function& v)
 {
@@ -176,10 +225,7 @@ void interpolate(Function& u, const Function& v)
 
   detail::interpolate_from_any<T>(u, v);
 }
-
-/// Interpolate an expression
-/// @param[in,out] u The function to interpolate into
-/// @param[in] f The expression to be interpolated
+//----------------------------------------------------------------------------
 template <typename T>
 void interpolate(
     Function& u,
@@ -215,7 +261,7 @@ void interpolate(
       throw std::runtime_error("Number of computed values is not equal to the "
                                "number of evaluation points. (1)");
     }
-    detail::interpolate<T>(u, values);
+    detail::interpolate_values<T>(u, values);
   }
   else
   {
@@ -227,18 +273,10 @@ void interpolate(
                                "number of evaluation points. (2)");
     }
 
-    detail::interpolate<T>(u, values.transpose());
+    detail::interpolate_values<T>(u, values.transpose());
   }
 }
-
-/// Interpolate an expression. This interface uses an expression
-/// function f that has an in/out argument for the expression values.
-/// It is primarily to support C code implementations of the
-/// expression, e.g. using Numba. Generally the interface where the
-/// expression function is a pure function, i.e. the expression values
-/// are the return argument, should be preferred.
-/// @param[in,out] u The function to interpolate into
-/// @param[in] f The expression to be interpolated
+//----------------------------------------------------------------------------
 template <typename T>
 void interpolate_c(
     Function& u,
@@ -265,7 +303,8 @@ void interpolate_c(
       x.rows(), value_size);
   f(values, x);
 
-  detail::interpolate<T>(u, values);
+  detail::interpolate_values<T>(u, values);
 }
+//----------------------------------------------------------------------------
 
 } // namespace dolfinx::function

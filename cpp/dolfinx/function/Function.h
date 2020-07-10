@@ -51,7 +51,7 @@ public:
   Function(Function&& v) = default;
 
   /// Destructor
-  virtual ~Function() = default;
+  virtual ~Function();
 
   /// Move assignment
   Function& operator=(Function&& v) = default;
@@ -113,7 +113,7 @@ public:
                                Eigen::RowMajor>>
            u) const;
 
-  /// Compute values at all mesh points
+  /// Compute values at all mesh 'nodes'
   /// @return The values at all geometric points
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   compute_point_values() const;
@@ -134,7 +134,7 @@ private:
   // The vector of expansion coefficients (local)
   std::shared_ptr<la::Vector<PetscScalar>> _x;
 
-  // The vector of expansion coefficients
-  mutable Vec _vector = nullptr;
+  // PETSc wrapper of the expansion coefficients
+  mutable Vec _petsc_vector = nullptr;
 };
 } // namespace dolfinx::function

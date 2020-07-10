@@ -83,6 +83,12 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
          <= _x->map()->block_size() * _x->map()->size_global());
 }
 //-----------------------------------------------------------------------------
+Function::~Function()
+{
+  if (_petsc_vector)
+    VecDestroy(&_petsc_vector);
+}
+//-----------------------------------------------------------------------------
 Function Function::sub(int i) const
 {
   // Extract function subspace
@@ -137,12 +143,12 @@ Vec Function::vector() const
   // Check that data type is the same as the PETSc build
   // if constexpr (std::is_same<T, PetscScalar>::value)
   // {
-  if (!_vector)
+  if (!_petsc_vector)
   {
-    _vector = create_ghosted_vector(*_function_space->dofmap()->index_map,
-                                    _x->array());
+    _petsc_vector = create_ghosted_vector(*_function_space->dofmap()->index_map,
+                                          _x->array());
   }
-  return _vector;
+  return _petsc_vector;
   // }
   // else
   // {
