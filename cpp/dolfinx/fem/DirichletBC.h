@@ -170,11 +170,11 @@ public:
   {
     // FIXME: This one excludes ghosts. Need to straighten out.
     assert(_g);
-    la::VecReadWrapper g(_g->vector().vec(), false);
+    auto& g = _g->x()->array();
     for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
     {
       if (_dofs(i, 0) < x.rows())
-        x[_dofs(i, 0)] = scale * g.x[_dofs(i, 1)];
+        x[_dofs(i, 0)] = scale * g[_dofs(i, 1)];
     }
   }
 
@@ -187,12 +187,12 @@ public:
   {
     // FIXME: This one excludes ghosts. Need to straighten out.
     assert(_g);
+    auto& g = _g->x()->array();
     assert(x.rows() <= x0.rows());
-    la::VecReadWrapper g(_g->vector().vec(), false);
     for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
     {
       if (_dofs(i, 0) < x.rows())
-        x[_dofs(i, 0)] = scale * (g.x[_dofs(i, 1)] - x0[_dofs(i, 0)]);
+        x[_dofs(i, 0)] = scale * (g[_dofs(i, 1)] - x0[_dofs(i, 0)]);
     }
   }
 
@@ -203,9 +203,9 @@ public:
   void dof_values(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> values) const
   {
     assert(_g);
-    la::VecReadWrapper g(_g->vector().vec());
+    auto& g = _g->x()->array();
     for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
-      values[_dofs(i, 0)] = g.x[_dofs(i, 1)];
+      values[_dofs(i, 0)] = g[_dofs(i, 1)];
   }
 
   /// Set markers[i] = true if dof i has a boundary condition applied.
@@ -220,7 +220,8 @@ private:
   // The function
   std::shared_ptr<const function::Function> _g;
 
-  // Indices of dofs in _function_space and in the space of _g
+  // Pairs of dof indices in _function_space (i, 0) and in the space of
+  // _g (i, 1)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _dofs;
 
   // The first _owned_indices in _dofs are owned by this process

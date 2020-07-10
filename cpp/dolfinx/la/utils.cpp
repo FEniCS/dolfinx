@@ -248,128 +248,6 @@ void dolfinx::la::petsc_error(int error_code, std::string filename,
                            + std::string(desc));
 }
 //-----------------------------------------------------------------------------
-dolfinx::la::VecWrapper::VecWrapper(Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y), _ghosted(ghosted)
-{
-  assert(_y);
-  if (ghosted)
-    VecGhostGetLocalForm(_y, &_y_local);
-  else
-    _y_local = _y;
-
-  PetscInt n = 0;
-  VecGetSize(_y_local, &n);
-  VecGetArray(_y_local, &array);
-
-  new (&x) Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array, n);
-}
-//-----------------------------------------------------------------------------
-dolfinx::la::VecWrapper::VecWrapper(VecWrapper&& w)
-    : x(std::move(w.x)), _y(std::exchange(w._y, nullptr)),
-      _y_local(std::exchange(w._y_local, nullptr)),
-      _ghosted(std::move(w._ghosted))
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-dolfinx::la::VecWrapper::~VecWrapper()
-{
-  if (_y_local)
-  {
-    VecRestoreArray(_y_local, &array);
-    if (_ghosted)
-      VecGhostRestoreLocalForm(_y, &_y_local);
-  }
-}
-//-----------------------------------------------------------------------------
-dolfinx::la::VecWrapper& dolfinx::la::VecWrapper::operator=(VecWrapper&& w)
-{
-  _y = std::exchange(w._y, nullptr);
-  _y_local = std::exchange(w._y_local, nullptr);
-  _ghosted = std::move(w._ghosted);
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-void dolfinx::la::VecWrapper::restore()
-{
-  assert(_y);
-  assert(_y_local);
-  VecRestoreArray(_y_local, &array);
-  if (_ghosted)
-    VecGhostRestoreLocalForm(_y, &_y_local);
-
-  _y = nullptr;
-  _y_local = nullptr;
-  new (&x)
-      Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(nullptr, 0);
-}
-//-----------------------------------------------------------------------------
-dolfinx::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y), _ghosted(ghosted)
-{
-  assert(_y);
-  if (ghosted)
-    VecGhostGetLocalForm(_y, &_y_local);
-  else
-    _y_local = _y;
-
-  PetscInt n = 0;
-  VecGetSize(_y_local, &n);
-  VecGetArrayRead(_y_local, &array);
-  new (&x)
-      Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array, n);
-}
-//-----------------------------------------------------------------------------
-dolfinx::la::VecReadWrapper::VecReadWrapper(VecReadWrapper&& w)
-    : x(std::move(w.x)), _y(std::exchange(w._y, nullptr)),
-      _y_local(std::exchange(w._y_local, nullptr)),
-      _ghosted(std::move(w._ghosted))
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-dolfinx::la::VecReadWrapper::~VecReadWrapper()
-{
-  if (_y_local)
-  {
-    VecRestoreArrayRead(_y_local, &array);
-    if (_ghosted)
-      VecGhostRestoreLocalForm(_y, &_y_local);
-  }
-}
-//-----------------------------------------------------------------------------
-dolfinx::la::VecReadWrapper&
-dolfinx::la::VecReadWrapper::operator=(VecReadWrapper&& w)
-{
-  _y = std::exchange(w._y, nullptr);
-  _y_local = std::exchange(w._y_local, nullptr);
-  _ghosted = std::move(w._ghosted);
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-void dolfinx::la::VecReadWrapper::restore()
-{
-  assert(_y);
-  assert(_y_local);
-  VecRestoreArrayRead(_y_local, &array);
-  if (_ghosted)
-    VecGhostRestoreLocalForm(_y, &_y_local);
-
-  _y = nullptr;
-  _y_local = nullptr;
-  new (&x)
-      Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(nullptr, 0);
-}
-//-----------------------------------------------------------------------------
-// Mat dolfinx::la::get_local_submatrix(const Mat A, const IS row, const IS
-// col);
-
-// void restore_local_submatrix(const Mat A, const IS row, const IS col, Mat*
-// Asub);
-
-//-----------------------------------------------------------------------------
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
 dolfinx::la::get_local_vectors(const Vec x,
                                const std::vector<const common::IndexMap*>& maps)
@@ -383,7 +261,14 @@ dolfinx::la::get_local_vectors(const Vec x,
   }
 
   // Unwrap PETSc vector
-  la::VecReadWrapper x_wrapper(x);
+  // la::VecReadWrapper x_wrapper(x);
+  Vec x_local;
+  VecGhostGetLocalForm(x, &x_local);
+  PetscInt n = 0;
+  VecGetSize(x_local, &n);
+  const PetscScalar* array = nullptr;
+  VecGetArrayRead(x_local, &array);
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x(array, n);
 
   // Copy PETSc Vec data in to Eigen vector
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_b;
@@ -392,18 +277,19 @@ dolfinx::la::get_local_vectors(const Vec x,
   for (const common::IndexMap* map : maps)
   {
     const int bs = map->block_size();
-    const int size_owned = map->size_local() * bs;
-    const int size_ghost = map->num_ghosts() * bs;
+    const std::int32_t size_owned = map->size_local() * bs;
+    const std::int32_t size_ghost = map->num_ghosts() * bs;
     x_b.emplace_back(
         Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>(size_owned + size_ghost));
-    x_b.back().head(size_owned) = x_wrapper.x.segment(offset, size_owned);
-    x_b.back().tail(size_ghost) = x_wrapper.x.segment(offset_ghost, size_ghost);
+    x_b.back().head(size_owned) = _x.segment(offset, size_owned);
+    x_b.back().tail(size_ghost) = _x.segment(offset_ghost, size_ghost);
 
     offset += size_owned;
     offset_ghost += size_ghost;
   }
 
-  x_wrapper.restore();
+  VecRestoreArrayRead(x_local, &array);
+  VecGhostRestoreLocalForm(x, &x_local);
 
   return x_b;
 }
@@ -467,21 +353,29 @@ void dolfinx::la::scatter_local_vectors(
   }
 
   // Copy Eigen vectors into PETSc Vec
+  Vec x_local;
+  VecGhostGetLocalForm(x, &x_local);
+  PetscInt n = 0;
+  VecGetSize(x_local, &n);
+  PetscScalar* array = nullptr;
+  VecGetArray(x_local, &array);
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x(array, n);
+
   int offset = 0;
   int offset_ghost = offset_owned; // Ghost DoFs start after owned
-  la::VecWrapper x_wrapper(x);
   for (std::size_t i = 0; i < maps.size(); ++i)
   {
     const int bs = maps[i]->block_size();
     const int size_owned = maps[i]->size_local() * bs;
     const int size_ghost = maps[i]->num_ghosts() * bs;
-    x_wrapper.x.segment(offset, size_owned) = x_b[i].head(size_owned);
-    x_wrapper.x.segment(offset_ghost, size_ghost) = x_b[i].tail(size_ghost);
+    _x.segment(offset, size_owned) = x_b[i].head(size_owned);
+    _x.segment(offset_ghost, size_ghost) = x_b[i].tail(size_ghost);
 
     offset += size_owned;
     offset_ghost += size_ghost;
   }
 
-  x_wrapper.restore();
+  VecRestoreArray(x_local, &array);
+  VecGhostRestoreLocalForm(x, &x_local);
 }
 //-----------------------------------------------------------------------------

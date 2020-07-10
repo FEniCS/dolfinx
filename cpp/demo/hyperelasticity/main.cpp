@@ -1,6 +1,8 @@
 #include "hyperelasticity.h"
 #include <cfloat>
 #include <dolfinx.h>
+#include <dolfinx/fem/assembler.h>
+#include <dolfinx/la/Vector.h>
 
 using namespace dolfinx;
 
@@ -16,14 +18,31 @@ public:
                       std::shared_ptr<fem::Form> J,
                       std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
       : _u(u), _l(L), _j(J), _bcs(bcs),
-        _b(*L->function_space(0)->dofmap()->index_map),
+        _b(L->function_space(0)->dofmap()->index_map),
         _matA(fem::create_matrix(*J))
   {
-    // Do nothing
+    auto map = L->function_space(0)->dofmap()->index_map;
+    const int bs = map->block_size();
+    std::int32_t size_local = bs * map->size_local();
+    std::int32_t num_ghosts = bs * map->num_ghosts();
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map->ghosts();
+    Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts(bs * ghosts.rows());
+    for (int i = 0; i < ghosts.rows(); ++i)
+    {
+      for (int j = 0; j < bs; ++j)
+        _ghosts[i * bs + j] = bs * ghosts[i] + j;
+    }
+
+    VecCreateGhostWithArray(map->comm(), size_local, PETSC_DECIDE, num_ghosts,
+                            _ghosts.data(), _b.array().data(), &_b_petsc);
   }
 
   /// Destructor
-  virtual ~HyperElasticProblem() = default;
+  virtual ~HyperElasticProblem()
+  {
+    if (_b_petsc)
+      VecDestroy(&_b_petsc);
+  }
 
   void form(Vec x) final
   {
@@ -34,18 +53,25 @@ public:
   /// Compute F at current point x
   Vec F(const Vec x) final
   {
-    // Assemble b
-    la::VecWrapper b_wrapper(_b.vec());
-    b_wrapper.x.setZero();
-    b_wrapper.restore();
-
-    assemble_vector(_b.vec(), *_l);
-    _b.apply_ghosts();
+    // Assemble b and update ghosts
+    _b.array().setZero();
+    fem::assemble_vector(_b.array(), *_l);
+    VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
+    VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
 
     // Set bcs
-    set_bc(_b.vec(), _bcs, x, -1);
+    Vec x_local;
+    VecGhostGetLocalForm(x, &x_local);
+    PetscInt n = 0;
+    VecGetSize(x_local, &n);
+    const PetscScalar* array = nullptr;
+    VecGetArrayRead(x_local, &array);
+    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x(array,
+                                                                       n);
+    set_bc(_b.array(), _bcs, _x, -1);
+    VecRestoreArrayRead(x, &array);
 
-    return _b.vec();
+    return _b_petsc;
   }
 
   /// Compute J = F' at current point x
@@ -63,7 +89,8 @@ private:
   std::shared_ptr<fem::Form> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC>> _bcs;
 
-  la::PETScVector _b;
+  la::Vector<PetscScalar> _b;
+  Vec _b_petsc = nullptr;
   la::PETScMatrix _matA;
 };
 
@@ -155,7 +182,7 @@ int main(int argc, char* argv[])
 
   HyperElasticProblem problem(u, L, a, bcs);
   nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
-  newton_solver.solve(problem, u->vector().vec());
+  newton_solver.solve(problem, u->vector());
 
   // Save solution in VTK format
   io::VTKFile file("u.pvd");

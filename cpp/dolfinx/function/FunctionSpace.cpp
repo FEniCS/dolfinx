@@ -14,6 +14,7 @@
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -90,9 +91,7 @@ void FunctionSpace::interpolate_from_any(
 
   // Iterate over mesh and interpolate on each cell
   assert(_dofmap);
-  la::VecReadWrapper v_vector_wrap(v.vector().vec());
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> v_array
-      = v_vector_wrap.x;
+  const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& v_array = v.x()->array();
   const int num_cells = map->size_local() + map->num_ghosts();
   for (int c = 0; c < num_cells; ++c)
   {
