@@ -17,7 +17,7 @@ from dolfinx import DirichletBC, Function, FunctionSpace, fem, geometry, cpp
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from dolfinx_utils.test.skips import skip_if_complex
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
@@ -121,7 +121,6 @@ def test_manufactured_poisson(degree, filename, datadir):
     assert np.absolute(error) < 1.0e-14
 
 
-@skip_in_parallel
 @pytest.mark.parametrize("filename", [
     "UnitSquareMesh_triangle.xdmf",
     "UnitCubeMesh_tetra.xdmf",
@@ -181,8 +180,8 @@ def test_manufactured_vector1(family, degree, filename, datadir):
     assert np.allclose(up, u_exact)
 
 
+# This is skipped in complex as it is very slow and causes CircleCI to time out
 @skip_if_complex
-@skip_in_parallel
 @pytest.mark.parametrize("filename", [
     "UnitSquareMesh_triangle.xdmf",
     "UnitCubeMesh_tetra.xdmf",
