@@ -31,6 +31,8 @@ using namespace dolfinx::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
+/// Get the ownership of an entity shared over several processes
+int get_ownership(std::set<int>& processes) { return *processes.begin(); }
 
 /// Takes an array and computes the sort permutation that would reorder
 /// the rows in ascending order
@@ -256,12 +258,16 @@ get_local_indexing(
     }
   }
 
+  // Add this rank to the list of sharing processes
+  const int mpi_rank = dolfinx::MPI::rank(comm);
+  for (auto& q : shared_entities)
+    q.second.insert(mpi_rank);
+
   //---------
   // Determine ownership
   std::vector<std::int32_t> local_index(entity_count, -1);
   std::int32_t num_local;
   {
-    int mpi_rank = dolfinx::MPI::rank(comm);
     std::int32_t c = 0;
     // Index non-ghost entities
     for (int i = 0; i < entity_count; ++i)
@@ -279,7 +285,7 @@ get_local_indexing(
         local_index[i] = c;
         ++c;
       }
-      else if (*(it->second.begin()) > mpi_rank)
+      else if (get_ownership(it->second) == mpi_rank)
       {
         // Take ownership (lower rank wins)
         // FIXME: this could be made a deterministic function
