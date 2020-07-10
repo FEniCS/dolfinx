@@ -9,17 +9,175 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include <Eigen/Dense>
+#include <dolfinx/fem/DofMap.h>
+#include <dolfinx/fem/FiniteElement.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 
 namespace dolfinx::function
 {
+
+namespace detail
+{
+
+// Interpolate data. Fills coefficients using 'values', which are the
+// values of an expression at each dof.
+void interpolate(
+    Function& u,
+    // Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+    const Eigen::Ref<const Eigen::Array<
+        PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values)
+{
+  assert(u.function_space());
+  auto mesh = u.function_space()->mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
+
+  // Note: the following does not exploit any block structure, e.g. for
+  // vector Lagrange, which leads to a lot of redundant evaluations.
+  // E.g., for a vector Lagrange element the vector-valued expression is
+  // evaluted three times at the some point.
+
+  const int value_size = values.cols();
+
+  // FIXME: Dummy coordinate dofs - should limit the interpolation to
+  // Lagrange, in which case we don't need coordinate dofs in
+  // FiniteElement::transform_values.
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
+
+  // FIXME: It would be far more elegant and efficient to avoid the need
+  // to loop over cells to set the expansion corfficients. Would be much
+  // better if the expansion coefficients could be passed straight into
+  // Expresion::eval.
+
+  // Loop over cells
+  auto element = u.function_space()->element();
+  assert(element);
+  const int ndofs = element->space_dimension();
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values_cell(ndofs, value_size);
+
+  auto dofmap = u.function_space()->dofmap();
+  assert(dofmap);
+  assert(dofmap->element_dof_layout);
+  std::vector<PetscScalar> cell_coefficients(
+      dofmap->element_dof_layout->num_dofs());
+
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& coefficients = u.x()->array();
+
+  auto map = mesh->topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
+  {
+    // Get dofmap for cell
+    auto cell_dofs = dofmap->cell_dofs(c);
+    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
+    {
+      for (Eigen::Index j = 0; j < value_size; ++j)
+        values_cell(i, j) = values(cell_dofs[i], j);
+    }
+
+    // FIXME: For vector-valued Lagrange, this function 'throws away'
+    // the redundant expression evaluations. It should really be made
+    // not necessary.
+    element->transform_values(cell_coefficients.data(), values_cell,
+                              coordinate_dofs);
+
+    // Copy into expansion coefficient array
+    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
+      coefficients[cell_dofs[i]] = cell_coefficients[i];
+  }
+}
+
+void interpolate_from_any(
+    // Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
+    //     expansion_coefficients,
+    Function& u, const Function& v)
+{
+  assert(v.function_space());
+  const auto element = u.function_space()->element();
+  assert(element);
+  if (!v.function_space()->has_element(*element))
+  {
+    throw std::runtime_error("Restricting finite elements function in "
+                             "different elements not supported.");
+  }
+
+  const auto mesh = u.function_space()->mesh();
+  assert(mesh);
+  assert(v.function_space()->mesh());
+  if (mesh->id() != v.function_space()->mesh()->id())
+  {
+    throw std::runtime_error(
+        "Interpolation on different meshes not supported (yet).");
+  }
+  const int tdim = mesh->topology().dim();
+
+  // Get dofmaps
+  assert(v.function_space());
+  std::shared_ptr<const fem::DofMap> dofmap_v = v.function_space()->dofmap();
+  assert(dofmap_v);
+  auto map = mesh->topology().index_map(tdim);
+  assert(map);
+
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& expansion_coefficients
+      = u.x()->array();
+
+  // Iterate over mesh and interpolate on each cell
+  const auto dofmap_u = u.function_space()->dofmap();
+  const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& v_array = v.x()->array();
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
+  {
+    auto dofs_v = dofmap_v->cell_dofs(c);
+    auto cell_dofs = dofmap_u->cell_dofs(c);
+    assert(dofs_v.size() == cell_dofs.size());
+    for (Eigen::Index i = 0; i < dofs_v.size(); ++i)
+      expansion_coefficients[cell_dofs[i]] = v_array[dofs_v[i]];
+  }
+}
+
+} // namespace detail
 
 /// Interpolate a Function (on possibly non-matching meshes)
 /// @param[in,out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
 void interpolate(Function& u, const Function& v)
 {
-  u.function_space()->interpolate(u.x()->array(), v);
+  assert(u.function_space());
+  const auto element = u.function_space()->element();
+  assert(element);
+
+  // Check that function ranks match
+  if (int rank_v = v.function_space()->element()->value_rank();
+      element->value_rank() != rank_v)
+  {
+    throw std::runtime_error("Cannot interpolate function into function space. "
+                             "Rank of function ("
+                             + std::to_string(rank_v)
+                             + ") does not match rank of function space ("
+                             + std::to_string(element->value_rank()) + ")");
+  }
+
+  // Check that function dimension match
+  for (int i = 0; i < element->value_rank(); ++i)
+  {
+    if (int v_dim = v.function_space()->element()->value_dimension(i);
+        element->value_dimension(i) != v_dim)
+    {
+      throw std::runtime_error(
+          "Cannot interpolate function into function space. "
+          "Dimension "
+          + std::to_string(i) + " of function (" + std::to_string(v_dim)
+          + ") does not match dimension " + std::to_string(i)
+          + " of function space(" + std::to_string(element->value_dimension(i))
+          + ")");
+    }
+  }
+
+  detail::interpolate_from_any(u, v);
 }
 
 /// Interpolate an expression
