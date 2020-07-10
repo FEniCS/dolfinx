@@ -104,7 +104,8 @@ void fem::assemble_vector(
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form>>& a,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale)
 {
   Vec b_local;
@@ -151,7 +152,8 @@ void fem::apply_lifting(
 void fem::apply_lifting(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>>& a,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<
         Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
     double scale)
@@ -160,7 +162,8 @@ void fem::apply_lifting(
 }
 //-----------------------------------------------------------------------------
 Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> fem::assemble_matrix_eigen(
-    const Form& a, const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
+    const Form& a,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs)
 {
   // Index maps for dof ranges
   auto map0 = a.function_space(0)->dofmap()->index_map;
@@ -221,7 +224,7 @@ Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> fem::assemble_matrix_eigen(
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(
     Mat A, const Form& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs)
 {
   // Index maps for dof ranges
   auto map0 = a.function_space(0)->dofmap()->index_map;
@@ -271,7 +274,7 @@ void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
 //-----------------------------------------------------------------------------
 void fem::add_diagonal(
     Mat A, const function::FunctionSpace& V,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     PetscScalar diagonal)
 {
   for (const auto& bc : bcs)
@@ -310,9 +313,10 @@ void fem::add_diagonal(
   }
 }
 //-----------------------------------------------------------------------------
-void fem::set_bc(Vec b,
-                 const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
-                 const Vec x0, double scale)
+void fem::set_bc(
+    Vec b,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
+    const Vec x0, double scale)
 {
   // VecGhostGetLocalForm(b, &b_local);
   PetscInt n = 0;
@@ -345,7 +349,7 @@ void fem::set_bc(Vec b,
 //-----------------------------------------------------------------------------
 void fem::set_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
@@ -358,9 +362,10 @@ void fem::set_bc(
   }
 }
 //-----------------------------------------------------------------------------
-void fem::set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                 const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
-                 double scale)
+void fem::set_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
+    double scale)
 {
   for (const auto& bc : bcs)
   {
@@ -369,34 +374,39 @@ void fem::set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>
-fem::bcs_rows(const std::vector<const Form*>& L,
-              const std::vector<std::shared_ptr<const fem::DirichletBC>>& bcs)
+std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>
+fem::bcs_rows(
+    const std::vector<const Form*>& L,
+    const std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>&
+        bcs)
 {
   // Pack DirichletBC pointers for rows
-  std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>> bcs0(
-      L.size());
+  std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>
+      bcs0(L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
-    for (const std::shared_ptr<const DirichletBC>& bc : bcs)
+    for (const std::shared_ptr<const DirichletBC<PetscScalar>>& bc : bcs)
       if (L[i]->function_space(0)->contains(*bc->function_space()))
         bcs0[i].push_back(bc);
 
   return bcs0;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
-fem::bcs_cols(const std::vector<std::vector<std::shared_ptr<const Form>>>& a,
-              const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
+std::vector<std::vector<
+    std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>>
+fem::bcs_cols(
+    const std::vector<std::vector<std::shared_ptr<const Form>>>& a,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs)
 {
   // Pack DirichletBC pointers for columns
-  std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
+  std::vector<std::vector<
+      std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>>
       bcs1(a.size());
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     for (std::size_t j = 0; j < a[i].size(); ++j)
     {
       bcs1[i].resize(a[j].size());
-      for (const std::shared_ptr<const DirichletBC>& bc : bcs)
+      for (const std::shared_ptr<const DirichletBC<PetscScalar>>& bc : bcs)
       {
         // FIXME: handle case where a[i][j] is null
         if (a[i][j])

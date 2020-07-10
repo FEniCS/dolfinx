@@ -92,7 +92,7 @@ template <typename T>
 void apply_lifting(
     Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>> a,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>>&
         x0,
     double scale);
@@ -698,7 +698,7 @@ template <typename T>
 void apply_lifting(
     Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>> a,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>>&
         x0,
     double scale)
@@ -730,10 +730,10 @@ void apply_lifting(
           = map1->block_size() * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
       bc_values1 = Eigen::Matrix<T, Eigen::Dynamic, 1>::Zero(crange);
-      for (const std::shared_ptr<const DirichletBC>& bc : bcs1[j])
+      for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
-        bc->dof_values<T>(bc_values1);
+        bc->dof_values(bc_values1);
       }
 
       // Modify (apply lifting) vector
