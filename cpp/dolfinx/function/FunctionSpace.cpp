@@ -60,157 +60,6 @@ std::int64_t FunctionSpace::dim() const
   return _dofmap->index_map->size_global() * _dofmap->index_map->block_size();
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate_from_any(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
-        expansion_coefficients,
-    const Function& v) const
-{
-  assert(v.function_space());
-  if (!v.function_space()->has_element(*_element))
-  {
-    throw std::runtime_error("Restricting finite elements function in "
-                             "different elements not supported.");
-  }
-
-  assert(_mesh);
-  assert(v.function_space()->mesh());
-  if (_mesh->id() != v.function_space()->mesh()->id())
-  {
-    throw std::runtime_error(
-        "Interpolation on different meshes not supported (yet).");
-  }
-
-  const int tdim = _mesh->topology().dim();
-
-  // Get dofmaps
-  assert(v.function_space());
-  std::shared_ptr<const fem::DofMap> dofmap_v = v.function_space()->dofmap();
-  assert(dofmap_v);
-  auto map = _mesh->topology().index_map(tdim);
-  assert(map);
-
-  // Iterate over mesh and interpolate on each cell
-  assert(_dofmap);
-  const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& v_array = v.x()->array();
-  const int num_cells = map->size_local() + map->num_ghosts();
-  for (int c = 0; c < num_cells; ++c)
-  {
-    auto dofs_v = dofmap_v->cell_dofs(c);
-    auto cell_dofs = _dofmap->cell_dofs(c);
-    assert(dofs_v.size() == cell_dofs.size());
-    for (Eigen::Index i = 0; i < dofs_v.size(); ++i)
-      expansion_coefficients[cell_dofs[i]] = v_array[dofs_v[i]];
-  }
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
-        expansion_coefficients,
-    const Function& v) const
-{
-  assert(_mesh);
-  assert(_element);
-
-  // Check that function ranks match
-  if (int rank_v = v.function_space()->element()->value_rank();
-      _element->value_rank() != rank_v)
-  {
-    throw std::runtime_error("Cannot interpolate function into function space. "
-                             "Rank of function ("
-                             + std::to_string(rank_v)
-                             + ") does not match rank of function space ("
-                             + std::to_string(_element->value_rank()) + ")");
-  }
-
-  // Check that function dimension match
-  for (int i = 0; i < _element->value_rank(); ++i)
-  {
-    if (int v_dim = v.function_space()->element()->value_dimension(i);
-        _element->value_dimension(i) != v_dim)
-    {
-      throw std::runtime_error(
-          "Cannot interpolate function into function space. "
-          "Dimension "
-          + std::to_string(i) + " of function (" + std::to_string(v_dim)
-          + ") does not match dimension " + std::to_string(i)
-          + " of function space(" + std::to_string(_element->value_dimension(i))
-          + ")");
-    }
-  }
-
-  interpolate_from_any(expansion_coefficients, v);
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
-    const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                     Eigen::Dynamic, Eigen::RowMajor>(
-        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& f) const
-{
-  // Evaluate expression at dof points
-  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
-      = tabulate_dof_coordinates().transpose();
-  const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                     Eigen::RowMajor>
-      values = f(x);
-
-  assert(_element);
-  std::vector<int> vshape(_element->value_rank(), 1);
-  for (std::size_t i = 0; i < vshape.size(); ++i)
-    vshape[i] = _element->value_dimension(i);
-  const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
-                                         1, std::multiplies<>());
-
-  // Note: pybind11 maps 1D NumPy arrays to column vectors for
-  // Eigen::Array<PetscScalar, Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>
-  // types, therefore we need to handle vectors as a special case.
-  if (values.cols() == 1 and values.rows() != 1)
-  {
-    if (values.rows() != x.cols())
-    {
-      throw std::runtime_error("Number of computed values is not equal to the "
-                               "number of evaluation points. (1)");
-    }
-    interpolate(coefficients, values);
-  }
-  else
-  {
-    if (values.rows() != value_size)
-      throw std::runtime_error("Values shape is incorrect. (2)");
-
-    if (values.cols() != x.cols())
-    {
-      throw std::runtime_error("Number of computed values is not equal to the "
-                               "number of evaluation points. (2)");
-    }
-
-    interpolate(coefficients, values.transpose());
-  }
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::interpolate_c(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
-    const interpolation_function& f) const
-{
-  // Build list of points at which to evaluate the Expression
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
-      = tabulate_dof_coordinates();
-
-  // Evaluate expression at points
-  assert(_element);
-  std::vector<int> vshape(_element->value_rank(), 1);
-  for (std::size_t i = 0; i < vshape.size(); ++i)
-    vshape[i] = _element->value_dimension(i);
-  const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
-                                         1, std::multiplies<>());
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values(x.rows(), value_size);
-  f(values, x);
-
-  interpolate(coefficients, values);
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
 FunctionSpace::sub(const std::vector<int>& component) const
 {
@@ -353,9 +202,8 @@ FunctionSpace::tabulate_dof_coordinates() const
   return x;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::set_x(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x,
-    PetscScalar value, int component) const
+void FunctionSpace::set_x(Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> x,
+                          double value, int component) const
 {
   assert(_mesh);
   assert(_dofmap);
@@ -363,7 +211,7 @@ void FunctionSpace::set_x(
 
   const int gdim = _mesh->geometry().dim();
   const int tdim = _mesh->topology().dim();
-  std::vector<PetscScalar> x_values;
+  std::vector<double> x_values;
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -445,67 +293,5 @@ bool FunctionSpace::contains(const FunctionSpace& V) const
 
   // Ok, V is really our subspace
   return true;
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
-    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        values) const
-{
-  assert(_mesh);
-  assert(_element);
-  assert(_dofmap);
-  const int tdim = _mesh->topology().dim();
-
-  // Note: the following does not exploit any block structure, e.g. for
-  // vector Lagrange, which leads to a lot of redundant evaluations.
-  // E.g., for a vector Lagrange element the vector-valued expression is
-  // evaluted three times at the some point.
-
-  const int value_size = values.cols();
-
-  // FIXME: Dummy coordinate dofs - should limit the interpolation to
-  // Lagrange, in which case we don't need coordinate dofs in
-  // FiniteElement::transform_values.
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
-
-  // FIXME: It would be far more elegant and efficient to avoid the need
-  // to loop over cells to set the expansion corfficients. Would be much
-  // better if the expansion coefficients could be passed straight into
-  // Expresion::eval.
-
-  // Loop over cells
-  const int ndofs = _element->space_dimension();
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values_cell(ndofs, value_size);
-  assert(_dofmap->element_dof_layout);
-  std::vector<PetscScalar> cell_coefficients(
-      _dofmap->element_dof_layout->num_dofs());
-
-  auto map = _mesh->topology().index_map(tdim);
-  assert(map);
-  const int num_cells = map->size_local() + map->num_ghosts();
-  for (int c = 0; c < num_cells; ++c)
-  {
-    // Get dofmap for cell
-    auto cell_dofs = _dofmap->cell_dofs(c);
-    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
-    {
-      for (Eigen::Index j = 0; j < value_size; ++j)
-        values_cell(i, j) = values(cell_dofs[i], j);
-    }
-
-    // FIXME: For vector-valued Lagrange, this function 'throws away'
-    // the redundant expression evaluations. It should really be made
-    // not necessary.
-    _element->transform_values(cell_coefficients.data(), values_cell,
-                               coordinate_dofs);
-
-    // Copy into expansion coefficient array
-    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
-      coefficients[cell_dofs[i]] = cell_coefficients[i];
-  }
 }
 //-----------------------------------------------------------------------------

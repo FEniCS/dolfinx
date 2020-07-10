@@ -190,7 +190,49 @@ void interpolate(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& f)
 {
-  u.function_space()->interpolate(u.x()->array(), f);
+  // u.function_space()->interpolate(u.x()->array(), f);
+  assert(u.function_space());
+
+  // Evaluate expression at dof points
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
+      = u.function_space()->tabulate_dof_coordinates().transpose();
+  const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
+      values = f(x);
+
+  const auto element = u.function_space()->element();
+  assert(element);
+  std::vector<int> vshape(element->value_rank(), 1);
+  for (std::size_t i = 0; i < vshape.size(); ++i)
+    vshape[i] = element->value_dimension(i);
+  const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
+                                         1, std::multiplies<>());
+
+  // Note: pybind11 maps 1D NumPy arrays to column vectors for
+  // Eigen::Array<PetscScalar, Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>
+  // types, therefore we need to handle vectors as a special case.
+  if (values.cols() == 1 and values.rows() != 1)
+  {
+    if (values.rows() != x.cols())
+    {
+      throw std::runtime_error("Number of computed values is not equal to the "
+                               "number of evaluation points. (1)");
+    }
+    detail::interpolate(u, values);
+  }
+  else
+  {
+    if (values.rows() != value_size)
+      throw std::runtime_error("Values shape is incorrect. (2)");
+
+    if (values.cols() != x.cols())
+    {
+      throw std::runtime_error("Number of computed values is not equal to the "
+                               "number of evaluation points. (2)");
+    }
+
+    detail::interpolate(u, values.transpose());
+  }
 }
 
 /// Interpolate an expression. This interface uses an expression
@@ -209,7 +251,24 @@ void interpolate_c(
              const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                                  Eigen::RowMajor>>&)>& f)
 {
-  u.function_space()->interpolate_c(u.x()->array(), f);
+  // u.function_space()->interpolate_c(u.x()->array(), f);
+  // Build list of points at which to evaluate the Expression
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
+      = u.function_space()->tabulate_dof_coordinates();
+
+  // Evaluate expression at points
+  const auto element = u.function_space()->element();
+  assert(element);
+  std::vector<int> vshape(element->value_rank(), 1);
+  for (std::size_t i = 0; i < vshape.size(); ++i)
+    vshape[i] = element->value_dimension(i);
+  const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
+                                         1, std::multiplies<>());
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values(x.rows(), value_size);
+  f(values, x);
+
+  detail::interpolate(u, values);
 }
 
 } // namespace dolfinx::function
