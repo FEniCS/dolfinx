@@ -44,7 +44,6 @@ def build_nullspace(V):
         # Build rotational null space basis
         x = V.tabulate_dof_coordinates()
         dofs = [V.sub(i).dofmap.list.array() for i in range(3)]
-        dofs = [V.sub(i).dofmap.list.array() for i in range(3)]
         basis[3][dofs[0]] = -x[dofs[0], 1]
         basis[3][dofs[1]] = x[dofs[1], 0]
         basis[4][dofs[0]] = x[dofs[0], 2]
