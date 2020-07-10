@@ -720,25 +720,19 @@ fem::pack_coefficients(const fem::Form& form)
   const fem::FormCoefficients& coefficients = form.coefficients();
   const std::vector<int>& offsets = coefficients.offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
+
+  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+      v;
   for (int i = 0; i < coefficients.size(); ++i)
+  {
     dofmaps[i] = coefficients.get(i)->function_space()->dofmap().get();
+    v.emplace_back(coefficients.get(i)->x()->array());
+  }
 
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
   assert(mesh);
   const int tdim = mesh->topology().dim();
-
-  // Unwrap PETSc vectors
-  std::vector<const PetscScalar*> v(coefficients.size(), nullptr);
-  std::vector<Vec> x(coefficients.size(), nullptr),
-      x_local(coefficients.size(), nullptr);
-  for (std::size_t i = 0; i < v.size(); ++i)
-  {
-    x[i] = coefficients.get(i)->vector().vec();
-    VecGhostGetLocalForm(x[i], &x_local[i]);
-    VecGetArrayRead(x_local[i], &v[i]);
-  }
-
   const int num_cells = mesh->topology().index_map(tdim)->size_local()
                         + mesh->topology().index_map(tdim)->num_ghosts();
 
@@ -752,18 +746,14 @@ fem::pack_coefficients(const fem::Form& form)
       for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
       {
         auto dofs = dofmaps[coeff]->cell_dofs(cell);
-        const PetscScalar* _v = v[coeff];
+        // const PetscScalar* _v = v[coeff];
+        const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
+            _v
+            = v[coeff];
         for (Eigen::Index k = 0; k < dofs.size(); ++k)
           c(cell, k + offsets[coeff]) = _v[dofs[k]];
       }
     }
-  }
-
-  // Restore PETSc vectors
-  for (std::size_t i = 0; i < v.size(); ++i)
-  {
-    VecRestoreArrayRead(x_local[i], &v[i]);
-    VecGhostRestoreLocalForm(x[i], &x_local[i]);
   }
 
   return c;

@@ -36,7 +36,8 @@ void function(py::module& m)
       m, "Function", "A finite element function")
       .def(py::init<std::shared_ptr<const dolfinx::function::FunctionSpace>>(),
            "Create a function on the given function space")
-      .def(py::init<std::shared_ptr<dolfinx::function::FunctionSpace>, Vec>())
+      .def(py::init<std::shared_ptr<dolfinx::function::FunctionSpace>,
+                    std::shared_ptr<dolfinx::la::Vector<PetscScalar>>>())
       .def_readwrite("name", &dolfinx::function::Function::name)
       .def_property_readonly("id", &dolfinx::function::Function::id)
       .def("sub", &dolfinx::function::Function::sub,
@@ -68,14 +69,15 @@ void function(py::module& m)
                            double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x) {
                     f(values.data(), values.rows(), values.cols(), x.data());
                   };
-
             self.interpolate_c(_f);
           },
           "Interpolate using a pointer to an expression with a C signature")
       .def_property_readonly(
           "vector",
-          [](const dolfinx::function::Function&
-                 self) { return self.vector().vec(); },
+          [](const dolfinx::function::Function& self) { return self.vector(); },
+          "Return the vector associated with the finite element Function")
+      .def_property_readonly(
+          "x", py::overload_cast<>(&dolfinx::function::Function::x),
           "Return the vector associated with the finite element Function")
       .def("eval", &dolfinx::function::Function::eval, py::arg("x"),
            py::arg("cells"), py::arg("values"), "Evaluate Function")

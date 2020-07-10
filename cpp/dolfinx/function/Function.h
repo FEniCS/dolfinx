@@ -8,7 +8,7 @@
 
 #include <Eigen/Dense>
 #include <dolfinx/common/types.h>
-#include <dolfinx/la/PETScVector.h>
+#include <dolfinx/la/Vector.h>
 #include <functional>
 #include <memory>
 #include <petscsys.h>
@@ -16,11 +16,9 @@
 #include <string>
 #include <vector>
 
-namespace dolfinx
+namespace dolfinx::function
 {
 
-namespace function
-{
 class FunctionSpace;
 
 /// This class represents a function \f$ u_h \f$ in a finite
@@ -43,7 +41,8 @@ public:
   ///
   /// @param[in] V The function space
   /// @param[in] x The vector
-  Function(std::shared_ptr<const FunctionSpace> V, Vec x);
+  Function(std::shared_ptr<const FunctionSpace> V,
+           std::shared_ptr<la::Vector<PetscScalar>> x);
 
   // Copy constructor
   Function(const Function& v) = delete;
@@ -74,13 +73,15 @@ public:
   /// @return The function space
   std::shared_ptr<const FunctionSpace> function_space() const;
 
-  /// Return vector of expansion coefficients (non-const version)
+  /// Return vector of expansion coefficients as a PETSc Vec
   /// @return The vector of expansion coefficients
-  la::PETScVector& vector();
+  Vec vector() const;
 
-  /// Return vector of expansion coefficients (const version)
-  /// @return The vector of expansion coefficients
-  const la::PETScVector& vector() const;
+  /// Underlying vector
+  std::shared_ptr<const la::Vector<PetscScalar>> x() const { return _x; }
+
+  /// Underlying vector
+  std::shared_ptr<la::Vector<PetscScalar>> x() { return _x; }
 
   /// Interpolate a Function (on possibly non-matching meshes)
   /// @param[in] v The function to be interpolated.
@@ -147,7 +148,9 @@ private:
   std::shared_ptr<const FunctionSpace> _function_space;
 
   // The vector of expansion coefficients (local)
-  la::PETScVector _vector;
+  std::shared_ptr<la::Vector<PetscScalar>> _x;
+
+  // The vector of expansion coefficients
+  mutable Vec _vector = nullptr;
 };
-} // namespace function
-} // namespace dolfinx
+} // namespace dolfinx::function

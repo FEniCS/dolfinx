@@ -346,9 +346,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
 
   // Get  values
   std::vector<PetscScalar> values(dof_set.size());
-  la::VecReadWrapper u_wrapper(u.vector().vec());
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x
-      = u_wrapper.x;
+  const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& _x = u.x()->array();
   for (std::size_t i = 0; i < dof_set.size(); ++i)
     values[i] = _x[dof_set[i]];
 
