@@ -75,11 +75,12 @@ def build_broken_elastic_nullspace(V):
         basis[1][dofs[1]] = 1.0
 
         # Build rotational null space basis
-        V.sub(0).set_x(basis[2], -1.0, 1)
-        V.sub(1).set_x(basis[2], 1.0, 0)
+        basis[2][dofs[0]] = -x[dofs[0], 1]
+        basis[2][dofs[1]] = x[dofs[1], 0]
+
 
         # Add vector that is not in nullspace
-        V.sub(1).set_x(basis[3], 1.0, 1)
+        basis[3][dofs[1]] = x[dofs[1], 1]
 
     return la.VectorSpaceBasis(nullspace_basis)
 
