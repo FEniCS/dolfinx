@@ -32,20 +32,19 @@ make_petsc_lambda(Mat A, std::vector<PetscInt>& cache)
   return [&, A](std::int32_t m, const std::int32_t* rows, std::int32_t n,
                 const std::int32_t* cols, const PetscScalar* vals) -> int {
     PetscErrorCode ierr;
-    if constexpr (std::is_same<std::int64_t, PetscInt>::value)
+    if constexpr (std::is_same<std::int32_t, PetscInt>::value)
+    {
+      cache.data(); // Dummy call to avoid unused variable error
+      static_assert(std::is_same<std::int32_t, PetscInt>::value);
+      ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, ADD_VALUES);
+    }
+    else
     {
       cache.resize(m + n);
       std::copy(rows, rows + m, cache.begin());
       std::copy(cols, cols + n, cache.begin() + m);
       const PetscInt *_rows = cache.data(), *_cols = _rows + m;
       ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, ADD_VALUES);
-    }
-    else
-    {
-      cache.data(); // Dummy call to avoid unused variable error
-      static_assert(std::is_same<std::int32_t, PetscInt>::value);
-      ierr = MatSetValuesLocal(A, m, (PetscInt*)rows, n, (PetscInt*)cols, vals,
-                               ADD_VALUES);
     }
 
 #ifdef DEBUG
@@ -54,7 +53,7 @@ make_petsc_lambda(Mat A, std::vector<PetscInt>& cache)
 #endif
     return 0;
   };
-}
+} // namespace
 
 // const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
 //                         const std::int32_t*, const PetscScalar*)>
