@@ -23,36 +23,85 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
-namespace
-{
+// namespace
+// {
+// const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+//                         const std::int32_t*, const PetscScalar*)>
+// make_petsc_lambda(Mat A, std::vector<PetscInt>& cache)
+// {
+//   return [&, A=A](std::int32_t m, const std::int32_t* rows, std::int32_t n,
+//                 const std::int32_t* cols, const PetscScalar* vals) -> int {
+//     PetscErrorCode ierr;
+//     if constexpr (std::is_same<std::int64_t, PetscInt>::value)
+//     {
+//       cache.resize(m + n);
+//       std::copy(rows, rows + m, cache.begin());
+//       std::copy(cols, cols + n, cache.begin() + m);
+//       const PetscInt *_rows = cache.data(), *_cols = cache.data() + m;
+//       ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, ADD_VALUES);
+//     }
+//     else
+//     {
+//       ierr = MatSetValuesLocal(A, m, (PetscInt*)rows, n, (PetscInt*)cols,
+//       vals,
+//                                ADD_VALUES);
+//     }
+
+// #ifdef DEBUG
+//     if (ierr != 0)
+//       la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+// #endif
+//     return 0;
+//   };
+// }
+// } // namespace
+
+#ifdef PETSC_USE_64BIT_INDICES
 const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                         const std::int32_t*, const PetscScalar*)>
-make_petsc_lambda(Mat A, std::vector<PetscInt>& cache)
+make_petsc_lambda(Mat A, std::vector<PetscInt>& tmp_dofs_petsc64)
 {
-  return [&, A](std::int32_t m, const std::int32_t* rows, std::int32_t n,
-                const std::int32_t* cols, const PetscScalar* vals) -> int {
-    PetscErrorCode ierr;
-    if constexpr (std::is_same<std::int64_t, PetscInt>::value)
-    {
-      cache.resize(m + n);
-      std::copy(rows, rows + m, cache.begin());
-      std::copy(cols, cols + n, cache.begin() + m);
-      const PetscInt *_rows = cache.data(), *_cols = cache.data() + m;
-      ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, ADD_VALUES);
-    }
-    else
-    {
-      ierr = MatSetValuesLocal(A, m, (PetscInt*)rows, n, (PetscInt*)cols, vals,
-                               ADD_VALUES);
-    }
 
+  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                          const std::int32_t*, const PetscScalar*)>
+      f = [A, &tmp_dofs_petsc64](std::int32_t nrow, const std::int32_t* rows,
+                                 std::int32_t ncol, const std::int32_t* cols,
+                                 const PetscScalar* y) {
+        tmp_dofs_petsc64.resize(nrow + ncol);
+        std::copy(rows, rows + nrow, tmp_dofs_petsc64.begin());
+        std::copy(cols, cols + ncol, tmp_dofs_petsc64.begin() + nrow);
+        const PetscInt *rows1 = tmp_dofs_petsc64.data(), *cols1 = rows1 + nrow;
+        PetscErrorCode ierr
+            = MatSetValuesLocal(A, nrow, rows1, ncol, cols1, y, ADD_VALUES);
 #ifdef DEBUG
-    if (ierr != 0)
-      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+        if (ierr != 0)
+          la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
-    return 0;
-  };
+        return 0;
+      };
+  return f;
 }
+#else
+const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                        const std::int32_t*, const PetscScalar*)>
+make_petsc_lambda(Mat A, std::vector<PetscInt>&)
+{
+  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                          const std::int32_t*, const PetscScalar*)>
+      f = [A](std::int32_t nrow, const std::int32_t* rows, std::int32_t ncol,
+              const std::int32_t* cols, const PetscScalar* y) {
+        PetscErrorCode ierr
+            = MatSetValuesLocal(A, nrow, rows, ncol, cols, y, ADD_VALUES);
+#ifdef DEBUG
+        if (ierr != 0)
+          la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
+        return 0;
+      };
+  return f;
+}
+#endif
+
 } // namespace
 
 //-----------------------------------------------------------------------------
