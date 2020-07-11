@@ -19,8 +19,6 @@ namespace dolfinx
 namespace mesh
 {
 class Mesh;
-template <typename T>
-class MeshTags;
 } // namespace mesh
 
 namespace common
@@ -30,12 +28,6 @@ class IndexMap;
 
 namespace refinement
 {
-/// Data structure and methods for refining meshes in parallel
-
-/// ParallelRefinement encapsulates two main features: a distributed
-/// MeshTags defined over the mesh edges, which can be updated across
-/// processes, and storage for local mesh data, which can be used to
-/// construct the new Mesh
 
 class ParallelRefinement
 {
@@ -50,6 +42,11 @@ public:
   compute_edge_sharing(const mesh::Mesh& mesh);
 
   /// Transfer marked edges between processes
+  /// @param[in] neighbour_comm MPI Communicator for neighbourhood
+  /// @param[in] marked_for_update Lists of edges to be updates on each
+  /// neighbour
+  /// @param[in/out] marked_edges Marked edges to be updated
+  /// @param[in] map_e IndexMap for edges
   static void update_logical_edgefunction(
       const MPI_Comm& neighbour_comm,
       const std::vector<std::vector<std::int32_t>>& marked_for_update,
@@ -58,7 +55,11 @@ public:
   /// Add new vertex for each marked edge, and create
   /// new_vertex_coordinates and global_edge->new_vertex map.
   /// Communicate new vertices with MPI to all affected processes.
-  /// @return edge_to_new_vertex map
+  /// @param[in] neighbour_comm MPI Communicator for neighbourhood
+  /// @param[in] shared_edges
+  /// @param[in] mesh Existing mesh
+  /// @param[in] marked_edges
+  /// @return edge_to_new_vertex map and geometry array
   static std::pair<
       std::map<std::int32_t, std::int64_t>,
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>

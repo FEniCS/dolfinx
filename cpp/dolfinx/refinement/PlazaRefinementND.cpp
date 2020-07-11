@@ -601,12 +601,13 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
       }
     }
   }
+
   // Communicate any shared edges
   ParallelRefinement::update_logical_edgefunction(
       neighbour_comm, marked_for_update, marked_edges, *map_e);
 
   // Enforce rules about refinement (i.e. if any edge is marked in a triangle,
-  // then the longest edge must also be marked.
+  // then the longest edge must also be marked).
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   enforce_rules(neighbour_comm, shared_edges, marked_edges, mesh, long_edge);
 
