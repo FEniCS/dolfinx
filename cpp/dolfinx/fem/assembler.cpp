@@ -297,15 +297,15 @@ void fem::add_diagonal(
   // NOTE: MatSetValuesLocal uses ADD_VALUES, hence it requires that the
   //       diagonal is zero before this function is called.
 
-  std::vector<PetscInt> tmp_dofs_petsc64;
-  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
-      mat_set_values_local = make_petsc_lambda(A, tmp_dofs_petsc64);
-
   for (Eigen::Index i = 0; i < rows.size(); ++i)
   {
-    const std::int32_t row = rows(i);
-    mat_set_values_local(1, &row, 1, &row, &diagonal);
+    const PetscInt row = rows(i);
+    PetscErrorCode ierr
+        = MatSetValuesLocal(A, 1, &row, 1, &row, &diagonal, ADD_VALUES);
+#ifdef DEBUG
+    if (ierr != 0)
+      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
   }
 }
 //-----------------------------------------------------------------------------
