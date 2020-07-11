@@ -40,23 +40,23 @@ namespace fem
 /// with a facet/edge/vertex.
 ///
 /// @param[in] V The function (sub)space(s) on which degrees-of-freedom
-///     (DOFs) will be located. The spaces must share the same mesh and
-///     element type.
-/// @param[in] dim Topological dimension of mesh entities on
-///     which degrees-of-freedom will be located
+///   (DOFs) will be located. The spaces must share the same mesh and
+///   element type.
+/// @param[in] dim Topological dimension of mesh entities on which
+///   degrees-of-freedom will be located
 /// @param[in] entities Indices of mesh entities. All DOFs associated
-///     with the closure of these indices will be returned
+///   with the closure of these indices will be returned
 /// @param[in] remote True to return also "remotely located"
-///     degree-of-freedom indices. Remotely located degree-of-freedom
-///     indices are local/owned by the current process, but which the
-///     current process cannot identify because it does not recognize
-///     mesh entity as a marked. For example, a boundary condition dof
-///     at a vertex where this process does not have the associated
-///     boundary facet. This commonly occurs with partitioned meshes.
+///   degree-of-freedom indices. Remotely located degree-of-freedom
+///   indices are local/owned by the current process, but which the
+///   current process cannot identify because it does not recognize mesh
+///   entity as a marked. For example, a boundary condition dof at a
+///   vertex where this process does not have the associated boundary
+///   facet. This commonly occurs with partitioned meshes.
 /// @return Array of local DOF indices in the spaces V[0] (and V[1] is
-///     two spaces are passed in). If two spaces are passed in, the (i,
-///     0) entry is the DOF index in the space V[0] and (i, 1) is the
-///     correspinding DOF entry in the space V[1].
+///   two spaces are passed in). If two spaces are passed in, the (i, 0)
+///   entry is the DOF index in the space V[0] and (i, 1) is the
+///   correspinding DOF entry in the space V[1].
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
 locate_dofs_topological(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,

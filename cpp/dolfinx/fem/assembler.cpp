@@ -281,11 +281,7 @@ void fem::add_diagonal(
   {
     assert(bc);
     if (V.contains(*bc->function_space()))
-    {
-      const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& owned_dofs
-          = bc->dofs_owned().col(0);
-      add_diagonal(A, owned_dofs, diagonal);
-    }
+      add_diagonal(A, bc->dofs_owned().col(0), diagonal);
   }
 }
 //-----------------------------------------------------------------------------
