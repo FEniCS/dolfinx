@@ -161,13 +161,13 @@ ParallelRefinement::compute_edge_sharing(const mesh::Mesh& mesh)
 
   // Create shared edges, for both owned and ghost indices
   // returning edge -> set(global process numbers)
-  std::map<std::int32_t, std::set<int>> shared_edges
+  std::map<std::int32_t, std::set<int>> shared_edges_by_proc
       = map_e->compute_shared_indices();
 
   // Compute a slightly wider neighbourhood for direct communication of shared
   // edges
   std::set<int> all_neighbour_set;
-  for (const auto& q : shared_edges)
+  for (const auto& q : shared_edges_by_proc)
     all_neighbour_set.insert(q.second.begin(), q.second.end());
   std::vector<int> neighbours(all_neighbour_set.begin(),
                               all_neighbour_set.end());
@@ -183,7 +183,8 @@ ParallelRefinement::compute_edge_sharing(const mesh::Mesh& mesh)
   for (std::size_t i = 0; i < neighbours.size(); ++i)
     proc_to_neighbour.insert({neighbours[i], i});
 
-  for (auto& q : shared_edges)
+  std::map<std::int32_t, std::set<int>> shared_edges;
+  for (auto& q : shared_edges_by_proc)
   {
     std::set<int> neighbour_set;
     for (int r : q.second)
