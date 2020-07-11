@@ -75,22 +75,10 @@ create_petsc_index_sets(const std::vector<const common::IndexMap*>& maps);
 void petsc_error(int error_code, std::string filename,
                  std::string petsc_function);
 
-// /// Get sub-matrix. Sub-matrix is local to the process
-// Mat get_local_submatrix(const Mat A, const IS row, const IS col);
-
-// /// Restore local submatrix
-// void restore_local_submatrix(const Mat A, const IS row, const IS col, Mat*
-// Asub);
-
 /// Copy blocks from Vec into Eigen vectors
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
 get_local_vectors(const Vec x,
                   const std::vector<const common::IndexMap*>& maps);
-
-/// Copy blocks from Vec into local Vec objects
-// std::vector<Vec>
-// get_local_petsc_vectors(const Vec x,
-//                         const std::vector<const common::IndexMap*>& maps);
 
 /// Scatter local Eigen vectors to Vec
 void scatter_local_vectors(
