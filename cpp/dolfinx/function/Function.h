@@ -111,7 +111,7 @@ public:
   }
 
   /// Collapse a subfunction (view into the Function) to a stand-alone
-  /// Function
+  ///   Function
   /// @return New collapsed Function
   Function collapse() const
   {
