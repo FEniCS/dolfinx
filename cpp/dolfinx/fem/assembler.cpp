@@ -23,8 +23,8 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
-// namespace
-// {
+namespace
+{
 // const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
 //                         const std::int32_t*, const PetscScalar*)>
 // make_petsc_lambda(Mat A, std::vector<PetscInt>& cache)
@@ -61,7 +61,6 @@ const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                         const std::int32_t*, const PetscScalar*)>
 make_petsc_lambda(Mat A, std::vector<PetscInt>& tmp_dofs_petsc64)
 {
-
   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const PetscScalar*)>
       f = [A, &tmp_dofs_petsc64](std::int32_t nrow, const std::int32_t* rows,
