@@ -40,6 +40,12 @@ namespace refinement
 class ParallelRefinement
 {
 public:
+  /// Compute the sharing of edges between processes.
+  /// The resulting MPI_Comm is over the neighbourhood of shared edges, allowing
+  /// direct communication between peers. The resulting map is from local edge
+  /// index to the set of neighbours (within the comm) that share that edge.
+  /// @param mesh Mesh
+  /// @return pair of comm and map
   static std::pair<MPI_Comm, std::map<std::int32_t, std::set<int>>>
   compute_edge_sharing(const mesh::Mesh& mesh);
 
@@ -63,9 +69,11 @@ public:
 
   /// Use vertex and topology data to partition new mesh across
   /// processes
+  /// @param[in] old_mesh
   /// @param[in] cell_topology Topology of cells, (vertex indices)
   /// @param[in] num_ghost_cells Number of cells which are ghost (at end
   ///   of list)
+  /// @param[in] new_vertex_coordinates
   /// @param[in] redistribute Call graph partitioner if true
   /// @return New mesh
   static mesh::Mesh
@@ -76,7 +84,9 @@ public:
             bool redistribute);
 
   /// Build local mesh from internal data when not running in parallel
+  /// @param[in] old_mesh
   /// @param[in] cell_topology
+  /// @param[in] new_vertex_coordinates
   /// @return A Mesh
   static mesh::Mesh
   build_local(const mesh::Mesh& old_mesh,
