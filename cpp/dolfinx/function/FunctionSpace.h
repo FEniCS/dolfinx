@@ -29,7 +29,6 @@ class Mesh;
 
 namespace function
 {
-class Function;
 
 /// This class represents a finite element function space defined by a
 /// mesh, a finite element, and a local-to-global map of the degrees of

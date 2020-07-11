@@ -33,6 +33,7 @@ namespace function
 {
 template <typename T>
 class Constant;
+template <typename T>
 class Function;
 class FunctionSpace;
 } // namespace function
@@ -122,7 +123,8 @@ Form create_form(
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
 
 /// Extract coefficients from a UFC form
-std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
+std::vector<std::tuple<int, std::string,
+                       std::shared_ptr<function::Function<PetscScalar>>>>
 get_coeffs_from_ufc_form(const ufc_form& ufc_form);
 
 /// Extract coefficients from a UFC form

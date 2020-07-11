@@ -18,6 +18,7 @@ namespace dolfinx
 
 namespace function
 {
+template <typename T>
 class Function;
 class FunctionSpace;
 } // namespace function
@@ -107,7 +108,7 @@ public:
   /// @param[in] dofs Degree-of-freedom indices in the space of the
   ///   boundary value function applied to V_dofs[i]
   DirichletBC(
-      const std::shared_ptr<const function::Function>& g,
+      const std::shared_ptr<const function::Function<PetscScalar>>& g,
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
           dofs);
 
@@ -121,7 +122,7 @@ public:
   /// @param[in] V The function (sub)space on which the boundary
   ///   condition is applied
   DirichletBC(
-      const std::shared_ptr<const function::Function>& g,
+      const std::shared_ptr<const function::Function<PetscScalar>>& g,
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>&
           V_g_dofs,
       std::shared_ptr<const function::FunctionSpace> V);
@@ -150,7 +151,7 @@ public:
 
   /// Return boundary value function g
   /// @return The boundary values Function
-  std::shared_ptr<const function::Function> value() const;
+  std::shared_ptr<const function::Function<PetscScalar>> value() const;
 
   /// Get array of dof indices to which a Dirichlet boundary condition
   /// is applied. The array is sorted and may contain ghost entries.
@@ -218,7 +219,7 @@ private:
   std::shared_ptr<const function::FunctionSpace> _function_space;
 
   // The function
-  std::shared_ptr<const function::Function> _g;
+  std::shared_ptr<const function::Function<PetscScalar>> _g;
 
   // Pairs of dof indices in _function_space (i, 0) and in the space of
   // _g (i, 1)

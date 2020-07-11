@@ -138,8 +138,8 @@ int main(int argc, char* argv[])
 
   std::shared_ptr<fem::Form> L = fem::create_form(create_form_poisson_L, {V});
 
-  auto f = std::make_shared<function::Function>(V);
-  auto g = std::make_shared<function::Function>(V);
+  auto f = std::make_shared<function::Function<PetscScalar>>(V);
+  auto g = std::make_shared<function::Function<PetscScalar>>(V);
 
   // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
   // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 
   // FIXME: zero function and make sure ghosts are updated
   // Define boundary condition
-  auto u0 = std::make_shared<function::Function>(V);
+  auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs
       = fem::locate_dofs_geometrical({*V}, [](auto& x) {
@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Compute solution
-  function::Function u(V);
+  function::Function<PetscScalar> u(V);
   la::PETScMatrix A = fem::create_matrix(*a);
   la::PETScVector b(*L->function_space(0)->dofmap()->index_map);
 

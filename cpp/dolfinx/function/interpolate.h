@@ -17,18 +17,21 @@
 namespace dolfinx::function
 {
 
+template <typename T>
+class Function;
+
 /// Interpolate a Function (on possibly non-matching meshes)
 /// @param[in,out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
 template <typename T>
-void interpolate(Function& u, const Function& v);
+void interpolate(Function<T>& u, const Function<T>& v);
 
 /// Interpolate an expression
 /// @param[in,out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
 template <typename T>
 void interpolate(
-    Function& u,
+    Function<T>& u,
     const std::function<
         Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -44,7 +47,7 @@ void interpolate(
 /// @param[in] f The expression to be interpolated
 template <typename T>
 void interpolate_c(
-    Function& u,
+    Function<T>& u,
     const std::function<void(
         Eigen::Ref<
             Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
@@ -58,7 +61,7 @@ namespace detail
 // values of an expression at each dof.
 template <typename T>
 void interpolate_values(
-    Function& u,
+    Function<T>& u,
     const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& values)
 {
@@ -125,7 +128,7 @@ void interpolate_values(
 }
 
 template <typename T>
-void interpolate_from_any(Function& u, const Function& v)
+void interpolate_from_any(Function<T>& u, const Function<T>& v)
 {
   assert(v.function_space());
   const auto element = u.function_space()->element();
@@ -173,7 +176,7 @@ void interpolate_from_any(Function& u, const Function& v)
 
 //----------------------------------------------------------------------------
 template <typename T>
-void interpolate(Function& u, const Function& v)
+void interpolate(Function<T>& u, const Function<T>& v)
 {
   assert(u.function_space());
   const auto element = u.function_space()->element();
@@ -206,12 +209,12 @@ void interpolate(Function& u, const Function& v)
     }
   }
 
-  detail::interpolate_from_any<T>(u, v);
+  detail::interpolate_from_any(u, v);
 }
 //----------------------------------------------------------------------------
 template <typename T>
 void interpolate(
-    Function& u,
+    Function<T>& u,
     const std::function<
         Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -262,14 +265,13 @@ void interpolate(
 //----------------------------------------------------------------------------
 template <typename T>
 void interpolate_c(
-    Function& u,
+    Function<T>& u,
     const std::function<void(
         Eigen::Ref<
             Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
         const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                             Eigen::RowMajor>>&)>& f)
 {
-  // u.function_space()->interpolate_c(u.x()->array(), f);
   // Build list of points at which to evaluate the Expression
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = u.function_space()->tabulate_dof_coordinates();

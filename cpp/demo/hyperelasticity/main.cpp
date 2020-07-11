@@ -13,7 +13,7 @@ using namespace dolfinx;
 class HyperElasticProblem : public nls::NonlinearProblem
 {
 public:
-  HyperElasticProblem(std::shared_ptr<function::Function> u,
+  HyperElasticProblem(std::shared_ptr<function::Function<PetscScalar>> u,
                       std::shared_ptr<fem::Form> L,
                       std::shared_ptr<fem::Form> J,
                       std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
@@ -85,7 +85,7 @@ public:
   }
 
 private:
-  std::shared_ptr<function::Function> _u;
+  std::shared_ptr<function::Function<PetscScalar>> _u;
   std::shared_ptr<fem::Form> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC>> _bcs;
 
@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
       create_functionspace_form_hyperelasticity_F, "u", mesh);
 
   // Define solution function
-  auto u = std::make_shared<function::Function>(V);
+  auto u = std::make_shared<function::Function<PetscScalar>>(V);
 
   std::shared_ptr<fem::Form> a
       = fem::create_form(create_form_hyperelasticity_J, {V, V});
@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
   std::shared_ptr<fem::Form> L
       = fem::create_form(create_form_hyperelasticity_F, {V});
 
-  auto u_rotation = std::make_shared<function::Function>(V);
+  auto u_rotation = std::make_shared<function::Function<PetscScalar>>(V);
   u_rotation->interpolate([](auto& x) {
     const double scale = 0.005;
 
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
     return values;
   });
 
-  auto u_clamp = std::make_shared<function::Function>(V);
+  auto u_clamp = std::make_shared<function::Function<PetscScalar>>(V);
   u_clamp->interpolate([](auto& x) {
     return Eigen::Array<PetscScalar, 3, Eigen::Dynamic, Eigen::RowMajor>::Zero(
         3, x.cols());
@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
   a->set_coefficients({{"u", u}});
 
   // Create Dirichlet boundary conditions
-  auto u0 = std::make_shared<function::Function>(V);
+  auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs_left
       = fem::locate_dofs_geometrical(
