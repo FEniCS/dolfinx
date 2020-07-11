@@ -52,20 +52,6 @@ public:
   /// Destructor
   ~ParallelRefinement();
 
-  /// Return markers for all edges
-  /// @returns array of markers
-  std::vector<bool>& marked_edges();
-
-  /// Mark edge by index
-  /// @param[in] edge_index Index of edge to mark
-  /// @return false if marker was already set, otherwise true
-  bool mark(std::int32_t edge_index, const common::IndexMap& map_e);
-
-  /// Mark all edges incident on entities indicated by refinement marker
-  /// @param[in] refinement_marker Value 1 means "refine", any other
-  ///   value means "do not refine"
-  void mark(const mesh::MeshTags<std::int8_t>& refinement_marker);
-
   /// Transfer marked edges between processes
   static void update_logical_edgefunction(
       const MPI_Comm& neighbour_comm,
@@ -134,13 +120,6 @@ public:
   }
 
 private:
-  // Management of marked edges
-  std::vector<bool> _marked_edges;
-
-  // Temporary storage for edges that have been recently marked (global
-  // index)
-  std::vector<std::vector<std::int64_t>> _marked_for_update;
-
   // Shared edges between processes
   std::map<std::int32_t, std::set<std::int32_t>> _shared_edges;
 

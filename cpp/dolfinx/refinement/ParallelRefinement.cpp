@@ -158,7 +158,6 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
   const std::int32_t num_edges = map_e->size_local() + map_e->num_ghosts();
-  _marked_edges = std::vector<bool>(num_edges, false);
 
   // Create shared edges, for both owned and ghost indices
   // returning edge -> set(global process numbers)
@@ -190,61 +189,9 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
       neighbour_set.insert(proc_to_neighbour[r]);
     _shared_edges.insert({q.first, neighbour_set});
   }
-
-  _marked_for_update.resize(neighbours.size());
 }
 //-----------------------------------------------------------------------------
 ParallelRefinement::~ParallelRefinement() { MPI_Comm_free(&_neighbour_comm); }
-//-----------------------------------------------------------------------------
-std::vector<bool>& ParallelRefinement::marked_edges() { return _marked_edges; }
-//-----------------------------------------------------------------------------
-bool ParallelRefinement::mark(std::int32_t edge_index,
-                              const common::IndexMap& map_e)
-{
-  assert(edge_index < (map_e.size_local() + map_e.num_ghosts()));
-
-  // Already marked, so nothing to do
-  if (_marked_edges[edge_index])
-    return false;
-
-  _marked_edges[edge_index] = true;
-
-  // If it is a shared edge, add all sharing neighbours to update set
-  if (auto map_it = _shared_edges.find(edge_index);
-      map_it != _shared_edges.end())
-  {
-    const std::int64_t global_index = local_to_global(edge_index, map_e);
-    for (int p : map_it->second)
-      _marked_for_update[p].push_back(global_index);
-  }
-
-  return true;
-}
-//-----------------------------------------------------------------------------
-void ParallelRefinement::mark(
-    const mesh::MeshTags<std::int8_t>& refinement_marker)
-{
-  const std::size_t entity_dim = refinement_marker.dim();
-
-  const std::vector<std::int32_t>& marker_indices = refinement_marker.indices();
-
-  std::shared_ptr<const mesh::Mesh> mesh = refinement_marker.mesh();
-  auto map_e = mesh->topology().index_map(1);
-  auto map_ent = mesh->topology().index_map(entity_dim);
-  assert(map_ent);
-
-  auto ent_to_edge = mesh->topology().connectivity(entity_dim, 1);
-  if (!ent_to_edge)
-    throw std::runtime_error("Connectivity missing: ("
-                             + std::to_string(entity_dim) + ", 1)");
-
-  for (const auto& i : marker_indices)
-  {
-    const auto edges = ent_to_edge->links(i);
-    for (int j = 0; j < edges.rows(); ++j)
-      mark(edges[j], *map_e);
-  }
-}
 //-----------------------------------------------------------------------------
 void ParallelRefinement::update_logical_edgefunction(
     const MPI_Comm& neighbour_comm,
