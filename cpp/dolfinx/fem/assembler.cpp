@@ -56,41 +56,26 @@ namespace
 // }
 // } // namespace
 
+const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                        const std::int32_t*, const PetscScalar*)>
+make_petsc_lambda(Mat A, [[maybe_unused]] std::vector<PetscInt>& cache)
+{
+  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                          const std::int32_t*, const PetscScalar*)>
+      f = [A, &cache](std::int32_t m, const std::int32_t* rows, std::int32_t n,
+                      const std::int32_t* cols, const PetscScalar* vals) {
+        PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
-const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                        const std::int32_t*, const PetscScalar*)>
-make_petsc_lambda(Mat A, std::vector<PetscInt>& tmp_dofs_petsc64)
-{
-  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
-      f = [A, &tmp_dofs_petsc64](std::int32_t nrow, const std::int32_t* rows,
-                                 std::int32_t ncol, const std::int32_t* cols,
-                                 const PetscScalar* y) {
-        tmp_dofs_petsc64.resize(nrow + ncol);
-        std::copy(rows, rows + nrow, tmp_dofs_petsc64.begin());
-        std::copy(cols, cols + ncol, tmp_dofs_petsc64.begin() + nrow);
-        const PetscInt *rows1 = tmp_dofs_petsc64.data(), *cols1 = rows1 + nrow;
-        PetscErrorCode ierr
-            = MatSetValuesLocal(A, nrow, rows1, ncol, cols1, y, ADD_VALUES);
-#ifdef DEBUG
-        if (ierr != 0)
-          la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-#endif
-        return 0;
-      };
-  return f;
-}
+        cache.resize(m + n);
+        std::copy(rows, rows + m, cache.begin());
+        std::copy(cols, cols + n, cache.begin() + m);
+        const PetscInt *rows1 = cache.data(), *cols1 = rows1 + m;
+        ierr = MatSetValuesLocal(A, m, rows1, n, cols1, vals, ADD_VALUES);
 #else
-const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                        const std::int32_t*, const PetscScalar*)>
-make_petsc_lambda(Mat A, std::vector<PetscInt>&)
-{
-  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
-      f = [A](std::int32_t nrow, const std::int32_t* rows, std::int32_t ncol,
-              const std::int32_t* cols, const PetscScalar* y) {
-        PetscErrorCode ierr
-            = MatSetValuesLocal(A, nrow, rows, ncol, cols, y, ADD_VALUES);
+        cache.data(); // Dummy call to avoid unused variable error
+        ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, ADD_VALUES);
+#endif
+
 #ifdef DEBUG
         if (ierr != 0)
           la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
@@ -99,7 +84,6 @@ make_petsc_lambda(Mat A, std::vector<PetscInt>&)
       };
   return f;
 }
-#endif
 
 } // namespace
 
