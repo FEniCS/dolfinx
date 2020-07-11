@@ -43,6 +43,7 @@ make_petsc_lambda(Mat A, std::vector<PetscInt>& cache)
     else
     {
       cache.data(); // Dummy call to avoid unused variable error
+      static_assert(std::is_same<std::int32_t, PetscInt>::value);
       ierr = MatSetValuesLocal(A, m, (PetscInt*)rows, n, (PetscInt*)cols, vals,
                                ADD_VALUES);
     }
