@@ -25,65 +25,65 @@ using namespace dolfinx::fem;
 
 namespace
 {
-// const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-//                         const std::int32_t*, const PetscScalar*)>
-// make_petsc_lambda(Mat A, std::vector<PetscInt>& cache)
-// {
-//   return [&, A=A](std::int32_t m, const std::int32_t* rows, std::int32_t n,
-//                 const std::int32_t* cols, const PetscScalar* vals) -> int {
-//     PetscErrorCode ierr;
-//     if constexpr (std::is_same<std::int64_t, PetscInt>::value)
-//     {
-//       cache.resize(m + n);
-//       std::copy(rows, rows + m, cache.begin());
-//       std::copy(cols, cols + n, cache.begin() + m);
-//       const PetscInt *_rows = cache.data(), *_cols = cache.data() + m;
-//       ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, ADD_VALUES);
-//     }
-//     else
-//     {
-//       ierr = MatSetValuesLocal(A, m, (PetscInt*)rows, n, (PetscInt*)cols,
-//       vals,
-//                                ADD_VALUES);
-//     }
-
-// #ifdef DEBUG
-//     if (ierr != 0)
-//       la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-// #endif
-//     return 0;
-//   };
-// }
-// } // namespace
-
 const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                         const std::int32_t*, const PetscScalar*)>
-make_petsc_lambda(Mat A, [[maybe_unused]] std::vector<PetscInt>& cache)
+make_petsc_lambda(Mat A, std::vector<PetscInt>& cache)
 {
-  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
-      f = [A, &cache](std::int32_t m, const std::int32_t* rows, std::int32_t n,
-                      const std::int32_t* cols, const PetscScalar* vals) {
-        PetscErrorCode ierr;
-#ifdef PETSC_USE_64BIT_INDICES
-        cache.resize(m + n);
-        std::copy(rows, rows + m, cache.begin());
-        std::copy(cols, cols + n, cache.begin() + m);
-        const PetscInt *rows1 = cache.data(), *cols1 = rows1 + m;
-        ierr = MatSetValuesLocal(A, m, rows1, n, cols1, vals, ADD_VALUES);
-#else
-        cache.data(); // Dummy call to avoid unused variable error
-        ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, ADD_VALUES);
-#endif
+  return [&, A](std::int32_t m, const std::int32_t* rows, std::int32_t n,
+                const std::int32_t* cols, const PetscScalar* vals) -> int {
+    PetscErrorCode ierr;
+    if constexpr (std::is_same<std::int64_t, PetscInt>::value)
+    {
+      cache.resize(m + n);
+      std::copy(rows, rows + m, cache.begin());
+      std::copy(cols, cols + n, cache.begin() + m);
+      const PetscInt *_rows = cache.data(), *_cols = _rows + m;
+      ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, ADD_VALUES);
+    }
+    else
+    {
+      cache.data(); // Dummy call to avoid unused variable error
+      ierr = MatSetValuesLocal(A, m, (PetscInt*)rows, n, (PetscInt*)cols, vals,
+                               ADD_VALUES);
+    }
 
 #ifdef DEBUG
-        if (ierr != 0)
-          la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+    if (ierr != 0)
+      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
-        return 0;
-      };
-  return f;
+    return 0;
+  };
 }
+
+// const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+//                         const std::int32_t*, const PetscScalar*)>
+// make_petsc_lambda(Mat A, [[maybe_unused]] std::vector<PetscInt>& cache)
+// {
+//   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+//                           const std::int32_t*, const PetscScalar*)>
+//       f = [A, &cache](std::int32_t m, const std::int32_t* rows, std::int32_t
+//       n,
+//                       const std::int32_t* cols, const PetscScalar* vals) {
+//         PetscErrorCode ierr;
+// #ifdef PETSC_USE_64BIT_INDICES
+//         cache.resize(m + n);
+//         std::copy(rows, rows + m, cache.begin());
+//         std::copy(cols, cols + n, cache.begin() + m);
+//         const PetscInt *rows1 = cache.data(), *cols1 = rows1 + m;
+//         ierr = MatSetValuesLocal(A, m, rows1, n, cols1, vals, ADD_VALUES);
+// #else
+//         cache.data(); // Dummy call to avoid unused variable error
+//         ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, ADD_VALUES);
+// #endif
+
+// #ifdef DEBUG
+//         if (ierr != 0)
+//           la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+// #endif
+//         return 0;
+//       };
+//   return f;
+// }
 
 } // namespace
 
