@@ -59,10 +59,7 @@ public:
   /// Mark edge by index
   /// @param[in] edge_index Index of edge to mark
   /// @return false if marker was already set, otherwise true
-  bool mark(std::int32_t edge_index);
-
-  /// Mark all edges in mesh
-  void mark_all();
+  bool mark(std::int32_t edge_index, const common::IndexMap& map_e);
 
   /// Mark all edges incident on entities indicated by refinement marker
   /// @param[in] refinement_marker Value 1 means "refine", any other
@@ -101,19 +98,21 @@ public:
   ///   of list)
   /// @param[in] redistribute Call graph partitioner if true
   /// @return New mesh
-  mesh::Mesh
-  partition(const std::vector<std::int64_t>& cell_topology, int num_ghost_cells,
-            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>& new_vertex_coordinates,
-            bool redistribute) const;
+  mesh::Mesh static partition(
+      const mesh::Mesh& old_mesh,
+      const std::vector<std::int64_t>& cell_topology, int num_ghost_cells,
+      const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                         Eigen::RowMajor>& new_vertex_coordinates,
+      bool redistribute);
 
   /// Build local mesh from internal data when not running in parallel
   /// @param[in] cell_topology
   /// @return A Mesh
-  mesh::Mesh build_local(
+  mesh::Mesh static build_local(
+      const mesh::Mesh& old_mesh,
       const std::vector<std::int64_t>& cell_topology,
       const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                         Eigen::RowMajor>& new_vertex_coordinates) const;
+                         Eigen::RowMajor>& new_vertex_coordinates);
 
   /// Adjust indices to account for extra n values on each process This
   /// is a utility to help add new topological vertices on each process
@@ -135,9 +134,6 @@ public:
   }
 
 private:
-  // Mesh
-  const mesh::Mesh& _mesh;
-
   // Management of marked edges
   std::vector<bool> _marked_edges;
 
