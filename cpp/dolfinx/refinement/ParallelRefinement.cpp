@@ -149,20 +149,20 @@ create_new_geometry(
 }
 } // namespace
 
-//-----------------------------------------------------------------------------
-ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
+//---------------------------------------------------------------------------------
+std::pair<MPI_Comm, std::map<std::int32_t, std::set<int>>>
+ParallelRefinement::compute_edge_sharing(const mesh::Mesh& mesh)
 {
   if (!mesh.topology().connectivity(1, 0))
     throw std::runtime_error("Edges must be initialised");
 
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
-  const std::int32_t num_edges = map_e->size_local() + map_e->num_ghosts();
 
   // Create shared edges, for both owned and ghost indices
   // returning edge -> set(global process numbers)
   std::map<std::int32_t, std::set<int>> shared_edges
-      = mesh.topology().index_map(1)->compute_shared_indices();
+      = map_e->compute_shared_indices();
 
   // Compute a slightly wider neighbourhood for direct communication of shared
   // edges
@@ -172,10 +172,11 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
   std::vector<int> neighbours(all_neighbour_set.begin(),
                               all_neighbour_set.end());
 
+  MPI_Comm neighbour_comm;
   MPI_Dist_graph_create_adjacent(
       mesh.mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
       neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &_neighbour_comm);
+      false, &neighbour_comm);
 
   // Create a "shared_edge to neighbour map"
   std::map<int, int> proc_to_neighbour;
@@ -187,11 +188,11 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
     std::set<int> neighbour_set;
     for (int r : q.second)
       neighbour_set.insert(proc_to_neighbour[r]);
-    _shared_edges.insert({q.first, neighbour_set});
+    shared_edges.insert({q.first, neighbour_set});
   }
+
+  return {neighbour_comm, shared_edges};
 }
-//-----------------------------------------------------------------------------
-ParallelRefinement::~ParallelRefinement() { MPI_Comm_free(&_neighbour_comm); }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::update_logical_edgefunction(
     const MPI_Comm& neighbour_comm,
@@ -215,7 +216,7 @@ void ParallelRefinement::update_logical_edgefunction(
       = MPI::neighbor_all_to_all(neighbour_comm, send_offsets, data_to_send)
             .array();
 
-  // Flatten received values and set _marked_edges at each index received
+  // Flatten received values and set marked_edges at each index received
   std::vector<std::int32_t> local_indices = map_e.global_to_local(data_to_recv);
   for (std::int32_t local_index : local_indices)
     marked_edges[local_index] = true;

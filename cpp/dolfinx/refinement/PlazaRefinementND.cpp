@@ -525,16 +525,21 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
   }
 
   common::Timer t0("PLAZA: refine");
-  const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
 
+  auto [neighbour_comm, shared_edges]
+      = ParallelRefinement::compute_edge_sharing(mesh);
+
+  // Mark all edges
   auto map_e = mesh.topology().index_map(1);
-  ParallelRefinement p_ref(mesh);
   std::vector<bool> marked_edges(map_e->size_local() + map_e->num_ghosts(),
                                  true);
 
-  return compute_refinement(p_ref.neighbour_comm(), marked_edges,
-                            p_ref.shared_edges(), mesh, long_edge,
-                            edge_ratio_ok, redistribute);
+  const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
+  mesh::Mesh new_mesh
+      = compute_refinement(neighbour_comm, marked_edges, shared_edges, mesh,
+                           long_edge, edge_ratio_ok, redistribute);
+  MPI_Comm_free(&neighbour_comm);
+  return new_mesh;
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh
@@ -549,13 +554,12 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   }
 
   common::Timer t0("PLAZA: refine");
-  const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
 
-  ParallelRefinement p_ref(mesh);
+  auto [neighbour_comm, shared_edges]
+      = ParallelRefinement::compute_edge_sharing(mesh);
 
   const std::size_t entity_dim = refinement_marker.dim();
   const std::vector<std::int32_t>& marker_indices = refinement_marker.indices();
-  // assert(*(refinement_marker.mesh()) == mesh);
   auto map_e = mesh.topology().index_map(1);
   auto map_ent = mesh.topology().index_map(entity_dim);
   assert(map_ent);
@@ -565,11 +569,15 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
     throw std::runtime_error("Connectivity missing: ("
                              + std::to_string(entity_dim) + ", 1)");
 
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
-      = p_ref.shared_edges();
   std::vector<bool> marked_edges(map_e->size_local() + map_e->num_ghosts(),
                                  false);
-  int num_neighbours = 0;
+
+  // Get number of neighbours
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(neighbour_comm, &indegree, &outdegree,
+                                 &weighted);
+  assert(indegree == outdegree);
+  const int num_neighbours = indegree;
   std::vector<std::vector<std::int32_t>> marked_for_update(num_neighbours);
 
   for (std::int32_t i : marker_indices)
@@ -594,14 +602,18 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
     }
   }
   // Communicate any shared edges
-  const MPI_Comm neighbour_comm = p_ref.neighbour_comm();
-
   ParallelRefinement::update_logical_edgefunction(
       neighbour_comm, marked_for_update, marked_edges, *map_e);
 
+  // Enforce rules about refinement (i.e. if any edge is marked in a triangle,
+  // then the longest edge must also be marked.
+  const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   enforce_rules(neighbour_comm, shared_edges, marked_edges, mesh, long_edge);
 
-  return compute_refinement(neighbour_comm, marked_edges, shared_edges, mesh,
-                            long_edge, edge_ratio_ok, redistribute);
+  mesh::Mesh new_mesh
+      = compute_refinement(neighbour_comm, marked_edges, shared_edges, mesh,
+                           long_edge, edge_ratio_ok, redistribute);
+  MPI_Comm_free(&neighbour_comm);
+  return new_mesh;
 }
 //-----------------------------------------------------------------------------

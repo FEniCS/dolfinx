@@ -40,17 +40,8 @@ namespace refinement
 class ParallelRefinement
 {
 public:
-  /// Constructor
-  ParallelRefinement(const mesh::Mesh& mesh);
-
-  /// Disable copy constructor
-  ParallelRefinement(const ParallelRefinement& p) = delete;
-
-  /// Disable copy assignment
-  ParallelRefinement& operator=(const ParallelRefinement& p) = delete;
-
-  /// Destructor
-  ~ParallelRefinement();
+  static std::pair<MPI_Comm, std::map<std::int32_t, std::set<int>>>
+  compute_edge_sharing(const mesh::Mesh& mesh);
 
   /// Transfer marked edges between processes
   static void update_logical_edgefunction(
@@ -62,20 +53,13 @@ public:
   /// new_vertex_coordinates and global_edge->new_vertex map.
   /// Communicate new vertices with MPI to all affected processes.
   /// @return edge_to_new_vertex map
-  std::pair<
+  static std::pair<
       std::map<std::int32_t, std::int64_t>,
-      Eigen::Array<
-          double, Eigen::Dynamic, Eigen::Dynamic,
-          Eigen::RowMajor>> static create_new_vertices(const MPI_Comm&
-                                                           neighbour_comm,
-                                                       const std::map<
-                                                           std::int32_t,
-                                                           std::set<
-                                                               std::int32_t>>&
-                                                           shared_edges,
-                                                       const mesh::Mesh& mesh,
-                                                       const std::vector<bool>&
-                                                           marked_edges);
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+  create_new_vertices(
+      const MPI_Comm& neighbour_comm,
+      const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges,
+      const mesh::Mesh& mesh, const std::vector<bool>& marked_edges);
 
   /// Use vertex and topology data to partition new mesh across
   /// processes
@@ -84,21 +68,21 @@ public:
   ///   of list)
   /// @param[in] redistribute Call graph partitioner if true
   /// @return New mesh
-  mesh::Mesh static partition(
-      const mesh::Mesh& old_mesh,
-      const std::vector<std::int64_t>& cell_topology, int num_ghost_cells,
-      const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                         Eigen::RowMajor>& new_vertex_coordinates,
-      bool redistribute);
+  static mesh::Mesh
+  partition(const mesh::Mesh& old_mesh,
+            const std::vector<std::int64_t>& cell_topology, int num_ghost_cells,
+            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>& new_vertex_coordinates,
+            bool redistribute);
 
   /// Build local mesh from internal data when not running in parallel
   /// @param[in] cell_topology
   /// @return A Mesh
-  mesh::Mesh static build_local(
-      const mesh::Mesh& old_mesh,
-      const std::vector<std::int64_t>& cell_topology,
-      const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                         Eigen::RowMajor>& new_vertex_coordinates);
+  static mesh::Mesh
+  build_local(const mesh::Mesh& old_mesh,
+              const std::vector<std::int64_t>& cell_topology,
+              const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                 Eigen::RowMajor>& new_vertex_coordinates);
 
   /// Adjust indices to account for extra n values on each process This
   /// is a utility to help add new topological vertices on each process
@@ -111,20 +95,6 @@ public:
   static std::vector<std::int64_t>
   adjust_indices(const std::shared_ptr<const common::IndexMap>& index_map,
                  std::int32_t n);
-
-  MPI_Comm& neighbour_comm() { return _neighbour_comm; }
-
-  std::map<std::int32_t, std::set<std::int32_t>>& shared_edges()
-  {
-    return _shared_edges;
-  }
-
-private:
-  // Shared edges between processes
-  std::map<std::int32_t, std::set<std::int32_t>> _shared_edges;
-
-  // Neighbourhood communicator
-  MPI_Comm _neighbour_comm;
 };
 } // namespace refinement
 } // namespace dolfinx
