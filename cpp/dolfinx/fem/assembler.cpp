@@ -177,24 +177,20 @@ Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> fem::assemble_matrix_eigen(
   // Lambda function creating Eigen::Triplet array
   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const PetscScalar*)>
-      mat_set_values_local
-      = [&triplets](std::int32_t nrow, const std::int32_t* rows,
-                    std::int32_t ncol, const std::int32_t* cols,
-                    const PetscScalar* y) {
-          for (int i = 0; i < nrow; ++i)
-          {
-            int row = rows[i];
-            for (int j = 0; j < ncol; ++j)
-            {
-              int col = cols[j];
-              triplets.emplace_back(row, col, y[i * ncol + j]);
-            }
-          }
-          return 0;
-        };
+      mat_set_values = [&triplets](std::int32_t nrow, const std::int32_t* rows,
+                                   std::int32_t ncol, const std::int32_t* cols,
+                                   const PetscScalar* y) {
+        for (int i = 0; i < nrow; ++i)
+        {
+          int row = rows[i];
+          for (int j = 0; j < ncol; ++j)
+            triplets.emplace_back(row, cols[j], y[i * ncol + j]);
+        }
+        return 0;
+      };
 
   // Assemble
-  impl::assemble_matrix(mat_set_values_local, a, dof_marker0, dof_marker1);
+  impl::assemble_matrix(mat_set_values, a, dof_marker0, dof_marker1);
 
   Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> mat(
       map0->block_size() * (map0->size_local() + map0->num_ghosts()),
@@ -236,10 +232,10 @@ void fem::assemble_matrix(
   std::vector<PetscInt> tmp_dofs_petsc64;
   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const PetscScalar*)>
-      mat_set_values_local = make_petsc_lambda(A, tmp_dofs_petsc64);
+      mat_set_values = make_petsc_lambda(A, tmp_dofs_petsc64);
 
   // Assemble
-  impl::assemble_matrix(mat_set_values_local, a, dof_marker0, dof_marker1);
+  impl::assemble_matrix(mat_set_values, a, dof_marker0, dof_marker1);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
@@ -248,9 +244,9 @@ void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
   std::vector<PetscInt> tmp_dofs_petsc64;
   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const PetscScalar*)>
-      mat_set_values_local = make_petsc_lambda(A, tmp_dofs_petsc64);
+      mat_set_values = make_petsc_lambda(A, tmp_dofs_petsc64);
 
-  impl::assemble_matrix(mat_set_values_local, a, bc0, bc1);
+  impl::assemble_matrix(mat_set_values, a, bc0, bc1);
 }
 //-----------------------------------------------------------------------------
 void fem::add_diagonal(
