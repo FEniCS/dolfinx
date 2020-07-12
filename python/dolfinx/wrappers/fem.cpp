@@ -421,7 +421,7 @@ void fem(py::module& m)
           py::return_value_policy::reference_internal,
           "Return active domains for given integral");
 
-  py::enum_<dolfinx::fem::IntegralType>(formintegrals, "Type")
+  py::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell)
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet)
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet);
