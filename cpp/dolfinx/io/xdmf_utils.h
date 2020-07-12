@@ -27,6 +27,7 @@ namespace dolfinx
 
 namespace function
 {
+template <typename T>
 class Function;
 } // namespace function
 
@@ -61,10 +62,12 @@ std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 
 /// Get point data values for linear or quadratic mesh into flattened 2D
 /// array
-std::vector<PetscScalar> get_point_data_values(const function::Function& u);
+std::vector<PetscScalar>
+get_point_data_values(const function::Function<PetscScalar>& u);
 
 /// Get cell data values as a flattened 2D array
-std::vector<PetscScalar> get_cell_data_values(const function::Function& u);
+std::vector<PetscScalar>
+get_cell_data_values(const function::Function<PetscScalar>& u);
 
 /// Get the VTK string identifier
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);

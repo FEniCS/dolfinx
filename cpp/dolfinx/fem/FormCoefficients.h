@@ -7,6 +7,7 @@
 #pragma once
 
 #include <memory>
+#include <petscsys.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -16,6 +17,7 @@ namespace dolfinx
 
 namespace function
 {
+template <typename T>
 class Function;
 }
 
@@ -33,8 +35,8 @@ public:
   /// (original_coeff_position, name, shared_ptr<function::Function>).
   /// The shared_ptr<Function> may be a nullptr and assigned later.
   FormCoefficients(
-      const std::vector<
-          std::tuple<int, std::string, std::shared_ptr<function::Function>>>&
+      const std::vector<std::tuple<
+          int, std::string, std::shared_ptr<function::Function<PetscScalar>>>>&
           coefficients);
 
   /// Get number of coefficients
@@ -46,14 +48,15 @@ public:
   std::vector<int> offsets() const;
 
   /// Set coefficient with index i to be a Function
-  void set(int i, std::shared_ptr<const function::Function> coefficient);
+  void set(int i,
+           std::shared_ptr<const function::Function<PetscScalar>> coefficient);
 
   /// Set coefficient with name to be a Function
   void set(std::string name,
-           std::shared_ptr<const function::Function> coefficient);
+           std::shared_ptr<const function::Function<PetscScalar>> coefficient);
 
   /// Get the Function coefficient i
-  std::shared_ptr<const function::Function> get(int i) const;
+  std::shared_ptr<const function::Function<PetscScalar>> get(int i) const;
 
   /// Original position of coefficient in UFL form
   int original_position(int i) const;
@@ -70,7 +73,8 @@ public:
 
 private:
   // Functions for the coefficients
-  std::vector<std::shared_ptr<const function::Function>> _coefficients;
+  std::vector<std::shared_ptr<const function::Function<PetscScalar>>>
+      _coefficients;
 
   // Copy of 'original positions' in UFL form
   std::vector<int> _original_pos;

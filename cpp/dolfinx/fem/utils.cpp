@@ -530,10 +530,12 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
   return DofMap(dof_layout, index_map, std::move(dofmap));
 }
 //-----------------------------------------------------------------------------
-std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
+std::vector<std::tuple<int, std::string,
+                       std::shared_ptr<function::Function<PetscScalar>>>>
 fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
 {
-  std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
+  std::vector<std::tuple<int, std::string,
+                         std::shared_ptr<function::Function<PetscScalar>>>>
       coeffs;
   const char** names = ufc_form.coefficient_name_map();
   for (int i = 0; i < ufc_form.num_coefficients; ++i)

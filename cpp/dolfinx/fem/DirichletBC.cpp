@@ -518,7 +518,7 @@ fem::locate_dofs_geometrical(
 
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
-    const std::shared_ptr<const function::Function>& g,
+    const std::shared_ptr<const function::Function<PetscScalar>>& g,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
         V_dofs)
     : _function_space(g->function_space()), _g(g), _dofs(V_dofs.rows(), 2)
@@ -535,7 +535,7 @@ DirichletBC::DirichletBC(
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
-    const std::shared_ptr<const function::Function>& g,
+    const std::shared_ptr<const function::Function<PetscScalar>>& g,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>&
         V_g_dofs,
     std::shared_ptr<const function::FunctionSpace> V)
@@ -554,7 +554,8 @@ DirichletBC::function_space() const
   return _function_space;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const function::Function> DirichletBC::value() const
+std::shared_ptr<const function::Function<PetscScalar>>
+DirichletBC::value() const
 {
   return _g;
 }
