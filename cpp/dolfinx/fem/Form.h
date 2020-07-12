@@ -8,6 +8,7 @@
 
 #include "FormCoefficients.h"
 #include "FormIntegrals.h"
+#include <dolfinx/function/FunctionSpace.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -41,7 +42,7 @@ class MeshTags;
 namespace fem
 {
 
-/// Base class for variational forms
+/// Class for variational forms
 ///
 /// A note on the order of trial and test spaces: FEniCS numbers
 /// argument spaces starting with the leading dimension of the
@@ -65,6 +66,7 @@ namespace fem
 /// of spaces should start with space number 0 (the test space) and then
 /// space number 1 (the trial space).
 
+template <typename T>
 class Form
 {
 public:
@@ -78,11 +80,25 @@ public:
   ///   (nonsimplified) form.
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
-       const FormIntegrals<PetscScalar>& integrals,
-       const FormCoefficients<PetscScalar>& coefficients,
-       const std::vector<std::pair<
-           std::string, std::shared_ptr<const function::Constant<PetscScalar>>>>
-           constants);
+       const FormIntegrals<T>& integrals,
+       const FormCoefficients<T>& coefficients,
+       const std::vector<
+           std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
+           constants)
+      : _integrals(integrals), _coefficients(coefficients),
+        _constants(constants), _function_spaces(function_spaces)
+  {
+    // Set _mesh from function::FunctionSpace, and check they are the same
+    if (!function_spaces.empty())
+      _mesh = function_spaces[0]->mesh();
+    for (const auto& V : function_spaces)
+      if (_mesh != V->mesh())
+        throw std::runtime_error("Incompatible mesh");
+
+    // Set markers for default integrals
+    if (_mesh)
+      _integrals.set_default_domains(*_mesh);
+  }
 
   /// Create form (no UFC integrals). Integrals can be attached later
   /// using FormIntegrals::set_cell_tabulate_tensor.
@@ -91,7 +107,12 @@ public:
   /// @param[in] function_spaces Vector of function spaces
   explicit Form(
       const std::vector<std::shared_ptr<const function::FunctionSpace>>&
-          function_spaces);
+          function_spaces)
+      : Form(function_spaces, FormIntegrals<T>(),
+             FormCoefficients<PetscScalar>({}), {})
+  {
+    // Do nothing
+  }
 
   /// Move constructor
   Form(Form&& form) = default;
@@ -102,29 +123,38 @@ public:
   /// Rank of form (bilinear form = 2, linear form = 1, functional = 0,
   /// etc)
   /// @return The rank of the form
-  int rank() const;
+  int rank() const { return _function_spaces.size(); }
 
   /// Set coefficient with given number (shared pointer version)
   /// @param[in] coefficients Map from coefficient index to the
-  ///                         coefficient
+  ///   coefficient
   void set_coefficients(
-      const std::map<int,
-                     std::shared_ptr<const function::Function<PetscScalar>>>&
-          coefficients);
+      const std::map<int, std::shared_ptr<const function::Function<T>>>&
+          coefficients)
+  {
+    for (const auto& c : coefficients)
+      _coefficients.set(c.first, c.second);
+  }
 
   /// Set coefficient with given name (shared pointer version)
   /// @param[in] coefficients Map from coefficient name to the
   ///                         coefficient
   void set_coefficients(
-      const std::map<std::string,
-                     std::shared_ptr<const function::Function<PetscScalar>>>&
-          coefficients);
+      const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
+          coefficients)
+  {
+    for (const auto& c : coefficients)
+      _coefficients.set(c.first, c.second);
+  }
 
   /// Return original coefficient position for each coefficient (0 <= i
   /// < n)
   /// @return The position of coefficient i in original ufl form
   ///         coefficients.
-  int original_coefficient_position(int i) const;
+  int original_coefficient_position(int i) const
+  {
+    return _coefficients.original_position(i);
+  }
 
   /// Set constants based on their names
   ///
@@ -133,9 +163,28 @@ public:
   ///
   /// Names of the constants must agree with their names in UFL file.
   void set_constants(
-      const std::map<std::string,
-                     std::shared_ptr<const function::Constant<PetscScalar>>>&
-          constants);
+      const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
+          constants)
+  {
+    for (auto const& constant : constants)
+    {
+      std::string name = constant.first;
+
+      // Find matching string in existing constants
+      const auto it = std::find_if(
+          _constants.begin(), _constants.end(),
+          [&](const std::pair<
+              std::string,
+              std::shared_ptr<const function::Constant<PetscScalar>>>& q) {
+            return (q.first == name);
+          });
+
+      if (it == _constants.end())
+        throw std::runtime_error("Constant '" + name + "' not found in form");
+
+      it->second = constant.second;
+    }
+  }
 
   /// Set constants based on their order (without names)
   ///
@@ -145,85 +194,138 @@ public:
   ///
   /// The order of constants must match their order in original ufl
   /// Form.
-  void set_constants(
-      const std::vector<std::shared_ptr<const function::Constant<PetscScalar>>>&
-          constants);
+  void
+  set_constants(const std::vector<std::shared_ptr<const function::Constant<T>>>&
+                    constants)
+  {
+    if (constants.size() != _constants.size())
+      throw std::runtime_error("Incorrect number of constants.");
+
+    // Loop every constant that user wants to attach
+    for (std::size_t i = 0; i < constants.size(); ++i)
+    {
+      // In this case, the constants don't have names
+      _constants[i] = std::pair("", constants[i]);
+    }
+  }
 
   /// Check if all constants associated with the form have been set
   /// @return True if all Form constants have been set
-  bool all_constants_set() const;
+  bool all_constants_set() const
+  {
+    for (const auto& constant : _constants)
+      if (!constant.second)
+        return false;
+    return true;
+  }
 
   /// Return names of any constants that have not been set
   /// @return Names of unset constants
-  std::set<std::string> get_unset_constants() const;
+  std::set<std::string> get_unset_constants() const
+  {
+    std::set<std::string> unset;
+    for (const auto& constant : _constants)
+      if (!constant.second)
+        unset.insert(constant.first);
+    return unset;
+  }
 
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
   /// @param[in] mesh The mesh
-  void set_mesh(const std::shared_ptr<const mesh::Mesh>& mesh);
+  void set_mesh(const std::shared_ptr<const mesh::Mesh>& mesh)
+  {
+    _mesh = mesh;
+    // Set markers for default integrals
+    _integrals.set_default_domains(*_mesh);
+  }
 
   /// Extract common mesh from form
   /// @return The mesh
-  std::shared_ptr<const mesh::Mesh> mesh() const;
+  std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
 
   /// Return function space for given argument
   /// @param[in] i Index of the argument
   /// @return Function space
-  std::shared_ptr<const function::FunctionSpace> function_space(int i) const;
+  std::shared_ptr<const function::FunctionSpace> function_space(int i) const
+  {
+    return _function_spaces.at(i);
+  }
 
   /// Register the function for 'tabulate_tensor' for cell integral i
   void set_tabulate_tensor(
       IntegralType type, int i,
-      const std::function<void(PetscScalar*, const PetscScalar*,
-                               const PetscScalar*, const double*, const int*,
-                               const std::uint8_t*, const std::uint32_t)>& fn);
+      const std::function<void(T*, const T*, const T*, const double*,
+                               const int*, const std::uint8_t*,
+                               const std::uint32_t)>& fn)
+  {
+    _integrals.set_tabulate_tensor(type, i, fn);
+    if (i == -1 and _mesh)
+      _integrals.set_default_domains(*_mesh);
+  }
 
   /// Set cell domains
   /// @param[in] cell_domains The cell domains
-  void set_cell_domains(const mesh::MeshTags<int>& cell_domains);
+  void set_cell_domains(const mesh::MeshTags<int>& cell_domains)
+  {
+    _integrals.set_domains(IntegralType::cell, cell_domains);
+  }
 
   /// Set exterior facet domains
   /// @param[in] exterior_facet_domains The exterior facet domains
   void
-  set_exterior_facet_domains(const mesh::MeshTags<int>& exterior_facet_domains);
+  set_exterior_facet_domains(const mesh::MeshTags<int>& exterior_facet_domains)
+  {
+    _integrals.set_domains(IntegralType::exterior_facet,
+                           exterior_facet_domains);
+  }
 
   /// Set interior facet domains
   /// @param[in] interior_facet_domains The interior facet domains
   void
-  set_interior_facet_domains(const mesh::MeshTags<int>& interior_facet_domains);
+  set_interior_facet_domains(const mesh::MeshTags<int>& interior_facet_domains)
+  {
+    _integrals.set_domains(IntegralType::interior_facet,
+                           interior_facet_domains);
+  }
 
   /// Set vertex domains
   /// @param[in] vertex_domains The vertex domains.
-  void set_vertex_domains(const mesh::MeshTags<int>& vertex_domains);
+  void set_vertex_domains(const mesh::MeshTags<int>& vertex_domains)
+  {
+    _integrals.set_domains(IntegralType::vertex, vertex_domains);
+  }
 
   /// Access coefficients
-  FormCoefficients<PetscScalar>& coefficients();
+  FormCoefficients<T>& coefficients() { return _coefficients; }
 
   /// Access coefficients
-  const FormCoefficients<PetscScalar>& coefficients() const;
+  const FormCoefficients<T>& coefficients() const { return _coefficients; }
 
   /// Access form integrals
-  const FormIntegrals<PetscScalar>& integrals() const;
+  const FormIntegrals<T>& integrals() const { return _integrals; }
 
   /// Access constants
   /// @return Vector of attached constants with their names. Names are
-  ///         used to set constants in user's c++ code. Index in the
-  ///         vector is the position of the constant in the original
-  ///         (nonsimplified) form.
-  const std::vector<std::pair<
-      std::string, std::shared_ptr<const function::Constant<PetscScalar>>>>&
-  constants() const;
+  ///   used to set constants in user's c++ code. Index in the vector is
+  ///   the position of the constant in the original (nonsimplified) form.
+  const std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
+  constants() const
+  {
+    return _constants;
+  }
 
 private:
   // Integrals associated with the Form
-  FormIntegrals<PetscScalar> _integrals;
+  FormIntegrals<T> _integrals;
 
   // Coefficients associated with the Form
-  FormCoefficients<PetscScalar> _coefficients;
+  FormCoefficients<T> _coefficients;
 
   // Constants associated with the Form
-  std::vector<std::pair<std::string,
-                        std::shared_ptr<const function::Constant<PetscScalar>>>>
+  std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
       _constants;
 
   // Function spaces (one for each argument)

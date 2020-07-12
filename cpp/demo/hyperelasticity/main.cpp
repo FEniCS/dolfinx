@@ -15,7 +15,8 @@ class HyperElasticProblem : public nls::NonlinearProblem
 public:
   HyperElasticProblem(
       std::shared_ptr<function::Function<PetscScalar>> u,
-      std::shared_ptr<fem::Form> L, std::shared_ptr<fem::Form> J,
+      std::shared_ptr<fem::Form<PetscScalar>> L,
+      std::shared_ptr<fem::Form<PetscScalar>> J,
       std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bcs)
       : _u(u), _l(L), _j(J), _bcs(bcs),
         _b(L->function_space(0)->dofmap()->index_map),
@@ -86,7 +87,7 @@ public:
 
 private:
   std::shared_ptr<function::Function<PetscScalar>> _u;
-  std::shared_ptr<fem::Form> _l, _j;
+  std::shared_ptr<fem::Form<PetscScalar>> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> _bcs;
 
   la::Vector<PetscScalar> _b;
@@ -122,10 +123,10 @@ int main(int argc, char* argv[])
   // Define solution function
   auto u = std::make_shared<function::Function<PetscScalar>>(V);
 
-  std::shared_ptr<fem::Form> a
+  std::shared_ptr<fem::Form<PetscScalar>> a
       = fem::create_form(create_form_hyperelasticity_J, {V, V});
 
-  std::shared_ptr<fem::Form> L
+  std::shared_ptr<fem::Form<PetscScalar>> L
       = fem::create_form(create_form_hyperelasticity_F, {V});
 
   auto u_rotation = std::make_shared<function::Function<PetscScalar>>(V);

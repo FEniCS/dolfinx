@@ -34,7 +34,8 @@ void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const ScalarType*)>&
         mat_set_values,
-    const Form& a, const std::vector<bool>& bc0, const std::vector<bool>& bc1);
+    const Form<ScalarType>& a, const std::vector<bool>& bc0,
+    const std::vector<bool>& bc1);
 
 /// Execute kernel over cells and accumulate result in Mat
 template <typename ScalarType>
@@ -92,7 +93,8 @@ void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const ScalarType*)>&
         mat_set_values,
-    const Form& a, const std::vector<bool>& bc0, const std::vector<bool>& bc1)
+    const Form<ScalarType>& a, const std::vector<bool>& bc0,
+    const std::vector<bool>& bc1)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);

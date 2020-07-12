@@ -25,6 +25,7 @@ namespace fem
 {
 template <typename T>
 class DirichletBC;
+template <typename T>
 class Form;
 
 // -- Scalar ----------------------------------------------------------------
@@ -34,7 +35,7 @@ class Form;
 /// @param[in] M The form (functional) to assemble
 /// @return The contribution to the form (functional) from the local
 ///         process
-PetscScalar assemble_scalar(const Form& M);
+PetscScalar assemble_scalar(const Form<PetscScalar>& M);
 
 // -- Vectors ----------------------------------------------------------------
 
@@ -47,14 +48,15 @@ PetscScalar assemble_scalar(const Form& M);
 ///                  assembled into this vector. It is not zeroed before
 ///                  assembly.
 /// @param[in] L The linear form to assemble
-void assemble_vector(Vec b, const Form& L);
+void assemble_vector(Vec b, const Form<PetscScalar>& L);
 
 /// Assemble linear form into an Eigen vector
 /// @param[in,out] b The Eigen vector to be assembled. It will not be
 ///                  zeroed before assembly.
 /// @param[in] L The linear forms to assemble into b
 void assemble_vector(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L);
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const Form<PetscScalar>& L);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
@@ -75,7 +77,7 @@ void assemble_vector(
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
 void apply_lifting(
-    Vec b, const std::vector<std::shared_ptr<const Form>>& a,
+    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale);
@@ -94,7 +96,7 @@ void apply_lifting(
 /// is responsible for calling VecGhostUpdateBegin/End.
 void apply_lifting(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form>>& a,
+    const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<
@@ -110,7 +112,7 @@ void apply_lifting(
 ///                dofs the row and column are zeroed. The diagonal
 ///                entry is not set.
 Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> assemble_matrix_eigen(
-    const Form& a,
+    const Form<PetscScalar>& a,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs);
 
 /// Assemble bilinear form into a matrix. Matrix must already be
@@ -125,7 +127,7 @@ Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> assemble_matrix_eigen(
 ///                dofs the row and column are zeroed. The diagonal
 ///                entry is not set.
 void assemble_matrix(
-    Mat A, const Form& a,
+    Mat A, const Form<PetscScalar>& a,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs);
 
 /// Assemble bilinear form into a matrix. Matrix must already be
@@ -139,7 +141,8 @@ void assemble_matrix(
 /// @param[in] bc1 Boundary condition markers for the columns. If bc[i]
 ///                is true then rows i in A will be zeroed. The index i
 ///                is a local index.
-void assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
+void assemble_matrix(Mat A, const Form<PetscScalar>& a,
+                     const std::vector<bool>& bc0,
                      const std::vector<bool>& bc1);
 
 /// Adds a value to the diagonal of the matrix for rows with a Dirichlet
@@ -225,7 +228,7 @@ void set_bc(
 ///         order of the bcs array.
 std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>
 bcs_rows(
-    const std::vector<const Form*>& L,
+    const std::vector<const Form<PetscScalar>*>& L,
     const std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>&
         bcs);
 
@@ -241,7 +244,7 @@ bcs_rows(
 std::vector<std::vector<
     std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>>
 bcs_cols(
-    const std::vector<std::vector<std::shared_ptr<const Form>>>& a,
+    const std::vector<std::vector<std::shared_ptr<const Form<PetscScalar>>>>& a,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs);
 
 } // namespace fem

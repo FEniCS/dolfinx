@@ -133,10 +133,11 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Define variational forms
-  std::shared_ptr<fem::Form> a
+  std::shared_ptr<fem::Form<PetscScalar>> a
       = fem::create_form(create_form_poisson_a, {V, V});
 
-  std::shared_ptr<fem::Form> L = fem::create_form(create_form_poisson_L, {V});
+  std::shared_ptr<fem::Form<PetscScalar>> L
+      = fem::create_form(create_form_poisson_L, {V});
 
   auto f = std::make_shared<function::Function<PetscScalar>>(V);
   auto g = std::make_shared<function::Function<PetscScalar>>(V);

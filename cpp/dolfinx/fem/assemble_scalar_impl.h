@@ -24,7 +24,7 @@ namespace dolfinx::fem::impl
 
 /// Assemble functional into an scalar
 template <typename T>
-T assemble_scalar(const fem::Form& M);
+T assemble_scalar(const fem::Form<T>& M);
 
 /// Assemble functional over cells
 template <typename T>
@@ -58,7 +58,7 @@ T assemble_interior_facets(
 
 //-----------------------------------------------------------------------------
 template <typename T>
-T assemble_scalar(const fem::Form& M)
+T assemble_scalar(const fem::Form<T>& M)
 {
   std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
   assert(mesh);

@@ -34,7 +34,7 @@ namespace dolfinx::fem::impl
 /// @param[in] L The linear forms to assemble into b
 template <typename T>
 void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-                     const Form& L);
+                     const Form<T>& L);
 
 /// Execute kernel over cells and accumulate result in vector
 template <typename T>
@@ -91,7 +91,7 @@ void assemble_interior_facets(
 template <typename T>
 void apply_lifting(
     Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form>> a,
+    const std::vector<std::shared_ptr<const Form<T>>> a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>>&
         x0,
@@ -109,7 +109,7 @@ void apply_lifting(
 /// @param[in] scale Scaling to apply
 template <typename T>
 void lift_bc(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1, double scale);
 
@@ -127,7 +127,7 @@ void lift_bc(
 /// @param[in] scale Scaling to apply
 template <typename T>
 void lift_bc(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
@@ -136,7 +136,7 @@ void lift_bc(
 // Implementation of bc application
 template <typename T>
 void _lift_bc_cells(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
@@ -249,7 +249,7 @@ void _lift_bc_cells(
 //----------------------------------------------------------------------------
 template <typename T>
 void _lift_bc_exterior_facets(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
@@ -286,8 +286,7 @@ void _lift_bc_exterior_facets(
 
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>& fn
-      = a.integrals().get_tabulate_tensor(IntegralType::exterior_facet,
-                                          0);
+      = a.integrals().get_tabulate_tensor(IntegralType::exterior_facet, 0);
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -408,7 +407,7 @@ void _lift_bc_exterior_facets(
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-                     const Form& L)
+                     const Form<T>& L)
 {
   std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
   assert(mesh);
@@ -432,8 +431,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
   using type = fem::IntegralType;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    const auto& fn
-        = integrals.get_tabulate_tensor(IntegralType::cell, i);
+    const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(b, *mesh, active_cells, dofs, fn, coeffs,
@@ -697,7 +695,7 @@ void assemble_interior_facets(
 template <typename T>
 void apply_lifting(
     Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form>> a,
+    const std::vector<std::shared_ptr<const Form<T>>> a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>>&
         x0,
@@ -747,7 +745,7 @@ void apply_lifting(
 //-----------------------------------------------------------------------------
 template <typename T>
 void lift_bc(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1, double scale)
 {
@@ -760,7 +758,7 @@ void lift_bc(
 //-----------------------------------------------------------------------------
 template <typename T>
 void lift_bc(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
