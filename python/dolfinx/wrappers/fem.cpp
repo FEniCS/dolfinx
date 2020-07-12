@@ -74,6 +74,7 @@ namespace dolfinx_wrappers
 void fem(py::module& m)
 {
   // utils
+  m.def("get_coeffs_from_ufc_form", &dolfinx::fem::get_coeffs_from_ufc_form);
   m.def(
       "block_function_spaces",
       [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&
@@ -448,10 +449,10 @@ void fem(py::module& m)
             return self.coefficients().size();
           },
           "Return number of coefficients in form")
-      .def("original_coefficient_position",
-           [](dolfinx::fem::Form<PetscScalar>& self, std::size_t i) {
-             self.coefficients().original_position(i)(i);
-           })
+      //   .def("original_coefficient_position",
+      //        [](dolfinx::fem::Form<PetscScalar>& self, std::size_t i) {
+      //          self.coefficients().original_position(i);
+      //        })
       .def("set_coefficient",
            [](dolfinx::fem::Form<PetscScalar>& self, std::size_t i,
               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>

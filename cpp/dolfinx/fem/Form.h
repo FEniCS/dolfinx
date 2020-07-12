@@ -147,17 +147,15 @@ public:
       _coefficients.set(c.first, c.second);
   }
 
-  Ì
-      /// Set constants based on their names
-      ///
-      /// This method is used in command-line workflow, when users set
-      /// constants to the form in cpp file.
-      ///
-      /// Names of the constants must agree with their names in UFL file.
-      void
-      set_constants(const std::map<
-                    std::string, std::shared_ptr<const function::Constant<T>>>&
-                        constants)
+  /// Set constants based on their names
+  ///
+  /// This method is used in command-line workflow, when users set
+  /// constants to the form in cpp file.
+  ///
+  /// Names of the constants must agree with their names in UFL file.
+  void set_constants(
+      const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
+          constants)
   {
     for (auto const& constant : constants)
     {

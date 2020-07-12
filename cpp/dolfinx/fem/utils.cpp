@@ -659,9 +659,10 @@ fem::Form<PetscScalar> fem::create_form(
         "Vertex integrals not supported. Under development.");
   }
 
-  return fem::Form(spaces, integrals,
-                   FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
-                   fem::get_constants_from_ufc_form(ufc_form));
+  return fem::Form(
+      spaces, integrals,
+      FormCoefficients<PetscScalar>(fem::get_coeffs_from_ufc_form(ufc_form)),
+      fem::get_constants_from_ufc_form(ufc_form));
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement

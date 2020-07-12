@@ -7,6 +7,7 @@
 #pragma once
 
 #include <algorithm>
+#include <dolfinx/function/Function.h>
 #include <memory>
 #include <string>
 #include <utility>

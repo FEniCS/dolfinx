@@ -17,6 +17,9 @@
 #include <string>
 #include <vector>
 
+#include <dolfinx/function/Function.h>
+#include <petscsys.h>
+
 struct ufc_dofmap;
 struct ufc_form;
 struct ufc_coordinate_mapping;
