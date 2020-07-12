@@ -396,9 +396,35 @@ T norm(const dolfinx::la::Vector<T>& v)
   return std::sqrt(global_result);
 }
 
+// Instantiate
 template double norm(const dolfinx::la::Vector<double>&);
 template float norm(const dolfinx::la::Vector<float>&);
 template std::complex<double>
 norm(const dolfinx::la::Vector<std::complex<double>>&);
 template std::complex<float>
 norm(const dolfinx::la::Vector<std::complex<float>>&);
+
+template <typename T>
+T max(const dolfinx::la::Vector<T>& v)
+{
+  const Eigen::Matrix<T, Eigen::Dynamic, 1>& arr = v.array();
+  const std::int32_t size_local = v.map()->size_local();
+
+  T result = std::reduce(arr.data(), arr.data() + size_local, 0.0,
+                         [](T a, T b) { return std::max(a, b); });
+  return result;
+}
+
+template <>
+std::complex<double> max(const dolfinx::la::Vector<std::complex<double>>&)
+{
+  throw std::runtime_error("Cannot compute max of a complex vector");
+}
+template <>
+std::complex<float> max(const dolfinx::la::Vector<std::complex<float>>&)
+{
+  throw std::runtime_error("Cannot compute max of a complex vector");
+}
+
+template double max(const dolfinx::la::Vector<double>&);
+template float max(const dolfinx::la::Vector<float>&);

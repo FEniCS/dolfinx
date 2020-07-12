@@ -101,7 +101,11 @@ void scatter_local_vectors(
 
 /// Norm
 template <typename T>
-void norm(const la::Vector<T>& v);
+T norm(const la::Vector<T>& v);
+
+// Max
+template <typename T>
+T max(const la::Vector<T>& v);
 
 } // namespace la
 
