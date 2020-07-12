@@ -61,8 +61,8 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
 int Form::rank() const { return _function_spaces.size(); }
 //-----------------------------------------------------------------------------
 void Form::set_coefficients(
-    std::map<std::size_t,
-             std::shared_ptr<const function::Function<PetscScalar>>>
+    const std::map<std::size_t,
+                   std::shared_ptr<const function::Function<PetscScalar>>>&
         coefficients)
 {
   for (const auto& c : coefficients)
@@ -70,8 +70,8 @@ void Form::set_coefficients(
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficients(
-    std::map<std::string,
-             std::shared_ptr<const function::Function<PetscScalar>>>
+    const std::map<std::string,
+                   std::shared_ptr<const function::Function<PetscScalar>>>&
         coefficients)
 {
   for (const auto& c : coefficients)
@@ -84,8 +84,8 @@ int Form::original_coefficient_position(int i) const
 }
 //-----------------------------------------------------------------------------
 void Form::set_constants(
-    std::map<std::string,
-             std::shared_ptr<const function::Constant<PetscScalar>>>
+    const std::map<std::string,
+                   std::shared_ptr<const function::Constant<PetscScalar>>>&
         constants)
 {
   for (auto const& constant : constants)
@@ -109,7 +109,7 @@ void Form::set_constants(
 }
 //-----------------------------------------------------------------------------
 void Form::set_constants(
-    std::vector<std::shared_ptr<const function::Constant<PetscScalar>>>
+    const std::vector<std::shared_ptr<const function::Constant<PetscScalar>>>&
         constants)
 {
   if (constants.size() != _constants.size())
@@ -143,7 +143,7 @@ std::set<std::string> Form::get_unset_constants() const
   return unset;
 }
 //-----------------------------------------------------------------------------
-void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
+void Form::set_mesh(const std::shared_ptr<const mesh::Mesh>& mesh)
 {
   _mesh = mesh;
   // Set markers for default integrals
@@ -159,10 +159,9 @@ std::shared_ptr<const function::FunctionSpace> Form::function_space(int i) const
 //-----------------------------------------------------------------------------
 void Form::set_tabulate_tensor(
     IntegralType type, int i,
-    std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                       const double*, const int*, const std::uint8_t*,
-                       const std::uint32_t)>
-        fn)
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const std::uint8_t*, const std::uint32_t)>& fn)
 {
   _integrals.set_tabulate_tensor(type, i, fn);
   if (i == -1 and _mesh)

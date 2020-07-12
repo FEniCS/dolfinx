@@ -108,16 +108,16 @@ public:
   /// @param[in] coefficients Map from coefficient index to the
   ///                         coefficient
   void set_coefficients(
-      std::map<std::size_t,
-               std::shared_ptr<const function::Function<PetscScalar>>>
+      const std::map<std::size_t,
+                     std::shared_ptr<const function::Function<PetscScalar>>>&
           coefficients);
 
   /// Set coefficient with given name (shared pointer version)
   /// @param[in] coefficients Map from coefficient name to the
   ///                         coefficient
   void set_coefficients(
-      std::map<std::string,
-               std::shared_ptr<const function::Function<PetscScalar>>>
+      const std::map<std::string,
+                     std::shared_ptr<const function::Function<PetscScalar>>>&
           coefficients);
 
   /// Return original coefficient position for each coefficient (0 <= i
@@ -132,10 +132,10 @@ public:
   /// constants to the form in cpp file.
   ///
   /// Names of the constants must agree with their names in UFL file.
-  void
-  set_constants(std::map<std::string,
-                         std::shared_ptr<const function::Constant<PetscScalar>>>
-                    constants);
+  void set_constants(
+      const std::map<std::string,
+                     std::shared_ptr<const function::Constant<PetscScalar>>>&
+          constants);
 
   /// Set constants based on their order (without names)
   ///
@@ -146,7 +146,7 @@ public:
   /// The order of constants must match their order in original ufl
   /// Form.
   void set_constants(
-      std::vector<std::shared_ptr<const function::Constant<PetscScalar>>>
+      const std::vector<std::shared_ptr<const function::Constant<PetscScalar>>>&
           constants);
 
   /// Check if all constants associated with the form have been set
@@ -160,7 +160,7 @@ public:
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
   /// @param[in] mesh The mesh
-  void set_mesh(std::shared_ptr<const mesh::Mesh> mesh);
+  void set_mesh(const std::shared_ptr<const mesh::Mesh>& mesh);
 
   /// Extract common mesh from form
   /// @return The mesh
@@ -174,10 +174,9 @@ public:
   /// Register the function for 'tabulate_tensor' for cell integral i
   void set_tabulate_tensor(
       IntegralType type, int i,
-      std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                         const double*, const int*, const std::uint8_t*,
-                         const std::uint32_t)>
-          fn);
+      const std::function<void(PetscScalar*, const PetscScalar*,
+                               const PetscScalar*, const double*, const int*,
+                               const std::uint8_t*, const std::uint32_t)>& fn);
 
   /// Set cell domains
   /// @param[in] cell_domains The cell domains

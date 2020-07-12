@@ -444,11 +444,10 @@ void fem(py::module& m)
            [](dolfinx::fem::Form& self, std::size_t i,
               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>
                   f) { self.coefficients().set(i, f); })
-      .def(
-          "set_constants",
-          py::overload_cast<std::vector<
-              std::shared_ptr<const dolfinx::function::Constant<PetscScalar>>>>(
-              &dolfinx::fem::Form::set_constants))
+      .def("set_constants",
+           py::overload_cast<const std::vector<std::shared_ptr<
+               const dolfinx::function::Constant<PetscScalar>>>&>(
+               &dolfinx::fem::Form::set_constants))
       .def("set_mesh", &dolfinx::fem::Form::set_mesh)
       .def("set_cell_domains", &dolfinx::fem::Form::set_cell_domains)
       .def("set_exterior_facet_domains",
