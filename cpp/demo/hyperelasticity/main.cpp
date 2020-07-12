@@ -13,10 +13,10 @@ using namespace dolfinx;
 class HyperElasticProblem : public nls::NonlinearProblem
 {
 public:
-  HyperElasticProblem(std::shared_ptr<function::Function<PetscScalar>> u,
-                      std::shared_ptr<fem::Form> L,
-                      std::shared_ptr<fem::Form> J,
-                      std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
+  HyperElasticProblem(
+      std::shared_ptr<function::Function<PetscScalar>> u,
+      std::shared_ptr<fem::Form> L, std::shared_ptr<fem::Form> J,
+      std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bcs)
       : _u(u), _l(L), _j(J), _bcs(bcs),
         _b(L->function_space(0)->dofmap()->index_map),
         _matA(fem::create_matrix(*J))
@@ -87,7 +87,7 @@ public:
 private:
   std::shared_ptr<function::Function<PetscScalar>> _u;
   std::shared_ptr<fem::Form> _l, _j;
-  std::vector<std::shared_ptr<const fem::DirichletBC>> _bcs;
+  std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> _bcs;
 
   la::Vector<PetscScalar> _b;
   Vec _b_petsc = nullptr;
@@ -176,9 +176,9 @@ int main(int argc, char* argv[])
       = fem::locate_dofs_geometrical(
           {*V}, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
 
-  std::vector<std::shared_ptr<const fem::DirichletBC>> bcs
-      = {std::make_shared<fem::DirichletBC>(u_clamp, bdofs_left),
-         std::make_shared<fem::DirichletBC>(u_rotation, bdofs_right)};
+  std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bcs = {
+      std::make_shared<fem::DirichletBC<PetscScalar>>(u_clamp, bdofs_left),
+      std::make_shared<fem::DirichletBC<PetscScalar>>(u_rotation, bdofs_right)};
 
   HyperElasticProblem problem(u, L, a, bcs);
   nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
