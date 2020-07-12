@@ -147,28 +147,21 @@ public:
       _coefficients.set(c.first, c.second);
   }
 
-  /// Return original coefficient position for each coefficient (0 <= i
-  /// < n)
-  /// @return The position of coefficient i in original ufl form
-  ///         coefficients.
-  int original_coefficient_position(int i) const
-  {
-    return _coefficients.original_position(i);
-  }
-
-  /// Set constants based on their names
-  ///
-  /// This method is used in command-line workflow, when users set
-  /// constants to the form in cpp file.
-  ///
-  /// Names of the constants must agree with their names in UFL file.
-  void set_constants(
-      const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
-          constants)
+  Ì
+      /// Set constants based on their names
+      ///
+      /// This method is used in command-line workflow, when users set
+      /// constants to the form in cpp file.
+      ///
+      /// Names of the constants must agree with their names in UFL file.
+      void
+      set_constants(const std::map<
+                    std::string, std::shared_ptr<const function::Constant<T>>>&
+                        constants)
   {
     for (auto const& constant : constants)
     {
-      std::string name = constant.first;
+      const std::string name = constant.first;
 
       // Find matching string in existing constants
       const auto it = std::find_if(
