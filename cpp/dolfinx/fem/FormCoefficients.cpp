@@ -16,8 +16,9 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 FormCoefficients::FormCoefficients(
-    const std::vector<std::tuple<int, std::string,
-                                 std::shared_ptr<function::Function>>>& coeffs)
+    const std::vector<std::tuple<
+        int, std::string, std::shared_ptr<function::Function<PetscScalar>>>>&
+        coeffs)
 {
   for (const auto& coeff : coeffs)
   {
@@ -32,7 +33,7 @@ int FormCoefficients::size() const { return _coefficients.size(); }
 std::vector<int> FormCoefficients::offsets() const
 {
   std::vector<int> n = {0};
-  for (const auto & c : _coefficients)
+  for (const auto& c : _coefficients)
   {
     if (!c)
       throw std::runtime_error("Not all form coefficients have been set.");
@@ -42,7 +43,7 @@ std::vector<int> FormCoefficients::offsets() const
 }
 //-----------------------------------------------------------------------------
 void FormCoefficients::set(
-    int i, std::shared_ptr<const function::Function> coefficient)
+    int i, std::shared_ptr<const function::Function<PetscScalar>> coefficient)
 {
   if (i >= (int)_coefficients.size())
     _coefficients.resize(i + 1);
@@ -51,7 +52,8 @@ void FormCoefficients::set(
 }
 //-----------------------------------------------------------------------------
 void FormCoefficients::set(
-    std::string name, std::shared_ptr<const function::Function> coefficient)
+    std::string name,
+    std::shared_ptr<const function::Function<PetscScalar>> coefficient)
 {
   int i = get_index(name);
   if (i >= (int)_coefficients.size())
@@ -60,7 +62,8 @@ void FormCoefficients::set(
   _coefficients[i] = coefficient;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const function::Function> FormCoefficients::get(int i) const
+std::shared_ptr<const function::Function<PetscScalar>>
+FormCoefficients::get(int i) const
 {
   return _coefficients.at(i);
 }
