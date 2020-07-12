@@ -450,9 +450,7 @@ void fem(py::module& m)
           },
           "Return number of coefficients in form")
       .def("original_coefficient_position",
-           [](dolfinx::fem::Form<PetscScalar>& self, std::size_t i) {
-             self.coefficients().original_position(i);
-           })
+           &dolfinx::fem::Form<PetscScalar>::original_coefficient_position)
       .def("set_coefficient",
            [](dolfinx::fem::Form<PetscScalar>& self, std::size_t i,
               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>
