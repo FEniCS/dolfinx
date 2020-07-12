@@ -116,8 +116,8 @@ void assemble_matrix(
                      Eigen::RowMajor>
       coeffs = pack_coefficients(a);
 
-  const FormIntegrals& integrals = a.integrals();
-  using type = fem::FormIntegrals::Type;
+  const FormIntegrals<ScalarType>& integrals = a.integrals();
+  using type = fem::IntegralType;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
     const auto& fn = integrals.get_tabulate_tensor(type::cell, i);

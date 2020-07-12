@@ -401,15 +401,17 @@ void fem(py::module& m)
   //           py::return_value_policy::take_ownership);
 
   // dolfinx::fem::FormIntegrals
-  py::class_<dolfinx::fem::FormIntegrals,
-             std::shared_ptr<dolfinx::fem::FormIntegrals>>
+  py::class_<dolfinx::fem::FormIntegrals<PetscScalar>,
+             std::shared_ptr<dolfinx::fem::FormIntegrals<PetscScalar>>>
       formintegrals(m, "FormIntegrals",
                     "Holder for integral kernels and domains");
-  formintegrals.def("integral_ids", &dolfinx::fem::FormIntegrals::integral_ids)
+  formintegrals
+      .def("integral_ids",
+           &dolfinx::fem::FormIntegrals<PetscScalar>::integral_ids)
       .def(
           "integral_domains",
-          [](dolfinx::fem::FormIntegrals& self,
-             dolfinx::fem::FormIntegrals::Type type, int i) {
+          [](dolfinx::fem::FormIntegrals<PetscScalar>& self,
+             dolfinx::fem::IntegralType type, int i) {
             const std::vector<std::int32_t>& domains
                 = self.integral_domains(type, i);
 
@@ -419,12 +421,10 @@ void fem(py::module& m)
           py::return_value_policy::reference_internal,
           "Return active domains for given integral");
 
-  py::enum_<dolfinx::fem::FormIntegrals::Type>(formintegrals, "Type")
-      .value("cell", dolfinx::fem::FormIntegrals::Type::cell)
-      .value("exterior_facet",
-             dolfinx::fem::FormIntegrals::Type::exterior_facet)
-      .value("interior_facet",
-             dolfinx::fem::FormIntegrals::Type::interior_facet);
+  py::enum_<dolfinx::fem::IntegralType>(formintegrals, "Type")
+      .value("cell", dolfinx::fem::IntegralType::cell)
+      .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet)
+      .value("interior_facet", dolfinx::fem::IntegralType::interior_facet);
 
   // dolfinx::fem::Form
   py::class_<dolfinx::fem::Form, std::shared_ptr<dolfinx::fem::Form>>(
@@ -457,8 +457,8 @@ void fem(py::module& m)
            &dolfinx::fem::Form::set_interior_facet_domains)
       .def("set_vertex_domains", &dolfinx::fem::Form::set_vertex_domains)
       .def("set_tabulate_tensor",
-           [](dolfinx::fem::Form& self, dolfinx::fem::FormIntegrals::Type type,
-              int i, py::object addr) {
+           [](dolfinx::fem::Form& self, dolfinx::fem::IntegralType type, int i,
+              py::object addr) {
              auto tabulate_tensor_ptr = (void (*)(
                  PetscScalar*, const PetscScalar*, const PetscScalar*,
                  const double*, const int*, const std::uint8_t*,

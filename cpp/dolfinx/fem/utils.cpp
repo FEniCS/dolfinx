@@ -165,13 +165,13 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
 
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh->mpi_comm(), index_maps);
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+  if (a.integrals().num_integrals(fem::IntegralType::cell) > 0)
   {
     SparsityPatternBuilder::cells(pattern, mesh->topology(),
                                   {{dofmaps[0], dofmaps[1]}});
   }
 
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
+  if (a.integrals().num_integrals(fem::IntegralType::interior_facet) > 0)
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
@@ -180,7 +180,7 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
                                             {{dofmaps[0], dofmaps[1]}});
   }
 
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
+  if (a.integrals().num_integrals(fem::IntegralType::exterior_facet) > 0)
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
@@ -242,16 +242,16 @@ la::PETScMatrix fem::create_matrix_block(
         assert(patterns[row].back());
         auto& sp = patterns[row].back();
         assert(sp);
-        const FormIntegrals& integrals = a(row, col)->integrals();
-        if (integrals.num_integrals(FormIntegrals::Type::cell) > 0)
+        const FormIntegrals<PetscScalar>& integrals = a(row, col)->integrals();
+        if (integrals.num_integrals(IntegralType::cell) > 0)
           SparsityPatternBuilder::cells(*sp, mesh->topology(), dofmaps);
-        if (integrals.num_integrals(FormIntegrals::Type::interior_facet) > 0)
+        if (integrals.num_integrals(IntegralType::interior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
           SparsityPatternBuilder::interior_facets(*sp, mesh->topology(),
                                                   dofmaps);
         }
-        if (integrals.num_integrals(FormIntegrals::Type::exterior_facet) > 0)
+        if (integrals.num_integrals(IntegralType::exterior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
           SparsityPatternBuilder::exterior_facets(*sp, mesh->topology(),
@@ -593,7 +593,7 @@ fem::Form fem::create_form(
   }
 
   // Get list of integral IDs, and load tabulate tensor into memory for each
-  FormIntegrals integrals;
+  FormIntegrals<PetscScalar> integrals;
 
   std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
@@ -601,7 +601,7 @@ fem::Form fem::create_form(
   {
     ufc_integral* cell_integral = ufc_form.create_cell_integral(id);
     assert(cell_integral);
-    integrals.set_tabulate_tensor(FormIntegrals::Type::cell, id,
+    integrals.set_tabulate_tensor(IntegralType::cell, id,
                                   cell_integral->tabulate_tensor);
     std::free(cell_integral);
   }
@@ -627,7 +627,7 @@ fem::Form fem::create_form(
     ufc_integral* exterior_facet_integral
         = ufc_form.create_exterior_facet_integral(id);
     assert(exterior_facet_integral);
-    integrals.set_tabulate_tensor(FormIntegrals::Type::exterior_facet, id,
+    integrals.set_tabulate_tensor(IntegralType::exterior_facet, id,
                                   exterior_facet_integral->tabulate_tensor);
     std::free(exterior_facet_integral);
   }
@@ -640,7 +640,7 @@ fem::Form fem::create_form(
     ufc_integral* interior_facet_integral
         = ufc_form.create_interior_facet_integral(id);
     assert(interior_facet_integral);
-    integrals.set_tabulate_tensor(FormIntegrals::Type::interior_facet, id,
+    integrals.set_tabulate_tensor(IntegralType::interior_facet, id,
                                   interior_facet_integral->tabulate_tensor);
 
     std::free(interior_facet_integral);

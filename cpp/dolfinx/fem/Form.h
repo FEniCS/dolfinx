@@ -78,7 +78,8 @@ public:
   ///   (nonsimplified) form.
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
-       const FormIntegrals& integrals, const FormCoefficients& coefficients,
+       const FormIntegrals<PetscScalar>& integrals,
+       const FormCoefficients& coefficients,
        const std::vector<std::pair<
            std::string, std::shared_ptr<const function::Constant<PetscScalar>>>>
            constants);
@@ -172,7 +173,7 @@ public:
 
   /// Register the function for 'tabulate_tensor' for cell integral i
   void set_tabulate_tensor(
-      FormIntegrals::Type type, int i,
+      IntegralType type, int i,
       std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                          const double*, const int*, const std::uint8_t*,
                          const std::uint32_t)>
@@ -203,7 +204,7 @@ public:
   const FormCoefficients& coefficients() const;
 
   /// Access form integrals
-  const FormIntegrals& integrals() const;
+  const FormIntegrals<PetscScalar>& integrals() const;
 
   /// Access constants
   /// @return Vector of attached constants with their names. Names are
@@ -216,7 +217,7 @@ public:
 
 private:
   // Integrals associated with the Form
-  FormIntegrals _integrals;
+  FormIntegrals<PetscScalar> _integrals;
 
   // Coefficients associated with the Form
   FormCoefficients _coefficients;

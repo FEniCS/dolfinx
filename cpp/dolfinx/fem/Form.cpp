@@ -25,7 +25,8 @@ using namespace dolfinx::fem;
 Form::Form(
     const std::vector<std::shared_ptr<const function::FunctionSpace>>&
         function_spaces,
-    const FormIntegrals& integrals, const FormCoefficients& coefficients,
+    const FormIntegrals<PetscScalar>& integrals,
+    const FormCoefficients& coefficients,
     const std::vector<std::pair<
         std::string, std::shared_ptr<const function::Constant<PetscScalar>>>>
         constants)
@@ -48,7 +49,7 @@ Form::Form(
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces)
-    : Form(function_spaces, FormIntegrals(), FormCoefficients({}),
+    : Form(function_spaces, FormIntegrals<PetscScalar>(), FormCoefficients({}),
            std::vector<std::pair<
                std::string,
                std::shared_ptr<const function::Constant<PetscScalar>>>>())
@@ -148,11 +149,7 @@ void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
   _integrals.set_default_domains(*_mesh);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::Mesh> Form::mesh() const
-{
-  assert(_mesh);
-  return _mesh;
-}
+std::shared_ptr<const mesh::Mesh> Form::mesh() const { return _mesh; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::FunctionSpace> Form::function_space(int i) const
 {
@@ -160,7 +157,7 @@ std::shared_ptr<const function::FunctionSpace> Form::function_space(int i) const
 }
 //-----------------------------------------------------------------------------
 void Form::set_tabulate_tensor(
-    FormIntegrals::Type type, int i,
+    IntegralType type, int i,
     std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                        const double*, const int*, const std::uint8_t*,
                        const std::uint32_t)>
@@ -173,26 +170,24 @@ void Form::set_tabulate_tensor(
 //-----------------------------------------------------------------------------
 void Form::set_cell_domains(const mesh::MeshTags<int>& cell_domains)
 {
-  _integrals.set_domains(FormIntegrals::Type::cell, cell_domains);
+  _integrals.set_domains(IntegralType::cell, cell_domains);
 }
 //-----------------------------------------------------------------------------
 void Form::set_exterior_facet_domains(
     const mesh::MeshTags<int>& exterior_facet_domains)
 {
-  _integrals.set_domains(FormIntegrals::Type::exterior_facet,
-                         exterior_facet_domains);
+  _integrals.set_domains(IntegralType::exterior_facet, exterior_facet_domains);
 }
 //-----------------------------------------------------------------------------
 void Form::set_interior_facet_domains(
     const mesh::MeshTags<int>& interior_facet_domains)
 {
-  _integrals.set_domains(FormIntegrals::Type::interior_facet,
-                         interior_facet_domains);
+  _integrals.set_domains(IntegralType::interior_facet, interior_facet_domains);
 }
 //-----------------------------------------------------------------------------
 void Form::set_vertex_domains(const mesh::MeshTags<int>& vertex_domains)
 {
-  _integrals.set_domains(FormIntegrals::Type::vertex, vertex_domains);
+  _integrals.set_domains(IntegralType::vertex, vertex_domains);
 }
 //-----------------------------------------------------------------------------
 fem::FormCoefficients& Form::coefficients() { return _coefficients; }
@@ -209,5 +204,8 @@ Form::constants() const
   return _constants;
 }
 //-----------------------------------------------------------------------------
-const fem::FormIntegrals& Form::integrals() const { return _integrals; }
+const fem::FormIntegrals<PetscScalar>& Form::integrals() const
+{
+  return _integrals;
+}
 //-----------------------------------------------------------------------------
