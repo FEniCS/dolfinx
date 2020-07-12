@@ -9,7 +9,6 @@
 #include <array>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
-#include <petscsys.h>
 #include <vector>
 
 namespace dolfinx
