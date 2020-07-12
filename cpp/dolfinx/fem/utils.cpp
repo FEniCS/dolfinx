@@ -571,7 +571,6 @@ std::shared_ptr<fem::Form<PetscScalar>> fem::create_form(
   auto L = std::make_shared<fem::Form<PetscScalar>>(
       dolfinx::fem::create_form(*form, spaces));
   std::free(form);
-
   return L;
 }
 //-----------------------------------------------------------------------------

@@ -146,15 +146,6 @@ public:
       _coefficients.set(c.first, c.second);
   }
 
-  /// Return original coefficient position for each coefficient (0 <= i
-  /// < n)
-  /// @return The position of coefficient i in original ufl form
-  ///         coefficients.
-  int original_coefficient_position(int i) const
-  {
-    return _coefficients.original_position(i);
-  }
-
   /// Set constants based on their names
   ///
   /// This method is used in command-line workflow, when users set

@@ -424,7 +424,6 @@ void fem(py::module& m)
              dolfinx::fem::IntegralType type, int i) {
             const std::vector<std::int32_t>& domains
                 = self.integral_domains(type, i);
-
             return py::array_t<std::int32_t>(domains.size(), domains.data(),
                                              py::none());
           },
@@ -443,6 +442,10 @@ void fem(py::module& m)
       .def(py::init<std::vector<
                std::shared_ptr<const dolfinx::function::FunctionSpace>>>())
       .def("integrals", &dolfinx::fem::Form<PetscScalar>::integrals)
+      .def_property_readonly(
+          "coefficients",
+          py::overload_cast<>(&dolfinx::fem::Form<PetscScalar>::coefficients,
+                              py::const_))
       .def(
           "num_coefficients",
           [](const dolfinx::fem::Form<PetscScalar>& self) {
@@ -450,7 +453,9 @@ void fem(py::module& m)
           },
           "Return number of coefficients in form")
       .def("original_coefficient_position",
-           &dolfinx::fem::Form<PetscScalar>::original_coefficient_position)
+           [](dolfinx::fem::Form<PetscScalar>& self, int i) {
+             return self.coefficients().original_position(i);
+           })
       .def("set_coefficient",
            [](dolfinx::fem::Form<PetscScalar>& self, std::size_t i,
               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>

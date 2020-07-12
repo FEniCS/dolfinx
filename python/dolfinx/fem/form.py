@@ -59,8 +59,7 @@ class Form:
         original_coefficients = form.coefficients()
         for i in range(self._cpp_object.num_coefficients()):
             j = self._cpp_object.original_coefficient_position(i)
-            self._cpp_object.set_coefficient(
-                i, original_coefficients[j]._cpp_object)
+            self._cpp_object.set_coefficient(i, original_coefficients[j]._cpp_object)
 
         # Constants are set based on their position in original form
         original_constants = [c._cpp_object for c in form.constants()]
