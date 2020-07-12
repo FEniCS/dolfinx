@@ -108,7 +108,7 @@ public:
   /// @param[in] coefficients Map from coefficient index to the
   ///                         coefficient
   void set_coefficients(
-      const std::map<std::size_t,
+      const std::map<int,
                      std::shared_ptr<const function::Function<PetscScalar>>>&
           coefficients);
 

@@ -50,10 +50,7 @@ Form::Form(
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces)
     : Form(function_spaces, FormIntegrals<PetscScalar>(),
-           FormCoefficients<PetscScalar>({}),
-           std::vector<std::pair<
-               std::string,
-               std::shared_ptr<const function::Constant<PetscScalar>>>>())
+           FormCoefficients<PetscScalar>({}), {})
 {
   // Do nothing
 }
@@ -61,8 +58,7 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
 int Form::rank() const { return _function_spaces.size(); }
 //-----------------------------------------------------------------------------
 void Form::set_coefficients(
-    const std::map<std::size_t,
-                   std::shared_ptr<const function::Function<PetscScalar>>>&
+    const std::map<int, std::shared_ptr<const function::Function<PetscScalar>>>&
         coefficients)
 {
   for (const auto& c : coefficients)
