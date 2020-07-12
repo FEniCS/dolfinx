@@ -379,3 +379,26 @@ void dolfinx::la::scatter_local_vectors(
   VecGhostRestoreLocalForm(x, &x_local);
 }
 //-----------------------------------------------------------------------------
+template <typename T>
+T norm(const dolfinx::la::Vector<T>& v)
+{
+  const Eigen::Matrix<T, Eigen::Dynamic, 1>& arr = v.array();
+  const std::int32_t size_local = v.map()->size_local();
+
+  double result = std::transform_reduce(arr.data(), arr.data() + size_local,
+                                        0.0, std::plus<double>(),
+                                        [](T val) { return std::norm(val); });
+
+  double global_result;
+  MPI_Allreduce(&result, &global_result, 1, MPI_DOUBLE, MPI_SUM,
+                v.map()->comm());
+
+  return std::sqrt(global_result);
+}
+
+template double norm(const dolfinx::la::Vector<double>&);
+template float norm(const dolfinx::la::Vector<float>&);
+template std::complex<double>
+norm(const dolfinx::la::Vector<std::complex<double>>&);
+template std::complex<float>
+norm(const dolfinx::la::Vector<std::complex<float>>&);

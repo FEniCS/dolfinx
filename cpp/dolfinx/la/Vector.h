@@ -43,7 +43,7 @@ public:
   /// Move Assignment operator
   Vector& operator=(Vector&& x) = default;
 
-  /// Get local part of the vector (const version)
+  /// IndexMap
   std::shared_ptr<const common::IndexMap> map() const { return _map; }
 
   /// Get local part of the vector (const version)

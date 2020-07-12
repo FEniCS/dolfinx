@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "Vector.h"
 #include <Eigen/Dense>
 #include <array>
 #include <dolfinx/common/MPI.h>
@@ -98,5 +99,10 @@ void scatter_local_vectors(
     const std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,
     const std::vector<const common::IndexMap*>& maps);
 
+/// Norm
+template <typename T>
+void norm(const la::Vector<T>& v);
+
 } // namespace la
+
 } // namespace dolfinx
