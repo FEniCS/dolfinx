@@ -719,7 +719,7 @@ Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 fem::pack_coefficients(const fem::Form& form)
 {
   // Get form coefficient offsets amd dofmaps
-  const fem::FormCoefficients& coefficients = form.coefficients();
+  const fem::FormCoefficients<PetscScalar>& coefficients = form.coefficients();
   const std::vector<int>& offsets = coefficients.offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
 

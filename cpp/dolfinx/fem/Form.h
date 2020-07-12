@@ -79,7 +79,7 @@ public:
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
        const FormIntegrals<PetscScalar>& integrals,
-       const FormCoefficients& coefficients,
+       const FormCoefficients<PetscScalar>& coefficients,
        const std::vector<std::pair<
            std::string, std::shared_ptr<const function::Constant<PetscScalar>>>>
            constants);
@@ -198,10 +198,10 @@ public:
   void set_vertex_domains(const mesh::MeshTags<int>& vertex_domains);
 
   /// Access coefficients
-  FormCoefficients& coefficients();
+  FormCoefficients<PetscScalar>& coefficients();
 
   /// Access coefficients
-  const FormCoefficients& coefficients() const;
+  const FormCoefficients<PetscScalar>& coefficients() const;
 
   /// Access form integrals
   const FormIntegrals<PetscScalar>& integrals() const;
@@ -220,7 +220,7 @@ private:
   FormIntegrals<PetscScalar> _integrals;
 
   // Coefficients associated with the Form
-  FormCoefficients _coefficients;
+  FormCoefficients<PetscScalar> _coefficients;
 
   // Constants associated with the Form
   std::vector<std::pair<std::string,

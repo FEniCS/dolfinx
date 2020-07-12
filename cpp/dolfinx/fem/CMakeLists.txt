@@ -32,8 +32,6 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Form.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FormCoefficients.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FormIntegrals.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ReferenceCellGeometry.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPatternBuilder.cpp
 )

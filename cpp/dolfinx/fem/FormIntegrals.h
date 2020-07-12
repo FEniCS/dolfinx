@@ -17,8 +17,6 @@ namespace dolfinx
 namespace mesh
 {
 class Mesh;
-template <typename T>
-class MeshTags;
 } // namespace mesh
 
 namespace fem
@@ -53,9 +51,7 @@ public:
   get_tabulate_tensor(IntegralType type, int i) const
   {
     int type_index = static_cast<int>(type);
-    const std::vector<struct FormIntegrals::Integral>& integrals
-        = _integrals.at(type_index);
-    return integrals.at(i).tabulate;
+    return _integrals.at(type_index).at(i).tabulate;
   }
 
   /// Set the function for 'tabulate_tensor' for integral i of
@@ -87,10 +83,9 @@ public:
       ++pos;
     }
 
-    // Create new Integral and insert
-    struct FormIntegrals::Integral new_integral
-        = {fn, i, std::vector<std::int32_t>()};
-    integrals.insert(integrals.begin() + pos, new_integral);
+    // Insert new Integral
+    integrals.insert(integrals.begin() + pos,
+                     {fn, i, std::vector<std::int32_t>()});
   }
 
   /// Number of integrals of given type
@@ -126,7 +121,7 @@ public:
   const std::vector<std::int32_t>& integral_domains(IntegralType type,
                                                     int i) const
   {
-    int type_index = static_cast<int>(type);
+    const int type_index = static_cast<int>(type);
     return _integrals.at(type_index).at(i).active_entities;
   }
 
@@ -137,7 +132,7 @@ public:
   /// @param[in] marker MeshTags mapping entities to integrals
   void set_domains(IntegralType type, const mesh::MeshTags<int>& marker)
   {
-    int type_index = static_cast<int>(type);
+    const int type_index = static_cast<int>(type);
     std::vector<struct Integral>& integrals = _integrals.at(type_index);
     if (integrals.size() == 0)
       return;
@@ -184,7 +179,6 @@ public:
     {
       auto f_to_c = topology.connectivity(tdim - 1, tdim);
       assert(f_to_c);
-
       if (type == IntegralType::exterior_facet)
       {
         // Only need to consider shared facets when there are no ghost cells
@@ -303,7 +297,7 @@ public:
     // owned interior facets.
     std::vector<struct FormIntegrals::Integral>& inf_integrals
         = _integrals[static_cast<int>(IntegralType::interior_facet)];
-    if (inf_integrals.size() > 0 and inf_integrals[0].id == -1)
+    if (!inf_integrals.empty() and inf_integrals[0].id == -1)
     {
       // If there is a default integral, define it only on interior facets
       inf_integrals[0].active_entities.clear();
@@ -311,7 +305,6 @@ public:
       // Get number of facets owned by this process
       mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
       assert(topology.index_map(tdim - 1));
-
       const int num_facets = topology.index_map(tdim - 1)->size_local();
       auto f_to_c = topology.connectivity(tdim - 1, tdim);
       inf_integrals[0].active_entities.reserve(num_facets);
@@ -328,9 +321,8 @@ private:
   // integrate on
   struct Integral
   {
-    std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                       const double*, const int*, const std::uint8_t*,
-                       const std::uint32_t)>
+    std::function<void(T*, const T*, const T*, const double*, const int*,
+                       const std::uint8_t*, const std::uint32_t)>
         tabulate;
     int id;
     std::vector<std::int32_t> active_entities;

@@ -26,7 +26,7 @@ Form::Form(
     const std::vector<std::shared_ptr<const function::FunctionSpace>>&
         function_spaces,
     const FormIntegrals<PetscScalar>& integrals,
-    const FormCoefficients& coefficients,
+    const FormCoefficients<PetscScalar>& coefficients,
     const std::vector<std::pair<
         std::string, std::shared_ptr<const function::Constant<PetscScalar>>>>
         constants)
@@ -49,7 +49,8 @@ Form::Form(
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces)
-    : Form(function_spaces, FormIntegrals<PetscScalar>(), FormCoefficients({}),
+    : Form(function_spaces, FormIntegrals<PetscScalar>(),
+           FormCoefficients<PetscScalar>({}),
            std::vector<std::pair<
                std::string,
                std::shared_ptr<const function::Constant<PetscScalar>>>>())
@@ -190,9 +191,12 @@ void Form::set_vertex_domains(const mesh::MeshTags<int>& vertex_domains)
   _integrals.set_domains(IntegralType::vertex, vertex_domains);
 }
 //-----------------------------------------------------------------------------
-fem::FormCoefficients& Form::coefficients() { return _coefficients; }
+fem::FormCoefficients<PetscScalar>& Form::coefficients()
+{
+  return _coefficients;
+}
 //-----------------------------------------------------------------------------
-const fem::FormCoefficients& Form::coefficients() const
+const fem::FormCoefficients<PetscScalar>& Form::coefficients() const
 {
   return _coefficients;
 }
