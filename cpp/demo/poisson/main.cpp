@@ -163,8 +163,8 @@ int main(int argc, char* argv[])
           return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
         });
 
-  std::vector<std::shared_ptr<const fem::DirichletBC>> bc
-      = {std::make_shared<fem::DirichletBC>(u0, bdofs)};
+  std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bc
+      = {std::make_shared<fem::DirichletBC<PetscScalar>>(u0, bdofs)};
 
   f->interpolate([](auto& x) {
     auto dx = Eigen::square(x - 0.5);

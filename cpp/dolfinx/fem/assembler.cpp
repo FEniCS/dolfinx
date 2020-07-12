@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2019 Garth N. Wells
+// Copyright (C) 2018-2020 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -25,43 +25,26 @@ using namespace dolfinx::fem;
 
 namespace
 {
-
+const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                        const std::int32_t*, const PetscScalar*)>
+make_petsc_lambda(Mat A, [[maybe_unused]] std::vector<PetscInt>& cache)
+{
+  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                          const std::int32_t*, const PetscScalar*)>
+      f = [A, &cache](std::int32_t m, const std::int32_t* rows, std::int32_t n,
+                      const std::int32_t* cols, const PetscScalar* vals) {
+        PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
-const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                        const std::int32_t*, const PetscScalar*)>
-make_petsc_lambda(Mat A, std::vector<PetscInt>& tmp_dofs_petsc64)
-{
-
-  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
-      f = [A, &tmp_dofs_petsc64](std::int32_t nrow, const std::int32_t* rows,
-                                 std::int32_t ncol, const std::int32_t* cols,
-                                 const PetscScalar* y) {
-        tmp_dofs_petsc64.resize(nrow + ncol);
-        std::copy(rows, rows + nrow, tmp_dofs_petsc64.begin());
-        std::copy(cols, cols + ncol, tmp_dofs_petsc64.begin() + nrow);
-        const PetscInt *rows1 = tmp_dofs_petsc64.data(), *cols1 = rows1 + nrow;
-        PetscErrorCode ierr
-            = MatSetValuesLocal(A, nrow, rows1, ncol, cols1, y, ADD_VALUES);
-#ifdef DEBUG
-        if (ierr != 0)
-          la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-#endif
-        return 0;
-      };
-  return f;
-}
+        cache.resize(m + n);
+        std::copy(rows, rows + m, cache.begin());
+        std::copy(cols, cols + n, cache.begin() + m);
+        const PetscInt *rows1 = cache.data(), *cols1 = rows1 + m;
+        ierr = MatSetValuesLocal(A, m, rows1, n, cols1, vals, ADD_VALUES);
 #else
-const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                        const std::int32_t*, const PetscScalar*)>
-make_petsc_lambda(Mat A, std::vector<PetscInt>&)
-{
-  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
-      f = [A](std::int32_t nrow, const std::int32_t* rows, std::int32_t ncol,
-              const std::int32_t* cols, const PetscScalar* y) {
-        PetscErrorCode ierr
-            = MatSetValuesLocal(A, nrow, rows, ncol, cols, y, ADD_VALUES);
+        cache.data(); // Dummy call to avoid unused variable error
+        ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, ADD_VALUES);
+#endif
+
 #ifdef DEBUG
         if (ierr != 0)
           la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
@@ -70,8 +53,6 @@ make_petsc_lambda(Mat A, std::vector<PetscInt>&)
       };
   return f;
 }
-#endif
-
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -104,7 +85,8 @@ void fem::assemble_vector(
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form>>& a,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale)
 {
   Vec b_local;
@@ -151,7 +133,8 @@ void fem::apply_lifting(
 void fem::apply_lifting(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>>& a,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<
         Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
     double scale)
@@ -160,7 +143,8 @@ void fem::apply_lifting(
 }
 //-----------------------------------------------------------------------------
 Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> fem::assemble_matrix_eigen(
-    const Form& a, const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
+    const Form& a,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs)
 {
   // Index maps for dof ranges
   auto map0 = a.function_space(0)->dofmap()->index_map;
@@ -193,24 +177,20 @@ Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> fem::assemble_matrix_eigen(
   // Lambda function creating Eigen::Triplet array
   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const PetscScalar*)>
-      mat_set_values_local
-      = [&triplets](std::int32_t nrow, const std::int32_t* rows,
-                    std::int32_t ncol, const std::int32_t* cols,
-                    const PetscScalar* y) {
-          for (int i = 0; i < nrow; ++i)
-          {
-            int row = rows[i];
-            for (int j = 0; j < ncol; ++j)
-            {
-              int col = cols[j];
-              triplets.emplace_back(row, col, y[i * ncol + j]);
-            }
-          }
-          return 0;
-        };
+      mat_set_values = [&triplets](std::int32_t nrow, const std::int32_t* rows,
+                                   std::int32_t ncol, const std::int32_t* cols,
+                                   const PetscScalar* y) {
+        for (int i = 0; i < nrow; ++i)
+        {
+          int row = rows[i];
+          for (int j = 0; j < ncol; ++j)
+            triplets.emplace_back(row, cols[j], y[i * ncol + j]);
+        }
+        return 0;
+      };
 
   // Assemble
-  impl::assemble_matrix(mat_set_values_local, a, dof_marker0, dof_marker1);
+  impl::assemble_matrix(mat_set_values, a, dof_marker0, dof_marker1);
 
   Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> mat(
       map0->block_size() * (map0->size_local() + map0->num_ghosts()),
@@ -221,7 +201,7 @@ Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> fem::assemble_matrix_eigen(
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(
     Mat A, const Form& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs)
 {
   // Index maps for dof ranges
   auto map0 = a.function_space(0)->dofmap()->index_map;
@@ -252,10 +232,10 @@ void fem::assemble_matrix(
   std::vector<PetscInt> tmp_dofs_petsc64;
   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const PetscScalar*)>
-      mat_set_values_local = make_petsc_lambda(A, tmp_dofs_petsc64);
+      mat_set_values = make_petsc_lambda(A, tmp_dofs_petsc64);
 
   // Assemble
-  impl::assemble_matrix(mat_set_values_local, a, dof_marker0, dof_marker1);
+  impl::assemble_matrix(mat_set_values, a, dof_marker0, dof_marker1);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
@@ -264,25 +244,21 @@ void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
   std::vector<PetscInt> tmp_dofs_petsc64;
   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const PetscScalar*)>
-      mat_set_values_local = make_petsc_lambda(A, tmp_dofs_petsc64);
+      mat_set_values = make_petsc_lambda(A, tmp_dofs_petsc64);
 
-  impl::assemble_matrix(mat_set_values_local, a, bc0, bc1);
+  impl::assemble_matrix(mat_set_values, a, bc0, bc1);
 }
 //-----------------------------------------------------------------------------
 void fem::add_diagonal(
     Mat A, const function::FunctionSpace& V,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     PetscScalar diagonal)
 {
   for (const auto& bc : bcs)
   {
     assert(bc);
     if (V.contains(*bc->function_space()))
-    {
-      const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& owned_dofs
-          = bc->dofs_owned().col(0);
-      add_diagonal(A, owned_dofs, diagonal);
-    }
+      add_diagonal(A, bc->dofs_owned().col(0), diagonal);
   }
 }
 //-----------------------------------------------------------------------------
@@ -298,21 +274,22 @@ void fem::add_diagonal(
   // NOTE: MatSetValuesLocal uses ADD_VALUES, hence it requires that the
   //       diagonal is zero before this function is called.
 
-  std::vector<PetscInt> tmp_dofs_petsc64;
-  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
-      mat_set_values_local = make_petsc_lambda(A, tmp_dofs_petsc64);
-
   for (Eigen::Index i = 0; i < rows.size(); ++i)
   {
-    const std::int32_t row = rows(i);
-    mat_set_values_local(1, &row, 1, &row, &diagonal);
+    const PetscInt row = rows(i);
+    PetscErrorCode ierr
+        = MatSetValuesLocal(A, 1, &row, 1, &row, &diagonal, ADD_VALUES);
+#ifdef DEBUG
+    if (ierr != 0)
+      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
   }
 }
 //-----------------------------------------------------------------------------
-void fem::set_bc(Vec b,
-                 const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
-                 const Vec x0, double scale)
+void fem::set_bc(
+    Vec b,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
+    const Vec x0, double scale)
 {
   // VecGhostGetLocalForm(b, &b_local);
   PetscInt n = 0;
@@ -345,7 +322,7 @@ void fem::set_bc(Vec b,
 //-----------------------------------------------------------------------------
 void fem::set_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
@@ -358,9 +335,10 @@ void fem::set_bc(
   }
 }
 //-----------------------------------------------------------------------------
-void fem::set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                 const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
-                 double scale)
+void fem::set_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
+    double scale)
 {
   for (const auto& bc : bcs)
   {
@@ -369,34 +347,39 @@ void fem::set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>
-fem::bcs_rows(const std::vector<const Form*>& L,
-              const std::vector<std::shared_ptr<const fem::DirichletBC>>& bcs)
+std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>
+fem::bcs_rows(
+    const std::vector<const Form*>& L,
+    const std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>&
+        bcs)
 {
   // Pack DirichletBC pointers for rows
-  std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>> bcs0(
-      L.size());
+  std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>
+      bcs0(L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
-    for (const std::shared_ptr<const DirichletBC>& bc : bcs)
+    for (const std::shared_ptr<const DirichletBC<PetscScalar>>& bc : bcs)
       if (L[i]->function_space(0)->contains(*bc->function_space()))
         bcs0[i].push_back(bc);
 
   return bcs0;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
-fem::bcs_cols(const std::vector<std::vector<std::shared_ptr<const Form>>>& a,
-              const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
+std::vector<std::vector<
+    std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>>
+fem::bcs_cols(
+    const std::vector<std::vector<std::shared_ptr<const Form>>>& a,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs)
 {
   // Pack DirichletBC pointers for columns
-  std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
+  std::vector<std::vector<
+      std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>>
       bcs1(a.size());
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     for (std::size_t j = 0; j < a[i].size(); ++j)
     {
       bcs1[i].resize(a[j].size());
-      for (const std::shared_ptr<const DirichletBC>& bc : bcs)
+      for (const std::shared_ptr<const DirichletBC<PetscScalar>>& bc : bcs)
       {
         // FIXME: handle case where a[i][j] is null
         if (a[i][j])
