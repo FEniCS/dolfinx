@@ -72,18 +72,19 @@ compute_face_permutations_simplex(
         e_vertices[j] = it - cell_vertices.data();
       }
 
-      std::cout << "\n";
-      std::cout << "{" << e_vertices[0] << " " << e_vertices[1] << " "
-         << e_vertices[2] << "}\n";
-      std::cout << "{" << vertices[0] << " " << vertices[1] << " "
-         << vertices[2] << "}\n";
-
-      std::uint8_t rots__ = 0;
+      // Number of rotations
+      std::uint8_t rots = 0;
       for (int v = 1; v < 3; ++v)
-        if (e_vertices[v] < e_vertices[rots__])
-          rots__ = v;
-      std::cout << unsigned(rots__) << "\n";
+        if (e_vertices[v] < e_vertices[rots])
+          rots = v;
 
+      // pre is the number of the next vertex clockwise from the lowest
+      // numbered vertex
+      const int pre = rots == 0 ? e_vertices[3 - 1] : e_vertices[rots - 1];
+
+      // post is the number of the next vertex anticlockwise from the
+      // lowest numbered vertex
+      const int post = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
 
       vertices[0] = global_min;
       vertices[2] = global_max;
@@ -106,12 +107,6 @@ compute_face_permutations_simplex(
          << vertices[2] << "}\n";
 
 
-      // Number of rotations
-      std::uint8_t rots = 0;
-      for (int v = 1; v < 3; ++v)
-        if (e_vertices[v] < e_vertices[rots])
-          rots = v;
-
       std::uint8_t g_rots = 0;
       for (int v = 1; v < 3; ++v)
         if (_vertices[v] < _vertices[g_rots])
@@ -125,24 +120,14 @@ compute_face_permutations_simplex(
       // lowest numbered vertex
       const int g_post = g_rots == 3 - 1 ? _vertices[0] : _vertices[g_rots + 1];
 
-      // pre is the number of the next vertex clockwise from the lowest
-      // numbered vertex
-      const int pre = rots == 0 ? e_vertices[3 - 1] : e_vertices[rots - 1];
-
-      // post is the number of the next vertex anticlockwise from the
-      // lowest numbered vertex
-      const int post = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
-
       std::uint8_t rots2 = 0;
       if (g_post > g_pre)
-        rots2 = rots__ <= g_rots ? g_rots - rots__ : g_rots + 3 - rots__;
+        rots2 = rots <= g_rots ? g_rots - rots : g_rots + 3 - rots;
       else
-        rots2 = g_rots <= rots__ ? rots__ - g_rots : rots__ + 3 - g_rots;
-
-      assert (rots == rots2);
+        rots2 = g_rots <= rots ? rots - g_rots : rots + 3 - g_rots;
 
 
-      face_perm[c][3 * i] = (post > pre);// == (g_post < g_pre);
+      face_perm[c][3 * i] = (post > pre) == (g_post < g_pre);
       face_perm[c][3 * i + 1] = rots2 % 2;
       face_perm[c][3 * i + 2] = rots2 / 2;
       //      std::cout << face_perm[c][3 * i] << " " << face_perm[c][3 * i + 1]
