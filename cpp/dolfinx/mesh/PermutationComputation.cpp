@@ -36,12 +36,29 @@ compute_face_permutations_simplex(
     {
       // Get the face
       const int face = cell_faces[i];
-      auto vertices = im->local_to_global(f_to_v.links(face));
+      auto _vertices = im->local_to_global(f_to_v.links(face));
+
+      // Number of rotations
+      std::uint8_t global_min = _vertices[0];
+      std::uint8_t global_max = _vertices[0];
+      for (int v = 1; v < 3; ++v)
+      {
+        if (_vertices[v] < global_min)
+          global_min = _vertices[v];
+        if (_vertices[v] > global_max)
+          global_max = _vertices[v];
+      }
 
       // Orient that triangle so the the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
       // lower number than the next vertex clockwise. Find the index of
       // the lowest numbered vertex
+
+      std::array<std::int32_t, 3> vertices;
+      vertices[0] = global_min;
+      vertices[2] = global_max;
+      vertices[1] = _vertices[0] + _vertices[1] + _vertices[2] - global_max
+                    - global_min;
 
       // Store local vertex indices here
       std::array<std::int32_t, 3> e_vertices;
@@ -61,6 +78,17 @@ compute_face_permutations_simplex(
       for (int v = 1; v < 3; ++v)
         if (e_vertices[v] < e_vertices[rots])
           rots = v;
+      //      rots = rots >= global_rots ? rots - global_rots : rots + 3 -
+      //      global_rots; rots = rots <= global_rots ? global_rots - rots :
+      //      global_rots + 3 - rots;
+
+      //      std::cout << "{" << e_vertices[0] << " " << e_vertices[1] << " "
+      //      << e_vertices[2] << "}\n"; std::cout << "{" << vertices[0] << " "
+      //      << vertices[1] << " " << vertices[2] << "}\n"; std::cout << "r: "
+      //      << unsigned(minv) << "\n"; std::cout << "g: " <<
+      //      unsigned(global_minv) << "\n";
+
+      //      const std::uint8_t rots = minv;
 
       // pre is the number of the next vertex clockwise from the lowest
       // numbered vertex
@@ -70,9 +98,14 @@ compute_face_permutations_simplex(
       // lowest numbered vertex
       const int post = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
 
-      face_perm[c][3 * i] = (post > pre);
+      //      std::cout << pre << " " << post << " :: " << global_pre << " " <<
+      //      global_post << "\n";
+
+      face_perm[c][3 * i] = (post > pre); // == (global_post < global_pre);
       face_perm[c][3 * i + 1] = rots % 2;
       face_perm[c][3 * i + 2] = rots / 2;
+      //      std::cout << face_perm[c][3 * i] << " " << face_perm[c][3 * i + 1]
+      //      << " " << face_perm[c][3 * i + 2] << "\n\n";
     }
   }
   return face_perm;
@@ -190,8 +223,6 @@ compute_edge_reflections(const mesh::Topology& topology)
       edges_per_cell, c_to_v->num_nodes());
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    std::cout << "{" << c_to_v->links(c) << "}\n<"
-              << im->local_to_global(c_to_v->links(c)) << ">\n";
     auto cell_vertices = im->local_to_global(c_to_v->links(c));
     auto cell_edges = c_to_e->links(c);
     for (int i = 0; i < edges_per_cell; ++i)
@@ -211,7 +242,7 @@ compute_edge_reflections(const mesh::Topology& topology)
 
       // The number of reflections. Comparing iterators directly instead
       // of values they point to is sufficient here.
-      edge_perm[c][i] = (it1 < it0) == (vertices[1] < vertices[0]);
+      edge_perm[c][i] = (it1 < it0) == (vertices[1] > vertices[0]);
     }
   }
   return edge_perm;
