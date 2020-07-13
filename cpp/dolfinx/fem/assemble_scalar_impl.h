@@ -81,7 +81,7 @@ T assemble_scalar(const fem::Form<T>& M)
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
       = pack_coefficients(M);
 
-  const FormIntegrals<PetscScalar>& integrals = M.integrals();
+  const FormIntegrals<T>& integrals = M.integrals();
   using type = fem::IntegralType;
   T value(0);
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)

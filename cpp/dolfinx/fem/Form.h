@@ -107,8 +107,7 @@ public:
   explicit Form(
       const std::vector<std::shared_ptr<const function::FunctionSpace>>&
           function_spaces)
-      : Form(function_spaces, FormIntegrals<T>(),
-             FormCoefficients<PetscScalar>({}), {})
+      : Form(function_spaces, FormIntegrals<T>(), FormCoefficients<T>({}), {})
   {
     // Do nothing
   }
@@ -164,8 +163,7 @@ public:
       const auto it = std::find_if(
           _constants.begin(), _constants.end(),
           [&](const std::pair<
-              std::string,
-              std::shared_ptr<const function::Constant<PetscScalar>>>& q) {
+              std::string, std::shared_ptr<const function::Constant<T>>>& q) {
             return (q.first == name);
           });
 
@@ -252,38 +250,6 @@ public:
     _integrals.set_tabulate_tensor(type, i, fn);
     if (i == -1 and _mesh)
       _integrals.set_default_domains(*_mesh);
-  }
-
-  /// Set cell domains
-  /// @param[in] cell_domains The cell domains
-  void set_cell_domains(const mesh::MeshTags<int>& cell_domains)
-  {
-    _integrals.set_domains(IntegralType::cell, cell_domains);
-  }
-
-  /// Set exterior facet domains
-  /// @param[in] exterior_facet_domains The exterior facet domains
-  void
-  set_exterior_facet_domains(const mesh::MeshTags<int>& exterior_facet_domains)
-  {
-    _integrals.set_domains(IntegralType::exterior_facet,
-                           exterior_facet_domains);
-  }
-
-  /// Set interior facet domains
-  /// @param[in] interior_facet_domains The interior facet domains
-  void
-  set_interior_facet_domains(const mesh::MeshTags<int>& interior_facet_domains)
-  {
-    _integrals.set_domains(IntegralType::interior_facet,
-                           interior_facet_domains);
-  }
-
-  /// Set vertex domains
-  /// @param[in] vertex_domains The vertex domains.
-  void set_vertex_domains(const mesh::MeshTags<int>& vertex_domains)
-  {
-    _integrals.set_domains(IntegralType::vertex, vertex_domains);
   }
 
   /// Access coefficients

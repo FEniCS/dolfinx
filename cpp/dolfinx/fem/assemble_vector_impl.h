@@ -427,7 +427,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
       = pack_coefficients(L);
 
-  const FormIntegrals<PetscScalar>& integrals = L.integrals();
+  const FormIntegrals<T>& integrals = L.integrals();
   using type = fem::IntegralType;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {

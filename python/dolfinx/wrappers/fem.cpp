@@ -73,8 +73,12 @@ namespace dolfinx_wrappers
 {
 void fem(py::module& m)
 {
+  // NOTE: &dolfinx::fem::get_coeffs_from_ufc_form is not used, but
+  // removing it seems to lead to an undefined symbol linking error with
+  // clang (but not with gcc). Remove later if possible.
+  m.def("get_coeffs_from_ufc_form", &dolfinx::fem::get_coeffs_from_ufc_form);
+
   // utils
-//   m.def("get_coeffs_from_ufc_form", &dolfinx::fem::get_coeffs_from_ufc_form);
   m.def(
       "block_function_spaces",
       [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&
@@ -445,7 +449,8 @@ void fem(py::module& m)
       m, "Form", "Variational form object")
       .def(py::init<std::vector<
                std::shared_ptr<const dolfinx::function::FunctionSpace>>>())
-      .def("integrals", &dolfinx::fem::Form<PetscScalar>::integrals)
+      .def_property_readonly("integrals",
+                             &dolfinx::fem::Form<PetscScalar>::integrals)
       .def_property_readonly(
           "coefficients",
           py::overload_cast<>(&dolfinx::fem::Form<PetscScalar>::coefficients,
@@ -469,14 +474,6 @@ void fem(py::module& m)
                const dolfinx::function::Constant<PetscScalar>>>&>(
                &dolfinx::fem::Form<PetscScalar>::set_constants))
       .def("set_mesh", &dolfinx::fem::Form<PetscScalar>::set_mesh)
-      .def("set_cell_domains",
-           &dolfinx::fem::Form<PetscScalar>::set_cell_domains)
-      .def("set_exterior_facet_domains",
-           &dolfinx::fem::Form<PetscScalar>::set_exterior_facet_domains)
-      .def("set_interior_facet_domains",
-           &dolfinx::fem::Form<PetscScalar>::set_interior_facet_domains)
-      .def("set_vertex_domains",
-           &dolfinx::fem::Form<PetscScalar>::set_vertex_domains)
       .def("set_tabulate_tensor",
            [](dolfinx::fem::Form<PetscScalar>& self,
               dolfinx::fem::IntegralType type, int i, py::object addr) {
