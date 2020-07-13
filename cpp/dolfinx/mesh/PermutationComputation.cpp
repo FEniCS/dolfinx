@@ -73,63 +73,42 @@ compute_face_permutations_simplex(
       }
 
       // Number of rotations
+      std::uint8_t min_v = 0;
+      for (int v = 1; v < 3; ++v)
+        if (e_vertices[v] < e_vertices[min_v])
+          min_v = v;
+
+      // pre is the number of the next vertex clockwise from the lowest
+      // numbered vertex
+      const int pre = min_v == 0 ? e_vertices[3 - 1] : e_vertices[min_v - 1];
+
+      // post is the number of the next vertex anticlockwise from the
+      // lowest numbered vertex
+      const int post = min_v == 3 - 1 ? e_vertices[0] : e_vertices[min_v + 1];
+
+      std::uint8_t g_min_v = 0;
+      for (int v = 1; v < 3; ++v)
+        if (_vertices[v] < _vertices[g_min_v])
+          g_min_v = v;
+
+      // pre is the number of the next vertex clockwise from the lowest
+      // numbered vertex
+      const int g_pre = g_min_v == 0 ? _vertices[3 - 1] : _vertices[g_min_v - 1];
+
+      // post is the number of the next vertex anticlockwise from the
+      // lowest numbered vertex
+      const int g_post = g_min_v == 3 - 1 ? _vertices[0] : _vertices[g_min_v + 1];
+
       std::uint8_t rots = 0;
-      for (int v = 1; v < 3; ++v)
-        if (e_vertices[v] < e_vertices[rots])
-          rots = v;
-
-      // pre is the number of the next vertex clockwise from the lowest
-      // numbered vertex
-      const int pre = rots == 0 ? e_vertices[3 - 1] : e_vertices[rots - 1];
-
-      // post is the number of the next vertex anticlockwise from the
-      // lowest numbered vertex
-      const int post = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
-
-      vertices[0] = global_min;
-      vertices[2] = global_max;
-      vertices[1] = _vertices[0] + _vertices[1] + _vertices[2] - global_max
-                    - global_min;
-
-      // Find iterators pointing to cell vertex given a vertex on facet
-      for (int j = 0; j < 3; ++j)
-      {
-        const auto *const it = std::find(cell_vertices.data(),
-                                  cell_vertices.data() + cell_vertices.size(),
-                                  vertices[j]);
-        // Get the actual local vertex indices
-        e_vertices[j] = it - cell_vertices.data();
-      }
-
-      std::cout << "{" << e_vertices[0] << " " << e_vertices[1] << " "
-         << e_vertices[2] << "}\n";
-      std::cout << "{" << vertices[0] << " " << vertices[1] << " "
-         << vertices[2] << "}\n";
-
-
-      std::uint8_t g_rots = 0;
-      for (int v = 1; v < 3; ++v)
-        if (_vertices[v] < _vertices[g_rots])
-          g_rots = v;
-
-      // pre is the number of the next vertex clockwise from the lowest
-      // numbered vertex
-      const int g_pre = g_rots == 0 ? _vertices[3 - 1] : _vertices[g_rots - 1];
-
-      // post is the number of the next vertex anticlockwise from the
-      // lowest numbered vertex
-      const int g_post = g_rots == 3 - 1 ? _vertices[0] : _vertices[g_rots + 1];
-
-      std::uint8_t rots2 = 0;
       if (g_post > g_pre)
-        rots2 = rots <= g_rots ? g_rots - rots : g_rots + 3 - rots;
+        rots = min_v <= g_min_v ? g_min_v - min_v : g_min_v + 3 - min_v;
       else
-        rots2 = g_rots <= rots ? rots - g_rots : rots + 3 - g_rots;
+        rots = g_min_v <= min_v ? min_v - g_min_v : min_v + 3 - g_min_v;
 
 
       face_perm[c][3 * i] = (post > pre) == (g_post < g_pre);
-      face_perm[c][3 * i + 1] = rots2 % 2;
-      face_perm[c][3 * i + 2] = rots2 / 2;
+      face_perm[c][3 * i + 1] = rots % 2;
+      face_perm[c][3 * i + 2] = rots / 2;
       //      std::cout << face_perm[c][3 * i] << " " << face_perm[c][3 * i + 1]
       //      << " " << face_perm[c][3 * i + 2] << "\n\n";
     }
