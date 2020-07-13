@@ -13,7 +13,8 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import DirichletBC, Function, FunctionSpace, fem, geometry, cpp
+from dolfinx import (DirichletBC, Function, FunctionSpace, fem, cpp,
+                     VectorFunctionSpace)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
@@ -140,6 +141,7 @@ def test_manufactured_vector1(family, degree, filename, datadir):
         mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, (family, degree))
+    W = VectorFunctionSpace(mesh, ("CG", degree))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
 
@@ -167,17 +169,15 @@ def test_manufactured_vector1(family, degree, filename, datadir):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    xp = np.array([0.33, 0.33, 0.0])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_collisions_point(tree, xp)
+    u_exact = Function(W)
+    u_exact.interpolate(lambda x: np.array(
+        [x[0]**degree if i == 0 else 0 * x[0] for i in range(mesh.topology.dim)]))
 
-    up = uh.eval(xp, cells[0])
-    print("test0:", up)
-    print("test1:", xp[0]**degree)
+    M = inner(uh - u_exact, uh - u_exact) * dx
+    M = fem.Form(M)
+    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
 
-    u_exact = np.zeros(mesh.geometry.dim)
-    u_exact[0] = xp[0]**degree
-    assert np.allclose(up, u_exact)
+    assert np.absolute(error) < 1.0e-14
 
 
 # This is skipped in complex as it is very slow and causes CircleCI to time out
@@ -201,6 +201,7 @@ def test_manufactured_vector2(family, degree, filename, datadir):
         mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, (family, degree + 1))
+    W = VectorFunctionSpace(mesh, ("CG", degree))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
 
@@ -228,15 +229,12 @@ def test_manufactured_vector2(family, degree, filename, datadir):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    xp = np.array([0.33, 0.33, 0.0])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cell_candidates = geometry.compute_collisions_point(tree, xp)
-    cell = cpp.geometry.select_colliding_cells(mesh, cell_candidates, xp, 1)
+    u_exact = Function(W)
+    u_exact.interpolate(lambda x: np.array(
+        [x[0]**degree if i == 0 else 0 * x[0] for i in range(mesh.topology.dim)]))
 
-    up = uh.eval(xp, cell)
-    print("test0:", up)
-    print("test1:", xp[0]**degree)
+    M = inner(uh - u_exact, uh - u_exact) * dx
+    M = fem.Form(M)
+    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
 
-    u_exact = np.zeros(mesh.geometry.dim)
-    u_exact[0] = xp[0]**degree
-    assert np.allclose(up, u_exact)
+    assert np.absolute(error) < 1.0e-14
