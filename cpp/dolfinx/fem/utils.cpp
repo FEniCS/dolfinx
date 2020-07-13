@@ -92,8 +92,9 @@ int analyse_block_structure(
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
 fem::block_function_spaces(
-    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>& a)
+    const Eigen::Ref<
+        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V;
   V[0] = std::vector<std::shared_ptr<const function::FunctionSpace>>(a.rows(),
@@ -139,7 +140,8 @@ fem::block_function_spaces(
   return V;
 }
 //-----------------------------------------------------------------------------
-la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
+la::SparsityPattern
+dolfinx::fem::create_sparsity_pattern(const Form<PetscScalar>& a)
 {
   if (a.rank() != 2)
   {
@@ -165,13 +167,13 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
 
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh->mpi_comm(), index_maps);
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+  if (a.integrals().num_integrals(fem::IntegralType::cell) > 0)
   {
     SparsityPatternBuilder::cells(pattern, mesh->topology(),
                                   {{dofmaps[0], dofmaps[1]}});
   }
 
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
+  if (a.integrals().num_integrals(fem::IntegralType::interior_facet) > 0)
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
@@ -180,7 +182,7 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
                                             {{dofmaps[0], dofmaps[1]}});
   }
 
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
+  if (a.integrals().num_integrals(fem::IntegralType::exterior_facet) > 0)
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
@@ -193,7 +195,7 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
   return pattern;
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
+la::PETScMatrix dolfinx::fem::create_matrix(const Form<PetscScalar>& a)
 {
   // Build sparsitypattern
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
@@ -210,8 +212,9 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix fem::create_matrix_block(
-    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>& a)
+    const Eigen::Ref<
+        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
   // Extract and check row/column ranges
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
@@ -242,16 +245,16 @@ la::PETScMatrix fem::create_matrix_block(
         assert(patterns[row].back());
         auto& sp = patterns[row].back();
         assert(sp);
-        const FormIntegrals& integrals = a(row, col)->integrals();
-        if (integrals.num_integrals(FormIntegrals::Type::cell) > 0)
+        const FormIntegrals<PetscScalar>& integrals = a(row, col)->integrals();
+        if (integrals.num_integrals(IntegralType::cell) > 0)
           SparsityPatternBuilder::cells(*sp, mesh->topology(), dofmaps);
-        if (integrals.num_integrals(FormIntegrals::Type::interior_facet) > 0)
+        if (integrals.num_integrals(IntegralType::interior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
           SparsityPatternBuilder::interior_facets(*sp, mesh->topology(),
                                                   dofmaps);
         }
-        if (integrals.num_integrals(FormIntegrals::Type::exterior_facet) > 0)
+        if (integrals.num_integrals(IntegralType::exterior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
           SparsityPatternBuilder::exterior_facets(*sp, mesh->topology(),
@@ -330,8 +333,9 @@ la::PETScMatrix fem::create_matrix_block(
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix fem::create_matrix_nest(
-    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>& a)
+    const Eigen::Ref<
+        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
   // Extract and check row/column ranges
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
@@ -559,19 +563,18 @@ fem::get_constants_from_ufc_form(const ufc_form& ufc_form)
   return constants;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<fem::Form> fem::create_form(
+std::shared_ptr<fem::Form<PetscScalar>> fem::create_form(
     ufc_form* (*fptr)(),
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
 {
   ufc_form* form = fptr();
-  auto L
-      = std::make_shared<fem::Form>(dolfinx::fem::create_form(*form, spaces));
+  auto L = std::make_shared<fem::Form<PetscScalar>>(
+      dolfinx::fem::create_form(*form, spaces));
   std::free(form);
-
   return L;
 }
 //-----------------------------------------------------------------------------
-fem::Form fem::create_form(
+fem::Form<PetscScalar> fem::create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
 {
@@ -593,7 +596,7 @@ fem::Form fem::create_form(
   }
 
   // Get list of integral IDs, and load tabulate tensor into memory for each
-  FormIntegrals integrals;
+  FormIntegrals<PetscScalar> integrals;
 
   std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
@@ -601,7 +604,7 @@ fem::Form fem::create_form(
   {
     ufc_integral* cell_integral = ufc_form.create_cell_integral(id);
     assert(cell_integral);
-    integrals.set_tabulate_tensor(FormIntegrals::Type::cell, id,
+    integrals.set_tabulate_tensor(IntegralType::cell, id,
                                   cell_integral->tabulate_tensor);
     std::free(cell_integral);
   }
@@ -627,7 +630,7 @@ fem::Form fem::create_form(
     ufc_integral* exterior_facet_integral
         = ufc_form.create_exterior_facet_integral(id);
     assert(exterior_facet_integral);
-    integrals.set_tabulate_tensor(FormIntegrals::Type::exterior_facet, id,
+    integrals.set_tabulate_tensor(IntegralType::exterior_facet, id,
                                   exterior_facet_integral->tabulate_tensor);
     std::free(exterior_facet_integral);
   }
@@ -640,7 +643,7 @@ fem::Form fem::create_form(
     ufc_integral* interior_facet_integral
         = ufc_form.create_interior_facet_integral(id);
     assert(interior_facet_integral);
-    integrals.set_tabulate_tensor(FormIntegrals::Type::interior_facet, id,
+    integrals.set_tabulate_tensor(IntegralType::interior_facet, id,
                                   interior_facet_integral->tabulate_tensor);
 
     std::free(interior_facet_integral);
@@ -655,9 +658,10 @@ fem::Form fem::create_form(
         "Vertex integrals not supported. Under development.");
   }
 
-  return fem::Form(spaces, integrals,
-                   FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
-                   fem::get_constants_from_ufc_form(ufc_form));
+  return fem::Form(
+      spaces, integrals,
+      FormCoefficients<PetscScalar>(fem::get_coeffs_from_ufc_form(ufc_form)),
+      fem::get_constants_from_ufc_form(ufc_form));
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement
@@ -716,10 +720,10 @@ fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-fem::pack_coefficients(const fem::Form& form)
+fem::pack_coefficients(const fem::Form<PetscScalar>& form)
 {
   // Get form coefficient offsets amd dofmaps
-  const fem::FormCoefficients& coefficients = form.coefficients();
+  const fem::FormCoefficients<PetscScalar>& coefficients = form.coefficients();
   const std::vector<int>& offsets = coefficients.offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
 
@@ -762,7 +766,7 @@ fem::pack_coefficients(const fem::Form& form)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
-fem::pack_constants(const fem::Form& form)
+fem::pack_constants(const fem::Form<PetscScalar>& form)
 {
   const std::vector<std::pair<
       std::string, std::shared_ptr<const function::Constant<PetscScalar>>>>

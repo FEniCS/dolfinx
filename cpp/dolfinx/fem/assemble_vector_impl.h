@@ -34,7 +34,7 @@ namespace dolfinx::fem::impl
 /// @param[in] L The linear forms to assemble into b
 template <typename T>
 void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-                     const Form& L);
+                     const Form<T>& L);
 
 /// Execute kernel over cells and accumulate result in vector
 template <typename T>
@@ -91,7 +91,7 @@ void assemble_interior_facets(
 template <typename T>
 void apply_lifting(
     Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form>> a,
+    const std::vector<std::shared_ptr<const Form<T>>> a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>>&
         x0,
@@ -109,7 +109,7 @@ void apply_lifting(
 /// @param[in] scale Scaling to apply
 template <typename T>
 void lift_bc(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1, double scale);
 
@@ -127,7 +127,7 @@ void lift_bc(
 /// @param[in] scale Scaling to apply
 template <typename T>
 void lift_bc(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
@@ -136,7 +136,7 @@ void lift_bc(
 // Implementation of bc application
 template <typename T>
 void _lift_bc_cells(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
@@ -164,7 +164,7 @@ void _lift_bc_cells(
 
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>& fn
-      = a.integrals().get_tabulate_tensor(FormIntegrals::Type::cell, 0);
+      = a.integrals().get_tabulate_tensor(IntegralType::cell, 0);
 
   // Prepare cell geometry
   const int gdim = mesh->geometry().dim();
@@ -249,7 +249,7 @@ void _lift_bc_cells(
 //----------------------------------------------------------------------------
 template <typename T>
 void _lift_bc_exterior_facets(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
@@ -286,8 +286,7 @@ void _lift_bc_exterior_facets(
 
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>& fn
-      = a.integrals().get_tabulate_tensor(FormIntegrals::Type::exterior_facet,
-                                          0);
+      = a.integrals().get_tabulate_tensor(IntegralType::exterior_facet, 0);
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -408,7 +407,7 @@ void _lift_bc_exterior_facets(
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-                     const Form& L)
+                     const Form<T>& L)
 {
   std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
   assert(mesh);
@@ -428,35 +427,35 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
       = pack_coefficients(L);
 
-  const FormIntegrals& integrals = L.integrals();
-  using type = fem::FormIntegrals::Type;
-  for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
+  const FormIntegrals<T>& integrals = L.integrals();
+  for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
   {
-    const auto& fn
-        = integrals.get_tabulate_tensor(FormIntegrals::Type::cell, i);
+    const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = integrals.integral_domains(type::cell, i);
+        = integrals.integral_domains(IntegralType::cell, i);
     fem::impl::assemble_cells(b, *mesh, active_cells, dofs, fn, coeffs,
                               constant_values);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::exterior_facet);
+       ++i)
   {
     const auto& fn
-        = integrals.get_tabulate_tensor(FormIntegrals::Type::exterior_facet, i);
+        = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
-        = integrals.integral_domains(type::exterior_facet, i);
+        = integrals.integral_domains(IntegralType::exterior_facet, i);
     fem::impl::assemble_exterior_facets(b, *mesh, active_facets, *dofmap, fn,
                                         coeffs, constant_values);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
+       ++i)
   {
     const std::vector<int> c_offsets = L.coefficients().offsets();
     const auto& fn
-        = integrals.get_tabulate_tensor(FormIntegrals::Type::interior_facet, i);
+        = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
-        = integrals.integral_domains(type::interior_facet, i);
+        = integrals.integral_domains(IntegralType::interior_facet, i);
     fem::impl::assemble_interior_facets(b, *mesh, active_facets, *dofmap, fn,
                                         coeffs, c_offsets, constant_values);
   }
@@ -697,7 +696,7 @@ void assemble_interior_facets(
 template <typename T>
 void apply_lifting(
     Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form>> a,
+    const std::vector<std::shared_ptr<const Form<T>>> a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>>&
         x0,
@@ -747,28 +746,28 @@ void apply_lifting(
 //-----------------------------------------------------------------------------
 template <typename T>
 void lift_bc(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1, double scale)
 {
   const Eigen::Matrix<T, Eigen::Dynamic, 1> x0(0);
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+  if (a.integrals().num_integrals(fem::IntegralType::cell) > 0)
     _lift_bc_cells<T>(b, a, bc_values1, bc_markers1, x0, scale);
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
+  if (a.integrals().num_integrals(fem::IntegralType::exterior_facet) > 0)
     _lift_bc_exterior_facets<T>(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
 void lift_bc(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+  if (a.integrals().num_integrals(fem::IntegralType::cell) > 0)
     _lift_bc_cells(b, a, bc_values1, bc_markers1, x0, scale);
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
+  if (a.integrals().num_integrals(fem::IntegralType::exterior_facet) > 0)
     _lift_bc_exterior_facets(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
