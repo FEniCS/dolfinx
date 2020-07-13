@@ -126,7 +126,7 @@ def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.V
     """
     for b_sub, L_sub in zip(b.getNestSubVecs(), _create_cpp_form(L)):
         with b_sub.localForm() as b_local:
-            cpp.fem.assemble_vector(b_sub.array_w, L_sub)
+            cpp.fem.assemble_vector(b_local.array_w, L_sub)
     return b
 
 
@@ -138,13 +138,13 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
                           x0: typing.Optional[PETSc.Vec] = None,
                           scale: float = 1.0) -> PETSc.Vec:
     """Assemble linear forms into a monolithic vector. The vector is not
-    zeroed and it is not finalised, i.e. ghost values are not
-    accumulated.
+    finalised, i.e. ghost values are not accumulated.
 
     """
     maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
     b = cpp.fem.create_vector_block(maps)
-    b.set(0.0)
+    with b.localForm() as b_local:
+        b_local.set(0.0)
     return assemble_vector_block(b, L, a, bcs, x0, scale)
 
 

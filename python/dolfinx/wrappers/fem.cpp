@@ -279,14 +279,10 @@ void fem(py::module& m)
                              &dolfinx::fem::DirichletBC<PetscScalar>::value);
 
   // dolfinx::fem::assemble
+  // Functional
   m.def("assemble_scalar", &dolfinx::fem::assemble_scalar<PetscScalar>,
         "Assemble functional over mesh");
-  // Vectors (single)
-  //   m.def("assemble_vector",
-  //         py::overload_cast<Vec, const dolfinx::fem::Form<PetscScalar>&>(
-  //             &dolfinx::fem::assemble_vector_petsc),
-  //         py::arg("b"), py::arg("L"),
-  //         "Assemble linear form into an existing vector");
+  // Vector
   m.def("assemble_vector", &dolfinx::fem::assemble_vector<PetscScalar>,
         py::arg("b"), py::arg("L"),
         "Assemble linear form into an existing Eigen vector");
@@ -305,66 +301,12 @@ void fem(py::module& m)
                           const std::vector<std::shared_ptr<
                               const dolfinx::fem::DirichletBC<PetscScalar>>>&,
                           PetscScalar>(&dolfinx::fem::add_diagonal));
-
-  //   m.def("assemble_scalar", &dolfinx::fem::assemble_scalar<PetscScalar>,
-  //         "Assemble functional over mesh");
-  // Vectors (single)
-  //   m.def("assemble_vector",
-  //         py::overload_cast<Vec, const dolfinx::fem::Form<PetscScalar>&>(
-  //             &dolfinx::fem::assemble_vector_petsc),
-  //         py::arg("b"), py::arg("L"),
-  //         "Assemble linear form into an existing vector");
-  //   m.def("assemble_vector",
-  //         py::overload_cast<
-  //             Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
-  //             const dolfinx::fem::Form<PetscScalar>&>(
-  //             &dolfinx::fem::assemble_vector),
-  //         py::arg("b"), py::arg("L"),
-  //         "Assemble linear form into an existing Eigen vector");
-  //   // Matrices
-  //   m.def("assemble_matrix",
-  //         py::overload_cast<Mat, const dolfinx::fem::Form<PetscScalar>&,
-  //                           const std::vector<std::shared_ptr<
-  //                               const
-  //                               dolfinx::fem::DirichletBC<PetscScalar>>>&>(
-  //             &dolfinx::fem::assemble_matrix));
-  //   m.def("assemble_matrix",
-  //         py::overload_cast<Mat, const dolfinx::fem::Form<PetscScalar>&,
-  //                           const std::vector<bool>&, const
-  //                           std::vector<bool>&>(
-  //             &dolfinx::fem::assemble_matrix));
-  //   m.def("add_diagonal",
-  //         py::overload_cast<Mat, const dolfinx::function::FunctionSpace&,
-  //                           const std::vector<std::shared_ptr<
-  //                               const
-  //                               dolfinx::fem::DirichletBC<PetscScalar>>>&,
-  //                           PetscScalar>(&dolfinx::fem::add_diagonal));
-
   m.def("assemble_matrix_eigen",
         &dolfinx::fem::assemble_matrix_eigen<PetscScalar>);
 
   // BC modifiers
-  //   m.def(
-  //       "apply_lifting_petsc",
-  //       py::overload_cast<
-  //           Vec,
-  //           const std::vector<
-  //               std::shared_ptr<const dolfinx::fem::Form<PetscScalar>>>&,
-  //           const std::vector<std::vector<
-  //               std::shared_ptr<const
-  //               dolfinx::fem::DirichletBC<PetscScalar>>>>&,
-  //           const std::vector<Vec>&,
-  //           double>(&dolfinx::fem::apply_lifting_petsc),
-  //       "Modify vector for lifted boundary conditions");
   m.def("apply_lifting", &dolfinx::fem::apply_lifting<PetscScalar>,
         "Modify vector for lifted boundary conditions");
-  //   m.def("set_bc",
-  //         py::overload_cast<Vec,
-  //                           const std::vector<std::shared_ptr<
-  //                               const
-  //                               dolfinx::fem::DirichletBC<PetscScalar>>>&,
-  //                           const Vec, double>(&dolfinx::fem::set_bc_petsc),
-  //         "Insert boundary condition values into vector");
   m.def(
       "set_bc",
       [](Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
