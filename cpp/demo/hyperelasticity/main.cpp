@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
   auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
 
   const auto bdofs_left = fem::locate_dofs_geometrical(
-      {*V}, [](auto x) { return x.row(0) < DBL_EPSILON; });
+      {*V}, [](auto& x) { return x.row(0) < DBL_EPSILON; });
   const auto bdofs_right = fem::locate_dofs_geometrical(
       {*V}, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
 

@@ -73,11 +73,6 @@ namespace dolfinx_wrappers
 {
 void fem(py::module& m)
 {
-  // NOTE: &dolfinx::fem::get_coeffs_from_ufc_form is not used, but
-  // removing it seems to lead to an undefined symbol linking error with
-  // clang (but not with gcc). Remove later if possible.
-//   m.def("get_coeffs_from_ufc_form", &dolfinx::fem::get_coeffs_from_ufc_form);
-
   // utils
   m.def(
       "block_function_spaces",

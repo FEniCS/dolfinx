@@ -136,7 +136,7 @@ public:
 
   /// Set coefficient with given name (shared pointer version)
   /// @param[in] coefficients Map from coefficient name to the
-  ///                         coefficient
+  ///   coefficient
   void set_coefficients(
       const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
           coefficients)
@@ -157,20 +157,18 @@ public:
   {
     for (auto const& constant : constants)
     {
-      std::string name = constant.first;
-
       // Find matching string in existing constants
+      const std::string name = constant.first;
       const auto it = std::find_if(
           _constants.begin(), _constants.end(),
           [&](const std::pair<
               std::string, std::shared_ptr<const function::Constant<T>>>& q) {
             return (q.first == name);
           });
-
-      if (it == _constants.end())
+      if (it != _constants.end())
+        it->second = constant.second;
+      else
         throw std::runtime_error("Constant '" + name + "' not found in form");
-
-      it->second = constant.second;
     }
   }
 
@@ -189,7 +187,7 @@ public:
     if (constants.size() != _constants.size())
       throw std::runtime_error("Incorrect number of constants.");
 
-    // Loop every constant that user wants to attach
+    // Loop over each constant that user wants to attach
     for (std::size_t i = 0; i < constants.size(); ++i)
     {
       // In this case, the constants don't have names

@@ -49,8 +49,7 @@ public:
                            const std::uint8_t*, const std::uint32_t)>&
   get_tabulate_tensor(IntegralType type, int i) const
   {
-    int type_index = static_cast<int>(type);
-    return _integrals.at(type_index).at(i).tabulate;
+    return _integrals.at(static_cast<int>(type)).at(i).tabulate;
   }
 
   /// Set the function for 'tabulate_tensor' for integral i of
@@ -64,9 +63,8 @@ public:
                          const std::uint8_t*, const std::uint32_t)>
           fn)
   {
-    const int type_index = static_cast<int>(type);
     std::vector<struct FormIntegrals::Integral>& integrals
-        = _integrals.at(type_index);
+        = _integrals.at(static_cast<int>(type));
 
     // Find insertion point
     int pos = 0;
@@ -103,8 +101,7 @@ public:
   std::vector<int> integral_ids(IntegralType type) const
   {
     std::vector<int> ids;
-    int type_index = static_cast<int>(type);
-    for (const auto& integral : _integrals[type_index])
+    for (const auto& integral : _integrals[static_cast<int>(type)])
       ids.push_back(integral.id);
     return ids;
   }
@@ -120,8 +117,7 @@ public:
   const std::vector<std::int32_t>& integral_domains(IntegralType type,
                                                     int i) const
   {
-    const int type_index = static_cast<int>(type);
-    return _integrals.at(type_index).at(i).active_entities;
+    return _integrals.at(static_cast<int>(type)).at(i).active_entities;
   }
 
   /// Set the valid domains for the integrals of a given type from a
@@ -131,8 +127,8 @@ public:
   /// @param[in] marker MeshTags mapping entities to integrals
   void set_domains(IntegralType type, const mesh::MeshTags<int>& marker)
   {
-    const int type_index = static_cast<int>(type);
-    std::vector<struct Integral>& integrals = _integrals.at(type_index);
+    std::vector<struct Integral>& integrals
+        = _integrals.at(static_cast<int>(type));
     if (integrals.size() == 0)
       return;
 
