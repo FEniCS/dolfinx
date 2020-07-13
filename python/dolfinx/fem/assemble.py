@@ -5,10 +5,11 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Assembly functions for variational forms."""
 
+import contextlib
 import functools
 import typing
-import scipy.sparse
 
+import scipy.sparse
 from petsc4py import PETSc
 
 import ufl
@@ -313,8 +314,11 @@ def apply_lifting(b: PETSc.Vec,
     Ghost contributions are not accumulated (not sent to owner). Caller
     is responsible for calling VecGhostUpdateBegin/End.
     """
-    with b.localForm() as b_local:
-        cpp.fem.apply_lifting(b_local.array_w, _create_cpp_form(a), bcs, x0, scale)
+    with contextlib.ExitStack() as stack:
+        x0 = [stack.enter_context(x.localForm()) for x in x0]
+        x0_r = [x.array_r for x in x0]
+        b_local = stack.enter_context(b.localForm())
+        cpp.fem.apply_lifting(b_local.array_w, _create_cpp_form(a), bcs, x0_r, scale)
 
 
 def apply_lifting_nest(b: PETSc.Vec,
@@ -325,15 +329,11 @@ def apply_lifting_nest(b: PETSc.Vec,
     """Modify nested vector for lifting of Dirichlet boundary conditions.
 
     """
-    if x0 is not None:
-        _x0 = x0.getNestSubVecs()
-    else:
-        _x0 = []
+    x0 = [] if x0 is None else x0.getNestSubVecs()
     _a = _create_cpp_form(a)
     bcs1 = cpp.fem.bcs_cols(_a, bcs)
     for b_sub, a_sub, bc1 in zip(b.getNestSubVecs(), _a, bcs1):
-        with b_sub.localForm() as b_local:
-            cpp.fem.apply_lifting(b_local.array_w, a_sub, bc1, _x0, scale)
+        apply_lifting(b_sub, a_sub, bc1, x0, scale)
     return b
 
 
@@ -347,6 +347,8 @@ def set_bc(b: PETSc.Vec,
     condition value.
 
     """
+    if x0 is not None:
+        x0 = x0.array_r
     cpp.fem.set_bc(b.array_w, bcs, x0, scale)
 
 
@@ -361,10 +363,6 @@ def set_bc_nest(b: PETSc.Vec,
 
     """
     _b = b.getNestSubVecs()
-    if x0 is not None:
-        _x0 = x0.getNestSubVecs()
-    else:
-        _x0 = [None] * len(_b)
-    for b_sub, bc, x_sub in zip(_b, bcs, _x0):
-        with b_sub.localForm() as b_local:
-            cpp.fem.set_bc(b_local.array_w, bc, x_sub, scale)
+    x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
+    for b_sub, bc, x_sub in zip(_b, bcs, x0):
+        set_bc(b_sub, bc, x_sub, scale)
