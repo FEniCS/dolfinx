@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2019 Garth N. Wells
+// Copyright (C) 2018-2020 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -11,9 +11,7 @@
 #include "assemble_vector_impl.h"
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
-#include <dolfinx/common/types.h>
 #include <memory>
-#include <petscmat.h>
 #include <petscvec.h>
 #include <vector>
 
@@ -183,7 +181,8 @@ void assemble_matrix(
   impl::assemble_matrix(mat_add, a, dof_marker0, dof_marker1);
 }
 
-// Experimental
+/// @warning Experimental
+///
 /// Assemble bilinear form into an Eigen Sparse matrix.
 /// @param[in] a The bilinear from to assemble
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
@@ -270,7 +269,6 @@ void add_diagonal(
       add_diagonal<T>(mat_add, bc->dofs_owned().col(0), diagonal);
   }
 }
-
 
 // -- Setting bcs ------------------------------------------------------------
 

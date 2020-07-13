@@ -17,7 +17,6 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
-#include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/mesh/Mesh.h>
 
 using namespace dolfinx;
