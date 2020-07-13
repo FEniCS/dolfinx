@@ -79,8 +79,9 @@ public:
   Mat J(const Vec) final
   {
     MatZeroEntries(_matA.mat());
-    assemble_matrix_petsc(_matA.mat(), *_j, _bcs);
-    add_diagonal(_matA.mat(), *_j->function_space(0), _bcs);
+    fem::assemble_matrix(la::PETScMatrix::add_fn(_matA.mat()), *_j, _bcs);
+    fem::add_diagonal(la::PETScMatrix::add_fn(_matA.mat()),
+                      *_j->function_space(0), _bcs);
     _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
     return _matA.mat();
   }

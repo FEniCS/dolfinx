@@ -301,10 +301,13 @@ void fem(py::module& m)
                                         rows0, rows1);
         });
   m.def("add_diagonal",
-        py::overload_cast<Mat, const dolfinx::function::FunctionSpace&,
-                          const std::vector<std::shared_ptr<
-                              const dolfinx::fem::DirichletBC<PetscScalar>>>&,
-                          PetscScalar>(&dolfinx::fem::add_diagonal_petsc));
+        [](Mat A, const dolfinx::function::FunctionSpace& V,
+           const std::vector<std::shared_ptr<
+               const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
+           PetscScalar diagonal) {
+          dolfinx::fem::add_diagonal(dolfinx::la::PETScMatrix::add_fn(A), V,
+                                     bcs, diagonal);
+        });
   m.def("assemble_matrix_eigen",
         &dolfinx::fem::assemble_matrix_eigen<PetscScalar>);
 

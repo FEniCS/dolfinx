@@ -87,22 +87,6 @@ void fem::apply_lifting_petsc(
   VecGhostRestoreLocalForm(b, &b_local);
 }
 //-----------------------------------------------------------------------------
-void fem::add_diagonal_petsc(
-    Mat A, const function::FunctionSpace& V,
-    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
-    PetscScalar diagonal)
-{
-  add_diagonal(la::PETScMatrix::add_fn(A), V, bcs, diagonal);
-}
-//-----------------------------------------------------------------------------
-void fem::add_diagonal_petsc(
-    Mat A,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
-    PetscScalar diagonal)
-{
-  add_diagonal(la::PETScMatrix::add_fn(A), rows, diagonal);
-}
-//-----------------------------------------------------------------------------
 void fem::set_bc_petsc(
     Vec b,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,

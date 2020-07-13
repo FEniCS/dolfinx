@@ -271,44 +271,6 @@ void add_diagonal(
   }
 }
 
-/// Adds a value to the diagonal of the matrix for rows with a Dirichlet
-/// boundary conditions applied. This function is typically called after
-/// assembly. The assembly function zeroes Dirichlet rows and columns.
-/// This function adds the value only to rows that are locally owned,
-/// and therefore does not create a need for parallel communication. For
-/// block matrices, this function should normally be called only on the
-/// diagonal blocks, i.e. blocks for which the test and trial spaces are
-/// the same.
-/// @param[in,out] A The matrix to add diagonal values to
-/// @param[in] V The function space for the rows and columns of the
-///   matrix. It is used to extract only the Dirichlet boundary conditions
-///   that are define on V or subspaces of V.
-/// @param[in] bcs The Dirichlet boundary condtions
-/// @param[in] diagonal The value to add to the diagonal for rows with a
-///   boundary condition applied
-void add_diagonal_petsc(
-    Mat A, const function::FunctionSpace& V,
-    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
-    PetscScalar diagonal = 1.0);
-
-// Developer note: This function calls MatSetValuesLocal and not
-// MatZeroRowsLocal
-// (https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatZeroRowsLocal.html)
-
-/// Adds a value to the diagonal of a matrix for specified rows. It is
-/// typically called after assembly. The assembly function zeroes
-/// Dirichlet rows and columns. For block matrices, this function should
-/// normally be called only on the diagonal blocks, i.e. blocks for
-/// which the test and trial spaces are the same.
-/// @param[in,out] A The matrix to add diagonal values to
-/// @param[in] rows The rows, in local indices, for which to add a value
-///   to the diagonal
-/// @param[in] diagonal The value to add to the diagonal for the
-///   specified rows
-void add_diagonal_petsc(
-    Mat A,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
-    PetscScalar diagonal = 1.0);
 
 // -- Setting bcs ------------------------------------------------------------
 
