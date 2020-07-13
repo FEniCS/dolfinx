@@ -164,8 +164,7 @@ void assemble_matrix(
 
 /// Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
-/// @param[in,out] A The matrix to assemble in to. Matrix must be
-///   initialised.
+/// @param[in] mat_add The function for adding values into the matrix
 /// @param[in] a The bilinear form to assemble
 /// @param[in] dof_marker0 Boundary condition markers for the rows. If
 ///   bc[i] is true then rows i in A will be zeroed. The index i is a
