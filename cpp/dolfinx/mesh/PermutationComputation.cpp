@@ -36,7 +36,7 @@ compute_face_permutations_simplex(
     {
       // Get the face
       const int face = cell_faces[i];
-      auto vertices = im->local_to_global(f_to_v.links(face));
+      const auto vertices = im->local_to_global(f_to_v.links(face));
 
       // Orient that triangle so the the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
@@ -49,9 +49,9 @@ compute_face_permutations_simplex(
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 3; ++j)
       {
-        const auto *const it = std::find(cell_vertices.data(),
-                                  cell_vertices.data() + cell_vertices.size(),
-                                  vertices[j]);
+        auto it = std::find(cell_vertices.data(),
+                            cell_vertices.data() + cell_vertices.size(),
+                            vertices[j]);
         // Get the actual local vertex indices
         e_vertices[j] = it - cell_vertices.data();
       }
@@ -88,7 +88,6 @@ compute_face_permutations_simplex(
         rots = min_v <= g_min_v ? g_min_v - min_v : g_min_v + 3 - min_v;
       else
         rots = g_min_v <= min_v ? min_v - g_min_v : min_v + 3 - g_min_v;
-
 
       face_perm[c][3 * i] = (post > pre) == (g_post < g_pre);
       face_perm[c][3 * i + 1] = rots % 2;
@@ -130,9 +129,9 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 4; ++j)
       {
-        const auto *const it = std::find(cell_vertices.data(),
-                                  cell_vertices.data() + cell_vertices.size(),
-                                  vertices[j]);
+        auto it = std::find(cell_vertices.data(),
+                            cell_vertices.data() + cell_vertices.size(),
+                            vertices[j]);
         // Get the actual local vertex indices
         e_vertices[j] = it - cell_vertices.data();
       }
@@ -254,10 +253,10 @@ compute_edge_reflections(const mesh::Topology& topology)
       // from the lowest numbered vertex to the highest numbered vertex.
 
       // Find iterators pointing to cell vertex given a vertex on facet
-      const auto *const it0
+      const auto it0
           = std::find(cell_vertices.data(),
                       cell_vertices.data() + cell_vertices.size(), vertices[0]);
-      const auto *const it1
+      const auto it1
           = std::find(cell_vertices.data(),
                       cell_vertices.data() + cell_vertices.size(), vertices[1]);
 
@@ -287,7 +286,6 @@ compute_face_permutations(const mesh::Topology& topology)
 
   auto im = topology.index_map(0);
   assert(im);
-
   const CellType cell_type = topology.cell_type();
   const int faces_per_cell = cell_num_entities(cell_type, 2);
   if (cell_type == CellType::triangle or cell_type == CellType::tetrahedron)
