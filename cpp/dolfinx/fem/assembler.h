@@ -192,14 +192,13 @@ void assemble_matrix(
 /// Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
 /// @param[in,out] A The matrix to assemble in to. Matrix must be
-///                  initialised.
+///   initialised.
 /// @param[in] a The bilinear form to assemble
 /// @param[in] bc0 Boundary condition markers for the rows. If bc[i] is
-///                true then rows i in A will be zeroed. The index i is
-///                a local index.
+///   true then rows i in A will be zeroed. The index i is a local index.
 /// @param[in] bc1 Boundary condition markers for the columns. If bc[i]
-///                is true then rows i in A will be zeroed. The index i
-///                is a local index.
+///   is true then rows i in A will be zeroed. The index i is a local
+///   index.
 void assemble_matrix(Mat A, const Form<PetscScalar>& a,
                      const std::vector<bool>& bc0,
                      const std::vector<bool>& bc1);
@@ -214,12 +213,11 @@ void assemble_matrix(Mat A, const Form<PetscScalar>& a,
 /// the same.
 /// @param[in,out] A The matrix to add diagonal values to
 /// @param[in] V The function space for the rows and columns of the
-///              matrix. It is used to extract only the Dirichlet
-///              boundary conditions that are define on V or subspaces
-///              of V.
+///   matrix. It is used to extract only the Dirichlet boundary conditions
+///   that are define on V or subspaces of V.
 /// @param[in] bcs The Dirichlet boundary condtions
 /// @param[in] diagonal The value to add to the diagonal for rows with a
-///                     boundary condition applied
+///   boundary condition applied
 void add_diagonal(
     Mat A, const function::FunctionSpace& V,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
@@ -236,9 +234,9 @@ void add_diagonal(
 /// which the test and trial spaces are the same.
 /// @param[in,out] A The matrix to add diagonal values to
 /// @param[in] rows The rows, in local indices, for which to add a value
-///                 to the diagonal
+///   to the diagonal
 /// @param[in] diagonal The value to add to the diagonal for the
-///                     specified rows
+///   specified rows
 void add_diagonal(
     Mat A,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
@@ -294,13 +292,14 @@ void set_bc(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
 
 // FIXME: Handle null block
 // FIXME: Pass function spaces rather than forms
+
 /// Arrange boundary conditions by block
 /// @param[in] L Linear forms for each block
 /// @param[in] bcs Boundary conditions
 /// @return The boundary conditions collected by block, i.e.
-///         bcs_block[i] is the list of boundary conditions applied to
-///         L[i]. The order within bcs_block[i] preserves the input
-///         order of the bcs array.
+///   bcs_block[i] is the list of boundary conditions applied to L[i]. The
+///   order within bcs_block[i] preserves the input order of the bcs
+///   array.
 template <typename T>
 std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<T>>>>
 bcs_rows(const std::vector<const Form<T>*>& L,
@@ -318,13 +317,14 @@ bcs_rows(const std::vector<const Form<T>*>& L,
 
 // FIXME: Handle null block
 // FIXME: Pass function spaces rather than forms
+
 /// Arrange boundary conditions by block
 /// @param[in] a Biinear forms for each block
 /// @param[in] bcs Boundary conditions
 /// @return The boundary conditions collected by block, i.e.
-///         bcs_block[i] is the list of boundary conditions applied to
-///         the trial space of a[i]. The order within bcs_block[i]
-///         preserves the input order of the bcs array.
+///   bcs_block[i] is the list of boundary conditions applied to the trial
+///   space of a[i]. The order within bcs_block[i] preserves the input
+///   order of the bcs array.
 template <typename T>
 std::vector<
     std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<T>>>>>
