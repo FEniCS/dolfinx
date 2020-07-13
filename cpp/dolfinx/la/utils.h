@@ -23,6 +23,7 @@ class IndexMap;
 }
 namespace fem
 {
+template <typename T>
 class Form;
 }
 namespace la
