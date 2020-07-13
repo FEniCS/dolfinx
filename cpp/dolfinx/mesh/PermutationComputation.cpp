@@ -115,15 +115,14 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
     auto cell_faces = c_to_f.links(c);
     for (int i = 0; i < faces_per_cell; ++i)
     {
+      // Get the face
       const int face = cell_faces[i];
       auto vertices = im->local_to_global(f_to_v.links(face));
 
-      // quadrilateral
-      // Orient that quad so the the lowest numbered vertex is the
+      // Orient that triangle so the the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
       // lower number than the next vertex clockwise. Find the index of
       // the lowest numbered vertex
-      int num_min = -1;
 
       // Store local vertex indices here
       std::array<std::int32_t, 4> e_vertices;
@@ -138,15 +137,11 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
         e_vertices[j] = it - cell_vertices.data();
       }
 
-      for (int v = 0; v < 4; ++v)
-      {
-        if (num_min == -1 or e_vertices[v] < e_vertices[num_min])
-          num_min = v;
-      }
-
-      // rots is the number of rotations to get the lowest numbered
-      // vertex to the origin
-      std::uint8_t rots = num_min;
+      // Number of rotations
+      std::uint8_t min_v = 0;
+      for (int v = 1; v < 4; ++v)
+        if (e_vertices[v] < e_vertices[min_v])
+          min_v = v;
 
       // pre is the (local) number of the next vertex clockwise from the
       // lowest numbered vertex
@@ -156,9 +151,8 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       // from the lowest numbered vertex
       int post = 1;
 
-      // The tensor product ordering of quads must be taken into account
-      assert(num_min < 4);
-      switch (num_min)
+      assert(min_v < 4);
+      switch (min_v)
       {
       case 1:
         pre = 0;
@@ -167,16 +161,56 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       case 2:
         pre = 3;
         post = 0;
-        rots = 3;
+        min_v = 3;
         break;
       case 3:
         pre = 1;
         post = 2;
-        rots = 2;
+        min_v = 2;
         break;
       }
 
-      face_perm[c][3 * i] = (post > pre);
+      std::uint8_t g_min_v = 0;
+      for (int v = 1; v < 4; ++v)
+        if (vertices[v] < vertices[g_min_v])
+          g_min_v = v;
+
+      // rots is the number of rotations to get the lowest numbered
+      // vertex to the origin
+      // pre is the (local) number of the next vertex clockwise from the
+      // lowest numbered vertex
+      int g_pre = 2;
+
+      // post is the (local) number of the next vertex anticlockwise
+      // from the lowest numbered vertex
+      int g_post = 1;
+
+      assert(g_min_v < 4);
+      switch (g_min_v)
+      {
+      case 1:
+        g_pre = 0;
+        g_post = 3;
+        break;
+      case 2:
+        g_pre = 3;
+        g_post = 0;
+        g_min_v = 3;
+        break;
+      case 3:
+        g_pre = 1;
+        g_post = 2;
+        g_min_v = 2;
+        break;
+      }
+
+      std::uint8_t rots = 0;
+      if (g_post > g_pre)
+        rots = min_v <= g_min_v ? g_min_v - min_v : g_min_v + 4 - min_v;
+      else
+        rots = g_min_v <= min_v ? min_v - g_min_v : min_v + 4 - g_min_v;
+
+      face_perm[c][3 * i] = (post > pre) == (g_post < g_pre);
       face_perm[c][3 * i + 1] = rots % 2;
       face_perm[c][3 * i + 2] = rots / 2;
     }
