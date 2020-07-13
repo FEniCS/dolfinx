@@ -287,15 +287,15 @@ void fem(py::module& m)
         py::arg("b"), py::arg("L"),
         "Assemble linear form into an existing Eigen vector");
   // Matrices
-  m.def("assemble_matrix",
+  m.def("assemble_matrix_petsc",
         py::overload_cast<Mat, const dolfinx::fem::Form<PetscScalar>&,
                           const std::vector<std::shared_ptr<
                               const dolfinx::fem::DirichletBC<PetscScalar>>>&>(
-            &dolfinx::fem::assemble_matrix));
-  m.def("assemble_matrix",
+            &dolfinx::fem::assemble_matrix_petsc));
+  m.def("assemble_matrix_petsc",
         py::overload_cast<Mat, const dolfinx::fem::Form<PetscScalar>&,
                           const std::vector<bool>&, const std::vector<bool>&>(
-            &dolfinx::fem::assemble_matrix));
+            &dolfinx::fem::assemble_matrix_petsc));
   m.def("add_diagonal",
         py::overload_cast<Mat, const dolfinx::function::FunctionSpace&,
                           const std::vector<std::shared_ptr<

@@ -119,55 +119,20 @@ void fem::apply_lifting_petsc(
   VecGhostRestoreLocalForm(b, &b_local);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix(
+void fem::assemble_matrix_petsc(
     Mat A, const Form<PetscScalar>& a,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs)
 {
-  // Index maps for dof ranges
-  auto map0 = a.function_space(0)->dofmap()->index_map;
-  auto map1 = a.function_space(1)->dofmap()->index_map;
-
-  // Build dof markers
-  std::vector<bool> dof_marker0, dof_marker1;
-  std::int32_t dim0
-      = map0->block_size() * (map0->size_local() + map0->num_ghosts());
-  std::int32_t dim1
-      = map1->block_size() * (map1->size_local() + map1->num_ghosts());
-  for (std::size_t k = 0; k < bcs.size(); ++k)
-  {
-    assert(bcs[k]);
-    assert(bcs[k]->function_space());
-    if (a.function_space(0)->contains(*bcs[k]->function_space()))
-    {
-      dof_marker0.resize(dim0, false);
-      bcs[k]->mark_dofs(dof_marker0);
-    }
-    if (a.function_space(1)->contains(*bcs[k]->function_space()))
-    {
-      dof_marker1.resize(dim1, false);
-      bcs[k]->mark_dofs(dof_marker1);
-    }
-  }
-
   std::vector<PetscInt> tmp_dofs_petsc64;
-  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
-      mat_set_values = make_petsc_lambda(A, tmp_dofs_petsc64);
-
-  // Assemble
-  impl::assemble_matrix(mat_set_values, a, dof_marker0, dof_marker1);
+  assemble_matrix(make_petsc_lambda(A, tmp_dofs_petsc64), a, bcs);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix(Mat A, const Form<PetscScalar>& a,
-                          const std::vector<bool>& bc0,
-                          const std::vector<bool>& bc1)
+void fem::assemble_matrix_petsc(Mat A, const Form<PetscScalar>& a,
+                                const std::vector<bool>& bc0,
+                                const std::vector<bool>& bc1)
 {
   std::vector<PetscInt> tmp_dofs_petsc64;
-  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
-      mat_set_values = make_petsc_lambda(A, tmp_dofs_petsc64);
-
-  impl::assemble_matrix(mat_set_values, a, bc0, bc1);
+  impl::assemble_matrix(make_petsc_lambda(A, tmp_dofs_petsc64), a, bc0, bc1);
 }
 //-----------------------------------------------------------------------------
 void fem::add_diagonal(

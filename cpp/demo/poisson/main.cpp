@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
   la::PETScVector b(*L->function_space(0)->dofmap()->index_map);
 
   MatZeroEntries(A.mat());
-  dolfinx::fem::assemble_matrix(A.mat(), *a, bc);
+  dolfinx::fem::assemble_matrix_petsc(A.mat(), *a, bc);
   dolfinx::fem::add_diagonal(A.mat(), *V, bc);
   MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);

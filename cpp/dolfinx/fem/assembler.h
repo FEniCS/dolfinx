@@ -119,12 +119,15 @@ void apply_lifting(
 // -- Matrices ---------------------------------------------------------------
 
 // Experimental
-/// Assemble bilinear form into an Eigen Sparse matrix.
+/// Assemble bilinear form into a matrix
+/// @param[in] mat_set The function for adding values into the matrix
 /// @param[in] a The bilinear from to assemble
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
 template <typename T>
-Eigen::SparseMatrix<T, Eigen::RowMajor> assemble_matrix_eigen(
+void assemble_matrix(
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const T*)>& mat_set,
     const Form<T>& a,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
@@ -155,6 +158,20 @@ Eigen::SparseMatrix<T, Eigen::RowMajor> assemble_matrix_eigen(
     }
   }
 
+  // Assemble
+  impl::assemble_matrix(mat_set, a, dof_marker0, dof_marker1);
+}
+
+// Experimental
+/// Assemble bilinear form into an Eigen Sparse matrix.
+/// @param[in] a The bilinear from to assemble
+/// @param[in] bcs Boundary conditions to apply. For boundary condition
+///  dofs the row and column are zeroed. The diagonal  entry is not set.
+template <typename T>
+Eigen::SparseMatrix<T, Eigen::RowMajor> assemble_matrix_eigen(
+    const Form<T>& a,
+    const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
+{
   // Lambda function creating Eigen::Triplet array
   std::vector<Eigen::Triplet<T>> triplets;
   const auto set_values
@@ -167,8 +184,10 @@ Eigen::SparseMatrix<T, Eigen::RowMajor> assemble_matrix_eigen(
         };
 
   // Assemble
-  impl::assemble_matrix<T>(set_values, a, dof_marker0, dof_marker1);
+  assemble_matrix<T>(set_values, a, bcs);
 
+  auto map0 = a.function_space(0)->dofmap()->index_map;
+  auto map1 = a.function_space(1)->dofmap()->index_map;
   Eigen::SparseMatrix<T, Eigen::RowMajor> mat(
       map0->block_size() * (map0->size_local() + map0->num_ghosts()),
       map1->block_size() * (map1->size_local() + map1->num_ghosts()));
@@ -185,7 +204,7 @@ Eigen::SparseMatrix<T, Eigen::RowMajor> assemble_matrix_eigen(
 /// @param[in] a The bilinear from to assemble
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///   dofs the row and column are zeroed. The diagonal entry is not set.
-void assemble_matrix(
+void assemble_matrix_petsc(
     Mat A, const Form<PetscScalar>& a,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs);
 
@@ -199,9 +218,9 @@ void assemble_matrix(
 /// @param[in] bc1 Boundary condition markers for the columns. If bc[i]
 ///   is true then rows i in A will be zeroed. The index i is a local
 ///   index.
-void assemble_matrix(Mat A, const Form<PetscScalar>& a,
-                     const std::vector<bool>& bc0,
-                     const std::vector<bool>& bc1);
+void assemble_matrix_petsc(Mat A, const Form<PetscScalar>& a,
+                           const std::vector<bool>& bc0,
+                           const std::vector<bool>& bc1);
 
 /// Adds a value to the diagonal of the matrix for rows with a Dirichlet
 /// boundary conditions applied. This function is typically called after
