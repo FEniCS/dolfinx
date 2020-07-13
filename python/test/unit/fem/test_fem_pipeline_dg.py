@@ -13,7 +13,6 @@ from petsc4py import PETSc
 
 import ufl
 from dolfinx import Function, FunctionSpace
-# from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import assemble_matrix, assemble_scalar, assemble_vector
 from dolfinx.io import XDMFFile
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, avg, div, ds,
