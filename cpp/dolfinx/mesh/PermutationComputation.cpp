@@ -36,28 +36,12 @@ compute_face_permutations_simplex(
     {
       // Get the face
       const int face = cell_faces[i];
-      auto _vertices = im->local_to_global(f_to_v.links(face));
-
-      // Number of rotations
-      std::uint8_t global_min = _vertices[0];
-      std::uint8_t global_max = _vertices[0];
-      for (int v = 1; v < 3; ++v)
-      {
-        if (_vertices[v] < global_min)
-          global_min = _vertices[v];
-        if (_vertices[v] > global_max)
-          global_max = _vertices[v];
-      }
+      auto vertices = im->local_to_global(f_to_v.links(face));
 
       // Orient that triangle so the the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
       // lower number than the next vertex clockwise. Find the index of
       // the lowest numbered vertex
-
-      std::array<std::int32_t, 3> vertices;
-      vertices[0] = _vertices[0];
-      vertices[2] = _vertices[2];
-      vertices[1] = _vertices[1];
 
       // Store local vertex indices here
       std::array<std::int32_t, 3> e_vertices;
@@ -88,16 +72,16 @@ compute_face_permutations_simplex(
 
       std::uint8_t g_min_v = 0;
       for (int v = 1; v < 3; ++v)
-        if (_vertices[v] < _vertices[g_min_v])
+        if (vertices[v] < vertices[g_min_v])
           g_min_v = v;
 
       // pre is the number of the next vertex clockwise from the lowest
       // numbered vertex
-      const int g_pre = g_min_v == 0 ? _vertices[3 - 1] : _vertices[g_min_v - 1];
+      const int g_pre = g_min_v == 0 ? vertices[3 - 1] : vertices[g_min_v - 1];
 
       // post is the number of the next vertex anticlockwise from the
       // lowest numbered vertex
-      const int g_post = g_min_v == 3 - 1 ? _vertices[0] : _vertices[g_min_v + 1];
+      const int g_post = g_min_v == 3 - 1 ? vertices[0] : vertices[g_min_v + 1];
 
       std::uint8_t rots = 0;
       if (g_post > g_pre)
@@ -109,8 +93,6 @@ compute_face_permutations_simplex(
       face_perm[c][3 * i] = (post > pre) == (g_post < g_pre);
       face_perm[c][3 * i + 1] = rots % 2;
       face_perm[c][3 * i + 2] = rots / 2;
-      //      std::cout << face_perm[c][3 * i] << " " << face_perm[c][3 * i + 1]
-      //      << " " << face_perm[c][3 * i + 2] << "\n\n";
     }
   }
   return face_perm;
