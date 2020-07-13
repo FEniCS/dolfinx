@@ -55,10 +55,9 @@ compute_face_permutations_simplex(
       // the lowest numbered vertex
 
       std::array<std::int32_t, 3> vertices;
-      vertices[0] = global_min;
-      vertices[2] = global_max;
-      vertices[1] = _vertices[0] + _vertices[1] + _vertices[2] - global_max
-                    - global_min;
+      vertices[0] = _vertices[0];
+      vertices[2] = _vertices[2];
+      vertices[1] = _vertices[1];
 
       // Store local vertex indices here
       std::array<std::int32_t, 3> e_vertices;
@@ -73,22 +72,58 @@ compute_face_permutations_simplex(
         e_vertices[j] = it - cell_vertices.data();
       }
 
+      std::cout << "\n";
+      std::cout << "{" << e_vertices[0] << " " << e_vertices[1] << " "
+         << e_vertices[2] << "}\n";
+      std::cout << "{" << vertices[0] << " " << vertices[1] << " "
+         << vertices[2] << "}\n";
+
+      std::uint8_t rots__ = 0;
+      for (int v = 1; v < 3; ++v)
+        if (e_vertices[v] < e_vertices[rots__])
+          rots__ = v;
+      std::cout << unsigned(rots__) << "\n";
+
+
+      vertices[0] = global_min;
+      vertices[2] = global_max;
+      vertices[1] = _vertices[0] + _vertices[1] + _vertices[2] - global_max
+                    - global_min;
+
+      // Find iterators pointing to cell vertex given a vertex on facet
+      for (int j = 0; j < 3; ++j)
+      {
+        const auto *const it = std::find(cell_vertices.data(),
+                                  cell_vertices.data() + cell_vertices.size(),
+                                  vertices[j]);
+        // Get the actual local vertex indices
+        e_vertices[j] = it - cell_vertices.data();
+      }
+
+      std::cout << "{" << e_vertices[0] << " " << e_vertices[1] << " "
+         << e_vertices[2] << "}\n";
+      std::cout << "{" << vertices[0] << " " << vertices[1] << " "
+         << vertices[2] << "}\n";
+
+
       // Number of rotations
       std::uint8_t rots = 0;
       for (int v = 1; v < 3; ++v)
         if (e_vertices[v] < e_vertices[rots])
           rots = v;
-      //      rots = rots >= global_rots ? rots - global_rots : rots + 3 -
-      //      global_rots; rots = rots <= global_rots ? global_rots - rots :
-      //      global_rots + 3 - rots;
 
-      //      std::cout << "{" << e_vertices[0] << " " << e_vertices[1] << " "
-      //      << e_vertices[2] << "}\n"; std::cout << "{" << vertices[0] << " "
-      //      << vertices[1] << " " << vertices[2] << "}\n"; std::cout << "r: "
-      //      << unsigned(minv) << "\n"; std::cout << "g: " <<
-      //      unsigned(global_minv) << "\n";
+      std::uint8_t g_rots = 0;
+      for (int v = 1; v < 3; ++v)
+        if (_vertices[v] < _vertices[g_rots])
+          g_rots = v;
 
-      //      const std::uint8_t rots = minv;
+      // pre is the number of the next vertex clockwise from the lowest
+      // numbered vertex
+      const int g_pre = g_rots == 0 ? _vertices[3 - 1] : _vertices[g_rots - 1];
+
+      // post is the number of the next vertex anticlockwise from the
+      // lowest numbered vertex
+      const int g_post = g_rots == 3 - 1 ? _vertices[0] : _vertices[g_rots + 1];
 
       // pre is the number of the next vertex clockwise from the lowest
       // numbered vertex
@@ -98,12 +133,18 @@ compute_face_permutations_simplex(
       // lowest numbered vertex
       const int post = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
 
-      //      std::cout << pre << " " << post << " :: " << global_pre << " " <<
-      //      global_post << "\n";
+      std::uint8_t rots2 = 0;
+      if (g_post > g_pre)
+        rots2 = rots__ <= g_rots ? g_rots - rots__ : g_rots + 3 - rots__;
+      else
+        rots2 = g_rots <= rots__ ? rots__ - g_rots : rots__ + 3 - g_rots;
 
-      face_perm[c][3 * i] = (post > pre); // == (global_post < global_pre);
-      face_perm[c][3 * i + 1] = rots % 2;
-      face_perm[c][3 * i + 2] = rots / 2;
+      assert (rots == rots2);
+
+
+      face_perm[c][3 * i] = (post > pre);// == (g_post < g_pre);
+      face_perm[c][3 * i + 1] = rots2 % 2;
+      face_perm[c][3 * i + 2] = rots2 / 2;
       //      std::cout << face_perm[c][3 * i] << " " << face_perm[c][3 * i + 1]
       //      << " " << face_perm[c][3 * i + 2] << "\n\n";
     }
