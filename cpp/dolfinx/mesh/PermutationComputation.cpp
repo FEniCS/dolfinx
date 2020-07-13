@@ -6,6 +6,7 @@
 
 #include "PermutationComputation.h"
 #include <bitset>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 
@@ -20,7 +21,8 @@ Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1>
 compute_face_permutations_simplex(
     const graph::AdjacencyList<std::int32_t>& c_to_v,
     const graph::AdjacencyList<std::int32_t>& c_to_f,
-    const graph::AdjacencyList<std::int32_t>& f_to_v, int faces_per_cell)
+    const graph::AdjacencyList<std::int32_t>& f_to_v, int faces_per_cell,
+    const std::shared_ptr<const common::IndexMap>& im)
 {
   const std::int32_t num_cells = c_to_v.num_nodes();
   Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1> face_perm(num_cells);
@@ -28,13 +30,13 @@ compute_face_permutations_simplex(
 
   for (int c = 0; c < num_cells; ++c)
   {
-    auto cell_vertices = c_to_v.links(c);
+    auto cell_vertices = im->local_to_global(c_to_v.links(c));
     auto cell_faces = c_to_f.links(c);
     for (int i = 0; i < faces_per_cell; ++i)
     {
       // Get the face
       const int face = cell_faces[i];
-      auto vertices = f_to_v.links(face);
+      auto vertices = im->local_to_global(f_to_v.links(face));
 
       // Orient that triangle so the the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
@@ -80,19 +82,21 @@ Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1>
 compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
                              const graph::AdjacencyList<std::int32_t>& c_to_f,
                              const graph::AdjacencyList<std::int32_t>& f_to_v,
-                             int faces_per_cell)
+                             int faces_per_cell,
+                             const std::shared_ptr<const common::IndexMap>& im)
 {
   const std::int32_t num_cells = c_to_v.num_nodes();
   Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1> face_perm(num_cells);
   face_perm.fill(0);
+
   for (int c = 0; c < num_cells; ++c)
   {
-    auto cell_vertices = c_to_v.links(c);
+    auto cell_vertices = im->local_to_global(c_to_v.links(c));
     auto cell_faces = c_to_f.links(c);
     for (int i = 0; i < faces_per_cell; ++i)
     {
       const int face = cell_faces[i];
-      auto vertices = f_to_v.links(face);
+      auto vertices = im->local_to_global(f_to_v.links(face));
 
       // quadrilateral
       // Orient that quad so the the lowest numbered vertex is the
@@ -179,15 +183,19 @@ compute_edge_reflections(const mesh::Topology& topology)
   auto e_to_v = topology.connectivity(1, 0);
   assert(e_to_v);
 
+  auto im = topology.index_map(0);
+  assert(im);
+
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> reflections(
       edges_per_cell, c_to_v->num_nodes());
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    auto cell_vertices = c_to_v->links(c);
+    std::cout << "{" << c_to_v->links(c) << "}\n<" << im->local_to_global(c_to_v->links(c)) << ">\n";
+    auto cell_vertices = im->local_to_global(c_to_v->links(c));
     auto cell_edges = c_to_e->links(c);
     for (int i = 0; i < edges_per_cell; ++i)
     {
-      auto vertices = e_to_v->links(cell_edges[i]);
+      auto vertices = im->local_to_global(e_to_v->links(cell_edges[i]));
 
       // If the entity is an interval, it should be oriented pointing
       // from the lowest numbered vertex to the highest numbered vertex.
@@ -202,7 +210,7 @@ compute_edge_reflections(const mesh::Topology& topology)
 
       // The number of reflections. Comparing iterators directly instead
       // of values they point to is sufficient here.
-      edge_perm[c][i] = (it1 < it0);
+      edge_perm[c][i] = (it1 < it0) == (vertices[1] < vertices[0]);
     }
   }
   return edge_perm;
@@ -224,17 +232,20 @@ compute_face_permutations(const mesh::Topology& topology)
   auto f_to_v = topology.connectivity(2, 0);
   assert(f_to_v);
 
+  auto im = topology.index_map(0);
+  assert(im);
+
   const CellType cell_type = topology.cell_type();
   const int faces_per_cell = cell_num_entities(cell_type, 2);
   if (cell_type == CellType::triangle or cell_type == CellType::tetrahedron)
   {
     return compute_face_permutations_simplex(*c_to_v, *c_to_f, *f_to_v,
-                                             faces_per_cell);
+                                             faces_per_cell, im);
   }
   else
   {
     return compute_face_permutations_tp(*c_to_v, *c_to_f, *f_to_v,
-                                        faces_per_cell);
+                                        faces_per_cell, im);
   }
 }
 //-----------------------------------------------------------------------------
