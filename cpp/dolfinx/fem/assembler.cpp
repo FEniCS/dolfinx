@@ -56,12 +56,12 @@ make_petsc_lambda(Mat A, [[maybe_unused]] std::vector<PetscInt>& cache)
 } // namespace
 
 //-----------------------------------------------------------------------------
-PetscScalar fem::assemble_scalar(const Form& M)
+PetscScalar fem::assemble_scalar(const Form<PetscScalar>& M)
 {
   return fem::impl::assemble_scalar<PetscScalar>(M);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_vector(Vec b, const Form& L)
+void fem::assemble_vector(Vec b, const Form<PetscScalar>& L)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -78,13 +78,14 @@ void fem::assemble_vector(Vec b, const Form& L)
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const Form<PetscScalar>& L)
 {
   fem::impl::assemble_vector<PetscScalar>(b, L);
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
-    Vec b, const std::vector<std::shared_ptr<const Form>>& a,
+    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale)
@@ -132,7 +133,7 @@ void fem::apply_lifting(
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form>>& a,
+    const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<
@@ -143,7 +144,7 @@ void fem::apply_lifting(
 }
 //-----------------------------------------------------------------------------
 Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> fem::assemble_matrix_eigen(
-    const Form& a,
+    const Form<PetscScalar>& a,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs)
 {
   // Index maps for dof ranges
@@ -200,7 +201,7 @@ Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> fem::assemble_matrix_eigen(
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(
-    Mat A, const Form& a,
+    Mat A, const Form<PetscScalar>& a,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs)
 {
   // Index maps for dof ranges
@@ -238,7 +239,7 @@ void fem::assemble_matrix(
   impl::assemble_matrix(mat_set_values, a, dof_marker0, dof_marker1);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
+void fem::assemble_matrix(Mat A, const Form<PetscScalar>& a, const std::vector<bool>& bc0,
                           const std::vector<bool>& bc1)
 {
   std::vector<PetscInt> tmp_dofs_petsc64;
@@ -349,7 +350,7 @@ void fem::set_bc(
 //-----------------------------------------------------------------------------
 std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>
 fem::bcs_rows(
-    const std::vector<const Form*>& L,
+    const std::vector<const Form<PetscScalar>*>& L,
     const std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>&
         bcs)
 {
@@ -367,7 +368,7 @@ fem::bcs_rows(
 std::vector<std::vector<
     std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>>
 fem::bcs_cols(
-    const std::vector<std::vector<std::shared_ptr<const Form>>>& a,
+    const std::vector<std::vector<std::shared_ptr<const Form<PetscScalar>>>>& a,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs)
 {
   // Pack DirichletBC pointers for columns

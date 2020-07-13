@@ -15,7 +15,8 @@ class HyperElasticProblem : public nls::NonlinearProblem
 public:
   HyperElasticProblem(
       std::shared_ptr<function::Function<PetscScalar>> u,
-      std::shared_ptr<fem::Form> L, std::shared_ptr<fem::Form> J,
+      std::shared_ptr<fem::Form<PetscScalar>> L,
+      std::shared_ptr<fem::Form<PetscScalar>> J,
       std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bcs)
       : _u(u), _l(L), _j(J), _bcs(bcs),
         _b(L->function_space(0)->dofmap()->index_map),
@@ -86,7 +87,7 @@ public:
 
 private:
   std::shared_ptr<function::Function<PetscScalar>> _u;
-  std::shared_ptr<fem::Form> _l, _j;
+  std::shared_ptr<fem::Form<PetscScalar>> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> _bcs;
 
   la::Vector<PetscScalar> _b;
@@ -109,8 +110,7 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Create mesh and define function space
-  std::array<Eigen::Vector3d, 2> pt
-      = {Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(1, 1, 1)};
+  std::array pt{Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(1, 1, 1)};
 
   auto cmap = fem::create_coordinate_map(create_coordinate_map_hyperelasticity);
   auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
@@ -122,11 +122,8 @@ int main(int argc, char* argv[])
   // Define solution function
   auto u = std::make_shared<function::Function<PetscScalar>>(V);
 
-  std::shared_ptr<fem::Form> a
-      = fem::create_form(create_form_hyperelasticity_J, {V, V});
-
-  std::shared_ptr<fem::Form> L
-      = fem::create_form(create_form_hyperelasticity_F, {V});
+  auto a = fem::create_form(create_form_hyperelasticity_J, {V, V});
+  auto L = fem::create_form(create_form_hyperelasticity_F, {V});
 
   auto u_rotation = std::make_shared<function::Function<PetscScalar>>(V);
   u_rotation->interpolate([](auto& x) {
@@ -168,17 +165,15 @@ int main(int argc, char* argv[])
   // Create Dirichlet boundary conditions
   auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs_left
-      = fem::locate_dofs_geometrical(
-          {*V}, [](auto x) { return x.row(0) < DBL_EPSILON; });
+  const auto bdofs_left = fem::locate_dofs_geometrical(
+      {*V}, [](auto& x) { return x.row(0) < DBL_EPSILON; });
+  const auto bdofs_right = fem::locate_dofs_geometrical(
+      {*V}, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs_right
-      = fem::locate_dofs_geometrical(
-          {*V}, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
-
-  std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bcs = {
-      std::make_shared<fem::DirichletBC<PetscScalar>>(u_clamp, bdofs_left),
-      std::make_shared<fem::DirichletBC<PetscScalar>>(u_rotation, bdofs_right)};
+  auto bcs = std::vector({std::make_shared<const fem::DirichletBC<PetscScalar>>(
+                              u_clamp, bdofs_left),
+                          std::make_shared<const fem::DirichletBC<PetscScalar>>(
+                              u_rotation, bdofs_right)});
 
   HyperElasticProblem problem(u, L, a, bcs);
   nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
