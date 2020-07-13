@@ -27,6 +27,11 @@ class VectorSpaceBasis;
 class PETScMatrix : public PETScOperator
 {
 public:
+
+  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                           const std::int32_t*, const PetscScalar*)>
+  add_fn(Mat A);
+
   /// Create holder of a PETSc Mat object from a sparsity pattern
   PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
 

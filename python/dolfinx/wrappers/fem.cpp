@@ -300,7 +300,7 @@ void fem(py::module& m)
         py::overload_cast<Mat, const dolfinx::function::FunctionSpace&,
                           const std::vector<std::shared_ptr<
                               const dolfinx::fem::DirichletBC<PetscScalar>>>&,
-                          PetscScalar>(&dolfinx::fem::add_diagonal));
+                          PetscScalar>(&dolfinx::fem::add_diagonal_petsc));
   m.def("assemble_matrix_eigen",
         &dolfinx::fem::assemble_matrix_eigen<PetscScalar>);
 

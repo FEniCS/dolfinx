@@ -23,37 +23,38 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
-namespace
-{
-const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                        const std::int32_t*, const PetscScalar*)>
-make_petsc_lambda(Mat A, [[maybe_unused]] std::vector<PetscInt>& cache)
-{
-  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const PetscScalar*)>
-      f = [A, &cache](std::int32_t m, const std::int32_t* rows, std::int32_t n,
-                      const std::int32_t* cols, const PetscScalar* vals) {
-        PetscErrorCode ierr;
-#ifdef PETSC_USE_64BIT_INDICES
-        cache.resize(m + n);
-        std::copy(rows, rows + m, cache.begin());
-        std::copy(cols, cols + n, cache.begin() + m);
-        const PetscInt *rows1 = cache.data(), *cols1 = rows1 + m;
-        ierr = MatSetValuesLocal(A, m, rows1, n, cols1, vals, ADD_VALUES);
-#else
-        cache.data(); // Dummy call to avoid unused variable error
-        ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, ADD_VALUES);
-#endif
+// namespace
+// {
+// const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+//                         const std::int32_t*, const PetscScalar*)>
+// make_petsc_add(Mat A, [[maybe_unused]] std::vector<PetscInt>& cache)
+// {
+//   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+//                           const std::int32_t*, const PetscScalar*)>
+//       f = [A, &cache](std::int32_t m, const std::int32_t* rows, std::int32_t
+//       n,
+//                       const std::int32_t* cols, const PetscScalar* vals) {
+//         PetscErrorCode ierr;
+// #ifdef PETSC_USE_64BIT_INDICES
+//         cache.resize(m + n);
+//         std::copy(rows, rows + m, cache.begin());
+//         std::copy(cols, cols + n, cache.begin() + m);
+//         const PetscInt *rows1 = cache.data(), *cols1 = rows1 + m;
+//         ierr = MatSetValuesLocal(A, m, rows1, n, cols1, vals, ADD_VALUES);
+// #else
+//         cache.data(); // Dummy call to avoid unused variable error
+//         ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, ADD_VALUES);
+// #endif
 
-#ifdef DEBUG
-        if (ierr != 0)
-          la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-#endif
-        return 0;
-      };
-  return f;
-}
-} // namespace
+// #ifdef DEBUG
+//         if (ierr != 0)
+//           la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+// #endif
+//         return 0;
+//       };
+//   return f;
+// }
+// } // namespace
 
 //-----------------------------------------------------------------------------
 void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
@@ -123,19 +124,17 @@ void fem::assemble_matrix_petsc(
     Mat A, const Form<PetscScalar>& a,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs)
 {
-  std::vector<PetscInt> tmp_dofs_petsc64;
-  assemble_matrix(make_petsc_lambda(A, tmp_dofs_petsc64), a, bcs);
+  assemble_matrix(la::PETScMatrix::add_fn(A), a, bcs);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix_petsc(Mat A, const Form<PetscScalar>& a,
                                 const std::vector<bool>& bc0,
                                 const std::vector<bool>& bc1)
 {
-  std::vector<PetscInt> tmp_dofs_petsc64;
-  impl::assemble_matrix(make_petsc_lambda(A, tmp_dofs_petsc64), a, bc0, bc1);
+  impl::assemble_matrix(la::PETScMatrix::add_fn(A), a, bc0, bc1);
 }
 //-----------------------------------------------------------------------------
-void fem::add_diagonal(
+void fem::add_diagonal_petsc(
     Mat A, const function::FunctionSpace& V,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     PetscScalar diagonal)
@@ -144,11 +143,11 @@ void fem::add_diagonal(
   {
     assert(bc);
     if (V.contains(*bc->function_space()))
-      add_diagonal(A, bc->dofs_owned().col(0), diagonal);
+      add_diagonal_petsc(A, bc->dofs_owned().col(0), diagonal);
   }
 }
 //-----------------------------------------------------------------------------
-void fem::add_diagonal(
+void fem::add_diagonal_petsc(
     Mat A,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
     PetscScalar diagonal)
