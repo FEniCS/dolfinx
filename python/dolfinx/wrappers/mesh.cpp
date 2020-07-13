@@ -51,16 +51,20 @@ void declare_meshtags(py::module& m, std::string type)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)
       .def("ufl_id", &dolfinx::mesh::MeshTags<T>::id)
-      .def_property_readonly("values",
-                             [](dolfinx::mesh::MeshTags<T>& self) {
-                               return py::array_t<T>(self.values().size(),
-                                                     self.values().data(),
-                                                     py::none());
-                             })
-      .def_property_readonly("indices", [](dolfinx::mesh::MeshTags<T>& self) {
-        return py::array_t<std::int32_t>(self.indices().size(),
-                                         self.indices().data(), py::none());
-      });
+      .def_property_readonly(
+          "values",
+          [](dolfinx::mesh::MeshTags<T>& self) {
+            return py::array_t<T>(self.values().size(), self.values().data(),
+                                  py::none());
+          },
+          py::return_value_policy::reference_internal)
+      .def_property_readonly(
+          "indices",
+          [](dolfinx::mesh::MeshTags<T>& self) {
+            return py::array_t<std::int32_t>(self.indices().size(),
+                                             self.indices().data(), py::none());
+          },
+          py::return_value_policy::reference_internal);
 
   m.def("create_meshtags",
         [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
