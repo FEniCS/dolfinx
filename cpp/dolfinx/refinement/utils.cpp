@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "ParallelRefinement.h"
+#include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -20,7 +20,6 @@
 #include <vector>
 
 using namespace dolfinx;
-using namespace dolfinx::refinement;
 
 namespace
 {
@@ -151,7 +150,7 @@ create_new_geometry(
 
 //---------------------------------------------------------------------------------
 std::pair<MPI_Comm, std::map<std::int32_t, std::set<int>>>
-ParallelRefinement::compute_edge_sharing(const mesh::Mesh& mesh)
+refinement::compute_edge_sharing(const mesh::Mesh& mesh)
 {
   if (!mesh.topology().connectivity(1, 0))
     throw std::runtime_error("Edges must be initialised");
@@ -195,7 +194,7 @@ ParallelRefinement::compute_edge_sharing(const mesh::Mesh& mesh)
   return {neighbour_comm, shared_edges};
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::update_logical_edgefunction(
+void refinement::update_logical_edgefunction(
     const MPI_Comm& neighbour_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
     std::vector<bool>& marked_edges, const common::IndexMap& map_e)
@@ -225,7 +224,7 @@ void ParallelRefinement::update_logical_edgefunction(
 //-----------------------------------------------------------------------------
 std::pair<std::map<std::int32_t, std::int64_t>,
           Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-ParallelRefinement::create_new_vertices(
+refinement::create_new_vertices(
     const MPI_Comm& neighbour_comm,
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges,
     const mesh::Mesh& mesh, const std::vector<bool>& marked_edges)
@@ -319,7 +318,7 @@ ParallelRefinement::create_new_vertices(
   return {local_edge_to_new_vertex, new_vertex_coordinates};
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> ParallelRefinement::adjust_indices(
+std::vector<std::int64_t> refinement::adjust_indices(
     const std::shared_ptr<const common::IndexMap>& index_map, std::int32_t n)
 {
   // Add in an extra "n" indices at the end of the current local_range
@@ -348,7 +347,7 @@ std::vector<std::int64_t> ParallelRefinement::adjust_indices(
   return global_indices;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh ParallelRefinement::build_local(
+mesh::Mesh refinement::build_local(
     const mesh::Mesh& old_mesh, const std::vector<std::int64_t>& cell_topology,
     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         new_vertex_coordinates)
@@ -370,7 +369,7 @@ mesh::Mesh ParallelRefinement::build_local(
   return mesh;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh ParallelRefinement::partition(
+mesh::Mesh refinement::partition(
     const mesh::Mesh& old_mesh, const std::vector<std::int64_t>& cell_topology,
     int num_ghost_cells,
     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&

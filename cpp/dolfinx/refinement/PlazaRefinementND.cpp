@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "PlazaRefinementND.h"
-#include "ParallelRefinement.h"
+#include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -57,8 +57,8 @@ void enforce_rules(
   while (update_count > 0)
   {
     update_count = 0;
-    ParallelRefinement::update_logical_edgefunction(
-        neighbour_comm, marked_for_update, marked_edges, *map_e);
+    refinement::update_logical_edgefunction(neighbour_comm, marked_for_update,
+                                            marked_edges, *map_e);
     for (int i = 0; i < num_neighbours; ++i)
       marked_for_update[i].clear();
 
@@ -395,8 +395,8 @@ mesh::Mesh compute_refinement(
 
   // Make new vertices in parallel
   const auto [new_vertex_map, new_vertex_coordinates]
-      = ParallelRefinement::create_new_vertices(neighbour_comm, shared_edges,
-                                                mesh, marked_edges);
+      = refinement::create_new_vertices(neighbour_comm, shared_edges, mesh,
+                                        marked_edges);
 
   std::vector<std::size_t> parent_cell;
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
@@ -417,7 +417,7 @@ mesh::Mesh compute_refinement(
       marked_edges.begin(),
       marked_edges.begin() + mesh.topology().index_map(1)->size_local(), true);
 
-  std::vector<std::int64_t> global_indices = ParallelRefinement::adjust_indices(
+  std::vector<std::int64_t> global_indices = refinement::adjust_indices(
       mesh.topology().index_map(0), num_new_vertices_local);
 
   const int num_cells = map_c->size_local();
@@ -505,12 +505,10 @@ mesh::Mesh compute_refinement(
 
   const bool serial = (dolfinx::MPI::size(mesh.mpi_comm()) == 1);
   if (serial)
-    return ParallelRefinement::build_local(mesh, cell_topology,
-                                           new_vertex_coordinates);
+    return refinement::build_local(mesh, cell_topology, new_vertex_coordinates);
   else
-    return ParallelRefinement::partition(mesh, cell_topology,
-                                         num_new_ghost_cells,
-                                         new_vertex_coordinates, redistribute);
+    return refinement::partition(mesh, cell_topology, num_new_ghost_cells,
+                                 new_vertex_coordinates, redistribute);
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -526,8 +524,7 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
 
   common::Timer t0("PLAZA: refine");
 
-  auto [neighbour_comm, shared_edges]
-      = ParallelRefinement::compute_edge_sharing(mesh);
+  auto [neighbour_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
 
   // Mark all edges
   auto map_e = mesh.topology().index_map(1);
@@ -555,8 +552,7 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
 
   common::Timer t0("PLAZA: refine");
 
-  auto [neighbour_comm, shared_edges]
-      = ParallelRefinement::compute_edge_sharing(mesh);
+  auto [neighbour_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
 
   const std::size_t entity_dim = refinement_marker.dim();
   const std::vector<std::int32_t>& marker_indices = refinement_marker.indices();
@@ -603,8 +599,8 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   }
 
   // Communicate any shared edges
-  ParallelRefinement::update_logical_edgefunction(
-      neighbour_comm, marked_for_update, marked_edges, *map_e);
+  refinement::update_logical_edgefunction(neighbour_comm, marked_for_update,
+                                          marked_edges, *map_e);
 
   // Enforce rules about refinement (i.e. if any edge is marked in a triangle,
   // then the longest edge must also be marked).
