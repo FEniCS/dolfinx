@@ -190,7 +190,8 @@ compute_edge_reflections(const mesh::Topology& topology)
       edges_per_cell, c_to_v->num_nodes());
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    std::cout << "{" << c_to_v->links(c) << "}\n<" << im->local_to_global(c_to_v->links(c)) << ">\n";
+    std::cout << "{" << c_to_v->links(c) << "}\n<"
+              << im->local_to_global(c_to_v->links(c)) << ">\n";
     auto cell_vertices = im->local_to_global(c_to_v->links(c));
     auto cell_edges = c_to_e->links(c);
     for (int i = 0; i < edges_per_cell; ++i)
