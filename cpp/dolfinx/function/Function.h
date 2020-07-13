@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2012 Anders Logg
+// Copyright (C) 2003-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -29,6 +29,12 @@ namespace dolfinx::function
 
 namespace detail
 {
+/// Create a PETSc Vec that wrap the data in x
+/// @param[in] map The index map that described the parallel layout of
+///    the distributed vector
+/// @param[in] x The local part of the vector, including ghost entries
+/// @param[out] A PETSc Vec object that share the x data. The caller is
+///   responsible for destroying the Vec.
 Vec create_ghosted_vector(
     const common::IndexMap& map,
     const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x);

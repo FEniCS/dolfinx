@@ -432,7 +432,9 @@ void fem(py::module& m)
                                              py::none());
           },
           py::return_value_policy::reference_internal,
-          "Return active domains for given integral");
+          "Return active domains for given integral")
+      .def("set_domains",
+           &dolfinx::fem::FormIntegrals<PetscScalar>::set_domains);
 
   py::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell)
