@@ -82,32 +82,35 @@ T assemble_scalar(const fem::Form<T>& M)
       = pack_coefficients(M);
 
   const FormIntegrals<T>& integrals = M.integrals();
-  using type = fem::IntegralType;
   T value(0);
-  for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
   {
-    const auto& fn = integrals.get_tabulate_tensor(type::cell, i);
+    const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = integrals.integral_domains(type::cell, i);
+        = integrals.integral_domains(IntegralType::cell, i);
     value += fem::impl::assemble_cells(*mesh, active_cells, fn, coeffs,
                                        constant_values);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::exterior_facet);
+       ++i)
   {
-    const auto& fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
-        = integrals.integral_domains(type::exterior_facet, i);
+        = integrals.integral_domains(IntegralType::exterior_facet, i);
     value += fem::impl::assemble_exterior_facets(*mesh, active_facets, fn,
                                                  coeffs, constant_values);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
+       ++i)
   {
     const std::vector<int> c_offsets = M.coefficients().offsets();
-    const auto& fn = integrals.get_tabulate_tensor(type::interior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
-        = integrals.integral_domains(type::interior_facet, i);
+        = integrals.integral_domains(IntegralType::interior_facet, i);
     value += fem::impl::assemble_interior_facets(
         *mesh, active_facets, fn, coeffs, c_offsets, constant_values);
   }

@@ -119,33 +119,36 @@ void assemble_matrix(
       coeffs = pack_coefficients(a);
 
   const FormIntegrals<ScalarType>& integrals = a.integrals();
-  using type = fem::IntegralType;
-  for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
   {
-    const auto& fn = integrals.get_tabulate_tensor(type::cell, i);
+    const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = integrals.integral_domains(type::cell, i);
+        = integrals.integral_domains(IntegralType::cell, i);
     fem::impl::assemble_cells<ScalarType>(mat_set_values, *mesh, active_cells,
                                           dofs0, dofs1, bc0, bc1, fn, coeffs,
                                           constants);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::exterior_facet);
+       ++i)
   {
-    const auto& fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
-        = integrals.integral_domains(type::exterior_facet, i);
+        = integrals.integral_domains(IntegralType::exterior_facet, i);
     fem::impl::assemble_exterior_facets<ScalarType>(
         mat_set_values, *mesh, active_facets, *dofmap0, *dofmap1, bc0, bc1, fn,
         coeffs, constants);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
+       ++i)
   {
     const std::vector<int> c_offsets = a.coefficients().offsets();
-    const auto& fn = integrals.get_tabulate_tensor(type::interior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
-        = integrals.integral_domains(type::interior_facet, i);
+        = integrals.integral_domains(IntegralType::interior_facet, i);
     fem::impl::assemble_interior_facets<ScalarType>(
         mat_set_values, *mesh, active_facets, *dofmap0, *dofmap1, bc0, bc1, fn,
         coeffs, c_offsets, constants);

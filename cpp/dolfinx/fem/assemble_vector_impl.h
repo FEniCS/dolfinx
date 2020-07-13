@@ -428,33 +428,34 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
       = pack_coefficients(L);
 
   const FormIntegrals<T>& integrals = L.integrals();
-  using type = fem::IntegralType;
-  for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
   {
     const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = integrals.integral_domains(type::cell, i);
+        = integrals.integral_domains(IntegralType::cell, i);
     fem::impl::assemble_cells(b, *mesh, active_cells, dofs, fn, coeffs,
                               constant_values);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::exterior_facet);
+       ++i)
   {
     const auto& fn
         = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
-        = integrals.integral_domains(type::exterior_facet, i);
+        = integrals.integral_domains(IntegralType::exterior_facet, i);
     fem::impl::assemble_exterior_facets(b, *mesh, active_facets, *dofmap, fn,
                                         coeffs, constant_values);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
+       ++i)
   {
     const std::vector<int> c_offsets = L.coefficients().offsets();
     const auto& fn
         = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
-        = integrals.integral_domains(type::interior_facet, i);
+        = integrals.integral_domains(IntegralType::interior_facet, i);
     fem::impl::assemble_interior_facets(b, *mesh, active_facets, *dofmap, fn,
                                         coeffs, c_offsets, constant_values);
   }
