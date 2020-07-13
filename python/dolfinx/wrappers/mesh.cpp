@@ -230,7 +230,7 @@ void mesh(py::module& m)
   // dolfinx::mesh::MeshTags
 
   declare_meshtags<std::int8_t>(m, "int8");
-  declare_meshtags<int>(m, "int");
+  declare_meshtags<std::int32_t>(m, "int32");
   declare_meshtags<double>(m, "double");
   declare_meshtags<std::int64_t>(m, "int64");
 
