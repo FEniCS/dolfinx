@@ -198,11 +198,11 @@ int main(int argc, char* argv[])
   VecSet(b.vec(), 0.0);
   VecGhostUpdateBegin(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
   VecGhostUpdateEnd(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
-  dolfinx::fem::assemble_vector(b.vec(), *L);
-  dolfinx::fem::apply_lifting(b.vec(), {a}, {{bc}}, {}, 1.0);
+  dolfinx::fem::assemble_vector_petsc(b.vec(), *L);
+  dolfinx::fem::apply_lifting_petsc(b.vec(), {a}, {{bc}}, {}, 1.0);
   VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
   VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-  dolfinx::fem::set_bc(b.vec(), bc, nullptr);
+  dolfinx::fem::set_bc_petsc(b.vec(), bc, nullptr);
 
   la::PETScKrylovSolver lu(MPI_COMM_WORLD);
   la::PETScOptions::set("ksp_type", "preonly");

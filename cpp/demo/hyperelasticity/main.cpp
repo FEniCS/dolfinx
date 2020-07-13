@@ -56,7 +56,7 @@ public:
   {
     // Assemble b and update ghosts
     _b.array().setZero();
-    fem::assemble_vector(_b.array(), *_l);
+    fem::assemble_vector<PetscScalar>(_b.array(), *_l);
     VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
     VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
 
@@ -69,7 +69,7 @@ public:
     VecGetArrayRead(x_local, &array);
     Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x(array,
                                                                        n);
-    set_bc(_b.array(), _bcs, _x, -1);
+    fem::set_bc<PetscScalar>(_b.array(), _bcs, _x, -1.0);
     VecRestoreArrayRead(x, &array);
 
     return _b_petsc;

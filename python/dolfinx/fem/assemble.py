@@ -86,7 +86,7 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     b = cpp.la.create_vector(_L.function_space(0).dofmap.index_map)
     with b.localForm() as b_local:
         b_local.set(0.0)
-    cpp.fem.assemble_vector(b, _L)
+        cpp.fem.assemble_vector(b_local.array_w, _L)
     return b
 
 
@@ -97,7 +97,8 @@ def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     not accumulated on the owning processes.
 
     """
-    cpp.fem.assemble_vector(b, _create_cpp_form(L))
+    with b.localForm() as b_local:
+        cpp.fem.assemble_vector(b_local.array_w, _create_cpp_form(L))
     return b
 
 
@@ -124,7 +125,8 @@ def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.V
 
     """
     for b_sub, L_sub in zip(b.getNestSubVecs(), _create_cpp_form(L)):
-        cpp.fem.assemble_vector(b_sub, L_sub)
+        with b_sub.localForm() as b_local:
+            cpp.fem.assemble_vector(b_sub.array_w, L_sub)
     return b
 
 
@@ -311,7 +313,8 @@ def apply_lifting(b: PETSc.Vec,
     Ghost contributions are not accumulated (not sent to owner). Caller
     is responsible for calling VecGhostUpdateBegin/End.
     """
-    cpp.fem.apply_lifting(b, _create_cpp_form(a), bcs, x0, scale)
+    with b.localForm() as b_local:
+        cpp.fem.apply_lifting(b_local.array_w, _create_cpp_form(a), bcs, x0, scale)
 
 
 def apply_lifting_nest(b: PETSc.Vec,
@@ -329,8 +332,8 @@ def apply_lifting_nest(b: PETSc.Vec,
     _a = _create_cpp_form(a)
     bcs1 = cpp.fem.bcs_cols(_a, bcs)
     for b_sub, a_sub, bc1 in zip(b.getNestSubVecs(), _a, bcs1):
-        cpp.fem.apply_lifting(b_sub, a_sub, bc1, _x0, scale)
-
+        with b_sub.localForm() as b_local:
+            cpp.fem.apply_lifting(b_local.array_w, a_sub, bc1, _x0, scale)
     return b
 
 
@@ -344,7 +347,7 @@ def set_bc(b: PETSc.Vec,
     condition value.
 
     """
-    cpp.fem.set_bc(b, bcs, x0, scale)
+    cpp.fem.set_bc(b.array_w, bcs, x0, scale)
 
 
 def set_bc_nest(b: PETSc.Vec,
@@ -363,4 +366,5 @@ def set_bc_nest(b: PETSc.Vec,
     else:
         _x0 = [None] * len(_b)
     for b_sub, bc, x_sub in zip(_b, bcs, _x0):
-        cpp.fem.set_bc(b_sub, bc, x_sub, scale)
+        with b_sub.localForm() as b_local:
+            cpp.fem.set_bc(b_local.array_w, bc, x_sub, scale)
