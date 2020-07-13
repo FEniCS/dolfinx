@@ -100,11 +100,11 @@ void scatter_local_vectors(
     const std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,
     const std::vector<const common::IndexMap*>& maps);
 
-/// Norm
+/// L2 Norm of distributed vector
 template <typename T>
 T norm(const la::Vector<T>& v);
 
-// Max
+/// Maximum value of distributed vector
 template <typename T>
 T max(const la::Vector<T>& v);
 

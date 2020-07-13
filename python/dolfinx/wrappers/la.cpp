@@ -86,7 +86,10 @@ void la(py::module& m)
   py::class_<dolfinx::la::Vector<PetscScalar>,
              std::shared_ptr<dolfinx::la::Vector<PetscScalar>>>(m, "Vector")
       .def("array",
-           py::overload_cast<>(&dolfinx::la::Vector<PetscScalar>::array));
+           py::overload_cast<>(&dolfinx::la::Vector<PetscScalar>::array))
+      .def("norm", [](const dolfinx::la::Vector<PetscScalar>& self) {
+        return dolfinx::la::norm(self);
+      });
 
   // utils
   m.def("create_vector",
