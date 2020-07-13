@@ -29,6 +29,7 @@ class IndexMap;
 namespace refinement
 {
 
+/// to be removed
 class ParallelRefinement
 {
 public:
@@ -36,17 +37,17 @@ public:
   /// The resulting MPI_Comm is over the neighbourhood of shared edges, allowing
   /// direct communication between peers. The resulting map is from local edge
   /// index to the set of neighbours (within the comm) that share that edge.
-  /// @param mesh Mesh
+  /// @param[in] mesh Mesh
   /// @return pair of comm and map
   static std::pair<MPI_Comm, std::map<std::int32_t, std::set<int>>>
   compute_edge_sharing(const mesh::Mesh& mesh);
 
-  /// Transfer marked edges between processes
-  /// @param[in] neighbour_comm MPI Communicator for neighbourhood
-  /// @param[in] marked_for_update Lists of edges to be updates on each
+  /// Transfer marked edges between processes.
+  /// @param neighbour_comm MPI Communicator for neighbourhood
+  /// @param marked_for_update Lists of edges to be updates on each
   /// neighbour
-  /// @param[in/out] marked_edges Marked edges to be updated
-  /// @param[in] map_e IndexMap for edges
+  /// @param marked_edges Marked edges to be updated
+  /// @param map_e IndexMap for edges
   static void update_logical_edgefunction(
       const MPI_Comm& neighbour_comm,
       const std::vector<std::vector<std::int32_t>>& marked_for_update,
