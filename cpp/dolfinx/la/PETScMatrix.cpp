@@ -23,7 +23,7 @@ PETScMatrix::add_fn(Mat A)
 {
   return [A, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
-             const std::int32_t* cols, const PetscScalar* vals) {
+             const std::int32_t* cols, const PetscScalar* vals) mutable {
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);

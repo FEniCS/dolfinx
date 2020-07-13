@@ -162,6 +162,28 @@ void assemble_matrix(
   impl::assemble_matrix(mat_add, a, dof_marker0, dof_marker1);
 }
 
+/// Assemble bilinear form into a matrix. Matrix must already be
+/// initialised. Does not zero or finalise the matrix.
+/// @param[in,out] A The matrix to assemble in to. Matrix must be
+///   initialised.
+/// @param[in] a The bilinear form to assemble
+/// @param[in] dof_marker0 Boundary condition markers for the rows. If
+///   bc[i] is true then rows i in A will be zeroed. The index i is a
+///   local index.
+/// @param[in] dof_marker1 Boundary condition markers for the columns.
+///   If bc[i] is true then rows i in A will be zeroed. The index i is a
+///   local index.
+template <typename T>
+void assemble_matrix(
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const T*)>& mat_add,
+    const Form<PetscScalar>& a, const std::vector<bool>& dof_marker0,
+    const std::vector<bool>& dof_marker1)
+
+{
+  impl::assemble_matrix(mat_add, a, dof_marker0, dof_marker1);
+}
+
 // Experimental
 /// Assemble bilinear form into an Eigen Sparse matrix.
 /// @param[in] a The bilinear from to assemble
@@ -194,33 +216,6 @@ Eigen::SparseMatrix<T, Eigen::RowMajor> assemble_matrix_eigen(
   mat.setFromTriplets(triplets.begin(), triplets.end());
   return mat;
 }
-
-/// Assemble bilinear form into a matrix. Matrix must already be
-/// initialised. Does not zero or finalise the matrix.
-/// @param[in,out] A The PETsc matrix to assemble the form into. The
-///   matrix size/layout must be initialised before calling this function.
-///   The matrix is not zeroed and it is not finalised (shared entries not
-/// communicated).
-/// @param[in] a The bilinear from to assemble
-/// @param[in] bcs Boundary conditions to apply. For boundary condition
-///   dofs the row and column are zeroed. The diagonal entry is not set.
-void assemble_matrix_petsc(
-    Mat A, const Form<PetscScalar>& a,
-    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs);
-
-/// Assemble bilinear form into a matrix. Matrix must already be
-/// initialised. Does not zero or finalise the matrix.
-/// @param[in,out] A The matrix to assemble in to. Matrix must be
-///   initialised.
-/// @param[in] a The bilinear form to assemble
-/// @param[in] bc0 Boundary condition markers for the rows. If bc[i] is
-///   true then rows i in A will be zeroed. The index i is a local index.
-/// @param[in] bc1 Boundary condition markers for the columns. If bc[i]
-///   is true then rows i in A will be zeroed. The index i is a local
-///   index.
-void assemble_matrix_petsc(Mat A, const Form<PetscScalar>& a,
-                           const std::vector<bool>& bc0,
-                           const std::vector<bool>& bc1);
 
 /// Adds a value to the diagonal of a matrix for specified rows. It is
 /// typically called after assembly. The assembly function zeroes

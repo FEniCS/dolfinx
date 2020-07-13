@@ -288,14 +288,18 @@ void fem(py::module& m)
         "Assemble linear form into an existing Eigen vector");
   // Matrices
   m.def("assemble_matrix_petsc",
-        py::overload_cast<Mat, const dolfinx::fem::Form<PetscScalar>&,
-                          const std::vector<std::shared_ptr<
-                              const dolfinx::fem::DirichletBC<PetscScalar>>>&>(
-            &dolfinx::fem::assemble_matrix_petsc));
+        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+           const std::vector<std::shared_ptr<
+               const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs) {
+          dolfinx::fem::assemble_matrix(dolfinx::la::PETScMatrix::add_fn(A), a,
+                                        bcs);
+        });
   m.def("assemble_matrix_petsc",
-        py::overload_cast<Mat, const dolfinx::fem::Form<PetscScalar>&,
-                          const std::vector<bool>&, const std::vector<bool>&>(
-            &dolfinx::fem::assemble_matrix_petsc));
+        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+           const std::vector<bool>& rows0, const std::vector<bool>& rows1) {
+          dolfinx::fem::assemble_matrix(dolfinx::la::PETScMatrix::add_fn(A), a,
+                                        rows0, rows1);
+        });
   m.def("add_diagonal",
         py::overload_cast<Mat, const dolfinx::function::FunctionSpace&,
                           const std::vector<std::shared_ptr<

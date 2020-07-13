@@ -87,20 +87,6 @@ void fem::apply_lifting_petsc(
   VecGhostRestoreLocalForm(b, &b_local);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix_petsc(
-    Mat A, const Form<PetscScalar>& a,
-    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs)
-{
-  assemble_matrix(la::PETScMatrix::add_fn(A), a, bcs);
-}
-//-----------------------------------------------------------------------------
-void fem::assemble_matrix_petsc(Mat A, const Form<PetscScalar>& a,
-                                const std::vector<bool>& bc0,
-                                const std::vector<bool>& bc1)
-{
-  impl::assemble_matrix(la::PETScMatrix::add_fn(A), a, bc0, bc1);
-}
-//-----------------------------------------------------------------------------
 void fem::add_diagonal_petsc(
     Mat A, const function::FunctionSpace& V,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
