@@ -19,6 +19,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <numeric>
+#include <random>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -31,6 +32,22 @@ using namespace dolfinx::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
+/// Get the ownership of an entity shared over several processes
+/// @param processes Set of sharing processes
+/// @param vertices Global vertex indices of entity
+/// @return owning process number
+int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
+{
+  // Use a deterministic random number generator, seeded with global vertex
+  // indices ensuring all processes get the same answer
+  std::mt19937 gen;
+  std::seed_seq seq(vertices.begin(), vertices.end());
+  gen.seed(seq);
+  std::vector<int> p(processes.begin(), processes.end());
+  int index = gen() % p.size();
+  int owner = p[index];
+  return owner;
+}
 
 /// Takes an array and computes the sort permutation that would reorder
 /// the rows in ascending order
@@ -214,6 +231,8 @@ get_local_indexing(
   // for the received entities (from other processes) with the indices
   // of the sent entities (to other processes)
   std::unordered_map<std::int32_t, std::set<std::int32_t>> shared_entities;
+  std::unordered_map<std::int32_t, std::vector<std::int64_t>>
+      shared_entity_to_global_vertices;
 
   // Prepare data for neighbour all to all
   std::vector<std::int64_t> send_entities_data;
@@ -249,6 +268,7 @@ get_local_indexing(
           it != global_entity_to_entity_index.end())
       {
         shared_entities[it->second].insert(p);
+        shared_entity_to_global_vertices.insert({it->second, recv_vec});
         recv_index.push_back(it->second);
       }
       else
@@ -256,12 +276,16 @@ get_local_indexing(
     }
   }
 
+  // Add this rank to the list of sharing processes
+  const int mpi_rank = dolfinx::MPI::rank(comm);
+  for (auto& q : shared_entities)
+    q.second.insert(mpi_rank);
+
   //---------
   // Determine ownership
   std::vector<std::int32_t> local_index(entity_count, -1);
   std::int32_t num_local;
   {
-    int mpi_rank = dolfinx::MPI::rank(comm);
     std::int32_t c = 0;
     // Index non-ghost entities
     for (int i = 0; i < entity_count; ++i)
@@ -279,13 +303,18 @@ get_local_indexing(
         local_index[i] = c;
         ++c;
       }
-      else if (*(it->second.begin()) > mpi_rank)
+      else
       {
-        // Take ownership (lower rank wins)
-        // FIXME: this could be made a deterministic function
-        // on each process, instead of simply "lowest wins"
-        local_index[i] = c;
-        ++c;
+        const auto global_vertices_it
+            = shared_entity_to_global_vertices.find(i);
+        assert(global_vertices_it != shared_entity_to_global_vertices.end());
+        int owner_rank = get_ownership(it->second, global_vertices_it->second);
+        if (owner_rank == mpi_rank)
+        {
+          // Take ownership
+          local_index[i] = c;
+          ++c;
+        }
       }
     }
     num_local = c;

@@ -23,6 +23,7 @@ class FunctionSpace;
 
 namespace fem
 {
+template <typename T>
 class DirichletBC;
 class Form;
 
@@ -75,7 +76,8 @@ void assemble_vector(
 /// is responsible for calling VecGhostUpdateBegin/End.
 void apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form>>& a,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale);
 
 /// Modify b such that:
@@ -93,7 +95,8 @@ void apply_lifting(
 void apply_lifting(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>>& a,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<
         Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
     double scale);
@@ -107,7 +110,8 @@ void apply_lifting(
 ///                dofs the row and column are zeroed. The diagonal
 ///                entry is not set.
 Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> assemble_matrix_eigen(
-    const Form& a, const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
+    const Form& a,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs);
 
 /// Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
@@ -122,7 +126,7 @@ Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> assemble_matrix_eigen(
 ///                entry is not set.
 void assemble_matrix(
     Mat A, const Form& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs);
 
 /// Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
@@ -154,9 +158,10 @@ void assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
 /// @param[in] bcs The Dirichlet boundary condtions
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 ///                     boundary condition applied
-void add_diagonal(Mat A, const function::FunctionSpace& V,
-                  const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
-                  PetscScalar diagonal = 1.0);
+void add_diagonal(
+    Mat A, const function::FunctionSpace& V,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
+    PetscScalar diagonal = 1.0);
 
 // Developer note: This function calls MatSetValuesLocal and not
 // MatZeroRowsLocal
@@ -187,24 +192,27 @@ void add_diagonal(
 /// Set bc values in owned (local) part of the PETScVector, multiplied
 /// by 'scale'. The vectors b and x0 must have the same local size. The
 /// bcs should be on (sub-)spaces of the form L that b represents.
-void set_bc(Vec b, const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
-            const Vec x0, double scale = 1.0);
+void set_bc(
+    Vec b,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
+    const Vec x0, double scale = 1.0);
 
 /// Set bc values in owned (local) part of the PETScVector, multiplied
 /// by 'scale'. The vectors b and x0 must have the same local size. The
 /// bcs should be on (sub-)spaces of the form L that b represents.
 void set_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale = 1.0);
 
 /// Set bc values in owned (local) part of the PETScVector, multiplied
 /// by 'scale'. The bcs should be on (sub-)spaces of the form L that b
 /// represents.
-void set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-            const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
-            double scale = 1.0);
+void set_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
+    double scale = 1.0);
 
 // FIXME: Handle null block
 // FIXME: Pass function spaces rather than forms
@@ -215,9 +223,11 @@ void set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
 ///         bcs_block[i] is the list of boundary conditions applied to
 ///         L[i]. The order within bcs_block[i] preserves the input
 ///         order of the bcs array.
-std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>
-bcs_rows(const std::vector<const Form*>& L,
-         const std::vector<std::shared_ptr<const fem::DirichletBC>>& bcs);
+std::vector<std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>
+bcs_rows(
+    const std::vector<const Form*>& L,
+    const std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>&
+        bcs);
 
 // FIXME: Handle null block
 // FIXME: Pass function spaces rather than forms
@@ -228,9 +238,11 @@ bcs_rows(const std::vector<const Form*>& L,
 ///         bcs_block[i] is the list of boundary conditions applied to
 ///         the trial space of a[i]. The order within bcs_block[i]
 ///         preserves the input order of the bcs array.
-std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
-bcs_cols(const std::vector<std::vector<std::shared_ptr<const Form>>>& a,
-         const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
+std::vector<std::vector<
+    std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>>>>
+bcs_cols(
+    const std::vector<std::vector<std::shared_ptr<const Form>>>& a,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs);
 
 } // namespace fem
 } // namespace dolfinx
