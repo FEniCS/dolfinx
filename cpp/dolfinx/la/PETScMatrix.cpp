@@ -29,10 +29,9 @@ PETScMatrix::add_fn(Mat A)
     cache.resize(m + n);
     std::copy(rows, rows + m, cache.begin());
     std::copy(cols, cols + n, cache.begin() + m);
-    const PetscInt *rows1 = cache.data(), *cols1 = rows1 + m;
-    ierr = MatSetValuesLocal(A, m, rows1, n, cols1, vals, ADD_VALUES);
+    const PetscInt *_rows = cache.data(), *_cols1 = _rows + m;
+    ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, ADD_VALUES);
 #else
-    cache.data(); // Dummy call to avoid unused variable error
     ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, ADD_VALUES);
 #endif
 
