@@ -222,6 +222,30 @@ void assemble_matrix_petsc(Mat A, const Form<PetscScalar>& a,
                            const std::vector<bool>& bc0,
                            const std::vector<bool>& bc1);
 
+/// Adds a value to the diagonal of a matrix for specified rows. It is
+/// typically called after assembly. The assembly function zeroes
+/// Dirichlet rows and columns. For block matrices, this function should
+/// normally be called only on the diagonal blocks, i.e. blocks for
+/// which the test and trial spaces are the same.
+/// @param[in] mat_add The function for adding values to a matrix
+/// @param[in] rows The rows, in local indices, for which to add a value
+///   to the diagonal
+/// @param[in] diagonal The value to add to the diagonal for the
+///   specified rows
+template <typename T>
+void add_diagonal(
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const T*)>& mat_add,
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
+    T diagonal = 1.0)
+{
+  for (Eigen::Index i = 0; i < rows.size(); ++i)
+  {
+    const std::int32_t row = rows(i);
+    mat_add(1, &row, 1, &row, &diagonal);
+  }
+}
+
 /// Adds a value to the diagonal of the matrix for rows with a Dirichlet
 /// boundary conditions applied. This function is typically called after
 /// assembly. The assembly function zeroes Dirichlet rows and columns.
@@ -230,7 +254,7 @@ void assemble_matrix_petsc(Mat A, const Form<PetscScalar>& a,
 /// block matrices, this function should normally be called only on the
 /// diagonal blocks, i.e. blocks for which the test and trial spaces are
 /// the same.
-/// @param[in,out] A The matrix to add diagonal values to
+/// @param[in] mat_add The function for adding values to a matrix
 /// @param[in] V The function space for the rows and columns of the
 ///   matrix. It is used to extract only the Dirichlet boundary conditions
 ///   that are define on V or subspaces of V.
@@ -249,31 +273,7 @@ void add_diagonal(
   {
     assert(bc);
     if (V.contains(*bc->function_space()))
-      add_diagonal(mat_add, bc->dofs_owned().col(0), diagonal);
-  }
-}
-
-/// Adds a value to the diagonal of a matrix for specified rows. It is
-/// typically called after assembly. The assembly function zeroes
-/// Dirichlet rows and columns. For block matrices, this function should
-/// normally be called only on the diagonal blocks, i.e. blocks for
-/// which the test and trial spaces are the same.
-/// @param[in,out] A The matrix to add diagonal values to
-/// @param[in] rows The rows, in local indices, for which to add a value
-///   to the diagonal
-/// @param[in] diagonal The value to add to the diagonal for the
-///   specified rows
-template <typename T>
-void add_diagonal(
-    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& mat_add,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
-    T diagonal = 1.0)
-{
-  for (Eigen::Index i = 0; i < rows.size(); ++i)
-  {
-    const std::int32_t row = rows(i);
-    mat_add(1, &row, 1, &row, &diagonal);
+      add_diagonal<T>(mat_add, bc->dofs_owned().col(0), diagonal);
   }
 }
 

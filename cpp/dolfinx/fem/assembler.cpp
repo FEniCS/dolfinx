@@ -23,39 +23,6 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
-// namespace
-// {
-// const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-//                         const std::int32_t*, const PetscScalar*)>
-// make_petsc_add(Mat A, [[maybe_unused]] std::vector<PetscInt>& cache)
-// {
-//   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-//                           const std::int32_t*, const PetscScalar*)>
-//       f = [A, &cache](std::int32_t m, const std::int32_t* rows, std::int32_t
-//       n,
-//                       const std::int32_t* cols, const PetscScalar* vals) {
-//         PetscErrorCode ierr;
-// #ifdef PETSC_USE_64BIT_INDICES
-//         cache.resize(m + n);
-//         std::copy(rows, rows + m, cache.begin());
-//         std::copy(cols, cols + n, cache.begin() + m);
-//         const PetscInt *rows1 = cache.data(), *cols1 = rows1 + m;
-//         ierr = MatSetValuesLocal(A, m, rows1, n, cols1, vals, ADD_VALUES);
-// #else
-//         cache.data(); // Dummy call to avoid unused variable error
-//         ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, ADD_VALUES);
-// #endif
-
-// #ifdef DEBUG
-//         if (ierr != 0)
-//           la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-// #endif
-//         return 0;
-//       };
-//   return f;
-// }
-// } // namespace
-
 //-----------------------------------------------------------------------------
 void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
 {
@@ -139,12 +106,7 @@ void fem::add_diagonal_petsc(
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     PetscScalar diagonal)
 {
-  for (const auto& bc : bcs)
-  {
-    assert(bc);
-    if (V.contains(*bc->function_space()))
-      add_diagonal_petsc(A, bc->dofs_owned().col(0), diagonal);
-  }
+  add_diagonal(la::PETScMatrix::add_fn(A), V, bcs, diagonal);
 }
 //-----------------------------------------------------------------------------
 void fem::add_diagonal_petsc(
@@ -152,23 +114,7 @@ void fem::add_diagonal_petsc(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
     PetscScalar diagonal)
 {
-  // NOTE: We use MatSetValuesLocal rather than MatZeroRowsLocal because
-  //       MatZeroRowsLocal does not work with sub-matrices extracted
-  //       using MatGetLocalSubMatrix from a monolithic matrix.
-
-  // NOTE: MatSetValuesLocal uses ADD_VALUES, hence it requires that the
-  //       diagonal is zero before this function is called.
-
-  for (Eigen::Index i = 0; i < rows.size(); ++i)
-  {
-    const PetscInt row = rows(i);
-    PetscErrorCode ierr
-        = MatSetValuesLocal(A, 1, &row, 1, &row, &diagonal, ADD_VALUES);
-#ifdef DEBUG
-    if (ierr != 0)
-      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-#endif
-  }
+  add_diagonal(la::PETScMatrix::add_fn(A), rows, diagonal);
 }
 //-----------------------------------------------------------------------------
 void fem::set_bc_petsc(

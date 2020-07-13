@@ -28,6 +28,8 @@ class PETScMatrix : public PETScOperator
 {
 public:
 
+  /// Return a function with an interface for adding values to the
+  /// matrix A
   static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                            const std::int32_t*, const PetscScalar*)>
   add_fn(Mat A);
