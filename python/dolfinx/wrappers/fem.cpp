@@ -74,7 +74,7 @@ namespace dolfinx_wrappers
 void fem(py::module& m)
 {
   // utils
-  m.def("get_coeffs_from_ufc_form", &dolfinx::fem::get_coeffs_from_ufc_form);
+//   m.def("get_coeffs_from_ufc_form", &dolfinx::fem::get_coeffs_from_ufc_form);
   m.def(
       "block_function_spaces",
       [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&
@@ -434,6 +434,10 @@ void fem(py::module& m)
       .value("cell", dolfinx::fem::IntegralType::cell)
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet)
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet);
+
+  //   py::class_<dolfinx::fem::FormCoefficients<PetscScalar>,
+  //              std::shared_ptr<dolfinx::fem::FormCoefficients<PetscScalar>>>(
+  //       m, "FormCoefficients", "Variational form coefficients");
 
   // dolfinx::fem::Form
   py::class_<dolfinx::fem::Form<PetscScalar>,
