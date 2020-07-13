@@ -396,6 +396,7 @@ T dolfinx::la::norm(const dolfinx::la::Vector<T>& v)
   return std::sqrt(global_result);
 }
 
+/// @cond
 // Instantiate
 template double dolfinx::la::norm(const dolfinx::la::Vector<double>&);
 template float dolfinx::la::norm(const dolfinx::la::Vector<float>&);
@@ -403,6 +404,7 @@ template std::complex<double>
 dolfinx::la::norm(const dolfinx::la::Vector<std::complex<double>>&);
 template std::complex<float>
 dolfinx::la::norm(const dolfinx::la::Vector<std::complex<float>>&);
+/// @endcond
 
 template <typename T>
 T dolfinx::la::max(const dolfinx::la::Vector<T>& v)
@@ -415,6 +417,7 @@ T dolfinx::la::max(const dolfinx::la::Vector<T>& v)
   return result;
 }
 
+/// @cond
 template <>
 std::complex<double>
 dolfinx::la::max(const dolfinx::la::Vector<std::complex<double>>&)
@@ -427,6 +430,6 @@ dolfinx::la::max(const dolfinx::la::Vector<std::complex<float>>&)
 {
   throw std::runtime_error("Cannot compute max of a complex vector");
 }
-
 template double dolfinx::la::max(const dolfinx::la::Vector<double>&);
 template float dolfinx::la::max(const dolfinx::la::Vector<float>&);
+/// @endcond
