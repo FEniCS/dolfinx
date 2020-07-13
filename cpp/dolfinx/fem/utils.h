@@ -10,11 +10,14 @@
 #include "DofMap.h"
 #include "ElementDofLayout.h"
 #include <dolfinx/common/types.h>
+#include <dolfinx/function/Function.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
+#include <petscsys.h>
 #include <string>
+#include <utility>
 #include <vector>
 
 struct ufc_dofmap;
@@ -33,6 +36,7 @@ namespace function
 {
 template <typename T>
 class Constant;
+template <typename T>
 class Function;
 class FunctionSpace;
 } // namespace function
@@ -45,6 +49,7 @@ class Topology;
 
 namespace fem
 {
+template <typename T>
 class Form;
 
 /// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
@@ -57,31 +62,34 @@ class Form;
 ///     blocks (1).
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
 block_function_spaces(
-    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>& a);
+    const Eigen::Ref<
+        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Create a matrix
 /// @param[in] a  A bilinear form
 /// @return A matrix. The matrix is not zeroed.
-la::PETScMatrix create_matrix(const Form& a);
+la::PETScMatrix create_matrix(const Form<PetscScalar>& a);
 
 /// Create a sparsity pattern for a given form. The pattern is not
 /// finalised, i.e. the caller is responsible for calling
 /// SparsityPattern::assemble.
 /// @param[in] a A bilinear form
 /// @return The corresponding sparsity pattern
-la::SparsityPattern create_sparsity_pattern(const Form& a);
+la::SparsityPattern create_sparsity_pattern(const Form<PetscScalar>& a);
 
 /// Initialise monolithic matrix for an array for bilinear forms. Matrix
 /// is not zeroed.
 la::PETScMatrix create_matrix_block(
-    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>& a);
+    const Eigen::Ref<
+        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Create nested (MatNest) matrix. Matrix is not zeroed.
 la::PETScMatrix create_matrix_nest(
-    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>& a);
+    const Eigen::Ref<
+        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Initialise monolithic vector. Vector is not zeroed.
 la::PETScVector create_vector_block(
@@ -110,19 +118,20 @@ DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
 ///    ufc_form
 /// @param[in] spaces function spaces
 /// @return Form
-std::shared_ptr<Form> create_form(
+std::shared_ptr<Form<PetscScalar>> create_form(
     ufc_form* (*fptr)(),
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
 
 /// Create a Form from UFC input
 /// @param[in] ufc_form The UFC form
 /// @param[in] spaces Vector of function spaces
-Form create_form(
+Form<PetscScalar> create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
 
 /// Extract coefficients from a UFC form
-std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
+std::vector<std::tuple<int, std::string,
+                       std::shared_ptr<function::Function<PetscScalar>>>>
 get_coeffs_from_ufc_form(const ufc_form& ufc_form);
 
 /// Extract coefficients from a UFC form
@@ -159,12 +168,12 @@ create_functionspace(ufc_function_space* (*fptr)(const char*),
 // NOTE: This is subject to change
 /// Pack form coefficients ready for assembly
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-pack_coefficients(const fem::Form& form);
+pack_coefficients(const fem::Form<PetscScalar>& form);
 
 // NOTE: This is subject to change
 /// Pack form constants ready for assembly
 Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
-pack_constants(const fem::Form& form);
+pack_constants(const fem::Form<PetscScalar>& form);
 
 } // namespace fem
 } // namespace dolfinx

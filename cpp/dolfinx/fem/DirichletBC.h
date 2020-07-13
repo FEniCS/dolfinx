@@ -18,6 +18,7 @@ namespace dolfinx
 
 namespace function
 {
+template <typename T>
 class Function;
 class FunctionSpace;
 } // namespace function
@@ -39,23 +40,23 @@ namespace fem
 /// with a facet/edge/vertex.
 ///
 /// @param[in] V The function (sub)space(s) on which degrees-of-freedom
-///     (DOFs) will be located. The spaces must share the same mesh and
-///     element type.
-/// @param[in] dim Topological dimension of mesh entities on
-///     which degrees-of-freedom will be located
+///   (DOFs) will be located. The spaces must share the same mesh and
+///   element type.
+/// @param[in] dim Topological dimension of mesh entities on which
+///   degrees-of-freedom will be located
 /// @param[in] entities Indices of mesh entities. All DOFs associated
-///     with the closure of these indices will be returned
+///   with the closure of these indices will be returned
 /// @param[in] remote True to return also "remotely located"
-///     degree-of-freedom indices. Remotely located degree-of-freedom
-///     indices are local/owned by the current process, but which the
-///     current process cannot identify because it does not recognize
-///     mesh entity as a marked. For example, a boundary condition dof
-///     at a vertex where this process does not have the associated
-///     boundary facet. This commonly occurs with partitioned meshes.
+///   degree-of-freedom indices. Remotely located degree-of-freedom
+///   indices are local/owned by the current process, but which the
+///   current process cannot identify because it does not recognize mesh
+///   entity as a marked. For example, a boundary condition dof at a
+///   vertex where this process does not have the associated boundary
+///   facet. This commonly occurs with partitioned meshes.
 /// @return Array of local DOF indices in the spaces V[0] (and V[1] is
-///     two spaces are passed in). If two spaces are passed in, the (i,
-///     0) entry is the DOF index in the space V[0] and (i, 1) is the
-///     correspinding DOF entry in the space V[1].
+///   two spaces are passed in). If two spaces are passed in, the (i, 0)
+///   entry is the DOF index in the space V[0] and (i, 1) is the
+///   correspinding DOF entry in the space V[1].
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
 locate_dofs_topological(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
@@ -96,6 +97,7 @@ locate_dofs_geometrical(
 /// (trial space) and degrees of freedom to which the boundary condition
 /// applies.
 
+template <typename T>
 class DirichletBC
 {
 
@@ -107,9 +109,20 @@ public:
   /// @param[in] dofs Degree-of-freedom indices in the space of the
   ///   boundary value function applied to V_dofs[i]
   DirichletBC(
-      const std::shared_ptr<const function::Function>& g,
+      const std::shared_ptr<const function::Function<T>>& g,
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-          dofs);
+          dofs)
+      : _function_space(g->function_space()), _g(g), _dofs(dofs.rows(), 2)
+  {
+    // Stack indices as columns, fits column-major _dofs layout
+    _dofs.col(0) = dofs;
+    _dofs.col(1) = dofs;
+    const int owned_size = _function_space->dofmap()->index_map->block_size()
+                           * _function_space->dofmap()->index_map->size_local();
+    auto* it = std::lower_bound(_dofs.col(0).data(),
+                                _dofs.col(0).data() + _dofs.rows(), owned_size);
+    _owned_indices = std::distance(_dofs.col(0).data(), it);
+  }
 
   /// Create boundary condition
   ///
@@ -121,10 +134,18 @@ public:
   /// @param[in] V The function (sub)space on which the boundary
   ///   condition is applied
   DirichletBC(
-      const std::shared_ptr<const function::Function>& g,
+      const std::shared_ptr<const function::Function<T>>& g,
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>&
           V_g_dofs,
-      std::shared_ptr<const function::FunctionSpace> V);
+      std::shared_ptr<const function::FunctionSpace> V)
+      : _function_space(V), _g(g), _dofs(V_g_dofs)
+  {
+    const int owned_size = _function_space->dofmap()->index_map->block_size()
+                           * _function_space->dofmap()->index_map->size_local();
+    auto* it = std::lower_bound(_dofs.col(0).data(),
+                                _dofs.col(0).data() + _dofs.rows(), owned_size);
+    _owned_indices = std::distance(_dofs.col(0).data(), it);
+  }
 
   /// Copy constructor
   /// @param[in] bc The object to be copied
@@ -146,25 +167,33 @@ public:
 
   /// The function space to which boundary conditions are applied
   /// @return The function space
-  std::shared_ptr<const function::FunctionSpace> function_space() const;
+  std::shared_ptr<const function::FunctionSpace> function_space() const
+  {
+    return _function_space;
+  }
 
   /// Return boundary value function g
   /// @return The boundary values Function
-  std::shared_ptr<const function::Function> value() const;
+  std::shared_ptr<const function::Function<T>> value() const { return _g; }
 
   /// Get array of dof indices to which a Dirichlet boundary condition
   /// is applied. The array is sorted and may contain ghost entries.
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>& dofs() const;
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>& dofs() const
+  {
+    return _dofs;
+  }
 
   /// Get array of dof indices owned by this process to which a
   /// Dirichlet BC is applied. The array is sorted and does not contain
   /// ghost entries.
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>
-  dofs_owned() const;
+  dofs_owned() const
+  {
+    return _dofs.block<Eigen::Dynamic, 2>(0, 0, _owned_indices, 2);
+  }
 
   /// Set bc entries in x to scale*x_bc
   /// @todo Clarify w.r.t ghosts
-  template <typename T>
   void set(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> x,
            double scale = 1.0) const
   {
@@ -180,7 +209,6 @@ public:
 
   /// Set bc entries in x to scale*(x0 - x_bc).
   /// @todo Clarify w.r.t ghosts
-  template <typename T>
   void set(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> x,
            const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
            double scale = 1.0) const
@@ -199,7 +227,6 @@ public:
   /// Set boundary condition value for entres with an applied boundary
   /// condition. Other entries are not modified.
   /// @todo Clarify w.r.t ghosts
-  template <typename T>
   void dof_values(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> values) const
   {
     assert(_g);
@@ -211,14 +238,21 @@ public:
   /// Set markers[i] = true if dof i has a boundary condition applied.
   /// Value of markers[i] is not changed otherwise.
   /// @todo Clarify w.r.t ghosts
-  void mark_dofs(std::vector<bool>& markers) const;
+  void mark_dofs(std::vector<bool>& markers) const
+  {
+    for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
+    {
+      assert(_dofs(i, 0) < (std::int32_t)markers.size());
+      markers[_dofs(i, 0)] = true;
+    }
+  }
 
 private:
   // The function space (possibly a sub function space)
   std::shared_ptr<const function::FunctionSpace> _function_space;
 
   // The function
-  std::shared_ptr<const function::Function> _g;
+  std::shared_ptr<const function::Function<T>> _g;
 
   // Pairs of dof indices in _function_space (i, 0) and in the space of
   // _g (i, 1)

@@ -10,6 +10,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
+#include <petscsys.h>
 #include <string>
 
 namespace pugi
@@ -27,6 +28,7 @@ class CoordinateElement;
 
 namespace function
 {
+template <typename T>
 class Function;
 } // namespace function
 
@@ -134,7 +136,8 @@ public:
   /// @param[in] t The time stamp to associate with the Function
   /// @param[in] mesh_xpath XPath for a Grid under which Function will
   ///   be inserted
-  void write_function(const function::Function& function, const double t,
+  void write_function(const function::Function<PetscScalar>& function,
+                      const double t,
                       const std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 

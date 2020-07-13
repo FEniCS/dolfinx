@@ -256,7 +256,7 @@ void VTKWriter::write_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   write_ascii_mesh(mesh, cell_dim, filename);
 }
 //----------------------------------------------------------------------------
-void VTKWriter::write_cell_data(const function::Function& u,
+void VTKWriter::write_cell_data(const function::Function<PetscScalar>& u,
                                 std::string filename)
 {
   assert(u.function_space());

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <fstream>
+#include <petscsys.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -20,6 +21,7 @@ namespace dolfinx
 {
 namespace function
 {
+template <typename T>
 class Function;
 }
 
@@ -49,13 +51,13 @@ public:
   void write(const mesh::Mesh& mesh);
 
   /// Output function::Function
-  void write(const function::Function& u);
+  void write(const function::Function<PetscScalar>& u);
 
   /// Output mesh::Mesh and timestep
   void write(const mesh::Mesh& mesh, double t);
 
   /// Output function::Function and timestep
-  void write(const function::Function& u, double t);
+  void write(const function::Function<PetscScalar>& u, double t);
 
 private:
   const std::string _filename;

@@ -116,8 +116,7 @@ int main(int argc, char* argv[])
 
   // Create mesh and function space
   auto cmap = fem::create_coordinate_map(create_coordinate_map_poisson);
-  std::array<Eigen::Vector3d, 2> pt{Eigen::Vector3d(0.0, 0.0, 0.0),
-                                    Eigen::Vector3d(1.0, 1.0, 0.0)};
+  std::array pt{Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 0.0)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
       MPI_COMM_WORLD, pt, {{32, 32}}, cmap, mesh::GhostMode::none));
 
@@ -133,13 +132,12 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Define variational forms
-  std::shared_ptr<fem::Form> a
-      = fem::create_form(create_form_poisson_a, {V, V});
+  auto a = fem::create_form(create_form_poisson_a, {V, V});
 
-  std::shared_ptr<fem::Form> L = fem::create_form(create_form_poisson_L, {V});
+  auto L = fem::create_form(create_form_poisson_L, {V});
 
-  auto f = std::make_shared<function::Function>(V);
-  auto g = std::make_shared<function::Function>(V);
+  auto f = std::make_shared<function::Function<PetscScalar>>(V);
+  auto g = std::make_shared<function::Function<PetscScalar>>(V);
 
   // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
   // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
@@ -156,15 +154,14 @@ int main(int argc, char* argv[])
 
   // FIXME: zero function and make sure ghosts are updated
   // Define boundary condition
-  auto u0 = std::make_shared<function::Function>(V);
+  auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs
-      = fem::locate_dofs_geometrical({*V}, [](auto& x) {
-          return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
-        });
+  const auto bdofs = fem::locate_dofs_geometrical({*V}, [](auto& x) {
+    return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
+  });
 
-  std::vector<std::shared_ptr<const fem::DirichletBC>> bc
-      = {std::make_shared<fem::DirichletBC>(u0, bdofs)};
+  std::vector bc{
+      std::make_shared<const fem::DirichletBC<PetscScalar>>(u0, bdofs)};
 
   f->interpolate([](auto& x) {
     auto dx = Eigen::square(x - 0.5);
@@ -188,7 +185,7 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Compute solution
-  function::Function u(V);
+  function::Function<PetscScalar> u(V);
   la::PETScMatrix A = fem::create_matrix(*a);
   la::PETScVector b(*L->function_space(0)->dofmap()->index_map);
 
