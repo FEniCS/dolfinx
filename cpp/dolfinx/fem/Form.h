@@ -11,7 +11,6 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <petscsys.h>
 #include <set>
 #include <string>
 #include <vector>

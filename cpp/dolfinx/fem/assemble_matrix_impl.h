@@ -17,7 +17,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
-#include <petscmat.h>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -37,7 +36,7 @@ void assemble_matrix(
     const Form<ScalarType>& a, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1);
 
-/// Execute kernel over cells and accumulate result in Mat
+/// Execute kernel over cells and accumulate result in matrix
 template <typename ScalarType>
 void assemble_cells(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,

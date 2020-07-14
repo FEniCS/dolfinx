@@ -56,7 +56,7 @@ public:
   {
     // Assemble b and update ghosts
     _b.array().setZero();
-    fem::assemble_vector(_b.array(), *_l);
+    fem::assemble_vector<PetscScalar>(_b.array(), *_l);
     VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
     VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
 
@@ -69,7 +69,7 @@ public:
     VecGetArrayRead(x_local, &array);
     Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x(array,
                                                                        n);
-    set_bc(_b.array(), _bcs, _x, -1);
+    fem::set_bc<PetscScalar>(_b.array(), _bcs, _x, -1.0);
     VecRestoreArrayRead(x, &array);
 
     return _b_petsc;
@@ -79,8 +79,9 @@ public:
   Mat J(const Vec) final
   {
     MatZeroEntries(_matA.mat());
-    assemble_matrix(_matA.mat(), *_j, _bcs);
-    add_diagonal(_matA.mat(), *_j->function_space(0), _bcs);
+    fem::assemble_matrix(la::PETScMatrix::add_fn(_matA.mat()), *_j, _bcs);
+    fem::add_diagonal(la::PETScMatrix::add_fn(_matA.mat()),
+                      *_j->function_space(0), _bcs);
     _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
     return _matA.mat();
   }
@@ -122,8 +123,8 @@ int main(int argc, char* argv[])
   // Define solution function
   auto u = std::make_shared<function::Function<PetscScalar>>(V);
 
-  auto a = fem::create_form(create_form_hyperelasticity_J, {V, V});
-  auto L = fem::create_form(create_form_hyperelasticity_F, {V});
+  auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J, {V, V});
+  auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V});
 
   auto u_rotation = std::make_shared<function::Function<PetscScalar>>(V);
   u_rotation->interpolate([](auto& x) {
