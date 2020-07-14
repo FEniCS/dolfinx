@@ -92,39 +92,38 @@ int analyse_block_structure(
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
 fem::block_function_spaces(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a)
+    const Eigen ::Ref<const Eigen::Array<
+        std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
+        Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& V)
 {
-  std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V;
-  V[0] = std::vector<std::shared_ptr<const function::FunctionSpace>>(a.rows(),
-                                                                     nullptr);
-  V[1] = std::vector<std::shared_ptr<const function::FunctionSpace>>(a.cols(),
-                                                                     nullptr);
+  std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
+      spaces;
+  spaces[0] = std::vector<std::shared_ptr<const function::FunctionSpace>>(
+      V.rows(), nullptr);
+  spaces[1] = std::vector<std::shared_ptr<const function::FunctionSpace>>(
+      V.cols(), nullptr);
 
   // Loop over rows
-  for (int i = 0; i < a.rows(); ++i)
+  for (int i = 0; i < V.rows(); ++i)
   {
     // Loop over columns
-    for (int j = 0; j < a.cols(); ++j)
+    for (int j = 0; j < V.cols(); ++j)
     {
-      if (a(i, j))
+      if (V(i, j)[0] and V(i, j)[1])
       {
-        assert(a(i, j)->rank() == 2);
-
-        if (!V[0][i])
-          V[0][i] = a(i, j)->function_space(0);
+        if (!spaces[0][i])
+          spaces[0][i] = V(i, j)[0];
         else
         {
-          if (V[0][i] != a(i, j)->function_space(0))
+          if (spaces[0][i] != V(i, j)[0])
             throw std::runtime_error("Mismatched test space for row.");
         }
 
-        if (!V[1][j])
-          V[1][j] = a(i, j)->function_space(1);
+        if (!spaces[1][j])
+          spaces[1][j] = V(i, j)[1];
         else
         {
-          if (V[1][j] != a(i, j)->function_space(1))
+          if (spaces[1][j] != V(i, j)[1])
             throw std::runtime_error("Mismatched trial space for column.");
         }
       }
@@ -132,12 +131,12 @@ fem::block_function_spaces(
   }
 
   // Check there are no null entries
-  for (std::size_t i = 0; i < V.size(); ++i)
-    for (std::size_t j = 0; j < V[i].size(); ++j)
-      if (!V[i][j])
+  for (std::size_t i = 0; i < spaces.size(); ++i)
+    for (std::size_t j = 0; j < spaces[i].size(); ++j)
+      if (!spaces[i][j])
         throw std::runtime_error("Could not deduce all block spaces.");
 
-  return V;
+  return spaces;
 }
 //-----------------------------------------------------------------------------
 la::SparsityPattern
@@ -218,7 +217,7 @@ la::PETScMatrix fem::create_matrix_block(
 {
   // Extract and check row/column ranges
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
-      = block_function_spaces(a);
+      = block_function_spaces(block_function_space_pairs(a));
 
   std::shared_ptr<const mesh::Mesh> mesh = V[0][0]->mesh();
   assert(mesh);
@@ -339,7 +338,7 @@ la::PETScMatrix fem::create_matrix_nest(
 {
   // Extract and check row/column ranges
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
-      = block_function_spaces(a);
+      = block_function_spaces(block_function_space_pairs(a));
 
   // Loop over each form and create matrix
   Eigen::Array<std::shared_ptr<la::PETScMatrix>, Eigen::Dynamic, Eigen::Dynamic,

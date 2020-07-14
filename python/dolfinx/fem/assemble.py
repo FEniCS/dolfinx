@@ -35,16 +35,16 @@ def _create_cpp_form(form):
 
 
 def create_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
-    return cpp.la.create_vector(_create_cpp_form(L).function_space(0).dofmap.index_map)
+    return cpp.la.create_vector(_create_cpp_form(L).function_spaces[0].dofmap.index_map)
 
 
 def create_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
-    maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
+    maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
     return cpp.fem.create_vector_block(maps)
 
 
 def create_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
-    maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
+    maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
     return cpp.fem.create_vector_nest(maps)
 
 
@@ -84,7 +84,7 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
     """
     _L = _create_cpp_form(L)
-    b = cpp.la.create_vector(_L.function_space(0).dofmap.index_map)
+    b = cpp.la.create_vector(_L.function_spaces[0].dofmap.index_map)
     with b.localForm() as b_local:
         b_local.set(0.0)
         cpp.fem.assemble_vector(b_local.array_w, _L)
@@ -110,7 +110,7 @@ def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     on the owning processes.
 
     """
-    maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
+    maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
     b = cpp.fem.create_vector_nest(maps)
     for b_sub in b.getNestSubVecs():
         with b_sub.localForm() as b_local:
@@ -142,7 +142,7 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     finalised, i.e. ghost values are not accumulated.
 
     """
-    maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
+    maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
     b = cpp.fem.create_vector_block(maps)
     with b.localForm() as b_local:
         b_local.set(0.0)
@@ -161,7 +161,7 @@ def _(b: PETSc.Vec,
     accumulated.
 
     """
-    maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
+    maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
     if x0 is not None:
         x0_local = cpp.la.get_local_vectors(x0, maps)
         x0_sub = x0_local
@@ -199,9 +199,9 @@ def assemble_csr_matrix(a: typing.Union[Form, cpp.fem.Form],
     _a = _create_cpp_form(a)
     A = cpp.fem.assemble_matrix_eigen(_a, bcs)
 
-    if _a.function_space(0).id == _a.function_space(1).id:
+    if _a.function_spaces[0].id == _a.function_spaces[1].id:
         for bc in bcs:
-            if _a.function_space(0).contains(bc.function_space):
+            if _a.function_spaces[0].contains(bc.function_space):
                 bc_dofs = bc.dof_indices[:, 0]
                 A[bc_dofs, bc_dofs] = diagonal
     return A
@@ -231,8 +231,8 @@ def _(A: PETSc.Mat,
     """
     _a = _create_cpp_form(a)
     cpp.fem.assemble_matrix_petsc(A, _a, bcs)
-    if _a.function_space(0).id == _a.function_space(1).id:
-        cpp.fem.add_diagonal(A, _a.function_space(0), bcs, diagonal)
+    if _a.function_spaces[0].id == _a.function_spaces[1].id:
+        cpp.fem.add_diagonal(A, _a.function_spaces[0], bcs, diagonal)
     return A
 
 
@@ -274,14 +274,44 @@ def assemble_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.
     return assemble_matrix_block(A, a, bcs, diagonal)
 
 
-@assemble_matrix_block.register(PETSc.Mat)
+def _extract_function_spaces(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]]):
+    """From a rectangular array of bilinear forms, extraction the function spaces
+    for each block row and block column
+
+    """
+
+    assert len({len(cols) for cols in a}) == 1, "Array of function spaces is not rectangular"
+
+    # Extract (V0, V1) pair for each block in 'a'
+    def fn(form):
+        return form.function_spaces if form is not None else None
+    from functools import partial
+    Vblock = map(partial(map, fn), a)
+
+    # Compute spaces for each row/column block
+    rows = [set() for i in range(len(a))]
+    cols = [set() for i in range(len(a[0]))]
+    for i, Vrow in enumerate(Vblock):
+        for j, V in enumerate(Vrow):
+            if V is not None:
+                rows[i].add(V[0])
+                cols[j].add(V[1])
+
+    rows = [e for row in rows for e in row]
+    cols = [e for col in cols for e in col]
+    assert len(rows) == len(a)
+    assert len(cols) == len(a[0])
+    return rows, cols
+
+
+@ assemble_matrix_block.register(PETSc.Mat)
 def _(A: PETSc.Mat,
       a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
       bcs: typing.List[DirichletBC] = [],
       diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     _a = _create_cpp_form(a)
-    V = cpp.fem.block_function_spaces(_a)
+    V = _extract_function_spaces(_a)
     is_rows = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[0]])
     is_cols = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[1]])
     for i, a_row in enumerate(_a):

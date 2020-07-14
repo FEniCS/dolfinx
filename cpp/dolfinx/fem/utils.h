@@ -59,11 +59,35 @@ namespace fem
 /// @param[in] a A rectangular block on bilinear forms
 /// @return Function spaces for each row blocks (0) and for each column
 ///     blocks (1).
+template <typename T>
+Eigen::Array<std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
+             Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+block_function_space_pairs(
+    const Eigen::Ref<const Eigen::Array<const fem::Form<T>*, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>& a)
+{
+  Eigen::Array<std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
+               Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      spaces(a.rows(), a.cols());
+  for (int i = 0; i < a.rows(); ++i)
+    for (int j = 0; i < a.cols(); ++j)
+      spaces(i, j) = {a(i, j)->function_space(0), a(i, j)->function_space(1)};
+  return spaces;
+}
+
+/// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
+/// from a rectangular array of bilinear forms. Raises an exception if
+/// there is an inconsistency. e.g. if each form in row i does not have
+/// the same test space then an exception is raised.
+///
+/// @param[in] a A rectangular block on bilinear forms
+/// @return Function spaces for each row blocks (0) and for each column
+///     blocks (1).
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
 block_function_spaces(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a);
+    const Eigen ::Ref<const Eigen::Array<
+        std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
+        Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& V);
 
 /// Create a matrix
 /// @param[in] a  A bilinear form

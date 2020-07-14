@@ -75,12 +75,6 @@ void fem(py::module& m)
 {
   // utils
   m.def(
-      "block_function_spaces",
-      [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&
-             a) {
-        return dolfinx::fem::block_function_spaces(forms_vector_to_array(a));
-      });
-  m.def(
       "create_vector_block",
       [](const std::vector<
           std::reference_wrapper<const dolfinx::common::IndexMap>>& maps) {
@@ -424,7 +418,8 @@ void fem(py::module& m)
            })
       .def_property_readonly("rank", &dolfinx::fem::Form<PetscScalar>::rank)
       .def("mesh", &dolfinx::fem::Form<PetscScalar>::mesh)
-      .def("function_space", &dolfinx::fem::Form<PetscScalar>::function_space);
+      .def_property_readonly("function_spaces",
+                             &dolfinx::fem::Form<PetscScalar>::function_spaces);
 
   m.def("locate_dofs_topological", &dolfinx::fem::locate_dofs_topological,
         py::arg("V"), py::arg("dim"), py::arg("entities"),
