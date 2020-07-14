@@ -70,8 +70,9 @@ block_function_space_pairs(
                Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       spaces(a.rows(), a.cols());
   for (int i = 0; i < a.rows(); ++i)
-    for (int j = 0; i < a.cols(); ++j)
-      spaces(i, j) = {a(i, j)->function_space(0), a(i, j)->function_space(1)};
+    for (int j = 0; j < a.cols(); ++j)
+      if (a(i, j))
+        spaces(i, j) = {a(i, j)->function_space(0), a(i, j)->function_space(1)};
   return spaces;
 }
 
