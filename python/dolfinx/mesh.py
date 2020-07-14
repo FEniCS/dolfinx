@@ -80,7 +80,7 @@ def locate_entities_boundary(mesh: cpp.mesh.Mesh,
 
 _meshtags_types = {
     numpy.int8: cpp.mesh.MeshTags_int8,
-    numpy.intc: cpp.mesh.MeshTags_int,
+    numpy.int32: cpp.mesh.MeshTags_int32,
     numpy.int64: cpp.mesh.MeshTags_int64,
     numpy.double: cpp.mesh.MeshTags_double
 }
@@ -136,8 +136,30 @@ class MeshTags(object):
         self.dtype = dtype
         fn = _meshtags_types[dtype]
         self._cpp_object = fn(mesh, dim, indices, values)
-        self.values = fn.values
-        self.indices = fn.indices
+        
+    @property
+    def values(self):
+        return self._cpp_object.values
+        
+    @values.setter
+    def values(self, val):
+        self._cpp_object.values = val
+
+    @property
+    def indices(self): 
+        return self._cpp_object.indices
+      
+    @indices.setter
+    def indices(self, val):
+        self._cpp_object.indices = val
+
+    @property
+    def name(self):
+        return self._cpp_object.name
+
+    @name.setter
+    def name(self, val):
+        self._cpp_object.name = val
 
     def ufl_id(self):
         return self._cpp_object.ufl_id()

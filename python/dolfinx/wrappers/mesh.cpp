@@ -31,6 +31,52 @@ namespace py = pybind11;
 namespace dolfinx_wrappers
 {
 
+template <typename T>
+void declare_meshtags(py::module& m, std::string type)
+{
+  std::string pyclass_name = std::string("MeshTags_") + type;
+  py::class_<dolfinx::mesh::MeshTags<T>,
+             std::shared_ptr<dolfinx::mesh::MeshTags<T>>>(
+      m, pyclass_name.c_str(), "MeshTags object")
+      .def(py::init([](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
+                       int dim, const py::array_t<std::int32_t>& indices,
+                       const py::array_t<T>& values) {
+        std::vector<std::int32_t> indices_vec(indices.data(),
+                                              indices.data() + indices.size());
+        std::vector<T> values_vec(values.data(), values.data() + values.size());
+        return std::make_unique<dolfinx::mesh::MeshTags<T>>(
+            mesh, dim, std::move(indices_vec), std::move(values_vec));
+      }))
+      .def_readwrite("name", &dolfinx::mesh::MeshTags<T>::name)
+      .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
+      .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)
+      .def("ufl_id", &dolfinx::mesh::MeshTags<T>::id)
+      .def_property_readonly(
+          "values",
+          [](dolfinx::mesh::MeshTags<T>& self) {
+            return py::array_t<T>(self.values().size(), self.values().data(),
+                                  py::none());
+          },
+          py::return_value_policy::reference_internal)
+      .def_property_readonly(
+          "indices",
+          [](dolfinx::mesh::MeshTags<T>& self) {
+            return py::array_t<std::int32_t>(self.indices().size(),
+                                             self.indices().data(), py::none());
+          },
+          py::return_value_policy::reference_internal);
+
+  m.def("create_meshtags",
+        [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
+           const int dim,
+           const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
+           const py::array_t<T>& values) {
+          py::buffer_info buf = values.request();
+          std::vector<T> vals((T*)buf.ptr, (T*)buf.ptr + buf.size);
+          return dolfinx::mesh::create_meshtags(mesh, dim, entities, vals);
+        });
+}
+
 void mesh(py::module& m)
 {
 
@@ -185,53 +231,12 @@ void mesh(py::module& m)
       .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
       .def_readwrite("name", &dolfinx::mesh::Mesh::name);
 
-// dolfinx::mesh::MeshTags
-#define MESHTAGS_MACRO(SCALAR, SCALAR_NAME)                                    \
-  py::class_<dolfinx::mesh::MeshTags<SCALAR>,                                  \
-             std::shared_ptr<dolfinx::mesh::MeshTags<SCALAR>>>(                \
-      m, "MeshTags_" #SCALAR_NAME, "MeshTags object")                          \
-      .def(py::init([](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, \
-                       int dim, const py::array_t<std::int32_t>& indices,      \
-                       const py::array_t<SCALAR>& values) {                    \
-        std::vector<std::int32_t> indices_vec(                                 \
-            indices.data(), indices.data() + indices.size());                  \
-        std::vector<SCALAR> values_vec(values.data(),                          \
-                                       values.data() + values.size());         \
-        return std::make_unique<dolfinx::mesh::MeshTags<SCALAR>>(              \
-            mesh, dim, std::move(indices_vec), std::move(values_vec));         \
-      }))                                                                      \
-      .def_readwrite("name", &dolfinx::mesh::MeshTags<SCALAR>::name)           \
-      .def_property_readonly("dim", &dolfinx::mesh::MeshTags<SCALAR>::dim)     \
-      .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<SCALAR>::mesh)   \
-      .def("ufl_id", &dolfinx::mesh::MeshTags<SCALAR>::id)                     \
-      .def_property_readonly("values",                                         \
-                             [](dolfinx::mesh::MeshTags<SCALAR>& self) {       \
-                               return py::array_t<SCALAR>(                     \
-                                   self.values().size(), self.values().data(), \
-                                   py::none());                                \
-                             })                                                \
-      .def_property_readonly(                                                  \
-          "indices", [](dolfinx::mesh::MeshTags<SCALAR>& self) {               \
-            return py::array_t<std::int32_t>(                                  \
-                self.indices().size(), self.indices().data(), py::none());     \
-          });                                                                  \
-                                                                               \
-  m.def("create_meshtags",                                                     \
-        [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,             \
-           const int dim,                                                      \
-           const dolfinx::graph::AdjacencyList<std::int32_t>& entities,        \
-           const py::array_t<SCALAR>& values) {                                \
-          py::buffer_info buf = values.request();                              \
-          std::vector<SCALAR> vals((SCALAR*)buf.ptr,                           \
-                                   (SCALAR*)buf.ptr + buf.size);               \
-          return dolfinx::mesh::create_meshtags(mesh, dim, entities, vals);    \
-        });
+  // dolfinx::mesh::MeshTags
 
-  MESHTAGS_MACRO(std::int8_t, int8);
-  MESHTAGS_MACRO(int, int);
-  MESHTAGS_MACRO(double, double);
-  MESHTAGS_MACRO(std::int64_t, int64);
-#undef MESHTAGS_MACRO
+  declare_meshtags<std::int8_t>(m, "int8");
+  declare_meshtags<std::int32_t>(m, "int32");
+  declare_meshtags<double>(m, "double");
+  declare_meshtags<std::int64_t>(m, "int64");
 
   // Partitioning interface
   m.def("partition_cells",
