@@ -139,7 +139,7 @@ class MeshTags(object):
         self.values = fn.values
         self.indices = fn.indices
 
-    def ufl_id():
+    def ufl_id(self):
         return self._cpp_object.ufl_id()
 
 
