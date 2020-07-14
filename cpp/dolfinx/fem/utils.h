@@ -80,9 +80,9 @@ block_function_space_pairs(
 /// there is an inconsistency. e.g. if each form in row i does not have
 /// the same test space then an exception is raised.
 ///
-/// @param[in] a A rectangular block on bilinear forms
-/// @return Function spaces for each row blocks (0) and for each column
-///     blocks (1).
+/// @param[in] V Rectangular array of function space pairs (test, trial)
+/// @return Function spaces for each row block (0) and for each column
+///   block (1).
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
 block_function_spaces(
     const Eigen ::Ref<const Eigen::Array<
