@@ -194,7 +194,7 @@ Eigen::SparseMatrix<T, Eigen::RowMajor> assemble_matrix_eigen(
 {
   // Lambda function creating Eigen::Triplet array
   std::vector<Eigen::Triplet<T>> triplets;
-  const auto set_values
+  const auto mat_add
       = [&triplets](std::int32_t nrow, const std::int32_t* rows,
                     std::int32_t ncol, const std::int32_t* cols, const T* v) {
           for (int i = 0; i < nrow; ++i)
@@ -204,7 +204,7 @@ Eigen::SparseMatrix<T, Eigen::RowMajor> assemble_matrix_eigen(
         };
 
   // Assemble
-  assemble_matrix<T>(set_values, a, bcs);
+  assemble_matrix<T>(mat_add, a, bcs);
 
   auto map0 = a.function_space(0)->dofmap()->index_map;
   auto map1 = a.function_space(1)->dofmap()->index_map;
