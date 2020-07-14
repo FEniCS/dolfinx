@@ -138,7 +138,9 @@ class MeshTags(object):
         self._cpp_object = fn(mesh, dim, indices, values)
         self.values = fn.values
         self.indices = fn.indices
-        self.ufl_id = fn.ufl_id
+
+    def ufl_id():
+        return self._cpp_object.ufl_id()
 
 
 # Functions to extend cpp.mesh.Mesh with
