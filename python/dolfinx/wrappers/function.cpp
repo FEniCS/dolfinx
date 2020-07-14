@@ -9,6 +9,7 @@
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Constant.h>
+#include <dolfinx/function/Expression.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/function/interpolate.h>
@@ -128,5 +129,25 @@ void function(py::module& m)
             return py::array(self.shape, self.value.data(), py::none());
           },
           py::return_value_policy::reference_internal);
+
+  // dolfinx::function::Expression
+  py::class_<dolfinx::function::Expression<PetscScalar>,
+             std::shared_ptr<dolfinx::function::Expression<PetscScalar>>>(
+      m, "Expression", "An Expression")
+      .def("set_coefficient",
+           [](dolfinx::function::Expression<PetscScalar>& self, std::size_t i,
+              std::shared_ptr<const dolfinx::function::Function<PetscScalar>>
+                  f) { self.coefficients().set(i, f); })
+      .def("set_constants",
+           py::overload_cast<const std::vector<std::shared_ptr<
+               const dolfinx::function::Constant<PetscScalar>>>&>(
+               &dolfinx::function::Expression<PetscScalar>::set_constants))
+      .def("set_tabulate_expression",
+           [](dolfinx::function::Expression<PetscScalar>& self, py::object addr) {
+             auto tabulate_expression_ptr = (void (*)(
+                 PetscScalar*, const PetscScalar*, const PetscScalar*,
+                 const double*)) addr.cast<std::uintptr_t>();
+             self.set_tabulate_expression(tabulate_expression_ptr);
+           });
 }
 } // namespace dolfinx_wrappers
