@@ -121,19 +121,23 @@ def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostM
     return create_mesh(comm, cells, x, domain, ghost_mode)
 
 
-def MeshTags(mesh, dim, indices, values):
+class MeshTags(object):
+    def __init__(self, mesh, dim, indices, values):
 
-    if isinstance(values, int):
-        values = numpy.full(indices.shape, values, dtype=numpy.intc)
-    elif isinstance(values, float):
-        values = numpy.full(indices.shape, values, dtype=numpy.double)
+        if isinstance(values, int):
+            values = numpy.full(indices.shape, values, dtype=numpy.intc)
+        elif isinstance(values, float):
+            values = numpy.full(indices.shape, values, dtype=numpy.double)
 
-    dtype = values.dtype.type
-    if dtype not in _meshtags_types.keys():
-        raise KeyError("Datatype {} of values array not recognised".format(dtype))
+        dtype = values.dtype.type
+        if dtype not in _meshtags_types.keys():
+            raise KeyError("Datatype {} of values array not recognised".format(dtype))
 
-    fn = _meshtags_types[dtype]
-    return fn(mesh, dim, indices, values)
+        self.dtype = dtype
+        fn = _meshtags_types[dtype]
+        self._cpp_object = fn(mesh, dim, indices, values)
+        self.values = fn.values
+        self.indices = fn.indices
 
 
 # Functions to extend cpp.mesh.Mesh with
