@@ -80,7 +80,7 @@ def locate_entities_boundary(mesh: cpp.mesh.Mesh,
 
 _meshtags_types = {
     numpy.int8: cpp.mesh.MeshTags_int8,
-    numpy.intc: cpp.mesh.MeshTags_int,
+    numpy.int32: cpp.mesh.MeshTags_int32,
     numpy.int64: cpp.mesh.MeshTags_int64,
     numpy.double: cpp.mesh.MeshTags_double
 }
@@ -124,7 +124,7 @@ def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostM
 def MeshTags(mesh, dim, indices, values):
 
     if isinstance(values, int):
-        values = numpy.full(indices.shape, values, dtype=numpy.intc)
+        values = numpy.full(indices.shape, values, dtype=numpy.int32)
     elif isinstance(values, float):
         values = numpy.full(indices.shape, values, dtype=numpy.double)
 
