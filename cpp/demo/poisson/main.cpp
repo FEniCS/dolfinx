@@ -132,9 +132,8 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Define variational forms
-  auto a = fem::create_form(create_form_poisson_a, {V, V});
-
-  auto L = fem::create_form(create_form_poisson_L, {V});
+  auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V});
+  auto L = fem::create_form<PetscScalar>(create_form_poisson_L, {V});
 
   auto f = std::make_shared<function::Function<PetscScalar>>(V);
   auto g = std::make_shared<function::Function<PetscScalar>>(V);

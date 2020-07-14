@@ -104,9 +104,9 @@ void fem(py::module& m)
 
   m.def("create_sparsity_pattern", &dolfinx::fem::create_sparsity_pattern,
         "Create a sparsity pattern for bilinear form.");
-  m.def("pack_coefficients", &dolfinx::fem::pack_coefficients,
+  m.def("pack_coefficients", &dolfinx::fem::pack_coefficients<PetscScalar>,
         "Pack coefficients for a UFL form.");
-  m.def("pack_constants", &dolfinx::fem::pack_constants,
+  m.def("pack_constants", &dolfinx::fem::pack_constants<PetscScalar>,
         "Pack constants for a UFL form.");
   m.def(
       "create_matrix",
@@ -158,7 +158,7 @@ void fem(py::module& m)
          const std::vector<
              std::shared_ptr<const dolfinx::function::FunctionSpace>>& spaces) {
         const ufc_form* p = reinterpret_cast<const ufc_form*>(form);
-        return dolfinx::fem::create_form(*p, spaces);
+        return dolfinx::fem::create_form<PetscScalar>(*p, spaces);
       },
       "Create Form from a pointer to ufc_form.");
   m.def(

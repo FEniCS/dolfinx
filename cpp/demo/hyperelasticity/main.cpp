@@ -123,8 +123,8 @@ int main(int argc, char* argv[])
   // Define solution function
   auto u = std::make_shared<function::Function<PetscScalar>>(V);
 
-  auto a = fem::create_form(create_form_hyperelasticity_J, {V, V});
-  auto L = fem::create_form(create_form_hyperelasticity_F, {V});
+  auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J, {V, V});
+  auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V});
 
   auto u_rotation = std::make_shared<function::Function<PetscScalar>>(V);
   u_rotation->interpolate([](auto& x) {
