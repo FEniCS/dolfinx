@@ -12,12 +12,9 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/function/Function.h>
-#include <dolfinx/la/PETScMatrix.h>
-#include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
-#include <petscsys.h>
 #include <set>
 #include <string>
 #include <utility>
