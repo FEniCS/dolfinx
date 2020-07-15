@@ -29,16 +29,22 @@ template <typename T>
 class Expression
 {
 public:
-  // Construct empty object
-  Expression(){};
-
   Expression(
       const fem::FormCoefficients<T>& coefficients,
       const std::vector<
-          std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
+          std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
           constants)
       : _coefficients(coefficients), _constants(constants)
   {
+    // Do nothing
+  }
+
+  /// Create Expression. UFC Expression, coefficients and constants can be
+  /// attached later using Expression::set_tabulate_expression,
+  /// Expression::set_coefficients, and Expression::set_constants.
+  explicit Expression() : Expression(fem::FormCoefficients<T>({}), {})
+  {
+    // Do nothing
   }
 
   /// Move constructor
@@ -122,8 +128,9 @@ public:
   set_constants(const std::vector<std::shared_ptr<const function::Constant<T>>>&
                     constants)
   {
-    if (constants.size() != _constants.size())
-      throw std::runtime_error("Incorrect number of constants.");
+    //if (constants.size() != _constants.size())
+    //throw std::runtime_error("Incorrect number of constants.");
+    _constants.resize(constants.size());
 
     // Loop over each constant that user wants to attach
     for (std::size_t i = 0; i < constants.size(); ++i)
@@ -165,7 +172,7 @@ private:
 
   // Function to evaluate the Expression
   std::function<void(T*, const T*, const T*, const double*)> _fn;
-;
+  ;
 };
 } // namespace function
 } // namespace dolfinx

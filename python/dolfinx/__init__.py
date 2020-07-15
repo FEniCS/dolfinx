@@ -50,7 +50,7 @@ from .fem.dirichletbc import DirichletBC
 from .fem.solving import solve
 
 from .function import (FunctionSpace, VectorFunctionSpace,
-                       TensorFunctionSpace, Constant, Function)
+                       TensorFunctionSpace, Constant, Expression, Function)
 
 from .mesh import MeshTags
 

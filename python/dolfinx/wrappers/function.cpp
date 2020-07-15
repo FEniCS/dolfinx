@@ -134,6 +134,8 @@ void function(py::module& m)
   py::class_<dolfinx::function::Expression<PetscScalar>,
              std::shared_ptr<dolfinx::function::Expression<PetscScalar>>>(
       m, "Expression", "An Expression")
+      .def(py::init<>(),
+           "Create an Expression")
       .def("set_coefficient",
            [](dolfinx::function::Expression<PetscScalar>& self, std::size_t i,
               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>

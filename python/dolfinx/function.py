@@ -12,6 +12,9 @@ import cffi
 import numpy as np
 
 import ufl
+import ufl.algorithms
+import ufl.algorithms.analysis
+
 from dolfinx import common, cpp, fem, function, jit
 
 
@@ -38,6 +41,27 @@ class Constant(ufl.Constant):
     def value(self, v):
         np.copyto(self._cpp_object.value(), np.asarray(v))
 
+
+class Expression:
+    def __init__(self,
+                 expression: ufl.core.expr.Expr,
+                 points: np.ndarray,
+                 name: typing.Optional[str] = None):
+        self.name = name
+
+        # Compile UFL expression with JIT
+        ufc_expression = jit.ffcx_jit((expression, points))
+
+        ffi = cffi.FFI()
+        self._cpp_object = cpp.function.Expression()
+        self._cpp_object.set_tabulate_expression(ffi.cast("intptr_t", ufc_expression.tabulate_expression))
+
+        coefficients = ufl.algorithms.extract_coefficients(expression)
+        for i, coefficient in enumerate(coefficients):
+            self._cpp_object.set_coefficient(i, coefficient)
+
+        constants = ufl.algorithms.analysis.extract_constants(expression)
+        self._cpp_object.set_constants([constant._cpp_object for constant in constants])
 
 class Function(ufl.Coefficient):
     """A finite element function that is represented by a function
