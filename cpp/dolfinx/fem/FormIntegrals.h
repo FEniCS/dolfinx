@@ -89,14 +89,13 @@ public:
   /// @return Integrals types
   std::set<IntegralType> types() const
   {
-    std::array types{IntegralType::cell, IntegralType::exterior_facet,
-                     IntegralType::interior_facet};
+    static const std::array types{IntegralType::cell,
+                                  IntegralType::exterior_facet,
+                                  IntegralType::interior_facet};
     std::set<IntegralType> set;
     for (auto type : types)
-    {
       if (!_integrals.at(static_cast<int>(type)).empty())
         set.insert(type);
-    }
     return set;
   }
 
