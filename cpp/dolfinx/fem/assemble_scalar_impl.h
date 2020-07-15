@@ -176,7 +176,7 @@ T assemble_exterior_facets(
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
-  // FIXME: cleanup these calls? Some of the happen internally again.
+  // FIXME: cleanup these calls? Some of these happen internally again.
   mesh.topology_mutable().create_entities(tdim - 1);
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
   mesh.topology_mutable().create_entity_permutations();

@@ -51,18 +51,17 @@ class Topology;
 namespace fem
 {
 
-/// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
-/// from a rectangular array of bilinear forms. Raises an exception if
-/// there is an inconsistency. e.g. if each form in row i does not have
-/// the same test space then an exception is raised.
+/// Extract test (0) and trial (1) function spaces pairs for each
+/// bilinear form for a rectangular array of forms
 ///
 /// @param[in] a A rectangular block on bilinear forms
-/// @return Function spaces for each row blocks (0) and for each column
-///     blocks (1).
+/// @return Rectangular array of the same shape as @p a with a pair of
+///   function spaces in each array entry. If a form is null, then the
+///   returned function space pair is (null, null).
 template <typename T>
 Eigen::Array<std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
              Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-block_function_space_pairs(
+extract_function_spaces(
     const Eigen::Ref<const Eigen::Array<const fem::Form<T>*, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
@@ -77,15 +76,16 @@ block_function_space_pairs(
 }
 
 /// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
-/// from a rectangular array of bilinear forms. Raises an exception if
-/// there is an inconsistency. e.g. if each form in row i does not have
-/// the same test space then an exception is raised.
+/// from a rectangular array of bilinear forms. The test space must be
+/// the same for each row and the trial spaces must be the same for each
+/// column. Raises an exception if there is an inconsistency. e.g. if
+/// each form in row i does not have the same test space then an
+/// exception is raised.
 ///
-/// @param[in] V Rectangular array of function space pairs (test, trial)
-/// @return Function spaces for each row block (0) and for each column
-///   block (1).
+/// @param[in] V Vector function spaces for (0) each row block and (1)
+/// each column block
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
-block_function_spaces(
+common_function_spaces(
     const Eigen ::Ref<const Eigen::Array<
         std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
         Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& V);
