@@ -65,66 +65,8 @@ void interpolate_values(
     const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& values)
 {
-  assert(u.function_space());
-  auto mesh = u.function_space()->mesh();
-  assert(mesh);
-  const int tdim = mesh->topology().dim();
-
-  // Note: the following does not exploit any block structure, e.g. for
-  // vector Lagrange, which leads to a lot of redundant evaluations.
-  // E.g., for a vector Lagrange element the vector-valued expression is
-  // evaluted three times at the some point.
-
-  const int value_size = values.cols();
-
-  // FIXME: Dummy coordinate dofs - should limit the interpolation to
-  // Lagrange, in which case we don't need coordinate dofs in
-  // FiniteElement::transform_values.
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
-
-  // FIXME: It would be far more elegant and efficient to avoid the need
-  // to loop over cells to set the expansion corfficients. Would be much
-  // better if the expansion coefficients could be passed straight into
-  // Expresion::eval.
-
-  // Loop over cells
-  auto element = u.function_space()->element();
-  assert(element);
-  const int ndofs = element->space_dimension();
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values_cell(
-      ndofs, value_size);
-
-  auto dofmap = u.function_space()->dofmap();
-  assert(dofmap);
-  assert(dofmap->element_dof_layout);
-  std::vector<T> cell_coefficients(dofmap->element_dof_layout->num_dofs());
-
-  Eigen::Matrix<T, Eigen::Dynamic, 1>& coefficients = u.x()->array();
-
-  auto map = mesh->topology().index_map(tdim);
-  assert(map);
-  const int num_cells = map->size_local() + map->num_ghosts();
-  for (int c = 0; c < num_cells; ++c)
-  {
-    // Get dofmap for cell
-    auto cell_dofs = dofmap->cell_dofs(c);
-    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
-    {
-      for (Eigen::Index j = 0; j < value_size; ++j)
-        values_cell(i, j) = values(cell_dofs[i], j);
-    }
-
-    // FIXME: For vector-valued Lagrange, this function 'throws away'
-    // the redundant expression evaluations. It should really be made
-    // not necessary.
-    element->transform_values(cell_coefficients.data(), values_cell,
-                              coordinate_dofs);
-
-    // Copy into expansion coefficient array
-    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
-      coefficients[cell_dofs[i]] = cell_coefficients[i];
-  }
+  u = Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(
+      values.data(), u.rows());
 }
 
 template <typename T>

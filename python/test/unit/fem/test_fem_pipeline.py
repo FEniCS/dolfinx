@@ -240,7 +240,6 @@ def test_manufactured_vector2(family, degree, filename, datadir):
     assert np.absolute(error) < 1.0e-14
 
 
-@skip_in_parallel
 @pytest.mark.parametrize("filename", [
     "UnitSquareMesh_triangle.xdmf",
     "UnitCubeMesh_tetra.xdmf",
