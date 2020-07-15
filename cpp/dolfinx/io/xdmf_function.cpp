@@ -44,7 +44,7 @@ std::string rank_to_string(int value_rank)
 //-----------------------------------------------------------------------------
 
 /// Returns true for DG0 function::Functions
-bool has_cell_centred_data(const function::Function& u)
+bool has_cell_centred_data(const function::Function<PetscScalar>& u)
 {
   int cell_based_dim = 1;
   const int rank = u.function_space()->element()->value_rank();
@@ -61,11 +61,10 @@ bool has_cell_centred_data(const function::Function& u)
 
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-int get_padded_width(const function::Function& u)
+int get_padded_width(const function::Function<PetscScalar>& u)
 {
   const int width = u.function_space()->element()->value_size();
   const int rank = u.function_space()->element()->value_rank();
-
   if (rank == 1 and width == 2)
     return 3;
   else if (rank == 2 and width == 4)
@@ -77,7 +76,8 @@ int get_padded_width(const function::Function& u)
 } // namespace
 
 //-----------------------------------------------------------------------------
-void xdmf_function::add_function(MPI_Comm comm, const function::Function& u,
+void xdmf_function::add_function(MPI_Comm comm,
+                                 const function::Function<PetscScalar>& u,
                                  const double t, pugi::xml_node& xml_node,
                                  const hid_t h5_id)
 {

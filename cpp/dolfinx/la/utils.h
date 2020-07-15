@@ -23,6 +23,7 @@ class IndexMap;
 }
 namespace fem
 {
+template <typename T>
 class Form;
 }
 namespace la
@@ -75,73 +76,10 @@ create_petsc_index_sets(const std::vector<const common::IndexMap*>& maps);
 void petsc_error(int error_code, std::string filename,
                  std::string petsc_function);
 
-/// Wrapper around a PETSc Vec object, to simplify direct access to data.
-class VecWrapper
-{
-public:
-  /// Wrap PETSc Vec y
-  VecWrapper(Vec y, bool ghosted = true);
-  VecWrapper(const VecWrapper& w) = delete;
-  /// Move constructor
-  VecWrapper(VecWrapper&& w);
-  VecWrapper& operator=(const VecWrapper& w) = delete;
-  /// Move assignment
-  VecWrapper& operator=(VecWrapper&& w);
-  ~VecWrapper();
-  /// Restore PETSc Vec object
-  void restore();
-  /// Eigen Map into PETSc Vec
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x;
-
-private:
-  PetscScalar* array = nullptr;
-  Vec _y;
-  Vec _y_local = nullptr;
-  bool _ghosted;
-};
-
-/// Read-only wrapper around a PETSc Vec object, to simplify direct access to
-/// data.
-class VecReadWrapper
-{
-public:
-  /// Wrap PETSc Vec y
-  VecReadWrapper(const Vec y, bool ghosted = true);
-  VecReadWrapper(const VecReadWrapper& w) = delete;
-  /// Move constructor
-  VecReadWrapper(VecReadWrapper&& w);
-  VecReadWrapper& operator=(const VecReadWrapper& w) = delete;
-  /// Move assignment
-  VecReadWrapper& operator=(VecReadWrapper&& w);
-  ~VecReadWrapper();
-  /// Restore PETSc Vec
-  void restore();
-  /// Eigen Map into PETSc Vec
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x;
-
-private:
-  PetscScalar const* array = nullptr;
-  Vec _y;
-  Vec _y_local = nullptr;
-  bool _ghosted;
-};
-
-// /// Get sub-matrix. Sub-matrix is local to the process
-// Mat get_local_submatrix(const Mat A, const IS row, const IS col);
-
-// /// Restore local submatrix
-// void restore_local_submatrix(const Mat A, const IS row, const IS col, Mat*
-// Asub);
-
 /// Copy blocks from Vec into Eigen vectors
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
 get_local_vectors(const Vec x,
                   const std::vector<const common::IndexMap*>& maps);
-
-/// Copy blocks from Vec into local Vec objects
-// std::vector<Vec>
-// get_local_petsc_vectors(const Vec x,
-//                         const std::vector<const common::IndexMap*>& maps);
 
 /// Scatter local Eigen vectors to Vec
 void scatter_local_vectors(

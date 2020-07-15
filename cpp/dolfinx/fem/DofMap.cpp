@@ -124,8 +124,11 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   }
 
   // Create new index map
-  auto index_map = std::make_shared<common::IndexMap>(comm, num_owned, ghosts,
-                                                      ghost_owners, bs);
+  auto index_map = std::make_shared<common::IndexMap>(
+      comm, num_owned,
+      dolfinx::MPI::compute_graph_edges(
+          comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
+      ghosts, ghost_owners, bs);
 
   // Create array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);

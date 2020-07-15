@@ -10,11 +10,15 @@
 #include "DofMap.h"
 #include "ElementDofLayout.h"
 #include <dolfinx/common/types.h>
+#include <dolfinx/fem/Form.h>
+#include <dolfinx/function/Function.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
+#include <petscsys.h>
 #include <string>
+#include <utility>
 #include <vector>
 
 struct ufc_dofmap;
@@ -31,7 +35,9 @@ class IndexMap;
 
 namespace function
 {
+template <typename T>
 class Constant;
+template <typename T>
 class Function;
 class FunctionSpace;
 } // namespace function
@@ -44,7 +50,6 @@ class Topology;
 
 namespace fem
 {
-class Form;
 
 /// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
 /// from a rectangular array of bilinear forms. Raises an exception if
@@ -56,31 +61,34 @@ class Form;
 ///     blocks (1).
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
 block_function_spaces(
-    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>& a);
+    const Eigen::Ref<
+        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Create a matrix
 /// @param[in] a  A bilinear form
 /// @return A matrix. The matrix is not zeroed.
-la::PETScMatrix create_matrix(const Form& a);
+la::PETScMatrix create_matrix(const Form<PetscScalar>& a);
 
 /// Create a sparsity pattern for a given form. The pattern is not
 /// finalised, i.e. the caller is responsible for calling
 /// SparsityPattern::assemble.
 /// @param[in] a A bilinear form
 /// @return The corresponding sparsity pattern
-la::SparsityPattern create_sparsity_pattern(const Form& a);
+la::SparsityPattern create_sparsity_pattern(const Form<PetscScalar>& a);
 
 /// Initialise monolithic matrix for an array for bilinear forms. Matrix
 /// is not zeroed.
 la::PETScMatrix create_matrix_block(
-    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>& a);
+    const Eigen::Ref<
+        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Create nested (MatNest) matrix. Matrix is not zeroed.
 la::PETScMatrix create_matrix_nest(
-    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>& a);
+    const Eigen::Ref<
+        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Initialise monolithic vector. Vector is not zeroed.
 la::PETScVector create_vector_block(
@@ -103,30 +111,149 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
                      mesh::Topology& topology);
 
+/// Extract coefficients from a UFC form
+template <typename T>
+std::vector<
+    std::tuple<int, std::string, std::shared_ptr<function::Function<T>>>>
+get_coeffs_from_ufc_form(const ufc_form& ufc_form)
+{
+  std::vector<
+      std::tuple<int, std::string, std::shared_ptr<function::Function<T>>>>
+      coeffs;
+  const char** names = ufc_form.coefficient_name_map();
+  for (int i = 0; i < ufc_form.num_coefficients; ++i)
+  {
+    coeffs.emplace_back(ufc_form.original_coefficient_position(i), names[i],
+                        nullptr);
+  }
+  return coeffs;
+}
+
+/// Extract coefficients from a UFC form
+template <typename T>
+std::vector<
+    std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
+get_constants_from_ufc_form(const ufc_form& ufc_form)
+{
+  std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
+      constants;
+  const char** names = ufc_form.constant_name_map();
+  for (int i = 0; i < ufc_form.num_constants; ++i)
+    constants.emplace_back(names[i], nullptr);
+  return constants;
+}
+
+/// Create a Form from UFC input
+/// @param[in] ufc_form The UFC form
+/// @param[in] spaces Vector of function spaces
+template <typename T>
+Form<T> create_form(
+    const ufc_form& ufc_form,
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
+{
+  assert(ufc_form.rank == (int)spaces.size());
+
+  // Check argument function spaces
+  for (std::size_t i = 0; i < spaces.size(); ++i)
+  {
+    assert(spaces[i]->element());
+    std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
+        ufc_form.create_finite_element(i), free);
+    assert(ufc_element);
+    if (std::string(ufc_element->signature)
+        != spaces[i]->element()->signature())
+    {
+      throw std::runtime_error(
+          "Cannot create form. Wrong type of function space for argument.");
+    }
+  }
+
+  // Get list of integral IDs, and load tabulate tensor into memory for each
+  FormIntegrals<T> integrals;
+
+  std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
+  ufc_form.get_cell_integral_ids(cell_integral_ids.data());
+  for (int id : cell_integral_ids)
+  {
+    ufc_integral* cell_integral = ufc_form.create_cell_integral(id);
+    assert(cell_integral);
+    integrals.set_tabulate_tensor(IntegralType::cell, id,
+                                  cell_integral->tabulate_tensor);
+    std::free(cell_integral);
+  }
+
+  // FIXME: Can this be handled better?
+  // FIXME: Handle forms with no space
+  if (ufc_form.num_exterior_facet_integrals > 0
+      or ufc_form.num_interior_facet_integrals > 0)
+  {
+    if (!spaces.empty())
+    {
+      auto mesh = spaces[0]->mesh();
+      const int tdim = mesh->topology().dim();
+      spaces[0]->mesh()->topology_mutable().create_entities(tdim - 1);
+    }
+  }
+
+  std::vector<int> exterior_facet_integral_ids(
+      ufc_form.num_exterior_facet_integrals);
+  ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
+  for (int id : exterior_facet_integral_ids)
+  {
+    ufc_integral* exterior_facet_integral
+        = ufc_form.create_exterior_facet_integral(id);
+    assert(exterior_facet_integral);
+    integrals.set_tabulate_tensor(IntegralType::exterior_facet, id,
+                                  exterior_facet_integral->tabulate_tensor);
+    std::free(exterior_facet_integral);
+  }
+
+  std::vector<int> interior_facet_integral_ids(
+      ufc_form.num_interior_facet_integrals);
+  ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
+  for (int id : interior_facet_integral_ids)
+  {
+    ufc_integral* interior_facet_integral
+        = ufc_form.create_interior_facet_integral(id);
+    assert(interior_facet_integral);
+    integrals.set_tabulate_tensor(IntegralType::interior_facet, id,
+                                  interior_facet_integral->tabulate_tensor);
+    std::free(interior_facet_integral);
+  }
+
+  // Not currently working
+  std::vector<int> vertex_integral_ids(ufc_form.num_vertex_integrals);
+  ufc_form.get_vertex_integral_ids(vertex_integral_ids.data());
+  if (vertex_integral_ids.size() > 0)
+  {
+    throw std::runtime_error(
+        "Vertex integrals not supported. Under development.");
+  }
+
+  return fem::Form(
+      spaces, integrals,
+      FormCoefficients<T>(fem::get_coeffs_from_ufc_form<T>(ufc_form)),
+      fem::get_constants_from_ufc_form<T>(ufc_form));
+}
+
 /// Create a form from a form_create function returning a pointer to a
 /// ufc_form, taking care of memory allocation
 /// @param[in] fptr pointer to a function returning a pointer to
 ///    ufc_form
 /// @param[in] spaces function spaces
 /// @return Form
-std::shared_ptr<Form> create_form(
+template <typename T>
+std::shared_ptr<Form<T>> create_form(
     ufc_form* (*fptr)(),
-    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
-
-/// Create a Form from UFC input
-/// @param[in] ufc_form The UFC form
-/// @param[in] spaces Vector of function spaces
-Form create_form(
-    const ufc_form& ufc_form,
-    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
-
-/// Extract coefficients from a UFC form
-std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
-get_coeffs_from_ufc_form(const ufc_form& ufc_form);
-
-/// Extract coefficients from a UFC form
-std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
-get_constants_from_ufc_form(const ufc_form& ufc_form);
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
+{
+  ufc_form* form = fptr();
+  auto L = std::make_shared<fem::Form<T>>(
+      dolfinx::fem::create_form<T>(*form, spaces));
+  std::free(form);
+  return L;
+}
 
 /// Create a CoordinateElement from ufc
 /// @param[in] ufc_cmap UFC coordinate mapping
@@ -156,13 +283,65 @@ create_functionspace(ufc_function_space* (*fptr)(const char*),
 
 // NOTE: This is subject to change
 /// Pack form coefficients ready for assembly
-Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-pack_coefficients(const fem::Form& form);
+template <typename T>
+Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+pack_coefficients(const fem::Form<T>& form)
+{
+  // Get form coefficient offsets amd dofmaps
+  const fem::FormCoefficients<T>& coefficients = form.coefficients();
+  const std::vector<int>& offsets = coefficients.offsets();
+  std::vector<const fem::DofMap*> dofmaps(coefficients.size());
+  std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>> v;
+  for (int i = 0; i < coefficients.size(); ++i)
+  {
+    dofmaps[i] = coefficients.get(i)->function_space()->dofmap().get();
+    v.emplace_back(coefficients.get(i)->x()->array());
+  }
+
+  // Get mesh
+  std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
+  const std::int32_t num_cells
+      = mesh->topology().index_map(tdim)->size_local()
+        + mesh->topology().index_map(tdim)->num_ghosts();
+
+  // Copy data into coefficient array
+  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> c(
+      num_cells, offsets.back());
+  if (coefficients.size() > 0)
+  {
+    for (int cell = 0; cell < num_cells; ++cell)
+    {
+      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      {
+        auto dofs = dofmaps[coeff]->cell_dofs(cell);
+        const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& _v
+            = v[coeff];
+        for (Eigen::Index k = 0; k < dofs.size(); ++k)
+          c(cell, k + offsets[coeff]) = _v[dofs[k]];
+      }
+    }
+  }
+
+  return c;
+}
 
 // NOTE: This is subject to change
 /// Pack form constants ready for assembly
-Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
-pack_constants(const fem::Form& form);
+template <typename T>
+Eigen::Array<T, Eigen::Dynamic, 1> pack_constants(const fem::Form<T>& form)
+{
+  std::vector<T> constant_values;
+  for (auto& constant : form.constants())
+  {
+    const std::vector<T>& array = constant.second->value;
+    constant_values.insert(constant_values.end(), array.begin(), array.end());
+  }
+
+  return Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1>>(
+      constant_values.data(), constant_values.size(), 1);
+}
 
 } // namespace fem
 } // namespace dolfinx
