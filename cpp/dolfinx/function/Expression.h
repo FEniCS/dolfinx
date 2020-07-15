@@ -25,6 +25,11 @@ namespace function
 template <typename T>
 class Constant;
 
+/// Represents a mathematical expression evaluated at a pre-defined
+/// set of points on the reference cell. Holds fem::FormCoefficients,
+/// function::Constant and a callable std::function that can be
+/// called to evaluate the Expression on a given cell.
+
 template <typename T>
 class Expression
 {
@@ -128,8 +133,8 @@ public:
   set_constants(const std::vector<std::shared_ptr<const function::Constant<T>>>&
                     constants)
   {
-    //if (constants.size() != _constants.size())
-    //throw std::runtime_error("Incorrect number of constants.");
+    // if (constants.size() != _constants.size())
+    // throw std::runtime_error("Incorrect number of constants.");
     _constants.resize(constants.size());
 
     // Loop over each constant that user wants to attach
