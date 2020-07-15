@@ -28,18 +28,20 @@ class Constant;
 /// Represents a mathematical expression evaluated at a pre-defined
 /// set of points on the reference cell. Holds fem::FormCoefficients,
 /// function::Constant and a callable std::function that can be
-/// called to evaluate the Expression on a given cell.
+/// called to evaluate the Expression on a cell.
 
 template <typename T>
 class Expression
 {
 public:
+  /// Create Expression. UFC Expression callable should be attached later
+  /// using Expression::set_tabulate_expression.
   Expression(
       const fem::FormCoefficients<T>& coefficients,
       const std::vector<
           std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
           constants)
-      : _coefficients(coefficients), _constants(constants)
+      : _coefficients(coefficients), _constants(constants), _fn(nullptr)
   {
     // Do nothing
   }
