@@ -65,8 +65,9 @@ void interpolate_values(
     const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& values)
 {
-  u = Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(
-      values.data(), u.rows());
+  Eigen::Matrix<T, Eigen::Dynamic, 1>& coefficients = u.x()->array();
+  coefficients = Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(
+      values.data(), coefficients.rows());
 }
 
 template <typename T>
