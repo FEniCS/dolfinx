@@ -124,7 +124,7 @@ bool FunctionSpace::has_element(const fem::FiniteElement& element) const
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-FunctionSpace::tabulate_dof_coordinates() const
+FunctionSpace::_internal_tabulate_dof_coordinates(int repeats) const
 {
   // Geometric dimension
   assert(_mesh);
@@ -167,7 +167,7 @@ FunctionSpace::tabulate_dof_coordinates() const
   // Array to hold coordinates to return
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
-          local_size, 3);
+          local_size * repeats, 3);
 
   // Loop over cells and tabulate dofs
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -197,11 +197,24 @@ FunctionSpace::tabulate_dof_coordinates() const
     {
       // FIXME: this depends on the dof layout
       const std::int32_t dof = dofs[i * ebs] / ebs;
-      x.row(dof).head(gdim) = coordinates.row(i);
+      for (int j = 0; j < repeats; ++j)
+        x.row(dof * repeats + j).head(gdim) = coordinates.row(i);
     }
   }
 
   return x;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+FunctionSpace::tabulate_dof_coordinates() const
+{
+  return _internal_tabulate_dof_coordinates(_element->block_size());
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+FunctionSpace::tabulate_scalar_subspace_dof_coordinates() const
+{
+  return _internal_tabulate_dof_coordinates(1);
 }
 //-----------------------------------------------------------------------------
 std::size_t FunctionSpace::id() const { return _id; }

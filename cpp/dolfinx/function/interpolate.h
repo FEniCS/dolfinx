@@ -168,7 +168,9 @@ void interpolate(
 
   // Evaluate expression at dof points
   const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
-      = u.function_space()->tabulate_dof_coordinates().transpose();
+      = u.function_space()
+            ->tabulate_scalar_subspace_dof_coordinates()
+            .transpose();
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values
       = f(x);
 
