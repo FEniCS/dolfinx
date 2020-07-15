@@ -69,8 +69,8 @@ Mat dolfinx::la::create_petsc_matrix(
     petsc_error(ierr, __FILE__, "MatCreate");
 
   // Get IndexMaps from sparsity patterm, and block size
-  std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-      = {sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)};
+  std::array index_maps{sparsity_pattern.index_map(0),
+                        sparsity_pattern.index_map(1)};
   const int bs0 = index_maps[0]->block_size();
   const int bs1 = index_maps[1]->block_size();
 
@@ -120,10 +120,8 @@ Mat dolfinx::la::create_petsc_matrix(
 
   // Create PETSc local-to-global map/index set
   const bool blocked = (bs0 == bs1 ? true : false);
-  const std::vector<std::int64_t> _map0
-      = index_maps[0]->global_indices(blocked);
-  const std::vector<std::int64_t> _map1
-      = index_maps[1]->global_indices(blocked);
+  const std::vector _map0 = index_maps[0]->global_indices(blocked);
+  const std::vector _map1 = index_maps[1]->global_indices(blocked);
   const std::vector<PetscInt> map0(_map0.begin(), _map0.end());
   const std::vector<PetscInt> map1(_map1.begin(), _map1.end());
 

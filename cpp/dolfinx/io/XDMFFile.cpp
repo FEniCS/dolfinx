@@ -303,7 +303,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
 
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
-  std::vector<std::int32_t> values = xdmf_read::get_dataset<std::int32_t>(
+  const std::vector values = xdmf_read::get_dataset<std::int32_t>(
       _mpi_comm.comm(), values_data_node, _h5_id);
 
   const std::pair<std::string, int> cell_type_str

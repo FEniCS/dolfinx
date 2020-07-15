@@ -52,7 +52,7 @@ void xdmf_mesh::add_topology_data(
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map_g->ghosts();
 
-  const std::vector<std::uint8_t> vtk_map = io::cells::transpose(
+  const std::vector vtk_map = io::cells::transpose(
       io::cells::perm_vtk(entity_cell_type, num_nodes_per_entity));
   auto map_e = topology.index_map(dim);
   assert(map_e);
@@ -249,13 +249,12 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
   // Get number of points from Geometry dataitem node
   pugi::xml_node geometry_data_node = geometry_node.child("DataItem");
   assert(geometry_data_node);
-  const std::vector<std::int64_t> gdims
-      = xdmf_utils::get_dataset_shape(geometry_data_node);
+  const std::vector gdims = xdmf_utils::get_dataset_shape(geometry_data_node);
   assert(gdims.size() == 2);
   assert(gdims[1] == gdim);
 
   // Read geometry data
-  const std::vector<double> geometry_data
+  const std::vector geometry_data
       = xdmf_read::get_dataset<double>(comm, geometry_data_node, h5_id);
   const std::size_t num_local_nodes = geometry_data.size() / gdim;
   return Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
@@ -281,12 +280,11 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
   // Get topology dataset node
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
   assert(topology_data_node);
-  const std::vector<std::int64_t> tdims
-      = xdmf_utils::get_dataset_shape(topology_data_node);
+  const std::vector tdims = xdmf_utils::get_dataset_shape(topology_data_node);
   const int npoint_per_cell = tdims[1];
 
   // Read topology data
-  const std::vector<std::int64_t> topology_data
+  const std::vector topology_data
       = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
   const int num_local_cells = topology_data.size() / npoint_per_cell;
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,

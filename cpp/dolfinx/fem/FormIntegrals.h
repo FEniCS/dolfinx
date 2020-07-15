@@ -81,8 +81,7 @@ public:
     }
 
     // Insert new Integral
-    integrals.insert(integrals.begin() + pos,
-                     {fn, i, std::vector<std::int32_t>()});
+    integrals.insert(integrals.begin() + pos, {fn, i, {}});
   }
 
   /// Number of integrals of given type

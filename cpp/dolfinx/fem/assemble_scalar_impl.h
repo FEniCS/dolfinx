@@ -103,10 +103,10 @@ T assemble_scalar(const fem::Form<T>& M)
                                                  coeffs, constant_values);
   }
 
+  const std::vector<int> c_offsets = M.coefficients().offsets();
   for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
        ++i)
   {
-    const std::vector<int> c_offsets = M.coefficients().offsets();
     const auto& fn
         = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
@@ -291,8 +291,8 @@ T assemble_interior_facets(
       local_facet[i] = std::distance(facets.data(), it);
     }
 
-    const std::array<std::uint8_t, 2> perm
-        = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
+    const std::array perm{perms(local_facet[0], cells[0]),
+                          perms(local_facet[1], cells[1])};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);

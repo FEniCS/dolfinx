@@ -300,7 +300,7 @@ la::PETScMatrix fem::create_matrix_block(
       const common::IndexMap& map = maps[d][f].get();
       const int bs = map.block_size();
       const std::int32_t size_local = bs * map.size_local();
-      const std::vector<std::int64_t> global = map.global_indices(false);
+      const std::vector global = map.global_indices(false);
       for (std::int32_t i = 0; i < size_local; ++i)
         _maps[d].push_back(i + rank_offset + local_offset[f]);
       for (std::size_t i = size_local; i < global.size(); ++i)
