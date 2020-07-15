@@ -139,8 +139,8 @@ fem::common_function_spaces(
 //-----------------------------------------------------------------------------
 la::SparsityPattern
 fem::create_sparsity_pattern(const mesh::Topology& topology,
-                             const std::array<const fem::DofMap*, 2>& dofmaps,
-                             const std::set<fem::IntegralType>& integrals)
+                             const std::array<const DofMap*, 2>& dofmaps,
+                             const std::set<IntegralType>& integrals)
 {
   common::Timer t0("Build sparsity");
 

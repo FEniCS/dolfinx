@@ -22,11 +22,11 @@ class IndexMap;
 namespace la
 {
 
-/// Create a PETSc Vec that wrap the data in x
+/// Create a PETSc Vec that wraps the data in x
 /// @param[in] map The index map that described the parallel layout of
-///    the distributed vector
+///   the distributed vector
 /// @param[in] x The local part of the vector, including ghost entries
-/// @param[out] A PETSc Vec object that share the x data. The caller is
+/// @return A PETSc Vec object that share the x data. The caller is
 ///   responsible for destroying the Vec.
 Vec create_ghosted_vector(
     const common::IndexMap& map,

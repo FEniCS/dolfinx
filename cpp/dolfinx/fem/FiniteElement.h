@@ -10,7 +10,6 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
-#include <petscsys.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 
