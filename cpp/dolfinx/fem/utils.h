@@ -92,11 +92,6 @@ common_function_spaces(
         std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
         Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& V);
 
-/// Create a matrix
-/// @param[in] a  A bilinear form
-/// @return A matrix. The matrix is not zeroed.
-la::PETScMatrix create_matrix(const Form<PetscScalar>& a);
-
 /// Create a sparsity pattern for a given form. The pattern is not
 /// finalised, i.e. the caller is responsible for calling
 /// SparsityPattern::assemble.
@@ -137,27 +132,6 @@ la::SparsityPattern
 create_sparsity_pattern(const mesh::Topology& topology,
                         const std::array<const DofMap*, 2>& dofmaps,
                         const std::set<IntegralType>& integrals);
-
-/// Initialise monolithic matrix for an array for bilinear forms. Matrix
-/// is not zeroed.
-la::PETScMatrix create_matrix_block(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a);
-
-/// Create nested (MatNest) matrix. Matrix is not zeroed.
-la::PETScMatrix create_matrix_nest(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a);
-
-/// Initialise monolithic vector. Vector is not zeroed.
-la::PETScVector create_vector_block(
-    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps);
-
-/// Create nested (VecNest) vector. Vector is not zeroed.
-la::PETScVector
-create_vector_nest(const std::vector<const common::IndexMap*>& maps);
 
 /// Create an ElementDofLayout from a ufc_dofmap
 ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,

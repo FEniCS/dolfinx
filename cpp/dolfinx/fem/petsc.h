@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <dolfinx/la/PETScMatrix.h>
+#include <dolfinx/la/PETScVector.h>
 #include <memory>
 #include <petscvec.h>
 #include <vector>
@@ -24,6 +26,31 @@ class DirichletBC;
 template <typename T>
 class Form;
 
+/// Create a matrix
+/// @param[in] a  A bilinear form
+/// @return A matrix. The matrix is not zeroed.
+la::PETScMatrix create_matrix(const Form<PetscScalar>& a);
+
+/// Initialise monolithic matrix for an array for bilinear forms. Matrix
+/// is not zeroed.
+la::PETScMatrix create_matrix_block(
+    const Eigen::Ref<
+        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>& a);
+
+/// Create nested (MatNest) matrix. Matrix is not zeroed.
+la::PETScMatrix create_matrix_nest(
+    const Eigen::Ref<
+        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>& a);
+
+/// Initialise monolithic vector. Vector is not zeroed.
+la::PETScVector create_vector_block(
+    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps);
+
+/// Create nested (VecNest) vector. Vector is not zeroed.
+la::PETScVector
+create_vector_nest(const std::vector<const common::IndexMap*>& maps);
 
 // -- Vectors ----------------------------------------------------------------
 
@@ -37,7 +64,6 @@ class Form;
 ///   vector. It is not zeroed before assembly.
 /// @param[in] L The linear form to assemble
 void assemble_vector_petsc(Vec b, const Form<PetscScalar>& L);
-
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
@@ -62,7 +88,6 @@ void apply_lifting_petsc(
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale);
-
 
 // -- Setting bcs ------------------------------------------------------------
 
