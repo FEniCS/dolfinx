@@ -5,22 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "assembler.h"
-#include "DirichletBC.h"
-#include "DofMap.h"
-#include "Form.h"
-#include "assemble_matrix_impl.h"
-#include "assemble_scalar_impl.h"
-#include "assemble_vector_impl.h"
-#include "utils.h"
-#include <Eigen/Sparse>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/types.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
-#include <dolfinx/mesh/Mesh.h>
+#include "assembler_petsc.h"
 
 using namespace dolfinx;
-using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
@@ -32,9 +19,7 @@ void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
   Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
-
-  fem::impl::assemble_vector<PetscScalar>(_b, L);
-
+  fem::assemble_vector<PetscScalar>(_b, L);
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b, &b_local);
 }
@@ -54,7 +39,7 @@ void fem::apply_lifting_petsc(
   Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
 
   if (x0.empty())
-    fem::impl::apply_lifting<PetscScalar>(_b, a, bcs1, {}, scale);
+    fem::apply_lifting<PetscScalar>(_b, a, bcs1, {}, scale);
   else
   {
     std::vector<Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
@@ -73,7 +58,7 @@ void fem::apply_lifting_petsc(
 
     std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
         x0_tmp(x0_ref.begin(), x0_ref.end());
-    fem::impl::apply_lifting<PetscScalar>(_b, a, bcs1, x0_tmp, scale);
+    fem::apply_lifting<PetscScalar>(_b, a, bcs1, x0_tmp, scale);
 
     for (std::size_t i = 0; i < x0_local.size(); ++i)
     {
@@ -108,14 +93,12 @@ void fem::set_bc_petsc(
     VecGetArrayRead(x0_local, &array);
     Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x0(array,
                                                                         n);
-
-    set_bc<PetscScalar>(_b, bcs, _x0, scale);
-
+    fem::set_bc<PetscScalar>(_b, bcs, _x0, scale);
     VecRestoreArrayRead(x0_local, &array);
     VecGhostRestoreLocalForm(x0, &x0_local);
   }
   else
-    set_bc<PetscScalar>(_b, bcs, scale);
+    fem::set_bc<PetscScalar>(_b, bcs, scale);
 
   VecRestoreArray(b, &array);
 }
