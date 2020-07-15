@@ -136,19 +136,19 @@ class MeshTags(object):
         self.dtype = dtype
         fn = _meshtags_types[dtype]
         self._cpp_object = fn(mesh, dim, indices, values)
-        
+
     @property
     def values(self):
         return self._cpp_object.values
-        
+
     @values.setter
     def values(self, val):
         self._cpp_object.values = val
 
     @property
-    def indices(self): 
+    def indices(self):
         return self._cpp_object.indices
-      
+
     @indices.setter
     def indices(self, val):
         self._cpp_object.indices = val
