@@ -174,7 +174,7 @@ template <typename T>
 void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
-    const Form<PetscScalar>& a, const std::vector<bool>& dof_marker0,
+    const Form<T>& a, const std::vector<bool>& dof_marker0,
     const std::vector<bool>& dof_marker1)
 
 {

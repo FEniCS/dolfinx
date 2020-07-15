@@ -94,7 +94,7 @@ Partitioning::reorder_global_indices(
                 MPI::mpi_type<std::int64_t>(), comm);
 
   // Build list of sharing processes for each vertex
-  const std::array<std::int64_t, 2> range
+  const std::array range
       = dolfinx::MPI::local_range(rank, max_global_index + 1, size);
   std::vector<std::set<int>> owners(range[1] - range[0]);
   for (int i = 0; i < size; ++i)

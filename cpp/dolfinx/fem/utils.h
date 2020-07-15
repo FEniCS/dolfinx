@@ -14,9 +14,11 @@
 #include <dolfinx/function/Function.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
+#include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <petscsys.h>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -51,19 +53,44 @@ class Topology;
 namespace fem
 {
 
-/// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
-/// from a rectangular array of bilinear forms. Raises an exception if
-/// there is an inconsistency. e.g. if each form in row i does not have
-/// the same test space then an exception is raised.
+/// Extract test (0) and trial (1) function spaces pairs for each
+/// bilinear form for a rectangular array of forms
 ///
 /// @param[in] a A rectangular block on bilinear forms
-/// @return Function spaces for each row blocks (0) and for each column
-///     blocks (1).
+/// @return Rectangular array of the same shape as @p a with a pair of
+///   function spaces in each array entry. If a form is null, then the
+///   returned function space pair is (null, null).
+template <typename T>
+Eigen::Array<std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
+             Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+extract_function_spaces(
+    const Eigen::Ref<const Eigen::Array<const fem::Form<T>*, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>& a)
+{
+  Eigen::Array<std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
+               Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      spaces(a.rows(), a.cols());
+  for (int i = 0; i < a.rows(); ++i)
+    for (int j = 0; j < a.cols(); ++j)
+      if (a(i, j))
+        spaces(i, j) = {a(i, j)->function_space(0), a(i, j)->function_space(1)};
+  return spaces;
+}
+
+/// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
+/// from a rectangular array of bilinear forms. The test space must be
+/// the same for each row and the trial spaces must be the same for each
+/// column. Raises an exception if there is an inconsistency. e.g. if
+/// each form in row i does not have the same test space then an
+/// exception is raised.
+///
+/// @param[in] V Vector function spaces for (0) each row block and (1)
+/// each column block
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
-block_function_spaces(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a);
+common_function_spaces(
+    const Eigen ::Ref<const Eigen::Array<
+        std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
+        Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& V);
 
 /// Create a matrix
 /// @param[in] a  A bilinear form
@@ -75,7 +102,41 @@ la::PETScMatrix create_matrix(const Form<PetscScalar>& a);
 /// SparsityPattern::assemble.
 /// @param[in] a A bilinear form
 /// @return The corresponding sparsity pattern
-la::SparsityPattern create_sparsity_pattern(const Form<PetscScalar>& a);
+template <typename T>
+la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
+{
+  if (a.rank() != 2)
+  {
+    throw std::runtime_error(
+        "Cannot create sparsity pattern. Form is not a bilinear form");
+  }
+
+  // Get dof maps and mesh
+  std::array dofmaps{a.function_space(0)->dofmap().get(),
+                     a.function_space(1)->dofmap().get()};
+  std::shared_ptr mesh = a.mesh();
+  assert(mesh);
+
+  const std::set<IntegralType> types = a.integrals().types();
+  if (types.find(IntegralType::interior_facet) != types.end()
+      or types.find(IntegralType::exterior_facet) != types.end())
+  {
+    // FIXME: cleanup these calls? Some of the happen internally again.
+    const int tdim = mesh->topology().dim();
+    mesh->topology_mutable().create_entities(tdim - 1);
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+  }
+
+  return create_sparsity_pattern(mesh->topology(), dofmaps, types);
+}
+
+/// Create a sparsity pattern for a given form. The pattern is not
+/// finalised, i.e. the caller is responsible for calling
+/// SparsityPattern::assemble.
+la::SparsityPattern
+create_sparsity_pattern(const mesh::Topology& topology,
+                        const std::array<const DofMap*, 2>& dofmaps,
+                        const std::set<IntegralType>& integrals);
 
 /// Initialise monolithic matrix for an array for bilinear forms. Matrix
 /// is not zeroed.

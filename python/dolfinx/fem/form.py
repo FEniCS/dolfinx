@@ -50,7 +50,7 @@ class Form:
             func.ufl_function_space()._cpp_object for func in form.arguments()
         ]
 
-        # Prepare dolfinx.Form and hold it as a member
+        # Prepare dolfinx.cpp.fem.Form and hold it as a member
         ffi = cffi.FFI()
         self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ufc_form), function_spaces)
 

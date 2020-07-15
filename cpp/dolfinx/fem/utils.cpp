@@ -91,40 +91,37 @@ int analyse_block_structure(
 
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
-fem::block_function_spaces(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a)
+fem::common_function_spaces(
+    const Eigen ::Ref<const Eigen::Array<
+        std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
+        Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& V)
 {
-  std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V;
-  V[0] = std::vector<std::shared_ptr<const function::FunctionSpace>>(a.rows(),
-                                                                     nullptr);
-  V[1] = std::vector<std::shared_ptr<const function::FunctionSpace>>(a.cols(),
-                                                                     nullptr);
+  std::array spaces{std::vector<std::shared_ptr<const function::FunctionSpace>>(
+                        V.rows(), nullptr),
+                    std::vector<std::shared_ptr<const function::FunctionSpace>>(
+                        V.cols(), nullptr)};
 
   // Loop over rows
-  for (int i = 0; i < a.rows(); ++i)
+  for (int i = 0; i < V.rows(); ++i)
   {
     // Loop over columns
-    for (int j = 0; j < a.cols(); ++j)
+    for (int j = 0; j < V.cols(); ++j)
     {
-      if (a(i, j))
+      if (V(i, j)[0] and V(i, j)[1])
       {
-        assert(a(i, j)->rank() == 2);
-
-        if (!V[0][i])
-          V[0][i] = a(i, j)->function_space(0);
+        if (!spaces[0][i])
+          spaces[0][i] = V(i, j)[0];
         else
         {
-          if (V[0][i] != a(i, j)->function_space(0))
+          if (spaces[0][i] != V(i, j)[0])
             throw std::runtime_error("Mismatched test space for row.");
         }
 
-        if (!V[1][j])
-          V[1][j] = a(i, j)->function_space(1);
+        if (!spaces[1][j])
+          spaces[1][j] = V(i, j)[1];
         else
         {
-          if (V[1][j] != a(i, j)->function_space(1))
+          if (spaces[1][j] != V(i, j)[1])
             throw std::runtime_error("Mismatched trial space for column.");
         }
       }
@@ -132,64 +129,47 @@ fem::block_function_spaces(
   }
 
   // Check there are no null entries
-  for (std::size_t i = 0; i < V.size(); ++i)
-    for (std::size_t j = 0; j < V[i].size(); ++j)
-      if (!V[i][j])
+  for (std::size_t i = 0; i < spaces.size(); ++i)
+    for (std::size_t j = 0; j < spaces[i].size(); ++j)
+      if (!spaces[i][j])
         throw std::runtime_error("Could not deduce all block spaces.");
 
-  return V;
+  return spaces;
 }
 //-----------------------------------------------------------------------------
 la::SparsityPattern
-dolfinx::fem::create_sparsity_pattern(const Form<PetscScalar>& a)
+fem::create_sparsity_pattern(const mesh::Topology& topology,
+                             const std::array<const DofMap*, 2>& dofmaps,
+                             const std::set<IntegralType>& integrals)
 {
-  if (a.rank() != 2)
-  {
-    throw std::runtime_error(
-        "Cannot create sparsity pattern. Form is not a bilinear form");
-  }
-
-  // Get dof maps
-  std::array<const DofMap*, 2> dofmaps
-      = {{a.function_space(0)->dofmap().get(),
-          a.function_space(1)->dofmap().get()}};
-
-  // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
-  assert(mesh);
-  const int tdim = mesh->topology().dim();
-
   common::Timer t0("Build sparsity");
 
   // Get common::IndexMaps for each dimension
-  std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-      = {{dofmaps[0]->index_map, dofmaps[1]->index_map}};
+  std::array index_maps{dofmaps[0]->index_map, dofmaps[1]->index_map};
 
   // Create and build sparsity pattern
-  la::SparsityPattern pattern(mesh->mpi_comm(), index_maps);
-  if (a.integrals().num_integrals(fem::IntegralType::cell) > 0)
+  assert(dofmaps[0]);
+  assert(dofmaps[0]->index_map);
+  la::SparsityPattern pattern(dofmaps[0]->index_map->comm(), index_maps);
+  for (auto type : integrals)
   {
-    SparsityPatternBuilder::cells(pattern, mesh->topology(),
-                                  {{dofmaps[0], dofmaps[1]}});
+    if (type == fem::IntegralType::cell)
+    {
+      SparsityPatternBuilder::cells(pattern, topology,
+                                    {{dofmaps[0], dofmaps[1]}});
+    }
+    else if (type == fem::IntegralType::interior_facet)
+    {
+      SparsityPatternBuilder::interior_facets(pattern, topology,
+                                              {{dofmaps[0], dofmaps[1]}});
+    }
+    else if (type == fem::IntegralType::exterior_facet)
+    {
+      SparsityPatternBuilder::exterior_facets(pattern, topology,
+                                              {{dofmaps[0], dofmaps[1]}});
+    }
   }
 
-  if (a.integrals().num_integrals(fem::IntegralType::interior_facet) > 0)
-  {
-    // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh->topology_mutable().create_entities(tdim - 1);
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    SparsityPatternBuilder::interior_facets(pattern, mesh->topology(),
-                                            {{dofmaps[0], dofmaps[1]}});
-  }
-
-  if (a.integrals().num_integrals(fem::IntegralType::exterior_facet) > 0)
-  {
-    // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh->topology_mutable().create_entities(tdim - 1);
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    SparsityPatternBuilder::exterior_facets(pattern, mesh->topology(),
-                                            {{dofmaps[0], dofmaps[1]}});
-  }
   t0.stop();
 
   return pattern;
@@ -217,10 +197,9 @@ la::PETScMatrix fem::create_matrix_block(
                            Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
   // Extract and check row/column ranges
-  std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
-      = block_function_spaces(a);
+  auto V = common_function_spaces(extract_function_spaces(a));
 
-  std::shared_ptr<const mesh::Mesh> mesh = V[0][0]->mesh();
+  std::shared_ptr mesh = V[0][0]->mesh();
   assert(mesh);
   const int tdim = mesh->topology().dim();
 
@@ -240,8 +219,8 @@ la::PETScMatrix fem::create_matrix_block(
             mesh->mpi_comm(), index_maps));
 
         // Build sparsity pattern for block
-        std::array<const DofMap*, 2> dofmaps
-            = {{V[0][row]->dofmap().get(), V[1][col]->dofmap().get()}};
+        std::array dofmaps{V[0][row]->dofmap().get(),
+                           V[1][col]->dofmap().get()};
         assert(patterns[row].back());
         auto& sp = patterns[row].back();
         assert(sp);
@@ -306,7 +285,7 @@ la::PETScMatrix fem::create_matrix_block(
       const common::IndexMap& map = maps[d][f].get();
       const int bs = map.block_size();
       const std::int32_t size_local = bs * map.size_local();
-      const std::vector<std::int64_t> global = map.global_indices(false);
+      const std::vector global = map.global_indices(false);
       for (std::int32_t i = 0; i < size_local; ++i)
         _maps[d].push_back(i + rank_offset + local_offset[f]);
       for (std::size_t i = size_local; i < global.size(); ++i)
@@ -338,8 +317,7 @@ la::PETScMatrix fem::create_matrix_nest(
                            Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
   // Extract and check row/column ranges
-  std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
-      = block_function_spaces(a);
+  auto V = common_function_spaces(extract_function_spaces(a));
 
   // Loop over each form and create matrix
   Eigen::Array<std::shared_ptr<la::PETScMatrix>, Eigen::Dynamic, Eigen::Dynamic,
@@ -578,11 +556,10 @@ fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
   ufc_function_space* space = fptr(function_name.c_str());
   ufc_dofmap* ufc_map = space->create_dofmap();
   ufc_finite_element* ufc_element = space->create_element();
-  std::shared_ptr<function::FunctionSpace> V
-      = std::make_shared<function::FunctionSpace>(
-          mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
-          std::make_shared<fem::DofMap>(fem::create_dofmap(
-              mesh->mpi_comm(), *ufc_map, mesh->topology())));
+  auto V = std::make_shared<function::FunctionSpace>(
+      mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
+      std::make_shared<fem::DofMap>(
+          fem::create_dofmap(mesh->mpi_comm(), *ufc_map, mesh->topology())));
   std::free(ufc_element);
   std::free(ufc_map);
   std::free(space);

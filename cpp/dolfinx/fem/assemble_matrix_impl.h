@@ -140,10 +140,10 @@ void assemble_matrix(
         coeffs, constants);
   }
 
+  const std::vector<int> c_offsets = a.coefficients().offsets();
   for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
        ++i)
   {
-    const std::vector<int> c_offsets = a.coefficients().offsets();
     const auto& fn
         = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
@@ -396,10 +396,9 @@ void assemble_interior_facets(
     assert(it1 != (facets1.data() + facets1.rows()));
     const int local_facet1 = std::distance(facets1.data(), it1);
 
-    const std::array<int, 2> local_facet = {local_facet0, local_facet1};
-
-    const std::array<std::uint8_t, 2> perm
-        = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
+    const std::array local_facet{local_facet0, local_facet1};
+    const std::array perm{perms(local_facet[0], cells[0]),
+                          perms(local_facet[1], cells[1])};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
