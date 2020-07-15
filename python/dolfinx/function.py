@@ -63,6 +63,7 @@ class Expression:
         constants = ufl.algorithms.analysis.extract_constants(expression)
         self._cpp_object.set_constants([constant._cpp_object for constant in constants])
 
+
 class Function(ufl.Coefficient):
     """A finite element function that is represented by a function
     space (domain, element and dofmap) and a vector holding the
