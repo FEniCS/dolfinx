@@ -14,9 +14,11 @@
 #include <dolfinx/function/Function.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
+#include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <petscsys.h>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -100,7 +102,41 @@ la::PETScMatrix create_matrix(const Form<PetscScalar>& a);
 /// SparsityPattern::assemble.
 /// @param[in] a A bilinear form
 /// @return The corresponding sparsity pattern
-la::SparsityPattern create_sparsity_pattern(const Form<PetscScalar>& a);
+template <typename T>
+la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
+{
+  if (a.rank() != 2)
+  {
+    throw std::runtime_error(
+        "Cannot create sparsity pattern. Form is not a bilinear form");
+  }
+
+  // Get dof maps and mesh
+  std::array dofmaps{a.function_space(0)->dofmap().get(),
+                     a.function_space(1)->dofmap().get()};
+  std::shared_ptr mesh = a.mesh();
+  assert(mesh);
+
+  const std::set<IntegralType> types = a.integrals().types();
+  if (types.find(IntegralType::interior_facet) != types.end()
+      or types.find(IntegralType::exterior_facet) != types.end())
+  {
+    // FIXME: cleanup these calls? Some of the happen internally again.
+    const int tdim = mesh->topology().dim();
+    mesh->topology_mutable().create_entities(tdim - 1);
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+  }
+
+  return create_sparsity_pattern(mesh->topology(), dofmaps, types);
+}
+
+/// Create a sparsity pattern for a given form. The pattern is not
+/// finalised, i.e. the caller is responsible for calling
+/// SparsityPattern::assemble.
+la::SparsityPattern
+create_sparsity_pattern(const mesh::Topology& topology,
+                        const std::array<const DofMap*, 2>& dofmaps,
+                        const std::set<IntegralType>& integrals);
 
 /// Initialise monolithic matrix for an array for bilinear forms. Matrix
 /// is not zeroed.

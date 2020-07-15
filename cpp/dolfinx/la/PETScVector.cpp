@@ -76,6 +76,27 @@ la::create_petsc_index_sets(const std::vector<const common::IndexMap*>& maps)
   return is;
 }
 //-----------------------------------------------------------------------------
+Vec la::create_ghosted_vector(
+    const common::IndexMap& map,
+    const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x)
+{
+  const int bs = map.block_size();
+  std::int32_t size_local = bs * map.size_local();
+  std::int32_t num_ghosts = bs * map.num_ghosts();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map.ghosts();
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts(bs * ghosts.rows());
+  for (int i = 0; i < ghosts.rows(); ++i)
+  {
+    for (int j = 0; j < bs; ++j)
+      _ghosts[i * bs + j] = bs * ghosts[i] + j;
+  }
+
+  Vec vec;
+  VecCreateGhostWithArray(map.comm(), size_local, PETSC_DECIDE, num_ghosts,
+                          _ghosts.data(), x.array().data(), &vec);
+  return vec;
+}
+//-----------------------------------------------------------------------------
 Vec la::create_petsc_vector(const dolfinx::common::IndexMap& map)
 {
   return la::create_petsc_vector(map.comm(), map.local_range(), map.ghosts(),

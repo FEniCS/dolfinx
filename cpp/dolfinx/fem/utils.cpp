@@ -138,53 +138,38 @@ fem::common_function_spaces(
 }
 //-----------------------------------------------------------------------------
 la::SparsityPattern
-dolfinx::fem::create_sparsity_pattern(const Form<PetscScalar>& a)
+fem::create_sparsity_pattern(const mesh::Topology& topology,
+                             const std::array<const fem::DofMap*, 2>& dofmaps,
+                             const std::set<fem::IntegralType>& integrals)
 {
-  if (a.rank() != 2)
-  {
-    throw std::runtime_error(
-        "Cannot create sparsity pattern. Form is not a bilinear form");
-  }
-
-  // Get dof maps
-  std::array dofmaps{a.function_space(0)->dofmap().get(),
-                     a.function_space(1)->dofmap().get()};
-
-  // Get mesh
-  std::shared_ptr mesh = a.mesh();
-  assert(mesh);
-  const int tdim = mesh->topology().dim();
-
   common::Timer t0("Build sparsity");
 
   // Get common::IndexMaps for each dimension
   std::array index_maps{dofmaps[0]->index_map, dofmaps[1]->index_map};
 
   // Create and build sparsity pattern
-  la::SparsityPattern pattern(mesh->mpi_comm(), index_maps);
-  if (a.integrals().num_integrals(fem::IntegralType::cell) > 0)
+  assert(dofmaps[0]);
+  assert(dofmaps[0]->index_map);
+  la::SparsityPattern pattern(dofmaps[0]->index_map->comm(), index_maps);
+  for (auto type : integrals)
   {
-    SparsityPatternBuilder::cells(pattern, mesh->topology(),
-                                  {{dofmaps[0], dofmaps[1]}});
+    if (type == fem::IntegralType::cell)
+    {
+      SparsityPatternBuilder::cells(pattern, topology,
+                                    {{dofmaps[0], dofmaps[1]}});
+    }
+    else if (type == fem::IntegralType::interior_facet)
+    {
+      SparsityPatternBuilder::interior_facets(pattern, topology,
+                                              {{dofmaps[0], dofmaps[1]}});
+    }
+    else if (type == fem::IntegralType::exterior_facet)
+    {
+      SparsityPatternBuilder::exterior_facets(pattern, topology,
+                                              {{dofmaps[0], dofmaps[1]}});
+    }
   }
 
-  if (a.integrals().num_integrals(fem::IntegralType::interior_facet) > 0)
-  {
-    // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh->topology_mutable().create_entities(tdim - 1);
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    SparsityPatternBuilder::interior_facets(pattern, mesh->topology(),
-                                            {{dofmaps[0], dofmaps[1]}});
-  }
-
-  if (a.integrals().num_integrals(fem::IntegralType::exterior_facet) > 0)
-  {
-    // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh->topology_mutable().create_entities(tdim - 1);
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    SparsityPatternBuilder::exterior_facets(pattern, mesh->topology(),
-                                            {{dofmaps[0], dofmaps[1]}});
-  }
   t0.stop();
 
   return pattern;

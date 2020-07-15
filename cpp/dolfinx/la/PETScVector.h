@@ -22,6 +22,16 @@ class IndexMap;
 namespace la
 {
 
+/// Create a PETSc Vec that wrap the data in x
+/// @param[in] map The index map that described the parallel layout of
+///    the distributed vector
+/// @param[in] x The local part of the vector, including ghost entries
+/// @param[out] A PETSc Vec object that share the x data. The caller is
+///   responsible for destroying the Vec.
+Vec create_ghosted_vector(
+    const common::IndexMap& map,
+    const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x);
+
 /// Print error message for PETSc calls that return an error
 void petsc_error(int error_code, std::string filename,
                  std::string petsc_function);

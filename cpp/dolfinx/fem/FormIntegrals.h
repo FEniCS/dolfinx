@@ -9,6 +9,7 @@
 #include <array>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
+#include <set>
 #include <vector>
 
 namespace dolfinx
@@ -82,6 +83,21 @@ public:
 
     // Insert new Integral
     integrals.insert(integrals.begin() + pos, {fn, i, {}});
+  }
+
+  /// Get types of integrals in the form
+  /// @return Integrals types
+  std::set<IntegralType> types() const
+  {
+    std::array types{IntegralType::cell, IntegralType::exterior_facet,
+                     IntegralType::interior_facet};
+    std::set<IntegralType> set;
+    for (auto type : types)
+    {
+      if (!_integrals.at(static_cast<int>(type)).empty())
+        set.insert(type);
+    }
+    return set;
   }
 
   /// Number of integrals of given type
