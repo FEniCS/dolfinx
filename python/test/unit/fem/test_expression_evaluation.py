@@ -70,8 +70,9 @@ def test_rank0():
                    ffi.from_buffer(w),
                    ffi.from_buffer(constants),
                    ffi.from_buffer(geometry))
-            for j in range(6):
-                b[dofmap[i * 6 + 2 * (j % 3) + j // 3]] = b_local[j]
+            for j in range(3):
+                for k in range(2):
+                    b[dofmap[i * 6 + 2 * j + k]] = b_local[3 * k + j]
 
     # Prepare mesh and dofmap data
     pos = mesh.geometry.dofmap.offsets()
