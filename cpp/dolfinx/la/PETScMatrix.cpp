@@ -196,26 +196,6 @@ PETScMatrix::PETScMatrix(Mat A, bool inc_ref_count)
   // Reference count to A is incremented in base class
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set(const PetscScalar* block, int m, const PetscInt* rows,
-                      int n, const PetscInt* cols)
-{
-  assert(_matA);
-  PetscErrorCode ierr
-      = MatSetValues(_matA, m, rows, n, cols, block, INSERT_VALUES);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetValues");
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::add_local(const PetscScalar* block, int m,
-                            const PetscInt* rows, int n, const PetscInt* cols)
-{
-  assert(_matA);
-  PetscErrorCode ierr
-      = MatSetValuesLocal(_matA, m, rows, n, cols, block, ADD_VALUES);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-}
-//-----------------------------------------------------------------------------
 double PETScMatrix::norm(la::Norm norm_type) const
 {
   assert(_matA);

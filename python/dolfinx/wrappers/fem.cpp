@@ -18,6 +18,7 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/assembler.h>
+#include <dolfinx/fem/petsc.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/function/Constant.h>
 #include <dolfinx/function/Function.h>

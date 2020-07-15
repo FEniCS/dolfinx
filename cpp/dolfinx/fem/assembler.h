@@ -12,7 +12,6 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <memory>
-#include <petscvec.h>
 #include <vector>
 
 namespace dolfinx
@@ -44,17 +43,6 @@ T assemble_scalar(const Form<T>& M)
 
 // -- Vectors ----------------------------------------------------------------
 
-/// Assemble linear form into an already allocated PETSc vector. Ghost
-/// contributions are not accumulated (not sent to owner). Caller is
-/// responsible for calling VecGhostUpdateBegin/End.
-///
-/// @param[in,out] b The PETsc vector to assemble the form into. The
-///   vector must already be initialised with the correct size. The
-///   process-local contribution of the form is assembled into this
-///   vector. It is not zeroed before assembly.
-/// @param[in] L The linear form to assemble
-void assemble_vector_petsc(Vec b, const Form<PetscScalar>& L);
-
 /// Assemble linear form into an Eigen vector
 /// @param[in,out] b The Eigen vector to be assembled. It will not be
 ///   zeroed before assembly.
@@ -71,24 +59,6 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
 
 // FIXME: need to pass an array of Vec for x0?
 // FIXME: clarify zeroing of vector
-
-/// Modify b such that:
-///
-///   b <- b - scale * A_j (g_j - x0_j)
-///
-/// where j is a block (nest) index. For a non-blocked problem j = 0. The
-/// boundary conditions bcs1 are on the trial spaces V_j. The forms in
-/// [a] must have the same test space as L (from which b was built), but the
-/// trial space may differ. If x0 is not supplied, then it is treated as
-/// zero.
-///
-/// Ghost contributions are not accumulated (not sent to owner). Caller
-/// is responsible for calling VecGhostUpdateBegin/End.
-void apply_lifting_petsc(
-    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
-    const std::vector<
-        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
-    const std::vector<Vec>& x0, double scale);
 
 /// Modify b such that:
 ///
@@ -276,14 +246,6 @@ void add_diagonal(
 
 // FIXME: clarify x0
 // FIXME: clarify what happens with ghosts
-
-/// Set bc values in owned (local) part of the PETScVector, multiplied
-/// by 'scale'. The vectors b and x0 must have the same local size. The
-/// bcs should be on (sub-)spaces of the form L that b represents.
-void set_bc_petsc(
-    Vec b,
-    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
-    const Vec x0, double scale = 1.0);
 
 /// Set bc values in owned (local) part of the PETScVector, multiplied
 /// by 'scale'. The vectors b and x0 must have the same local size. The
