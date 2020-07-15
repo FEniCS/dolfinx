@@ -96,7 +96,8 @@ void fem(py::module& m)
       py::return_value_policy::take_ownership,
       "Create nested vector for multiple (stacked) linear forms.");
 
-  m.def("create_sparsity_pattern", &dolfinx::fem::create_sparsity_pattern,
+  m.def("create_sparsity_pattern",
+        &dolfinx::fem::create_sparsity_pattern<PetscScalar>,
         "Create a sparsity pattern for bilinear form.");
   m.def("pack_coefficients", &dolfinx::fem::pack_coefficients<PetscScalar>,
         "Pack coefficients for a UFL form.");
