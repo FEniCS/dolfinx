@@ -105,7 +105,7 @@ compute_ordering_triangle(const mesh::Topology& topology)
 
   auto map = topology.index_map(0);
   assert(map);
-  const std::vector<std::int64_t> global_indices = map->global_indices();
+  const std::vector global_indices = map->global_indices();
 
   // Set orders for each cell
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
@@ -138,7 +138,7 @@ compute_ordering_quadrilateral(const mesh::Topology& topology)
   // Set orders for each cell
   auto map = topology.index_map(0);
   assert(map);
-  const std::vector<std::int64_t> global_indices = map->global_indices();
+  const std::vector global_indices = map->global_indices();
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     auto vertices = cells->links(cell_n);
@@ -171,7 +171,7 @@ compute_ordering_tetrahedron(const mesh::Topology& topology)
   // Set orders for each cell
   auto map = topology.index_map(0);
   assert(map);
-  const std::vector<std::int64_t> global_indices = map->global_indices();
+  const std::vector global_indices = map->global_indices();
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     auto vertices = cells->links(cell_n);
@@ -189,20 +189,16 @@ compute_ordering_tetrahedron(const mesh::Topology& topology)
     cell_orders(cell_n, 5) = (v0 > v1);
 
     // Set the orders for the face rotations and reflections
-    const std::array<std::int8_t, 2> tri_orders0
-        = calculate_triangle_orders<std::int64_t>(v1, v2, v3);
+    const std::array tri_orders0 = calculate_triangle_orders(v1, v2, v3);
     cell_orders(cell_n, 6) = tri_orders0[0];
     cell_orders(cell_n, 7) = tri_orders0[1];
-    const std::array<std::int8_t, 2> tri_orders1
-        = calculate_triangle_orders<std::int64_t>(v0, v2, v3);
+    const std::array tri_orders1 = calculate_triangle_orders(v0, v2, v3);
     cell_orders(cell_n, 8) = tri_orders1[0];
     cell_orders(cell_n, 9) = tri_orders1[1];
-    const std::array<std::int8_t, 2> tri_orders2
-        = calculate_triangle_orders<std::int64_t>(v0, v1, v3);
+    const std::array tri_orders2 = calculate_triangle_orders(v0, v1, v3);
     cell_orders(cell_n, 10) = tri_orders2[0];
     cell_orders(cell_n, 11) = tri_orders2[1];
-    const std::array<std::int8_t, 2> tri_orders3
-        = calculate_triangle_orders<std::int64_t>(v0, v1, v2);
+    const std::array tri_orders3 = calculate_triangle_orders(v0, v1, v2);
     cell_orders(cell_n, 12) = tri_orders3[0];
     cell_orders(cell_n, 13) = tri_orders3[1];
   }
@@ -224,7 +220,7 @@ compute_ordering_hexahedron(const mesh::Topology& topology)
   // Set orders for each cell
   auto map = topology.index_map(0);
   assert(map);
-  const std::vector<std::int64_t> global_indices = map->global_indices();
+  const std::vector global_indices = map->global_indices();
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     auto vertices = cells->links(cell_n);
@@ -252,28 +248,28 @@ compute_ordering_hexahedron(const mesh::Topology& topology)
     cell_orders(cell_n, 11) = (v3 > v7);
 
     // Set the orders for the face rotations and reflections
-    const std::array<std::int8_t, 2> quad_orders0
-        = calculate_quadrilateral_orders<std::int64_t>(v0, v1, v2, v3);
+    const std::array quad_orders0
+        = calculate_quadrilateral_orders(v0, v1, v2, v3);
     cell_orders(cell_n, 12) = quad_orders0[0];
     cell_orders(cell_n, 13) = quad_orders0[1];
-    const std::array<std::int8_t, 2> quad_orders1
-        = calculate_quadrilateral_orders<std::int64_t>(v4, v5, v6, v7);
+    const std::array quad_orders1
+        = calculate_quadrilateral_orders(v4, v5, v6, v7);
     cell_orders(cell_n, 14) = quad_orders1[0];
     cell_orders(cell_n, 15) = quad_orders1[1];
-    const std::array<std::int8_t, 2> quad_orders2
-        = calculate_quadrilateral_orders<std::int64_t>(v0, v1, v4, v5);
+    const std::array quad_orders2
+        = calculate_quadrilateral_orders(v0, v1, v4, v5);
     cell_orders(cell_n, 16) = quad_orders2[0];
     cell_orders(cell_n, 17) = quad_orders2[1];
-    const std::array<std::int8_t, 2> quad_orders3
-        = calculate_quadrilateral_orders<std::int64_t>(v2, v3, v6, v7);
+    const std::array quad_orders3
+        = calculate_quadrilateral_orders(v2, v3, v6, v7);
     cell_orders(cell_n, 18) = quad_orders3[0];
     cell_orders(cell_n, 19) = quad_orders3[1];
-    const std::array<std::int8_t, 2> quad_orders4
-        = calculate_quadrilateral_orders<std::int64_t>(v0, v2, v4, v6);
+    const std::array quad_orders4
+        = calculate_quadrilateral_orders(v0, v2, v4, v6);
     cell_orders(cell_n, 20) = quad_orders4[0];
     cell_orders(cell_n, 21) = quad_orders4[1];
-    const std::array<std::int8_t, 2> quad_orders5
-        = calculate_quadrilateral_orders<std::int64_t>(v1, v3, v5, v7);
+    const std::array quad_orders5
+        = calculate_quadrilateral_orders(v1, v3, v5, v7);
     cell_orders(cell_n, 22) = quad_orders5[0];
     cell_orders(cell_n, 23) = quad_orders5[1];
   }

@@ -27,6 +27,7 @@ namespace dolfinx
 
 namespace function
 {
+template <typename T>
 class Function;
 } // namespace function
 
@@ -61,10 +62,12 @@ std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 
 /// Get point data values for linear or quadratic mesh into flattened 2D
 /// array
-std::vector<PetscScalar> get_point_data_values(const function::Function& u);
+std::vector<PetscScalar>
+get_point_data_values(const function::Function<PetscScalar>& u);
 
 /// Get cell data values as a flattened 2D array
-std::vector<PetscScalar> get_cell_data_values(const function::Function& u);
+std::vector<PetscScalar>
+get_cell_data_values(const function::Function<PetscScalar>& u);
 
 /// Get the VTK string identifier
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
@@ -143,8 +146,7 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
       local_shape0 /= shape[i];
     }
 
-    const std::array<std::int64_t, 2> local_range
-        = {{offset, offset + local_shape0}};
+    const std::array local_range{offset, offset + local_shape0};
     HDF5Interface::write_dataset(h5_id, h5_path, x.data(), local_range, shape,
                                  use_mpi_io, false);
 

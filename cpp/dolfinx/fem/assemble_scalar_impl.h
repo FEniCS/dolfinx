@@ -24,7 +24,7 @@ namespace dolfinx::fem::impl
 
 /// Assemble functional into an scalar
 template <typename T>
-T assemble_scalar(const fem::Form& M);
+T assemble_scalar(const fem::Form<T>& M);
 
 /// Assemble functional over cells
 template <typename T>
@@ -58,7 +58,7 @@ T assemble_interior_facets(
 
 //-----------------------------------------------------------------------------
 template <typename T>
-T assemble_scalar(const fem::Form& M)
+T assemble_scalar(const fem::Form<T>& M)
 {
   std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
   assert(mesh);
@@ -81,33 +81,36 @@ T assemble_scalar(const fem::Form& M)
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
       = pack_coefficients(M);
 
-  const FormIntegrals& integrals = M.integrals();
-  using type = fem::FormIntegrals::Type;
+  const FormIntegrals<T>& integrals = M.integrals();
   T value(0);
-  for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
   {
-    const auto& fn = integrals.get_tabulate_tensor(type::cell, i);
+    const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = integrals.integral_domains(type::cell, i);
+        = integrals.integral_domains(IntegralType::cell, i);
     value += fem::impl::assemble_cells(*mesh, active_cells, fn, coeffs,
                                        constant_values);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::exterior_facet);
+       ++i)
   {
-    const auto& fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
-        = integrals.integral_domains(type::exterior_facet, i);
+        = integrals.integral_domains(IntegralType::exterior_facet, i);
     value += fem::impl::assemble_exterior_facets(*mesh, active_facets, fn,
                                                  coeffs, constant_values);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
+  const std::vector<int> c_offsets = M.coefficients().offsets();
+  for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
+       ++i)
   {
-    const std::vector<int> c_offsets = M.coefficients().offsets();
-    const auto& fn = integrals.get_tabulate_tensor(type::interior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
-        = integrals.integral_domains(type::interior_facet, i);
+        = integrals.integral_domains(IntegralType::interior_facet, i);
     value += fem::impl::assemble_interior_facets(
         *mesh, active_facets, fn, coeffs, c_offsets, constant_values);
   }
@@ -173,7 +176,7 @@ T assemble_exterior_facets(
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
-  // FIXME: cleanup these calls? Some of the happen internally again.
+  // FIXME: cleanup these calls? Some of these happen internally again.
   mesh.topology_mutable().create_entities(tdim - 1);
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
   mesh.topology_mutable().create_entity_permutations();
@@ -288,8 +291,8 @@ T assemble_interior_facets(
       local_facet[i] = std::distance(facets.data(), it);
     }
 
-    const std::array<std::uint8_t, 2> perm
-        = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
+    const std::array perm{perms(local_facet[0], cells[0]),
+                          perms(local_facet[1], cells[1])};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);

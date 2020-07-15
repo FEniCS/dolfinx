@@ -156,11 +156,11 @@ int _build_from_leaf(
                      });
 
     // Split bounding boxes into two groups and call recursively
-    std::array<int, 2> bbox;
-    bbox[0] = _build_from_leaf(leaf_bboxes, partition_begin, partition_middle,
-                               bboxes, bbox_coordinates);
-    bbox[1] = _build_from_leaf(leaf_bboxes, partition_middle, partition_end,
-                               bboxes, bbox_coordinates);
+    std::array bbox{_build_from_leaf(leaf_bboxes, partition_begin,
+                                     partition_middle, bboxes,
+                                     bbox_coordinates),
+                    _build_from_leaf(leaf_bboxes, partition_middle,
+                                     partition_end, bboxes, bbox_coordinates)};
 
     // Store bounding box data. Note that root box will be added last.
     bboxes.push_back(bbox);
@@ -237,9 +237,9 @@ int _build_from_point(const std::vector<Eigen::Vector3d>& points,
   });
 
   // Split bounding boxes into two groups and call recursively
-  std::array<int, 2> bbox;
-  bbox[0] = _build_from_point(points, begin, middle, bboxes, bbox_coordinates);
-  bbox[1] = _build_from_point(points, middle, end, bboxes, bbox_coordinates);
+  std::array bbox{
+      _build_from_point(points, begin, middle, bboxes, bbox_coordinates),
+      _build_from_point(points, middle, end, bboxes, bbox_coordinates)};
 
   // Store bounding box data. Note that root box will be added last
   bboxes.push_back(bbox);

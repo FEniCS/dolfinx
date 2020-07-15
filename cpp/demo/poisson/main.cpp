@@ -90,6 +90,7 @@
 #include "poisson.h"
 #include <cfloat>
 #include <dolfinx.h>
+#include <dolfinx/fem/petsc.h>
 #include <dolfinx/function/Constant.h>
 
 using namespace dolfinx;
@@ -116,8 +117,7 @@ int main(int argc, char* argv[])
 
   // Create mesh and function space
   auto cmap = fem::create_coordinate_map(create_coordinate_map_poisson);
-  std::array<Eigen::Vector3d, 2> pt{Eigen::Vector3d(0.0, 0.0, 0.0),
-                                    Eigen::Vector3d(1.0, 1.0, 0.0)};
+  std::array pt{Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 0.0)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
       MPI_COMM_WORLD, pt, {{32, 32}}, cmap, mesh::GhostMode::none));
 
@@ -133,13 +133,11 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Define variational forms
-  std::shared_ptr<fem::Form> a
-      = fem::create_form(create_form_poisson_a, {V, V});
+  auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V});
+  auto L = fem::create_form<PetscScalar>(create_form_poisson_L, {V});
 
-  std::shared_ptr<fem::Form> L = fem::create_form(create_form_poisson_L, {V});
-
-  auto f = std::make_shared<function::Function>(V);
-  auto g = std::make_shared<function::Function>(V);
+  auto f = std::make_shared<function::Function<PetscScalar>>(V);
+  auto g = std::make_shared<function::Function<PetscScalar>>(V);
 
   // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
   // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
@@ -156,15 +154,14 @@ int main(int argc, char* argv[])
 
   // FIXME: zero function and make sure ghosts are updated
   // Define boundary condition
-  auto u0 = std::make_shared<function::Function>(V);
+  auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs
-      = fem::locate_dofs_geometrical({*V}, [](auto& x) {
-          return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
-        });
+  const auto bdofs = fem::locate_dofs_geometrical({*V}, [](auto& x) {
+    return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
+  });
 
-  std::vector<std::shared_ptr<const fem::DirichletBC>> bc
-      = {std::make_shared<fem::DirichletBC>(u0, bdofs)};
+  std::vector bc{
+      std::make_shared<const fem::DirichletBC<PetscScalar>>(u0, bdofs)};
 
   f->interpolate([](auto& x) {
     auto dx = Eigen::square(x - 0.5);
@@ -188,24 +185,24 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Compute solution
-  function::Function u(V);
+  function::Function<PetscScalar> u(V);
   la::PETScMatrix A = fem::create_matrix(*a);
   la::PETScVector b(*L->function_space(0)->dofmap()->index_map);
 
   MatZeroEntries(A.mat());
-  dolfinx::fem::assemble_matrix(A.mat(), *a, bc);
-  dolfinx::fem::add_diagonal(A.mat(), *V, bc);
+  fem::assemble_matrix(la::PETScMatrix::add_fn(A.mat()), *a, bc);
+  fem::add_diagonal(la::PETScMatrix::add_fn(A.mat()), *V, bc);
   MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
   VecSet(b.vec(), 0.0);
   VecGhostUpdateBegin(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
   VecGhostUpdateEnd(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
-  dolfinx::fem::assemble_vector(b.vec(), *L);
-  dolfinx::fem::apply_lifting(b.vec(), {a}, {{bc}}, {}, 1.0);
+  fem::assemble_vector_petsc(b.vec(), *L);
+  fem::apply_lifting_petsc(b.vec(), {a}, {{bc}}, {}, 1.0);
   VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
   VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-  dolfinx::fem::set_bc(b.vec(), bc, nullptr);
+  fem::set_bc_petsc(b.vec(), bc, nullptr);
 
   la::PETScKrylovSolver lu(MPI_COMM_WORLD);
   la::PETScOptions::set("ksp_type", "preonly");
@@ -213,7 +210,7 @@ int main(int argc, char* argv[])
   lu.set_from_options();
 
   lu.set_operator(A.mat());
-  lu.solve(u.vector().vec(), b.vec());
+  lu.solve(u.vector(), b.vec());
 
   // The function ``u`` will be modified during the call to solve. A
   // :cpp:class:`Function` can be saved to a file. Here, we output the

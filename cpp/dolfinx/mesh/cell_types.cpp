@@ -421,7 +421,7 @@ std::map<std::array<int, 2>, std::vector<std::set<int>>>
 mesh::cell_entity_closure(mesh::CellType cell_type)
 {
   const int cell_dim = mesh::cell_dim(cell_type);
-  std::array<int, 4> num_entities{};
+  std::array<int, 4> num_entities;
   for (int i = 0; i <= cell_dim; ++i)
     num_entities[i] = mesh::cell_num_entities(cell_type, i);
 

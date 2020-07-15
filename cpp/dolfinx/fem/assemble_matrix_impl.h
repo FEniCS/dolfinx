@@ -17,7 +17,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
-#include <petscmat.h>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -33,15 +32,16 @@ template <typename ScalarType>
 void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const ScalarType*)>&
-        mat_set_values_local,
-    const Form& a, const std::vector<bool>& bc0, const std::vector<bool>& bc1);
+        mat_set_values,
+    const Form<ScalarType>& a, const std::vector<bool>& bc0,
+    const std::vector<bool>& bc1);
 
-/// Execute kernel over cells and accumulate result in Mat
+/// Execute kernel over cells and accumulate result in matrix
 template <typename ScalarType>
 void assemble_cells(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const ScalarType*)>&
-        mat_set_values_local,
+        mat_set_values,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap0,
     const graph::AdjacencyList<std::int32_t>& dofmap1,
@@ -58,7 +58,7 @@ template <typename ScalarType>
 void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const ScalarType*)>&
-        mat_set_values_local,
+        mat_set_values,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const DofMap& dofmap0, const DofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
@@ -74,7 +74,7 @@ template <typename ScalarType>
 void assemble_interior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const ScalarType*)>&
-        mat_set_values_local,
+        mat_set_values,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const DofMap& dofmap0, const DofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
@@ -91,8 +91,9 @@ template <typename ScalarType>
 void assemble_matrix(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const ScalarType*)>&
-        mat_set_values_local,
-    const Form& a, const std::vector<bool>& bc0, const std::vector<bool>& bc1)
+        mat_set_values,
+    const Form<ScalarType>& a, const std::vector<bool>& bc0,
+    const std::vector<bool>& bc1)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);
@@ -116,37 +117,40 @@ void assemble_matrix(
                      Eigen::RowMajor>
       coeffs = pack_coefficients(a);
 
-  const FormIntegrals& integrals = a.integrals();
-  using type = fem::FormIntegrals::Type;
-  for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
+  const FormIntegrals<ScalarType>& integrals = a.integrals();
+  for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
   {
-    const auto& fn = integrals.get_tabulate_tensor(type::cell, i);
+    const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = integrals.integral_domains(type::cell, i);
-    fem::impl::assemble_cells<ScalarType>(mat_set_values_local, *mesh,
-                                          active_cells, dofs0, dofs1, bc0, bc1,
-                                          fn, coeffs, constants);
+        = integrals.integral_domains(IntegralType::cell, i);
+    fem::impl::assemble_cells<ScalarType>(mat_set_values, *mesh, active_cells,
+                                          dofs0, dofs1, bc0, bc1, fn, coeffs,
+                                          constants);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
+  for (int i = 0; i < integrals.num_integrals(IntegralType::exterior_facet);
+       ++i)
   {
-    const auto& fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
-        = integrals.integral_domains(type::exterior_facet, i);
+        = integrals.integral_domains(IntegralType::exterior_facet, i);
     fem::impl::assemble_exterior_facets<ScalarType>(
-        mat_set_values_local, *mesh, active_facets, *dofmap0, *dofmap1, bc0,
-        bc1, fn, coeffs, constants);
+        mat_set_values, *mesh, active_facets, *dofmap0, *dofmap1, bc0, bc1, fn,
+        coeffs, constants);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
+  const std::vector<int> c_offsets = a.coefficients().offsets();
+  for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
+       ++i)
   {
-    const std::vector<int> c_offsets = a.coefficients().offsets();
-    const auto& fn = integrals.get_tabulate_tensor(type::interior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
-        = integrals.integral_domains(type::interior_facet, i);
+        = integrals.integral_domains(IntegralType::interior_facet, i);
     fem::impl::assemble_interior_facets<ScalarType>(
-        mat_set_values_local, *mesh, active_facets, *dofmap0, *dofmap1, bc0,
-        bc1, fn, coeffs, c_offsets, constants);
+        mat_set_values, *mesh, active_facets, *dofmap0, *dofmap1, bc0, bc1, fn,
+        coeffs, c_offsets, constants);
   }
 }
 //-----------------------------------------------------------------------------
@@ -229,7 +233,7 @@ template <typename ScalarType>
 void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const ScalarType*)>&
-        mat_set_values_local,
+        mat_set_values,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const DofMap& dofmap0, const DofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
@@ -316,8 +320,8 @@ void assemble_exterior_facets(
       }
     }
 
-    mat_set_values_local(dmap0.size(), dmap0.data(), dmap1.size(), dmap1.data(),
-                         Ae.data());
+    mat_set_values(dmap0.size(), dmap0.data(), dmap1.size(), dmap1.data(),
+                   Ae.data());
   }
 }
 //-----------------------------------------------------------------------------
@@ -325,7 +329,7 @@ template <typename ScalarType>
 void assemble_interior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const ScalarType*)>&
-        mat_set_values_local,
+        mat_set_values,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const DofMap& dofmap0, const DofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
@@ -392,10 +396,9 @@ void assemble_interior_facets(
     assert(it1 != (facets1.data() + facets1.rows()));
     const int local_facet1 = std::distance(facets1.data(), it1);
 
-    const std::array<int, 2> local_facet = {local_facet0, local_facet1};
-
-    const std::array<std::uint8_t, 2> perm
-        = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
+    const std::array local_facet{local_facet0, local_facet1};
+    const std::array perm{perms(local_facet[0], cells[0]),
+                          perms(local_facet[1], cells[1])};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
@@ -458,8 +461,8 @@ void assemble_interior_facets(
       }
     }
 
-    mat_set_values_local(dmapjoint0.size(), dmapjoint0.data(),
-                         dmapjoint1.size(), dmapjoint1.data(), Ae.data());
+    mat_set_values(dmapjoint0.size(), dmapjoint0.data(), dmapjoint1.size(),
+                   dmapjoint1.data(), Ae.data());
   }
 }
 //-----------------------------------------------------------------------------

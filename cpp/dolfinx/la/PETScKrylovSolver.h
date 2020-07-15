@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "PETScVector.h"
 #include <dolfinx/common/MPI.h>
 #include <petscksp.h>
 #include <petscmat.h>

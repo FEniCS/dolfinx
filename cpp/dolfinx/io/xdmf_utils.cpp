@@ -15,6 +15,7 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -29,7 +30,7 @@ namespace
 {
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-std::int64_t get_padded_width(const function::Function& u)
+std::int64_t get_padded_width(const function::Function<PetscScalar>& u)
 {
   const int width = u.function_space()->element()->value_size();
   const int rank = u.function_space()->element()->value_rank();
@@ -169,8 +170,7 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
   // Get number of cells from topology dataset
   pugi::xml_node topology_dataset_node = topology_node.child("DataItem");
   assert(topology_dataset_node);
-  const std::vector<std::int64_t> tdims
-      = get_dataset_shape(topology_dataset_node);
+  const std::vector tdims = get_dataset_shape(topology_dataset_node);
 
   // Check that number of cells can be determined
   if (tdims.size() != 2 and num_cells_topolgy == -1)
@@ -188,7 +188,7 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 }
 //----------------------------------------------------------------------------
 std::vector<PetscScalar>
-xdmf_utils::get_point_data_values(const function::Function& u)
+xdmf_utils::get_point_data_values(const function::Function<PetscScalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
@@ -230,7 +230,7 @@ xdmf_utils::get_point_data_values(const function::Function& u)
 }
 //-----------------------------------------------------------------------------
 std::vector<PetscScalar>
-xdmf_utils::get_cell_data_values(const function::Function& u)
+xdmf_utils::get_cell_data_values(const function::Function<PetscScalar>& u)
 {
   assert(u.function_space()->dofmap());
   const auto mesh = u.function_space()->mesh();
@@ -262,9 +262,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   // Get values
   std::vector<PetscScalar> data_values(dof_set.size());
   {
-    la::VecReadWrapper u_wrapper(u.vector().vec());
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
-        = u_wrapper.x;
+    const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x = u.x()->array();
     for (std::size_t i = 0; i < dof_set.size(); ++i)
       data_values[i] = x[dof_set[i]];
   }
