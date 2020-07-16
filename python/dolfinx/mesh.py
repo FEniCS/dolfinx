@@ -9,7 +9,7 @@ import types
 import numpy
 import ufl
 from dolfinx import cpp, fem
-from dolfinx.cpp.mesh import create_meshtags
+
 
 __all__ = [
     "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags"
@@ -122,38 +122,36 @@ def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostM
 
 
 class MeshTags(object):
-    def __init__(self, mesh, dim, indices, values):
+    def __init__(self, *args):
 
-        if isinstance(values, int):
-            values = numpy.full(indices.shape, values, dtype=numpy.intc)
-        elif isinstance(values, float):
-            values = numpy.full(indices.shape, values, dtype=numpy.double)
+        if len(args) == 4:
+            mesh, dim, indices, values = args
 
-        dtype = values.dtype.type
-        if dtype not in _meshtags_types.keys():
-            raise KeyError("Datatype {} of values array not recognised".format(dtype))
+            if isinstance(values, int):
+                values = numpy.full(indices.shape, values, dtype=numpy.intc)
+            elif isinstance(values, float):
+                values = numpy.full(indices.shape, values, dtype=numpy.double)
 
-        self.dtype = dtype
-        fn = _meshtags_types[dtype]
-        self._cpp_object = fn(mesh, dim, indices, values)
-        self.values = self._cpp_object.values
-        self.indices = self._cpp_object.indices
+            dtype = values.dtype.type
+            if dtype not in _meshtags_types.keys():
+                raise KeyError("Datatype {} of values array not recognised".format(dtype))
 
-    # @property
-    # def values(self):
-    #     return self._cpp_object.values
+            fn = _meshtags_types[dtype]
+            self._cpp_object = fn(mesh, dim, indices, values)
+            self.values = self._cpp_object.values
+            self.indices = self._cpp_object.indices
 
-    # @values.setter
-    # def values(self, val):
-    #     self._cpp_object.values = val
+    @classmethod
+    def from_cpp_object(cls, cpp_object):
+        m = cls()
+        m._cpp_object = cpp_object
+        m.values = cpp_object.values
+        m.indices = cpp_object.indices
+        return m
 
-    # @property
-    # def indices(self):
-    #     return self._cpp_object.indices
-
-    # @indices.setter
-    # def indices(self, val):
-    #     self._cpp_object.indices = val
+    @property
+    def dtype(self):
+        return self.values.dtype
 
     @property
     def name(self):
@@ -165,6 +163,11 @@ class MeshTags(object):
 
     def ufl_id(self):
         return self._cpp_object.ufl_id()
+
+
+def create_meshtags(mesh, dim, adj_list, values):
+    mt = cpp.mesh.create_meshtags(mesh, dim, adj_list, values)
+    return MeshTags.from_cpp_object(mt)
 
 
 # Functions to extend cpp.mesh.Mesh with
