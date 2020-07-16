@@ -199,7 +199,7 @@ def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells
             b[index] += value
 
 
-@ numba.njit
+@numba.njit
 def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
     """Assemble provided FFCX/UFC kernel over a mesh into the array b"""
     v, x = mesh
@@ -223,7 +223,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
             b[dofmap[cell, j]] += b_local[j]
 
 
-@ numba.njit(fastmath=True)
+@numba.njit(fastmath=True)
 def assemble_matrix_cffi(A, mesh, dofmap, num_cells, set_vals, mode):
     """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
 
@@ -254,7 +254,7 @@ def assemble_matrix_cffi(A, mesh, dofmap, num_cells, set_vals, mode):
     sink(A_local, dofmap)
 
 
-@ numba.njit
+@numba.njit
 def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
     """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
     v, x = mesh
@@ -395,7 +395,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
 
-@ pytest.mark.parametrize("set_vals", [MatSetValues_abi, MatSetValues_api])
+@pytest.mark.parametrize("set_vals", [MatSetValues_abi, MatSetValues_api])
 def test_custom_mesh_loop_cffi_rank2(set_vals):
     """Test numba assembler for bilinear form"""
 
