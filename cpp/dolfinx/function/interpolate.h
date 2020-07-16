@@ -182,6 +182,44 @@ void interpolate(
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
 
+  auto mesh = u.function_space()->mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
+  // std::cout << "interpolate_values\n";
+  if (element->family() == "Mixed")
+  {
+    // Extract the correct
+    auto dofmap = u.function_space()->dofmap();
+    auto map = mesh->topology().index_map(tdim);
+    assert(map);
+    const int num_cells = map->size_local() + map->num_ghosts();
+
+    // TODO: what about MixedElement(VectorElement, ?)
+    Eigen::Array<T, 1, Eigen::Dynamic> mixed_values(values.cols());
+    // std::cout << "AAAAAAAAAaaAAAaAAAaaaAAaaaAAAaaAAaaAAA\n";
+    // std::cout << "sub_E: " << element->num_sub_elements() << "\n";
+    for (std::size_t cell = 0; cell < num_cells; ++cell)
+    {
+      for (int i = 0; i < element->num_sub_elements(); ++i)
+      {
+        const std::vector<int> component = {i};
+        auto sub_dofmap = dofmap->extract_sub_dofmap(component);
+        const auto cell_dofs = sub_dofmap.cell_dofs(cell);
+        // std::cout << "[" << cell_dofs << "]\n\n";
+        for (std::size_t dof = 0; dof < cell_dofs.rows(); ++dof)
+        {
+          mixed_values(cell_dofs[dof]) = values(i, cell_dofs[dof]);
+        }
+      }
+    }
+    // std::cout << mixed_values.rows() << "x" << mixed_values.cols() << "\n";
+    // for(Eigen::Index i=0; i < mixed_values.rows(); ++i)
+    // std::cout << "[ " << mixed_values.row(i) << " ]\n";
+    // std::cout << "\n";
+    detail::interpolate_values<T>(u, mixed_values);
+    return;
+  }
+
   // Note: pybind11 maps 1D NumPy arrays to column vectors for
   // Eigen::Array<T, Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>
   // types, therefore we need to handle vectors as a special case.
