@@ -54,47 +54,6 @@ void interpolate_c(
         const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                             Eigen::RowMajor>>&)>& f);
 
-namespace
-{
-//----------------------------------------------------------------------------
-template <typename T>
-Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-extract_mixed_values(
-    std::shared_ptr<const fem::FiniteElement> element,
-    std::shared_ptr<const fem::DofMap> dofmap, std::size_t num_cells,
-    const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        values)
-{
-  // TODO: what about MixedElement(VectorElement, ?)
-  Eigen::Array<T, 1, Eigen::Dynamic, Eigen::RowMajor> mixed_values(
-      values.cols());
-  int offset = 0;
-  for (int i = 0; i < element->num_sub_elements(); ++i)
-  {
-    const std::vector<int> component = {i};
-    auto sub_dofmap = dofmap->extract_sub_dofmap(component);
-    auto sub_element = element->extract_sub_element(component);
-    const int vs = sub_element->value_size();
-    if (sub_element->family() == "Mixed")
-      throw std::runtime_error(
-          "Interpolation into MixedElements containing "
-          "MixedElements as subelements not yet supported.");
-    else
-      for (std::size_t cell = 0; cell < num_cells; ++cell)
-      {
-        const auto cell_dofs = sub_dofmap.cell_dofs(cell);
-        // TODO: check and simplify this
-        for (std::size_t dof = 0; dof < cell_dofs.rows(); ++dof)
-          mixed_values(cell_dofs[dof])
-              = values(offset + dof / (cell_dofs.rows() / vs), cell_dofs[dof]);
-      }
-    offset += vs;
-  }
-  return mixed_values;
-}
-//----------------------------------------------------------------------------
-} // namespace
-
 namespace detail
 {
 
@@ -217,35 +176,47 @@ void interpolate(
 
   const auto element = u.function_space()->element();
   assert(element);
-
-  if (element->family() != "Mixed" && element->family() != "Lagrange"
-      && element->family() != "Vecctor")
-    throw std::runtime_error(
-        "Interpolation of a function into this space not yet supported.");
-
   std::vector<int> vshape(element->value_rank(), 1);
   for (std::size_t i = 0; i < vshape.size(); ++i)
     vshape[i] = element->value_dimension(i);
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
 
+  auto mesh = u.function_space()->mesh();
+  assert(mesh);
+  const int tdim = mesh->topology().dim();
+  // std::cout << "interpolate_values\n";
   if (element->family() == "Mixed")
   {
-    const auto element = u.function_space()->element();
-    assert(element);
-
-    auto mesh = u.function_space()->mesh();
-    assert(mesh);
-    const int tdim = mesh->topology().dim();
-
     // Extract the correct
     auto dofmap = u.function_space()->dofmap();
     auto map = mesh->topology().index_map(tdim);
     assert(map);
     const int num_cells = map->size_local() + map->num_ghosts();
 
-    detail::interpolate_values<T>(
-        u, extract_mixed_values(element, dofmap, num_cells, values));
+    // TODO: what about MixedElement(VectorElement, ?)
+    Eigen::Array<T, 1, Eigen::Dynamic> mixed_values(values.cols());
+    // std::cout << "AAAAAAAAAaaAAAaAAAaaaAAaaaAAAaaAAaaAAA\n";
+    // std::cout << "sub_E: " << element->num_sub_elements() << "\n";
+    for (std::size_t cell = 0; cell < num_cells; ++cell)
+    {
+      for (int i = 0; i < element->num_sub_elements(); ++i)
+      {
+        const std::vector<int> component = {i};
+        auto sub_dofmap = dofmap->extract_sub_dofmap(component);
+        const auto cell_dofs = sub_dofmap.cell_dofs(cell);
+        // std::cout << "[" << cell_dofs << "]\n\n";
+        for (std::size_t dof = 0; dof < cell_dofs.rows(); ++dof)
+        {
+          mixed_values(cell_dofs[dof]) = values(i, cell_dofs[dof]);
+        }
+      }
+    }
+    // std::cout << mixed_values.rows() << "x" << mixed_values.cols() << "\n";
+    // for(Eigen::Index i=0; i < mixed_values.rows(); ++i)
+    // std::cout << "[ " << mixed_values.row(i) << " ]\n";
+    // std::cout << "\n";
+    detail::interpolate_values<T>(u, mixed_values);
     return;
   }
 
