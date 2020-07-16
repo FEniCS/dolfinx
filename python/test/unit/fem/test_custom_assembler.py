@@ -183,7 +183,7 @@ def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells
     """Assemble simple linear form over a mesh into the array b"""
     q0 = 1 / 3.0
     q1 = 1 / 3.0
-    b_unassembled = np.zeros((num_cells, 3), dtype=np.double)
+    b_unassembled = np.zeros((num_cells, 3), dtype=b.dtype)
     for cell in numba.prange(num_cells):
         # FIXME: This assumes a particular geometry dof layout
         A = area(x[v[cell, 0]], x[v[cell, 1]], x[v[cell, 2]])
@@ -283,7 +283,7 @@ def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
 def test_custom_mesh_loop_rank1():
 
     # Create mesh and function space
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 1024, 1024)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
