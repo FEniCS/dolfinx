@@ -51,6 +51,9 @@ void declare_adjacency_list(py::module& m, std::string type)
 void graph(py::module& m)
 {
 
+  declare_adjacency_list<std::int32_t>(m, "int32");
+  declare_adjacency_list<std::int64_t>(m, "int64");
+
   m.def("create_local_adjacency_list",
         &dolfinx::graph::Partitioning::create_local_adjacency_list);
   m.def(
@@ -80,8 +83,5 @@ void graph(py::module& m)
         &dolfinx::graph::Partitioning::compute_local_to_global_links);
   m.def("compute_local_to_local",
         &dolfinx::graph::Partitioning::compute_local_to_local);
-
-  declare_adjacency_list<std::int32_t>(m, "int32");
-  declare_adjacency_list<std::int64_t>(m, "int64");
 }
 } // namespace dolfinx_wrappers

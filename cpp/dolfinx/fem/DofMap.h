@@ -30,6 +30,10 @@ class Topology;
 namespace fem
 {
 
+/// Creat an adjacency list . . .
+graph::AdjacencyList<std::int32_t>
+transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap);
+
 /// Degree-of-freedom map
 
 /// This class handles the mapping of degrees of freedom. It builds a

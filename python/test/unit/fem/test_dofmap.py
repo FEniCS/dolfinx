@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 from mpi4py import MPI
 
+import dolfinx
 from dolfinx import (FunctionSpace, Mesh, UnitCubeMesh, UnitIntervalMesh,
                      UnitSquareMesh, VectorFunctionSpace, fem)
 from dolfinx.cpp.mesh import CellType
@@ -379,3 +380,10 @@ def test_higher_order_tetra_coordinate_map(order):
     assert(np.allclose(x[:, 0], X[:, 0]))
     assert(np.allclose(x[:, 1], 2 * X[:, 1]))
     assert(np.allclose(x[:, 2], 3 * X[:, 2]))
+
+
+@skip_in_parallel
+def test_transpose_dofmap():
+    dofmap = dolfinx.cpp.graph.AdjacencyList_int32(np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]]))
+    transpose = dolfinx.cpp.fem.transpose_dofmap(dofmap)
+    assert np.array_equal(transpose.array(), [0, 2, 5, 8, 1, 4, 3, 7, 6])

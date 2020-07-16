@@ -187,6 +187,9 @@ void fem(py::module& m)
             std::move(dofmap));
       },
       "Build and dofmap on a mesh.");
+  m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
+        "Build the index to (cell, local index) map from a "
+        "dofmap ((cell, local index ) -> index).");
 
   // dolfinx::fem::FiniteElement
   py::class_<dolfinx::fem::FiniteElement,
