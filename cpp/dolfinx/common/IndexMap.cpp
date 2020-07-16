@@ -171,7 +171,7 @@ compute_asymmetric_communicators(MPI_Comm comm,
                                  const std::vector<int>& halo_src_ranks,
                                  const std::vector<int>& halo_dest_ranks)
 {
-  std::array<MPI_Comm, 3> comms{MPI_COMM_NULL, MPI_COMM_NULL, MPI_COMM_NULL};
+  std::array comms{MPI_COMM_NULL, MPI_COMM_NULL, MPI_COMM_NULL};
 
   // Create communicator with edges owner (sources) -> ghost
   // (destinations)
@@ -435,8 +435,8 @@ IndexMap::IndexMap(
   {
     // Get rank of owner on the neighborhood communicator (rank of out
     // edge on _comm_owner_to_ghost)
-    const auto it = std::find(halo_src_ranks.begin(), halo_src_ranks.end(),
-                              src_ranks[j]);
+    const auto it
+        = std::find(halo_src_ranks.begin(), halo_src_ranks.end(), src_ranks[j]);
     assert(it != halo_src_ranks.end());
     const int p_neighbour = std::distance(halo_src_ranks.begin(), it);
     if (src_ranks[j] == myrank)
@@ -452,7 +452,7 @@ IndexMap::IndexMap(
 
   // Create communicators with directional edges:
   // (0) owner -> ghost, (1) ghost -> owner, (2) two-way
-  std::array<MPI_Comm, 3> comm_array
+  std::array comm_array
       = compute_asymmetric_communicators(mpi_comm, halo_src_ranks, dest_ranks);
   _comm_owner_to_ghost = dolfinx::MPI::Comm(comm_array[0], false);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(comm_array[1], false);
@@ -621,9 +621,8 @@ Eigen::Array<std::int64_t, Eigen::Dynamic, 1>
 IndexMap::indices(bool unroll_block) const
 {
   const int bs = unroll_block ? this->_block_size : 1;
-  const std::array<std::int64_t, 2> local_range = this->local_range();
+  const std::array local_range = this->local_range();
   const std::int32_t size_local = this->size_local() * bs;
-
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> indx(size_local
                                                      + num_ghosts() * bs);
   std::iota(indx.data(), indx.data() + size_local, bs * local_range[0]);
@@ -832,7 +831,7 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
   for (std::int32_t i = 0; i < _ghosts.size(); ++i)
     sizes_recv[_ghost_owners[i]] += n;
 
-  std::vector<std::int32_t> displs_send = _shared_disp;
+  std::vector displs_send = _shared_disp;
   std::transform(displs_send.begin(), displs_send.end(), displs_send.begin(),
                  std::bind(std::multiplies<T>(), std::placeholders::_1, n));
   std::vector<std::int32_t> sizes_send(outdegree, 0);

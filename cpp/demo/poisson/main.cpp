@@ -90,6 +90,7 @@
 #include "poisson.h"
 #include <cfloat>
 #include <dolfinx.h>
+#include <dolfinx/fem/petsc.h>
 #include <dolfinx/function/Constant.h>
 
 using namespace dolfinx;

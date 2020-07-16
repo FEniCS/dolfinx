@@ -2,6 +2,7 @@
 #include <cfloat>
 #include <dolfinx.h>
 #include <dolfinx/fem/assembler.h>
+#include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/Vector.h>
 
 using namespace dolfinx;
