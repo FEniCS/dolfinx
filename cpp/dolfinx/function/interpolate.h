@@ -193,8 +193,6 @@ void interpolate(
     assert(map);
     const int num_cells = map->size_local() + map->num_ghosts();
 
-
-    // TODO: what about MixedElement(VectorElement, ?)
     Eigen::Array<T, 1, Eigen::Dynamic> mixed_values(values.cols());
     int value_offset = 0;
     for (int i = 0; i < element->num_sub_elements(); ++i)
