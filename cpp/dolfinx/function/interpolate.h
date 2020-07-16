@@ -193,18 +193,25 @@ void interpolate(
     assert(map);
     const int num_cells = map->size_local() + map->num_ghosts();
 
+
     // TODO: what about MixedElement(VectorElement, ?)
     Eigen::Array<T, 1, Eigen::Dynamic> mixed_values(values.cols());
-    for (std::size_t cell = 0; cell < num_cells; ++cell)
+    int value_offset = 0;
+    for (int i = 0; i < element->num_sub_elements(); ++i)
     {
-      for (int i = 0; i < element->num_sub_elements(); ++i)
+      const std::vector<int> component = {i};
+      auto sub_dofmap = dofmap->extract_sub_dofmap(component);
+      auto sub_element = element->extract_sub_element(component);
+      const int ebs = sub_element->block_size();
+      for (std::size_t cell = 0; cell < num_cells; ++cell)
       {
-        const std::vector<int> component = {i};
-        auto sub_dofmap = dofmap->extract_sub_dofmap(component);
         const auto cell_dofs = sub_dofmap.cell_dofs(cell);
-        for (std::size_t dof = 0; dof < cell_dofs.rows(); ++dof)
-          mixed_values(cell_dofs[dof]) = values(i, cell_dofs[dof]);
+        const int scalar_dofs = cell_dofs.rows() / ebs;
+        for (std::size_t dof = 0; dof < scalar_dofs; ++dof)
+          for(int b=0; b < ebs; ++b)
+            mixed_values(cell_dofs[dof * ebs + b]) = values(value_offset + b, cell_dofs[dof]);
       }
+      value_offset += ebs;
     }
     detail::interpolate_values<T>(u, mixed_values);
     return;
