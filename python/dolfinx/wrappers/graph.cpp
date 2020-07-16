@@ -35,11 +35,12 @@ void declare_adjacency_list(py::module& m, std::string type)
           },
           "Links (edges) of a node",
           py::return_value_policy::reference_internal)
-      .def("array", &dolfinx::graph::AdjacencyList<T>::array,
-           py::return_value_policy::reference_internal)
-      .def("offsets", &dolfinx::graph::AdjacencyList<T>::offsets,
-           "Index to each node in the links array",
-           py::return_value_policy::reference_internal)
+      .def_property_readonly("array", &dolfinx::graph::AdjacencyList<T>::array,
+                             py::return_value_policy::reference_internal)
+      .def_property_readonly("offsets",
+                             &dolfinx::graph::AdjacencyList<T>::offsets,
+                             "Index to each node in the links array",
+                             py::return_value_policy::reference_internal)
       .def_property_readonly("num_nodes",
                              &dolfinx::graph::AdjacencyList<T>::num_nodes)
       .def("__eq__", &dolfinx::graph::AdjacencyList<T>::operator==,

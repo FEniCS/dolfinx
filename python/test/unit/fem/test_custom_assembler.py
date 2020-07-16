@@ -177,7 +177,29 @@ def assemble_vector(b, mesh, dofmap, num_cells):
         b[dofmap[cell, 2]] += A * q1
 
 
-@numba.njit
+@numba.njit(parallel=True, fastmath=True)
+def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells):
+    # def assemble_vector_parallel(b, mesh, num_cells):
+    """Assemble simple linear form over a mesh into the array b"""
+    q0 = 1 / 3.0
+    q1 = 1 / 3.0
+    b_unassembled = np.zeros((num_cells, 3), dtype=np.double)
+    for cell in numba.prange(num_cells):
+        # FIXME: This assumes a particular geometry dof layout
+        A = area(x[v[cell, 0]], x[v[cell, 1]], x[v[cell, 2]])
+        b_unassembled[cell, 0] = A * (1.0 - q0 - q1)
+        b_unassembled[cell, 1] = A * q0
+        b_unassembled[cell, 2] = A * q1
+
+    # Accumulate values in RHS
+    _b_unassembled = b_unassembled.reshape(num_cells * 3)
+    for index in numba.prange(dofmap_t_offsets.shape[0] - 1):
+        array = _b_unassembled[dofmap_t_data[dofmap_t_offsets[index]:dofmap_t_offsets[index + 1]]]
+        for value in array:
+            b[index] += value
+
+
+@ numba.njit
 def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
     """Assemble provided FFCX/UFC kernel over a mesh into the array b"""
     v, x = mesh
@@ -201,7 +223,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
             b[dofmap[cell, j]] += b_local[j]
 
 
-@numba.njit(fastmath=True)
+@ numba.njit(fastmath=True)
 def assemble_matrix_cffi(A, mesh, dofmap, num_cells, set_vals, mode):
     """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
 
@@ -232,7 +254,7 @@ def assemble_matrix_cffi(A, mesh, dofmap, num_cells, set_vals, mode):
     sink(A_local, dofmap)
 
 
-@numba.njit
+@ numba.njit
 def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
     """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
     v, x = mesh
@@ -261,15 +283,16 @@ def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
 def test_custom_mesh_loop_rank1():
 
     # Create mesh and function space
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 1024, 1024)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     num_cells = num_owned_cells + mesh.topology.index_map(mesh.topology.dim).num_ghosts
-    x_dofs = mesh.geometry.dofmap.array().reshape(num_cells, 3)
+    x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
     x = mesh.geometry.x
-    dofmap = V.dofmap.list.array().reshape(num_cells, 3)
+    dofmap = V.dofmap.list.array.reshape(num_cells, 3)
+    dofmap_t = dolfinx.cpp.fem.transpose_dofmap(V.dofmap.list)
 
     # Assemble with pure Numba function (two passes, first will include JIT overhead)
     b0 = dolfinx.Function(V)
@@ -280,9 +303,23 @@ def test_custom_mesh_loop_rank1():
             assemble_vector(np.asarray(b), (x_dofs, x), dofmap, num_owned_cells)
             end = time.time()
             print("Time (numba, pass {}): {}".format(i, end - start))
-
     b0.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert(b0.vector.sum() == pytest.approx(1.0))
+
+    # Assemble with pure Numba function using parallel loop (two passes,
+    # first will include JIT overhead)
+    btmp = dolfinx.Function(V)
+    for i in range(2):
+        with btmp.vector.localForm() as b:
+            b.set(0.0)
+            start = time.time()
+            assemble_vector_parallel(np.asarray(b), x_dofs, x,
+                                     dofmap_t.array, dofmap_t.offsets,
+                                     num_owned_cells)
+            end = time.time()
+            print("Time (numba parallel, pass {}): {}".format(i, end - start))
+    btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    # assert(btmp.vector.sum() == pytest.approx(1.0))
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
@@ -358,7 +395,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
 
-@pytest.mark.parametrize("set_vals", [MatSetValues_abi, MatSetValues_api])
+@ pytest.mark.parametrize("set_vals", [MatSetValues_abi, MatSetValues_api])
 def test_custom_mesh_loop_cffi_rank2(set_vals):
     """Test numba assembler for bilinear form"""
 

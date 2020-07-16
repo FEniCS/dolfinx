@@ -195,7 +195,7 @@ fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap)
       data[pos[dofs[i]]++] = cell_offsets[c] + i;
   }
 
-  Sort the source indices for each global index
+  // Sort the source indices for each global index
   for (int index = 0; index < max_index; ++index)
   {
     std::sort(data.begin() + index_offsets[index],
