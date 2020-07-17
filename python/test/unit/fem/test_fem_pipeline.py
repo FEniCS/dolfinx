@@ -13,7 +13,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, fem, geometry, cpp,
+from dolfinx import (DirichletBC, Function, FunctionSpace, fem, cpp,
                      VectorFunctionSpace)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
@@ -281,7 +281,7 @@ def test_manufactured_vector_function_space(degree, filename, datadir):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    u_exact = Function(W)
+    u_exact = Function(V)
     u_exact.interpolate(lambda x: np.array(
         [x[0]**degree if i == 0 else 0 * x[0] for i in range(mesh.topology.dim)]))
 
@@ -290,4 +290,3 @@ def test_manufactured_vector_function_space(degree, filename, datadir):
     error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
 
     assert np.absolute(error) < 1.0e-14
-
