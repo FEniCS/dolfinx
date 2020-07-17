@@ -486,27 +486,30 @@ std::tuple<std::shared_ptr<const ElementDofLayout>,
            std::shared_ptr<const common::IndexMap>,
            graph::AdjacencyList<std::int32_t>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
-                     std::shared_ptr<const ElementDofLayout> element_dof_layout)
+                     std::shared_ptr<const ElementDofLayout> element_dof_layout,
+                     const bool transpose_blocks)
 {
   assert(element_dof_layout);
   const int bs = element_dof_layout->block_size();
   if (bs == 1)
   {
-    auto [index_map, dofmap]
-        = DofMapBuilder::build(comm, topology, *element_dof_layout, 1);
+    auto [index_map, dofmap] = DofMapBuilder::build(
+        comm, topology, *element_dof_layout, 1, transpose_blocks);
     return {element_dof_layout, index_map, std::move(dofmap)};
   }
   else
   {
     auto [index_map, dofmap] = DofMapBuilder::build(
-        comm, topology, *element_dof_layout->sub_dofmap({0}), bs);
+        comm, topology, *element_dof_layout->sub_dofmap({0}), bs,
+        transpose_blocks);
     return {element_dof_layout, index_map, std::move(dofmap)};
   }
 }
 //-----------------------------------------------------------------------------
 std::pair<std::shared_ptr<common::IndexMap>, graph::AdjacencyList<std::int32_t>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
-                     const ElementDofLayout& element_dof_layout, int block_size)
+                     const ElementDofLayout& element_dof_layout, int block_size,
+                     const bool transpose_blocks)
 {
   common::Timer t0("Init dofmap");
 
@@ -573,12 +576,13 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
       const std::int32_t new_node = old_to_new[old_node];
       for (std::int32_t block = 0; block < block_size; ++block)
       {
-        dofmap[cell * block_size * local_dim0 + block_size * j + block]
+        dofmap[transpose_blocks
+                   ? cell * block_size * local_dim0 + block_size * j + block
+                   : cell * block_size * local_dim0 + block * local_dim0 + j]
             = block_size * new_node + block;
       }
     }
   }
-
   assert(dofmap.rows() % node_graph0.num_nodes() == 0);
   Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
                           Eigen::RowMajor>>

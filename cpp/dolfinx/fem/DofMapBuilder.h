@@ -40,13 +40,15 @@ public:
                     std::shared_ptr<const common::IndexMap>,
                     graph::AdjacencyList<std::int32_t>>
   build(MPI_Comm comm, const mesh::Topology& topology,
-        std::shared_ptr<const ElementDofLayout> element_dof_layout);
+        std::shared_ptr<const ElementDofLayout> element_dof_layout,
+        const bool transpose_blocks = true);
 
   /// Build dofmap
   static std::pair<std::shared_ptr<common::IndexMap>,
                    graph::AdjacencyList<std::int32_t>>
   build(MPI_Comm comm, const mesh::Topology& topology,
-        const ElementDofLayout& element_dof_layout, int block_size);
+        const ElementDofLayout& element_dof_layout, int block_size,
+        const bool transpose_blocks = true);
 };
 } // namespace fem
 } // namespace dolfinx
