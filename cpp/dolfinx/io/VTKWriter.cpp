@@ -159,7 +159,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     num_nodes = x_dofmap.num_links(0);
 
     // Get map from VTK index i to DOLFIN index j
-    std::vector<std::uint8_t> map = io::cells::transpose(
+    std::vector map = io::cells::transpose(
         io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
 
     // TODO: Remove when when paraview issue 19433 is resolved
@@ -209,7 +209,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     // geometries (aka line segments). CoordinateDofs needs to be
     // extended to have connections to facets.
     const int num_vertices = mesh::num_cell_vertices(e_type);
-    const std::vector<std::uint8_t> map_vtk
+    const std::vector map_vtk
         = io::cells::transpose(io::cells::perm_vtk(e_type, num_vertices));
     auto e_to_v = mesh.topology().connectivity(cell_dim, 0);
     assert(e_to_v);

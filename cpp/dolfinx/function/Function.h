@@ -14,6 +14,7 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
+#include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -26,19 +27,6 @@
 
 namespace dolfinx::function
 {
-
-namespace detail
-{
-/// Create a PETSc Vec that wrap the data in x
-/// @param[in] map The index map that described the parallel layout of
-///    the distributed vector
-/// @param[in] x The local part of the vector, including ghost entries
-/// @param[out] A PETSc Vec object that share the x data. The caller is
-///   responsible for destroying the Vec.
-Vec create_ghosted_vector(
-    const common::IndexMap& map,
-    const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x);
-}
 
 class FunctionSpace;
 
@@ -117,7 +105,7 @@ public:
   }
 
   /// Collapse a subfunction (view into the Function) to a stand-alone
-  ///   Function
+  /// Function
   /// @return New collapsed Function
   Function collapse() const
   {
@@ -150,7 +138,8 @@ public:
     return _function_space;
   }
 
-  /// Return vector of expansion coefficients as a PETSc Vec
+  /// Return vector of expansion coefficients as a PETSc Vec. Throws an
+  /// exception a PETSc Vec cannot be created due to a type mismatch.
   /// @return The vector of expansion coefficients
   Vec vector() const
   {
@@ -170,7 +159,7 @@ public:
     {
       if (!_petsc_vector)
       {
-        _petsc_vector = detail::create_ghosted_vector(
+        _petsc_vector = la::create_ghosted_vector(
             *_function_space->dofmap()->index_map, _x->array());
       }
       return _petsc_vector;

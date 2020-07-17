@@ -237,6 +237,14 @@ public:
     return _function_spaces.at(i);
   }
 
+  /// Return function spaces for each argument
+  /// @return Function spaces
+  std::vector<std::shared_ptr<const function::FunctionSpace>>
+  function_spaces() const
+  {
+    return _function_spaces;
+  }
+
   /// Register the function for 'tabulate_tensor' for cell integral i
   void set_tabulate_tensor(
       IntegralType type, int i,

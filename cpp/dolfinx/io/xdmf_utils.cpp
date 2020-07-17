@@ -170,8 +170,7 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
   // Get number of cells from topology dataset
   pugi::xml_node topology_dataset_node = topology_node.child("DataItem");
   assert(topology_dataset_node);
-  const std::vector<std::int64_t> tdims
-      = get_dataset_shape(topology_dataset_node);
+  const std::vector tdims = get_dataset_shape(topology_dataset_node);
 
   // Check that number of cells can be determined
   if (tdims.size() != 2 and num_cells_topolgy == -1)

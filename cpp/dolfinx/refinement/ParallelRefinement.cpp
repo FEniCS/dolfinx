@@ -71,9 +71,8 @@ compute_vertex_exterior_markers(const mesh::Topology& topology_local)
 std::int64_t local_to_global(std::int32_t local_index,
                              const common::IndexMap& map)
 {
-  const std::array<std::int64_t, 2> local_range = map.local_range();
-
   assert(local_index >= 0);
+  const std::array local_range = map.local_range();
   const std::int32_t local_size = (local_range[1] - local_range[0]);
   if (local_index < local_size)
   {
@@ -275,7 +274,7 @@ void ParallelRefinement::update_logical_edgefunction()
             .array();
 
   // Flatten received values and set _marked_edges at each index received
-  std::vector<std::int32_t> local_indices
+  const std::vector local_indices
       = _mesh.topology().index_map(1)->global_to_local(data_to_recv);
   for (std::int32_t local_index : local_indices)
     _marked_edges[local_index] = true;
@@ -353,7 +352,7 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
   assert(received_values.size() % 2 == 0);
   for (int i = 0; i < received_values.size() / 2; ++i)
     recv_global_edge.push_back(received_values[i * 2]);
-  std::vector<std::int32_t> recv_local_edge
+  std::vector recv_local_edge
       = _mesh.topology().index_map(1)->global_to_local(recv_global_edge);
   for (int i = 0; i < received_values.size() / 2; ++i)
   {
@@ -381,7 +380,7 @@ std::vector<std::int64_t> ParallelRefinement::adjust_indices(
   for (std::int32_t r : recvn)
     global_offsets.push_back(global_offsets.back() + r);
 
-  std::vector<std::int64_t> global_indices = index_map->global_indices(true);
+  std::vector global_indices = index_map->global_indices(true);
 
   Eigen::Array<int, Eigen::Dynamic, 1> ghost_owners
       = index_map->ghost_owner_rank();
@@ -512,8 +511,7 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
 
     // Get facets that are on the boundary of the local topology, i.e
     // are connect to one cell only
-    const std::vector<bool> boundary
-        = mesh::compute_boundary_facets(topology_local);
+    const std::vector boundary = mesh::compute_boundary_facets(topology_local);
 
     // Build distributed cell-vertex AdjacencyList, IndexMap for
     // vertices, and map from local index to old global index

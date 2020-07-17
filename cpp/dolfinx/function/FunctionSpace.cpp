@@ -91,8 +91,7 @@ FunctionSpace::sub(const std::vector<int>& component) const
                                component.end());
 
   // Insert new subspace into cache
-  _subspaces.insert(std::pair<std::vector<int>, std::shared_ptr<FunctionSpace>>(
-      sub_space->_component, sub_space));
+  _subspaces.emplace(sub_space->_component, sub_space);
 
   return sub_space;
 }

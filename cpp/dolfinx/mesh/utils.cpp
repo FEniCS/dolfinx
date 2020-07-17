@@ -684,8 +684,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
   // Compute marker for boundary facets
   mesh.topology_mutable().create_entities(tdim - 1);
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-  const std::vector<bool> boundary_facet
-      = mesh::compute_boundary_facets(topology);
+  const std::vector boundary_facet = mesh::compute_boundary_facets(topology);
 
   // Create entities and connectivities
   mesh.topology_mutable().create_entities(dim);
