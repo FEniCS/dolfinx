@@ -145,6 +145,7 @@ FunctionSpace::_internal_tabulate_dof_coordinates(int repeats) const
   int ebs = _element->block_size();
   std::int32_t local_size
       = bs * (index_map->size_local() + index_map->num_ghosts()) / ebs;
+  const int scalar_dofs = _element->space_dimension() / ebs;
 
   // Dof coordinate on reference element
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
@@ -170,7 +171,7 @@ FunctionSpace::_internal_tabulate_dof_coordinates(int repeats) const
 
   // Loop over cells and tabulate dofs
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinates(_element->space_dimension() / ebs, gdim);
+      coordinates(scalar_dofs, gdim);
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
@@ -192,7 +193,7 @@ FunctionSpace::_internal_tabulate_dof_coordinates(int repeats) const
     cmap.push_forward(coordinates, X, coordinate_dofs);
 
     // Copy dof coordinates into vector
-    for (Eigen::Index i = 0; i < dofs.size() / ebs; ++i)
+    for (Eigen::Index i = 0; i < scalar_dofs; ++i)
     {
       // FIXME: this depends on the dof layout
       const std::int32_t dof = dofs[i * ebs] / ebs;

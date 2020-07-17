@@ -566,20 +566,40 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   // Build re-ordered dofmap, accounting for block size
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap(
       node_graph0.array().rows() * block_size);
-  for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
+
+  if (transpose_blocks)
   {
-    const std::int32_t local_dim0 = node_graph0.num_links(cell);
-    auto old_nodes = node_graph0.links(cell);
-    for (std::int32_t j = 0; j < local_dim0; ++j)
+    for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
     {
-      const std::int32_t old_node = old_nodes[j];
-      const std::int32_t new_node = old_to_new[old_node];
-      for (std::int32_t block = 0; block < block_size; ++block)
+      const std::int32_t local_dim0 = node_graph0.num_links(cell);
+      auto old_nodes = node_graph0.links(cell);
+      for (std::int32_t j = 0; j < local_dim0; ++j)
       {
-        dofmap[transpose_blocks
-                   ? cell * block_size * local_dim0 + block_size * j + block
-                   : cell * block_size * local_dim0 + block * local_dim0 + j]
-            = block_size * new_node + block;
+        const std::int32_t old_node = old_nodes[j];
+        const std::int32_t new_node = old_to_new[old_node];
+        for (std::int32_t block = 0; block < block_size; ++block)
+        {
+          dofmap[cell * block_size * local_dim0 + block_size * j + block]
+              = block_size * new_node + block;
+        }
+      }
+    }
+  }
+  else
+  {
+    for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
+    {
+      const std::int32_t local_dim0 = node_graph0.num_links(cell);
+      auto old_nodes = node_graph0.links(cell);
+      for (std::int32_t j = 0; j < local_dim0; ++j)
+      {
+        const std::int32_t old_node = old_nodes[j];
+        const std::int32_t new_node = old_to_new[old_node];
+        for (std::int32_t block = 0; block < block_size; ++block)
+        {
+          dofmap[cell * block_size * local_dim0 + block * local_dim0 + j]
+              = block_size * new_node + block;
+        }
       }
     }
   }

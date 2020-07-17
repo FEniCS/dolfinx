@@ -243,8 +243,8 @@ def test_manufactured_vector2(family, degree, filename, datadir):
 @pytest.mark.parametrize("filename", [
     "UnitSquareMesh_triangle.xdmf",
     "UnitCubeMesh_tetra.xdmf",
-    # "UnitSquareMesh_quad.xdmf",
-    # "UnitCubeMesh_hexahedron.xdmf"
+    "UnitSquareMesh_quad.xdmf",
+    "UnitCubeMesh_hexahedron.xdmf"
 ])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_manufactured_vector_function_space(degree, filename, datadir):
@@ -281,14 +281,13 @@ def test_manufactured_vector_function_space(degree, filename, datadir):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    xp = np.array([0.33, 0.33, 0.0])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_collisions_point(tree, xp)
+    u_exact = Function(W)
+    u_exact.interpolate(lambda x: np.array(
+        [x[0]**degree if i == 0 else 0 * x[0] for i in range(mesh.topology.dim)]))
 
-    up = uh.eval(xp, cells[0])
-    print("test0:", up)
-    print("test1:", xp[0]**degree)
+    M = inner(uh - u_exact, uh - u_exact) * dx
+    M = fem.Form(M)
+    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
 
-    u_exact = np.zeros(mesh.geometry.dim)
-    u_exact[0] = xp[0]**degree
-    assert np.allclose(up, u_exact)
+    assert np.absolute(error) < 1.0e-14
+

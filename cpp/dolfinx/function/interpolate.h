@@ -207,12 +207,8 @@ void interpolate(
         const int scalar_dofs = cell_dofs.rows() / ebs;
         for (std::size_t dof = 0; dof < scalar_dofs; ++dof)
           for(int b=0; b < ebs; ++b)
-          {
-            assert(values(value_offset + b, cell_dofs[ebs * dof])
-                   == values(value_offset + b, cell_dofs[ebs * dof + b]));
             mixed_values(cell_dofs[ebs * dof + b])
                 = values(value_offset + b, cell_dofs[ebs * dof]);
-          }
       }
       value_offset += ebs;
     }
