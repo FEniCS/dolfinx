@@ -385,5 +385,5 @@ def test_higher_order_tetra_coordinate_map(order):
 @skip_in_parallel
 def test_transpose_dofmap():
     dofmap = dolfinx.cpp.graph.AdjacencyList_int32(np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]]))
-    transpose = dolfinx.cpp.fem.transpose_dofmap(dofmap)
+    transpose = dolfinx.cpp.fem.transpose_dofmap(dofmap, 3)
     assert np.array_equal(transpose.array, [0, 2, 5, 8, 1, 4, 3, 7, 6])
