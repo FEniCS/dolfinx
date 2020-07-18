@@ -165,7 +165,6 @@ fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap)
   const std::int32_t max_index = dofmap.array().maxCoeff();
   std::vector<int> dofs_per_cell(dofmap.num_nodes());
   std::vector<int> num_local_contributions(max_index + 1);
-  std::cout << "Max index: " << max_index << std::endl;
   for (int c = 0; c < dofmap.num_nodes(); ++c)
   {
     auto dofs = dofmap.links(c);

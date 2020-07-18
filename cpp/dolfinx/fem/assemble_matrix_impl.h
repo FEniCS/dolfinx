@@ -194,15 +194,15 @@ void assemble_cells(
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < x_dofs.rows(); ++i)
-      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     auto dofs0 = dofmap0.links(c);
     auto dofs1 = dofmap1.links(c);
 
     // Tabulate tensor
-    auto coeff_cell = coeffs.row(c);
     Ae.setZero(dofs0.size(), dofs1.size());
-    kernel(Ae.data(), coeff_cell.data(), constants.data(),
+    kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Zero rows/columns for essential bcs
@@ -289,17 +289,17 @@ void assemble_exterior_facets(
     // Get cell vertex coordinates
     auto x_dofs = x_dofmap.links(cells[0]);
     for (int i = 0; i < num_dofs_g; ++i)
-      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Get dof maps for cell
     auto dmap0 = dofmap0.cell_dofs(cells[0]);
     auto dmap1 = dofmap1.cell_dofs(cells[0]);
 
     // Tabulate tensor
-    auto coeff_cell = coeffs.row(cells[0]);
     const std::uint8_t perm = perms(local_facet, cells[0]);
     Ae.setZero(dmap0.size(), dmap1.size());
-    kernel(Ae.data(), coeff_cell.data(), constants.data(),
+    kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
            coordinate_dofs.data(), &local_facet, &perm, cell_info[cells[0]]);
 
     // Zero rows/columns for essential bcs
@@ -405,8 +405,11 @@ void assemble_interior_facets(
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (int i = 0; i < num_dofs_g; ++i)
     {
-      coordinate_dofs.row(i) = x_g.row(x_dofs0[i]).head(gdim);
-      coordinate_dofs.row(i + num_dofs_g) = x_g.row(x_dofs1[i]).head(gdim);
+      for (int j = 0; j < gdim; ++j)
+      {
+        coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
+        coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+      }
     }
 
     // Get dof maps for cells and pack

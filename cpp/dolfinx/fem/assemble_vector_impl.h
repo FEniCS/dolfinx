@@ -52,7 +52,8 @@ void assemble_cells(
 template <typename T>
 void assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_facets, const fem::DofMap& dofmap,
+    const std::vector<std::int32_t>& active_facets,
+    const graph::AdjacencyList<std::int32_t>& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
@@ -217,7 +218,8 @@ void _lift_bc_cells(
     // Get cell vertex coordinates
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
-      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Size data structure for assembly
     auto dmap0 = dofmap0->cell_dofs(c);
@@ -371,7 +373,8 @@ void _lift_bc_exterior_facets(
     // Get cell vertex coordinates
     auto x_dofs = x_dofmap.links(cell);
     for (int i = 0; i < num_dofs_g; ++i)
-      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Size data structure for assembly
     auto dmap0 = dofmap0->cell_dofs(cell);
@@ -444,7 +447,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
         = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(IntegralType::exterior_facet, i);
-    fem::impl::assemble_exterior_facets(b, *mesh, active_facets, *dofmap, fn,
+    fem::impl::assemble_exterior_facets(b, *mesh, active_facets, dofs, fn,
                                         coeffs, constant_values);
   }
 
@@ -472,6 +475,8 @@ void assemble_cells(
         coeffs,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values)
 {
+  boost::timer::auto_cpu_timer t;
+
   const int gdim = mesh.geometry().dim();
   mesh.topology_mutable().create_entity_permutations();
 
@@ -483,13 +488,20 @@ void assemble_cells(
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
+  // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
+  const int num_dofs = dofmap.links(0).size();
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
-  Eigen::Matrix<T, Eigen::Dynamic, 1> be;
+  Eigen::Matrix<T, Eigen::Dynamic, 1> be(num_dofs);
 
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
       = mesh.topology().get_cell_permutation_info();
+
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& dof_array
+      = dofmap.array();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& dof_offsets
+      = dofmap.offsets();
 
   // Iterate over active cells
   for (std::int32_t c : active_cells)
@@ -497,18 +509,17 @@ void assemble_cells(
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
-      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
-
-    auto dofs = dofmap.links(c);
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Tabulate vector for cell
-    auto coeff_cell = coeffs.row(c);
-    be.setZero(dofs.size());
-    kernel(be.data(), coeff_cell.data(), constant_values.data(),
+    std::fill(be.data(), be.data() + num_dofs, 0);
+    kernel(be.data(), coeffs.row(c).data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
-    // Scatter cell vector to 'global' vector array
-    for (Eigen::Index i = 0; i < dofs.size(); ++i)
+    // // Scatter cell vector to 'global' vector array
+    auto dofs = dofmap.links(c);
+    for (Eigen::Index i = 0; i < num_dofs; ++i)
       b[dofs[i]] += be[i];
   }
 }
@@ -516,7 +527,8 @@ void assemble_cells(
 template <typename T>
 void assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_facets, const fem::DofMap& dofmap,
+    const std::vector<std::int32_t>& active_facets,
+    const graph::AdjacencyList<std::int32_t>& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
@@ -539,10 +551,12 @@ void assemble_exterior_facets(
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
+  // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
+  const int num_dofs = dofmap.links(0).size();
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
-  Eigen::Matrix<T, Eigen::Dynamic, 1> be;
+  Eigen::Matrix<T, Eigen::Dynamic, 1> be(num_dofs);
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
@@ -566,23 +580,21 @@ void assemble_exterior_facets(
     const int local_facet = std::distance(facets.data(), it);
     const std::uint8_t perm = perms(local_facet, cell);
 
-    // Get cell vertex coordinates
+    // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
     for (int i = 0; i < num_dofs_g; ++i)
-      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
-
-    // Get dof map for cell
-    auto dmap = dofmap.cell_dofs(cell);
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Tabulate element vector
-    auto coeff_cell = coeffs.row(cell);
-    be.setZero(dmap.size());
-    fn(be.data(), coeff_cell.data(), constant_values.data(),
+    std::fill(be.data(), be.data() + num_dofs, 0);
+    fn(be.data(), coeffs.row(cell).data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &perm, cell_info[cell]);
 
     // Add element vector to global vector
-    for (Eigen::Index i = 0; i < dmap.size(); ++i)
-      b[dmap[i]] += be[i];
+    auto dofs = dofmap.links(cell);
+    for (Eigen::Index i = 0; i < num_dofs; ++i)
+      b[dofs[i]] += be[i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -655,8 +667,11 @@ void assemble_interior_facets(
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (int i = 0; i < num_dofs_g; ++i)
     {
-      coordinate_dofs.row(i) = x_g.row(x_dofs0[i]).head(gdim);
-      coordinate_dofs.row(i + num_dofs_g) = x_g.row(x_dofs1[i]).head(gdim);
+      for (int j = 0; j < gdim; ++j)
+      {
+        coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
+        coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+      }
     }
 
     // Get dofmaps for cell
