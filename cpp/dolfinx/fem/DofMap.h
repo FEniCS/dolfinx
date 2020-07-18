@@ -32,7 +32,8 @@ namespace fem
 
 /// Creat an adjacency list . . .
 graph::AdjacencyList<std::int32_t>
-transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap);
+transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap,
+                 std::int32_t num_cells);
 
 /// Degree-of-freedom map
 

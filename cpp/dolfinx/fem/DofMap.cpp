@@ -159,13 +159,15 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
 
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
-fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap)
+fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap,
+                      std::int32_t num_cells)
 {
   // Count number of cell contributions to each global index
-  const std::int32_t max_index = dofmap.array().maxCoeff();
-  std::vector<int> dofs_per_cell(dofmap.num_nodes());
+  const std::int32_t max_index
+      = dofmap.array().head(dofmap.offsets()(num_cells)).maxCoeff();
+  std::vector<int> dofs_per_cell(num_cells);
   std::vector<int> num_local_contributions(max_index + 1);
-  for (int c = 0; c < dofmap.num_nodes(); ++c)
+  for (int c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap.links(c);
     dofs_per_cell[c] = dofs.size();
@@ -187,7 +189,7 @@ fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap)
 
   std::vector<std::int32_t> data(index_offsets.back());
   std::vector<int> pos = index_offsets;
-  for (int c = 0; c < dofmap.num_nodes(); ++c)
+  for (int c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap.links(c);
     for (int i = 0; i < dofs.rows(); ++i)

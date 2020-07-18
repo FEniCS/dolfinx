@@ -475,8 +475,6 @@ void assemble_cells(
         coeffs,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values)
 {
-  boost::timer::auto_cpu_timer t;
-
   const int gdim = mesh.geometry().dim();
   mesh.topology_mutable().create_entity_permutations();
 

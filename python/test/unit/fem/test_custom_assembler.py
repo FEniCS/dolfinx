@@ -194,12 +194,11 @@ def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells
     # Accumulate values in RHS
     _b_unassembled = b_unassembled.reshape(num_cells * 3)
     for index in numba.prange(dofmap_t_offsets.shape[0] - 1):
-        array = _b_unassembled[dofmap_t_data[dofmap_t_offsets[index]:dofmap_t_offsets[index + 1]]]
-        for value in array:
-            b[index] += value
+        for p in range(dofmap_t_offsets[index], dofmap_t_offsets[index + 1]):
+            b[index] += _b_unassembled[dofmap_t_data[p]]
 
 
-@numba.njit
+@numba.njit(fastmath=True)
 def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
     """Assemble provided FFCX/UFC kernel over a mesh into the array b"""
     v, x = mesh
@@ -283,7 +282,7 @@ def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
 def test_custom_mesh_loop_rank1():
 
     # Create mesh and function space
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 2048, 1024)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
@@ -292,7 +291,7 @@ def test_custom_mesh_loop_rank1():
     x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
     x = mesh.geometry.x
     dofmap = V.dofmap.list.array.reshape(num_cells, 3)
-    dofmap_t = dolfinx.cpp.fem.transpose_dofmap(V.dofmap.list)
+    dofmap_t = dolfinx.cpp.fem.transpose_dofmap(V.dofmap.list, num_owned_cells)
 
     # Assemble with pure Numba function (two passes, first will include
     # JIT overhead)
@@ -320,7 +319,7 @@ def test_custom_mesh_loop_rank1():
             end = time.time()
             print("Time (numba parallel, pass {}): {}".format(i, end - start))
     btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert(btmp.vector.sum() == pytest.approx(1.0))
+    assert((btmp.vector - b0.vector).norm() == pytest.approx(0.0))
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
