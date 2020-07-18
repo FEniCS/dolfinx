@@ -510,7 +510,7 @@ void assemble_cells(
     kernel(be.data(), coeffs.row(c).data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
-    // // Scatter cell vector to 'global' vector array
+    // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);
     for (Eigen::Index i = 0; i < num_dofs; ++i)
       b[dofs[i]] += be[i];

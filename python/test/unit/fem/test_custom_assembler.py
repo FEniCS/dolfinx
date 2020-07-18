@@ -327,13 +327,14 @@ def test_custom_mesh_loop_rank1():
     start = time.time()
     b1 = dolfinx.fem.assemble_vector(L)
     end = time.time()
-    print("Time (C++, pass 1):", end - start)
+    print("Time (C++, pass 0):", end - start)
+
     with b1.localForm() as b_local:
         b_local.set(0.0)
     start = time.time()
     dolfinx.fem.assemble_vector(b1, L)
     end = time.time()
-    print("Time (C++, pass 2):", end - start)
+    print("Time (C++, pass 1):", end - start)
     b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert((b1 - b0.vector).norm() == pytest.approx(0.0))
 
