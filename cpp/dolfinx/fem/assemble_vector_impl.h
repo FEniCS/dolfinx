@@ -498,11 +498,6 @@ void assemble_cells(
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
       = mesh.topology().get_cell_permutation_info();
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& dof_array
-      = dofmap.array();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& dof_offsets
-      = dofmap.offsets();
-
   // Iterate over active cells
   for (std::int32_t c : active_cells)
   {
