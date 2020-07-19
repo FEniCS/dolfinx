@@ -179,8 +179,7 @@ def assemble_vector(b, mesh, dofmap, num_cells):
 
 @numba.njit(parallel=True, fastmath=True)
 def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells):
-    # def assemble_vector_parallel(b, mesh, num_cells):
-    """Assemble simple linear form over a mesh into the array b"""
+    """Assemble simple linear form over a mesh into the array b using a parallel loop"""
     q0 = 1 / 3.0
     q1 = 1 / 3.0
     b_unassembled = np.empty((num_cells, 3), dtype=b.dtype)
