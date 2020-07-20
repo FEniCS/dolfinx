@@ -232,61 +232,61 @@ Partitioning::reorder_global_indices(
     }
   }
 
-  // Get array of unique neighbouring process ranks, and remove self
+  // Get array of unique neighboring process ranks, and remove self
   const Eigen::Array<int, Eigen::Dynamic, 1>& procs
       = sharing_processes->array();
-  std::vector<int> neighbours(procs.data(), procs.data() + procs.rows());
-  std::sort(neighbours.begin(), neighbours.end());
-  neighbours.erase(std::unique(neighbours.begin(), neighbours.end()),
-                   neighbours.end());
-  if (auto it = std::find(neighbours.begin(), neighbours.end(), rank);
-      it != neighbours.end())
+  std::vector<int> neighbors(procs.data(), procs.data() + procs.rows());
+  std::sort(neighbors.begin(), neighbors.end());
+  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
+                  neighbors.end());
+  if (auto it = std::find(neighbors.begin(), neighbors.end(), rank);
+      it != neighbors.end())
   {
-    neighbours.erase(it);
+    neighbors.erase(it);
   }
 
-  // Create neighbourhood communicator
+  // Create neighborhood communicator
   MPI_Comm comm_n;
-  MPI_Dist_graph_create_adjacent(comm, neighbours.size(), neighbours.data(),
-                                 MPI_UNWEIGHTED, neighbours.size(),
-                                 neighbours.data(), MPI_UNWEIGHTED,
+  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
+                                 MPI_UNWEIGHTED, neighbors.size(),
+                                 neighbors.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &comm_n);
 
   // Compute number on (global old, global new) pairs to send to each
-  // neighbour
-  std::vector<int> number_send_neigh(neighbours.size(), 0);
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
+  // neighbor
+  std::vector<int> number_send_neigh(neighbors.size(), 0);
+  for (std::size_t i = 0; i < neighbors.size(); ++i)
   {
     for (int j = 0; j < sharing_processes->num_nodes(); ++j)
     {
       auto p = sharing_processes->links(j);
-      const auto* it = std::find(p.data(), p.data() + p.rows(), neighbours[i]);
+      const auto* it = std::find(p.data(), p.data() + p.rows(), neighbors[i]);
       if (it != (p.data() + p.rows()))
         number_send_neigh[i] += 2;
     }
   }
 
   // Compute send displacements
-  std::vector<int> disp_send_neigh(neighbours.size() + 1, 0);
+  std::vector<int> disp_send_neigh(neighbors.size() + 1, 0);
   std::partial_sum(number_send_neigh.begin(), number_send_neigh.end(),
                    disp_send_neigh.begin() + 1);
 
   // Communicate number of values to send/receive
-  std::vector<int> num_indices_recv(neighbours.size());
+  std::vector<int> num_indices_recv(neighbors.size());
   MPI_Neighbor_alltoall(number_send_neigh.data(), 1, MPI_INT,
                         num_indices_recv.data(), 1, MPI_INT, comm_n);
 
   // Compute receive displacements
-  std::vector<int> disp_recv_neigh(neighbours.size() + 1, 0);
+  std::vector<int> disp_recv_neigh(neighbors.size() + 1, 0);
   std::partial_sum(num_indices_recv.begin(), num_indices_recv.end(),
                    disp_recv_neigh.begin() + 1);
 
   // Pack data to send
   std::vector<int> offset_neigh = disp_send_neigh;
   std::vector<std::int64_t> data_send_neigh(disp_send_neigh.back(), -1);
-  for (std::size_t p = 0; p < neighbours.size(); ++p)
+  for (std::size_t p = 0; p < neighbors.size(); ++p)
   {
-    const int neighbour = neighbours[p];
+    const int neighbor = neighbors[p];
     for (int i = 0; i < sharing_processes->num_nodes(); ++i)
     {
       auto it = global_to_local.find(indices_send[i]);
@@ -301,7 +301,7 @@ Partitioning::reorder_global_indices(
       auto procs = sharing_processes->links(i);
       for (int k = 0; k < procs.rows(); ++k)
       {
-        if (procs[k] == neighbour)
+        if (procs[k] == neighbor)
         {
           data_send_neigh[offset_neigh[p]++] = global_old;
           data_send_neigh[offset_neigh[p]++] = global_new;
@@ -329,7 +329,7 @@ Partitioning::reorder_global_indices(
                                         disp_recv_neigh.end(), i + 1);
       const int owner = std::distance(disp_recv_neigh.begin(), pos) - 1;
       global_old_new.insert(
-          {data_recv_neigh[i], {data_recv_neigh[i + 1], neighbours[owner]}});
+          {data_recv_neigh[i], {data_recv_neigh[i + 1], neighbors[owner]}});
     }
   }
 
@@ -547,21 +547,21 @@ std::vector<std::int64_t> Partitioning::compute_ghost_indices(
   const std::int64_t offset_local
       = dolfinx::MPI::global_offset(comm, num_local, true);
 
-  // Find out how many ghosts are on each neighbouring process
+  // Find out how many ghosts are on each neighboring process
   std::vector<int> ghost_index_count;
-  std::vector<int> neighbours;
-  std::map<int, int> proc_to_neighbour;
+  std::vector<int> neighbors;
+  std::map<int, int> proc_to_neighbor;
   int np = 0;
   int mpi_rank = MPI::rank(comm);
   for (int p : ghost_owners)
   {
     assert(p != mpi_rank);
 
-    const auto [it, insert] = proc_to_neighbour.insert({p, np});
+    const auto [it, insert] = proc_to_neighbor.insert({p, np});
     if (insert)
     {
-      // New neighbour found
-      neighbours.push_back(p);
+      // New neighbor found
+      neighbors.push_back(p);
       ghost_index_count.push_back(0);
       ++np;
     }
@@ -571,11 +571,11 @@ std::vector<std::int64_t> Partitioning::compute_ghost_indices(
   // NB - this assumes a symmetry, i.e. that if one process shares an index
   // owned by another process, then the same is true vice versa. This
   // assumption is valid for meshes with cells shared via facet or vertex.
-  MPI_Comm neighbour_comm;
-  MPI_Dist_graph_create_adjacent(comm, neighbours.size(), neighbours.data(),
-                                 MPI_UNWEIGHTED, neighbours.size(),
-                                 neighbours.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neighbour_comm);
+  MPI_Comm neighbor_comm;
+  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
+                                 MPI_UNWEIGHTED, neighbors.size(),
+                                 neighbors.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neighbor_comm);
 
   std::vector<int> send_offsets = {0};
   for (std::size_t i = 0; i < ghost_index_count.size(); ++i)
@@ -589,17 +589,17 @@ std::vector<std::int64_t> Partitioning::compute_ghost_indices(
   {
     // Owning process
     int p = ghost_owners[i];
-    // Owning neighbour
-    int np = proc_to_neighbour[p];
+    // Owning neighbor
+    int np = proc_to_neighbor[p];
     // Send data location
     int pos = ghost_index_offset[np];
     send_data[pos] = global_indices[num_local + i];
     ++ghost_index_offset[np];
   }
 
-  std::vector<int> recv_sizes(neighbours.size());
+  std::vector<int> recv_sizes(neighbors.size());
   MPI_Neighbor_alltoall(ghost_index_count.data(), 1, MPI_INT, recv_sizes.data(),
-                        1, MPI_INT, neighbour_comm);
+                        1, MPI_INT, neighbor_comm);
   std::vector<int> recv_offsets = {0};
   for (int q : recv_sizes)
     recv_offsets.push_back(recv_offsets.back() + q);
@@ -608,7 +608,7 @@ std::vector<std::int64_t> Partitioning::compute_ghost_indices(
   MPI_Neighbor_alltoallv(send_data.data(), ghost_index_count.data(),
                          send_offsets.data(), MPI_INT64_T, recv_data.data(),
                          recv_sizes.data(), recv_offsets.data(), MPI_INT64_T,
-                         neighbour_comm);
+                         neighbor_comm);
 
   // Replace values in recv_data with new_index and send back
   std::unordered_map<std::int64_t, std::int64_t> old_to_new;
@@ -627,7 +627,7 @@ std::vector<std::int64_t> Partitioning::compute_ghost_indices(
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
                          recv_offsets.data(), MPI_INT64_T, new_recv.data(),
                          ghost_index_count.data(), send_offsets.data(),
-                         MPI_INT64_T, neighbour_comm);
+                         MPI_INT64_T, neighbor_comm);
 
   // Add to map
   for (std::size_t i = 0; i < send_data.size(); ++i)
@@ -645,7 +645,7 @@ std::vector<std::int64_t> Partitioning::compute_ghost_indices(
     q = it->second;
   }
 
-  MPI_Comm_free(&neighbour_comm);
+  MPI_Comm_free(&neighbor_comm);
   return ghost_global_indices;
 }
 //-----------------------------------------------------------------------------

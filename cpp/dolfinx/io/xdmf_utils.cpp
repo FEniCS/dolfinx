@@ -161,11 +161,11 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
   assert(topology_node);
 
   // Get number of cells from topology
-  std::int64_t num_cells_topolgy = -1;
+  std::int64_t num_cells_topology = -1;
   pugi::xml_attribute num_cells_attr
       = topology_node.attribute("NumberOfElements");
   if (num_cells_attr)
-    num_cells_topolgy = num_cells_attr.as_llong();
+    num_cells_topology = num_cells_attr.as_llong();
 
   // Get number of cells from topology dataset
   pugi::xml_node topology_dataset_node = topology_node.child("DataItem");
@@ -173,18 +173,18 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
   const std::vector tdims = get_dataset_shape(topology_dataset_node);
 
   // Check that number of cells can be determined
-  if (tdims.size() != 2 and num_cells_topolgy == -1)
-    throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
+  if (tdims.size() != 2 and num_cells_topology == -1)
+    throw std::runtime_error("Cannot determine number of cells in XDMF mesh");
 
   // Check for consistency if number of cells appears in both the topology
   // and DataItem nodes
-  if (num_cells_topolgy != -1 and tdims.size() == 2)
+  if (num_cells_topology != -1 and tdims.size() == 2)
   {
-    if (num_cells_topolgy != tdims[0])
-      throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
+    if (num_cells_topology != tdims[0])
+      throw std::runtime_error("Cannot determine number of cells in XDMF mesh");
   }
 
-  return std::max(num_cells_topolgy, tdims[0]);
+  return std::max(num_cells_topology, tdims[0]);
 }
 //----------------------------------------------------------------------------
 std::vector<PetscScalar>
@@ -458,7 +458,7 @@ xdmf_utils::extract_local_entities(
 
   // NOTE: Could: (i) use a std::unordered_multimap, or (ii) only send
   // owned nodes to the postmaster and use map, unordered_map or
-  // std::vector<pair>>, followed by a neighbourhood all_to_all at the
+  // std::vector<pair>>, followed by a neighborhood all_to_all at the
   // end.
   //
   // Build map from global node index to ranks that have the node
