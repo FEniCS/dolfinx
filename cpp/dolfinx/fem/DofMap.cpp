@@ -165,14 +165,10 @@ fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap,
   // Count number of cell contributions to each global index
   const std::int32_t max_index
       = dofmap.array().head(dofmap.offsets()(num_cells)).maxCoeff();
-  std::vector<int> dofs_per_cell(num_cells);
-  std::vector<int> num_local_contributions(max_index + 1);
+  std::vector<int> num_local_contributions(max_index + 1, 0);
   for (int c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap.links(c);
-    dofs_per_cell[c] = dofs.size();
-
-    // Count cells that contribute to a global dof index
     for (int i = 0; i < dofs.rows(); ++i)
       num_local_contributions[dofs[i]]++;
   }
@@ -182,21 +178,19 @@ fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap,
   std::partial_sum(num_local_contributions.begin(),
                    num_local_contributions.end(), index_offsets.begin() + 1);
 
-  // Compute offset for each cell block
-  std::vector<int> cell_offsets(dofs_per_cell.size() + 1, 0);
-  std::partial_sum(dofs_per_cell.begin(), dofs_per_cell.end(),
-                   cell_offsets.begin() + 1);
-
   std::vector<std::int32_t> data(index_offsets.back());
   std::vector<int> pos = index_offsets;
+  int cell_offset = 0;
   for (int c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap.links(c);
     for (int i = 0; i < dofs.rows(); ++i)
-      data[pos[dofs[i]]++] = cell_offsets[c] + i;
+      data[pos[dofs[i]]++] = cell_offset++;
   }
 
   // Sort the source indices for each global index
+  // This could improve linear memory access
+  // FIXME: needs profiling
   for (int index = 0; index < max_index; ++index)
   {
     std::sort(data.begin() + index_offsets[index],
