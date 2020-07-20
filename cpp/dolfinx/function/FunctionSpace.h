@@ -126,7 +126,7 @@ public:
 private:
   // Internal dof tabulation function
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-  _internal_tabulate_dof_coordinates(int ebs) const;
+  _internal_tabulate_dof_coordinates(int element_block_size) const;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;

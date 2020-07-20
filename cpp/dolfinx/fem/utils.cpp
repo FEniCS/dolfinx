@@ -209,14 +209,14 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // Create UFC subdofmaps and compute offset
   std::vector<std::shared_ptr<ufc_dofmap>> ufc_sub_dofmaps;
   std::vector<int> offsets(1, 0);
-  const int ebs = dofmap.submap_block_size;
+  const int element_block_size = dofmap.submap_block_size;
 
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
     auto ufc_sub_dofmap
         = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i), std::free);
     ufc_sub_dofmaps.push_back(ufc_sub_dofmap);
-    if (ebs == 1)
+    if (element_block_size == 1)
       offsets.push_back(offsets.back() + ufc_sub_dofmap->num_element_support_dofs);
     else
       offsets.push_back(offsets.back() + 1);
@@ -229,7 +229,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     assert(ufc_sub_dofmap);
     std::vector<int> parent_map_sub(ufc_sub_dofmap->num_element_support_dofs);
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
-      parent_map_sub[j] = offsets[i] + j * ebs;
+      parent_map_sub[j] = offsets[i] + j * element_block_size;
     sub_dofmaps.push_back(
         std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
             *ufc_sub_dofmaps[i], cell_type, parent_map_sub)));

@@ -142,10 +142,11 @@ FunctionSpace::_internal_tabulate_dof_coordinates(int repeats) const
   std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;
   assert(index_map);
   int bs = index_map->block_size();
-  int ebs = _element->block_size();
+  int element_block_size = _element->block_size();
   std::int32_t local_size
-      = bs * (index_map->size_local() + index_map->num_ghosts()) / ebs;
-  const int scalar_dofs = _element->space_dimension() / ebs;
+      = bs * (index_map->size_local() + index_map->num_ghosts())
+        / element_block_size;
+  const int scalar_dofs = _element->space_dimension() / element_block_size;
 
   // Dof coordinate on reference element
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
@@ -196,7 +197,8 @@ FunctionSpace::_internal_tabulate_dof_coordinates(int repeats) const
     for (Eigen::Index i = 0; i < scalar_dofs; ++i)
     {
       // FIXME: this depends on the dof layout
-      const std::int32_t dof = dofs[i * ebs] / ebs;
+      const std::int32_t dof
+          = dofs[i * element_block_size] / element_block_size;
       for (int j = 0; j < repeats; ++j)
         x.row(dof * repeats + j).head(gdim) = coordinates.row(i);
     }

@@ -66,7 +66,7 @@ void interpolate_values(
                                         Eigen::RowMajor>>& values)
 {
   Eigen::Matrix<T, Eigen::Dynamic, 1>& coefficients = u.x()->array();
-  coefficients = Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(
+  coefficients = Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1>>(
       values.data(), coefficients.rows());
 }
 
@@ -200,17 +200,17 @@ void interpolate(
       const std::vector<int> component = {i};
       auto sub_dofmap = dofmap->extract_sub_dofmap(component);
       auto sub_element = element->extract_sub_element(component);
-      const int ebs = sub_element->block_size();
+      const int element_block_size = sub_element->block_size();
       for (std::size_t cell = 0; cell < num_cells; ++cell)
       {
         const auto cell_dofs = sub_dofmap.cell_dofs(cell);
-        const int scalar_dofs = cell_dofs.rows() / ebs;
+        const int scalar_dofs = cell_dofs.rows() / element_block_size;
         for (std::size_t dof = 0; dof < scalar_dofs; ++dof)
-          for(int b=0; b < ebs; ++b)
-            mixed_values(cell_dofs[ebs * dof + b])
-                = values(value_offset + b, cell_dofs[ebs * dof]);
+          for (int b = 0; b < element_block_size; ++b)
+            mixed_values(cell_dofs[element_block_size * dof + b])
+                = values(value_offset + b, cell_dofs[element_block_size * dof]);
       }
-      value_offset += ebs;
+      value_offset += element_block_size;
     }
     detail::interpolate_values<T>(u, mixed_values);
     return;
