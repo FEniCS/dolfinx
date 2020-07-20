@@ -89,9 +89,9 @@ public:
   static std::vector<int> compute_graph_edges(MPI_Comm comm,
                                               const std::set<int>& edges);
 
-  /// Neighbourhood all-to-all. Send data to neighbours using offsets
+  /// neighborhood all-to-all. Send data to neighbors using offsets
   /// into contiguous data array. Offset array should contain
-  /// (num_neighbours + 1) entries, starting from zero.
+  /// (num_neighbors + 1) entries, starting from zero.
   template <typename T>
   static graph::AdjacencyList<T>
   neighbor_all_to_all(MPI_Comm neighbor_comm,
@@ -100,7 +100,7 @@ public:
 
   /// @todo Clarify directions
   ///
-  /// Return list of neighbours for a neighbourhood communicator
+  /// Return list of neighbors for a neighborhood communicator
   /// @param[in] neighbor_comm Neighborhood communicator
   /// @return source ranks, destination ranks
   static std::tuple<std::vector<int>, std::vector<int>>
@@ -242,7 +242,7 @@ dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
                                   const std::vector<int>& send_offsets,
                                   const std::vector<T>& send_data)
 {
-  // Get neighbour processes
+  // Get neighbor processes
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
                                  &weighted);
