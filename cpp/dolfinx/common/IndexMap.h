@@ -300,7 +300,7 @@ private:
   // Number indices across communicator
   std::int64_t _size_global;
 
-  // MPI neighbourhood communicators
+  // MPI neighborhood communicators
 
   // Communicator where the source ranks own the indices in the callers
   // halo, and the destination ranks 'ghost' indices owned by the

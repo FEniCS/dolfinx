@@ -30,29 +30,29 @@ namespace refinement
 {
 
 /// Compute the sharing of edges between processes.
-/// The resulting MPI_Comm is over the neighbourhood of shared edges, allowing
+/// The resulting MPI_Comm is over the neighborhood of shared edges, allowing
 /// direct communication between peers. The resulting map is from local edge
-/// index to the set of neighbours (within the comm) that share that edge.
+/// index to the set of neighbors (within the comm) that share that edge.
 /// @param[in] mesh Mesh
 /// @return pair of comm and map
 std::pair<MPI_Comm, std::map<std::int32_t, std::set<int>>>
 compute_edge_sharing(const mesh::Mesh& mesh);
 
 /// Transfer marked edges between processes.
-/// @param neighbour_comm MPI Communicator for neighbourhood
+/// @param neighbor_comm MPI Communicator for neighborhood
 /// @param marked_for_update Lists of edges to be updates on each
-/// neighbour
+/// neighbor
 /// @param marked_edges Marked edges to be updated
 /// @param map_e IndexMap for edges
 void update_logical_edgefunction(
-    const MPI_Comm& neighbour_comm,
+    const MPI_Comm& neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
     std::vector<bool>& marked_edges, const common::IndexMap& map_e);
 
 /// Add new vertex for each marked edge, and create
 /// new_vertex_coordinates and global_edge->new_vertex map.
 /// Communicate new vertices with MPI to all affected processes.
-/// @param[in] neighbour_comm MPI Communicator for neighbourhood
+/// @param[in] neighbor_comm MPI Communicator for neighborhood
 /// @param[in] shared_edges
 /// @param[in] mesh Existing mesh
 /// @param[in] marked_edges
@@ -60,7 +60,7 @@ void update_logical_edgefunction(
 std::pair<std::map<std::int32_t, std::int64_t>,
           Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 create_new_vertices(
-    const MPI_Comm& neighbour_comm,
+    const MPI_Comm& neighbor_comm,
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges,
     const mesh::Mesh& mesh, const std::vector<bool>& marked_edges);
 

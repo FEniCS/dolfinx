@@ -26,7 +26,7 @@ namespace
 // Propagate edge markers according to rules (longest edge of each
 // face must be marked, if any edge of face is marked)
 void enforce_rules(
-    const MPI_Comm& neighbour_comm,
+    const MPI_Comm& neighbor_comm,
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges,
     std::vector<bool>& marked_edges, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& long_edge)
@@ -45,21 +45,21 @@ void enforce_rules(
   auto f_to_e = mesh.topology().connectivity(2, 1);
   assert(f_to_e);
 
-  // Get number of neighbours
+  // Get number of neighbors
   int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(neighbour_comm, &indegree, &outdegree,
+  MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
                                  &weighted);
   assert(indegree == outdegree);
-  const int num_neighbours = indegree;
-  std::vector<std::vector<std::int32_t>> marked_for_update(num_neighbours);
+  const int num_neighbors = indegree;
+  std::vector<std::vector<std::int32_t>> marked_for_update(num_neighbors);
 
   std::int32_t update_count = 1;
   while (update_count > 0)
   {
     update_count = 0;
-    refinement::update_logical_edgefunction(neighbour_comm, marked_for_update,
+    refinement::update_logical_edgefunction(neighbor_comm, marked_for_update,
                                             marked_edges, *map_e);
-    for (int i = 0; i < num_neighbours; ++i)
+    for (int i = 0; i < num_neighbors; ++i)
       marked_for_update[i].clear();
 
     for (int f = 0; f < num_faces; ++f)
@@ -79,7 +79,7 @@ void enforce_rules(
         {
           marked_edges[long_e] = true;
 
-          // If it is a shared edge, add all sharing neighbours to update set
+          // If it is a shared edge, add all sharing neighbors to update set
           if (auto map_it = shared_edges.find(long_e);
               map_it != shared_edges.end())
           {
@@ -384,7 +384,7 @@ face_long_edge(const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 // Convenient interface for both uniform and marker refinement
 mesh::Mesh compute_refinement(
-    const MPI_Comm& neighbour_comm, const std::vector<bool>& marked_edges,
+    const MPI_Comm& neighbor_comm, const std::vector<bool>& marked_edges,
     const std::map<std::int32_t, std::set<std::int32_t>> shared_edges,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& long_edge,
     const std::vector<bool>& edge_ratio_ok, bool redistribute)
@@ -395,7 +395,7 @@ mesh::Mesh compute_refinement(
 
   // Make new vertices in parallel
   const auto [new_vertex_map, new_vertex_coordinates]
-      = refinement::create_new_vertices(neighbour_comm, shared_edges, mesh,
+      = refinement::create_new_vertices(neighbor_comm, shared_edges, mesh,
                                         marked_edges);
 
   std::vector<std::size_t> parent_cell;
@@ -524,7 +524,7 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
 
   common::Timer t0("PLAZA: refine");
 
-  auto [neighbour_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
+  auto [neighbor_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
 
   // Mark all edges
   auto map_e = mesh.topology().index_map(1);
@@ -533,9 +533,9 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
 
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   mesh::Mesh new_mesh
-      = compute_refinement(neighbour_comm, marked_edges, shared_edges, mesh,
+      = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
                            long_edge, edge_ratio_ok, redistribute);
-  MPI_Comm_free(&neighbour_comm);
+  MPI_Comm_free(&neighbor_comm);
   return new_mesh;
 }
 //-----------------------------------------------------------------------------
@@ -552,7 +552,7 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
 
   common::Timer t0("PLAZA: refine");
 
-  auto [neighbour_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
+  auto [neighbor_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
 
   const std::size_t entity_dim = refinement_marker.dim();
   const std::vector<std::int32_t>& marker_indices = refinement_marker.indices();
@@ -568,13 +568,13 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   std::vector<bool> marked_edges(map_e->size_local() + map_e->num_ghosts(),
                                  false);
 
-  // Get number of neighbours
+  // Get number of neighbors
   int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(neighbour_comm, &indegree, &outdegree,
+  MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
                                  &weighted);
   assert(indegree == outdegree);
-  const int num_neighbours = indegree;
-  std::vector<std::vector<std::int32_t>> marked_for_update(num_neighbours);
+  const int num_neighbors = indegree;
+  std::vector<std::vector<std::int32_t>> marked_for_update(num_neighbors);
 
   for (std::int32_t i : marker_indices)
   {
@@ -587,7 +587,7 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
       {
         marked_edges[edge] = true;
 
-        // If it is a shared edge, add all sharing neighbours to update set
+        // If it is a shared edge, add all sharing neighbors to update set
         auto map_it = shared_edges.find(edge);
         if (map_it != shared_edges.end())
         {
@@ -599,18 +599,18 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   }
 
   // Communicate any shared edges
-  refinement::update_logical_edgefunction(neighbour_comm, marked_for_update,
+  refinement::update_logical_edgefunction(neighbor_comm, marked_for_update,
                                           marked_edges, *map_e);
 
   // Enforce rules about refinement (i.e. if any edge is marked in a triangle,
   // then the longest edge must also be marked).
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
-  enforce_rules(neighbour_comm, shared_edges, marked_edges, mesh, long_edge);
+  enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh, long_edge);
 
   mesh::Mesh new_mesh
-      = compute_refinement(neighbour_comm, marked_edges, shared_edges, mesh,
+      = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
                            long_edge, edge_ratio_ok, redistribute);
-  MPI_Comm_free(&neighbour_comm);
+  MPI_Comm_free(&neighbor_comm);
   return new_mesh;
 }
 //-----------------------------------------------------------------------------

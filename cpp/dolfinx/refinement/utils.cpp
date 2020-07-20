@@ -162,46 +162,45 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
   std::map<std::int32_t, std::set<int>> shared_edges_by_proc
       = map_e->compute_shared_indices();
 
-  // Compute a slightly wider neighbourhood for direct communication of shared
+  // Compute a slightly wider neighborhood for direct communication of shared
   // edges
-  std::set<int> all_neighbour_set;
+  std::set<int> all_neighbor_set;
   for (const auto& q : shared_edges_by_proc)
-    all_neighbour_set.insert(q.second.begin(), q.second.end());
-  std::vector<int> neighbours(all_neighbour_set.begin(),
-                              all_neighbour_set.end());
+    all_neighbor_set.insert(q.second.begin(), q.second.end());
+  std::vector<int> neighbors(all_neighbor_set.begin(), all_neighbor_set.end());
 
-  MPI_Comm neighbour_comm;
+  MPI_Comm neighbor_comm;
   MPI_Dist_graph_create_adjacent(
-      mesh.mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
-      neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &neighbour_comm);
+      mesh.mpi_comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
+      neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
+      &neighbor_comm);
 
-  // Create a "shared_edge to neighbour map"
-  std::map<int, int> proc_to_neighbour;
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
-    proc_to_neighbour.insert({neighbours[i], i});
+  // Create a "shared_edge to neighbor map"
+  std::map<int, int> proc_to_neighbor;
+  for (std::size_t i = 0; i < neighbors.size(); ++i)
+    proc_to_neighbor.insert({neighbors[i], i});
 
   std::map<std::int32_t, std::set<int>> shared_edges;
   for (auto& q : shared_edges_by_proc)
   {
-    std::set<int> neighbour_set;
+    std::set<int> neighbor_set;
     for (int r : q.second)
-      neighbour_set.insert(proc_to_neighbour[r]);
-    shared_edges.insert({q.first, neighbour_set});
+      neighbor_set.insert(proc_to_neighbor[r]);
+    shared_edges.insert({q.first, neighbor_set});
   }
 
-  return {neighbour_comm, shared_edges};
+  return {neighbor_comm, shared_edges};
 }
 //-----------------------------------------------------------------------------
 void refinement::update_logical_edgefunction(
-    const MPI_Comm& neighbour_comm,
+    const MPI_Comm& neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
     std::vector<bool>& marked_edges, const common::IndexMap& map_e)
 {
   std::vector<std::int32_t> send_offsets = {0};
   std::vector<std::int64_t> data_to_send;
-  int num_neighbours = marked_for_update.size();
-  for (int i = 0; i < num_neighbours; ++i)
+  int num_neighbors = marked_for_update.size();
+  for (int i = 0; i < num_neighbors; ++i)
   {
     for (std::int32_t q : marked_for_update[i])
       data_to_send.push_back(local_to_global(q, map_e));
@@ -212,7 +211,7 @@ void refinement::update_logical_edgefunction(
   // Send all shared edges marked for update and receive from other
   // processes
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> data_to_recv
-      = MPI::neighbor_all_to_all(neighbour_comm, send_offsets, data_to_send)
+      = MPI::neighbor_all_to_all(neighbor_comm, send_offsets, data_to_send)
             .array();
 
   // Flatten received values and set marked_edges at each index received
@@ -224,7 +223,7 @@ void refinement::update_logical_edgefunction(
 std::pair<std::map<std::int32_t, std::int64_t>,
           Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 refinement::create_new_vertices(
-    const MPI_Comm& neighbour_comm,
+    const MPI_Comm& neighbor_comm,
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges,
     const mesh::Mesh& mesh, const std::vector<bool>& marked_edges)
 {
@@ -260,14 +259,14 @@ refinement::create_new_vertices(
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.
 
-  // Get number of neighbours
+  // Get number of neighbors
   int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(neighbour_comm, &indegree, &outdegree,
+  MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
                                  &weighted);
   assert(indegree == outdegree);
-  const int num_neighbours = indegree;
+  const int num_neighbors = indegree;
 
-  std::vector<std::vector<std::int64_t>> values_to_send(num_neighbours);
+  std::vector<std::vector<std::int64_t>> values_to_send(num_neighbors);
   for (auto& local_edge : local_edge_to_new_vertex)
   {
     const std::size_t local_i = local_edge.first;
@@ -286,10 +285,10 @@ refinement::create_new_vertices(
     }
   }
 
-  // Send new vertex indices to edge neighbours and receive
+  // Send new vertex indices to edge neighbors and receive
   std::vector<std::int64_t> send_values;
   std::vector<int> send_offsets = {0};
-  for (int i = 0; i < num_neighbours; ++i)
+  for (int i = 0; i < num_neighbors; ++i)
   {
     send_values.insert(send_values.end(), values_to_send[i].begin(),
                        values_to_send[i].end());
@@ -297,7 +296,7 @@ refinement::create_new_vertices(
   }
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> received_values
-      = MPI::neighbor_all_to_all(neighbour_comm, send_offsets, send_values)
+      = MPI::neighbor_all_to_all(neighbor_comm, send_offsets, send_values)
             .array();
 
   // Add received remote global vertex indices to map
