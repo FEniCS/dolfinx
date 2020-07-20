@@ -43,25 +43,76 @@ class Constant(ufl.Constant):
 
 
 class Expression:
+    """An Expression.
+
+    Parameters
+    ----------
+    expression: UFL expression
+    x: array of points on the reference element
+    name: name
+
+    Example
+    -------
+
+    >>> 
+    """
     def __init__(self,
                  expression: ufl.core.expr.Expr,
-                 points: np.ndarray,
+                 x: np.ndarray,
                  name: typing.Optional[str] = None):
-        self.name = name
+        self._name = name
+        self._x = np.asarray(x, dtype=np.float64)
+        assert x.ndim < 3
+        self.num_points = self._x.shape[0] if self._x.ndim == 2 else 1
+        if x.shape[1] != 3:
+            raise ValueError("Coordinate(s) for Expression evaluation must have length 3.")
 
         # Compile UFL expression with JIT
-        ufc_expression = jit.ffcx_jit((expression, points))
+        ufc_expression = jit.ffcx_jit((expression, x))
+        self._ufl_expression = expression
+        self._ufc_expression = ufc_expression
 
         ffi = cffi.FFI()
         self._cpp_object = cpp.function.Expression()
+
+        # Setup cpp.Expression with JIT-ed tabulate expression function.
         self._cpp_object.set_tabulate_expression(ffi.cast("intptr_t", ufc_expression.tabulate_expression))
 
+        # and setup data (coefficients, constants, mesh).
         coefficients = ufl.algorithms.extract_coefficients(expression)
         for i, coefficient in enumerate(coefficients):
-            self._cpp_object.set_coefficient(i, coefficient)
+            self._cpp_object.set_coefficient(i, coefficient._cpp_object)
 
         constants = ufl.algorithms.analysis.extract_constants(expression)
         self._cpp_object.set_constants([constant._cpp_object for constant in constants])
+
+        self._cpp_object.mesh = expression.ufl_domain().ufl_cargo()
+
+    def eval(self, cells: np.ndarray, u=None) -> np.ndarray:
+        cells = np.asarray(cells, dtype=np.int32)
+        assert cells.ndim == 1
+
+        # Allocate memory for result if u was not provided
+        if u is None:
+            value_size = ufl.product(self.ufl_expression.ufl_shape)
+            if common.has_petsc_complex:
+                u = np.empty((self.num_points, value_size), dtype=np.complex128)
+            else:
+                u = np.empty((self.num_points, value_size), dtype=np.float64)
+
+        self._cpp_object.eval(cells, u)
+
+    @property
+    def ufl_expression(self):
+        return self._ufl_expression
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def points(self):
+        return self._x
 
 
 class Function(ufl.Coefficient):
@@ -127,7 +178,7 @@ class Function(ufl.Coefficient):
         point is ignored."""
 
         # Make sure input coordinates are a NumPy array
-        x = np.asarray(x, dtype=np.float)
+        x = np.asarray(x, dtype=np.float64)
         assert x.ndim < 3
         num_points = x.shape[0] if x.ndim == 2 else 1
         x = np.reshape(x, (num_points, -1))
