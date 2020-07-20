@@ -164,7 +164,7 @@ dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
   MPI_Topo_test(neighbor_comm, &status);
   assert(status != MPI_UNDEFINED);
 
-  // Get list of neighbours
+  // Get list of neighbors
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
                                  &weighted);
