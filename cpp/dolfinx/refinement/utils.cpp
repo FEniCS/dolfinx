@@ -70,9 +70,8 @@ compute_vertex_exterior_markers(const mesh::Topology& topology_local)
 std::int64_t local_to_global(std::int32_t local_index,
                              const common::IndexMap& map)
 {
-  const std::array<std::int64_t, 2> local_range = map.local_range();
-
   assert(local_index >= 0);
+  const std::array local_range = map.local_range();
   const std::int32_t local_size = (local_range[1] - local_range[0]);
   if (local_index < local_size)
   {
@@ -334,7 +333,7 @@ std::vector<std::int64_t> refinement::adjust_indices(
   for (std::int32_t r : recvn)
     global_offsets.push_back(global_offsets.back() + r);
 
-  std::vector<std::int64_t> global_indices = index_map->global_indices(true);
+  std::vector global_indices = index_map->global_indices(true);
 
   Eigen::Array<int, Eigen::Dynamic, 1> ghost_owners
       = index_map->ghost_owner_rank();
@@ -472,8 +471,7 @@ mesh::Mesh refinement::partition(
 
     // Get facets that are on the boundary of the local topology, i.e
     // are connect to one cell only
-    const std::vector<bool> boundary
-        = mesh::compute_boundary_facets(topology_local);
+    const std::vector boundary = mesh::compute_boundary_facets(topology_local);
 
     // Build distributed cell-vertex AdjacencyList, IndexMap for
     // vertices, and map from local index to old global index

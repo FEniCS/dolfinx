@@ -479,8 +479,7 @@ compute_entities_by_key_matching(
   }
 
   // Sort the list and label uniquely
-  std::vector<std::int32_t> sort_order
-      = sort_by_perm<std::int32_t>(entity_list_sorted);
+  const std::vector sort_order = sort_by_perm<std::int32_t>(entity_list_sorted);
   std::int32_t last = sort_order[0];
   entity_index[last] = 0;
   for (std::size_t i = 1; i < sort_order.size(); ++i)

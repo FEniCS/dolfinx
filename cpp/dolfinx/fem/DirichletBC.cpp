@@ -46,7 +46,7 @@ get_remote_bcs1(const common::IndexMap& map,
 
   // Return early if there are no neighbors
   if (num_neighbors == 0)
-    return std::vector<std::int32_t>();
+    return {};
 
   // Figure out how many entries to receive from each neighbor
   const int num_dofs = dofs_local.size();
@@ -107,7 +107,7 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
 
   // Return early if there are no neighbors
   if (num_neighbors == 0)
-    return std::vector<std::array<std::int32_t, 2>>();
+    return {};
 
   // Figure out how many entries to receive from each neighbor
   const int num_dofs = 2 * dofs_local.size();
@@ -159,8 +159,8 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
     dofs_received1[i] = dofs_received(i, 1);
   }
 
-  std::vector<std::int32_t> dofs0 = map0.global_to_local(dofs_received0, false);
-  std::vector<std::int32_t> dofs1 = map1.global_to_local(dofs_received1, false);
+  std::vector dofs0 = map0.global_to_local(dofs_received0, false);
+  std::vector dofs1 = map1.global_to_local(dofs_received1, false);
 
   // FIXME: check that dofs is sorted
   dofs0.erase(std::remove(dofs0.begin(), dofs0.end(), -1), dofs0.end());
@@ -265,9 +265,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
     // Get bc dof indices (local) in (V, Vg) spaces on this process that
     // were found by other processes, e.g. a vertex dof on this process
     // that has no connected facets on the boundary.
-    const std::vector<std::array<std::int32_t, 2>> dofs_remote
-        = get_remote_bcs2(*V0.dofmap()->index_map, *V1.dofmap()->index_map,
-                          bc_dofs);
+    const std::vector dofs_remote = get_remote_bcs2(
+        *V0.dofmap()->index_map, *V1.dofmap()->index_map, bc_dofs);
 
     // Add received bc indices to dofs_local
     bc_dofs.insert(bc_dofs.end(), dofs_remote.begin(), dofs_remote.end());
@@ -356,7 +355,7 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 
   if (remote)
   {
-    const std::vector<std::int32_t> dofs_remote
+    const std::vector dofs_remote
         = get_remote_bcs1(*V.dofmap()->index_map, dofs);
 
     // Add received bc indices to dofs_local

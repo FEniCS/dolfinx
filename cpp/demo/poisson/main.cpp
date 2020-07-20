@@ -90,6 +90,7 @@
 #include "poisson.h"
 #include <cfloat>
 #include <dolfinx.h>
+#include <dolfinx/fem/petsc.h>
 #include <dolfinx/function/Constant.h>
 
 using namespace dolfinx;
@@ -132,9 +133,8 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Define variational forms
-  auto a = fem::create_form(create_form_poisson_a, {V, V});
-
-  auto L = fem::create_form(create_form_poisson_L, {V});
+  auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V});
+  auto L = fem::create_form<PetscScalar>(create_form_poisson_L, {V});
 
   auto f = std::make_shared<function::Function<PetscScalar>>(V);
   auto g = std::make_shared<function::Function<PetscScalar>>(V);
@@ -190,19 +190,19 @@ int main(int argc, char* argv[])
   la::PETScVector b(*L->function_space(0)->dofmap()->index_map);
 
   MatZeroEntries(A.mat());
-  dolfinx::fem::assemble_matrix(A.mat(), *a, bc);
-  dolfinx::fem::add_diagonal(A.mat(), *V, bc);
+  fem::assemble_matrix(la::PETScMatrix::add_fn(A.mat()), *a, bc);
+  fem::add_diagonal(la::PETScMatrix::add_fn(A.mat()), *V, bc);
   MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
   VecSet(b.vec(), 0.0);
   VecGhostUpdateBegin(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
   VecGhostUpdateEnd(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
-  dolfinx::fem::assemble_vector(b.vec(), *L);
-  dolfinx::fem::apply_lifting(b.vec(), {a}, {{bc}}, {}, 1.0);
+  fem::assemble_vector_petsc(b.vec(), *L);
+  fem::apply_lifting_petsc(b.vec(), {a}, {{bc}}, {}, 1.0);
   VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
   VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-  dolfinx::fem::set_bc(b.vec(), bc, nullptr);
+  fem::set_bc_petsc(b.vec(), bc, nullptr);
 
   la::PETScKrylovSolver lu(MPI_COMM_WORLD);
   la::PETScOptions::set("ksp_type", "preonly");
