@@ -15,12 +15,61 @@
 
 namespace dolfinx
 {
-namespace la
+namespace common
 {
 class IndexMap;
 }
 namespace la
 {
+
+/// Create a PETSc Vec that wraps the data in x
+/// @param[in] map The index map that described the parallel layout of
+///   the distributed vector
+/// @param[in] x The local part of the vector, including ghost entries
+/// @return A PETSc Vec object that share the x data. The caller is
+///   responsible for destroying the Vec.
+Vec create_ghosted_vector(
+    const common::IndexMap& map,
+    const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x);
+
+/// Print error message for PETSc calls that return an error
+void petsc_error(int error_code, std::string filename,
+                 std::string petsc_function);
+
+/// @todo This function could take just the local sizes
+///
+/// Compute IndexSets (IS) for stacked index maps.  E.g., if map[0] =
+/// {0, 1, 2, 3, 4, 5, 6} and map[1] = {0, 1, 2, 4} (in local indices),
+/// IS[0] = {0, 1, 2, 3, 4, 5, 6} and IS[1] = {7, 8, 9, 10}. Caller is
+/// responsible for destruction of each IS.
+///
+/// @param[in] maps Vector of IndexMaps
+/// @returns Vector of PETSc Index Sets, created on PETSc_COMM_SELF
+std::vector<IS>
+create_petsc_index_sets(const std::vector<const common::IndexMap*>& maps);
+
+/// Create a ghosted PETSc Vec. Caller is responsible for destroying the
+/// returned object.
+Vec create_petsc_vector(const common::IndexMap& map);
+
+/// Create a ghosted PETSc Vec. Caller is responsible for destroying the
+/// returned object.
+Vec create_petsc_vector(
+    MPI_Comm comm, std::array<std::int64_t, 2> range,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
+        ghost_indices,
+    int block_size);
+
+/// Copy blocks from Vec into Eigen vectors
+std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+get_local_vectors(const Vec x,
+                  const std::vector<const common::IndexMap*>& maps);
+
+/// Scatter local Eigen vectors to Vec
+void scatter_local_vectors(
+    Vec x,
+    const std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,
+    const std::vector<const common::IndexMap*>& maps);
 
 /// It is a simple wrapper for a PETSc vector pointer (Vec). Its main
 /// purpose is to assist memory management of PETSc Vec objects.
@@ -51,7 +100,7 @@ public:
   /// counter of the Vec object will be increased. The Vec reference
   /// count will always be decreased upon destruction of the the
   /// PETScVector.
-  explicit PETScVector(Vec x, bool inc_ref_count);
+  PETScVector(Vec x, bool inc_ref_count);
 
   /// Destructor
   virtual ~PETScVector();

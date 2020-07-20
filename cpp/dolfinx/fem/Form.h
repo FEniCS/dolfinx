@@ -11,7 +11,6 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <petscsys.h>
 #include <set>
 #include <string>
 #include <vector>
@@ -236,6 +235,14 @@ public:
   std::shared_ptr<const function::FunctionSpace> function_space(int i) const
   {
     return _function_spaces.at(i);
+  }
+
+  /// Return function spaces for each argument
+  /// @return Function spaces
+  std::vector<std::shared_ptr<const function::FunctionSpace>>
+  function_spaces() const
+  {
+    return _function_spaces;
   }
 
   /// Register the function for 'tabulate_tensor' for cell integral i

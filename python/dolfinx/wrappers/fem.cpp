@@ -18,6 +18,7 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/assembler.h>
+#include <dolfinx/fem/petsc.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/function/Constant.h>
 #include <dolfinx/function/Function.h>
@@ -75,12 +76,6 @@ void fem(py::module& m)
 {
   // utils
   m.def(
-      "block_function_spaces",
-      [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&
-             a) {
-        return dolfinx::fem::block_function_spaces(forms_vector_to_array(a));
-      });
-  m.def(
       "create_vector_block",
       [](const std::vector<
           std::reference_wrapper<const dolfinx::common::IndexMap>>& maps) {
@@ -102,11 +97,12 @@ void fem(py::module& m)
       py::return_value_policy::take_ownership,
       "Create nested vector for multiple (stacked) linear forms.");
 
-  m.def("create_sparsity_pattern", &dolfinx::fem::create_sparsity_pattern,
+  m.def("create_sparsity_pattern",
+        &dolfinx::fem::create_sparsity_pattern<PetscScalar>,
         "Create a sparsity pattern for bilinear form.");
-  m.def("pack_coefficients", &dolfinx::fem::pack_coefficients,
+  m.def("pack_coefficients", &dolfinx::fem::pack_coefficients<PetscScalar>,
         "Pack coefficients for a UFL form.");
-  m.def("pack_constants", &dolfinx::fem::pack_constants,
+  m.def("pack_constants", &dolfinx::fem::pack_constants<PetscScalar>,
         "Pack constants for a UFL form.");
   m.def(
       "create_matrix",
@@ -158,7 +154,7 @@ void fem(py::module& m)
          const std::vector<
              std::shared_ptr<const dolfinx::function::FunctionSpace>>& spaces) {
         const ufc_form* p = reinterpret_cast<const ufc_form*>(form);
-        return dolfinx::fem::create_form(*p, spaces);
+        return dolfinx::fem::create_form<PetscScalar>(*p, spaces);
       },
       "Create Form from a pointer to ufc_form.");
   m.def(
@@ -279,99 +275,41 @@ void fem(py::module& m)
                              &dolfinx::fem::DirichletBC<PetscScalar>::value);
 
   // dolfinx::fem::assemble
-  m.def("assemble_scalar", &dolfinx::fem::assemble_scalar,
+  // Functional
+  m.def("assemble_scalar", &dolfinx::fem::assemble_scalar<PetscScalar>,
         "Assemble functional over mesh");
-  // Vectors (single)
-  m.def("assemble_vector",
-        py::overload_cast<Vec, const dolfinx::fem::Form<PetscScalar>&>(
-            &dolfinx::fem::assemble_vector),
-        py::arg("b"), py::arg("L"),
-        "Assemble linear form into an existing vector");
-  m.def("assemble_vector",
-        py::overload_cast<
-            Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
-            const dolfinx::fem::Form<PetscScalar>&>(
-            &dolfinx::fem::assemble_vector),
+  // Vector
+  m.def("assemble_vector", &dolfinx::fem::assemble_vector<PetscScalar>,
         py::arg("b"), py::arg("L"),
         "Assemble linear form into an existing Eigen vector");
   // Matrices
-  m.def("assemble_matrix",
-        py::overload_cast<Mat, const dolfinx::fem::Form<PetscScalar>&,
-                          const std::vector<std::shared_ptr<
-                              const dolfinx::fem::DirichletBC<PetscScalar>>>&>(
-            &dolfinx::fem::assemble_matrix));
-  m.def("assemble_matrix",
-        py::overload_cast<Mat, const dolfinx::fem::Form<PetscScalar>&,
-                          const std::vector<bool>&, const std::vector<bool>&>(
-            &dolfinx::fem::assemble_matrix));
+  m.def("assemble_matrix_petsc",
+        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+           const std::vector<std::shared_ptr<
+               const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs) {
+          dolfinx::fem::assemble_matrix(dolfinx::la::PETScMatrix::add_fn(A), a,
+                                        bcs);
+        });
+  m.def("assemble_matrix_petsc",
+        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+           const std::vector<bool>& rows0, const std::vector<bool>& rows1) {
+          dolfinx::fem::assemble_matrix(dolfinx::la::PETScMatrix::add_fn(A), a,
+                                        rows0, rows1);
+        });
   m.def("add_diagonal",
-        py::overload_cast<Mat, const dolfinx::function::FunctionSpace&,
-                          const std::vector<std::shared_ptr<
-                              const dolfinx::fem::DirichletBC<PetscScalar>>>&,
-                          PetscScalar>(&dolfinx::fem::add_diagonal));
-
-  m.def("assemble_scalar", &dolfinx::fem::assemble_scalar,
-        "Assemble functional over mesh");
-  // Vectors (single)
-  m.def("assemble_vector",
-        py::overload_cast<Vec, const dolfinx::fem::Form<PetscScalar>&>(
-            &dolfinx::fem::assemble_vector),
-        py::arg("b"), py::arg("L"),
-        "Assemble linear form into an existing vector");
-  m.def("assemble_vector",
-        py::overload_cast<
-            Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
-            const dolfinx::fem::Form<PetscScalar>&>(
-            &dolfinx::fem::assemble_vector),
-        py::arg("b"), py::arg("L"),
-        "Assemble linear form into an existing Eigen vector");
-  // Matrices
-  m.def("assemble_matrix",
-        py::overload_cast<Mat, const dolfinx::fem::Form<PetscScalar>&,
-                          const std::vector<std::shared_ptr<
-                              const dolfinx::fem::DirichletBC<PetscScalar>>>&>(
-            &dolfinx::fem::assemble_matrix));
-  m.def("assemble_matrix",
-        py::overload_cast<Mat, const dolfinx::fem::Form<PetscScalar>&,
-                          const std::vector<bool>&, const std::vector<bool>&>(
-            &dolfinx::fem::assemble_matrix));
-  m.def("add_diagonal",
-        py::overload_cast<Mat, const dolfinx::function::FunctionSpace&,
-                          const std::vector<std::shared_ptr<
-                              const dolfinx::fem::DirichletBC<PetscScalar>>>&,
-                          PetscScalar>(&dolfinx::fem::add_diagonal));
-
-  m.def("assemble_matrix_eigen", &dolfinx::fem::assemble_matrix_eigen);
+        [](Mat A, const dolfinx::function::FunctionSpace& V,
+           const std::vector<std::shared_ptr<
+               const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
+           PetscScalar diagonal) {
+          dolfinx::fem::add_diagonal(dolfinx::la::PETScMatrix::add_fn(A), V,
+                                     bcs, diagonal);
+        });
+  m.def("assemble_matrix_eigen",
+        &dolfinx::fem::assemble_matrix_eigen<PetscScalar>);
 
   // BC modifiers
-  m.def(
-      "apply_lifting",
-      py::overload_cast<
-          Vec,
-          const std::vector<
-              std::shared_ptr<const dolfinx::fem::Form<PetscScalar>>>&,
-          const std::vector<std::vector<
-              std::shared_ptr<const dolfinx::fem::DirichletBC<PetscScalar>>>>&,
-          const std::vector<Vec>&, double>(&dolfinx::fem::apply_lifting),
-      "Modify vector for lifted boundary conditions");
-  m.def(
-      "apply_lifting",
-      py::overload_cast<
-          Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
-          const std::vector<
-              std::shared_ptr<const dolfinx::fem::Form<PetscScalar>>>&,
-          const std::vector<std::vector<
-              std::shared_ptr<const dolfinx::fem::DirichletBC<PetscScalar>>>>&,
-          const std::vector<
-              Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>&,
-          double>(&dolfinx::fem::apply_lifting),
-      "Modify vector for lifted boundary conditions");
-  m.def("set_bc",
-        py::overload_cast<Vec,
-                          const std::vector<std::shared_ptr<
-                              const dolfinx::fem::DirichletBC<PetscScalar>>>&,
-                          const Vec, double>(&dolfinx::fem::set_bc),
-        "Insert boundary condition values into vector");
+  m.def("apply_lifting", &dolfinx::fem::apply_lifting<PetscScalar>,
+        "Modify vector for lifted boundary conditions");
   m.def(
       "set_bc",
       [](Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
@@ -379,12 +317,12 @@ void fem(py::module& m)
              const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
          const py::array_t<PetscScalar>& x0, double scale) {
         if (x0.ndim() == 0)
-          dolfinx::fem::set_bc(b, bcs, scale);
+          dolfinx::fem::set_bc<PetscScalar>(b, bcs, scale);
         else if (x0.ndim() == 1)
         {
           Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x0(
               x0.data(), x0.shape(0));
-          dolfinx::fem::set_bc(b, bcs, _x0, scale);
+          dolfinx::fem::set_bc<PetscScalar>(b, bcs, _x0, scale);
         }
         else
           throw std::runtime_error("Wrong array dimension.");
@@ -392,8 +330,8 @@ void fem(py::module& m)
       py::arg("b"), py::arg("bcs"), py::arg("x0") = py::none(),
       py::arg("scale") = 1.0);
   // Tools
-  m.def("bcs_rows", &dolfinx::fem::bcs_rows);
-  m.def("bcs_cols", &dolfinx::fem::bcs_cols);
+  m.def("bcs_rows", &dolfinx::fem::bcs_rows<PetscScalar>);
+  m.def("bcs_cols", &dolfinx::fem::bcs_cols<PetscScalar>);
 
   //   // dolfinx::fem::DiscreteOperators
   //   py::class_<dolfinx::fem::DiscreteOperators>(m, "DiscreteOperators")
@@ -482,7 +420,8 @@ void fem(py::module& m)
            })
       .def_property_readonly("rank", &dolfinx::fem::Form<PetscScalar>::rank)
       .def("mesh", &dolfinx::fem::Form<PetscScalar>::mesh)
-      .def("function_space", &dolfinx::fem::Form<PetscScalar>::function_space);
+      .def_property_readonly("function_spaces",
+                             &dolfinx::fem::Form<PetscScalar>::function_spaces);
 
   m.def("locate_dofs_topological", &dolfinx::fem::locate_dofs_topological,
         py::arg("V"), py::arg("dim"), py::arg("entities"),
