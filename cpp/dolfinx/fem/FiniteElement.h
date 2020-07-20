@@ -43,7 +43,9 @@ public:
   /// @return Dimension of the finite element space
   int space_dimension() const;
 
-  /// Block size of the finite element function space
+  /// Block size of the finite element function space. For VectorElements and
+  /// TensorElements, this is the number of DOFs colocated at each DOF point.
+  /// For other elements, this is always 1.
   /// @return Block size of the finite element space
   int block_size() const;
 
@@ -171,7 +173,8 @@ private:
                     const ufc_coordinate_mapping*)>
       _transform_values;
 
-  // Block size for VectorElement
+  // Block size for VectorElements and TensorElements
+  // This gives the number of DOFs colocated at each point
   int _block_size;
 };
 } // namespace dolfinx::fem
