@@ -25,7 +25,7 @@ namespace dolfinx::graph
 class Partitioning
 {
 public:
-  /// @todo Return the list of neighbour processes which is computed
+  /// @todo Return the list of neighbor processes which is computed
   /// internally
   ///
   /// Compute new, contiguous global indices from a collection of

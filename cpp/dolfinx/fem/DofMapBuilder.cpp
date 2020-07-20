@@ -334,7 +334,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 /// @param [in] dof_entity The ith entry gives (topological dim, local
 ///   index) of the mesh entity to which node i (old local index) is
 ///   associated
-/// @returns The (0) global indices for unowned dofs, (1) onwer rank of each
+/// @returns The (0) global indices for unowned dofs, (1) owner rank of each
 ///   unowned dof
 std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     const mesh::Topology& topology, const std::int32_t num_owned,
@@ -394,7 +394,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     {
       comm[d] = map->comm(common::IndexMap::Direction::symmetric);
 
-      // Get number of neighbours
+      // Get number of neighbors
       int indegree(-1), outdegree(-2), weighted(-1);
       MPI_Dist_graph_neighbors_count(comm[d], &indegree, &outdegree, &weighted);
 
