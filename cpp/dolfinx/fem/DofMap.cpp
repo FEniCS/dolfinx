@@ -158,6 +158,48 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
 } // namespace
 
 //-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t>
+fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap,
+                      std::int32_t num_cells)
+{
+  // Count number of cell contributions to each global index
+  const std::int32_t max_index
+      = dofmap.array().head(dofmap.offsets()(num_cells)).maxCoeff();
+  std::vector<int> num_local_contributions(max_index + 1, 0);
+  for (int c = 0; c < num_cells; ++c)
+  {
+    auto dofs = dofmap.links(c);
+    for (int i = 0; i < dofs.rows(); ++i)
+      num_local_contributions[dofs[i]]++;
+  }
+
+  // Compute offset for each global index
+  std::vector<int> index_offsets(num_local_contributions.size() + 1, 0);
+  std::partial_sum(num_local_contributions.begin(),
+                   num_local_contributions.end(), index_offsets.begin() + 1);
+
+  std::vector<std::int32_t> data(index_offsets.back());
+  std::vector<int> pos = index_offsets;
+  int cell_offset = 0;
+  for (int c = 0; c < num_cells; ++c)
+  {
+    auto dofs = dofmap.links(c);
+    for (int i = 0; i < dofs.rows(); ++i)
+      data[pos[dofs[i]]++] = cell_offset++;
+  }
+
+  // Sort the source indices for each global index
+  // This could improve linear memory access
+  // FIXME: needs profiling
+  for (int index = 0; index < max_index; ++index)
+  {
+    std::sort(data.begin() + index_offsets[index],
+              data.begin() + index_offsets[index + 1]);
+  }
+
+  return graph::AdjacencyList<std::int32_t>(data, index_offsets);
+}
+//-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                std::shared_ptr<const common::IndexMap> index_map,
                const graph::AdjacencyList<std::int32_t>& dofmap)
