@@ -187,8 +187,9 @@ void interpolate(
   const int tdim = mesh->topology().dim();
   if (element->family() == "Mixed")
   {
-    // Extract the correct
-    auto dofmap = u.function_space()->dofmap();
+    // Extract the correct components of the result for each subelement of the
+    // MixedElement
+    std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
     auto map = mesh->topology().index_map(tdim);
     assert(map);
     const int num_cells = map->size_local() + map->num_ghosts();
@@ -198,8 +199,9 @@ void interpolate(
     for (int i = 0; i < element->num_sub_elements(); ++i)
     {
       const std::vector<int> component = {i};
-      auto sub_dofmap = dofmap->extract_sub_dofmap(component);
-      auto sub_element = element->extract_sub_element(component);
+      const fem::DofMap sub_dofmap = dofmap->extract_sub_dofmap(component);
+      std::shared_ptr<const fem::FiniteElement> sub_element
+          = element->extract_sub_element(component);
       const int element_block_size = sub_element->block_size();
       for (std::size_t cell = 0; cell < num_cells; ++cell)
       {
