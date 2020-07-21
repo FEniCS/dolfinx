@@ -209,7 +209,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // Create UFC subdofmaps and compute offset
   std::vector<std::shared_ptr<ufc_dofmap>> ufc_sub_dofmaps;
   std::vector<int> offsets(1, 0);
-  const int element_block_size = dofmap.submap_block_size;
+  const int element_block_size = dofmap.block_size;
 
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
@@ -273,7 +273,7 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     }
   }
 
-  if (ufc_dofmap.submap_block_size == 1)
+  if (ufc_dofmap.block_size == 1)
   {
     auto [index_map, dofmap]
         = DofMapBuilder::build(comm, topology, *element_dof_layout, 1);
