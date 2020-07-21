@@ -273,9 +273,9 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     }
   }
 
-  auto [dof_layout, index_map, dofmap] = DofMapBuilder::build(
+  auto [index_map, dofmap] = DofMapBuilder::build(
       comm, topology, element_dof_layout, ufc_dofmap.submap_block_size != 1);
-  return DofMap(dof_layout, index_map, std::move(dofmap));
+  return DofMap(element_dof_layout, index_map, std::move(dofmap));
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement

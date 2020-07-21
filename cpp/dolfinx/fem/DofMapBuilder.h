@@ -45,9 +45,9 @@ public:
   ///    XYZXYZ ordering to XXYYZZ ordering. This should be true for
   ///    VectorElements and TensorElements, and false for MixedElements. For
   ///    other elements, it's value should have no effect.
-  static std::tuple<std::shared_ptr<const ElementDofLayout>,
-                    std::shared_ptr<const common::IndexMap>,
-                    graph::AdjacencyList<std::int32_t>>
+  /// @return The index map and local to global DOF data for the DOF map.
+  static std::pair<std::shared_ptr<const common::IndexMap>,
+                   graph::AdjacencyList<std::int32_t>>
   build(MPI_Comm comm, const mesh::Topology& topology,
         std::shared_ptr<const ElementDofLayout> element_dof_layout,
         const bool transpose_blocks = true);
@@ -64,6 +64,7 @@ public:
   ///    XYZXYZ ordering to XXYYZZ ordering. This should be true for
   ///    VectorElements and TensorElements, and false for MixedElements. For
   ///    other elements, it's value should have no effect.
+  /// @return The index map and local to global DOF data for the DOF map.
   static std::pair<std::shared_ptr<common::IndexMap>,
                    graph::AdjacencyList<std::int32_t>>
   build(MPI_Comm comm, const mesh::Topology& topology,
