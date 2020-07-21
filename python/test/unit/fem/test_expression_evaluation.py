@@ -74,11 +74,11 @@ def test_rank0():
                 b[dofmap[i * 6 + j]] = b_local[j]
 
     # Prepare mesh and dofmap data
-    pos = mesh.geometry.dofmap.offsets()
-    x_dofs = mesh.geometry.dofmap.array()
+    pos = mesh.geometry.dofmap.offsets
+    x_dofs = mesh.geometry.dofmap.array
     x = mesh.geometry.x
-    coeff_dofmap = P2.dofmap.list.array()
-    dofmap = vP1.dofmap.list.array()
+    coeff_dofmap = P2.dofmap.list.array
+    dofmap = vP1.dofmap.list.array
 
     # Data structure for the result
     b = dolfinx.Function(vP1)
