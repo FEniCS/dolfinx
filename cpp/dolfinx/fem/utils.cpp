@@ -273,9 +273,18 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     }
   }
 
-  auto [index_map, dofmap] = DofMapBuilder::build(
-      comm, topology, element_dof_layout, ufc_dofmap.submap_block_size != 1);
-  return DofMap(element_dof_layout, index_map, std::move(dofmap));
+  if (ufc_dofmap.submap_block_size == 1)
+  {
+    auto [index_map, dofmap]
+        = DofMapBuilder::build(comm, topology, *element_dof_layout, 1);
+    return DofMap(element_dof_layout, index_map, std::move(dofmap));
+  }
+  else
+  {
+    auto [index_map, dofmap] = DofMapBuilder::build(
+        comm, topology, *element_dof_layout, element_dof_layout->block_size());
+    return DofMap(element_dof_layout, index_map, std::move(dofmap));
+  }
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement

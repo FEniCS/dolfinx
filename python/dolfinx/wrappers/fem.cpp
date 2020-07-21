@@ -167,15 +167,6 @@ void fem(py::module& m)
       "Create CoordinateElement from a pointer to ufc_coordinate_map.");
   m.def(
       "build_dofmap",
-      [](const dolfinx::mesh::Mesh& mesh,
-         std::shared_ptr<const dolfinx::fem::ElementDofLayout>
-             element_dof_layout) {
-        return dolfinx::fem::DofMapBuilder::build(
-            mesh.mpi_comm(), mesh.topology(), element_dof_layout);
-      },
-      "Build and dofmap on a mesh.");
-  m.def(
-      "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout, int bs) {
         // See https://github.com/pybind/pybind11/issues/1138 on why we need
