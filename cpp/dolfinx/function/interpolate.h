@@ -206,7 +206,7 @@ void interpolate(
       for (std::size_t cell = 0; cell < num_cells; ++cell)
       {
         const auto cell_dofs = sub_dofmap.cell_dofs(cell);
-        const int scalar_dofs = cell_dofs.rows() / element_block_size;
+        const std::size_t scalar_dofs = cell_dofs.rows() / element_block_size;
         for (std::size_t dof = 0; dof < scalar_dofs; ++dof)
           for (int b = 0; b < element_block_size; ++b)
             mixed_values(cell_dofs[element_block_size * dof + b])
