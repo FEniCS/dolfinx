@@ -36,6 +36,15 @@ class DofMapBuilder
 
 public:
   /// Build dofmap
+  /// @param[in] comm MPI communicator
+  /// @param[in] topology The mesh topology
+  /// @param[in] element_dof_layout The element dof layout for the function
+  /// space
+  /// @param[in] transpose_blocks Indicates whether or not the DOF blocks should
+  /// be transposed from
+  ///    XYZXYZ ordering to XXYYZZ ordering. This should be true for
+  ///    VectorElements and TensorElements, and false for MixedElements. For
+  ///    other elements, it's value should have no effect.
   static std::tuple<std::shared_ptr<const ElementDofLayout>,
                     std::shared_ptr<const common::IndexMap>,
                     graph::AdjacencyList<std::int32_t>>
@@ -44,6 +53,17 @@ public:
         const bool transpose_blocks = true);
 
   /// Build dofmap
+  /// Build dofmap
+  /// @param[in] comm MPI communicator
+  /// @param[in] topology The mesh topology
+  /// @param[in] element_dof_layout The element dof layout for the function
+  /// space
+  /// @param[in] block_size The number of DOF colocated at each point
+  /// @param[in] transpose_blocks Indicates whether or not the DOF blocks should
+  /// be transposed from
+  ///    XYZXYZ ordering to XXYYZZ ordering. This should be true for
+  ///    VectorElements and TensorElements, and false for MixedElements. For
+  ///    other elements, it's value should have no effect.
   static std::pair<std::shared_ptr<common::IndexMap>,
                    graph::AdjacencyList<std::int32_t>>
   build(MPI_Comm comm, const mesh::Topology& topology,
