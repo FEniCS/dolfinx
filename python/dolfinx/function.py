@@ -66,8 +66,6 @@ class Expression:
         self._cpp_object = cpp.function.Expression()
 
         # Setup data (evaluation points, coefficients, constants, mesh, value_shape).
-        if x.shape[1] != 3:
-            raise ValueError("Point(s) for Expression evaluation must have x.shape[1] == 3.")
         self._cpp_object.x = x
 
         # Setup cpp.Expression with JIT-ed tabulate expression function and tabulation points.

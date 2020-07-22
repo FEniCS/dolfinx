@@ -213,7 +213,7 @@ public:
   /// Set evaluation points
   /// @param[in] x Evaluation points
   void set_x(
-      const Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      const Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
           x)
   {
     _x = x;
@@ -251,7 +251,7 @@ private:
   std::function<void(T*, const T*, const T*, const double*)> _fn;
 
   // Evaluation points on reference cell
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _x;
 
   // The mesh.
   std::shared_ptr<const mesh::Mesh> _mesh;
