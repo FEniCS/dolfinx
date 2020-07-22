@@ -138,9 +138,8 @@ void function(py::module& m)
       .def("eval", &dolfinx::function::Expression<PetscScalar>::eval)
       .def_property("mesh", &dolfinx::function::Expression<PetscScalar>::mesh,
                     &dolfinx::function::Expression<PetscScalar>::set_mesh)
-      .def_property("num_points",
-                    &dolfinx::function::Expression<PetscScalar>::num_points,
-                    nullptr)
+      .def_property_readonly("num_points",
+                    &dolfinx::function::Expression<PetscScalar>::num_points)
       .def_property("value_size",
                     &dolfinx::function::Expression<PetscScalar>::value_size,
                     &dolfinx::function::Expression<PetscScalar>::set_value_size)

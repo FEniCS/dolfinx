@@ -26,17 +26,17 @@ class Expression;
 /// @param[in] e The expression to evaluate
 /// @param[in] active_cells The cells on which to evaluate the expression
 template <typename T>
-void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> values,
+void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> values,
           const function::Expression<T>& e,
           const std::vector<std::int32_t>& active_cells);
 
 template <typename T>
-void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> values,
+void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> values,
           const function::Expression<T>& e,
           const std::vector<std::int32_t>& active_cells)
 {
   // Extract data from Expression
-  const mesh::Mesh& mesh = *(e.mesh());
+  auto mesh = e.mesh();
   assert(mesh);
 
   // Prepare coefficients
@@ -51,15 +51,15 @@ void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> values,
   const auto& fn = e.get_tabulate_expression();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh->geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+      = mesh->geometry().x();
 
   // Create data structures used in evaluation
-  const int gdim = mesh.geometry().dim();
+  const int gdim = mesh->geometry().dim();
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
@@ -85,7 +85,7 @@ void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> values,
        coordinate_dofs.data());
 
     for (Eigen::Index k = 0; k < size; ++k)
-      values[i * size + k] = values_e[k];
+      values(i, k) = values_e[k];
   }
 }
 

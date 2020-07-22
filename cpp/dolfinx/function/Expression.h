@@ -46,8 +46,7 @@ public:
       const std::vector<
           std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
           constants)
-      : _coefficients(coefficients), _constants(constants), _fn(nullptr),
-        _mesh(nullptr)
+      : _coefficients(coefficients), _constants(constants)
   {
     // Do nothing
   }
@@ -75,7 +74,7 @@ public:
   /// @param[in,out] values To store the result. Caller responsible for correct
   /// sizing.
   void eval(const std::vector<std::int32_t>& active_cells,
-            Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> values)
+            Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> values) const
   {
     function::eval(values, *this, active_cells);
   }

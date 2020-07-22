@@ -85,7 +85,7 @@ class Expression:
         self._cpp_object.value_size = ufl.product(self.ufl_expression.ufl_shape)
 
     def eval(self, cells: np.ndarray, u=None) -> np.ndarray:
-        """Evaluate Expression at points in cells where cell[i] is the index of
+        """Evaluate Expression at points in cells where cell[i] is the local index of
         the cell."""
         cells = np.asarray(cells, dtype=np.int32)
         assert cells.ndim == 1
@@ -94,17 +94,15 @@ class Expression:
         # Allocate memory for result if u was not provided
         if u is None:
             if common.has_petsc_complex:
-                u = np.empty((num_cells * self.num_points * self.value_size), dtype=np.complex128)
+                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.complex128)
             else:
-                u = np.empty((num_cells * self.num_points * self.value_size), dtype=np.float64)
+                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.float64)
             self._cpp_object.eval(cells, u)
-            # Copy-free reshape
-            u.shape = (num_cells, self.num_points * self.value_size)
         else:
-            # Check the array is big enough to hold the result, user is
-            # responsible for shape and ordering
-            assert u.size == num_cells * self.num_points * self.value_size
-            self._cpp_object.eval(cells, u.flatten())
+            assert u.ndim == 2
+            assert u.shape[0] == num_cells
+            assert u.shape[1] == self.num_points * self.value_size
+            self._cpp_object.eval(cells, u)
 
         return u
 
