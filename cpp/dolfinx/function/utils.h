@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Expression.h"
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Mesh.h>
 
 namespace dolfinx {
