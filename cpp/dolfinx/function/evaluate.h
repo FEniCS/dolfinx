@@ -75,8 +75,12 @@ void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowM
     std::int32_t c = active_cells[i];
 
     auto x_dofs = x_dofmap.links(c);
-    for (int j = 0; j < num_dofs_g; ++j)
-      coordinate_dofs.row(j) = x_g.row(x_dofs[j]).head(gdim);
+    for (Eigen::Index j = 0; j < num_dofs_g; ++j)
+    {
+      const auto x_dof = x_dofs[j];
+      for (Eigen::Index k = 0; k < gdim; ++k)
+        coordinate_dofs(j, k) = x_g(x_dof, k);
+    }
 
     auto coeff_cell = coeffs.row(c);
 
@@ -84,8 +88,8 @@ void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowM
     fn(values_e.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data());
 
-    for (Eigen::Index k = 0; k < size; ++k)
-      values(i, k) = values_e[k];
+    for (Eigen::Index j = 0; j < size; ++j)
+      values(i, j) = values_e[j];
   }
 }
 
