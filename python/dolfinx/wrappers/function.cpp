@@ -138,6 +138,14 @@ void function(py::module& m)
       .def("eval", &dolfinx::function::Expression<PetscScalar>::eval)
       .def_property("mesh", &dolfinx::function::Expression<PetscScalar>::mesh,
                     &dolfinx::function::Expression<PetscScalar>::set_mesh)
+      .def_property("num_points",
+                    &dolfinx::function::Expression<PetscScalar>::num_points,
+                    nullptr)
+      .def_property("value_size",
+                    &dolfinx::function::Expression<PetscScalar>::value_size,
+                    &dolfinx::function::Expression<PetscScalar>::set_value_size)
+      .def_property("x", &dolfinx::function::Expression<PetscScalar>::x,
+                    &dolfinx::function::Expression<PetscScalar>::set_x)
       .def("set_coefficient",
            [](dolfinx::function::Expression<PetscScalar>& self, std::size_t i,
               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>

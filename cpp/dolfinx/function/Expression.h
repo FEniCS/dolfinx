@@ -32,20 +32,22 @@ template <typename T>
 class Constant;
 
 /// Represents a mathematical expression evaluated at a pre-defined
-/// set of points on the reference cell. Holds fem::FormCoefficients. 
+/// set of points on the reference cell. Holds fem::FormCoefficients.
 /// This class closely follows the concept of a UFC Expression.
 
 template <typename T>
 class Expression
 {
 public:
-  /// Create Expression. UFC Expression callable and mesh should be set later by caller.
+  /// Create Expression. UFC Expression callable and mesh should be set later by
+  /// caller.
   Expression(
       const fem::FormCoefficients<T>& coefficients,
       const std::vector<
           std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
           constants)
-      : _coefficients(coefficients), _constants(constants), _fn(nullptr), _mesh(nullptr)
+      : _coefficients(coefficients), _constants(constants), _fn(nullptr),
+        _mesh(nullptr)
   {
     // Do nothing
   }
@@ -70,9 +72,10 @@ public:
 
   /// Evaluate the expression on cells
   /// @param[in] active_cells Cells on which to evaluate the Expression
-  /// @param[in,out] values To store the result. Caller responsible for correct sizing.
-  void eval(const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& active_cells,
-                const Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values)
+  /// @param[in,out] values To store the result. Caller responsible for correct
+  /// sizing.
+  void eval(const std::vector<std::int32_t>& active_cells,
+            Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> values)
   {
     function::eval(values, *this, active_cells);
   }
@@ -83,6 +86,14 @@ public:
       const std::function<void(T*, const T*, const T*, const double*)> fn)
   {
     _fn = fn;
+  }
+
+  /// Register the function for tabulate_expression.
+  /// @param[in] fn Function to tabulate expression.
+  const std::function<void(T*, const T*, const T*, const double*)>&
+  get_tabulate_expression() const
+  {
+    return _fn;
   }
 
   /// Set coefficient with given number (shared pointer version)
@@ -159,6 +170,17 @@ public:
     }
   }
 
+  /// Access constants
+  /// @return Vector of attached constants with their names. Names are
+  ///   used to set constants in user's c++ code. Index in the vector is
+  ///   the position of the constant in the original (nonsimplified) form.
+  const std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
+  constants() const
+  {
+    return _constants;
+  }
+
   /// Check if all constants associated with the expression have been set
   /// @return True if all Form constants have been set
   bool all_constants_set() const
@@ -188,6 +210,34 @@ public:
   /// @return The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
 
+  /// Set evaluation points
+  /// @param[in] x Evaluation points
+  void set_x(
+      const Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+          x)
+  {
+    _x = x;
+  }
+
+  /// Get evaluation points
+  /// @return Evaluation points
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x() const
+  {
+    return _x;
+  }
+
+  /// Set value size
+  /// [in] value_size
+  void set_value_size(std::size_t value_size) { _value_size = value_size; }
+
+  /// Get value size
+  /// @return value_size
+  const std::size_t value_size() const { return _value_size; }
+
+  /// Get number of points
+  /// @return number of points
+  const Eigen::Index num_points() const { return _x.rows(); }
+
 private:
   // Coefficients associated with the Expression
   fem::FormCoefficients<T> _coefficients;
@@ -200,8 +250,14 @@ private:
   // Function to evaluate the Expression
   std::function<void(T*, const T*, const T*, const double*)> _fn;
 
-  // The mesh. Not necessary if the Expression has no Coefficients.
+  // Evaluation points on reference cell
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
+
+  // The mesh.
   std::shared_ptr<const mesh::Mesh> _mesh;
+
+  // Evaluation size
+  std::size_t _value_size;
 };
 } // namespace function
 } // namespace dolfinx

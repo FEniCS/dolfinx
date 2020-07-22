@@ -43,64 +43,72 @@ class Constant(ufl.Constant):
 
 
 class Expression:
-    """An Expression.
-
-    Parameters
-    ----------
-    expression: UFL expression
-    x: array of points on the reference element
-    name: name
-
-    Example
-    -------
-
-    >>> 
-    """
     def __init__(self,
-                 expression: ufl.core.expr.Expr,
+                 ufl_expression: ufl.core.expr.Expr,
                  x: np.ndarray,
                  name: typing.Optional[str] = None):
-        self._name = name
-        self._x = np.asarray(x, dtype=np.float64)
-        assert x.ndim < 3
-        self.num_points = self._x.shape[0] if self._x.ndim == 2 else 1
-        if x.shape[1] != 3:
-            raise ValueError("Coordinate(s) for Expression evaluation must have length 3.")
+        """An expression.
 
+        Parameters
+        ----------
+        ufl_expression: UFL expression
+        x: array of points on the reference element
+        name: name
+        """
+        self._name = name
+
+        assert x.ndim < 3
         # Compile UFL expression with JIT
-        ufc_expression = jit.ffcx_jit((expression, x))
-        self._ufl_expression = expression
+        ufc_expression = jit.ffcx_jit((ufl_expression, x))
+        self._ufl_expression = ufl_expression
         self._ufc_expression = ufc_expression
 
-        ffi = cffi.FFI()
         self._cpp_object = cpp.function.Expression()
 
-        # Setup cpp.Expression with JIT-ed tabulate expression function.
+        # Setup data (evaluation points, coefficients, constants, mesh, value_shape).
+        if x.shape[1] != 3:
+            raise ValueError("Point(s) for Expression evaluation must have x.shape[1] == 3.")
+        self._cpp_object.x = x
+
+        # Setup cpp.Expression with JIT-ed tabulate expression function and tabulation points.
+        ffi = cffi.FFI()
         self._cpp_object.set_tabulate_expression(ffi.cast("intptr_t", ufc_expression.tabulate_expression))
 
-        # and setup data (coefficients, constants, mesh).
-        coefficients = ufl.algorithms.extract_coefficients(expression)
+        coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
         for i, coefficient in enumerate(coefficients):
             self._cpp_object.set_coefficient(i, coefficient._cpp_object)
 
-        constants = ufl.algorithms.analysis.extract_constants(expression)
+        constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
         self._cpp_object.set_constants([constant._cpp_object for constant in constants])
 
-        self._cpp_object.mesh = expression.ufl_domain().ufl_cargo()
+        self._cpp_object.mesh = ufl_expression.ufl_domain().ufl_cargo()
+
+        # NOTE: Could also get from ufc_expression object.
+        self._cpp_object.value_size = ufl.product(self.ufl_expression.ufl_shape)
 
     def eval(self, cells: np.ndarray, u=None) -> np.ndarray:
+        """Evaluate Expression at points in cells where cell[i] is the index of
+        the cell."""
         cells = np.asarray(cells, dtype=np.int32)
         assert cells.ndim == 1
+        num_cells = cells.shape[0]
 
         # Allocate memory for result if u was not provided
         if u is None:
-            value_size = ufl.product(self.ufl_expression.ufl_shape)
             if common.has_petsc_complex:
-                u = np.empty((self.num_points, value_size), dtype=np.complex128)
+                u = np.empty((num_cells * self.num_points * self.value_size), dtype=np.complex128)
             else:
-                u = np.empty((self.num_points, value_size), dtype=np.float64)
+                u = np.empty((num_cells * self.num_points * self.value_size), dtype=np.float64)
+            self._cpp_object.eval(cells, u)
+            # Copy-free reshape
+            u.shape = (num_cells, self.num_points * self.value_size)
+        else:
+            # Check the array is big enough to hold the result, user is
+            # responsible for shape and ordering
+            assert u.size == num_cells * self.num_points * self.value_size
+            self._cpp_object.eval(cells, u.flatten())
 
-        self._cpp_object.eval(cells, u)
+        return u
 
     @property
     def ufl_expression(self):
@@ -111,8 +119,16 @@ class Expression:
         return self._name
 
     @property
-    def points(self):
-        return self._x
+    def x(self):
+        return self._cpp_object.x
+
+    @property
+    def num_points(self):
+        return self._cpp_object.num_points
+
+    @property
+    def value_size(self):
+        return self._cpp_object.value_size
 
 
 class Function(ufl.Coefficient):
