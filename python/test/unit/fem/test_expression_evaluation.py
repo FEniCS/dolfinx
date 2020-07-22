@@ -108,7 +108,7 @@ def test_simple_evaluation():
     evaluating the spatial coordinates as an Expression using UFL/FFCX and
     passing the result to a numpy function that calculates the exact gradient.
     """
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 1, 1)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
     P2 = dolfinx.FunctionSpace(mesh, ("P", 2))
 
     f = dolfinx.Function(P2)
@@ -117,11 +117,7 @@ def test_simple_evaluation():
         return x[0] ** 2 + 2.0 * x[1] ** 2
 
     def exact_grad_expr(x):
-        values = np.empty((2, x.shape[1]))
-        values[0] = 2.0 * x[0]
-        values[1] = 4.0 * x[1]
-
-        return values
+        return np.array([2 * x[0], 4 * x[1]])
 
     f.interpolate(exact_expr)
 
@@ -131,7 +127,9 @@ def test_simple_evaluation():
     assert grad_expr.num_points == 3
     assert grad_expr.value_size == 2
 
+    # NOTE: Cell numbering is process local.
     cells = np.array([0, 1], dtype=np.int32)
+    num_cells = cells.shape[0]
     grad_expr_evaluated = grad_expr.eval(cells)
 
     # Evaluate points in global space
@@ -142,15 +140,17 @@ def test_simple_evaluation():
     x_evaluated = x_expr.eval(cells)
 
     # NOTE: Will need to be adjusted when new XYZXYZ ordering is introduced?
-    x_global = np.zeros((2, cells.shape[0] * x_expr.num_points), dtype=PETSc.ScalarType)
-    # Have to reshape to use standard expression code
-    x_global[0, :] = x_evaluated[:, 0:3].flatten()
-    x_global[1, :] = x_evaluated[:, 3:].flatten()
+    x_evaluated_repack = np.zeros((2, cells.shape[0] * x_expr.num_points), dtype=PETSc.ScalarType)
+    # Have to repack to use standard expression code
+    x_evaluated_repack[0, :] = x_evaluated[:, 0:x_expr.num_points].flatten()
+    x_evaluated_repack[1, :] = x_evaluated[:, x_expr.num_points:].flatten()
     # Evaluate exact gradient using global points
-    grad_expr_exact = exact_grad_expr(x_evaluated)
-    grad_expr_exact_reshape = np.empty_like(grad_expr_exact)
-    # And reshape back to match output of Expression.
-    grad_expr_exact_reshape[0, :] = grad_expr_exact[:, 0:3].flatten()
-    grad_expr_exact_reshape[1, :] = grad_expr_exact[:, 3:].flatten()
+    grad_expr_exact = exact_grad_expr(x_evaluated_repack)
+    grad_expr_exact_repack = np.zeros_like(grad_expr_evaluated)
+    # Repack for comparison with Expression result
+    grad_expr_exact_repack[:, 0:grad_expr.num_points] = \
+        grad_expr_exact[0, :].reshape(num_cells, grad_expr.num_points)
+    grad_expr_exact_repack[:, grad_expr.num_points:] = \
+        grad_expr_exact[1, :].reshape(num_cells, grad_expr.num_points)
 
-    assert(np.allclose(grad_expr_evaluated, grad_expr_exact_reshape))
+    assert(np.allclose(grad_expr_evaluated, grad_expr_exact_repack))
