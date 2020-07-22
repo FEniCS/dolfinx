@@ -142,7 +142,7 @@ def test_simple_evaluation():
     x_evaluated = x_expr.eval(cells)
 
     # NOTE: Will need to be adjusted when new XYZXYZ ordering is introduced?
-    x_global = np.zeros((2, cells.shape[0] * x_expr.num_points))
+    x_global = np.zeros((2, cells.shape[0] * x_expr.num_points), dtype=PETSc.ScalarType)
     # Have to reshape to use standard expression code
     x_global[0, :] = x_evaluated[:, 0:3].flatten()
     x_global[1, :] = x_evaluated[:, 3:].flatten()
@@ -153,6 +153,6 @@ def test_simple_evaluation():
     grad_expr_exact_reshape[0, :] = grad_expr_exact[:, 0:3].flatten()
     grad_expr_exact_reshape[1, :] = grad_expr_exact[:, 3:].flatten()
 
-    expected_result = np.array([[0, 2, 2, 0, 0, 4], [0, 0, 2, 0, 4, 4]], dtype=np.float64)
+    expected_result = np.array([[0, 2, 2, 0, 0, 4], [0, 0, 2, 0, 4, 4]], dtype=PETSc.ScalarType)
     assert(np.allclose(grad_expr_evaluated, expected_result))
     assert(np.allclose(grad_expr_evaluated, grad_expr_exact_reshape))
