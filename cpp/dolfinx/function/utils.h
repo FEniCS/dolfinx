@@ -9,6 +9,7 @@
 #include "Expression.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <functional>
 
 namespace dolfinx {
 
@@ -37,7 +38,7 @@ pack_coefficients(const function::Expression<T>& e)
   const fem::FormCoefficients<T>& coefficients = e.coefficients();
   const std::vector<int>& offsets = coefficients.offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
-  std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>> v;
+  std::vector<std::reference_wrapper<const Eigen::Matrix<T, Eigen::Dynamic, 1>>> v;
   for (int i = 0; i < coefficients.size(); ++i)
   {
     dofmaps[i] = coefficients.get(i)->function_space()->dofmap().get();
@@ -62,7 +63,7 @@ pack_coefficients(const function::Expression<T>& e)
       for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
       {
         auto dofs = dofmaps[coeff]->cell_dofs(cell);
-        const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& _v
+        const Eigen::Matrix<T, Eigen::Dynamic, 1>& _v
             = v[coeff];
         for (Eigen::Index k = 0; k < dofs.size(); ++k)
           c(cell, k + offsets[coeff]) = _v[dofs[k]];
