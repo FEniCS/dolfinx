@@ -25,11 +25,13 @@ def random_point_in_cell(cell_type):
         return (random.random(), 0, 0)
     if cell_type == CellType.triangle:
         x, y = random.random(), random.random()
+        # If point is outside cell, move it back inside
         if x + y > 1:
             x, y = 1 - x, 1 - y
         return (x, y, 0)
     elif cell_type == CellType.tetrahedron:
         x, y, z = random.random(), random.random(), random.random()
+        # If point is outside cell, move it back inside
         if x + y > 1:
             x, y = 1 - x, 1 - y
         if y + z > 1:
