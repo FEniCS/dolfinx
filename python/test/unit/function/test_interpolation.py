@@ -10,9 +10,11 @@ import random
 import numpy as np
 import pytest
 from mpi4py import MPI
+import ufl
 
-from dolfinx import Function, FunctionSpace, Mesh, VectorFunctionSpace
+from dolfinx import Function, FunctionSpace, VectorFunctionSpace, cpp
 from dolfinx.cpp.mesh import CellType
+from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 
 parametrize_cell_types = pytest.mark.parametrize(
@@ -68,7 +70,9 @@ def one_cell_mesh(cell_type):
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
-    mesh = Mesh(MPI.COMM_WORLD, cell_type, ordered_points, cells, [])
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
+
     mesh.topology.create_connectivity_all()
     return mesh
 
@@ -80,7 +84,6 @@ def test_scalar_interpolation(cell_type, order):
     """Test that interpolation is correct in a FunctionSpace"""
     mesh = one_cell_mesh(cell_type)
     tdim = mesh.topology.dim
-
     V = FunctionSpace(mesh, ("Lagrange", order))
     v = Function(V)
 
@@ -93,13 +96,11 @@ def test_scalar_interpolation(cell_type, order):
     else:
         def f(x):
             return x[1] ** order + 2 * x[0] - 3 * x[2]
-    v.interpolate(f)
 
+    v.interpolate(f)
     points = [random_point_in_cell(cell_type) for count in range(5)]
     cells = [0 for count in range(5)]
-
     values = v.eval(points, cells)
-
     for p, v in zip(points, values):
         assert np.allclose(v, f(p))
 
@@ -124,12 +125,10 @@ def test_vector_interpolation(cell_type, order):
     else:
         def f(x):
             return (x[1], 2 * x[0] ** order, 3 * x[2])
-    v.interpolate(f)
 
+    v.interpolate(f)
     points = [random_point_in_cell(cell_type) for count in range(5)]
     cells = [0 for count in range(5)]
-
     values = v.eval(points, cells)
-
     for p, v in zip(points, values):
         assert np.allclose(v, f(p))
