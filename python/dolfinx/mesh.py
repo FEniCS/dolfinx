@@ -111,14 +111,14 @@ def create_mesh(comm, cells, x, domain, ghost_mode=cpp.mesh.GhostMode.shared_fac
     return mesh
 
 
-def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostMode.none):
-    """Create a mesh from topology and geometry data
+# def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostMode.none):
+#     """Create a mesh from topology and geometry data
 
-    Note: this function is deprecated in favour of mesh.create
-    """
-    cell = ufl.Cell(cpp.mesh.to_string(cell_type), geometric_dimension=x.shape[1])
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
-    return create_mesh(comm, cells, x, domain, ghost_mode)
+#     Note: this function is deprecated in favour of mesh.create
+#     """
+#     cell = ufl.Cell(cpp.mesh.to_string(cell_type), geometric_dimension=x.shape[1])
+#     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
+#     return create_mesh(comm, cells, x, domain, ghost_mode)
 
 
 def MeshTags(mesh, dim, indices, values):

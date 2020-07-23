@@ -11,7 +11,6 @@ from mpi4py import MPI
 
 from dolfinx import Function, FunctionSpace
 from dolfinx.cpp.mesh import CellType
-from dolfinx.mesh import Mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 
 

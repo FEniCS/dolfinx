@@ -13,7 +13,7 @@ from mpi4py import MPI
 
 import dolfinx
 import FIAT
-from dolfinx import (BoxMesh, Mesh, RectangleMesh, UnitCubeMesh,
+from dolfinx import (BoxMesh, RectangleMesh, UnitCubeMesh,
                      UnitIntervalMesh, UnitSquareMesh, cpp)
 from dolfinx.cpp.mesh import CellType, is_simplex
 from dolfinx.fem import assemble_scalar
