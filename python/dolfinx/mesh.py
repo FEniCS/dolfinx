@@ -104,6 +104,14 @@ def create_mesh(comm, cells, x, domain, ghost_mode=cpp.mesh.GhostMode.shared_fac
     return mesh
 
 
+_meshtags_types = {
+    numpy.int8: cpp.mesh.MeshTags_int8,
+    numpy.int32: cpp.mesh.MeshTags_int32,
+    numpy.int64: cpp.mesh.MeshTags_int64,
+    numpy.double: cpp.mesh.MeshTags_double
+}
+
+
 class MeshTags:
     def __init__(self, *args):
         """This initializer is not intended for the user interface. Use create_mesh_tags"""
