@@ -9,11 +9,10 @@ from random import shuffle
 
 import numpy as np
 import pytest
-from mpi4py import MPI
-
 import ufl
 from dolfinx import FunctionSpace, fem
 from dolfinx.mesh import create_mesh
+from mpi4py import MPI
 
 xfail = pytest.mark.xfail(strict=True)
 

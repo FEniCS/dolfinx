@@ -10,12 +10,12 @@ from random import shuffle
 
 import numpy as np
 import pytest
-from mpi4py import MPI
-
-from dolfinx import Function, FunctionSpace, Mesh, VectorFunctionSpace, fem
+import ufl
+from dolfinx import Function, FunctionSpace, VectorFunctionSpace, cpp, fem
 from dolfinx.cpp.mesh import CellType
-from dolfinx.mesh import MeshTags
+from dolfinx.mesh import MeshTags, create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 from ufl import FacetNormal, TestFunction, TrialFunction, ds, dS, inner
 
 parametrize_cell_types = pytest.mark.parametrize(
@@ -55,7 +55,9 @@ def unit_cell(cell_type, random_order=True):
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
-    mesh = Mesh(MPI.COMM_WORLD, cell_type, ordered_points, cells, [])
+
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
     mesh.topology.create_connectivity_all()
     return mesh
 
@@ -114,15 +116,17 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
-    mesh = Mesh(MPI.COMM_WORLD, cell_type, ordered_points, ordered_cells, [])
+
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
+    mesh = create_mesh(MPI.COMM_WORLD, ordered_cells, ordered_points, domain)
     mesh.topology.create_connectivity_all()
     if return_order:
         return mesh, order
     return mesh
 
 
-@skip_in_parallel
-@parametrize_cell_types
+@ skip_in_parallel
+@ parametrize_cell_types
 def test_facet_integral(cell_type):
     """Test that the integral of a function over a facet is correct"""
     for count in range(5):
@@ -161,8 +165,8 @@ def test_facet_integral(cell_type):
             assert np.isclose(result, out[0])
 
 
-@skip_in_parallel
-@parametrize_cell_types
+@ skip_in_parallel
+@ parametrize_cell_types
 def test_facet_normals(cell_type):
     """Test that FacetNormal is outward facing"""
     for count in range(5):
@@ -222,16 +226,15 @@ def test_facet_normals(cell_type):
             assert ones == 1
 
 
-@skip_in_parallel
-@pytest.mark.parametrize('space_type', ["CG", "DG"])
-@parametrize_cell_types
+@ skip_in_parallel
+@ pytest.mark.parametrize('space_type', ["CG", "DG"])
+@ parametrize_cell_types
 def test_plus_minus(cell_type, space_type):
     """Test that ('+') and ('-') give the same value for continuous functions"""
     results = []
     for count in range(3):
         for agree in [True, False]:
             mesh = two_unit_cells(cell_type, agree)
-
             V = FunctionSpace(mesh, (space_type, 1))
             v = Function(V)
             v.interpolate(lambda x: x[0] - 2 * x[1])
@@ -243,9 +246,9 @@ def test_plus_minus(cell_type, space_type):
         assert np.isclose(i, j)
 
 
-@skip_in_parallel
-@pytest.mark.parametrize('pm', ["+", "-"])
-@parametrize_cell_types
+@ skip_in_parallel
+@ pytest.mark.parametrize('pm', ["+", "-"])
+@ parametrize_cell_types
 def test_plus_minus_simple_vector(cell_type, pm):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
@@ -293,10 +296,10 @@ def test_plus_minus_simple_vector(cell_type, pm):
                 assert np.isclose(results[0][dof0], result[dof1])
 
 
-@skip_in_parallel
-@pytest.mark.parametrize('pm1', ["+", "-"])
-@pytest.mark.parametrize('pm2', ["+", "-"])
-@parametrize_cell_types
+@ skip_in_parallel
+@ pytest.mark.parametrize('pm1', ["+", "-"])
+@ pytest.mark.parametrize('pm2', ["+", "-"])
+@ parametrize_cell_types
 def test_plus_minus_vector(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
@@ -347,10 +350,10 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
                 assert np.isclose(results[0][dof0], result[dof1])
 
 
-@skip_in_parallel
-@pytest.mark.parametrize('pm1', ["+", "-"])
-@pytest.mark.parametrize('pm2', ["+", "-"])
-@parametrize_cell_types
+@ skip_in_parallel
+@ pytest.mark.parametrize('pm1', ["+", "-"])
+@ pytest.mark.parametrize('pm2', ["+", "-"])
+@ parametrize_cell_types
 def test_plus_minus_matrix(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []

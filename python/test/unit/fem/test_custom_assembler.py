@@ -14,17 +14,16 @@ import pathlib
 import time
 
 import cffi
+import dolfinx
 import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
 import petsc4py.lib
 import pytest
+import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
-
-import dolfinx
-import ufl
 from ufl import dx, inner
 
 # Get details of PETSc install

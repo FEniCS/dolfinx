@@ -11,16 +11,16 @@ import numpy as np
 import pytest
 import scipy.integrate
 import sympy as sp
+import ufl
+from dolfinx import Function, FunctionSpace, cpp
+from dolfinx.cpp.io import perm_gmsh, perm_vtk
+from dolfinx.cpp.mesh import CellType
+from dolfinx.fem import assemble_scalar
+from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
+from dolfinx.mesh import create_mesh
+from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from sympy.vector import CoordSys3D, matrix_to_vector
-
-from dolfinx import Function, FunctionSpace
-from dolfinx.cpp.io import perm_vtk
-from dolfinx.cpp.mesh import CellType, GhostMode
-from dolfinx.fem import assemble_scalar
-from dolfinx.io import XDMFFile
-from dolfinx.mesh import Mesh
-from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import dx
 
 
@@ -104,7 +104,10 @@ def test_second_order_tri():
             cells = np.array([[0, 1, 3, 4, 8, 7],
                               [1, 2, 3, 5, 6, 8]])
             cells = cells[:, perm_vtk(CellType.triangle, cells.shape[1])]
-            mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], degree=2)
+
+            cell = ufl.Cell("triangle", geometric_dimension=points.shape[1])
+            domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
+            mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
             def e2(x):
                 return x[2] + x[0] * x[1]
@@ -122,7 +125,7 @@ def test_second_order_tri():
 
 
 @skip_in_parallel
-def xtest_third_order_tri():
+def test_third_order_tri():
     #  *---*---*---*   3--11--10--2
     #  | \         |   | \        |
     #  *   *   *   *   8   7  15  13
@@ -144,13 +147,15 @@ def xtest_third_order_tri():
             cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 14],
                               [1, 2, 3, 12, 13, 10, 11, 7, 6, 15]])
             cells = cells[:, perm_vtk(CellType.triangle, cells.shape[1])]
-            mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], degree=3)
+
+            cell = ufl.Cell("triangle", geometric_dimension=points.shape[1])
+            domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 3))
+            mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
             def e2(x):
                 return x[2] + x[0] * x[1]
-            degree = mesh.geometry.dofmap_layout().degree()
             # Interpolate function
-            V = FunctionSpace(mesh, ("CG", degree))
+            V = FunctionSpace(mesh, ("Lagrange", 3))
             u = Function(V)
             u.interpolate(e2)
 
@@ -163,7 +168,7 @@ def xtest_third_order_tri():
 
 
 @skip_in_parallel
-def xtest_fourth_order_tri():
+def test_fourth_order_tri():
     L = 1
     #  *--*--*--*--*   3-21-20-19--2
     #  | \         |   | \         |
@@ -192,13 +197,15 @@ def xtest_fourth_order_tri():
             cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                               [1, 2, 3, 16, 17, 18, 19, 20, 21, 9, 8, 7, 22, 23, 24]])
             cells = cells[:, perm_vtk(CellType.triangle, cells.shape[1])]
-            mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], degree=4)
+            cell = ufl.Cell("triangle", geometric_dimension=points.shape[1])
+            domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 4))
+            mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
             def e2(x):
                 return x[2] + x[0] * x[1]
-            degree = mesh.geometry.degree()
+
             # Interpolate function
-            V = FunctionSpace(mesh, ("CG", degree))
+            V = FunctionSpace(mesh, ("Lagrange", 4))
             u = Function(V)
             u.interpolate(e2)
 
@@ -243,7 +250,7 @@ def scipy_one_cell(points, nodes):
 # FIXME: Higher order tests are too slow, need to find a better test
 @skip_in_parallel
 # @pytest.mark.parametrize("order", range(1, 6))
-@pytest.mark.parametrize("order", range(1, 2))
+@pytest.mark.parametrize("order", range(1, 6))
 def test_nth_order_triangle(order):
     num_nodes = (order + 1) * (order + 2) / 2
     cells = np.array([range(int(num_nodes))])
@@ -346,7 +353,9 @@ def test_nth_order_triangle(order):
                            [0.37500, 0.25000, 0.00195], [0.37500, 0.37500, -0.00195],
                            [0.25000, 0.37500, -0.00195]])
 
-    mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [])
+    cell = ufl.Cell("triangle", geometric_dimension=points.shape[1])
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, order))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     # Find nodes corresponding to y axis
     nodes = []
@@ -402,7 +411,9 @@ def test_second_order_quad(L, H, Z):
                        [2 * L, 0, 0], [2 * L, H, Z]])
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8]])
     cells = cells[:, perm_vtk(CellType.quadrilateral, cells.shape[1])]
-    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells, [], degree=2)
+    cell = ufl.Cell("quadrilateral", geometric_dimension=points.shape[1])
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     def e2(x):
         return x[2] + x[0] * x[1]
@@ -424,7 +435,7 @@ def test_second_order_quad(L, H, Z):
 @pytest.mark.parametrize('L', [1, 2])
 @pytest.mark.parametrize('H', [1])
 @pytest.mark.parametrize('Z', [0, 0.3])
-def xtest_third_order_quad(L, H, Z):
+def test_third_order_quad(L, H, Z):
     """Test by comparing integration of z+x*y against sympy/scipy integration
     of a quad element. Z>0 implies curved element.
 
@@ -455,7 +466,9 @@ def xtest_third_order_quad(L, H, Z):
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                       [1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
     cells = cells[:, perm_vtk(CellType.quadrilateral, cells.shape[1])]
-    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells, [])
+    cell = ufl.Cell("quadrilateral", geometric_dimension=points.shape[1])
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 3))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     def e2(x):
         return x[2] + x[0] * x[1]
@@ -477,7 +490,7 @@ def xtest_third_order_quad(L, H, Z):
 @pytest.mark.parametrize('L', [1, 2])
 @pytest.mark.parametrize('H', [1])
 @pytest.mark.parametrize('Z', [0, 0.3])
-def xtest_fourth_order_quad(L, H, Z):
+def test_fourth_order_quad(L, H, Z):
     """Test by comparing integration of z+x*y against sympy/scipy integration
     of a quad element. Z>0 implies curved element.
 
@@ -519,7 +532,9 @@ def xtest_fourth_order_quad(L, H, Z):
                       [4, 28, 44, 24, 25, 26, 27, 32, 36, 40, 41, 42, 43, 9, 14, 19,
                        29, 30, 31, 33, 34, 35, 37, 38, 39]])
     cells = cells[:, perm_vtk(CellType.quadrilateral, cells.shape[1])]
-    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells, [], GhostMode.none)
+    cell = ufl.Cell("quadrilateral", geometric_dimension=points.shape[1])
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 4))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     def e2(x):
         return x[2] + x[0] * x[1]
@@ -545,7 +560,6 @@ def test_gmsh_input_quad(order):
     R = 1
     res = 0.2 if order == 2 else 0.2
     algorithm = 2 if order == 2 else 5
-    element = "quad{0:d}".format(int((order + 1)**2))
 
     geo = pygmsh.opencascade.Geometry()
     geo.add_raw_code("Mesh.ElementOrder={0:d};".format(order))
@@ -554,22 +568,11 @@ def test_gmsh_input_quad(order):
     geo.add_raw_code("Mesh.Algorithm = {0:d};".format(algorithm))
     msh = pygmsh.generate_mesh(geo, verbose=True, dim=2)
 
-    if order > 2:
-        # Quads order > 3 have a gmsh specific ordering, and has to be
-        # re-mapped
-        msh_to_dolfin = np.array([0, 3, 11, 10, 1, 2, 6, 7, 4, 9, 12, 15, 5, 8, 13, 14])
-        cells = np.zeros(msh.cells_dict[element].shape)
-        for i in range(len(cells)):
-            for j in range(len(msh_to_dolfin)):
-                cells[i, j] = msh.cells_dict[element][i, msh_to_dolfin[j]]
-    else:
-        # XDMF does not support higher order quads
-        cells = msh.cells_dict[element][:, perm_vtk(CellType.quadrilateral, msh.cells_dict[element].shape[1])]
-
-    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, msh.points, cells,
-                [], degree=order)
+    gmsh_quad = perm_gmsh(cpp.mesh.CellType.quadrilateral, (order + 1)**2)
+    cells = msh.cells[-1].data[:, gmsh_quad]
+    mesh = create_mesh(MPI.COMM_WORLD, cells, msh.points,
+                       ufl_mesh_from_gmsh(msh.cells[-1].type, msh.points.shape[1]))
     surface = assemble_scalar(1 * dx(mesh))
-
     assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi * R * R, rel=1e-5)
 
     # Bug related to VTK output writing

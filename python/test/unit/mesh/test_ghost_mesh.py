@@ -5,9 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from mpi4py import MPI
-
 from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
+from mpi4py import MPI
 
 
 @pytest.mark.xfail(condition=MPI.COMM_WORLD.size == 1,

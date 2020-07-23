@@ -1,21 +1,19 @@
 import numpy
-from mpi4py import MPI
-
-from dolfinx import Mesh, geometry, cpp
-from dolfinx.cpp.mesh import CellType
+import ufl
+from dolfinx import cpp, geometry
 from dolfinx.geometry import BoundingBoxTree
+from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 
 
 @skip_in_parallel
 def test_manifold_point_search():
     # Simple two-triangle surface in 3d
-    vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
-                                                                    0.0)]
+    vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)]
     cells = [(0, 1, 2), (0, 1, 3)]
-    mesh = Mesh(MPI.COMM_WORLD, CellType.triangle,
-                numpy.array(vertices, dtype=numpy.float64),
-                numpy.array(cells, dtype=numpy.int32), [])
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
 
     bb = BoundingBoxTree(mesh, mesh.topology.dim)
     p = numpy.array([0.5, 0.25, 0.75])

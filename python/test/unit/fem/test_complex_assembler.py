@@ -5,13 +5,12 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly in complex mode"""
 
+import dolfinx
 import numpy as np
 import pytest
+import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
-
-import dolfinx
-import ufl
 from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
