@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-"""IO module for input data, post-processing and checkpointing"""
+"""IO module"""
 
 import ufl
 from dolfinx import cpp, fem
