@@ -1,12 +1,11 @@
 import numpy
-from mpi4py import MPI
-
-from dolfinx.mesh import create_mesh
-from dolfinx import geometry, cpp
+import ufl
+from dolfinx import cpp, geometry
 from dolfinx.cpp.mesh import CellType
 from dolfinx.geometry import BoundingBoxTree
+from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
-import ufl
+from mpi4py import MPI
 
 
 @skip_in_parallel

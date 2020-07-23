@@ -7,19 +7,18 @@
 
 import math
 
+import dolfinx
 import numpy
 import pytest
 import scipy.sparse.linalg
-from mpi4py import MPI
-from petsc4py import PETSc
-
-import dolfinx
 import ufl
 from dolfinx import function
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
-from ufl import derivative, ds, dx, inner
 from dolfinx.mesh import create_mesh
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from mpi4py import MPI
+from petsc4py import PETSc
+from ufl import derivative, ds, dx, inner
 
 
 def nest_matrix_norm(A):

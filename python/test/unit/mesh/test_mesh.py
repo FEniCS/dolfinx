@@ -7,18 +7,17 @@
 import math
 import sys
 
-import numpy as np
-import pytest
-from mpi4py import MPI
-
 import dolfinx
 import FIAT
-from dolfinx import (BoxMesh, RectangleMesh, UnitCubeMesh,
-                     UnitIntervalMesh, UnitSquareMesh, cpp)
+import numpy as np
+import pytest
+from dolfinx import (BoxMesh, RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, cpp)
 from dolfinx.cpp.mesh import CellType, is_simplex
 from dolfinx.fem import assemble_scalar
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 from ufl import dx
 
 assert (tempdir)

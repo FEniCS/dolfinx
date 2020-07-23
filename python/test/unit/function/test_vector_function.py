@@ -7,13 +7,12 @@
 
 import numpy as np
 import pytest
-from mpi4py import MPI
-
+import ufl
 from dolfinx import Function, FunctionSpace
 from dolfinx.cpp.mesh import CellType
-from dolfinx_utils.test.skips import skip_in_parallel
-import ufl
 from dolfinx.mesh import create_mesh
+from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 
 
 @skip_in_parallel

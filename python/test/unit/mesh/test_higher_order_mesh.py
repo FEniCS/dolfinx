@@ -11,21 +11,17 @@ import numpy as np
 import pytest
 import scipy.integrate
 import sympy as sp
-from mpi4py import MPI
-from sympy.vector import CoordSys3D, matrix_to_vector
-
-from dolfinx import Function, FunctionSpace
-from dolfinx.cpp.io import perm_vtk
+import ufl
+from dolfinx import Function, FunctionSpace, cpp
+from dolfinx.cpp.io import perm_gmsh, perm_vtk
 from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_scalar
-from dolfinx.io import XDMFFile
-from dolfinx_utils.test.skips import skip_in_parallel
-from ufl import dx
-import ufl
+from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import create_mesh
-from dolfinx.io import ufl_mesh_from_gmsh
-from dolfinx.cpp.io import perm_gmsh
-from dolfinx import cpp
+from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
+from sympy.vector import CoordSys3D, matrix_to_vector
+from ufl import dx
 
 
 def sympy_scipy(points, nodes, L, H):

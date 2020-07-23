@@ -12,12 +12,11 @@ import sys
 import numpy
 import petsc4py
 import pytest
+from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
+from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from mpi4py import MPI
 from petsc4py import PETSc
-
-from dolfinx.wrappers import get_include_path as pybind_inc
-from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
 
 
 def test_petsc_casters_cppimport(tempdir):  # noqa: F811

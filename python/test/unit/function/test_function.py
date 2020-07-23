@@ -9,17 +9,16 @@ import importlib
 import math
 
 import cffi
+import dolfinx
 import numpy as np
 import pytest
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
-from mpi4py import MPI
-from petsc4py import PETSc
-
 import ufl
-import dolfinx
 from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
                      UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
 from dolfinx.mesh import create_mesh
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 @pytest.fixture
