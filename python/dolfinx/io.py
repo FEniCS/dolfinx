@@ -43,13 +43,12 @@ class XDMFFile(cpp.io.XDMFFile):
         u_cpp = getattr(u, "_cpp_object", u)
         super().write_function(u_cpp, t, mesh_xpath)
 
-    def write_meshtags(self, tags, **kwargs):
-        tags_cpp = tags._cpp_object
-        super().write_meshtags(tags_cpp, **kwargs)
+    def write_meshtags(self, tags: MeshTags, geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
+                       xpath: str = "/Xdmf/Domain"):
+        super().write_meshtags(tags._cpp_object, geometry_xpath, xpath)
 
-    def read_meshtags(self, mesh, tagname, **kwargs):
-        tags_cpp = super().read_meshtags(mesh, tagname, **kwargs)
-        return MeshTags(tags_cpp)
+    def read_meshtags(self, mesh: cpp.mesh.Mesh, tagname: str, xpath: str = "/Xdmf/Domain") -> MeshTags:
+        return MeshTags(super().read_meshtags(mesh, tagname, xpath))
 
     def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"):
         # Read mesh data from file
@@ -67,7 +66,6 @@ class XDMFFile(cpp.io.XDMFFile):
         mesh.name = name
         domain._ufl_cargo = mesh
         mesh._ufl_domain = domain
-
         return mesh
 
 
