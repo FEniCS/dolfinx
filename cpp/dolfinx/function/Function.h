@@ -251,9 +251,11 @@ public:
     std::shared_ptr<const fem::FiniteElement> element
         = _function_space->element();
     assert(element);
-    const int reference_value_size = element->reference_value_size();
-    const int value_size = element->value_size();
-    const int space_dimension = element->space_dimension();
+    const int block_size = element->block_size();
+    const int reference_value_size
+        = element->reference_value_size() / block_size;
+    const int value_size = element->value_size() / block_size;
+    const int space_dimension = element->space_dimension() / block_size;
 
     // Prepare geometry data structures
     Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
@@ -269,7 +271,8 @@ public:
                                                            value_size);
 
     // Create work vector for expansion coefficients
-    Eigen::Matrix<T, 1, Eigen::Dynamic> coefficients(space_dimension);
+    Eigen::Matrix<T, 1, Eigen::Dynamic> coefficients(space_dimension
+                                                     * block_size);
 
     // Get dofmap
     std::shared_ptr<const fem::DofMap> dofmap = _function_space->dofmap();
@@ -312,12 +315,16 @@ public:
         coefficients[i] = _v[dofs[i]];
 
       // Compute expansion
-      for (int i = 0; i < space_dimension; ++i)
+      for (int block = 0; block < block_size; ++block)
       {
-        for (int j = 0; j < value_size; ++j)
+        for (int i = 0; i < space_dimension; ++i)
         {
-          // TODO: Find an Eigen shortcut for this operation
-          u.row(p)[j] += coefficients[i] * basis_values(0, i, j);
+          for (int j = 0; j < value_size; ++j)
+          {
+            // TODO: Find an Eigen shortcut for this operation
+            u.row(p)[j * block_size + block]
+                += coefficients[i * block_size + block] * basis_values(0, i, j);
+          }
         }
       }
     }

@@ -209,13 +209,17 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // Create UFC subdofmaps and compute offset
   std::vector<std::shared_ptr<ufc_dofmap>> ufc_sub_dofmaps;
   std::vector<int> offsets(1, 0);
+  const int element_block_size = dofmap.block_size;
+
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
     auto ufc_sub_dofmap
         = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i), std::free);
     ufc_sub_dofmaps.push_back(ufc_sub_dofmap);
-    const int num_dofs = ufc_sub_dofmap->num_element_support_dofs;
-    offsets.push_back(offsets.back() + num_dofs);
+    if (element_block_size == 1)
+      offsets.push_back(offsets.back() + ufc_sub_dofmap->num_element_support_dofs);
+    else
+      offsets.push_back(offsets.back() + 1);
   }
 
   std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps;
@@ -224,7 +228,8 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     auto ufc_sub_dofmap = ufc_sub_dofmaps[i];
     assert(ufc_sub_dofmap);
     std::vector<int> parent_map_sub(ufc_sub_dofmap->num_element_support_dofs);
-    std::iota(parent_map_sub.begin(), parent_map_sub.end(), offsets[i]);
+    for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
+      parent_map_sub[j] = offsets[i] + j * element_block_size;
     sub_dofmaps.push_back(
         std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
             *ufc_sub_dofmaps[i], cell_type, parent_map_sub)));
@@ -268,9 +273,18 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     }
   }
 
-  auto [dof_layout, index_map, dofmap]
-      = DofMapBuilder::build(comm, topology, element_dof_layout);
-  return DofMap(dof_layout, index_map, std::move(dofmap));
+  if (ufc_dofmap.block_size == 1)
+  {
+    auto [index_map, dofmap]
+        = DofMapBuilder::build(comm, topology, *element_dof_layout, 1);
+    return DofMap(element_dof_layout, index_map, std::move(dofmap));
+  }
+  else
+  {
+    auto [index_map, dofmap] = DofMapBuilder::build(
+        comm, topology, *element_dof_layout, element_dof_layout->block_size());
+    return DofMap(element_dof_layout, index_map, std::move(dofmap));
+  }
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement
