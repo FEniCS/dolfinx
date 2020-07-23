@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import types
+import typing
 
 import numpy
 import ufl
@@ -78,14 +79,6 @@ def locate_entities_boundary(mesh: cpp.mesh.Mesh,
     return cpp.mesh.locate_entities_boundary(mesh, dim, marker)
 
 
-_meshtags_types = {
-    numpy.int8: cpp.mesh.MeshTags_int8,
-    numpy.int32: cpp.mesh.MeshTags_int32,
-    numpy.int64: cpp.mesh.MeshTags_int64,
-    numpy.double: cpp.mesh.MeshTags_double
-}
-
-
 def refine(mesh, cell_markers=None, redistribute=True):
     """Refine a mesh"""
     if cell_markers is None:
@@ -121,37 +114,39 @@ def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostM
     return create_mesh(comm, cells, x, domain, ghost_mode)
 
 
-class MeshTags(object):
+_meshtags_types = {
+    numpy.int8: cpp.mesh.MeshTags_int8,
+    numpy.int32: cpp.mesh.MeshTags_int32,
+    numpy.int64: cpp.mesh.MeshTags_int64,
+    numpy.double: cpp.mesh.MeshTags_double
+}
+
+
+class MeshTags:
     def __init__(self, *args):
-
-        if len(args) == 4:
+        """This initializer is not intended for the user interface. Use create_mesh_tags"""
+        try:
             mesh, dim, indices, values = args
-
             if isinstance(values, int):
                 values = numpy.full(indices.shape, values, dtype=numpy.intc)
             elif isinstance(values, float):
                 values = numpy.full(indices.shape, values, dtype=numpy.double)
-
             dtype = values.dtype.type
-            if dtype not in _meshtags_types.keys():
-                raise KeyError("Datatype {} of values array not recognised".format(dtype))
-
-            fn = _meshtags_types[dtype]
-            self._cpp_object = fn(mesh, dim, indices, values)
-            self.values = self._cpp_object.values
-            self.indices = self._cpp_object.indices
-
-    @classmethod
-    def from_cpp_object(cls, cpp_object):
-        m = cls()
-        m._cpp_object = cpp_object
-        m.values = cpp_object.values
-        m.indices = cpp_object.indices
-        return m
+            try:
+                self._cpp_object = _meshtags_types[dtype](mesh, dim, indices, values)
+            except KeyError:
+                raise KeyError("Unsupported value type ({}) for MeshTags.".format(dtype))
+        except ValueError:
+            assert len(args) == 1
+            self._cpp_object = args[0]
 
     @property
-    def dtype(self):
-        return self.values.dtype
+    def dim(self):
+        return self._cpp_object.dim
+
+    @property
+    def mesh(self):
+        return self._cpp_object.mesh
 
     @property
     def name(self):
@@ -161,13 +156,43 @@ class MeshTags(object):
     def name(self, val):
         self._cpp_object.name = val
 
+    @property
+    def indices(self):
+        return self._cpp_object.indices
+
+    @property
+    def values(self):
+        return self._cpp_object.values
+
     def ufl_id(self):
-        return self._cpp_object.ufl_id()
+        return self._cpp_object.id
 
 
-def create_meshtags(mesh, dim, adj_list, values):
-    mt = cpp.mesh.create_meshtags(mesh, dim, adj_list, values)
-    return MeshTags.from_cpp_object(mt)
+def create_meshtags(mesh: cpp.mesh.Mesh, dim: int, indices: typing.Union[numpy.array, cpp.graph.AdjacencyList_int32],
+                    values: numpy.array) -> MeshTags:
+    """Create a MeshTags object
+    Parameters
+    ----------
+    mesh
+        The mesh
+    dim
+        The topological dimension of the mesh entities to tag
+    indices
+        The entities to tag. Can be an array of entity indices or an
+        AdjacencyList with the vertices of each each tagged entity.
+
+    Returns
+    -------
+    MeshTags
+        MeshTags object.
+
+    """
+    try:
+        # Create from an adjacency list of values
+        return MeshTags(cpp.mesh.create_meshtags(mesh, dim, indices, values))
+    except TypeError:
+        # Create from an list of entity indices and values
+        return MeshTags(mesh, dim, indices, values)
 
 
 # Functions to extend cpp.mesh.Mesh with

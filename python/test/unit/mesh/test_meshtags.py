@@ -13,7 +13,6 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 def test_create(cell_type):
     comm = MPI.COMM_WORLD
-
     mesh = UnitCubeMesh(comm, 6, 6, 6, cell_type)
     mesh.topology.create_connectivity_all()
 

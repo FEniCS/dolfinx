@@ -44,13 +44,13 @@ void declare_meshtags(py::module& m, std::string type)
         std::vector<std::int32_t> indices_vec(indices.data(),
                                               indices.data() + indices.size());
         std::vector<T> values_vec(values.data(), values.data() + values.size());
-        return std::make_unique<dolfinx::mesh::MeshTags<T>>(
-            mesh, dim, std::move(indices_vec), std::move(values_vec));
+        return dolfinx::mesh::MeshTags<T>(mesh, dim, std::move(indices_vec),
+                                          std::move(values_vec));
       }))
       .def_readwrite("name", &dolfinx::mesh::MeshTags<T>::name)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)
-      .def("ufl_id", &dolfinx::mesh::MeshTags<T>::id)
+      .def_property_readonly("id", &dolfinx::mesh::MeshTags<T>::id)
       .def_property_readonly(
           "values",
           [](dolfinx::mesh::MeshTags<T>& self) {

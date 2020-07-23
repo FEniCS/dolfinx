@@ -49,7 +49,7 @@ class XDMFFile(cpp.io.XDMFFile):
 
     def read_meshtags(self, mesh, tagname, **kwargs):
         tags_cpp = super().read_meshtags(mesh, tagname, **kwargs)
-        return MeshTags.from_cpp_object(tags_cpp)
+        return MeshTags(tags_cpp)
 
     def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"):
         # Read mesh data from file

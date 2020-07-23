@@ -132,7 +132,8 @@ private:
 /// Create MeshTags from arrays
 /// @param[in] mesh The Mesh that the tags are associated with
 /// @param[in] dim Topological dimension of tagged entities
-/// @param[in] entities Local vertex indices for tagged entities.
+/// @param[in] entities Local (process-wise) vertex indices for tagged
+///   entities
 /// @param[in] values Tag values for each entity in @ entities. The
 ///   length of @ values  must be equal to number of rows in @ entities.
 template <typename T>
@@ -160,8 +161,9 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
   std::vector<std::int32_t> key(num_vertices_per_entity);
   for (int e = 0; e < num_entities_mesh; ++e)
   {
-    // Prepare a map from ordered local vertex indices to local entity number
-    // This map is used to identify if received entity is owned or ghost
+    // Prepare a map from ordered local vertex indices to local entity
+    // number. This map is used to identify if received entity is owned
+    // or ghost.
     auto vertices = e_to_v->links(e);
     for (int v = 0; v < vertices.rows(); ++v)
       key[v] = vertices[v];
@@ -174,7 +176,6 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
   std::vector<std::int32_t> indices_new;
   std::vector<T> values_new;
   std::vector<std::int32_t> entity(num_vertices_per_entity);
-
   for (Eigen::Index e = 0; e < entities.num_nodes(); ++e)
   {
     // This would fail for mixed cell type meshes
