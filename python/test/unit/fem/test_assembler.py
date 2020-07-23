@@ -19,6 +19,7 @@ from dolfinx import function
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from ufl import derivative, ds, dx, inner
+from dolfinx.mesh import create_mesh
 
 
 def nest_matrix_norm(A):
@@ -213,7 +214,9 @@ def test_assemble_manifold():
     points = numpy.array([[0.0, 0.0], [0.2, 0.0], [0.4, 0.0],
                           [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=numpy.float64)
     cells = numpy.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=numpy.int32)
-    mesh = dolfinx.Mesh(MPI.COMM_WORLD, dolfinx.cpp.mesh.CellType.interval, points, cells, [])
+    cell = ufl.Cell("interval", geometric_dimension=points.shape[1])
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     assert mesh.geometry.dim == 2
     assert mesh.topology.dim == 1
 

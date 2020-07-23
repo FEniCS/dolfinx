@@ -12,11 +12,13 @@ import pytest
 from mpi4py import MPI
 
 import dolfinx
-from dolfinx import (FunctionSpace, Mesh, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, VectorFunctionSpace, fem)
+from dolfinx import (FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, VectorFunctionSpace, fem, cpp)
 from dolfinx.cpp.mesh import CellType
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement
+import ufl
+from dolfinx.mesh import create_mesh
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -312,7 +314,8 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 def test_higher_order_coordinate_map(points, celltype, order):
     """Computes physical coordinates of a cell, based on the coordinate map."""
     cells = np.array([range(len(points))])
-    mesh = Mesh(MPI.COMM_WORLD, celltype, points, cells, [], degree=order)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(celltype), order))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     V = FunctionSpace(mesh, ("Lagrange", 2))
     X = V.element.dof_reference_coordinates()
@@ -361,7 +364,8 @@ def test_higher_order_tetra_coordinate_map(order):
                            [0, 1, 3 / 2], [1 / 2, 0, 3 / 2], [1 / 2, 1, 0], [0, 0, 3 / 2],
                            [0, 1, 0], [1 / 2, 0, 0]])
     cells = np.array([range(len(points))])
-    mesh = Mesh(MPI.COMM_WORLD, celltype, points, cells, [], degree=order)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(celltype), order))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     V = FunctionSpace(mesh, ("Lagrange", order))
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap
