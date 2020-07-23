@@ -8,14 +8,13 @@ import os
 
 import numpy as np
 import pytest
-from mpi4py import MPI
-
 from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 from dolfinx.cpp.io import perm_vtk
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.fixtures import tempdir
+from mpi4py import MPI
 
 assert (tempdir)
 

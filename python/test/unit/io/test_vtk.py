@@ -7,15 +7,14 @@
 import os
 
 import pytest
-from mpi4py import MPI
-
-from dolfinx import (Function, FunctionSpace,
-                     TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, VectorFunctionSpace)
+from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
+                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
+                     VectorFunctionSpace)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import VTKFile
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 
 assert (tempdir)
 

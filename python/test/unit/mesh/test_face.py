@@ -4,12 +4,11 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
-from mpi4py import MPI
-
 import dolfinx
+import pytest
 from dolfinx import UnitCubeMesh, UnitSquareMesh
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 
 
 @pytest.fixture

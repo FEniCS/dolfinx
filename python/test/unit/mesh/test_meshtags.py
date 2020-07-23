@@ -1,11 +1,10 @@
-from dolfinx.generation import UnitCubeMesh
-from dolfinx.mesh import locate_entities, create_meshtags
-from dolfinx.cpp.mesh import CellType
-from dolfinx import cpp
-import pytest
-
-from mpi4py import MPI
 import numpy
+import pytest
+from dolfinx import cpp
+from dolfinx.cpp.mesh import CellType
+from dolfinx.generation import UnitCubeMesh
+from dolfinx.mesh import create_meshtags, locate_entities
+from mpi4py import MPI
 
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 

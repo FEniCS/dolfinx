@@ -10,9 +10,8 @@ import math
 
 import numpy
 import pytest
-from mpi4py import MPI
-
 from dolfinx import RectangleMesh, UnitIntervalMesh
+from mpi4py import MPI
 from ufl import (FacetNormal, SpatialCoordinate, acos, as_matrix, as_vector,
                  asin, atan, cos, cross, det, dev, diff, div, dot, ds, dx,
                  elem_div, elem_mult, elem_op, elem_pow, erf, exp, grad, inner,

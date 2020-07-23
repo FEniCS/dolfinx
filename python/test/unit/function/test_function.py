@@ -9,16 +9,16 @@ import importlib
 import math
 
 import cffi
+import dolfinx
 import numpy as np
 import pytest
+import ufl
+from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
+                     UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
+from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
-
-import ufl
-import dolfinx
-from dolfinx import (Function, FunctionSpace, TensorFunctionSpace, Mesh,
-                     UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
 
 
 @pytest.fixture
@@ -33,17 +33,17 @@ def R(mesh):
 
 @pytest.fixture
 def V(mesh):
-    return FunctionSpace(mesh, ('CG', 1))
+    return FunctionSpace(mesh, ('Lagrange', 1))
 
 
 @pytest.fixture
 def W(mesh):
-    return VectorFunctionSpace(mesh, ('CG', 1))
+    return VectorFunctionSpace(mesh, ('Lagrange', 1))
 
 
 @pytest.fixture
 def Q(mesh):
-    return TensorFunctionSpace(mesh, ('CG', 1))
+    return TensorFunctionSpace(mesh, ('Lagrange', 1))
 
 
 def test_name_argument(W):
@@ -201,11 +201,10 @@ def test_eval_manifold():
     vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
                                                                     0.0)]
     cells = [(0, 1, 2), (0, 1, 3)]
-    mesh = Mesh(MPI.COMM_WORLD, cpp.mesh.CellType.triangle,
-                np.array(vertices, dtype=np.float64),
-                np.array(cells, dtype=np.int32), [])
-
-    Q = FunctionSpace(mesh, ("CG", 1))
+    cell = ufl.Cell("triangle", geometric_dimension=3)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
+    Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(Q)
     u.interpolate(lambda x: x[0] + x[1])
     assert np.isclose(u.eval([0.75, 0.25, 0.5], 0)[0], 1.0)
@@ -370,10 +369,10 @@ def test_cffi_expression(V):
 
 
 def test_interpolation_function(mesh):
-    V = FunctionSpace(mesh, ("CG", 1))
+    V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
     u.vector.set(1)
-    Vh = FunctionSpace(mesh, ("CG", 1))
+    Vh = FunctionSpace(mesh, ("Lagrange", 1))
     uh = Function(Vh)
     uh.interpolate(u)
     assert np.allclose(uh.vector.array, 1)
