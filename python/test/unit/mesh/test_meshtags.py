@@ -17,7 +17,7 @@ def test_create(cell_type):
     mesh.topology.create_connectivity_all()
 
     marked_lines = locate_entities(mesh, 1, lambda x: numpy.isclose(x[1], 0.5))
-    f_v = mesh.topology.connectivity(1, 0).array().reshape(-1, 2)
+    f_v = mesh.topology.connectivity(1, 0).array.reshape(-1, 2)
 
     entities = cpp.graph.AdjacencyList_int32(f_v[marked_lines])
     values = numpy.full(marked_lines.shape[0], 2, dtype=numpy.int32)

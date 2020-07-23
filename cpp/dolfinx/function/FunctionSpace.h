@@ -103,6 +103,14 @@ public:
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
   tabulate_dof_coordinates() const;
 
+  /// Tabulate the physical coordinates of all dofs of scalar subspace on this
+  /// process. For a VectorFunctionSpace or TensorFunctionSpace, the scalar
+  /// subspace is the space used for each componenet. Otherwise the scalar
+  /// subspace is the space itself
+  /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...)
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+  tabulate_scalar_subspace_dof_coordinates() const;
+
   /// Unique identifier
   std::size_t id() const;
 

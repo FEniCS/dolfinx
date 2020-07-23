@@ -30,7 +30,7 @@ def _has_matplotlib():
 def mesh2triang(mesh):
     import matplotlib.tri as tri
     xy = mesh.geometry.x
-    cells = mesh.geometry.dofmap.array().reshape((-1, mesh.topology.dim + 1))
+    cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
     return tri.Triangulation(xy[:, 0], xy[:, 1], cells)
 
 
@@ -45,7 +45,7 @@ def mplot_mesh(ax, mesh, **kwargs):
         mplot_mesh(ax, bmesh, **kwargs)
     elif gdim == 3 and tdim == 2:
         xy = mesh.geometry.x
-        cells = mesh.geometry.dofmap.array().reshape((-1, mesh.topology.dim + 1))
+        cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
         return ax.plot_trisurf(
             *[xy[:, i] for i in range(gdim)], triangles=cells, **kwargs)
     elif tdim == 1:
@@ -231,7 +231,7 @@ def mplot_function(ax, f, **kwargs):
             import matplotlib.tri as tri
             if gdim == 2 and tdim == 2:
                 # FIXME: Not tested
-                cells = mesh.geometry.dofmap.array().reshape((-1, mesh.topology.dim + 1))
+                cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
                 triang = tri.Triangulation(Xdef[0], Xdef[1], cells)
                 shading = kwargs.pop("shading", "flat")
                 return ax.tripcolor(triang, C, shading=shading, **kwargs)
