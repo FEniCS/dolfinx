@@ -10,8 +10,8 @@ import time
 import numpy as np
 import pytest
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, VectorFunctionSpace,
-                     cpp, fem)
+from dolfinx import (DirichletBC, Function, FunctionSpace, fem, cpp,
+                     VectorFunctionSpace)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
@@ -229,6 +229,58 @@ def test_manufactured_vector2(family, degree, filename, datadir):
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     u_exact = Function(W)
+    u_exact.interpolate(lambda x: np.array(
+        [x[0]**degree if i == 0 else 0 * x[0] for i in range(mesh.topology.dim)]))
+
+    M = inner(uh - u_exact, uh - u_exact) * dx
+    M = fem.Form(M)
+    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
+
+    assert np.absolute(error) < 1.0e-14
+
+
+@pytest.mark.parametrize("filename", [
+    "UnitSquareMesh_triangle.xdmf",
+    "UnitCubeMesh_tetra.xdmf",
+    "UnitSquareMesh_quad.xdmf",
+    "UnitCubeMesh_hexahedron.xdmf"
+])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_manufactured_vector_function_space(degree, filename, datadir):
+    """Projection into H(div/curl) spaces"""
+
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
+
+    V = VectorFunctionSpace(mesh, ("Lagrange", degree))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = inner(u, v) * dx
+
+    # Source term
+    x = SpatialCoordinate(mesh)
+    u_ref = x[0]**degree
+    L = inner(u_ref, v[0]) * dx
+
+    b = assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    A = assemble_matrix(a)
+    A.assemble()
+
+    # Create LU linear solver (Note: need to use a solver that
+    # re-orders to handle pivots, e.g. not the PETSc built-in LU
+    # solver)
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
+    solver.setType("preonly")
+    solver.getPC().setType('lu')
+    solver.setOperators(A)
+
+    # Solve
+    uh = Function(V)
+    solver.solve(b, uh.vector)
+    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+    u_exact = Function(V)
     u_exact.interpolate(lambda x: np.array(
         [x[0]**degree if i == 0 else 0 * x[0] for i in range(mesh.topology.dim)]))
 
