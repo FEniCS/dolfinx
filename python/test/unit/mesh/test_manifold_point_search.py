@@ -1,7 +1,6 @@
 import numpy
 import ufl
 from dolfinx import cpp, geometry
-from dolfinx.cpp.mesh import CellType
 from dolfinx.geometry import BoundingBoxTree
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
