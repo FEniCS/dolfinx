@@ -194,8 +194,6 @@ build_basic_dofmap(const mesh::Topology& topology,
     }
   }
 
-  
-
   return {
       graph::AdjacencyList<std::int32_t>(std::move(dofs), std::move(cell_ptr)),
       std::move(local_to_global), std::move(dof_entity)};
@@ -492,8 +490,9 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
 
   const int element_block_size = element_dof_layout.block_size();
 
-//  if (element_dof_layout.block_size() != 1)
-//    throw std::runtime_error("Block size of 1 expected when building dofmap.");
+  //  if (element_dof_layout.block_size() != 1)
+  //    throw std::runtime_error("Block size of 1 expected when building
+  //    dofmap.");
 
   const int D = topology.dim();
 
@@ -512,7 +511,8 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     {
       assert(topology.index_map(d));
       const std::int64_t n = topology.index_map(d)->size_global();
-      global_dimension += n * element_dof_layout.num_entity_dofs(d) * element_dof_layout.block_size();
+      global_dimension += n * element_dof_layout.num_entity_dofs(d)
+                          * element_dof_layout.block_size();
     }
   }
 

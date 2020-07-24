@@ -50,7 +50,8 @@ internal_tabulate_dof_coordinates(
         / element_block_size;
   const int scalar_dofs = element->space_dimension() / element_block_size;
 
-  std::cout << "element->space_dimension() = " << element->space_dimension() << "\n";
+  std::cout << "element->space_dimension() = " << element->space_dimension()
+            << "\n";
   std::cout << "element_block_size = " << element_block_size << "\n";
 
   // Dof coordinate on reference element
@@ -99,9 +100,11 @@ internal_tabulate_dof_coordinates(
       std::cout << "i = " << i << "\n";
       std::cout << "x_dofs[i] = " << x_dofs[i] << "\n";
       std::cout << "x_g.row(x_dofs[i]) = [" << x_g.row(x_dofs[i]) << "]\n";
-      std::cout << "x_g.row(x_dofs[i]).head(gdim) = [" << x_g.row(x_dofs[i]).head(gdim) << "]\n";
+      std::cout << "x_g.row(x_dofs[i]).head(gdim) = ["
+                << x_g.row(x_dofs[i]).head(gdim) << "]\n";
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
-      std::cout << "coordinate_dofs.row(i) = [" << coordinate_dofs.row(i) << "]\n";
+      std::cout << "coordinate_dofs.row(i) = [" << coordinate_dofs.row(i)
+                << "]\n";
       std::cout << std::endl;
     }
     std::cout << "B\n";
