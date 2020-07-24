@@ -194,6 +194,8 @@ build_basic_dofmap(const mesh::Topology& topology,
     }
   }
 
+  
+
   return {
       graph::AdjacencyList<std::int32_t>(std::move(dofs), std::move(cell_ptr)),
       std::move(local_to_global), std::move(dof_entity)};
@@ -489,12 +491,9 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   common::Timer t0("Init dofmap");
 
   const int element_block_size = element_dof_layout.block_size();
-  const ElementDofLayout& element_dof_sublayout
-      = element_block_size == 1 ? element_dof_layout
-                                : *element_dof_layout.sub_dofmap({0});
 
-  if (element_dof_sublayout.block_size() != 1)
-    throw std::runtime_error("Block size of 1 expected when building dofmap.");
+//  if (element_dof_layout.block_size() != 1)
+//    throw std::runtime_error("Block size of 1 expected when building dofmap.");
 
   const int D = topology.dim();
 
@@ -503,19 +502,23 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
   const auto [node_graph0, local_to_global0, dof_entity0]
-      = build_basic_dofmap(topology, element_dof_sublayout);
+      = build_basic_dofmap(topology, element_dof_layout);
 
   // Compute global dofmap dimension
   std::int64_t global_dimension = 0;
   for (int d = 0; d < D + 1; ++d)
   {
-    if (element_dof_sublayout.num_entity_dofs(d) > 0)
+    if (element_dof_layout.num_entity_dofs(d) > 0)
     {
       assert(topology.index_map(d));
       const std::int64_t n = topology.index_map(d)->size_global();
-      global_dimension += n * element_dof_sublayout.num_entity_dofs(d);
+      global_dimension += n * element_dof_layout.num_entity_dofs(d) * element_dof_layout.block_size();
     }
   }
+
+  std::cout << "ebs = " << element_dof_layout.block_size() << "\n";
+  std::cout << "num_nodes = " << node_graph0.num_nodes() << "\n";
+  std::cout << "dim = " << global_dimension << "\n";
 
   // Build re-ordering map for data locality and get number of owned
   // nodes
@@ -573,7 +576,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                           Eigen::RowMajor>>
       _dofmap(dofmap.data(), node_graph0.num_nodes(),
               dofmap.rows() / node_graph0.num_nodes());
-
+  std::cout << "-- END --\n\n";
   return {std::move(index_map), graph::AdjacencyList<std::int32_t>(_dofmap)};
 }
 //-----------------------------------------------------------------------------

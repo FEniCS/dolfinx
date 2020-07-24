@@ -273,6 +273,9 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     }
   }
 
+  std::cout << "-- " << ufc_dofmap.signature << " --\n";
+  std::cout << "ufc_dofmap.block_size = " << ufc_dofmap.block_size << "\n";
+
   if (ufc_dofmap.block_size == 1)
   {
     auto [index_map, dofmap]
@@ -282,7 +285,7 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
   else
   {
     auto [index_map, dofmap] = DofMapBuilder::build(
-        comm, topology, *element_dof_layout, element_dof_layout->block_size());
+        comm, topology, *element_dof_layout, ufc_dofmap.block_size);
     return DofMap(element_dof_layout, index_map, std::move(dofmap));
   }
 }
