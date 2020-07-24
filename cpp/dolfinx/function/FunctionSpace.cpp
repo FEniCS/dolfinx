@@ -50,10 +50,6 @@ internal_tabulate_dof_coordinates(
         / element_block_size;
   const int scalar_dofs = element->space_dimension() / element_block_size;
 
-  std::cout << "element->space_dimension() = " << element->space_dimension()
-            << "\n";
-  std::cout << "element_block_size = " << element_block_size << "\n";
-
   // Dof coordinate on reference element
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = element->dof_reference_coordinates();
@@ -74,7 +70,7 @@ internal_tabulate_dof_coordinates(
   // Array to hold coordinates to return
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
-          local_size * repeats, 3);
+          local_size * gdim * repeats, 3);
 
   // Loop over cells and tabulate dofs
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -82,52 +78,30 @@ internal_tabulate_dof_coordinates(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
-  std::cout << "num_dofs_g = " << num_dofs_g << "\n";
-
   auto map = mesh->topology().index_map(tdim);
   assert(map);
   const int num_cells = map->size_local() + map->num_ghosts();
 
   for (int c = 0; c < num_cells; ++c)
   {
-    std::cout << "cell " << c << "\n";
-
-    std::cout << "A\n";
     // Update cell
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
-    {
-      std::cout << "i = " << i << "\n";
-      std::cout << "x_dofs[i] = " << x_dofs[i] << "\n";
-      std::cout << "x_g.row(x_dofs[i]) = [" << x_g.row(x_dofs[i]) << "]\n";
-      std::cout << "x_g.row(x_dofs[i]).head(gdim) = ["
-                << x_g.row(x_dofs[i]).head(gdim) << "]\n";
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
-      std::cout << "coordinate_dofs.row(i) = [" << coordinate_dofs.row(i)
-                << "]\n";
-      std::cout << std::endl;
-    }
-    std::cout << "B\n";
 
     // Get local-to-global map
     auto dofs = dofmap->cell_dofs(c);
 
-    std::cout << "C\n";
-
     // Tabulate dof coordinates on cell
     cmap.push_forward(coordinates, X, coordinate_dofs);
-
-    std::cout << "D\n";
 
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < scalar_dofs; ++i)
     {
       // FIXME: this depends on the dof layout
-      const std::int32_t dof = dofs[i];
       for (int j = 0; j < repeats; ++j)
-        x.row(dof * repeats + j).head(gdim) = coordinates.row(i);
+        x.row(dofs[i] * repeats + j).head(gdim) = coordinates.row(i);
     }
-    std::cout << "E\n";
   }
 
   return x;

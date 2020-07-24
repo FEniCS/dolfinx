@@ -55,35 +55,6 @@ int get_num_permutations(const mesh::CellType cell_type)
     return 0;
   }
 }
-// Try to figure out block size. FIXME - replace elsewhere
-int analyse_block_structure(
-    const std::vector<std::shared_ptr<const fem::ElementDofLayout>>&
-        sub_dofmaps)
-{
-  // Must be at least two subdofmaps
-  if (sub_dofmaps.size() < 2)
-    return 1;
-
-  for (const auto& dmap : sub_dofmaps)
-  {
-    assert(dmap);
-
-    // If any subdofmaps have subdofmaps themselves, ignore any
-    // potential block structure
-    if (dmap->num_sub_dofmaps() > 0)
-      return 1;
-
-    // Check number of dofs are the same for all subdofmaps
-    for (int d = 0; d < 4; ++d)
-    {
-      if (sub_dofmaps[0]->num_entity_dofs(d) != dmap->num_entity_dofs(d))
-        return 1;
-    }
-  }
-
-  // All subdofmaps are simple, and have the same number of dofs
-  return sub_dofmaps.size();
-}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -237,15 +208,13 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 
   // Check for "block structure". This should ultimately be replaced,
   // but keep for now to mimic existing code
-  const int block_size = analyse_block_structure(sub_dofmaps);
-
   const int num_base_permutations = get_num_permutations(cell_type);
   const Eigen::Map<
       const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
       base_permutations(dofmap.base_permutations, num_base_permutations,
                         dof_count);
-  return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
-                               cell_type, base_permutations);
+  return fem::ElementDofLayout(element_block_size, entity_dofs, parent_map,
+                               sub_dofmaps, cell_type, base_permutations);
 }
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
@@ -272,9 +241,6 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
         topology.set_index_map(d, index_map);
     }
   }
-
-  std::cout << "-- " << ufc_dofmap.signature << " --\n";
-  std::cout << "ufc_dofmap.block_size = " << ufc_dofmap.block_size << "\n";
 
   if (ufc_dofmap.block_size == 1)
   {
