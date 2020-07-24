@@ -224,6 +224,8 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
       create_element_dof_layout(ufc_dofmap, topology.cell_type()));
   assert(element_dof_layout);
 
+  std::cout << "-- " << ufc_dofmap.signature << " --\n";
+
   // Create required mesh entities
   const int D = topology.dim();
   for (int d = 0; d < D; ++d)

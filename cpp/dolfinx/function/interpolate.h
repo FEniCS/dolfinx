@@ -171,6 +171,7 @@ void interpolate(
       = u.function_space()
             ->tabulate_scalar_subspace_dof_coordinates()
             .transpose();
+  std::cout << "x = [" << x << "]\n";
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values
       = f(x);
 
@@ -181,6 +182,8 @@ void interpolate(
     vshape[i] = element->value_dimension(i);
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
+
+  std::cout << "-> " << u.function_space()->element()->block_size() << "\n";
 
   auto mesh = u.function_space()->mesh();
   assert(mesh);
