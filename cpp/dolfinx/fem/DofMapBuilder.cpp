@@ -516,10 +516,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     }
   }
 
-  std::cout << "ebs = " << element_dof_layout.block_size() << "\n";
-  std::cout << "num_nodes = " << node_graph0.num_nodes() << "\n";
-  std::cout << "dim = " << global_dimension << "\n";
-
   // Build re-ordering map for data locality and get number of owned
   // nodes
   const auto [old_to_new, num_owned]
@@ -576,7 +572,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                           Eigen::RowMajor>>
       _dofmap(dofmap.data(), node_graph0.num_nodes(),
               dofmap.rows() / node_graph0.num_nodes());
-  std::cout << "-- END --\n\n";
   return {std::move(index_map), graph::AdjacencyList<std::int32_t>(_dofmap)};
 }
 //-----------------------------------------------------------------------------

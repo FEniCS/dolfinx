@@ -47,8 +47,6 @@ internal_tabulate_dof_coordinates(
   int bs = index_map->block_size();
   int element_block_size = element->block_size();
 
-  std::cout << "bs = " << bs << "; ebs = " << element_block_size << ";\n";
-
   std::int32_t local_size
       = bs * (index_map->size_local() + index_map->num_ghosts())
         / element_block_size;
@@ -67,10 +65,6 @@ internal_tabulate_dof_coordinates(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  std::cout << "num_dofs_g = " << num_dofs_g << "\n";
-  std::cout << "local_size = " << local_size << "\n";
-  std::cout << "scalar_dofs = " << scalar_dofs << "\n";
-  std::cout << "repeats = " << repeats << "\n";
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
       = mesh->geometry().x();
@@ -92,42 +86,28 @@ internal_tabulate_dof_coordinates(
 
   for (int c = 0; c < num_cells; ++c)
   {
-    std::cout << "A\n";
     // Update cell
     auto x_dofs = x_dofmap.links(c);
-    std::cout << "x_dofmap.links(" << c << ") = [" << x_dofs << "]\n";
     for (int i = 0; i < num_dofs_g; ++i)
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
-    std::cout << "B\n";
 
     // Get local-to-global map
     auto dofs = dofmap->cell_dofs(c);
 
-    std::cout << "C\n";
-
     // Tabulate dof coordinates on cell
     cmap.push_forward(coordinates, X, coordinate_dofs);
-
-    std::cout << "D\n";
 
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < scalar_dofs; ++i)
     {
-      std::cout << "\n\n---\ni = " << i << "\n";
       // FIXME: this depends on the dof layout
       for (int j = 0; j < repeats; ++j)
-      {
-        std::cout << i << " " << dofs[i] << " " << dofs[i] * repeats + j
-                  << "\n";
-        std::cout << "x is " << x.rows() << "x" << x.cols() << "\n";
-        std::cout << "coordinates is " << coordinates.rows() << "x"
-                  << coordinates.cols() << "\n";
         x.row(dofs[i * element_block_size] / element_block_size * repeats + j)
             .head(gdim)
             = coordinates.row(i);
-      }
+      // TODO: cell_dofs should return values for scalar subspace, rather than
+      // fixing that here.
     }
-    std::cout << "E\n";
   }
 
   return x;
