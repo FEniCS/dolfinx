@@ -117,7 +117,7 @@ def test_simple_evaluation():
 
     # NOTE: The scaling by a constant factor of 3.0 to get f(x, y) is
     # implemented within the UFL Expression. This is to check that the
-    # are being set correctly.
+    # Constants are being set up correctly.
     def exact_expr(x):
         return x[0] ** 2 + 2.0 * x[1] ** 2
 
@@ -153,7 +153,6 @@ def test_simple_evaluation():
     assert x_evaluated.shape[0] == cells.shape[0]
     assert x_evaluated.shape[1] == x_expr.value_size * x_expr.num_points
 
-    # NOTE: Will need to be adjusted when new XYZXYZ ordering is introduced?
     x_evaluated_repack = np.zeros((2, cells.shape[0] * x_expr.num_points), dtype=PETSc.ScalarType)
     # Have to repack to use standard expression code
     x_evaluated_repack[0, :] = x_evaluated[:, 0:x_expr.num_points].flatten()

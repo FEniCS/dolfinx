@@ -31,28 +31,40 @@ namespace function
 template <typename T>
 class Constant;
 
-/// Represents a mathematical expression evaluated at a pre-defined
-/// set of points on the reference cell. Holds fem::FormCoefficients.
-/// This class closely follows the concept of a UFC Expression.
+/// Represents a mathematical expression evaluated at a pre-defined set of
+/// points on the reference cell. This class closely follows the concept of a UFC
+/// Expression.
 
 template <typename T>
 class Expression
 {
 public:
-  /// Create Expression. UFC Expression callable and mesh should be set later by
-  /// caller.
+  /// Create Expression.
   Expression(
       const fem::FormCoefficients<T>& coefficients,
       const std::vector<
-          std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
-          constants)
-      : _coefficients(coefficients), _constants(constants)
+          std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
+          constants,
+      const std::shared_ptr<const mesh::Mesh>& mesh,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
+      const std::function<void(T*, const T*, const T*, const double*)> fn,
+      const std::size_t value_size)
+      : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x(x),
+        _fn(fn), _value_size(value_size)
   {
     // Do nothing
   }
 
-  /// Create Expression. Members should be set later by caller.
-  explicit Expression() : Expression(fem::FormCoefficients<T>({}), {})
+  /// Create Expression. coefficients, constants and fn must be set later by
+  /// caller.
+  Expression(
+      const std::shared_ptr<mesh::Mesh>& mesh,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
+      const std::size_t value_size)
+      : Expression(fem::FormCoefficients<T>({}), {}, mesh, x, nullptr,
+                   value_size)
   {
     // Do nothing
   }
@@ -73,8 +85,11 @@ public:
   /// @param[in] active_cells Cells on which to evaluate the Expression
   /// @param[in,out] values To store the result. Caller responsible for correct
   /// sizing.
-  void eval(const std::vector<std::int32_t>& active_cells,
-            Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> values) const
+  void
+  eval(const std::vector<std::int32_t>& active_cells,
+       Eigen::Ref<
+           Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+           values) const
   {
     function::eval(values, *this, active_cells);
   }
@@ -201,22 +216,9 @@ public:
     return unset;
   }
 
-  /// Set mesh
-  /// @param[in] mesh The mesh
-  void set_mesh(const std::shared_ptr<const mesh::Mesh>& mesh) { _mesh = mesh; }
-
   /// Get mesh
   /// @return The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
-
-  /// Set evaluation points
-  /// @param[in] x Evaluation points
-  void set_x(
-      const Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-          x)
-  {
-    _x = x;
-  }
 
   /// Get evaluation points
   /// @return Evaluation points
@@ -224,10 +226,6 @@ public:
   {
     return _x;
   }
-
-  /// Set value size
-  /// [in] value_size
-  void set_value_size(std::size_t value_size) { _value_size = value_size; }
 
   /// Get value size
   /// @return value_size

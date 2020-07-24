@@ -134,17 +134,17 @@ void function(py::module& m)
   py::class_<dolfinx::function::Expression<PetscScalar>,
              std::shared_ptr<dolfinx::function::Expression<PetscScalar>>>(
       m, "Expression", "An Expression")
-      .def(py::init<>(), "Create an Expression")
+      .def(py::init<const std::shared_ptr<dolfinx::mesh::Mesh>&,
+      const Eigen::Ref<const
+          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&,
+      const std::size_t>(), "Create an Expression")
       .def("eval", &dolfinx::function::Expression<PetscScalar>::eval)
-      .def_property("mesh", &dolfinx::function::Expression<PetscScalar>::mesh,
-                    &dolfinx::function::Expression<PetscScalar>::set_mesh)
+      .def_property_readonly("mesh", &dolfinx::function::Expression<PetscScalar>::mesh)
       .def_property_readonly("num_points",
                     &dolfinx::function::Expression<PetscScalar>::num_points)
-      .def_property("value_size",
-                    &dolfinx::function::Expression<PetscScalar>::value_size,
-                    &dolfinx::function::Expression<PetscScalar>::set_value_size)
-      .def_property("x", &dolfinx::function::Expression<PetscScalar>::x,
-                    &dolfinx::function::Expression<PetscScalar>::set_x)
+      .def_property_readonly("value_size",
+                    &dolfinx::function::Expression<PetscScalar>::value_size)
+      .def_property_readonly("x", &dolfinx::function::Expression<PetscScalar>::x)
       .def("set_coefficient",
            [](dolfinx::function::Expression<PetscScalar>& self, std::size_t i,
               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>

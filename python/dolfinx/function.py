@@ -58,31 +58,36 @@ class Expression:
         self._name = name
 
         assert x.ndim < 3
+        num_points = x.shape[0] if x.ndim == 2 else 1
+        x = np.reshape(x, (num_points, -1))
+
         # Compile UFL expression with JIT
         ufc_expression = jit.ffcx_jit((ufl_expression, x))
         self._ufl_expression = ufl_expression
         self._ufc_expression = ufc_expression
 
-        self._cpp_object = cpp.function.Expression()
-
         # Setup data (evaluation points, coefficients, constants, mesh, value_shape).
-        self._cpp_object.x = x
 
-        # Setup cpp.Expression with JIT-ed tabulate expression function and tabulation points.
+        # Tabulation function.
         ffi = cffi.FFI()
-        self._cpp_object.set_tabulate_expression(ffi.cast("intptr_t", ufc_expression.tabulate_expression))
+        fn = ffi.cast("intptr_t", ufc_expression.tabulate_expression)
+
+        mesh = ufl_expression.ufl_domain().ufl_cargo()
+
+        # NOTE: Could also get from UFC expression?
+        value_size = ufl.product(self.ufl_expression.ufl_shape)
+
+        self._cpp_object = cpp.function.Expression(mesh, x, value_size)
 
         coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
         for i, coefficient in enumerate(coefficients):
             self._cpp_object.set_coefficient(i, coefficient._cpp_object)
 
-        constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
-        self._cpp_object.set_constants([constant._cpp_object for constant in constants])
+        ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
+        constants = [ufl_constant._cpp_object for ufl_constant in ufl_constants]
+        self._cpp_object.set_constants(constants)
 
-        self._cpp_object.mesh = ufl_expression.ufl_domain().ufl_cargo()
-
-        # NOTE: Could also get from ufc_expression object.
-        self._cpp_object.value_size = ufl.product(self.ufl_expression.ufl_shape)
+        self._cpp_object.set_tabulate_expression(fn)
 
     def eval(self, cells: np.ndarray, u=None) -> np.ndarray:
         """Evaluate Expression at points in cells where cell[i] is the local index of
@@ -111,7 +116,7 @@ class Expression:
         return self._ufl_expression
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
