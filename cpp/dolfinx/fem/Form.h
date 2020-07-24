@@ -211,8 +211,6 @@ public:
     return _function_spaces;
   }
 
-  /// @note This constructor is intended for use only from the Python
-  /// interface
   /// Register the function for 'tabulate_tensor' for cell integral i
   void set_tabulate_tensor(
       IntegralType type, int i,
