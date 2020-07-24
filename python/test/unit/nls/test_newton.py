@@ -5,14 +5,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for Newton solver assembly"""
 
-import numpy as np
-from mpi4py import MPI
-from petsc4py import PETSc
-
 import dolfinx
 import dolfinx.fem as fem
+import numpy as np
 import ufl
 from dolfinx import function
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
 

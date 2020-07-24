@@ -4,11 +4,10 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from mpi4py import MPI
-
 from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
 from dolfinx.cpp.mesh import GhostMode
 from dolfinx.mesh import refine
+from mpi4py import MPI
 
 
 def test_RefineUnitSquareMesh():

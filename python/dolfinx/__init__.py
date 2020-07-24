@@ -40,7 +40,6 @@ import dolfinx.log
 from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
-from dolfinx.mesh import Mesh
 from .cpp.mesh import Topology, Geometry
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)

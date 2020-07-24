@@ -8,13 +8,12 @@ import os
 
 import numpy as np
 import pytest
-from mpi4py import MPI
-from petsc4py import PETSc
-
 import ufl
 from dolfinx import Function, FunctionSpace
 from dolfinx.fem import assemble_matrix, assemble_scalar, assemble_vector
 from dolfinx.io import XDMFFile
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, avg, div, ds,
                  dS, dx, grad, inner, jump)
 

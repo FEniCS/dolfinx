@@ -1,8 +1,8 @@
 import gc
 import os
 
-from mpi4py import MPI
 import pytest
+from mpi4py import MPI
 
 
 def pytest_runtest_teardown(item):
