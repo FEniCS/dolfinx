@@ -122,14 +122,11 @@ FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
 //-----------------------------------------------------------------------------
 bool FunctionSpace::operator==(const FunctionSpace& V) const
 {
-  // Compare pointers to shared objects
-  return _element.get() == V._element.get() and _mesh.get() == V._mesh.get()
-         and _dofmap.get() == V._dofmap.get();
+  return _element == V._element and _mesh == V._mesh and _dofmap == V._dofmap;
 }
 //-----------------------------------------------------------------------------
 bool FunctionSpace::operator!=(const FunctionSpace& V) const
 {
-  // Compare pointers to shared objects
   return !(*this == V);
 }
 //-----------------------------------------------------------------------------
@@ -200,7 +197,7 @@ FunctionSpace::collapse() const
   auto collapsed_sub_space
       = std::make_shared<FunctionSpace>(_mesh, _element, collapsed_dofmap);
 
-  return std::pair(std::move(collapsed_sub_space), std::move(collapsed_dofs));
+  return {std::move(collapsed_sub_space), std::move(collapsed_dofs)};
 }
 //-----------------------------------------------------------------------------
 bool FunctionSpace::has_element(const fem::FiniteElement& element) const
@@ -260,11 +257,8 @@ bool FunctionSpace::contains(const FunctionSpace& V) const
     return false;
 
   // Are our components same as leading components of V?
-  for (std::size_t i = 0; i < _component.size(); ++i)
-  {
-    if (_component[i] != V._component[i])
-      return false;
-  }
+  if (!std::equal(_component.begin(), _component.end(), V._component.begin()))
+    return false;
 
   // Ok, V is really our subspace
   return true;
@@ -275,9 +269,11 @@ function::common_function_spaces(
     const std::vector<
         std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>& V)
 {
+  assert(!V.empty());
   std::array spaces{
       std::vector<std::shared_ptr<const FunctionSpace>>(V.size(), nullptr),
-      std::vector<std::shared_ptr<const FunctionSpace>>(V[0].size(), nullptr)};
+      std::vector<std::shared_ptr<const FunctionSpace>>(V.front().size(),
+                                                        nullptr)};
 
   // Loop over rows
   for (std::size_t i = 0; i < V.size(); ++i)
@@ -285,22 +281,23 @@ function::common_function_spaces(
     // Loop over columns
     for (std::size_t j = 0; j < V[i].size(); ++j)
     {
-      auto& _V = V[i][j];
-      if (_V[0] and _V[1])
+      auto& V0 = V[i][j][0];
+      auto& V1 = V[i][j][1];
+      if (V0 and V1)
       {
         if (!spaces[0][i])
-          spaces[0][i] = _V[0];
+          spaces[0][i] = V0;
         else
         {
-          if (spaces[0][i] != _V[0])
+          if (spaces[0][i] != V0)
             throw std::runtime_error("Mismatched test space for row.");
         }
 
         if (!spaces[1][j])
-          spaces[1][j] = _V[1];
+          spaces[1][j] = V1;
         else
         {
-          if (spaces[1][j] != _V[1])
+          if (spaces[1][j] != V1)
             throw std::runtime_error("Mismatched trial space for column.");
         }
       }
@@ -308,10 +305,11 @@ function::common_function_spaces(
   }
 
   // Check there are no null entries
-  for (std::size_t i = 0; i < spaces.size(); ++i)
-    for (std::size_t j = 0; j < spaces[i].size(); ++j)
-      if (!spaces[i][j])
-        throw std::runtime_error("Could not deduce all block spaces.");
+  for (auto& space : spaces)
+  {
+    if (std::find(space.begin(), space.end(), nullptr) != space.end())
+      throw std::runtime_error("Could not deduce all block spaces.");
+  }
 
   return spaces;
 }
