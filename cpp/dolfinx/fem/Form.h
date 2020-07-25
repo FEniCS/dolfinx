@@ -8,7 +8,6 @@
 
 #include "FormCoefficients.h"
 #include "FormIntegrals.h"
-// #include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -114,6 +113,9 @@ public:
     // Do nothing
   }
 
+  /// Copy constructor
+  Form(const Form& form) = delete;
+
   /// Move constructor
   Form(Form&& form) = default;
 
@@ -132,8 +134,8 @@ public:
       const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
           coefficients)
   {
-    for (const auto& c : coefficients)
-      _coefficients.set(c.first, c.second);
+    std::for_each(coefficients.begin(), coefficients.end(),
+                  [this](auto& c) { _coefficients.set(c.first, c.second); });
   }
 
   /// Set constants based on their names. Names of the constants must
@@ -145,13 +147,10 @@ public:
     for (auto const& constant : constants)
     {
       // Find matching string in existing constants
-      const std::string name = constant.first;
-      const auto it = std::find_if(
-          _constants.begin(), _constants.end(),
-          [&](const std::pair<
-              std::string, std::shared_ptr<const function::Constant<T>>>& q) {
-            return (q.first == name);
-          });
+      const std::string& name = constant.first;
+      auto it
+          = std::find_if(_constants.begin(), _constants.end(),
+                         [&name](const auto& q) { return q.first == name; });
       if (it != _constants.end())
         it->second = constant.second;
       else
@@ -174,9 +173,10 @@ public:
   std::set<std::string> get_unset_constants() const
   {
     std::set<std::string> unset;
-    for (const auto& constant : _constants)
-      if (!constant.second)
-        unset.insert(constant.first);
+    std::for_each(_constants.begin(), _constants.end(), [&unset](auto& c) {
+      if (!c.second)
+        unset.insert(c.first);
+    });
     return unset;
   }
 
@@ -333,9 +333,9 @@ Form<T> create_form(
     }
   }
 
-  // Get list of integral IDs, and load tabulate tensor into memory for each
+  // Get list of integral IDs, and load tabulate tensor into memory for
+  // each
   FormIntegrals<T> integrals;
-
   std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
   for (int id : cell_integral_ids)
