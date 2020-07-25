@@ -24,19 +24,19 @@ using namespace dolfinx::common;
 // before use. (google "static initialization order fiasco" for full
 // explanation)
 
-SubSystemsManager& SubSystemsManager::singleton()
-{
-  static SubSystemsManager the_instance;
-  return the_instance;
-}
+// SubSystemsManager& SubSystemsManager::singleton()
+// {
+//   static SubSystemsManager the_instance;
+//   return the_instance;
+// }
 //-----------------------------------------------------------------------------
-SubSystemsManager::SubSystemsManager()
-    : petsc_err_msg(""), petsc_initialized(false), control_mpi(false)
-{
-  // Do nothing
-}
+// SubSystemsManager::SubSystemsManager()
+//     : petsc_err_msg(""), petsc_initialized(false), control_mpi(false)
+// {
+//   // Do nothing
+// }
 //-----------------------------------------------------------------------------
-SubSystemsManager::~SubSystemsManager() { finalize(); }
+// SubSystemsManager::~SubSystemsManager() { finalize(); }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_mpi()
 {
@@ -50,7 +50,7 @@ void SubSystemsManager::init_mpi()
   std::string s("");
   char* c = const_cast<char*>(s.c_str());
   SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
-  singleton().control_mpi = true;
+  // singleton().control_mpi = true;
 }
 //-----------------------------------------------------------------------------
 int SubSystemsManager::init_mpi(int argc, char* argv[],
@@ -64,7 +64,6 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
   // Initialise MPI and take responsibility
   int provided = -1;
   MPI_Init_thread(&argc, &argv, required_thread_level, &provided);
-  singleton().control_mpi = true;
 
   return provided;
 }
@@ -88,9 +87,6 @@ void SubSystemsManager::init_petsc()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
-  if (singleton().petsc_initialized)
-    return;
-
   // Initialized MPI (do it here rather than letting PETSc do it to make
   // sure we MPI is initialized with any thread support
   init_mpi();
@@ -112,27 +108,27 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 #endif
 
   // Remember that PETSc has been initialized
-  singleton().petsc_initialized = true;
+  // singleton().petsc_initialized = true;
 
   // Determine if PETSc initialised MPI (and is therefore responsible
   // for MPI finalization)
-  if (mpi_initialized() && !mpi_init_status)
-    singleton().control_mpi = false;
+  // if (mpi_initialized() && !mpi_init_status)
+  //   singleton().control_mpi = false;
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::finalize()
-{
-  // Finalize subsystems in the correct order
-  finalize_petsc();
-  finalize_mpi();
-}
+// void SubSystemsManager::finalize()
+// {
+//   // Finalize subsystems in the correct order
+//   finalize_petsc();
+//   finalize_mpi();
+// }
 //-----------------------------------------------------------------------------
-bool SubSystemsManager::responsible_mpi() { return singleton().control_mpi; }
-//-----------------------------------------------------------------------------
-bool SubSystemsManager::responsible_petsc()
-{
-  return singleton().petsc_initialized;
-}
+// bool SubSystemsManager::responsible_mpi() { return singleton().control_mpi; }
+// //-----------------------------------------------------------------------------
+// bool SubSystemsManager::responsible_petsc()
+// {
+//   return singleton().petsc_initialized;
+// }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_mpi()
 {
@@ -140,7 +136,7 @@ void SubSystemsManager::finalize_mpi()
   MPI_Initialized(&mpi_initialized);
 
   // Finalise MPI if required
-  if (mpi_initialized && singleton().control_mpi)
+  if (mpi_initialized)
   {
     // Check in MPI has already been finalised (possibly incorrectly by
     // a 3rd party library). If it hasn't, finalise as normal.
@@ -159,24 +155,24 @@ void SubSystemsManager::finalize_mpi()
                 << std::endl;
     }
 
-    singleton().control_mpi = false;
+    // singleton().control_mpi = false;
   }
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_petsc()
 {
-  if (singleton().petsc_initialized)
-  {
-    if (!PetscFinalizeCalled)
-    {
-      PetscFinalize();
-    }
-    singleton().petsc_initialized = false;
+  // if (singleton().petsc_initialized)
+  // {
+  //   if (!PetscFinalizeCalled)
+  //   {
+  PetscFinalize();
+  // }
+  // singleton().petsc_initialized = false;
 
 #ifdef HAS_SLEPC
-    SlepcFinalize();
+  SlepcFinalize();
 #endif
-  }
+  // }
 }
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_initialized()
@@ -197,29 +193,29 @@ bool SubSystemsManager::mpi_finalized()
   return mpi_finalized;
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
-    MPI_Comm, int line, const char* fun, const char* file, PetscErrorCode n,
-    PetscErrorType, const char* mess, void*)
-{
-  // Store message for printing later (by PETScObject::petsc_error) only
-  // if it's not empty message (passed by PETSc when repeating error)
-  std::string _mess = mess;
-  boost::algorithm::trim(_mess);
-  if (_mess != "")
-    singleton().petsc_err_msg = _mess;
+// PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
+//     MPI_Comm, int line, const char* fun, const char* file, PetscErrorCode n,
+//     PetscErrorType, const char* mess, void*)
+// {
+//   // Store message for printing later (by PETScObject::petsc_error) only
+//   // if it's not empty message (passed by PETSc when repeating error)
+//   std::string _mess = mess;
+//   boost::algorithm::trim(_mess);
+//   if (_mess != "")
+//     singleton().petsc_err_msg = _mess;
 
-  // Fetch PETSc error description
-  const char* desc;
-  PetscErrorMessage(n, &desc, nullptr);
+//   // Fetch PETSc error description
+//   const char* desc;
+//   PetscErrorMessage(n, &desc, nullptr);
 
-  // Log detailed error info
-  LOG(ERROR)
-      << "PetscDolfinErrorHandler: line '{}', function '{}', file '{}',\n"
-         "                       : error code '{}' ({}), message follows:"
-      << line << fun << file << n << desc;
-  LOG(ERROR) << (_mess);
+//   // Log detailed error info
+//   LOG(ERROR)
+//       << "PetscDolfinErrorHandler: line '{}', function '{}', file '{}',\n"
+//          "                       : error code '{}' ({}), message follows:"
+//       << line << fun << file << n << desc;
+//   LOG(ERROR) << (_mess);
 
-  // Continue with error handling
-  PetscFunctionReturn(n);
-}
+//   // Continue with error handling
+//   PetscFunctionReturn(n);
+// }
 //-----------------------------------------------------------------------------

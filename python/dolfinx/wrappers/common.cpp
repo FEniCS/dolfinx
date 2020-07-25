@@ -10,8 +10,7 @@
 #include <Eigen/Dense>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/SubSystemsManager.h>
+// #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/defines.h>
@@ -106,35 +105,35 @@ void common(py::module& m)
         });
 
   // dolfinx::SubSystemsManager
-  py::class_<dolfinx::common::SubSystemsManager,
-             std::unique_ptr<dolfinx::common::SubSystemsManager, py::nodelete>>(
-      m, "SubSystemsManager")
-      .def_static("init_petsc",
-                  (void (*)()) & dolfinx::common::SubSystemsManager::init_petsc)
-      .def_static("init_petsc",
-                  [](std::vector<std::string> args) {
-                    std::vector<char*> argv(args.size());
-                    for (std::size_t i = 0; i < args.size(); ++i)
-                      argv[i] = const_cast<char*>(args[i].data());
-                    dolfinx::common::SubSystemsManager::init_petsc(args.size(),
-                                                                   argv.data());
-                  })
-      .def_static("init_logging",
-                  [](std::vector<std::string> args) {
-                    std::vector<char*> argv(args.size() + 1, nullptr);
-                    for (std::size_t i = 0; i < args.size(); ++i)
-                      argv[i] = const_cast<char*>(args[i].data());
-                    dolfinx::common::SubSystemsManager::init_logging(
-                        args.size(), argv.data());
-                  })
-      .def_static("finalize", &dolfinx::common::SubSystemsManager::finalize)
-      .def_static("responsible_mpi",
-                  &dolfinx::common::SubSystemsManager::responsible_mpi)
-      .def_static("responsible_petsc",
-                  &dolfinx::common::SubSystemsManager::responsible_petsc)
-      .def_static("mpi_initialized",
-                  &dolfinx::common::SubSystemsManager::mpi_initialized)
-      .def_static("mpi_finalized",
-                  &dolfinx::common::SubSystemsManager::mpi_finalized);
+  // py::class_<dolfinx::common::SubSystemsManager,
+  //            std::unique_ptr<dolfinx::common::SubSystemsManager, py::nodelete>>(
+  //     m, "SubSystemsManager")
+  //     .def_static("init_petsc",
+  //                 (void (*)()) & dolfinx::common::SubSystemsManager::init_petsc)
+  //     .def_static("init_petsc",
+  //                 [](std::vector<std::string> args) {
+  //                   std::vector<char*> argv(args.size());
+  //                   for (std::size_t i = 0; i < args.size(); ++i)
+  //                     argv[i] = const_cast<char*>(args[i].data());
+  //                   dolfinx::common::SubSystemsManager::init_petsc(args.size(),
+  //                                                                  argv.data());
+  //                 })
+  //     .def_static("init_logging",
+  //                 [](std::vector<std::string> args) {
+  //                   std::vector<char*> argv(args.size() + 1, nullptr);
+  //                   for (std::size_t i = 0; i < args.size(); ++i)
+  //                     argv[i] = const_cast<char*>(args[i].data());
+  //                   dolfinx::common::SubSystemsManager::init_logging(
+  //                       args.size(), argv.data());
+  //                 })
+  //     .def_static("finalize", &dolfinx::common::SubSystemsManager::finalize)
+  //     .def_static("responsible_mpi",
+  //                 &dolfinx::common::SubSystemsManager::responsible_mpi)
+  //     .def_static("responsible_petsc",
+  //                 &dolfinx::common::SubSystemsManager::responsible_petsc)
+  //     .def_static("mpi_initialized",
+  //                 &dolfinx::common::SubSystemsManager::mpi_initialized)
+  //     .def_static("mpi_finalized",
+  //                 &dolfinx::common::SubSystemsManager::mpi_finalized);
 }
 } // namespace dolfinx_wrappers
