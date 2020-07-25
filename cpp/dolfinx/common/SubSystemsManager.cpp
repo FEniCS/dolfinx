@@ -4,14 +4,12 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#define MPICH_IGNORE_CXX_SEEK 1
-
 #include "SubSystemsManager.h"
-#include <boost/algorithm/string/trim.hpp>
 #include <dolfinx/common/log.h>
 #include <iostream>
 #include <mpi.h>
 #include <petscsys.h>
+#include <string>
 
 #ifdef HAS_SLEPC
 #include <slepcsys.h>
@@ -129,30 +127,4 @@ bool SubSystemsManager::mpi_finalized()
   MPI_Finalized(&mpi_finalized);
   return mpi_finalized;
 }
-//-----------------------------------------------------------------------------
-// PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
-//     MPI_Comm, int line, const char* fun, const char* file, PetscErrorCode n,
-//     PetscErrorType, const char* mess, void*)
-// {
-//   // Store message for printing later (by PETScObject::petsc_error) only
-//   // if it's not empty message (passed by PETSc when repeating error)
-//   std::string _mess = mess;
-//   boost::algorithm::trim(_mess);
-//   if (_mess != "")
-//     singleton().petsc_err_msg = _mess;
-
-//   // Fetch PETSc error description
-//   const char* desc;
-//   PetscErrorMessage(n, &desc, nullptr);
-
-//   // Log detailed error info
-//   LOG(ERROR)
-//       << "PetscDolfinErrorHandler: line '{}', function '{}', file '{}',\n"
-//          "                       : error code '{}' ({}), message follows:"
-//       << line << fun << file << n << desc;
-//   LOG(ERROR) << (_mess);
-
-//   // Continue with error handling
-//   PetscFunctionReturn(n);
-// }
 //-----------------------------------------------------------------------------

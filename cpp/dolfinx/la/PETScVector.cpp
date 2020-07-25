@@ -10,7 +10,6 @@
 #include <cstddef>
 #include <cstring>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/SubSystemsManager.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 
@@ -25,30 +24,18 @@ using namespace dolfinx::la;
   } while (0)
 
 //-----------------------------------------------------------------------------
-void la::petsc_error(int error_code, std::string, std::string petsc_function)
+void la::petsc_error(int error_code, std::string filename,
+                     std::string petsc_function)
 {
   // Fetch PETSc error description
   const char* desc;
   PetscErrorMessage(error_code, &desc, nullptr);
 
-  // // Fetch and clear PETSc error message
-  // const std::string msg =
-  // common::SubSystemsManager::singleton().petsc_err_msg;
-  // common::SubSystemsManager::singleton().petsc_err_msg = "";
+  // Log detailed error info
+  DLOG(INFO) << "PETSc error in '" << filename.c_str() << "', '"
+             << petsc_function.c_str() << "'";
+  DLOG(INFO) << "PETSc error code '" << error_code << "' (" << desc << ".";
 
-  // // // Log detailed error info
-  // DLOG(INFO) << "PETSc error in '" << filename.c_str() << "', '"
-  //            << petsc_function.c_str() << "'";
-
-  // DLOG(INFO) << "PETSc error code '" << error_code << "' (" << desc
-  //            << "), message follows:";
-
-  // // NOTE: don't put msg as variadic argument; it might get trimmed
-  // DLOG(INFO) << std::string(78, '-');
-  // DLOG(INFO) << msg;
-  // DLOG(INFO) << std::string(78, '-');
-
-  // Raise exception with standard error message
   throw std::runtime_error("Failed to successfully call PETSc function '"
                            + petsc_function + "'. PETSc error code is: "
                            + std ::to_string(error_code) + ", "

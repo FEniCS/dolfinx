@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <string>
-
 namespace dolfinx::common
 {
 
@@ -42,17 +40,6 @@ bool mpi_initialized();
 /// Check if MPI has been finalized (returns true if MPI has been
 /// finalised)
 bool mpi_finalized();
-
-/// PETSc error handler. Logs everything known to DOLFINX logging
-/// system (with level TRACE) and stores the error message into
-/// pests_err_msg member.
-// static PetscErrorCode
-// PetscDolfinErrorHandler(MPI_Comm comm, int line, const char* fun,
-//                         const char* file, PetscErrorCode n, PetscErrorType p,
-//                         const char* mess, void* ctx);
-
-/// Last recorded PETSc error message
-// std::string petsc_err_msg;
 
 /// Finalize MPI
 void finalize_mpi();
