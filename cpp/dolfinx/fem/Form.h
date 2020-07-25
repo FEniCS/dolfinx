@@ -10,13 +10,11 @@
 #include "FormIntegrals.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
-#include <ufc.h>
 #include <vector>
 
 namespace dolfinx
@@ -274,150 +272,6 @@ private:
   // The mesh (needed for functionals when we don't have any spaces)
   std::shared_ptr<const mesh::Mesh> _mesh;
 };
-
-/// Extract coefficients from a UFC form
-template <typename T>
-std::vector<
-    std::tuple<int, std::string, std::shared_ptr<function::Function<T>>>>
-get_coeffs_from_ufc_form(const ufc_form& ufc_form)
-{
-  std::vector<
-      std::tuple<int, std::string, std::shared_ptr<function::Function<T>>>>
-      coeffs;
-  const char** names = ufc_form.coefficient_name_map();
-  for (int i = 0; i < ufc_form.num_coefficients; ++i)
-  {
-    coeffs.emplace_back(ufc_form.original_coefficient_position(i), names[i],
-                        nullptr);
-  }
-  return coeffs;
-}
-
-/// Extract coefficients from a UFC form
-template <typename T>
-std::vector<
-    std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
-get_constants_from_ufc_form(const ufc_form& ufc_form)
-{
-  std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
-      constants;
-  const char** names = ufc_form.constant_name_map();
-  for (int i = 0; i < ufc_form.num_constants; ++i)
-    constants.emplace_back(names[i], nullptr);
-  return constants;
-}
-
-/// Create a Form from UFC input
-/// @param[in] ufc_form The UFC form
-/// @param[in] spaces Vector of function spaces
-template <typename T>
-Form<T> create_form(
-    const ufc_form& ufc_form,
-    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
-{
-  assert(ufc_form.rank == (int)spaces.size());
-
-  // Check argument function spaces
-  for (std::size_t i = 0; i < spaces.size(); ++i)
-  {
-    assert(spaces[i]->element());
-    std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
-        ufc_form.create_finite_element(i), free);
-    assert(ufc_element);
-    if (std::string(ufc_element->signature)
-        != spaces[i]->element()->signature())
-    {
-      throw std::runtime_error(
-          "Cannot create form. Wrong type of function space for argument.");
-    }
-  }
-
-  // Get list of integral IDs, and load tabulate tensor into memory for
-  // each
-  FormIntegrals<T> integrals;
-  std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
-  ufc_form.get_cell_integral_ids(cell_integral_ids.data());
-  for (int id : cell_integral_ids)
-  {
-    ufc_integral* cell_integral = ufc_form.create_cell_integral(id);
-    assert(cell_integral);
-    integrals.set_tabulate_tensor(IntegralType::cell, id,
-                                  cell_integral->tabulate_tensor);
-    std::free(cell_integral);
-  }
-
-  // FIXME: Can this be handled better?
-  // FIXME: Handle forms with no space
-  if (ufc_form.num_exterior_facet_integrals > 0
-      or ufc_form.num_interior_facet_integrals > 0)
-  {
-    if (!spaces.empty())
-    {
-      auto mesh = spaces[0]->mesh();
-      const int tdim = mesh->topology().dim();
-      spaces[0]->mesh()->topology_mutable().create_entities(tdim - 1);
-    }
-  }
-
-  std::vector<int> exterior_facet_integral_ids(
-      ufc_form.num_exterior_facet_integrals);
-  ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
-  for (int id : exterior_facet_integral_ids)
-  {
-    ufc_integral* exterior_facet_integral
-        = ufc_form.create_exterior_facet_integral(id);
-    assert(exterior_facet_integral);
-    integrals.set_tabulate_tensor(IntegralType::exterior_facet, id,
-                                  exterior_facet_integral->tabulate_tensor);
-    std::free(exterior_facet_integral);
-  }
-
-  std::vector<int> interior_facet_integral_ids(
-      ufc_form.num_interior_facet_integrals);
-  ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
-  for (int id : interior_facet_integral_ids)
-  {
-    ufc_integral* interior_facet_integral
-        = ufc_form.create_interior_facet_integral(id);
-    assert(interior_facet_integral);
-    integrals.set_tabulate_tensor(IntegralType::interior_facet, id,
-                                  interior_facet_integral->tabulate_tensor);
-    std::free(interior_facet_integral);
-  }
-
-  // Not currently working
-  std::vector<int> vertex_integral_ids(ufc_form.num_vertex_integrals);
-  ufc_form.get_vertex_integral_ids(vertex_integral_ids.data());
-  if (vertex_integral_ids.size() > 0)
-  {
-    throw std::runtime_error(
-        "Vertex integrals not supported. Under development.");
-  }
-
-  return fem::Form(
-      spaces, integrals,
-      FormCoefficients<T>(fem::get_coeffs_from_ufc_form<T>(ufc_form)),
-      fem::get_constants_from_ufc_form<T>(ufc_form));
-}
-
-/// Create a form from a form_create function returning a pointer to a
-/// ufc_form, taking care of memory allocation
-/// @param[in] fptr pointer to a function returning a pointer to
-///    ufc_form
-/// @param[in] spaces function spaces
-/// @return Form
-template <typename T>
-std::shared_ptr<Form<T>> create_form(
-    ufc_form* (*fptr)(),
-    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
-{
-  ufc_form* form = fptr();
-  auto L = std::make_shared<fem::Form<T>>(
-      dolfinx::fem::create_form<T>(*form, spaces));
-  std::free(form);
-  return L;
-}
 
 } // namespace fem
 } // namespace dolfinx

@@ -270,3 +270,49 @@ bool FunctionSpace::contains(const FunctionSpace& V) const
   return true;
 }
 //-----------------------------------------------------------------------------
+std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
+function::common_function_spaces(
+    const std::vector<
+        std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>& V)
+{
+  std::array spaces{
+      std::vector<std::shared_ptr<const FunctionSpace>>(V.size(), nullptr),
+      std::vector<std::shared_ptr<const FunctionSpace>>(V[0].size(), nullptr)};
+
+  // Loop over rows
+  for (std::size_t i = 0; i < V.size(); ++i)
+  {
+    // Loop over columns
+    for (std::size_t j = 0; j < V[i].size(); ++j)
+    {
+      auto& _V = V[i][j];
+      if (_V[0] and _V[1])
+      {
+        if (!spaces[0][i])
+          spaces[0][i] = _V[0];
+        else
+        {
+          if (spaces[0][i] != _V[0])
+            throw std::runtime_error("Mismatched test space for row.");
+        }
+
+        if (!spaces[1][j])
+          spaces[1][j] = _V[1];
+        else
+        {
+          if (spaces[1][j] != _V[1])
+            throw std::runtime_error("Mismatched trial space for column.");
+        }
+      }
+    }
+  }
+
+  // Check there are no null entries
+  for (std::size_t i = 0; i < spaces.size(); ++i)
+    for (std::size_t j = 0; j < spaces[i].size(); ++j)
+      if (!spaces[i][j])
+        throw std::runtime_error("Could not deduce all block spaces.");
+
+  return spaces;
+}
+//-----------------------------------------------------------------------------
