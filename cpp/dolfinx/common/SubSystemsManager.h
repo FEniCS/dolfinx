@@ -47,5 +47,5 @@ void finalize_mpi();
 /// Finalize PETSc
 void finalize_petsc();
 
-}; // namespace SubSystemsManager
+} // namespace SubSystemsManager
 } // namespace dolfinx::common
