@@ -295,5 +295,6 @@ ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
     pip3 install --no-cache-dir jupyter jupyterlab
 EXPOSE 8888/tcp
+ENV SHELL /bin/bash
 
 ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
