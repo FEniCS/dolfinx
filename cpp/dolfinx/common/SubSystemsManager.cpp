@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Garth N. Wells, Anders Logg, Jan Blechta
+// Copyright (C) 2008-2020 Garth N. Wells, Anders Logg, Jan Blechta
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -11,7 +11,6 @@
 #include <dolfinx/common/log.h>
 #include <iostream>
 #include <mpi.h>
-// #include <petsc.h>
 #include <petscsys.h>
 
 #ifdef HAS_SLEPC
@@ -20,24 +19,6 @@
 
 using namespace dolfinx::common;
 
-// Return singleton instance. Do NOT make the singleton a global static
-// object; the method here ensures that the singleton is initialised
-// before use. (google "static initialization order fiasco" for full
-// explanation)
-
-// SubSystemsManager& SubSystemsManager::singleton()
-// {
-//   static SubSystemsManager the_instance;
-//   return the_instance;
-// }
-//-----------------------------------------------------------------------------
-// SubSystemsManager::SubSystemsManager()
-//     : petsc_err_msg(""), petsc_initialized(false), control_mpi(false)
-// {
-//   // Do nothing
-// }
-//-----------------------------------------------------------------------------
-// SubSystemsManager::~SubSystemsManager() { finalize(); }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_mpi()
 {

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Garth N. Wells
+// Copyright (C) 2008-2020 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -11,19 +11,12 @@
 namespace dolfinx::common
 {
 
-/// This is a singleton class which manages the initialisation and
-/// finalisation of various sub systems, such as MPI and PETSc.
+/// Function in this namesspace are convenience functtions for the
+/// initialisation and finalisation of various sub systems, such as MPI
+/// and PETSc.
 
 namespace SubSystemsManager
 {
-// public:
-/// Singleton instance. Calling this ensures singleton instance of
-/// SubSystemsManager is initialized according to the "Construct on
-/// First Use" idiom.
-// static SubSystemsManager& singleton();
-
-// Copy constructor
-// SubSystemsManager(const SubSystemsManager&) = delete;
 
 /// Initialise MPI
 void init_mpi();
@@ -41,18 +34,6 @@ void init_petsc();
 /// command-line arguments may also be filtered and sent to PETSc by
 /// parameters.parse(argc, argv).
 void init_petsc(int argc, char* argv[]);
-
-/// Finalize subsystems. This will be called by the destructor, but in
-/// special cases it may be necessary to call finalize() explicitly.
-// static void finalize();
-
-/// Return true if DOLFINX initialised MPI (and is therefore
-/// responsible for finalization)
-// static bool responsible_mpi();
-
-/// Return true if DOLFINX initialised PETSc (and is therefore
-/// responsible for finalization)
-// static bool responsible_petsc();
 
 /// Check if MPI has been initialised (returns true if MPI has been
 /// initialised, even if it is later finalised)
@@ -73,21 +54,11 @@ bool mpi_finalized();
 /// Last recorded PETSc error message
 // std::string petsc_err_msg;
 
-// private:
-//   // Constructor (private)
-//   SubSystemsManager();
-
-//   // Destructor
-//   ~SubSystemsManager();
-
 /// Finalize MPI
 void finalize_mpi();
 
 /// Finalize PETSc
 void finalize_petsc();
 
-// State variables
-// bool petsc_initialized;
-// bool control_mpi;
 }; // namespace SubSystemsManager
 } // namespace dolfinx::common

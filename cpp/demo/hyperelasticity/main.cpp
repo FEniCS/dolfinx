@@ -102,88 +102,97 @@ int main(int argc, char* argv[])
   common::SubSystemsManager::init_logging(argc, argv);
   common::SubSystemsManager::init_petsc(argc, argv);
 
-  // Inside the ``main`` function, we begin by defining a tetrahedral mesh
-  // of the domain and the function space on this mesh. Here, we choose to
-  // create a unit cube mesh with 25 ( = 24 + 1) vertices in one direction
-  // and 17 ( = 16 + 1) vertices in the other two directions. With this
-  // mesh, we initialize the (finite element) function space defined by the
-  // generated code.
-  //
-  // .. code-block:: cpp
+  {
+    // Inside the ``main`` function, we begin by defining a tetrahedral mesh
+    // of the domain and the function space on this mesh. Here, we choose to
+    // create a unit cube mesh with 25 ( = 24 + 1) vertices in one direction
+    // and 17 ( = 16 + 1) vertices in the other two directions. With this
+    // mesh, we initialize the (finite element) function space defined by the
+    // generated code.
+    //
+    // .. code-block:: cpp
 
-  // Create mesh and define function space
-  std::array pt{Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(1, 1, 1)};
+    // Create mesh and define function space
+    std::array pt{Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(1, 1, 1)};
 
-  auto cmap = fem::create_coordinate_map(create_coordinate_map_hyperelasticity);
-  auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
-      MPI_COMM_WORLD, pt, {{10, 10, 10}}, cmap, mesh::GhostMode::none));
+    auto cmap
+        = fem::create_coordinate_map(create_coordinate_map_hyperelasticity);
+    auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
+        MPI_COMM_WORLD, pt, {{10, 10, 10}}, cmap, mesh::GhostMode::none));
 
-  auto V = fem::create_functionspace(
-      create_functionspace_form_hyperelasticity_F, "u", mesh);
+    auto V = fem::create_functionspace(
+        create_functionspace_form_hyperelasticity_F, "u", mesh);
 
-  // Define solution function
-  auto u = std::make_shared<function::Function<PetscScalar>>(V);
+    // Define solution function
+    auto u = std::make_shared<function::Function<PetscScalar>>(V);
 
-  auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J, {V, V});
-  auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V});
+    auto a
+        = fem::create_form<PetscScalar>(create_form_hyperelasticity_J, {V, V});
+    auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V});
 
-  auto u_rotation = std::make_shared<function::Function<PetscScalar>>(V);
-  u_rotation->interpolate([](auto& x) {
-    const double scale = 0.005;
+    auto u_rotation = std::make_shared<function::Function<PetscScalar>>(V);
+    u_rotation->interpolate([](auto& x) {
+      const double scale = 0.005;
 
-    // Center of rotation
-    const double y0 = 0.5;
-    const double z0 = 0.5;
+      // Center of rotation
+      const double y0 = 0.5;
+      const double z0 = 0.5;
 
-    // Large angle of rotation (60 degrees)
-    const double theta = 1.04719755;
+      // Large angle of rotation (60 degrees)
+      const double theta = 1.04719755;
 
-    Eigen::Array<PetscScalar, 3, Eigen::Dynamic, Eigen::RowMajor> values(
-        3, x.cols());
-    for (int i = 0; i < x.cols(); ++i)
-    {
-      // New coordinates
-      double y = y0 + (x(1, i) - y0) * cos(theta) - (x(2, i) - z0) * sin(theta);
-      double z = z0 + (x(1, i) - y0) * sin(theta) + (x(2, i) - z0) * cos(theta);
+      Eigen::Array<PetscScalar, 3, Eigen::Dynamic, Eigen::RowMajor> values(
+          3, x.cols());
+      for (int i = 0; i < x.cols(); ++i)
+      {
+        // New coordinates
+        double y
+            = y0 + (x(1, i) - y0) * cos(theta) - (x(2, i) - z0) * sin(theta);
+        double z
+            = z0 + (x(1, i) - y0) * sin(theta) + (x(2, i) - z0) * cos(theta);
 
-      // Rotate at right end
-      values(0, i) = 0.0;
-      values(1, i) = scale * (y - x(1, i));
-      values(2, i) = scale * (z - x(2, i));
-    }
+        // Rotate at right end
+        values(0, i) = 0.0;
+        values(1, i) = scale * (y - x(1, i));
+        values(2, i) = scale * (z - x(2, i));
+      }
 
-    return values;
-  });
+      return values;
+    });
 
-  auto u_clamp = std::make_shared<function::Function<PetscScalar>>(V);
-  u_clamp->interpolate([](auto& x) {
-    return Eigen::Array<PetscScalar, 3, Eigen::Dynamic, Eigen::RowMajor>::Zero(
-        3, x.cols());
-  });
+    auto u_clamp = std::make_shared<function::Function<PetscScalar>>(V);
+    u_clamp->interpolate([](auto& x) {
+      return Eigen::Array<PetscScalar, 3, Eigen::Dynamic,
+                          Eigen::RowMajor>::Zero(3, x.cols());
+    });
 
-  L->set_coefficients({{"u", u}});
-  a->set_coefficients({{"u", u}});
+    L->set_coefficients({{"u", u}});
+    a->set_coefficients({{"u", u}});
 
-  // Create Dirichlet boundary conditions
-  auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
+    // Create Dirichlet boundary conditions
+    auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
 
-  const auto bdofs_left = fem::locate_dofs_geometrical(
-      {*V}, [](auto& x) { return x.row(0) < DBL_EPSILON; });
-  const auto bdofs_right = fem::locate_dofs_geometrical(
-      {*V}, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
+    const auto bdofs_left = fem::locate_dofs_geometrical(
+        {*V}, [](auto& x) { return x.row(0) < DBL_EPSILON; });
+    const auto bdofs_right = fem::locate_dofs_geometrical(
+        {*V}, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
 
-  auto bcs = std::vector({std::make_shared<const fem::DirichletBC<PetscScalar>>(
-                              u_clamp, bdofs_left),
-                          std::make_shared<const fem::DirichletBC<PetscScalar>>(
-                              u_rotation, bdofs_right)});
+    auto bcs
+        = std::vector({std::make_shared<const fem::DirichletBC<PetscScalar>>(
+                           u_clamp, bdofs_left),
+                       std::make_shared<const fem::DirichletBC<PetscScalar>>(
+                           u_rotation, bdofs_right)});
 
-  HyperElasticProblem problem(u, L, a, bcs);
-  nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
-  newton_solver.solve(problem, u->vector());
+    HyperElasticProblem problem(u, L, a, bcs);
+    nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
+    newton_solver.solve(problem, u->vector());
 
-  // Save solution in VTK format
-  io::VTKFile file("u.pvd");
-  file.write(*u);
+    // Save solution in VTK format
+    io::VTKFile file("u.pvd");
+    file.write(*u);
+  }
+
+  common::SubSystemsManager::finalize_petsc();
 
   return 0;
 }
