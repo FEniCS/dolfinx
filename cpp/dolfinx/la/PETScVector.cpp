@@ -25,15 +25,15 @@ using namespace dolfinx::la;
   } while (0)
 
 //-----------------------------------------------------------------------------
-void la::petsc_error(int error_code, std::string filename,
-                     std::string petsc_function)
+void la::petsc_error(int error_code, std::string, std::string petsc_function)
 {
   // Fetch PETSc error description
   const char* desc;
   PetscErrorMessage(error_code, &desc, nullptr);
 
   // // Fetch and clear PETSc error message
-  // const std::string msg = common::SubSystemsManager::singleton().petsc_err_msg;
+  // const std::string msg =
+  // common::SubSystemsManager::singleton().petsc_err_msg;
   // common::SubSystemsManager::singleton().petsc_err_msg = "";
 
   // // // Log detailed error info

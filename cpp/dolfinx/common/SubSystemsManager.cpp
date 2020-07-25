@@ -11,10 +11,11 @@
 #include <dolfinx/common/log.h>
 #include <iostream>
 #include <mpi.h>
-#include <petsc.h>
+// #include <petsc.h>
+#include <petscsys.h>
 
 #ifdef HAS_SLEPC
-#include <slepc.h>
+#include <slepcsys.h>
 #endif
 
 using namespace dolfinx::common;
@@ -45,12 +46,10 @@ void SubSystemsManager::init_mpi()
   if (mpi_initialized)
     return;
 
-  // Init MPI with highest level of thread support and take
-  // responsibility
+  // Init MPI with highest level of thread support
   std::string s("");
   char* c = const_cast<char*>(s.c_str());
   SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
-  // singleton().control_mpi = true;
 }
 //-----------------------------------------------------------------------------
 int SubSystemsManager::init_mpi(int argc, char* argv[],
@@ -64,7 +63,6 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
   // Initialise MPI and take responsibility
   int provided = -1;
   MPI_Init_thread(&argc, &argv, required_thread_level, &provided);
-
   return provided;
 }
 //-----------------------------------------------------------------------------
@@ -77,23 +75,14 @@ void SubSystemsManager::init_logging(int argc, char* argv[])
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()
 {
-  // Dummy command-line arguments
+  // Initialize PETSc
   int argc = 0;
   char** argv = nullptr;
-
-  // Initialize PETSc
   init_petsc(argc, argv);
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
-  // Initialized MPI (do it here rather than letting PETSc do it to make
-  // sure we MPI is initialized with any thread support
-  init_mpi();
-
-  // Get status of MPI before PETSc initialisation
-  const bool mpi_init_status = mpi_initialized();
-
   // Print message if PETSc is initialised with command line arguments
   if (argc > 1)
     LOG(INFO) << "Initializing PETSc with given command-line arguments.";
@@ -106,29 +95,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 #ifdef HAS_SLEPC
   SlepcInitialize(&argc, &argv, nullptr, nullptr);
 #endif
-
-  // Remember that PETSc has been initialized
-  // singleton().petsc_initialized = true;
-
-  // Determine if PETSc initialised MPI (and is therefore responsible
-  // for MPI finalization)
-  // if (mpi_initialized() && !mpi_init_status)
-  //   singleton().control_mpi = false;
 }
-//-----------------------------------------------------------------------------
-// void SubSystemsManager::finalize()
-// {
-//   // Finalize subsystems in the correct order
-//   finalize_petsc();
-//   finalize_mpi();
-// }
-//-----------------------------------------------------------------------------
-// bool SubSystemsManager::responsible_mpi() { return singleton().control_mpi; }
-// //-----------------------------------------------------------------------------
-// bool SubSystemsManager::responsible_petsc()
-// {
-//   return singleton().petsc_initialized;
-// }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_mpi()
 {
@@ -154,33 +121,22 @@ void SubSystemsManager::finalize_mpi()
                    "can lead to unpredictable behaviour."
                 << std::endl;
     }
-
-    // singleton().control_mpi = false;
   }
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_petsc()
 {
-  // if (singleton().petsc_initialized)
-  // {
-  //   if (!PetscFinalizeCalled)
-  //   {
   PetscFinalize();
-  // }
-  // singleton().petsc_initialized = false;
-
 #ifdef HAS_SLEPC
   SlepcFinalize();
 #endif
-  // }
 }
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_initialized()
 {
-  // This function not affected if MPI_Finalize has been called. It
+  // This function is not affected if MPI_Finalize has been called. It
   // returns true if MPI_Init has been called at any point, even if
   // MPI_Finalize has been called.
-
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
   return mpi_initialized;
