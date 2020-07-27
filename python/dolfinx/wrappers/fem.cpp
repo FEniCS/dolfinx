@@ -218,7 +218,8 @@ void fem(py::module& m)
            &dolfinx::fem::ElementDofLayout::num_entity_closure_dofs)
       .def("entity_dofs", &dolfinx::fem::ElementDofLayout::entity_dofs)
       .def("entity_closure_dofs",
-           &dolfinx::fem::ElementDofLayout::entity_closure_dofs);
+           &dolfinx::fem::ElementDofLayout::entity_closure_dofs)
+      .def("block_size", &dolfinx::fem::ElementDofLayout::block_size);
 
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(

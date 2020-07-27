@@ -65,9 +65,10 @@ def test_entity_dofs(mesh):
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
     V = VectorFunctionSpace(mesh, ("CG", 1))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) * 2 == 2
-    assert V.dofmap.dof_layout.num_entity_dofs(1) * 2 == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) * 2 == 0
+    bs = V.dofmap.dof_layout.block_size()
+    assert V.dofmap.dof_layout.num_entity_dofs(0) * bs == 2
+    assert V.dofmap.dof_layout.num_entity_dofs(1) * bs == 0
+    assert V.dofmap.dof_layout.num_entity_dofs(2) * bs == 0
 
     V = FunctionSpace(mesh, ("CG", 2))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
@@ -90,15 +91,11 @@ def test_entity_dofs(mesh):
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 3
 
     V = VectorFunctionSpace(mesh, ("CG", 1))
+    bs = V.dofmap.dof_layout.block_size()
 
-    # Note this numbering is dependent on FFCX and can change This test
-    # is here just to check that we get correct numbers mapped from ufc
-    # generated code to dolfinx
-    #for i, cdofs in enumerate([[0, 1], [2, 3], [4, 5]]):
-    #    dofs = V.dofmap.dof_layout.entity_dofs(0, i)
-    #    assert all(d == cd for d, cd in zip(dofs, cdofs))
-    for i, cdofs in enumerate([[0], [1], [2]]):
-        dofs = V.dofmap.dof_layout.entity_dofs(0, i)
+    for i, cdofs in enumerate([[0, 1], [2, 3], [4, 5]]):
+        dofs = [bs * d + b for d in V.dofmap.dof_layout.entity_dofs(0, i)
+                for b in range(bs)]
         assert all(d == cd for d, cd in zip(dofs, cdofs))
 
 
