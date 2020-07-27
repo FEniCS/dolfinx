@@ -489,6 +489,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   common::Timer t0("Init dofmap");
 
   const int element_block_size = element_dof_layout.block_size();
+  assert(element_block_size == block_size);
 
   //  if (element_dof_layout.block_size() != 1)
   //    throw std::runtime_error("Block size of 1 expected when building
@@ -511,8 +512,8 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     {
       assert(topology.index_map(d));
       const std::int64_t n = topology.index_map(d)->size_global();
-      global_dimension += n * element_dof_layout.num_entity_dofs(d)
-                          * element_dof_layout.block_size();
+      global_dimension
+          += n * element_dof_layout.num_entity_dofs(d) * element_block_size;
     }
   }
 

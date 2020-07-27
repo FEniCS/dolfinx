@@ -148,6 +148,8 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
                                const mesh::CellType cell_type,
                                const std::vector<int>& parent_map)
 {
+  const int element_block_size = dofmap.block_size;
+
   // Copy over number of dofs per entity type
   std::array<int, 4> num_entity_dofs;
   std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
@@ -180,7 +182,6 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // Create UFC subdofmaps and compute offset
   std::vector<std::shared_ptr<ufc_dofmap>> ufc_sub_dofmaps;
   std::vector<int> offsets(1, 0);
-  const int element_block_size = dofmap.block_size;
 
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
@@ -242,18 +243,9 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     }
   }
 
-  if (ufc_dofmap.block_size == 1)
-  {
-    auto [index_map, dofmap]
-        = DofMapBuilder::build(comm, topology, *element_dof_layout, 1);
-    return DofMap(element_dof_layout, index_map, std::move(dofmap));
-  }
-  else
-  {
-    auto [index_map, dofmap] = DofMapBuilder::build(
-        comm, topology, *element_dof_layout, ufc_dofmap.block_size);
-    return DofMap(element_dof_layout, index_map, std::move(dofmap));
-  }
+  auto [index_map, dofmap] = DofMapBuilder::build(
+      comm, topology, *element_dof_layout, ufc_dofmap.block_size);
+  return DofMap(element_dof_layout, index_map, std::move(dofmap));
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement
