@@ -17,13 +17,9 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <ufc.h>
 #include <utility>
 #include <vector>
-
-struct ufc_dofmap;
-struct ufc_form;
-struct ufc_coordinate_mapping;
-struct ufc_function_space;
 
 namespace dolfinx
 {
@@ -58,36 +54,24 @@ namespace fem
 ///   function spaces in each array entry. If a form is null, then the
 ///   returned function space pair is (null, null).
 template <typename T>
-Eigen::Array<std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
-             Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+std::vector<
+    std::vector<std::array<std::shared_ptr<const function::FunctionSpace>, 2>>>
 extract_function_spaces(
     const Eigen::Ref<const Eigen::Array<const fem::Form<T>*, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
-  Eigen::Array<std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
-               Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      spaces(a.rows(), a.cols());
+  std::vector<std::vector<
+      std::array<std::shared_ptr<const function::FunctionSpace>, 2>>>
+      spaces(a.rows(),
+             std::vector<
+                 std::array<std::shared_ptr<const function::FunctionSpace>, 2>>(
+                 a.cols()));
   for (int i = 0; i < a.rows(); ++i)
     for (int j = 0; j < a.cols(); ++j)
       if (a(i, j))
-        spaces(i, j) = {a(i, j)->function_space(0), a(i, j)->function_space(1)};
+        spaces[i][j] = {a(i, j)->function_space(0), a(i, j)->function_space(1)};
   return spaces;
 }
-
-/// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
-/// from a rectangular array of bilinear forms. The test space must be
-/// the same for each row and the trial spaces must be the same for each
-/// column. Raises an exception if there is an inconsistency. e.g. if
-/// each form in row i does not have the same test space then an
-/// exception is raised.
-///
-/// @param[in] V Vector function spaces for (0) each row block and (1)
-/// each column block
-std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
-common_function_spaces(
-    const Eigen ::Ref<const Eigen::Array<
-        std::array<std::shared_ptr<const function::FunctionSpace>, 2>,
-        Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& V);
 
 /// Create a sparsity pattern for a given form. The pattern is not
 /// finalised, i.e. the caller is responsible for calling
