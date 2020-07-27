@@ -284,8 +284,9 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   {
     auto cell_dofs_view = this->cell_dofs(c);
     auto cell_dofs = dofmap_new->cell_dofs(c);
-    assert(cell_dofs_view.rows() == cell_dofs.rows());
-    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
+    assert(cell_dofs_view.rows() * this->element_dof_layout->block_size()
+           == cell_dofs.rows());
+    for (Eigen::Index i = 0; i < cell_dofs_view.rows(); ++i)
     {
       assert(cell_dofs[i] < (int)collapsed_map.size());
       collapsed_map[cell_dofs[i]] = cell_dofs_view[i];
