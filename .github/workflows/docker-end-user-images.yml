@@ -8,7 +8,7 @@ on:
   #     - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
-    - cron: "4 * * *"
+    - cron: "0 4 * * *"
 
 jobs:
   build_end_user_images:
