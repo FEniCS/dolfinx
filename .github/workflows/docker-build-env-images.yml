@@ -15,8 +15,7 @@ on:
 jobs:
   build_test_env:
     name: Build fenicsproject/test-env image
-    if: github.repository == 'FEniCS/dolfinx'
-    if: github.ref == 'master'
+    if: github.repository == 'FEniCS/dolfinx' && github.ref == 'master'
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -29,8 +28,7 @@ jobs:
 
   build_dev_env:
     name: Build dolfinx/dev-env image
-    if: github.repository == 'FEniCS/dolfinx'
-    if: github.ref == 'master'
+    if: github.repository == 'FEniCS/dolfinx' && github.ref == 'master'
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
