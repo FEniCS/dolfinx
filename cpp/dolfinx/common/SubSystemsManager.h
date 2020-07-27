@@ -25,12 +25,12 @@ int init_mpi(int argc, char* argv[], int required_thread_level);
 /// Initialise loguru
 void init_logging(int argc, char* argv[]);
 
-/// Initialize PETSc without command-line arguments
+/// Initialize PETSc (and SLEPc, if configured) without command-line
+/// arguments
 void init_petsc();
 
-/// Initialize PETSc with command-line arguments. Note that PETSc
-/// command-line arguments may also be filtered and sent to PETSc by
-/// parameters.parse(argc, argv).
+/// Initialize PETSc (and SLEPc, if configured) with command-line
+/// arguments
 void init_petsc(int argc, char* argv[]);
 
 /// Check if MPI has been initialised (returns true if MPI has been

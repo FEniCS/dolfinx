@@ -54,7 +54,6 @@ void SubSystemsManager::init_logging(int argc, char* argv[])
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()
 {
-  // Initialize PETSc
   int argc = 0;
   char** argv = nullptr;
   init_petsc(argc, argv);
@@ -62,7 +61,6 @@ void SubSystemsManager::init_petsc()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
-  // Print message if PETSc is initialised with command line arguments
   if (argc > 1)
     LOG(INFO) << "Initializing PETSc with given command-line arguments.";
 
@@ -80,11 +78,9 @@ void SubSystemsManager::finalize_mpi()
 {
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
-
-  // Finalise MPI if required
   if (mpi_initialized)
   {
-    // Check in MPI has already been finalised (possibly incorrectly by
+    // Check if MPI has already been finalised (possibly incorrectly by
     // a 3rd party library). If it hasn't, finalise as normal.
     int mpi_finalized;
     MPI_Finalized(&mpi_finalized);
@@ -93,11 +89,8 @@ void SubSystemsManager::finalize_mpi()
     else
     {
       // Use std::cout since log system may fail because MPI has been shut down.
-      std::cout << "DOLFINX is responsible for MPI, but it has been finalized "
-                   "elsewhere prematurely."
-                << std::endl;
-      std::cout << "This is usually due to a bug in a 3rd party library, and "
-                   "can lead to unpredictable behaviour."
+      std::cout << "MPI has already been finalised, possibly prematurely by "
+                   "another library."
                 << std::endl;
     }
   }
