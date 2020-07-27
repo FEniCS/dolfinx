@@ -102,30 +102,6 @@ demos-python-mpi: &demos-python-mpi
     python3 ./generate-demo-files.py
     python3 -m pytest -n=2 -v -m mpi test.py --num-proc=3
 
-commands:
-  build-and-push-target:
-    description: "Build and push target in docker/`dockerfile`"
-    parameters:
-      docker-target:
-        type: string
-      dockerfile:
-        type: string
-        default: "Dockerfile"
-      extra-args:
-        type: string
-        default: ""
-    steps:
-      - run: >
-          cd docker &&
-          sudo DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --cache-to=type=inline,mode=all
-          --progress plain
-          --build-arg MAKEFLAGS='-j3'
-          --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
-          --target << parameters.docker-target >>
-          --file << parameters.dockerfile >> << parameters.extra-args >>
-          --tag dolfinx/<< parameters.docker-target >>:latest . &&
-          sudo docker push dolfinx/<< parameters.docker-target >>:latest
-
 jobs:
   build-real:
     docker:
@@ -192,3 +168,10 @@ jobs:
           path: ~/junit
       - store_artifacts:
           path: ~/junit
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build-real
+      - build-complex
