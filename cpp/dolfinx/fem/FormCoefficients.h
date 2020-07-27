@@ -80,7 +80,7 @@ public:
   void set(const std::string& name,
            const std::shared_ptr<const function::Function<T>>& coefficient)
   {
-    int i = get_index(name);
+    const int i = get_index(name);
     if (i >= (int)_coefficients.size())
       _coefficients.resize(i + 1);
     _coefficients[i] = coefficient;
