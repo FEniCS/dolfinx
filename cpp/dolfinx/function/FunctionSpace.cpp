@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -270,10 +270,9 @@ function::common_function_spaces(
         std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>& V)
 {
   assert(!V.empty());
-  std::array spaces{
-      std::vector<std::shared_ptr<const FunctionSpace>>(V.size(), nullptr),
-      std::vector<std::shared_ptr<const FunctionSpace>>(V.front().size(),
-                                                        nullptr)};
+  std::vector<std::shared_ptr<const FunctionSpace>> spaces0(V.size(), nullptr);
+  std::vector<std::shared_ptr<const FunctionSpace>> spaces1(V.front().size(),
+                                                            nullptr);
 
   // Loop over rows
   for (std::size_t i = 0; i < V.size(); ++i)
@@ -285,19 +284,19 @@ function::common_function_spaces(
       auto& V1 = V[i][j][1];
       if (V0 and V1)
       {
-        if (!spaces[0][i])
-          spaces[0][i] = V0;
+        if (!spaces0[i])
+          spaces0[i] = V0;
         else
         {
-          if (spaces[0][i] != V0)
+          if (spaces0[i] != V0)
             throw std::runtime_error("Mismatched test space for row.");
         }
 
-        if (!spaces[1][j])
-          spaces[1][j] = V1;
+        if (!spaces1[j])
+          spaces1[j] = V1;
         else
         {
-          if (spaces[1][j] != V1)
+          if (spaces1[j] != V1)
             throw std::runtime_error("Mismatched trial space for column.");
         }
       }
@@ -305,12 +304,11 @@ function::common_function_spaces(
   }
 
   // Check there are no null entries
-  for (auto& space : spaces)
-  {
-    if (std::find(space.begin(), space.end(), nullptr) != space.end())
-      throw std::runtime_error("Could not deduce all block spaces.");
-  }
+  if (std::find(spaces0.begin(), spaces0.end(), nullptr) != spaces0.end())
+    throw std::runtime_error("Could not deduce all block test spaces.");
+  if (std::find(spaces1.begin(), spaces1.end(), nullptr) != spaces1.end())
+    throw std::runtime_error("Could not deduce all block trial spaces.");
 
-  return spaces;
+  return {spaces0, spaces1};
 }
 //-----------------------------------------------------------------------------
