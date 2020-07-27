@@ -19,8 +19,8 @@ namespace SubSystemsManager
 /// Initialise MPI
 void init_mpi();
 
-/// Initialise MPI with required level of thread support
-int init_mpi(int argc, char* argv[], int required_thread_level);
+/// Initialise MPI
+void init_mpi(int argc, char* argv[]);
 
 /// Initialise loguru
 void init_logging(int argc, char* argv[]);

@@ -25,24 +25,21 @@ void SubSystemsManager::init_mpi()
   if (mpi_initialized)
     return;
 
-  // Init MPI with highest level of thread support
+  // Init MPI
   std::string s("");
   char* c = const_cast<char*>(s.c_str());
-  SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
+  SubSystemsManager::init_mpi(0, &c);
 }
 //-----------------------------------------------------------------------------
-int SubSystemsManager::init_mpi(int argc, char* argv[],
-                                int required_thread_level)
+void SubSystemsManager::init_mpi(int argc, char* argv[])
 {
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
   if (mpi_initialized)
-    return -100;
+    return;
 
-  // Initialise MPI and take responsibility
-  int provided = -1;
-  MPI_Init_thread(&argc, &argv, required_thread_level, &provided);
-  return provided;
+  // Initialise MPI
+  MPI_Init(&argc, &argv);
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_logging(int argc, char* argv[])
