@@ -124,7 +124,7 @@ ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
 
 ########################################
 
-FROM base as test
+FROM base as test-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS development environment"
 

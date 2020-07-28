@@ -5,9 +5,9 @@ name: CI Docker build environment images
 
 on:
   # Uncomment the below to trigger 'docker build' on push
-  #push:
-  #  branches:
-  #    - "**"
+  push:
+    branches:
+      - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * MON"
@@ -15,12 +15,12 @@ on:
 jobs:
   build_test_env:
     name: Build fenicsproject/test-env image
-    if: github.repository == 'FEniCS/dolfinx' && github.ref == 'master'
+    if: github.repository == 'FEniCS/dolfinx' #&& github.ref == 'master'
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Build the Docker image
-        run: docker build --file .github/workflows/Dockerfile --target test --tag fenicsproject/test-env .
+        run: docker build --file .github/workflows/Dockerfile --target test-env --tag fenicsproject/test-env .
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
@@ -28,7 +28,7 @@ jobs:
 
   build_dev_env:
     name: Build dolfinx/dev-env image
-    if: github.repository == 'FEniCS/dolfinx' && github.ref == 'master'
+    if: github.repository == 'FEniCS/dolfinx' #&& github.ref == 'master'
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
