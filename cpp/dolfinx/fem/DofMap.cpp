@@ -114,10 +114,24 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   // Compute ghosts for collapsed dofmap
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(num_unowned);
   std::vector<int> ghost_owners(num_unowned);
+
+  std::cout << "(" << dolfinx::MPI::rank(comm) << ") index_map->block_size = " << dofmap_view.index_map->block_size() << "\n";
+  std::cout << "(" << dolfinx::MPI::rank(comm) << ") global_index_remote<" << global_index_remote.size() << "> = [ ";
+  for(std::size_t i=0; i<global_index_remote.size(); ++i) std::cout << global_index_remote[i] << " ";
+  std::cout << "]\n";
+
   for (auto it = it_unowned0; it != dofs_view.end(); ++it)
   {
     const std::int32_t index = std::distance(it_unowned0, it) / bs;
     const std::int32_t index_old = *it / bs_view - num_owned_view;
+    std::cout << "(" << dolfinx::MPI::rank(comm) << ") index = " << index << "\n";
+    std::cout << "(" << dolfinx::MPI::rank(comm) << ") index_old = " << index_old << "\n";
+    std::cout << "(" << dolfinx::MPI::rank(comm) << ") global_index_remote[" << index_old << "] = " << global_index_remote[index_old] << "\n";
+  std::cout << "(" << dolfinx::MPI::rank(comm) << ") global_index_remote<" << global_index_remote.size() << "> = [ ";
+  for(std::size_t i=0; i<global_index_remote.size(); ++i) std::cout << global_index_remote[i] << " ";
+  std::cout << "]\n";
+
+
     assert(global_index_remote[index_old] >= 0);
     ghosts[index] = global_index_remote[index_old];
     ghost_owners[index] = ghost_owner_old[index_old];
@@ -225,15 +239,14 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 
   // Build dofmap by extracting from parent
   const int num_cells = this->_dofmap.num_nodes();
-  const std::int32_t dofs_per_cell
-      = sub_element_map_view.size() * sub_element_dof_layout->block_size();
+  const std::int32_t dofs_per_cell = sub_element_map_view.size() * sub_element_dof_layout->block_size();
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       dofmap(num_cells, dofs_per_cell);
   for (int c = 0; c < num_cells; ++c)
   {
     auto cell_dmap_parent = this->_dofmap.links(c);
     for (std::int32_t i = 0; i < dofs_per_cell; ++i)
-      dofmap(c, i) = cell_dmap_parent[sub_element_map_view[i]];
+        dofmap(c, i) = cell_dmap_parent[sub_element_map_view[i]];
   }
 
   return DofMap(sub_element_dof_layout, this->index_map,
