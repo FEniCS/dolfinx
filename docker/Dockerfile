@@ -87,7 +87,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     liblapack-dev \
     lib${MPI}-dev \
     libopenblas-dev \
-    ${MPI} \
     ninja-build \
     pkg-config \
     python3-dev \
