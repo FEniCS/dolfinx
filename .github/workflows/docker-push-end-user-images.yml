@@ -28,8 +28,8 @@ jobs:
         run: |
           cd docker/
           docker build --file Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
-          docker build --file Dockerfile --target dolfinx --cache-from dolfinx/dolfinx-onbuild --tag dolfinx/dolfinx .
-          docker build --file Dockerfile --target lab --cache-from dolfinx/dolfinx --tag dolfinx/lab .
+          docker build --file Dockerfile --target dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
+          docker build --file Dockerfile --target lab --cache-from dolfinx/dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/lab .
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
