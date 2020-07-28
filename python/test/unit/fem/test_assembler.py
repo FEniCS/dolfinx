@@ -480,7 +480,6 @@ def test_assembly_solve_block(mode):
     assert x2norm == pytest.approx(x0norm, 1.0e-10)
 
 
-@skip_in_parallel
 @pytest.mark.parametrize("mesh", [
     UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
     UnitSquareMesh(MPI.COMM_WORLD, 12, 11, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet),
