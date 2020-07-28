@@ -28,5 +28,6 @@ jobs:
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
-        run: docker push dolfinx/dolfinx
-        run: docker push dolfinx/lab
+        run: |
+          docker push dolfinx/dolfinx
+          docker push dolfinx/lab
