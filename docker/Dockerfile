@@ -121,6 +121,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 RUN pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
     export HDF5_MPI="ON" && \
+    export CC=mpicc && \
     pip3 install --no-cache-dir --no-binary=h5py h5py meshio pygmsh
 
 # Install pybind11
