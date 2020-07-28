@@ -79,7 +79,15 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   const int bs = element_dof_layout->block_size();
 
   // Compute sizes
-  const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
+  const std::int32_t num_owned_view = dofmap_view.index_map->size_local() / bs_view;
+  std::cout << "(" << dolfinx::MPI::rank(comm) << ") ~start~\n";
+  std::cout << "(" << dolfinx::MPI::rank(comm) << ") bs_view = " << bs_view;
+  std::cout << "(" << dolfinx::MPI::rank(comm) << ") bs = " << bs;
+  std::cout << "(" << dolfinx::MPI::rank(comm) << ") num_owned_view = " << num_owned_view << "\n";
+  std::cout << "(" << dolfinx::MPI::rank(comm) << ") num_owned_view = " << num_owned_view << "\n";
+  std::cout << "(" << dolfinx::MPI::rank(comm) << ") num_owned_view = " << num_owned_view << "\n";
+  std::cout << "(" << dolfinx::MPI::rank(comm) << ") num_owned_view = " << num_owned_view << "\n";
+  std::cout << "(" << dolfinx::MPI::rank(comm) << ") ~end~\n";
   const auto it_unowned0 = std::lower_bound(dofs_view.begin(), dofs_view.end(),
                                             num_owned_view * bs_view);
   const std::int64_t num_owned
@@ -249,9 +257,9 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
 
   // Create new dofmap
   std::unique_ptr<DofMap> dofmap_new;
-  if (this->index_map->block_size() == 1
-      and this->element_dof_layout->block_size() > 1)
-  {
+//  if (this->index_map->block_size() == 1
+//      and this->element_dof_layout->block_size() > 1)
+//  {
     // Create new element dof layout and reset parent
     auto collapsed_dof_layout
         = std::make_shared<ElementDofLayout>(element_dof_layout->copy());
@@ -263,8 +271,9 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
                                element_dof_layout->block_size());
     dofmap_new = std::make_unique<DofMap>(element_dof_layout, index_map,
                                           std::move(dofmap));
-  }
-  else
+//  }
+//  else
+  if (1 == 0)
   {
     // Collapse dof map, without build and re-ordering from scratch
     dofmap_new = std::make_unique<DofMap>(
