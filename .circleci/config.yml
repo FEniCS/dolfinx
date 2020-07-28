@@ -105,7 +105,7 @@ demos-python-mpi: &demos-python-mpi
 jobs:
   build-real:
     docker:
-      - image: dolfinx/dev-env:latest
+      - image: dolfinx/test-env:mpich
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
@@ -141,7 +141,7 @@ jobs:
 
   build-complex:
     docker:
-      - image: dolfinx/dev-env:latest
+        - image: dolfinx/test-env:mpich
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"

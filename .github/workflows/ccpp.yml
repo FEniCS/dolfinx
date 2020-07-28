@@ -12,7 +12,7 @@ jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env
+    container: fenicsproject/test-env:openmpi
 
     env:
       CC: clang-10

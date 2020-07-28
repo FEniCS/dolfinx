@@ -4,9 +4,9 @@ name: CI Docker end-user images
 
 on:
   # Uncomment the below to trigger 'docker build' on push
-  #push:
-  #  branches:
-  #    - "**"
+  push:
+    branches:
+      - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 4 * * *"
@@ -23,9 +23,9 @@ jobs:
       - name: Build the Docker images
         run: |
           cd docker/
-          docker build --file Dockerfile --target dolfinx-onbuild --cache-from=dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
-          docker build --file Dockerfile --target dolfinx --cache-from=dolfinx/dolfinx-onbuild,dolfinx/dev-env --tag dolfinx/dolfinx .
-          docker build --file Dockerfile --target lab --cache-from=dolfinx/dolfinx-onbuild,dolfinx/dev-env --tag dolfinx/lab .
+          docker build --file Dockerfile --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
+          docker build --file Dockerfile --target dolfinx --cache-from dolfinx/dolfinx-onbuild --tag dolfinx/dolfinx .
+          docker build --file Dockerfile --target lab --cache-from dolfinx/dolfinx --tag dolfinx/lab .
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
