@@ -271,13 +271,13 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
                                element_dof_layout->block_size());
     dofmap_new = std::make_unique<DofMap>(element_dof_layout, index_map,
                                           std::move(dofmap));
-//  }
-//  else
-  if (1 == 0)
-  {
-    // Collapse dof map, without build and re-ordering from scratch
-    dofmap_new = std::make_unique<DofMap>(
-        build_collapsed_dofmap(comm, *this, topology));
+    //  }
+    //  else
+    if (1 == 0)
+    {
+      // Collapse dof map, without build and re-ordering from scratch
+      dofmap_new = std::make_unique<DofMap>(
+          build_collapsed_dofmap(comm, *this, topology));
   }
   assert(dofmap_new);
 
