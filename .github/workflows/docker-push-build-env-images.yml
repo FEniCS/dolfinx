@@ -47,19 +47,19 @@ jobs:
       - name: push to the dockerhub registry
         run: docker push fenicsproject/test-env:${MPI}
 
-    build_dev_env:
-      name: Build dolfinx/dev-env image
-      if: github.repository == 'FEniCS/dolfinx' #&& github.ref == 'master'
-      runs-on: ubuntu-20.04
-      env:
-        PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
-        PETSC_SLEPC_DEBUGGING: "no"
-        MPI: "mpich"
-      steps:
-        - uses: actions/checkout@v2
-        - name: Build the Docker image
-          run: docker build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env docker/
-        - name: Log into the DockerHub registry
-          run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-        - name: Push to the DockerHub registry
-          run: docker push dolfinx/dev-env
+  build_dev_env:
+    name: Build dolfinx/dev-env image
+    if: github.repository == 'FEniCS/dolfinx' #&& github.ref == 'master'
+    runs-on: ubuntu-20.04
+    env:
+      PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
+      PETSC_SLEPC_DEBUGGING: "no"
+      MPI: "mpich"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build the Docker image
+        run: docker build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env docker/
+      - name: Log into the DockerHub registry
+        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+      - name: Push to the DockerHub registry
+        run: docker push dolfinx/dev-env
