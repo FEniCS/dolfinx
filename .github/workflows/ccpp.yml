@@ -80,7 +80,7 @@ jobs:
           cmake -DPYBIND11_TEST=False ../
           make install
 
-    - name: Build Python interface
+      - name: Build Python interface
         run: python3 -m pip -v install python/
       - name: Build Python interface documentation
         run: |
