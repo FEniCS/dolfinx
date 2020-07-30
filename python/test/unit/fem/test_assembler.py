@@ -113,6 +113,7 @@ def compile_eigen_csr_assembler_module(tmpdir):
     #include <pybind11/eigen.h>
     #include <pybind11/stl.h>
     #include <Eigen/Sparse>
+    #include <petscsys.h>
     #include <dolfinx/fem/assembler.h>
     #include <dolfinx/fem/DirichletBC.h>
     #include <dolfinx/fem/Form.h>
@@ -150,7 +151,7 @@ def compile_eigen_csr_assembler_module(tmpdir):
 
     PYBIND11_MODULE(eigen_csr, m)
     {
-        m.def("assemble_matrix", &assemble_csr<PetscScalar>);
+      m.def("assemble_matrix", &assemble_csr<PetscScalar>);
     }
     """
 
