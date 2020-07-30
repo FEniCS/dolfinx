@@ -114,6 +114,7 @@ def compile_eigen_csr_assembler_module(tmpdir):
     #include <pybind11/stl.h>
     #include <Eigen/Sparse>
     #include <dolfinx/fem/assembler.h>
+    #include <dolfinx/fem/DirichletBC.h>
     #include <dolfinx/fem/Form.h>
 
     #include <caster_mpi.h>
