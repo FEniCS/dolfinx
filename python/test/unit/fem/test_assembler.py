@@ -5,14 +5,15 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly"""
 
+import scipy.sparse.linalg
 import math
+import typing
 
 import dolfinx
 import numpy
 import pytest
-import scipy.sparse.linalg
 import ufl
-from dolfinx import function
+from dolfinx import function, cpp
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
@@ -80,40 +81,52 @@ def test_assemble_derivatives():
 
     A1 = dolfinx.fem.assemble_matrix(a)
     A1.assemble()
-
     a = c2 * b * inner(du, v) * dx
     A2 = dolfinx.fem.assemble_matrix(a)
     A2.assemble()
-
     assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
 
-# @skip_in_parallel
-# @skip_if_complex
-# @pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
-# def test_eigen_assembly(mode):
-#     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
-#     mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-#     Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
-#     u = ufl.TrialFunction(Q)
-#     v = ufl.TestFunction(Q)
-#     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+def assemble_csr_matrix(a: typing.Union[dolfinx.fem.Form, cpp.fem.Form],
+                        bcs: typing.List[dolfinx.fem.dirichletbc.DirichletBC] = [],
+                        diagonal: float = 1.0) -> scipy.sparse.csr_matrix:
+    """Assemble bilinear form into an SciPy CSR matrix, in serial."""
+    _a = dolfinx.fem.assemble._create_cpp_form(a)
+    A = cpp.fem.assemble_matrix_eigen(_a, bcs)
+    if _a.function_spaces[0].id == _a.function_spaces[1].id:
+        for bc in bcs:
+            if _a.function_spaces[0].contains(bc.function_space):
+                bc_dofs = bc.dof_indices[:, 0]
+                A[bc_dofs, bc_dofs] = diagonal
+    return A
 
-#     def boundary(x):
-#         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
-#     bdofsQ = dolfinx.fem.locate_dofs_geometrical(Q, boundary)
+@skip_in_parallel
+@skip_if_complex
+@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+def test_eigen_assembly(mode):
+    """Compare assembly into scipy.CSR matrix with PETSc assembly"""
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
+    u = ufl.TrialFunction(Q)
+    v = ufl.TestFunction(Q)
+    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
 
-#     u_bc = dolfinx.function.Function(Q)
-#     with u_bc.vector.localForm() as u_local:
-#         u_local.set(1.0)
-#     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsQ)
+    def boundary(x):
+        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
-#     A1 = dolfinx.fem.assemble_matrix(a, [bc])
-#     A1.assemble()
+    bdofsQ = dolfinx.fem.locate_dofs_geometrical(Q, boundary)
 
-#     A2 = dolfinx.fem.assemble_csr_matrix(a, [bc])
-#     assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
+    u_bc = dolfinx.function.Function(Q)
+    with u_bc.vector.localForm() as u_local:
+        u_local.set(1.0)
+    bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsQ)
+
+    A1 = dolfinx.fem.assemble_matrix(a, [bc])
+    A1.assemble()
+
+    A2 = assemble_csr_matrix(a, [bc])
+    assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
 
 
 @pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
