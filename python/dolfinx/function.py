@@ -311,6 +311,9 @@ class FunctionSpace(ufl.FunctionSpace):
             except Exception as e:
                 raise RuntimeError("Unable to check if object is in FunctionSpace ({})".format(e))
 
+    def __hash__(self):
+        return self._cpp_object.id
+
     def __eq__(self, other):
         """Comparison for equality."""
         return super().__eq__(other) and self._cpp_object == other._cpp_object
