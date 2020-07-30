@@ -94,6 +94,7 @@ def test_assemble_derivatives():
     assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
 
+@skip_if_complex
 @skip_in_parallel
 def test_eigen_assembly(tempdir):  # noqa: F811
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
