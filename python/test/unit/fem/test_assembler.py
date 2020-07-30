@@ -90,10 +90,10 @@ def test_assemble_derivatives():
     assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
 
-@pytest.mark.forked
-@skip_if_complex
+# Note: the test doesn't use the tempdir fixture as it leads to strange
+# pybind11 TypeErrors
 @skip_in_parallel
-def test_eigen_assembly():  # noqa: F811
+def test_eigen_assembly():
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
 
     def compile_eigen_csr_assembler_module():
