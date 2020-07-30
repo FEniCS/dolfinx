@@ -119,6 +119,8 @@ def compile_eigen_csr_assembler_module(tmpdir):
 
     #include <caster_mpi.h>
 
+    namespace py = pybind11;
+
     template<typename T>
     Eigen::SparseMatrix<T, Eigen::RowMajor>
       assemble_csr(const dolfinx::fem::Form<T>& a,
