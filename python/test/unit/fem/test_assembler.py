@@ -23,7 +23,7 @@ from dolfinx.jit import dolfinx_pc
 from dolfinx.mesh import create_mesh
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
-from dolfinx_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import derivative, ds, dx, inner
@@ -112,11 +112,8 @@ def test_eigen_assembly(tempdir):  # noqa: F811
 
         cpp_code = """
         #include <pybind11/pybind11.h>
-        #include <pybind11/complex.h>
         #include <pybind11/eigen.h>
-        #include <pybind11/functional.h>
         #include <pybind11/stl.h>
-        #include <functional>
         #include <vector>
         #include <Eigen/Sparse>
         #include <petscsys.h>
@@ -186,6 +183,7 @@ def test_eigen_assembly(tempdir):  # noqa: F811
     with u_bc.vector.localForm() as u_local:
         u_local.set(1.0)
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsQ)
+
     A1 = dolfinx.fem.assemble_matrix(a, [bc])
     A1.assemble()
     A2 = assemble_csr_matrix(a, [bc])
