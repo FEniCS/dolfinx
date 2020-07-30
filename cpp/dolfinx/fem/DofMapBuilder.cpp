@@ -341,7 +341,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     const std::int64_t process_offset,
     const std::vector<std::int64_t>& global_indices_old,
     const std::vector<std::int32_t>& old_to_new,
-    const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity)
+    const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
+    const int block_size)
 {
   assert(dof_entity.size() == global_indices_old.size());
 
@@ -437,8 +438,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     }
   }
 
-  std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
-  std::vector<int> local_to_global_new_owner(old_to_new.size() - num_owned);
+  std::vector<std::int64_t> local_to_global_new((old_to_new.size() - num_owned) * block_size);
+  std::vector<int> local_to_global_new_owner((old_to_new.size() - num_owned) * block_size);
   for (std::size_t i = 0; i < requests_dim.size(); ++i)
   {
     int idx, d;
@@ -469,9 +470,12 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     {
       auto it = global_old_new.find(local_new_to_global_old_d[i]);
       assert(it != global_old_new.end());
-      local_to_global_new[local_new_to_global_old_d[i + 1]] = it->second.first;
-      local_to_global_new_owner[local_new_to_global_old_d[i + 1]]
-          = it->second.second;
+      for (int b = 0; b < block_size; ++b)
+      {
+        local_to_global_new[local_new_to_global_old_d[i + 1] * block_size + b] = it->second.first;
+        local_to_global_new_owner[local_new_to_global_old_d[i + 1] * block_size + b]
+            = it->second.second;
+      }
     }
   }
 
@@ -529,7 +533,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]
       = get_global_indices(topology, num_owned, process_offset,
-                           local_to_global0, old_to_new, dof_entity0);
+                           local_to_global0, old_to_new, dof_entity0, element_block_size);
   assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
   // Create IndexMap for dofs range on this process
