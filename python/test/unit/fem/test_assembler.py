@@ -158,9 +158,7 @@ def test_eigen_assembly():  # noqa: F811
         open("eigen_csr.cpp", "w").write(cpp_code_header + cpp_code)
         return cppimport.imp("eigen_csr")
 
-    def assemble_csr_matrix(a: typing.Union[dolfinx.fem.Form, cpp.fem.Form],
-                            bcs: typing.List[dolfinx.fem.dirichletbc.DirichletBC] = [],
-                            diagonal: float = 1.0) -> scipy.sparse.csr_matrix:
+    def assemble_csr_matrix(a, bcs, diagonal = 1.0) :
         """Assemble bilinear form into an SciPy CSR matrix, in serial."""
         module = compile_eigen_csr_assembler_module()
         _a = dolfinx.fem.assemble._create_cpp_form(a)
