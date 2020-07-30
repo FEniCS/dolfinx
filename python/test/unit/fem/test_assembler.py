@@ -29,6 +29,7 @@ from petsc4py import PETSc
 from ufl import derivative, ds, dx, inner
 import mpi4py
 
+
 def nest_matrix_norm(A):
     """Return norm of a MatNest matrix"""
     assert A.getType() == "nest"
@@ -98,7 +99,8 @@ def compile_eigen_csr_assembler_module(tmpdir):
     cpp_code_header = f"""
     <%
     setup_pybind11(cfg)
-    cfg['include_dirs'] += {dolfinx_pc["include_dirs"] + [mpi4py.get_include()] + [petsc4py.get_include()] + [str(pybind_inc())]}
+    cfg['include_dirs'] += {dolfinx_pc["include_dirs"] + [mpi4py.get_include()]
+        + [petsc4py.get_include()] + [str(pybind_inc())]}
     cfg['compiler_args'] += {["-D" + dm for dm in dolfinx_pc["define_macros"]]}
     cfg['compiler_args'] = ['-std=c++17']
     cfg['libraries'] += {dolfinx_pc["libraries"]}
