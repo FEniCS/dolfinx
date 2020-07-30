@@ -11,7 +11,6 @@ import sys
 
 import numpy
 import petsc4py
-import pytest
 from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
 from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401

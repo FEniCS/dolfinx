@@ -94,7 +94,7 @@ def test_assemble_derivatives():
     assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
 
-def compile_eigen_csr_assembler_module(tempdir):
+def compile_eigen_csr_assembler_module(tmpdir):
     cpp_code_header = f"""
     <%
     setup_pybind11(cfg)
@@ -147,14 +147,14 @@ def compile_eigen_csr_assembler_module(tempdir):
     }
     """
 
-    open(os.path.join(tempdir, "eigen_csr.cpp"), "w").write(cpp_code_header + cpp_code)
-    sys.path.append(tempdir)
+    open(os.path.join(tmpdir, "eigen_csr.cpp"), "w").write(cpp_code_header + cpp_code)
+    sys.path.append(tmpdir)
     return cppimport.imp("eigen_csr")
 
 
 @skip_in_parallel
 @skip_if_complex
-def test_eigen_assembly(tempdir):
+def test_eigen_assembly(tempdir):  # noqa: F811
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
 
     def assemble_csr_matrix(a: typing.Union[dolfinx.fem.Form, cpp.fem.Form],

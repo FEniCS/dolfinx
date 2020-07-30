@@ -11,7 +11,6 @@ import sys
 
 import dolfinx
 import mpi4py
-import pytest
 from dolfinx import wrappers
 from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
