@@ -5,7 +5,8 @@
 # <blechta@karlin.mff.cuni.cz>
 
 ARG GMSH_VERSION=4.5.6
-ARG PYBIND11_VERSION=2.5.0
+ARG PYBIND11_VERSION=master
+# ARG PYBIND11_VERSION=v2.5.0
 ARG PETSC_VERSION=3.13.1
 ARG SLEPC_VERSION=3.13.2
 ARG PETSC4PY_VERSION=3.13.0
@@ -93,8 +94,8 @@ RUN python3 -m pip install --no-cache-dir mpi4py numba && \
     python3 -m pip install --no-cache-dir meshio pygmsh
 
 # Install pybind11
-RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
-    tar -xf v${PYBIND11_VERSION}.tar.gz && \
+RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/${PYBIND11_VERSION}.tar.gz && \
+    tar -xf ${PYBIND11_VERSION}.tar.gz && \
     cd pybind11-${PYBIND11_VERSION} && \
     mkdir build && \
     cd build && \

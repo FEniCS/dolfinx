@@ -70,7 +70,7 @@ jobs:
           ctest -R demo -R serial
           ctest -R demo -R mpi_2
 
-      - name: Install pybind11
+      - name: Install pybind11 (remove when Docker containers have been re-built)
         run: |
           wget -nc --quiet https://github.com/pybind/pybind11/archive/master.tar.gz
           tar -xf master.tar.gz
@@ -86,11 +86,6 @@ jobs:
         run: |
           cd python/demo && python3 ./generate-demo-files.py
           cd ../doc && make html
-
-      - name: Run Python unit test
-        run: |
-           cd python/test/unit
-           python3 -m pytest -vs -k test_eigen_assembly fem/test_assembler.py
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py

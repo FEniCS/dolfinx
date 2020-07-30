@@ -27,7 +27,6 @@ from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import derivative, ds, dx, inner
-import mpi4py
 
 
 def nest_matrix_norm(A):
@@ -99,8 +98,7 @@ def compile_eigen_csr_assembler_module(tmpdir):
     cpp_code_header = f"""
     <%
     setup_pybind11(cfg)
-    cfg['include_dirs'] += {dolfinx_pc["include_dirs"] + [mpi4py.get_include()]
-        + [petsc4py.get_include()] + [str(pybind_inc())]}
+    cfg['include_dirs'] += {dolfinx_pc["include_dirs"] + [petsc4py.get_include()] + [str(pybind_inc())]}
     cfg['compiler_args'] += {["-D" + dm for dm in dolfinx_pc["define_macros"]]}
     cfg['compiler_args'] = ['-std=c++17']
     cfg['libraries'] += {dolfinx_pc["libraries"]}
@@ -112,15 +110,12 @@ def compile_eigen_csr_assembler_module(tmpdir):
     #include <pybind11/pybind11.h>
     #include <pybind11/eigen.h>
     #include <pybind11/stl.h>
+    #include <vector>
     #include <Eigen/Sparse>
     #include <petscsys.h>
     #include <dolfinx/fem/assembler.h>
     #include <dolfinx/fem/DirichletBC.h>
     #include <dolfinx/fem/Form.h>
-
-    #include <caster_mpi.h>
-
-    namespace py = pybind11;
 
     template<typename T>
     Eigen::SparseMatrix<T, Eigen::RowMajor>
