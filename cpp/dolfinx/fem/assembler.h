@@ -10,7 +10,6 @@
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
 #include <Eigen/Dense>
-#include <Eigen/Sparse>
 #include <memory>
 #include <vector>
 
@@ -149,40 +148,6 @@ void assemble_matrix(
 
 {
   impl::assemble_matrix(mat_add, a, dof_marker0, dof_marker1);
-}
-
-/// @warning Experimental
-///
-/// Assemble bilinear form into an Eigen Sparse matrix.
-/// @param[in] a The bilinear from to assemble
-/// @param[in] bcs Boundary conditions to apply. For boundary condition
-///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename T>
-Eigen::SparseMatrix<T, Eigen::RowMajor> assemble_matrix_eigen(
-    const Form<T>& a,
-    const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
-{
-  // Lambda function creating Eigen::Triplet array
-  std::vector<Eigen::Triplet<T>> triplets;
-  const auto mat_add
-      = [&triplets](std::int32_t nrow, const std::int32_t* rows,
-                    std::int32_t ncol, const std::int32_t* cols, const T* v) {
-          for (int i = 0; i < nrow; ++i)
-            for (int j = 0; j < ncol; ++j)
-              triplets.emplace_back(rows[i], cols[j], v[i * ncol + j]);
-          return 0;
-        };
-
-  // Assemble
-  assemble_matrix<T>(mat_add, a, bcs);
-
-  auto map0 = a.function_space(0)->dofmap()->index_map;
-  auto map1 = a.function_space(1)->dofmap()->index_map;
-  Eigen::SparseMatrix<T, Eigen::RowMajor> mat(
-      map0->block_size() * (map0->size_local() + map0->num_ghosts()),
-      map1->block_size() * (map1->size_local() + map1->num_ghosts()));
-  mat.setFromTriplets(triplets.begin(), triplets.end());
-  return mat;
 }
 
 /// Adds a value to the diagonal of a matrix for specified rows. It is

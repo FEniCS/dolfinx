@@ -16,6 +16,7 @@ from dolfinx import wrappers
 from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from mpi4py import MPI
+import cppimport
 
 
 def test_mpi_comm_wrapper():
@@ -29,8 +30,6 @@ def test_mpi_comm_wrapper():
 
 def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for code compiled with cppimport"""
-
-    cppimport = pytest.importorskip("cppimport")
 
     @mpi_jit_decorator
     def compile_module():
@@ -62,7 +61,6 @@ def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
         """
 
         open(os.path.join(tempdir, "test_mpi_comm_wrapper.cpp"), "w").write(cpp_code_header + cpp_code)
-
         sys.path.append(tempdir)
         return cppimport.imp("test_mpi_comm_wrapper")
 

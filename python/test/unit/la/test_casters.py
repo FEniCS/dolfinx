@@ -17,14 +17,11 @@ from dolfinx.wrappers import get_include_path as pybind_inc
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from mpi4py import MPI
 from petsc4py import PETSc
+import cppimport
 
 
 def test_petsc_casters_cppimport(tempdir):  # noqa: F811
-    """
-    Test casters of PETSc objects in codes compiled with cppimport
-    """
-
-    cppimport = pytest.importorskip("cppimport")
+    """Test casters of PETSc objects in codes compiled with cppimport"""
 
     @mpi_jit_decorator
     def compile_module():
