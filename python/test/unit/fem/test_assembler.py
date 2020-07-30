@@ -27,7 +27,7 @@ from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import derivative, ds, dx, inner
-
+import mpi4py
 
 def nest_matrix_norm(A):
     """Return norm of a MatNest matrix"""
@@ -98,7 +98,7 @@ def compile_eigen_csr_assembler_module(tmpdir):
     cpp_code_header = f"""
     <%
     setup_pybind11(cfg)
-    cfg['include_dirs'] += {dolfinx_pc["include_dirs"] + [petsc4py.get_include()] + [str(pybind_inc())]}
+    cfg['include_dirs'] += {dolfinx_pc["include_dirs"] + [mpi4py.get_include()] + [petsc4py.get_include()] + [str(pybind_inc())]}
     cfg['compiler_args'] += {["-D" + dm for dm in dolfinx_pc["define_macros"]]}
     cfg['compiler_args'] = ['-std=c++17']
     cfg['libraries'] += {dolfinx_pc["libraries"]}
@@ -114,9 +114,11 @@ def compile_eigen_csr_assembler_module(tmpdir):
     #include <dolfinx/fem/assembler.h>
     #include <dolfinx/fem/Form.h>
 
+    #include <caster_mpi.h>
+
     template<typename T>
     Eigen::SparseMatrix<T, Eigen::RowMajor>
-      assemble(const dolfinx::fem::Form<T>& a,
+      assemble_csr(const dolfinx::fem::Form<T>& a,
                const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>& bcs)
     {
       std::vector<Eigen::Triplet<T>> triplets;
@@ -143,7 +145,7 @@ def compile_eigen_csr_assembler_module(tmpdir):
 
     PYBIND11_MODULE(eigen_csr, m)
     {
-        m.def("assemble_matrix", &assemble<PetscScalar>);
+        m.def("assemble_matrix", &assemble_csr<PetscScalar>);
     }
     """
 
