@@ -112,8 +112,11 @@ def test_eigen_assembly(tempdir):  # noqa: F811
 
         cpp_code = """
         #include <pybind11/pybind11.h>
+        #include <pybind11/complex.h>
         #include <pybind11/eigen.h>
+        #include <pybind11/functional.h>
         #include <pybind11/stl.h>
+        #include <functional>
         #include <vector>
         #include <Eigen/Sparse>
         #include <petscsys.h>
