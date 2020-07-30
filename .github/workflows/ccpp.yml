@@ -87,6 +87,11 @@ jobs:
           cd python/demo && python3 ./generate-demo-files.py
           cd ../doc && make html
 
+      - name: Run Python unit test
+        run: |
+           cd python/test/unit
+           python3 -m pytest -vs -k test_eigen_assembly fem/test_assembler.py
+
       - name: Run demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
