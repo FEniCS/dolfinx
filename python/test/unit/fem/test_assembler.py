@@ -22,7 +22,6 @@ from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.jit import dolfinx_pc
 from dolfinx.mesh import create_mesh
 from dolfinx.wrappers import get_include_path as pybind_inc
-from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -97,10 +96,10 @@ def test_assemble_derivatives():
 @pytest.mark.forked
 @skip_if_complex
 @skip_in_parallel
-def test_eigen_assembly(tempdir):  # noqa: F811
+def test_eigen_assembly():  # noqa: F811
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
 
-    def compile_eigen_csr_assembler_module(tmpdir):
+    def compile_eigen_csr_assembler_module():
         cpp_code_header = f"""
         <%
         setup_pybind11(cfg)
@@ -156,15 +155,14 @@ def test_eigen_assembly(tempdir):  # noqa: F811
         }
         """
 
-        open(os.path.join(tmpdir, "eigen_csr.cpp"), "w").write(cpp_code_header + cpp_code)
-        sys.path.append(tmpdir)
+        open("eigen_csr.cpp", "w").write(cpp_code_header + cpp_code)
         return cppimport.imp("eigen_csr")
 
     def assemble_csr_matrix(a: typing.Union[dolfinx.fem.Form, cpp.fem.Form],
                             bcs: typing.List[dolfinx.fem.dirichletbc.DirichletBC] = [],
                             diagonal: float = 1.0) -> scipy.sparse.csr_matrix:
         """Assemble bilinear form into an SciPy CSR matrix, in serial."""
-        module = compile_eigen_csr_assembler_module(tempdir)
+        module = compile_eigen_csr_assembler_module()
         _a = dolfinx.fem.assemble._create_cpp_form(a)
         A = module.assemble_matrix(_a, bcs)
         if _a.function_spaces[0].id == _a.function_spaces[1].id:
