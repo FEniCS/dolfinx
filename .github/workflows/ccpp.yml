@@ -70,7 +70,17 @@ jobs:
           ctest -R demo -R serial
           ctest -R demo -R mpi_2
 
-      - name: Build Python interface
+      - name: Install pybind11
+        run: |
+          wget -nc --quiet https://github.com/pybind/pybind11/archive/master.tar.gz
+          tar -xf master.tar.gz
+          cd pybind11-master
+          mkdir build
+          cd build
+          cmake -DPYBIND11_TEST=False ../
+          make install
+
+    - name: Build Python interface
         run: python3 -m pip -v install python/
       - name: Build Python interface documentation
         run: |
