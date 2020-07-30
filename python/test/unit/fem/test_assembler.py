@@ -165,7 +165,7 @@ def test_eigen_assembly(tempdir):  # noqa: F811
         """Assemble bilinear form into an SciPy CSR matrix, in serial."""
         module = compile_eigen_csr_assembler_module(tempdir)
         _a = dolfinx.fem.assemble._create_cpp_form(a)
-        A = module.assemble_matrix(_a, bcs)
+        A = module.assemble_matrix(_a, [])
         if _a.function_spaces[0].id == _a.function_spaces[1].id:
             for bc in bcs:
                 if _a.function_spaces[0].contains(bc.function_space):
