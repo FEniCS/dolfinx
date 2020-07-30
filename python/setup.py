@@ -17,6 +17,7 @@ RESTRICT_REQUIREMENTS = ">=2019.2.0.dev0,<2019.3"
 
 REQUIREMENTS = [
     "numpy",
+    "scipy",
     "mpi4py",
     "petsc4py",
     "fenics-ffcx",
