@@ -6,9 +6,6 @@
 """Unit tests for assembly"""
 
 import math
-import os
-import sys
-import typing
 
 import cppimport
 import dolfinx
@@ -17,7 +14,7 @@ import petsc4py
 import pytest
 import scipy.sparse.linalg
 import ufl
-from dolfinx import cpp, function
+from dolfinx import function
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.jit import dolfinx_pc
 from dolfinx.mesh import create_mesh
@@ -158,7 +155,7 @@ def test_eigen_assembly():  # noqa: F811
         open("eigen_csr.cpp", "w").write(cpp_code_header + cpp_code)
         return cppimport.imp("eigen_csr")
 
-    def assemble_csr_matrix(a, bcs, diagonal = 1.0) :
+    def assemble_csr_matrix(a, bcs, diagonal=1.0):
         """Assemble bilinear form into an SciPy CSR matrix, in serial."""
         module = compile_eigen_csr_assembler_module()
         _a = dolfinx.fem.assemble._create_cpp_form(a)
