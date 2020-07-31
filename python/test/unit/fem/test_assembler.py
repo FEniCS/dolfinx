@@ -91,7 +91,7 @@ def test_assemble_derivatives():
 
 
 # TODO: convert to a demo
-# @pytest.mark.xfail(reason="This test strangely fails when run with pytest test discovery, but pass when run on its on.")
+@pytest.mark.xfail(reason="This test strangely fails when run with pytest test discovery, but pass when run on its on.")
 @skip_in_parallel
 def test_eigen_assembly():
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
