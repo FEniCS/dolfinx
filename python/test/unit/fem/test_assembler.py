@@ -90,8 +90,8 @@ def test_assemble_derivatives():
     assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
 
-# Note: the test doesn't use the tempdir fixture as it leads to strange
-# pybind11 TypeErrors
+# TODO: convert to a demo
+# @pytest.mark.xfail(reason="This test strangely fails when run with pytest test discovery, but pass when run on its on.")
 @skip_in_parallel
 def test_eigen_assembly():
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
