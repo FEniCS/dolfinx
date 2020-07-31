@@ -73,22 +73,16 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   std::sort(dofs_view.begin(), dofs_view.end());
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
-
   // Get block sizes
   const int bs_view = dofmap_view.index_map->block_size();
-  const int bs = element_dof_layout->block_size();
 
   // Compute sizes
   const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
   const auto it_unowned0 = std::lower_bound(dofs_view.begin(), dofs_view.end(),
                                             num_owned_view * bs_view);
-  const std::int64_t num_owned
-      = std::distance(dofs_view.begin(), it_unowned0) / bs;
-  assert(std::distance(dofs_view.begin(), it_unowned0) % bs == 0);
+  const std::int64_t num_owned = std::distance(dofs_view.begin(), it_unowned0);
 
-  const std::int64_t num_unowned
-      = std::distance(it_unowned0, dofs_view.end()) / bs;
-  assert(std::distance(it_unowned0, dofs_view.end()) % bs == 0);
+  const std::int64_t num_unowned = std::distance(it_unowned0, dofs_view.end());
 
   // Get process offset for new dofmap
   const std::int64_t process_offset
@@ -99,7 +93,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                                          -1);
   for (auto it = dofs_view.begin(); it != it_unowned0; ++it)
   {
-    const std::int64_t block = std::distance(dofs_view.begin(), it) / bs;
+    const std::int64_t block = std::distance(dofs_view.begin(), it);
     const std::int32_t block_parent = *it / bs_view;
     global_index[block_parent] = block + process_offset;
   }
@@ -116,7 +110,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   std::vector<int> ghost_owners(num_unowned);
   for (auto it = it_unowned0; it != dofs_view.end(); ++it)
   {
-    const std::int32_t index = std::distance(it_unowned0, it) / bs;
+    const std::int32_t index = std::distance(it_unowned0, it);
     const std::int32_t index_old = *it / bs_view - num_owned_view;
     assert(global_index_remote[index_old] >= 0);
     ghosts[index] = global_index_remote[index_old];
@@ -128,7 +122,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
       comm, num_owned,
       dolfinx::MPI::compute_graph_edges(
           comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
-      ghosts, ghost_owners, bs);
+      ghosts, ghost_owners, 1);
 
   // Create array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
@@ -247,13 +241,9 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   assert(index_map);
 
   // Create new element dof layout and reset parent
-  auto collapsed_dof_layout
-      = std::make_shared<ElementDofLayout>(element_dof_layout->copy());
 
   // Parent does not have block structure but sub-map does, so build
   // new submap to get block structure for collapsed dofmap.
-  auto [index_map, dofmap]
-      = DofMapBuilder::build(comm, topology, *collapsed_dof_layout);
   // Create new dofmap
   std::unique_ptr<DofMap> dofmap_new;
   if (this->index_map->block_size() == 1
