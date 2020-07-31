@@ -341,8 +341,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     const std::int64_t process_offset,
     const std::vector<std::int64_t>& global_indices_old,
     const std::vector<std::int32_t>& old_to_new,
-    const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
-    const int block_size)
+    const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity)
 {
   assert(dof_entity.size() == global_indices_old.size());
 
@@ -438,8 +437,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     }
   }
 
-  std::vector<std::int64_t> local_to_global_new((old_to_new.size() - num_owned) * block_size);
-  std::vector<int> local_to_global_new_owner((old_to_new.size() - num_owned) * block_size);
+  std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
+  std::vector<int> local_to_global_new_owner(old_to_new.size() - num_owned);
   for (std::size_t i = 0; i < requests_dim.size(); ++i)
   {
     int idx, d;
@@ -470,12 +469,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     {
       auto it = global_old_new.find(local_new_to_global_old_d[i]);
       assert(it != global_old_new.end());
-      for (int b = 0; b < block_size; ++b)
-      {
-        local_to_global_new[local_new_to_global_old_d[i + 1] * block_size + b] = it->second.first;
-        local_to_global_new_owner[local_new_to_global_old_d[i + 1] * block_size + b]
-            = it->second.second;
-      }
+      local_to_global_new[local_new_to_global_old_d[i + 1]] = it->second.first;
+      local_to_global_new_owner[local_new_to_global_old_d[i + 1]]
+          = it->second.second;
     }
   }
 
@@ -488,12 +484,11 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 //-----------------------------------------------------------------------------
 std::pair<std::shared_ptr<common::IndexMap>, graph::AdjacencyList<std::int32_t>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
-                     const ElementDofLayout& element_dof_layout, int block_size)
+                     const ElementDofLayout& element_dof_layout)
 {
   common::Timer t0("Init dofmap");
 
   const int element_block_size = element_dof_layout.block_size();
-  assert(element_block_size == block_size);
 
   //  if (element_dof_layout.block_size() != 1)
   //    throw std::runtime_error("Block size of 1 expected when building
@@ -533,7 +528,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]
       = get_global_indices(topology, num_owned, process_offset,
-                           local_to_global0, old_to_new, dof_entity0, element_block_size);
+                           local_to_global0, old_to_new, dof_entity0);
   assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
   // Create IndexMap for dofs range on this process
@@ -551,8 +546,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap(
       node_graph0.array().rows() * element_block_size);
 
-  const int mixed_blocks = element_block_size / block_size;
-
   for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
   {
     const std::int32_t local_dim0 = node_graph0.num_links(cell);
@@ -561,17 +554,14 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     {
       const std::int32_t old_node = old_nodes[j];
       const std::int32_t new_node = old_to_new[old_node];
-      for (std::int32_t mix = 0; mix < mixed_blocks; ++mix)
+      for (std::int32_t block = 0; block < element_block_size; ++block)
       {
-        for (std::int32_t block = 0; block < block_size; ++block)
-        {
-          dofmap[block_size * local_dim0 * mixed_blocks * cell
-                 + block_size * local_dim0 * mix + block_size * j + block]
-              = mixed_blocks * block_size * new_node + block_size * mix + block;
-        }
+        dofmap[element_block_size * local_dim0 * cell + element_block_size * j
+               + block]
+            = element_block_size * new_node + block;
       }
     }
-    }
+  }
   assert(dofmap.rows() % node_graph0.num_nodes() == 0);
   Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
                           Eigen::RowMajor>>
