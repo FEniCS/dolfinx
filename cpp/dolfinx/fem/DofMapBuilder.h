@@ -40,7 +40,6 @@ public:
   /// @param[in] topology The mesh topology
   /// @param[in] element_dof_layout The element dof layout for the function
   /// space
-  /// @param[in] block_size The number of DOF colocated at each point
   /// @return The index map and local to global DOF data for the DOF map.
   static std::pair<std::shared_ptr<common::IndexMap>,
                    graph::AdjacencyList<std::int32_t>>
