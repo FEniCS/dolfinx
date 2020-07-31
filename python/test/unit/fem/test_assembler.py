@@ -155,7 +155,7 @@ def test_eigen_assembly():
         open("eigen_csr.cpp", "w").write(cpp_code_header + cpp_code)
         return cppimport.imp("eigen_csr")
 
-    def assemble_csr_matrix(a, bcs, diagonal=1.0):
+    def assemble_csr_matrix(a, bcs):
         """Assemble bilinear form into an SciPy CSR matrix, in serial."""
         module = compile_eigen_csr_assembler_module()
         _a = dolfinx.fem.assemble._create_cpp_form(a)
@@ -164,7 +164,7 @@ def test_eigen_assembly():
             for bc in bcs:
                 if _a.function_spaces[0].contains(bc.function_space):
                     bc_dofs = bc.dof_indices[:, 0]
-                    A[bc_dofs, bc_dofs] = diagonal
+                    A[bc_dofs, bc_dofs] = 1.0
         return A
 
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
