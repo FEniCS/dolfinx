@@ -368,10 +368,6 @@ void fem(py::module& m)
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet)
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet);
 
-  //   py::class_<dolfinx::fem::FormCoefficients<PetscScalar>,
-  //              std::shared_ptr<dolfinx::fem::FormCoefficients<PetscScalar>>>(
-  //       m, "FormCoefficients", "Variational form coefficients");
-
   // dolfinx::fem::Form
   py::class_<dolfinx::fem::Form<PetscScalar>,
              std::shared_ptr<dolfinx::fem::Form<PetscScalar>>>(
