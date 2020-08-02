@@ -6,13 +6,12 @@
 
 
 import cffi
+import dolfinx
 import numba
 import numpy as np
+import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
-
-import ufl
-import dolfinx
 
 
 def test_rank0():
@@ -70,15 +69,16 @@ def test_rank0():
                    ffi.from_buffer(w),
                    ffi.from_buffer(constants),
                    ffi.from_buffer(geometry))
-            for j in range(6):
-                b[dofmap[i * 6 + j]] = b_local[j]
+            for j in range(3):
+                for k in range(2):
+                    b[dofmap[i * 6 + 2 * j + k]] = b_local[3 * k + j]
 
     # Prepare mesh and dofmap data
-    pos = mesh.geometry.dofmap.offsets()
-    x_dofs = mesh.geometry.dofmap.array()
+    pos = mesh.geometry.dofmap.offsets
+    x_dofs = mesh.geometry.dofmap.array
     x = mesh.geometry.x
-    coeff_dofmap = P2.dofmap.list.array()
-    dofmap = vP1.dofmap.list.array()
+    coeff_dofmap = P2.dofmap.list.array
+    dofmap = vP1.dofmap.list.array
 
     # Data structure for the result
     b = dolfinx.Function(vP1)

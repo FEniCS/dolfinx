@@ -125,9 +125,6 @@ endif()
 #------------------------------------------------------------------------------
 # Run tests to find required packages
 
-# Find Python3 and define Python3_EXECUTABLE
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
-
 # Check for Boost
 set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
 if (BOOST_ROOT)
@@ -174,12 +171,6 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   URL "https://www.mcs.anl.gov/petsc/"
   PURPOSE "PETSc linear algebra backend")
 
-# Check for required package UFC
-find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
-set_package_properties(UFC PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
-  URL "https://github.com/fenics/ffcx")
-
 # Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
 find_package(HDF5 REQUIRED)
@@ -196,7 +187,14 @@ set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
   URL "https://www.labri.fr/perso/pelegrin/scotch"
   PURPOSE "Enables parallel graph partitioning")
 
-#------------------------------------------------------------------------------
+# Check for required package UFC
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
+set_package_properties(UFC PROPERTIES TYPE REQUIRED
+  DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
+  URL "https://github.com/fenics/ffcx")
+
+  #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
 # Check for SLEPc

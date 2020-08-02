@@ -167,15 +167,6 @@ void fem(py::module& m)
       "Create CoordinateElement from a pointer to ufc_coordinate_map.");
   m.def(
       "build_dofmap",
-      [](const dolfinx::mesh::Mesh& mesh,
-         std::shared_ptr<const dolfinx::fem::ElementDofLayout>
-             element_dof_layout) {
-        return dolfinx::fem::DofMapBuilder::build(
-            mesh.mpi_comm(), mesh.topology(), element_dof_layout);
-      },
-      "Build and dofmap on a mesh.");
-  m.def(
-      "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout, int bs) {
         // See https://github.com/pybind/pybind11/issues/1138 on why we need
@@ -187,6 +178,9 @@ void fem(py::module& m)
             std::move(dofmap));
       },
       "Build and dofmap on a mesh.");
+  m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
+        "Build the index to (cell, local index) map from a "
+        "dofmap ((cell, local index ) -> index).");
 
   // dolfinx::fem::FiniteElement
   py::class_<dolfinx::fem::FiniteElement,
@@ -405,9 +399,15 @@ void fem(py::module& m)
               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>
                   f) { self.coefficients().set(i, f); })
       .def("set_constants",
-           py::overload_cast<const std::vector<std::shared_ptr<
-               const dolfinx::function::Constant<PetscScalar>>>&>(
-               &dolfinx::fem::Form<PetscScalar>::set_constants))
+           [](dolfinx::fem::Form<PetscScalar>& self,
+              const std::vector<std::shared_ptr<
+                  const dolfinx::function::Constant<PetscScalar>>>& constants) {
+             auto& c = self.constants();
+             if (constants.size() != c.size())
+               throw std::runtime_error("Incorrect number of constants.");
+             for (std::size_t i = 0; i < constants.size(); ++i)
+               c[i] = std::pair("", constants[i]);
+           })
       .def("set_mesh", &dolfinx::fem::Form<PetscScalar>::set_mesh)
       .def("set_tabulate_tensor",
            [](dolfinx::fem::Form<PetscScalar>& self,
@@ -419,7 +419,7 @@ void fem(py::module& m)
              self.set_tabulate_tensor(type, i, tabulate_tensor_ptr);
            })
       .def_property_readonly("rank", &dolfinx::fem::Form<PetscScalar>::rank)
-      .def("mesh", &dolfinx::fem::Form<PetscScalar>::mesh)
+      .def_property_readonly("mesh", &dolfinx::fem::Form<PetscScalar>::mesh)
       .def_property_readonly("function_spaces",
                              &dolfinx::fem::Form<PetscScalar>::function_spaces);
 

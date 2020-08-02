@@ -7,6 +7,7 @@
 #include "petsc.h"
 #include "SparsityPatternBuilder.h"
 #include "assembler.h"
+#include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/SparsityPattern.h>
 
 using namespace dolfinx;
@@ -34,7 +35,7 @@ la::PETScMatrix fem::create_matrix_block(
                            Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
   // Extract and check row/column ranges
-  auto V = common_function_spaces(extract_function_spaces(a));
+  auto V = function::common_function_spaces(extract_function_spaces(a));
 
   std::shared_ptr mesh = V[0][0]->mesh();
   assert(mesh);
@@ -154,7 +155,7 @@ la::PETScMatrix fem::create_matrix_nest(
                            Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
   // Extract and check row/column ranges
-  auto V = common_function_spaces(extract_function_spaces(a));
+  auto V = function::common_function_spaces(extract_function_spaces(a));
 
   // Loop over each form and create matrix
   Eigen::Array<std::shared_ptr<la::PETScMatrix>, Eigen::Dynamic, Eigen::Dynamic,

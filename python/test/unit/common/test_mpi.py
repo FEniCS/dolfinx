@@ -9,14 +9,13 @@
 import os
 import sys
 
+import dolfinx
 import mpi4py
 import pytest
-from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
-from mpi4py import MPI
-
-import dolfinx
 from dolfinx import wrappers
 from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
+from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
+from mpi4py import MPI
 
 
 def test_mpi_comm_wrapper():

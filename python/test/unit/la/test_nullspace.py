@@ -10,13 +10,12 @@ from contextlib import ExitStack
 
 import numpy as np
 import pytest
-from mpi4py import MPI
-
 import ufl
 from dolfinx import UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp, la
 from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_matrix
 from dolfinx.generation import BoxMesh
+from mpi4py import MPI
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 
@@ -38,7 +37,7 @@ def build_elastic_nullspace(V):
         basis = [np.asarray(x) for x in vec_local]
 
         x = V.tabulate_dof_coordinates()
-        dofs = [V.sub(i).dofmap.list.array() for i in range(gdim)]
+        dofs = [V.sub(i).dofmap.list.array for i in range(gdim)]
 
         # Build translational null space basis
         for i in range(gdim):
@@ -70,7 +69,7 @@ def build_broken_elastic_nullspace(V):
         basis = [np.asarray(x) for x in vec_local]
 
         x = V.tabulate_dof_coordinates()
-        dofs = [V.sub(i).dofmap.list.array() for i in range(2)]
+        dofs = [V.sub(i).dofmap.list.array for i in range(2)]
         basis[0][dofs[0]] = 1.0
         basis[1][dofs[1]] = 1.0
 

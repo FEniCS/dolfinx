@@ -134,7 +134,7 @@ def _solve_varproblem(*args, **kwargs):
         A = fem.assemble_matrix(a._cpp_object, bcs)
         A.assemble()
 
-        comm = L._cpp_object.mesh().mpi_comm()
+        comm = L._cpp_object.mesh.mpi_comm()
         ksp = PETSc.KSP().create(comm)
         ksp.setOperators(A)
 

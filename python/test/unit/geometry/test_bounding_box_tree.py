@@ -7,12 +7,10 @@
 
 import numpy
 import pytest
-from mpi4py import MPI
-
-from dolfinx import (UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                     geometry)
+from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, geometry
 from dolfinx.geometry import BoundingBoxTree
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 
 # --- compute_collisions with point ---
 

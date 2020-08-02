@@ -7,10 +7,10 @@
 
 import numpy as np
 import pytest
-from mpi4py import MPI
-
 from dolfinx import FunctionSpace, UnitSquareMesh, cpp
 from dolfinx.cpp.mesh import CellType
+from mpi4py import MPI
+
 # from dolfinx_utils.test.fixtures import fixture
 
 
