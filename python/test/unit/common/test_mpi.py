@@ -6,8 +6,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
-import sys
+import pathlib
 
 import dolfinx
 import mpi4py
@@ -16,6 +15,11 @@ from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from mpi4py import MPI
 import cppimport
+
+
+cppimport.set_quiet(False)
+cppimport.force_rebuild()
+
 
 def test_mpi_comm_wrapper():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
@@ -60,9 +64,11 @@ PYBIND11_MODULE(mpi_comm_wrapper, m)
 }
 """
 
-        open(os.path.join(tempdir, "mpi_comm_wrapper.cpp"), "w").write(cpp_code + cpp_code_header)
-        sys.path.append(tempdir)
-        return cppimport.imp("mpi_comm_wrapper")
+        path = pathlib.Path(tempdir)
+        open(pathlib.Path(tempdir, "mpi_comm_wrapper.cpp"), "w").write(cpp_code + cpp_code_header)
+        rel_path = path.relative_to(pathlib.Path(__file__).parent)
+        p = str(rel_path).replace("/", ".") + ".mpi_comm_wrapper"
+        return cppimport.imp(p)
 
     module = compile_module()
 

@@ -6,6 +6,7 @@
 """Unit tests for assembly"""
 
 import math
+import pathlib
 
 import cppimport
 import dolfinx
@@ -23,6 +24,9 @@ from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import derivative, ds, dx, inner
+
+cppimport.set_quiet(False)
+cppimport.force_rebuild()
 
 
 def nest_matrix_norm(A):
@@ -94,7 +98,7 @@ def test_assemble_derivatives():
 # @pytest.mark.xfail(reason="This test strangely fails when run with pytest test discovery,
 # but pass when run on its on.")
 @skip_in_parallel
-def test_eigen_assembly():
+def test_eigen_assembly(tempdir):
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
 
     def compile_eigen_csr_assembler_module():
@@ -153,8 +157,11 @@ def test_eigen_assembly():
         }
         """
 
-        open("eigen_csr.cpp", "w").write(cpp_code_header + cpp_code)
-        return cppimport.imp("eigen_csr")
+        path = pathlib.Path(tempdir)
+        open(pathlib.Path(tempdir, "eigen_csr.cpp"), "w").write(cpp_code + cpp_code_header)
+        rel_path = path.relative_to(pathlib.Path(__file__).parent)
+        p = str(rel_path).replace("/", ".") + ".eigen_csr"
+        return cppimport.imp(p)
 
     def assemble_csr_matrix(a, bcs):
         """Assemble bilinear form into an SciPy CSR matrix, in serial."""
