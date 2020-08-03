@@ -48,6 +48,17 @@ jobs:
       - name: Build C++ interface documentation
         run: cd cpp/doc && doxygen
 
+      - name: Install pybind11 (remove when Docker containers have been re-built)
+        run: |
+          wget -nc --quiet https://github.com/pybind/pybind11/archive/master.tar.gz
+          tar -xf master.tar.gz
+          cd pybind11-master
+          pip3 install . --upgrade
+          mkdir build
+          cd build
+          cmake -DPYBIND11_TEST=False ../
+          make install
+
       - name: Update ccpimport
         run: python3 -m pip install cppimport --upgrade
 
