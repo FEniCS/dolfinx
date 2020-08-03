@@ -15,8 +15,10 @@ jobs:
     container: fenicsproject/test-env
 
     env:
-      CC: clang-10
-      CXX: clang++-10
+      # CC: clang-10
+      # CXX: clang++-10
+      CC:  gcc
+      CXX: g++
       DOLFINX_JIT_CFLAGS: -g0 -O0
       MPLBACKEND: agg
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
