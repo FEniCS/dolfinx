@@ -17,7 +17,6 @@ from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from mpi4py import MPI
 import cppimport
 
-
 def test_mpi_comm_wrapper():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
     w1 = MPI.COMM_WORLD
@@ -33,35 +32,37 @@ def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
     @mpi_jit_decorator
     def compile_module():
         cpp_code_header = f"""
-        <%
-        setup_pybind11(cfg)
-        cfg['compiler_args'] = ['-std=c++17']
-        cfg['include_dirs'] += {dolfinx_pc["include_dirs"]
-                                + [mpi4py.get_include()]
-                                + [str(wrappers.get_include_path())]}
-        %>
-        """
+/*
+<%
+setup_pybind11(cfg)
+cfg['compiler_args'] = ['-std=c++17']
+cfg['include_dirs'] += {dolfinx_pc["include_dirs"]
+                        + [mpi4py.get_include()]
+                        + [str(wrappers.get_include_path())]}
+%>
+*/
+"""
 
         cpp_code = """
-        #include <pybind11/pybind11.h>
-        #include <caster_mpi.h>
+#include <pybind11/pybind11.h>
+#include <caster_mpi.h>
 
-        dolfinx_wrappers::MPICommWrapper
-        test_comm_passing(const dolfinx_wrappers::MPICommWrapper comm)
-        {
-          MPI_Comm c = comm.get();
-          return dolfinx_wrappers::MPICommWrapper(c);
-        }
+dolfinx_wrappers::MPICommWrapper
+test_comm_passing(const dolfinx_wrappers::MPICommWrapper comm)
+{
+    MPI_Comm c = comm.get();
+    return dolfinx_wrappers::MPICommWrapper(c);
+}
 
-        PYBIND11_MODULE(test_mpi_comm_wrapper, m)
-        {
-            m.def("test_comm_passing", &test_comm_passing);
-        }
-        """
+PYBIND11_MODULE(mpi_comm_wrapper, m)
+{
+    m.def("test_comm_passing", &test_comm_passing);
+}
+"""
 
-        open(os.path.join(tempdir, "test_mpi_comm_wrapper.cpp"), "w").write(cpp_code_header + cpp_code)
+        open(os.path.join(tempdir, "mpi_comm_wrapper.cpp"), "w").write(cpp_code + cpp_code_header)
         sys.path.append(tempdir)
-        return cppimport.imp("test_mpi_comm_wrapper")
+        return cppimport.imp("mpi_comm_wrapper")
 
     module = compile_module()
 
