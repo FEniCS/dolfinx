@@ -325,6 +325,8 @@ public:
     }
   }
 
+  bool needs_permutation_data;
+
 private:
   // Collect together the function, id, and indices of entities to
   // integrate on

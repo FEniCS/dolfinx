@@ -196,6 +196,7 @@ Form<T> create_form(
     assert(cell_integral);
     integrals.set_tabulate_tensor(IntegralType::cell, id,
                                   cell_integral->tabulate_tensor);
+    integrals.needs_permutation_data = cell_integral->needs_permutation_data;
     std::free(cell_integral);
   }
 
@@ -222,6 +223,8 @@ Form<T> create_form(
     assert(exterior_facet_integral);
     integrals.set_tabulate_tensor(IntegralType::exterior_facet, id,
                                   exterior_facet_integral->tabulate_tensor);
+    integrals.needs_permutation_data
+        = exterior_facet_integral->needs_permutation_data;
     std::free(exterior_facet_integral);
   }
 
@@ -235,6 +238,8 @@ Form<T> create_form(
     assert(interior_facet_integral);
     integrals.set_tabulate_tensor(IntegralType::interior_facet, id,
                                   interior_facet_integral->tabulate_tensor);
+    integrals.needs_permutation_data
+        = interior_facet_integral->needs_permutation_data;
     std::free(interior_facet_integral);
   }
 
