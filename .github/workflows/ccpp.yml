@@ -48,6 +48,9 @@ jobs:
       - name: Build C++ interface documentation
         run: cd cpp/doc && doxygen
 
+      - name: Update ccpimport
+        run: python3 -m pip install cppimport --upgrade
+
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
       - name: Build and install C++ library
