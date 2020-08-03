@@ -100,7 +100,7 @@ def test_assemble_derivatives():
 # @pytest.mark.xfail(reason="This test strangely fails when run with pytest test discovery,
 # but pass when run on its on.")
 @skip_in_parallel
-def test_eigen_assembly(tempdir):
+def test_eigen_assembly(tempdir):  # noqa: F811
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
 
     def compile_eigen_csr_assembler_module():
