@@ -434,7 +434,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
       = pack_coefficients(L);
 
   const FormIntegrals<T>& integrals = L.integrals();
-  const bool needs_permutation_data = integrals.needs_permutation_data;
+  const bool needs_permutation_data = integrals.needs_permutation_data();
   for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
   {
     const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);

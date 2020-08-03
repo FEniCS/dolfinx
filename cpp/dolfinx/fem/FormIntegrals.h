@@ -325,9 +325,16 @@ public:
     }
   }
 
-  /// A bool indicating whether permutation data needs to be passed into
+  /// Get bool indicating whether permutation data needs to be passed into
   /// these integrals.
-  bool needs_permutation_data;
+  bool needs_permutation_data() const { return _needs_permutation_data; }
+
+  /// Set bool indicating whether permutation data needs to be passed into
+  /// these integrals.
+  void set_needs_permutation_data(const bool need)
+  {
+    _needs_permutation_data = need;
+  }
 
 private:
   // Collect together the function, id, and indices of entities to
@@ -344,6 +351,10 @@ private:
   // Array of vectors of integrals, arranged by type (see Type enum, and
   // struct Integral above)
   std::array<std::vector<struct Integral>, 4> _integrals;
+
+  /// A bool indicating whether permutation data needs to be passed into
+  /// these integrals.
+  bool _needs_permutation_data = false;
 };
 } // namespace fem
 } // namespace dolfinx

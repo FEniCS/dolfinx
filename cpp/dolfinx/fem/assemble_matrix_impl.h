@@ -112,7 +112,7 @@ void assemble_matrix(
       = pack_coefficients(a);
 
   const FormIntegrals<T>& integrals = a.integrals();
-  const bool needs_permutation_data = integrals.needs_permutation_data;
+  const bool needs_permutation_data = integrals.needs_permutation_data();
   for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
   {
     const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);

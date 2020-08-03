@@ -83,7 +83,7 @@ T assemble_scalar(const fem::Form<T>& M)
       = pack_coefficients(M);
 
   const FormIntegrals<T>& integrals = M.integrals();
-  const bool needs_permutation_data = integrals.needs_permutation_data;
+  const bool needs_permutation_data = integrals.needs_permutation_data();
   T value(0);
   for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
   {
