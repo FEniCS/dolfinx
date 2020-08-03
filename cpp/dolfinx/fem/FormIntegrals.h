@@ -325,6 +325,8 @@ public:
     }
   }
 
+  // A bool indicating whether or not permutation data needs to be passed into
+  // these integrals.
   bool needs_permutation_data;
 
 private:
