@@ -24,6 +24,8 @@ from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import derivative, ds, dx, inner
+from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
+
 
 cppimport.set_quiet(False)
 cppimport.force_rebuild()
