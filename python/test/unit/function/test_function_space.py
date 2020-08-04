@@ -93,10 +93,8 @@ def test_sub(Q, W):
 
     assert W.dofmap.dof_layout.num_dofs == X.dofmap.dof_layout.num_dofs
     for dim, entity_count in enumerate([4, 6, 4, 1]):
-        assert W.dofmap.dof_layout.num_entity_dofs(dim) \
-            == X.dofmap.dof_layout.num_entity_dofs(dim)
-        assert W.dofmap.dof_layout.num_entity_closure_dofs(dim) \
-            == X.dofmap.dof_layout.num_entity_closure_dofs(dim)
+        assert W.dofmap.dof_layout.num_entity_dofs(dim) == X.dofmap.dof_layout.num_entity_dofs(dim)
+        assert W.dofmap.dof_layout.num_entity_closure_dofs(dim) == X.dofmap.dof_layout.num_entity_closure_dofs(dim)
         for i in range(entity_count):
             assert len(W.dofmap.dof_layout.entity_dofs(dim, i)) \
                 == len(X.dofmap.dof_layout.entity_dofs(dim, i)) \
@@ -104,15 +102,14 @@ def test_sub(Q, W):
             assert len(W.dofmap.dof_layout.entity_closure_dofs(dim, i)) \
                 == len(X.dofmap.dof_layout.entity_closure_dofs(dim, i)) \
                 == len(X.dofmap.dof_layout.entity_closure_dofs(dim, 0))
-    assert W.dofmap.dof_layout.block_size() == X.dofmap.dof_layout.block_size()
 
+    assert W.dofmap.dof_layout.block_size() == X.dofmap.dof_layout.block_size()
     assert len(W.dofmap.cell_dofs(0)) == len(X.dofmap.cell_dofs(0))
 
     assert W.element.num_sub_elements() == X.element.num_sub_elements()
     assert W.element.space_dimension() == X.element.space_dimension()
     assert W.element.value_rank == X.element.value_rank
-    assert W.element.dof_reference_coordinates().shape \
-        == X.element.dof_reference_coordinates().shape
+    assert W.element.dof_reference_coordinates().shape == X.element.dof_reference_coordinates().shape
     assert W.element.signature() == X.element.signature()
 
 

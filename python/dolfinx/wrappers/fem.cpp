@@ -173,9 +173,7 @@ void fem(py::module& m)
         // to convert from a std::unique_ptr to a std::shard_ptr
         auto [map, dofmap] = dolfinx::fem::DofMapBuilder::build(
             comm.get(), topology, element_dof_layout);
-        return std::pair(
-            std::shared_ptr<const dolfinx::common::IndexMap>(std::move(map)),
-            std::move(dofmap));
+        return std::pair(map, std::move(dofmap));
       },
       "Build and dofmap on a mesh.");
   m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
