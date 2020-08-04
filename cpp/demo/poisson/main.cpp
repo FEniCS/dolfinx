@@ -115,113 +115,117 @@ int main(int argc, char* argv[])
   common::SubSystemsManager::init_logging(argc, argv);
   common::SubSystemsManager::init_petsc(argc, argv);
 
-  // Create mesh and function space
-  auto cmap = fem::create_coordinate_map(create_coordinate_map_poisson);
-  std::array pt{Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 0.0)};
-  auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, pt, {{32, 32}}, cmap, mesh::GhostMode::none));
+  {
+    // Create mesh and function space
+    auto cmap = fem::create_coordinate_map(create_coordinate_map_poisson);
+    auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
+        MPI_COMM_WORLD,
+        {Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 0.0)},
+        {32, 32}, cmap, mesh::GhostMode::none));
 
-  auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
-                                     mesh);
+    auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
+                                       mesh);
 
-  // Next, we define the variational formulation by initializing the
-  // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
-  // defined :cpp:class:`FunctionSpace` ``V``.  Then we can create the
-  // source and boundary flux term (:math:`f`, :math:`g`) and attach these
-  // to the linear form.
-  //
-  // .. code-block:: cpp
+    // Next, we define the variational formulation by initializing the
+    // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
+    // defined :cpp:class:`FunctionSpace` ``V``.  Then we can create the
+    // source and boundary flux term (:math:`f`, :math:`g`) and attach these
+    // to the linear form.
+    //
+    // .. code-block:: cpp
 
-  // Define variational forms
-  auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V});
-  auto L = fem::create_form<PetscScalar>(create_form_poisson_L, {V});
+    // Define variational forms
+    auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V});
+    auto L = fem::create_form<PetscScalar>(create_form_poisson_L, {V});
 
-  auto f = std::make_shared<function::Function<PetscScalar>>(V);
-  auto g = std::make_shared<function::Function<PetscScalar>>(V);
+    auto f = std::make_shared<function::Function<PetscScalar>>(V);
+    auto g = std::make_shared<function::Function<PetscScalar>>(V);
 
-  // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
-  // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
-  // takes two arguments: the value of the boundary condition,
-  // and the part of the boundary on which the condition applies.
-  // In our example, the value of the boundary condition (0.0) can
-  // represented using a :cpp:class:`Function`, and the Dirichlet boundary
-  // is defined by the indices of degrees of freedom to which the boundary
-  // condition applies.
-  // The definition of the Dirichlet boundary condition then looks
-  // as follows:
-  //
-  // .. code-block:: cpp
+    // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
+    // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
+    // takes two arguments: the value of the boundary condition,
+    // and the part of the boundary on which the condition applies.
+    // In our example, the value of the boundary condition (0.0) can
+    // represented using a :cpp:class:`Function`, and the Dirichlet boundary
+    // is defined by the indices of degrees of freedom to which the boundary
+    // condition applies.
+    // The definition of the Dirichlet boundary condition then looks
+    // as follows:
+    //
+    // .. code-block:: cpp
 
-  // FIXME: zero function and make sure ghosts are updated
-  // Define boundary condition
-  auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
+    // FIXME: zero function and make sure ghosts are updated
+    // Define boundary condition
+    auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
 
-  const auto bdofs = fem::locate_dofs_geometrical({*V}, [](auto& x) {
-    return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
-  });
+    const auto bdofs = fem::locate_dofs_geometrical({*V}, [](auto& x) {
+      return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
+    });
 
-  std::vector bc{
-      std::make_shared<const fem::DirichletBC<PetscScalar>>(u0, bdofs)};
+    std::vector bc{
+        std::make_shared<const fem::DirichletBC<PetscScalar>>(u0, bdofs)};
 
-  f->interpolate([](auto& x) {
-    auto dx = Eigen::square(x - 0.5);
-    return 10.0 * Eigen::exp(-(dx.row(0) + dx.row(1)) / 0.02);
-  });
+    f->interpolate([](auto& x) {
+      auto dx = Eigen::square(x - 0.5);
+      return 10.0 * Eigen::exp(-(dx.row(0) + dx.row(1)) / 0.02);
+    });
 
-  g->interpolate([](auto& x) { return Eigen::sin(5 * x.row(0)); });
-  L->set_coefficients({{"f", f}, {"g", g}});
+    g->interpolate([](auto& x) { return Eigen::sin(5 * x.row(0)); });
+    L->set_coefficients({{"f", f}, {"g", g}});
 
-  // Prepare and set Constants for the bilinear form
-  auto kappa = std::make_shared<function::Constant<PetscScalar>>(2.0);
-  a->set_constants({{"kappa", kappa}});
+    // Prepare and set Constants for the bilinear form
+    auto kappa = std::make_shared<function::Constant<PetscScalar>>(2.0);
+    a->set_constants({{"kappa", kappa}});
 
-  // Now, we have specified the variational forms and can consider the
-  // solution of the variational problem. First, we need to define a
-  // :cpp:class:`Function` ``u`` to store the solution. (Upon
-  // initialization, it is simply set to the zero function.) Next, we can
-  // call the ``solve`` function with the arguments ``a == L``, ``u`` and
-  // ``bc`` as follows:
-  //
-  // .. code-block:: cpp
+    // Now, we have specified the variational forms and can consider the
+    // solution of the variational problem. First, we need to define a
+    // :cpp:class:`Function` ``u`` to store the solution. (Upon
+    // initialization, it is simply set to the zero function.) Next, we can
+    // call the ``solve`` function with the arguments ``a == L``, ``u`` and
+    // ``bc`` as follows:
+    //
+    // .. code-block:: cpp
 
-  // Compute solution
-  function::Function<PetscScalar> u(V);
-  la::PETScMatrix A = fem::create_matrix(*a);
-  la::PETScVector b(*L->function_space(0)->dofmap()->index_map);
+    // Compute solution
+    function::Function<PetscScalar> u(V);
+    la::PETScMatrix A = fem::create_matrix(*a);
+    la::PETScVector b(*L->function_space(0)->dofmap()->index_map);
 
-  MatZeroEntries(A.mat());
-  fem::assemble_matrix(la::PETScMatrix::add_fn(A.mat()), *a, bc);
-  fem::add_diagonal(la::PETScMatrix::add_fn(A.mat()), *V, bc);
-  MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
+    MatZeroEntries(A.mat());
+    fem::assemble_matrix(la::PETScMatrix::add_fn(A.mat()), *a, bc);
+    fem::add_diagonal(la::PETScMatrix::add_fn(A.mat()), *V, bc);
+    MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
-  VecSet(b.vec(), 0.0);
-  VecGhostUpdateBegin(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
-  fem::assemble_vector_petsc(b.vec(), *L);
-  fem::apply_lifting_petsc(b.vec(), {a}, {{bc}}, {}, 1.0);
-  VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-  VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-  fem::set_bc_petsc(b.vec(), bc, nullptr);
+    VecSet(b.vec(), 0.0);
+    VecGhostUpdateBegin(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
+    fem::assemble_vector_petsc(b.vec(), *L);
+    fem::apply_lifting_petsc(b.vec(), {a}, {{bc}}, {}, 1.0);
+    VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+    VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+    fem::set_bc_petsc(b.vec(), bc, nullptr);
 
-  la::PETScKrylovSolver lu(MPI_COMM_WORLD);
-  la::PETScOptions::set("ksp_type", "preonly");
-  la::PETScOptions::set("pc_type", "lu");
-  lu.set_from_options();
+    la::PETScKrylovSolver lu(MPI_COMM_WORLD);
+    la::PETScOptions::set("ksp_type", "preonly");
+    la::PETScOptions::set("pc_type", "lu");
+    lu.set_from_options();
 
-  lu.set_operator(A.mat());
-  lu.solve(u.vector(), b.vec());
+    lu.set_operator(A.mat());
+    lu.solve(u.vector(), b.vec());
 
-  // The function ``u`` will be modified during the call to solve. A
-  // :cpp:class:`Function` can be saved to a file. Here, we output the
-  // solution to a ``VTK`` file (specified using the suffix ``.pvd``) for
-  // visualisation in an external program such as Paraview.
-  //
-  // .. code-block:: cpp
+    // The function ``u`` will be modified during the call to solve. A
+    // :cpp:class:`Function` can be saved to a file. Here, we output the
+    // solution to a ``VTK`` file (specified using the suffix ``.pvd``) for
+    // visualisation in an external program such as Paraview.
+    //
+    // .. code-block:: cpp
 
-  // Save solution in VTK format
-  io::VTKFile file("u.pvd");
-  file.write(u);
+    // Save solution in VTK format
+    io::VTKFile file("u.pvd");
+    file.write(u);
+  }
 
+  common::SubSystemsManager::finalize_petsc();
   return 0;
 }

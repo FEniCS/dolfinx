@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -43,8 +43,10 @@ internal_tabulate_dof_coordinates(
   assert(dofmap);
   std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
   assert(index_map);
+
   int bs = index_map->block_size();
   int element_block_size = element->block_size();
+
   std::int32_t local_size
       = bs * (index_map->size_local() + index_map->num_ghosts())
         / element_block_size;
@@ -99,10 +101,14 @@ internal_tabulate_dof_coordinates(
     for (Eigen::Index i = 0; i < scalar_dofs; ++i)
     {
       // FIXME: this depends on the dof layout
-      const std::int32_t dof
-          = dofs[i * element_block_size] / element_block_size;
       for (int j = 0; j < repeats; ++j)
-        x.row(dof * repeats + j).head(gdim) = coordinates.row(i);
+      {
+        x.row(dofs[i * element_block_size] / element_block_size * repeats + j)
+            .head(gdim)
+            = coordinates.row(i);
+      }
+      // TODO: cell_dofs should return values for scalar subspace, rather than
+      // fixing that here.
     }
   }
 
@@ -122,14 +128,11 @@ FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
 //-----------------------------------------------------------------------------
 bool FunctionSpace::operator==(const FunctionSpace& V) const
 {
-  // Compare pointers to shared objects
-  return _element.get() == V._element.get() and _mesh.get() == V._mesh.get()
-         and _dofmap.get() == V._dofmap.get();
+  return _element == V._element and _mesh == V._mesh and _dofmap == V._dofmap;
 }
 //-----------------------------------------------------------------------------
 bool FunctionSpace::operator!=(const FunctionSpace& V) const
 {
-  // Compare pointers to shared objects
   return !(*this == V);
 }
 //-----------------------------------------------------------------------------
@@ -200,7 +203,7 @@ FunctionSpace::collapse() const
   auto collapsed_sub_space
       = std::make_shared<FunctionSpace>(_mesh, _element, collapsed_dofmap);
 
-  return std::pair(std::move(collapsed_sub_space), std::move(collapsed_dofs));
+  return {std::move(collapsed_sub_space), std::move(collapsed_dofs)};
 }
 //-----------------------------------------------------------------------------
 bool FunctionSpace::has_element(const fem::FiniteElement& element) const
@@ -260,13 +263,58 @@ bool FunctionSpace::contains(const FunctionSpace& V) const
     return false;
 
   // Are our components same as leading components of V?
-  for (std::size_t i = 0; i < _component.size(); ++i)
-  {
-    if (_component[i] != V._component[i])
-      return false;
-  }
+  if (!std::equal(_component.begin(), _component.end(), V._component.begin()))
+    return false;
 
   // Ok, V is really our subspace
   return true;
+}
+//-----------------------------------------------------------------------------
+std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
+function::common_function_spaces(
+    const std::vector<
+        std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>& V)
+{
+  assert(!V.empty());
+  std::vector<std::shared_ptr<const FunctionSpace>> spaces0(V.size(), nullptr);
+  std::vector<std::shared_ptr<const FunctionSpace>> spaces1(V.front().size(),
+                                                            nullptr);
+
+  // Loop over rows
+  for (std::size_t i = 0; i < V.size(); ++i)
+  {
+    // Loop over columns
+    for (std::size_t j = 0; j < V[i].size(); ++j)
+    {
+      auto& V0 = V[i][j][0];
+      auto& V1 = V[i][j][1];
+      if (V0 and V1)
+      {
+        if (!spaces0[i])
+          spaces0[i] = V0;
+        else
+        {
+          if (spaces0[i] != V0)
+            throw std::runtime_error("Mismatched test space for row.");
+        }
+
+        if (!spaces1[j])
+          spaces1[j] = V1;
+        else
+        {
+          if (spaces1[j] != V1)
+            throw std::runtime_error("Mismatched trial space for column.");
+        }
+      }
+    }
+  }
+
+  // Check there are no null entries
+  if (std::find(spaces0.begin(), spaces0.end(), nullptr) != spaces0.end())
+    throw std::runtime_error("Could not deduce all block test spaces.");
+  if (std::find(spaces1.begin(), spaces1.end(), nullptr) != spaces1.end())
+    throw std::runtime_error("Could not deduce all block trial spaces.");
+
+  return {spaces0, spaces1};
 }
 //-----------------------------------------------------------------------------

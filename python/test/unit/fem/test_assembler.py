@@ -10,12 +10,11 @@ import math
 import dolfinx
 import numpy
 import pytest
-import scipy.sparse.linalg
 import ufl
 from dolfinx import function
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import create_mesh
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import derivative, ds, dx, inner
@@ -80,40 +79,10 @@ def test_assemble_derivatives():
 
     A1 = dolfinx.fem.assemble_matrix(a)
     A1.assemble()
-
     a = c2 * b * inner(du, v) * dx
     A2 = dolfinx.fem.assemble_matrix(a)
     A2.assemble()
-
     assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
-
-
-@skip_in_parallel
-@skip_if_complex
-@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
-def test_eigen_assembly(mode):
-    """Compare assembly into scipy.CSR matrix with PETSc assembly"""
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
-    u = ufl.TrialFunction(Q)
-    v = ufl.TestFunction(Q)
-    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
-
-    def boundary(x):
-        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
-
-    bdofsQ = dolfinx.fem.locate_dofs_geometrical(Q, boundary)
-
-    u_bc = dolfinx.function.Function(Q)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(1.0)
-    bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsQ)
-
-    A1 = dolfinx.fem.assemble_matrix(a, [bc])
-    A1.assemble()
-
-    A2 = dolfinx.fem.assemble_csr_matrix(a, [bc])
-    assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
 
 
 @pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
