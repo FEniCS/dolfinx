@@ -17,10 +17,6 @@ from mpi4py import MPI
 import cppimport
 
 
-cppimport.set_quiet(False)
-cppimport.force_rebuild()
-
-
 def test_mpi_comm_wrapper():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
     w1 = MPI.COMM_WORLD

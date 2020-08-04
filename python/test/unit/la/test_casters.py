@@ -18,10 +18,6 @@ from petsc4py import PETSc
 import cppimport
 
 
-cppimport.set_quiet(False)
-cppimport.force_rebuild()
-
-
 def test_petsc_casters_cppimport(tempdir):  # noqa: F811
     """Test casters of PETSc objects in codes compiled with cppimport"""
 
