@@ -9,13 +9,12 @@ import random
 
 import numpy as np
 import pytest
-from mpi4py import MPI
 import ufl
-
 from dolfinx import Function, FunctionSpace, VectorFunctionSpace, cpp
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type", [CellType.interval, CellType.triangle, CellType.tetrahedron,
