@@ -298,8 +298,14 @@ void fem(py::module& m)
           dolfinx::fem::add_diagonal(dolfinx::la::PETScMatrix::add_fn(A), V,
                                      bcs, diagonal);
         });
-  m.def("assemble_matrix_eigen",
-        &dolfinx::fem::assemble_matrix_eigen<PetscScalar>);
+  m.def("assemble_matrix",
+        py::overload_cast<const std::function<int(
+                              std::int32_t, const std::int32_t*, std::int32_t,
+                              const std::int32_t*, const PetscScalar*)>&,
+                          const dolfinx::fem::Form<PetscScalar>&,
+                          const std::vector<std::shared_ptr<
+                              const dolfinx::fem::DirichletBC<PetscScalar>>>&>(
+            &dolfinx::fem::assemble_matrix<PetscScalar>));
 
   // BC modifiers
   m.def("apply_lifting", &dolfinx::fem::apply_lifting<PetscScalar>,
