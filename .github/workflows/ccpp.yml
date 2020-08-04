@@ -38,16 +38,14 @@ jobs:
       - name: Install FEniCS Python components
         run: python3 -m pip install git+https://github.com/FEniCS/fiat.git git+https://github.com/FEniCS/ufl.git git+https://github.com/FEniCS/ffcx.git
 
-      - name: MPI flags
-        run: mpicc -show
-
-        - name: Flake8 checks
+      - name: Flake8 checks
         run: |
           cd python/
           python3 -m flake8 dolfinx
           python3 -m flake8 dolfinx_utils
           python3 -m flake8 demo
           python3 -m flake8 test
+
       - name: Build C++ interface documentation
         run: cd cpp/doc && doxygen
 
