@@ -11,6 +11,7 @@
 #include "utils.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -306,6 +307,8 @@ mesh::create_topology(MPI_Comm comm,
                       const std::vector<int>& ghost_owners,
                       const CellType& cell_type, mesh::GhostMode ghost_mode)
 {
+  LOG(INFO) << "Create topology";
+
   if (cells.num_nodes() > 0
       and cells.num_links(0) != mesh::num_cell_vertices(cell_type))
   {

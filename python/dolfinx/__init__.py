@@ -56,10 +56,7 @@ from .mesh import MeshTags
 # Initialise logging
 from dolfinx import cpp
 import sys
-# FIXME: We're not passing command link argument here because some
-# pytest arg crash loguru
-cpp.common.init_logging([""])
-# cpp.common.SubSystemsManager.init_logging(sys.argv)
+cpp.common.init_logging(sys.argv)
 del sys
 
 def get_include(user=False):
