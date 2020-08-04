@@ -110,6 +110,8 @@ else:
 MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
 # Make MatSetValuesLocal from PETSc available via cffi in API mode
+
+
 def get_matsetvalues_api():
     worker = os.getenv('PYTEST_XDIST_WORKER', None)
     module_name = "_petsc_cffi_{}".format(worker)
@@ -127,11 +129,11 @@ def get_matsetvalues_api():
         ffibuilder.set_source(module_name, """
             # include "petscmat.h"
         """,
-                            libraries=['petsc'],
-                            include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
+                              libraries=['petsc'],
+                              include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
                                             os.path.join(petsc_dir, 'include')],
-                            library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
-                            extra_compile_args=[])
+                              library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
+                              extra_compile_args=[])
 
         # Build module in same directory as test file
         path = pathlib.Path(__file__).parent.absolute()
