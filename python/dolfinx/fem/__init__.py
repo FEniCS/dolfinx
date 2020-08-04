@@ -11,7 +11,6 @@ from dolfinx.fem.assemble import (create_vector, create_vector_block, create_vec
                                   assemble_scalar,
                                   assemble_vector, assemble_vector_nest, assemble_vector_block,
                                   assemble_matrix, assemble_matrix_nest, assemble_matrix_block,
-                                  assemble_csr_matrix,
                                   set_bc, set_bc_nest,
                                   apply_lifting, apply_lifting_nest)
 from dolfinx.fem.coordinatemapping import create_coordinate_map
@@ -30,7 +29,7 @@ __all__ = [
     "apply_lifting", "apply_lifting_nest", "assemble_scalar", "assemble_vector",
     "assemble_vector_block", "assemble_vector_nest",
     "assemble_matrix_block", "assemble_matrix_nest",
-    "assemble_matrix", "assemble_csr_matrix", "set_bc", "set_bc_nest", "create_coordinate_map",
+    "assemble_matrix", "set_bc", "set_bc_nest", "create_coordinate_map",
     "DirichletBC", "DofMap", "Form", "IntegralType",
     "derivative", "adjoint", "increase_order",
     "tear", "project", "solve", "locate_dofs_geometrical", "locate_dofs_topological"
