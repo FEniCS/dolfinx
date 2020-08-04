@@ -109,8 +109,8 @@ else:
         raise
 MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
-# Make MatSetValuesLocal from PETSc available via cffi in API mode
 def get_matsetvalues_api():
+    """Get MatSetValuesLocal from PETSc via cffi in API mode"""
     worker = os.getenv('PYTEST_XDIST_WORKER', None)
     module_name = "_petsc_cffi_{}".format(worker)
     if MPI.COMM_WORLD.Get_rank() == 0:
@@ -395,7 +395,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
 
-@pytest.mark.parametrize("set_vals", [MatSetValues_abi, MatSetValues_api])
+@pytest.mark.parametrize("set_vals", [MatSetValues_abi, get_matsetvalues_api()])
 def test_custom_mesh_loop_cffi_rank2(set_vals):
     """Test numba assembler for bilinear form"""
 
