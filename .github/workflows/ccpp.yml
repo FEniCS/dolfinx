@@ -11,8 +11,8 @@ on:
 jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
-    runs-on: ubuntu-latest
-    container: fenicsproject/test-env
+    runs-on: ubuntu-20.04
+    container: fenicsproject/test-env:openmpi
 
     env:
       CC: clang-10
@@ -88,13 +88,20 @@ jobs:
       - name: Run Python unit tests (MPI, np=2)
         run: mpirun -np 2 python3 -m pytest python/test/unit/
 
+      - name: Install SSH key for fenicsproject.org documentation push
+        uses: shimataro/ssh-key-action@v2.0.3
+        with:
+          key: ${{ secrets.SSH_DOCS_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.SSH_DOCS_KNOWN_HOSTS }}
+
       - name: Push C++ documentation
         if: github.ref == 'master'
         run: |
           cd cpp/doc
-          # Upload to server
-      # - name: Push Python documentation
-      #     if: github.ref == 'master'
-      #     run: |
-      #     cd python/doc
-      # Upload to server
+          scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
+
+      - name: Push Python documentation
+        if: github.ref == 'master'
+        run: |
+          cd python/doc
+          scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
