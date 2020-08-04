@@ -21,6 +21,7 @@ import numpy as np
 import petsc4py.lib
 import pytest
 import ufl
+from dolfinx.jit import dolfinx_pc
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
@@ -109,43 +110,45 @@ else:
         raise
 MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
-# Make MatSetValuesLocal from PETSc available via cffi in API mode
-worker = os.getenv('PYTEST_XDIST_WORKER', None)
-module_name = "_petsc_cffi_{}".format(worker)
-if MPI.COMM_WORLD.Get_rank() == 0:
-    os.environ["CC"] = "mpicc"
-    ffibuilder = cffi.FFI()
-    ffibuilder.cdef("""
-        typedef int... PetscInt;
-        typedef ... PetscScalar;
-        typedef int... InsertMode;
-        int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
-                              PetscInt ncol, const PetscInt* icol,
-                              const PetscScalar* y, InsertMode addv);
-    """)
-    ffibuilder.set_source(module_name, """
-        # include "petscmat.h"
-    """,
-                          libraries=['petsc'],
-                          include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
-                                        os.path.join(petsc_dir, 'include')],
-                          library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
-                          extra_compile_args=[])
 
-    # Build module in same directory as test file
-    path = pathlib.Path(__file__).parent.absolute()
-    ffibuilder.compile(tmpdir=path, verbose=False)
+# @pytest.fixture
+def get_matsetvalues_api():
+    """Make MatSetValuesLocal from PETSc available via cffi in API mode"""
+    worker = os.getenv('PYTEST_XDIST_WORKER', None)
+    module_name = "_petsc_cffi_{}".format(worker)
+    if MPI.COMM_WORLD.Get_rank() == 0:
+        ffibuilder = cffi.FFI()
+        ffibuilder.cdef("""
+            typedef int... PetscInt;
+            typedef ... PetscScalar;
+            typedef int... InsertMode;
+            int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
+                                PetscInt ncol, const PetscInt* icol,
+                                const PetscScalar* y, InsertMode addv);
+        """)
+        ffibuilder.set_source(module_name, """
+            # include "petscmat.h"
+        """,
+                              libraries=['petsc'],
+                              include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
+                                            os.path.join(petsc_dir, 'include')] + dolfinx_pc["include_dirs"],
+                              library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
+                              extra_compile_args=[])
 
-MPI.COMM_WORLD.Barrier()
+        # Build module in same directory as test file
+        path = pathlib.Path(__file__).parent.absolute()
+        ffibuilder.compile(tmpdir=path, verbose=True)
 
-spec = importlib.util.find_spec(module_name)
-if spec is None:
-    raise ImportError("Failed to find CFFI generated module")
-module = importlib.util.module_from_spec(spec)
+    MPI.COMM_WORLD.Barrier()
 
-cffi_support.register_module(module)
-MatSetValues_api = module.lib.MatSetValuesLocal
-cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba_scalar_t)
+    spec = importlib.util.find_spec(module_name)
+    if spec is None:
+        raise ImportError("Failed to find CFFI generated module")
+    module = importlib.util.module_from_spec(spec)
+
+    cffi_support.register_module(module)
+    cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba_scalar_t)
+    return module.lib.MatSetValuesLocal
 
 
 # See https://github.com/numba/numba/issues/4036 for why we need 'sink'
@@ -393,7 +396,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
 
-@pytest.mark.parametrize("set_vals", [MatSetValues_abi, MatSetValues_api])
+@pytest.mark.parametrize("set_vals", [MatSetValues_abi, get_matsetvalues_api()])
 def test_custom_mesh_loop_cffi_rank2(set_vals):
     """Test numba assembler for bilinear form"""
 
