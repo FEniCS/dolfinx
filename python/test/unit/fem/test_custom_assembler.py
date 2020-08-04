@@ -113,6 +113,7 @@ MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
 # @pytest.fixture
 def get_matsetvalues_api():
+    print("**********", dolfinx_pc["include_dirs"])
     """Make MatSetValuesLocal from PETSc available via cffi in API mode"""
     worker = os.getenv('PYTEST_XDIST_WORKER', None)
     module_name = "_petsc_cffi_{}".format(worker)
