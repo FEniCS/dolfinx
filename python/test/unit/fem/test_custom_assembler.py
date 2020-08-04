@@ -111,7 +111,6 @@ else:
 MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
 
-
 # @pytest.fixture
 def get_matsetvalues_api():
     """Make MatSetValuesLocal from PETSc available via cffi in API mode"""
