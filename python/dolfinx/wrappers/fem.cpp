@@ -168,14 +168,12 @@ void fem(py::module& m)
   m.def(
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
-         const dolfinx::fem::ElementDofLayout& element_dof_layout, int bs) {
+         const dolfinx::fem::ElementDofLayout& element_dof_layout) {
         // See https://github.com/pybind/pybind11/issues/1138 on why we need
         // to convert from a std::unique_ptr to a std::shard_ptr
         auto [map, dofmap] = dolfinx::fem::DofMapBuilder::build(
-            comm.get(), topology, element_dof_layout, bs);
-        return std::pair(
-            std::shared_ptr<const dolfinx::common::IndexMap>(std::move(map)),
-            std::move(dofmap));
+            comm.get(), topology, element_dof_layout);
+        return std::pair(map, std::move(dofmap));
       },
       "Build and dofmap on a mesh.");
   m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
@@ -218,7 +216,8 @@ void fem(py::module& m)
            &dolfinx::fem::ElementDofLayout::num_entity_closure_dofs)
       .def("entity_dofs", &dolfinx::fem::ElementDofLayout::entity_dofs)
       .def("entity_closure_dofs",
-           &dolfinx::fem::ElementDofLayout::entity_closure_dofs);
+           &dolfinx::fem::ElementDofLayout::entity_closure_dofs)
+      .def("block_size", &dolfinx::fem::ElementDofLayout::block_size);
 
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
