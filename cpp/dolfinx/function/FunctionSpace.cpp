@@ -102,9 +102,11 @@ internal_tabulate_dof_coordinates(
     {
       // FIXME: this depends on the dof layout
       for (int j = 0; j < repeats; ++j)
+      {
         x.row(dofs[i * element_block_size] / element_block_size * repeats + j)
             .head(gdim)
             = coordinates.row(i);
+      }
       // TODO: cell_dofs should return values for scalar subspace, rather than
       // fixing that here.
     }

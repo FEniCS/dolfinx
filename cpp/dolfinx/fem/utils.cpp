@@ -142,9 +142,11 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
         = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i), std::free);
     ufc_sub_dofmaps.push_back(ufc_sub_dofmap);
     if (element_block_size == 1)
+    {
       offsets.push_back(offsets.back()
                         + ufc_sub_dofmap->num_element_support_dofs
                               * ufc_sub_dofmap->block_size);
+    }
     else
       offsets.push_back(offsets.back() + 1);
   }

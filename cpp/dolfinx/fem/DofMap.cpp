@@ -80,9 +80,8 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
   const auto it_unowned0 = std::lower_bound(dofs_view.begin(), dofs_view.end(),
                                             num_owned_view * bs_view);
-  const std::int64_t num_owned = std::distance(dofs_view.begin(), it_unowned0);
-
-  const std::int64_t num_unowned = std::distance(it_unowned0, dofs_view.end());
+  const std::size_t num_owned = std::distance(dofs_view.begin(), it_unowned0);
+  const std::size_t num_unowned = std::distance(it_unowned0, dofs_view.end());
 
   // Get process offset for new dofmap
   const std::int64_t process_offset
@@ -93,7 +92,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                                          -1);
   for (auto it = dofs_view.begin(); it != it_unowned0; ++it)
   {
-    const std::int64_t block = std::distance(dofs_view.begin(), it);
+    const std::size_t block = std::distance(dofs_view.begin(), it);
     const std::int32_t block_parent = *it / bs_view;
     global_index[block_parent] = block + process_offset;
   }
@@ -220,14 +219,15 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 
   // Build dofmap by extracting from parent
   const int num_cells = this->_dofmap.num_nodes();
-  const std::int32_t dofs_per_cell = sub_element_map_view.size() * sub_element_dof_layout->block_size();
+  const std::int32_t dofs_per_cell
+      = sub_element_map_view.size() * sub_element_dof_layout->block_size();
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       dofmap(num_cells, dofs_per_cell);
   for (int c = 0; c < num_cells; ++c)
   {
     auto cell_dmap_parent = this->_dofmap.links(c);
     for (std::int32_t i = 0; i < dofs_per_cell; ++i)
-        dofmap(c, i) = cell_dmap_parent[sub_element_map_view[i]];
+      dofmap(c, i) = cell_dmap_parent[sub_element_map_view[i]];
   }
 
   return DofMap(sub_element_dof_layout, this->index_map,

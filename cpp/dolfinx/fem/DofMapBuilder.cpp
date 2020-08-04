@@ -489,11 +489,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   common::Timer t0("Init dofmap");
 
   const int element_block_size = element_dof_layout.block_size();
-
-  //  if (element_dof_layout.block_size() != 1)
-  //    throw std::runtime_error("Block size of 1 expected when building
-  //    dofmap.");
-
   const int D = topology.dim();
 
   // Build a simple dofmap based on mesh entity numbering, returning (i)
