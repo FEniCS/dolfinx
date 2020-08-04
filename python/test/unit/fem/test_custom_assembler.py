@@ -138,7 +138,7 @@ def get_matsetvalues_api():
 
         # Build module in same directory as test file
         path = pathlib.Path(__file__).parent.absolute()
-        ffibuilder.compile(tmpdir=path, verbose=False)
+        ffibuilder.compile(tmpdir=path, verbose=True)
 
     MPI.COMM_WORLD.Barrier()
 
@@ -149,7 +149,6 @@ def get_matsetvalues_api():
 
     cffi_support.register_module(module)
     cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba_scalar_t)
-    # MatSetValues_api = module.lib.MatSetValuesLocal
     return module.lib.MatSetValuesLocal
 
 
