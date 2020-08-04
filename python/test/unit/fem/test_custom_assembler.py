@@ -110,42 +110,44 @@ else:
 MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
 # Make MatSetValuesLocal from PETSc available via cffi in API mode
-worker = os.getenv('PYTEST_XDIST_WORKER', None)
-module_name = "_petsc_cffi_{}".format(worker)
-if MPI.COMM_WORLD.Get_rank() == 0:
-    os.environ["CC"] = "mpicc"
-    ffibuilder = cffi.FFI()
-    ffibuilder.cdef("""
-        typedef int... PetscInt;
-        typedef ... PetscScalar;
-        typedef int... InsertMode;
-        int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
-                              PetscInt ncol, const PetscInt* icol,
-                              const PetscScalar* y, InsertMode addv);
-    """)
-    ffibuilder.set_source(module_name, """
-        # include "petscmat.h"
-    """,
-                          libraries=['petsc'],
-                          include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
-                                        os.path.join(petsc_dir, 'include')],
-                          library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
-                          extra_compile_args=[])
+def get_matsetvalues_api():
+    worker = os.getenv('PYTEST_XDIST_WORKER', None)
+    module_name = "_petsc_cffi_{}".format(worker)
+    if MPI.COMM_WORLD.Get_rank() == 0:
+        os.environ["CC"] = "mpicc"
+        ffibuilder = cffi.FFI()
+        ffibuilder.cdef("""
+            typedef int... PetscInt;
+            typedef ... PetscScalar;
+            typedef int... InsertMode;
+            int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
+                                PetscInt ncol, const PetscInt* icol,
+                                const PetscScalar* y, InsertMode addv);
+        """)
+        ffibuilder.set_source(module_name, """
+            # include "petscmat.h"
+        """,
+                            libraries=['petsc'],
+                            include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
+                                            os.path.join(petsc_dir, 'include')],
+                            library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
+                            extra_compile_args=[])
 
-    # Build module in same directory as test file
-    path = pathlib.Path(__file__).parent.absolute()
-    ffibuilder.compile(tmpdir=path, verbose=False)
+        # Build module in same directory as test file
+        path = pathlib.Path(__file__).parent.absolute()
+        ffibuilder.compile(tmpdir=path, verbose=False)
 
-MPI.COMM_WORLD.Barrier()
+    MPI.COMM_WORLD.Barrier()
 
-spec = importlib.util.find_spec(module_name)
-if spec is None:
-    raise ImportError("Failed to find CFFI generated module")
-module = importlib.util.module_from_spec(spec)
+    spec = importlib.util.find_spec(module_name)
+    if spec is None:
+        raise ImportError("Failed to find CFFI generated module")
+    module = importlib.util.module_from_spec(spec)
 
-cffi_support.register_module(module)
-MatSetValues_api = module.lib.MatSetValuesLocal
-cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba_scalar_t)
+    cffi_support.register_module(module)
+    cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba_scalar_t)
+    # MatSetValues_api = module.lib.MatSetValuesLocal
+    return module.lib.MatSetValuesLocal
 
 
 # See https://github.com/numba/numba/issues/4036 for why we need 'sink'
