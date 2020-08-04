@@ -1,13 +1,11 @@
 name: CI Docker environment images
-# Builds the fenicsproject/test-env:${MPI} and dolfinx/dev-env images once per week.
-# These are used for build/test workflows and end-user builds of DOLFINX,
-# respectively.
+description: "Builds the fenicsproject/test-env:${MPI} and dolfinx/dev-env images once per week. These are used for build/test workflows and end-user builds of DOLFINX, respectively."
 
 on:
   # Uncomment the below to trigger 'docker build' on push
-  push:
-   branches:
-     - "**"
+  # push:
+  #  branches:
+  #    - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * MON"
@@ -15,7 +13,7 @@ on:
 jobs:
   build_test_env_openmpi:
     name: build fenicsproject/test-env:openmpi image
-    # if: github.repository == 'fenics/dolfinx' && github.ref == 'master'
+    if: github.repository == 'fenics/dolfinx' && github.ref == 'master'
     runs-on: ubuntu-20.04
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -g"
@@ -32,7 +30,7 @@ jobs:
 
   build_test_env_mpich:
     name: build fenicsproject/test-env:mpich image
-    # if: github.repository == 'fenics/dolfinx' && github.ref == 'master'
+    if: github.repository == 'fenics/dolfinx' && github.ref == 'master'
     runs-on: ubuntu-20.04
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -g"
@@ -49,7 +47,7 @@ jobs:
 
   build_dev_env:
     name: build dolfinx/dev-env image
-    # if: github.repository == 'FEniCS/dolfinx' && github.ref == 'master'
+    if: github.repository == 'FEniCS/dolfinx' && github.ref == 'master'
     runs-on: ubuntu-20.04
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
