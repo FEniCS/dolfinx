@@ -133,7 +133,7 @@ def get_matsetvalues_api():
         """,
                               libraries=['petsc'],
                               include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
-                                            os.path.join(petsc_dir, 'include'), dolfinx_pc["include_dirs"]],
+                                            os.path.join(petsc_dir, 'include')] + dolfinx_pc["include_dirs"],
                               library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
                               extra_compile_args=[])
 
