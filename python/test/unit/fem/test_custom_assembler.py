@@ -25,6 +25,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
 from ufl import dx, inner
+from dolfinx.jit import dolfinx_pc
 
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
@@ -109,10 +110,11 @@ else:
         raise
 MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
-# Make MatSetValuesLocal from PETSc available via cffi in API mode
 
 
+# @pytest.fixture
 def get_matsetvalues_api():
+    """Make MatSetValuesLocal from PETSc available via cffi in API mode"""
     worker = os.getenv('PYTEST_XDIST_WORKER', None)
     module_name = "_petsc_cffi_{}".format(worker)
     if MPI.COMM_WORLD.Get_rank() == 0:
@@ -131,7 +133,7 @@ def get_matsetvalues_api():
         """,
                               libraries=['petsc'],
                               include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
-                                            os.path.join(petsc_dir, 'include')],
+                                            os.path.join(petsc_dir, 'include'), dolfinx_pc["include_dirs"]],
                               library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
                               extra_compile_args=[])
 
