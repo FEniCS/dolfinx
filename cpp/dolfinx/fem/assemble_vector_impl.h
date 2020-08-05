@@ -460,6 +460,10 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
   if (integrals.num_integrals(IntegralType::exterior_facet) > 0
       or integrals.num_integrals(IntegralType::interior_facet) > 0)
   {
+    // FIXME: cleanup these calls? Some of the happen internally again.
+    mesh->topology_mutable().create_entities(tdim - 1);
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+
     const int facets_per_cell
         = mesh::cell_num_entities(mesh->topology().cell_type(), tdim - 1);
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
@@ -561,10 +565,6 @@ void assemble_exterior_facets(
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
-  // FIXME: cleanup these calls? Some of the happen internally again.
-  mesh.topology_mutable().create_entities(tdim - 1);
-  mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
@@ -630,10 +630,6 @@ void assemble_interior_facets(
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
-
-  // FIXME: cleanup these calls? Some of the happen internally again.
-  mesh.topology_mutable().create_entities(tdim - 1);
-  mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
