@@ -380,8 +380,9 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::Form<PetscScalar>,
              std::shared_ptr<dolfinx::fem::Form<PetscScalar>>>(
       m, "Form", "Variational form object")
-      .def(py::init<std::vector<
-               std::shared_ptr<const dolfinx::function::FunctionSpace>>>())
+      .def(py::init<
+           std::vector<std::shared_ptr<const dolfinx::function::FunctionSpace>>,
+           bool>())
       .def_property_readonly("integrals",
                              &dolfinx::fem::Form<PetscScalar>::integrals)
       .def_property_readonly(

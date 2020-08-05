@@ -38,10 +38,13 @@ template <typename T>
 class FormIntegrals
 {
 public:
-  /// Construct empty object
-  FormIntegrals(){};
-
-  /// Construct empty object
+  /// Construct object from (index, tabulate function) pairs for
+  /// different integral types
+  /// @param[in] integrals For each integral type (domain index,
+  ///   tabulate function) pairs for each integral. Domain index -1 means
+  ///   for all entities.
+  /// @param[in] needs_permutation_data Pass true if an integral
+  ///   requires mesh entity permutation data
   FormIntegrals(
       const std::map<
           IntegralType,
