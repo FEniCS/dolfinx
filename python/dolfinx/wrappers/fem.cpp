@@ -354,11 +354,9 @@ void fem(py::module& m)
   formintegrals
       .def("integral_ids",
            &dolfinx::fem::FormIntegrals<PetscScalar>::integral_ids)
-      .def_property_readonly(
+      .def_property(
           "needs_permutation_data",
-          &dolfinx::fem::FormIntegrals<PetscScalar>::needs_permutation_data)
-      .def(
-          "set_needs_permutation_data",
+          &dolfinx::fem::FormIntegrals<PetscScalar>::needs_permutation_data,
           &dolfinx::fem::FormIntegrals<PetscScalar>::set_needs_permutation_data)
       .def(
           "integral_domains",
