@@ -29,7 +29,8 @@ T assemble_scalar(const fem::Form<T>& M);
 /// Assemble functional over cells
 template <typename T>
 T assemble_cells(
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
+    const mesh::Geometry& geometry,
+    const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
@@ -104,8 +105,8 @@ T assemble_scalar(const fem::Form<T>& M)
     const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(IntegralType::cell, i);
-    value += fem::impl::assemble_cells(*mesh, active_cells, fn, coeffs,
-                                       constant_values, cell_info);
+    value += fem::impl::assemble_cells(mesh->geometry(), active_cells, fn,
+                                       coeffs, constant_values, cell_info);
   }
 
   if (integrals.num_integrals(IntegralType::exterior_facet) > 0
@@ -149,7 +150,8 @@ T assemble_scalar(const fem::Form<T>& M)
 //-----------------------------------------------------------------------------
 template <typename T>
 T assemble_cells(
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
+    const mesh::Geometry& geometry,
+    const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
@@ -157,17 +159,15 @@ T assemble_cells(
     const std::vector<T>& constant_values,
     const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info)
 {
-  const int gdim = mesh.geometry().dim();
-  const int tdim = mesh.topology().dim();
-  mesh.topology_mutable().create_entities(tdim);
+  const int gdim = geometry.dim();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+      = geometry.x();
 
   // Create data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

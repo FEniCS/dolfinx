@@ -176,7 +176,8 @@ template <typename T>
 void assemble_cells(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
+    const mesh::Geometry& geometry,
+    const std::vector<std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap0,
     const graph::AdjacencyList<std::int32_t>& dofmap1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
@@ -187,15 +188,15 @@ void assemble_cells(
     const Eigen::Array<T, Eigen::Dynamic, 1>& constants,
     const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info)
 {
-  const int gdim = mesh.geometry().dim();
+  const int gdim = geometry.dim();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+      = geometry.x();
 
   // Data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
