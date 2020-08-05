@@ -77,6 +77,8 @@ public:
     return _integrals.at(static_cast<int>(type)).at(i).tabulate;
   }
 
+  /// @todo Should this be removed
+  ///
   /// Set the function for 'tabulate_tensor' for integral i of
   /// given type
   /// @param[in] type Integral type
@@ -370,9 +372,9 @@ private:
   // struct Integral above)
   std::array<std::vector<struct Integral>, 4> _integrals;
 
-  /// A bool indicating whether permutation data needs to be passed into
-  /// these integrals.
-  bool _needs_permutation_data = false;
+  // A bool indicating whether permutation data needs to be passed into
+  // these integrals
+  bool _needs_permutation_data;
 };
 } // namespace fem
 } // namespace dolfinx
