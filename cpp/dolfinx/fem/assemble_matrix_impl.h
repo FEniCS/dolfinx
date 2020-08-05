@@ -148,7 +148,6 @@ void assemble_matrix(
     for (int i = 0; i < integrals.num_integrals(IntegralType::exterior_facet);
          ++i)
     {
-
       const auto& fn
           = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
@@ -308,7 +307,7 @@ void assemble_exterior_facets(
     // Tabulate tensor
     std::fill(Ae.data(), Ae.data() + num_dofs0 * num_dofs1, 0);
     kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
-           coordinate_dofs.data(), &local_facet, perms(local_facet, cells[0]),
+           coordinate_dofs.data(), &local_facet, &perms(local_facet, cells[0]),
            cell_info[cells[0]]);
 
     // Zero rows/columns for essential bcs
