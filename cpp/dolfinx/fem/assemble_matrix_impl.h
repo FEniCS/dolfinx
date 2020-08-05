@@ -40,7 +40,8 @@ template <typename T>
 void assemble_cells(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
+    const mesh::Geometry& geometry,
+    const std::vector<std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap0,
     const graph::AdjacencyList<std::int32_t>& dofmap1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
@@ -130,8 +131,9 @@ void assemble_matrix(
     const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(IntegralType::cell, i);
-    impl::assemble_cells<T>(mat_set_values, *mesh, active_cells, dofs0, dofs1,
-                            bc0, bc1, fn, coeffs, constants, cell_info);
+    impl::assemble_cells<T>(mat_set_values, mesh->geometry(), active_cells,
+                            dofs0, dofs1, bc0, bc1, fn, coeffs, constants,
+                            cell_info);
   }
 
   if (integrals.num_integrals(IntegralType::exterior_facet) > 0
