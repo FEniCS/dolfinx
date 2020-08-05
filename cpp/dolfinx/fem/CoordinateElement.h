@@ -34,7 +34,7 @@ public:
   CoordinateElement(mesh::CellType cell_type, int topological_dimension,
                     int geometric_dimension, const std::string& signature,
                     const ElementDofLayout& dof_layout, bool is_affine,
-                    std::function<int(double*, int, int, const double*)>
+                    const std::function<int(double*, int, int, const double*)>&
                         evaluate_basis_derivatives);
 
   /// Destructor

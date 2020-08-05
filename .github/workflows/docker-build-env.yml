@@ -1,11 +1,12 @@
-name: CI Docker build environment images
-# Builds the fenicsproject/test-env:${MPI} and dolfinx/dev-env images once per week.
-# These are used for build/test workflows and end-user builds of DOLFINX,
-# respectively.
+name: Docker environment images
+
+# Builds the fenicsproject/test-env:${MPI} and dolfinx/dev-env images
+# once per week. These are used for build/test workflows and end-user
+# builds of DOLFINX, respectively."
 
 on:
   # Uncomment the below to trigger 'docker build' on push
-  #push:
+  # push:
   #  branches:
   #    - "**"
   schedule:
@@ -14,7 +15,7 @@ on:
 
 jobs:
   build_test_env_openmpi:
-    name: build fenicsproject/test-env:openmpi image
+    name: Build fenicsproject/test-env:openmpi image
     if: github.repository == 'fenics/dolfinx' && github.ref == 'master'
     runs-on: ubuntu-20.04
     env:
@@ -31,7 +32,7 @@ jobs:
         run: docker push fenicsproject/test-env:${MPI}
 
   build_test_env_mpich:
-    name: build fenicsproject/test-env:mpich image
+    name: Build fenicsproject/test-env:mpich image
     if: github.repository == 'fenics/dolfinx' && github.ref == 'master'
     runs-on: ubuntu-20.04
     env:
@@ -48,7 +49,7 @@ jobs:
         run: docker push fenicsproject/test-env:${MPI}
 
   build_dev_env:
-    name: build dolfinx/dev-env image
+    name: Build dolfinx/dev-env image
     if: github.repository == 'FEniCS/dolfinx' && github.ref == 'master'
     runs-on: ubuntu-20.04
     env:
