@@ -271,9 +271,9 @@ void assemble_exterior_facets(
             ? mesh.topology().get_facet_permutations()
             : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(0, 0);
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-      = needs_permutation_data
-            ? mesh.topology().get_cell_permutation_info()
-            : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(0);
+      = needs_permutation_data ? mesh.topology().get_cell_permutation_info()
+                               : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(
+                                   dofmap0.num_nodes());
 
   // Iterate over all facets
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -299,17 +299,10 @@ void assemble_exterior_facets(
 
     // Tabulate tensor
     std::fill(Ae.data(), Ae.data() + num_dofs0 * num_dofs1, 0);
-    if (needs_permutation_data)
-    {
-      const std::uint8_t perm = perms(local_facet, cells[0]);
-      kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
-             coordinate_dofs.data(), &local_facet, &perm, cell_info[cells[0]]);
-    }
-    else
-    {
-      kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
-             coordinate_dofs.data(), &local_facet, nullptr, {});
-    }
+    const std::uint8_t perm
+        = needs_permutation_data ? perms(local_facet, cells[0]) : 0;
+    kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
+           coordinate_dofs.data(), &local_facet, &perm, cell_info[cells[0]]);
 
     // Zero rows/columns for essential bcs
     auto dmap0 = dofmap0.links(cells[0]);
