@@ -1,4 +1,4 @@
-name: CI Docker environment images
+name: Docker environment images
 
 # Builds the fenicsproject/test-env:${MPI} and dolfinx/dev-env images
 # once per week. These are used for build/test workflows and end-user
