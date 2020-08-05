@@ -1,5 +1,7 @@
 name: CI Docker end-user images
-description: "Builds images with dolfinx and all of the required FEniCS Project components nightly."
+
+# Builds images with dolfinx and all of the required FEniCS Project
+# components nightly.
 
 on:
   # Uncomment the below to trigger 'docker build' on push
