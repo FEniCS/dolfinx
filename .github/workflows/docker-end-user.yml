@@ -1,4 +1,4 @@
-name: CI Docker end-user images
+name: Docker end-user images
 
 # Builds images with dolfinx and all of the required FEniCS Project
 # components nightly.
