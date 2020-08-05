@@ -186,18 +186,25 @@ Form<T> create_form(
   }
 
   // Get list of integral IDs, and load tabulate tensor into memory for each
-  FormIntegrals<T> integrals;
+  bool needs_permutation_data = false;
+  std::map<IntegralType,
+           std::vector<std::pair<
+               int, std::function<void(T*, const T*, const T*, const double*,
+                                       const int*, const std::uint8_t*,
+                                       const std::uint32_t)>>>>
+      integral_data;
 
   std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
   for (int id : cell_integral_ids)
   {
-    ufc_integral* cell_integral = ufc_form.create_cell_integral(id);
-    assert(cell_integral);
-    integrals.set_tabulate_tensor(IntegralType::cell, id,
-                                  cell_integral->tabulate_tensor);
-    integrals.set_needs_permutation_data(cell_integral->needs_permutation_data);
-    std::free(cell_integral);
+    ufc_integral* integral = ufc_form.create_cell_integral(id);
+    assert(integral);
+    if (integral->needs_permutation_data)
+      needs_permutation_data = true;
+    integral_data[IntegralType::cell].emplace_back(id,
+                                                   integral->tabulate_tensor);
+    std::free(integral);
   }
 
   // FIXME: Can this be handled better?
@@ -218,14 +225,13 @@ Form<T> create_form(
   ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
   for (int id : exterior_facet_integral_ids)
   {
-    ufc_integral* exterior_facet_integral
-        = ufc_form.create_exterior_facet_integral(id);
-    assert(exterior_facet_integral);
-    integrals.set_tabulate_tensor(IntegralType::exterior_facet, id,
-                                  exterior_facet_integral->tabulate_tensor);
-    integrals.set_needs_permutation_data(
-        exterior_facet_integral->needs_permutation_data);
-    std::free(exterior_facet_integral);
+    ufc_integral* integral = ufc_form.create_exterior_facet_integral(id);
+    assert(integral);
+    if (integral->needs_permutation_data)
+      needs_permutation_data = true;
+    integral_data[IntegralType::exterior_facet].emplace_back(
+        id, integral->tabulate_tensor);
+    std::free(integral);
   }
 
   std::vector<int> interior_facet_integral_ids(
@@ -233,14 +239,13 @@ Form<T> create_form(
   ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
   for (int id : interior_facet_integral_ids)
   {
-    ufc_integral* interior_facet_integral
-        = ufc_form.create_interior_facet_integral(id);
+    ufc_integral* integral = ufc_form.create_interior_facet_integral(id);
     assert(interior_facet_integral);
-    integrals.set_tabulate_tensor(IntegralType::interior_facet, id,
-                                  interior_facet_integral->tabulate_tensor);
-    integrals.set_needs_permutation_data(
-        interior_facet_integral->needs_permutation_data);
-    std::free(interior_facet_integral);
+    if (integral->needs_permutation_data)
+      needs_permutation_data = true;
+    integral_data[IntegralType::interior_facet].emplace_back(
+        id, integral->tabulate_tensor);
+    std::free(integral);
   }
 
   // Not currently working
@@ -253,7 +258,7 @@ Form<T> create_form(
   }
 
   return fem::Form(
-      spaces, integrals,
+      spaces, FormIntegrals<T>(integral_data, needs_permutation_data),
       FormCoefficients<T>(fem::get_coeffs_from_ufc_form<T>(ufc_form)),
       fem::get_constants_from_ufc_form<T>(ufc_form));
 }

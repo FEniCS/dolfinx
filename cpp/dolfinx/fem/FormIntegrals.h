@@ -41,6 +41,27 @@ public:
   /// Construct empty object
   FormIntegrals(){};
 
+  /// Construct empty object
+  FormIntegrals(
+      const std::map<
+          IntegralType,
+          std::vector<std::pair<
+              int, std::function<void(T*, const T*, const T*, const double*,
+                                      const int*, const std::uint8_t*,
+                                      const std::uint32_t)>>>>& integrals,
+      bool needs_permutation_data)
+      : _needs_permutation_data(needs_permutation_data)
+  {
+    for (auto& integral_type : integrals)
+    {
+      for (auto& integral : integral_type.second)
+      {
+        set_tabulate_tensor(integral_type.first, integral.first,
+                            integral.second);
+      }
+    }
+  };
+
   /// Get the function for 'tabulate_tensor' for integral i of given
   /// type
   /// @param[in] type Integral type
@@ -328,13 +349,6 @@ public:
   /// Get bool indicating whether permutation data needs to be passed into
   /// these integrals.
   bool needs_permutation_data() const { return _needs_permutation_data; }
-
-  /// Set bool indicating whether permutation data needs to be passed into
-  /// these integrals.
-  void set_needs_permutation_data(const bool need)
-  {
-    _needs_permutation_data = need;
-  }
 
 private:
   // Collect together the function, id, and indices of entities to
