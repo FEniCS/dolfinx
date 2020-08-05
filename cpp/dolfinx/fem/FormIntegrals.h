@@ -38,8 +38,32 @@ template <typename T>
 class FormIntegrals
 {
 public:
-  /// Construct empty object
-  FormIntegrals(){};
+  /// Construct object from (index, tabulate function) pairs for
+  /// different integral types
+  /// @param[in] integrals For each integral type (domain index,
+  ///   tabulate function) pairs for each integral. Domain index -1 means
+  ///   for all entities.
+  /// @param[in] needs_permutation_data Pass true if an integral
+  ///   requires mesh entity permutation data
+  FormIntegrals(
+      const std::map<
+          IntegralType,
+          std::vector<std::pair<
+              int, std::function<void(T*, const T*, const T*, const double*,
+                                      const int*, const std::uint8_t*,
+                                      const std::uint32_t)>>>>& integrals,
+      bool needs_permutation_data)
+      : _needs_permutation_data(needs_permutation_data)
+  {
+    for (auto& integral_type : integrals)
+    {
+      for (auto& integral : integral_type.second)
+      {
+        set_tabulate_tensor(integral_type.first, integral.first,
+                            integral.second);
+      }
+    }
+  };
 
   /// Get the function for 'tabulate_tensor' for integral i of given
   /// type
@@ -53,6 +77,8 @@ public:
     return _integrals.at(static_cast<int>(type)).at(i).tabulate;
   }
 
+  /// @todo Should this be removed
+  ///
   /// Set the function for 'tabulate_tensor' for integral i of
   /// given type
   /// @param[in] type Integral type
@@ -60,9 +86,9 @@ public:
   /// @param[in] fn tabulate function
   void set_tabulate_tensor(
       IntegralType type, int i,
-      std::function<void(T*, const T*, const T*, const double*, const int*,
-                         const std::uint8_t*, const std::uint32_t)>
-          fn)
+      const std::function<void(T*, const T*, const T*, const double*,
+                               const int*, const std::uint8_t*,
+                               const std::uint32_t)>& fn)
   {
     std::vector<struct FormIntegrals::Integral>& integrals
         = _integrals.at(static_cast<int>(type));
@@ -325,6 +351,11 @@ public:
     }
   }
 
+  /// Get bool indicating whether permutation data needs to be passed
+  /// into these integrals
+  /// @return True if cell permutation data is required
+  bool needs_permutation_data() const { return _needs_permutation_data; }
+
 private:
   // Collect together the function, id, and indices of entities to
   // integrate on
@@ -340,6 +371,10 @@ private:
   // Array of vectors of integrals, arranged by type (see Type enum, and
   // struct Integral above)
   std::array<std::vector<struct Integral>, 4> _integrals;
+
+  // A bool indicating whether permutation data needs to be passed into
+  // these integrals
+  bool _needs_permutation_data;
 };
 } // namespace fem
 } // namespace dolfinx

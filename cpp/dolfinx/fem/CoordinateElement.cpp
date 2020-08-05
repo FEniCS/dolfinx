@@ -15,7 +15,7 @@ CoordinateElement::CoordinateElement(
     mesh::CellType cell_type, int topological_dimension,
     int geometric_dimension, const std::string& signature,
     const ElementDofLayout& dof_layout, bool is_affine,
-    std::function<int(double*, int, int, const double*)>
+    const std::function<int(double*, int, int, const double*)>&
         evaluate_basis_derivatives)
     : _tdim(topological_dimension), _gdim(geometric_dimension),
       _cell(cell_type), _signature(signature), _dof_layout(dof_layout),
