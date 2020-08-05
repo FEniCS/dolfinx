@@ -103,6 +103,7 @@ void function(py::module& m)
                     std::shared_ptr<dolfinx::fem::FiniteElement>,
                     std::shared_ptr<dolfinx::fem::DofMap>>())
       .def_property_readonly("id", &dolfinx::function::FunctionSpace::id)
+      .def("__hash__", &dolfinx::function::FunctionSpace::id)
       .def("__eq__", &dolfinx::function::FunctionSpace::operator==)
       .def_property_readonly("dim", &dolfinx::function::FunctionSpace::dim)
       .def("collapse", &dolfinx::function::FunctionSpace::collapse)

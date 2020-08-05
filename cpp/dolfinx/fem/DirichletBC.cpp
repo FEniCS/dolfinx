@@ -213,6 +213,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
   assert(dofmap0->element_dof_layout);
   const int num_entity_dofs
       = dofmap0->element_dof_layout->num_entity_closure_dofs(dim);
+  const int block_size = dofmap0->element_dof_layout->block_size();
+  assert(block_size == dofmap1->element_dof_layout->block_size());
 
   // Build vector local dofs for each cell facet
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
@@ -250,8 +252,11 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
     for (int i = 0; i < num_entity_dofs; ++i)
     {
       const int index = entity_dofs[entity_local_index][i];
-      bc_dofs.push_back(
-          {(std::int32_t)cell_dofs0[index], (std::int32_t)cell_dofs1[index]});
+      for (int block = 0; block < block_size; ++block)
+      {
+        bc_dofs.push_back({cell_dofs0[index * block_size + block],
+                           cell_dofs1[index * block_size + block]});
+      }
     }
   }
 
@@ -323,6 +328,7 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 
   const int num_entity_closure_dofs
       = dofmap->element_dof_layout->num_entity_closure_dofs(entity_dim);
+  const int block_size = dofmap->element_dof_layout->block_size();
   std::vector<std::int32_t> dofs;
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
@@ -344,7 +350,8 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
     for (int j = 0; j < num_entity_closure_dofs; j++)
     {
       const int index = entity_dofs[entity_local_index][j];
-      dofs.push_back(cell_dofs[index]);
+      for (int block = 0; block < block_size; ++block)
+        dofs.push_back(cell_dofs[index * block_size + block]);
     }
   }
 

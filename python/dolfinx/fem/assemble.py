@@ -9,7 +9,6 @@ import contextlib
 import functools
 import typing
 
-import scipy.sparse
 from petsc4py import PETSc
 
 import ufl
@@ -190,21 +189,6 @@ def _(b: PETSc.Vec,
 
 
 # -- Matrix assembly ---------------------------------------------------------
-
-def assemble_csr_matrix(a: typing.Union[Form, cpp.fem.Form],
-                        bcs: typing.List[DirichletBC] = [],
-                        diagonal: float = 1.0) -> scipy.sparse.csr_matrix:
-    """Assemble bilinear form into an Scipy CSR matrix, in serial.
-    """
-    _a = _create_cpp_form(a)
-    A = cpp.fem.assemble_matrix_eigen(_a, bcs)
-
-    if _a.function_spaces[0].id == _a.function_spaces[1].id:
-        for bc in bcs:
-            if _a.function_spaces[0].contains(bc.function_space):
-                bc_dofs = bc.dof_indices[:, 0]
-                A[bc_dofs, bc_dofs] = diagonal
-    return A
 
 
 @functools.singledispatch

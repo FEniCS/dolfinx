@@ -8,15 +8,14 @@
 
 #include "FormCoefficients.h"
 #include "FormIntegrals.h"
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/fem/DofMap.h>
 #include <functional>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
-
-// Forward declaration
-struct ufc_form;
 
 namespace dolfinx
 {
@@ -98,18 +97,25 @@ public:
       _integrals.set_default_domains(*_mesh);
   }
 
-  /// Create form (no UFC integrals). Integrals can be attached later
-  /// using FormIntegrals::set_cell_tabulate_tensor.
   /// @warning Experimental
   ///
+  /// Create form (no UFC integrals). Integrals can be attached later
+  /// using FormIntegrals::set_cell_tabulate_tensor.
+  ///
   /// @param[in] function_spaces Vector of function spaces
-  explicit Form(
-      const std::vector<std::shared_ptr<const function::FunctionSpace>>&
-          function_spaces)
-      : Form(function_spaces, FormIntegrals<T>(), FormCoefficients<T>({}), {})
+  /// @param[in] need_mesh_permutation_data Set to true if mesh entity
+  ///   permutation data is required
+  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
+           function_spaces,
+       bool need_mesh_permutation_data)
+      : Form(function_spaces, FormIntegrals<T>({}, need_mesh_permutation_data),
+             FormCoefficients<T>({}), {})
   {
     // Do nothing
   }
+
+  /// Copy constructor
+  Form(const Form& form) = delete;
 
   /// Move constructor
   Form(Form&& form) = default;
@@ -117,39 +123,24 @@ public:
   /// Destructor
   virtual ~Form() = default;
 
-  /// Rank of form (bilinear form = 2, linear form = 1, functional = 0,
-  /// etc)
+  /// Rank of the form (bilinear form = 2, linear form = 1, functional =
+  /// 0, etc)
   /// @return The rank of the form
   int rank() const { return _function_spaces.size(); }
 
-  /// Set coefficient with given number (shared pointer version)
-  /// @param[in] coefficients Map from coefficient index to the
-  ///   coefficient
-  void set_coefficients(
-      const std::map<int, std::shared_ptr<const function::Function<T>>>&
-          coefficients)
-  {
-    for (const auto& c : coefficients)
-      _coefficients.set(c.first, c.second);
-  }
-
-  /// Set coefficient with given name (shared pointer version)
+  /// Set coefficient with given name
   /// @param[in] coefficients Map from coefficient name to the
   ///   coefficient
   void set_coefficients(
       const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
           coefficients)
   {
-    for (const auto& c : coefficients)
-      _coefficients.set(c.first, c.second);
+    std::for_each(coefficients.begin(), coefficients.end(),
+                  [this](auto& c) { _coefficients.set(c.first, c.second); });
   }
 
-  /// Set constants based on their names
-  ///
-  /// This method is used in command-line workflow, when users set
-  /// constants to the form in cpp file.
-  ///
-  /// Names of the constants must agree with their names in UFL file.
+  /// Set constants based on their names. Names of the constants must
+  /// agree with their names in UFL file.
   void set_constants(
       const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
           constants)
@@ -157,40 +148,14 @@ public:
     for (auto const& constant : constants)
     {
       // Find matching string in existing constants
-      const std::string name = constant.first;
-      const auto it = std::find_if(
-          _constants.begin(), _constants.end(),
-          [&](const std::pair<
-              std::string, std::shared_ptr<const function::Constant<T>>>& q) {
-            return (q.first == name);
-          });
+      const std::string& name = constant.first;
+      auto it
+          = std::find_if(_constants.begin(), _constants.end(),
+                         [&name](const auto& q) { return q.first == name; });
       if (it != _constants.end())
         it->second = constant.second;
       else
         throw std::runtime_error("Constant '" + name + "' not found in form");
-    }
-  }
-
-  /// Set constants based on their order (without names)
-  ///
-  /// This method is used in Python workflow, when constants are
-  /// automatically attached to the form based on their order in the
-  /// original form.
-  ///
-  /// The order of constants must match their order in original ufl
-  /// Form.
-  void
-  set_constants(const std::vector<std::shared_ptr<const function::Constant<T>>>&
-                    constants)
-  {
-    if (constants.size() != _constants.size())
-      throw std::runtime_error("Incorrect number of constants.");
-
-    // Loop over each constant that user wants to attach
-    for (std::size_t i = 0; i < constants.size(); ++i)
-    {
-      // In this case, the constants don't have names
-      _constants[i] = std::pair("", constants[i]);
     }
   }
 
@@ -209,12 +174,16 @@ public:
   std::set<std::string> get_unset_constants() const
   {
     std::set<std::string> unset;
-    for (const auto& constant : _constants)
-      if (!constant.second)
-        unset.insert(constant.first);
+    std::for_each(_constants.begin(), _constants.end(), [&unset](auto& c) {
+      if (!c.second)
+        unset.insert(c.first);
+    });
     return unset;
   }
 
+  /// @todo Remove this function and make sure the mesh can be set via
+  /// the constructor
+  ///
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
   /// @param[in] mesh The mesh
@@ -237,7 +206,7 @@ public:
     return _function_spaces.at(i);
   }
 
-  /// Return function spaces for each argument
+  /// Return function spaces for all arguments
   /// @return Function spaces
   std::vector<std::shared_ptr<const function::FunctionSpace>>
   function_spaces() const
@@ -270,6 +239,17 @@ public:
   /// @return Vector of attached constants with their names. Names are
   ///   used to set constants in user's c++ code. Index in the vector is
   ///   the position of the constant in the original (nonsimplified) form.
+  std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
+  constants()
+  {
+    return _constants;
+  }
+
+  /// Access constants
+  /// @return Vector of attached constants with their names. Names are
+  ///   used to set constants in user's c++ code. Index in the vector is
+  ///   the position of the constant in the original (nonsimplified) form.
   const std::vector<
       std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
   constants() const
@@ -295,5 +275,6 @@ private:
   // The mesh (needed for functionals when we don't have any spaces)
   std::shared_ptr<const mesh::Mesh> _mesh;
 };
+
 } // namespace fem
 } // namespace dolfinx

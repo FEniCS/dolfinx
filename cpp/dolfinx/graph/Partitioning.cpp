@@ -536,8 +536,7 @@ std::vector<std::int64_t> Partitioning::compute_ghost_indices(
     MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
     const std::vector<int>& ghost_owners)
 {
-  if (ghost_owners.size() == 0)
-    return std::vector<std::int64_t>();
+  LOG(INFO) << "Compute ghost indices";
 
   // Get number of local cells and global offset
   int num_local = global_indices.size() - ghost_owners.size();

@@ -145,5 +145,19 @@ private:
   // Cache of subspaces
   mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>> _subspaces;
 };
+
+/// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
+/// from a rectangular array of (test, trial) space pairs. The test
+/// space must be the same for each row and the trial spaces must be the
+/// same for each column. Raises an exception if there is an
+/// inconsistency. e.g. if each form in row i does not have the same
+/// test space then an exception is raised.
+///
+/// @param[in] V Vector function spaces for (0) each row block and (1)
+/// each column block
+std::array<std::vector<std::shared_ptr<const FunctionSpace>>, 2>
+common_function_spaces(
+    const std::vector<
+        std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>& V);
 } // namespace function
 } // namespace dolfinx

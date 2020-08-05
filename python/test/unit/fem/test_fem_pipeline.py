@@ -10,8 +10,8 @@ import time
 import numpy as np
 import pytest
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, fem, cpp,
-                     VectorFunctionSpace)
+from dolfinx import (DirichletBC, Function, FunctionSpace, VectorFunctionSpace,
+                     cpp, fem)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
