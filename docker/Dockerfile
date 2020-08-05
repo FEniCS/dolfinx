@@ -21,24 +21,25 @@
 #
 
 ARG TINI_VERSION=v0.19.0
-ARG GMSH_VERSION=4.5.6
+ARG GMSH_VERSION=4.6.0
 ARG PYBIND11_VERSION=2.5.0
-ARG PETSC_VERSION=3.13.2
-ARG SLEPC_VERSION=3.13.2
+ARG PETSC_VERSION=3.13.3
+ARG SLEPC_VERSION=3.13.3
 ARG PETSC4PY_VERSION=3.13.0
 ARG SLEPC4PY_VERSION=3.13.0
 # Should be updated upon a new KaHIP release
 ARG KAHIP_VERSION=14be06c
 
 ARG MAKEFLAGS
-ARG PETSC_SLEPC_OPTFLAGS="-O2 -g"
-ARG PETSC_SLEPC_DEBUGGING="yes"
+ARG PETSC_SLEPC_OPTFLAGS="-O2 -march=sandybridge"
+ARG PETSC_SLEPC_DEBUGGING="no"
+ARG MPI="mpich"
 
 ########################################
 
 FROM ubuntu:20.04 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
-LABEL description="FEniCS development environment with PETSc real and complex modes"
+LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
 ARG GMSH_VERSION
 ARG PYBIND11_VERSION
@@ -50,6 +51,7 @@ ARG SLEPC4PY_VERSION
 ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS
 ARG PETSC_SLEPC_DEBUGGING
+ARG MPI
 
 WORKDIR /tmp
 
@@ -68,6 +70,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
+    clang-10 \
     cmake \
     g++ \
     gfortran \
@@ -80,11 +83,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-thread-dev \
     libboost-timer-dev \
     libeigen3-dev \
-    libhdf5-mpich-dev \
+    libhdf5-${MPI}-dev \
     liblapack-dev \
-    libmpich-dev \
+    lib${MPI}-dev \
     libopenblas-dev \
-    mpich \
     ninja-build \
     pkg-config \
     python3-dev \
@@ -93,6 +95,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-pip \
     python3-scipy \
     python3-setuptools && \
+    #
     apt-get -y install \
     doxygen \
     git \
@@ -118,6 +121,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 RUN pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
     export HDF5_MPI="ON" && \
+    export CC=mpicc && \
     pip3 install --no-cache-dir --no-binary=h5py h5py meshio pygmsh
 
 # Install pybind11
@@ -158,11 +162,13 @@ RUN apt-get -qq update && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p ${PETSC_DIR} && tar -xf petsc-${PETSC_VERSION}.tar.gz -C ${PETSC_DIR} --strip-components 1 && \
     cd ${PETSC_DIR} && \
+    # Real, 32-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-real-32 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
     --with-shared-libraries \
@@ -178,11 +184,13 @@ RUN apt-get -qq update && \
     --download-superlu_dist \
     --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 ${MAKEFLAGS} all && \
+    # Complex, 32-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-complex-32 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
     --with-shared-libraries \
@@ -196,6 +204,42 @@ RUN apt-get -qq update && \
     --download-superlu_dist \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 ${MAKEFLAGS} all && \
+    # Real, 64-bit int
+    python3 ./configure \
+    PETSC_ARCH=linux-gnu-real-64 \
+    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --with-64-bit-indices=yes \
+    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
+    --with-fortran-bindings=no \
+    --with-shared-libraries \
+    --download-hypre \
+    --download-mumps \
+    --download-ptscotch \
+    --download-scalapack \
+    --download-suitesparse \
+    --download-superlu_dist \
+    --with-scalar-type=real && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-64 ${MAKEFLAGS} all && \
+    # Complex, 64-bit int
+    python3 ./configure \
+    PETSC_ARCH=linux-gnu-complex-64 \
+    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --with-64-bit-indices=yes \
+    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
+    --with-fortran-bindings=no \
+    --with-shared-libraries \
+    --download-hypre \
+    --download-mumps \
+    --download-ptscotch \
+    --download-scalapack \
+    --download-suitesparse \
+    --download-superlu_dist \
+    --with-scalar-type=complex && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
     apt-get clean && \
@@ -223,18 +267,24 @@ RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION
     export PETSC_ARCH=linux-gnu-complex-32 && \
     python3 ./configure && \
     make && \
+    export PETSC_ARCH=linux-gnu-real-64 && \
+    python3 ./configure && \
+    make && \
+    export PETSC_ARCH=linux-gnu-complex-64 && \
+    python3 ./configure && \
+    make && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
 
 # Install petsc4py and slepc4py with real and complex types
-RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32 pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} slepc4py==${SLEPC4PY_VERSION}
+RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} slepc4py==${SLEPC4PY_VERSION}
 
 WORKDIR /root
 
 ########################################
 
 FROM dev-env as dolfinx-onbuild
-LABEL description="DOLFIN-X in real and complex modes (onbuild)"
+LABEL description="DOLFIN-X in 32-bit real and complex modes (onbuild)"
 
 ADD dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
 ADD dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
@@ -295,5 +345,6 @@ ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
     pip3 install --no-cache-dir jupyter jupyterlab
 EXPOSE 8888/tcp
+ENV SHELL /bin/bash
 
 ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]

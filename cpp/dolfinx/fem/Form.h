@@ -103,10 +103,13 @@ public:
   /// using FormIntegrals::set_cell_tabulate_tensor.
   ///
   /// @param[in] function_spaces Vector of function spaces
-  explicit Form(
-      const std::vector<std::shared_ptr<const function::FunctionSpace>>&
-          function_spaces)
-      : Form(function_spaces, FormIntegrals<T>(), FormCoefficients<T>({}), {})
+  /// @param[in] need_mesh_permutation_data Set to true if mesh entity
+  ///   permutation data is required
+  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
+           function_spaces,
+       bool need_mesh_permutation_data)
+      : Form(function_spaces, FormIntegrals<T>({}, need_mesh_permutation_data),
+             FormCoefficients<T>({}), {})
   {
     // Do nothing
   }

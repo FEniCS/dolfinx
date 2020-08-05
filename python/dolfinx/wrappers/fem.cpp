@@ -354,6 +354,9 @@ void fem(py::module& m)
   formintegrals
       .def("integral_ids",
            &dolfinx::fem::FormIntegrals<PetscScalar>::integral_ids)
+      .def_property_readonly(
+          "needs_permutation_data",
+          &dolfinx::fem::FormIntegrals<PetscScalar>::needs_permutation_data)
       .def(
           "integral_domains",
           [](dolfinx::fem::FormIntegrals<PetscScalar>& self,
@@ -377,8 +380,9 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::Form<PetscScalar>,
              std::shared_ptr<dolfinx::fem::Form<PetscScalar>>>(
       m, "Form", "Variational form object")
-      .def(py::init<std::vector<
-               std::shared_ptr<const dolfinx::function::FunctionSpace>>>())
+      .def(py::init<
+           std::vector<std::shared_ptr<const dolfinx::function::FunctionSpace>>,
+           bool>())
       .def_property_readonly("integrals",
                              &dolfinx::fem::Form<PetscScalar>::integrals)
       .def_property_readonly(
