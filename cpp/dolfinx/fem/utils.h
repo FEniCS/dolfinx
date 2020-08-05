@@ -240,7 +240,7 @@ Form<T> create_form(
   for (int id : interior_facet_integral_ids)
   {
     ufc_integral* integral = ufc_form.create_interior_facet_integral(id);
-    assert(interior_facet_integral);
+    assert(integral);
     if (integral->needs_permutation_data)
       needs_permutation_data = true;
     integral_data[IntegralType::interior_facet].emplace_back(

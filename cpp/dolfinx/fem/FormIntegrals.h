@@ -81,9 +81,9 @@ public:
   /// @param[in] fn tabulate function
   void set_tabulate_tensor(
       IntegralType type, int i,
-      std::function<void(T*, const T*, const T*, const double*, const int*,
-                         const std::uint8_t*, const std::uint32_t)>
-          fn)
+      const std::function<void(T*, const T*, const T*, const double*,
+                               const int*, const std::uint8_t*,
+                               const std::uint32_t)>& fn)
   {
     std::vector<struct FormIntegrals::Integral>& integrals
         = _integrals.at(static_cast<int>(type));
@@ -346,8 +346,9 @@ public:
     }
   }
 
-  /// Get bool indicating whether permutation data needs to be passed into
-  /// these integrals.
+  /// Get bool indicating whether permutation data needs to be passed
+  /// into these integrals
+  /// @return True if cell permutation data is required
   bool needs_permutation_data() const { return _needs_permutation_data; }
 
 private:
