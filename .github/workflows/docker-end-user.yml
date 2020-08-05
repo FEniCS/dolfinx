@@ -5,9 +5,9 @@ name: Docker end-user images
 
 on:
   # Uncomment the below to trigger 'docker build' on push
-  # push:
-  #   branches:
-  #     - "**"
+  push:
+    branches:
+      - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 4 * * *"
@@ -15,7 +15,7 @@ on:
 jobs:
   build_end_user_images:
     name: Build dolfinx end-user images
-    if: github.repository == 'FEniCS/dolfinx' && github.ref == 'master'
+    # if: github.repository == 'FEniCS/dolfinx' && github.ref == 'master'
     runs-on: ubuntu-20.04
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
