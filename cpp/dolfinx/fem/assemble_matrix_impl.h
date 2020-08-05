@@ -113,6 +113,9 @@ void assemble_matrix(
 
   const FormIntegrals<T>& integrals = a.integrals();
   const bool needs_permutation_data = integrals.needs_permutation_data();
+  if (needs_permutation_data)
+    mesh->topology_mutable().create_entity_permutations();
+
   for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
   {
     const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
@@ -165,8 +168,6 @@ void assemble_cells(
     const bool needs_permutation_data)
 {
   const int gdim = mesh.geometry().dim();
-  if (needs_permutation_data)
-    mesh.topology_mutable().create_entity_permutations();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
@@ -185,9 +186,9 @@ void assemble_cells(
       num_dofs0, num_dofs1);
 
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-      = needs_permutation_data
-            ? mesh.topology().get_cell_permutation_info()
-            : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(0);
+      = needs_permutation_data ? mesh.topology().get_cell_permutation_info()
+                               : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(
+                                   dofmap0.num_nodes());
 
   // Iterate over active cells
   for (std::int32_t c : active_cells)
@@ -200,16 +201,8 @@ void assemble_cells(
 
     // Tabulate tensor
     std::fill(Ae.data(), Ae.data() + num_dofs0 * num_dofs1, 0);
-    if (needs_permutation_data)
-    {
-      kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
-             coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
-    }
-    else
-    {
-      kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
-             coordinate_dofs.data(), nullptr, nullptr, {});
-    }
+    kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
+           coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Zero rows/columns for essential bcs
     auto dofs0 = dofmap0.links(c);
@@ -256,8 +249,6 @@ void assemble_exterior_facets(
   // FIXME: cleanup these calls? Some of the happen internally again.
   mesh.topology_mutable().create_entities(tdim - 1);
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-  if (needs_permutation_data)
-    mesh.topology_mutable().create_entity_permutations();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
@@ -366,8 +357,6 @@ void assemble_interior_facets(
   // FIXME: cleanup these calls? Some of the happen internally again.
   mesh.topology_mutable().create_entities(tdim - 1);
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-  if (needs_permutation_data)
-    mesh.topology_mutable().create_entity_permutations();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
