@@ -16,7 +16,7 @@ on:
 jobs:
   build_test_env_openmpi:
     name: Build fenicsproject/test-env:openmpi image
-    if: github.repository == 'fenics/dolfinx' && github.ref == 'master'
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'master' }}
     runs-on: ubuntu-20.04
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -g"
@@ -33,7 +33,7 @@ jobs:
 
   build_test_env_mpich:
     name: Build fenicsproject/test-env:mpich image
-    if: github.repository == 'fenics/dolfinx' && github.ref == 'master'
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'master' }}
     runs-on: ubuntu-20.04
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -g"
@@ -50,7 +50,7 @@ jobs:
 
   build_dev_env:
     name: Build dolfinx/dev-env image
-    if: github.repository == 'FEniCS/dolfinx' && github.ref == 'master'
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'master' }}
     runs-on: ubuntu-20.04
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
