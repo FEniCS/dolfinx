@@ -86,4 +86,5 @@ setup(name='fenics-dolfinx',
       ext_modules=[CMakeExtension('dolfinx.cpp')],
       cmdclass=dict(build_ext=CMakeBuild),
       install_requires=REQUIREMENTS,
+      package_dir={"dolfinx": "dolfinx"},
       zip_safe=False)
