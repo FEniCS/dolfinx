@@ -89,7 +89,7 @@ jobs:
         run: mpirun -np 2 python3 -m pytest python/test/unit/
 
       - name: Install SSH key for fenicsproject.org documentation push
-        #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
+        if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         uses: shimataro/ssh-key-action@v2.1.0
         with:
           key: ${{ secrets.SSH_DOCS_PRIVATE_KEY }}
@@ -97,15 +97,13 @@ jobs:
             fenicsproject.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFbD134YcxSNaHVyio0XPAvJYh8SF90xp/ARqfrbAwOmJaEPTl5CNXm6f3+Sy0k1QTp+j9WawiJON+4/FWQBTD4=
 
       - name: Push C++ documentation
-        #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
+        if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run: |
-          echo $HOME
-          cat -A $HOME/.ssh/known_hosts
           cd cpp/doc
-          scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
+          scp -o StrictHostKeyChecking=no -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
 
       - name: Push Python documentation
-        #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
+        if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run: |
           cd python/doc
-          scp -vvv -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
+          scp -o StrictHostKeyChecking=no -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
