@@ -94,15 +94,18 @@ jobs:
           mkdir ~/.ssh
           echo '${{ secrets.SSH_DOCS_KNOWN_HOSTS }}' > ~/.ssh/known_hosts
           echo '${{ secrets.SSH_DOCS_PRIVATE_KEY }}' > ~/.ssh/id_rsa
+          chmod 0700 ~/.ssh
+          chmod 0644 ~/.ssh/known_hosts
+          chmod 0644 ~/.ssh/id_rsa
 
       - name: Push C++ documentation
         #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run: |
           cd cpp/doc
-          scp -vvv -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
+          scp -vvv -o UserKnownHostsFile=~./.ssh/known_hosts -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
 
       - name: Push Python documentation
         #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run: |
           cd python/doc
-          scp -vvv -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
+          scp -vvv -o UserKnownHostsFile=~./.ssh/known_hosts -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
