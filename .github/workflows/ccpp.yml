@@ -96,7 +96,7 @@ jobs:
           echo '${{ secrets.SSH_DOCS_PRIVATE_KEY }}' > ~/.ssh/id_rsa
           chmod 0700 ~/.ssh
           chmod 0644 ~/.ssh/known_hosts
-          chmod 0644 ~/.ssh/id_rsa
+          chmod 0600 ~/.ssh/id_rsa
 
       - name: Push C++ documentation
         #if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
