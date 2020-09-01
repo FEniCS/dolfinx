@@ -143,7 +143,7 @@ void fem(py::module& m)
       [](const std::uintptr_t dofmap, const dolfinx::mesh::CellType cell_type,
          const std::vector<int>& parent_map) {
         const ufc_dofmap* p = reinterpret_cast<const ufc_dofmap*>(dofmap);
-        return dolfinx::fem::create_element_dof_layout(*ufc_dofmap, cell_type,
+        return dolfinx::fem::create_element_dof_layout(*p, cell_type,
                                                        parent_map);
       },
       "Create ElementDofLayout object from a ufc dofmap.");
