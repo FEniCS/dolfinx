@@ -138,8 +138,15 @@ void fem(py::module& m)
       },
       py::return_value_policy::take_ownership,
       "Create nested sparse matrix for bilinear forms.");
-  m.def("create_element_dof_layout", &dolfinx::fem::create_element_dof_layout,
-        "Create ElementDofLayout object from a ufc dofmap.");
+  m.def(
+      "create_element_dof_layout",
+      [](const std::uintptr_t dofmap, const dolfinx::mesh::CellType cell_type,
+         const std::vector<int>& parent_map) {
+        const ufc_dofmap* p = reinterpret_cast<const ufc_dofmap*>(dofmap);
+        return dolfinx::fem::create_element_dof_layout(*ufc_dofmap, cell_type,
+                                                       parent_map);
+      },
+      "Create ElementDofLayout object from a ufc dofmap.");
   m.def(
       "create_dofmap",
       [](const MPICommWrapper comm, const std::uintptr_t dofmap,
