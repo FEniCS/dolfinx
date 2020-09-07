@@ -1,9 +1,10 @@
-# Copyright (C) 2019 Jorgen Dokken and Garth N. Wells
+# Copyright (C) 2019-2020 Matthew Scroggs, Jorgen Dokken and Garth N. Wells
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from math import log
 from random import shuffle, choice
 import numpy as np
 import pytest
@@ -14,7 +15,7 @@ from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import SpatialCoordinate, dx, inner
+from ufl import SpatialCoordinate, dx, inner, div
 
 
 @skip_in_parallel
@@ -82,3 +83,24 @@ def test_manufactured_vector(family, degree):
     error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
 
     assert np.absolute(error) < 1.0e-14
+
+
+def test_div():
+    points = np.array([[0., 0.], [0., 1.], [1., 0.], [2., 1.]])
+    cells = np.array([[0, 1, 2, 3]])
+
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh.topology.create_connectivity_all()
+
+    RT = FunctionSpace(mesh, ("RTCF", 1))
+    tau = ufl.TestFunction(RT)
+    a = div(tau) * dx
+    v = assemble_vector(a)
+
+    v = sorted(list(v[:]))
+    # Assert that these values match those computed elsewhere using sympy
+    actual = [-1.0, 1 / 2 - 2 * log(2), 1, 1 / 2 + log(2)]
+
+    for a, b in zip(v, actual):
+        assert abs(a - b) < 0.01
