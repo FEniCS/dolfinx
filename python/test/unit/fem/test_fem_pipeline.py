@@ -244,7 +244,7 @@ def run_dg_test(mesh, V, degree):
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                           mode=PETSc.ScatterMode.FORWARD)
 
-    M = (u_exact - uh[0])**2 * dx
+    M = (u_exact - uh)**2 * dx
     M = fem.Form(M)
     error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
