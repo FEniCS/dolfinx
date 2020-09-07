@@ -12,7 +12,7 @@ import ufl
 from dolfinx import Function, FunctionSpace, VectorFunctionSpace, fem
 from dolfinx.fem import assemble_matrix, assemble_scalar, assemble_vector
 from dolfinx.mesh import create_mesh
-from dolfinx_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel, skip_if_complex
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import SpatialCoordinate, dx, inner, div
@@ -86,6 +86,7 @@ def test_manufactured_vector(family, degree):
 
 
 @skip_in_parallel
+@skip_if_complex
 def test_div():
     points = np.array([[0., 0.], [0., 1.], [1., 0.], [2., 1.]])
     cells = np.array([[0, 1, 2, 3]])
@@ -96,7 +97,7 @@ def test_div():
 
     RT = FunctionSpace(mesh, ("RTCF", 1))
     tau = ufl.TestFunction(RT)
-    a = div(ufl.conj(tau)) * dx
+    a = div(tau) * dx
     v = assemble_vector(a)
 
     v = sorted(list(v[:]))
