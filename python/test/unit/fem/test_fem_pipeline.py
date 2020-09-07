@@ -14,7 +14,7 @@ from petsc4py import PETSc
 
 import ufl
 from dolfinx import (DirichletBC, Function, FunctionSpace, fem, cpp,
-                     UnitCubeMesh, UnitSquareMesh)
+                     UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.cpp.mesh import CellType
