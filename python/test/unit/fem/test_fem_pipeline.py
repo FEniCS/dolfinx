@@ -14,15 +14,13 @@ from petsc4py import PETSc
 
 import ufl
 from dolfinx import (DirichletBC, Function, FunctionSpace, fem, cpp,
-                     UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, solve)
+                     UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
-                 inner, ds, dS, avg, jump, FacetNormal, CellDiameter,
-                 TrialFunctions, TestFunctions, pi, sin, cos, as_vector,
-                 FiniteElement)
+                 inner, ds, dS, avg, jump, FacetNormal, CellDiameter)
 
 
 def get_mesh(cell_type, datadir):
@@ -181,40 +179,6 @@ def run_vector_test(mesh, V, degree):
     error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
 
     assert np.absolute(error) < 1.0e-14
-
-def compute_L2_norm(v):
-    return np.sqrt(mesh.mpi_comm().allreduce(assemble_scalar(inner(v, v) * dx),
-                                             op=MPI.SUM))
-
-def run_vector_poisson_test(mesh, V, W, degree):
-    X = FunctionSpace(mesh, V * W)
-    (u, sigma) = TrialFunctions(X)
-    (v, tau) = TestFunctions(X)
-
-    x = SpatialCoordinate(mesh)
-    u_exact = sin(pi * x[0]) * sin(pi * x[1])
-    f = - div(grad(u_exact))
-    a = inner(sigma, tau) * dx + inner(div(tau), u) * dx \
-        + inner(div(sigma), v) * dx
-    L = - inner(f, v) * dx
-
-    sln = Function(X)
-    # TODO Should probably specify PETSc options
-    solve(a == L, sln, [])
-
-    u = sln.sub(0).collapse()
-    sigma = sln.sub(1).collapse()
-
-    sigma_exact = as_vector((pi * cos(pi * x[0]) * sin(pi * x[1]),
-                         pi * sin(pi * x[0]) * cos(pi * x[1])))
-    e_u = u_exact - u
-    e_sigma = sigma_exact - sigma
-
-    L2_error_u = compute_L2_norm(e_u)
-    L2_error_sigma = compute_L2_norm(e_sigma)
-
-    print(f"L2-norm of the error in u = {L2_error_u}")
-    print(f"L2-norm of the error in sigma = {L2_error_sigma}")
 
 
 def run_dg_test(mesh, V, degree):
@@ -401,9 +365,3 @@ def xtest_AA_hex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
-
-# TODO REMOVE
-mesh = get_mesh(CellType.triangle, "")
-V = FiniteElement("DG", mesh.ufl_cell(), 0)
-Q = FiniteElement("RT", mesh.ufl_cell(), 1)
-run_vector_poisson_test(mesh, V, Q, 0)
