@@ -96,7 +96,7 @@ def test_div():
 
     RT = FunctionSpace(mesh, ("RTCF", 1))
     tau = ufl.TestFunction(RT)
-    a = div(tau) * dx
+    a = div(ufl.conj(tau)) * dx
     v = assemble_vector(a)
 
     v = sorted(list(v[:]))
