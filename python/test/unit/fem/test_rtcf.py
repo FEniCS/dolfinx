@@ -20,7 +20,7 @@ from ufl import SpatialCoordinate, dx, inner, div
 
 @skip_in_parallel
 @pytest.mark.parametrize("family", ["RTCF"])
-@pytest.mark.parametrize("degree", [1])
+@pytest.mark.parametrize("degree", [1, 2, 3])
 def test_manufactured_vector(family, degree):
     """Projection into H(div/curl) spaces"""
 
