@@ -245,8 +245,6 @@ def run_dg_test(mesh, V, degree):
                           mode=PETSc.ScatterMode.FORWARD)
 
     M = (u_exact - uh[0])**2 * dx
-    for i in range(1, mesh.topology.dim):
-        M += uh[i]**2 * dx
     M = fem.Form(M)
     error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
@@ -260,6 +258,15 @@ def test_P_simplex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)
+
+
+@parametrize_cell_types_simplex
+@pytest.mark.parametrize("family", ["Lagrange"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_vector_P_simplex(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
+    V = VectorFunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree)
 
 
 @parametrize_cell_types_simplex
@@ -297,6 +304,15 @@ def test_P_tp(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)
+
+
+@parametrize_cell_types_tp
+@pytest.mark.parametrize("family", ["Q"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_vector_P_tp(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
+    V = VectorFunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree)
 
 
 # TODO: Implement DPC spaces
