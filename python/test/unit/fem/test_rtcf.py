@@ -85,6 +85,7 @@ def test_manufactured_vector(family, degree):
     assert np.absolute(error) < 1.0e-14
 
 
+@skip_in_parallel
 def test_div():
     points = np.array([[0., 0.], [0., 1.], [1., 0.], [2., 1.]])
     cells = np.array([[0, 1, 2, 3]])
@@ -99,8 +100,8 @@ def test_div():
     v = assemble_vector(a)
 
     v = sorted(list(v[:]))
+
     # Assert that these values match those computed elsewhere using sympy
     actual = [-1.0, 1 / 2 - 2 * log(2), 1, 1 / 2 + log(2)]
-
     for a, b in zip(v, actual):
         assert abs(a - b) < 0.01
