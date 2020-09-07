@@ -13,7 +13,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, fem, geometry, cpp,
+from dolfinx import (DirichletBC, Function, FunctionSpace, fem, cpp,
                      UnitCubeMesh, UnitSquareMesh)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
@@ -149,8 +149,8 @@ def run_vector_test(mesh, V, degree):
 
     # Source term
     x = SpatialCoordinate(mesh)
-    u_ref = x[0] ** degree
-    L = inner(u_ref, v[0]) * dx
+    u_exact = x[0] ** degree
+    L = inner(u_exact, v[0]) * dx
 
     b = assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -171,17 +171,14 @@ def run_vector_test(mesh, V, degree):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    xp = np.array([0.33, 0.33, 0.0])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_collisions_point(tree, xp)
+    M = (u_exact - uh[0])**2 * dx
+    for i in range(1, mesh.topology.dim):
+        M += uh[i]**2 * dx
+    M = fem.Form(M)
 
-    up = uh.eval(xp, cells[0])
-    print("test0:", up)
-    print("test1:", xp[0] ** degree)
+    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
 
-    u_exact = np.zeros(mesh.geometry.dim)
-    u_exact[0] = xp[0] ** degree
-    assert np.allclose(up, u_exact)
+    assert np.absolute(error) < 1.0e-14
 
 
 def run_dg_test(mesh, V, degree):
@@ -246,7 +243,12 @@ def run_dg_test(mesh, V, degree):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                           mode=PETSc.ScatterMode.FORWARD)
-    error = mesh.mpi_comm().allreduce(assemble_scalar((u_exact - uh)**2 * dx), op=MPI.SUM)
+
+    M = (u_exact - uh[0])**2 * dx
+    for i in range(1, mesh.topology.dim):
+        M += uh[i]**2 * dx
+    M = fem.Form(M)
+    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
 
 
@@ -301,7 +303,7 @@ def test_P_tp(family, degree, cell_type, datadir):
 @parametrize_cell_types_tp
 @pytest.mark.parametrize("family", ["DQ"])
 # @pytest.mark.parametrize("family", ["DQ", "DPC"])
-@pytest.mark.parametrize("degree", [2, 3, 4])
+@pytest.mark.parametrize("degree", [2, 3])
 def test_dP_tp(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
