@@ -14,7 +14,7 @@ include(CMakeFindDependencyMacro)
 find_dependency(MPI REQUIRED)
 
 # Check for Boost
-if(DEFINED ENV{BOOST_ROOTC} OR DEFINED BOOST_ROOT)
+if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
