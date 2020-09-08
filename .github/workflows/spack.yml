@@ -68,7 +68,7 @@ jobs:
           spack install
 
       # NOTE: numba is installed via pip because the spack packages
-      # takes an extremely long time to compiler
+      # takes an extremely long time to compile
       - name: Run DOLFIN-X (Python) tests
         run: |
           . ./spack/share/spack/setup-env.sh
