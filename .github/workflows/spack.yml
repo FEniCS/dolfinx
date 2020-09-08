@@ -2,16 +2,16 @@ name: Spack build
 
 on:
   # Uncomment the below 'push' to trigger on push
-  push:
-   branches:
-     - "**"
+  # push:
+  #  branches:
+  #    - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * SAT"
 
 jobs:
   build:
-    # if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/head/master' }}
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/head/master' }}
     strategy:
       matrix:
         os: [ubuntu-20.04, macos-10.15]
