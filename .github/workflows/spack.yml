@@ -19,6 +19,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    if: ${{ matrix.os == 'ubuntu-20.04'}
+    container: ubuntu:20.04
+
     env:
       DOLFINX_JIT_CFLAGS: -g0 -O0
       MPLBACKEND: agg
