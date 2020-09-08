@@ -20,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     container:
       image: debian:stable
-      if: matrix.os == ubuntu-20.04
+      if: ${{ matrix.os == ubuntu-20.04 }}
 
     env:
       DOLFINX_JIT_CFLAGS: -g0 -O0
