@@ -125,17 +125,13 @@ endif()
 #------------------------------------------------------------------------------
 # Run tests to find required packages
 
-# Check for Boost
-set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
-if (BOOST_ROOT)
+# Note: When updating Boost version, also update DOLFINXCongif.cmake.in
+if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-
-
-# Note: When updating Boost version, also update DOLFINXCongif.cmake.in
 set(Boost_VERBOSE TRUE)
-find_package(Boost 1.70 PATHS ${BOOST_ROOT} REQUIRED timer filesystem program_options)
+find_package(Boost 1.70 REQUIRED timer filesystem program_options)
 set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")

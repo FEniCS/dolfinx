@@ -14,14 +14,12 @@ include(CMakeFindDependencyMacro)
 find_dependency(MPI REQUIRED)
 
 # Check for Boost
-set(BOOST_ROOT $ENV{BOOST_DIR} ${BOOST_ROOT})
-if (BOOST_ROOT)
+if(DEFINED ENV{BOOST_ROOTC} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-
 set(Boost_VERBOSE TRUE)
-find_package(Boost 1.70 PATHS ${BOOST_ROOT} REQUIRED COMPONENTS timer filesystem program_options)
+find_package(Boost 1.70 REQUIRED COMPONENTS timer filesystem program_options)
 
 if (NOT TARGET PETSC::petsc)
   set(DOLFINX_SKIP_BUILD_TESTS TRUE)
