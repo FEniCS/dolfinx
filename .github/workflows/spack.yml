@@ -26,9 +26,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: ./spack
-          # repository: spack/spack
-          repository: garth-wells/spack
-          ref: fenics-dolfinx-dep-fixes
+          repository: spack/spack
 
       - name: Build DOLFIN-X (C++) via Spack
         run: |
