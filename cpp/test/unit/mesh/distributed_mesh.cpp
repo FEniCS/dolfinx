@@ -8,7 +8,6 @@
 
 #include "cmap.h"
 #include <catch.hpp>
-#include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/io/XDMFFile.h>
