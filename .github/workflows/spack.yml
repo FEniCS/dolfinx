@@ -28,7 +28,7 @@ jobs:
           path: ./spack
           # repository: spack/spack
           repository: garth-wells/spack
-          ref: fenics-updates
+          ref: fenics-dolfinx-dep-fixes
 
       - name: Build DOLFIN-X (C++) via Spack
         run: |
