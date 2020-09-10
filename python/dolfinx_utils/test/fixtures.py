@@ -75,12 +75,12 @@ def _create_tempdir(request):
         
         # Wait until the above created the directory
         waited = 0
-        while not os.path.exists(file_path):
+        while not os.path.exists(path):
             time.sleep(1)
             waited += 1
 
             if waited > 10:
-                raise RuntimeError(f"Unable to create test directory {file_path}")
+                raise RuntimeError(f"Unable to create test directory {path}")
 
     comm.Barrier()
 
