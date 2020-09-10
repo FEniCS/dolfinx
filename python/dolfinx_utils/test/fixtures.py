@@ -6,6 +6,7 @@
 """Shared fixtures for unit tests."""
 
 import os
+import time
 import shutil
 from collections import defaultdict
 from mpi4py import MPI
@@ -72,7 +73,7 @@ def _create_tempdir(request):
         # e.g. test_foo_tempdir/test_something__3
         if not os.path.exists(path):
             os.mkdir(path)
-        
+
         # Wait until the above created the directory
         waited = 0
         while not os.path.exists(path):
