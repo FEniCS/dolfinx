@@ -272,7 +272,7 @@ def test_vector_P_simplex(family, degree, cell_type, datadir):
 
 @parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["DG"])
-@pytest.mark.parametrize("degree", [2, 3, 4])
+@pytest.mark.parametrize("degree", [2, 3])
 def test_dP_simplex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
