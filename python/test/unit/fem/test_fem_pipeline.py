@@ -337,10 +337,8 @@ def test_dP_hex(family, degree, cell_type, datadir):
     run_dg_test(mesh, V, degree)
 
 
-# TODO: Implement RTCE spaces
 @parametrize_cell_types_quad
-# @pytest.mark.parametrize("family", ["RTCE", "RTCF"])
-@pytest.mark.parametrize("family", ["RTCF"])
+@pytest.mark.parametrize("family", ["RTCE", "RTCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_RTC_quad(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
@@ -348,17 +346,19 @@ def test_RTC_quad(family, degree, cell_type, datadir):
     run_vector_test(mesh, V, degree - 1)
 
 
-# TODO: Implement NC spaces
+# TODO: Implement NCE spaces
 @parametrize_cell_types_hex
-@pytest.mark.parametrize("family", ["NCE", "NCF"])
+# @pytest.mark.parametrize("family", ["NCE", "NCF"])
+@pytest.mark.parametrize("family", ["NCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def xtest_NC_hex(family, degree, cell_type, datadir):
+def test_NC_hex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree + 1))
     run_vector_test(mesh, V, degree)
 
 
-# TODO: Implement BDMC spaces
+# TODO: Implement BDMCE spaces
+# Note: These are currently not supported in FIAT
 @parametrize_cell_types_quad
 @pytest.mark.parametrize("family", ["BDMCE", "BDMCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
