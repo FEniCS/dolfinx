@@ -5,7 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
-import time
 
 import numpy as np
 import pytest
@@ -14,7 +13,8 @@ from petsc4py import PETSc
 
 import ufl
 from dolfinx import (DirichletBC, Function, FunctionSpace, fem, cpp,
-                     UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace)
+                     UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,
+                     common)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.cpp.mesh import CellType
@@ -78,13 +78,12 @@ def run_scalar_test(mesh, V, degree):
     L = inner(f, v) * dx(metadata={"quadrature_degree": -1})
     L.integrals()[0].metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(L)
 
-    t0 = time.time()
-    L = fem.Form(L)
-    t1 = time.time()
-    print("Linear form compile time:", t1 - t0)
+    with common.Timer("Linear form compile"):
+        L = fem.Form(L)
 
-    u_bc = Function(V)
-    u_bc.interpolate(lambda x: x[1]**degree)
+    with common.Timer("Function interpolation"):
+        u_bc = Function(V)
+        u_bc.interpolate(lambda x: x[1]**degree)
 
     # Create Dirichlet boundary condition
     mesh.topology.create_connectivity_all()
@@ -94,51 +93,38 @@ def run_scalar_test(mesh, V, degree):
     assert(len(bdofs) < V.dim)
     bc = DirichletBC(u_bc, bdofs)
 
-    t0 = time.time()
-    b = assemble_vector(L)
-    apply_lifting(b, [a], [[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b, [bc])
-    t1 = time.time()
-    print("Vector assembly time:", t1 - t0)
+    with common.Timer("Vector assembly"):
+        b = assemble_vector(L)
+        apply_lifting(b, [a], [[bc]])
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        set_bc(b, [bc])
 
-    t0 = time.time()
-    a = fem.Form(a)
-    t1 = time.time()
-    print("Bilinear form compile time:", t1 - t0)
+    with common.Timer("Bilinear form compile"):
+        a = fem.Form(a)
 
-    t0 = time.time()
-    A = assemble_matrix(a, [bc])
-    A.assemble()
-    t1 = time.time()
-    print("Matrix assembly time:", t1 - t0)
+    with common.Timer("Matrix assembly"):
+        A = assemble_matrix(a, [bc])
+        A.assemble()
 
     # Create LU linear solver
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
     solver.setType(PETSc.KSP.Type.PREONLY)
     solver.getPC().setType(PETSc.PC.Type.LU)
     solver.setOperators(A)
-    # Solve
-    t0 = time.time()
-    uh = Function(V)
-    solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    t1 = time.time()
-    print("Linear solver time:", t1 - t0)
+    with common.Timer("Solve"):
+        uh = Function(V)
+        solver.solve(b, uh.vector)
+        uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    M = (u_exact - uh)**2 * dx
-    t0 = time.time()
-    M = fem.Form(M)
-    t1 = time.time()
-    print("Error functional compile time:", t1 - t0)
+    with common.Timer("Error functional compile"):
+        M = (u_exact - uh)**2 * dx
+        M = fem.Form(M)
 
-    t0 = time.time()
-    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM) ** 0.5
+    with common.Timer("Error assembly"):
+        error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
 
-    t1 = time.time()
-
-    print("Error assembly time:", t1 - t0)
+    common.list_timings(MPI.COMM_WORLD, [common.TimingType.wall])
     assert np.absolute(error) < 1.0e-14
 
 
@@ -152,32 +138,38 @@ def run_vector_test(mesh, V, degree):
     u_exact = x[0] ** degree
     L = inner(u_exact, v[0]) * dx
 
-    b = assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    with common.Timer("Assemble vector"):
+        b = assemble_vector(L)
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    A = assemble_matrix(a)
-    A.assemble()
+    with common.Timer("Assemble matrix"):
+        A = assemble_matrix(a)
+        A.assemble()
 
-    # Create LU linear solver (Note: need to use a solver that
-    # re-orders to handle pivots, e.g. not the PETSc built-in LU
-    # solver)
-    solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setType("preonly")
-    solver.getPC().setType('lu')
-    solver.setOperators(A)
+    with common.Timer("Solve"):
+        # Create LU linear solver (Note: need to use a solver that
+        # re-orders to handle pivots, e.g. not the PETSc built-in LU
+        # solver)
+        solver = PETSc.KSP().create(MPI.COMM_WORLD)
+        solver.setType("preonly")
+        solver.getPC().setType('lu')
+        solver.setOperators(A)
 
-    # Solve
-    uh = Function(V)
-    solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        # Solve
+        uh = Function(V)
+        solver.solve(b, uh.vector)
+        uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    M = (u_exact - uh[0])**2 * dx
-    for i in range(1, mesh.topology.dim):
-        M += uh[i]**2 * dx
-    M = fem.Form(M)
+    with common.Timer("Error functional compile"):
+        M = (u_exact - uh[0])**2 * dx
+        for i in range(1, mesh.topology.dim):
+            M += uh[i]**2 * dx
+        M = fem.Form(M)
 
-    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM) ** 0.5
+    with common.Timer("Error assembly"):
+        error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
 
+    common.list_timings(MPI.COMM_WORLD, [common.TimingType.wall])
     assert np.absolute(error) < 1.0e-14
 
 
@@ -211,42 +203,51 @@ def run_dg_test(mesh, V, degree):
     ds_ = ds(metadata={"quadrature_degree": -1})
     dS_ = dS(metadata={"quadrature_degree": -1})
 
-    a = inner(k * grad(u), grad(v)) * dx_ \
-        - k("+") * inner(avg(grad(u)), jump(v, n)) * dS_ \
-        - k("+") * inner(jump(u, n), avg(grad(v))) * dS_ \
-        + k("+") * (alpha / h_avg) * inner(jump(u, n), jump(v, n)) * dS_ \
-        - inner(k * grad(u), v * n) * ds_ \
-        - inner(u * n, k * grad(v)) * ds_ \
-        + (alpha / h) * inner(k * u, v) * ds_
-    L = inner(f, v) * dx_ - inner(k * u_exact * n, grad(v)) * ds_ \
-        + (alpha / h) * inner(k * u_exact, v) * ds_
+    with common.Timer("Compile forms"):
+        a = inner(k * grad(u), grad(v)) * dx_ \
+            - k("+") * inner(avg(grad(u)), jump(v, n)) * dS_ \
+            - k("+") * inner(jump(u, n), avg(grad(v))) * dS_ \
+            + k("+") * (alpha / h_avg) * inner(jump(u, n), jump(v, n)) * dS_ \
+            - inner(k * grad(u), v * n) * ds_ \
+            - inner(u * n, k * grad(v)) * ds_ \
+            + (alpha / h) * inner(k * u, v) * ds_
+        L = inner(f, v) * dx_ - inner(k * u_exact * n, grad(v)) * ds_ \
+            + (alpha / h) * inner(k * u_exact, v) * ds_
 
     for integral in a.integrals():
         integral.metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(a)
     for integral in L.integrals():
         integral.metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(L)
 
-    b = assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    with common.Timer("Assemble vector"):
+        b = assemble_vector(L)
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    A = assemble_matrix(a, [])
-    A.assemble()
+    with common.Timer("Assemble matrix"):
+        A = assemble_matrix(a, [])
+        A.assemble()
 
-    # Create LU linear solver
-    solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setType(PETSc.KSP.Type.PREONLY)
-    solver.getPC().setType(PETSc.PC.Type.LU)
-    solver.setOperators(A)
+    with common.Timer("Solve"):
+        # Create LU linear solver
+        solver = PETSc.KSP().create(MPI.COMM_WORLD)
+        solver.setType(PETSc.KSP.Type.PREONLY)
+        solver.getPC().setType(PETSc.PC.Type.LU)
+        solver.setOperators(A)
 
-    # Solve
-    uh = Function(V)
-    solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+        # Solve
+        uh = Function(V)
+        solver.solve(b, uh.vector)
+        uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                              mode=PETSc.ScatterMode.FORWARD)
 
-    M = (u_exact - uh)**2 * dx
-    M = fem.Form(M)
-    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM) ** 0.5
+    with common.Timer("Error functional compile"):
+        M = (u_exact - uh)**2 * dx
+        M = fem.Form(M)
+
+    with common.Timer("Error assembly"):
+        error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
+
+    common.list_timings(MPI.COMM_WORLD, [common.TimingType.wall])
     assert np.absolute(error) < 1.0e-14
 
 
