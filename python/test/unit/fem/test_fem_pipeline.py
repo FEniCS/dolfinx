@@ -134,7 +134,7 @@ def run_scalar_test(mesh, V, degree):
     print("Error functional compile time:", t1 - t0)
 
     t0 = time.time()
-    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
+    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM) ** 0.5
 
     t1 = time.time()
 
@@ -176,7 +176,7 @@ def run_vector_test(mesh, V, degree):
         M += uh[i]**2 * dx
     M = fem.Form(M)
 
-    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
+    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM) ** 0.5
 
     assert np.absolute(error) < 1.0e-14
 
@@ -246,7 +246,7 @@ def run_dg_test(mesh, V, degree):
 
     M = (u_exact - uh)**2 * dx
     M = fem.Form(M)
-    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
+    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM) ** 0.5
     assert np.absolute(error) < 1.0e-14
 
 
@@ -334,7 +334,7 @@ def test_dP_tp(family, degree, cell_type, datadir):
 def test_RTC_quad(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
-    run_vector_test(mesh, V, degree)
+    run_vector_test(mesh, V, degree - 1)
 
 
 # TODO: Implement NC spaces
