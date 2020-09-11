@@ -176,7 +176,8 @@ def test_tetrahedron_dof_ordering(space_type):
 
 @pytest.mark.parametrize('space_type', [
     ("P", 1), ("P", 2), ("P", 3), ("P", 4),
-    ("RTCF", 1)
+    ("RTCF", 1), ("RTCF", 2), ("RTCF", 3),
+    ("RTCE", 1), ("RTCE", 2), ("RTCE", 3)
 ])
 def test_quadrilateral_dof_ordering(space_type):
     """Checks that dofs on shared quadrilateral edges match up"""
@@ -237,7 +238,11 @@ def test_quadrilateral_dof_ordering(space_type):
                 edges[i] = j
 
 
-@pytest.mark.parametrize('space_type', [("P", 1), ("P", 2), ("P", 3), ("P", 4), ])
+@pytest.mark.parametrize('space_type', [
+    ("P", 1), ("P", 2), ("P", 3), ("P", 4),
+    ("NCF", 1), ("NCF", 2), ("NCF", 3),
+    ("NCE", 1), ("NCE", 2), ("NCE", 3)
+])
 def test_hexahedron_dof_ordering(space_type):
     """Checks that dofs on shared hexahedron edges match up"""
 

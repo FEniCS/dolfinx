@@ -281,11 +281,11 @@ def test_dP_simplex(family, degree, cell_type, datadir):
 
 @parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["RT", "N1curl"])
-@pytest.mark.parametrize("degree", [1, 2, 3])
+@pytest.mark.parametrize("degree", [1, 2, 3, 4])
 def test_RT_N1curl_simplex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree + 1))
-    run_vector_test(mesh, V, degree)
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree - 1)
 
 
 @parametrize_cell_types_simplex
@@ -346,15 +346,13 @@ def test_RTC_quad(family, degree, cell_type, datadir):
     run_vector_test(mesh, V, degree - 1)
 
 
-# TODO: Implement NCE spaces
 @parametrize_cell_types_hex
-# @pytest.mark.parametrize("family", ["NCE", "NCF"])
-@pytest.mark.parametrize("family", ["NCF"])
+@pytest.mark.parametrize("family", ["NCE", "NCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_NC_hex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree + 1))
-    run_vector_test(mesh, V, degree)
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree - 1)
 
 
 # TODO: Implement BDMCE spaces
