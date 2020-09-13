@@ -16,7 +16,7 @@ namespace dolfinx::graph::KaHIP
 #ifdef HAS_KAHIP
 public:
 // Standard KaHIP partition
-static AdjacencyList<std::int32_t>
+AdjacencyList<std::int32_t>
 partition(MPI_Comm mpi_comm, int nparts,
           const AdjacencyList<unsigned long long>& adj_graph, bool ghosting);
 
