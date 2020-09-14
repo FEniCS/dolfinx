@@ -367,6 +367,7 @@ def xtest_BDM_quad(family, degree, cell_type, datadir):
 
 
 # TODO: Implement AA spaces
+# Note: These are currently not supported in FIAT
 @parametrize_cell_types_hex
 @pytest.mark.parametrize("family", ["AAE", "AAF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
