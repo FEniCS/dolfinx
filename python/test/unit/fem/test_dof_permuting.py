@@ -312,7 +312,6 @@ def test_hexahedron_dof_positions(space_type):
                 faces[i] = j
 
 
-
 @skip_in_parallel
 @pytest.mark.parametrize('space_type', ["P", "N1curl", "RT", "BDM", "N2curl"])
 @pytest.mark.parametrize('space_order', range(1, 4))
@@ -479,7 +478,7 @@ def test_hexahedron_evaluation(space_type, space_order):
 
     for repeat in range(10):
         order = [i for i, j in enumerate(temp_points)]
-        #shuffle(order)
+        shuffle(order)
         points = np.zeros(temp_points.shape)
         for i, j in enumerate(order):
             points[j] = temp_points[i]
