@@ -282,8 +282,6 @@ public:
     const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
         = mesh->topology().get_cell_permutation_info();
 
-    std::cout << "cell_info = {" << cell_info << "}\n";
-
     // Loop over points
     u.setZero();
     const Eigen::Matrix<T, Eigen::Dynamic, 1>& _v = _x->array();
