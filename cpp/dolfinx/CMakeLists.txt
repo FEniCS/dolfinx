@@ -87,13 +87,9 @@ target_include_directories(dolfinx SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
 target_compile_definitions(dolfinx PUBLIC "EIGEN_MAX_ALIGN_BYTES=${DOLFINX_EIGEN_MAX_ALIGN_BYTES}")
 
 # Boost
-target_link_libraries(dolfinx PUBLIC Boost::boost)
-foreach (BOOST_PACKAGE ${DOLFINX_BOOST_COMPONENTS_PUBLIC})
-  target_link_libraries(dolfinx PUBLIC "Boost::${BOOST_PACKAGE}")
-endforeach()
-foreach (BOOST_PACKAGE ${DOLFINX_BOOST_COMPONENTS_PRIVATE})
-  target_link_libraries(dolfinx PRIVATE "Boost::${BOOST_PACKAGE}")
-endforeach()
+target_link_libraries(dolfinx PUBLIC Boost::headers)
+target_link_libraries(dolfinx PUBLIC Boost::timer)
+target_link_libraries(dolfinx PRIVATE Boost::filesystem Boost::program_options)
 
 # MPI
 target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
@@ -211,7 +207,7 @@ foreach(_target ${PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES})
     endif()
 
     # Special handling for compiled Boost imported targets
-    if (("${_target}" MATCHES "^.*Boost::.*$") AND NOT "${_target}" STREQUAL "Boost::boost")
+    if (("${_target}" MATCHES "^.*Boost::.*$") AND NOT "${_target}" STREQUAL "Boost::headers")
       get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
       if (_libs)
         list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
@@ -248,14 +244,13 @@ foreach(_lib ${PKGCONFIG_DOLFINX_LIBS})
   if ("${_lib}" MATCHES "-Wl,[^ ]*")
     set(PKG_LINKFLAGS "${_lib} ${PKG_LINKFLAGS}")
   else()
-    string(REGEX REPLACE "(.?:?/[^ ]*)/lib([^ ]*)\\.(a|so|dylib|dll)" "-L\\1 -l\\2"
-      _linkflags
-      "${_lib}"
-      )
+    get_filename_component(_path ${_lib} DIRECTORY)
+    get_filename_component(_name ${_lib} NAME_WE)
+    string(REPLACE "lib" "" _name "${_name}")
 
     # Add libraries that matches the form -L<libdir> -l<lib>
-    if ("${_linkflags}" MATCHES "-L.+ -l.+")
-      set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
+    if (NOT "${_path}" STREQUAL "")
+      set(PKG_LINKFLAGS "-L${_path} -l${_name} ${PKG_LINKFLAGS}")
     endif()
   endif()
 endforeach()
@@ -271,7 +266,7 @@ foreach(_linkflag ${DOLFINX_LINK_FLAGS})
 endforeach()
 
 # Boost include dir (used as pkg-config variable)
-get_target_property(BOOST_INCLUDE_DIR Boost::boost INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(BOOST_INCLUDE_DIR Boost::headers INTERFACE_INCLUDE_DIRECTORIES)
 
 # Configure and install pkg-config file
 configure_file(${DOLFINX_SOURCE_DIR}/cmake/templates/dolfinx.pc.in ${CMAKE_BINARY_DIR}/dolfinx.pc @ONLY)

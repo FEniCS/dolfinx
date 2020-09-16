@@ -1,9 +1,10 @@
 # DOLFINX
 
 [![Actions CI tests](https://github.com/FEniCS/dolfinx/workflows/DOLFINX%20CI%20tests/badge.svg)](https://github.com/FEniCS/dolfinx/actions?query=workflow%3A%22DOLFINX+CI%22)
+[![CircleCI](https://circleci.com/gh/FEniCS/dolfinx.svg?style=shield)](https://circleci.com/gh/FEniCS/dolfinx)
 [![Actions Docker environment images](https://github.com/FEniCS/dolfinx/workflows/Docker%20environment%20images/badge.svg)](https://github.com/FEniCS/dolfinx/actions?query=workflow%3A%22Docker+environment+images%22)
 [![Actions Docker image builds](https://github.com/FEniCS/dolfinx/workflows/Docker%20end-user%20images/badge.svg)](https://github.com/FEniCS/dolfinx/actions?query=workflow%3A%22Docker+end-user+images%22)
-[![CircleCI](https://circleci.com/gh/FEniCS/dolfinx.svg?style=shield)](https://circleci.com/gh/FEniCS/dolfinx)
+[![Actions Spack build](https://github.com/FEniCS/dolfinx/workflows/Spack%20build/badge.svg)](https://github.com/FEniCS/dolfinx/actions?query=workflow%3A%22Spack+build%22)
 
 DOLFINX is a new version of DOLFIN. It is being actively developed and
 features may come and go as development proceeds.
@@ -21,7 +22,9 @@ Documentation can be viewed at:
 
 ## Installation
 
-### C++ core
+### From source
+
+#### C++ core
 
 To build and install the C++ core, in the ``cpp/`` directory, run::
 ```
@@ -31,7 +34,7 @@ cmake ..
 make install
 ```
 
-### Python interface
+#### Python interface
 
 To install the Python interface, first install the C++ core, and then
 in the ``python/`` directory run::
@@ -42,10 +45,25 @@ pip install .
 
 For detailed instructions, see the file INSTALL.
 
-## Docker
+### Spack
+
+To build using [Spack](https://spack.readthedocs.io/) (assuming a bash shell):
+```
+git clone https://github.com/spack/spack.git
+. ./spack/share/spack/setup-env.sh
+spack env create fenicsx-env
+spack env activate fenicsx-env
+echo "  concretization: together" >> ./spack/var/spack/environments/fenicsx-env/spack.yaml
+spack add py-fenics-dolfinx ^petsc+mumps+hypre cflags="-O3" fflags="-O3"
+spack install
+```
+See the Spack [documentation](https://spack.readthedocs.io/) for
+comprehensive instructions.
+
+
+## Docker images
 
 A Docker image with DOLFINX built nightly:
-
 ```
 docker run -ti dolfinx/dolfinx
 ```
@@ -57,14 +75,12 @@ source /usr/local/bin/dolfinx-real-mode
 ```
 
 A Jupyter Lab environment with DOLFINX built nightly:
-
 ```
 docker run -ti -p 8888:8888 dolfinx/lab # Access at http://localhost:8888
 ```
 
 A development image with all of the dependencies required
 to build DOLFINX:
-
 ```
 docker run -ti dolfinx/dev-env
 ```
