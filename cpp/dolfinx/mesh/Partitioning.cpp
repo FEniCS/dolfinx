@@ -37,16 +37,9 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
     }
   }
 
-  // FIXME: Update GraphBuilder to use AdjacencyList
-  // Wrap AdjacencyList
-  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>
-      _cells(cells.array().data(), cells.num_nodes(),
-             mesh::num_cell_vertices(cell_type));
-
   // Compute distributed dual graph (for the cells on this process)
   const auto [dual_graph, graph_info]
-      = mesh::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
+      = mesh::GraphBuilder::compute_dual_graph(comm, cells, cell_type);
 
   // Extract data from graph_info
   const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]

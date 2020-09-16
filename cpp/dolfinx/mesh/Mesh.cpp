@@ -85,9 +85,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // partitioning. Always get the ghost cells via facet, though these may be
   // discarded later.
   const int size = dolfinx::MPI::size(comm);
-  const graph::AdjacencyList<std::int32_t> dest
-      = Partitioning::partition_cells(comm, size, element.cell_shape(),
-                                      cells_topology, GhostMode::shared_facet);
+  const graph::AdjacencyList<std::int32_t> dest = Partitioning::partition_cells(
+      comm, size, element.cell_shape(), cells_topology, ghost_mode);
 
   // Distribute cells to destination rank
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
