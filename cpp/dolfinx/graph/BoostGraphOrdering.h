@@ -6,10 +6,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <set>
 #include <utility>
 #include <vector>
-#include <cstdint>
 
 namespace dolfinx::graph
 {
@@ -19,20 +19,19 @@ class AdjacencyList;
 
 /// This class computes graph re-orderings. It uses Boost Graph.
 
-class BoostGraphOrdering
+namespace BoostGraphOrdering
 {
 
-public:
-  /// Compute re-ordering (map[old] -> new) using Cuthill-McKee
-  /// algorithm
-  static std::vector<int>
-  compute_cuthill_mckee(const AdjacencyList<std::int32_t>& graph,
-                        bool reverse = false);
+/// Compute re-ordering (map[old] -> new) using Cuthill-McKee
+/// algorithm
+std::vector<int> compute_cuthill_mckee(const AdjacencyList<std::int32_t>& graph,
+                                       bool reverse = false);
 
-  /// Compute re-ordering (map[old] -> new) using Cuthill-McKee
-  /// algorithm
-  static std::vector<int> compute_cuthill_mckee(
-      const std::set<std::pair<std::size_t, std::size_t>>& edges,
-      std::size_t size, bool reverse = false);
-};
+/// Compute re-ordering (map[old] -> new) using Cuthill-McKee
+/// algorithm
+std::vector<int> compute_cuthill_mckee(
+    const std::set<std::pair<std::size_t, std::size_t>>& edges,
+    std::size_t size, bool reverse = false);
+
+} // namespace BoostGraphOrdering
 } // namespace dolfinx::graph
