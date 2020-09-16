@@ -204,7 +204,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       }
 
       std::uint8_t rots = 0;
-      if (g_post > g_pre)
+      if (e_vertices[g_post] > e_vertices[g_pre])
         rots = min_v <= g_min_v ? g_min_v - min_v : g_min_v + 4 - min_v;
       else
         rots = g_min_v <= min_v ? min_v - g_min_v : min_v + 4 - g_min_v;
