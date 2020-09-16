@@ -209,7 +209,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       else
         rots = g_min_v <= min_v ? min_v - g_min_v : min_v + 4 - g_min_v;
 
-      face_perm[c][3 * i] = (post > pre) == (g_post < g_pre);
+      face_perm[c][3 * i] = (e_vertices[post] < e_vertices[pre]) == (vertices[g_post] < vertices[g_pre]);
       face_perm[c][3 * i + 1] = rots % 2;
       face_perm[c][3 * i + 2] = rots / 2;
     }
