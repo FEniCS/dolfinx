@@ -13,9 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace dolfinx
-{
-namespace mesh
+namespace dolfinx::mesh
 {
 
 /// Cell type identifier
@@ -86,5 +84,4 @@ int num_cell_vertices(CellType type);
 std::map<std::array<int, 2>, std::vector<std::set<int>>>
 cell_entity_closure(mesh::CellType cell_type);
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh
