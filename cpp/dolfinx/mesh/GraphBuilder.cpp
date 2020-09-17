@@ -59,13 +59,14 @@ compute_local_dual_graph_keyed(
   int counter = 0;
   for (std::int32_t i = 0; i < num_local_cells; ++i)
   {
+     auto& vertices = cell_vertices.links(i);
     // Iterate over facets of cell
     for (int j = 0; j < num_facets_per_cell; ++j)
     {
       // Get list of facet vertices
       auto& facet = facets[counter].first;
       for (int k = 0; k < N; ++k)
-        facet[k] = cell_vertices.links(i)[facet_vertices(j, k)];
+        facet[k] = vertices[facet_vertices(j, k)];
 
       // Sort facet vertices
       std::sort(facet.begin(), facet.end());
