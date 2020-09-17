@@ -350,6 +350,11 @@ def test_RTC_quad(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["NCE", "NCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_NC_hex(family, degree, cell_type, datadir):
+    # TODO: Implement higher order NCE/NCF spaces
+    if family == "NCE" and degree >= 3:
+        return
+    if family == "NCF" and degree >= 2:
+        return
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
