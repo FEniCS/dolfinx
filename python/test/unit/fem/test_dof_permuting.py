@@ -465,7 +465,7 @@ def test_hexahedron_evaluation(space_type, space_order):
     if space_type == "NCF" and space_order >= 3:
         print("Space not supported yet")
         return
-    if space_type == "NCE": and space_order >= 2:
+    if space_type == "NCE" and space_order >= 2:
         print("Space not supported yet")
         return
 
