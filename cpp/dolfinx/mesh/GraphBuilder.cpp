@@ -30,20 +30,18 @@ std::tuple<std::vector<std::vector<std::int32_t>>,
            std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>,
            std::int32_t>
 compute_local_dual_graph_keyed(
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                       Eigen::RowMajor>& cell_vertices,
+    const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type)
 {
   common::Timer timer("Compute local part of mesh dual graph");
 
   const int tdim = mesh::cell_dim(cell_type);
-  const std::int32_t num_local_cells = cell_vertices.rows();
+  const std::int32_t num_local_cells = cell_vertices.num_nodes();
   const int num_facets_per_cell = mesh::cell_num_entities(cell_type, tdim - 1);
   const int num_vertices_per_facet
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
   assert(N == num_vertices_per_facet);
-  assert(num_local_cells == (int)cell_vertices.rows());
 
   // Compute edges (cell-cell connections) using local numbering
 
@@ -61,13 +59,14 @@ compute_local_dual_graph_keyed(
   int counter = 0;
   for (std::int32_t i = 0; i < num_local_cells; ++i)
   {
+    auto& vertices = cell_vertices.links(i);
     // Iterate over facets of cell
     for (int j = 0; j < num_facets_per_cell; ++j)
     {
       // Get list of facet vertices
       auto& facet = facets[counter].first;
       for (int k = 0; k < N; ++k)
-        facet[k] = cell_vertices(i, facet_vertices(j, k));
+        facet[k] = vertices[facet_vertices(j, k)];
 
       // Sort facet vertices
       std::sort(facet.begin(), facet.end());
@@ -141,9 +140,7 @@ compute_local_dual_graph_keyed(
 std::tuple<std::vector<std::vector<std::int64_t>>, std::int32_t, std::int32_t>
 compute_nonlocal_dual_graph(
     const MPI_Comm mpi_comm,
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        cell_vertices,
+    const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type,
     const std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>&
         facet_cell_map,
@@ -152,7 +149,7 @@ compute_nonlocal_dual_graph(
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
   common::Timer timer("Compute non-local part of mesh dual graph");
 
-  const std::int32_t num_local_cells = cell_vertices.rows();
+  const std::int32_t num_local_cells = cell_vertices.num_nodes();
 
   // Get offset for this process
   const std::int64_t offset
@@ -181,7 +178,6 @@ compute_nonlocal_dual_graph(
   const int num_vertices_per_facet
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
-  assert(num_local_cells == (int)cell_vertices.rows());
   //  assert(num_vertices_per_cell == (int)cell_vertices.cols());
 
   // Compute local edges (cell-cell connections) using global (internal
@@ -190,7 +186,7 @@ compute_nonlocal_dual_graph(
   // Get global range of vertex indices
   std::int64_t num_global_vertices = 0;
   const std::int64_t max_vertex
-      = (cell_vertices.rows() > 0) ? cell_vertices.maxCoeff() : 0;
+      = (cell_vertices.num_nodes() > 0) ? cell_vertices.array().maxCoeff() : 0;
   MPI_Allreduce(&max_vertex, &num_global_vertices, 1, MPI_INT64_T, MPI_SUM,
                 mpi_comm);
   num_global_vertices += 1;
@@ -303,9 +299,7 @@ compute_nonlocal_dual_graph(
 std::pair<std::vector<std::vector<std::int64_t>>, std::array<std::int32_t, 3>>
 mesh::GraphBuilder::compute_dual_graph(
     const MPI_Comm mpi_comm,
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        cell_vertices,
+    const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type)
 {
   LOG(INFO) << "Build mesh dual graph";
@@ -327,9 +321,7 @@ std::tuple<std::vector<std::vector<std::int32_t>>,
            std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>,
            std::int32_t>
 dolfinx::mesh::GraphBuilder::compute_local_dual_graph(
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        cell_vertices,
+    const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type)
 {
   LOG(INFO) << "Build local part of mesh dual graph";
