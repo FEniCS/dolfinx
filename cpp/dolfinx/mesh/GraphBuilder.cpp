@@ -59,7 +59,7 @@ compute_local_dual_graph_keyed(
   int counter = 0;
   for (std::int32_t i = 0; i < num_local_cells; ++i)
   {
-     auto& vertices = cell_vertices.links(i);
+    auto& vertices = cell_vertices.links(i);
     // Iterate over facets of cell
     for (int j = 0; j < num_facets_per_cell; ++j)
     {
