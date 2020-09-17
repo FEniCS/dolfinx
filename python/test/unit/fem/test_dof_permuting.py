@@ -174,9 +174,7 @@ def test_tetrahedron_dof_positions(space_type):
 
 
 @pytest.mark.parametrize('space_type', [
-    ("P", 1), ("P", 2), ("P", 3), ("P", 4),
-    ("RTCF", 1), ("RTCF", 2), ("RTCF", 3),
-    ("RTCE", 1), ("RTCE", 2), ("RTCE", 3)
+    ("P", 1), ("P", 2), ("P", 3), ("P", 4)
 ])
 def test_quadrilateral_dof_positions(space_type):
     """Checks that dofs on shared quadrilateral edges match up"""
