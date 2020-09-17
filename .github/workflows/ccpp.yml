@@ -89,19 +89,23 @@ jobs:
         run: mpirun -np 2 python3 -m pytest python/test/unit/
 
       - name: Install SSH key for fenicsproject.org documentation push
-        uses: shimataro/ssh-key-action@v2.0.3
-        with:
-          key: ${{ secrets.SSH_DOCS_PRIVATE_KEY }}
-          known_hosts: ${{ secrets.SSH_DOCS_KNOWN_HOSTS }}
+        if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
+        run : |
+          mkdir ~/.ssh
+          echo '${{ secrets.SSH_DOCS_KNOWN_HOSTS }}' > ~/.ssh/known_hosts
+          echo '${{ secrets.SSH_DOCS_PRIVATE_KEY }}' > ~/.ssh/id_rsa
+          chmod 0700 ~/.ssh
+          chmod 0644 ~/.ssh/known_hosts
+          chmod 0600 ~/.ssh/id_rsa
 
       - name: Push C++ documentation
-        if: github.ref == 'master'
+        if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run: |
           cd cpp/doc
-          scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
+          scp -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
 
       - name: Push Python documentation
-        if: github.ref == 'master'
+        if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run: |
           cd python/doc
-          scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
+          scp -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
