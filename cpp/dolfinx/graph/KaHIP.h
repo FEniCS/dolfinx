@@ -10,23 +10,14 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
 
-namespace dolfinx
-{
-
-namespace graph
-{
-
-/// This class provides an interface to KaHIP parallel partitioner
-class KaHIP
+// Interface to KaHIP parallel partitioner
+namespace dolfinx::graph::KaHIP
 {
 #ifdef HAS_KAHIP
-public:
-  // Standard KaHIP partition
-  static AdjacencyList<std::int32_t>
-  partition(MPI_Comm mpi_comm, int nparts,
-            const AdjacencyList<unsigned long long>& adj_graph, bool ghosting);
+// Standard KaHIP partition
+AdjacencyList<std::int32_t>
+partition(MPI_Comm mpi_comm, int nparts,
+          const AdjacencyList<unsigned long long>& adj_graph, bool ghosting);
 
 #endif
-};
-} // namespace graph
-} // namespace dolfinx
+} // namespace dolfinx::graph::KaHIP
