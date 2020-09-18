@@ -70,7 +70,7 @@ class Expression:
 
         # Tabulation function.
         ffi = cffi.FFI()
-        fn = ffi.cast("intptr_t", ufc_expression.tabulate_expression)
+        fn = ffi.cast("uintptr_t", ufc_expression.tabulate_expression)
 
         mesh = ufl_expression.ufl_domain().ufl_cargo()
 
