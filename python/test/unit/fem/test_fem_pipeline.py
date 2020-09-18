@@ -19,6 +19,7 @@ from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
+from dolfinx_utils.test.skips import skip_if_complex
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner, ds, dS, avg, jump, FacetNormal, CellDiameter)
 
@@ -290,8 +291,19 @@ def test_RT_N1curl_simplex(family, degree, cell_type, datadir):
 
 @parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["BDM", "N2curl"])
-@pytest.mark.parametrize("degree", [1, 2, 3])
+@pytest.mark.parametrize("degree", [1, 2])
 def test_BDM_N2curl_simplex(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree)
+
+
+# Skip slowest test in complex to stop CI timing out
+@skip_if_complex
+@parametrize_cell_types_simplex
+@pytest.mark.parametrize("family", ["BDM", "N2curl"])
+@pytest.mark.parametrize("degree", [3])
+def test_BDM_N2curl_simplex_highest_order(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
