@@ -32,7 +32,7 @@ T build_csr_directed_graph(const graph::AdjacencyList<X>& graph)
   {
     auto links = graph.links(v);
     for (int e = 0; e < links.rows(); ++e)
-      edges.push_back({v, links[e]});
+      edges.emplace_back(v, links[e]);
   }
 
   // Number of vertices

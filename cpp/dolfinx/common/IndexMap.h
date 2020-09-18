@@ -59,6 +59,16 @@ public:
     symmetric // Symmetric. NOTE: To be removed
   };
 
+  /// Create an non-overlapping index map with local_size owned blocks on this
+  /// process.
+  ///
+  /// @note Collective
+  /// @param[in] comm The MPI communicator
+  /// @param[in] local_size Local size of the IndexMap, i.e. the number
+  ///   of owned entries
+  /// @param[in] block_size The block size of the IndexMap
+  IndexMap(MPI_Comm comm, std::int32_t local_size, int block_size);
+
   /// Create an index map with local_size owned blocks on this process, and
   /// blocks have size block_size.
   ///
@@ -66,13 +76,17 @@ public:
   /// @param[in] mpi_comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
+  /// @param[in] dest_ranks Ranks that 'ghost' indices that are owned by
+  ///   the calling rank. I.e., ranks that the caller will send data to
+  ///   when updating ghost values.
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] ghost_src_rank Owner rank (on global communicator)
-  ///   of each ghost entry
+  /// @param[in] src_ranks Owner rank (on global communicator) of each
+  ///   entry in @p ghosts
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+           const std::vector<int>& dest_ranks,
            const std::vector<std::int64_t>& ghosts,
-           const std::vector<int>& ghost_src_rank, int block_size);
+           const std::vector<int>& src_ranks, int block_size);
 
   /// Create an index map
   ///
@@ -80,15 +94,18 @@ public:
   /// @param[in] mpi_comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
+  /// @param[in] dest_ranks Ranks that ghost indices owned by the
+  ///   calling rank
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] ghost_src_rank Owner rank (on global communicator) of
-  ///   each ghost entry
+  /// @param[in] src_ranks Owner rank (on global communicator) of each
+  ///   ghost entry
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(
       MPI_Comm mpi_comm, std::int32_t local_size,
+      const std::vector<int>& dest_ranks,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
           ghosts,
-      const std::vector<int>& ghost_src_rank, int block_size);
+      const std::vector<int>& src_ranks, int block_size);
 
   /// Copy constructor
   IndexMap(const IndexMap& map) = delete;
@@ -100,10 +117,10 @@ public:
   ~IndexMap() = default;
 
   /// Range of indices (global) owned by this process
-  std::array<std::int64_t, 2> local_range() const;
+  std::array<std::int64_t, 2> local_range() const noexcept;
 
   /// Block size
-  int block_size() const;
+  int block_size() const noexcept;
 
   /// Number of ghost indices on this process
   std::int32_t num_ghosts() const;
@@ -118,7 +135,7 @@ public:
   /// range)
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts() const;
 
-  /// Return a MPI communicator with atached distributed graph topology
+  /// Return a MPI communicator with attached distributed graph topology
   /// information
   /// @param[in] dir Edge direction of communicator (forward, reverse,
   /// symmetric)
@@ -171,18 +188,18 @@ public:
       bool blocked = true) const;
 
   /// Global indices
-  /// @return The global index for all local indices (0, 1, 2, ...) on this
-  /// process, including ghosts
+  /// @return The global index for all local indices (0, 1, 2, ...) on
+  ///   this process, including ghosts
   std::vector<std::int64_t> global_indices(bool blocked = true) const;
 
   /// @todo Reconsider name
   /// Local (owned) indices shared with neighbor processes, i.e. are
   /// ghosts on other processes
   /// @return List of indices that are ghosted on other processes
-  const std::vector<std::int32_t>& forward_indices() const;
+  const std::vector<std::int32_t>& shared_indices() const;
 
   /// Owner rank (on global communicator) of each ghost entry
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owner_rank() const;
+  Eigen::Array<int, Eigen::Dynamic, 1> ghost_owner_rank() const;
 
   /// Return array of global indices for all indices on this process,
   /// including ghosts
@@ -195,7 +212,7 @@ public:
   /// Compute map from each local (owned) index to the set of ranks that
   /// have the index as a ghost
   /// @return shared indices
-  std::map<std::int32_t, std::set<std::int32_t>> compute_shared_indices() const;
+  std::map<std::int32_t, std::set<int>> compute_shared_indices() const;
 
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
@@ -283,9 +300,23 @@ private:
   // Number indices across communicator
   std::int64_t _size_global;
 
-  // MPI neighbourhood communicators
+  // MPI neighborhood communicators
+
+  // Communicator where the source ranks own the indices in the callers
+  // halo, and the destination ranks 'ghost' indices owned by the
+  // caller. I.e.,
+  // - in-edges (src) are from ranks that own my ghosts
+  // - out-edges (dest) go to ranks that 'ghost' my owned indices
   dolfinx::MPI::Comm _comm_owner_to_ghost;
+
+  // Communicator where the source ranks have ghost indices that are
+  // owned by the caller, and the destination ranks are the owners of
+  // indices in the callers halo region. I.e.,
+  // - in-edges (src) are from ranks that 'ghost' my owned indicies
+  // - out-edges (dest) are to the owning ranks of my ghost indices
   dolfinx::MPI::Comm _comm_ghost_to_owner;
+
+  // TODO: remove
   dolfinx::MPI::Comm _comm_symmetric;
 
   // Local-to-global map for ghost indices
@@ -295,13 +326,23 @@ private:
   // communicator for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
-  // Number of owned indices to send to each outgoing (rank) edge on
-  // _comm_owner_to_ghost when scattering owner -> ghosts
-  std::vector<std::int32_t> _forward_sizes;
+  // TODO: replace _shared_disp and _shared_disp by an AdjacencyList
+
+  // TODO: _shared_indices are received on _comm_ghost_to_owner, and
+  // _shared_indices is the recv_disp on _comm_ghost_to_owner. Check for
+  // corect use on _comm_owner_to_ghost. Can guarantee that
+  // _comm_owner_to_ghost and _comm_ghost_to_owner are the transpose of
+  // each other?
 
   // Owned local indices that are in the halo (ghost) region on other
   // ranks
-  std::vector<std::int32_t> _forward_indices;
+  std::vector<std::int32_t> _shared_indices;
+
+  // FIXME: explain better the ranks
+  // Displacement vector for _shared_indices. _shared_indices[i] is the
+  // starting postion in _shared_indices for data that is ghosted on
+  // rank i, where i is the ith outgoing edge on _comm_owner_to_ghost.
+  std::vector<std::int32_t> _shared_disp;
 
   template <typename T>
   void scatter_fwd_impl(const std::vector<T>& local_data,

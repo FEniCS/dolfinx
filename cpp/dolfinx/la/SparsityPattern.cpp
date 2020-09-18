@@ -61,9 +61,15 @@ SparsityPattern::SparsityPattern(
 
   // Create new IndexMaps
   _index_maps[0] = std::make_shared<common::IndexMap>(
-      comm, local_offset0.back(), ghosts0, ghost_owners0, 1);
+      comm, local_offset0.back(),
+      dolfinx::MPI::compute_graph_edges(
+          comm, std::set<int>(ghost_owners0.begin(), ghost_owners0.end())),
+      ghosts0, ghost_owners0, 1);
   _index_maps[1] = std::make_shared<common::IndexMap>(
-      comm, local_offset1.back(), ghosts1, ghost_owners1, 1);
+      comm, local_offset1.back(),
+      dolfinx::MPI::compute_graph_edges(
+          comm, std::set<int>(ghost_owners1.begin(), ghost_owners1.end())),
+      ghosts1, ghost_owners1, 1);
 
   // Size cache arrays
   const std::int32_t size_row = local_offset0.back() + ghosts0.size();
@@ -166,8 +172,8 @@ SparsityPattern::SparsityPattern(
 std::array<std::int64_t, 2> SparsityPattern::local_range(int dim) const
 {
   const int bs = _index_maps.at(dim)->block_size();
-  const std::array<std::int64_t, 2> lrange = _index_maps[dim]->local_range();
-  return {{bs * lrange[0], bs * lrange[1]}};
+  const std::array lrange = _index_maps[dim]->local_range();
+  return {bs * lrange[0], bs * lrange[1]};
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
@@ -256,16 +262,14 @@ void SparsityPattern::assemble()
   const int bs0 = _index_maps[0]->block_size();
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
-  const std::array<std::int64_t, 2> local_range0
-      = _index_maps[0]->local_range();
+  const std::array local_range0 = _index_maps[0]->local_range();
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts0
       = _index_maps[0]->ghosts();
 
   assert(_index_maps[1]);
   const int bs1 = _index_maps[1]->block_size();
   const std::int32_t local_size1 = _index_maps[1]->size_local();
-  const std::array<std::int64_t, 2> local_range1
-      = _index_maps[1]->local_range();
+  const std::array local_range1 = _index_maps[1]->local_range();
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
       = _index_maps[1]->ghosts();
 

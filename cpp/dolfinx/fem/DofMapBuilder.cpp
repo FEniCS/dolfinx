@@ -334,7 +334,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 /// @param [in] dof_entity The ith entry gives (topological dim, local
 ///   index) of the mesh entity to which node i (old local index) is
 ///   associated
-/// @returns The (0) global indices for unowned dofs, (1) onwer rank of each
+/// @returns The (0) global indices for unowned dofs, (1) owner rank of each
 ///   unowned dof
 std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     const mesh::Topology& topology, const std::int32_t num_owned,
@@ -356,7 +356,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     if (map)
     {
       shared_entity[d] = std::vector<bool>(map->size_local(), false);
-      const std::vector<std::int32_t>& forward_indices = map->forward_indices();
+      const std::vector<std::int32_t>& forward_indices = map->shared_indices();
       for (auto entity : forward_indices)
         shared_entity[d][entity] = true;
     }
@@ -394,7 +394,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     {
       comm[d] = map->comm(common::IndexMap::Direction::symmetric);
 
-      // Get number of neighbours
+      // Get number of neighbors
       int indegree(-1), outdegree(-2), weighted(-1);
       MPI_Dist_graph_neighbors_count(comm[d], &indegree, &outdegree, &weighted);
 
@@ -482,37 +482,13 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<std::shared_ptr<const ElementDofLayout>,
-           std::shared_ptr<const common::IndexMap>,
-           graph::AdjacencyList<std::int32_t>>
-DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
-                     std::shared_ptr<const ElementDofLayout> element_dof_layout)
-{
-  assert(element_dof_layout);
-  const int bs = element_dof_layout->block_size();
-  if (bs == 1)
-  {
-    auto [index_map, dofmap]
-        = DofMapBuilder::build(comm, topology, *element_dof_layout, 1);
-    return {element_dof_layout, index_map, std::move(dofmap)};
-  }
-  else
-  {
-    auto [index_map, dofmap] = DofMapBuilder::build(
-        comm, topology, *element_dof_layout->sub_dofmap({0}), bs);
-    return {element_dof_layout, index_map, std::move(dofmap)};
-  }
-}
-//-----------------------------------------------------------------------------
 std::pair<std::shared_ptr<common::IndexMap>, graph::AdjacencyList<std::int32_t>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
-                     const ElementDofLayout& element_dof_layout, int block_size)
+                     const ElementDofLayout& element_dof_layout)
 {
   common::Timer t0("Init dofmap");
 
-  if (element_dof_layout.block_size() != 1)
-    throw std::runtime_error("Block size of 1 expected when building dofmap.");
-
+  const int element_block_size = element_dof_layout.block_size();
   const int D = topology.dim();
 
   // Build a simple dofmap based on mesh entity numbering, returning (i)
@@ -530,7 +506,8 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     {
       assert(topology.index_map(d));
       const std::int64_t n = topology.index_map(d)->size_global();
-      global_dimension += n * element_dof_layout.num_entity_dofs(d);
+      global_dimension
+          += n * element_dof_layout.num_entity_dofs(d) * element_block_size;
     }
   }
 
@@ -551,15 +528,19 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
 
   // Create IndexMap for dofs range on this process
   auto index_map = std::make_unique<common::IndexMap>(
-      comm, num_owned, local_to_global_unowned, local_to_global_owner,
-      block_size);
+      comm, num_owned,
+      dolfinx::MPI::compute_graph_edges(
+          comm, std::set<int>(local_to_global_owner.begin(),
+                              local_to_global_owner.end())),
+      local_to_global_unowned, local_to_global_owner, element_block_size);
   assert(index_map);
 
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.
   // Build re-ordered dofmap, accounting for block size
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap(
-      node_graph0.array().rows() * block_size);
+      node_graph0.array().rows() * element_block_size);
+
   for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
   {
     const std::int32_t local_dim0 = node_graph0.num_links(cell);
@@ -568,20 +549,19 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     {
       const std::int32_t old_node = old_nodes[j];
       const std::int32_t new_node = old_to_new[old_node];
-      for (std::int32_t block = 0; block < block_size; ++block)
+      for (std::int32_t block = 0; block < element_block_size; ++block)
       {
-        dofmap[cell * block_size * local_dim0 + block * local_dim0 + j]
-            = block_size * new_node + block;
+        dofmap[element_block_size * local_dim0 * cell + element_block_size * j
+               + block]
+            = element_block_size * new_node + block;
       }
     }
   }
-
   assert(dofmap.rows() % node_graph0.num_nodes() == 0);
   Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
                           Eigen::RowMajor>>
       _dofmap(dofmap.data(), node_graph0.num_nodes(),
               dofmap.rows() / node_graph0.num_nodes());
-
   return {std::move(index_map), graph::AdjacencyList<std::int32_t>(_dofmap)};
 }
 //-----------------------------------------------------------------------------

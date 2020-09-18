@@ -28,7 +28,8 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
           ufc_element.evaluate_reference_basis_derivatives),
       _transform_reference_basis_derivatives(
           ufc_element.transform_reference_basis_derivatives),
-      _transform_values(ufc_element.transform_values)
+      _transform_values(ufc_element.transform_values),
+      _block_size(ufc_element.block_size)
 {
   // Store dof coordinates on reference element if they exist
   assert(ufc_element.tabulate_reference_dof_coordinates);
@@ -37,6 +38,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _space_dim, _tdim);
   if (ufc_element.tabulate_reference_dof_coordinates(X.data()) != -1)
     _refX = X;
+
+  // FIXME: this should really be fixed in ffcx.
+  _refX.conservativeResize(_space_dim / _block_size, _tdim);
 
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
@@ -89,6 +93,8 @@ int FiniteElement::reference_value_size() const
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::value_rank() const { return _value_dimension.size(); }
+//-----------------------------------------------------------------------------
+int FiniteElement::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
 int FiniteElement::value_dimension(int i) const
 {
@@ -188,8 +194,8 @@ FiniteElement::dof_reference_coordinates() const
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_values(
-    PetscScalar* reference_values,
-    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic,
+    ufc_scalar_t* reference_values,
+    const Eigen::Ref<const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         physical_values,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,

@@ -7,18 +7,16 @@
 import math
 import sys
 
+import FIAT
 import numpy as np
 import pytest
-from mpi4py import MPI
-
-import dolfinx
-import FIAT
-from dolfinx import (BoxMesh, Mesh, RectangleMesh, UnitCubeMesh,
-                     UnitIntervalMesh, UnitSquareMesh, cpp)
+from dolfinx import (BoxMesh, RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, cpp)
 from dolfinx.cpp.mesh import CellType, is_simplex
 from dolfinx.fem import assemble_scalar
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 from ufl import dx
 
 assert (tempdir)
@@ -144,77 +142,6 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
     _check_ufl_domain(rectangle)
     _check_ufl_domain(cube)
     _check_ufl_domain(box)
-
-
-# pygmsh is problematic in parallel because it uses subprocess to call
-# gmsh. To be robust, it would need to call MPI 'spawn'.
-@pytest.mark.skip(
-    reason="pymsh calling gmsh fails in container (related to file creation)")
-@skip_in_parallel
-def test_mesh_construction_pygmsh():
-
-    pygmsh = pytest.importorskip("pygmsh")
-
-    if MPI.COMM_WORLD.rank == 0:
-        geom = pygmsh.opencascade.Geometry()
-        geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
-        pygmsh_mesh = pygmsh.generate_mesh(geom)
-        points, cells = pygmsh_mesh.points, pygmsh_mesh.cells
-    else:
-        points = np.zeros([0, 3])
-        cells = {
-            "tetra": np.zeros([0, 4], dtype=np.int64),
-            "triangle": np.zeros([0, 3], dtype=np.int64),
-            "line": np.zeros([0, 2], dtype=np.int64)
-        }
-
-    mesh = Mesh(MPI.COMM_WORLD, dolfinx.cpp.mesh.CellType.tetrahedron, points,
-                cells['tetra'], [], cpp.mesh.GhostMode.none)
-    assert mesh.geometry.degree() == 1
-    assert mesh.geometry.dim == 3
-    assert mesh.topology.dim == 3
-
-    mesh = Mesh(MPI.COMM_WORLD,
-                dolfinx.cpp.mesh.CellType.triangle, points,
-                cells['triangle'], [], cpp.mesh.GhostMode.none)
-    assert mesh.geometry.degree() == 1
-    assert mesh.geometry.dim == 3
-    assert mesh.topology.dim == 2
-
-    mesh = Mesh(MPI.COMM_WORLD,
-                dolfinx.cpp.mesh.CellType.interval, points,
-                cells['line'], [], cpp.mesh.GhostMode.none)
-    assert mesh.geometry.degree() == 1
-    assert mesh.geometry.dim == 3
-    assert mesh.topology.dim == 1
-
-    if MPI.COMM_WORLD.rank == 0:
-        print("Generate mesh")
-        geom = pygmsh.opencascade.Geometry()
-        geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
-        pygmsh_mesh = pygmsh.generate_mesh(
-            geom, extra_gmsh_arguments=['-order', '2'])
-        points, cells = pygmsh_mesh.points, pygmsh_mesh.cells
-        print("End Generate mesh", cells.keys())
-    else:
-        points = np.zeros([0, 3])
-        cells = {
-            "tetra10": np.zeros([0, 10], dtype=np.int64),
-            "triangle6": np.zeros([0, 6], dtype=np.int64),
-            "line3": np.zeros([0, 3], dtype=np.int64)
-        }
-
-    mesh = Mesh(MPI.COMM_WORLD, dolfinx.cpp.mesh.CellType.tetrahedron, points,
-                cells['tetra10'], [], cpp.mesh.GhostMode.none)
-    assert mesh.geometry.degree() == 2
-    assert mesh.geometry.dim == 3
-    assert mesh.topology.dim == 3
-
-    mesh = Mesh(MPI.COMM_WORLD, dolfinx.cpp.mesh.CellType.triangle, points,
-                cells['triangle6'], [], cpp.mesh.GhostMode.none)
-    assert mesh.geometry.degree() == 2
-    assert mesh.geometry.dim == 3
-    assert mesh.topology.dim == 2
 
 
 def test_UnitSquareMeshDistributed():
@@ -428,36 +355,3 @@ def test_UnitHexMesh_assemble():
     vol = assemble_scalar(1 * dx(mesh))
     vol = mesh.mpi_comm().allreduce(vol, MPI.SUM)
     assert(vol == pytest.approx(1, rel=1e-9))
-
-
-def xtest_mesh_order_unchanged_triangle():
-    points = [[0, 0], [1, 0], [1, 1]]
-    cells = [[0, 1, 2]]
-    mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points,
-                cells, [], cpp.mesh.GhostMode.none)
-    assert (mesh.cells()[0] == cells[0]).all()
-
-
-def xtest_mesh_order_unchanged_quadrilateral():
-    points = [[0, 0], [1, 0], [0, 1], [1, 1]]
-    cells = [[0, 1, 2, 3]]
-    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points,
-                cells, [], cpp.mesh.GhostMode.none)
-    assert (mesh.cells()[0] == cells[0]).all()
-
-
-def xtest_mesh_order_unchanged_tetrahedron():
-    points = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 0, 1]]
-    cells = [[0, 1, 2, 3]]
-    mesh = Mesh(MPI.COMM_WORLD, CellType.tetrahedron, points,
-                cells, [], cpp.mesh.GhostMode.none)
-    assert (mesh.cells()[0] == cells[0]).all()
-
-
-def xtest_mesh_order_unchanged_hexahedron():
-    points = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0],
-              [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]]
-    cells = [[0, 1, 2, 3, 4, 5, 6, 7]]
-    mesh = Mesh(MPI.COMM_WORLD, CellType.hexahedron, points,
-                cells, [], cpp.mesh.GhostMode.none)
-    assert (mesh.cells()[0] == cells[0]).all()

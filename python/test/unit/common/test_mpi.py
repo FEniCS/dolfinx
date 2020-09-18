@@ -6,17 +6,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
-import sys
-
-import mpi4py
-import pytest
-from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
-from mpi4py import MPI
+import pathlib
 
 import dolfinx
+import mpi4py
 from dolfinx import wrappers
 from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
+from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
+from mpi4py import MPI
+import cppimport
 
 
 def test_mpi_comm_wrapper():
@@ -31,41 +29,42 @@ def test_mpi_comm_wrapper():
 def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for code compiled with cppimport"""
 
-    cppimport = pytest.importorskip("cppimport")
-
     @mpi_jit_decorator
     def compile_module():
         cpp_code_header = f"""
-        <%
-        setup_pybind11(cfg)
-        cfg['compiler_args'] = ['-std=c++17']
-        cfg['include_dirs'] += {dolfinx_pc["include_dirs"]
-                                + [mpi4py.get_include()]
-                                + [str(wrappers.get_include_path())]}
-        %>
-        """
+/*
+<%
+setup_pybind11(cfg)
+cfg['compiler_args'] = ['-std=c++17']
+cfg['include_dirs'] += {dolfinx_pc["include_dirs"]
+                        + [mpi4py.get_include()]
+                        + [str(wrappers.get_include_path())]}
+%>
+*/
+"""
 
         cpp_code = """
-        #include <pybind11/pybind11.h>
-        #include <caster_mpi.h>
+#include <pybind11/pybind11.h>
+#include <caster_mpi.h>
 
-        dolfinx_wrappers::MPICommWrapper
-        test_comm_passing(const dolfinx_wrappers::MPICommWrapper comm)
-        {
-          MPI_Comm c = comm.get();
-          return dolfinx_wrappers::MPICommWrapper(c);
-        }
+dolfinx_wrappers::MPICommWrapper
+test_comm_passing(const dolfinx_wrappers::MPICommWrapper comm)
+{
+    MPI_Comm c = comm.get();
+    return dolfinx_wrappers::MPICommWrapper(c);
+}
 
-        PYBIND11_MODULE(test_mpi_comm_wrapper, m)
-        {
-            m.def("test_comm_passing", &test_comm_passing);
-        }
-        """
+PYBIND11_MODULE(mpi_comm_wrapper, m)
+{
+    m.def("test_comm_passing", &test_comm_passing);
+}
+"""
 
-        open(os.path.join(tempdir, "test_mpi_comm_wrapper.cpp"), "w").write(cpp_code_header + cpp_code)
-
-        sys.path.append(tempdir)
-        return cppimport.imp("test_mpi_comm_wrapper")
+        path = pathlib.Path(tempdir)
+        open(pathlib.Path(tempdir, "mpi_comm_wrapper.cpp"), "w").write(cpp_code + cpp_code_header)
+        rel_path = path.relative_to(pathlib.Path(__file__).parent)
+        p = str(rel_path).replace("/", ".") + ".mpi_comm_wrapper"
+        return cppimport.imp(p)
 
     module = compile_module()
 

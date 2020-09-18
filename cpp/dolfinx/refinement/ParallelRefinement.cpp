@@ -71,9 +71,8 @@ compute_vertex_exterior_markers(const mesh::Topology& topology_local)
 std::int64_t local_to_global(std::int32_t local_index,
                              const common::IndexMap& map)
 {
-  const std::array<std::int64_t, 2> local_range = map.local_range();
-
   assert(local_index >= 0);
+  const std::array local_range = map.local_range();
   const std::int32_t local_size = (local_range[1] - local_range[0]);
   if (local_index < local_size)
   {
@@ -165,36 +164,35 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh) : _mesh(mesh)
   std::map<std::int32_t, std::set<int>> shared_edges
       = _mesh.topology().index_map(1)->compute_shared_indices();
 
-  // Compute a slightly wider neighbourhood for direct communication of shared
+  // Compute a slightly wider neighborhood for direct communication of shared
   // edges
-  std::set<int> all_neighbour_set;
+  std::set<int> all_neighbor_set;
   for (const auto& q : shared_edges)
-    all_neighbour_set.insert(q.second.begin(), q.second.end());
-  std::vector<int> neighbours(all_neighbour_set.begin(),
-                              all_neighbour_set.end());
+    all_neighbor_set.insert(q.second.begin(), q.second.end());
+  std::vector<int> neighbors(all_neighbor_set.begin(), all_neighbor_set.end());
 
   MPI_Dist_graph_create_adjacent(
-      mesh.mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
-      neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &_neighbour_comm);
+      mesh.mpi_comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
+      neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
+      &_neighbor_comm);
 
-  // Create a "shared_edge to neighbour map"
-  std::map<int, int> proc_to_neighbour;
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
-    proc_to_neighbour.insert({neighbours[i], i});
+  // Create a "shared_edge to neighbor map"
+  std::map<int, int> proc_to_neighbor;
+  for (std::size_t i = 0; i < neighbors.size(); ++i)
+    proc_to_neighbor.insert({neighbors[i], i});
 
   for (auto& q : shared_edges)
   {
-    std::set<int> neighbour_set;
+    std::set<int> neighbor_set;
     for (int r : q.second)
-      neighbour_set.insert(proc_to_neighbour[r]);
-    _shared_edges.insert({q.first, neighbour_set});
+      neighbor_set.insert(proc_to_neighbor[r]);
+    _shared_edges.insert({q.first, neighbor_set});
   }
 
-  _marked_for_update.resize(neighbours.size());
+  _marked_for_update.resize(neighbors.size());
 }
 //-----------------------------------------------------------------------------
-ParallelRefinement::~ParallelRefinement() { MPI_Comm_free(&_neighbour_comm); }
+ParallelRefinement::~ParallelRefinement() { MPI_Comm_free(&_neighbor_comm); }
 //-----------------------------------------------------------------------------
 const std::vector<bool>& ParallelRefinement::marked_edges() const
 {
@@ -213,7 +211,7 @@ bool ParallelRefinement::mark(std::int32_t edge_index)
 
   _marked_edges[edge_index] = true;
 
-  // If it is a shared edge, add all sharing neighbours to update set
+  // If it is a shared edge, add all sharing neighbors to update set
   if (auto map_it = _shared_edges.find(edge_index);
       map_it != _shared_edges.end())
   {
@@ -259,8 +257,8 @@ void ParallelRefinement::update_logical_edgefunction()
 {
   std::vector<std::int32_t> send_offsets = {0};
   std::vector<std::int64_t> data_to_send;
-  int num_neighbours = _marked_for_update.size();
-  for (int i = 0; i < num_neighbours; ++i)
+  int num_neighbors = _marked_for_update.size();
+  for (int i = 0; i < num_neighbors; ++i)
   {
     data_to_send.insert(data_to_send.end(), _marked_for_update[i].begin(),
                         _marked_for_update[i].end());
@@ -271,11 +269,11 @@ void ParallelRefinement::update_logical_edgefunction()
   // Send all shared edges marked for update and receive from other
   // processes
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> data_to_recv
-      = MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, data_to_send)
+      = MPI::neighbor_all_to_all(_neighbor_comm, send_offsets, data_to_send)
             .array();
 
   // Flatten received values and set _marked_edges at each index received
-  std::vector<std::int32_t> local_indices
+  const std::vector local_indices
       = _mesh.topology().index_map(1)->global_to_local(data_to_recv);
   for (std::int32_t local_index : local_indices)
     _marked_edges[local_index] = true;
@@ -314,8 +312,8 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.
 
-  int num_neighbours = _marked_for_update.size();
-  std::vector<std::vector<std::int64_t>> values_to_send(num_neighbours);
+  int num_neighbors = _marked_for_update.size();
+  std::vector<std::vector<std::int64_t>> values_to_send(num_neighbors);
   for (auto& local_edge : local_edge_to_new_vertex)
   {
     const std::size_t local_i = local_edge.first;
@@ -334,10 +332,10 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
     }
   }
 
-  // Send new vertex indices to edge neighbours and receive
+  // Send new vertex indices to edge neighbors and receive
   std::vector<std::int64_t> send_values;
   std::vector<int> send_offsets = {0};
-  for (int i = 0; i < num_neighbours; ++i)
+  for (int i = 0; i < num_neighbors; ++i)
   {
     send_values.insert(send_values.end(), values_to_send[i].begin(),
                        values_to_send[i].end());
@@ -345,7 +343,7 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
   }
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> received_values
-      = MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, send_values)
+      = MPI::neighbor_all_to_all(_neighbor_comm, send_offsets, send_values)
             .array();
 
   // Add received remote global vertex indices to map
@@ -353,7 +351,7 @@ std::map<std::int32_t, std::int64_t> ParallelRefinement::create_new_vertices()
   assert(received_values.size() % 2 == 0);
   for (int i = 0; i < received_values.size() / 2; ++i)
     recv_global_edge.push_back(received_values[i * 2]);
-  std::vector<std::int32_t> recv_local_edge
+  std::vector recv_local_edge
       = _mesh.topology().index_map(1)->global_to_local(recv_global_edge);
   for (int i = 0; i < received_values.size() / 2; ++i)
   {
@@ -381,7 +379,7 @@ std::vector<std::int64_t> ParallelRefinement::adjust_indices(
   for (std::int32_t r : recvn)
     global_offsets.push_back(global_offsets.back() + r);
 
-  std::vector<std::int64_t> global_indices = index_map->global_indices(true);
+  std::vector global_indices = index_map->global_indices(true);
 
   Eigen::Array<int, Eigen::Dynamic, 1> ghost_owners
       = index_map->ghost_owner_rank();
@@ -478,17 +476,18 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
     // set cell-vertex topology
     mesh::Topology topology_local(comm, _mesh.geometry().cmap().cell_shape());
     const int tdim = topology_local.dim();
-    auto map = std::make_shared<common::IndexMap>(comm, cells_local.num_nodes(),
-                                                  std::vector<std::int64_t>(),
-                                                  std::vector<int>(), 1);
+    auto map = std::make_shared<common::IndexMap>(
+        comm, cells_local.num_nodes(), std::vector<int>(),
+        std::vector<std::int64_t>(), std::vector<int>(), 1);
     topology_local.set_index_map(tdim, map);
     auto _cells_local
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
     topology_local.set_connectivity(_cells_local, tdim, 0);
 
     const int n = local_to_global_vertices.size();
-    map = std::make_shared<common::IndexMap>(
-        comm, n, std::vector<std::int64_t>(), std::vector<int>(), 1);
+    map = std::make_shared<common::IndexMap>(comm, n, std::vector<int>(),
+                                             std::vector<std::int64_t>(),
+                                             std::vector<int>(), 1);
     topology_local.set_index_map(0, map);
     auto _vertices_local
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(n);
@@ -511,8 +510,7 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
 
     // Get facets that are on the boundary of the local topology, i.e
     // are connect to one cell only
-    const std::vector<bool> boundary
-        = mesh::compute_boundary_facets(topology_local);
+    const std::vector boundary = mesh::compute_boundary_facets(topology_local);
 
     // Build distributed cell-vertex AdjacencyList, IndexMap for
     // vertices, and map from local index to old global index
@@ -532,8 +530,8 @@ ParallelRefinement::partition(const std::vector<std::int64_t>& cell_topology,
 
     // Set cell IndexMap and cell-vertex connectivity
     auto index_map_c = std::make_shared<common::IndexMap>(
-        comm, cells_d.num_nodes(), std::vector<std::int64_t>(),
-        std::vector<int>(), 1);
+        comm, cells_d.num_nodes(), std::vector<int>(),
+        std::vector<std::int64_t>(), std::vector<int>(), 1);
     topology.set_index_map(tdim, index_map_c);
     auto _cells_d
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);

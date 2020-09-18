@@ -40,7 +40,6 @@ import dolfinx.log
 from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
-from dolfinx.mesh import Mesh
 from .cpp.mesh import Topology, Geometry
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)
@@ -54,15 +53,11 @@ from .function import (FunctionSpace, VectorFunctionSpace,
 
 from .mesh import MeshTags
 
-# Initialise PETSc and logging
+# Initialise logging
 from dolfinx import cpp
 import sys
-# FIXME: We're not passing command link argument here because some
-# pytest arg crash loguru
-cpp.common.SubSystemsManager.init_logging([""])
-# cpp.common.SubSystemsManager.init_logging(sys.argv)
+cpp.common.init_logging(sys.argv)
 del sys
-cpp.common.SubSystemsManager.init_petsc()
 
 def get_include(user=False):
     import os

@@ -1,0 +1,39 @@
+name: Docker end-user images
+
+# Builds images with dolfinx and all of the required FEniCS Project
+# components nightly.
+
+on:
+  # Uncomment the below to trigger 'docker build' on push
+  # push:
+  #   branches:
+  #     - "**"
+  schedule:
+    # '*' is a special character in YAML, so string must be quoted
+    - cron: "0 4 * * *"
+
+jobs:
+  build_end_user_images:
+    name: Build dolfinx end-user images
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-20.04
+    env:
+      PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
+      PETSC_SLEPC_DEBUGGING: "no"
+      MPI: "mpich"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Pull dolfinx/dev-env
+        run: docker pull dolfinx/dev-env
+      - name: Build the Docker images
+        run: |
+          cd docker/
+          docker build --file Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
+          docker build --file Dockerfile --target dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
+          docker build --file Dockerfile --target lab --cache-from dolfinx/dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/lab .
+      - name: Log into the DockerHub registry
+        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+      - name: Push to the DockerHub registry
+        run: |
+          docker push dolfinx/dolfinx
+          docker push dolfinx/lab

@@ -88,7 +88,7 @@ public:
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
   void set_index_map(int dim,
-                     std::shared_ptr<const common::IndexMap> index_map);
+                     const std::shared_ptr<const common::IndexMap>& map);
 
   /// Get the IndexMap that described the parallel distribution of the
   /// mesh entities
@@ -191,7 +191,7 @@ private:
 ///   global indices for the vertices. It contains cells that have been
 ///   distributed to this rank, e.g. via a graph partitioner. It must
 ///   also contain all ghost cells via facet, i.e. cells which are on a
-///   neighbouring process and share a facet with a local cell.
+///   neighboring process and share a facet with a local cell.
 /// @param[in] original_cell_index The original global index associated
 ///   with each cell.
 /// @param[in] ghost_owners The ownership of the ghost cells (ghost

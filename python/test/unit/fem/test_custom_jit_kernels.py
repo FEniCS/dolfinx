@@ -6,16 +6,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import dolfinx
 import numba
 import numpy as np
+from dolfinx import (Function, FunctionSpace, TimingType, UnitSquareMesh, cpp,
+                     list_timings)
+from dolfinx.fem import IntegralType
+from dolfinx_utils.test.skips import skip_if_complex
 from mpi4py import MPI
 from petsc4py import PETSc
-
-import dolfinx
-from dolfinx import (FunctionSpace, TimingType, UnitSquareMesh, cpp,
-                     list_timings, Function)
-from dolfinx_utils.test.skips import skip_if_complex
-from dolfinx.fem import FormIntegrals
 
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
@@ -75,13 +74,13 @@ def test_numba_assembly():
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
-    a = cpp.fem.Form([V._cpp_object, V._cpp_object])
-    a.set_tabulate_tensor(FormIntegrals.Type.cell, -1, tabulate_tensor_A.address)
-    a.set_tabulate_tensor(FormIntegrals.Type.cell, 12, tabulate_tensor_A.address)
-    a.set_tabulate_tensor(FormIntegrals.Type.cell, 2, tabulate_tensor_A.address)
+    a = cpp.fem.Form([V._cpp_object, V._cpp_object], False)
+    a.set_tabulate_tensor(IntegralType.cell, -1, tabulate_tensor_A.address)
+    a.set_tabulate_tensor(IntegralType.cell, 12, tabulate_tensor_A.address)
+    a.set_tabulate_tensor(IntegralType.cell, 2, tabulate_tensor_A.address)
 
-    L = cpp.fem.Form([V._cpp_object])
-    L.set_tabulate_tensor(FormIntegrals.Type.cell, -1, tabulate_tensor_b.address)
+    L = cpp.fem.Form([V._cpp_object], False)
+    L.set_tabulate_tensor(IntegralType.cell, -1, tabulate_tensor_b.address)
 
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
@@ -103,8 +102,8 @@ def test_coefficient():
     vals = Function(DG0)
     vals.vector.set(2.0)
 
-    L = cpp.fem.Form([V._cpp_object])
-    L.set_tabulate_tensor(FormIntegrals.Type.cell, -1, tabulate_tensor_b_coeff.address)
+    L = cpp.fem.Form([V._cpp_object], False)
+    L.set_tabulate_tensor(IntegralType.cell, -1, tabulate_tensor_b_coeff.address)
     L.set_coefficient(0, vals._cpp_object)
 
     b = dolfinx.fem.assemble_vector(L)
@@ -220,13 +219,13 @@ def test_cffi_assembly():
     mesh.mpi_comm().Barrier()
     from _cffi_kernelA import ffi, lib
 
-    a = cpp.fem.Form([V._cpp_object, V._cpp_object])
+    a = cpp.fem.Form([V._cpp_object, V._cpp_object], False)
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
-    a.set_tabulate_tensor(FormIntegrals.Type.cell, -1, ptrA)
+    a.set_tabulate_tensor(IntegralType.cell, -1, ptrA)
 
-    L = cpp.fem.Form([V._cpp_object])
+    L = cpp.fem.Form([V._cpp_object], False)
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
-    L.set_tabulate_tensor(FormIntegrals.Type.cell, -1, ptrL)
+    L.set_tabulate_tensor(IntegralType.cell, -1, ptrL)
 
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()

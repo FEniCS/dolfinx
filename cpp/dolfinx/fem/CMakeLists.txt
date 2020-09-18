@@ -11,6 +11,7 @@ set(HEADERS_fem
   ${CMAKE_CURRENT_SOURCE_DIR}/DofMap.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.h
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_fem.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Form.h
@@ -21,10 +22,6 @@ set(HEADERS_fem
   PARENT_SCOPE)
 
 target_sources(dolfinx PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/assembler.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/assemble_matrix_impl.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/assemble_scalar_impl.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/assemble_vector_impl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateElement.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DirichletBC.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DiscreteOperators.cpp
@@ -32,11 +29,9 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/DofMapBuilder.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DofMap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Form.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FormCoefficients.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FormIntegrals.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ReferenceCellGeometry.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPatternBuilder.cpp
 )

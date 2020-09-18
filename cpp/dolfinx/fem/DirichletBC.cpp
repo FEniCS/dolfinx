@@ -46,7 +46,7 @@ get_remote_bcs1(const common::IndexMap& map,
 
   // Return early if there are no neighbors
   if (num_neighbors == 0)
-    return std::vector<std::int32_t>();
+    return {};
 
   // Figure out how many entries to receive from each neighbor
   const int num_dofs = dofs_local.size();
@@ -107,7 +107,7 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
 
   // Return early if there are no neighbors
   if (num_neighbors == 0)
-    return std::vector<std::array<std::int32_t, 2>>();
+    return {};
 
   // Figure out how many entries to receive from each neighbor
   const int num_dofs = 2 * dofs_local.size();
@@ -159,8 +159,8 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
     dofs_received1[i] = dofs_received(i, 1);
   }
 
-  std::vector<std::int32_t> dofs0 = map0.global_to_local(dofs_received0, false);
-  std::vector<std::int32_t> dofs1 = map1.global_to_local(dofs_received1, false);
+  std::vector dofs0 = map0.global_to_local(dofs_received0, false);
+  std::vector dofs1 = map1.global_to_local(dofs_received1, false);
 
   // FIXME: check that dofs is sorted
   dofs0.erase(std::remove(dofs0.begin(), dofs0.end(), -1), dofs0.end());
@@ -213,6 +213,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
   assert(dofmap0->element_dof_layout);
   const int num_entity_dofs
       = dofmap0->element_dof_layout->num_entity_closure_dofs(dim);
+  const int block_size = dofmap0->element_dof_layout->block_size();
+  assert(block_size == dofmap1->element_dof_layout->block_size());
 
   // Build vector local dofs for each cell facet
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
@@ -250,8 +252,11 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
     for (int i = 0; i < num_entity_dofs; ++i)
     {
       const int index = entity_dofs[entity_local_index][i];
-      bc_dofs.push_back(
-          {(std::int32_t)cell_dofs0[index], (std::int32_t)cell_dofs1[index]});
+      for (int block = 0; block < block_size; ++block)
+      {
+        bc_dofs.push_back({cell_dofs0[index * block_size + block],
+                           cell_dofs1[index * block_size + block]});
+      }
     }
   }
 
@@ -265,9 +270,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
     // Get bc dof indices (local) in (V, Vg) spaces on this process that
     // were found by other processes, e.g. a vertex dof on this process
     // that has no connected facets on the boundary.
-    const std::vector<std::array<std::int32_t, 2>> dofs_remote
-        = get_remote_bcs2(*V0.dofmap()->index_map, *V1.dofmap()->index_map,
-                          bc_dofs);
+    const std::vector dofs_remote = get_remote_bcs2(
+        *V0.dofmap()->index_map, *V1.dofmap()->index_map, bc_dofs);
 
     // Add received bc indices to dofs_local
     bc_dofs.insert(bc_dofs.end(), dofs_remote.begin(), dofs_remote.end());
@@ -324,6 +328,7 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 
   const int num_entity_closure_dofs
       = dofmap->element_dof_layout->num_entity_closure_dofs(entity_dim);
+  const int block_size = dofmap->element_dof_layout->block_size();
   std::vector<std::int32_t> dofs;
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
@@ -345,7 +350,8 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
     for (int j = 0; j < num_entity_closure_dofs; j++)
     {
       const int index = entity_dofs[entity_local_index][j];
-      dofs.push_back(cell_dofs[index]);
+      for (int block = 0; block < block_size; ++block)
+        dofs.push_back(cell_dofs[index * block_size + block]);
     }
   }
 
@@ -356,7 +362,7 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 
   if (remote)
   {
-    const std::vector<std::int32_t> dofs_remote
+    const std::vector dofs_remote
         = get_remote_bcs1(*V.dofmap()->index_map, dofs);
 
     // Add received bc indices to dofs_local
@@ -513,108 +519,5 @@ fem::locate_dofs_geometrical(
     return _locate_dofs_geometrical(V[0].get(), marker);
   else
     throw std::runtime_error("Expected only 1 or 2 function spaces.");
-}
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(
-    const std::shared_ptr<const function::Function>& g,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-        V_dofs)
-    : _function_space(g->function_space()), _g(g), _dofs(V_dofs.rows(), 2)
-{
-  // Stack indices as columns, fits column-major _dofs layout
-  _dofs.col(0) = V_dofs;
-  _dofs.col(1) = V_dofs;
-
-  const int owned_size = _function_space->dofmap()->index_map->block_size()
-                         * _function_space->dofmap()->index_map->size_local();
-  auto* it = std::lower_bound(_dofs.col(0).data(),
-                              _dofs.col(0).data() + _dofs.rows(), owned_size);
-  _owned_indices = std::distance(_dofs.col(0).data(), it);
-}
-//-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(
-    const std::shared_ptr<const function::Function>& g,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>&
-        V_g_dofs,
-    std::shared_ptr<const function::FunctionSpace> V)
-    : _function_space(V), _g(g), _dofs(V_g_dofs)
-{
-  const int owned_size = _function_space->dofmap()->index_map->block_size()
-                         * _function_space->dofmap()->index_map->size_local();
-  auto* it = std::lower_bound(_dofs.col(0).data(),
-                              _dofs.col(0).data() + _dofs.rows(), owned_size);
-  _owned_indices = std::distance(_dofs.col(0).data(), it);
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const function::FunctionSpace>
-DirichletBC::function_space() const
-{
-  return _function_space;
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const function::Function> DirichletBC::value() const
-{
-  return _g;
-}
-//-----------------------------------------------------------------------------
-const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>& DirichletBC::dofs() const
-{
-  return _dofs;
-}
-//-----------------------------------------------------------------------------
-const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>
-DirichletBC::dofs_owned() const
-{
-  return _dofs.block<Eigen::Dynamic, 2>(0, 0, _owned_indices, 2);
-}
-// -----------------------------------------------------------------------------
-void DirichletBC::set(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
-    double scale) const
-{
-  // FIXME: This one excludes ghosts. Need to straighten out.
-  assert(_g);
-  la::VecReadWrapper g(_g->vector().vec(), false);
-  for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
-  {
-    if (_dofs(i, 0) < x.rows())
-      x[_dofs(i, 0)] = scale * g.x[_dofs(i, 1)];
-  }
-}
-//-----------------------------------------------------------------------------
-void DirichletBC::set(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
-    double scale) const
-{
-  // FIXME: This one excludes ghosts. Need to straighten out.
-  assert(_g);
-  assert(x.rows() <= x0.rows());
-  la::VecReadWrapper g(_g->vector().vec(), false);
-  for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
-  {
-    if (_dofs(i, 0) < x.rows())
-      x[_dofs(i, 0)] = scale * (g.x[_dofs(i, 1)] - x0[_dofs(i, 0)]);
-  }
-}
-//-----------------------------------------------------------------------------
-void DirichletBC::dof_values(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> values) const
-{
-  assert(_g);
-  la::VecReadWrapper g(_g->vector().vec());
-  for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
-    values[_dofs(i, 0)] = g.x[_dofs(i, 1)];
-}
-//-----------------------------------------------------------------------------
-void DirichletBC::mark_dofs(std::vector<bool>& markers) const
-{
-  for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
-  {
-    assert(_dofs(i, 0) < (std::int32_t)markers.size());
-    markers[_dofs(i, 0)] = true;
-  }
 }
 //-----------------------------------------------------------------------------

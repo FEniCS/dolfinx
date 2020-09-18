@@ -1,0 +1,78 @@
+name: Spack build
+
+on:
+  # Uncomment the below 'push' to trigger on push
+  # push:
+  #  branches:
+  #    - "**"
+  schedule:
+    # '*' is a special character in YAML, so string must be quoted
+    - cron: "0 2 * * THU"
+
+jobs:
+  build:
+    if: github.repository == 'FEniCS/dolfinx'
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, macos-10.15]
+    runs-on: ${{ matrix.os }}
+
+    env:
+      DOLFINX_JIT_CFLAGS: -g0 -O0
+      MPLBACKEND: agg
+
+    steps:
+      - name: Get Spack
+        uses: actions/checkout@v2
+        with:
+          path: ./spack
+          repository: spack/spack
+
+      - name: Build DOLFIN-X (C++) via Spack
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create cpp
+          spack env activate cpp
+          echo "  concretization: together" >> ./spack/var/spack/environments/cpp/spack.yaml
+          spack add fenics-dolfinx
+          spack install
+
+      - name: Get DOLFIN-X code (to access test files)
+        uses: actions/checkout@v2
+        with:
+          path: ./dolfinx-test
+
+      - name: Run a C++ test via Spack
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env activate cpp
+          cd dolfinx-test/cpp/
+          python cmake/scripts/generate-cmakefiles.py
+          cd demo/poisson
+          ffcx poisson.ufl
+          cmake .
+          make
+          mpirun -np 2 ./demo_poisson
+
+      - name: Build DOLFIN-X (Python) and test dependencies via Spack
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create py
+          spack env activate py
+          echo "  concretization: together" >> ./spack/var/spack/environments/py/spack.yaml
+          spack add py-fenics-dolfinx
+          spack add py-pip py-pytest py-pytest-xdist py-scipy
+          spack install
+
+      # NOTE: numba is installed via pip because the spack package takes
+      # an extremely long time to compile
+      - name: Run DOLFIN-X (Python) tests
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env activate py
+          pip install cppimport numba
+          cd ./dolfinx-test/python/test
+          pytest -n auto --ignore=unit/fem/test_custom_jit_kernels.py --ignore=unit/geometry/test_gjk.py --ignore=unit/function/test_function.py .
+          mpirun -np 2 pytest --ignore=unit/fem/test_custom_jit_kernels.py --ignore=unit/geometry/test_gjk.py --ignore=unit/function/test_function.py .
+
+

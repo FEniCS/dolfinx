@@ -6,10 +6,8 @@
 """Unit tests for the FunctionSpace class"""
 
 import pytest
+from dolfinx import Function, FunctionSpace, UnitCubeMesh, VectorFunctionSpace
 from mpi4py import MPI
-
-from dolfinx import (Function, FunctionSpace, UnitCubeMesh,
-                     VectorFunctionSpace)
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
                  grad, triangle)
 from ufl.log import UFLException
@@ -88,6 +86,31 @@ def test_equality(V, V2, W, W2):
     assert V == V2
     assert W == W
     assert W == W2
+
+
+def test_sub(Q, W):
+    X = Q.sub(0)
+
+    assert W.dofmap.dof_layout.num_dofs == X.dofmap.dof_layout.num_dofs
+    for dim, entity_count in enumerate([4, 6, 4, 1]):
+        assert W.dofmap.dof_layout.num_entity_dofs(dim) == X.dofmap.dof_layout.num_entity_dofs(dim)
+        assert W.dofmap.dof_layout.num_entity_closure_dofs(dim) == X.dofmap.dof_layout.num_entity_closure_dofs(dim)
+        for i in range(entity_count):
+            assert len(W.dofmap.dof_layout.entity_dofs(dim, i)) \
+                == len(X.dofmap.dof_layout.entity_dofs(dim, i)) \
+                == len(X.dofmap.dof_layout.entity_dofs(dim, 0))
+            assert len(W.dofmap.dof_layout.entity_closure_dofs(dim, i)) \
+                == len(X.dofmap.dof_layout.entity_closure_dofs(dim, i)) \
+                == len(X.dofmap.dof_layout.entity_closure_dofs(dim, 0))
+
+    assert W.dofmap.dof_layout.block_size() == X.dofmap.dof_layout.block_size()
+    assert len(W.dofmap.cell_dofs(0)) == len(X.dofmap.cell_dofs(0))
+
+    assert W.element.num_sub_elements() == X.element.num_sub_elements()
+    assert W.element.space_dimension() == X.element.space_dimension()
+    assert W.element.value_rank == X.element.value_rank
+    assert W.element.dof_reference_coordinates().shape == X.element.dof_reference_coordinates().shape
+    assert W.element.signature() == X.element.signature()
 
 
 def test_inclusion(V, Q):

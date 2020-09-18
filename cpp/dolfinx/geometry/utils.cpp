@@ -51,7 +51,7 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
                         const mesh::Mesh& mesh, int closest_entity, double R2)
 {
   // Get children of current bounding box node
-  const std::array<int, 2> bbox = tree.bbox(node);
+  const std::array bbox = tree.bbox(node);
 
   // If bounding box is outside radius, then don't search further
   const double r2
@@ -98,7 +98,7 @@ _compute_closest_point(const geometry::BoundingBoxTree& tree,
                        int closest_point, double R2)
 {
   // Get children of current bounding box node
-  const std::array<int, 2> bbox = tree.bbox(node);
+  const std::array bbox = tree.bbox(node);
 
   // If box is leaf, then compute distance and shrink radius
   if (is_leaf(bbox, node))
@@ -137,7 +137,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
                                std::vector<int>& entities)
 {
   // Get children of current bounding box node
-  const std::array<int, 2> bbox = tree.bbox(node);
+  const std::array bbox = tree.bbox(node);
 
   if (!point_in_bbox(tree.get_bbox(node), p))
   {
@@ -173,8 +173,8 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
     return;
 
   // Get bounding boxes for current nodes
-  const std::array<int, 2> bbox_A = A.bbox(node_A);
-  const std::array<int, 2> bbox_B = B.bbox(node_B);
+  const std::array bbox_A = A.bbox(node_A);
+  const std::array bbox_B = B.bbox(node_B);
 
   // Check whether we've reached a leaf in A or B
   const bool is_leaf_A = is_leaf(bbox_A, node_A);
@@ -246,12 +246,10 @@ std::vector<std::array<int, 2>>
 geometry::compute_collisions(const BoundingBoxTree& tree0,
                              const BoundingBoxTree& tree1)
 {
-  std::vector<std::array<int, 2>> entities;
-
   // Call recursive find function
+  std::vector<std::array<int, 2>> entities;
   _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,
                            tree1.num_bboxes() - 1, entities);
-
   return entities;
 }
 //-----------------------------------------------------------------------------

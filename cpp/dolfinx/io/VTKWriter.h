@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstdint>
+#include <petscsys.h>
 #include <string>
 #include <vector>
 
@@ -14,6 +15,7 @@ namespace dolfinx
 {
 namespace function
 {
+template <typename T>
 class Function;
 }
 namespace mesh
@@ -34,7 +36,8 @@ public:
                          std::string file);
 
   /// Cell data writer
-  static void write_cell_data(const function::Function& u, std::string file);
+  static void write_cell_data(const function::Function<PetscScalar>& u,
+                              std::string file);
 };
 } // namespace io
 } // namespace dolfinx

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "PETScVector.h"
 #include "utils.h"
 #include <boost/lexical_cast.hpp>
 #include <petscoptions.h>

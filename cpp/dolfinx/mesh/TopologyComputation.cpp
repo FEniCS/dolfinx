@@ -19,6 +19,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <numeric>
+#include <random>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -31,6 +32,22 @@ using namespace dolfinx::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
+/// Get the ownership of an entity shared over several processes
+/// @param processes Set of sharing processes
+/// @param vertices Global vertex indices of entity
+/// @return owning process number
+int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
+{
+  // Use a deterministic random number generator, seeded with global vertex
+  // indices ensuring all processes get the same answer
+  std::mt19937 gen;
+  std::seed_seq seq(vertices.begin(), vertices.end());
+  gen.seed(seq);
+  std::vector<int> p(processes.begin(), processes.end());
+  int index = gen() % p.size();
+  int owner = p[index];
+  return owner;
+}
 
 /// Takes an array and computes the sort permutation that would reorder
 /// the rows in ascending order
@@ -132,28 +149,27 @@ get_local_indexing(
   }
 
   //---------
-  // Create an expanded neighbour_comm from shared_vertices
+  // Create an expanded neighbor_comm from shared_vertices
   const std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
       = vertex_indexmap->compute_shared_indices();
 
-  std::set<std::int32_t> neighbour_set;
+  std::set<std::int32_t> neighbor_set;
   for (auto& q : shared_vertices)
-    neighbour_set.insert(q.second.begin(), q.second.end());
-  std::vector<std::int32_t> neighbours(neighbour_set.begin(),
-                                       neighbour_set.end());
-  MPI_Comm neighbour_comm;
-  MPI_Dist_graph_create_adjacent(comm, neighbours.size(), neighbours.data(),
-                                 MPI_UNWEIGHTED, neighbours.size(),
-                                 neighbours.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neighbour_comm);
+    neighbor_set.insert(q.second.begin(), q.second.end());
+  std::vector<std::int32_t> neighbors(neighbor_set.begin(), neighbor_set.end());
+  MPI_Comm neighbor_comm;
+  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
+                                 MPI_UNWEIGHTED, neighbors.size(),
+                                 neighbors.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neighbor_comm);
 
-  const int neighbour_size = neighbours.size();
-  std::unordered_map<int, int> proc_to_neighbour;
-  for (int i = 0; i < neighbour_size; ++i)
-    proc_to_neighbour.insert({neighbours[i], i});
+  const int neighbor_size = neighbors.size();
+  std::unordered_map<int, int> proc_to_neighbor;
+  for (int i = 0; i < neighbor_size; ++i)
+    proc_to_neighbor.insert({neighbors[i], i});
 
-  std::vector<std::vector<std::int64_t>> send_entities(neighbour_size);
-  std::vector<std::vector<std::int32_t>> send_index(neighbour_size);
+  std::vector<std::vector<std::int64_t>> send_entities(neighbor_size);
+  std::vector<std::vector<std::int32_t>> send_index(neighbor_size);
 
   // Get all "possibly shared" entities, based on vertex sharing. Send to
   // other processes, and see if we get the same back.
@@ -186,8 +202,8 @@ get_local_indexing(
       if (q.second == num_vertices)
       {
         const int p = q.first;
-        auto it = proc_to_neighbour.find(p);
-        assert(it != proc_to_neighbour.end());
+        auto it = proc_to_neighbor.find(p);
+        assert(it != proc_to_neighbor.end());
         const int np = it->second;
 
         vlocal.assign(entity_list.row(i).data(),
@@ -214,8 +230,10 @@ get_local_indexing(
   // for the received entities (from other processes) with the indices
   // of the sent entities (to other processes)
   std::unordered_map<std::int32_t, std::set<std::int32_t>> shared_entities;
+  std::unordered_map<std::int32_t, std::vector<std::int64_t>>
+      shared_entity_to_global_vertices;
 
-  // Prepare data for neighbour all to all
+  // Prepare data for neighbor all to all
   std::vector<std::int64_t> send_entities_data;
   std::vector<int> send_offsets = {0};
   for (std::size_t i = 0; i < send_entities.size(); ++i)
@@ -226,7 +244,7 @@ get_local_indexing(
   }
 
   const graph::AdjacencyList<std::int64_t> recv_data
-      = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
+      = dolfinx::MPI::neighbor_all_to_all(neighbor_comm, send_offsets,
                                           send_entities_data);
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_entities_data
       = recv_data.array();
@@ -237,9 +255,9 @@ get_local_indexing(
   // Any which are not found will have -1 in recv_index
   std::vector<std::int32_t> recv_index;
   std::vector<std::int64_t> recv_vec(num_vertices);
-  for (int np = 0; np < neighbour_size; ++np)
+  for (int np = 0; np < neighbor_size; ++np)
   {
-    const int p = neighbours[np];
+    const int p = neighbors[np];
 
     for (int j = recv_offsets[np]; j < recv_offsets[np + 1]; j += num_vertices)
     {
@@ -249,6 +267,7 @@ get_local_indexing(
           it != global_entity_to_entity_index.end())
       {
         shared_entities[it->second].insert(p);
+        shared_entity_to_global_vertices.insert({it->second, recv_vec});
         recv_index.push_back(it->second);
       }
       else
@@ -256,12 +275,16 @@ get_local_indexing(
     }
   }
 
+  // Add this rank to the list of sharing processes
+  const int mpi_rank = dolfinx::MPI::rank(comm);
+  for (auto& q : shared_entities)
+    q.second.insert(mpi_rank);
+
   //---------
   // Determine ownership
   std::vector<std::int32_t> local_index(entity_count, -1);
   std::int32_t num_local;
   {
-    int mpi_rank = dolfinx::MPI::rank(comm);
     std::int32_t c = 0;
     // Index non-ghost entities
     for (int i = 0; i < entity_count; ++i)
@@ -279,13 +302,18 @@ get_local_indexing(
         local_index[i] = c;
         ++c;
       }
-      else if (*(it->second.begin()) > mpi_rank)
+      else
       {
-        // Take ownership (lower rank wins)
-        // FIXME: this could be made a deterministic function
-        // on each process, instead of simply "lowest wins"
-        local_index[i] = c;
-        ++c;
+        const auto global_vertices_it
+            = shared_entity_to_global_vertices.find(i);
+        assert(global_vertices_it != shared_entity_to_global_vertices.end());
+        int owner_rank = get_ownership(it->second, global_vertices_it->second);
+        if (owner_rank == mpi_rank)
+        {
+          // Take ownership
+          local_index[i] = c;
+          ++c;
+        }
       }
     }
     num_local = c;
@@ -316,14 +344,14 @@ get_local_indexing(
     // Send global indices for same entities that we sent before. This
     // uses the same pattern as before, so we can match up the received
     // data to the indices in recv_index
-    for (int np = 0; np < neighbour_size; ++np)
+    for (int np = 0; np < neighbor_size; ++np)
     {
       for (std::int32_t index : send_index[np])
       {
         // If not in our local range, send -1.
-        std::int64_t gi = (local_index[index] < num_local)
-                              ? (local_offset + local_index[index])
-                              : -1;
+        const std::int64_t gi = (local_index[index] < num_local)
+                                    ? (local_offset + local_index[index])
+                                    : -1;
 
         send_global_index_data.push_back(gi);
       }
@@ -332,7 +360,7 @@ get_local_indexing(
     }
     const graph::AdjacencyList<std::int64_t> recv_data
         = dolfinx::MPI::neighbor_all_to_all(
-            neighbour_comm, send_global_index_offsets, send_global_index_data);
+            neighbor_comm, send_global_index_offsets, send_global_index_data);
 
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_global_index_data
         = recv_data.array();
@@ -353,17 +381,20 @@ get_local_indexing(
         const auto pos = std::upper_bound(
             recv_offsets.data(), recv_offsets.data() + recv_offsets.rows(), j);
         const int owner = std::distance(recv_offsets.data(), pos) - 1;
-        ghost_owners[local_index[idx] - num_local] = neighbours[owner];
+        ghost_owners[local_index[idx] - num_local] = neighbors[owner];
       }
     }
     for (std::int64_t idx : ghost_indices)
       assert(idx != -1);
   }
 
-  MPI_Comm_free(&neighbour_comm);
+  MPI_Comm_free(&neighbor_comm);
 
   auto index_map = std::make_shared<common::IndexMap>(
-      comm, num_local, ghost_indices, ghost_owners, 1);
+      comm, num_local,
+      dolfinx::MPI::compute_graph_edges(
+          comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
+      ghost_indices, ghost_owners, 1);
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
@@ -375,7 +406,7 @@ get_local_indexing(
 //-----------------------------------------------------------------------------
 
 /// Compute entities of dimension d
-/// @param[in] comm MPI communicator (TODO: full or neighbour hood?)
+/// @param[in] comm MPI communicator (TODO: full or neighbor hood?)
 /// @param[in] cells Adjacency list for cell-vertex connectivity
 /// @param[in] shared_vertices TODO
 /// @param[in] cell_type Cell type
@@ -447,8 +478,7 @@ compute_entities_by_key_matching(
   }
 
   // Sort the list and label uniquely
-  std::vector<std::int32_t> sort_order
-      = sort_by_perm<std::int32_t>(entity_list_sorted);
+  const std::vector sort_order = sort_by_perm<std::int32_t>(entity_list_sorted);
   std::int32_t last = sort_order[0];
   entity_index[last] = 0;
   for (std::size_t i = 1; i < sort_order.size(); ++i)
@@ -464,7 +494,7 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-  auto [local_index, index_map] = get_local_indexing(
+  const auto [local_index, index_map] = get_local_indexing(
       comm, cell_index_map, vertex_index_map, entity_list, entity_index);
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

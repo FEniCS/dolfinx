@@ -123,8 +123,8 @@ private:
   // Shared edges between processes
   std::map<std::int32_t, std::set<std::int32_t>> _shared_edges;
 
-  // Neighbourhood communicator
-  MPI_Comm _neighbour_comm;
+  // Neighborhood communicator
+  MPI_Comm _neighbor_comm;
 };
 } // namespace refinement
 } // namespace dolfinx

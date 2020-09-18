@@ -313,7 +313,7 @@ face_long_edge(const mesh::Mesh& mesh)
   assert(f_to_v);
   auto f_to_e = mesh.topology().connectivity(2, 1);
   assert(f_to_e);
-  const std::vector<std::int64_t> global_indices
+  const std::vector global_indices
       = mesh.topology().index_map(0)->global_indices(true);
   for (int f = 0; f < f_to_v->num_nodes(); ++f)
   {
@@ -389,7 +389,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
       marked_edges.begin(),
       marked_edges.begin() + mesh.topology().index_map(1)->size_local(), true);
 
-  std::vector<std::int64_t> global_indices = ParallelRefinement::adjust_indices(
+  const std::vector global_indices = ParallelRefinement::adjust_indices(
       mesh.topology().index_map(0), num_new_vertices_local);
 
   const int num_cells = map_c->size_local();

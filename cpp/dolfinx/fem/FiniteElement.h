@@ -10,7 +10,6 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
-#include <petscsys.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 
@@ -43,6 +42,12 @@ public:
   /// Dimension of the finite element function space
   /// @return Dimension of the finite element space
   int space_dimension() const;
+
+  /// Block size of the finite element function space. For VectorElements and
+  /// TensorElements, this is the number of DOFs colocated at each DOF point.
+  /// For other elements, this is always 1.
+  /// @return Block size of the finite element space
+  int block_size() const;
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
   /// @return The value size
@@ -111,8 +116,8 @@ public:
   /// Map values of field from physical to reference space which has
   /// been evaluated at points given by dof_reference_coordinates()
   void transform_values(
-      PetscScalar* reference_values,
-      const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic,
+      ufc_scalar_t* reference_values,
+      const Eigen::Ref<const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           physical_values,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
@@ -167,5 +172,9 @@ private:
   std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*,
                     const ufc_coordinate_mapping*)>
       _transform_values;
+
+  // Block size for VectorElements and TensorElements
+  // This gives the number of DOFs colocated at each point
+  int _block_size;
 };
 } // namespace dolfinx::fem

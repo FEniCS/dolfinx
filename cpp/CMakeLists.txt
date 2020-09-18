@@ -125,39 +125,13 @@ endif()
 #------------------------------------------------------------------------------
 # Run tests to find required packages
 
-# Find Python3 and define Python3_EXECUTABLE
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
-
-# Check for Boost
-set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
-if (BOOST_ROOT)
+# Note: When updating Boost version, also update DOLFINXCongif.cmake.in
+if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
-
-# Prevent FindBoost.cmake from looking for system Boost{foo}.cmake
-# files
-set(Boost_NO_BOOST_CMAKE true)
-
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-# Note: When updating Boost version, also update FindDOLFIN.cmake.
-find_package(Boost 1.56 QUIET REQUIRED)
-
-# Boost public/private libraries to link to.
-# Note: These should all be private as they do not appear in the
-# DOLFIN public interface , but there is a linking issues with older
-# Boost or CMake. Ubuntu 16.04 requires linking DOLFIN programs with
-# filesystem, whereas Ubuntu 16.10 and macOS (Homebrew) do not.
-if (Boost_VERSION VERSION_LESS 106100)
-  set(DOLFINX_BOOST_COMPONENTS_PUBLIC filesystem timer)
-  set(DOLFINX_BOOST_COMPONENTS_PRIVATE program_options)
-else()
-  set(DOLFINX_BOOST_COMPONENTS_PUBLIC timer)
-  set(DOLFINX_BOOST_COMPONENTS_PRIVATE filesystem program_options)
-endif()
-
-# Find required Boost libraries
-find_package(Boost COMPONENTS
-  ${DOLFINX_BOOST_COMPONENTS_PUBLIC} ${DOLFINX_BOOST_COMPONENTS_PRIVATE} REQUIRED)
+set(Boost_VERBOSE TRUE)
+find_package(Boost 1.70 REQUIRED timer filesystem program_options)
 set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
@@ -173,12 +147,6 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
   URL "https://www.mcs.anl.gov/petsc/"
   PURPOSE "PETSc linear algebra backend")
-
-# Check for required package UFC
-find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
-set_package_properties(UFC PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
-  URL "https://github.com/fenics/ffcx")
 
 # Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
@@ -196,7 +164,14 @@ set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
   URL "https://www.labri.fr/perso/pelegrin/scotch"
   PURPOSE "Enables parallel graph partitioning")
 
-#------------------------------------------------------------------------------
+# Check for required package UFC
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
+set_package_properties(UFC PROPERTIES TYPE REQUIRED
+  DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
+  URL "https://github.com/fenics/ffcx")
+
+  #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
 # Check for SLEPc

@@ -40,8 +40,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
 
   // Get data set shape from 'Dimensions' attribute (empty if not
   // available)
-  const std::vector<std::int64_t> shape_xml
-      = xdmf_utils::get_dataset_shape(dataset_node);
+  const std::vector shape_xml = xdmf_utils::get_dataset_shape(dataset_node);
 
   const std::string format = format_attr.as_string();
   std::vector<T> data_vector;
@@ -76,7 +75,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     auto paths = xdmf_utils::get_hdf5_paths(dataset_node);
 
     // Get data shape from HDF5 file
-    const std::vector<std::int64_t> shape_hdf5
+    const std::vector shape_hdf5
         = HDF5Interface::get_dataset_shape(h5_id, paths[1]);
 
     // FIXME: should we support empty data sets?
