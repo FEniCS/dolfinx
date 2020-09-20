@@ -177,9 +177,9 @@ from ufl import (
 set_log_level(LogLevel.INFO)
 set_output_file("logHyperelasticity.txt")
 
-# A subclass of :py:class:`NonlinearProblem <dolfinx.cpp.NonlinearProblem>` ::
+# A subclass of :py:class:`NonlinearProblem <dolfinx.cpp.NonlinearProblem>`,
 # which will represent Hyperelasticity in an abstract form to interface with the built-in
-# :py:class:`NewtonSolver <dolfinx.cpp.nls.NewtonSolver>` is now defined. ::
+# :py:class:`NewtonSolver <dolfinx.cpp.nls.NewtonSolver>`, is now defined. ::
 
 
 class Hyperelasticity(NonlinearProblem):
