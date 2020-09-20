@@ -163,7 +163,6 @@ from dolfinx.io import XDMFFile
 from dolfinx.log import set_log_level, LogLevel, set_output_file
 from ufl import (
     Identity,
-    SpatialCoordinate,
     TestFunction,
     TrialFunction,
     as_vector,
@@ -342,7 +341,7 @@ solver.convergence_criterion = "incremental"
 solver.max_it = 25
 solver.rtol = 1.e-8
 
-# The next step is to solve the problem and store the solution vector in 
+# The next step is to solve the problem and store the solution vector in
 # :py:func:`u.vector<dolfinx.cpp.Function.vector>`.
 # This is accomplished by calling :py:func:`solver.solve(problem,
 # u.vector)<dolfinx.cpp.NewtonSolver.solve>`::
