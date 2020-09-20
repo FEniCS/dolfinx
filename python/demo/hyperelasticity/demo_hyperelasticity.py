@@ -342,7 +342,8 @@ solver.convergence_criterion = "incremental"
 solver.max_it = 25
 solver.rtol = 1.e-8
 
-# The next step is to solve the problem and store the solution vector in :py:func:`u.vector<dolfinx.cpp.Function.vector>`.
+# The next step is to solve the problem and store the solution vector in 
+# :py:func:`u.vector<dolfinx.cpp.Function.vector>`.
 # This is accomplished by calling :py:func:`solver.solve(problem,
 # u.vector)<dolfinx.cpp.NewtonSolver.solve>`::
 
