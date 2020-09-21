@@ -222,7 +222,7 @@ public:
 
   /// Get evaluation points
   /// @return Evaluation points
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x() const
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& x() const
   {
     return _x;
   }
