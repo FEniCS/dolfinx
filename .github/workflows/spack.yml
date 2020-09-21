@@ -7,8 +7,7 @@ on:
   #    - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
-    # - cron: "0 1 * * SAT"
-    - cron: "15 12 * * 1"
+    - cron: "0 2 * * THU"
 
 jobs:
   build:
@@ -55,7 +54,6 @@ jobs:
           make
           mpirun -np 2 ./demo_poisson
 
-
       - name: Build DOLFIN-X (Python) and test dependencies via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
@@ -66,8 +64,8 @@ jobs:
           spack add py-pip py-pytest py-pytest-xdist py-scipy
           spack install
 
-      # NOTE: numba is installed via pip because the spack packages
-      # takes an extremely long time to compile
+      # NOTE: numba is installed via pip because the spack package takes
+      # an extremely long time to compile
       - name: Run DOLFIN-X (Python) tests
         run: |
           . ./spack/share/spack/setup-env.sh
