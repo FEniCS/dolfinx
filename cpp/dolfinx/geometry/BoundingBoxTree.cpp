@@ -259,7 +259,10 @@ BoundingBoxTree::BoundingBoxTree(
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
+BoundingBoxTree::BoundingBoxTree(
+    const mesh::Mesh& mesh, int tdim,
+    const std::vector<std::int32_t>& entity_indices)
+    : _tdim(tdim)
 {
   // Check dimension
   if (tdim < 1 or tdim > mesh.topology().dim())
@@ -274,17 +277,26 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   // Create bounding boxes for all mesh entities (leaves)
   auto map = mesh.topology().index_map(tdim);
   assert(map);
-  const std::int32_t num_leaves = map->size_local() + map->num_ghosts();
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> leaf_bboxes(
-      2 * num_leaves, 3);
-  for (int e = 0; e < num_leaves; ++e)
-    leaf_bboxes.block<2, 3>(2 * e, 0) = compute_bbox_of_entity(mesh, tdim, e);
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> leaf_bboxes;
+  if (entity_indices.empty())
+  {
+    const std::int32_t num_leaves = map->size_local() + map->num_ghosts();
+    leaf_bboxes.resize(2 * num_leaves, 3);
+    for (int e = 0; e < num_leaves; ++e)
+      leaf_bboxes.block<2, 3>(2 * e, 0) = compute_bbox_of_entity(mesh, tdim, e);
+  }
+  else
+  {
+    leaf_bboxes.resize(2 * entity_indices.size(), 3);
+    for (int e : entity_indices)
+      leaf_bboxes.block<2, 3>(2 * e, 0) = compute_bbox_of_entity(mesh, tdim, e);
+  }
 
   // Recursively build the bounding box tree from the leaves
   std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
-            << " nodes for " << num_leaves << " entities.";
+            << " nodes for " << leaf_bboxes.rows() / 2 << " entities.";
 
   // Build tree for each process
   MPI_Comm comm = mesh.mpi_comm();

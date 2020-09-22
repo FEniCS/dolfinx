@@ -34,7 +34,12 @@ public:
   /// @param[in] mesh The mesh for building the bounding box tree
   /// @param[in] tdim The topological dimension of the mesh entities to
   ///                 by the bounding box tree for
-  BoundingBoxTree(const mesh::Mesh& mesh, int tdim);
+  /// @param[in] entity_indices List of entity indices to compute the bounding
+  /// box for. If left empty, all mesh entities of topological dimension tdim
+  /// will be computed.
+  ///
+  BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
+                  const std::vector<std::int32_t>& entity_indices);
 
   /// Constructor
   /// @param[in] points Cloud of points to build the bounding box tree
