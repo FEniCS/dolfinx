@@ -11,6 +11,9 @@ class BoundingBoxTree:
     def __init__(self, obj, dim=None):
         self._cpp_object = cpp.geometry.BoundingBoxTree(obj, dim)
 
+    def num_bboxes(self):
+        return self._cpp_object.num_bboxes()
+
     @classmethod
     def create_midpoint_tree(cls, mesh):
         """Create a BoundingBoxTree using cell midpoints"""

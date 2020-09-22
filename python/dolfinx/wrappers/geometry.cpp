@@ -64,6 +64,7 @@ void geometry(py::module& m)
       .def(py::init<const dolfinx::mesh::Mesh&, int,
                     const std::vector<std::int32_t>&>())
       .def(py::init<const std::vector<Eigen::Vector3d>&>())
+      .def("num_bboxes", &dolfinx::geometry::BoundingBoxTree::num_bboxes)
       .def("compute_global_tree",
            &dolfinx::geometry::BoundingBoxTree::compute_global_tree);
 }

@@ -18,6 +18,8 @@ from mpi4py import MPI
 def test_empty_tree():
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
     bbtree = cpp.geometry.BoundingBoxTree(mesh, mesh.topology.dim, [])
+    assert bbtree.num_bboxes() == 0
+
 
 @skip_in_parallel
 def test_compute_collisions_point_1d():
