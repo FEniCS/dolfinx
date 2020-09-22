@@ -7,13 +7,17 @@
 
 import numpy
 import pytest
-from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, geometry
+from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, geometry, cpp
 from dolfinx.geometry import BoundingBoxTree
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
 # --- compute_collisions with point ---
 
+
+def test_empty_tree():
+    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
+    bbtree = cpp.geometry.BoundingBoxTree(mesh, mesh.topology.dim, [])
 
 @skip_in_parallel
 def test_compute_collisions_point_1d():

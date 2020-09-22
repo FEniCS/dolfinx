@@ -161,7 +161,7 @@ A = dolfinx.fem.assemble_matrix(a, [bc])
 A.assemble()
 
 # Create bounding box for function evaluation
-bb_tree = dolfinx.cpp.geometry.BoundingBoxTree(mesh, 2, [])
+bb_tree = dolfinx.cpp.geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
 p = numpy.array([48.0, 52.0, 0.0], dtype=numpy.float64)

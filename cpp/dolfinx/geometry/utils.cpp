@@ -261,19 +261,10 @@ std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
   return entities;
 }
 //-----------------------------------------------------------------------------
-std::vector<int>
-geometry::compute_process_collisions(const geometry::BoundingBoxTree& tree,
-                                     const Eigen::Vector3d& p)
+std::vector<int> geometry::compute_process_collisions(
+    const geometry::BoundingBoxTree& global_tree, const Eigen::Vector3d& p)
 {
-  if (tree.global_tree)
-    return geometry::compute_collisions(*tree.global_tree, p);
-  else
-  {
-    std::vector<int> collision;
-    if (point_in_bbox(tree.get_bbox(tree.num_bboxes() - 1), p))
-      collision.push_back(0);
-    return collision;
-  }
+  return geometry::compute_collisions(global_tree, p);
 }
 //-----------------------------------------------------------------------------
 double geometry::compute_squared_distance_bbox(

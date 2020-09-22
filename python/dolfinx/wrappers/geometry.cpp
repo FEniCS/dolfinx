@@ -60,8 +60,11 @@ void geometry(py::module& m)
   py::class_<dolfinx::geometry::BoundingBoxTree,
              std::shared_ptr<dolfinx::geometry::BoundingBoxTree>>(
       m, "BoundingBoxTree")
+      .def(py::init<const dolfinx::mesh::Mesh&, int>())
       .def(py::init<const dolfinx::mesh::Mesh&, int,
                     const std::vector<std::int32_t>&>())
-      .def(py::init<const std::vector<Eigen::Vector3d>&>());
+      .def(py::init<const std::vector<Eigen::Vector3d>&>())
+      .def("compute_global_tree",
+           &dolfinx::geometry::BoundingBoxTree::compute_global_tree);
 }
 } // namespace dolfinx_wrappers
