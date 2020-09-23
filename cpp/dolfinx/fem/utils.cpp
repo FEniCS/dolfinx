@@ -155,10 +155,12 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   for (std::size_t i = 0; i < ufc_sub_dofmaps.size(); ++i)
   {
     auto ufc_sub_dofmap = ufc_sub_dofmaps[i];
+    const std::int32_t sub_block_size = ufc_sub_dofmap->block_size;
     assert(ufc_sub_dofmap);
     std::vector<int> parent_map_sub(ufc_sub_dofmap->num_element_support_dofs);
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
-      parent_map_sub[j] = offsets[i] + j * element_block_size;
+      for (std::int32_t block = 0; block < sub_block_size; ++block)
+        parent_map_sub[j] = offsets[i] + element_block_size * (j * sub_block_size + block);
     sub_dofmaps.push_back(
         std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
             *ufc_sub_dofmaps[i], cell_type, parent_map_sub)));
