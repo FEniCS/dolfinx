@@ -25,26 +25,25 @@ namespace fem
 {
 class DofMap;
 
-/// This class provides functions to compute the sparsity pattern
-/// based on DOF maps
+/// Functions to compute the sparsity pattern based on DOF maps
 
-class SparsityPatternBuilder
+namespace SparsityPatternBuilder
 {
-public:
-  /// Iterate over cells and insert entries into sparsity pattern
-  static void cells(la::SparsityPattern& pattern,
-                    const mesh::Topology& topology,
-                    const std::array<const fem::DofMap*, 2> dofmaps);
 
-  /// Iterate over interior facets and insert entries into sparsity pattern
-  static void interior_facets(la::SparsityPattern& pattern,
-                              const mesh::Topology& topology,
-                              const std::array<const fem::DofMap*, 2> dofmaps);
+/// Iterate over cells and insert entries into sparsity pattern
+void cells(la::SparsityPattern& pattern, const mesh::Topology& topology,
+           const std::array<const fem::DofMap*, 2> dofmaps);
 
-  /// Iterate over exterior facets and insert entries into sparsity pattern
-  static void exterior_facets(la::SparsityPattern& pattern,
-                              const mesh::Topology& topology,
-                              const std::array<const fem::DofMap*, 2> dofmaps);
-};
+/// Iterate over interior facets and insert entries into sparsity pattern
+void interior_facets(la::SparsityPattern& pattern,
+                     const mesh::Topology& topology,
+                     const std::array<const fem::DofMap*, 2> dofmaps);
+
+/// Iterate over exterior facets and insert entries into sparsity pattern
+void exterior_facets(la::SparsityPattern& pattern,
+                     const mesh::Topology& topology,
+                     const std::array<const fem::DofMap*, 2> dofmaps);
+
+} // namespace SparsityPatternBuilder
 } // namespace fem
 } // namespace dolfinx
