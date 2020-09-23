@@ -108,7 +108,7 @@ def test_scalar_interpolation(cell_type, order):
 @parametrize_cell_types
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
 def test_vector_interpolation(cell_type, order):
-    """Test that interpolation is correct in a VectorFunctionSpace"""
+    """Test that interpolation is correct in a VectorFunctionSpace."""
     mesh = one_cell_mesh(cell_type)
     tdim = mesh.topology.dim
 
@@ -137,7 +137,7 @@ def test_vector_interpolation(cell_type, order):
 @parametrize_cell_types
 @pytest.mark.parametrize('order', [1, 2])
 def test_mixed_interpolation(cell_type, order):
-    """Test that interpolation is correct in a VectorFunctionSpace"""
+    """Test that interpolation is correct in a MixedElement."""
     mesh = one_cell_mesh(cell_type)
     tdim = mesh.topology.dim
 
@@ -155,11 +155,12 @@ def test_mixed_interpolation(cell_type, order):
             return (x[1], 2 * x[0] ** order, 3 * x[1])
     else:
         def f(x):
-            return (x[1], 2 * x[0] ** order, 3 * x[2], 4 * x[0], 5 * x[1] ** order)
+            return (x[1], 2 * x[0] ** order, 3 * x[2], 4 * x[0])
 
     v.interpolate(f)
     points = [random_point_in_cell(cell_type) for count in range(5)]
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
+
     for p, v in zip(points, values):
         assert np.allclose(v, f(p))
