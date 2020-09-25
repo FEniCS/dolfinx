@@ -791,7 +791,7 @@ mesh::entities_to_geometry(
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list)
 {
   // FIXME - this is only true for simplices
-  const int num_entity_vertices = dim;
+  const int num_entity_vertices = dim + 1;
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entity_geometry(entity_list.size(), num_entity_vertices);
