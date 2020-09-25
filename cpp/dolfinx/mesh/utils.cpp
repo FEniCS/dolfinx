@@ -785,3 +785,37 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
       entities.data(), entities.size());
 }
 //-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+mesh::entities_to_geometry(
+    const mesh::Mesh& mesh, const int dim,
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list)
+{
+  // FIXME - this is only true for simplices
+  const int num_entity_vertices = dim;
+
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      entity_geometry(entity_list.size(), num_entity_vertices);
+
+  auto xdofs = mesh.geometry().dofmap();
+  auto e_to_c = mesh.topology().connectivity(dim, mesh.topology().dim());
+  auto e_to_v = mesh.topology().connectivity(dim, 0);
+  auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
+
+  for (int i = 0; i < entity_list.size(); ++i)
+  {
+    const int idx = entity_list[i];
+    const int cell = e_to_c->links(idx)[0];
+    auto ev = e_to_v->links(idx);
+    assert(ev.size() == num_entity_vertices);
+    auto cv = c_to_v->links(cell);
+    auto xc = xdofs.links(cell);
+    for (int j = 0; j < num_entity_vertices; ++j)
+    {
+      int k = std::find(cv.data(), cv.data() + cv.size(), ev[j]) - cv.data();
+      assert(k < cv.size());
+      entity_geometry(i, j) = xc[k];
+    }
+  }
+
+  return entity_geometry;
+}

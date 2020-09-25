@@ -108,5 +108,11 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_boundary(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
 
+/// Compute the geometry of given entities from the mesh geometry
+Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+entities_to_geometry(
+    const mesh::Mesh& mesh, const int dim,
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list);
+
 } // namespace mesh
 } // namespace dolfinx
