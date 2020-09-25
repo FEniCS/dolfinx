@@ -788,8 +788,13 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 mesh::entities_to_geometry(
     const mesh::Mesh& mesh, const int dim,
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list)
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list,
+    bool orient)
 {
+  // FIXME - add more checks for cell types
+  if (orient and (mesh.topology().dim() != 3 or dim != 2))
+    throw std::runtime_error("Can only orient facets of 3D mesh");
+
   // FIXME - this is only true for simplices
   const int num_entity_vertices = dim + 1;
 
@@ -814,6 +819,24 @@ mesh::entities_to_geometry(
       int k = std::find(cv.data(), cv.data() + cv.size(), ev[j]) - cv.data();
       assert(k < cv.size());
       entity_geometry(i, j) = xc[k];
+    }
+
+    if (orient)
+    {
+      // Compute cell midpoint
+      Eigen::Vector3d midpoint(0.0, 0.0, 0.0);
+      for (int j = 0; j < xc.size(); ++j)
+        midpoint += mesh.geometry().node(xc[j]);
+      midpoint /= xc.size();
+      // Compute vector triple product of two edges and vector to midpoint
+      Eigen::Vector3d p0 = mesh.geometry().node(entity_geometry(i, 0));
+      Eigen::Matrix3d a;
+      a.row(0) = midpoint - p0;
+      a.row(1) = mesh.geometry().node(entity_geometry(i, 1)) - p0;
+      a.row(2) = mesh.geometry().node(entity_geometry(i, 2)) - p0;
+      // Switch order if sign is negative
+      if (a.determinant() < 0.0)
+        std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
     }
   }
 
@@ -859,3 +882,4 @@ mesh::exterior_facet_indices(const Mesh& mesh)
 
   return surface_facet_array;
 }
+//------------------------------------------------------------------------------
