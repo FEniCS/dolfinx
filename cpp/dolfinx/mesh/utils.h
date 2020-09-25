@@ -108,11 +108,21 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_boundary(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
 
-/// Compute the geometry of given entities from the mesh geometry
+/// Compute the geometry indices of given entities from the mesh geometry
+/// @param[in] mesh Mesh
+/// @param[in] dim Topological dimension of the entities of interest
+/// @param[in] entity_list List of entities to obtain vertex geometry
+/// @return Vertex indices in the geometry dofmap of the mesh for each entity
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 entities_to_geometry(
     const mesh::Mesh& mesh, const int dim,
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list);
+
+/// Compute exterior facet indices only
+/// @param[in] mesh Mesh
+/// @return List of facet indices of exterior facets of the mesh
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+exterior_facet_indices(const Mesh& mesh);
 
 } // namespace mesh
 } // namespace dolfinx

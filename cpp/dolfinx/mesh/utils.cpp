@@ -796,19 +796,19 @@ mesh::entities_to_geometry(
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entity_geometry(entity_list.size(), num_entity_vertices);
 
-  auto xdofs = mesh.geometry().dofmap();
-  auto e_to_c = mesh.topology().connectivity(dim, mesh.topology().dim());
-  auto e_to_v = mesh.topology().connectivity(dim, 0);
-  auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
+  const auto xdofs = mesh.geometry().dofmap();
+  const auto e_to_c = mesh.topology().connectivity(dim, mesh.topology().dim());
+  const auto e_to_v = mesh.topology().connectivity(dim, 0);
+  const auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
 
   for (int i = 0; i < entity_list.size(); ++i)
   {
     const int idx = entity_list[i];
     const int cell = e_to_c->links(idx)[0];
-    auto ev = e_to_v->links(idx);
+    const auto ev = e_to_v->links(idx);
     assert(ev.size() == num_entity_vertices);
-    auto cv = c_to_v->links(cell);
-    auto xc = xdofs.links(cell);
+    const auto cv = c_to_v->links(cell);
+    const auto xc = xdofs.links(cell);
     for (int j = 0; j < num_entity_vertices; ++j)
     {
       int k = std::find(cv.data(), cv.data() + cv.size(), ev[j]) - cv.data();
@@ -818,4 +818,44 @@ mesh::entities_to_geometry(
   }
 
   return entity_geometry;
+}
+//------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+mesh::exterior_facet_indices(const Mesh& mesh)
+{
+  const mesh::Topology& topology = mesh.topology();
+  std::vector<std::int32_t> surface_facets;
+
+  // Get number of facets owned by this process
+  const int tdim = topology.dim();
+  mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+  auto f_to_c = topology.connectivity(tdim - 1, tdim);
+  assert(topology.index_map(tdim - 1));
+  std::set<std::int32_t> fwd_shared_facets;
+
+  // Only need to consider shared facets when there are no ghost cells
+  if (topology.index_map(tdim)->num_ghosts() == 0)
+  {
+    fwd_shared_facets.insert(
+        topology.index_map(tdim - 1)->shared_indices().begin(),
+        topology.index_map(tdim - 1)->shared_indices().end());
+  }
+
+  // Find all owned facets (not ghost) with only one attached cell, which are
+  // also not shared forward (ghost on another process)
+  const int num_facets = topology.index_map(tdim - 1)->size_local();
+  for (int f = 0; f < num_facets; ++f)
+  {
+    if (f_to_c->num_links(f) == 1
+        and fwd_shared_facets.find(f) == fwd_shared_facets.end())
+      surface_facets.push_back(f);
+  }
+
+  // Copy over to Eigen::Array
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> surface_facet_array(
+      surface_facets.size());
+  std::copy(surface_facets.begin(), surface_facets.end(),
+            surface_facet_array.data());
+
+  return surface_facet_array;
 }
