@@ -138,8 +138,10 @@ def test_simple_evaluation():
     assert grad_f_expr.value_size == 2
 
     # NOTE: Cell numbering is process local.
-    cells = np.array([0, 1], dtype=np.int32)
-    num_cells = cells.shape[0]
+    map_c = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = map_c.size_local + map_c.num_ghosts
+    cells = np.arange(0, num_cells, dtype=np.int32)
+
     grad_f_evaluated = grad_f_expr.eval(cells)
     assert grad_f_evaluated.shape[0] == cells.shape[0]
     assert grad_f_evaluated.shape[1] == grad_f_expr.value_size * grad_f_expr.num_points
