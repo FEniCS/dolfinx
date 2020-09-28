@@ -1,18 +1,28 @@
+# Copyright (C) 2020 Jørgen S. Dokken and Chris Richardson
+#
+# This file is part of DOLFINX (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
 import dolfinx
 import dolfinx.cpp.mesh as cmesh
 import dolfinx.fem
 import dolfinx.io
 import dolfinx.mesh
 import numpy as np
+import pytest
 import ufl
 from mpi4py import MPI
 
 
-def create_boundary_mesh(mesh, comm):
+def create_boundary_mesh(mesh, comm, orient=True):
     """
     Create a mesh consisting of all exterior facets of a mesh
     Input:
-      mesh - The mesh
+      mesh   - The mesh
+      comm   - The MPI communicator
+      orient - Boolean flag for reorientation of facets to have
+               consistent outwards-pointing normal (default: True)
     Output:
       bmesh - The boundary mesh
       bmesh_to_geometry - Map from cells of the boundary mesh
@@ -20,7 +30,7 @@ def create_boundary_mesh(mesh, comm):
     """
     ext_facets = cmesh.exterior_facet_indices(mesh)
     boundary_geometry = cmesh.entities_to_geometry(
-        mesh, mesh.topology.dim - 1, ext_facets, True)
+        mesh, mesh.topology.dim - 1, ext_facets, orient)
     facet_type = dolfinx.cpp.mesh.to_string(cmesh.cell_entity_type(
         mesh.topology.cell_type, mesh.topology.dim - 1))
     facet_cell = ufl.Cell(facet_type,
@@ -32,8 +42,15 @@ def create_boundary_mesh(mesh, comm):
     return bmesh, boundary_geometry
 
 
-def test_b_mesh_mapping():
-    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2)
+@pytest.mark.parametrize("celltype",
+                         [cmesh.CellType.tetrahedron,
+                          cmesh.CellType.hexahedron])
+def test_b_mesh_mapping(celltype):
+    """
+    Creates a boundary mesh and checks that the geometrical entities
+    are mapped to the correct cells.
+    """
+    mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2, cell_type=celltype)
 
     b_mesh, bndry_to_mesh = create_boundary_mesh(mesh, MPI.COMM_SELF)
 
@@ -58,3 +75,49 @@ def test_b_mesh_mapping():
     mesh_surface = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(
         dolfinx.Constant(mesh, 1) * ufl.ds), op=MPI.SUM)
     assert(np.isclose(b_volume, mesh_surface))
+
+
+@pytest.mark.parametrize("celltype",
+                         [cmesh.CellType.tetrahedron,
+                          cmesh.CellType.hexahedron])
+def test_b_mesh_orientation(celltype):
+    """
+    Test orientation of boundary facets on 3D meshes
+    """
+    mesh = dolfinx.BoxMesh(MPI.COMM_WORLD,
+                           [np.array([-0.5, -0.5, -0.5]),
+                            np.array([0.5, 0.5, 0.5])],
+                           [2, 2, 2], cell_type=celltype)
+
+    b_mesh, bndry_to_mesh = create_boundary_mesh(mesh, MPI.COMM_SELF, True)
+    bdim = b_mesh.topology.dim
+    b_mesh.topology.create_connectivity(bdim, bdim - 1)
+    b_mesh.topology.create_connectivity(bdim - 1, bdim)
+    b_mesh.topology.create_connectivity(bdim, 0)
+
+    num_cells = b_mesh.topology.index_map(bdim).size_local
+    num_cell_vertices = \
+        cmesh.cell_num_vertices(cmesh.cell_entity_type(celltype, bdim))
+    entity_geometry = np.zeros((num_cells, num_cell_vertices),
+                               dtype=np.int32)
+
+    xdofs = b_mesh.geometry.dofmap
+    for i in range(num_cells):
+        xc = xdofs.links(i)
+        for j in range(num_cell_vertices):
+            entity_geometry[i, j] = xc[j]
+
+    # Compute dot((p0-midpoint), cross(p1-p0, p2-p0)) for every facet
+    # to check that the orientation is correct
+    for i in range(num_cells):
+        midpoint = np.zeros(3, dtype=np.float64)
+        for j in range(num_cell_vertices):
+            midpoint += b_mesh.geometry.x[entity_geometry[i, j]]
+        midpoint /= num_cell_vertices
+        a = np.zeros((3, 3), dtype=np.float64)
+        a[0] = b_mesh.geometry.x[entity_geometry[i, 0]] - midpoint
+        a[1] = b_mesh.geometry.x[entity_geometry[i, 1]]
+        - b_mesh.geometry.x[entity_geometry[i, 0]]
+        a[2] = b_mesh.geometry.x[entity_geometry[i, 2]]
+        - b_mesh.geometry.x[entity_geometry[i, 0]]
+        assert(np.linalg.det(a) > 0)
