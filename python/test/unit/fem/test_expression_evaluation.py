@@ -233,7 +233,7 @@ def test_assembly_into_quadrature_function():
     num_points = e_expr.num_points
     e_eval = np.zeros((num_cells, value_size, num_points))
     e_expr.eval(cells, u=e_eval.reshape(num_cells, -1))
-    e_eval_reshape = np.swapaxes(e_eval, 1, 2)
+    e_eval_reshape = np.array(np.swapaxes(e_eval, 1, 2), copy=True, order="C")
 
     # Assemble into Function
     e_Q = dolfinx.Function(Q)
