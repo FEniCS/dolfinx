@@ -229,11 +229,11 @@ def test_assembly_into_quadrature_function():
     num_cells = map_c.size_local + map_c.num_ghosts
     cells = np.arange(0, num_cells, dtype=np.int32)
 
-    e_eval = e_expr.eval(cells)
-    e_eval_reshape = np.zeros_like(e_eval)
-    # NOTE: Why is it necessary to repack the data like this?
-    e_eval_reshape[:, 0::2] = e_eval[:, 0:e_expr.num_points]
-    e_eval_reshape[:, 1::2] = e_eval[:, e_expr.num_points:]
+    value_size = e_expr.value_size
+    num_points = e_expr.num_points
+    e_eval = np.zeros((num_cells, value_size, num_points))
+    e_expr.eval(cells, u=u_eval.reshape(num_cells, -1))
+    e_eval_reshape = np.swapaxes(e_eval, 1, 2)
 
     # Assemble into Function
     e_Q = dolfinx.Function(Q)
