@@ -7,6 +7,7 @@
 
 import cffi
 import dolfinx
+import FIAT
 import numba
 import numpy as np
 import ufl
@@ -16,13 +17,18 @@ from petsc4py import PETSc
 
 def test_rank0():
     """Test evaluation of UFL expression.
-    This test evaluates gradient of P2 function at vertices of reference triangle.
-    Because these points coincide with positions of point evaluation degrees-of-freedom
-    of vector P1 space, values could be used to interpolate the expression into this space.
-    This test also shows simple Numba assembler which accepts the donor P2 function ``f``
-    as a coefficient and tabulates vector P1 function into tensor ``b``.
-    For a donor function f(x, y) = x^2 + 2*y^2 result is compared with the exact
-    gradient grad f(x, y) = [2*x, 4*y].
+
+    This test evaluates gradient of P2 function at vertices of reference
+    triangle. Because these points coincide with positions of point evaluation
+    degrees-of-freedom of vector P1 space, values could be used to interpolate
+    the expression into this space.
+
+    This test also shows simple Numba assembler which accepts the donor P2
+    function ``f`` as a coefficient and tabulates vector P1 function into
+    tensor ``b``.
+
+    For a donor function f(x, y) = x^2 + 2*y^2 result is compared with the
+    exact gradient grad f(x, y) = [2*x, 4*y].
     """
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
     P2 = dolfinx.FunctionSpace(mesh, ("P", 2))
@@ -169,3 +175,83 @@ def test_simple_evaluation():
         grad_f_exact[1, :].reshape(num_cells, grad_f_expr.num_points)
 
     assert(np.allclose(grad_f_evaluated, grad_f_exact_repack))
+
+
+def test_assembly_into_quadrature_function():
+    """Test assembly into a Quadrature function.
+
+    This test evaluates a UFL Expression into a Quadrature function space by
+    evaluating the Expression on all cells of the mesh, and then inserting the
+    evaluated values into a PETSc Vector constructed from a matching Quadrature
+    function space.
+
+    Concretely, we consider the evaluation of:
+
+        e = B*(K(T)))**2 * grad(T)
+
+    where
+
+        K = 1/(A + B*T)
+
+    where A and B are Constants and T is a Coefficient on a P2 finite element
+    space with T = x + 2*y.
+
+    The result is compared with interpolating the analytical expression of e
+    directly into the Quadrature space.
+
+    In parallel, each process evaluates the Expression on both local cells and
+    ghost cells so that no parallel communication is required after insertion
+    into the vector.
+    """
+    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 3, 6)
+
+    quadrature_degree = 2
+    quadrature_points = FIAT.create_quadrature(FIAT.ufc_simplex(
+        mesh.topology.dim), quadrature_degree, scheme="default").get_points()
+    Q_element = ufl.VectorElement("Quadrature", ufl.triangle, quadrature_degree, quad_scheme="default")
+    Q = dolfinx.FunctionSpace(mesh, Q_element)
+
+    def T_exact(x):
+        return x[0] + 2.0 * x[1]
+
+    P2 = dolfinx.FunctionSpace(mesh, ("P", 2))
+    T = dolfinx.Function(P2)
+    T.interpolate(T_exact)
+    A = dolfinx.Constant(mesh, 1.0)
+    B = dolfinx.Constant(mesh, 2.0)
+
+    K = 1.0 / (A + B * T)
+    e = B * K**2 * ufl.grad(T)
+
+    e_expr = dolfinx.Expression(e, quadrature_points)
+
+    map_c = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = map_c.size_local + map_c.num_ghosts
+    cells = np.arange(0, num_cells, dtype=np.int32)
+
+    e_eval = e_expr.eval(cells)
+    e_eval_reshape = np.zeros_like(e_eval)
+    # NOTE: Why is it necessary to repack the data like this?
+    e_eval_reshape[:, 0::2] = e_eval[:, 0:e_expr.num_points]
+    e_eval_reshape[:, 1::2] = e_eval[:, e_expr.num_points:]
+
+    # Assemble into Function
+    e_Q = dolfinx.Function(Q)
+    with e_Q.vector.localForm() as e_Q_local:
+        e_Q_local.setValues(Q.dofmap.list.array, e_eval_reshape, addv=PETSc.InsertMode.INSERT)
+
+    def e_exact(x):
+        T = x[0] + 2.0 * x[1]
+        K = 1.0 / (A.value + B.value * T)
+
+        grad_T = np.zeros((2, x.shape[1]))
+        grad_T[0, :] = 1.0
+        grad_T[1, :] = 2.0
+
+        e = B.value * K**2 * grad_T
+        return e
+
+    e_exact_Q = dolfinx.Function(Q)
+    e_exact_Q.interpolate(e_exact)
+
+    assert(np.isclose((e_exact_Q.vector - e_Q.vector).norm(), 0.0))
