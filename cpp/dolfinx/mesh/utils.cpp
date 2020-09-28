@@ -791,21 +791,23 @@ mesh::entities_to_geometry(
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list,
     bool orient)
 {
+
   // FIXME - add more checks for cell types
   if (orient and (mesh.topology().dim() != 3 or dim != 2))
     throw std::runtime_error("Can only orient facets of 3D mesh");
-
-  // FIXME - this is only true for simplices
-  const int num_entity_vertices = dim + 1;
-
+  dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
+  const int num_entity_vertices
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entity_geometry(entity_list.size(), num_entity_vertices);
 
   const auto xdofs = mesh.geometry().dofmap();
   const auto e_to_c = mesh.topology().connectivity(dim, mesh.topology().dim());
+  assert(e_to_c);
   const auto e_to_v = mesh.topology().connectivity(dim, 0);
+  assert(e_to_v);
   const auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
-
+  assert(c_to_v);
   for (int i = 0; i < entity_list.size(); ++i)
   {
     const int idx = entity_list[i];
@@ -846,6 +848,8 @@ mesh::entities_to_geometry(
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 mesh::exterior_facet_indices(const Mesh& mesh)
 {
+  // Note: Possible duplication of mesh::Topology::compute_boundary_facets
+
   const mesh::Topology& topology = mesh.topology();
   std::vector<std::int32_t> surface_facets;
 
