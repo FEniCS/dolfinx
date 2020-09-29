@@ -791,15 +791,14 @@ mesh::entities_to_geometry(
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list,
     bool orient)
 {
-
-  // FIXME - add more checks for cell types
-  if (orient and (mesh.topology().dim() != 3 or dim != 2))
-    throw std::runtime_error("Can only orient facets of 3D mesh");
   dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
   const int num_entity_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entity_geometry(entity_list.size(), num_entity_vertices);
+
+  if (orient and cell_type != dolfinx::mesh::CellType::tetrahedron)
+    throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const auto xdofs = mesh.geometry().dofmap();
   const auto e_to_c = mesh.topology().connectivity(dim, mesh.topology().dim());
