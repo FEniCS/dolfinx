@@ -148,8 +148,7 @@ def run_vector_test(mesh, V, degree):
 
     with common.Timer("Solve"):
         # Create LU linear solver (Note: need to use a solver that
-        # re-orders to handle pivots, e.g. not the PETSc built-in LU
-        # solver)
+        # re-orders to handle pivots, e.g. not the PETSc built-in LU solver)
         solver = PETSc.KSP().create(MPI.COMM_WORLD)
         solver.setType("preonly")
         solver.getPC().setType('lu')
