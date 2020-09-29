@@ -219,8 +219,7 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 
   // Build dofmap by extracting from parent
   const int num_cells = this->_dofmap.num_nodes();
-  const std::int32_t dofs_per_cell
-      = sub_element_map_view.size() * sub_element_dof_layout->block_size();
+  const std::int32_t dofs_per_cell = sub_element_map_view.size();
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       dofmap(num_cells, dofs_per_cell);
   for (int c = 0; c < num_cells; ++c)
