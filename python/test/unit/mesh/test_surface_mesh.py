@@ -15,7 +15,7 @@ import ufl
 from mpi4py import MPI
 
 
-def create_boundary_mesh(mesh, comm, orient=True):
+def create_boundary_mesh(mesh, comm, orient=False):
     """
     Create a mesh consisting of all exterior facets of a mesh
     Input:
@@ -78,8 +78,7 @@ def test_b_mesh_mapping(celltype):
 
 
 @pytest.mark.parametrize("celltype",
-                         [cmesh.CellType.tetrahedron,
-                          cmesh.CellType.hexahedron])
+                         [cmesh.CellType.tetrahedron])
 def test_b_mesh_orientation(celltype):
     """
     Test orientation of boundary facets on 3D meshes
@@ -107,17 +106,11 @@ def test_b_mesh_orientation(celltype):
         for j in range(num_cell_vertices):
             entity_geometry[i, j] = xc[j]
 
-    # Compute dot((p0-midpoint), cross(p1-p0, p2-p0)) for every facet
+    # Compute dot(p0, cross(p1-p0, p2-p0)) for every facet
     # to check that the orientation is correct
+    # p0 is vector from centre of mesh
     for i in range(num_cells):
-        midpoint = np.zeros(3, dtype=np.float64)
-        for j in range(num_cell_vertices):
-            midpoint += b_mesh.geometry.x[entity_geometry[i, j]]
-        midpoint /= num_cell_vertices
-        a = np.zeros((3, 3), dtype=np.float64)
-        a[0] = b_mesh.geometry.x[entity_geometry[i, 0]] - midpoint
-        a[1] = b_mesh.geometry.x[entity_geometry[i, 1]]
-        - b_mesh.geometry.x[entity_geometry[i, 0]]
-        a[2] = b_mesh.geometry.x[entity_geometry[i, 2]]
-        - b_mesh.geometry.x[entity_geometry[i, 0]]
+        a = b_mesh.geometry.x[entity_geometry[i, :]]
+        a[1] -= a[0]
+        a[2] -= a[0]
         assert(np.linalg.det(a) > 0)
