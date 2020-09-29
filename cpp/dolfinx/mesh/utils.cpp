@@ -797,7 +797,8 @@ mesh::entities_to_geometry(
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entity_geometry(entity_list.size(), num_entity_vertices);
 
-  if (orient and cell_type != dolfinx::mesh::CellType::tetrahedron)
+  if (orient
+      and (cell_type != dolfinx::mesh::CellType::tetrahedron or dim != 2))
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const auto xdofs = mesh.geometry().dofmap();
@@ -817,7 +818,8 @@ mesh::entities_to_geometry(
     const auto xc = xdofs.links(cell);
     for (int j = 0; j < num_entity_vertices; ++j)
     {
-      int k = std::find(cv.data(), cv.data() + cv.size(), ev[j]) - cv.data();
+      int k = std::distance(cv.data(),
+                            std::find(cv.data(), cv.data() + cv.size(), ev[j]));
       assert(k < cv.size());
       entity_geometry(i, j) = xc[k];
     }
