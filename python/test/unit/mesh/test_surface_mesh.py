@@ -110,7 +110,7 @@ def test_b_mesh_orientation(celltype):
     # to check that the orientation is correct
     # p0 is vector from centre of mesh
     for i in range(num_cells):
-        a = b_mesh.geometry.x[entity_geometry[i, :]]
-        a[1] -= a[0]
-        a[2] -= a[0]
-        assert(np.linalg.det(a) > 0)
+        p = b_mesh.geometry.x[entity_geometry[i, :]]
+        p[1] -= p[0]
+        p[2] -= p[0]
+        assert(np.linalg.det(p) > 0)
