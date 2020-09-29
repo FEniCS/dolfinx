@@ -64,8 +64,7 @@ def run_scalar_test(mesh, V, degree):
     u, v = TrialFunction(V), TestFunction(V)
     a = inner(grad(u), grad(v)) * dx
 
-    # Get quadrature degree for bilinear form integrand (ignores effect
-    # of non-affine map)
+    # Get quadrature degree for bilinear form integrand (ignores effect of non-affine map)
     a = inner(grad(u), grad(v)) * dx(metadata={"quadrature_degree": -1})
     a.integrals()[0].metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(a)
 
