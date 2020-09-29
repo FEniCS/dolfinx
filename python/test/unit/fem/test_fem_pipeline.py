@@ -159,6 +159,7 @@ def run_vector_test(mesh, V, degree):
         uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     with common.Timer("Error functional compile"):
+        # Calculate error
         M = (u_exact - uh[0])**2 * dx
         for i in range(1, mesh.topology.dim):
             M += uh[i]**2 * dx
@@ -239,6 +240,7 @@ def run_dg_test(mesh, V, degree):
                               mode=PETSc.ScatterMode.FORWARD)
 
     with common.Timer("Error functional compile"):
+        # Calculate error
         M = (u_exact - uh)**2 * dx
         M = fem.Form(M)
 
