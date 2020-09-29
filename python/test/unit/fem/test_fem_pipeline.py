@@ -74,8 +74,7 @@ def run_scalar_test(mesh, V, degree):
     u_exact = x[1]**degree
     f = - div(grad(u_exact))
 
-    # Set quadrature degree for linear form integrand (ignores effect of
-    # non-affine map)
+    # Set quadrature degree for linear form integrand (ignores effect of non-affine map)
     L = inner(f, v) * dx(metadata={"quadrature_degree": -1})
     L.integrals()[0].metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(L)
 
