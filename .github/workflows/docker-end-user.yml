@@ -23,8 +23,21 @@ jobs:
       MPI: "mpich"
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+        with:
+          repository: "FEniCS/ufl"
+          path: "docker"
+      - uses: actions/checkout@v2
+        with:
+          repository: FEniCS/fiat
+          path: "docker"
+      - uses: actions/checkout@v2
+        with:
+          repository: FEniCS/ffcx
+          path: "docker"
       - name: Pull dolfinx/dev-env
-        run: docker pull dolfinx/dev-env
+        run: |
+          docker pull dolfinx/dev-env
       - name: Build the Docker images
         run: |
           cd docker/

@@ -292,17 +292,21 @@ RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
 ONBUILD ARG MAKEFLAGS
 
-ONBUILD WORKDIR /tmp
+ONBUILD ADD fiat /src/ffcx
+ONBUILD ADD ufl /src/ufl
+ONBUILD ADD ffcx /src/ffcx
+ONBUILD ADD dolfinx /src/dolfinx
 
-# Install ipython (optional), FIAT, UFL and FFCX (development
-# versions, master branch)
-ONBUILD RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
+ONBUILD WORKDIR /src
 
-ONBUILD RUN git clone --depth 1 https://github.com/fenics/dolfinx.git && \
-    cd dolfinx && \
+# The dolfinx-onbuild container expects to have folders fiat/ ufl/ ffcx/ and
+# dolfinx/ mounted/shared at /src.
+ONBUILD RUN cd fiat && pip3 install --no-cache-dir . && \
+    cd ../ufl && pip3 install --no-cache-dir . && \
+    cd ../ffcx && pip3 install --no-cache-dir . && \
+    cd ../ && pip3 install --no-cache-dir ipython
+
+ONBUILD RUN cd dolfinx && \
     mkdir build && \
     cd build && \
     PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real ../cpp && \
@@ -317,8 +321,7 @@ ONBUILD RUN git clone --depth 1 https://github.com/fenics/dolfinx.git && \
     ninja ${MAKEFLAGS} install && \
     . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed . && \
-    rm -rf /tmp/*
+    PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
 
 # Real by default.
 ONBUILD ENV LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
