@@ -11,6 +11,7 @@ on:
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 4 * * *"
+  workflow_dispatch: ~
 
 jobs:
   build_end_user_images:
