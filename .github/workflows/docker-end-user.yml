@@ -20,33 +20,38 @@ jobs:
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
       PETSC_SLEPC_DEBUGGING: "no"
+      DOLFINX_CMAKE_BUILD_TYPE: "RelWithDebInfo"
+      DOLFINX_CMAKE_CXX_FLAGS: "-march=sandybridge"
       MPI: "mpich"
     steps:
       - uses: actions/checkout@v2
+        with:
+          repository: "FEniCS/dolfinx"
+          path: "dolfinx"
+      - uses: actions/checkout@v2
+        with:
+          repository: "FEniCS/ffcx"
+          path: "ffcx"
+      - uses: actions/checkout@v2
+        with:
+          repository: "FEniCS/fiat"
+          path: "fiat"
       - uses: actions/checkout@v2
         with:
           repository: "FEniCS/ufl"
-          path: "docker"
-      - uses: actions/checkout@v2
-        with:
-          repository: FEniCS/fiat
-          path: "docker"
-      - uses: actions/checkout@v2
-        with:
-          repository: FEniCS/ffcx
-          path: "docker"
+          path: "ufl"
       - name: Pull dolfinx/dev-env
         run: |
           docker pull dolfinx/dev-env
       - name: Build the Docker images
         run: |
-          cd docker/
-          docker build --file Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
-          docker build --file Dockerfile --target dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
-          docker build --file Dockerfile --target lab --cache-from dolfinx/dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/lab .
+          docker build --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
+          docker build --file dolfinx/docker/Dockerfile --build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS --target dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
+          docker build --file dolfinx/docker/Dockerfile --target lab --cache-from dolfinx/dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/lab .
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
         run: |
+          docker push dolfinx/dolfinx-onbuild
           docker push dolfinx/dolfinx
           docker push dolfinx/lab

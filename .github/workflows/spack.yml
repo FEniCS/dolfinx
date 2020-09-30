@@ -74,5 +74,3 @@ jobs:
           cd ./dolfinx-test/python/test
           pytest -n auto --ignore=unit/fem/test_custom_jit_kernels.py --ignore=unit/geometry/test_gjk.py --ignore=unit/function/test_function.py .
           mpirun -np 2 pytest --ignore=unit/fem/test_custom_jit_kernels.py --ignore=unit/geometry/test_gjk.py --ignore=unit/function/test_function.py .
-
-
