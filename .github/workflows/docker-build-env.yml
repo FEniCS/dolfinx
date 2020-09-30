@@ -2,7 +2,7 @@ name: Docker environment images
 
 # Builds the fenicsproject/test-env:${MPI} and dolfinx/dev-env images
 # once per week. These are used for build/test workflows and end-user
-# builds of DOLFINX, respectively."
+# builds of DOLFINX, respectively.
 
 on:
   # Uncomment the below to trigger 'docker build' on push
@@ -12,6 +12,7 @@ on:
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * MON"
+  workflow_dispatch: ~
 
 jobs:
   build_test_env_openmpi:
