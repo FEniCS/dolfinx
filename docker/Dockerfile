@@ -314,10 +314,6 @@ WORKDIR /root
 FROM dev-env as dolfinx-onbuild
 LABEL description="DOLFIN-X in 32-bit real and complex modes (onbuild)"
 
-ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
-ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
-RUN chmod +x /usr/local/bin/dolfinx-*-mode
-
 ONBUILD ARG MAKEFLAGS
 ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE
 ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
@@ -355,19 +351,31 @@ ONBUILD RUN cd dolfinx && \
     cd ../ && \
     rm -r build
 
-# Real by default.
-ONBUILD ENV LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
-        PATH=/usr/local/dolfinx-real/bin:$PATH \
-        PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
-        PETSC_ARCH=linux-gnu-real-32 \
-        PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH
-
 ONBUILD WORKDIR /root
 
 ########################################
 
-FROM dolfinx-onbuild as dolfinx
+FROM dolfinx-onbuild as intermediate
 LABEL description="DOLFIN-X in real and complex modes"
+
+########################################
+
+FROM dev-env as dolfinx
+LABEL description="DOLFIN-X in real and complex modes"
+
+ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
+ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
+RUN chmod +x /usr/local/bin/dolfinx-*-mode
+
+COPY --from=intermediate /usr/local/dolfinx-real /usr/local/dolfinx-real
+COPY --from=intermediate /usr/local/dolfinx-complex /usr/local/dolfinx-real
+
+# Real by default.
+ENV LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
+    PATH=/usr/local/dolfinx-real/bin:$PATH \
+    PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
+    PETSC_ARCH=linux-gnu-real-32 \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH
 
 ########################################
 
