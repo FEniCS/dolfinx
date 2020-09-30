@@ -785,3 +785,112 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
       entities.data(), entities.size());
 }
 //-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+mesh::entities_to_geometry(
+    const mesh::Mesh& mesh, const int dim,
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list,
+    bool orient)
+{
+  dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
+  const int num_entity_vertices
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      entity_geometry(entity_list.size(), num_entity_vertices);
+
+  if (orient
+      and (cell_type != dolfinx::mesh::CellType::tetrahedron or dim != 2))
+    throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
+
+  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Topology& topology = mesh.topology();
+
+  const int tdim = topology.dim();
+  mesh.topology_mutable().create_entities(dim);
+  mesh.topology_mutable().create_connectivity(dim, tdim);
+  mesh.topology_mutable().create_connectivity(dim, 0);
+  mesh.topology_mutable().create_connectivity(tdim, 0);
+
+  const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
+  const auto e_to_c = topology.connectivity(dim, tdim);
+  assert(e_to_c);
+  const auto e_to_v = topology.connectivity(dim, 0);
+  assert(e_to_v);
+  const auto c_to_v = topology.connectivity(tdim, 0);
+  assert(c_to_v);
+  for (int i = 0; i < entity_list.size(); ++i)
+  {
+    const std::int32_t idx = entity_list[i];
+    const std::int32_t cell = e_to_c->links(idx)[0];
+    const auto ev = e_to_v->links(idx);
+    assert(ev.size() == num_entity_vertices);
+    const auto cv = c_to_v->links(cell);
+    const auto xc = xdofs.links(cell);
+    for (int j = 0; j < num_entity_vertices; ++j)
+    {
+      int k = std::distance(cv.data(),
+                            std::find(cv.data(), cv.data() + cv.size(), ev[j]));
+      assert(k < cv.size());
+      entity_geometry(i, j) = xc[k];
+    }
+
+    if (orient)
+    {
+      // Compute cell midpoint
+      Eigen::Vector3d midpoint(0.0, 0.0, 0.0);
+      for (int j = 0; j < xc.size(); ++j)
+        midpoint += geometry.node(xc[j]);
+      midpoint /= xc.size();
+      // Compute vector triple product of two edges and vector to midpoint
+      Eigen::Vector3d p0 = geometry.node(entity_geometry(i, 0));
+      Eigen::Matrix3d a;
+      a.row(0) = midpoint - p0;
+      a.row(1) = geometry.node(entity_geometry(i, 1)) - p0;
+      a.row(2) = geometry.node(entity_geometry(i, 2)) - p0;
+      // Midpoint direction should be opposite to normal, hence this should be
+      // negative. Switch points if not.
+      if (a.determinant() > 0.0)
+        std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
+    }
+  }
+
+  return entity_geometry;
+}
+//------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+mesh::exterior_facet_indices(const Mesh& mesh)
+{
+  // Note: Possible duplication of mesh::Topology::compute_boundary_facets
+
+  const mesh::Topology& topology = mesh.topology();
+  std::vector<std::int32_t> surface_facets;
+
+  // Get number of facets owned by this process
+  const int tdim = topology.dim();
+  mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+  auto f_to_c = topology.connectivity(tdim - 1, tdim);
+  assert(topology.index_map(tdim - 1));
+  std::set<std::int32_t> fwd_shared_facets;
+
+  // Only need to consider shared facets when there are no ghost cells
+  if (topology.index_map(tdim)->num_ghosts() == 0)
+  {
+    fwd_shared_facets.insert(
+        topology.index_map(tdim - 1)->shared_indices().begin(),
+        topology.index_map(tdim - 1)->shared_indices().end());
+  }
+
+  // Find all owned facets (not ghost) with only one attached cell, which are
+  // also not shared forward (ghost on another process)
+  const int num_facets = topology.index_map(tdim - 1)->size_local();
+  for (int f = 0; f < num_facets; ++f)
+  {
+    if (f_to_c->num_links(f) == 1
+        and fwd_shared_facets.find(f) == fwd_shared_facets.end())
+      surface_facets.push_back(f);
+  }
+
+  // Copy over to Eigen::Array
+  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
+      surface_facets.data(), surface_facets.size());
+}
+//------------------------------------------------------------------------------
