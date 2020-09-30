@@ -801,17 +801,26 @@ mesh::entities_to_geometry(
       and (cell_type != dolfinx::mesh::CellType::tetrahedron or dim != 2))
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
-  const auto xdofs = mesh.geometry().dofmap();
-  const auto e_to_c = mesh.topology().connectivity(dim, mesh.topology().dim());
+  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Topology& topology = mesh.topology();
+
+  const int tdim = topology.dim();
+  mesh.topology_mutable().create_entities(dim);
+  mesh.topology_mutable().create_connectivity(dim, tdim);
+  mesh.topology_mutable().create_connectivity(dim, 0);
+  mesh.topology_mutable().create_connectivity(tdim, 0);
+
+  const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
+  const auto e_to_c = topology.connectivity(dim, tdim);
   assert(e_to_c);
-  const auto e_to_v = mesh.topology().connectivity(dim, 0);
+  const auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
-  const auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
+  const auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
   for (int i = 0; i < entity_list.size(); ++i)
   {
-    const int idx = entity_list[i];
-    const int cell = e_to_c->links(idx)[0];
+    const std::int32_t idx = entity_list[i];
+    const std::int32_t cell = e_to_c->links(idx)[0];
     const auto ev = e_to_v->links(idx);
     assert(ev.size() == num_entity_vertices);
     const auto cv = c_to_v->links(cell);
@@ -829,14 +838,14 @@ mesh::entities_to_geometry(
       // Compute cell midpoint
       Eigen::Vector3d midpoint(0.0, 0.0, 0.0);
       for (int j = 0; j < xc.size(); ++j)
-        midpoint += mesh.geometry().node(xc[j]);
+        midpoint += geometry.node(xc[j]);
       midpoint /= xc.size();
       // Compute vector triple product of two edges and vector to midpoint
-      Eigen::Vector3d p0 = mesh.geometry().node(entity_geometry(i, 0));
+      Eigen::Vector3d p0 = geometry.node(entity_geometry(i, 0));
       Eigen::Matrix3d a;
       a.row(0) = midpoint - p0;
-      a.row(1) = mesh.geometry().node(entity_geometry(i, 1)) - p0;
-      a.row(2) = mesh.geometry().node(entity_geometry(i, 2)) - p0;
+      a.row(1) = geometry.node(entity_geometry(i, 1)) - p0;
+      a.row(2) = geometry.node(entity_geometry(i, 2)) - p0;
       // Midpoint direction should be opposite to normal, hence this should be
       // negative. Switch points if not.
       if (a.determinant() > 0.0)
@@ -881,11 +890,7 @@ mesh::exterior_facet_indices(const Mesh& mesh)
   }
 
   // Copy over to Eigen::Array
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> surface_facet_array(
-      surface_facets.size());
-  std::copy(surface_facets.begin(), surface_facets.end(),
-            surface_facet_array.data());
-
-  return surface_facet_array;
+  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
+      surface_facets.data(), surface_facets.size());
 }
 //------------------------------------------------------------------------------
