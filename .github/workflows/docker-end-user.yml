@@ -19,11 +19,8 @@ jobs:
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-20.04
     env:
-      PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
-      PETSC_SLEPC_DEBUGGING: "no"
       DOLFINX_CMAKE_BUILD_TYPE: "RelWithDebInfo"
       DOLFINX_CMAKE_CXX_FLAGS: "-march=sandybridge"
-      MPI: "mpich"
     steps:
       - uses: actions/checkout@v2
         with:
@@ -46,9 +43,12 @@ jobs:
           docker pull dolfinx/dev-env
       - name: Build the Docker images
         run: |
-          docker build --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
+          docker build --file dolfinx/docker/Dockerfile --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
           docker build --file dolfinx/docker/Dockerfile --build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS --target dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
           docker build --file dolfinx/docker/Dockerfile --target lab --cache-from dolfinx/dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/lab .
+      - name: Run basic test inside container
+        run: |
+          docker run --rm -ti dolfinx/dolfinx python3 -c "import dolfinx; from mpi4py import MPI; mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10); V = dolfinx.FunctionSpace(mesh, ('P', 1));" 
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
