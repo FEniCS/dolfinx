@@ -21,6 +21,9 @@ jobs:
     env:
       DOLFINX_CMAKE_BUILD_TYPE: "RelWithDebInfo"
       DOLFINX_CMAKE_CXX_FLAGS: "-march=sandybridge"
+      PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
+      PETSC_SLEPC_DEBUGGING: "no"
+      MPI: "mpich"
     steps:
       - uses: actions/checkout@v2
         with:
@@ -43,7 +46,7 @@ jobs:
           docker pull dolfinx/dev-env
       - name: Build the Docker images
         run: |
-          docker build --file dolfinx/docker/Dockerfile --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
+          docker build --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
           docker build --file dolfinx/docker/Dockerfile --build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS --target dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
           docker build --file dolfinx/docker/Dockerfile --target lab --cache-from dolfinx/dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/lab .
       - name: Run basic test inside container
