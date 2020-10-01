@@ -24,23 +24,23 @@
 #
 # Then run the commands:
 #
-#    docker pull dolfinx/dev-env dolfinx/dolfinx-onbuild
-#    docker build --target dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --file dolfinx/docker/Dockerfile .
+#    docker pull dolfinx/dolfinx-onbuild
+#    echo "FROM dolfinx/dolfinx-onbuild" | docker build -f- . 
 #
-# Note that the cache usage depends on if Docker finds a cache hit. If there
-# are changes in the `Dockerfile` with respect to the one used to build the
-# `dolfinx/dolfinx-onbuild` or `dolfinx/dev-env` images then Docker will build
-# all targets.
-#
-# You can build an optimised version of FEniCS for your platform using the
-# command:
+# You can build an optimised version of the complete FEniCS environment for
+# your platform using the command:
 #
 #    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" .
 #
 # The pre-built images on Dockerhub are currently optimised for Intel Sandy
-# Bridge architectures and will run on all modern x86 chips (>~2012).
+# Bridge architectures and will run on all modern x86-64 chips (>~2012).
+#
+# You can build an optimised version of the FEniCS development environment
+# (without the FEniCS components) for your platform using the command:
+#
+#    docker build --target dev-env --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
+#
 
-ARG TINI_VERSION=v0.19.0
 ARG GMSH_VERSION=4.6.0
 ARG PYBIND11_VERSION=2.5.0
 ARG PETSC_VERSION=3.13.3
@@ -56,9 +56,9 @@ ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS="-O2 -march=sandybridge"
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
 ARG PETSC_SLEPC_DEBUGGING="no"
-# CMake build type. See CMake documentation.
+# CMake build type for DOLFINX C++ build. See CMake documentation.
 ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
-# Extra CMake C++ compiler flags.
+# Extra CMake C++ compiler flags for DOLFINX C++ build.
 ARG DOLFINX_CMAKE_CXX_FLAGS="-march=sandybridge"
 # Ubuntu MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
@@ -324,6 +324,9 @@ ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
 ONBUILD WORKDIR /src
 
+# This leaves the sources inside the container. This is a limitation of Docker.
+# There is some trickery in the intermediate and dolfinx containers that can be
+# used to remove this source if needed, see below.
 ONBUILD ADD fiat/ /src/fiat/
 ONBUILD ADD ufl/ /src/ufl/
 ONBUILD ADD ffcx/ /src/ffcx/
@@ -347,7 +350,7 @@ ONBUILD RUN cd dolfinx && \
     rm -r build && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=Release -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFIN_CMAKE_CXX_FLAGS} ../cpp && \
+    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFIN_CMAKE_CXX_FLAGS} ../cpp && \
     ninja ${MAKEFLAGS} install && \
     . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
     cd ../python && \
@@ -356,18 +359,40 @@ ONBUILD RUN cd dolfinx && \
     rm -r build
 
 # Real by default.
-ONBUILD ENV LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
-        PATH=/usr/local/dolfinx-real/bin:$PATH \
-        PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
-        PETSC_ARCH=linux-gnu-real-32 \
-        PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH
+ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
+            PETSC_ARCH=linux-gnu-real-32 \
+            PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
+            LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ONBUILD WORKDIR /root
 
 ########################################
 
-FROM dolfinx-onbuild as dolfinx
-LABEL description="DOLFIN-X in real and complex modes"
+FROM dolfinx-onbuild as intermediate
+
+########################################
+
+FROM dev-env as dolfinx
+LABEL description="DOLFIN-X in 32-bit real and complex modes"
+
+# This layer manually copies the build artifacts from intermediate into dev-env
+# to make the final image. This is a workaround for a well known limitation of
+# Docker that you cannot cleanup after an ADD operation. This reduces the
+# container size by around 80MB as the /src folder no longer exists in the final
+# image.
+
+COPY --from=intermediate /usr/local/dolfinx-real /usr/local/dolfinx-real
+COPY --from=intermediate /usr/local/dolfinx-complex /usr/local/dolfinx-complex
+COPY --from=intermediate /usr/local/lib/python3.8/dist-packages /usr/local/lib/python3.8/dist-packages
+COPY --from=intermediate /usr/local/bin /usr/local/bin
+
+# Real by default.
+# Note that because we inherit from dev-env we do not inherit these ENV from
+# dolfinx-onbuild.
+ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
+    PETSC_ARCH=linux-gnu-real-32 \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
+    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ########################################
 
