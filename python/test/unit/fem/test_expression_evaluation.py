@@ -73,7 +73,7 @@ def test_rank0():
                    ffi.from_buffer(geometry))
             for j in range(3):
                 for k in range(2):
-                    b[dofmap[i * 6 + 2 * j + k]] = b_local[3 * k + j]
+                    b[dofmap[i * 6 + 2 * j + k]] = b_local[2 * j + k]
 
     # Prepare mesh and dofmap data
     pos = mesh.geometry.dofmap.offsets
@@ -132,7 +132,11 @@ def test_simple_evaluation():
         return 3 * (x[0] ** 2 + 2.0 * x[1] ** 2)
 
     def exact_grad_f(x):
-        return 3 * np.array([2 * x[0], 4 * x[1]])
+        values = np.zeros_like(x)
+        values[:, 0::2] = 2 * x[:, 0::2]
+        values[:, 1::2] = 4 * x[:, 1::2]
+        values *= 3.0
+        return values
 
     expr = dolfinx.Function(P2)
     expr.interpolate(exact_expr)
@@ -159,22 +163,12 @@ def test_simple_evaluation():
     assert x_expr.value_size == 2
     x_evaluated = x_expr.eval(cells)
     assert x_evaluated.shape[0] == cells.shape[0]
-    assert x_evaluated.shape[1] == x_expr.value_size * x_expr.num_points
+    assert x_evaluated.shape[1] == x_expr.num_points * x_expr.value_size
 
-    x_evaluated_repack = np.zeros((2, cells.shape[0] * x_expr.num_points), dtype=PETSc.ScalarType)
-    # Have to repack to use standard expression code
-    x_evaluated_repack[0, :] = x_evaluated[:, 0:x_expr.num_points].flatten()
-    x_evaluated_repack[1, :] = x_evaluated[:, x_expr.num_points:].flatten()
     # Evaluate exact gradient using global points
-    grad_f_exact = exact_grad_f(x_evaluated_repack)
-    grad_f_exact_repack = np.zeros_like(grad_f_evaluated)
-    # Repack for comparison with Expression result
-    grad_f_exact_repack[:, 0:grad_f_expr.num_points] = \
-        grad_f_exact[0, :].reshape(num_cells, grad_f_expr.num_points)
-    grad_f_exact_repack[:, grad_f_expr.num_points:] = \
-        grad_f_exact[1, :].reshape(num_cells, grad_f_expr.num_points)
+    grad_f_exact = exact_grad_f(x_evaluated)
 
-    assert(np.allclose(grad_f_evaluated, grad_f_exact_repack))
+    assert(np.allclose(grad_f_evaluated, grad_f_exact))
 
 
 def test_assembly_into_quadrature_function():
@@ -229,16 +223,12 @@ def test_assembly_into_quadrature_function():
     num_cells = map_c.size_local + map_c.num_ghosts
     cells = np.arange(0, num_cells, dtype=np.int32)
 
-    value_size = e_expr.value_size
-    num_points = e_expr.num_points
-    e_eval = np.zeros((num_cells, value_size, num_points))
-    e_expr.eval(cells, u=e_eval.reshape(num_cells, -1))
-    e_eval_reshape = np.array(np.swapaxes(e_eval, 1, 2), copy=True, order="C")
+    e_eval = e_expr.eval(cells)
 
     # Assemble into Function
     e_Q = dolfinx.Function(Q)
     with e_Q.vector.localForm() as e_Q_local:
-        e_Q_local.setValues(Q.dofmap.list.array, e_eval_reshape, addv=PETSc.InsertMode.INSERT)
+        e_Q_local.setValues(Q.dofmap.list.array, e_eval, addv=PETSc.InsertMode.INSERT)
 
     def e_exact(x):
         T = x[0] + 2.0 * x[1]

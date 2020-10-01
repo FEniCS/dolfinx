@@ -99,14 +99,13 @@ class Expression:
         # Allocate memory for result if u was not provided
         if u is None:
             if common.has_petsc_complex:
-                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.complex128)
+                u = np.empty((num_cells, self.num_points*self.value_size), dtype=np.complex128)
             else:
-                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.float64)
+                u = np.empty((num_cells, self.num_points*self.value_size), dtype=np.float64)
             self._cpp_object.eval(cells, u)
         else:
-            assert u.ndim == 2
-            assert u.shape[0] == num_cells
-            assert u.shape[1] == self.num_points * self.value_size
+            assert u.ndim < 3
+            assert u.size == num_cells*self.num_points*self.value_size
             self._cpp_object.eval(cells, u)
 
         return u
