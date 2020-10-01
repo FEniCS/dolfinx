@@ -176,6 +176,7 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
   std::iota(dof_list.begin(), dof_list.end(), 0);
 
   const ElementDofLayout* element_dofmap_current = this;
+
   for (int i : component)
   {
     // Switch to sub-dofmap
@@ -184,7 +185,8 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
       throw std::runtime_error("Invalid component");
     element_dofmap_current = _sub_dofmaps.at(i).get();
 
-    std::vector<int> dof_list_new(element_dofmap_current->_num_dofs);
+    std::vector<int> dof_list_new(element_dofmap_current->_num_dofs
+                                  * element_dofmap_current->_block_size);
     for (std::size_t j = 0; j < dof_list_new.size(); ++j)
       dof_list_new[j] = dof_list[element_dofmap_current->_parent_map[j]];
     dof_list = dof_list_new;
