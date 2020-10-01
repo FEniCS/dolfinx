@@ -4,23 +4,43 @@
 # <lzlarryli@gmail.com> Garth N. Wells <gnw20@cam.ac.uk> Jan Blechta
 # <blechta@karlin.mff.cuni.cz>
 #
-# All layers are built nightly on CircleCI and pushed to
-# https://hub.docker.com/orgs/dolfinx
-#
 # To run a nightly build:
 #
 #    docker run -ti dolfinx/dolfinx
 #
 # To run a Jupyter lab session:
 #
-#    docker run -p 8888:8888 dolfinx/lab
+#    docker run --init -p 8888:8888 dolfinx/lab
 #
 # To run and share the current host directory with the container:
 #
-#    docker run -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
+#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
+#
+# To build from source, first checkout the DOLFINX, FFCX, FIAT and UFL
+# repositories into the working directory, e.g.:
+#
+# $ ls $(pwd)
+# dolfinx  ffcx  fiat  ufl
+#
+# Then run the commands:
+#
+#    docker pull dolfinx/dolfinx-onbuild
+#    echo "FROM dolfinx/dolfinx-onbuild" | docker build -f- . 
+#
+# You can build an optimised version of the complete FEniCS environment for
+# your platform using the command:
+#
+#    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" .
+#
+# The pre-built images on Dockerhub are currently optimised for Intel Sandy
+# Bridge architectures and will run on all modern x86-64 chips (>~2012).
+#
+# You can build an optimised version of the FEniCS development environment
+# (without the FEniCS components) for your platform using the command:
+#
+#    docker build --target dev-env --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
 
-ARG TINI_VERSION=v0.19.0
 ARG GMSH_VERSION=4.6.0
 ARG PYBIND11_VERSION=2.5.0
 ARG PETSC_VERSION=3.13.3
@@ -30,9 +50,17 @@ ARG SLEPC4PY_VERSION=3.13.0
 # Should be updated upon a new KaHIP release
 ARG KAHIP_VERSION=14be06c
 
+# Flags to pass to ninja build system.
 ARG MAKEFLAGS
+# Compiler optimisation flags for SLEPc and PETSc, all languages.
 ARG PETSC_SLEPC_OPTFLAGS="-O2 -march=sandybridge"
+# Turn on PETSc and SLEPc debugging. "yes" or "no".
 ARG PETSC_SLEPC_DEBUGGING="no"
+# CMake build type for DOLFINX C++ build. See CMake documentation.
+ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
+# Extra CMake C++ compiler flags for DOLFINX C++ build.
+ARG DOLFINX_CMAKE_CXX_FLAGS="-march=sandybridge"
+# Ubuntu MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
 
 ########################################
@@ -286,65 +314,95 @@ WORKDIR /root
 FROM dev-env as dolfinx-onbuild
 LABEL description="DOLFIN-X in 32-bit real and complex modes (onbuild)"
 
-ADD dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
-ADD dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
+ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
+ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
 RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
 ONBUILD ARG MAKEFLAGS
+ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE
+ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
-ONBUILD WORKDIR /tmp
+ONBUILD WORKDIR /src
 
-# Install ipython (optional), FIAT, UFL and FFCX (development
-# versions, master branch)
-ONBUILD RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
+# This leaves the sources inside the container. This is a limitation of Docker.
+# There is some trickery in the intermediate and dolfinx containers that can be
+# used to remove this source if needed, see below.
+ONBUILD ADD fiat/ /src/fiat/
+ONBUILD ADD ufl/ /src/ufl/
+ONBUILD ADD ffcx/ /src/ffcx/
+ONBUILD ADD dolfinx/ /src/dolfinx/
 
-ONBUILD RUN git clone --depth 1 https://github.com/fenics/dolfinx.git && \
-    cd dolfinx && \
+# The dolfinx-onbuild container expects to have folders fiat/ ufl/ ffcx/ and
+# dolfinx/ mounted/shared at /src.
+ONBUILD RUN cd fiat && pip3 install --no-cache-dir . && \
+    cd ../ufl && pip3 install --no-cache-dir . && \
+    cd ../ffcx && pip3 install --no-cache-dir . && \
+    cd ../ && pip3 install --no-cache-dir ipython
+
+ONBUILD RUN cd dolfinx && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real ../cpp && \
+    PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
     ninja ${MAKEFLAGS} install && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies --ignore-installed . && \
+    PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
     cd ../ && \
-    git clean -fdx && \
+    rm -r build && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
+    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFIN_CMAKE_CXX_FLAGS} ../cpp && \
     ninja ${MAKEFLAGS} install && \
     . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed . && \
-    rm -rf /tmp/*
+    PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies . && \
+    cd ../ && \
+    rm -r build
 
 # Real by default.
-ONBUILD ENV LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
-        PATH=/usr/local/dolfinx-real/bin:$PATH \
-        PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
-        PETSC_ARCH=linux-gnu-real-32 \
-        PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH
+ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
+            PETSC_ARCH=linux-gnu-real-32 \
+            PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
+            LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ONBUILD WORKDIR /root
 
 ########################################
 
-FROM dolfinx-onbuild as dolfinx
-LABEL description="DOLFIN-X in real and complex modes"
+FROM dolfinx-onbuild as intermediate
+
+########################################
+
+FROM dev-env as dolfinx
+LABEL description="DOLFIN-X in 32-bit real and complex modes"
+
+# This layer manually copies the build artifacts from intermediate into dev-env
+# to make the final image. This is a workaround for a well known limitation of
+# Docker that you cannot cleanup after an ADD operation. This reduces the
+# container size by around 80MB as the /src folder no longer exists in the final
+# image.
+
+COPY --from=intermediate /usr/local/dolfinx-real /usr/local/dolfinx-real
+COPY --from=intermediate /usr/local/dolfinx-complex /usr/local/dolfinx-complex
+COPY --from=intermediate /usr/local/lib/python3.8/dist-packages /usr/local/lib/python3.8/dist-packages
+COPY --from=intermediate /usr/local/bin /usr/local/bin
+
+# Real by default.
+# Note that because we inherit from dev-env we do not inherit these ENV from
+# dolfinx-onbuild.
+ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
+    PETSC_ARCH=linux-gnu-real-32 \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
+    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ########################################
 
 FROM dolfinx as lab
 LABEL description="DOLFIN-X Jupyter Lab"
+
 WORKDIR /root
 
-ARG TINI_VERSION
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini && \
-    pip3 install --no-cache-dir jupyter jupyterlab
+RUN pip3 install --upgrade --no-cache-dir jupyter jupyterlab
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash
 
-ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+ENTRYPOINT ["jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
