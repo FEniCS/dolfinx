@@ -160,7 +160,8 @@ int main(int argc, char* argv[])
 
     const auto bdofs = fem::locate_dofs_geometrical({*V}, [](auto& x) {
       static const double epsilon = std::numeric_limits<double>::epsilon();
-      return (x.row(0).abs() < 10.0*epsilon or (x.row(0) - 1.0).abs() < 10.0*epsilon);
+      return (x.row(0).abs() < 10.0 * epsilon
+              or (x.row(0) - 1.0).abs() < 10.0 * epsilon);
     });
 
     std::vector bc{
