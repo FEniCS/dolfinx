@@ -56,9 +56,9 @@ ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS="-O2 -march=sandybridge"
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
 ARG PETSC_SLEPC_DEBUGGING="no"
-# CMake build type. See CMake documentation.
+# CMake build type for DOLFINX C++ build. See CMake documentation.
 ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
-# Extra CMake C++ compiler flags.
+# Extra CMake C++ compiler flags for DOLFINX C++ build.
 ARG DOLFINX_CMAKE_CXX_FLAGS="-march=sandybridge"
 # Ubuntu MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
@@ -359,11 +359,10 @@ ONBUILD RUN cd dolfinx && \
     rm -r build
 
 # Real by default.
-ONBUILD ENV PATH=/usr/local/dolfinx-real/bin:$PATH \
-            PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
+ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
             PETSC_ARCH=linux-gnu-real-32 \
             PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
-            LD_LIBRARY_PATH=/usr/local/petsc/$PETSC_ARCH/lib:/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
+            LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ONBUILD WORKDIR /root
 
@@ -390,11 +389,10 @@ COPY --from=intermediate /usr/local/bin /usr/local/bin
 # Real by default.
 # Note that because we inherit from dev-env we do not inherit these ENV from
 # dolfinx-onbuild.
-ENV PATH=/usr/local/dolfinx-real/bin:$PATH \
-    PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
+ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     PETSC_ARCH=linux-gnu-real-32 \
     PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
-    LD_LIBRARY_PATH=/usr/local/petsc/$PETSC_ARCH/lib:/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
+    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ########################################
 
