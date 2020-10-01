@@ -1,5 +1,5 @@
 #include "hyperelasticity.h"
-#include <cfloat>
+#include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
@@ -172,9 +172,15 @@ int main(int argc, char* argv[])
     auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
 
     const auto bdofs_left = fem::locate_dofs_geometrical(
-        {*V}, [](auto& x) { return x.row(0) < DBL_EPSILON; });
+        {*V}, [](auto& x) {
+      static const double epsilon = std::numeric_limits<double>::epsilon();
+      return np.abs(x.row(0)) < 10.0*epsilon;
+    });
     const auto bdofs_right = fem::locate_dofs_geometrical(
-        {*V}, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
+        {*V}, [](auto& x) {
+	static const double epsilon = std::numeric_limits<double>::epsilon();
+	return (x.row(0) - 1.0).abs() < 10.0*epsilon;
+    });
 
     auto bcs
         = std::vector({std::make_shared<const fem::DirichletBC<PetscScalar>>(
