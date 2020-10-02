@@ -17,7 +17,7 @@ on:
 jobs:
   build_test_env_openmpi:
     name: Build fenicsproject/test-env:openmpi image
-    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/head/master' }}
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-20.04
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -g"
