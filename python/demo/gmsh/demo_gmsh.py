@@ -238,7 +238,7 @@ with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
         mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='ball_d2']/Geometry")
 
 if MPI.COMM_WORLD.rank == 0:
-    # Generate a mesh with 2nd-order hexahedral cells using pygmsh
+    # Generate a mesh with 2nd-order hexahedral cells using gmsh
     gmsh.model.add("Hexahedral mesh")
     gmsh.model.setCurrent("Hexahedral mesh")
     # Recombine tetrahedrons to hexahedrons

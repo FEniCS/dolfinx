@@ -70,7 +70,8 @@ _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
                   9: ("triangle", 2), 10: ("quadrilateral", 2),
                   11: ("tetrahedron", 2), 12: ("hexahedron", 2),
                   15: ("point", 1), 21: ("triangle", 3),
-                  26: ("interval", 3), 29: ("tetrahedron", 3)}
+                  26: ("interval", 3), 29: ("tetrahedron", 3),
+                  36: ("quadrilateral", 3)}
 
 
 def ufl_mesh_from_gmsh(gmsh_cell, gdim):
