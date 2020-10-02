@@ -555,7 +555,6 @@ def test_fourth_order_quad(L, H, Z):
 @pytest.mark.parametrize('order', [2, 3])
 def test_gmsh_input_quad(order):
     gmsh = pytest.importorskip("gmsh")
-    import gmsh
     # Parameterize test if gmsh gets wider support
     R = 1
     res = 0.2
