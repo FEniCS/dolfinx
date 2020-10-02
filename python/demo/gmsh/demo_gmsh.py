@@ -4,9 +4,9 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 #
-# =====================================
+# =========================================
 # Mesh generation using the GMSH python API
-# =====================================
+# =========================================
 
 from dolfinx.mesh import create_mesh, create_meshtags
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
@@ -17,54 +17,83 @@ import gmsh
 import numpy as np
 
 
-def gather_gmsh_physical_entities():
+def mesh_topology_and_markers_from_gmsh_physical_entities():
     """
-    Convenience function that extracts all entitites with
-    physical tags, creating mesh data structures for each
-    cell type.
-    Returns a dictionary where the key is the gmsh cell type
-    and its content is a dictionary of cells and cell data.
-
+    Loops through all entities tagged with a physical marker
+    in the gmsh model, and collects the data per cell type.
+    Returns a nested dictionary where the first key is the gmsh
+    MSH element type integer. Each element type present
+    in the model contains the cell topology of the elements
+    and corresponding markers.
+    Example:
+    MSH_triangle=2
+    MSH_tetra=4
+    meshes = {MSH_triangle: {"topology": triangle_topology,
+                             "cell_data": triangle_markers},
+              MSH_tetra: {"topology": tetra_topology,
+                          "cell_data": tetra_markers}}
     """
+    # Get the physical groups from gmsh on the form
+    # [(dim1, tag1),(dim1, tag2), (dim2, tag3),...]
     phys_grps = gmsh.model.getPhysicalGroups()
     meshes = {}
     for dim, tag in phys_grps:
+        # Get the entities for a given dimension:
+        # dim=0->Points, dim=1->Lines, dim=2->Triangles/Quadrilaterals
+        # etc.
         entities = gmsh.model.getEntitiesForPhysicalGroup(dim, tag)
+
         for entity in entities:
-            element_types, elem_tags, node_tags =\
+            # Get data about the elements on a given entity:
+            # NOTE: Assumes that each entity only have one cell-type
+            element_types, element_tags, node_tags =\
                 gmsh.model.mesh.getElements(dim, tag=entity)
-            for (e_type, e_tags, n_tags) in zip(
-                    element_types, elem_tags, node_tags):
-                name, dim, order, num_nodes, local_coords, _ = \
-                    gmsh.model.mesh.getElementProperties(e_type)
-                e_cells = n_tags.reshape(-1, num_nodes) - 1
-                if e_type in meshes.keys():
-                    meshes[e_type]["cells"] =\
-                        np.concatenate((meshes[e_type]["cells"],
-                                        e_cells), axis=0)
-                    meshes[e_type]["cell_data"] = \
-                        np.concatenate((meshes[e_type]["cell_data"],
-                                        np.full(len(e_tags), tag)), axis=0)
-                else:
-                    meshes[e_type] = {"cells":
-                                      e_cells,
-                                      "cell_data": np.full(len(e_tags), tag)}
+            assert(len(element_types) == 1)
+            # The MSH type of the cells on the element
+            element_type = element_types[0]
+            num_el = len(element_tags[0])
+            # Determine number of local nodes per element to create
+            # the topology of the elements
+            name, dim, order, num_nodes, local_coords, _ = \
+                gmsh.model.mesh.getElementProperties(element_type)
+
+            # 2D array of shape (num_elements,num_nodes_per_element) containing
+            # the topology of the elements on this entity
+            # NOTE: GMSH indexing starts with 1 and not zero.
+            element_topology = node_tags[0].reshape(-1, num_nodes) - 1
+
+            # Gather data for each element type and the
+            # corresponding physical markers
+            if element_type in meshes.keys():
+                meshes[element_type]["topology"] =\
+                    np.concatenate((meshes[element_type]["topology"],
+                                    element_topology), axis=0)
+                meshes[element_type]["cell_data"] =\
+                    np.concatenate((meshes[element_type]["cell_data"],
+                                    np.full(num_el, tag)), axis=0)
+            else:
+                meshes[element_type] = {"topology": element_topology,
+                                        "cell_data": np.full(num_el, tag)}
 
     return meshes
 
 
-def sort_gmsh_points():
+def mesh_geometry_from_gmsh():
     """
-    Extracts geometrical nodes from all entities in gmsh
-    and sorts them starting from index 0.
+    For a given gmsh model, extract the mesh geometry
+    as a numpy (N,3) array where the i-th row
+    corresponds to the i-th node in the mesh
     """
-    idx, points, _ = gmsh.model.mesh.getNodes()
+    # Get the unique tag and coordinates for nodes
+    # in mesh
+    indices, points, _ = gmsh.model.mesh.getNodes()
     points = points.reshape(-1, 3)
-    idx -= 1
-    srt = np.argsort(idx)
-    assert np.all(idx[srt] == np.arange(len(idx)))
-    x = points[srt]
-    return x
+    # GMSH indices starts at 1
+    indices -= 1
+    # Sort nodes in geometry according to the unique index
+    perm_sort = np.argsort(indices)
+    assert np.all(indices[perm_sort] == np.arange(len(indices)))
+    return points[perm_sort]
 
 
 # Generating a mesh on each process rank
@@ -72,7 +101,6 @@ def sort_gmsh_points():
 #
 # Generate a mesh on each rank with the gmsh API, and create a DOLFIN-X mesh
 # on each rank
-
 gmsh.initialize()
 gmsh.option.setNumber("General.Terminal", 0)
 gmsh.model.add("Sphere")
@@ -86,12 +114,14 @@ gmsh.model.mesh.generate(3)
 
 
 # Sort mesh nodes according to their index in gmsh (Starts at 1)
-x = sort_gmsh_points()
+x = mesh_geometry_from_gmsh()
 
 # Extract cells from gmsh (Only interested in tetrahedrons)
 element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=3)
-name, dim, order, num_nodes, local_coords, num_first_order_nodes = \
-    gmsh.model.mesh.getElementProperties(element_types[0])
+assert(len(element_types) == 1)
+name, dim, order, num_nodes, local_coords, num_first_order_nodes \
+    = gmsh.model.mesh.getElementProperties(
+        element_types[0])
 cells = node_tags[0].reshape(-1, num_nodes) - 1
 
 
@@ -134,19 +164,19 @@ if MPI.COMM_WORLD.rank == 0:
     gmsh.model.mesh.generate(3)
 
     # Sort mesh nodes according to their index in gmsh
-    x = sort_gmsh_points()
+    x = mesh_geometry_from_gmsh()
 
     # Broadcast cell type data and geometric dimension
     gmsh_cell_id = MPI.COMM_WORLD.bcast(
         gmsh.model.mesh.getElementType("tetrahedron", 1), root=0)
 
     # Get mesh data for dim (0, tdim) for all physical entities
-    meshes = gather_gmsh_physical_entities()
-    cells = meshes[gmsh_cell_id]["cells"]
+    meshes = mesh_topology_and_markers_from_gmsh_physical_entities()
+    cells = meshes[gmsh_cell_id]["topology"]
     cell_data = meshes[gmsh_cell_id]["cell_data"]
     num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
     gmsh_facet_id = gmsh.model.mesh.getElementType("triangle", 1)
-    marked_facets = meshes[gmsh_facet_id]["cells"]
+    marked_facets = meshes[gmsh_facet_id]["topology"]
     facet_values = meshes[gmsh_facet_id]["cell_data"]
 else:
     gmsh_cell_id = MPI.COMM_WORLD.bcast(None, root=0)
@@ -190,20 +220,20 @@ if MPI.COMM_WORLD.rank == 0:
     gmsh.option.setNumber("General.Terminal", 0)
 
     # Sort mesh nodes according to their index in gmsh
-    x = sort_gmsh_points()
+    x = mesh_geometry_from_gmsh()
 
     # Broadcast cell type data and geometric dimension
     gmsh_cell_id = MPI.COMM_WORLD.bcast(
         gmsh.model.mesh.getElementType("tetrahedron", 2), root=0)
 
     # Get mesh data for dim (0, tdim) for all physical entities
-    meshes = gather_gmsh_physical_entities()
-    cells = meshes[gmsh_cell_id]["cells"]
+    meshes = mesh_topology_and_markers_from_gmsh_physical_entities()
+    cells = meshes[gmsh_cell_id]["topology"]
     cell_data = meshes[gmsh_cell_id]["cell_data"]
 
     num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
     gmsh_facet_id = gmsh.model.mesh.getElementType("triangle", 2)
-    marked_facets = meshes[gmsh_facet_id]["cells"]
+    marked_facets = meshes[gmsh_facet_id]["topology"]
     facet_values = meshes[gmsh_facet_id]["cell_data"]
 
 else:
@@ -273,20 +303,20 @@ if MPI.COMM_WORLD.rank == 0:
     gmsh.model.setPhysicalName(3, 1, "Mesh volume")
 
     # Sort mesh nodes according to their index in gmsh
-    x = sort_gmsh_points()
+    x = mesh_geometry_from_gmsh()
 
     # Broadcast cell type data and geometric dimension
     gmsh_cell_id = MPI.COMM_WORLD.bcast(
         gmsh.model.mesh.getElementType("hexahedron", 2), root=0)
 
     # Get mesh data for dim (0, tdim) for all physical entities
-    meshes = gather_gmsh_physical_entities()
-    cells = meshes[gmsh_cell_id]["cells"]
+    meshes = mesh_topology_and_markers_from_gmsh_physical_entities()
+    cells = meshes[gmsh_cell_id]["topology"]
     cell_data = meshes[gmsh_cell_id]["cell_data"]
 
     num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
     gmsh_facet_id = gmsh.model.mesh.getElementType("quadrangle", 2)
-    marked_facets = meshes[gmsh_facet_id]["cells"]
+    marked_facets = meshes[gmsh_facet_id]["topology"]
     facet_values = meshes[gmsh_facet_id]["cell_data"]
     gmsh.finalize()
 else:
