@@ -62,17 +62,19 @@ class XDMFFile(cpp.io.XDMFFile):
         return mesh
 
 
-# Map from Gmsh string to DOLFIN cell type and degree
-_gmsh_cells = dict(tetra=("tetrahedron", 1), tetra10=("tetrahedron", 2), tetra20=("tetrahedron", 3),
-                   hexahedron=("hexahedron", 1), hexahedron27=("hexahedron", 2),
-                   triangle=("triangle", 1), triangle6=("triangle", 2), triangle10=("triangle", 3),
-                   quad=("quadrilateral", 1), quad9=("quadrilateral", 2), quad16=("quadrilateral", 3),
-                   line=("interval", 1), line3=("interval", 2), line4=("interval", 3),
-                   vertex=("point", 1))
+# Map from Gmsh float to DOLFIN cell type and degree
+# http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
+_gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
+                  3: ("quadrilateral", 1), 4: ("tetrahedron", 1),
+                  5: ("hexahedron", 1), 8: ("interval", 2),
+                  9: ("triangle", 2), 10: ("quadrilateral", 2),
+                  11: ("tetrahedron", 2), 12: ("hexahedron", 2),
+                  15: ("point", 1), 21: ("triangle", 3),
+                  26: ("interval", 3), 29: ("tetrahedron", 3)}
 
 
 def ufl_mesh_from_gmsh(gmsh_cell, gdim):
-    """Create a UFL mesh from a Gmsh cell string and the geometric dimension."""
-    shape, degree = _gmsh_cells[gmsh_cell]
+    """Create a UFL mesh from a Gmsh cell int and the geometric dimension."""
+    shape, degree = _gmsh_to_cells[gmsh_cell]
     cell = ufl.Cell(shape, geometric_dimension=gdim)
     return ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
