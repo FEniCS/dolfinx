@@ -100,8 +100,8 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_read_write_p2_mesh(tempdir, encoding):
-    gmsh = pytest.importorskip("gmsh")
     if MPI.COMM_WORLD.rank == 0:
+        gmsh = pytest.importorskip("gmsh")
         gmsh.initialize()
         gmsh.model.occ.addSphere(0, 0, 0, 1, tag=1)
         gmsh.option.setNumber("Mesh.CharacteristicLengthMin", 0.3)
@@ -128,7 +128,7 @@ def test_read_write_p2_mesh(tempdir, encoding):
         gmsh.finalize()
 
     else:
-        gmsh_cell_id. num_nodes = MPI.COMM_WORLD.bcast([None, None], root=0)
+        num_nodes, gmsh_cell_id = MPI.COMM_WORLD.bcast([None, None], root=0)
         cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
 
     domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
