@@ -103,7 +103,7 @@ def test_read_write_p2_mesh(tempdir, encoding):
     pygmsh = pytest.importorskip("pygmsh")
     if MPI.COMM_WORLD.rank == 0:
         geom = pygmsh.occ.Geometry()
-        geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.4)
+        geom.add_ball([0.0, 0.0, 0.0], 1.0, mesh_size=0.4)
         pygmsh_mesh = pygmsh.generate_mesh(geom, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
         cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
         pygmsh_cell = pygmsh_mesh.cells[-1].type

@@ -563,7 +563,7 @@ def test_gmsh_input_quad(order):
 
     geo = pygmsh.occ.Geometry()
     geo.add_raw_code("Mesh.ElementOrder={0:d};".format(order))
-    geo.add_ball([0, 0, 0], R, char_length=res)
+    geo.add_ball([0, 0, 0], R, mesh_size=res)
     geo.add_raw_code("Recombine Surface {1};")
     geo.add_raw_code("Mesh.Algorithm = {0:d};".format(algorithm))
     msh = pygmsh.generate_mesh(geo, verbose=True, dim=2)

@@ -24,7 +24,7 @@ from dolfinx.mesh import create_mesh, create_meshtags
 # on each rank
 
 geom = pygmsh.occ.Geometry()
-geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+geom.add_ball([0.0, 0.0, 0.0], 1.0, mesh_size=0.2)
 pygmsh_mesh = pygmsh.generate_mesh(geom)
 cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
 pygmsh_cell = pygmsh_mesh.cells[-1].type
@@ -42,7 +42,7 @@ with XDMFFile(MPI.COMM_SELF, "mesh_rank_{}.xdmf".format(MPI.COMM_WORLD.rank), "w
 if MPI.COMM_WORLD.rank == 0:
     # Generate a mesh
     geom = pygmsh.occ.Geometry()
-    ball = geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+    ball = geom.add_ball([0.0, 0.0, 0.0], 1.0, mesh_size=0.2)
     box = geom.add_box([0.0, 0.0, 0.0], [1.0, 1.0, 1.0])
 
     cut = geom.boolean_difference([ball], [box])
@@ -86,7 +86,7 @@ with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
 
 if MPI.COMM_WORLD.rank == 0:
     geom = pygmsh.occ.Geometry()
-    ball = geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+    ball = geom.add_ball([0.0, 0.0, 0.0], 1.0, mesh_size=0.2)
     box = geom.add_box([0.0, 0.0, 0.0], [1.0, 1.0, 1.0])
 
     cut = geom.boolean_difference([ball], [box])
