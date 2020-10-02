@@ -561,7 +561,7 @@ def test_gmsh_input_quad(order):
     res = 0.2 if order == 2 else 0.2
     algorithm = 2 if order == 2 else 5
 
-    geo = pygmsh.opencascade.Geometry()
+    geo = pygmsh.occ.Geometry()
     geo.add_raw_code("Mesh.ElementOrder={0:d};".format(order))
     geo.add_ball([0, 0, 0], R, char_length=res)
     geo.add_raw_code("Recombine Surface {1};")

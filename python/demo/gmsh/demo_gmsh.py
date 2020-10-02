@@ -23,7 +23,7 @@ from dolfinx.mesh import create_mesh, create_meshtags
 # Generate a mesh on each rank with pygmsh, and create a DOLFIN-X mesh
 # on each rank
 
-geom = pygmsh.opencascade.Geometry()
+geom = pygmsh.occ.Geometry()
 geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
 pygmsh_mesh = pygmsh.generate_mesh(geom)
 cells, x = pygmsh_mesh.cells[-1].data, pygmsh_mesh.points
@@ -41,7 +41,7 @@ with XDMFFile(MPI.COMM_SELF, "mesh_rank_{}.xdmf".format(MPI.COMM_WORLD.rank), "w
 
 if MPI.COMM_WORLD.rank == 0:
     # Generate a mesh
-    geom = pygmsh.opencascade.Geometry()
+    geom = pygmsh.occ.Geometry()
     ball = geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
     box = geom.add_box([0.0, 0.0, 0.0], [1.0, 1.0, 1.0])
 
@@ -85,7 +85,7 @@ with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
 # Generate mesh on rank 0, then build a distributed mesh
 
 if MPI.COMM_WORLD.rank == 0:
-    geom = pygmsh.opencascade.Geometry()
+    geom = pygmsh.occ.Geometry()
     ball = geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
     box = geom.add_box([0.0, 0.0, 0.0], [1.0, 1.0, 1.0])
 
@@ -136,7 +136,7 @@ with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
 
 if MPI.COMM_WORLD.rank == 0:
     # Generate a mesh with 2nd-order hexahedral cells using pygmsh
-    geom = pygmsh.opencascade.Geometry()
+    geom = pygmsh.occ.Geometry()
     geom.add_raw_code("Mesh.RecombineAll = 1;")
     geom.add_raw_code("Mesh.CharacteristicLengthFactor = 1.0;")
     geom.add_raw_code("Mesh.RecombinationAlgorithm = 2;")
