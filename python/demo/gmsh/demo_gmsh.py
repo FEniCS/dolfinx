@@ -92,7 +92,6 @@ x = sort_gmsh_points()
 element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=3)
 name, dim, order, num_nodes, local_coords, num_first_order_nodes = \
     gmsh.model.mesh.getElementProperties(element_types[0])
-num_elements = len(element_tags[0])
 cells = node_tags[0].reshape(-1, num_nodes) - 1
 
 
