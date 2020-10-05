@@ -157,8 +157,7 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
     // dolfinx::MPI::broadcast(comm, partitions);
     // HDF5Interface::add_attribute(h5_id, h5_path, "partition", partitions);
   }
-} // namespace
-//----------------------------------------------------------------------------
+}
 
 } // namespace io::xdmf_utils
 } // namespace dolfinx
