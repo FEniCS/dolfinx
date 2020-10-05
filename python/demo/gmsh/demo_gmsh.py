@@ -24,10 +24,11 @@ import numpy as np
 # Generate a mesh on rank 0 and write it to file as msh.
 # Load the mesh and corresponding meshtags as a
 # mesh distributed over all processors
+gmsh.initialize()
+model = gmsh.model()
+
 if MPI.COMM_WORLD.rank == 0:
 
-    gmsh.initialize()
-    model = gmsh.model()
     model.add("Rectangle")
     rect_tag = model.occ.addRectangle(0, 0, 0, 1, 1, 1)
     model.occ.synchronize()
