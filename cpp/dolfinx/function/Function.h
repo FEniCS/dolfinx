@@ -257,6 +257,32 @@ public:
     const int value_size = element->value_size() / block_size;
     const int space_dimension = element->space_dimension() / block_size;
 
+    // If the space has sub elements, concatenate the evaluations on the sub
+    // elements
+    const int num_sub_elements = element->num_sub_elements();
+    if (num_sub_elements > 1 && num_sub_elements != block_size)
+    {
+      if (block_size != 1)
+        throw std::runtime_error(
+            "Blocked elements of mixed spaces are not yet supported.");
+      int offset = 0;
+      for (int sub_e = 0; sub_e < num_sub_elements; ++sub_e)
+      {
+        std::shared_ptr<const fem::FiniteElement> sub_element
+            = element->extract_sub_element({sub_e});
+
+        const int sub_value_size = sub_element->value_size();
+        const Function sub_f = sub(sub_e);
+        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> sub_u(
+            u.rows(), sub_value_size);
+        sub_f.eval(x, cells, sub_u);
+
+        for (int i = 0; i < sub_value_size; ++i)
+          u.col(offset + i) = sub_u.col(i);
+        offset += sub_value_size;
+      }
+      return;
+    }
     // Prepare geometry data structures
     Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
     Eigen::Array<double, Eigen::Dynamic, 1> detJ(1);
