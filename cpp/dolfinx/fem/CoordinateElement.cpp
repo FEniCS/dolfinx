@@ -173,7 +173,7 @@ void CoordinateElement::compute_reference_geometry(
         // Increment to new point in reference
         Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> dX
             = Kview * (x.row(ip).matrix().transpose() - xk);
-        if (dX.squaredNorm() < 1e-12)
+        if (dX.squaredNorm() < 1e-16)
           break;
         Xk += dX;
       }
