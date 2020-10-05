@@ -19,8 +19,6 @@ C++ core
 - Boost (http://www.boost.org), with the following compiled Boost components
 
   - filesystem
-  - iostreams
-  - program_options
   - timer
 
 - CMake (https://cmake.org) [build dependency]
@@ -50,13 +48,13 @@ Below are additional requirements for the Python interface.
 - FFC-X, UFL and FIAT (http://github.com/FEniCS/).
 - pybind11 (https://github.com/pybind/pybind11)
 - NumPy (http://www.numpy.org)
+- mpi4py
+- petsc4py
 
 
 .. rubric:: Recommended
 
 - Matplotlib (required for plotting)
-- mpi4py
-- petsc4py
 - slepc4py
 
 
