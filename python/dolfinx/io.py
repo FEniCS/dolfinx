@@ -65,7 +65,7 @@ class XDMFFile(cpp.io.XDMFFile):
         return mesh
 
 
-def extract_mesh_topology_and_markers(gmsh_model, model_name=None):
+def extract_mesh_topology_and_markers(gmsh_model: "gmsh.model", model_name=None):
     """
     Extracts all entities tagged with a physical marker
     in the gmsh model, and collects the data per cell type.
@@ -130,7 +130,7 @@ def extract_mesh_topology_and_markers(gmsh_model, model_name=None):
     return topologies
 
 
-def extract_geometry(gmsh_model, model_name=None):
+def extract_geometry(gmsh_model: "gmsh.model", model_name=None):
     """
     For a given gmsh model, extract the mesh geometry
     as a numpy (N,3) array where the i-th row
