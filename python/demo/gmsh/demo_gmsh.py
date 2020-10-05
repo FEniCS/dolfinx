@@ -8,6 +8,8 @@
 # Mesh generation using Gmsh and pygmsh
 # =====================================
 
+import sys
+
 import numpy as np
 import pygmsh
 from mpi4py import MPI
@@ -22,6 +24,10 @@ from dolfinx.mesh import create_mesh, create_meshtags
 #
 # Generate a mesh on each rank with pygmsh, and create a DOLFIN-X mesh
 # on each rank
+
+
+# Interface needs updating for (py)msh API change
+sys.exit(0)
 
 geom = pygmsh.opencascade.Geometry()
 geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
