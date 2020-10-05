@@ -251,5 +251,8 @@ void mesh(py::module& m)
   m.def("locate_entities", &dolfinx::mesh::locate_entities);
   m.def("locate_entities_boundary", &dolfinx::mesh::locate_entities_boundary);
 
+  m.def("entities_to_geometry", &dolfinx::mesh::entities_to_geometry);
+  m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
+
 } // namespace dolfinx_wrappers
 } // namespace dolfinx_wrappers
