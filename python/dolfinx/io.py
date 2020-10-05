@@ -10,8 +10,6 @@
 import ufl
 import numpy
 from dolfinx import cpp, fem
-from mpi4py import MPI
-import dolfinx.mesh
 
 
 class VTKFile:
