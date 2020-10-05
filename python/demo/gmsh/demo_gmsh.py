@@ -8,8 +8,6 @@
 # Mesh generation using the GMSH python API
 # =========================================
 
-import dolfinx
-import ufl
 from dolfinx.mesh import create_mesh, create_meshtags
 from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh, read_from_msh, extract_geometry, extract_mesh_topology_and_markers
 
