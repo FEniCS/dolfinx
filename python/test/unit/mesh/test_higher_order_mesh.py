@@ -249,7 +249,6 @@ def scipy_one_cell(points, nodes):
 
 # FIXME: Higher order tests are too slow, need to find a better test
 @skip_in_parallel
-# @pytest.mark.parametrize("order", range(1, 6))
 @pytest.mark.parametrize("order", range(1, 6))
 def test_nth_order_triangle(order):
     num_nodes = (order + 1) * (order + 2) / 2
