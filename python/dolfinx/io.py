@@ -165,8 +165,14 @@ def read_from_msh(filename: str, cell_data=False, facet_data=False, gdim=None):
         gdim = 3
     if MPI.COMM_WORLD.rank == 0:
         import gmsh
-        gmsh.initialize()
+        # Check if gmsh is allready initialized
+        try:
+            current_model = gmsh.model.getCurrent()
+        except ValueError:
+            current_model = None
+            gmsh.initialize()
 
+        gmsh.model.add("Mesh from file")
         gmsh.merge(filename)
 
         # Get mesh geometry
@@ -185,8 +191,10 @@ def read_from_msh(filename: str, cell_data=False, facet_data=False, gdim=None):
             cell_information[i] = {"id": element, "dim": dim,
                                    "num_nodes": num_nodes}
             cell_dimensions[i] = dim
-        gmsh.finalize()
-
+        if current_model is None:
+            gmsh.finalize()
+        else:
+            gmsh.model.setCurrent(current_model)
         # Sort elements by ascending dimension
         perm_sort = numpy.argsort(cell_dimensions)
 
