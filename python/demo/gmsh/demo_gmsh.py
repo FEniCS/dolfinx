@@ -26,7 +26,8 @@ from dolfinx.mesh import create_mesh, create_meshtags
 # on each rank
 
 
-sys.exit("Interface needs updating for (py)msh API change.")
+# Interface needs updating for (py)msh API change
+sys.exit(0)
 
 geom = pygmsh.opencascade.Geometry()
 geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
