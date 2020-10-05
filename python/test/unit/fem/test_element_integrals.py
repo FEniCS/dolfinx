@@ -404,3 +404,22 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
         for a, b in dof_order:
             for c, d in dof_order:
                 assert np.isclose(results[0][a, c], result[b, d])
+
+
+@skip_in_parallel
+def test_curl():
+    points = np.array([[0., 0., 0.], [1., 0., 0.],
+                       [1., 1., 0.], [1., 1., -1.]])
+    cells = [[0, 1, 3, 2]]
+
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(CellType.tetrahedron), 1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh.topology.create_connectivity_all()
+
+    V = FunctionSpace(mesh, ("N1curl", 1))
+
+    v = TestFunction(V)
+
+    d = ufl.curl(v)[0] * ufl.dx
+    dvec = fem.assemble_vector(d)
+    assert np.allclose(dvec[:], [0, 0, 0, -1 / 3, 1 / 3, -1 / 3])
