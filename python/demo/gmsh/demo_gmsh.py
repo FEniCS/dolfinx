@@ -9,7 +9,7 @@
 # =========================================
 
 from dolfinx.mesh import create_mesh, create_meshtags
-from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh, read_from_msh, extract_geometry, extract_mesh_topology_and_markers
+from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh, extract_geometry, extract_mesh_topology_and_markers
 
 from dolfinx.cpp.io import perm_gmsh, extract_local_entities
 from dolfinx import cpp
@@ -18,49 +18,14 @@ import gmsh
 import numpy as np
 
 
-# Generating a mesh on one process and write to file
-# ==================================================
-#
-# Generate a mesh on rank 0 and write it to file as msh.
-# Load the mesh and corresponding meshtags as a
-# mesh distributed over all processors
-gmsh.initialize()
-model = gmsh.model()
-
-if MPI.COMM_WORLD.rank == 0:
-
-    model.add("Rectangle")
-    rect_tag = model.occ.addRectangle(0, 0, 0, 1, 1, 1)
-    model.occ.synchronize()
-
-    # Tag the physical volume with tag 7
-    model.addPhysicalGroup(2, [rect_tag], tag=7)
-    # Tag the line [0,0]->[0,1] with tag 11
-    facet_entities = model.occ.getEntities(dim=1)
-    for entity in facet_entities:
-        midpoint = model.occ.getCenterOfMass(dim=1, tag=entity[1])
-    if np.allclose(np.array(midpoint), [0, 0.5, 0]):
-        model.addPhysicalGroup(1, [entity[1]], tag=11)
-    model.mesh.generate(2)
-    gmsh.write("mesh.msh")
-
-
-# Read in mesh from MSH file as a 2D mesh
-mesh, ct, ft = read_from_msh("mesh.msh", cell_data=True, facet_data=True, gdim=2)
-ct.name = "Square cells"
-ft.name = "Square facets"
-mesh.name = "SquareMesh"
-with XDMFFile(MPI.COMM_WORLD, "mesh2D.xdmf", "w") as xdmf:
-    xdmf.write_mesh(mesh)
-    xdmf.write_meshtags(ct)
-    xdmf.write_meshtags(ft)
-
 # Generating a mesh on each process rank
 # ======================================
 #
 # Generate a mesh on each rank with the gmsh API, and create a DOLFIN-X mesh
 # on each rank
+gmsh.initialize()
 gmsh.option.setNumber("General.Terminal", 0)
+model = gmsh.model()
 model.add("Sphere")
 model.setCurrent("Sphere")
 model.occ.addSphere(0, 0, 0, 1, tag=1)
