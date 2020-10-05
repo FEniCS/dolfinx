@@ -13,7 +13,7 @@ namespace dolfinx::io
 {
 
 /// Get filename from a fully qualified path and filename
-/// @param[in] Full file path and name
+/// @param[in] fullname Full file path and name
 /// @return The filename (without path)
 std::string get_filename(const std::string& fullname);
 
