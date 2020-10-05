@@ -150,7 +150,7 @@ def extract_geometry(gmsh_model, model_name=None):
     return points[perm_sort]
 
 
-def read_from_msh(filename, cell_data=False, facet_data=False, gdim=None):
+def read_from_msh(filename: str, cell_data=False, facet_data=False, gdim=None):
     """
     Reads a mesh from a msh-file and returns the dolfin-x mesh.
     Input:
@@ -252,7 +252,7 @@ def read_from_msh(filename, cell_data=False, facet_data=False, gdim=None):
         return mesh
 
 
-# Map from Gmsh float to DOLFIN cell type and degree
+# Map from Gmsh int to DOLFIN cell type and degree
 # http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
 _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
                   3: ("quadrilateral", 1), 4: ("tetrahedron", 1),
@@ -264,8 +264,11 @@ _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
                   36: ("quadrilateral", 3)}
 
 
-def ufl_mesh_from_gmsh(gmsh_cell, gdim):
-    """Create a UFL mesh from a Gmsh cell int and the geometric dimension."""
+def ufl_mesh_from_gmsh(gmsh_cell: int, gdim: int):
+    """
+    Create a UFL mesh from a Gmsh cell identifier and the geometric dimension.
+    See: # http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
+    """
     shape, degree = _gmsh_to_cells[gmsh_cell]
     cell = ufl.Cell(shape, geometric_dimension=gdim)
     return ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))

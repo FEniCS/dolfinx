@@ -237,7 +237,7 @@ std::vector<std::uint8_t> gmsh_tetrahedron(int num_nodes)
   case 4:
     return {0, 1, 2, 3};
   case 10:
-    return std::vector<std::uint8_t>{0, 1, 2, 3, 9, 6, 8, 7, 4, 5};
+    return {0, 1, 2, 3, 9, 6, 8, 7, 4, 5};
   case 20:
     return {0,  1,  2, 3, 14, 15, 8,  9,  13, 12,
             11, 10, 5, 4, 7,  6,  19, 18, 17, 16};
