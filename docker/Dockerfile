@@ -133,7 +133,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
     libglu1 \
     libxcursor-dev \
-    libxinerama1
+    libxinerama1 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 
 # Install Python packages (via pip)
 # - First set of packages are required to build and run FEniCS.
