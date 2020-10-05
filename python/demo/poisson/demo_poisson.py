@@ -141,8 +141,8 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 u0 = Function(V)
 u0.vector.set(0.0)
 facets = locate_entities_boundary(mesh, 1,
-                                  lambda x: np.logical_or(x[0] < np.finfo(float).eps,
-                                                          x[0] > 1.0 - np.finfo(float).eps))
+                                  lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                          np.isclose(x[0], 1.0)))
 bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets))
 
 # Next, we want to express the variational problem.  First, we need to
