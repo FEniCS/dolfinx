@@ -131,7 +131,7 @@ if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
 endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
-find_package(Boost 1.70 REQUIRED timer filesystem program_options)
+find_package(Boost 1.70 REQUIRED timer filesystem)
 set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")

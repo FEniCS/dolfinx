@@ -19,7 +19,7 @@ if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
 endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
-find_package(Boost 1.70 REQUIRED COMPONENTS timer filesystem program_options)
+find_package(Boost 1.70 REQUIRED COMPONENTS timer filesystem)
 
 if (NOT TARGET PETSC::petsc)
   set(DOLFINX_SKIP_BUILD_TESTS TRUE)

@@ -99,7 +99,7 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
 
 
 @pytest.mark.parametrize("encoding", encodings)
-def test_read_write_p2_mesh(tempdir, encoding):
+def xtest_read_write_p2_mesh(tempdir, encoding):
     pygmsh = pytest.importorskip("pygmsh")
     if MPI.COMM_WORLD.rank == 0:
         geom = pygmsh.opencascade.Geometry()

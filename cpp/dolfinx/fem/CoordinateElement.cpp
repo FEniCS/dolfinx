@@ -66,7 +66,8 @@ void CoordinateElement::compute_reference_geometry(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& cell_geometry) const
+                                        Eigen::RowMajor>>& cell_geometry,
+    double eps) const
 {
   // Number of points
   int num_points = x.rows();
@@ -173,7 +174,7 @@ void CoordinateElement::compute_reference_geometry(
         // Increment to new point in reference
         Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> dX
             = Kview * (x.row(ip).matrix().transpose() - xk);
-        if (dX.squaredNorm() < 1e-12)
+        if (dX.squaredNorm() < eps)
           break;
         Xk += dX;
       }
