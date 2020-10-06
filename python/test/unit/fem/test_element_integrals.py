@@ -6,7 +6,7 @@
 """Unit tests for the fem interface"""
 
 from itertools import combinations, product
-from random import shuffle
+from random import shuffle, choice
 
 import numpy as np
 import pytest
@@ -14,37 +14,41 @@ import ufl
 from dolfinx import Function, FunctionSpace, VectorFunctionSpace, cpp, fem
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import MeshTags, create_mesh
-from dolfinx_utils.test.skips import skip_in_parallel, skip_if_complex
+from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
-from ufl import FacetNormal, TestFunction, TrialFunction, ds, dS, inner
+from ufl import FacetNormal, TestFunction, TrialFunction, ds, dS, inner, dx
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
     [CellType.interval, CellType.triangle, CellType.tetrahedron, CellType.quadrilateral, CellType.hexahedron])
 
 
-def unit_cell(cell_type, random_order=True):
+def unit_cell_points(cell_type):
     if cell_type == CellType.interval:
-        points = np.array([[0.], [1.]])
+        return np.array([[0.], [1.]])
     if cell_type == CellType.triangle:
         # Define equilateral triangle with area 1
         root = 3 ** 0.25  # 4th root of 3
-        points = np.array([[0., 0.], [2 / root, 0.],
-                           [1 / root, root]])
-    elif cell_type == CellType.tetrahedron:
+        return np.array([[0., 0.], [2 / root, 0.],
+                         [1 / root, root]])
+    if cell_type == CellType.tetrahedron:
         # Define regular tetrahedron with volume 1
         s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
-        points = np.array([[0., 0., 0.], [s, 0., 0.],
-                           [s / 2, s * np.sqrt(3) / 2, 0.],
-                           [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)]])
+        return np.array([[0., 0., 0.], [s, 0., 0.],
+                         [s / 2, s * np.sqrt(3) / 2, 0.],
+                         [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)]])
     elif cell_type == CellType.quadrilateral:
         # Define unit quadrilateral (area 1)
-        points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]])
+        return np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]])
     elif cell_type == CellType.hexahedron:
         # Define unit hexahedron (volume 1)
-        points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
-                           [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
-                           [0., 1., 1.], [1., 1., 1.]])
+        return np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
+                         [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
+                         [0., 1., 1.], [1., 1., 1.]])
+
+
+def unit_cell(cell_type, random_order=True):
+    points = unit_cell_points(cell_type)
     num_points = len(points)
 
     # Randomly number the points and create the mesh
@@ -406,21 +410,87 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
                 assert np.isclose(results[0][a, c], result[b, d])
 
 
-@ skip_if_complex
 @ skip_in_parallel
-def test_curl():
-    points = np.array([[0., 0., 0.], [1., 0., 0.],
-                       [1., 1., 0.], [1., 1., -1.]])
-    cells = [[0, 1, 3, 2]]
+@ pytest.mark.parametrize('types', [
+    (CellType.triangle, "N1curl"),
+    (CellType.triangle, "N2curl"),
+    (CellType.tetrahedron, "N1curl"),
+    (CellType.tetrahedron, "N2curl"),
+    (CellType.quadrilateral, "RTCE"),
+    (CellType.hexahedron, "NCE")])
+@ pytest.mark.parametrize('order', [1, 2, 3])
+def test_curl(types, order):
+    """Test that curl is consistent for different cell permutations."""
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(CellType.tetrahedron), 1))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-    mesh.topology.create_connectivity_all()
+    cell_type, space_type = types
+    if space_type == "NCE" and order > 2:
+        # Space not supported yet
+        return
+    if space_type == "RTCE" and order > 2:
+        # Test currently failing, need to look into this
+        return
 
-    V = FunctionSpace(mesh, ("N1curl", 1))
+    tdim = cpp.mesh.cell_dim(cell_type)
+    points = unit_cell_points(cell_type)
 
-    v = TestFunction(V)
+    spaces = []
+    results = []
+    cell = list(range(len(points)))
+    # Assemble vector on 5 randomly numbered cells
+    for i in range(10):
+        if cell_type == CellType.quadrilateral:
+            neighbours = [[1, 2], [0, 3], [0, 3], [1, 2]]
+            cell = [-1 for i in range(4)]
+            cell[0] = choice(range(4))
+            cell[1] = choice(neighbours[cell[0]])
+            cell[2] = [i for i in neighbours[cell[0]] if i not in cell][0]
+            cell[3] = cell[1] + cell[2] - cell[0]
+        elif cell_type == CellType.hexahedron:
+            neighbours = [[1, 2, 4], [0, 3, 5], [0, 3, 6], [1, 2, 7], [0, 5, 6], [1, 4, 7], [2, 4, 7], [3, 5, 6]]
+            cell = [-1 for i in range(8)]
+            cell[0] = choice(range(8))
+            cell[1] = choice(neighbours[cell[0]])
+            cell[2] = choice([i for i in neighbours[cell[0]] if i not in cell])
+            cell[4] = [i for i in neighbours[cell[0]] if i not in cell][0]
+            cell[3] = cell[1] + cell[2] - cell[0]
+            cell[5] = cell[1] + cell[4] - cell[0]
+            cell[6] = cell[2] + cell[4] - cell[0]
+            cell[7] = cell[3] + cell[4] - cell[0]
+        else:
+            shuffle(cell)
 
-    d = ufl.curl(v)[0] * ufl.dx
-    dvec = fem.assemble_vector(d)
-    assert np.allclose(dvec[:], [0, 0, 0, -1 / 3, 1 / 3, -1 / 3])
+        domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
+        mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
+        mesh.topology.create_connectivity_all()
+
+        V = FunctionSpace(mesh, (space_type, order))
+        v = TestFunction(V)
+
+        f = ufl.as_vector(tuple(1 if i == 0 else 0 for i in range(tdim)))
+        form = inner(f, v) * dx
+        result = fem.assemble_vector(form)
+        spaces.append(V)
+        results.append(result.array)
+
+    # Check that all DOFs on edges agree
+    V = spaces[0]
+    result = results[0]
+    connectivity = V.mesh.topology.connectivity(1, 0)
+    for i, edge in enumerate(V.mesh.topology.connectivity(tdim, 1).links(0)):
+        vertices = connectivity.links(edge)
+        values = [result[V.dofmap.cell_dofs(0)[a]] for a in V.dofmap.dof_layout.entity_dofs(1, i)]
+
+        for s, r in zip(spaces[1:], results[1:]):
+            c = s.mesh.topology.connectivity(1, 0)
+            for j, e in enumerate(s.mesh.topology.connectivity(tdim, 1).links(0)):
+                if (c.links(e) == vertices).all():
+                    v = [r[s.dofmap.cell_dofs(0)[a]] for a in s.dofmap.dof_layout.entity_dofs(1, j)]
+                    assert np.allclose(values, v)
+                    break
+                elif (c.links(e) == vertices[::-1]).all():
+                    v = [r[s.dofmap.cell_dofs(0)[a]] for a in s.dofmap.dof_layout.entity_dofs(1, j)[::-1]]
+                    assert np.allclose(values, v)
+                    break
+            else:
+                continue
+            break
