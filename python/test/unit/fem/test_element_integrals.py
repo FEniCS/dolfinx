@@ -14,7 +14,7 @@ import ufl
 from dolfinx import Function, FunctionSpace, VectorFunctionSpace, cpp, fem
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import MeshTags, create_mesh
-from dolfinx_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel, skip_if_complex
 from mpi4py import MPI
 from ufl import FacetNormal, TestFunction, TrialFunction, ds, dS, inner
 
