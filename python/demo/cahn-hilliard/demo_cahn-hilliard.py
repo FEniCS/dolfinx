@@ -116,7 +116,7 @@ from petsc4py import PETSc
 
 from dolfinx import (Form, Function, FunctionSpace, NewtonSolver,
                      NonlinearProblem, UnitSquareMesh, log)
-from dolfinx.cpp.mesh import CellType
+from dolfinx.mesh import CellType
 from dolfinx.fem.assemble import assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from ufl import (FiniteElement, TestFunctions, TrialFunction, derivative, diff,

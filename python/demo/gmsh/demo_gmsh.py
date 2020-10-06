@@ -10,10 +10,12 @@
 
 import numpy as np
 from dolfinx import cpp
-from dolfinx.cpp.io import extract_local_entities, perm_gmsh
-from dolfinx.io import (XDMFFile, extract_gmsh_geometry,
-                        extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
-from dolfinx.mesh import create_mesh, create_meshtags
+from dolfinx.cpp.io import extract_local_entities
+from dolfinx.io import XDMFFile
+from dolfinx.mesh import CellType, create_mesh, create_meshtags
+from dolfinx.mesh.gmsh import (extract_gmsh_geometry,
+                               extract_gmsh_topology_and_markers, perm_gmsh,
+                               ufl_mesh_from_gmsh)
 from mpi4py import MPI
 
 import gmsh
@@ -154,14 +156,14 @@ else:
 # Permute the topology from GMSH to DOLFIN-X ordering
 domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
 
-gmsh_tetra10 = perm_gmsh(cpp.mesh.CellType.tetrahedron, 10)
+gmsh_tetra10 = perm_gmsh(CellType.tetrahedron, 10)
 cells = cells[:, gmsh_tetra10]
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "ball_d2"
 
 # Permute also entities which are tagged
-gmsh_triangle6 = perm_gmsh(cpp.mesh.CellType.triangle, 6)
+gmsh_triangle6 = perm_gmsh(CellType.triangle, 6)
 marked_facets = marked_facets[:, gmsh_triangle6]
 
 local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)
@@ -232,14 +234,14 @@ else:
 
 # Permute the mesh topology from GMSH ordering to DOLFIN-X ordering
 domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
-gmsh_hex27 = perm_gmsh(cpp.mesh.CellType.hexahedron, 27)
+gmsh_hex27 = perm_gmsh(CellType.hexahedron, 27)
 cells = cells[:, gmsh_hex27]
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 mesh.name = "hex_d2"
 
 # Permute also entities which are tagged
-gmsh_quad9 = perm_gmsh(cpp.mesh.CellType.quadrilateral, 9)
+gmsh_quad9 = perm_gmsh(CellType.quadrilateral, 9)
 marked_facets = marked_facets[:, gmsh_quad9]
 
 local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)

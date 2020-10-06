@@ -76,10 +76,9 @@ from petsc4py import PETSc
 import dolfinx
 import ufl
 from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh
-from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import locate_entities_boundary
+from dolfinx.mesh import locate_entities_boundary, CellType, GhostMode
 from ufl import div, dx, grad, inner
 
 # We create a Mesh and attach a coordinate map to the mesh::
@@ -88,7 +87,7 @@ from ufl import div, dx, grad, inner
 mesh = RectangleMesh(
     MPI.COMM_WORLD,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
-    CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
+    CellType.triangle, GhostMode.none)
 
 
 # Function to mark x = 0, x = 1 and y = 0

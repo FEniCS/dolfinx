@@ -12,11 +12,12 @@ import pytest
 import scipy.integrate
 import sympy as sp
 import ufl
-from dolfinx import Function, FunctionSpace, cpp
-from dolfinx.cpp.io import perm_gmsh, perm_vtk
-from dolfinx.cpp.mesh import CellType
+from dolfinx import Function, FunctionSpace
+from dolfinx.cpp.io import perm_vtk
+from dolfinx.mesh.gmsh import perm_gmsh, ufl_mesh_from_gmsh
+from dolfinx.mesh import CellType
 from dolfinx.fem import assemble_scalar
-from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
+from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -582,7 +583,7 @@ def test_gmsh_input_quad(order):
     gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
     gmsh.finalize()
 
-    gmsh_quad = perm_gmsh(cpp.mesh.CellType.quadrilateral, (order + 1)**2)
+    gmsh_quad = perm_gmsh(CellType.quadrilateral, (order + 1)**2)
     cells = cells[:, gmsh_quad]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
     surface = assemble_scalar(1 * dx(mesh))

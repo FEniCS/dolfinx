@@ -14,9 +14,8 @@ import numpy as np
 from mpi4py import MPI
 from petsc4py import PETSc
 
-import dolfinx
 from dolfinx import BoxMesh, DirichletBC, Function, VectorFunctionSpace, cpp
-from dolfinx.cpp.mesh import CellType
+from dolfinx.mesh import CellType, GhostMode
 from dolfinx.fem import (Form, apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
@@ -67,7 +66,7 @@ def build_nullspace(V):
 mesh = BoxMesh(
     MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
-    CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.none)
+    CellType.tetrahedron, GhostMode.none)
 
 # Function to mark inner surface of pulley
 # def inner_surface(x, on_boundary):

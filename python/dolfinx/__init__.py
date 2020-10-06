@@ -36,11 +36,10 @@ from dolfinx.common import (has_debug, has_petsc_complex, has_kahip,
                            timings, list_timings)
 
 import dolfinx.log
+import dolfinx.mesh
 
 from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
-
-from .cpp.mesh import Topology, Geometry
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)
 
@@ -51,7 +50,6 @@ from .fem.solving import solve
 from .function import (FunctionSpace, VectorFunctionSpace,
                        TensorFunctionSpace, Constant, Function)
 
-from .mesh import MeshTags
 
 # Initialise logging
 from dolfinx import cpp
