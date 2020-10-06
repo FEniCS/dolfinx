@@ -380,7 +380,6 @@ def test_nth_order_triangle(order):
 
 @skip_in_parallel
 def test_xdmf_input_tri(datadir):
-    # pass
     with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
     surface = assemble_scalar(1 * dx(mesh))
@@ -554,7 +553,6 @@ def test_fourth_order_quad(L, H, Z):
 @pytest.mark.parametrize('order', [2, 3])
 def test_gmsh_input_quad(order):
     gmsh = pytest.importorskip("gmsh")
-    # Parameterize test if gmsh gets wider support
     R = 1
     res = 0.2
     algorithm = 2 if order == 2 else 5
@@ -576,10 +574,9 @@ def test_gmsh_input_quad(order):
     assert np.all(idx[srt] == np.arange(len(idx)))
     x = points[srt]
 
-    element_types, element_tags, node_tags =\
-        gmsh.model.mesh.getElements(dim=2)
-    name, dim, order, num_nodes, local_coords, num_first_order_nodes = \
-        gmsh.model.mesh.getElementProperties(element_types[0])
+    element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=2)
+    name, dim, order, num_nodes, local_coords, num_first_order_nodes = gmsh.model.mesh.getElementProperties(
+        element_types[0])
 
     cells = node_tags[0].reshape(-1, num_nodes) - 1
     gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
@@ -587,8 +584,7 @@ def test_gmsh_input_quad(order):
 
     gmsh_quad = perm_gmsh(cpp.mesh.CellType.quadrilateral, (order + 1)**2)
     cells = cells[:, gmsh_quad]
-    mesh = create_mesh(MPI.COMM_WORLD, cells, x,
-                       ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
     surface = assemble_scalar(1 * dx(mesh))
 
     assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi * R * R, rel=1e-5)

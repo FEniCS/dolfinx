@@ -7,8 +7,9 @@
 
 """IO module for input data, post-processing and checkpointing"""
 
-import ufl
 import numpy
+import ufl
+
 from dolfinx import cpp, fem
 
 
@@ -63,9 +64,8 @@ class XDMFFile(cpp.io.XDMFFile):
         return mesh
 
 
-def extract_mesh_topology_and_markers(gmsh_model, model_name=None):
-    """
-    Extracts all entities tagged with a physical marker
+def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
+    """Extract all entities tagged with a physical marker
     in the gmsh model, and collects the data per cell type.
     Returns a nested dictionary where the first key is the gmsh
     MSH element type integer. Each element type present
@@ -115,22 +115,18 @@ def extract_mesh_topology_and_markers(gmsh_model, model_name=None):
             # Gather data for each element type and the
             # corresponding physical markers
             if element_type in topologies.keys():
-                topologies[element_type]["topology"] =\
-                    numpy.concatenate((topologies[element_type]["topology"],
-                                       element_topology), axis=0)
-                topologies[element_type]["cell_data"] =\
-                    numpy.concatenate((topologies[element_type]["cell_data"],
-                                       numpy.full(num_el, tag)), axis=0)
+                topologies[element_type]["topology"] = numpy.concatenate(
+                    (topologies[element_type]["topology"], element_topology), axis=0)
+                topologies[element_type]["cell_data"] = numpy.concatenate(
+                    (topologies[element_type]["cell_data"], numpy.full(num_el, tag)), axis=0)
             else:
-                topologies[element_type] = {"topology": element_topology,
-                                            "cell_data": numpy.full(num_el, tag)}
+                topologies[element_type] = {"topology": element_topology, "cell_data": numpy.full(num_el, tag)}
 
     return topologies
 
 
-def extract_geometry(gmsh_model, model_name=None):
-    """
-    For a given gmsh model, extract the mesh geometry
+def extract_gmsh_geometry(gmsh_model, model_name=None):
+    """For a given gmsh model, extract the mesh geometry
     as a numpy (N,3) array where the i-th row
     corresponds to the i-th node in the mesh
     """

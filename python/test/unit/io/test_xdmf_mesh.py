@@ -52,13 +52,11 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
-
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
         mesh2 = file.read_mesh()
-
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
-    dim = mesh.topology.dim
-    assert mesh.topology.index_map(dim).size_global == mesh2.topology.index_map(dim).size_global
+    assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
+        mesh.topology.dim).size_global
 
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
@@ -76,8 +74,8 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
 
     assert mesh2.name == mesh.name
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
-    dim = mesh.topology.dim
-    assert mesh.topology.index_map(dim).size_global == mesh2.topology.index_map(dim).size_global
+    assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
+        mesh.topology.dim).size_global
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
@@ -91,11 +89,9 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
         mesh2 = file.read_mesh()
 
-    assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(
-        0).size_global
-    dim = mesh.topology.dim
-    assert mesh.topology.index_map(
-        dim).size_global == mesh2.topology.index_map(dim).size_global
+    assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
+    assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
+        mesh.topology.dim).size_global
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -117,14 +113,12 @@ def test_read_write_p2_mesh(tempdir, encoding):
         assert np.all(idx[srt] == np.arange(len(idx)))
         x = points[srt]
 
-        element_types, element_tags, node_tags =\
-            gmsh.model.mesh.getElements(dim=3)
-        name, dim, order, num_nodes, local_coords, num_first_order_nodes = \
-            gmsh.model.mesh.getElementProperties(element_types[0])
+        element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=3)
+        name, dim, order, num_nodes, local_coords, num_first_order_nodes = gmsh.model.mesh.getElementProperties(
+            element_types[0])
         cells = node_tags[0].reshape(-1, num_nodes) - 1
         num_nodes, gmsh_cell_id = MPI.COMM_WORLD.bcast(
-            [cells.shape[1], gmsh.model.mesh.getElementType("tetrahedron", 2)],
-            root=0)
+            [cells.shape[1], gmsh.model.mesh.getElementType("tetrahedron", 2)], root=0)
         gmsh.finalize()
 
     else:
@@ -144,5 +138,5 @@ def test_read_write_p2_mesh(tempdir, encoding):
         mesh2 = xdmf.read_mesh()
 
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
-    dim = mesh.topology.dim
-    assert mesh.topology.index_map(dim).size_global == mesh2.topology.index_map(dim).size_global
+    assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
+        mesh.topology.dim).size_global

@@ -8,15 +8,15 @@
 # Mesh generation using the GMSH python API
 # =========================================
 
-from dolfinx.mesh import create_mesh, create_meshtags
-from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh, extract_geometry, extract_mesh_topology_and_markers
-
-from dolfinx.cpp.io import perm_gmsh, extract_local_entities
-from dolfinx import cpp
-from mpi4py import MPI
-import gmsh
 import numpy as np
+from dolfinx import cpp
+from dolfinx.cpp.io import extract_local_entities, perm_gmsh
+from dolfinx.io import (XDMFFile, extract_gmsh_geometry,
+                        extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
+from dolfinx.mesh import create_mesh, create_meshtags
+from mpi4py import MPI
 
+import gmsh
 
 # Generating a mesh on each process rank
 # ======================================
@@ -36,7 +36,7 @@ model.mesh.generate(3)
 
 
 # Sort mesh nodes according to their index in gmsh (Starts at 1)
-x = extract_geometry(model, model_name="Sphere")
+x = extract_gmsh_geometry(model, model_name="Sphere")
 
 # Extract cells from gmsh (Only interested in tetrahedrons)
 element_types, element_tags, node_tags = model.mesh.getElements(dim=3)
@@ -63,8 +63,7 @@ if MPI.COMM_WORLD.rank == 0:
 
     sphere_dim_tags = model.occ.addSphere(0, 0, 0, 1)
     box_dim_tags = model.occ.addBox(0, 0, 0, 1, 1, 1)
-    model_dim_tags = model.occ.cut(
-        [(3, sphere_dim_tags)], [(3, box_dim_tags)])
+    model_dim_tags = model.occ.cut([(3, sphere_dim_tags)], [(3, box_dim_tags)])
     model.occ.synchronize()
 
     # Add physical tag 1 for exterior surfaces
@@ -81,13 +80,13 @@ if MPI.COMM_WORLD.rank == 0:
     model.mesh.generate(3)
 
     # Sort mesh nodes according to their index in gmsh
-    x = extract_geometry(model, model_name="Sphere minus box")
+    x = extract_gmsh_geometry(model, model_name="Sphere minus box")
 
     # Broadcast cell type data and geometric dimension
     gmsh_cell_id = MPI.COMM_WORLD.bcast(model.mesh.getElementType("tetrahedron", 1), root=0)
 
     # Get mesh data for dim (0, tdim) for all physical entities
-    topologies = extract_mesh_topology_and_markers(model, "Sphere minus box")
+    topologies = extract_gmsh_topology_and_markers(model, "Sphere minus box")
     cells = topologies[gmsh_cell_id]["topology"]
     cell_data = topologies[gmsh_cell_id]["cell_data"]
     num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
@@ -112,7 +111,6 @@ mt.name = "ball_d1_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
     file.write_mesh(mesh)
-
     mesh.topology.create_connectivity(2, 3)
     file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='ball_d1']/Geometry")
 
@@ -132,14 +130,13 @@ if MPI.COMM_WORLD.rank == 0:
     gmsh.option.setNumber("General.Terminal", 0)
 
     # Sort mesh nodes according to their index in gmsh
-    x = extract_geometry(model, model.getCurrent())
+    x = extract_gmsh_geometry(model, model.getCurrent())
 
     # Broadcast cell type data and geometric dimension
-    gmsh_cell_id = MPI.COMM_WORLD.bcast(
-        model.mesh.getElementType("tetrahedron", 2), root=0)
+    gmsh_cell_id = MPI.COMM_WORLD.bcast(model.mesh.getElementType("tetrahedron", 2), root=0)
 
     # Get mesh data for dim (0, tdim) for all physical entities
-    topologies = extract_mesh_topology_and_markers(model, model.getCurrent())
+    topologies = extract_gmsh_topology_and_markers(model, model.getCurrent())
     cells = topologies[gmsh_cell_id]["topology"]
     cell_data = topologies[gmsh_cell_id]["cell_data"]
 
@@ -211,13 +208,13 @@ if MPI.COMM_WORLD.rank == 0:
     model.setPhysicalName(3, 1, "Mesh volume")
 
     # Sort mesh nodes according to their index in gmsh
-    x = extract_geometry(model, model.getCurrent())
+    x = extract_gmsh_geometry(model, model.getCurrent())
 
     # Broadcast cell type data and geometric dimension
     gmsh_cell_id = MPI.COMM_WORLD.bcast(model.mesh.getElementType("hexahedron", 2), root=0)
 
     # Get mesh data for dim (0, tdim) for all physical entities
-    topologies = extract_mesh_topology_and_markers(model, model.getCurrent())
+    topologies = extract_gmsh_topology_and_markers(model, model.getCurrent())
     cells = topologies[gmsh_cell_id]["topology"]
     cell_data = topologies[gmsh_cell_id]["cell_data"]
 
@@ -252,6 +249,5 @@ mt.name = "hex_d2_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
     file.write_mesh(mesh)
-
     mesh.topology.create_connectivity(2, 3)
     file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='hex_d2']/Geometry")
