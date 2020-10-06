@@ -406,7 +406,8 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
                 assert np.isclose(results[0][a, c], result[b, d])
 
 
-@skip_in_parallel
+@ skip_if_complex
+@ skip_in_parallel
 def test_curl():
     points = np.array([[0., 0., 0.], [1., 0., 0.],
                        [1., 1., 0.], [1., 1., -1.]])
