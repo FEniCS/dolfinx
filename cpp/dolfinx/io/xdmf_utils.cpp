@@ -65,7 +65,8 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
          {"quadrilateral", {"quadrilateral", 1}},
          {"quadrilateral_9", {"quadrilateral", 2}},
          {"quadrilateral_16", {"quadrilateral", 3}},
-         {"hexahedron", {"hexahedron", 1}}};
+         {"hexahedron", {"hexahedron", 1}},
+         {"mixed", {"mixed", 0}}};
 
   // Convert XDMF cell type string to DOLFINX cell type string
   std::string cell_type = type_attr.as_string();

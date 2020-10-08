@@ -165,9 +165,10 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
                                const std::string xpath) const
 {
   // Read mesh data
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                     Eigen::RowMajor>
-      cells = XDMFFile::read_topology_data(name, xpath);
+  const std::pair < dolfinx::mesh::CellType,
+      Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                   Eigen::RowMajor>
+          cells = XDMFFile::read_topology_data(name, xpath);
   const auto x = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
@@ -178,7 +179,9 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
   return mesh;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+std::pair<
+    dolfinx::mesh::CellType,
+    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 XDMFFile::read_topology_data(const std::string name,
                              const std::string xpath) const
 {
@@ -190,7 +193,6 @@ XDMFFile::read_topology_data(const std::string name,
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
-
   return xdmf_mesh::read_topology_data(_mpi_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------

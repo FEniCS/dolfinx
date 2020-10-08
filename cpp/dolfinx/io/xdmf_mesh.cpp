@@ -262,7 +262,8 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
                                                          num_local_nodes, gdim);
 }
 //----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+std::map<dolfinx::mesh::CellType, Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                               Eigen::Dynamic, Eigen::RowMajor>>
 xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
                               const pugi::xml_node& node)
 {
@@ -281,18 +282,119 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
   assert(topology_data_node);
   const std::vector tdims = xdmf_utils::get_dataset_shape(topology_data_node);
-  const int npoint_per_cell = tdims[1];
 
   // Read topology data
   const std::vector topology_data
       = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
-  const int num_local_cells = topology_data.size() / npoint_per_cell;
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      cells_vtk(topology_data.data(), num_local_cells, npoint_per_cell);
+  std::map<dolfinx::mesh::CellType,
+           Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                        Eigen::RowMajor>>
+      topology_output;
+  // Extract topologies if we have a mixed topology
+  if (tdims.size() == 1)
+  {
+    // XDMF topology cell type map to dolfinx cell_type and number of nodes
+    // https://gitlab.kitware.com/xdmf/xdmf/blob/master/XdmfTopologyType.cpp
+    std::map<std::int32_t, std::pair<dolfinx::mesh::CellType, std::int32_t>>
+        xdmf_to_dolfin = {
+            {0x1, {dolfinx::mesh::CellType::point, 1}},
+            {0x2, {dolfinx::mesh::CellType::interval, 2}},
+            {0x4, {dolfinx::mesh::CellType::triangle, 3}},
+            {0x5, {dolfinx::mesh::CellType::quadrilateral, 4}},
+            {0x6, {dolfinx::mesh::CellType::tetrahedron, 4}},
+            {0x9, {dolfinx::mesh::CellType::hexahedron, 8}},
+            {0x22, {dolfinx::mesh::CellType::interval, 3}},
+            {0x24, {dolfinx::mesh::CellType::triangle, 6}},
+            {0x23, {dolfinx::mesh::CellType::quadrilateral, 9}},
+            {0x26, {dolfinx::mesh::CellType::tetrahedron, 10}},
+            {0x32, {dolfinx::mesh::CellType::hexahedron, 27}},
+        };
+    std::map<std::pair<dolfinx::mesh::CellType, std::int32_t>,
+             std::vector<std::int64_t>>
+        cell_topologies;
+    int i = 0;
+    while (i < tdims[0])
+    {
 
-  //  Permute cells from VTK to DOLFINX ordering
-  return io::cells::compute_permutation(
-      cells_vtk, io::cells::perm_vtk(cell_type, cells_vtk.cols()));
+      std::pair<dolfinx::mesh::CellType, std::int32_t> cell_type
+          = xdmf_to_dolfin[topology_data[i++]];
+      if (cell_type.first == dolfinx::mesh::CellType::interval)
+      {
+        // XDMF stores Line segments as arbitrary order, so next data index is
+        // the number of nodes Should always be 2.
+        const std::int32_t num_nodes = topology_data[i++];
+        assert(num_nodes == 2);
+      }
+      // Check if cell-type is allready added to cell_topologies;
+      if (cell_topologies.find(cell_type) != cell_topologies.end())
+      {
+        cell_topologies[cell_type].insert(
+            cell_topologies[cell_type].end(), topology_data.begin() + i,
+            topology_data.begin() + i + cell_type.second);
+      }
+      else
+      {
+        std::vector<std::int64_t> cell_topology;
+        cell_topology.insert(cell_topology.end(), topology_data.begin() + i,
+                             topology_data.begin() + i + cell_type.second);
+        cell_topologies.insert({cell_type, cell_topology});
+      }
+      // Jump to next cell
+      i += cell_type.second;
+    }
+    // Find cell with highest topological dimension
+    // std::int32_t max_tdim = -1;
+    // std::pair<dolfinx::mesh::CellType, std::int32_t> max_cell;
+    // for (std::map<std::pair<dolfinx::mesh::CellType, std::int32_t>,
+    //               std::vector<std::int64_t>>::iterator iter
+    //      = cell_topologies.begin();
+    //      iter != cell_topologies.end(); ++iter)
+    // {
+    //   std::int32_t tdim = dolfinx::mesh::cell_dim(iter->first.first);
+    //   if (tdim == max_tdim)
+    //     throw std::runtime_error("Mixed topology meshes not supported");
+    //   else if (tdim > max_tdim)
+    //   {
+    //     max_tdim = tdim;
+    //     max_cell = iter->first;
+    //   }
+    // }
+    // Insert map for each topology
+    for (std::map<std::pair<dolfinx::mesh::CellType, std::int32_t>,
+                  std::vector<std::int64_t>>::iterator iter
+         = cell_topologies.begin();
+         iter != cell_topologies.end(); ++iter)
+    {
+      const dolfinx::mesh::CellType sub_cell_type = iter->first.first;
+      const int num_nodes_per_cell = iter->first.second;
+      const int num_local_cells = iter->second.size() / num_nodes_per_cell;
+      Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                    Eigen::Dynamic, Eigen::RowMajor>>
+          cells_vtk(iter->second.data(), num_local_cells, num_nodes_per_cell);
+
+      //  Permute cells from VTK to DOLFINX ordering
+      topology_output.insert(
+          {sub_cell_type,
+           io::cells::compute_permutation(
+               cells_vtk,
+               io::cells::perm_vtk(sub_cell_type, cells_vtk.cols()))});
+    }
+  }
+  else
+  {
+    const int npoint_per_cell = tdims[1];
+
+    const int num_local_cells = topology_data.size() / npoint_per_cell;
+    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        cells_vtk(topology_data.data(), num_local_cells, npoint_per_cell);
+
+    //  Permute cells from VTK to DOLFINX ordering
+    topology_output.insert(
+        {cell_type,
+         io::cells::compute_permutation(
+             cells_vtk, io::cells::perm_vtk(cell_type, cells_vtk.cols()))});
+  }
+  return topology_output;
 }
 //----------------------------------------------------------------------------

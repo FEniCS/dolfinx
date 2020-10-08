@@ -69,8 +69,9 @@ read_geometry_data(MPI_Comm comm, const hid_t h5_id,
                    const pugi::xml_node& node);
 
 /// Read Topology data
-/// @returns ((cell type, degree), topology)
-Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+/// @returns cell_type, ((cell_type, degree), topology)
+std::map<dolfinx::mesh::CellType, Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                               Eigen::Dynamic, Eigen::RowMajor>>
 read_topology_data(MPI_Comm comm, const hid_t h5_id,
                    const pugi::xml_node& node);
 

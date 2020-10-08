@@ -86,7 +86,8 @@ void mesh(py::module& m)
       .value("triangle", dolfinx::mesh::CellType::triangle)
       .value("quadrilateral", dolfinx::mesh::CellType::quadrilateral)
       .value("tetrahedron", dolfinx::mesh::CellType::tetrahedron)
-      .value("hexahedron", dolfinx::mesh::CellType::hexahedron);
+      .value("hexahedron", dolfinx::mesh::CellType::hexahedron)
+      .value("mixed", dolfinx::mesh::CellType::mixed);
 
   m.def("to_string", &dolfinx::mesh::to_string);
   m.def("to_type", &dolfinx::mesh::to_type);

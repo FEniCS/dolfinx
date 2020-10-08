@@ -20,6 +20,7 @@ namespace dolfinx::mesh
 enum class CellType : int
 {
   // NOTE: Simplex cells have index > 0, see mesh::is_simplex
+  mixed = -11,
   point = 1,
   interval = 2,
   triangle = 3,

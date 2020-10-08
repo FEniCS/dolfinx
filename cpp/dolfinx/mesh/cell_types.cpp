@@ -218,6 +218,8 @@ std::string mesh::to_string(mesh::CellType type)
     return "quadrilateral";
   case mesh::CellType::hexahedron:
     return "hexahedron";
+  case mesh::CellType::mixed:
+    return "mixed";
   default:
     throw std::runtime_error("Unknown cell type.");
     return std::string();
@@ -238,6 +240,8 @@ mesh::CellType mesh::to_type(const std::string& cell)
     return mesh::CellType::quadrilateral;
   else if (cell == "hexahedron")
     return mesh::CellType::hexahedron;
+  else if (cell == "mixed")
+    return mesh::CellType::mixed;
   else
     throw std::runtime_error("Unknown cell type (" + cell + ")");
 }
