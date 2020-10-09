@@ -159,6 +159,7 @@ public:
   /// @param[in] mesh The Mesh that the data is defined on
   /// @param[in] name
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
+  /// @param[in] tdim Topological dimension of the mesh-data.
   mesh::MeshTags<std::int32_t> read_meshtags(
       const std::shared_ptr<const mesh::Mesh>& mesh, const std::string name,
       const std::string xpath = "/Xdmf/Domain", std::int32_t tdim = -1);
