@@ -70,10 +70,11 @@ read_geometry_data(MPI_Comm comm, const hid_t h5_id,
 
 /// Read Topology data
 /// @returns cell_type, ((cell_type, degree), topology)
-std::map<dolfinx::mesh::CellType, Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                               Eigen::Dynamic, Eigen::RowMajor>>
-read_topology_data(MPI_Comm comm, const hid_t h5_id,
-                   const pugi::xml_node& node);
+std::pair<
+    dolfinx::mesh::CellType,
+    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+read_topology_data(MPI_Comm comm, const hid_t h5_id, const pugi::xml_node& node,
+                   std::int32_t tdim = -1);
 
 } // namespace io::xdmf_mesh
 } // namespace dolfinx

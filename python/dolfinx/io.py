@@ -44,11 +44,16 @@ class XDMFFile(cpp.io.XDMFFile):
         u_cpp = getattr(u, "_cpp_object", u)
         super().write_function(u_cpp, t, mesh_xpath)
 
-    def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"):
+    def read_mesh(self, ghost_mode=cpp.mesh.GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain", tdim=-1):
         # Read mesh data from file
         cell_type = super().read_cell_type(name, xpath)
-        cells = super().read_topology_data(name, xpath)
+        cells = super().read_topology_data(name, xpath, tdim=tdim)
         x = super().read_geometry_data(name, xpath)
+        if (cell_type[0] != cells[0]):
+            if cell_type[0] != cpp.mesh.CellType.mixed:
+                raise ValueError("Could not find cell topology in mesh")
+            else:
+                cell_type = (cells[0], cpp.io.cell_degree(cells[0], cells[1].shape[1]))
 
         # Construct the geometry map
         cell = ufl.Cell(cpp.mesh.to_string(cell_type[0]), geometric_dimension=x.shape[1])
@@ -56,7 +61,7 @@ class XDMFFile(cpp.io.XDMFFile):
         cmap = fem.create_coordinate_map(domain)
 
         # Build the mesh
-        mesh = cpp.mesh.create_mesh(self.comm(), cpp.graph.AdjacencyList_int64(cells), cmap, x, ghost_mode)
+        mesh = cpp.mesh.create_mesh(self.comm(), cpp.graph.AdjacencyList_int64(cells[1]), cmap, x, ghost_mode)
         mesh.name = name
         domain._ufl_cargo = mesh
         mesh._ufl_domain = domain

@@ -13,78 +13,6 @@
 using namespace dolfinx;
 namespace
 {
-int cell_degree(mesh::CellType type, int num_nodes)
-{
-  switch (type)
-  {
-  case mesh::CellType::point:
-    return 1;
-  case mesh::CellType::interval:
-    return num_nodes - 1;
-  case mesh::CellType::triangle:
-    switch (num_nodes)
-    {
-    case 3:
-      return 1;
-    case 6:
-      return 2;
-    case 10:
-      return 3;
-    case 15:
-      return 4;
-    case 21:
-      return 5;
-    case 28:
-      return 6;
-    case 36:
-      return 7;
-    case 45:
-      LOG(WARNING) << "8th order mesh is untested";
-      return 8;
-    case 55:
-      LOG(WARNING) << "9th order mesh is untested";
-      return 9;
-    default:
-      throw std::runtime_error("Unknown triangle layout. Number of nodes: "
-                               + std::to_string(num_nodes));
-    }
-  case mesh::CellType::tetrahedron:
-    switch (num_nodes)
-    {
-    case 4:
-      return 1;
-    case 10:
-      return 2;
-    case 20:
-      return 3;
-    default:
-      throw std::runtime_error("Unknown tetrahedron layout.");
-    }
-  case mesh::CellType::quadrilateral:
-  {
-    const int n = std::sqrt(num_nodes);
-    if (num_nodes != n * n)
-    {
-      throw std::runtime_error("Quadrilateral of order "
-                               + std::to_string(num_nodes) + " not supported");
-    }
-    return n - 1;
-  }
-  case mesh::CellType::hexahedron:
-    switch (num_nodes)
-    {
-    case 8:
-      return 1;
-    case 27:
-      return 2;
-    default:
-      throw std::runtime_error("Unsupported hexahedron layout");
-      return 1;
-    }
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-}
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> vtk_triangle(int num_nodes)
 {
@@ -93,7 +21,7 @@ std::vector<std::uint8_t> vtk_triangle(int num_nodes)
   std::iota(map.begin(), map.begin() + 3, 0);
 
   int j = 3;
-  const int degree = cell_degree(mesh::CellType::triangle, num_nodes);
+  const int degree = io::cells::cell_degree(mesh::CellType::triangle, num_nodes);
   for (int k = 1; k < degree; ++k)
     map[j++] = 3 + 2 * (degree - 1) + k - 1;
   for (int k = 1; k < degree; ++k)
@@ -275,6 +203,79 @@ std::vector<std::uint8_t> gmsh_quadrilateral(int num_nodes)
   }
 }
 } // namespace
+//-----------------------------------------------------------------------------
+int io::cells::cell_degree(mesh::CellType type, int num_nodes)
+{
+  switch (type)
+  {
+  case mesh::CellType::point:
+    return 1;
+  case mesh::CellType::interval:
+    return num_nodes - 1;
+  case mesh::CellType::triangle:
+    switch (num_nodes)
+    {
+    case 3:
+      return 1;
+    case 6:
+      return 2;
+    case 10:
+      return 3;
+    case 15:
+      return 4;
+    case 21:
+      return 5;
+    case 28:
+      return 6;
+    case 36:
+      return 7;
+    case 45:
+      LOG(WARNING) << "8th order mesh is untested";
+      return 8;
+    case 55:
+      LOG(WARNING) << "9th order mesh is untested";
+      return 9;
+    default:
+      throw std::runtime_error("Unknown triangle layout. Number of nodes: "
+                               + std::to_string(num_nodes));
+    }
+  case mesh::CellType::tetrahedron:
+    switch (num_nodes)
+    {
+    case 4:
+      return 1;
+    case 10:
+      return 2;
+    case 20:
+      return 3;
+    default:
+      throw std::runtime_error("Unknown tetrahedron layout.");
+    }
+  case mesh::CellType::quadrilateral:
+  {
+    const int n = std::sqrt(num_nodes);
+    if (num_nodes != n * n)
+    {
+      throw std::runtime_error("Quadrilateral of order "
+                               + std::to_string(num_nodes) + " not supported");
+    }
+    return n - 1;
+  }
+  case mesh::CellType::hexahedron:
+    switch (num_nodes)
+    {
+    case 8:
+      return 1;
+    case 27:
+      return 2;
+    default:
+      throw std::runtime_error("Unsupported hexahedron layout");
+      return 1;
+    }
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+}
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
                                               int num_nodes)

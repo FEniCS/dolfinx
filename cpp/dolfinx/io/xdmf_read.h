@@ -24,7 +24,7 @@ namespace dolfinx::io::xdmf_read
 template <typename T>
 std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
                            const hid_t h5_id,
-                           std::array<std::int64_t, 2> range = {{0, 0}})
+                           std::array<std::int64_t, 2> range = {{-1, -1}})
 {
   // FIXME: Need to sort out datasset dimensions - can't depend on HDF5
   // shape, and a Topology data item is not required to have a
@@ -90,7 +90,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
 
     // If range = {0, 0} then no range is supplied and we must determine
     // the range
-    if (range[0] == 0 and range[1] == 0)
+    if (range[0] == -1 and range[1] == -1)
     {
       if (shape_xml == shape_hdf5)
       {

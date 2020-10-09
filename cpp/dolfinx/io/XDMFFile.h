@@ -111,10 +111,15 @@ public:
   /// Read Topology data for Mesh
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
-  /// @return (Cell type, degree), and cells topology (global node indexing)
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  /// @param[in] tdim Topological dimension of mesh topology extracted (Default:
+  /// -1 will extract the maximum topological dimension)
+  /// @return Cell type and cells topology (global node indexing)
+  std::pair<dolfinx::mesh::CellType,
+            Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                         Eigen::RowMajor>>
   read_topology_data(const std::string name,
-                     const std::string xpath = "/Xdmf/Domain") const;
+                     const std::string xpath = "/Xdmf/Domain",
+                     std::int32_t tdim = -1) const;
 
   /// Read Geometry data for Mesh
   /// @param[in] name Name of the mesh (Grid)

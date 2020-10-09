@@ -35,6 +35,9 @@ void io(py::module& m)
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk);
   m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh);
 
+  // Cell degree identification
+  m.def("cell_degree", &dolfinx::io::cells::cell_degree);
+
   // TODO: Template for different values dtypes
   m.def("extract_local_entities",
         [](const dolfinx::mesh::Mesh& mesh, const int entity_dim,
@@ -78,7 +81,8 @@ void io(py::module& m)
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
       .def("read_topology_data", &dolfinx::io::XDMFFile::read_topology_data,
-           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain",
+           py::arg("tdim") = -1)
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,

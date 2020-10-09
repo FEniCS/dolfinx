@@ -165,14 +165,14 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
                                const std::string xpath) const
 {
   // Read mesh data
-  const std::pair < dolfinx::mesh::CellType,
-      Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                   Eigen::RowMajor>
-          cells = XDMFFile::read_topology_data(name, xpath);
+  std::pair<dolfinx::mesh::CellType,
+            Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                         Eigen::RowMajor>>
+      cells = XDMFFile::read_topology_data(name, xpath);
   const auto x = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
-  graph::AdjacencyList<std::int64_t> cells_adj(cells);
+  graph::AdjacencyList<std::int64_t> cells_adj(cells.second);
   mesh::Mesh mesh
       = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x, mode);
   mesh.name = name;
@@ -182,8 +182,8 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
 std::pair<
     dolfinx::mesh::CellType,
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-XDMFFile::read_topology_data(const std::string name,
-                             const std::string xpath) const
+XDMFFile::read_topology_data(const std::string name, const std::string xpath,
+                             std::int32_t tdim) const
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -193,7 +193,8 @@ XDMFFile::read_topology_data(const std::string name,
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
-  return xdmf_mesh::read_topology_data(_mpi_comm.comm(), _h5_id, grid_node);
+  return xdmf_mesh::read_topology_data(_mpi_comm.comm(), _h5_id, grid_node,
+                                       tdim);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -299,8 +300,9 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                     Eigen::RowMajor>
+  std::pair<dolfinx::mesh::CellType,
+            Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                         Eigen::RowMajor>>
       entities = read_topology_data(name, xpath);
 
   pugi::xml_node values_data_node
@@ -315,7 +317,8 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   // Permute entities from VTK to DOLFINX ordering
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entities1 = io::cells::compute_permutation(
-          entities, io::cells::perm_vtk(cell_type, entities.cols()));
+          entities.second,
+          io::cells::perm_vtk(cell_type, entities.second.cols()));
 
   const auto [entities_local, values_local]
       = xdmf_utils::extract_local_entities(*mesh, mesh::cell_dim(cell_type),
