@@ -146,6 +146,7 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
     throw std::runtime_error("Number of entities and values must match");
 
   // Tagged entity topological dimension
+  mesh->topology_mutable().create_connectivity(mesh->topology().dim(), dim);
   const auto map_e = mesh->topology().index_map(dim);
   assert(map_e);
 

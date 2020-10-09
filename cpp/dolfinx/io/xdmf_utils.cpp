@@ -6,6 +6,7 @@
 
 #include "xdmf_utils.h"
 #include "pugixml.hpp"
+#include "xdmf_read.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -548,5 +549,67 @@ xdmf_utils::extract_local_entities(
   }
 
   return {entities_local, values_new};
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t>
+xdmf_utils::extract_mixed_topology_values(MPI_Comm comm, const hid_t h5_id,
+                                          const pugi::xml_node& node,
+                                          mesh::CellType cell_type)
+{
+  pugi::xml_node topology_node = node.child("Topology");
+  assert(topology_node);
+  pugi::xml_node values_data_node = node.child("Attribute").child("DataItem");
+  const std::vector vdims = xdmf_utils::get_dataset_shape(values_data_node);
+
+  std::array<std::int64_t, 2> range = {{0, 0}};
+  const int mpi_rank = dolfinx::MPI::rank(comm);
+  if (mpi_rank == 0)
+    range[1] = vdims[0];
+
+  std::vector values = xdmf_read::get_dataset<std::int32_t>(
+      comm, values_data_node, h5_id, range);
+  // Get topology dataset node
+  pugi::xml_node topology_data_node = topology_node.child("DataItem");
+  assert(topology_data_node);
+  const std::vector tdims = xdmf_utils::get_dataset_shape(topology_data_node);
+  assert(tdims.size() == 1);
+  if (mpi_rank == 0)
+    range[1] = tdims[0];
+  // Read in all data on the first processor as it is a 1D array with variable
+  // length per cell
+  const std::vector topology_data = xdmf_read::get_dataset<std::int64_t>(
+      comm, topology_data_node, h5_id, range);
+
+  // XDMF topology cell type map to dolfinx cell_type and number of nodes
+  // https://gitlab.kitware.com/xdmf/xdmf/blob/master/XdmfTopologyType.cpp
+  std::map<std::int32_t, std::pair<dolfinx::mesh::CellType, std::int32_t>>
+      xdmf_to_dolfin = {
+          {0x1, {dolfinx::mesh::CellType::point, 1}},
+          {0x2, {dolfinx::mesh::CellType::interval, 2}},
+          {0x4, {dolfinx::mesh::CellType::triangle, 3}},
+          {0x5, {dolfinx::mesh::CellType::quadrilateral, 4}},
+          {0x6, {dolfinx::mesh::CellType::tetrahedron, 4}},
+          {0x9, {dolfinx::mesh::CellType::hexahedron, 8}},
+          {0x22, {dolfinx::mesh::CellType::interval, 3}},
+          {0x24, {dolfinx::mesh::CellType::triangle, 6}},
+          {0x23, {dolfinx::mesh::CellType::quadrilateral, 9}},
+          {0x26, {dolfinx::mesh::CellType::tetrahedron, 10}},
+          {0x32, {dolfinx::mesh::CellType::hexahedron, 27}},
+      };
+  std::vector<std::int32_t> values_ct;
+  std::uint32_t i = 0;
+  std::int32_t cell_counter = 0;
+  while (i < topology_data.size())
+  {
+    std::pair<dolfinx::mesh::CellType, std::int32_t> ct
+        = xdmf_to_dolfin[topology_data[i]];
+    if (ct.first == cell_type)
+      values_ct.push_back(values[cell_counter]);
+    if (ct.first == mesh::CellType::interval)
+      ++i;
+    i += ct.second + 1;
+    ++cell_counter;
+  };
+  return values_ct;
 }
 //-----------------------------------------------------------------------------

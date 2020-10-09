@@ -290,7 +290,8 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
-                        const std::string name, const std::string xpath)
+                        const std::string name, const std::string xpath,
+                        std::int32_t tdim)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -303,25 +304,45 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   std::pair<dolfinx::mesh::CellType,
             Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                          Eigen::RowMajor>>
-      entities = read_topology_data(name, xpath);
-
-  pugi::xml_node values_data_node
-      = grid_node.child("Attribute").child("DataItem");
-  const std::vector values = xdmf_read::get_dataset<std::int32_t>(
-      _mpi_comm.comm(), values_data_node, _h5_id);
+      entities = read_topology_data(name, xpath, tdim);
 
   const std::pair<std::string, int> cell_type_str
       = xdmf_utils::get_cell_type(grid_node.child("Topology"));
-  mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
+  mesh::CellType cell_type = entities.first;
 
+  // Extract values from mixed topology
+  std::vector<int> values;
+  if (cell_type_str.first == "mixed")
+  {
+    values = xdmf_utils::extract_mixed_topology_values(_mpi_comm.comm(), _h5_id,
+                                                       grid_node, cell_type);
+  }
+  else
+  {
+    pugi::xml_node values_data_node
+        = grid_node.child("Attribute").child("DataItem");
+    values = xdmf_read::get_dataset<std::int32_t>(_mpi_comm.comm(),
+                                                  values_data_node, _h5_id);
+  }
+  // Broadcast celltype and number of nodes for cell permutation to all
+  // processors
+  const int mpi_rank = dolfinx::MPI::rank(_mpi_comm.comm());
+  std::vector<std::int32_t> cell_info(2);
+  if (mpi_rank == 0)
+  {
+    cell_info[0] = static_cast<std::int32_t>(entities.first);
+    cell_info[1] = entities.second.cols();
+  }
+  MPI_Bcast(cell_info.data(), cell_info.size(), MPI_INT32_T, 0, MPI_COMM_WORLD);
+
+  dolfinx::mesh::CellType ct_out
+      = static_cast<dolfinx::mesh::CellType>(cell_info[0]);
   // Permute entities from VTK to DOLFINX ordering
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entities1 = io::cells::compute_permutation(
-          entities.second,
-          io::cells::perm_vtk(cell_type, entities.second.cols()));
-
+          entities.second, io::cells::perm_vtk(ct_out, cell_info[1]));
   const auto [entities_local, values_local]
-      = xdmf_utils::extract_local_entities(*mesh, mesh::cell_dim(cell_type),
+      = xdmf_utils::extract_local_entities(*mesh, mesh::cell_dim(ct_out),
                                            entities1, values);
 
   mesh::MeshTags meshtags = mesh::create_meshtags(

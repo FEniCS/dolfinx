@@ -159,5 +159,11 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
   }
 }
 
+/// Extract cell values from a mixed topology
+std::vector<std::int32_t>
+extract_mixed_topology_values(MPI_Comm comm, const hid_t h5_id,
+                              const pugi::xml_node& node,
+                              mesh::CellType cell_type);
+
 } // namespace io::xdmf_utils
 } // namespace dolfinx

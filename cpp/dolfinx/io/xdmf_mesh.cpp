@@ -377,29 +377,27 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
     if ((cell_tdim == -1) && (mpi_rank == 0))
       throw std::runtime_error("No cell topology found");
 
+    // Broadcast CellType (as int) and number of nodes per cell from proc 9
     std::int32_t num_local_cells = 0;
-    std::int32_t num_nodes_per_cell = 0;
-    std::int32_t cell_type_int;
+    std::vector<std::int32_t> cell_info(2);
     if (mpi_rank == 0)
     {
-      dolfinx::mesh::CellType ct = cell_id.first;
-      num_nodes_per_cell = cell_id.second;
-      num_local_cells = cell_topologies[cell_id].size() / num_nodes_per_cell;
-      cell_type_int = static_cast<std::int32_t>(ct);
+      cell_info[0] = static_cast<std::int32_t>(cell_id.first);
+      cell_info[1] = cell_id.second;
+      num_local_cells = cell_topologies[cell_id].size() / cell_info[1];
     }
-    MPI_Bcast(&cell_type_int, 1, MPI_INT32_T, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&num_nodes_per_cell, 1, MPI_INT32_T, 0, MPI_COMM_WORLD);
+    MPI_Bcast(cell_info.data(), cell_info.size(), MPI_INT32_T, 0,
+              MPI_COMM_WORLD);
 
     Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
         cells_vtk(cell_topologies[cell_id].data(), num_local_cells,
-                  num_nodes_per_cell);
+                  cell_info[1]);
     dolfinx::mesh::CellType ct_out
-        = static_cast<dolfinx::mesh::CellType>(cell_type_int);
+        = static_cast<dolfinx::mesh::CellType>(cell_info[0]);
     return std::make_pair(
-        ct_out,
-        io::cells::compute_permutation(
-            cells_vtk, io::cells::perm_vtk(ct_out, num_nodes_per_cell)));
+        ct_out, io::cells::compute_permutation(
+                    cells_vtk, io::cells::perm_vtk(ct_out, cell_info[1])));
   }
   else
   {
