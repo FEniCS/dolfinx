@@ -10,6 +10,7 @@ import warnings
 import numpy as np
 
 from dolfinx import cpp, fem, function
+from dolfinx.mesh import create_boundary_mesh
 
 __all__ = ["plot"]
 
@@ -41,8 +42,8 @@ def mplot_mesh(ax, mesh, **kwargs):
         color = kwargs.pop("color", '#808080')
         return ax.triplot(mesh2triang(mesh), color=color, **kwargs)
     elif gdim == 3 and tdim == 3:
-        bmesh = cpp.mesh.BoundaryMesh(mesh, "exterior", order=False)
-        mplot_mesh(ax, bmesh, **kwargs)
+        bmesh = create_boundary_mesh(mesh, mesh.mpi_comm(), orient=False)
+        mplot_mesh(ax, bmesh[0], **kwargs)
     elif gdim == 3 and tdim == 2:
         xy = mesh.geometry.x
         cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
@@ -276,7 +277,7 @@ def _plot_matplotlib(obj, mesh, kwargs):
         ax = plt.gca(projection='3d')
     else:
         ax = plt.gca()
-    ax.set_aspect('equal')
+        ax.set_aspect('equal')
 
     title = kwargs.pop("title", None)
     if title is not None:
