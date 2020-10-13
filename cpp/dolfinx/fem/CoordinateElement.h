@@ -83,7 +83,8 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>& x,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
-          cell_geometry) const;
+          cell_geometry,
+      double eps = 1.0e-16) const;
 
 private:
   // Topological and geometric dimensions
