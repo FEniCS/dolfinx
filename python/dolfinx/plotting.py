@@ -6,7 +6,7 @@
 
 import os
 import warnings
-
+import numba
 import numpy as np
 
 from dolfinx import cpp, fem, function
@@ -408,3 +408,82 @@ def plot(object, *args, **kwargs):
         return _plot_matplotlib(object, mesh, kwargs)
     else:
         assert False, "This code should not be reached."
+
+
+# Determine VTK cell type (Using arbitrary Lagrange elements)
+# NOTE: Edge visualization of higher order elments are sketchy, see:
+# https://github.com/pyvista/pyvista/issues/947
+_dolfin_to_vtk_cell = {cpp.mesh.CellType.point: 1, cpp.mesh.CellType.triangle: 68,
+                       cpp.mesh.CellType.quadrilateral: 70, cpp.mesh.CellType.tetrahedron: 71,
+                       cpp.mesh.CellType.hexahedron: 72}
+
+
+def mesh_to_pyvista(mesh, dim):
+    """
+    Given a Dolfin-X mesh, return the mesh data required to plot a mesh of the dimension `dim`
+    in pyvista.
+    Input:
+       mesh - The mesh
+    Output:
+       Returns the flattened mesh topolgoy cells, a 1D array of cell types and mesh geometry.
+    """
+    # Extract the mesh geometry
+    points = mesh.geometry.x
+
+    # Extract the mesh topology
+    num_cells = mesh.topology.index_map(dim).size_local
+    cells = cpp.mesh.entities_to_geometry(mesh, dim, np.arange(num_cells), False)
+
+    # Get VTK cell type
+    dolfin_cell_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim)
+    cell_types = np.full(num_cells, _dolfin_to_vtk_cell[dolfin_cell_type])
+
+    # Permute cell topolgoy to VTK
+    perm_to_vtk = cpp.io.transpose_map(cpp.io.perm_vtk(dolfin_cell_type, cells.shape[1]))
+    cells = cells[:, perm_to_vtk]
+    # Convert [[node_01, ..., node_0M],...[node_N1, ..., node_NM]] into
+    # [M, node_01, ..., node_0M, M, node_11, ..., M, node_N1, node_NM]
+    flattened_cells = np.hstack([np.full((num_cells, 1), cells.shape[1]), cells]).reshape(-1)
+    return (flattened_cells, cell_types, points)
+
+
+@numba.njit(cache=True)
+def create_pyvista_cell_topology(topology, perm_to_vtk, num_cells, num_dofs_per_cell, dofmap, offsets):
+    """
+    Creating a mesh topology given a dofmap (dolfin-X ordering).
+    Return a pyvista mesh topology (vtk ordering)
+    """
+    for i in range(num_cells):
+        topology[i * (num_dofs_per_cell + 1)] = num_dofs_per_cell
+        topology[i * (num_dofs_per_cell + 1) + 1: i * (num_dofs_per_cell + 1)
+                 + num_dofs_per_cell + 1] = dofmap[offsets[i]:offsets[i + 1]][perm_to_vtk]
+
+
+def create_pyvista_mesh_from_function_space(u):
+    """
+    Given a dolfinx.Function, return the mesh geometry, topology and celltypes
+    for usage with pyvista visualization.
+    NOTE: Only works for CG and DG spaces
+    """
+    V = u.function_space
+    family = V.ufl_element().family()
+    if not (family == 'Discontinuous Lagrange' or family == "Lagrange"):
+        raise RuntimeError("Can only create meshes from CG or DG function-spaces")
+
+    geometry = V.tabulate_dof_coordinates()
+
+    mesh = u.function_space.mesh
+    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    dofmap = u.function_space.dofmap.list.array
+    offsets = u.function_space.dofmap.list.offsets
+    num_dofs_per_cell = u.function_space.dofmap.dof_layout.num_dofs
+    topology = np.zeros(num_cells * (num_dofs_per_cell + 1), dtype=np.int32)
+
+    dolfin_cell_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, mesh.topology.dim)
+    perm_to_vtk = cpp.io.transpose_map(cpp.io.perm_vtk(dolfin_cell_type, num_dofs_per_cell))
+    create_pyvista_cell_topology(topology, np.array(perm_to_vtk, dtype=np.int32),
+                                 num_cells, num_dofs_per_cell, dofmap, offsets)
+
+    cell_types = np.full(num_cells, _dolfin_to_vtk_cell[dolfin_cell_type])
+
+    return geometry, topology, cell_types
