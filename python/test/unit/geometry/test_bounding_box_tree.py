@@ -143,3 +143,10 @@ def test_compute_closest_entity_3d():
     entity, distance = geometry.compute_closest_entity(tree, tree_mid, mesh, p)
     assert entity == reference[0]
     assert distance[0] == pytest.approx(reference[1], 1.0e-12)
+
+
+def test_surface_bbtree():
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
+    sf = cpp.mesh.exterior_facet_indices(mesh)
+    bbtree = cpp.geometry.BoundingBoxTree(mesh, mesh.topology.dim - 1, sf)
+    print(bbtree.num_bboxes())

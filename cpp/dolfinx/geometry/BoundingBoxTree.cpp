@@ -307,8 +307,9 @@ BoundingBoxTree::BoundingBoxTree(
   assert(map);
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> leaf_bboxes(
       2 * entity_indices.size(), 3);
-  for (int e : entity_indices_sorted)
-    leaf_bboxes.block<2, 3>(2 * e, 0) = compute_bbox_of_entity(mesh, tdim, e);
+  for (std::size_t i = 0; i < entity_indices_sorted.size(); ++i)
+    leaf_bboxes.block<2, 3>(2 * i, 0)
+        = compute_bbox_of_entity(mesh, tdim, entity_indices_sorted[i]);
 
   // Recursively build the bounding box tree from the leaves
   if (leaf_bboxes.rows() > 0)
