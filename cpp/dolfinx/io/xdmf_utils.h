@@ -8,8 +8,8 @@
 
 #include "HDF5Interface.h"
 #include "pugixml.hpp"
+#include "utils.h"
 #include <array>
-#include <boost/filesystem.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <petscsys.h>
@@ -124,12 +124,12 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
   {
     data_item_node.append_attribute("Format") = "HDF";
 
-    // Get name of HDF5 file
+    // Get name of HDF5 file, including path
     const std::string hdf5_filename = HDF5Interface::get_filename(h5_id);
-    const boost::filesystem::path p(hdf5_filename);
+    const std::string filename = dolfinx::io::get_filename(hdf5_filename);
 
     // Add HDF5 filename and HDF5 internal path to XML file
-    const std::string xdmf_path = p.filename().string() + ":" + h5_path;
+    const std::string xdmf_path = filename + ":" + h5_path;
     data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
 
     // Compute total number of items and check for consistency with shape
@@ -157,8 +157,7 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
     // dolfinx::MPI::broadcast(comm, partitions);
     // HDF5Interface::add_attribute(h5_id, h5_path, "partition", partitions);
   }
-} // namespace
-//----------------------------------------------------------------------------
+}
 
 } // namespace io::xdmf_utils
 } // namespace dolfinx

@@ -11,6 +11,7 @@ on:
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 4 * * *"
+  workflow_dispatch: ~
 
 jobs:
   build_end_user_images:
@@ -18,22 +19,43 @@ jobs:
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-20.04
     env:
+      DOLFINX_CMAKE_BUILD_TYPE: "RelWithDebInfo"
+      DOLFINX_CMAKE_CXX_FLAGS: "-march=sandybridge"
       PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
       PETSC_SLEPC_DEBUGGING: "no"
       MPI: "mpich"
     steps:
       - uses: actions/checkout@v2
+        with:
+          repository: "FEniCS/dolfinx"
+          path: "dolfinx"
+      - uses: actions/checkout@v2
+        with:
+          repository: "FEniCS/ffcx"
+          path: "ffcx"
+      - uses: actions/checkout@v2
+        with:
+          repository: "FEniCS/fiat"
+          path: "fiat"
+      - uses: actions/checkout@v2
+        with:
+          repository: "FEniCS/ufl"
+          path: "ufl"
       - name: Pull dolfinx/dev-env
-        run: docker pull dolfinx/dev-env
+        run: |
+          docker pull dolfinx/dev-env
       - name: Build the Docker images
         run: |
-          cd docker/
-          docker build --file Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
-          docker build --file Dockerfile --target dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
-          docker build --file Dockerfile --target lab --cache-from dolfinx/dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/lab .
+          docker build --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
+          docker build --file dolfinx/docker/Dockerfile --build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS --target dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
+          docker build --file dolfinx/docker/Dockerfile --build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS --target lab --cache-from dolfinx/dolfinx --tag dolfinx/lab .
+      - name: Run basic test inside container
+        run: |
+          docker run --rm dolfinx/dolfinx python3 -c "import dolfinx; from mpi4py import MPI; mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10); V = dolfinx.FunctionSpace(mesh, ('P', 1));"
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
         run: |
+          docker push dolfinx/dolfinx-onbuild
           docker push dolfinx/dolfinx
           docker push dolfinx/lab
