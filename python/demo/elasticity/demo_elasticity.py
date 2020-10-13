@@ -76,8 +76,8 @@ mesh = BoxMesh(
 
 
 def boundary(x):
-    return np.logical_or(x[0] < 10.0 * np.finfo(float).eps,
-                         x[0] > 1.0 - 10.0 * np.finfo(float).eps)
+    return np.logical_or(np.isclose(x[0], 0.0),
+                         np.isclose(x[1], 1.0))
 
 
 # Rotation rate and mass density

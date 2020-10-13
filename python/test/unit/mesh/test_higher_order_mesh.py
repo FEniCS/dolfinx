@@ -249,7 +249,6 @@ def scipy_one_cell(points, nodes):
 
 # FIXME: Higher order tests are too slow, need to find a better test
 @skip_in_parallel
-# @pytest.mark.parametrize("order", range(1, 6))
 @pytest.mark.parametrize("order", range(1, 6))
 def test_nth_order_triangle(order):
     num_nodes = (order + 1) * (order + 2) / 2
@@ -381,7 +380,6 @@ def test_nth_order_triangle(order):
 
 @skip_in_parallel
 def test_xdmf_input_tri(datadir):
-    # pass
     with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
     surface = assemble_scalar(1 * dx(mesh))
@@ -554,25 +552,41 @@ def test_fourth_order_quad(L, H, Z):
 @skip_in_parallel
 @pytest.mark.parametrize('order', [2, 3])
 def test_gmsh_input_quad(order):
-    pygmsh = pytest.importorskip("pygmsh")
-
-    # Parameterize test if gmsh gets wider support
+    gmsh = pytest.importorskip("gmsh")
     R = 1
-    res = 0.2 if order == 2 else 0.2
+    res = 0.2
     algorithm = 2 if order == 2 else 5
+    gmsh.initialize()
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
+    gmsh.option.setNumber("Mesh.Algorithm", algorithm)
 
-    geo = pygmsh.opencascade.Geometry()
-    geo.add_raw_code("Mesh.ElementOrder={0:d};".format(order))
-    geo.add_ball([0, 0, 0], R, char_length=res)
-    geo.add_raw_code("Recombine Surface {1};")
-    geo.add_raw_code("Mesh.Algorithm = {0:d};".format(algorithm))
-    msh = pygmsh.generate_mesh(geo, verbose=True, dim=2)
+    gmsh.model.occ.addSphere(0, 0, 0, 1, tag=1)
+    gmsh.model.occ.synchronize()
+
+    gmsh.model.mesh.generate(2)
+    gmsh.model.mesh.recombine()
+    gmsh.model.mesh.setOrder(order)
+    idx, points, _ = gmsh.model.mesh.getNodes()
+    points = points.reshape(-1, 3)
+    idx -= 1
+    srt = np.argsort(idx)
+    assert np.all(idx[srt] == np.arange(len(idx)))
+    x = points[srt]
+
+    element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=2)
+    name, dim, order, num_nodes, local_coords, num_first_order_nodes = gmsh.model.mesh.getElementProperties(
+        element_types[0])
+
+    cells = node_tags[0].reshape(-1, num_nodes) - 1
+    gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
+    gmsh.finalize()
 
     gmsh_quad = perm_gmsh(cpp.mesh.CellType.quadrilateral, (order + 1)**2)
-    cells = msh.cells[-1].data[:, gmsh_quad]
-    mesh = create_mesh(MPI.COMM_WORLD, cells, msh.points,
-                       ufl_mesh_from_gmsh(msh.cells[-1].type, msh.points.shape[1]))
+    cells = cells[:, gmsh_quad]
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
     surface = assemble_scalar(1 * dx(mesh))
+
     assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi * R * R, rel=1e-5)
 
     # Bug related to VTK output writing

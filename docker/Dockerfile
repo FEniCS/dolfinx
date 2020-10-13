@@ -93,7 +93,6 @@ ENV OPENBLAS_NUM_THREADS=1 \
 #   documentation or tests.
 # - Third set of packages are optional, but required to run gmsh
 #   pre-built binaries.
-# - Fourth set of packages are optional, required for meshio.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -135,22 +134,16 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libglu1 \
     libxcursor-dev \
     libxinerama1 && \
-    apt-get -y install \
-    python3-lxml && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 
 # Install Python packages (via pip)
 # - First set of packages are required to build and run FEniCS.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
-# - Third set of packages are optional but required for
-#   pygmsh/meshio/DOLFINX mesh pipeline.
 RUN pip3 install --no-cache-dir mpi4py numba && \
-    pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
-    export HDF5_MPI="ON" && \
-    export CC=mpicc && \
-    pip3 install --no-cache-dir --no-binary=h5py h5py meshio pygmsh
+    pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \

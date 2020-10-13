@@ -88,7 +88,7 @@
 // .. code-block:: cpp
 
 #include "poisson.h"
-#include <cfloat>
+#include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/function/Constant.h>
@@ -159,7 +159,9 @@ int main(int argc, char* argv[])
     auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
 
     const auto bdofs = fem::locate_dofs_geometrical({*V}, [](auto& x) {
-      return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
+      static const double epsilon = std::numeric_limits<double>::epsilon();
+      return (x.row(0).abs() < 10.0 * epsilon
+              or (x.row(0) - 1.0).abs() < 10.0 * epsilon);
     });
 
     std::vector bc{
