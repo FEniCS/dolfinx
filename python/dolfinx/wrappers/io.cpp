@@ -34,6 +34,7 @@ void io(py::module& m)
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk);
   m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh);
+  m.def("transpose_map", &dolfinx::io::cells::transpose);
 
   // TODO: Template for different values dtypes
   m.def("extract_local_entities",
