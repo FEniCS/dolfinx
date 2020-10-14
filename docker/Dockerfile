@@ -142,8 +142,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 # - First set of packages are required to build and run FEniCS.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
+# - Third set of packages are required for visualization with pyvista
 RUN pip3 install --no-cache-dir mpi4py numba && \
-    pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme
+    pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
+    pip3 install --no-cache-dir pyvista
 
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
