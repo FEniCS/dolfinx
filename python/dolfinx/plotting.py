@@ -8,8 +8,10 @@ import os
 import warnings
 
 import numpy as np
+import ufl
 
 from dolfinx import cpp, fem, function
+from dolfinx.mesh import create_mesh
 
 __all__ = ["plot"]
 
