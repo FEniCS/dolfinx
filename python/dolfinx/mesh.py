@@ -12,7 +12,8 @@ from dolfinx import cpp, fem
 from dolfinx.cpp.mesh import create_meshtags
 
 __all__ = [
-    "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags"]
+    "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags"
+]
 
 
 def locate_entities(mesh: cpp.mesh.Mesh,
