@@ -12,6 +12,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Function.h>
@@ -54,7 +55,6 @@ void pvtu_write(const function::Function<PetscScalar>& u,
                 const std::size_t counter);
 void create_vtk_header(std::size_t num_vertices, std::size_t num_cells,
                        const std::string vtu_filename);
-void vtk_header_close(std::string file);
 std::string vtu_name(const int process, const int num_processes,
                      const int counter, const std::string filename,
                      const std::string ext);
@@ -81,25 +81,6 @@ void create_vtk_header(std::size_t num_vertices, std::size_t num_cells,
   piece_node.append_attribute("NumberOfCells") = num_cells;
   assert(piece_node);
   vtk_header.save_file(vtu_filename.c_str(), "  ");
-}
-//----------------------------------------------------------------------------
-void vtk_header_close(std::string vtu_filename)
-{
-  // Open file
-  std::ofstream file(vtu_filename.c_str(), std::ios::app);
-  file.precision(16);
-  if (!file.is_open())
-  {
-    throw std::runtime_error("IO Error");
-  }
-
-  // Close headers
-  file << "</Piece>" << std::endl
-       << "</UnstructuredGrid>" << std::endl
-       << "</VTKFile>";
-
-  // Close file
-  file.close();
 }
 //----------------------------------------------------------------------------
 std::string vtu_name(const int process, const int num_processes,
@@ -192,9 +173,6 @@ void write_function(const function::Function<PetscScalar>& u,
   }
   else if (num_processes == 1)
     pvd_file_write(counter, time, filename, vtu_filename);
-
-  // Finalise and write pvd files
-  vtk_header_close(vtu_filename);
 
   DLOG(INFO) << "Saved function \""
              << "u"
@@ -292,88 +270,83 @@ void write_point_data(const function::Function<PetscScalar>& u,
   const int dim = u.function_space()->element()->value_size();
 
   // Open file
-  std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
-  fp.precision(16);
 
-  // Get function values at vertices
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values = u.compute_point_values();
+  if (!boost::filesystem::exists(vtu_filename))
+    throw std::runtime_error("File " + vtu_filename + " does not exist");
+  pugi::xml_document file;
+  pugi::xml_parse_result result = file.load_file(vtu_filename.c_str());
+  assert(result);
+
+  // Select mesh node, Note: Could be done with xpath in the future
+  pugi::xml_node node
+      = file.select_node("/VTKFile/UnstructuredGrid/Piece").node();
+  if (!node)
+    throw std::runtime_error("XML node VTKFile/Unstructured/Piece not found.");
+  pugi::xml_node pd_node = node.append_child("PointData");
+  pugi::xml_node data_node = pd_node.append_child("DataArray");
+
+  // Set common attributes
+  data_node.append_attribute("Name") = u.name.c_str();
+  data_node.append_attribute("type") = "Float64";
+  data_node.append_attribute("format") = "ascii";
 
   if (rank == 0)
   {
-    fp << "<PointData  Scalars=\""
-       << "u"
-       << "\"> " << std::endl;
-    fp << R"(<DataArray  type="Float64"  Name=")"
-       << "u"
-       << "\"  format=\""
-       << "ascii"
-       << "\">";
+    pd_node.append_attribute("Scalars") = u.name.c_str();
   }
   else if (rank == 1)
   {
-    fp << "<PointData  Vectors=\""
-       << "u"
-       << "\"> " << std::endl;
-    fp << R"(<DataArray  type="Float64"  Name=")"
-       << "u"
-       << R"("  NumberOfComponents="3" format=")"
-       << "ascii"
-       << "\">";
+    pd_node.append_attribute("Vectors") = u.name.c_str();
+    data_node.append_attribute("NumberOfComponents") = 3;
   }
   else if (rank == 2)
   {
-    fp << "<PointData  Tensors=\""
-       << "u"
-       << "\"> " << std::endl;
-    fp << R"(<DataArray  type="Float64"  Name=")"
-       << "u"
-       << R"("  NumberOfComponents="9" format=")"
-       << "ascii"
-       << "\">";
+    pd_node.append_attribute("Tensors") = u.name.c_str();
+    data_node.append_attribute("NumberOfComponents") = 9;
   }
 
-  std::ostringstream ss;
-  ss << std::scientific;
-  ss << std::setprecision(16);
+  // Get function values at the nodes of the mesh
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values = u.compute_point_values();
+
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
       = mesh.geometry().x();
+
+  // Create flattened point data padded to 3D
+  std::vector<PetscScalar> point_data(points.rows() * std::pow(3, rank), 0);
+  std::int32_t k = 0;
   for (int i = 0; i < points.rows(); ++i)
   {
     if (rank == 1 and dim == 2)
     {
       // Append 0.0 to 2D vectors to make them 3D
       for (int j = 0; j < 2; j++)
-        ss << values(i, j) << " ";
-      ss << 0.0 << "  ";
+        point_data[k++] = values(i, j);
+      k++;
     }
     else if (rank == 2 and dim == 4)
     {
       // Pad 2D tensors with 0.0 to make them 3D
       for (int j = 0; j < 2; j++)
       {
-        ss << values(i, (2 * j + 0)) << " ";
-        ss << values(i, (2 * j + 1)) << " ";
-        ss << 0.0 << " ";
+        point_data[k++] = values(i, (2 * j + 0));
+        point_data[k++] = values(i, (2 * j + 1));
+        k++;
       }
-      ss << 0.0 << " ";
-      ss << 0.0 << " ";
-      ss << 0.0 << "  ";
+      k += 3;
     }
     else
     {
       // Write all components
       for (int j = 0; j < dim; j++)
-        ss << values(i, j) << " ";
-      ss << " ";
+        point_data[k++] = values(i, j);
     }
   }
-
-  // Send to file
-  fp << ss.str();
-
-  fp << "</DataArray> " << std::endl;
-  fp << "</PointData> " << std::endl;
+  std::int32_t linebreak = rank > 0 ? std::pow(3, rank) : 0;
+  data_node.append_child(pugi::node_pcdata)
+      .set_value(
+          common::container_to_string(point_data, " ", 16, linebreak).c_str());
+  file.save_file(vtu_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
 void pvd_file_write(std::size_t step, double time, const std::string filename,
@@ -580,8 +553,8 @@ void pvtu_write(const function::Function<PetscScalar>& u,
   }
 
   const int num_processes = dolfinx::MPI::size(mesh->mpi_comm());
-  pvtu_write_function(dim, rank, data_type, "u", filename, fname, counter,
-                      num_processes);
+  pvtu_write_function(dim, rank, data_type, u.name.c_str(), filename, fname,
+                      counter, num_processes);
 }
 //----------------------------------------------------------------------------
 
