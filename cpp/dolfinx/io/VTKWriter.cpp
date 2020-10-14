@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2019 Garth N. Wells
+// Copyright (C) 2010-2020 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -6,9 +6,12 @@
 
 #include "VTKWriter.h"
 #include "cells.h"
+#include "pugixml.hpp"
+#include <boost/filesystem.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Function.h>
@@ -18,6 +21,7 @@
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/utils.h>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
@@ -109,45 +113,23 @@ std::string ascii_cell_data(const mesh::Mesh& mesh,
 void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
                       std::string filename)
 {
+
+  // Get mesh geoemtry and number of cells
   const int num_cells = mesh.topology().index_map(cell_dim)->size_local();
-
-  // Get VTK cell type
-  const std::int8_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim);
-
-  // Open file
-  std::ofstream file(filename.c_str(), std::ios::app);
-  file.precision(16);
-  if (!file.is_open())
-  {
-    throw std::runtime_error("Unable to open file:" + filename);
-  }
-
-  // Write vertex positions
-  file << "<Points>" << std::endl;
-  file << R"(<DataArray  type="Float64"  NumberOfComponents="3"  format=")"
-       << "ascii"
-       << "\">";
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points
       = mesh.geometry().x();
-  for (int i = 0; i < points.rows(); ++i)
-    file << points(i, 0) << " " << points(i, 1) << " " << points(i, 2) << "  ";
-  file << "</DataArray>" << std::endl << "</Points>" << std::endl;
 
-  // Write cell connectivity
-  file << "<Cells>" << std::endl;
-  file << R"(<DataArray  type="Int32"  Name="connectivity"  format=")"
-       << "ascii"
-       << "\">";
+  // Output arrays for XML
+  std::int32_t num_nodes_per_cell;
+  std::vector<std::int32_t> mesh_topology;
 
-  int num_nodes;
+  // Get cell topology and map it from dolfin-X to VTK ordering
   const int tdim = mesh.topology().dim();
   if (cell_dim == 0)
   {
-    // Special case when only points should be visualized
-    for (int i = 0; i < points.rows(); ++i)
-      file << i << " ";
-    file << "</DataArray>" << std::endl;
-    num_nodes = 1;
+    for (std::int32_t i = 0; i < points.rows(); ++i)
+      mesh_topology.push_back(i);
+    num_nodes_per_cell = 1;
   }
   else if (cell_dim == tdim)
   {
@@ -156,16 +138,16 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh.geometry().dofmap();
     // FIXME: Use better way to get number of nods
-    num_nodes = x_dofmap.num_links(0);
+    num_nodes_per_cell = x_dofmap.num_links(0);
 
     // Get map from VTK index i to DOLFIN index j
     std::vector map = io::cells::transpose(
-        io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
+        io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes_per_cell));
 
     // TODO: Remove when when paraview issue 19433 is resolved
     // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
     if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
-        and num_nodes == 27)
+        and num_nodes_per_cell == 27)
     {
       map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
              22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
@@ -175,76 +157,94 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     {
       auto x_dofs = x_dofmap.links(c);
       for (int i = 0; i < x_dofs.rows(); ++i)
-        file << x_dofs(map[i]) << " ";
-      file << " ";
+        mesh_topology.push_back(x_dofs(map[i]));
     }
-    file << "</DataArray>" << std::endl;
   }
   else
   {
-    throw std::runtime_error(
-        "VTK outout for mesh_entities for dim<tdim is not implemented yet.");
-
-    // Build a map from topology to geometry
-    auto c_to_v = mesh.topology().connectivity(tdim, 0);
-    assert(c_to_v);
-    auto map = mesh.topology().index_map(0);
-    assert(map);
-    const std::int32_t num_mesh_vertices
-        = map->size_local() + map->num_ghosts();
-
-    auto x_dofmap = mesh.geometry().dofmap();
-    std::vector<std::int32_t> vertex_to_node(num_mesh_vertices);
-    for (int c = 0; c < c_to_v->num_nodes(); ++c)
-    {
-      auto vertices = c_to_v->links(c);
-      auto x_dofs = x_dofmap.links(c);
-      for (int i = 0; i < vertices.rows(); ++i)
-        vertex_to_node[vertices[i]] = x_dofs(i);
-    }
-
-    const mesh::CellType e_type
+    // Create map from topology of cell of sub dimension to geometry entries
+    Eigen::Array<std::int32_t, Eigen::Dynamic, 1> cell_indices(num_cells);
+    for (std::int32_t i = 0; i < num_cells; ++i)
+      cell_indices[i] = i;
+    mesh::CellType cell_type
         = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
-    // FIXME : Need to implement re-mapping for higher order
-    // geometries (aka line segments). CoordinateDofs needs to be
-    // extended to have connections to facets.
-    const int num_vertices = mesh::num_cell_vertices(e_type);
-    const std::vector map_vtk
-        = io::cells::transpose(io::cells::perm_vtk(e_type, num_vertices));
-    auto e_to_v = mesh.topology().connectivity(cell_dim, 0);
-    assert(e_to_v);
-    for (int e = 0; e < e_to_v->num_nodes(); ++e)
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        sub_topology
+        = mesh::entities_to_geometry(mesh, cell_dim, cell_indices, false);
+    num_nodes_per_cell = sub_topology.cols();
+    std::vector map = io::cells::transpose(
+        io::cells::perm_vtk(cell_type, num_nodes_per_cell));
+    for (int c = 0; c < sub_topology.rows(); ++c)
     {
-      auto vertices = e_to_v->links(e);
-      for (int i = 0; i < num_vertices; ++i)
-        file << vertex_to_node[vertices(map_vtk[i])] << " ";
-      file << " ";
+      auto x_dofs = sub_topology.row(c);
+      for (int i = 0; i < x_dofs.cols(); ++i)
+        mesh_topology.push_back(x_dofs(map[i]));
     }
-    file << "</DataArray>" << std::endl;
-    // Change number of nodes to fix offset
-    num_nodes = num_vertices;
   }
 
-  // Write offset into connectivity array for the end of each cell
-  file << R"(<DataArray  type="Int32"  Name="offsets"  format=")"
-       << "ascii"
-       << "\">";
-  for (int offsets = 1; offsets <= num_cells; offsets++)
-    file << offsets * num_nodes << " ";
-  file << "</DataArray>" << std::endl;
+  // Open file (Header should already have been created)
+  if (!boost::filesystem::exists(filename))
+    throw std::runtime_error("File " + filename + " does not exist");
+  pugi::xml_document file;
+  pugi::xml_parse_result result = file.load_file(filename.c_str());
+  assert(result);
 
-  // Write cell type
-  file << R"(<DataArray  type="Int8"  Name="types"  format=")"
-       << "ascii"
-       << "\">";
-  for (int types = 0; types < num_cells; types++)
-    file << std::to_string(vtk_cell_type) << " ";
-  file << "</DataArray>" << std::endl;
-  file << "</Cells>" << std::endl;
+  // Select mesh node, Note: Could be done with xpath in the future
+  pugi::xml_node node
+      = file.select_node("/VTKFile/UnstructuredGrid/Piece").node();
+  if (!node)
+    throw std::runtime_error("XML node VTKFile/Unstructured/Piece not found.");
+
+  // Add mesh geometry
+  pugi::xml_node points_node = node.append_child("Points");
+  pugi::xml_node data_item_node = points_node.append_child("DataArray");
+  data_item_node.append_attribute("type") = "Float64";
+  data_item_node.append_attribute("NumberOfComponents") = 3;
+  data_item_node.append_attribute("format") = "ascii";
+
+  // Flatten mesh geometry
+  std::vector<double> x(points.rows() * points.cols(), 0.0);
+  std::copy(points.data(), points.data() + points.rows() * points.cols(),
+            x.begin());
+  data_item_node.append_child(pugi::node_pcdata)
+      .set_value(common::container_to_string(x, " ", 16, 3).c_str());
+
+  // Save cell topology
+  pugi::xml_node cells_node = node.append_child("Cells");
+  pugi::xml_node connectivity_item_node = cells_node.append_child("DataArray");
+  connectivity_item_node.append_attribute("type") = "Int32";
+  connectivity_item_node.append_attribute("Name") = "connectivity";
+  connectivity_item_node.append_attribute("format") = "ascii";
+  connectivity_item_node.append_child(pugi::node_pcdata)
+      .set_value(common::container_to_string(mesh_topology, " ", 16,
+                                             num_nodes_per_cell)
+                     .c_str());
+
+  // Compute and add topology offsets
+  std::vector<std::int32_t> offsets(num_cells);
+  for (int i = 1; i <= num_cells; i++)
+    offsets[i - 1] = i * num_nodes_per_cell;
+  pugi::xml_node offsets_item_node = cells_node.append_child("DataArray");
+  offsets_item_node.append_attribute("type") = "Int32";
+  offsets_item_node.append_attribute("Name") = "offsets";
+  offsets_item_node.append_attribute("format") = "ascii";
+  offsets_item_node.append_child(pugi::node_pcdata)
+      .set_value(common::container_to_string(offsets, " ", 16, 0).c_str());
+
+  // Get VTK cell type
+  const std::int8_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim);
+  std::vector<std::int8_t> cell_types(num_cells, vtk_cell_type);
+  pugi::xml_node types_item_node = cells_node.append_child("DataArray");
+  types_item_node.append_attribute("type") = "Int8";
+  types_item_node.append_attribute("Name") = "types";
+  types_item_node.append_attribute("format") = "ascii";
+  types_item_node.append_child(pugi::node_pcdata)
+      .set_value(common::container_to_string(cell_types, " ", 8, 0).c_str());
 
   // Close file
-  file.close();
-}
+  file.save_file(filename.c_str(), "  ");
+
+} // namespace
 //-----------------------------------------------------------------------------
 
 } // namespace

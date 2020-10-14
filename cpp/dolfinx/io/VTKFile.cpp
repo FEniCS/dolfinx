@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2019 Garth N. Wells
+// Copyright (C) 2005-2020 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -52,36 +52,35 @@ void pvtu_write_mesh(const std::string filename,
 void pvtu_write(const function::Function<PetscScalar>& u,
                 const std::string filename, const std::string pvtu_filename,
                 const std::size_t counter);
-void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
-                     const std::string vtu_filename);
+void create_vtk_header(std::size_t num_vertices, std::size_t num_cells,
+                       const std::string vtu_filename);
 void vtk_header_close(std::string file);
 std::string vtu_name(const int process, const int num_processes,
                      const int counter, const std::string filename,
                      const std::string ext);
-void clear_file(std::string file);
 std::string strip_path(const std::string filename, const std::string file);
 void pvtu_write_mesh(pugi::xml_node xml_node);
 
 //----------------------------------------------------------------------------
-void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
-                     const std::string vtu_filename)
+void create_vtk_header(std::size_t num_vertices, std::size_t num_cells,
+                       const std::string vtu_filename)
 {
-  // Open file
-  std::ofstream file(vtu_filename.c_str(), std::ios::app);
-  file.precision(16);
-  if (!file.is_open())
-    throw std::runtime_error("Unable to open file " + vtu_filename);
+  // Overwrite existing file
+  pugi::xml_document vtk_header;
 
-  // Write headers
-  file << "<?xml version=\"1.0\"?>" << std::endl;
-  file << R"(<VTKFile type="UnstructuredGrid"  version="0.1" )"
-       << ">" << std::endl;
-  file << "<UnstructuredGrid>" << std::endl;
-  file << "<Piece  NumberOfPoints=\"" << num_vertices << "\" NumberOfCells=\""
-       << num_cells << "\">" << std::endl;
-
-  // Close file
-  file.close();
+  // Create main node
+  pugi::xml_node node = vtk_header.append_child("VTKFile");
+  assert(node);
+  // Create sub nodes with information
+  node.append_attribute("type") = "UnstructuredGrid";
+  node.append_attribute("version") = "0.1";
+  pugi::xml_node grid_node = node.append_child("UnstructuredGrid");
+  assert(grid_node);
+  pugi::xml_node piece_node = grid_node.append_child("Piece");
+  piece_node.append_attribute("NumberOfPoints") = num_vertices;
+  piece_node.append_attribute("NumberOfCells") = num_cells;
+  assert(piece_node);
+  vtk_header.save_file(vtu_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
 void vtk_header_close(std::string vtu_filename)
@@ -131,14 +130,6 @@ std::string vtu_name(const int process, const int num_processes,
   return newfilename.str();
 }
 //----------------------------------------------------------------------------
-void clear_file(std::string file)
-{
-  std::ofstream _file(file.c_str(), std::ios::trunc);
-  if (!_file.is_open())
-    throw std::runtime_error("IO Error");
-  _file.close();
-}
-//----------------------------------------------------------------------------
 std::string strip_path(const std::string filename, const std::string file)
 {
   std::string fname;
@@ -156,7 +147,6 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
   std::string vtu_filename
       = vtu_name(dolfinx::MPI::rank(mpi_comm), dolfinx::MPI::size(mpi_comm),
                  counter, filename, ".vtu");
-  clear_file(vtu_filename);
 
   // Number of cells
   const std::size_t num_cells
@@ -166,7 +156,7 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
   const int num_nodes = mesh.geometry().x().rows();
 
   // Write headers
-  vtk_header_open(num_nodes, num_cells, vtu_filename);
+  create_vtk_header(num_nodes, num_cells, vtu_filename);
 
   return vtu_filename;
 }
@@ -236,9 +226,6 @@ void write_mesh(const mesh::Mesh& mesh, const std::string filename,
   }
   else if (num_processes == 1)
     pvd_file_write(counter, time, filename, vtu_filename);
-
-  // Finalise
-  vtk_header_close(vtu_filename);
 
   DLOG(INFO) << "Saved mesh in VTK format to file:" << filename;
 }
