@@ -10,7 +10,6 @@ import warnings
 import numpy as np
 
 from dolfinx import cpp, fem, function
-from dolfinx.mesh import create_boundary_mesh
 
 __all__ = ["plot"]
 
@@ -18,6 +17,33 @@ _matplotlib_plottable_types = (cpp.function.Function,
                                cpp.mesh.Mesh,
                                cpp.fem.DirichletBC)
 _all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types)))
+
+
+def create_boundary_mesh(mesh, comm, orient=False):
+    """
+    Create a mesh consisting of all exterior facets of a mesh
+    Input:
+      mesh   - The mesh
+      comm   - The MPI communicator
+      orient - Boolean flag for reorientation of facets to have
+               consistent outwards-pointing normal (default: True)
+    Output:
+      bmesh - The boundary mesh
+      bmesh_to_geometry - Map from cells of the boundary mesh
+                          to the geometry of the original mesh
+    """
+    ext_facets = cpp.mesh.exterior_facet_indices(mesh)
+    boundary_geometry = cpp.mesh.entities_to_geometry(
+        mesh, mesh.topology.dim - 1, ext_facets, orient)
+    facet_type = cpp.mesh.to_string(cpp.mesh.cell_entity_type(
+        mesh.topology.cell_type, mesh.topology.dim - 1))
+    facet_cell = ufl.Cell(facet_type,
+                          geometric_dimension=mesh.geometry.dim)
+    degree = mesh.ufl_domain().ufl_coordinate_element().degree()
+    ufl_domain = ufl.Mesh(ufl.VectorElement("Lagrange", facet_cell, degree))
+    bmesh = create_mesh(
+        comm, boundary_geometry, mesh.geometry.x, ufl_domain)
+    return bmesh, boundary_geometry
 
 
 def _has_matplotlib():

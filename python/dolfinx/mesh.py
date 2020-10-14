@@ -12,8 +12,7 @@ from dolfinx import cpp, fem
 from dolfinx.cpp.mesh import create_meshtags
 
 __all__ = [
-    "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags", "create_boundary_mesh"
-]
+    "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags"]
 
 
 def locate_entities(mesh: cpp.mesh.Mesh,
@@ -125,32 +124,6 @@ def MeshTags(mesh, dim, indices, values):
     fn = _meshtags_types[dtype]
     return fn(mesh, dim, indices, values)
 
-
-def create_boundary_mesh(mesh, comm, orient=False):
-    """
-    Create a mesh consisting of all exterior facets of a mesh
-    Input:
-      mesh   - The mesh
-      comm   - The MPI communicator
-      orient - Boolean flag for reorientation of facets to have
-               consistent outwards-pointing normal (default: True)
-    Output:
-      bmesh - The boundary mesh
-      bmesh_to_geometry - Map from cells of the boundary mesh
-                          to the geometry of the original mesh
-    """
-    ext_facets = cpp.mesh.exterior_facet_indices(mesh)
-    boundary_geometry = cpp.mesh.entities_to_geometry(
-        mesh, mesh.topology.dim - 1, ext_facets, orient)
-    facet_type = cpp.mesh.to_string(cpp.mesh.cell_entity_type(
-        mesh.topology.cell_type, mesh.topology.dim - 1))
-    facet_cell = ufl.Cell(facet_type,
-                          geometric_dimension=mesh.geometry.dim)
-    degree = mesh.ufl_domain().ufl_coordinate_element().degree()
-    ufl_domain = ufl.Mesh(ufl.VectorElement("Lagrange", facet_cell, degree))
-    bmesh = create_mesh(
-        comm, boundary_geometry, mesh.geometry.x, ufl_domain)
-    return bmesh, boundary_geometry
 
 # Functions to extend cpp.mesh.Mesh with
 

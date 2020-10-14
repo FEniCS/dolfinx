@@ -8,7 +8,7 @@ import dolfinx
 import dolfinx.cpp.mesh as cmesh
 import dolfinx.fem
 import dolfinx.io
-import dolfinx.mesh
+import dolfinx.plotting
 import numpy as np
 import pytest
 import ufl
@@ -25,7 +25,7 @@ def test_b_mesh_mapping(celltype):
     """
     mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2, cell_type=celltype)
 
-    b_mesh, bndry_to_mesh = dolfinx.mesh.create_boundary_mesh(mesh, MPI.COMM_SELF)
+    b_mesh, bndry_to_mesh = dolfinx.plotting.create_boundary_mesh(mesh, MPI.COMM_SELF)
 
     # Compute map from boundary mesh topology to boundary mesh geometry
     b_mesh.topology.create_connectivity(
@@ -61,7 +61,7 @@ def test_b_mesh_orientation(celltype):
                             np.array([0.5, 0.5, 0.5])],
                            [2, 2, 2], cell_type=celltype)
 
-    b_mesh, bndry_to_mesh = dolfinx.mesh.create_boundary_mesh(mesh, MPI.COMM_SELF, True)
+    b_mesh, bndry_to_mesh = dolfinx.plotting.create_boundary_mesh(mesh, MPI.COMM_SELF, True)
     bdim = b_mesh.topology.dim
     b_mesh.topology.create_connectivity(bdim, bdim - 1)
     b_mesh.topology.create_connectivity(bdim - 1, bdim)
