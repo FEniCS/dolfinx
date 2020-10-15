@@ -154,7 +154,8 @@ template <typename T>
 Form<T> create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces,
-    const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
+    const std::vector<std::tuple<int, std::string,
+                                 std::shared_ptr<const function::Function<T>>>>&
         coefficients)
 {
   assert(ufc_form.rank == (int)spaces.size());
@@ -246,6 +247,23 @@ Form<T> create_form(
         "Vertex integrals not supported. Under development.");
   }
 
+  return fem::Form(spaces,
+                   FormIntegrals<T>(integral_data, needs_permutation_data),
+                   FormCoefficients<T>(coefficients),
+                   fem::get_constants_from_ufc_form<T>(ufc_form));
+}
+
+/// Create a Form from UFC input
+/// @param[in] ufc_form The UFC form
+/// @param[in] spaces Vector of function spaces
+/// @param[in] coefficients Coefficient fields in the form
+template <typename T>
+Form<T> create_form(
+    const ufc_form& ufc_form,
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces,
+    const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
+        coefficients)
+{
   // Build tuples of (index, name, coefficient function)
   const std::vector<std::pair<int, std::string>> pos_to_name
       = get_coeffs_from_ufc_form(ufc_form);
@@ -261,10 +279,7 @@ Form<T> create_form(
     coeff_map.emplace_back(it->first, it->second, c.second);
   }
 
-  return fem::Form(spaces,
-                   FormIntegrals<T>(integral_data, needs_permutation_data),
-                   FormCoefficients<T>(coeff_map),
-                   fem::get_constants_from_ufc_form<T>(ufc_form));
+  return create_form(ufc_form, spaces, coeff_map);
 }
 
 /// Create a form from a form_create function returning a pointer to a

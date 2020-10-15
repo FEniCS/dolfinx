@@ -50,16 +50,16 @@ class Form:
             func.ufl_function_space()._cpp_object for func in form.arguments()
         ]
 
+        # Prepare coefficients data. For every coefficient in form take
+        # its C++ object.
+        coeffs = []
+        for i in range(ufc_form.num_coefficients):
+            j = ufc_form.original_coefficient_position(i)
+            coeffs.append((j, None, original_coefficients[j]._cpp_object))
+
         # Prepare dolfinx.cpp.fem.Form and hold it as a member
         ffi = cffi.FFI()
-        self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ufc_form), function_spaces)
-
-        # Need to fill the form with coefficients data
-        # For every coefficient in form take its C++ object
-        original_coefficients = form.coefficients()
-        for i in range(self._cpp_object.num_coefficients()):
-            j = self._cpp_object.original_coefficient_position(i)
-            self._cpp_object.set_coefficient(i, original_coefficients[j]._cpp_object)
+        self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ufc_form), function_spaces, coeffs)
 
         # Constants are set based on their position in original form
         original_constants = [c._cpp_object for c in form.constants()]

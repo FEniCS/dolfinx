@@ -159,9 +159,13 @@ void fem(py::module& m)
       "create_form",
       [](const std::uintptr_t form,
          const std::vector<
-             std::shared_ptr<const dolfinx::function::FunctionSpace>>& spaces) {
+             std::shared_ptr<const dolfinx::function::FunctionSpace>>& spaces,
+         const std::vector<std::tuple<
+             int, std::string,
+             std::shared_ptr<const dolfinx::function::Function<PetscScalar>>>>&
+             coefficients) {
         const ufc_form* p = reinterpret_cast<const ufc_form*>(form);
-        return dolfinx::fem::create_form<PetscScalar>(*p, spaces, {});
+        return dolfinx::fem::create_form<PetscScalar>(*p, spaces, coefficients);
       },
       "Create Form from a pointer to ufc_form.");
   m.def(
@@ -406,10 +410,11 @@ void fem(py::module& m)
            [](dolfinx::fem::Form<PetscScalar>& self, int i) {
              return self.coefficients().original_position(i);
            })
-    //   .def("set_coefficient",
-    //        [](dolfinx::fem::Form<PetscScalar>& self, std::size_t i,
-    //           std::shared_ptr<const dolfinx::function::Function<PetscScalar>>
-    //               f) { self.coefficients().set(i, f); })
+      //   .def("set_coefficient",
+      //        [](dolfinx::fem::Form<PetscScalar>& self, std::size_t i,
+      //           std::shared_ptr<const
+      //           dolfinx::function::Function<PetscScalar>>
+      //               f) { self.coefficients().set(i, f); })
       .def("set_constants",
            [](dolfinx::fem::Form<PetscScalar>& self,
               const std::vector<std::shared_ptr<
