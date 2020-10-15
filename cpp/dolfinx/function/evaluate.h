@@ -10,7 +10,6 @@
 #include <vector>
 
 #include <Eigen/Dense>
-#include <dolfinx/fem/FormCoefficients.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 

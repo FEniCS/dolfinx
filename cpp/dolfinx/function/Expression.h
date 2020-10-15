@@ -6,20 +6,15 @@
 
 #pragma once
 
-#include "Constant.h"
-#include "evaluate.h"
+#include <Eigen/Dense>
 #include <dolfinx/fem/FormCoefficients.h>
+#include <dolfinx/function/evaluate.h>
 #include <functional>
 #include <utility>
 #include <vector>
 
 namespace dolfinx
 {
-namespace fem
-{
-template <typename T>
-class FormCoefficients;
-}
 
 namespace mesh
 {
@@ -28,10 +23,12 @@ class Mesh;
 
 namespace function
 {
+template <typename T>
+class Constant;
+
 /// Represents a mathematical expression evaluated at a pre-defined set of
 /// points on the reference cell. This class closely follows the concept of a
 /// UFC Expression.
-
 template <typename T>
 class Expression
 {
