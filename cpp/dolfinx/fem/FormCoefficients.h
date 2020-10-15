@@ -34,11 +34,10 @@ class FormCoefficients
 {
 public:
   /// Initialise the FormCoefficients, using tuples of
-  /// (original_coeff_position, name, Function). The Function pointer
-  /// may be a nullptr and assigned later.
+  /// (original_coeff_position, name, Function)
   FormCoefficients(
-      const std::vector<
-          std::tuple<int, std::string, std::shared_ptr<const function::Function<T>>>>&
+      const std::vector<std::tuple<
+          int, std::string, std::shared_ptr<const function::Function<T>>>>&
           coefficients)
   {
     for (const auto& c : coefficients)
@@ -46,6 +45,20 @@ public:
       _original_pos.push_back(std::get<0>(c));
       _names.push_back(std::get<1>(c));
       _coefficients.push_back(std::get<2>(c));
+    }
+  }
+
+  /// Initialise the FormCoefficients, using pairs of
+  /// (original_coeff_position, Function)
+  FormCoefficients(
+      const std::vector<
+          std::pair<int, std::shared_ptr<const function::Function<T>>>>&
+          coefficients)
+  {
+    for (const auto& c : coefficients)
+    {
+      _original_pos.push_back(c.first);
+      _coefficients.push_back(c.second);
     }
   }
 

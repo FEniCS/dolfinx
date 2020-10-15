@@ -109,7 +109,10 @@ public:
            function_spaces,
        bool need_mesh_permutation_data)
       : Form(function_spaces, FormIntegrals<T>({}, need_mesh_permutation_data),
-             FormCoefficients<T>({}), {})
+             FormCoefficients<T>(
+                 std::vector<std::pair<
+                     int, std::shared_ptr<const function::Function<T>>>>()),
+             {})
   {
     // Do nothing
   }
@@ -214,9 +217,6 @@ public:
     if (i == -1 and _mesh)
       _integrals.set_default_domains(*_mesh);
   }
-
-  /// Access coefficients
-  // FormCoefficients<T>& coefficients() { return _coefficients; }
 
   /// Access coefficients
   const FormCoefficients<T>& coefficients() const { return _coefficients; }

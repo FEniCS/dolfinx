@@ -102,9 +102,9 @@ def test_coefficient():
     vals = Function(DG0)
     vals.vector.set(2.0)
 
-    L = cpp.fem.Form([V._cpp_object], False)
+    L = cpp.fem.Form([V._cpp_object], (0, vals._cpp_object), False)
     L.set_tabulate_tensor(IntegralType.cell, -1, tabulate_tensor_b_coeff.address)
-    L.set_coefficient(0, vals._cpp_object)
+    # L.set_coefficient(0, vals._cpp_object)
 
     b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
