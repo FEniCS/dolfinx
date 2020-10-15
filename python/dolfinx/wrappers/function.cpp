@@ -58,24 +58,23 @@ void function(py::module& m)
            py::overload_cast<const dolfinx::function::Function<PetscScalar>&>(
                &dolfinx::function::Function<PetscScalar>::interpolate),
            py::arg("u"), "Interpolate a finite element function")
-      .def(
-          "interpolate_ptr",
-          [](dolfinx::function::Function<PetscScalar>& self,
-             std::uintptr_t addr) {
-            const std::function<void(PetscScalar*, int, int, const double*)> f
-                = reinterpret_cast<void (*)(PetscScalar*, int, int,
-                                            const double*)>(addr);
-            auto _f
-                = [&f](Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                               Eigen::Dynamic, Eigen::RowMajor>>
-                           values,
-                       const Eigen::Ref<const Eigen::Array<
-                           double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x) {
-                    f(values.data(), values.rows(), values.cols(), x.data());
-                  };
-            dolfinx::function::interpolate_c<PetscScalar>(self, _f);
-          },
-          "Interpolate using a pointer to an expression with a C signature")
+      .def("interpolate_ptr",
+           [](dolfinx::function::Function<PetscScalar>& self,
+              std::uintptr_t addr) {
+             const std::function<void(PetscScalar*, int, int, const double*)> f
+                 = reinterpret_cast<void (*)(PetscScalar*, int, int,
+                                             const double*)>(addr);
+             auto _f =
+                 [&f](Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                              Eigen::Dynamic, Eigen::RowMajor>>
+                          values,
+                      const Eigen::Ref<const Eigen::Array<
+                          double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x) {
+                   f(values.data(), values.rows(), values.cols(), x.data());
+                 };
+             dolfinx::function::interpolate_c<PetscScalar>(self, _f);
+           },
+           "Interpolate using a pointer to an expression with a C signature")
       .def_property_readonly(
           "vector",
           [](const dolfinx::function::Function<PetscScalar>&
@@ -124,28 +123,35 @@ void function(py::module& m)
       m, "Constant", "A value constant with respect to integration domain")
       .def(py::init<std::vector<int>, std::vector<PetscScalar>>(),
            "Create a constant from a scalar value array")
-      .def(
-          "value",
-          [](dolfinx::function::Constant<PetscScalar>& self) {
-            return py::array(self.shape, self.value.data(), py::none());
-          },
-          py::return_value_policy::reference_internal);
+      .def("value",
+           [](dolfinx::function::Constant<PetscScalar>& self) {
+             return py::array(self.shape, self.value.data(), py::none());
+           },
+           py::return_value_policy::reference_internal);
 
   // dolfinx::function::Expression
   py::class_<dolfinx::function::Expression<PetscScalar>,
              std::shared_ptr<dolfinx::function::Expression<PetscScalar>>>(
       m, "Expression", "An Expression")
-      .def(py::init<const std::shared_ptr<dolfinx::mesh::Mesh>&,
-      const Eigen::Ref<const
-          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&,
-      const std::size_t>(), "Create an Expression")
+      .def(py::init<
+               const std::shared_ptr<dolfinx::mesh::Mesh>&,
+               const Eigen::Ref<const Eigen::Array<
+                   double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&,
+               const std::size_t>(),
+           "Create an Expression")
       .def("eval", &dolfinx::function::Expression<PetscScalar>::eval)
-      .def_property_readonly("mesh", &dolfinx::function::Expression<PetscScalar>::mesh)
-      .def_property_readonly("num_points",
-                    &dolfinx::function::Expression<PetscScalar>::num_points)
-      .def_property_readonly("value_size",
-                    &dolfinx::function::Expression<PetscScalar>::value_size)
-      .def_property_readonly("x", &dolfinx::function::Expression<PetscScalar>::x)
+      .def_property_readonly("mesh",
+                             &dolfinx::function::Expression<PetscScalar>::mesh,
+                             py::return_value_policy::reference_internal)
+      .def_property_readonly(
+          "num_points", &dolfinx::function::Expression<PetscScalar>::num_points,
+          py::return_value_policy::reference_internal)
+      .def_property_readonly(
+          "value_size", &dolfinx::function::Expression<PetscScalar>::value_size,
+          py::return_value_policy::reference_internal)
+      .def_property_readonly("x",
+                             &dolfinx::function::Expression<PetscScalar>::x,
+                             py::return_value_policy::reference_internal)
       .def("set_coefficient",
            [](dolfinx::function::Expression<PetscScalar>& self, std::size_t i,
               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>
