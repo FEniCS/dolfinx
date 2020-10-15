@@ -105,21 +105,20 @@ class Expression:
         Parameters
         ----------
         cells
-            local indices of cells which you
+            local indices of cells to evaluate expression.
         u: optional
             array of shape (num_cells, num_points*value_size) to
-            store result of evaluating expression.
+            store result of expression evaluation.
 
         Returns
         -------
 
         u: np.ndarray
-            The i-th row of u contains the expression evaluated on the i-th cell.
+            The i-th row of u contains the expression evaluated on cells[i].
 
         Note
         ----
-        This function allocates u of the appropriate size if u is passed as
-        None.
+        This function allocates u of the appropriate size if u is not passed.
         """
         cells = np.asarray(cells, dtype=np.int32)
         assert cells.ndim == 1
