@@ -65,10 +65,10 @@ extract_function_spaces(
 {
   std::vector<std::vector<
       std::array<std::shared_ptr<const function::FunctionSpace>, 2>>>
-      spaces(a.rows(),
-             std::vector<
-                 std::array<std::shared_ptr<const function::FunctionSpace>, 2>>(
-                 a.cols()));
+  spaces(a.rows(),
+         std::vector<
+             std::array<std::shared_ptr<const function::FunctionSpace>, 2>>(
+             a.cols()));
   for (int i = 0; i < a.rows(); ++i)
     for (int j = 0; j < a.cols(); ++j)
       if (a(i, j))

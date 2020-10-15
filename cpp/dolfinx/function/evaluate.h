@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "Expression.h"
-#include "utils.h"
 #include <Eigen/Dense>
 #include <dolfinx/fem/FormCoefficients.h>
 #include <dolfinx/fem/utils.h>
@@ -31,13 +30,6 @@ void eval(
     Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         values,
     const function::Expression<T>& e,
-    const std::vector<std::int32_t>& active_cells);
-
-template <typename T>
-void eval(
-    Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        values,
-    const function::Expression<T>& e,
     const std::vector<std::int32_t>& active_cells)
 {
   // Extract data from Expression
@@ -46,7 +38,7 @@ void eval(
 
   // Prepare coefficients
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = pack_coefficients(e);
+      = dolfinx::fem::pack_coefficients<T, function::Expression<T>>(e);
 
   // Prepare constants
   if (!e.all_constants_set())

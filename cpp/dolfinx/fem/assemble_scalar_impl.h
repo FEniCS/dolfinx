@@ -122,7 +122,7 @@ T assemble_scalar(const fem::Form<T>& M)
         = needs_permutation_data
               ? mesh->topology().get_facet_permutations()
               : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
-                  facets_per_cell, num_cells);
+                    facets_per_cell, num_cells);
 
     for (int i = 0; i < integrals.num_integrals(IntegralType::exterior_facet);
          ++i)
