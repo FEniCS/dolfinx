@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2019 Garth N. Wells
+// Copyright (C) 2005-2020 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -27,7 +27,7 @@ namespace
 {
 //----------------------------------------------------------------------------
 /// Return true if Function is a cell-wise constant, otherwise false
-bool is_cellwise(const function::Function& u)
+bool is_cellwise(const function::Function<PetscScalar>& u)
 {
   assert(u.function_space());
   assert(u.function_space()->element());
@@ -111,7 +111,7 @@ void add_pvtu_mesh(pugi::xml_node& node)
 //----------------------------------------------------------------------------
 /// At data to a pugixml node
 void add_data(
-    const function::Function& u,
+    const function::Function<PetscScalar>& u,
     const Eigen::Ref<const Eigen::Array<
         PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values,
     pugi::xml_node& data_node)
@@ -150,13 +150,11 @@ void add_data(
 
   if (rank == 0)
   {
-    data_node.append_attribute("Scalars") = u.name.c_str();
     field_node.append_child(pugi::node_pcdata)
         .set_value(eigen_to_string(values, 16).c_str());
   }
   else if (rank == 1)
   {
-    data_node.append_attribute("Vectors") = u.name.c_str();
     field_node.append_attribute("NumberOfComponents") = 3;
     if (dim == 2)
     {
@@ -179,7 +177,6 @@ void add_data(
   }
   else if (rank == 2)
   {
-    data_node.append_attribute("Tensors") = u.name.c_str();
     field_node.append_attribute("NumberOfComponents") = 9;
     if (dim == 4)
     {
@@ -214,8 +211,7 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
   const mesh::Topology& topology = mesh.topology();
   const mesh::Geometry& geometry = mesh.geometry();
   const int tdim = topology.dim();
-  const std::int32_t num_cells = topology.index_map(tdim)->size_local()
-                                 + topology.index_map(tdim)->num_ghosts();
+  const std::int32_t num_cells = topology.index_map(tdim)->size_local();
 
   // Add geometry (points)
 
@@ -268,7 +264,7 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
       = x_dofmap.offsets();
   offsets_node.append_child(pugi::node_pcdata)
-      .set_value(eigen_to_string(offsets.tail(offsets.size() - 1), 0).c_str());
+      .set_value(eigen_to_string(offsets.segment(1, num_cells), 0).c_str());
 
   pugi::xml_node type_node = cells_node.append_child("DataArray");
   type_node.append_attribute("type") = "Int8";
@@ -304,7 +300,15 @@ io::VTKFileNew::~VTKFileNew()
 void io::VTKFileNew::close()
 {
   if (_pvd_xml and MPI::rank(_comm.comm()) == 0)
-    _pvd_xml->save_file(_filename.c_str(), "  ");
+  {
+    bool status = _pvd_xml->save_file(_filename.c_str(), "  ");
+    if (status == false)
+    {
+      throw std::runtime_error(
+          "Could not write VTKFile. Does the directory "
+          "exists and do you have read/write permissions?");
+    }
+  }
 }
 //----------------------------------------------------------------------------
 void io::VTKFileNew::flush()
@@ -338,8 +342,7 @@ void io::VTKFileNew::write(const mesh::Mesh& mesh, double time)
   const int tdim = topology.dim();
   const std::int32_t num_points
       = geometry.index_map()->size_local() + geometry.index_map()->num_ghosts();
-  const std::int32_t num_cells = topology.index_map(tdim)->size_local()
-                                 + topology.index_map(tdim)->num_ghosts();
+  const std::int32_t num_cells = topology.index_map(tdim)->size_local();
 
   // Create a VTU XML object
   pugi::xml_document xml_vtu;
@@ -401,7 +404,8 @@ void io::VTKFileNew::write(const mesh::Mesh& mesh, double time)
 }
 //----------------------------------------------------------------------------
 void io::VTKFileNew::write(
-    const std::vector<std::reference_wrapper<const function::Function>>& u,
+    const std::vector<
+        std::reference_wrapper<const function::Function<PetscScalar>>>& u,
     double time)
 {
   if (u.empty())
@@ -441,8 +445,7 @@ void io::VTKFileNew::write(
   const int tdim = topology.dim();
   const std::int32_t num_points
       = geometry.index_map()->size_local() + geometry.index_map()->num_ghosts();
-  const std::int32_t num_cells = topology.index_map(tdim)->size_local()
-                                 + topology.index_map(tdim)->num_ghosts();
+  const std::int32_t num_cells = topology.index_map(tdim)->size_local();
 
   // Create a VTU XML object
   pugi::xml_document xml_vtu;
@@ -459,6 +462,34 @@ void io::VTKFileNew::write(
   // Add mesh data to "Piece" node
   add_mesh(*mesh, piece_node);
 
+  // Loop through functions to add data types and ranks
+  for (auto _u : u)
+  {
+    std::string data_type;
+    if (is_cellwise(_u))
+      data_type = "CellData";
+    else
+      data_type = "PointData";
+
+    // Set last entry of a given rank to be the active data type
+    // as Paraview only supports one active type
+    if (piece_node.child(data_type.c_str()).empty())
+      piece_node.append_child(data_type.c_str());
+    const int rank = _u.get().function_space()->element()->value_rank();
+    pugi::xml_node data_node = piece_node.child(data_type.c_str());
+    std::string rank_type;
+    if (rank == 0)
+      rank_type = "Scalars";
+    else if (rank == 1)
+      rank_type = "Vectors";
+    else if (rank == 2)
+      rank_type = "Tensors";
+    if (data_node.attribute(rank_type.c_str()).empty())
+      data_node.append_attribute(rank_type.c_str());
+    pugi::xml_attribute data = data_node.attribute(rank_type.c_str());
+    data.set_value(_u.get().name.c_str());
+  }
+
   // Add cell/point data to VTU node
   for (auto _u : u)
   {
@@ -471,7 +502,8 @@ void io::VTKFileNew::write(
       Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
           _values(values.data(), values.size() / value_size, value_size);
-      pugi::xml_node data_node = piece_node.append_child("CellData");
+      pugi::xml_node data_node = piece_node.child("CellData");
+      assert(!data_node.empty());
       add_data(_u, _values, data_node);
     }
     else
@@ -484,12 +516,11 @@ void io::VTKFileNew::write(
       {
         // Extract mesh data
         int tdim = mesh->topology().dim();
-
         auto cmap = mesh->geometry().cmap();
         auto geometry_layout = cmap.dof_layout();
 
         // Fetch function array from PETSc
-        auto func_values = _u.get().vector().vec();
+        auto func_values = _u.get().vector();
         PetscScalar arr;
         PetscScalar* arr_ptr = &arr;
         VecGetArray(func_values, &arr_ptr);
@@ -504,13 +535,41 @@ void io::VTKFileNew::write(
 
         auto map = mesh->topology().index_map(tdim);
         assert(map);
-        const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+        const std::int32_t num_cells = map->size_local();
 
         // Resize array for holding point values
         Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                      Eigen::RowMajor>
             point_values(mesh->geometry().x().rows(), value_size_loc);
 
+        // If scalar function space
+        if (element->num_sub_elements() == 0)
+        {
+          auto dofmap = _u.get().function_space()->dofmap();
+          auto element_layout = dofmap->element_dof_layout;
+          for (std::int32_t i = 0; i <= tdim; i++)
+          {
+            // Check that subelement layout matches geometry layout
+            if (geometry_layout.num_entity_dofs(i)
+                != element_layout->num_entity_dofs(i))
+            {
+              throw std::runtime_error("Can only save Lagrange finite element "
+                                       "functions of same order "
+                                       "as the mesh geometry");
+            }
+          }
+          // Loop through cells
+          for (std::int32_t c = 0; c < num_cells; ++c)
+          {
+            // Get local to global dof ordering for geometry and function
+            auto dofs = x_dofmap.links(c);
+            auto cell_dofs = dofmap->cell_dofs(c);
+            for (std::int32_t i = 0; i < num_dofs_g; i++)
+            {
+              point_values(dofs[i], 0) = arr_ptr[cell_dofs[i]];
+            }
+          }
+        }
         // Loop through each vector component
         for (std::int32_t k = 0; k < element->num_sub_elements(); k++)
         {
@@ -540,7 +599,8 @@ void io::VTKFileNew::write(
             }
           }
         }
-        pugi::xml_node data_node = piece_node.append_child("PointData");
+        pugi::xml_node data_node = piece_node.child("PointData");
+        assert(!data_node.empty());
         add_data(_u, point_values, data_node);
       }
       else
@@ -552,14 +612,18 @@ void io::VTKFileNew::write(
 
   // Save VTU XML to file
   boost::filesystem::path vtu(p.parent_path());
-  vtu += "/" + p.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
+  if (!p.parent_path().empty())
+    vtu += "/";
+  vtu += p.stem().string() + "_p" + std::to_string(mpi_rank) + "_"
          + counter_str;
   vtu.replace_extension("vtu");
   xml_vtu.save_file(vtu.c_str(), "  ");
 
   // Create a PVTU XML object on rank 0
   boost::filesystem::path p_pvtu(p.parent_path());
-  p_pvtu += "/" + p.stem().string() + counter_str;
+  if (!p.parent_path().empty())
+    p_pvtu += "/";
+  p_pvtu += p.stem().string() + counter_str;
   p_pvtu.replace_extension("pvtu");
   if (mpi_rank == 0)
   {
@@ -569,34 +633,33 @@ void io::VTKFileNew::write(
     vtk_node.append_attribute("version") = "0.1";
     pugi::xml_node grid_node = vtk_node.append_child("PUnstructuredGrid");
     grid_node.append_attribute("GhostLevel") = 0;
-
+    for (auto _u : u)
+      if (is_cellwise(_u))
+      {
+        if (grid_node.child("PCellData").empty())
+          grid_node.append_child("PCellData");
+      }
+      else
+      {
+        if (grid_node.child("PPointData").empty())
+          grid_node.append_child("PPointData");
+      }
     // Add mesh metadata to PVTU object
     add_pvtu_mesh(grid_node);
-
     // Add field data
-    pugi::xml_node pointdata_pnode = grid_node.append_child("PPointData");
     for (auto _u : u)
     {
-      // FIXME: ssssss
+      std::string d_type = is_cellwise(_u) ? "PCellData" : "PPointData";
+      pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
       const int rank = _u.get().function_space()->element()->value_rank();
       int ncomps = 0;
-      if (rank == 0)
-      {
-        pointdata_pnode.append_attribute("Scalars") = _u.get().name.c_str();
-      }
-      else if (rank == 1)
-      {
+      if (rank == 1)
         ncomps = 3;
-        pointdata_pnode.append_attribute("Vectors") = _u.get().name.c_str();
-      }
       else if (rank == 2)
-      {
         ncomps = 9;
-        pointdata_pnode.append_attribute("Tensors") = _u.get().name.c_str();
-      }
       // FIXME add tensor handling
 
-      pugi::xml_node data_node = pointdata_pnode.append_child("PDataArray");
+      pugi::xml_node data_node = data_pnode.append_child("PDataArray");
       data_node.append_attribute("type") = "Float64";
       data_node.append_attribute("Name") = _u.get().name.c_str();
       data_node.append_attribute("NumberOfComponents") = ncomps;

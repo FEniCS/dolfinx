@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/function/Function.h>
 #include <functional>
 #include <memory>
 #include <string>
@@ -20,6 +21,7 @@ namespace dolfinx
 {
 namespace function
 {
+template <typename T>
 class Function;
 }
 
@@ -67,7 +69,8 @@ public:
   /// @param[in] u The Function to write to file
   /// @param[in] time Time parameter to associate with the @p mesh
   void
-  write(const std::vector<std::reference_wrapper<const function::Function>>& u,
+  write(const std::vector<
+            std::reference_wrapper<const function::Function<PetscScalar>>>& u,
         double time = 0.0);
 
 private:
