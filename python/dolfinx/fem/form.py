@@ -52,6 +52,7 @@ class Form:
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
+        original_coefficients = form.coefficients()
         coeffs = []
         for i in range(ufc_form.num_coefficients):
             j = ufc_form.original_coefficient_position(i)
