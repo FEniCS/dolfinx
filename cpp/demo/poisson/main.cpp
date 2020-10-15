@@ -134,12 +134,13 @@ int main(int argc, char* argv[])
     //
     // .. code-block:: cpp
 
-    // Define variational forms
-    auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V});
-    auto L = fem::create_form<PetscScalar>(create_form_poisson_L, {V});
-
     auto f = std::make_shared<function::Function<PetscScalar>>(V);
     auto g = std::make_shared<function::Function<PetscScalar>>(V);
+
+    // Define variational forms
+    auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V}, {});
+    auto L = fem::create_form<PetscScalar>(create_form_poisson_L, {V},
+                                           {{"f", f}, {"g", g}});
 
     // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
     // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
@@ -173,7 +174,6 @@ int main(int argc, char* argv[])
     });
 
     g->interpolate([](auto& x) { return Eigen::sin(5 * x.row(0)); });
-    L->set_coefficients({{"f", f}, {"g", g}});
 
     // Prepare and set Constants for the bilinear form
     auto kappa = std::make_shared<function::Constant<PetscScalar>>(2.0);

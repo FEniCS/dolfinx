@@ -161,7 +161,7 @@ void fem(py::module& m)
          const std::vector<
              std::shared_ptr<const dolfinx::function::FunctionSpace>>& spaces) {
         const ufc_form* p = reinterpret_cast<const ufc_form*>(form);
-        return dolfinx::fem::create_form<PetscScalar>(*p, spaces);
+        return dolfinx::fem::create_form<PetscScalar>(*p, spaces, {});
       },
       "Create Form from a pointer to ufc_form.");
   m.def(

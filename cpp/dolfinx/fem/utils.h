@@ -128,22 +128,8 @@ DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
                      mesh::Topology& topology);
 
 /// Extract coefficients from a UFC form
-template <typename T>
-std::vector<
-    std::tuple<int, std::string, std::shared_ptr<function::Function<T>>>>
-get_coeffs_from_ufc_form(const ufc_form& ufc_form)
-{
-  std::vector<
-      std::tuple<int, std::string, std::shared_ptr<function::Function<T>>>>
-      coeffs;
-  const char** names = ufc_form.coefficient_name_map();
-  for (int i = 0; i < ufc_form.num_coefficients; ++i)
-  {
-    coeffs.emplace_back(ufc_form.original_coefficient_position(i), names[i],
-                        nullptr);
-  }
-  return coeffs;
-}
+std::vector<std::pair<int, std::string>>
+get_coeffs_from_ufc_form(const ufc_form& ufc_form);
 
 /// Extract coefficients from a UFC form
 template <typename T>
@@ -166,7 +152,9 @@ get_constants_from_ufc_form(const ufc_form& ufc_form)
 template <typename T>
 Form<T> create_form(
     const ufc_form& ufc_form,
-    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces,
+    const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
+        coefficients)
 {
   assert(ufc_form.rank == (int)spaces.size());
 
@@ -257,10 +245,25 @@ Form<T> create_form(
         "Vertex integrals not supported. Under development.");
   }
 
-  return fem::Form(
-      spaces, FormIntegrals<T>(integral_data, needs_permutation_data),
-      FormCoefficients<T>(fem::get_coeffs_from_ufc_form<T>(ufc_form)),
-      fem::get_constants_from_ufc_form<T>(ufc_form));
+  // Build tuples of (index, name, coefficient function)
+  const std::vector<std::pair<int, std::string>> pos_to_name
+      = get_coeffs_from_ufc_form(ufc_form);
+  std::vector<std::tuple<int, std::string,
+                         std::shared_ptr<const function::Function<T>>>>
+      coeff_map;
+  for (auto& c : coefficients)
+  {
+    auto it = std::find_if(pos_to_name.begin(), pos_to_name.end(),
+                           [&c](auto& p) { return p.second == c.first; });
+    if (it == pos_to_name.end())
+      throw std::runtime_error("Cannot determine index for coefficient");
+    coeff_map.emplace_back(it->first, it->second, c.second);
+  }
+
+  return fem::Form(spaces,
+                   FormIntegrals<T>(integral_data, needs_permutation_data),
+                   FormCoefficients<T>(coeff_map),
+                   fem::get_constants_from_ufc_form<T>(ufc_form));
 }
 
 /// Create a form from a form_create function returning a pointer to a
@@ -272,11 +275,13 @@ Form<T> create_form(
 template <typename T>
 std::shared_ptr<Form<T>> create_form(
     ufc_form* (*fptr)(),
-    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces,
+    const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
+        coefficients)
 {
   ufc_form* form = fptr();
   auto L = std::make_shared<fem::Form<T>>(
-      dolfinx::fem::create_form<T>(*form, spaces));
+      dolfinx::fem::create_form<T>(*form, spaces, coefficients));
   std::free(form);
   return L;
 }

@@ -38,7 +38,7 @@ public:
   /// may be a nullptr and assigned later.
   FormCoefficients(
       const std::vector<
-          std::tuple<int, std::string, std::shared_ptr<function::Function<T>>>>&
+          std::tuple<int, std::string, std::shared_ptr<const function::Function<T>>>>&
           coefficients)
   {
     for (const auto& c : coefficients)
@@ -48,6 +48,21 @@ public:
       _coefficients.push_back(std::get<2>(c));
     }
   }
+
+  /// Initialise the FormCoefficients, using a map from coefficient name
+  /// to the actual coefficient.
+  // FormCoefficients(
+  //     const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
+  //         coefficients)
+  // {
+  //   for (auto& c : coefficients)
+  //   {
+  //     const int i = get_index(c.first);
+  //     if (i >= (int)_coefficients.size())
+  //       _coefficients.resize(i + 1);
+  //     _coefficients[i] = c.second;
+  //   }
+  // }
 
   /// Get number of coefficients
   int size() const { return _coefficients.size(); }

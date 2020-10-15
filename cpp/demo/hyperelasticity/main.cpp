@@ -125,9 +125,10 @@ int main(int argc, char* argv[])
     // Define solution function
     auto u = std::make_shared<function::Function<PetscScalar>>(V);
 
-    auto a
-        = fem::create_form<PetscScalar>(create_form_hyperelasticity_J, {V, V});
-    auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V});
+    auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J,
+                                           {V, V}, {{"u", u}});
+    auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V},
+                                           {{"u", u}});
 
     auto u_rotation = std::make_shared<function::Function<PetscScalar>>(V);
     u_rotation->interpolate([](auto& x) {
@@ -164,9 +165,6 @@ int main(int argc, char* argv[])
       return Eigen::Array<PetscScalar, 3, Eigen::Dynamic,
                           Eigen::RowMajor>::Zero(3, x.cols());
     });
-
-    L->set_coefficients({{"u", u}});
-    a->set_coefficients({{"u", u}});
 
     // Create Dirichlet boundary conditions
     auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
