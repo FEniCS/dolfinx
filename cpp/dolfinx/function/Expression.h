@@ -28,9 +28,6 @@ class Mesh;
 
 namespace function
 {
-template <typename T>
-class Constant;
-
 /// Represents a mathematical expression evaluated at a pre-defined set of
 /// points on the reference cell. This class closely follows the concept of a UFC
 /// Expression.
@@ -43,7 +40,7 @@ public:
   Expression(
       const fem::FormCoefficients<T>& coefficients,
       const std::vector<
-          std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
+          std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
           constants,
       const std::shared_ptr<const mesh::Mesh>& mesh,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
@@ -97,7 +94,7 @@ public:
   /// Register the function for tabulate_expression.
   /// @param[in] fn Function to tabulate expression.
   void set_tabulate_expression(
-      const std::function<void(T*, const T*, const T*, const double*)> fn)
+      const std::function<void(T*, const T*, const T*, const double*)>& fn)
   {
     _fn = fn;
   }
@@ -110,26 +107,15 @@ public:
     return _fn;
   }
 
-  /// Set coefficient with given number (shared pointer version)
-  /// @param[in] coefficients Map from coefficient index to the
-  ///   coefficient
-  void set_coefficients(
-      const std::map<int, std::shared_ptr<const function::Function<T>>>&
-          coefficients)
-  {
-    for (const auto& c : coefficients)
-      _coefficients.set(c.first, c.second);
-  }
-
-  /// Set coefficient with given name (shared pointer version)
+  /// Set coefficient with given name
   /// @param[in] coefficients Map from coefficient name to the
   ///   coefficient
   void set_coefficients(
       const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
           coefficients)
   {
-    for (const auto& c : coefficients)
-      _coefficients.set(c.first, c.second);
+    std::for_each(coefficients.begin(), coefficients.end(),
+                  [this](auto& c) { _coefficients.set(c.first, c.second); });
   }
 
   /// Set constants based on their names

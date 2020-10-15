@@ -70,10 +70,9 @@ void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowM
   values_e.setZero(size);
 
   // Iterate over cells and 'assemble' into values
-  for (std::size_t i = 0; i < active_cells.size(); ++i)
+  Eigen::Index i = 0;
+  for (std::int32_t c : active_cells)
   {
-    std::int32_t c = active_cells[i];
-
     auto x_dofs = x_dofmap.links(c);
     for (Eigen::Index j = 0; j < num_dofs_g; ++j)
     {
@@ -83,13 +82,16 @@ void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowM
     }
 
     auto coeff_cell = coeffs.row(c);
+    
+    // Experimentally faster than .setZero().
+    for (Eigen::Index j = 0; j < size; j++)
+      values_e(j) = 0.0;
 
-    values_e.setZero();
     fn(values_e.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data());
 
-    for (Eigen::Index j = 0; j < size; ++j)
-      values(i, j) = values_e[j];
+    values.row(i) = values_e;
+    ++i;
   }
 }
 
