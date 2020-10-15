@@ -131,13 +131,13 @@ public:
   /// Set coefficient with given name
   /// @param[in] coefficients Map from coefficient name to the
   ///   coefficient
-  void set_coefficients(
-      const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
-          coefficients)
-  {
-    std::for_each(coefficients.begin(), coefficients.end(),
-                  [this](auto& c) { _coefficients.set(c.first, c.second); });
-  }
+  // void set_coefficients(
+  //     const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
+  //         coefficients)
+  // {
+  //   std::for_each(coefficients.begin(), coefficients.end(),
+  //                 [this](auto& c) { _coefficients.set(c.first, c.second); });
+  // }
 
   /// Set constants based on their names. Names of the constants must
   /// agree with their names in UFL file.
