@@ -33,7 +33,17 @@ template <typename T>
 class Expression
 {
 public:
-  /// Create Expression.
+  /// Create Expression (C++).
+  ///
+  /// @param[in] coefficients
+  /// @param[in] constants Vector of pairs (name, constant). The index
+  ///   in the vector is the position of the constant in the original
+  ///   (non-simplified) form
+  /// @param[in] mesh
+  /// @param[in] x points on reference cell, number of points rows
+  //    and tdim cols
+  /// @param[in] fn function for tabulating expression
+  /// @param[in] value_size size of expression evaluated at single point
   Expression(
       const fem::FormCoefficients<T>& coefficients,
       const std::vector<
@@ -50,8 +60,16 @@ public:
     // Do nothing
   }
 
-  /// Create Expression. coefficients, constants and fn must be set later by
-  /// caller.
+  /// Create Expression (Python).
+  ///
+  /// @warning Leaves class in unfinalised state. Only for use by Python
+  ///   wrappers to DOLFINX. C++ callers should use the other constructor.
+  ///   coefficients, constants and fn must be set later by caller.
+  ///
+  /// @param[in] mesh
+  /// @param[in] x points on reference cell, number of points rows and
+  ///   tdim cols
+  /// @param[in] value_size size of expression evaluated at single point
   Expression(const std::shared_ptr<mesh::Mesh>& mesh,
              const Eigen::Ref<const Eigen::Array<
                  double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
@@ -77,7 +95,7 @@ public:
   /// Evaluate the expression on cells
   /// @param[in] active_cells Cells on which to evaluate the Expression
   /// @param[in,out] values To store the result. Caller responsible for correct
-  /// sizing.
+  ///   sizing which should be num_cells rows by num_points*value_size columns.
   void
   eval(const std::vector<std::int32_t>& active_cells,
        Eigen::Ref<
@@ -95,8 +113,8 @@ public:
     _fn = fn;
   }
 
-  /// Register the function for tabulate_expression.
-  /// @param[in] fn Function to tabulate expression.
+  /// Get function for tabulate_expression.
+  /// @param[out] fn Function to tabulate expression.
   const std::function<void(T*, const T*, const T*, const double*)>&
   get_tabulate_expression() const
   {
@@ -153,9 +171,6 @@ public:
   set_constants(const std::vector<std::shared_ptr<const function::Constant<T>>>&
                     constants)
   {
-    // TODO: Why this check? Should resize as necessary.
-    // if (constants.size() != _constants.size())
-    // throw std::runtime_error("Incorrect number of constants.");
     _constants.resize(constants.size());
 
     // Loop over each constant that user wants to attach
@@ -202,7 +217,7 @@ public:
   /// @return The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
 
-  /// Get evaluation points
+  /// Get evaluation points on reference cell
   /// @return Evaluation points
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
   x() const

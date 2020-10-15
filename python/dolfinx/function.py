@@ -46,23 +46,36 @@ class Expression:
     def __init__(self,
                  ufl_expression: ufl.core.expr.Expr,
                  x: np.ndarray,
-                 name: typing.Optional[str] = None):
-        """An expression.
+                 form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
+        """Create dolfinx Expression.
 
         Parameters
         ----------
-        ufl_expression: UFL expression
-        x: array of points on the reference element
-        name: name
-        """
-        self._name = name
+        ufl_expression
+            Pure UFL expression
+        x
+            Array of points of shape (num_points, tdim) on the reference
+            element.
+        form_compiler_parameters
+            Parameters used in FFCX compilation of this Expression. Run `ffcx
+            --help` in the commandline to see all available options.
+        jit_parameters
+            Parameters controlling JIT compilation of C code.
 
+        Note
+        ----
+        This wrapper is responsible for the FFCX compilation of the UFL Expr
+        and attaching the correct data to the underlying C++ Expression.
+        """
         assert x.ndim < 3
         num_points = x.shape[0] if x.ndim == 2 else 1
         x = np.reshape(x, (num_points, -1))
 
+        mesh = ufl_expression.ufl_domain().ufl_cargo()
+
         # Compile UFL expression with JIT
-        ufc_expression = jit.ffcx_jit((ufl_expression, x))
+        ufc_expression = jit.ffcx_jit((ufl_expression, x), form_compiler_parameters=form_compiler_parameters,
+                                      jit_parameters=jit_parameters, mpi_comm=mesh.mpi_comm())
         self._ufl_expression = ufl_expression
         self._ufc_expression = ufc_expression
 
@@ -72,9 +85,6 @@ class Expression:
         ffi = cffi.FFI()
         fn = ffi.cast("uintptr_t", ufc_expression.tabulate_expression)
 
-        mesh = ufl_expression.ufl_domain().ufl_cargo()
-
-        # NOTE: Could also get from UFC expression?
         value_size = ufl.product(self.ufl_expression.ufl_shape)
 
         self._cpp_object = cpp.function.Expression(mesh, x, value_size)
@@ -89,9 +99,28 @@ class Expression:
 
         self._cpp_object.set_tabulate_expression(fn)
 
-    def eval(self, cells: np.ndarray, u=None) -> np.ndarray:
-        """Evaluate Expression at points in cells where cell[i] is the local index of
-        the cell."""
+    def eval(self, cells: np.ndarray, u: typing.Optional[np.ndarray] = None) -> np.ndarray:
+        """Evaluate Expression in cells.
+
+        Parameters
+        ----------
+        cells
+            local indices of cells which you
+        u: optional
+            array of shape (num_cells, num_points*value_size) to
+            store result of evaluating expression.
+
+        Returns
+        -------
+
+        u: np.ndarray
+            The i-th row of u contains the expression evaluated on the i-th cell.
+
+        Note
+        ----
+        This function allocates u of the appropriate size if u is passed as
+        None.
+        """
         cells = np.asarray(cells, dtype=np.int32)
         assert cells.ndim == 1
         num_cells = cells.shape[0]
@@ -106,28 +135,30 @@ class Expression:
         else:
             assert u.ndim < 3
             assert u.size == num_cells * self.num_points * self.value_size
+            assert u.shape[0] == num_cells
+            assert u.shape[1] == self.num_points * self.value_size
             self._cpp_object.eval(cells, u)
 
         return u
 
     @property
     def ufl_expression(self):
+        """Return the original UFL Expression"""
         return self._ufl_expression
 
     @property
-    def name(self) -> str:
-        return self._name
-
-    @property
     def x(self):
+        """Return the evaluation points on the reference cell"""
         return self._cpp_object.x
 
     @property
     def num_points(self):
+        """Return the number of evaluation points on the reference cell."""
         return self._cpp_object.num_points
 
     @property
     def value_size(self):
+        """Return the value size of the expression"""
         return self._cpp_object.value_size
 
 
