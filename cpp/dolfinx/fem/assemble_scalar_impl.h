@@ -88,7 +88,7 @@ T assemble_scalar(const fem::Form<T>& M)
 
   // Prepare coefficients
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = pack_coefficients(M);
+      = pack_coefficients<T, fem::Form<T>>(M);
 
   const FormIntegrals<T>& integrals = M.integrals();
   const bool needs_permutation_data = integrals.needs_permutation_data();

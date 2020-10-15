@@ -111,11 +111,11 @@ void assemble_matrix(
   // Prepare constants
   if (!a.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
-  const Eigen::Array<T, Eigen::Dynamic, 1> constants = pack_constants(a);
+  const Eigen::Array<T, Eigen::Dynamic, 1> constants = pack_constants<T, fem::Form<T>>(a);
 
   // Prepare coefficients
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = pack_coefficients(a);
+      = pack_coefficients<T, fem::Form<T>>(a);
 
   const FormIntegrals<T>& integrals = a.integrals();
   const bool needs_permutation_data = integrals.needs_permutation_data();

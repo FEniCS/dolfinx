@@ -167,7 +167,7 @@ void _lift_bc_cells(
 
   // Prepare coefficients
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = pack_coefficients(a);
+      = pack_coefficients<T, fem::Form<T>>(a);
 
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>& fn
@@ -192,7 +192,7 @@ void _lift_bc_cells(
   // Prepare constants
   if (!a.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
-  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants(a);
+  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants<T, fem::Form<T>>(a);
 
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
       = mesh->topology().get_cell_permutation_info();
@@ -290,7 +290,7 @@ void _lift_bc_exterior_facets(
 
   // Prepare coefficients
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = pack_coefficients(a);
+      = pack_coefficients<T, fem::Form<T>>(a);
 
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>& fn
@@ -313,7 +313,7 @@ void _lift_bc_exterior_facets(
   // Prepare constants
   if (!a.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
-  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants(a);
+  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants<T, fem::Form<T>>(a);
 
   // Iterate over owned facets
   const mesh::Topology& topology = mesh->topology();
@@ -433,11 +433,11 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
   // Prepare constants
   if (!L.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
-  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants(L);
+  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants<T, fem::Form<T>>(L);
 
   // Prepare coefficients
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = pack_coefficients(L);
+      = pack_coefficients<T, fem::Form<T>>(L);
 
   const FormIntegrals<T>& integrals = L.integrals();
   const bool needs_permutation_data = integrals.needs_permutation_data();

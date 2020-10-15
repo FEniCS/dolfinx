@@ -13,6 +13,7 @@
 #include "utils.h"
 #include <Eigen/Dense>
 #include <dolfinx/fem/FormCoefficients.h>
+#include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 
 namespace dolfinx::function
@@ -26,14 +27,18 @@ class Expression;
 /// @param[in] e The expression to evaluate
 /// @param[in] active_cells The cells on which to evaluate the expression
 template <typename T>
-void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> values,
-          const function::Expression<T>& e,
-          const std::vector<std::int32_t>& active_cells);
+void eval(
+    Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        values,
+    const function::Expression<T>& e,
+    const std::vector<std::int32_t>& active_cells);
 
 template <typename T>
-void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> values,
-          const function::Expression<T>& e,
-          const std::vector<std::int32_t>& active_cells)
+void eval(
+    Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        values,
+    const function::Expression<T>& e,
+    const std::vector<std::int32_t>& active_cells)
 {
   // Extract data from Expression
   auto mesh = e.mesh();
@@ -46,12 +51,14 @@ void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowM
   // Prepare constants
   if (!e.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
-  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants(e);
+  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values
+      = dolfinx::fem::pack_constants<T, function::Expression<T>>(e);
 
   const auto& fn = e.get_tabulate_expression();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh->geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -82,7 +89,7 @@ void eval(Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowM
     }
 
     auto coeff_cell = coeffs.row(c);
-    
+
     // Experimentally faster than .setZero().
     for (Eigen::Index j = 0; j < size; j++)
       values_e(j) = 0.0;

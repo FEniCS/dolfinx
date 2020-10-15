@@ -46,6 +46,9 @@ class Topology;
 namespace fem
 {
 
+template <typename T>
+class Form;
+
 /// Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
 ///
@@ -308,13 +311,13 @@ create_functionspace(ufc_function_space* (*fptr)(const char*),
                      std::shared_ptr<mesh::Mesh> mesh);
 
 // NOTE: This is subject to change
-/// Pack form coefficients ready for assembly
-template <typename T>
+/// Pack coefficients of u of generic type U ready for assembly
+template <typename T, typename U>
 Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-pack_coefficients(const fem::Form<T>& form)
+pack_coefficients(const U& u)
 {
-  // Get form coefficient offsets amd dofmaps
-  const fem::FormCoefficients<T>& coefficients = form.coefficients();
+  // Get coefficient offsets and dofmaps
+  const fem::FormCoefficients<T>& coefficients = u.coefficients();
   const std::vector<int>& offsets = coefficients.offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>> v;
@@ -325,7 +328,7 @@ pack_coefficients(const fem::Form<T>& form)
   }
 
   // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = u.mesh();
   assert(mesh);
   const int tdim = mesh->topology().dim();
   const std::int32_t num_cells
@@ -354,12 +357,12 @@ pack_coefficients(const fem::Form<T>& form)
 }
 
 // NOTE: This is subject to change
-/// Pack form constants ready for assembly
-template <typename T>
-Eigen::Array<T, Eigen::Dynamic, 1> pack_constants(const fem::Form<T>& form)
+/// Pack constants of u of generic type U ready for assembly
+template <typename T, typename U>
+Eigen::Array<T, Eigen::Dynamic, 1> pack_constants(const U& u)
 {
   std::vector<T> constant_values;
-  for (auto& constant : form.constants())
+  for (auto& constant : u.constants())
   {
     const std::vector<T>& array = constant.second->value;
     constant_values.insert(constant_values.end(), array.begin(), array.end());

@@ -29,8 +29,8 @@ class Mesh;
 namespace function
 {
 /// Represents a mathematical expression evaluated at a pre-defined set of
-/// points on the reference cell. This class closely follows the concept of a UFC
-/// Expression.
+/// points on the reference cell. This class closely follows the concept of a
+/// UFC Expression.
 
 template <typename T>
 class Expression
@@ -55,11 +55,10 @@ public:
 
   /// Create Expression. coefficients, constants and fn must be set later by
   /// caller.
-  Expression(
-      const std::shared_ptr<mesh::Mesh>& mesh,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
-      const std::size_t value_size)
+  Expression(const std::shared_ptr<mesh::Mesh>& mesh,
+             const Eigen::Ref<const Eigen::Array<
+                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
+             const std::size_t value_size)
       : Expression(fem::FormCoefficients<T>({}), {}, mesh, x, nullptr,
                    value_size)
   {
@@ -208,7 +207,8 @@ public:
 
   /// Get evaluation points
   /// @return Evaluation points
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& x() const
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  x() const
   {
     return _x;
   }
