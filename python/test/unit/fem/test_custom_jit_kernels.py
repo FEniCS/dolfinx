@@ -95,14 +95,14 @@ def test_numba_assembly():
     list_timings(MPI.COMM_WORLD, [TimingType.wall])
 
 
-def test_coefficient():
+def xtest_coefficient():
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     DG0 = FunctionSpace(mesh, ("DG", 0))
     vals = Function(DG0)
     vals.vector.set(2.0)
 
-    L = cpp.fem.Form([V._cpp_object], (0, vals._cpp_object), False)
+    L = cpp.fem.Form([V._cpp_object], [(0, vals._cpp_object)], False)
     L.set_tabulate_tensor(IntegralType.cell, -1, tabulate_tensor_b_coeff.address)
     # L.set_coefficient(0, vals._cpp_object)
 

@@ -400,16 +400,16 @@ void fem(py::module& m)
           "coefficients",
           py::overload_cast<>(&dolfinx::fem::Form<PetscScalar>::coefficients,
                               py::const_))
-      .def(
-          "num_coefficients",
-          [](const dolfinx::fem::Form<PetscScalar>& self) {
-            return self.coefficients().size();
-          },
-          "Return number of coefficients in form")
-      .def("original_coefficient_position",
-           [](dolfinx::fem::Form<PetscScalar>& self, int i) {
-             return self.coefficients().original_position(i);
-           })
+    //   .def(
+    //       "num_coefficients",
+    //       [](const dolfinx::fem::Form<PetscScalar>& self) {
+    //         return self.coefficients().size();
+    //       },
+    //       "Return number of coefficients in form")
+    //   .def("original_coefficient_position",
+    //        [](dolfinx::fem::Form<PetscScalar>& self, int i) {
+    //          return self.coefficients().original_position(i);
+    //        })
       //   .def("set_coefficient",
       //        [](dolfinx::fem::Form<PetscScalar>& self, std::size_t i,
       //           std::shared_ptr<const

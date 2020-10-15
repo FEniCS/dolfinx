@@ -108,7 +108,7 @@ public:
   /// Original position of coefficient in UFL form
   /// @return The position of coefficient i in original ufl form
   ///   coefficients.
-  int original_position(int i) const { return _original_pos.at(i); }
+  // int original_position(int i) const { return _original_pos.at(i); }
 
   /// Get index from name of coefficient
   /// @param[in] name Name of coefficient
