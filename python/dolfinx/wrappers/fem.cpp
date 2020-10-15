@@ -406,10 +406,10 @@ void fem(py::module& m)
            [](dolfinx::fem::Form<PetscScalar>& self, int i) {
              return self.coefficients().original_position(i);
            })
-      .def("set_coefficient",
-           [](dolfinx::fem::Form<PetscScalar>& self, std::size_t i,
-              std::shared_ptr<const dolfinx::function::Function<PetscScalar>>
-                  f) { self.coefficients().set(i, f); })
+    //   .def("set_coefficient",
+    //        [](dolfinx::fem::Form<PetscScalar>& self, std::size_t i,
+    //           std::shared_ptr<const dolfinx::function::Function<PetscScalar>>
+    //               f) { self.coefficients().set(i, f); })
       .def("set_constants",
            [](dolfinx::fem::Form<PetscScalar>& self,
               const std::vector<std::shared_ptr<

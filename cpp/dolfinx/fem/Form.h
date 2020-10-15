@@ -216,7 +216,7 @@ public:
   }
 
   /// Access coefficients
-  FormCoefficients<T>& coefficients() { return _coefficients; }
+  // FormCoefficients<T>& coefficients() { return _coefficients; }
 
   /// Access coefficients
   const FormCoefficients<T>& coefficients() const { return _coefficients; }
