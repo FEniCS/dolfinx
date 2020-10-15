@@ -8,6 +8,7 @@
 #include "VTKWriter.h"
 #include "pugixml.hpp"
 #include <boost/cstdint.hpp>
+#include <boost/filesystem.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -282,72 +283,145 @@ void write_point_data(const function::Function<PetscScalar>& u,
       = file.select_node("/VTKFile/UnstructuredGrid/Piece").node();
   if (!node)
     throw std::runtime_error("XML node VTKFile/Unstructured/Piece not found.");
+
   pugi::xml_node pd_node = node.append_child("PointData");
-  pugi::xml_node data_node = pd_node.append_child("DataArray");
-
-  // Set common attributes
-  data_node.append_attribute("Name") = u.name.c_str();
-  data_node.append_attribute("type") = "Float64";
-  data_node.append_attribute("format") = "ascii";
-
   if (rank == 0)
-  {
     pd_node.append_attribute("Scalars") = u.name.c_str();
-  }
   else if (rank == 1)
-  {
     pd_node.append_attribute("Vectors") = u.name.c_str();
-    data_node.append_attribute("NumberOfComponents") = 3;
-  }
   else if (rank == 2)
-  {
     pd_node.append_attribute("Tensors") = u.name.c_str();
-    data_node.append_attribute("NumberOfComponents") = 9;
-  }
 
-  // Get function values at the nodes of the mesh
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values = u.compute_point_values();
+#ifdef PETSC_USE_COMPLEX
+  const std::vector<std::string> components = {"real", "imag"};
+#else
+  const std::vector<std::string> components = {""};
+#endif
 
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
-      = mesh.geometry().x();
-
-  // Create flattened point data padded to 3D
-  std::vector<PetscScalar> point_data(points.rows() * std::pow(3, rank), 0);
-  std::int32_t k = 0;
-  for (int i = 0; i < points.rows(); ++i)
+  for (const auto& component : components)
   {
-    if (rank == 1 and dim == 2)
+    std::string attr_name;
+    if (component.empty())
+      attr_name = u.name;
+    else
+      attr_name = component + "_" + u.name;
+
+    pugi::xml_node data_node = pd_node.append_child("DataArray");
+
+    // Set common attributes
+    data_node.append_attribute("Name") = attr_name.c_str();
+    data_node.append_attribute("type") = "Float64";
+    data_node.append_attribute("format") = "ascii";
+    if (rank == 1)
+      data_node.append_attribute("NumberOfComponents") = 3;
+    else if (rank == 2)
+      data_node.append_attribute("NumberOfComponents") = 9;
+
+    // Get function values at the nodes of the mesh
+    Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        values = u.compute_point_values();
+
+    const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
+        = mesh.geometry().x();
+
+    // Create flattened point data padded to 3D
+    std::vector<double> point_data(points.rows() * std::pow(3, rank), 0);
+    std::int32_t k = 0;
+    for (int i = 0; i < points.rows(); ++i)
     {
-      // Append 0.0 to 2D vectors to make them 3D
-      for (int j = 0; j < 2; j++)
-        point_data[k++] = values(i, j);
-      k++;
-    }
-    else if (rank == 2 and dim == 4)
-    {
-      // Pad 2D tensors with 0.0 to make them 3D
-      for (int j = 0; j < 2; j++)
+#ifdef PETSC_USE_COMPLEX
+      if (component == "real")
       {
-        point_data[k++] = values(i, (2 * j + 0));
-        point_data[k++] = values(i, (2 * j + 1));
+
+        if (rank == 1 and dim == 2)
+        {
+          // Append 0.0 to 2D vectors to make them 3D
+          for (int j = 0; j < 2; j++)
+            point_data[k++] = values(i, j).real();
+          k++;
+        }
+        else if (rank == 2 and dim == 4)
+        {
+          // Pad 2D tensors with 0.0 to make them 3D
+          for (int j = 0; j < 2; j++)
+          {
+            point_data[k++] = values(i, (2 * j + 0)).real();
+            point_data[k++] = values(i, (2 * j + 1)).real();
+            k++;
+          }
+          k += 3;
+        }
+        else
+        {
+          // Write all components
+          for (int j = 0; j < dim; j++)
+            point_data[k++] = values(i, j).real();
+        }
+      }
+      else if (component == "imag")
+      {
+
+        if (rank == 1 and dim == 2)
+        {
+          // Append 0.0 to 2D vectors to make them 3D
+          for (int j = 0; j < 2; j++)
+            point_data[k++] = values(i, j).imag();
+          k++;
+        }
+        else if (rank == 2 and dim == 4)
+        {
+          // Pad 2D tensors with 0.0 to make them 3D
+          for (int j = 0; j < 2; j++)
+          {
+            point_data[k++] = values(i, (2 * j + 0)).imag();
+            point_data[k++] = values(i, (2 * j + 1)).imag();
+            k++;
+          }
+          k += 3;
+        }
+        else
+        {
+          // Write all components
+          for (int j = 0; j < dim; j++)
+            point_data[k++] = values(i, j).imag();
+        }
+      }
+#else
+
+      if (rank == 1 and dim == 2)
+      {
+        // Append 0.0 to 2D vectors to make them 3D
+        for (int j = 0; j < 2; j++)
+          point_data[k++] = values(i, j);
         k++;
       }
-      k += 3;
+      else if (rank == 2 and dim == 4)
+      {
+        // Pad 2D tensors with 0.0 to make them 3D
+        for (int j = 0; j < 2; j++)
+        {
+          point_data[k++] = values(i, (2 * j + 0));
+          point_data[k++] = values(i, (2 * j + 1));
+          k++;
+        }
+        k += 3;
+      }
+      else
+      {
+        // Write all components
+        for (int j = 0; j < dim; j++)
+          point_data[k++] = values(i, j);
+      }
+#endif
     }
-    else
-    {
-      // Write all components
-      for (int j = 0; j < dim; j++)
-        point_data[k++] = values(i, j);
-    }
+    // namespace
+    std::int32_t linebreak = rank > 0 ? std::pow(3, rank) : 0;
+    data_node.append_child(pugi::node_pcdata)
+        .set_value(common::container_to_string(point_data, " ", 16, linebreak)
+                       .c_str());
   }
-  std::int32_t linebreak = rank > 0 ? std::pow(3, rank) : 0;
-  data_node.append_child(pugi::node_pcdata)
-      .set_value(
-          common::container_to_string(point_data, " ", 16, linebreak).c_str());
   file.save_file(vtu_filename.c_str(), "  ");
-}
+} // namespace
 //----------------------------------------------------------------------------
 void pvd_file_write(std::size_t step, double time, const std::string filename,
                     std::string fname)
@@ -526,8 +600,8 @@ void pvtu_write(const function::Function<PetscScalar>& u,
   const int rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
-    throw std::runtime_error(
-        "Only scalar, vector and tensor functions can be saved in VTK format");
+    throw std::runtime_error("Only scalar, vector and tensor functions can "
+                             "be saved in VTK format");
   }
 
   // Get number of components

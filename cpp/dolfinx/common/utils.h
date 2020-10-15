@@ -70,18 +70,18 @@ std::string container_to_string(const T& x, std::string delimiter,
   {
     if (linebreak == 0)
     {
-      s << std::to_string(*x.begin());
+      s << *x.begin();
       for (auto it = x.begin() + 1; it != x.end(); ++it)
-        s << delimiter << std::to_string(*it);
+        s << delimiter << *it;
     }
     else
     {
       for (std::size_t i = 0; i != x.size(); ++i)
       {
         if ((i + 1) % linebreak == 0)
-          s << std::to_string(x[i]) << std::endl;
+          s << x[i] << std::endl;
         else
-          s << std::to_string(x[i]) << delimiter;
+          s << x[i] << delimiter;
       }
     }
   }

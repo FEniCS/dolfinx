@@ -232,8 +232,9 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
       .set_value(common::container_to_string(offsets, " ", 16, 0).c_str());
 
   // Get VTK cell type
-  const std::int8_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim);
-  std::vector<std::int8_t> cell_types(num_cells, vtk_cell_type);
+  // NOTE: Precision workaround to work with stringstream
+  const std::int16_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim);
+  std::vector<std::int16_t> cell_types(num_cells, vtk_cell_type);
   pugi::xml_node types_item_node = cells_node.append_child("DataArray");
   types_item_node.append_attribute("type") = "Int8";
   types_item_node.append_attribute("Name") = "types";
