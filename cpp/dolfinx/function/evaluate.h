@@ -9,7 +9,6 @@
 
 #include <vector>
 
-#include "Expression.h"
 #include <Eigen/Dense>
 #include <dolfinx/fem/FormCoefficients.h>
 #include <dolfinx/fem/utils.h>
@@ -20,7 +19,6 @@ namespace dolfinx::function
 
 template <typename T>
 class Expression;
-
 /// Evaluate a UFC expression.
 /// @param[in,out] values An array to evaluate the expression into
 /// @param[in] e The expression to evaluate
