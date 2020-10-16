@@ -157,7 +157,7 @@ void add_data(
     field_node.append_attribute("Name") = (component + "_" + u.name).c_str();
     field_node.append_attribute("format") = "ascii";
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic> values_comp;
-    ;
+
     if (component == "real")
       values_comp = values.real();
     else if (component == "imag")
@@ -220,7 +220,7 @@ void add_data(
 #else
     pugi::xml_node field_node = data_node.append_child("DataArray");
     field_node.append_attribute("type") = "Float64";
-    field_node.append_attribute("Name") = u.name.c_str();
+    field_node.append_attribute("Name") = (component + u.name.c_str());
     field_node.append_attribute("format") = "ascii";
 
     if (rank == 0)
