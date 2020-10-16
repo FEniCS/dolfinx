@@ -156,8 +156,7 @@ template <typename T>
 Form<T> create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces,
-    const std::vector<std::tuple<int, std::string,
-                                 std::shared_ptr<const function::Function<T>>>>&
+    const std::vector<std::shared_ptr<const function::Function<T>>>&
         coefficients)
 {
   assert(ufc_form.rank == (int)spaces.size());
@@ -271,15 +270,16 @@ Form<T> create_form(
       = get_coeffs_from_ufc_form(ufc_form);
 
   // Build tuples of (index, name, coefficient function)
-  std::vector<std::tuple<int, std::string,
-                         std::shared_ptr<const function::Function<T>>>>
-      coeff_map;
+  // std::vector<std::tuple<int, std::string,
+  //                        std::shared_ptr<const function::Function<T>>>>
+  //     coeff_map;
+  std::vector<std::shared_ptr<const function::Function<T>>> coeff_map;
   for (auto& c : coefficients)
   {
     auto it = pos_to_name.find(c.first);
     if (it == pos_to_name.end())
       throw std::runtime_error("Cannot determine index for coefficient");
-    coeff_map.emplace_back(it->second, it->first, c.second);
+    coeff_map.push_back(c.second);
   }
 
   return create_form(ufc_form, spaces, coeff_map);

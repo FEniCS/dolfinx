@@ -56,7 +56,7 @@ class Form:
         coeffs = []
         for i in range(ufc_form.num_coefficients):
             j = ufc_form.original_coefficient_position(i)
-            coeffs.append((j, "", original_coefficients[j]._cpp_object))
+            coeffs.append(original_coefficients[j]._cpp_object)
 
         # Prepare dolfinx.cpp.fem.Form and hold it as a member
         ffi = cffi.FFI()

@@ -6,10 +6,8 @@
 
 #pragma once
 
-#include <algorithm>
 #include <dolfinx/function/Function.h>
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -33,20 +31,6 @@ template <typename T>
 class FormCoefficients
 {
 public:
-  /// Initialise the FormCoefficients, using tuples of
-  /// (original_coeff_position, name, Function)
-  FormCoefficients(
-      const std::vector<std::tuple<
-          int, std::string, std::shared_ptr<const function::Function<T>>>>&
-          coefficients)
-  {
-    for (const auto& c : coefficients)
-    {
-      _names.push_back(std::get<1>(c));
-      _coefficients.push_back(std::get<2>(c));
-    }
-  }
-
   /// Initialise the FormCoefficients
   FormCoefficients(
       const std::vector<std::shared_ptr<const function::Function<T>>>&
@@ -74,58 +58,15 @@ public:
     return n;
   }
 
-  /// Set coefficient with index i to be a Function
-  // void set(int i,
-  //          const std::shared_ptr<const function::Function<T>>& coefficient)
-  // {
-  //   if (i >= (int)_coefficients.size())
-  //     _coefficients.resize(i + 1);
-  //   _coefficients[i] = coefficient;
-  // }
-
-  /// Set coefficient with name to be a Function
-  // void set(const std::string& name,
-  //          const std::shared_ptr<const function::Function<T>>& coefficient)
-  // {
-  //   const int i = get_index(name);
-  //   if (i >= (int)_coefficients.size())
-  //     _coefficients.resize(i + 1);
-  //   _coefficients[i] = coefficient;
-  // }
-
   /// Get the Function coefficient i
   std::shared_ptr<const function::Function<T>> get(int i) const
   {
     return _coefficients.at(i);
   }
 
-  /// Get index from name of coefficient
-  /// @param[in] name Name of coefficient
-  /// @return Index of the coefficient
-  // int get_index(const std::string& name) const
-  // {
-  //   auto it = std::find(_names.begin(), _names.end(), name);
-  //   if (it == _names.end())
-  //     throw std::runtime_error("Cannot find coefficient name:" + name);
-  //   return std::distance(_names.begin(), it);
-  // }
-
-  /// Get name from index of coefficient
-  /// @param[in] index Index of the coefficient
-  /// @return Name of the coefficient
-  // std::string get_name(int index) const
-  // {
-  //   if (index >= (int)_names.size())
-  //     throw std::runtime_error("Invalid coefficient index");
-  //   return _names[index];
-  // }
-
 private:
   // Functions for the coefficients
   std::vector<std::shared_ptr<const function::Function<T>>> _coefficients;
-
-  // Names of coefficients
-  std::vector<std::string> _names;
 };
 } // namespace fem
 } // namespace dolfinx
