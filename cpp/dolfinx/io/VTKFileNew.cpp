@@ -142,65 +142,142 @@ void add_data(
         "Cannot write data to VTK file. "
         "Only scalar, vector and tensor functions can be saved in VTK format");
   }
+  // Loop for complex numbers, saved as real and imaginary part
+#ifdef PETSC_USE_COMPLEX
+  const std::vector<std::string> components = {"real", "imag"};
+#else
+  const std::vector<std::string> components = {""};
+#endif
 
-  pugi::xml_node field_node = data_node.append_child("DataArray");
-  field_node.append_attribute("type") = "Float64";
-  field_node.append_attribute("Name") = u.name.c_str();
-  field_node.append_attribute("format") = "ascii";
-
-  if (rank == 0)
+  for (const auto& component : components)
   {
-    field_node.append_child(pugi::node_pcdata)
-        .set_value(eigen_to_string(values, 16).c_str());
-  }
-  else if (rank == 1)
-  {
-    field_node.append_attribute("NumberOfComponents") = 3;
-    if (dim == 2)
+#ifdef PETSC_USE_COMPLEX
+    pugi::xml_node field_node = data_node.append_child("DataArray");
+    field_node.append_attribute("type") = "Float64";
+    field_node.append_attribute("Name") = (component + "_" + u.name).c_str();
+    field_node.append_attribute("format") = "ascii";
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic> values_comp;
+    ;
+    if (component == "real")
+      values_comp = values.real();
+    else if (component == "imag")
+      values_comp = values.imag();
+    if (rank == 0)
     {
-      assert(values.cols() == 2);
-      std::stringstream ss;
-      for (int i = 0; i < values.rows(); ++i)
-      {
-        for (int j = 0; j < 2; ++j)
-          ss << values(i, j) << " ";
-        ss << 0.0 << " ";
-      }
-      field_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
-    }
-    else
-    {
-      assert(values.cols() == 3);
       field_node.append_child(pugi::node_pcdata)
-          .set_value(eigen_to_string(values, 16).c_str());
+          .set_value(eigen_to_string(values_comp, 16).c_str());
     }
-  }
-  else if (rank == 2)
-  {
-    field_node.append_attribute("NumberOfComponents") = 9;
-    if (dim == 4)
+
+    else if (rank == 1)
     {
-      // Pad 2D tensors with 0.0 to make them 3D
-      std::stringstream ss;
-      for (int i = 0; i < values.rows(); ++i)
+      field_node.append_attribute("NumberOfComponents") = 3;
+      if (dim == 2)
       {
-        for (int j = 0; j < 2; ++j)
+        assert(values_comp.cols() == 2);
+        std::stringstream ss;
+        for (int i = 0; i < values_comp.rows(); ++i)
         {
-          ss << values(i, (2 * j + 0)) << " ";
-          ss << values(i, (2 * j + 1)) << " ";
+          for (int j = 0; j < 2; ++j)
+            ss << values_comp(i, j) << " ";
           ss << 0.0 << " ";
         }
-        ss << 0.0 << " ";
-        ss << 0.0 << " ";
-        ss << 0.0 << "  ";
+        field_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
       }
-      field_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+      else
+      {
+        assert(values_comp.cols() == 3);
+        field_node.append_child(pugi::node_pcdata)
+            .set_value(eigen_to_string(values_comp, 16).c_str());
+      }
     }
-    else
+    else if (rank == 2)
+    {
+      field_node.append_attribute("NumberOfComponents") = 9;
+      if (dim == 4)
+      {
+        // Pad 2D tensors with 0.0 to make them 3D
+        std::stringstream ss;
+        for (int i = 0; i < values_comp.rows(); ++i)
+        {
+          for (int j = 0; j < 2; ++j)
+          {
+            ss << values_comp(i, (2 * j + 0)) << " ";
+            ss << values_comp(i, (2 * j + 1)) << " ";
+            ss << 0.0 << " ";
+          }
+          ss << 0.0 << " ";
+          ss << 0.0 << " ";
+          ss << 0.0 << "  ";
+        }
+        field_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+      }
+      else
+      {
+        field_node.append_child(pugi::node_pcdata)
+            .set_value(eigen_to_string(values_comp, 16).c_str());
+      }
+    }
+#else
+    pugi::xml_node field_node = data_node.append_child("DataArray");
+    field_node.append_attribute("type") = "Float64";
+    field_node.append_attribute("Name") = u.name.c_str();
+    field_node.append_attribute("format") = "ascii";
+
+    if (rank == 0)
     {
       field_node.append_child(pugi::node_pcdata)
           .set_value(eigen_to_string(values, 16).c_str());
     }
+    else if (rank == 1)
+    {
+      field_node.append_attribute("NumberOfComponents") = 3;
+      if (dim == 2)
+      {
+        assert(values.cols() == 2);
+        std::stringstream ss;
+        for (int i = 0; i < values.rows(); ++i)
+        {
+          for (int j = 0; j < 2; ++j)
+            ss << values(i, j) << " ";
+          ss << 0.0 << " ";
+        }
+        field_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+      }
+      else
+      {
+        assert(values.cols() == 3);
+        field_node.append_child(pugi::node_pcdata)
+            .set_value(eigen_to_string(values, 16).c_str());
+      }
+    }
+    else if (rank == 2)
+    {
+      field_node.append_attribute("NumberOfComponents") = 9;
+      if (dim == 4)
+      {
+        // Pad 2D tensors with 0.0 to make them 3D
+        std::stringstream ss;
+        for (int i = 0; i < values.rows(); ++i)
+        {
+          for (int j = 0; j < 2; ++j)
+          {
+            ss << values(i, (2 * j + 0)) << " ";
+            ss << values(i, (2 * j + 1)) << " ";
+            ss << 0.0 << " ";
+          }
+          ss << 0.0 << " ";
+          ss << 0.0 << " ";
+          ss << 0.0 << "  ";
+        }
+        field_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+      }
+      else
+      {
+        field_node.append_child(pugi::node_pcdata)
+            .set_value(eigen_to_string(values, 16).c_str());
+      }
+    }
+#endif
   }
 }
 //----------------------------------------------------------------------------
@@ -647,6 +724,12 @@ void io::VTKFileNew::write(
     // Add mesh metadata to PVTU object
     add_pvtu_mesh(grid_node);
     // Add field data
+#ifdef PETSC_USE_COMPLEX
+    const std::vector<std::string> components = {"real", "imag"};
+#else
+    const std::vector<std::string> components = {""};
+#endif
+
     for (auto _u : u)
     {
       std::string d_type = is_cellwise(_u) ? "PCellData" : "PPointData";
@@ -657,26 +740,32 @@ void io::VTKFileNew::write(
         ncomps = 3;
       else if (rank == 2)
         ncomps = 9;
-      // FIXME add tensor handling
+      for (const auto& component : components)
+      {
 
-      pugi::xml_node data_node = data_pnode.append_child("PDataArray");
-      data_node.append_attribute("type") = "Float64";
-      data_node.append_attribute("Name") = _u.get().name.c_str();
-      data_node.append_attribute("NumberOfComponents") = ncomps;
+        pugi::xml_node data_node = data_pnode.append_child("PDataArray");
+        data_node.append_attribute("type") = "Float64";
+#ifdef PETSC_USE_COMPLEX
+        data_node.append_attribute("Name")
+            = (component + " _" + _u.get().name).c_str();
+#else
+        data_node.append_attribute("Name") = _u.get().name.c_str();
+#endif
+        data_node.append_attribute("NumberOfComponents") = ncomps;
+      }
+
+      // Add data for each process to the PVTU object
+      const int mpi_size = MPI::size(_comm.comm());
+      for (int i = 0; i < mpi_size; ++i)
+      {
+        boost::filesystem::path vtu = p.stem();
+        vtu += "_p" + std::to_string(i) + "_" + counter_str;
+        vtu.replace_extension("vtu");
+        pugi::xml_node piece_node = grid_node.append_child("Piece");
+        piece_node.append_attribute("Source")
+            = vtu.stem().replace_extension("vtu").c_str();
+      }
     }
-
-    // Add data for each process to the PVTU object
-    const int mpi_size = MPI::size(_comm.comm());
-    for (int i = 0; i < mpi_size; ++i)
-    {
-      boost::filesystem::path vtu = p.stem();
-      vtu += "_p" + std::to_string(i) + "_" + counter_str;
-      vtu.replace_extension("vtu");
-      pugi::xml_node piece_node = grid_node.append_child("Piece");
-      piece_node.append_attribute("Source")
-          = vtu.stem().replace_extension("vtu").c_str();
-    }
-
     // Write PVTU file
     xml_pvtu.save_file(p_pvtu.c_str(), "  ");
   }
