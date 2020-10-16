@@ -749,7 +749,8 @@ void io::VTKFileNew::write(
         data_node.append_attribute("Name")
             = (component + "_" + _u.get().name).c_str();
 #else
-        data_node.append_attribute("Name") = _u.get().name.c_str();
+        data_node.append_attribute("Name")
+            = component + "" + _u.get().name.c_str();
 #endif
         data_node.append_attribute("NumberOfComponents") = ncomps;
       }
