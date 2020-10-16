@@ -98,14 +98,14 @@ public:
       _integrals.set_default_domains(*_mesh);
   }
 
-  /// @warning Experimental
-  ///
-  /// Create form (no UFC integrals). Integrals can be attached later
-  /// using FormIntegrals::set_cell_tabulate_tensor.
-  ///
-  /// @param[in] function_spaces Vector of function spaces
-  /// @param[in] need_mesh_permutation_data Set to true if mesh entity
-  ///   permutation data is required
+  // @warning Experimental
+  //
+  // Create form (no UFC integrals). Integrals can be attached later
+  // using FormIntegrals::set_cell_tabulate_tensor.
+  //
+  // @param[in] function_spaces Vector of function spaces
+  // @param[in] need_mesh_permutation_data Set to true if mesh entity
+  //   permutation data is required
   // Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
   //          function_spaces,
   //      bool need_mesh_permutation_data)
