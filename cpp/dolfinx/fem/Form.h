@@ -98,23 +98,25 @@ public:
       _integrals.set_default_domains(*_mesh);
   }
 
-  // @warning Experimental
-  //
-  // Create form (no UFC integrals). Integrals can be attached later
-  // using FormIntegrals::set_cell_tabulate_tensor.
-  //
-  // @param[in] function_spaces Vector of function spaces
-  // @param[in] need_mesh_permutation_data Set to true if mesh entity
-  //   permutation data is required
-  // Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
-  //          function_spaces,
-  //      bool need_mesh_permutation_data)
-  //     : Form(function_spaces, FormIntegrals<T>({},
-  //     need_mesh_permutation_data),
-  //            {}, {})
-  // {
-  //   // Do nothing
-  // }
+  /// @warning Experimental
+  ///
+  /// Create form (no UFC integrals). Integrals can be attached later
+  /// using FormIntegrals::set_cell_tabulate_tensor.
+  ///
+  /// @param[in] function_spaces Vector of function spaces
+  /// @param[in] coefficients
+  /// @param[in] need_mesh_permutation_data Set to true if mesh entity
+  ///   permutation data is required
+  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
+           function_spaces,
+       const std::vector<std::shared_ptr<const function::Function<T>>>&
+           coefficients,
+       bool need_mesh_permutation_data)
+      : Form(function_spaces, FormIntegrals<T>({}, need_mesh_permutation_data),
+             coefficients, {})
+  {
+    // Do nothing
+  }
 
   /// Copy constructor
   Form(const Form& form) = delete;
