@@ -13,9 +13,10 @@ from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
 import ufl
-from dolfinx import (Function, FunctionSpace, Mesh, TensorFunctionSpace,
+from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
                      UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      VectorFunctionSpace)
+from dolfinx.mesh import create_mesh
 from dolfinx.cpp.io import VTKFileNew
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import VTKFile
@@ -167,7 +168,8 @@ def test_save_2d_vector(tempfile):
 
     cells = np.array([[0, 1, 2, 3, 4, 5],
                       [1, 6, 2, 7, 3, 8]])
-    mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], degree=2)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 2))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1)
     f = VTKFileNew(mesh.mpi_comm(), tempfile + "u2-new.pvd", "w")
