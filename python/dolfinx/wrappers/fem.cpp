@@ -389,28 +389,13 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::Form<PetscScalar>,
              std::shared_ptr<dolfinx::fem::Form<PetscScalar>>>(
       m, "Form", "Variational form object")
-    //   .def(py::init<
-    //        std::vector<std::shared_ptr<const dolfinx::function::FunctionSpace>>,
-    //        bool>())
+      //   .def(py::init<
+      //        std::vector<std::shared_ptr<const
+      //        dolfinx::function::FunctionSpace>>, bool>())
       .def_property_readonly("integrals",
                              &dolfinx::fem::Form<PetscScalar>::integrals)
-      .def_property_readonly(
-          "coefficients", &dolfinx::fem::Form<PetscScalar>::coefficients)
-      //   .def(
-      //       "num_coefficients",
-      //       [](const dolfinx::fem::Form<PetscScalar>& self) {
-      //         return self.coefficients().size();
-      //       },
-      //       "Return number of coefficients in form")
-      //   .def("original_coefficient_position",
-      //        [](dolfinx::fem::Form<PetscScalar>& self, int i) {
-      //          return self.coefficients().original_position(i);
-      //        })
-      //   .def("set_coefficient",
-      //        [](dolfinx::fem::Form<PetscScalar>& self, std::size_t i,
-      //           std::shared_ptr<const
-      //           dolfinx::function::Function<PetscScalar>>
-      //               f) { self.coefficients().set(i, f); })
+      .def_property_readonly("coefficients",
+                             &dolfinx::fem::Form<PetscScalar>::coefficients)
       .def("set_constants",
            [](dolfinx::fem::Form<PetscScalar>& self,
               const std::vector<std::shared_ptr<
