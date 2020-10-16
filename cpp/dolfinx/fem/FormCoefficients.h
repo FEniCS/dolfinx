@@ -47,15 +47,13 @@ public:
     }
   }
 
-  /// Initialise the FormCoefficients, using pairs of
-  /// (original_coeff_position, Function)
+  /// Initialise the FormCoefficients
   FormCoefficients(
-      const std::vector<
-          std::pair<int, std::shared_ptr<const function::Function<T>>>>&
+      const std::vector<std::shared_ptr<const function::Function<T>>>&
           coefficients)
+      : _coefficients(coefficients)
   {
-    for (const auto& c : coefficients)
-      _coefficients.push_back(c.second);
+    // Do nothing
   }
 
   /// Get number of coefficients
@@ -77,23 +75,23 @@ public:
   }
 
   /// Set coefficient with index i to be a Function
-  void set(int i,
-           const std::shared_ptr<const function::Function<T>>& coefficient)
-  {
-    if (i >= (int)_coefficients.size())
-      _coefficients.resize(i + 1);
-    _coefficients[i] = coefficient;
-  }
+  // void set(int i,
+  //          const std::shared_ptr<const function::Function<T>>& coefficient)
+  // {
+  //   if (i >= (int)_coefficients.size())
+  //     _coefficients.resize(i + 1);
+  //   _coefficients[i] = coefficient;
+  // }
 
   /// Set coefficient with name to be a Function
-  void set(const std::string& name,
-           const std::shared_ptr<const function::Function<T>>& coefficient)
-  {
-    const int i = get_index(name);
-    if (i >= (int)_coefficients.size())
-      _coefficients.resize(i + 1);
-    _coefficients[i] = coefficient;
-  }
+  // void set(const std::string& name,
+  //          const std::shared_ptr<const function::Function<T>>& coefficient)
+  // {
+  //   const int i = get_index(name);
+  //   if (i >= (int)_coefficients.size())
+  //     _coefficients.resize(i + 1);
+  //   _coefficients[i] = coefficient;
+  // }
 
   /// Get the Function coefficient i
   std::shared_ptr<const function::Function<T>> get(int i) const
@@ -104,23 +102,23 @@ public:
   /// Get index from name of coefficient
   /// @param[in] name Name of coefficient
   /// @return Index of the coefficient
-  int get_index(const std::string& name) const
-  {
-    auto it = std::find(_names.begin(), _names.end(), name);
-    if (it == _names.end())
-      throw std::runtime_error("Cannot find coefficient name:" + name);
-    return std::distance(_names.begin(), it);
-  }
+  // int get_index(const std::string& name) const
+  // {
+  //   auto it = std::find(_names.begin(), _names.end(), name);
+  //   if (it == _names.end())
+  //     throw std::runtime_error("Cannot find coefficient name:" + name);
+  //   return std::distance(_names.begin(), it);
+  // }
 
   /// Get name from index of coefficient
   /// @param[in] index Index of the coefficient
   /// @return Name of the coefficient
-  std::string get_name(int index) const
-  {
-    if (index >= (int)_names.size())
-      throw std::runtime_error("Invalid coefficient index");
-    return _names[index];
-  }
+  // std::string get_name(int index) const
+  // {
+  //   if (index >= (int)_names.size())
+  //     throw std::runtime_error("Invalid coefficient index");
+  //   return _names[index];
+  // }
 
 private:
   // Functions for the coefficients

@@ -276,7 +276,7 @@ Form<T> create_form(
       coeff_map;
   for (auto& c : coefficients)
   {
-    auto it = pos_to_name.find(coefficients.first);
+    auto it = pos_to_name.find(c.first);
     if (it == pos_to_name.end())
       throw std::runtime_error("Cannot determine index for coefficient");
     coeff_map.emplace_back(it->second, it->first, c.second);
