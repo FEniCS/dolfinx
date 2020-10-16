@@ -78,7 +78,8 @@ public:
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
        const FormIntegrals<T>& integrals,
-       const FormCoefficients<T>& coefficients,
+       const std::vector<std::shared_ptr<const function::Function<T>>>&
+           coefficients,
        const std::vector<
            std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
            constants)
@@ -109,9 +110,7 @@ public:
            function_spaces,
        bool need_mesh_permutation_data)
       : Form(function_spaces, FormIntegrals<T>({}, need_mesh_permutation_data),
-             FormCoefficients<T>(
-                 std::vector<std::shared_ptr<const function::Function<T>>>()),
-             {})
+             {}, {})
   {
     // Do nothing
   }

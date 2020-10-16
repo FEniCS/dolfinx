@@ -53,10 +53,8 @@ class Form:
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
         original_coefficients = form.coefficients()
-        coeffs = []
-        for i in range(ufc_form.num_coefficients):
-            j = ufc_form.original_coefficient_position(i)
-            coeffs.append(original_coefficients[j]._cpp_object)
+        coeffs = [original_coefficients[ufc_form.original_coefficient_position(
+            i)]._cpp_object for i in range(ufc_form.num_coefficients)]
 
         # Prepare dolfinx.cpp.fem.Form and hold it as a member
         ffi = cffi.FFI()

@@ -127,11 +127,10 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
                      mesh::Topology& topology);
 
-/// Create a map from the name to the original coefficient position
-/// (index) for all coefficients in the UFC form
+/// Get the name of each coefficient in a UFC form
 /// @param[in] ufc_form The UFC form
-/// return A map from name -> original position
-std::map<std::string, int> get_coeffs_from_ufc_form(const ufc_form& ufc_form);
+/// return The names of each coefficient
+std::vector<std::string> get_coefficient_names(const ufc_form& ufc_form);
 
 /// Extract coefficients from a UFC form
 template <typename T>
@@ -250,8 +249,7 @@ Form<T> create_form(
 
   return fem::Form(spaces,
                    FormIntegrals<T>(integral_data, needs_permutation_data),
-                   FormCoefficients<T>(coefficients),
-                   fem::get_constants_from_ufc_form<T>(ufc_form));
+                   coefficients, fem::get_constants_from_ufc_form<T>(ufc_form));
 }
 
 /// Create a Form from UFC input
@@ -265,21 +263,24 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
         coefficients)
 {
-  // Get map from original position to name
-  const std::map<std::string, int> pos_to_name
-      = get_coeffs_from_ufc_form(ufc_form);
+  // Get coefficient names
+  const std::vector<std::string> coeff_name = get_coefficient_names(ufc_form);
+  if (coeff_name.size() != coefficients.size())
+    throw std::runtime_error("Too few coefficients for form.");
 
-  // Build tuples of (index, name, coefficient function)
-  // std::vector<std::tuple<int, std::string,
-  //                        std::shared_ptr<const function::Function<T>>>>
-  //     coeff_map;
-  std::vector<std::shared_ptr<const function::Function<T>>> coeff_map;
+  // Place coefficients in appropriate order
+  std::vector<std::shared_ptr<const function::Function<T>>> coeff_map(
+      ufc_form.num_coefficients);
   for (auto& c : coefficients)
   {
-    auto it = pos_to_name.find(c.first);
-    if (it == pos_to_name.end())
-      throw std::runtime_error("Cannot determine index for coefficient");
-    coeff_map.push_back(c.second);
+    auto it = std::find(coeff_name.begin(), coeff_name.end(), c.first);
+    if (it == coeff_name.end())
+    {
+      // ADD WARNING
+      throw std::runtime_error("Cannot find form coefficient by name.");
+    }
+    else
+      coeff_map.at(std::distance(coeff_name.begin(), it)) = c.second;
   }
 
   return create_form(ufc_form, spaces, coeff_map);
