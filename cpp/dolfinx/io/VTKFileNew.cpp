@@ -220,7 +220,7 @@ void add_data(
 #else
     pugi::xml_node field_node = data_node.append_child("DataArray");
     field_node.append_attribute("type") = "Float64";
-    field_node.append_attribute("Name") = (component + u.name.c_str());
+    field_node.append_attribute("Name") = (component + u.name).c_str();
     field_node.append_attribute("format") = "ascii";
 
     if (rank == 0)
@@ -750,7 +750,7 @@ void io::VTKFileNew::write(
             = (component + "_" + _u.get().name).c_str();
 #else
         data_node.append_attribute("Name")
-            = component + "" + _u.get().name.c_str();
+            = (component + "" + _u.get().name).c_str();
 #endif
         data_node.append_attribute("NumberOfComponents") = ncomps;
       }
