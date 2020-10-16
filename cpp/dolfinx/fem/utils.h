@@ -127,9 +127,11 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
                      mesh::Topology& topology);
 
-/// Extract coefficients from a UFC form
-std::vector<std::pair<int, std::string>>
-get_coeffs_from_ufc_form(const ufc_form& ufc_form);
+/// Create a map from the name to the original coefficient position
+/// (index) for all coefficients in the UFC form
+/// @param[in] ufc_form The UFC form
+/// return A map from name -> original position
+std::map<std::string, int> get_coeffs_from_ufc_form(const ufc_form& ufc_form);
 
 /// Extract coefficients from a UFC form
 template <typename T>
@@ -264,19 +266,20 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
         coefficients)
 {
-  // Build tuples of (index, name, coefficient function)
-  const std::vector<std::pair<int, std::string>> pos_to_name
+  // Get map from original position to name
+  const std::map<std::string, int> pos_to_name
       = get_coeffs_from_ufc_form(ufc_form);
+
+  // Build tuples of (index, name, coefficient function)
   std::vector<std::tuple<int, std::string,
                          std::shared_ptr<const function::Function<T>>>>
       coeff_map;
   for (auto& c : coefficients)
   {
-    auto it = std::find_if(pos_to_name.begin(), pos_to_name.end(),
-                           [&c](auto& p) { return p.second == c.first; });
+    auto it = pos_to_name.find(coefficients.first);
     if (it == pos_to_name.end())
       throw std::runtime_error("Cannot determine index for coefficient");
-    coeff_map.emplace_back(it->first, it->second, c.second);
+    coeff_map.emplace_back(it->second, it->first, c.second);
   }
 
   return create_form(ufc_form, spaces, coeff_map);

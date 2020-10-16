@@ -42,7 +42,6 @@ public:
   {
     for (const auto& c : coefficients)
     {
-      _original_pos.push_back(std::get<0>(c));
       _names.push_back(std::get<1>(c));
       _coefficients.push_back(std::get<2>(c));
     }
@@ -56,10 +55,7 @@ public:
           coefficients)
   {
     for (const auto& c : coefficients)
-    {
-      _original_pos.push_back(c.first);
       _coefficients.push_back(c.second);
-    }
   }
 
   /// Get number of coefficients
@@ -105,11 +101,6 @@ public:
     return _coefficients.at(i);
   }
 
-  /// Original position of coefficient in UFL form
-  /// @return The position of coefficient i in original ufl form
-  ///   coefficients.
-  // int original_position(int i) const { return _original_pos.at(i); }
-
   /// Get index from name of coefficient
   /// @param[in] name Name of coefficient
   /// @return Index of the coefficient
@@ -134,9 +125,6 @@ public:
 private:
   // Functions for the coefficients
   std::vector<std::shared_ptr<const function::Function<T>>> _coefficients;
-
-  // Copy of 'original positions' in UFL form
-  std::vector<int> _original_pos;
 
   // Names of coefficients
   std::vector<std::string> _names;
