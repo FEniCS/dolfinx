@@ -37,6 +37,8 @@ class Form:
         self._subdomains, = list(sd.values())  # Assuming single domain
         domain, = list(sd.keys())  # Assuming single domain
         mesh = domain.ufl_cargo()
+        if mesh is None:
+            raise RuntimeError("Expecting to find a Mesh in the form.")
 
         # Compile UFL form with JIT
         ufc_form = jit.ffcx_jit(
@@ -60,15 +62,7 @@ class Form:
         ffi = cffi.FFI()
         self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ufc_form),
                                                function_spaces, coeffs,
-                                               [c._cpp_object for c in form.constants()])
-
-        if mesh is None:
-            raise RuntimeError("Expecting to find a Mesh in the form.")
-
-        # Attach mesh (because function spaces and coefficients may be
-        # empty lists)
-        if not function_spaces:
-            self._cpp_object.set_mesh(mesh)
+                                               [c._cpp_object for c in form.constants()], mesh)
 
         # Attach subdomains to C++ Form if we have them
         subdomains = self._subdomains.get("cell")

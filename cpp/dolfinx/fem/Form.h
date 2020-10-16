@@ -69,26 +69,30 @@ public:
   /// @param[in] integrals
   /// @param[in] coefficients
   /// @param[in] constants Constants in the Form
+  /// @param[in] mesh The mesh of the domain
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
        const FormIntegrals<T>& integrals,
        const std::vector<std::shared_ptr<const function::Function<T>>>&
            coefficients,
        const std::vector<std::shared_ptr<const function::Constant<T>>>&
-           constants)
+           constants,
+       const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
       : _function_spaces(function_spaces), _integrals(integrals),
-        _coefficients(coefficients), _constants(constants)
+        _coefficients(coefficients), _constants(constants), _mesh(mesh)
   {
     // Set _mesh from function::FunctionSpace, and check they are the same
-    if (!function_spaces.empty())
+    if (!_mesh and !function_spaces.empty())
       _mesh = function_spaces[0]->mesh();
     for (const auto& V : function_spaces)
       if (_mesh != V->mesh())
         throw std::runtime_error("Incompatible mesh");
 
+    if (!_mesh)
+      throw std::runtime_error("No mesh could be associated with the Form.");
+
     // Set markers for default integrals
-    if (_mesh)
-      _integrals.set_default_domains(*_mesh);
+    _integrals.set_default_domains(*_mesh);
   }
 
   /// @warning Experimental
@@ -124,19 +128,6 @@ public:
   /// 0, etc)
   /// @return The rank of the form
   int rank() const { return _function_spaces.size(); }
-
-  /// @todo Remove this function and make sure the mesh can be set via
-  /// the constructor
-  ///
-  /// Set mesh, necessary for functionals when there are no function
-  /// spaces
-  /// @param[in] mesh The mesh
-  void set_mesh(const std::shared_ptr<const mesh::Mesh>& mesh)
-  {
-    _mesh = mesh;
-    // Set markers for default integrals
-    _integrals.set_default_domains(*_mesh);
-  }
 
   /// Extract common mesh from form
   /// @return The mesh

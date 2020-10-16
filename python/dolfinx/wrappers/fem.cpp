@@ -163,10 +163,11 @@ void fem(py::module& m)
          const std::vector<std::shared_ptr<
              const dolfinx::function::Function<PetscScalar>>>& coefficients,
          const std::vector<std::shared_ptr<
-             const dolfinx::function::Constant<PetscScalar>>>& constants) {
+             const dolfinx::function::Constant<PetscScalar>>>& constants,
+         const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh) {
         const ufc_form* p = reinterpret_cast<const ufc_form*>(form);
         return dolfinx::fem::create_form<PetscScalar>(*p, spaces, coefficients,
-                                                      constants);
+                                                      constants, mesh);
       },
       "Create Form from a pointer to ufc_form.");
   m.def(
@@ -401,7 +402,6 @@ void fem(py::module& m)
                              &dolfinx::fem::Form<PetscScalar>::integrals)
       .def_property_readonly("coefficients",
                              &dolfinx::fem::Form<PetscScalar>::coefficients)
-      .def("set_mesh", &dolfinx::fem::Form<PetscScalar>::set_mesh)
       .def("set_tabulate_tensor",
            [](dolfinx::fem::Form<PetscScalar>& self,
               dolfinx::fem::IntegralType type, int i, py::object addr) {

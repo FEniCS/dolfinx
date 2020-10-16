@@ -142,13 +142,15 @@ std::vector<std::string> get_constant_names(const ufc_form& ufc_form);
 /// @param[in] spaces Vector of function spaces
 /// @param[in] coefficients Coefficient fields in the form
 /// @param[in] constants Spatial constants in the form
+/// @param[in] mesh The mesh of the domain
 template <typename T>
 Form<T> create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces,
     const std::vector<std::shared_ptr<const function::Function<T>>>&
         coefficients,
-    const std::vector<std::shared_ptr<const function::Constant<T>>>& constants)
+    const std::vector<std::shared_ptr<const function::Constant<T>>>& constants,
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   assert(ufc_form.rank == (int)spaces.size());
 
@@ -241,7 +243,7 @@ Form<T> create_form(
 
   return fem::Form(spaces,
                    FormIntegrals<T>(integral_data, needs_permutation_data),
-                   coefficients, constants);
+                   coefficients, constants, mesh);
 }
 
 /// Create a Form from UFC input
@@ -249,6 +251,7 @@ Form<T> create_form(
 /// @param[in] spaces Vector of function spaces
 /// @param[in] coefficients Coefficient fields in the form
 /// @param[in] constants Spatial constants in the form
+/// @param[in] mesh The mesh of the domain
 template <typename T>
 Form<T> create_form(
     const ufc_form& ufc_form,
@@ -256,7 +259,8 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
-        constants)
+        constants,
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   // Get coefficient names
   const std::vector<std::string> coeff_name = get_coefficient_names(ufc_form);
@@ -298,7 +302,7 @@ Form<T> create_form(
       const_map.at(std::distance(const_name.begin(), it)) = c.second;
   }
 
-  return create_form(ufc_form, spaces, coeff_map, const_map);
+  return create_form(ufc_form, spaces, coeff_map, const_map, mesh);
 }
 
 /// Create a form from a form_create function returning a pointer to a
@@ -308,6 +312,7 @@ Form<T> create_form(
 /// @param[in] spaces function spaces
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
+/// @param[in] mesh The mesh of the domain
 /// @return Form
 template <typename T>
 std::shared_ptr<Form<T>> create_form(
@@ -316,11 +321,12 @@ std::shared_ptr<Form<T>> create_form(
     const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
-        constants)
+        constants,
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   ufc_form* form = fptr();
-  auto L = std::make_shared<fem::Form<T>>(
-      dolfinx::fem::create_form<T>(*form, spaces, coefficients, constants));
+  auto L = std::make_shared<fem::Form<T>>(dolfinx::fem::create_form<T>(
+      *form, spaces, coefficients, constants, mesh));
   std::free(form);
   return L;
 }
