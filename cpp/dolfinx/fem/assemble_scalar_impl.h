@@ -135,7 +135,7 @@ T assemble_scalar(const fem::Form<T>& M)
           *mesh, active_facets, fn, coeffs, constant_values, cell_info, perms);
     }
 
-    const std::vector<int> c_offsets = M.coefficients().offsets();
+    const std::vector<int> c_offsets = M.coefficient_offsets();
     for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
          ++i)
     {

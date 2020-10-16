@@ -163,7 +163,7 @@ void assemble_matrix(
                                         constants, cell_info, perms);
     }
 
-    const std::vector<int> c_offsets = a.coefficients().offsets();
+    const std::vector<int> c_offsets = a.coefficient_offsets();
     for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
          ++i)
     {

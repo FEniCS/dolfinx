@@ -340,14 +340,15 @@ Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 pack_coefficients(const fem::Form<T>& form)
 {
   // Get form coefficient offsets amd dofmaps
-  const fem::FormCoefficients<T>& coefficients = form.coefficients();
-  const std::vector<int>& offsets = coefficients.offsets();
+  const std::vector<std::shared_ptr<const function::Function<T>>> coefficients
+      = form.coefficients();
+  const std::vector<int> offsets = form.coefficient_offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>> v;
-  for (int i = 0; i < coefficients.size(); ++i)
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
-    dofmaps[i] = coefficients.get(i)->function_space()->dofmap().get();
-    v.emplace_back(coefficients.get(i)->x()->array());
+    dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
+    v.emplace_back(coefficients[i]->x()->array());
   }
 
   // Get mesh

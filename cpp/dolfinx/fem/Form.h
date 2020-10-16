@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include "FormCoefficients.h"
 #include "FormIntegrals.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>
+#include <dolfinx/function/FunctionSpace.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -106,14 +106,15 @@ public:
   /// @param[in] function_spaces Vector of function spaces
   /// @param[in] need_mesh_permutation_data Set to true if mesh entity
   ///   permutation data is required
-  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
-           function_spaces,
-       bool need_mesh_permutation_data)
-      : Form(function_spaces, FormIntegrals<T>({}, need_mesh_permutation_data),
-             {}, {})
-  {
-    // Do nothing
-  }
+  // Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
+  //          function_spaces,
+  //      bool need_mesh_permutation_data)
+  //     : Form(function_spaces, FormIntegrals<T>({},
+  //     need_mesh_permutation_data),
+  //            {}, {})
+  // {
+  //   // Do nothing
+  // }
 
   /// Copy constructor
   Form(const Form& form) = delete;
@@ -217,7 +218,26 @@ public:
   }
 
   /// Access coefficients
-  const FormCoefficients<T>& coefficients() const { return _coefficients; }
+  const std::vector<std::shared_ptr<const function::Function<T>>>
+  coefficients() const
+  {
+    return _coefficients;
+  }
+
+  /// Offset for each coefficient expansion array on a cell. Used to
+  /// pack data for multiple coefficients in a flat array. The last
+  /// entry is the size required to store all coefficients.
+  std::vector<int> coefficient_offsets() const
+  {
+    std::vector<int> n{0};
+    for (const auto& c : _coefficients)
+    {
+      if (!c)
+        throw std::runtime_error("Not all form coefficients have been set.");
+      n.push_back(n.back() + c->function_space()->element()->space_dimension());
+    }
+    return n;
+  }
 
   /// Access form integrals
   const FormIntegrals<T>& integrals() const { return _integrals; }
@@ -248,9 +268,6 @@ private:
   // Integrals associated with the Form
   FormIntegrals<T> _integrals;
 
-  // Coefficients associated with the Form
-  FormCoefficients<T> _coefficients;
-
   // Constants associated with the Form
   std::vector<
       std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
@@ -261,6 +278,9 @@ private:
 
   // The mesh (needed for functionals when we don't have any spaces)
   std::shared_ptr<const mesh::Mesh> _mesh;
+
+  // Form coefficients
+  std::vector<std::shared_ptr<const function::Function<T>>> _coefficients;
 };
 
 } // namespace fem

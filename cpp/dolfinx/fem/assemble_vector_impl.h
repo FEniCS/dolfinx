@@ -483,7 +483,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
                                           perms);
     }
 
-    const std::vector<int> c_offsets = L.coefficients().offsets();
+    const std::vector<int> c_offsets = L.coefficient_offsets();
     for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
          ++i)
     {
