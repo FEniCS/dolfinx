@@ -7,13 +7,10 @@
 #pragma once
 
 #include "FormIntegrals.h"
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <functional>
-#include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -26,7 +23,6 @@ template <typename T>
 class Constant;
 template <typename T>
 class Function;
-class FunctionSpace;
 } // namespace function
 
 namespace mesh
@@ -72,19 +68,16 @@ public:
   /// @param[in] function_spaces Function Spaces
   /// @param[in] integrals
   /// @param[in] coefficients
-  /// @param[in] constants Vector of pairs (name, constant). The index
-  ///   in the vector is the position of the constant in the original
-  ///   (nonsimplified) form.
+  /// @param[in] constants Constants in the Form
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
        const FormIntegrals<T>& integrals,
        const std::vector<std::shared_ptr<const function::Function<T>>>&
            coefficients,
-       const std::vector<
-           std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
+       const std::vector<std::shared_ptr<const function::Constant<T>>>&
            constants)
-      : _integrals(integrals), _coefficients(coefficients),
-        _constants(constants), _function_spaces(function_spaces)
+      : _function_spaces(function_spaces), _integrals(integrals),
+        _coefficients(coefficients), _constants(constants)
   {
     // Set _mesh from function::FunctionSpace, and check they are the same
     if (!function_spaces.empty())
@@ -131,48 +124,6 @@ public:
   /// 0, etc)
   /// @return The rank of the form
   int rank() const { return _function_spaces.size(); }
-
-  /// Set constants based on their names. Names of the constants must
-  /// agree with their names in UFL file.
-  void set_constants(
-      const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
-          constants)
-  {
-    for (auto const& constant : constants)
-    {
-      // Find matching string in existing constants
-      const std::string& name = constant.first;
-      auto it
-          = std::find_if(_constants.begin(), _constants.end(),
-                         [&name](const auto& q) { return q.first == name; });
-      if (it != _constants.end())
-        it->second = constant.second;
-      else
-        throw std::runtime_error("Constant '" + name + "' not found in form");
-    }
-  }
-
-  /// Check if all constants associated with the form have been set
-  /// @return True if all Form constants have been set
-  bool all_constants_set() const
-  {
-    for (const auto& constant : _constants)
-      if (!constant.second)
-        return false;
-    return true;
-  }
-
-  /// Return names of any constants that have not been set
-  /// @return Names of unset constants
-  std::set<std::string> get_unset_constants() const
-  {
-    std::set<std::string> unset;
-    std::for_each(_constants.begin(), _constants.end(), [&unset](auto& c) {
-      if (!c.second)
-        unset.insert(c.first);
-    });
-    return unset;
-  }
 
   /// @todo Remove this function and make sure the mesh can be set via
   /// the constructor
@@ -248,41 +199,27 @@ public:
   /// @return Vector of attached constants with their names. Names are
   ///   used to set constants in user's c++ code. Index in the vector is
   ///   the position of the constant in the original (nonsimplified) form.
-  std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
-  constants()
-  {
-    return _constants;
-  }
-
-  /// Access constants
-  /// @return Vector of attached constants with their names. Names are
-  ///   used to set constants in user's c++ code. Index in the vector is
-  ///   the position of the constant in the original (nonsimplified) form.
-  const std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
+  const std::vector<std::shared_ptr<const function::Constant<T>>>&
   constants() const
   {
     return _constants;
   }
 
 private:
-  // Integrals associated with the Form
-  FormIntegrals<T> _integrals;
-
-  // Constants associated with the Form
-  std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
-      _constants;
-
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const function::FunctionSpace>> _function_spaces;
 
-  // The mesh (needed for functionals when we don't have any spaces)
-  std::shared_ptr<const mesh::Mesh> _mesh;
+  // Integrals associated with the Form
+  FormIntegrals<T> _integrals;
 
   // Form coefficients
   std::vector<std::shared_ptr<const function::Function<T>>> _coefficients;
+
+  // Constants associated with the Form
+  std::vector<std::shared_ptr<const function::Constant<T>>> _constants;
+
+  // The mesh (needed for functionals when we don't have any spaces)
+  std::shared_ptr<const mesh::Mesh> _mesh;
 };
 
 } // namespace fem

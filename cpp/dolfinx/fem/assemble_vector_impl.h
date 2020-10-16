@@ -190,8 +190,6 @@ void _lift_bc_cells(
   Eigen::Matrix<T, Eigen::Dynamic, 1> be;
 
   // Prepare constants
-  if (!a.all_constants_set())
-    throw std::runtime_error("Unset constant in Form");
   const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants(a);
 
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
@@ -311,8 +309,6 @@ void _lift_bc_exterior_facets(
   Eigen::Matrix<T, Eigen::Dynamic, 1> be;
 
   // Prepare constants
-  if (!a.all_constants_set())
-    throw std::runtime_error("Unset constant in Form");
   const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants(a);
 
   // Iterate over owned facets
@@ -431,8 +427,6 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
   const graph::AdjacencyList<std::int32_t>& dofs = dofmap->list();
 
   // Prepare constants
-  if (!L.all_constants_set())
-    throw std::runtime_error("Unset constant in Form");
   const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants(L);
 
   // Prepare coefficients

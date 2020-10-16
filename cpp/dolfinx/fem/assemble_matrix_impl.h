@@ -109,8 +109,6 @@ void assemble_matrix(
   const graph::AdjacencyList<std::int32_t>& dofs1 = dofmap1->list();
 
   // Prepare constants
-  if (!a.all_constants_set())
-    throw std::runtime_error("Unset constant in Form");
   const Eigen::Array<T, Eigen::Dynamic, 1> constants = pack_constants(a);
 
   // Prepare coefficients

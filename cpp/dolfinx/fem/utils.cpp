@@ -208,11 +208,20 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
 //-----------------------------------------------------------------------------
 std::vector<std::string> fem::get_coefficient_names(const ufc_form& ufc_form)
 {
-  std::vector<std::string> coeff_names;
+  std::vector<std::string> coefficients;
   const char** names = ufc_form.coefficient_name_map();
   for (int i = 0; i < ufc_form.num_coefficients; ++i)
-    coeff_names.push_back(names[i]);
-  return coeff_names;
+    coefficients.push_back(names[i]);
+  return coefficients;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::string> fem::get_constant_names(const ufc_form& ufc_form)
+{
+  std::vector<std::string> constants;
+  const char** names = ufc_form.constant_name_map();
+  for (int i = 0; i < ufc_form.num_constants; ++i)
+    constants.push_back(names[i]);
+  return constants;
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement

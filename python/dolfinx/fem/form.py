@@ -56,14 +56,13 @@ class Form:
         coeffs = [original_coefficients[ufc_form.original_coefficient_position(
             i)]._cpp_object for i in range(ufc_form.num_coefficients)]
 
-        # Prepare dolfinx.cpp.fem.Form and hold it as a member
-        ffi = cffi.FFI()
-        self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ufc_form), function_spaces, coeffs)
-
         # Constants are set based on their position in original form
         original_constants = [c._cpp_object for c in form.constants()]
 
-        self._cpp_object.set_constants(original_constants)
+        # Prepare dolfinx.cpp.fem.Form and hold it as a member
+        ffi = cffi.FFI()
+        self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ufc_form),
+                                               function_spaces, coeffs, original_constants)
 
         if mesh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")

@@ -129,23 +129,13 @@ DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufc_form The UFC form
-/// return The names of each coefficient
+/// return The name of each coefficient
 std::vector<std::string> get_coefficient_names(const ufc_form& ufc_form);
 
-/// Extract coefficients from a UFC form
-template <typename T>
-std::vector<
-    std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
-get_constants_from_ufc_form(const ufc_form& ufc_form)
-{
-  std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
-      constants;
-  const char** names = ufc_form.constant_name_map();
-  for (int i = 0; i < ufc_form.num_constants; ++i)
-    constants.emplace_back(names[i], nullptr);
-  return constants;
-}
+/// Get the name of each constant in a UFC form
+/// @param[in] ufc_form The UFC form
+/// return The name of each constant
+std::vector<std::string> get_constant_names(const ufc_form& ufc_form);
 
 /// Create a Form from UFC input
 /// @param[in] ufc_form The UFC form
@@ -156,7 +146,8 @@ Form<T> create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces,
     const std::vector<std::shared_ptr<const function::Function<T>>>&
-        coefficients)
+        coefficients,
+    const std::vector<std::shared_ptr<const function::Constant<T>>>& constants)
 {
   assert(ufc_form.rank == (int)spaces.size());
 
@@ -249,7 +240,7 @@ Form<T> create_form(
 
   return fem::Form(spaces,
                    FormIntegrals<T>(integral_data, needs_permutation_data),
-                   coefficients, fem::get_constants_from_ufc_form<T>(ufc_form));
+                   coefficients, constants);
 }
 
 /// Create a Form from UFC input
@@ -261,7 +252,9 @@ Form<T> create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces,
     const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
-        coefficients)
+        coefficients,
+    const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
+        constants)
 {
   // Get coefficient names
   const std::vector<std::string> coeff_name = get_coefficient_names(ufc_form);
@@ -283,7 +276,27 @@ Form<T> create_form(
       coeff_map.at(std::distance(coeff_name.begin(), it)) = c.second;
   }
 
-  return create_form(ufc_form, spaces, coeff_map);
+  // Get constant names
+  const std::vector<std::string> const_name = get_constant_names(ufc_form);
+  if (const_name.size() != constants.size())
+    throw std::runtime_error("Too few constants for form.");
+
+  // Place coefficients in appropriate order
+  std::vector<std::shared_ptr<const function::Constant<T>>> const_map(
+      ufc_form.num_constants);
+  for (auto& c : constants)
+  {
+    auto it = std::find(const_name.begin(), const_name.end(), c.first);
+    if (it == coeff_name.end())
+    {
+      // ADD WARNING
+      throw std::runtime_error("Cannot find form constant by name.");
+    }
+    else
+      const_map.at(std::distance(const_name.begin(), it)) = c.second;
+  }
+
+  return create_form(ufc_form, spaces, coeff_map, const_map);
 }
 
 /// Create a form from a form_create function returning a pointer to a
@@ -298,11 +311,13 @@ std::shared_ptr<Form<T>> create_form(
     ufc_form* (*fptr)(),
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces,
     const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
-        coefficients)
+        coefficients,
+    const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
+        constants)
 {
   ufc_form* form = fptr();
   auto L = std::make_shared<fem::Form<T>>(
-      dolfinx::fem::create_form<T>(*form, spaces, coefficients));
+      dolfinx::fem::create_form<T>(*form, spaces, coefficients, constants));
   std::free(form);
   return L;
 }
@@ -388,7 +403,7 @@ Eigen::Array<T, Eigen::Dynamic, 1> pack_constants(const fem::Form<T>& form)
   std::vector<T> constant_values;
   for (auto& constant : form.constants())
   {
-    const std::vector<T>& array = constant.second->value;
+    const std::vector<T>& array = constant->value;
     constant_values.insert(constant_values.end(), array.begin(), array.end());
   }
 

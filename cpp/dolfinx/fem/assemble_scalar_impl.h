@@ -73,15 +73,14 @@ T assemble_scalar(const fem::Form<T>& M)
       = mesh->topology().connectivity(tdim, 0)->num_nodes();
 
   // Prepare constants
-  if (!M.all_constants_set())
-    throw std::runtime_error("Unset constant in Form");
-  auto constants = M.constants();
+  const std::vector<std::shared_ptr<const function::Constant<T>>>& constants
+      = M.constants();
 
   std::vector<T> constant_values;
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    const std::vector<T>& array = constant.second->value;
+    const std::vector<T>& array = constant->value;
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
   }
