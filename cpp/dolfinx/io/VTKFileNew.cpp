@@ -747,7 +747,7 @@ void io::VTKFileNew::write(
         data_node.append_attribute("type") = "Float64";
 #ifdef PETSC_USE_COMPLEX
         data_node.append_attribute("Name")
-            = (component + " _" + _u.get().name).c_str();
+            = (component + "_" + _u.get().name).c_str();
 #else
         data_node.append_attribute("Name") = _u.get().name.c_str();
 #endif
