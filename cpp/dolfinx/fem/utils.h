@@ -141,6 +141,7 @@ std::vector<std::string> get_constant_names(const ufc_form& ufc_form);
 /// @param[in] ufc_form The UFC form
 /// @param[in] spaces Vector of function spaces
 /// @param[in] coefficients Coefficient fields in the form
+/// @param[in] constants Spatial constants in the form
 template <typename T>
 Form<T> create_form(
     const ufc_form& ufc_form,
@@ -247,6 +248,7 @@ Form<T> create_form(
 /// @param[in] ufc_form The UFC form
 /// @param[in] spaces Vector of function spaces
 /// @param[in] coefficients Coefficient fields in the form
+/// @param[in] constants Spatial constants in the form
 template <typename T>
 Form<T> create_form(
     const ufc_form& ufc_form,
@@ -304,7 +306,8 @@ Form<T> create_form(
 /// @param[in] fptr pointer to a function returning a pointer to
 ///    ufc_form
 /// @param[in] spaces function spaces
-/// @param[in] coefficients Coefficient fields in the form
+/// @param[in] coefficients Coefficient fields in the form (by name)
+/// @param[in] constants Spatial constants in the form (by name)
 /// @return Form
 template <typename T>
 std::shared_ptr<Form<T>> create_form(
