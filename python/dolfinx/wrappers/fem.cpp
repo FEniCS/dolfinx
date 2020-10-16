@@ -401,17 +401,6 @@ void fem(py::module& m)
                              &dolfinx::fem::Form<PetscScalar>::integrals)
       .def_property_readonly("coefficients",
                              &dolfinx::fem::Form<PetscScalar>::coefficients)
-      //   .def("set_constants",
-      //        [](dolfinx::fem::Form<PetscScalar>& self,
-      //           const std::vector<std::shared_ptr<
-      //               const dolfinx::function::Constant<PetscScalar>>>&
-      //               constants) {
-      //          auto& c = self.constants();
-      //          if (constants.size() != c.size())
-      //            throw std::runtime_error("Incorrect number of constants.");
-      //          for (std::size_t i = 0; i < constants.size(); ++i)
-      //            c[i] = std::pair("", constants[i]);
-      //        })
       .def("set_mesh", &dolfinx::fem::Form<PetscScalar>::set_mesh)
       .def("set_tabulate_tensor",
            [](dolfinx::fem::Form<PetscScalar>& self,
