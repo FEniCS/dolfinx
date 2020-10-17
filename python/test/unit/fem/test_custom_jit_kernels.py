@@ -80,7 +80,7 @@ def test_numba_assembly():
     a = cpp.fem.Form([V._cpp_object, V._cpp_object], integrals, [], [])
 
     integrals = dolfinx.cpp.fem.FormIntegrals({IntegralType.cell: [(-1, tabulate_tensor_b.address)]}, False)
-    L = cpp.fem.Form([V._cpp_object], integrals, [], [], False)
+    L = cpp.fem.Form([V._cpp_object], integrals, [], [])
 
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
@@ -103,7 +103,7 @@ def test_coefficient():
     vals.vector.set(2.0)
 
     integrals = dolfinx.cpp.fem.FormIntegrals({IntegralType.cell: [(-1, tabulate_tensor_b_coeff.address)]}, False)
-    L = cpp.fem.Form([V._cpp_object], [vals._cpp_object], integrals, [], [])
+    L = cpp.fem.Form([V._cpp_object], integrals, [vals._cpp_object], [])
 
     b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
