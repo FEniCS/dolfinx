@@ -25,7 +25,7 @@
 # Then run the commands:
 #
 #    docker pull dolfinx/dolfinx-onbuild
-#    echo "FROM dolfinx/dolfinx-onbuild" | docker build -f- . 
+#    echo "FROM dolfinx/dolfinx-onbuild" | docker build -f- .
 #
 # You can build an optimised version of the complete FEniCS environment for
 # your platform using the command:
