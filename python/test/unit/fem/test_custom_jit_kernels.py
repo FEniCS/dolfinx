@@ -74,20 +74,13 @@ def test_numba_assembly():
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
-    integrals = dolfinx.cpp.fem.FormIntegrals(
-        {dolfinx.fem.IntegralType.cell: [(-1, tabulate_tensor_A.address),
-                                         (12, tabulate_tensor_A.address),
-                                         (2, tabulate_tensor_A.address)]}, False)
+    integrals = dolfinx.cpp.fem.FormIntegrals({IntegralType.cell: [(-1, tabulate_tensor_A.address),
+                                                                   (12, tabulate_tensor_A.address),
+                                                                   (2, tabulate_tensor_A.address)]}, False)
     a = cpp.fem.Form([V._cpp_object, V._cpp_object], integrals, [], [])
-    # a.set_tabulate_tensor(IntegralType.cell, -1, tabulate_tensor_A.address)
-    # a.set_tabulate_tensor(IntegralType.cell, 12, tabulate_tensor_A.address)
-    # a.set_tabulate_tensor(IntegralType.cell, 2, tabulate_tensor_A.address)
 
-    integrals = dolfinx.cpp.fem.FormIntegrals(
-        {dolfinx.fem.IntegralType.cell: [(-1, tabulate_tensor_b.address),
-                                         ]}, False)
+    integrals = dolfinx.cpp.fem.FormIntegrals({IntegralType.cell: [(-1, tabulate_tensor_b.address)]}, False)
     L = cpp.fem.Form([V._cpp_object], integrals, [], [], False)
-    # L.set_tabulate_tensor(IntegralType.cell, -1, tabulate_tensor_b.address)
 
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
@@ -109,10 +102,8 @@ def test_coefficient():
     vals = Function(DG0)
     vals.vector.set(2.0)
 
-    integrals = dolfinx.cpp.fem.FormIntegrals(
-        {dolfinx.fem.IntegralType.cell: [(-1, tabulate_tensor_b_coeff.address)]}, False)
+    integrals = dolfinx.cpp.fem.FormIntegrals({IntegralType.cell: [(-1, tabulate_tensor_b_coeff.address)]}, False)
     L = cpp.fem.Form([V._cpp_object], [vals._cpp_object], integrals, [], [])
-    # L.set_tabulate_tensor(IntegralType.cell, -1, tabulate_tensor_b_coeff.address)
 
     b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -228,14 +219,12 @@ def test_cffi_assembly():
     from _cffi_kernelA import ffi, lib
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
-    integrals = dolfinx.cpp.fem.FormIntegrals({dolfinx.fem.IntegralType.cell: [(-1, ptrA)]}, False)
+    integrals = dolfinx.cpp.fem.FormIntegrals({IntegralType.cell: [(-1, ptrA)]}, False)
     a = cpp.fem.Form([V._cpp_object, V._cpp_object], integrals, [], [])
-    # a.set_tabulate_tensor(IntegralType.cell, -1, ptrA)
 
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
-    # L.set_tabulate_tensor(IntegralType.cell, -1, ptrL)
-    integrals = dolfinx.cpp.fem.FormIntegrals({dolfinx.fem.IntegralType.cell: [(-1, ptrL)0]}, False)
-    L = cpp.fem.Form([V._cpp_object], integrlas, [], [])
+    integrals = dolfinx.cpp.fem.FormIntegrals({IntegralType.cell: [(-1, ptrL)]}, False)
+    L = cpp.fem.Form([V._cpp_object], integrals, [], [])
 
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
