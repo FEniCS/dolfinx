@@ -25,7 +25,7 @@
 # Then run the commands:
 #
 #    docker pull dolfinx/dolfinx-onbuild
-#    echo "FROM dolfinx/dolfinx-onbuild" | docker build -f- .
+#    echo "FROM dolfinx/dolfinx-onbuild" | docker build -f- . 
 #
 # You can build an optimised version of the complete FEniCS environment for
 # your platform using the command:
@@ -43,10 +43,10 @@
 
 ARG GMSH_VERSION=4.6.0
 ARG PYBIND11_VERSION=2.5.0
-ARG PETSC_VERSION=3.14.0
-ARG SLEPC_VERSION=3.14.0
-ARG PETSC4PY_VERSION=3.14.0
-ARG SLEPC4PY_VERSION=3.14.0
+ARG PETSC_VERSION=3.13.3
+ARG SLEPC_VERSION=3.13.3
+ARG PETSC4PY_VERSION=3.13.0
+ARG SLEPC4PY_VERSION=3.13.0
 # Should be updated upon a new KaHIP release
 ARG KAHIP_VERSION=14be06c
 
