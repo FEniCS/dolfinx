@@ -69,7 +69,9 @@ public:
   /// @param[in] integrals
   /// @param[in] coefficients
   /// @param[in] constants Constants in the Form
-  /// @param[in] mesh The mesh of the domain
+  /// @param[in] mesh The mesh of the domain. This is required when
+  /// there are not argument functions from which the mesh can be
+  /// extracted, e.g. for functionals
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
        const FormIntegrals<T>& integrals,
@@ -91,28 +93,9 @@ public:
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
+    // TODO: remove this
     // Set markers for default integrals
     _integrals.set_default_domains(*_mesh);
-  }
-
-  /// @warning Experimental
-  ///
-  /// Create form (no UFC integrals). Integrals can be attached later
-  /// using FormIntegrals::set_cell_tabulate_tensor.
-  ///
-  /// @param[in] function_spaces Vector of function spaces
-  /// @param[in] coefficients
-  /// @param[in] need_mesh_permutation_data Set to true if mesh entity
-  ///   permutation data is required
-  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
-           function_spaces,
-       const std::vector<std::shared_ptr<const function::Function<T>>>&
-           coefficients,
-       bool need_mesh_permutation_data)
-      : Form(function_spaces, FormIntegrals<T>({}, need_mesh_permutation_data),
-             coefficients, {})
-  {
-    // Do nothing
   }
 
   /// Copy constructor
@@ -149,18 +132,6 @@ public:
     return _function_spaces;
   }
 
-  /// Register the function for 'tabulate_tensor' for cell integral i
-  void set_tabulate_tensor(
-      IntegralType type, int i,
-      const std::function<void(T*, const T*, const T*, const double*,
-                               const int*, const std::uint8_t*,
-                               const std::uint32_t)>& fn)
-  {
-    _integrals.set_tabulate_tensor(type, i, fn);
-    if (i == -1 and _mesh)
-      _integrals.set_default_domains(*_mesh);
-  }
-
   /// Access coefficients
   const std::vector<std::shared_ptr<const function::Function<T>>>
   coefficients() const
@@ -187,9 +158,6 @@ public:
   const FormIntegrals<T>& integrals() const { return _integrals; }
 
   /// Access constants
-  /// @return Vector of attached constants with their names. Names are
-  ///   used to set constants in user's c++ code. Index in the vector is
-  ///   the position of the constant in the original (nonsimplified) form.
   const std::vector<std::shared_ptr<const function::Constant<T>>>&
   constants() const
   {

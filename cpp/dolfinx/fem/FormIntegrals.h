@@ -65,6 +65,15 @@ public:
     }
   };
 
+  /// Copy constructor
+  FormIntegrals(const FormIntegrals& integrals) = default;
+
+  /// Move constructor
+  FormIntegrals(FormIntegrals&& integrals) = default;
+
+  /// Destructor
+  ~FormIntegrals() = default;
+
   /// Get the function for 'tabulate_tensor' for integral i of given
   /// type
   /// @param[in] type Integral type
@@ -75,40 +84,6 @@ public:
   get_tabulate_tensor(IntegralType type, int i) const
   {
     return _integrals.at(static_cast<int>(type)).at(i).tabulate;
-  }
-
-  /// @todo Should this be removed
-  ///
-  /// Set the function for 'tabulate_tensor' for integral i of
-  /// given type
-  /// @param[in] type Integral type
-  /// @param[in] i Integral number
-  /// @param[in] fn tabulate function
-  void set_tabulate_tensor(
-      IntegralType type, int i,
-      const std::function<void(T*, const T*, const T*, const double*,
-                               const int*, const std::uint8_t*,
-                               const std::uint32_t)>& fn)
-  {
-    std::vector<struct FormIntegrals::Integral>& integrals
-        = _integrals.at(static_cast<int>(type));
-
-    // Find insertion point
-    int pos = 0;
-    for (const auto& q : integrals)
-    {
-      if (q.id == i)
-      {
-        throw std::runtime_error("Integral with ID " + std::to_string(i)
-                                 + " already exists");
-      }
-      else if (q.id > i)
-        break;
-      ++pos;
-    }
-
-    // Insert new Integral
-    integrals.insert(integrals.begin() + pos, {fn, i, {}});
   }
 
   /// Get types of integrals in the form
@@ -357,6 +332,40 @@ public:
   bool needs_permutation_data() const { return _needs_permutation_data; }
 
 private:
+  /// @todo Should this be removed
+  ///
+  /// Set the function for 'tabulate_tensor' for integral i of
+  /// given type
+  /// @param[in] type Integral type
+  /// @param[in] i Integral number
+  /// @param[in] fn tabulate function
+  void set_tabulate_tensor(
+      IntegralType type, int i,
+      const std::function<void(T*, const T*, const T*, const double*,
+                               const int*, const std::uint8_t*,
+                               const std::uint32_t)>& fn)
+  {
+    std::vector<struct FormIntegrals::Integral>& integrals
+        = _integrals.at(static_cast<int>(type));
+
+    // Find insertion point
+    int pos = 0;
+    for (const auto& q : integrals)
+    {
+      if (q.id == i)
+      {
+        throw std::runtime_error("Integral with ID " + std::to_string(i)
+                                 + " already exists");
+      }
+      else if (q.id > i)
+        break;
+      ++pos;
+    }
+
+    // Insert new Integral
+    integrals.insert(integrals.begin() + pos, {fn, i, {}});
+  }
+
   // Collect together the function, id, and indices of entities to
   // integrate on
   struct Integral
@@ -372,8 +381,7 @@ private:
   // struct Integral above)
   std::array<std::vector<struct Integral>, 4> _integrals;
 
-  // A bool indicating whether permutation data needs to be passed into
-  // these integrals
+  // True is permutation data needs to be passed into these integrals
   bool _needs_permutation_data;
 };
 } // namespace fem

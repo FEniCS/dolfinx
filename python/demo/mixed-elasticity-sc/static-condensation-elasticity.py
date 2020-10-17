@@ -140,9 +140,10 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
     A[:, :] = - A10 @ numpy.linalg.solve(A00, A01)
 
 
-# Prepare an empty Form and set the condensed tabulation kernel
-a_cond = dolfinx.cpp.fem.Form([U._cpp_object, U._cpp_object], [], False)
-a_cond.set_tabulate_tensor(dolfinx.fem.IntegralType.cell, -1, tabulate_condensed_tensor_A.address)
+# Prepare a Form with a condensed tabulation kernel
+integrals = dolfinx.cpp.fem.FormIntegrals(
+    {dolfinx.fem.IntegralType.cell: [(-1, tabulate_condensed_tensor_A.address)]}, False)
+a_cond = dolfinx.cpp.fem.Form([U._cpp_object, U._cpp_object], integrals, [], [], None)
 
 A_cond = dolfinx.fem.assemble_matrix(a_cond, [bc])
 A_cond.assemble()

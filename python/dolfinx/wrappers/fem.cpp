@@ -365,6 +365,32 @@ void fem(py::module& m)
       formintegrals(m, "FormIntegrals",
                     "Holder for integral kernels and domains");
   formintegrals
+      .def(py::init(
+          [](const std::map<dolfinx::fem::IntegralType,
+                            std::vector<std::pair<int, py::object>>>& kernels,
+             bool needs_permutation_data) {
+            std::map<dolfinx::fem::IntegralType,
+                     std::vector<std::pair<
+                         int, std::function<void(
+                                  PetscScalar*, const PetscScalar*,
+                                  const PetscScalar*, const double*, const int*,
+                                  const std::uint8_t*, const std::uint32_t)>>>>
+                integrals;
+            for (auto& kernel_type : kernels)
+            {
+              for (auto& kernel : kernel_type.second)
+              {
+                auto tabulate_tensor_ptr = (void (*)(
+                    PetscScalar*, const PetscScalar*, const PetscScalar*,
+                    const double*, const int*, const std::uint8_t*,
+                    const std::uint32_t))kernel.second.cast<std::uintptr_t>();
+                integrals[kernel_type.first].push_back(
+                    {kernel.first, tabulate_tensor_ptr});
+              }
+            }
+            return dolfinx::fem::FormIntegrals<PetscScalar>(
+                integrals, needs_permutation_data);
+          }))
       .def("integral_ids",
            &dolfinx::fem::FormIntegrals<PetscScalar>::integral_ids)
       .def_property_readonly(
@@ -393,24 +419,20 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::Form<PetscScalar>,
              std::shared_ptr<dolfinx::fem::Form<PetscScalar>>>(
       m, "Form", "Variational form object")
-      .def(py::init<
-           std::vector<std::shared_ptr<const dolfinx::function::FunctionSpace>>,
-           const std::vector<std::shared_ptr<
-               const dolfinx::function::Function<PetscScalar>>>&,
-           bool>())
+      .def(py::init<const std::vector<std::shared_ptr<
+                        const dolfinx::function::FunctionSpace>>&,
+                    const dolfinx::fem::FormIntegrals<PetscScalar>&,
+                    const std::vector<std::shared_ptr<
+                        const dolfinx::function::Function<PetscScalar>>>&,
+                    const std::vector<std::shared_ptr<
+                        const dolfinx::function::Constant<PetscScalar>>>&,
+                    const std::shared_ptr<const dolfinx::mesh::Mesh>&>(),
+           py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
+           py::arg("constants"), py::arg("mesh") = py::none())
       .def_property_readonly("integrals",
                              &dolfinx::fem::Form<PetscScalar>::integrals)
       .def_property_readonly("coefficients",
                              &dolfinx::fem::Form<PetscScalar>::coefficients)
-      .def("set_tabulate_tensor",
-           [](dolfinx::fem::Form<PetscScalar>& self,
-              dolfinx::fem::IntegralType type, int i, py::object addr) {
-             auto tabulate_tensor_ptr = (void (*)(
-                 PetscScalar*, const PetscScalar*, const PetscScalar*,
-                 const double*, const int*, const std::uint8_t*,
-                 const std::uint32_t))addr.cast<std::uintptr_t>();
-             self.set_tabulate_tensor(type, i, tabulate_tensor_ptr);
-           })
       .def_property_readonly("rank", &dolfinx::fem::Form<PetscScalar>::rank)
       .def_property_readonly("mesh", &dolfinx::fem::Form<PetscScalar>::mesh)
       .def_property_readonly("function_spaces",
