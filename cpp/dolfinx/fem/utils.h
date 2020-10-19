@@ -142,6 +142,7 @@ std::vector<std::string> get_constant_names(const ufc_form& ufc_form);
 /// @param[in] spaces Vector of function spaces
 /// @param[in] coefficients Coefficient fields in the form
 /// @param[in] constants Spatial constants in the form
+/// @param[in] subdomains Subdomain markers
 /// @param[in] mesh The mesh of the domain
 template <typename T>
 Form<T> create_form(
@@ -150,6 +151,7 @@ Form<T> create_form(
     const std::vector<std::shared_ptr<const function::Function<T>>>&
         coefficients,
     const std::vector<std::shared_ptr<const function::Constant<T>>>& constants,
+    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   assert(ufc_form.rank == (int)spaces.size());
@@ -174,14 +176,17 @@ Form<T> create_form(
   using kern = std::function<void(PetscScalar*, const PetscScalar*,
                                   const PetscScalar*, const double*, const int*,
                                   const std::uint8_t*, const std::uint32_t)>;
-  std::map<IntegralType,
-           std::pair<std::vector<std::pair<int, kern>>, mesh::MeshTags<int>*>>
+  std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
+                                   const mesh::MeshTags<int>*>>
       integral_data;
 
   std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
-  if (!cell_integral_ids.empty())
-    integral_data[IntegralType::cell].second = nullptr;
+  if (auto it = subdomains.find(IntegralType::cell);
+      it != subdomains.end() and !cell_integral_ids.empty())
+  {
+    integral_data[IntegralType::cell].second = it->second;
+  }
   for (int id : cell_integral_ids)
   {
     ufc_integral* integral = ufc_form.create_cell_integral(id);
@@ -190,7 +195,6 @@ Form<T> create_form(
       needs_permutation_data = true;
     integral_data[IntegralType::cell].first.emplace_back(
         id, integral->tabulate_tensor);
-    integral_data[IntegralType::cell].second = nullptr;
     std::free(integral);
   }
 
@@ -210,8 +214,12 @@ Form<T> create_form(
   std::vector<int> exterior_facet_integral_ids(
       ufc_form.num_exterior_facet_integrals);
   ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
-  if (!exterior_facet_integral_ids.empty())
-    integral_data[IntegralType::exterior_facet].second = nullptr;
+  if (auto it = subdomains.find(IntegralType::exterior_facet);
+      it != subdomains.end() and !exterior_facet_integral_ids.empty())
+  {
+    integral_data[IntegralType::exterior_facet].second = it->second;
+  }
+
   for (int id : exterior_facet_integral_ids)
   {
     ufc_integral* integral = ufc_form.create_exterior_facet_integral(id);
@@ -226,8 +234,12 @@ Form<T> create_form(
   std::vector<int> interior_facet_integral_ids(
       ufc_form.num_interior_facet_integrals);
   ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
-  if (!interior_facet_integral_ids.empty())
-    integral_data[IntegralType::interior_facet].second = nullptr;
+  if (auto it = subdomains.find(IntegralType::interior_facet);
+      it != subdomains.end() and !interior_facet_integral_ids.empty())
+  {
+    integral_data[IntegralType::interior_facet].second = it->second;
+  }
+
   for (int id : interior_facet_integral_ids)
   {
     ufc_integral* integral = ufc_form.create_interior_facet_integral(id);
@@ -242,7 +254,7 @@ Form<T> create_form(
   // Not currently working
   std::vector<int> vertex_integral_ids(ufc_form.num_vertex_integrals);
   ufc_form.get_vertex_integral_ids(vertex_integral_ids.data());
-  if (vertex_integral_ids.size() > 0)
+  if (!vertex_integral_ids.empty())
   {
     throw std::runtime_error(
         "Vertex integrals not supported. Under development.");
@@ -267,6 +279,7 @@ Form<T> create_form(
         coefficients,
     const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
         constants,
+    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   // Get coefficient names
@@ -309,7 +322,7 @@ Form<T> create_form(
       const_map.at(std::distance(const_name.begin(), it)) = c.second;
   }
 
-  return create_form(ufc_form, spaces, coeff_map, const_map, mesh);
+  return create_form(ufc_form, spaces, coeff_map, const_map, subdomains, mesh);
 }
 
 /// Create a form from a form_create function returning a pointer to a
@@ -329,11 +342,12 @@ std::shared_ptr<Form<T>> create_form(
         coefficients,
     const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
         constants,
+    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   ufc_form* form = fptr();
   auto L = std::make_shared<fem::Form<T>>(dolfinx::fem::create_form<T>(
-      *form, spaces, coefficients, constants, mesh));
+      *form, spaces, coefficients, constants, subdomains, mesh));
   std::free(form);
   return L;
 }

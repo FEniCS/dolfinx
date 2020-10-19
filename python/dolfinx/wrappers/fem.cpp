@@ -164,10 +164,12 @@ void fem(py::module& m)
              const dolfinx::function::Function<PetscScalar>>>& coefficients,
          const std::vector<std::shared_ptr<
              const dolfinx::function::Constant<PetscScalar>>>& constants,
+         const std::map<dolfinx::fem::IntegralType,
+                        const dolfinx::mesh::MeshTags<int>*>& subdomains,
          const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh) {
         const ufc_form* p = reinterpret_cast<const ufc_form*>(form);
-        return dolfinx::fem::create_form<PetscScalar>(*p, spaces, coefficients,
-                                                      constants, mesh);
+        return dolfinx::fem::create_form<PetscScalar>(
+            *p, spaces, coefficients, constants, subdomains, mesh);
       },
       "Create Form from a pointer to ufc_form.");
   m.def(
@@ -368,7 +370,8 @@ void fem(py::module& m)
       .def(py::init(
           [](const std::map<dolfinx::fem::IntegralType,
                             std::pair<std::vector<std::pair<int, py::object>>,
-                                      dolfinx::mesh::MeshTags<int>*>>& kernels,
+                                      const dolfinx::mesh::MeshTags<int>*>>&
+                 kernels,
              bool needs_permutation_data) {
             using kern = std::function<void(PetscScalar*, const PetscScalar*,
                                             const PetscScalar*, const double*,
@@ -376,7 +379,7 @@ void fem(py::module& m)
                                             const std::uint32_t)>;
             std::map<dolfinx::fem::IntegralType,
                      std::pair<std::vector<std::pair<int, kern>>,
-                               dolfinx::mesh::MeshTags<int>*>>
+                               const dolfinx::mesh::MeshTags<int>*>>
                 integrals;
 
             // Loop over kernel for each entity type
@@ -414,14 +417,13 @@ void fem(py::module& m)
                                              py::none());
           },
           py::return_value_policy::reference_internal,
-          "Return active domains for given integral")
-      .def("set_domains",
-           &dolfinx::fem::FormIntegrals<PetscScalar>::set_domains);
+          "Return active domains for given integral");
 
   py::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell)
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet)
-      .value("interior_facet", dolfinx::fem::IntegralType::interior_facet);
+      .value("interior_facet", dolfinx::fem::IntegralType::interior_facet)
+      .value("vertex", dolfinx::fem::IntegralType::vertex);
 
   // dolfinx::fem::Form
   py::class_<dolfinx::fem::Form<PetscScalar>,

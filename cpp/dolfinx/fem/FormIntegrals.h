@@ -53,17 +53,23 @@ public:
                   int, std::function<void(T*, const T*, const T*, const double*,
                                           const int*, const std::uint8_t*,
                                           const std::uint32_t)>>>,
-              mesh::MeshTags<int>*>>& integrals,
+              const mesh::MeshTags<int>*>>& integrals,
       bool needs_permutation_data)
       : _needs_permutation_data(needs_permutation_data)
   {
+    // Loop over integrals by domain type (dimension)
     for (auto& integral_type : integrals)
     {
+      // Loop over integrals kernels
       for (auto& integral : integral_type.second.first)
       {
         set_tabulate_tensor(integral_type.first, integral.first,
                             integral.second);
       }
+
+      // Set domains
+      if (integral_type.second.second)
+        set_domains(integral_type.first, *integral_type.second.second);
     }
   };
 
@@ -137,6 +143,7 @@ public:
     return _integrals.at(static_cast<int>(type)).at(i).active_entities;
   }
 
+private:
   /// Set the valid domains for the integrals of a given type from a
   /// MeshTags "marker". Note the MeshTags is not stored, so if there
   /// any changes to the integration domain this must be called again.
@@ -252,6 +259,7 @@ public:
     }
   }
 
+public:
   /// If there exists a default integral of any type, set the list of
   /// entities for those integrals from the mesh topology. For cell
   /// integrals, this is all cells. For facet integrals, it is either

@@ -58,25 +58,16 @@ class Form:
         coeffs = [original_coefficients[ufc_form.original_coefficient_position(
             i)]._cpp_object for i in range(ufc_form.num_coefficients)]
 
+        # Create dictionary of of subdomain markers (possible None for
+        # some dimensions
+        subdomains = {cpp.fem.IntegralType.cell: self._subdomains.get("cell"),
+                      cpp.fem.IntegralType.exterior_facet: self._subdomains.get("exterior_facet"),
+                      cpp.fem.IntegralType.interior_facet: self._subdomains.get("interior_facet"),
+                      cpp.fem.IntegralType.vertex: self._subdomains.get("vertex")}
+
         # Prepare dolfinx.cpp.fem.Form and hold it as a member
         ffi = cffi.FFI()
         self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ufc_form),
                                                function_spaces, coeffs,
-                                               [c._cpp_object for c in form.constants()], mesh)
+                                               [c._cpp_object for c in form.constants()], subdomains, mesh)
 
-        # Attach subdomains to C++ Form if we have them
-        subdomains = self._subdomains.get("cell")
-        if subdomains:
-            self._cpp_object.integrals.set_domains(cpp.fem.IntegralType.cell, subdomains)
-
-        subdomains = self._subdomains.get("exterior_facet")
-        if subdomains:
-            self._cpp_object.integrals.set_domains(cpp.fem.IntegralType.exterior_facet, subdomains)
-
-        subdomains = self._subdomains.get("interior_facet")
-        if subdomains:
-            self._cpp_object.integrals.set_domains(cpp.fem.IntegralType.interior_facet, subdomains)
-
-        subdomains = self._subdomains.get("vertex")
-        if subdomains:
-            self._cpp_object.integrals.set_domains(cpp.fem.IntegralType.vertex, subdomains)
