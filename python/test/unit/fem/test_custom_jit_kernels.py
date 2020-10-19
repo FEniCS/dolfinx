@@ -122,8 +122,8 @@ def test_cffi_assembly():
         from cffi import FFI
         ffibuilder = FFI()
         ffibuilder.set_source("_cffi_kernelA", r"""
-        # include <math.h>
-        # include <stdalign.h>
+        #include <math.h>
+        #include <stdalign.h>
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
                                     const double* c,
                                     const double* restrict coordinate_dofs,
