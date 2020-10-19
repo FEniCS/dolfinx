@@ -113,7 +113,7 @@ def test_coefficient():
     assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
 
 
-@ skip_if_complex
+@skip_if_complex
 def test_cffi_assembly():
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
