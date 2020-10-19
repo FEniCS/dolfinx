@@ -110,6 +110,7 @@ public:
       for (auto& integral : integral_type.second.first)
         it.first->second.insert({integral.first, {integral.second, {}}});
 
+      // FIXME: do this neatly via a static function
       // Set domains for integral type
       if (integral_type.second.second)
         set_domains(type, *integral_type.second.second);
@@ -125,6 +126,7 @@ public:
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
+    // FIXME: do this neatly via a static function
     // Set markers for default integrals
     set_default_domains(*_mesh);
   }
