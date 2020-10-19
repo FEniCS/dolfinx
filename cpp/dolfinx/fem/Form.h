@@ -98,6 +98,15 @@ public:
         _constants(constants), _mesh(mesh),
         _needs_permutation_data(needs_permutation_data)
   {
+    // Extract _mesh from function::FunctionSpace, and check they are the same
+    if (!_mesh and !function_spaces.empty())
+      _mesh = function_spaces[0]->mesh();
+    for (const auto& V : function_spaces)
+      if (_mesh != V->mesh())
+        throw std::runtime_error("Incompatible mesh");
+    if (!_mesh)
+      throw std::runtime_error("No mesh could be associated with the Form.");
+
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto& integral_type : integrals)
     {
@@ -113,18 +122,11 @@ public:
       // FIXME: do this neatly via a static function
       // Set domains for integral type
       if (integral_type.second.second)
+      {
+        assert(_mesh == integral_type.second.second->mesh());
         set_domains(type, *integral_type.second.second);
+      }
     }
-
-    // Extract _mesh from function::FunctionSpace, and check they are the same
-    if (!_mesh and !function_spaces.empty())
-      _mesh = function_spaces[0]->mesh();
-    for (const auto& V : function_spaces)
-      if (_mesh != V->mesh())
-        throw std::runtime_error("Incompatible mesh");
-
-    if (!_mesh)
-      throw std::runtime_error("No mesh could be associated with the Form.");
 
     // FIXME: do this neatly via a static function
     // Set markers for default integrals
@@ -145,7 +147,7 @@ public:
   /// @return The rank of the form
   int rank() const { return _function_spaces.size(); }
 
-  /// Extract common mesh from form
+  /// Extract common mesh for the form
   /// @return The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
 
@@ -165,14 +167,14 @@ public:
     return _function_spaces;
   }
 
-  /// Get the function for 'tabulate_tensor' for integral i of given
+  /// Get the function for 'kernel' for integral i of given
   /// type
   /// @param[in] type Integral type
   /// @param[in] i Integral number
   /// @return Function to call for tabulate_tensor
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>&
-  get_tabulate_tensor(IntegralType type, int i) const
+  kernel(IntegralType type, int i) const
   {
     auto it0 = _integrals.find(type);
     if (it0 == _integrals.end())
@@ -221,14 +223,13 @@ public:
     return ids;
   }
 
-  /// Get the list of active entities for the ith integral of type t.
-  /// For cell integrals, a list of cells. For facet integrals, a list
-  /// of facets etc.
+  /// Get the list of mesh entity indices for the ith integral of type
+  /// t. For cell integrals, a list of cells. For facet integrals, a
+  /// list of facets etc.
   /// @param[in] type Integral type
   /// @param[in] i Integral number
   /// @return List of active entities for this integral
-  const std::vector<std::int32_t>& integral_domains(IntegralType type,
-                                                    int i) const
+  const std::vector<std::int32_t>& domains(IntegralType type, int i) const
   {
     auto it0 = _integrals.find(type);
     if (it0 == _integrals.end())

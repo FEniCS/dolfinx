@@ -100,9 +100,9 @@ T assemble_scalar(const fem::Form<T>& M)
   T value(0);
   for (int i : M.integral_ids(IntegralType::cell))
   {
-    const auto& fn = M.get_tabulate_tensor(IntegralType::cell, i);
+    const auto& fn = M.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = M.integral_domains(IntegralType::cell, i);
+        = M.domains(IntegralType::cell, i);
     value += fem::impl::assemble_cells(mesh->geometry(), active_cells, fn,
                                        coeffs, constant_values, cell_info);
   }
@@ -124,9 +124,9 @@ T assemble_scalar(const fem::Form<T>& M)
 
     for (int i : M.integral_ids(IntegralType::exterior_facet))
     {
-      const auto& fn = M.get_tabulate_tensor(IntegralType::exterior_facet, i);
+      const auto& fn = M.kernel(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = M.integral_domains(IntegralType::exterior_facet, i);
+          = M.domains(IntegralType::exterior_facet, i);
       value += fem::impl::assemble_exterior_facets(
           *mesh, active_facets, fn, coeffs, constant_values, cell_info, perms);
     }
@@ -134,9 +134,9 @@ T assemble_scalar(const fem::Form<T>& M)
     const std::vector<int> c_offsets = M.coefficient_offsets();
     for (int i : M.integral_ids(IntegralType::interior_facet))
     {
-      const auto& fn = M.get_tabulate_tensor(IntegralType::interior_facet, i);
+      const auto& fn = M.kernel(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = M.integral_domains(IntegralType::interior_facet, i);
+          = M.domains(IntegralType::interior_facet, i);
       value += fem::impl::assemble_interior_facets(
           *mesh, active_facets, fn, coeffs, c_offsets, constant_values,
           cell_info, perms);

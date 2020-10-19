@@ -125,9 +125,9 @@ void assemble_matrix(
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
-    const auto& fn = a.get_tabulate_tensor(IntegralType::cell, i);
+    const auto& fn = a.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = a.integral_domains(IntegralType::cell, i);
+        = a.domains(IntegralType::cell, i);
     impl::assemble_cells<T>(mat_set_values, mesh->geometry(), active_cells,
                             dofs0, dofs1, bc0, bc1, fn, coeffs, constants,
                             cell_info);
@@ -150,9 +150,9 @@ void assemble_matrix(
 
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
-      const auto& fn = a.get_tabulate_tensor(IntegralType::exterior_facet, i);
+      const auto& fn = a.kernel(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = a.integral_domains(IntegralType::exterior_facet, i);
+          = a.domains(IntegralType::exterior_facet, i);
       impl::assemble_exterior_facets<T>(mat_set_values, *mesh, active_facets,
                                         dofs0, dofs1, bc0, bc1, fn, coeffs,
                                         constants, cell_info, perms);
@@ -161,9 +161,9 @@ void assemble_matrix(
     const std::vector<int> c_offsets = a.coefficient_offsets();
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
-      const auto& fn = a.get_tabulate_tensor(IntegralType::interior_facet, i);
+      const auto& fn = a.kernel(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = a.integral_domains(IntegralType::interior_facet, i);
+          = a.domains(IntegralType::interior_facet, i);
       impl::assemble_interior_facets<T>(
           mat_set_values, *mesh, active_facets, *dofmap0, *dofmap1, bc0, bc1,
           fn, coeffs, c_offsets, constants, cell_info, perms);

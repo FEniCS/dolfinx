@@ -171,7 +171,7 @@ void _lift_bc_cells(
 
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>& fn
-      = a.get_tabulate_tensor(IntegralType::cell, -1);
+      = a.kernel(IntegralType::cell, -1);
 
   // Prepare cell geometry
   const int gdim = mesh->geometry().dim();
@@ -292,7 +292,7 @@ void _lift_bc_exterior_facets(
 
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>& fn
-      = a.get_tabulate_tensor(IntegralType::exterior_facet, -1);
+      = a.kernel(IntegralType::exterior_facet, -1);
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -443,9 +443,9 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
 
   for (int i : L.integral_ids(IntegralType::cell))
   {
-    const auto& fn = L.get_tabulate_tensor(IntegralType::cell, i);
+    const auto& fn = L.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = L.integral_domains(IntegralType::cell, i);
+        = L.domains(IntegralType::cell, i);
     fem::impl::assemble_cells(b, mesh->geometry(), active_cells, dofs, fn,
                               coeffs, constant_values, cell_info);
   }
@@ -466,9 +466,9 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
                   facets_per_cell, num_cells);
     for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
-      const auto& fn = L.get_tabulate_tensor(IntegralType::exterior_facet, i);
+      const auto& fn = L.kernel(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = L.integral_domains(IntegralType::exterior_facet, i);
+          = L.domains(IntegralType::exterior_facet, i);
       fem::impl::assemble_exterior_facets(b, *mesh, active_facets, dofs, fn,
                                           coeffs, constant_values, cell_info,
                                           perms);
@@ -477,9 +477,9 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
     const std::vector<int> c_offsets = L.coefficient_offsets();
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
-      const auto& fn = L.get_tabulate_tensor(IntegralType::interior_facet, i);
+      const auto& fn = L.kernel(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = L.integral_domains(IntegralType::interior_facet, i);
+          = L.domains(IntegralType::interior_facet, i);
       fem::impl::assemble_interior_facets(b, *mesh, active_facets, *dofmap, fn,
                                           coeffs, c_offsets, constant_values,
                                           cell_info, perms);
