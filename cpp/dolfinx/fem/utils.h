@@ -270,6 +270,7 @@ Form<T> create_form(
 /// @param[in] spaces Vector of function spaces
 /// @param[in] coefficients Coefficient fields in the form
 /// @param[in] constants Spatial constants in the form
+/// @param[in] subdomains Subdomain makers
 /// @param[in] mesh The mesh of the domain
 template <typename T>
 Form<T> create_form(
@@ -332,6 +333,7 @@ Form<T> create_form(
 /// @param[in] spaces function spaces
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
+/// @param[in] subdomains Subdomain markers
 /// @param[in] mesh The mesh of the domain
 /// @return Form
 template <typename T>
