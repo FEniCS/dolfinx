@@ -93,7 +93,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
   std::shared_ptr mesh = a.mesh();
   assert(mesh);
 
-  const std::set<IntegralType> types = a.integrals().types();
+  const std::set<IntegralType> types = a.integral_types();
   if (types.find(IntegralType::interior_facet) != types.end()
       or types.find(IntegralType::exterior_facet) != types.end())
   {
@@ -260,9 +260,8 @@ Form<T> create_form(
         "Vertex integrals not supported. Under development.");
   }
 
-  return fem::Form(spaces,
-                   FormIntegrals<T>(integral_data, needs_permutation_data),
-                   coefficients, constants, mesh);
+  return fem::Form(spaces, integral_data, coefficients, constants,
+                   needs_permutation_data, mesh);
 }
 
 /// Create a Form from UFC input

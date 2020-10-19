@@ -171,7 +171,7 @@ void _lift_bc_cells(
 
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>& fn
-      = a.integrals().get_tabulate_tensor(IntegralType::cell, -1);
+      = a.get_tabulate_tensor(IntegralType::cell, -1);
 
   // Prepare cell geometry
   const int gdim = mesh->geometry().dim();
@@ -292,7 +292,7 @@ void _lift_bc_exterior_facets(
 
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>& fn
-      = a.integrals().get_tabulate_tensor(IntegralType::exterior_facet, -1);
+      = a.get_tabulate_tensor(IntegralType::exterior_facet, -1);
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -433,8 +433,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
       = pack_coefficients(L);
 
-  const FormIntegrals<T>& integrals = L.integrals();
-  const bool needs_permutation_data = integrals.needs_permutation_data();
+  const bool needs_permutation_data = L.needs_permutation_data();
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
@@ -442,17 +441,17 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
             ? mesh->topology().get_cell_permutation_info()
             : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
 
-  for (int i : integrals.integral_ids(IntegralType::cell))
+  for (int i : L.integral_ids(IntegralType::cell))
   {
-    const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
+    const auto& fn = L.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = integrals.integral_domains(IntegralType::cell, i);
+        = L.integral_domains(IntegralType::cell, i);
     fem::impl::assemble_cells(b, mesh->geometry(), active_cells, dofs, fn,
                               coeffs, constant_values, cell_info);
   }
 
-  if (integrals.num_integrals(IntegralType::exterior_facet) > 0
-      or integrals.num_integrals(IntegralType::interior_facet) > 0)
+  if (L.num_integrals(IntegralType::exterior_facet) > 0
+      or L.num_integrals(IntegralType::interior_facet) > 0)
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
@@ -465,24 +464,22 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
               ? mesh->topology().get_facet_permutations()
               : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
                   facets_per_cell, num_cells);
-    for (int i : integrals.integral_ids(IntegralType::exterior_facet))
+    for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
-      const auto& fn
-          = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
+      const auto& fn = L.get_tabulate_tensor(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = integrals.integral_domains(IntegralType::exterior_facet, i);
+          = L.integral_domains(IntegralType::exterior_facet, i);
       fem::impl::assemble_exterior_facets(b, *mesh, active_facets, dofs, fn,
                                           coeffs, constant_values, cell_info,
                                           perms);
     }
 
     const std::vector<int> c_offsets = L.coefficient_offsets();
-    for (int i : integrals.integral_ids(IntegralType::interior_facet))
+    for (int i : L.integral_ids(IntegralType::interior_facet))
     {
-      const auto& fn
-          = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
+      const auto& fn = L.get_tabulate_tensor(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = integrals.integral_domains(IntegralType::interior_facet, i);
+          = L.integral_domains(IntegralType::interior_facet, i);
       fem::impl::assemble_interior_facets(b, *mesh, active_facets, *dofmap, fn,
                                           coeffs, c_offsets, constant_values,
                                           cell_info, perms);
@@ -766,9 +763,9 @@ void lift_bc(
     const std::vector<bool>& bc_markers1, double scale)
 {
   const Eigen::Matrix<T, Eigen::Dynamic, 1> x0(0);
-  if (a.integrals().num_integrals(fem::IntegralType::cell) > 0)
+  if (a.num_integrals(fem::IntegralType::cell) > 0)
     _lift_bc_cells<T>(b, a, bc_values1, bc_markers1, x0, scale);
-  if (a.integrals().num_integrals(fem::IntegralType::exterior_facet) > 0)
+  if (a.num_integrals(fem::IntegralType::exterior_facet) > 0)
     _lift_bc_exterior_facets<T>(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
@@ -780,9 +777,9 @@ void lift_bc(
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
-  if (a.integrals().num_integrals(fem::IntegralType::cell) > 0)
+  if (a.num_integrals(fem::IntegralType::cell) > 0)
     _lift_bc_cells(b, a, bc_values1, bc_markers1, x0, scale);
-  if (a.integrals().num_integrals(fem::IntegralType::exterior_facet) > 0)
+  if (a.num_integrals(fem::IntegralType::exterior_facet) > 0)
     _lift_bc_exterior_facets(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------

@@ -15,7 +15,6 @@ set(HEADERS_fem
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Form.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/FormIntegrals.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ReferenceCellGeometry.h
   ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPatternBuilder.h
   PARENT_SCOPE)

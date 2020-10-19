@@ -115,8 +115,7 @@ void assemble_matrix(
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
       = pack_coefficients(a);
 
-  const FormIntegrals<T>& integrals = a.integrals();
-  const bool needs_permutation_data = integrals.needs_permutation_data();
+  const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
@@ -124,18 +123,18 @@ void assemble_matrix(
             ? mesh->topology().get_cell_permutation_info()
             : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
 
-  for (int i : integrals.integral_ids(IntegralType::cell))
+  for (int i : a.integral_ids(IntegralType::cell))
   {
-    const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
+    const auto& fn = a.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = integrals.integral_domains(IntegralType::cell, i);
+        = a.integral_domains(IntegralType::cell, i);
     impl::assemble_cells<T>(mat_set_values, mesh->geometry(), active_cells,
                             dofs0, dofs1, bc0, bc1, fn, coeffs, constants,
                             cell_info);
   }
 
-  if (integrals.num_integrals(IntegralType::exterior_facet) > 0
-      or integrals.num_integrals(IntegralType::interior_facet) > 0)
+  if (a.num_integrals(IntegralType::exterior_facet) > 0
+      or a.num_integrals(IntegralType::interior_facet) > 0)
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
@@ -149,24 +148,22 @@ void assemble_matrix(
               : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
                   facets_per_cell, num_cells);
 
-    for (int i : integrals.integral_ids(IntegralType::exterior_facet))
+    for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
-      const auto& fn
-          = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
+      const auto& fn = a.get_tabulate_tensor(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = integrals.integral_domains(IntegralType::exterior_facet, i);
+          = a.integral_domains(IntegralType::exterior_facet, i);
       impl::assemble_exterior_facets<T>(mat_set_values, *mesh, active_facets,
                                         dofs0, dofs1, bc0, bc1, fn, coeffs,
                                         constants, cell_info, perms);
     }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
-    for (int i : integrals.integral_ids(IntegralType::interior_facet))
+    for (int i : a.integral_ids(IntegralType::interior_facet))
     {
-      const auto& fn
-          = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
+      const auto& fn = a.get_tabulate_tensor(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = integrals.integral_domains(IntegralType::interior_facet, i);
+          = a.integral_domains(IntegralType::interior_facet, i);
       impl::assemble_interior_facets<T>(
           mat_set_values, *mesh, active_facets, *dofmap0, *dofmap1, bc0, bc1,
           fn, coeffs, c_offsets, constants, cell_info, perms);
