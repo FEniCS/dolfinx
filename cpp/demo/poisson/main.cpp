@@ -142,9 +142,9 @@ int main(int argc, char* argv[])
 
     // Define variational forms
     auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V}, {},
-                                           {{"kappa", kappa}});
+                                           {{"kappa", kappa}}, {});
     auto L = fem::create_form<PetscScalar>(create_form_poisson_L, {V},
-                                           {{"f", f}, {"g", g}}, {});
+                                           {{"f", f}, {"g", g}}, {}, {});
 
     // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
     // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
