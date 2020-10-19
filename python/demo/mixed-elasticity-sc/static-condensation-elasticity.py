@@ -137,7 +137,7 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
              cell_permutation_info)
 
     # A = - A10 * A00^{-1} * A01
-    A[:, :] = - A10 @numpy.linalg.solve(A00, A01)
+    A[:, :] = - A10 @ numpy.linalg.solve(A00, A01)
 
 
 # Prepare a Form with a condensed tabulation kernel
