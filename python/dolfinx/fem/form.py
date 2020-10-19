@@ -70,4 +70,3 @@ class Form:
         self._cpp_object = cpp.fem.create_form(ffi.cast("uintptr_t", ufc_form),
                                                function_spaces, coeffs,
                                                [c._cpp_object for c in form.constants()], subdomains, mesh)
-
