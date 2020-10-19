@@ -9,6 +9,7 @@
 #include <array>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
+#include <map>
 #include <set>
 #include <vector>
 
@@ -60,18 +61,20 @@ public:
     // Loop over integrals by domain type (dimension)
     for (auto& integral_type : integrals)
     {
+      // Add key to map
+      auto it = _integrals.emplace(
+          integral_type.first,
+          std::map<int, std::pair<kern, std::vector<std::int32_t>>>());
+
       // Loop over integrals kernels
       for (auto& integral : integral_type.second.first)
-      {
-        set_tabulate_tensor(integral_type.first, integral.first,
-                            integral.second);
-      }
+        it.first->second.insert({integral.first, {integral.second, {}}});
 
       // Set domains
       if (integral_type.second.second)
         set_domains(integral_type.first, *integral_type.second.second);
     }
-  };
+  }
 
   /// Copy constructor
   FormIntegrals(const FormIntegrals& integrals) = default;
@@ -91,20 +94,23 @@ public:
                            const std::uint8_t*, const std::uint32_t)>&
   get_tabulate_tensor(IntegralType type, int i) const
   {
-    return _integrals.at(static_cast<int>(type)).at(i).tabulate;
+    auto it0 = _integrals.find(type);
+    if (it0 == _integrals.end())
+      throw std::runtime_error("No kernels for requested type.");
+    auto it1 = it0->second.find(i);
+    if (it1 == it0->second.end())
+      throw std::runtime_error("No kernel for requested index.");
+
+    return it1->second.first;
   }
 
   /// Get types of integrals in the form
   /// @return Integrals types
   std::set<IntegralType> types() const
   {
-    static const std::array types{IntegralType::cell,
-                                  IntegralType::exterior_facet,
-                                  IntegralType::interior_facet};
     std::set<IntegralType> set;
-    for (auto type : types)
-      if (!_integrals.at(static_cast<int>(type)).empty())
-        set.insert(type);
+    for (auto& type : _integrals)
+      set.insert(type.first);
     return set;
   }
 
@@ -113,7 +119,10 @@ public:
   /// @return Number of integrals
   int num_integrals(IntegralType type) const
   {
-    return _integrals.at(static_cast<int>(type)).size();
+    if (auto it = _integrals.find(type); it == _integrals.end())
+      return 0;
+    else
+      return it->second.size();
   }
 
   /// Get the integer IDs of integrals of type t. The IDs correspond to
@@ -124,8 +133,12 @@ public:
   std::vector<int> integral_ids(IntegralType type) const
   {
     std::vector<int> ids;
-    for (const auto& integral : _integrals[static_cast<int>(type)])
-      ids.push_back(integral.id);
+    // auto it = _integrals.find(type);
+    if (auto it = _integrals.find(type); it != _integrals.end())
+    {
+      for (auto& kernel : it->second)
+        ids.push_back(kernel.first);
+    }
     return ids;
   }
 
@@ -140,7 +153,13 @@ public:
   const std::vector<std::int32_t>& integral_domains(IntegralType type,
                                                     int i) const
   {
-    return _integrals.at(static_cast<int>(type)).at(i).active_entities;
+    auto it0 = _integrals.find(type);
+    if (it0 == _integrals.end())
+      throw std::runtime_error("No kernels for requested type.");
+    auto it1 = it0->second.find(i);
+    if (it1 == it0->second.end())
+      throw std::runtime_error("No kernel for requested index.");
+    return it1->second.second;
   }
 
 private:
@@ -151,10 +170,10 @@ private:
   /// @param[in] marker MeshTags mapping entities to integrals
   void set_domains(IntegralType type, const mesh::MeshTags<int>& marker)
   {
-    std::vector<struct Integral>& integrals
-        = _integrals.at(static_cast<int>(type));
-    if (integrals.size() == 0)
-      return;
+    // std::vector<struct Integral>& integrals
+    //     = _integrals.at(static_cast<int>(type));
+    // if (integrals.size() == 0)
+    //   return;
 
     std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
     const mesh::Topology& topology = mesh->topology();
@@ -175,16 +194,26 @@ private:
                                + std::to_string(marker.dim()));
     }
 
-    // Create a reverse map
-    std::map<int, int> id_to_integral;
-    for (std::size_t i = 0; i < integrals.size(); ++i)
+    // // Create a reverse map
+    // std::map<int, int> id_to_integral;
+    // for (std::size_t i = 0; i < integrals.size(); ++i)
+    // {
+    //   if (integrals[i].id != -1)
+    //   {
+    //     integrals[i].active_entities.clear();
+    //     id_to_integral.insert({integrals[i].id, i});
+    //   }
+    // }
+
+    auto it0 = _integrals.find(type);
+    if (it0 == _integrals.end())
     {
-      if (integrals[i].id != -1)
-      {
-        integrals[i].active_entities.clear();
-        id_to_integral.insert({integrals[i].id, i});
-      }
+      // TODO: Add warning
+      return;
     }
+    // std::vector<std::int32_t>& active_entities = it->second.second;
+    std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals
+        = it0->second;
 
     // Get mesh tag data
     const std::vector<int>& values = marker.values();
@@ -194,7 +223,7 @@ private:
         = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
                            topology.index_map(dim)->size_local());
 
-    if (type == IntegralType::exterior_facet)
+    if (dim == tdim - 1)
     {
       auto f_to_c = topology.connectivity(tdim - 1, tdim);
       assert(f_to_c);
@@ -212,18 +241,14 @@ private:
 
         for (auto f = tagged_entities.begin(); f != entity_end; ++f)
         {
-          const std::size_t i = std::distance(tagged_entities.cbegin(), f);
-
-          // All "owned" facets connected to one cell, that are not shared,
-          // should be external.
+          // All "owned" facets connected to one cell, that are not
+          // shared, should be external
           if (f_to_c->num_links(*f) == 1
               and fwd_shared.find(*f) == fwd_shared.end())
           {
-            if (auto it = id_to_integral.find(values[i]);
-                it != id_to_integral.end())
-            {
-              integrals[it->second].active_entities.push_back(*f);
-            }
+            const std::size_t i = std::distance(tagged_entities.cbegin(), f);
+            if (auto it = integrals.find(values[i]); it != integrals.end())
+              it->second.second.push_back(*f);
           }
         }
       }
@@ -234,11 +259,8 @@ private:
           if (f_to_c->num_links(*f) == 2)
           {
             const std::size_t i = std::distance(tagged_entities.cbegin(), f);
-            if (const auto it = id_to_integral.find(values[i]);
-                it != id_to_integral.end())
-            {
-              integrals[it->second].active_entities.push_back(*f);
-            }
+            if (auto it = integrals.find(values[i]); it != integrals.end())
+              it->second.second.push_back(*f);
           }
         }
       }
@@ -250,11 +272,8 @@ private:
       for (auto e = tagged_entities.begin(); e != entity_end; ++e)
       {
         const std::size_t i = std::distance(tagged_entities.cbegin(), e);
-        if (const auto it = id_to_integral.find(values[i]);
-            it != id_to_integral.end())
-        {
-          integrals[it->second].active_entities.push_back(*e);
-        }
+        if (auto it = integrals.find(values[i]); it != integrals.end())
+          it->second.second.push_back(*e);
       }
     }
   }
@@ -269,69 +288,77 @@ public:
   {
     const mesh::Topology& topology = mesh.topology();
     const int tdim = topology.dim();
-    std::vector<struct Integral>& cell_integrals
-        = _integrals[static_cast<int>(IntegralType::cell)];
 
     // Cells. If there is a default integral, define it on all owned cells
-    if (cell_integrals.size() > 0 and cell_integrals[0].id == -1)
+    if (auto kernels = _integrals.find(IntegralType::cell);
+        kernels != _integrals.end())
     {
-      const int num_cells = topology.index_map(tdim)->size_local();
-      cell_integrals[0].active_entities.resize(num_cells);
-      std::iota(cell_integrals[0].active_entities.begin(),
-                cell_integrals[0].active_entities.end(), 0);
+      if (auto it = kernels->second.find(-1); it != kernels->second.end())
+      {
+        std::vector<std::int32_t>& active_entities = it->second.second;
+        const int num_cells = topology.index_map(tdim)->size_local();
+        active_entities.resize(num_cells);
+        std::iota(active_entities.begin(), active_entities.end(), 0);
+      }
     }
 
-    // Exterior facets. If there is a default integral, define it only on
-    // owned surface facets.
-    std::vector<struct Integral>& exf_integrals
-        = _integrals[static_cast<int>(IntegralType::exterior_facet)];
-    if (exf_integrals.size() > 0 and exf_integrals[0].id == -1)
+    // Exterior facets. If there is a default integral, define it only
+    // on owned surface facets.
+    if (auto kernels = _integrals.find(IntegralType::exterior_facet);
+        kernels != _integrals.end())
     {
-      // If there is a default integral, define it only on surface facets
-      exf_integrals[0].active_entities.clear();
-
-      // Get number of facets owned by this process
-      mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-      auto f_to_c = topology.connectivity(tdim - 1, tdim);
-      assert(topology.index_map(tdim - 1));
-      std::set<std::int32_t> fwd_shared_facets;
-
-      // Only need to consider shared facets when there are no ghost cells
-      if (topology.index_map(tdim)->num_ghosts() == 0)
+      if (auto it = kernels->second.find(-1); it != kernels->second.end())
       {
-        fwd_shared_facets.insert(
-            topology.index_map(tdim - 1)->shared_indices().begin(),
-            topology.index_map(tdim - 1)->shared_indices().end());
-      }
+        std::vector<std::int32_t>& active_entities = it->second.second;
+        active_entities.clear();
 
-      const int num_facets = topology.index_map(tdim - 1)->size_local();
-      for (int f = 0; f < num_facets; ++f)
-      {
-        if (f_to_c->num_links(f) == 1
-            and fwd_shared_facets.find(f) == fwd_shared_facets.end())
-          exf_integrals[0].active_entities.push_back(f);
+        // Get number of facets owned by this process
+        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+        auto f_to_c = topology.connectivity(tdim - 1, tdim);
+        assert(topology.index_map(tdim - 1));
+        std::set<std::int32_t> fwd_shared_facets;
+
+        // Only need to consider shared facets when there are no ghost cells
+        if (topology.index_map(tdim)->num_ghosts() == 0)
+        {
+          fwd_shared_facets.insert(
+              topology.index_map(tdim - 1)->shared_indices().begin(),
+              topology.index_map(tdim - 1)->shared_indices().end());
+        }
+
+        const int num_facets = topology.index_map(tdim - 1)->size_local();
+        for (int f = 0; f < num_facets; ++f)
+        {
+          if (f_to_c->num_links(f) == 1
+              and fwd_shared_facets.find(f) == fwd_shared_facets.end())
+          {
+            active_entities.push_back(f);
+          }
+        }
       }
     }
 
     // Interior facets. If there is a default integral, define it only on
     // owned interior facets.
-    std::vector<struct FormIntegrals::Integral>& inf_integrals
-        = _integrals[static_cast<int>(IntegralType::interior_facet)];
-    if (!inf_integrals.empty() and inf_integrals[0].id == -1)
+    if (auto kernels = _integrals.find(IntegralType::interior_facet);
+        kernels != _integrals.end())
     {
-      // If there is a default integral, define it only on interior facets
-
-      // Get number of facets owned by this process
-      mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-      assert(topology.index_map(tdim - 1));
-      const int num_facets = topology.index_map(tdim - 1)->size_local();
-      auto f_to_c = topology.connectivity(tdim - 1, tdim);
-      inf_integrals[0].active_entities.clear();
-      inf_integrals[0].active_entities.reserve(num_facets);
-      for (int f = 0; f < num_facets; ++f)
+      if (auto it = kernels->second.find(-1); it != kernels->second.end())
       {
-        if (f_to_c->num_links(f) == 2)
-          inf_integrals[0].active_entities.push_back(f);
+        std::vector<std::int32_t>& active_entities = it->second.second;
+
+        // Get number of facets owned by this process
+        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+        assert(topology.index_map(tdim - 1));
+        const int num_facets = topology.index_map(tdim - 1)->size_local();
+        auto f_to_c = topology.connectivity(tdim - 1, tdim);
+        active_entities.clear();
+        active_entities.reserve(num_facets);
+        for (int f = 0; f < num_facets; ++f)
+        {
+          if (f_to_c->num_links(f) == 2)
+            active_entities.push_back(f);
+        }
       }
     }
   }
@@ -342,54 +369,12 @@ public:
   bool needs_permutation_data() const { return _needs_permutation_data; }
 
 private:
-  /// @todo Should this be removed
-  ///
-  /// Set the function for 'tabulate_tensor' for integral i of
-  /// given type
-  /// @param[in] type Integral type
-  /// @param[in] i Integral number
-  /// @param[in] fn tabulate function
-  void set_tabulate_tensor(
-      IntegralType type, int i,
-      const std::function<void(T*, const T*, const T*, const double*,
-                               const int*, const std::uint8_t*,
-                               const std::uint32_t)>& fn)
-  {
-    std::vector<struct FormIntegrals::Integral>& integrals
-        = _integrals.at(static_cast<int>(type));
-
-    // Find insertion point
-    int pos = 0;
-    for (const auto& q : integrals)
-    {
-      if (q.id == i)
-      {
-        throw std::runtime_error("Integral with ID " + std::to_string(i)
-                                 + " already exists");
-      }
-      else if (q.id > i)
-        break;
-      ++pos;
-    }
-
-    // Insert new Integral
-    integrals.insert(integrals.begin() + pos, {fn, i, {}});
-  }
-
-  // Collect together the function, id, and indices of entities to
-  // integrate on
-  struct Integral
-  {
-    std::function<void(T*, const T*, const T*, const double*, const int*,
-                       const std::uint8_t*, const std::uint32_t)>
-        tabulate;
-    int id;
-    std::vector<std::int32_t> active_entities;
-  };
-
-  // Array of vectors of integrals, arranged by type (see Type enum, and
-  // struct Integral above)
-  std::array<std::vector<struct Integral>, 4> _integrals;
+  using kern
+      = std::function<void(T*, const T*, const T*, const double*, const int*,
+                           const std::uint8_t*, const std::uint32_t)>;
+  std::map<IntegralType,
+           std::map<int, std::pair<kern, std::vector<std::int32_t>>>>
+      _integrals;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_permutation_data;

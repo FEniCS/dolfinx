@@ -171,7 +171,7 @@ void _lift_bc_cells(
 
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>& fn
-      = a.integrals().get_tabulate_tensor(IntegralType::cell, 0);
+      = a.integrals().get_tabulate_tensor(IntegralType::cell, -1);
 
   // Prepare cell geometry
   const int gdim = mesh->geometry().dim();
@@ -292,7 +292,7 @@ void _lift_bc_exterior_facets(
 
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>& fn
-      = a.integrals().get_tabulate_tensor(IntegralType::exterior_facet, 0);
+      = a.integrals().get_tabulate_tensor(IntegralType::exterior_facet, -1);
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -442,7 +442,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
             ? mesh->topology().get_cell_permutation_info()
             : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
 
-  for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
+  for (int i : integrals.integral_ids(IntegralType::cell))
   {
     const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
@@ -465,8 +465,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
               ? mesh->topology().get_facet_permutations()
               : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
                   facets_per_cell, num_cells);
-    for (int i = 0; i < integrals.num_integrals(IntegralType::exterior_facet);
-         ++i)
+    for (int i : integrals.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn
           = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
@@ -478,8 +477,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
     }
 
     const std::vector<int> c_offsets = L.coefficient_offsets();
-    for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
-         ++i)
+    for (int i : integrals.integral_ids(IntegralType::interior_facet))
     {
       const auto& fn
           = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);

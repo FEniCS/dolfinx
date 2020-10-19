@@ -124,7 +124,7 @@ void assemble_matrix(
             ? mesh->topology().get_cell_permutation_info()
             : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
 
-  for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
+  for (int i : integrals.integral_ids(IntegralType::cell))
   {
     const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
@@ -149,8 +149,7 @@ void assemble_matrix(
               : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
                   facets_per_cell, num_cells);
 
-    for (int i = 0; i < integrals.num_integrals(IntegralType::exterior_facet);
-         ++i)
+    for (int i : integrals.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn
           = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
@@ -162,8 +161,7 @@ void assemble_matrix(
     }
 
     const std::vector<int> c_offsets = a.coefficient_offsets();
-    for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
-         ++i)
+    for (int i : integrals.integral_ids(IntegralType::interior_facet))
     {
       const auto& fn
           = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
