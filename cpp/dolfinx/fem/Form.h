@@ -1,4 +1,4 @@
-// Copyright (C) 2019-200 Garth N. Wells and Chris Richardson
+// Copyright (C) 2019-2020 Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
