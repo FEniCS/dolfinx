@@ -48,16 +48,18 @@ public:
   FormIntegrals(
       const std::map<
           IntegralType,
-          std::vector<std::pair<
-              int, std::function<void(T*, const T*, const T*, const double*,
-                                      const int*, const std::uint8_t*,
-                                      const std::uint32_t)>>>>& integrals,
+          std::pair<
+              std::vector<std::pair<
+                  int, std::function<void(T*, const T*, const T*, const double*,
+                                          const int*, const std::uint8_t*,
+                                          const std::uint32_t)>>>,
+              mesh::MeshTags<int>*>>& integrals,
       bool needs_permutation_data)
       : _needs_permutation_data(needs_permutation_data)
   {
     for (auto& integral_type : integrals)
     {
-      for (auto& integral : integral_type.second)
+      for (auto& integral : integral_type.second.first)
       {
         set_tabulate_tensor(integral_type.first, integral.first,
                             integral.second);
@@ -310,13 +312,13 @@ public:
     if (!inf_integrals.empty() and inf_integrals[0].id == -1)
     {
       // If there is a default integral, define it only on interior facets
-      inf_integrals[0].active_entities.clear();
 
       // Get number of facets owned by this process
       mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
       assert(topology.index_map(tdim - 1));
       const int num_facets = topology.index_map(tdim - 1)->size_local();
       auto f_to_c = topology.connectivity(tdim - 1, tdim);
+      inf_integrals[0].active_entities.clear();
       inf_integrals[0].active_entities.reserve(num_facets);
       for (int f = 0; f < num_facets; ++f)
       {
@@ -381,7 +383,7 @@ private:
   // struct Integral above)
   std::array<std::vector<struct Integral>, 4> _integrals;
 
-  // True is permutation data needs to be passed into these integrals
+  // True if permutation data needs to be passed into these integrals
   bool _needs_permutation_data;
 };
 } // namespace fem

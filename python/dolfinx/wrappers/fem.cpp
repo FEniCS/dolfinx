@@ -367,24 +367,32 @@ void fem(py::module& m)
   formintegrals
       .def(py::init(
           [](const std::map<dolfinx::fem::IntegralType,
-                            std::vector<std::pair<int, py::object>>>& kernels,
+                            std::pair<std::vector<std::pair<int, py::object>>,
+                                      dolfinx::mesh::MeshTags<int>*>>& kernels,
              bool needs_permutation_data) {
+            using kern = std::function<void(PetscScalar*, const PetscScalar*,
+                                            const PetscScalar*, const double*,
+                                            const int*, const std::uint8_t*,
+                                            const std::uint32_t)>;
             std::map<dolfinx::fem::IntegralType,
-                     std::vector<std::pair<
-                         int, std::function<void(
-                                  PetscScalar*, const PetscScalar*,
-                                  const PetscScalar*, const double*, const int*,
-                                  const std::uint8_t*, const std::uint32_t)>>>>
+                     std::pair<std::vector<std::pair<int, kern>>,
+                               dolfinx::mesh::MeshTags<int>*>>
                 integrals;
+
+            // Loop over kernel for each entity type
             for (auto& kernel_type : kernels)
             {
-              for (auto& kernel : kernel_type.second)
+              // Set subdomain markers
+              integrals[kernel_type.first].second = nullptr;
+
+              // Loop over each domain kernel
+              for (auto& kernel : kernel_type.second.first)
               {
                 auto tabulate_tensor_ptr = (void (*)(
                     PetscScalar*, const PetscScalar*, const PetscScalar*,
                     const double*, const int*, const std::uint8_t*,
                     const std::uint32_t))kernel.second.cast<std::uintptr_t>();
-                integrals[kernel_type.first].push_back(
+                integrals[kernel_type.first].first.push_back(
                     {kernel.first, tabulate_tensor_ptr});
               }
             }

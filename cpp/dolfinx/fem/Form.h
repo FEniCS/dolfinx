@@ -177,7 +177,7 @@ private:
   // Constants associated with the Form
   std::vector<std::shared_ptr<const function::Constant<T>>> _constants;
 
-  // The mesh (needed for functionals when we don't have any spaces)
+  // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
 };
 
