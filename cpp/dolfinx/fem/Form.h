@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2014 Anders Logg
+// Copyright (C) 2019-200 Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <dolfinx/fem/DofMap.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
@@ -68,8 +67,10 @@ class Form
 public:
   /// Create form
   ///
-  /// @param[in] function_spaces Function Spaces
-  /// @param[in] integrals
+  /// @param[in] function_spaces Function spaces for the form arguments
+  /// @param[in] integrals The integrals in the form. The first key is
+  /// the domain type. For each key there is a pair (list[domain id,
+  /// integration kernel], domain markers).
   /// @param[in] coefficients
   /// @param[in] constants Constants in the Form
   /// @param[in] needs_permutation_data Set to true is any of the

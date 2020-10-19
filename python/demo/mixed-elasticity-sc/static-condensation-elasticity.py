@@ -141,9 +141,8 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
 
 
 # Prepare a Form with a condensed tabulation kernel
-integrals = dolfinx.cpp.fem.FormIntegrals(
-    {dolfinx.fem.IntegralType.cell: ([(-1, tabulate_condensed_tensor_A.address)], None)}, False)
-a_cond = dolfinx.cpp.fem.Form([U._cpp_object, U._cpp_object], integrals, [], [], None)
+integrals = {dolfinx.fem.IntegralType.cell: ([(-1, tabulate_condensed_tensor_A.address)], None)}
+a_cond = dolfinx.cpp.fem.Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None)
 
 A_cond = dolfinx.fem.assemble_matrix(a_cond, [bc])
 A_cond.assemble()
