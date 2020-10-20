@@ -211,6 +211,7 @@ int main(int argc, char* argv[])
     la::PETScKrylovSolver lu(MPI_COMM_WORLD);
     la::PETScOptions::set("ksp_type", "preonly");
     la::PETScOptions::set("pc_type", "lu");
+    la::PETScOptions::set("pc_factor_mat_solver_type", "superlu_dist");
     lu.set_from_options();
 
     lu.set_operator(A.mat());
