@@ -371,54 +371,26 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::Form<PetscScalar>,
              std::shared_ptr<dolfinx::fem::Form<PetscScalar>>>(
       m, "Form", "Variational form object")
-      .def(py::init([](const std::vector<std::shared_ptr<
-                           const dolfinx::function::FunctionSpace>>& spaces,
-                       const std::map<
-                           dolfinx::fem::IntegralType,
-                           std::pair<std::vector<std::pair<int, py::object>>,
-                                     const dolfinx::mesh::MeshTags<int>*>>&
-                           integrals,
-                       const std::vector<std::shared_ptr<
-                           const dolfinx::function::Function<PetscScalar>>>&
-                           coefficients,
-                       const std::vector<std::shared_ptr<
-                           const dolfinx::function::Constant<PetscScalar>>>&
-                           constants,
-                       bool needs_permutation_data,
-                       const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh) {
-             using kern = std::function<void(PetscScalar*, const PetscScalar*,
-                                             const PetscScalar*, const double*,
-                                             const int*, const std::uint8_t*,
-                                             const std::uint32_t)>;
-             std::map<dolfinx::fem::IntegralType,
-                      std::pair<std::vector<std::pair<int, kern>>,
-                                const dolfinx::mesh::MeshTags<int>*>>
-                 _integrals;
-
-             // Loop over kernel for each entity type
-             for (auto& kernel_type : integrals)
-             {
-               // Set subdomain markers
-               _integrals[kernel_type.first].second = nullptr;
-
-               // Loop over each domain kernel
-               for (auto& kernel : kernel_type.second.first)
-               {
-                 auto tabulate_tensor_ptr = (void (*)(
-                     PetscScalar*, const PetscScalar*, const PetscScalar*,
-                     const double*, const int*, const std::uint8_t*,
-                     const std::uint32_t))kernel.second.cast<std::uintptr_t>();
-                 _integrals[kernel_type.first].first.push_back(
-                     {kernel.first, tabulate_tensor_ptr});
-               }
-             }
-             return dolfinx::fem::Form<PetscScalar>(
-                 spaces, _integrals, coefficients, constants,
-                 needs_permutation_data, mesh);
-           }),
-           py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
-           py::arg("constants"), py::arg("need_permutation_data"),
-           py::arg("mesh") = py::none())
+      .def(
+          py::init<const std::vector<std::shared_ptr<
+                       const dolfinx::function::FunctionSpace>>&,
+                   const std::map<
+                       dolfinx::fem::IntegralType,
+                       std::pair<std::vector<std::pair<
+                                     int, std::function<void(
+                                              PetscScalar*, const PetscScalar*,
+                                              const PetscScalar*, const double*,
+                                              const int*, const std::uint8_t*,
+                                              const std::uint32_t)>>>,
+                                 const dolfinx::mesh::MeshTags<int>*>>&,
+                   const std::vector<std::shared_ptr<
+                       const dolfinx::function::Function<PetscScalar>>>&,
+                   const std::vector<std::shared_ptr<
+                       const dolfinx::function::Constant<PetscScalar>>>&,
+                   bool, const std::shared_ptr<const dolfinx::mesh::Mesh>&>(),
+          py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
+          py::arg("constants"), py::arg("need_permutation_data"),
+          py::arg("mesh") = py::none())
       .def_property_readonly("coefficients",
                              &dolfinx::fem::Form<PetscScalar>::coefficients)
       .def_property_readonly("rank", &dolfinx::fem::Form<PetscScalar>::rank)
