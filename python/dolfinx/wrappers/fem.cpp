@@ -200,7 +200,7 @@ void fem(py::module& m)
       .def(py::init([](const std::uintptr_t ufc_element) {
         const ufc_finite_element* p
             = reinterpret_cast<const ufc_finite_element*>(ufc_element);
-        return dolfinx::fem::FiniteElement > (*p);
+        return dolfinx::fem::FiniteElement(*p);
       }))
       .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
       .def("dof_reference_coordinates",
