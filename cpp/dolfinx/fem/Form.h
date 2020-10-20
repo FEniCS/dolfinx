@@ -151,17 +151,9 @@ public:
   /// @return The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
 
-  /// Return function space for given argument
-  /// @param[in] i Index of the argument
-  /// @return Function space
-  std::shared_ptr<const function::FunctionSpace> function_space(int i) const
-  {
-    return _function_spaces.at(i);
-  }
-
   /// Return function spaces for all arguments
   /// @return Function spaces
-  std::vector<std::shared_ptr<const function::FunctionSpace>>
+  const std::vector<std::shared_ptr<const function::FunctionSpace>>&
   function_spaces() const
   {
     return _function_spaces;
@@ -284,8 +276,7 @@ private:
   void set_domains(IntegralType type, const mesh::MeshTags<int>& marker)
   {
     auto it0 = _integrals.find(type);
-    if (it0 == _integrals.end())
-      return;
+    assert(it0 != _integrals.end());
 
     std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
     const mesh::Topology& topology = mesh->topology();

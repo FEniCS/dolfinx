@@ -67,9 +67,16 @@ extract_function_spaces(
                  std::array<std::shared_ptr<const function::FunctionSpace>, 2>>(
                  a.cols()));
   for (int i = 0; i < a.rows(); ++i)
+  {
     for (int j = 0; j < a.cols(); ++j)
+    {
       if (a(i, j))
-        spaces[i][j] = {a(i, j)->function_space(0), a(i, j)->function_space(1)};
+      {
+        spaces[i][j]
+            = {a(i, j)->function_spaces()[0], a(i, j)->function_spaces()[1]};
+      }
+    }
+  }
   return spaces;
 }
 
@@ -88,8 +95,8 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
   }
 
   // Get dof maps and mesh
-  std::array dofmaps{a.function_space(0)->dofmap().get(),
-                     a.function_space(1)->dofmap().get()};
+  std::array dofmaps{a.function_spaces().at(0)->dofmap().get(),
+                     a.function_spaces().at(1)->dofmap().get()};
   std::shared_ptr mesh = a.mesh();
   assert(mesh);
 

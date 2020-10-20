@@ -100,25 +100,27 @@ void assemble_matrix(
 {
 
   // Index maps for dof ranges
-  auto map0 = a.function_space(0)->dofmap()->index_map;
-  auto map1 = a.function_space(1)->dofmap()->index_map;
+  auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
+  auto map1 = a.function_spaces().at(1)->dofmap()->index_map;
 
   // Build dof markers
   std::vector<bool> dof_marker0, dof_marker1;
+  assert(map0);
   std::int32_t dim0
       = map0->block_size() * (map0->size_local() + map0->num_ghosts());
+  assert(map1);
   std::int32_t dim1
       = map1->block_size() * (map1->size_local() + map1->num_ghosts());
   for (std::size_t k = 0; k < bcs.size(); ++k)
   {
     assert(bcs[k]);
     assert(bcs[k]->function_space());
-    if (a.function_space(0)->contains(*bcs[k]->function_space()))
+    if (a.function_spaces().at(0)->contains(*bcs[k]->function_space()))
     {
       dof_marker0.resize(dim0, false);
       bcs[k]->mark_dofs(dof_marker0);
     }
-    if (a.function_space(1)->contains(*bcs[k]->function_space()))
+    if (a.function_spaces().at(1)->contains(*bcs[k]->function_space()))
     {
       dof_marker1.resize(dim1, false);
       bcs[k]->mark_dofs(dof_marker1);
@@ -265,7 +267,7 @@ bcs_rows(const std::vector<const Form<T>*>& L,
       L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
     for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs)
-      if (L[i]->function_space(0)->contains(*bc->function_space()))
+      if (L[i]->function_spaces()[0]->contains(*bc->function_space()))
         bcs0[i].push_back(bc);
   return bcs0;
 }
@@ -300,7 +302,7 @@ bcs_cols(const std::vector<std::vector<std::shared_ptr<const Form<T>>>>& a,
         // FIXME: handle case where a[i][j] is null
         if (a[i][j])
         {
-          if (a[i][j]->function_space(1)->contains(*bc->function_space()))
+          if (a[i][j]->function_spaces()[1]->contains(*bc->function_space()))
             bcs1[i][j].push_back(bc);
         }
       }

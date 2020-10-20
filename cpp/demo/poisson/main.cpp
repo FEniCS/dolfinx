@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
     // Compute solution
     function::Function<PetscScalar> u(V);
     la::PETScMatrix A = fem::create_matrix(*a);
-    la::PETScVector b(*L->function_space(0)->dofmap()->index_map);
+    la::PETScVector b(*L->function_spaces()[0]->dofmap()->index_map);
 
     MatZeroEntries(A.mat());
     fem::assemble_matrix(la::PETScMatrix::add_fn(A.mat()), *a, bc);

@@ -101,8 +101,10 @@ void assemble_matrix(
       = mesh->topology().connectivity(tdim, 0)->num_nodes();
 
   // Get dofmap data
-  std::shared_ptr<const fem::DofMap> dofmap0 = a.function_space(0)->dofmap();
-  std::shared_ptr<const fem::DofMap> dofmap1 = a.function_space(1)->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap0
+      = a.function_spaces().at(0)->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap1
+      = a.function_spaces().at(1)->dofmap();
   assert(dofmap0);
   assert(dofmap1);
   const graph::AdjacencyList<std::int32_t>& dofs0 = dofmap0->list();

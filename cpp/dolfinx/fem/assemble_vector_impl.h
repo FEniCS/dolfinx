@@ -158,10 +158,10 @@ void _lift_bc_cells(
   mesh->topology_mutable().create_entity_permutations();
 
   // Get dofmap for columns and rows of a
-  assert(a.function_space(0));
-  assert(a.function_space(1));
-  std::shared_ptr<const fem::DofMap> dofmap0 = a.function_space(0)->dofmap();
-  std::shared_ptr<const fem::DofMap> dofmap1 = a.function_space(1)->dofmap();
+  assert(a.function_spaces().at(0));
+  assert(a.function_spaces().at(1));
+  std::shared_ptr<const fem::DofMap> dofmap0 = a.function_spaces()[0]->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap1 = a.function_spaces()[1]->dofmap();
   assert(dofmap0);
   assert(dofmap1);
 
@@ -279,10 +279,12 @@ void _lift_bc_exterior_facets(
   mesh->topology_mutable().create_entity_permutations();
 
   // Get dofmap for columns and rows of a
-  assert(a.function_space(0));
-  assert(a.function_space(1));
-  std::shared_ptr<const fem::DofMap> dofmap0 = a.function_space(0)->dofmap();
-  std::shared_ptr<const fem::DofMap> dofmap1 = a.function_space(1)->dofmap();
+  assert(a.function_spaces().at(0));
+  assert(a.function_spaces().at(1));
+  std::shared_ptr<const fem::DofMap> dofmap0
+      = a.function_spaces().at(0)->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap1
+      = a.function_spaces().at(1)->dofmap();
   assert(dofmap0);
   assert(dofmap1);
 
@@ -421,8 +423,9 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
       = mesh->topology().connectivity(tdim, 0)->num_nodes();
 
   // Get dofmap data
-  assert(L.function_space(0));
-  std::shared_ptr<const fem::DofMap> dofmap = L.function_space(0)->dofmap();
+  assert(L.function_spaces().at(0));
+  std::shared_ptr<const fem::DofMap> dofmap
+      = L.function_spaces().at(0)->dofmap();
   assert(dofmap);
   const graph::AdjacencyList<std::int32_t>& dofs = dofmap->list();
 
@@ -733,7 +736,7 @@ void apply_lifting(
     Eigen::Matrix<T, Eigen::Dynamic, 1> bc_values1;
     if (a[j] and !bcs1[j].empty())
     {
-      auto V1 = a[j]->function_space(1);
+      auto V1 = a[j]->function_spaces()[1];
       assert(V1);
       auto map1 = V1->dofmap()->index_map;
       assert(map1);
