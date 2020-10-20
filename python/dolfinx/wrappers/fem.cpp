@@ -184,8 +184,6 @@ void fem(py::module& m)
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout) {
-        // See https://github.com/pybind/pybind11/issues/1138 on why we need
-        // to convert from a std::unique_ptr to a std::shard_ptr
         auto [map, dofmap] = dolfinx::fem::DofMapBuilder::build(
             comm.get(), topology, element_dof_layout);
         return std::pair(map, std::move(dofmap));
@@ -202,7 +200,7 @@ void fem(py::module& m)
       .def(py::init([](const std::uintptr_t ufc_element) {
         const ufc_finite_element* p
             = reinterpret_cast<const ufc_finite_element*>(ufc_element);
-        return std::make_unique<dolfinx::fem::FiniteElement>(*p);
+        return dolfinx::fem::FiniteElement(*p);
       }))
       .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
       .def("dof_reference_coordinates",
