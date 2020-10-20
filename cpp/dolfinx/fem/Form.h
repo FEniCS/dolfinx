@@ -207,11 +207,12 @@ public:
       return it->second.size();
   }
 
-  /// Get the integer IDs of integrals of type t. The IDs correspond to
-  /// the domains which the integrals are defined for in the form,
-  /// except ID -1, which denotes the default integral.
+  /// Get the IDs for integrals (kernels) for given integral type. The
+  /// IDs correspond to the domain IDs which the integrals are defined
+  /// for in the form. ID=-1 is the default integral over the whole
+  /// domain.
   /// @param[in] type Integral type
-  /// @return List of IDs for this integral
+  /// @return List of IDs for given integral type
   std::vector<int> integral_ids(IntegralType type) const
   {
     std::vector<int> ids;
@@ -223,12 +224,12 @@ public:
     return ids;
   }
 
-  /// Get the list of mesh entity indices for the ith integral of type
-  /// t. For cell integrals, a list of cells. For facet integrals, a
-  /// list of facets etc.
-  /// @param[in] type Integral type
-  /// @param[in] i Integral number
-  /// @return List of active entities for this integral
+  /// Get the list of mesh entity indices for the ith integral (kernel)
+  /// for the given domain type, i.e. for cell integrals a list of cell
+  /// indices, for facet integrals a list of facet indices, etc.
+  /// @param[in] type The integral type
+  /// @param[in] i Integral (kernel) index
+  /// @return List of active entities for the given integral (kernel)
   const std::vector<std::int32_t>& domains(IntegralType type, int i) const
   {
     auto it0 = _integrals.find(type);
@@ -275,13 +276,17 @@ public:
   }
 
 private:
-  /// Set the valid domains for the integrals of a given type from a
-  /// MeshTags "marker". Note the MeshTags is not stored, so if there
-  /// any changes to the integration domain this must be called again.
+  /// Sets the entity indices to assemble over for kernels with a domain ID.
   /// @param[in] type Integral type
-  /// @param[in] marker MeshTags mapping entities to integrals
+  /// @param[in] marker MeshTags with domain ID. Entities with marker
+  /// 'i' will be assembled over using the kernel with ID 'i'. The
+  /// MeshTags is not stored.
   void set_domains(IntegralType type, const mesh::MeshTags<int>& marker)
   {
+    auto it0 = _integrals.find(type);
+    if (it0 == _integrals.end())
+      return;
+
     std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
     const mesh::Topology& topology = mesh->topology();
     const int tdim = topology.dim();
@@ -289,8 +294,8 @@ private:
     if (type == IntegralType::exterior_facet
         or type == IntegralType::interior_facet)
     {
-      mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
       dim = tdim - 1;
+      mesh->topology_mutable().create_connectivity(dim, tdim);
     }
     else if (type == IntegralType::vertex)
       dim = 0;
@@ -299,13 +304,6 @@ private:
     {
       throw std::runtime_error("Invalid MeshTags dimension:"
                                + std::to_string(marker.dim()));
-    }
-
-    auto it0 = _integrals.find(type);
-    if (it0 == _integrals.end())
-    {
-      // TODO: No kernels for domain of this dimension - Add warning
-      return;
     }
 
     // Get all integrals for considered entity type

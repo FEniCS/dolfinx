@@ -313,9 +313,9 @@ Form<T> create_form(
   for (auto& c : constants)
   {
     auto it = std::find(const_name.begin(), const_name.end(), c.first);
-    if (it == coeff_name.end())
+    if (it == const_name.end())
     {
-      // ADD WARNING
+      // ADD WARNING?
       throw std::runtime_error("Cannot find form constant by name.");
     }
     else
