@@ -1,0 +1,938 @@
+arguments: demo_cahn-hilliard.py
+Current dir: /home/shared/dolfinx/python/demo/cahn-hilliard
+File verbosity level: 0
+date       time         ( uptime  ) [ thread name/id ]                   file:line     v| 
+2020-10-06 10:39:56.286 (   0.083s) [main thread     ]             loguru.cpp:770   INFO| Logging to 'log.txt', mode: 'w', verbosity: 0
+2020-10-06 10:39:56.304 (   0.101s) [main thread     ]       Partitioning.cpp:27    INFO| Compute partition of cells across processes
+2020-10-06 10:39:56.304 (   0.101s) [main thread     ]       GraphBuilder.cpp:305   INFO| Build mesh dual graph
+2020-10-06 10:39:56.304 (   0.101s) [main thread     ]       GraphBuilder.cpp:327   INFO| Build local part of mesh dual graph
+2020-10-06 10:39:56.308 (   0.105s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.004306, 0.000000, 0.000000 (Compute local part of mesh dual graph)
+2020-10-06 10:39:56.308 (   0.105s) [main thread     ]       GraphBuilder.cpp:149   INFO| Build nonlocal part of mesh dual graph
+2020-10-06 10:39:56.309 (   0.106s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.001167, 0.010000, 0.000000 (Compute non-local part of mesh dual graph)
+2020-10-06 10:39:56.310 (   0.107s) [main thread     ]             SCOTCH.cpp:128   INFO| Compute graph partition using PT-SCOTCH
+2020-10-06 10:39:56.310 (   0.107s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000059, 0.000000, 0.000000 (SCOTCH: call SCOTCH_dgraphBuild)
+2020-10-06 10:39:56.311 (   0.107s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000326, 0.000000, 0.000000 (SCOTCH: call SCOTCH_dgraphPart)
+2020-10-06 10:39:56.311 (   0.108s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000074, 0.000000, 0.000000 (SCOTCH: call SCOTCH_dgraphHalo)
+2020-10-06 10:39:56.311 (   0.108s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000000, 0.000000, 0.000000 (Get SCOTCH graph data)
+2020-10-06 10:39:56.311 (   0.108s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000078, 0.000000, 0.000000 (Extract partition boundaries from SCOTCH graph)
+2020-10-06 10:39:56.311 (   0.108s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000970, 0.000000, 0.000000 (Compute graph partition (SCOTCH))
+2020-10-06 10:39:56.311 (   0.108s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.007145, 0.010000, 0.000000 (Partition cells across processes)
+2020-10-06 10:39:56.312 (   0.109s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000995, 0.000000, 0.000000 (Distribute AdjacencyList)
+2020-10-06 10:39:56.312 (   0.109s) [main thread     ]           Topology.cpp:310   INFO| Create topology
+2020-10-06 10:39:56.312 (   0.109s) [main thread     ]       Partitioning.cpp:539   INFO| Compute ghost indices
+2020-10-06 10:39:56.317 (   0.114s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.001169, 0.000000, 0.000000 (Init dofmap from element dofmap)
+2020-10-06 10:39:56.319 (   0.116s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000004, 0.000000, 0.000000 (SCOTCH: call SCOTCH_graphBuild)
+2020-10-06 10:39:56.320 (   0.116s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000300, 0.000000, 0.000000 (SCOTCH: call SCOTCH_graphOrder)
+2020-10-06 10:39:56.320 (   0.116s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000610, 0.000000, 0.000000 (Compute SCOTCH graph re-ordering)
+2020-10-06 10:39:56.320 (   0.117s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.003834, 0.010000, 0.000000 (Init dofmap)
+2020-10-06 10:39:56.321 (   0.118s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000199, 0.000000, 0.000000 (Fetch float data from remote processes)
+2020-10-06 10:39:56.321 (   0.118s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000041, 0.000000, 0.000000 (Compute-local-to-global links for global/local adjacency list)
+2020-10-06 10:39:56.322 (   0.119s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000545, 0.000000, 0.000000 (Compute local-to-local map)
+2020-10-06 10:39:56.325 (   0.121s) [main thread     ]TopologyComputation.cpp:639   INFO| Computing mesh entities of dimension 0
+2020-10-06 10:39:56.326 (   0.123s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.001668, 0.000000, 0.000000 (Init dofmap from element dofmap)
+2020-10-06 10:39:56.332 (   0.129s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000008, 0.000000, 0.000000 (SCOTCH: call SCOTCH_graphBuild)
+2020-10-06 10:39:56.335 (   0.132s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.000875, 0.000000, 0.000000 (SCOTCH: call SCOTCH_graphOrder)
+2020-10-06 10:39:56.335 (   0.132s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.002518, 0.000000, 0.000000 (Compute SCOTCH graph re-ordering)
+2020-10-06 10:39:56.335 (   0.132s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.010650, 0.010000, 0.000000 (Init dofmap)
+2020-10-06 10:39:56.341 (   0.138s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:39:56.342 (   0.139s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:39:57.668 (   1.465s) [main thread     ]           XDMFFile.cpp:49    INFO| Opened HDF5 file with id "72057594037927936"
+2020-10-06 10:39:57.668 (   1.465s) [main thread     ]          xdmf_mesh.cpp:197   INFO| Adding mesh to node "/Xdmf/Domain"
+2020-10-06 10:39:57.668 (   1.465s) [main thread     ]          xdmf_mesh.cpp:24    INFO| Adding topology data to node "/Xdmf/Domain/Grid"
+2020-10-06 10:39:57.668 (   1.465s) [main thread     ]          xdmf_mesh.cpp:146   INFO| Adding geometry data to node "/Xdmf/Domain/Grid"
+2020-10-06 10:39:57.673 (   1.470s) [main thread     ]TopologyComputation.cpp:639   INFO| Computing mesh entities of dimension 1
+2020-10-06 10:39:57.681 (   1.478s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.008519, 0.000000, 0.000000 (Compute entities of dim = 1)
+2020-10-06 10:39:57.693 (   1.490s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.007356, 0.010000, 0.000000 (Build sparsity)
+2020-10-06 10:39:57.702 (   1.499s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.005118, 0.000000, 0.000000 (Init tensor)
+2020-10-06 10:39:57.715 (   1.511s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:57.828 (   1.625s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.113678, 0.090000, 0.020000 (PETSc Krylov solver)
+2020-10-06 10:39:57.830 (   1.627s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 1175.59 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:39:57.842 (   1.639s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:57.891 (   1.687s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048464, 0.030000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:39:57.892 (   1.689s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 0.218769 (tol = 1e-10) r (rel) = 0.000186092(tol = 1e-06)
+2020-10-06 10:39:57.904 (   1.701s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:57.949 (   1.746s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045258, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:39:57.951 (   1.748s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 3.8607e-06 (tol = 1e-10) r (rel) = 3.28404e-09(tol = 1e-06)
+2020-10-06 10:39:57.951 (   1.748s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 3 iterations and 3 linear solver iterations.
+2020-10-06 10:39:57.951 (   1.748s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:39:57.952 (   1.749s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:39:58.013 (   1.810s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.060 (   1.857s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046558, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:58.061 (   1.858s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 11.0161 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:39:58.074 (   1.871s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.120 (   1.917s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045463, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:39:58.122 (   1.918s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 0.109021 (tol = 1e-10) r (rel) = 0.00989646(tol = 1e-06)
+2020-10-06 10:39:58.133 (   1.930s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.179 (   1.976s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045502, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:58.181 (   1.978s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 5.23088e-06 (tol = 1e-10) r (rel) = 4.74838e-07(tol = 1e-06)
+2020-10-06 10:39:58.181 (   1.978s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 3 iterations and 3 linear solver iterations.
+2020-10-06 10:39:58.181 (   1.978s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:39:58.181 (   1.978s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:39:58.244 (   2.040s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.289 (   2.086s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045751, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:58.291 (   2.088s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 18.5349 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:39:58.303 (   2.100s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.348 (   2.145s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045366, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:58.350 (   2.147s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 0.460981 (tol = 1e-10) r (rel) = 0.0248709(tol = 1e-06)
+2020-10-06 10:39:58.362 (   2.159s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.407 (   2.204s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045024, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:58.409 (   2.206s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 9.65045e-05 (tol = 1e-10) r (rel) = 5.20663e-06(tol = 1e-06)
+2020-10-06 10:39:58.421 (   2.217s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.465 (   2.262s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044653, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:58.467 (   2.264s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 1.72421e-11 (tol = 1e-10) r (rel) = 9.3025e-13(tol = 1e-06)
+2020-10-06 10:39:58.467 (   2.264s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 4 iterations and 4 linear solver iterations.
+2020-10-06 10:39:58.467 (   2.264s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:39:58.467 (   2.264s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:39:58.529 (   2.326s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.574 (   2.371s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045138, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:58.576 (   2.373s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 38.583 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:39:58.587 (   2.384s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.634 (   2.431s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046216, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:58.635 (   2.432s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 2.15453 (tol = 1e-10) r (rel) = 0.0558413(tol = 1e-06)
+2020-10-06 10:39:58.648 (   2.445s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.693 (   2.490s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045734, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:58.695 (   2.492s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.00177282 (tol = 1e-10) r (rel) = 4.59482e-05(tol = 1e-06)
+2020-10-06 10:39:58.707 (   2.504s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.753 (   2.549s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045505, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:58.754 (   2.551s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 4.15028e-09 (tol = 1e-10) r (rel) = 1.07568e-10(tol = 1e-06)
+2020-10-06 10:39:58.754 (   2.551s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 4 iterations and 4 linear solver iterations.
+2020-10-06 10:39:58.754 (   2.551s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:39:58.755 (   2.552s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:39:58.817 (   2.614s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.863 (   2.660s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045930, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:58.865 (   2.662s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 87.7524 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:39:58.877 (   2.674s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.922 (   2.719s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045413, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:58.924 (   2.721s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 9.37785 (tol = 1e-10) r (rel) = 0.106867(tol = 1e-06)
+2020-10-06 10:39:58.936 (   2.733s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:58.981 (   2.778s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045339, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:39:58.983 (   2.780s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.0232112 (tol = 1e-10) r (rel) = 0.000264508(tol = 1e-06)
+2020-10-06 10:39:58.995 (   2.792s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.040 (   2.837s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044890, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.041 (   2.838s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 7.86515e-07 (tol = 1e-10) r (rel) = 8.96289e-09(tol = 1e-06)
+2020-10-06 10:39:59.041 (   2.838s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 4 iterations and 4 linear solver iterations.
+2020-10-06 10:39:59.042 (   2.838s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:39:59.042 (   2.839s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:39:59.103 (   2.900s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.149 (   2.946s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046051, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.151 (   2.948s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 221.12 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:39:59.163 (   2.960s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.208 (   3.005s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045039, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.209 (   3.006s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 39.6392 (tol = 1e-10) r (rel) = 0.179266(tol = 1e-06)
+2020-10-06 10:39:59.221 (   3.018s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.267 (   3.064s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045462, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.268 (   3.065s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 2.25909 (tol = 1e-10) r (rel) = 0.0102166(tol = 1e-06)
+2020-10-06 10:39:59.280 (   3.077s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.325 (   3.122s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044537, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.326 (   3.123s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0365734 (tol = 1e-10) r (rel) = 0.000165401(tol = 1e-06)
+2020-10-06 10:39:59.338 (   3.135s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.383 (   3.180s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044631, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.385 (   3.182s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.30323e-05 (tol = 1e-10) r (rel) = 5.89377e-08(tol = 1e-06)
+2020-10-06 10:39:59.385 (   3.182s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:39:59.385 (   3.182s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:39:59.385 (   3.182s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:39:59.447 (   3.244s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.493 (   3.290s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046011, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.495 (   3.292s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 411.819 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:39:59.507 (   3.304s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.552 (   3.349s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045400, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.554 (   3.351s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 194.382 (tol = 1e-10) r (rel) = 0.472008(tol = 1e-06)
+2020-10-06 10:39:59.566 (   3.363s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.611 (   3.408s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045471, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.613 (   3.410s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 28.0632 (tol = 1e-10) r (rel) = 0.0681445(tol = 1e-06)
+2020-10-06 10:39:59.625 (   3.422s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.671 (   3.467s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045553, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.672 (   3.469s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.808709 (tol = 1e-10) r (rel) = 0.00196375(tol = 1e-06)
+2020-10-06 10:39:59.684 (   3.481s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.730 (   3.527s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045943, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.732 (   3.529s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 0.0010146 (tol = 1e-10) r (rel) = 2.4637e-06(tol = 1e-06)
+2020-10-06 10:39:59.744 (   3.541s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.789 (   3.586s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044792, 0.030000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.791 (   3.588s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 5: r (abs) = 3.39787e-09 (tol = 1e-10) r (rel) = 8.2509e-12(tol = 1e-06)
+2020-10-06 10:39:59.791 (   3.588s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 6 iterations and 6 linear solver iterations.
+2020-10-06 10:39:59.791 (   3.588s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:39:59.791 (   3.588s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:39:59.853 (   3.650s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.900 (   3.697s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047199, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.902 (   3.699s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 323.595 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:39:59.914 (   3.711s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:39:59.959 (   3.756s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045428, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:39:59.961 (   3.758s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 213.136 (tol = 1e-10) r (rel) = 0.65865(tol = 1e-06)
+2020-10-06 10:39:59.973 (   3.770s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.018 (   3.815s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044977, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:00.020 (   3.817s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 22.6688 (tol = 1e-10) r (rel) = 0.0700529(tol = 1e-06)
+2020-10-06 10:40:00.032 (   3.829s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.077 (   3.874s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045299, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:00.079 (   3.876s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.489391 (tol = 1e-10) r (rel) = 0.00151236(tol = 1e-06)
+2020-10-06 10:40:00.091 (   3.888s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.135 (   3.932s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044628, 0.030000, 0.020000 (PETSc Krylov solver)
+2020-10-06 10:40:00.137 (   3.934s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 0.000474252 (tol = 1e-10) r (rel) = 1.46557e-06(tol = 1e-06)
+2020-10-06 10:40:00.149 (   3.946s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.193 (   3.990s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044641, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:00.195 (   3.992s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 5: r (abs) = 7.14851e-10 (tol = 1e-10) r (rel) = 2.20909e-12(tol = 1e-06)
+2020-10-06 10:40:00.195 (   3.992s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 6 iterations and 6 linear solver iterations.
+2020-10-06 10:40:00.195 (   3.992s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:00.196 (   3.993s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:00.258 (   4.055s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.304 (   4.101s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045570, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:00.305 (   4.102s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 242.728 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:00.317 (   4.114s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.363 (   4.160s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045552, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:00.365 (   4.162s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 108.286 (tol = 1e-10) r (rel) = 0.446122(tol = 1e-06)
+2020-10-06 10:40:00.377 (   4.174s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.421 (   4.218s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044678, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:00.423 (   4.220s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 6.53696 (tol = 1e-10) r (rel) = 0.0269312(tol = 1e-06)
+2020-10-06 10:40:00.435 (   4.232s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.480 (   4.277s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044715, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:00.481 (   4.278s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0509345 (tol = 1e-10) r (rel) = 0.000209842(tol = 1e-06)
+2020-10-06 10:40:00.493 (   4.290s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.538 (   4.335s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044556, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:00.540 (   4.337s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 6.08178e-06 (tol = 1e-10) r (rel) = 2.50559e-08(tol = 1e-06)
+2020-10-06 10:40:00.540 (   4.337s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:00.540 (   4.337s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:00.540 (   4.337s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:00.602 (   4.399s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.649 (   4.446s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046494, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:00.650 (   4.447s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 135.886 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:00.663 (   4.460s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.709 (   4.506s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046283, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:00.711 (   4.508s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 60.2883 (tol = 1e-10) r (rel) = 0.443669(tol = 1e-06)
+2020-10-06 10:40:00.723 (   4.520s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.769 (   4.566s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045881, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:00.771 (   4.568s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 4.47968 (tol = 1e-10) r (rel) = 0.0329666(tol = 1e-06)
+2020-10-06 10:40:00.783 (   4.580s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.828 (   4.625s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044773, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:00.830 (   4.626s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0741026 (tol = 1e-10) r (rel) = 0.000545331(tol = 1e-06)
+2020-10-06 10:40:00.841 (   4.638s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.886 (   4.683s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044457, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:00.888 (   4.685s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 4.09432e-05 (tol = 1e-10) r (rel) = 3.01306e-07(tol = 1e-06)
+2020-10-06 10:40:00.888 (   4.685s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:00.888 (   4.685s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:00.888 (   4.685s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:00.950 (   4.747s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:00.996 (   4.793s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046348, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:00.998 (   4.795s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 92.2058 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:01.010 (   4.807s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.056 (   4.853s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045416, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:01.058 (   4.854s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 34.2223 (tol = 1e-10) r (rel) = 0.371151(tol = 1e-06)
+2020-10-06 10:40:01.070 (   4.866s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.115 (   4.912s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045292, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:01.117 (   4.914s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 1.751 (tol = 1e-10) r (rel) = 0.0189901(tol = 1e-06)
+2020-10-06 10:40:01.128 (   4.925s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.173 (   4.970s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044646, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:01.175 (   4.972s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0114897 (tol = 1e-10) r (rel) = 0.000124609(tol = 1e-06)
+2020-10-06 10:40:01.187 (   4.984s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.233 (   5.030s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046033, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:01.235 (   5.031s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 7.48006e-07 (tol = 1e-10) r (rel) = 8.11235e-09(tol = 1e-06)
+2020-10-06 10:40:01.235 (   5.031s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:01.235 (   5.032s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:01.235 (   5.032s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:01.296 (   5.093s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.342 (   5.139s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045960, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:01.344 (   5.141s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 74.7627 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:01.356 (   5.153s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.401 (   5.198s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045123, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:01.403 (   5.200s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 35.2234 (tol = 1e-10) r (rel) = 0.471136(tol = 1e-06)
+2020-10-06 10:40:01.415 (   5.212s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.459 (   5.256s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044660, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:01.461 (   5.258s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 2.80387 (tol = 1e-10) r (rel) = 0.0375036(tol = 1e-06)
+2020-10-06 10:40:01.473 (   5.270s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.518 (   5.314s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044589, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:01.519 (   5.316s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.035136 (tol = 1e-10) r (rel) = 0.000469967(tol = 1e-06)
+2020-10-06 10:40:01.531 (   5.328s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.576 (   5.373s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045021, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:01.578 (   5.375s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 7.2579e-06 (tol = 1e-10) r (rel) = 9.70791e-08(tol = 1e-06)
+2020-10-06 10:40:01.578 (   5.375s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:01.578 (   5.375s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:01.578 (   5.375s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:01.641 (   5.438s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.687 (   5.484s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046527, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:01.689 (   5.486s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 51.8419 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:01.701 (   5.498s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.748 (   5.545s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046329, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:01.749 (   5.546s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 26.285 (tol = 1e-10) r (rel) = 0.507023(tol = 1e-06)
+2020-10-06 10:40:01.761 (   5.558s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.807 (   5.603s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045192, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:01.808 (   5.605s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 1.53432 (tol = 1e-10) r (rel) = 0.0295962(tol = 1e-06)
+2020-10-06 10:40:01.820 (   5.617s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.865 (   5.662s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044856, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:01.867 (   5.664s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0117987 (tol = 1e-10) r (rel) = 0.00022759(tol = 1e-06)
+2020-10-06 10:40:01.879 (   5.675s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:01.923 (   5.720s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044694, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:01.925 (   5.722s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 8.60608e-07 (tol = 1e-10) r (rel) = 1.66006e-08(tol = 1e-06)
+2020-10-06 10:40:01.925 (   5.722s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:01.925 (   5.722s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:01.926 (   5.723s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:01.987 (   5.784s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.033 (   5.830s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045920, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:02.035 (   5.831s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 48.3912 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:02.046 (   5.843s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.092 (   5.889s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045253, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:02.093 (   5.890s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 13.5554 (tol = 1e-10) r (rel) = 0.280121(tol = 1e-06)
+2020-10-06 10:40:02.105 (   5.902s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.150 (   5.947s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045106, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:02.152 (   5.949s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.317691 (tol = 1e-10) r (rel) = 0.00656507(tol = 1e-06)
+2020-10-06 10:40:02.164 (   5.961s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.208 (   6.005s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044535, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:02.210 (   6.007s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000606557 (tol = 1e-10) r (rel) = 1.25345e-05(tol = 1e-06)
+2020-10-06 10:40:02.222 (   6.019s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.267 (   6.064s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045384, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:02.269 (   6.066s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 2.92044e-09 (tol = 1e-10) r (rel) = 6.03507e-11(tol = 1e-06)
+2020-10-06 10:40:02.269 (   6.066s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:02.269 (   6.066s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:02.270 (   6.066s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:02.331 (   6.128s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.377 (   6.173s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045399, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:02.378 (   6.175s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 50.4677 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:02.390 (   6.187s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.436 (   6.233s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045388, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:02.438 (   6.234s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 11.9293 (tol = 1e-10) r (rel) = 0.236375(tol = 1e-06)
+2020-10-06 10:40:02.450 (   6.246s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.495 (   6.292s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045196, 0.050000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:02.496 (   6.293s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.222972 (tol = 1e-10) r (rel) = 0.00441812(tol = 1e-06)
+2020-10-06 10:40:02.508 (   6.305s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.553 (   6.350s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044570, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:02.555 (   6.352s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000131785 (tol = 1e-10) r (rel) = 2.61127e-06(tol = 1e-06)
+2020-10-06 10:40:02.566 (   6.363s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.612 (   6.409s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045659, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:02.614 (   6.411s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 7.29444e-11 (tol = 1e-10) r (rel) = 1.44537e-12(tol = 1e-06)
+2020-10-06 10:40:02.614 (   6.411s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:02.614 (   6.411s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:02.614 (   6.411s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:02.676 (   6.473s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.723 (   6.519s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046228, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:02.725 (   6.522s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 64.7493 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:02.737 (   6.534s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.783 (   6.580s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045718, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:02.785 (   6.581s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 34.3746 (tol = 1e-10) r (rel) = 0.530888(tol = 1e-06)
+2020-10-06 10:40:02.796 (   6.593s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.841 (   6.638s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044857, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:02.843 (   6.640s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 4.46534 (tol = 1e-10) r (rel) = 0.0689636(tol = 1e-06)
+2020-10-06 10:40:02.855 (   6.652s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.899 (   6.696s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044555, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:02.901 (   6.698s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.12165 (tol = 1e-10) r (rel) = 0.00187878(tol = 1e-06)
+2020-10-06 10:40:02.913 (   6.710s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:02.958 (   6.755s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044946, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:02.960 (   6.757s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 0.000109466 (tol = 1e-10) r (rel) = 1.69061e-06(tol = 1e-06)
+2020-10-06 10:40:02.972 (   6.769s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.017 (   6.814s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044929, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.019 (   6.816s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 5: r (abs) = 9.64863e-11 (tol = 1e-10) r (rel) = 1.49015e-12(tol = 1e-06)
+2020-10-06 10:40:03.019 (   6.816s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 6 iterations and 6 linear solver iterations.
+2020-10-06 10:40:03.019 (   6.816s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:03.019 (   6.816s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:03.082 (   6.878s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.128 (   6.925s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046317, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:03.130 (   6.927s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 59.8476 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:03.142 (   6.939s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.187 (   6.984s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045286, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.189 (   6.986s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 32.1992 (tol = 1e-10) r (rel) = 0.53802(tol = 1e-06)
+2020-10-06 10:40:03.200 (   6.997s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.246 (   7.043s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045818, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.248 (   7.045s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 3.29493 (tol = 1e-10) r (rel) = 0.0550554(tol = 1e-06)
+2020-10-06 10:40:03.260 (   7.057s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.304 (   7.101s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044532, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.306 (   7.103s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0647445 (tol = 1e-10) r (rel) = 0.00108182(tol = 1e-06)
+2020-10-06 10:40:03.318 (   7.115s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.363 (   7.160s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044986, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:03.364 (   7.161s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 3.01854e-05 (tol = 1e-10) r (rel) = 5.04372e-07(tol = 1e-06)
+2020-10-06 10:40:03.364 (   7.161s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:03.365 (   7.161s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:03.365 (   7.162s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:03.426 (   7.223s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.471 (   7.268s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045272, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.473 (   7.270s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 54.8231 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:03.485 (   7.282s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.530 (   7.327s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045329, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.532 (   7.329s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 20.1081 (tol = 1e-10) r (rel) = 0.366782(tol = 1e-06)
+2020-10-06 10:40:03.544 (   7.341s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.589 (   7.386s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045204, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.591 (   7.388s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 1.26983 (tol = 1e-10) r (rel) = 0.0231623(tol = 1e-06)
+2020-10-06 10:40:03.603 (   7.400s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.649 (   7.446s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045589, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.651 (   7.448s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0113492 (tol = 1e-10) r (rel) = 0.000207014(tol = 1e-06)
+2020-10-06 10:40:03.663 (   7.459s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.708 (   7.505s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045322, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.710 (   7.507s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.04377e-06 (tol = 1e-10) r (rel) = 1.90388e-08(tol = 1e-06)
+2020-10-06 10:40:03.710 (   7.507s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:03.710 (   7.507s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:03.710 (   7.507s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:03.772 (   7.569s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.819 (   7.615s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046349, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.820 (   7.617s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 47.1665 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:03.832 (   7.629s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.878 (   7.675s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045306, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.879 (   7.676s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 14.8779 (tol = 1e-10) r (rel) = 0.315433(tol = 1e-06)
+2020-10-06 10:40:03.891 (   7.688s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.936 (   7.733s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044640, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.938 (   7.735s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.405866 (tol = 1e-10) r (rel) = 0.00860497(tol = 1e-06)
+2020-10-06 10:40:03.950 (   7.747s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:03.995 (   7.792s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045148, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:03.997 (   7.794s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000519838 (tol = 1e-10) r (rel) = 1.10213e-05(tol = 1e-06)
+2020-10-06 10:40:04.008 (   7.805s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.053 (   7.850s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044912, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:04.055 (   7.852s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.37731e-09 (tol = 1e-10) r (rel) = 2.9201e-11(tol = 1e-06)
+2020-10-06 10:40:04.055 (   7.852s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:04.055 (   7.852s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:04.056 (   7.852s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:04.117 (   7.914s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.164 (   7.960s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046331, 0.050000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:04.165 (   7.962s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 70.5133 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:04.177 (   7.974s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.223 (   8.019s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045346, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:04.225 (   8.022s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 32.7314 (tol = 1e-10) r (rel) = 0.464188(tol = 1e-06)
+2020-10-06 10:40:04.237 (   8.034s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.282 (   8.079s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045376, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:04.284 (   8.081s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 2.36767 (tol = 1e-10) r (rel) = 0.0335776(tol = 1e-06)
+2020-10-06 10:40:04.296 (   8.093s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.340 (   8.137s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044636, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:04.342 (   8.139s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0235269 (tol = 1e-10) r (rel) = 0.000333652(tol = 1e-06)
+2020-10-06 10:40:04.354 (   8.151s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.398 (   8.195s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044611, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:04.400 (   8.197s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 2.87063e-06 (tol = 1e-10) r (rel) = 4.07104e-08(tol = 1e-06)
+2020-10-06 10:40:04.400 (   8.197s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:04.400 (   8.197s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:04.401 (   8.197s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:04.462 (   8.259s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.508 (   8.305s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045446, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:04.510 (   8.306s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 46.9112 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:04.522 (   8.318s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.568 (   8.365s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046718, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:04.570 (   8.367s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 40.1083 (tol = 1e-10) r (rel) = 0.854984(tol = 1e-06)
+2020-10-06 10:40:04.582 (   8.379s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.627 (   8.424s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045167, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:04.629 (   8.426s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 3.29347 (tol = 1e-10) r (rel) = 0.0702065(tol = 1e-06)
+2020-10-06 10:40:04.641 (   8.438s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.686 (   8.483s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045484, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:04.688 (   8.485s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0381958 (tol = 1e-10) r (rel) = 0.000814215(tol = 1e-06)
+2020-10-06 10:40:04.700 (   8.497s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.746 (   8.543s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045807, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:04.748 (   8.545s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 6.9517e-06 (tol = 1e-10) r (rel) = 1.48188e-07(tol = 1e-06)
+2020-10-06 10:40:04.748 (   8.545s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:04.748 (   8.545s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:04.748 (   8.545s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:04.809 (   8.606s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.855 (   8.652s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045944, 0.050000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:04.857 (   8.654s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 64.7195 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:04.869 (   8.666s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.914 (   8.711s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045080, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:04.916 (   8.713s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 20.1194 (tol = 1e-10) r (rel) = 0.310871(tol = 1e-06)
+2020-10-06 10:40:04.928 (   8.725s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:04.973 (   8.769s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044683, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:04.974 (   8.771s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 1.02492 (tol = 1e-10) r (rel) = 0.0158364(tol = 1e-06)
+2020-10-06 10:40:04.986 (   8.783s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.031 (   8.828s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044569, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:05.033 (   8.829s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.00463792 (tol = 1e-10) r (rel) = 7.16618e-05(tol = 1e-06)
+2020-10-06 10:40:05.044 (   8.841s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.089 (   8.886s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044850, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:05.091 (   8.888s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.21743e-07 (tol = 1e-10) r (rel) = 1.88108e-09(tol = 1e-06)
+2020-10-06 10:40:05.091 (   8.888s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:05.091 (   8.888s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:05.091 (   8.888s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:05.153 (   8.950s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.199 (   8.996s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045597, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:05.201 (   8.998s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 44.9968 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:05.212 (   9.009s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.259 (   9.055s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046103, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:05.260 (   9.057s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 19.4993 (tol = 1e-10) r (rel) = 0.433348(tol = 1e-06)
+2020-10-06 10:40:05.272 (   9.069s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.317 (   9.114s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044805, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:05.319 (   9.116s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 1.10864 (tol = 1e-10) r (rel) = 0.0246382(tol = 1e-06)
+2020-10-06 10:40:05.331 (   9.128s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.375 (   9.172s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044674, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:05.377 (   9.174s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.00592311 (tol = 1e-10) r (rel) = 0.000131634(tol = 1e-06)
+2020-10-06 10:40:05.389 (   9.186s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.433 (   9.230s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044672, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:05.435 (   9.232s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 2.02758e-07 (tol = 1e-10) r (rel) = 4.50604e-09(tol = 1e-06)
+2020-10-06 10:40:05.435 (   9.232s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:05.435 (   9.232s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:05.436 (   9.233s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:05.497 (   9.294s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.544 (   9.341s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047321, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:05.546 (   9.343s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 38.2092 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:05.559 (   9.355s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.606 (   9.403s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047198, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:05.608 (   9.405s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 11.739 (tol = 1e-10) r (rel) = 0.30723(tol = 1e-06)
+2020-10-06 10:40:05.620 (   9.417s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.667 (   9.464s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046804, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:05.669 (   9.466s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.310963 (tol = 1e-10) r (rel) = 0.00813843(tol = 1e-06)
+2020-10-06 10:40:05.682 (   9.479s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.729 (   9.526s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047729, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:05.731 (   9.528s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000460787 (tol = 1e-10) r (rel) = 1.20596e-05(tol = 1e-06)
+2020-10-06 10:40:05.744 (   9.541s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.792 (   9.589s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047563, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:05.794 (   9.591s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.29927e-09 (tol = 1e-10) r (rel) = 3.4004e-11(tol = 1e-06)
+2020-10-06 10:40:05.794 (   9.591s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:05.794 (   9.591s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:05.794 (   9.591s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:05.857 (   9.654s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.905 (   9.702s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047161, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:05.907 (   9.703s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 36.7674 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:05.919 (   9.716s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:05.966 (   9.763s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047318, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:05.968 (   9.765s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 10.2986 (tol = 1e-10) r (rel) = 0.2801(tol = 1e-06)
+2020-10-06 10:40:05.981 (   9.777s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.028 (   9.825s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047364, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:06.030 (   9.827s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.250086 (tol = 1e-10) r (rel) = 0.00680183(tol = 1e-06)
+2020-10-06 10:40:06.042 (   9.839s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.089 (   9.886s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046384, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:06.091 (   9.888s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.00027576 (tol = 1e-10) r (rel) = 7.50012e-06(tol = 1e-06)
+2020-10-06 10:40:06.104 (   9.900s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.151 (   9.947s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046960, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:06.152 (   9.949s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 4.52965e-10 (tol = 1e-10) r (rel) = 1.23197e-11(tol = 1e-06)
+2020-10-06 10:40:06.152 (   9.949s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:06.152 (   9.949s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:06.153 (   9.950s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:06.219 (  10.016s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.267 (  10.064s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048357, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:06.269 (  10.066s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 36.8595 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:06.282 (  10.078s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.329 (  10.126s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047500, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:06.331 (  10.128s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 12.5824 (tol = 1e-10) r (rel) = 0.34136(tol = 1e-06)
+2020-10-06 10:40:06.343 (  10.140s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.391 (  10.188s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048035, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:06.393 (  10.190s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.454729 (tol = 1e-10) r (rel) = 0.0123368(tol = 1e-06)
+2020-10-06 10:40:06.406 (  10.203s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.454 (  10.251s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048837, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:06.456 (  10.253s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.00104214 (tol = 1e-10) r (rel) = 2.82732e-05(tol = 1e-06)
+2020-10-06 10:40:06.469 (  10.266s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.517 (  10.314s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048337, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:06.519 (  10.316s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 8.24069e-09 (tol = 1e-10) r (rel) = 2.2357e-10(tol = 1e-06)
+2020-10-06 10:40:06.519 (  10.316s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:06.519 (  10.316s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:06.520 (  10.317s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:06.580 (  10.377s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.630 (  10.426s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.049175, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:06.631 (  10.428s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 49.3703 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:06.644 (  10.441s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.692 (  10.489s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048603, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:06.694 (  10.491s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 17.2997 (tol = 1e-10) r (rel) = 0.350408(tol = 1e-06)
+2020-10-06 10:40:06.707 (  10.503s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.754 (  10.551s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047918, 0.050000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:06.756 (  10.553s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.591373 (tol = 1e-10) r (rel) = 0.0119783(tol = 1e-06)
+2020-10-06 10:40:06.768 (  10.565s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.815 (  10.612s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046187, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:06.816 (  10.613s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.00110217 (tol = 1e-10) r (rel) = 2.23246e-05(tol = 1e-06)
+2020-10-06 10:40:06.829 (  10.626s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.876 (  10.673s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047222, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:06.878 (  10.675s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 7.20595e-09 (tol = 1e-10) r (rel) = 1.45957e-10(tol = 1e-06)
+2020-10-06 10:40:06.878 (  10.675s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:06.878 (  10.675s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:06.878 (  10.675s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:06.940 (  10.737s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:06.988 (  10.784s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047175, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:06.989 (  10.786s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 31.992 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:07.002 (  10.799s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.049 (  10.846s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046918, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.051 (  10.848s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 42.6621 (tol = 1e-10) r (rel) = 1.33352(tol = 1e-06)
+2020-10-06 10:40:07.063 (  10.860s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.109 (  10.906s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046196, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.111 (  10.908s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 5.25097 (tol = 1e-10) r (rel) = 0.164134(tol = 1e-06)
+2020-10-06 10:40:07.123 (  10.920s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.169 (  10.966s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045811, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.171 (  10.968s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.129069 (tol = 1e-10) r (rel) = 0.0040344(tol = 1e-06)
+2020-10-06 10:40:07.183 (  10.980s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.230 (  11.027s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046765, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.232 (  11.029s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 9.49861e-05 (tol = 1e-10) r (rel) = 2.96905e-06(tol = 1e-06)
+2020-10-06 10:40:07.243 (  11.040s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.288 (  11.085s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044564, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.290 (  11.087s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 5: r (abs) = 5.60193e-11 (tol = 1e-10) r (rel) = 1.75104e-12(tol = 1e-06)
+2020-10-06 10:40:07.290 (  11.087s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 6 iterations and 6 linear solver iterations.
+2020-10-06 10:40:07.290 (  11.087s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:07.290 (  11.087s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:07.351 (  11.148s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.399 (  11.196s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048012, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.401 (  11.198s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 51.1921 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:07.413 (  11.210s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.461 (  11.258s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047997, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.463 (  11.260s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 13.7041 (tol = 1e-10) r (rel) = 0.2677(tol = 1e-06)
+2020-10-06 10:40:07.475 (  11.272s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.521 (  11.318s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045769, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.523 (  11.319s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.264522 (tol = 1e-10) r (rel) = 0.00516724(tol = 1e-06)
+2020-10-06 10:40:07.534 (  11.331s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.584 (  11.381s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.049163, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:07.585 (  11.382s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000204287 (tol = 1e-10) r (rel) = 3.99059e-06(tol = 1e-06)
+2020-10-06 10:40:07.598 (  11.395s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.647 (  11.444s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048947, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.649 (  11.446s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.5351e-10 (tol = 1e-10) r (rel) = 2.9987e-12(tol = 1e-06)
+2020-10-06 10:40:07.649 (  11.446s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:07.649 (  11.446s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:07.649 (  11.446s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:07.710 (  11.507s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.757 (  11.554s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047334, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.759 (  11.556s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 48.1329 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:07.771 (  11.568s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.816 (  11.613s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045513, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.818 (  11.615s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 14.4565 (tol = 1e-10) r (rel) = 0.300346(tol = 1e-06)
+2020-10-06 10:40:07.830 (  11.627s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.875 (  11.672s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045297, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.877 (  11.674s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.890621 (tol = 1e-10) r (rel) = 0.0185034(tol = 1e-06)
+2020-10-06 10:40:07.889 (  11.686s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.934 (  11.731s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044551, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:07.935 (  11.732s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0046874 (tol = 1e-10) r (rel) = 9.73845e-05(tol = 1e-06)
+2020-10-06 10:40:07.947 (  11.744s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:07.992 (  11.789s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044823, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:07.994 (  11.791s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.36411e-07 (tol = 1e-10) r (rel) = 2.83404e-09(tol = 1e-06)
+2020-10-06 10:40:07.994 (  11.791s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:07.994 (  11.791s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:07.994 (  11.791s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:08.054 (  11.851s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:08.100 (  11.897s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046158, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:08.102 (  11.899s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 47.7152 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:08.114 (  11.911s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:08.160 (  11.957s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045402, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:08.162 (  11.959s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 29.4834 (tol = 1e-10) r (rel) = 0.617903(tol = 1e-06)
+2020-10-06 10:40:08.174 (  11.971s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:08.219 (  12.016s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045464, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:08.221 (  12.018s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 3.26997 (tol = 1e-10) r (rel) = 0.0685308(tol = 1e-06)
+2020-10-06 10:40:08.234 (  12.031s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:08.281 (  12.078s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046721, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:08.283 (  12.079s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0621011 (tol = 1e-10) r (rel) = 0.00130149(tol = 1e-06)
+2020-10-06 10:40:08.295 (  12.092s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:08.348 (  12.145s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.053158, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:08.350 (  12.147s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 2.74016e-05 (tol = 1e-10) r (rel) = 5.74273e-07(tol = 1e-06)
+2020-10-06 10:40:08.350 (  12.147s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:08.351 (  12.148s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:08.351 (  12.148s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:08.417 (  12.214s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:08.472 (  12.268s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.054443, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:08.474 (  12.270s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 34.7307 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:08.488 (  12.285s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:08.544 (  12.341s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.055982, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:08.546 (  12.343s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 17.8266 (tol = 1e-10) r (rel) = 0.51328(tol = 1e-06)
+2020-10-06 10:40:08.560 (  12.357s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:08.613 (  12.410s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.052509, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:08.615 (  12.412s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.873923 (tol = 1e-10) r (rel) = 0.0251628(tol = 1e-06)
+2020-10-06 10:40:08.628 (  12.425s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:08.685 (  12.482s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.056558, 0.060000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:08.687 (  12.484s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.00355332 (tol = 1e-10) r (rel) = 0.000102311(tol = 1e-06)
+2020-10-06 10:40:08.700 (  12.497s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:08.753 (  12.550s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.052483, 0.060000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:08.755 (  12.552s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 8.00182e-08 (tol = 1e-10) r (rel) = 2.30396e-09(tol = 1e-06)
+2020-10-06 10:40:08.755 (  12.552s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:08.755 (  12.552s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:08.755 (  12.552s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:08.817 (  12.614s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:08.873 (  12.670s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.056186, 0.060000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:08.875 (  12.672s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 40.6003 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:08.889 (  12.686s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:08.945 (  12.741s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.055479, 0.060000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:08.947 (  12.744s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 6.97182 (tol = 1e-10) r (rel) = 0.171719(tol = 1e-06)
+2020-10-06 10:40:08.961 (  12.758s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.020 (  12.817s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.058977, 0.060000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:09.022 (  12.819s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.266461 (tol = 1e-10) r (rel) = 0.00656304(tol = 1e-06)
+2020-10-06 10:40:09.036 (  12.833s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.091 (  12.888s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.055082, 0.060000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:09.094 (  12.891s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000141739 (tol = 1e-10) r (rel) = 3.49107e-06(tol = 1e-06)
+2020-10-06 10:40:09.107 (  12.904s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.161 (  12.958s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.053671, 0.060000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:09.163 (  12.960s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 6.54048e-11 (tol = 1e-10) r (rel) = 1.61095e-12(tol = 1e-06)
+2020-10-06 10:40:09.163 (  12.960s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:09.163 (  12.960s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:09.163 (  12.960s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:09.224 (  13.021s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.272 (  13.069s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047880, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:09.274 (  13.071s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 37.0728 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:09.286 (  13.083s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.334 (  13.131s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047857, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:09.336 (  13.132s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 36.6546 (tol = 1e-10) r (rel) = 0.988718(tol = 1e-06)
+2020-10-06 10:40:09.348 (  13.145s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.395 (  13.192s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046861, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:09.397 (  13.194s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 5.75952 (tol = 1e-10) r (rel) = 0.155357(tol = 1e-06)
+2020-10-06 10:40:09.409 (  13.206s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.456 (  13.253s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046799, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:09.458 (  13.255s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.207042 (tol = 1e-10) r (rel) = 0.00558473(tol = 1e-06)
+2020-10-06 10:40:09.470 (  13.267s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.517 (  13.314s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046899, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:09.519 (  13.316s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 0.000296854 (tol = 1e-10) r (rel) = 8.00731e-06(tol = 1e-06)
+2020-10-06 10:40:09.531 (  13.328s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.579 (  13.376s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047307, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:09.581 (  13.377s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 5: r (abs) = 6.45958e-10 (tol = 1e-10) r (rel) = 1.7424e-11(tol = 1e-06)
+2020-10-06 10:40:09.581 (  13.377s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 6 iterations and 6 linear solver iterations.
+2020-10-06 10:40:09.581 (  13.377s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:09.581 (  13.378s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:09.641 (  13.438s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.688 (  13.485s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046956, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:09.690 (  13.487s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 42.8114 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:09.703 (  13.500s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.749 (  13.546s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046760, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:09.751 (  13.548s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 11.2511 (tol = 1e-10) r (rel) = 0.262806(tol = 1e-06)
+2020-10-06 10:40:09.763 (  13.560s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.810 (  13.607s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046628, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:09.812 (  13.609s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.217947 (tol = 1e-10) r (rel) = 0.00509086(tol = 1e-06)
+2020-10-06 10:40:09.824 (  13.621s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.871 (  13.668s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046477, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:09.873 (  13.669s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000152901 (tol = 1e-10) r (rel) = 3.57151e-06(tol = 1e-06)
+2020-10-06 10:40:09.885 (  13.682s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:09.932 (  13.729s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047019, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:09.933 (  13.730s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 9.49007e-11 (tol = 1e-10) r (rel) = 2.21672e-12(tol = 1e-06)
+2020-10-06 10:40:09.933 (  13.730s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:09.934 (  13.731s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:09.934 (  13.731s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:09.994 (  13.791s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.043 (  13.840s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.049181, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:10.045 (  13.842s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 34.3415 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:10.058 (  13.855s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.106 (  13.903s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047623, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:10.108 (  13.905s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 7.16504 (tol = 1e-10) r (rel) = 0.208641(tol = 1e-06)
+2020-10-06 10:40:10.120 (  13.917s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.168 (  13.965s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047869, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:10.170 (  13.967s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.165538 (tol = 1e-10) r (rel) = 0.00482037(tol = 1e-06)
+2020-10-06 10:40:10.182 (  13.979s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.229 (  14.026s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047461, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:10.231 (  14.028s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000141065 (tol = 1e-10) r (rel) = 4.1077e-06(tol = 1e-06)
+2020-10-06 10:40:10.243 (  14.040s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.290 (  14.087s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046511, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:10.292 (  14.089s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.08948e-10 (tol = 1e-10) r (rel) = 3.1725e-12(tol = 1e-06)
+2020-10-06 10:40:10.292 (  14.089s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:10.292 (  14.089s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:10.292 (  14.089s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:10.353 (  14.150s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.402 (  14.198s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048564, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:10.403 (  14.200s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 40.5371 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:10.416 (  14.212s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.463 (  14.260s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047349, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:10.465 (  14.262s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 11.3022 (tol = 1e-10) r (rel) = 0.278811(tol = 1e-06)
+2020-10-06 10:40:10.477 (  14.274s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.525 (  14.322s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048297, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:10.527 (  14.324s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.392707 (tol = 1e-10) r (rel) = 0.00968758(tol = 1e-06)
+2020-10-06 10:40:10.539 (  14.336s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.587 (  14.383s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047614, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:10.589 (  14.385s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.00058691 (tol = 1e-10) r (rel) = 1.44783e-05(tol = 1e-06)
+2020-10-06 10:40:10.601 (  14.398s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.648 (  14.445s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047541, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:10.650 (  14.447s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.71967e-09 (tol = 1e-10) r (rel) = 4.24221e-11(tol = 1e-06)
+2020-10-06 10:40:10.650 (  14.447s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:10.650 (  14.447s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:10.651 (  14.448s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:10.711 (  14.508s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.763 (  14.559s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.051543, 0.050000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:10.764 (  14.561s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 40.4809 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:10.777 (  14.573s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.823 (  14.620s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046575, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:10.825 (  14.622s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 30.2598 (tol = 1e-10) r (rel) = 0.747508(tol = 1e-06)
+2020-10-06 10:40:10.837 (  14.634s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.883 (  14.680s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045651, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:10.885 (  14.681s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 3.33203 (tol = 1e-10) r (rel) = 0.0823111(tol = 1e-06)
+2020-10-06 10:40:10.896 (  14.693s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:10.943 (  14.740s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046311, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:10.944 (  14.741s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0608339 (tol = 1e-10) r (rel) = 0.00150278(tol = 1e-06)
+2020-10-06 10:40:10.956 (  14.753s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.003 (  14.800s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046886, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:11.005 (  14.802s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 2.25339e-05 (tol = 1e-10) r (rel) = 5.56654e-07(tol = 1e-06)
+2020-10-06 10:40:11.005 (  14.802s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:11.005 (  14.802s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:11.005 (  14.802s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:11.066 (  14.863s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.114 (  14.911s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047745, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:11.116 (  14.913s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 44.7586 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:11.128 (  14.925s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.176 (  14.973s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047774, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:11.178 (  14.975s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 17.2123 (tol = 1e-10) r (rel) = 0.384559(tol = 1e-06)
+2020-10-06 10:40:11.190 (  14.987s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.237 (  15.034s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047186, 0.030000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:11.239 (  15.036s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.639601 (tol = 1e-10) r (rel) = 0.01429(tol = 1e-06)
+2020-10-06 10:40:11.251 (  15.048s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.298 (  15.095s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046435, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:11.300 (  15.097s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.00139003 (tol = 1e-10) r (rel) = 3.10562e-05(tol = 1e-06)
+2020-10-06 10:40:11.312 (  15.109s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.358 (  15.155s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046595, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:11.361 (  15.157s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 8.24023e-09 (tol = 1e-10) r (rel) = 1.84104e-10(tol = 1e-06)
+2020-10-06 10:40:11.361 (  15.157s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:11.361 (  15.157s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:11.361 (  15.158s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:11.420 (  15.217s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.467 (  15.264s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046361, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:11.468 (  15.265s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 53.9514 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:11.480 (  15.277s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.528 (  15.325s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047964, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:11.530 (  15.327s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 16.0968 (tol = 1e-10) r (rel) = 0.298358(tol = 1e-06)
+2020-10-06 10:40:11.543 (  15.340s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.598 (  15.395s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.054991, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:11.600 (  15.397s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.683415 (tol = 1e-10) r (rel) = 0.0126672(tol = 1e-06)
+2020-10-06 10:40:11.613 (  15.410s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.664 (  15.461s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.051629, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:11.666 (  15.463s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.00178511 (tol = 1e-10) r (rel) = 3.30874e-05(tol = 1e-06)
+2020-10-06 10:40:11.679 (  15.476s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.727 (  15.524s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047952, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:11.729 (  15.526s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.66977e-08 (tol = 1e-10) r (rel) = 3.09495e-10(tol = 1e-06)
+2020-10-06 10:40:11.729 (  15.526s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:11.729 (  15.526s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:11.729 (  15.526s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:11.787 (  15.584s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.844 (  15.641s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.056782, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:11.846 (  15.643s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 47.16 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:11.858 (  15.655s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.904 (  15.701s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045733, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:11.906 (  15.703s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 37.6825 (tol = 1e-10) r (rel) = 0.799036(tol = 1e-06)
+2020-10-06 10:40:11.917 (  15.714s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:11.963 (  15.760s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045420, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:11.965 (  15.762s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 4.02956 (tol = 1e-10) r (rel) = 0.0854445(tol = 1e-06)
+2020-10-06 10:40:11.977 (  15.774s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.021 (  15.818s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044840, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:12.023 (  15.820s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0713614 (tol = 1e-10) r (rel) = 0.00151318(tol = 1e-06)
+2020-10-06 10:40:12.035 (  15.832s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.080 (  15.877s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044765, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:12.082 (  15.878s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 2.63123e-05 (tol = 1e-10) r (rel) = 5.57937e-07(tol = 1e-06)
+2020-10-06 10:40:12.082 (  15.878s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:12.082 (  15.879s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:12.082 (  15.879s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:12.150 (  15.947s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.197 (  15.994s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046747, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:12.199 (  15.996s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 41.7069 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:12.211 (  16.008s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.257 (  16.054s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046316, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:12.259 (  16.056s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 15.8541 (tol = 1e-10) r (rel) = 0.38013(tol = 1e-06)
+2020-10-06 10:40:12.271 (  16.068s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.318 (  16.114s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046467, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:12.319 (  16.116s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.288185 (tol = 1e-10) r (rel) = 0.00690976(tol = 1e-06)
+2020-10-06 10:40:12.332 (  16.129s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.379 (  16.176s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047203, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:12.381 (  16.178s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000191356 (tol = 1e-10) r (rel) = 4.58811e-06(tol = 1e-06)
+2020-10-06 10:40:12.393 (  16.190s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.439 (  16.236s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046257, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:12.441 (  16.238s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.28336e-10 (tol = 1e-10) r (rel) = 3.0771e-12(tol = 1e-06)
+2020-10-06 10:40:12.441 (  16.238s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:12.441 (  16.238s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:12.441 (  16.238s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:12.508 (  16.305s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.558 (  16.355s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.049914, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:12.561 (  16.358s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 38.2389 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:12.577 (  16.374s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.631 (  16.428s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.054359, 0.060000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:12.633 (  16.430s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 10.2378 (tol = 1e-10) r (rel) = 0.267732(tol = 1e-06)
+2020-10-06 10:40:12.646 (  16.443s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.693 (  16.490s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047293, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:12.695 (  16.492s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.224549 (tol = 1e-10) r (rel) = 0.00587226(tol = 1e-06)
+2020-10-06 10:40:12.713 (  16.510s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.771 (  16.568s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.058145, 0.060000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:12.773 (  16.570s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000153623 (tol = 1e-10) r (rel) = 4.01746e-06(tol = 1e-06)
+2020-10-06 10:40:12.787 (  16.584s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.838 (  16.635s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.051509, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:12.840 (  16.637s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 8.84311e-11 (tol = 1e-10) r (rel) = 2.3126e-12(tol = 1e-06)
+2020-10-06 10:40:12.840 (  16.637s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:12.840 (  16.637s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:12.841 (  16.638s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:12.907 (  16.703s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:12.954 (  16.751s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047118, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:12.955 (  16.752s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 37.867 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:12.968 (  16.765s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.013 (  16.810s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045653, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:13.015 (  16.812s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 9.61583 (tol = 1e-10) r (rel) = 0.253937(tol = 1e-06)
+2020-10-06 10:40:13.027 (  16.824s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.072 (  16.869s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045402, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:13.074 (  16.871s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.387373 (tol = 1e-10) r (rel) = 0.0102298(tol = 1e-06)
+2020-10-06 10:40:13.086 (  16.883s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.133 (  16.930s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046974, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:13.135 (  16.932s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.00100172 (tol = 1e-10) r (rel) = 2.64537e-05(tol = 1e-06)
+2020-10-06 10:40:13.148 (  16.944s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.195 (  16.992s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047450, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:13.197 (  16.994s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 7.09323e-09 (tol = 1e-10) r (rel) = 1.8732e-10(tol = 1e-06)
+2020-10-06 10:40:13.197 (  16.994s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:13.197 (  16.994s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:13.197 (  16.994s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:13.261 (  17.058s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.309 (  17.106s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048103, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:13.311 (  17.108s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 31.3648 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:13.323 (  17.120s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.370 (  17.167s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046990, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:13.372 (  17.169s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 17.228 (tol = 1e-10) r (rel) = 0.549279(tol = 1e-06)
+2020-10-06 10:40:13.384 (  17.181s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.431 (  17.228s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046532, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:13.433 (  17.230s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 1.5334 (tol = 1e-10) r (rel) = 0.0488892(tol = 1e-06)
+2020-10-06 10:40:13.445 (  17.242s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.492 (  17.289s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046945, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:13.494 (  17.291s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0164841 (tol = 1e-10) r (rel) = 0.000525561(tol = 1e-06)
+2020-10-06 10:40:13.506 (  17.303s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.552 (  17.348s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045678, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:13.553 (  17.350s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 2.09821e-06 (tol = 1e-10) r (rel) = 6.68969e-08(tol = 1e-06)
+2020-10-06 10:40:13.553 (  17.350s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:13.553 (  17.350s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:13.554 (  17.351s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:13.618 (  17.415s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.666 (  17.463s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048501, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:13.668 (  17.465s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 30.4935 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:13.681 (  17.478s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.729 (  17.526s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048743, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:13.731 (  17.528s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 8.59765 (tol = 1e-10) r (rel) = 0.28195(tol = 1e-06)
+2020-10-06 10:40:13.744 (  17.541s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.791 (  17.588s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047099, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:13.792 (  17.589s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.202288 (tol = 1e-10) r (rel) = 0.00663381(tol = 1e-06)
+2020-10-06 10:40:13.805 (  17.601s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.851 (  17.648s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046627, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:13.853 (  17.650s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000171645 (tol = 1e-10) r (rel) = 5.62889e-06(tol = 1e-06)
+2020-10-06 10:40:13.866 (  17.663s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:13.912 (  17.709s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046564, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:13.914 (  17.711s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.426e-10 (tol = 1e-10) r (rel) = 4.67639e-12(tol = 1e-06)
+2020-10-06 10:40:13.914 (  17.711s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:13.914 (  17.711s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:13.915 (  17.712s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:13.979 (  17.776s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.028 (  17.825s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.048690, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:14.029 (  17.826s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 24.3354 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:14.042 (  17.839s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.091 (  17.888s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.049082, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:14.093 (  17.890s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 7.19594 (tol = 1e-10) r (rel) = 0.295699(tol = 1e-06)
+2020-10-06 10:40:14.106 (  17.903s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.153 (  17.950s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047629, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:14.155 (  17.952s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.17744 (tol = 1e-10) r (rel) = 0.00729145(tol = 1e-06)
+2020-10-06 10:40:14.168 (  17.965s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.214 (  18.011s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046717, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:14.216 (  18.013s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000169436 (tol = 1e-10) r (rel) = 6.96253e-06(tol = 1e-06)
+2020-10-06 10:40:14.229 (  18.026s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.276 (  18.073s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046749, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:14.277 (  18.074s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 2.14327e-10 (tol = 1e-10) r (rel) = 8.80724e-12(tol = 1e-06)
+2020-10-06 10:40:14.277 (  18.074s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:14.278 (  18.074s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:14.278 (  18.075s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:14.341 (  18.138s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.395 (  18.192s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.053904, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:14.397 (  18.194s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 26.4084 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:14.410 (  18.206s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.459 (  18.256s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.049785, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:14.461 (  18.258s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 4.39549 (tol = 1e-10) r (rel) = 0.166443(tol = 1e-06)
+2020-10-06 10:40:14.474 (  18.271s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.523 (  18.320s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.049759, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:14.525 (  18.322s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.0413918 (tol = 1e-10) r (rel) = 0.00156737(tol = 1e-06)
+2020-10-06 10:40:14.538 (  18.335s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.584 (  18.381s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046773, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:14.586 (  18.383s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 5.15604e-06 (tol = 1e-10) r (rel) = 1.95242e-07(tol = 1e-06)
+2020-10-06 10:40:14.586 (  18.383s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 4 iterations and 4 linear solver iterations.
+2020-10-06 10:40:14.586 (  18.383s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:14.587 (  18.384s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:14.652 (  18.449s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.699 (  18.496s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047834, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:14.701 (  18.498s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 32.4613 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:14.713 (  18.510s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.760 (  18.557s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046654, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:14.762 (  18.559s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 19.8494 (tol = 1e-10) r (rel) = 0.611481(tol = 1e-06)
+2020-10-06 10:40:14.774 (  18.571s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.820 (  18.617s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.045510, 0.030000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:14.821 (  18.618s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 1.61437 (tol = 1e-10) r (rel) = 0.0497321(tol = 1e-06)
+2020-10-06 10:40:14.833 (  18.630s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.880 (  18.677s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046259, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:14.882 (  18.678s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.0138414 (tol = 1e-10) r (rel) = 0.000426399(tol = 1e-06)
+2020-10-06 10:40:14.893 (  18.690s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:14.938 (  18.735s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.044693, 0.030000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:14.940 (  18.737s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 1.17243e-06 (tol = 1e-10) r (rel) = 3.61178e-08(tol = 1e-06)
+2020-10-06 10:40:14.940 (  18.737s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:14.940 (  18.737s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:14.941 (  18.737s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:15.007 (  18.803s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:15.054 (  18.851s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047839, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:15.056 (  18.853s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 0: r (abs) = 21.6305 (tol = 1e-10) r (rel) = 1(tol = 1e-06)
+2020-10-06 10:40:15.069 (  18.866s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:15.115 (  18.912s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046410, 0.040000, 0.010000 (PETSc Krylov solver)
+2020-10-06 10:40:15.117 (  18.914s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 1: r (abs) = 12.4271 (tol = 1e-10) r (rel) = 0.57452(tol = 1e-06)
+2020-10-06 10:40:15.130 (  18.926s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:15.176 (  18.973s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046442, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:15.178 (  18.975s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 2: r (abs) = 0.397711 (tol = 1e-10) r (rel) = 0.0183866(tol = 1e-06)
+2020-10-06 10:40:15.190 (  18.987s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:15.238 (  19.035s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.047738, 0.050000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:15.240 (  19.037s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 3: r (abs) = 0.000671816 (tol = 1e-10) r (rel) = 3.10588e-05(tol = 1e-06)
+2020-10-06 10:40:15.252 (  19.049s) [main thread     ]  PETScKrylovSolver.cpp:88    INFO| PETSc Krylov solver starting to solve system.
+2020-10-06 10:40:15.299 (  19.096s) [main thread     ]         TimeLogger.cpp:28    INFO| Elapsed wall, usr, sys time: 0.046260, 0.040000, 0.000000 (PETSc Krylov solver)
+2020-10-06 10:40:15.300 (  19.097s) [main thread     ]       NewtonSolver.cpp:169   INFO| Newton iteration 4: r (abs) = 2.57199e-09 (tol = 1e-10) r (rel) = 1.18906e-10(tol = 1e-06)
+2020-10-06 10:40:15.301 (  19.097s) [main thread     ]       NewtonSolver.cpp:123   INFO| Newton solver finished in 5 iterations and 5 linear solver iterations.
+2020-10-06 10:40:15.301 (  19.097s) [main thread     ]      FiniteElement.cpp:221   INFO| Extracted finite element for sub-system: FiniteElement('Lagrange', triangle, 1)
+2020-10-06 10:40:15.301 (  19.098s) [main thread     ]      xdmf_function.cpp:84    INFO| Adding function to node "/Xdmf/Domain/Grid/Grid"
+2020-10-06 10:40:15.422 (  19.219s) [main thread     ]             loguru.cpp:485   INFO| atexit
