@@ -18,10 +18,7 @@ import pytest
 
 def worker_id(request):
     """Returns thread id when running with pytest-xdist in parallel."""
-    try:
-        return request.config.slaveinput['slaveid']
-    except AttributeError:
-        return 'master'
+    return request.config.workerinput['workerid']
 
 
 def _create_tempdir(request):
