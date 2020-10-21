@@ -206,6 +206,24 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
   return DofMap(element_dof_layout, index_map, std::move(dofmap));
 }
 //-----------------------------------------------------------------------------
+std::vector<std::string> fem::get_coefficient_names(const ufc_form& ufc_form)
+{
+  std::vector<std::string> coefficients;
+  const char** names = ufc_form.coefficient_name_map();
+  for (int i = 0; i < ufc_form.num_coefficients; ++i)
+    coefficients.push_back(names[i]);
+  return coefficients;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::string> fem::get_constant_names(const ufc_form& ufc_form)
+{
+  std::vector<std::string> constants;
+  const char** names = ufc_form.constant_name_map();
+  for (int i = 0; i < ufc_form.num_constants; ++i)
+    constants.push_back(names[i]);
+  return constants;
+}
+//-----------------------------------------------------------------------------
 fem::CoordinateElement
 fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
 {

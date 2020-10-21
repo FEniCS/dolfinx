@@ -65,8 +65,8 @@ const auto mat_add
 
 dolfinx::fem::assemble_matrix<T>(mat_add, a, bcs);
 
-auto map0 = a.function_space(0)->dofmap()->index_map;
-auto map1 = a.function_space(1)->dofmap()->index_map;
+auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
+auto map1 = a.function_spaces().at(1)->dofmap()->index_map;
 Eigen::SparseMatrix<T, Eigen::RowMajor> mat(
     map0->block_size() * (map0->size_local() + map0->num_ghosts()),
     map1->block_size() * (map1->size_local() + map1->num_ghosts()));
