@@ -115,7 +115,7 @@ def BoxMesh(comm, points: typing.List[numpy.array], n: list,
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
-    cmap = fem.create_coordinate_map(domain)
+    cmap = fem.create_coordinate_map(comm, domain)
     mesh = cpp.generation.BoxMesh.create(comm, points, n, cmap, ghost_mode)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
