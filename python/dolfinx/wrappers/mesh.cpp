@@ -44,8 +44,8 @@ void declare_meshtags(py::module& m, std::string type)
         std::vector<std::int32_t> indices_vec(indices.data(),
                                               indices.data() + indices.size());
         std::vector<T> values_vec(values.data(), values.data() + values.size());
-        return std::make_unique<dolfinx::mesh::MeshTags<T>>(
-            mesh, dim, std::move(indices_vec), std::move(values_vec));
+        return dolfinx::mesh::MeshTags<T>(mesh, dim, std::move(indices_vec),
+                                          std::move(values_vec));
       }))
       .def_readwrite("name", &dolfinx::mesh::MeshTags<T>::name)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
@@ -173,7 +173,7 @@ void mesh(py::module& m)
       m, "Topology", "Topology object")
       .def(py::init([](const MPICommWrapper comm,
                        const dolfinx::mesh::CellType cell_type) {
-        return std::make_unique<dolfinx::mesh::Topology>(comm.get(), cell_type);
+        return dolfinx::mesh::Topology(comm.get(), cell_type);
       }))
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity)
       .def("set_index_map", &dolfinx::mesh::Topology::set_index_map)
@@ -209,8 +209,7 @@ void mesh(py::module& m)
       .def(py::init([](const MPICommWrapper comm,
                        const dolfinx::mesh::Topology& topology,
                        dolfinx::mesh::Geometry& geometry) {
-        return std::make_unique<dolfinx::mesh::Mesh>(comm.get(), topology,
-                                                     geometry);
+        return dolfinx::mesh::Mesh(comm.get(), topology, geometry);
       }))
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
