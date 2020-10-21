@@ -222,8 +222,7 @@ Form<T> create_form(
     integral_data[IntegralType::cell].second = it->second;
   }
 
-  // FIXME: Can this be handled better?
-  // FIXME: Handle forms with no space
+  // FIXME: Can facets be handled better?
 
   // Create facets, if required
   if (ufc_form.num_exterior_facet_integrals > 0
@@ -296,11 +295,13 @@ Form<T> create_form(
 
 /// Create a Form from UFC input
 /// @param[in] ufc_form The UFC form
-/// @param[in] spaces Vector of function spaces
-/// @param[in] coefficients Coefficient fields in the form
-/// @param[in] constants Spatial constants in the form
+/// @param[in] spaces The function spaces for the Form arguments
+/// @param[in] coefficients Coefficient fields in the form (by name)
+/// @param[in] constants Spatial constants in the form (by name)
 /// @param[in] subdomains Subdomain makers
-/// @param[in] mesh The mesh of the domain
+/// @param[in] mesh The mesh of the domain. This is required if the form
+/// has no arguments, e.g. a functional.
+/// @return A Form
 template <typename T>
 Form<T> create_form(
     const ufc_form& ufc_form,
@@ -340,16 +341,17 @@ Form<T> create_form(
   return create_form(ufc_form, spaces, coeff_map, const_map, subdomains, mesh);
 }
 
-/// Create a form from a form_create function returning a pointer to a
-/// ufc_form, taking care of memory allocation
+/// Create a Form using a factory function that returns a pointer to a
+/// ufc_form.
 /// @param[in] fptr pointer to a function returning a pointer to
-///    ufc_form
-/// @param[in] spaces function spaces
+/// ufc_form
+/// @param[in] spaces The function spaces for the Form arguments
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
 /// @param[in] subdomains Subdomain markers
-/// @param[in] mesh The mesh of the domain
-/// @return Form
+/// @param[in] mesh The mesh of the domain. This is required if the form
+/// has no arguments, e.g. a functional.
+/// @return A Form
 template <typename T>
 std::shared_ptr<Form<T>> create_form(
     ufc_form* (*fptr)(),
