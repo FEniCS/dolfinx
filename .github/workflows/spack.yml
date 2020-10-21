@@ -38,7 +38,7 @@ jobs:
           spack env create cpp
           spack env activate cpp
           echo "  concretization: together" >> ./spack/var/spack/environments/cpp/spack.yaml
-          spack add fenics-dolfinx
+          spack add fenics-dolfinx ^petsc+superlu-dist
           spack install
 
       - name: Get DOLFIN-X code (to access test files)
