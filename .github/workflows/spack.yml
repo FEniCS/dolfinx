@@ -39,7 +39,7 @@ jobs:
           spack env activate cpp
           echo "  concretization: together" >> ./spack/var/spack/environments/cpp/spack.yaml
           # See issue with 3.14 at https://github.com/spack/spack/issues/19417
-          spack add fenics-dolfinx ^petsc@3.13
+          spack add fenics-dolfinx ^petsc@3.13.0
           spack install
 
       - name: Get DOLFIN-X code (to access test files)
