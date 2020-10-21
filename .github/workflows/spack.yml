@@ -38,7 +38,8 @@ jobs:
           spack env create cpp
           spack env activate cpp
           echo "  concretization: together" >> ./spack/var/spack/environments/cpp/spack.yaml
-          spack add fenics-dolfinx
+          # See issue with 3.14 at https://github.com/spack/spack/issues/19417
+          spack add fenics-dolfinx ^petsc@3.13
           spack install
 
       - name: Get DOLFIN-X code (to access test files)
@@ -56,9 +57,7 @@ jobs:
           ffcx poisson.ufl
           cmake .
           make
-          #  See https://github.com/spack/spack/issues/19417. Enable parallel test when resolved.
-          ./demo_poisson
-          # mpirun -np 2 ./demo_poisson
+          mpirun -np 2 ./demo_poisson
 
       - name: Build DOLFIN-X (Python) and test dependencies via Spack
         run: |
