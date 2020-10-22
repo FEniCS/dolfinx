@@ -162,7 +162,7 @@ public:
   /// Get the function for 'kernel' for integral i of given
   /// type
   /// @param[in] type Integral type
-  /// @param[in] i Integral number
+  /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
   const std::function<void(T*, const T*, const T*, const double*, const int*,
                            const std::uint8_t*, const std::uint32_t)>&
@@ -173,7 +173,7 @@ public:
       throw std::runtime_error("No kernels for requested type.");
     auto it1 = it0->second.find(i);
     if (it1 == it0->second.end())
-      throw std::runtime_error("No kernel for requested index.");
+      throw std::runtime_error("No kernel for requested domain index.");
 
     return it1->second.first;
   }
@@ -220,16 +220,16 @@ public:
   /// for the given domain type, i.e. for cell integrals a list of cell
   /// indices, for facet integrals a list of facet indices, etc.
   /// @param[in] type The integral type
-  /// @param[in] i Integral (kernel) index
+  /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of active entities for the given integral (kernel)
   const std::vector<std::int32_t>& domains(IntegralType type, int i) const
   {
     auto it0 = _integrals.find(type);
     if (it0 == _integrals.end())
-      throw std::runtime_error("No kernels for requested type.");
+      throw std::runtime_error("No mesh entities for requested type.");
     auto it1 = it0->second.find(i);
     if (it1 == it0->second.end())
-      throw std::runtime_error("No kernel for requested index.");
+      throw std::runtime_error("No mesh entities for requested domain index.");
     return it1->second.second;
   }
 
