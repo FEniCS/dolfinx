@@ -20,10 +20,10 @@ public:
       std::shared_ptr<fem::Form<PetscScalar>> J,
       std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bcs)
       : _u(u), _l(L), _j(J), _bcs(bcs),
-        _b(L->function_space(0)->dofmap()->index_map),
+        _b(L->function_spaces()[0]->dofmap()->index_map),
         _matA(fem::create_matrix(*J))
   {
-    auto map = L->function_space(0)->dofmap()->index_map;
+    auto map = L->function_spaces()[0]->dofmap()->index_map;
     const int bs = map->block_size();
     std::int32_t size_local = bs * map->size_local();
     std::int32_t num_ghosts = bs * map->num_ghosts();
@@ -82,7 +82,7 @@ public:
     MatZeroEntries(_matA.mat());
     fem::assemble_matrix(la::PETScMatrix::add_fn(_matA.mat()), *_j, _bcs);
     fem::add_diagonal(la::PETScMatrix::add_fn(_matA.mat()),
-                      *_j->function_space(0), _bcs);
+                      *_j->function_spaces()[0], _bcs);
     _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
     return _matA.mat();
   }
@@ -125,9 +125,10 @@ int main(int argc, char* argv[])
     // Define solution function
     auto u = std::make_shared<function::Function<PetscScalar>>(V);
 
-    auto a
-        = fem::create_form<PetscScalar>(create_form_hyperelasticity_J, {V, V});
-    auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V});
+    auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J,
+                                           {V, V}, {{"u", u}}, {}, {});
+    auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V},
+                                           {{"u", u}}, {}, {});
 
     auto u_rotation = std::make_shared<function::Function<PetscScalar>>(V);
     u_rotation->interpolate([](auto& x) {
@@ -164,9 +165,6 @@ int main(int argc, char* argv[])
       return Eigen::Array<PetscScalar, 3, Eigen::Dynamic,
                           Eigen::RowMajor>::Zero(3, x.cols());
     });
-
-    L->set_coefficients({{"u", u}});
-    a->set_coefficients({{"u", u}});
 
     // Create Dirichlet boundary conditions
     auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
