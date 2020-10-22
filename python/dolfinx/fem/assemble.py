@@ -288,7 +288,7 @@ def _extract_function_spaces(a: typing.List[typing.List[typing.Union[Form, cpp.f
     return rows, cols
 
 
-@ assemble_matrix_block.register(PETSc.Mat)
+@assemble_matrix_block.register(PETSc.Mat)
 def _(A: PETSc.Mat,
       a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
       bcs: typing.List[DirichletBC] = [],

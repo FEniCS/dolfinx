@@ -127,7 +127,7 @@ def get_matsetvalues_api():
                                 const PetscScalar* y, InsertMode addv);
         """)
         ffibuilder.set_source(module_name, """
-            # include "petscmat.h"
+            #include "petscmat.h"
         """,
                               libraries=['petsc'],
                               include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
