@@ -422,7 +422,9 @@ void fem(py::module& m)
       .def_property_readonly("rank", &dolfinx::fem::Form<PetscScalar>::rank)
       .def_property_readonly("mesh", &dolfinx::fem::Form<PetscScalar>::mesh)
       .def_property_readonly("function_spaces",
-                             &dolfinx::fem::Form<PetscScalar>::function_spaces);
+                             &dolfinx::fem::Form<PetscScalar>::function_spaces)
+      .def("integral_ids",   &dolfinx::fem::Form<PetscScalar>::integral_ids)
+      .def("domains",   &dolfinx::fem::Form<PetscScalar>::domains);;
 
   m.def("locate_dofs_topological", &dolfinx::fem::locate_dofs_topological,
         py::arg("V"), py::arg("dim"), py::arg("entities"),
