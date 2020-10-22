@@ -840,7 +840,13 @@ void apply_lifting(
         bc->dof_values(bc_values1);
       }
 
-      lift_bc<T>(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
+      if (!x0.empty())
+        lift_bc<T>(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
+      else
+      {
+        const Eigen::Matrix<T, Eigen::Dynamic, 1> x0(0);
+        lift_bc<T>(b, *a[j], bc_values1, bc_markers1, x0, scale);
+      }
     }
   }
 }
