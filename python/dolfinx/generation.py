@@ -33,7 +33,7 @@ def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.shar
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
-    cmap = fem.create_coordinate_map(domain)
+    cmap = fem.create_coordinate_map(comm, domain)
     mesh = cpp.generation.IntervalMesh.create(comm, nx, points, cmap, ghost_mode)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
@@ -71,7 +71,7 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
-    cmap = fem.create_coordinate_map(domain)
+    cmap = fem.create_coordinate_map(comm, domain)
     mesh = cpp.generation.RectangleMesh.create(comm, points, n, cmap, ghost_mode, diagonal)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
