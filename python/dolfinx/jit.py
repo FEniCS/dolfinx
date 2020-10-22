@@ -39,21 +39,17 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     """
 
     @functools.wraps(local_jit)
-    def mpi_jit(*args, **kwargs):
-
-        # FIXME: should require mpi_comm to be explicit and not default
-        # to comm_world?
-        mpi_comm = kwargs.pop("mpi_comm", MPI.COMM_WORLD)
+    def mpi_jit(comm, *args, **kwargs):
 
         # Just call JIT compiler when running in serial
-        if mpi_comm.size == 1:
+        if comm.size == 1:
             return local_jit(*args, **kwargs)
 
         # Default status (0 == ok, 1 == fail)
         status = 0
 
         # Compile first on process 0
-        root = mpi_comm.rank == 0
+        root = comm.rank == 0
         if root:
             try:
                 output = local_jit(*args, **kwargs)
@@ -71,7 +67,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
         # Wait for the compiling process to finish and get status TODO:
         # Would be better to broadcast the status from root but this
         # works.
-        global_status = mpi_comm.allreduce(status, op=MPI.MAX)
+        global_status = comm.allreduce(status, op=MPI.MAX)
         if global_status == 0:
             # Success, call jit on all other processes (this should just
             # read the cache)
