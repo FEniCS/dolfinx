@@ -498,7 +498,6 @@ void _lift_bc_interior_facets(
 
     for (Eigen::Index k = 0; k < dmap0_cell1.size(); ++k)
       b[dmap0_cell1[k]] += be[k];
-
   }
 }
 //-----------------------------------------------------------------------------
