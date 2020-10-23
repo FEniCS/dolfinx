@@ -39,7 +39,8 @@ jobs:
           spack env activate cpp
           echo "  concretization: together" >> ./spack/var/spack/environments/cpp/spack.yaml
           # See issue with 3.14 at https://github.com/spack/spack/issues/19417
-          spack add fenics-dolfinx ^petsc@3.13.6
+          # spack add fenics-dolfinx ^petsc@3.13.6
+          spack add py-fenics-dolfinx ^petsc@3.13.6
           spack install
 
       - name: Get DOLFIN-X code (to access test files)
@@ -59,22 +60,23 @@ jobs:
           make
           mpirun -np 2 ./demo_poisson
 
-      - name: Build DOLFIN-X (Python) and test dependencies via Spack
-        run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env create py
-          spack env activate py
-          echo "  concretization: together" >> ./spack/var/spack/environments/py/spack.yaml
-          spack add py-fenics-dolfinx ^py-petsc4py@3.13.0
-          spack add py-pip py-pytest py-pytest-xdist py-scipy
-          spack install
+      # - name: Build DOLFIN-X (Python) and test dependencies via Spack
+      #   run: |
+      #     . ./spack/share/spack/setup-env.sh
+      #     spack env create py
+      #     spack env activate py
+      #     echo "  concretization: together" >> ./spack/var/spack/environments/py/spack.yaml
+      #     spack add py-fenics-dolfinx ^py-petsc4py@3.13.0
+      #     spack add py-pip py-pytest py-pytest-xdist py-scipy
+      #     spack install
 
       # NOTE: numba is installed via pip because the spack package takes
       # an extremely long time to compile
       - name: Run DOLFIN-X (Python) tests
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env activate py
+          spack env activate cpp
+          # spack env activate py
           pip install cppimport numba
           cd ./dolfinx-test/python/test
           pytest -n auto --ignore=unit/fem/test_custom_jit_kernels.py --ignore=unit/geometry/test_gjk.py --ignore=unit/function/test_function.py .
