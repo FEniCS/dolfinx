@@ -69,7 +69,10 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
 
-    with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
+    # Wait for rank0 to write XDMF XML file
+    mesh.mpi_comm().Barrier()
+
+    with XDMFFile(mesh.mpi_comm(), filename, "r", encoding=encoding) as file:
         mesh2 = file.read_mesh(name="square")
 
     assert mesh2.name == mesh.name
@@ -86,7 +89,10 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
 
-    with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
+    # Wait for rank0 to write XDMF XML file
+    mesh.mpi_comm().Barrier()
+
+    with XDMFFile(mesh.mpi_comm(), filename, "r", encoding=encoding) as file:
         mesh2 = file.read_mesh()
 
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
@@ -134,6 +140,9 @@ def test_read_write_p2_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "tet10_mesh.xdmf")
     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as xdmf:
         xdmf.write_mesh(mesh)
+
+    # Wait for rank0 to write XDMF XML file
+    mesh.mpi_comm().Barrier()
 
     with XDMFFile(mesh.mpi_comm(), filename, "r", encoding=encoding) as xdmf:
         mesh2 = xdmf.read_mesh()
