@@ -63,6 +63,9 @@ class XDMFFile(cpp.io.XDMFFile):
 
         return mesh
 
+    def __exit__(self, type, value, tb):
+        super().close()
+
 
 def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
     """Extract all entities tagged with a physical marker

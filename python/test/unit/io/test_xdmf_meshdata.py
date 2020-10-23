@@ -53,7 +53,10 @@ def test_read_mesh_data(tempdir, tdim, n):
     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding) as file:
         file.write_mesh(mesh)
 
-    with XDMFFile(MPI.COMM_WORLD, filename, "r") as file:
+    # Wait for rank0 to write XDMF XML file
+    mesh.mpi_comm().Barrier()
+
+    with XDMFFile(mesh.mpi_comm(), filename, "r") as file:
         cell_type = file.read_cell_type()
         cells = file.read_topology_data()
         x = file.read_geometry_data()

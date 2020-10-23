@@ -332,6 +332,10 @@ while (t < T):
     u.vector.copy(result=u0.vector)
     file.write_function(u.sub(0), t)
 
+    # Flush the file after each time step write if you need to be sure
+    # that results file won't be corrupted in case of sudden simulation error
+    file.flush()
+
 file.close()
 
 # Within the time stepping loop, the nonlinear problem is solved by
