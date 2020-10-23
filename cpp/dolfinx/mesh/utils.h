@@ -20,7 +20,6 @@ namespace mesh
 {
 enum class CellType;
 class Mesh;
-class MeshEntity;
 
 /// Extract topology from cell data, i.e. extract cell vertices
 /// @param[in] cell_type The cell shape
@@ -60,9 +59,6 @@ Eigen::ArrayXd radius_ratio(const Mesh& mesh,
 /// Compute normal to given cell (viewed as embedded in 3D)
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 cell_normals(const Mesh& mesh, int dim);
-
-/// Compute of given facet with respect to the cell
-Eigen::Vector3d normal(const MeshEntity& cell, int facet_local);
 
 /// Compute midpoints or mesh entities of a given dimension
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
@@ -111,6 +107,30 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_boundary(
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
+
+/// Compute the geometry indices of vertices of the given entities from the mesh
+/// geometry
+/// @param[in] mesh Mesh
+/// @param[in] dim Topological dimension of the entities of interest
+/// @param[in] entity_list List of entity indices (local)
+/// @param[in] orient If true, in 3D, reorients facets to have consistent normal
+/// direction
+/// @return Indices in the geometry array for the mesh entity vertices, i.e.
+/// indices(i, j) is the position in the geometry array of the j-th vertex of
+/// the entity entity_list[i].
+Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+entities_to_geometry(
+    const mesh::Mesh& mesh, const int dim,
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list,
+    bool orient);
+
+/// Compute the indices (local) of all exterior facets. An exterior facet
+/// (co-dimension 1) is one that is connected globally to only one cell of
+/// co-dimension 0).
+/// @param[in] mesh Mesh
+/// @return List of facet indices of exterior facets of the mesh
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+exterior_facet_indices(const Mesh& mesh);
 
 } // namespace mesh
 } // namespace dolfinx

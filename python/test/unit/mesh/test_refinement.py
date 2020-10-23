@@ -26,6 +26,13 @@ def test_RefineUnitCubeMesh_repartition():
     mesh = refine(mesh, redistribute=True)
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
+
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.shared_facet)
+    mesh.topology.create_entities(1)
+    mesh = refine(mesh, redistribute=True)
+    assert mesh.topology.index_map(0).size_global == 3135
+    assert mesh.topology.index_map(3).size_global == 15120
+
     Q = FunctionSpace(mesh, ("CG", 1))
     assert(Q)
 

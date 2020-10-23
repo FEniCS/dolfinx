@@ -12,8 +12,10 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DofMap.h>
+#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -28,15 +30,17 @@ namespace
 {
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-std::int64_t get_padded_width(const function::Function& u)
+std::int64_t get_padded_width(const function::Function<PetscScalar>& u)
 {
-  std::int64_t width = u.value_size();
-  std::int64_t rank = u.value_rank();
+  const int width = u.function_space()->element()->value_size();
+  const int rank = u.function_space()->element()->value_rank();
+
   if (rank == 1 and width == 2)
     return 3;
   else if (rank == 2 and width == 4)
     return 9;
-  return width;
+  else
+    return width;
 }
 //-----------------------------------------------------------------------------
 
@@ -157,35 +161,34 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
   assert(topology_node);
 
   // Get number of cells from topology
-  std::int64_t num_cells_topolgy = -1;
+  std::int64_t num_cells_topology = -1;
   pugi::xml_attribute num_cells_attr
       = topology_node.attribute("NumberOfElements");
   if (num_cells_attr)
-    num_cells_topolgy = num_cells_attr.as_llong();
+    num_cells_topology = num_cells_attr.as_llong();
 
   // Get number of cells from topology dataset
   pugi::xml_node topology_dataset_node = topology_node.child("DataItem");
   assert(topology_dataset_node);
-  const std::vector<std::int64_t> tdims
-      = get_dataset_shape(topology_dataset_node);
+  const std::vector tdims = get_dataset_shape(topology_dataset_node);
 
   // Check that number of cells can be determined
-  if (tdims.size() != 2 and num_cells_topolgy == -1)
-    throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
+  if (tdims.size() != 2 and num_cells_topology == -1)
+    throw std::runtime_error("Cannot determine number of cells in XDMF mesh");
 
   // Check for consistency if number of cells appears in both the topology
   // and DataItem nodes
-  if (num_cells_topolgy != -1 and tdims.size() == 2)
+  if (num_cells_topology != -1 and tdims.size() == 2)
   {
-    if (num_cells_topolgy != tdims[0])
-      throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
+    if (num_cells_topology != tdims[0])
+      throw std::runtime_error("Cannot determine number of cells in XDMF mesh");
   }
 
-  return std::max(num_cells_topolgy, tdims[0]);
+  return std::max(num_cells_topology, tdims[0]);
 }
 //----------------------------------------------------------------------------
 std::vector<PetscScalar>
-xdmf_utils::get_point_data_values(const function::Function& u)
+xdmf_utils::get_point_data_values(const function::Function<PetscScalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
@@ -201,11 +204,11 @@ xdmf_utils::get_point_data_values(const function::Function& u)
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
   std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
-  const int value_rank = u.value_rank();
+  const int value_rank = u.function_space()->element()->value_rank();
   if (value_rank > 0)
   {
     // Transpose vector/tensor data arrays
-    const int value_size = u.value_size();
+    const int value_size = u.function_space()->element()->value_size();
     for (int i = 0; i < num_local_points; i++)
     {
       for (int j = 0; j < value_size; j++)
@@ -227,12 +230,12 @@ xdmf_utils::get_point_data_values(const function::Function& u)
 }
 //-----------------------------------------------------------------------------
 std::vector<PetscScalar>
-xdmf_utils::get_cell_data_values(const function::Function& u)
+xdmf_utils::get_cell_data_values(const function::Function<PetscScalar>& u)
 {
   assert(u.function_space()->dofmap());
   const auto mesh = u.function_space()->mesh();
-  const int value_size = u.value_size();
-  const int value_rank = u.value_rank();
+  const int value_size = u.function_space()->element()->value_size();
+  const int value_rank = u.function_space()->element()->value_rank();
 
   // Allocate memory for function values at cell centres
   const int tdim = mesh->topology().dim();
@@ -259,9 +262,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   // Get values
   std::vector<PetscScalar> data_values(dof_set.size());
   {
-    la::VecReadWrapper u_wrapper(u.vector().vec());
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
-        = u_wrapper.x;
+    const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x = u.x()->array();
     for (std::size_t i = 0; i < dof_set.size(); ++i)
       data_values[i] = x[dof_set[i]];
   }
@@ -376,9 +377,8 @@ xdmf_utils::extract_local_entities(
   const int num_vertices_per_entity = mesh::cell_num_entities(entity_type, 0);
   assert(entity_vertex_dofs.size() == (std::size_t)num_vertices_per_entity);
 
-
   // Throw away input global indices which do not belong to entity vertices
-  // This decreases the amount of data needed in parallel communication 
+  // This decreases the amount of data needed in parallel communication
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entities_vertices(entities.rows(), num_vertices_per_entity);
   for (Eigen::Index e = 0; e < entities_vertices.rows(); ++e)
@@ -458,7 +458,7 @@ xdmf_utils::extract_local_entities(
 
   // NOTE: Could: (i) use a std::unordered_multimap, or (ii) only send
   // owned nodes to the postmaster and use map, unordered_map or
-  // std::vector<pair>>, followed by a neighbourhood all_to_all at the
+  // std::vector<pair>>, followed by a neighborhood all_to_all at the
   // end.
   //
   // Build map from global node index to ranks that have the node

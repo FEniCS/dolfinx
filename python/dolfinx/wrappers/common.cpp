@@ -10,7 +10,6 @@
 #include <Eigen/Dense>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/SubSystemsManager.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
@@ -48,11 +47,13 @@ void common(py::module& m)
              std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
       .def(py::init(
           [](const MPICommWrapper comm, std::int32_t local_size,
+             const std::vector<int>& dest_ranks,
              const Eigen::Ref<
                  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>& ghosts,
-             std::vector<int> ghost_owners, int block_size) {
+             const std::vector<int>& ghost_owners, int block_size) {
             return std::make_shared<dolfinx::common::IndexMap>(
-                comm.get(), local_size, ghosts, ghost_owners, block_size);
+                comm.get(), local_size, dest_ranks, ghosts, ghost_owners,
+                block_size);
           }))
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMap::size_local)
@@ -66,8 +67,7 @@ void common(py::module& m)
       .def_property_readonly("local_range",
                              &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
-      .def("ghost_owners", &dolfinx::common::IndexMap::ghost_owners,
-           py::return_value_policy::reference_internal,
+      .def("ghost_owner_rank", &dolfinx::common::IndexMap::ghost_owner_rank,
            "Return owning process for each ghost index")
       .def_property_readonly("ghosts", &dolfinx::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,
@@ -104,36 +104,11 @@ void common(py::module& m)
           dolfinx::list_timings(comm.get(), _type);
         });
 
-  // dolfinx::SubSystemsManager
-  py::class_<dolfinx::common::SubSystemsManager,
-             std::unique_ptr<dolfinx::common::SubSystemsManager, py::nodelete>>(
-      m, "SubSystemsManager")
-      .def_static("init_petsc",
-                  (void (*)()) & dolfinx::common::SubSystemsManager::init_petsc)
-      .def_static("init_petsc",
-                  [](std::vector<std::string> args) {
-                    std::vector<char*> argv(args.size());
-                    for (std::size_t i = 0; i < args.size(); ++i)
-                      argv[i] = const_cast<char*>(args[i].data());
-                    dolfinx::common::SubSystemsManager::init_petsc(args.size(),
-                                                                   argv.data());
-                  })
-      .def_static("init_logging",
-                  [](std::vector<std::string> args) {
-                    std::vector<char*> argv(args.size() + 1, nullptr);
-                    for (std::size_t i = 0; i < args.size(); ++i)
-                      argv[i] = const_cast<char*>(args[i].data());
-                    dolfinx::common::SubSystemsManager::init_logging(
-                        args.size(), argv.data());
-                  })
-      .def_static("finalize", &dolfinx::common::SubSystemsManager::finalize)
-      .def_static("responsible_mpi",
-                  &dolfinx::common::SubSystemsManager::responsible_mpi)
-      .def_static("responsible_petsc",
-                  &dolfinx::common::SubSystemsManager::responsible_petsc)
-      .def_static("mpi_initialized",
-                  &dolfinx::common::SubSystemsManager::mpi_initialized)
-      .def_static("mpi_finalized",
-                  &dolfinx::common::SubSystemsManager::mpi_finalized);
+  m.def("init_logging", [](std::vector<std::string> args) {
+    std::vector<char*> argv(args.size() + 1, nullptr);
+    for (std::size_t i = 0; i < args.size(); ++i)
+      argv[i] = const_cast<char*>(args[i].data());
+    dolfinx::common::SubSystemsManager::init_logging(args.size(), argv.data());
+  });
 }
 } // namespace dolfinx_wrappers

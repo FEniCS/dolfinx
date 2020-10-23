@@ -10,6 +10,7 @@
 #include "PETScOperator.h"
 #include "utils.h"
 #include <array>
+#include <functional>
 #include <petscmat.h>
 #include <string>
 
@@ -17,6 +18,15 @@ namespace dolfinx::la
 {
 class SparsityPattern;
 class VectorSpaceBasis;
+
+/// Create a PETSc Mat. Caller is responsible for destroying the
+/// returned object.
+Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
+
+/// Create PETSc MatNullSpace. Caller is responsible for destruction
+/// returned object.
+MatNullSpace create_petsc_nullspace(MPI_Comm comm,
+                                    const VectorSpaceBasis& nullspace);
 
 /// It is a simple wrapper for a PETSc matrix pointer (Mat). Its main
 /// purpose is to assist memory management of PETSc Mat objects.
@@ -27,6 +37,12 @@ class VectorSpaceBasis;
 class PETScMatrix : public PETScOperator
 {
 public:
+  /// Return a function with an interface for adding values to the
+  /// matrix A
+  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                           const std::int32_t*, const PetscScalar*)>
+  add_fn(Mat A);
+
   /// Create holder of a PETSc Mat object from a sparsity pattern
   PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
 
@@ -66,14 +82,6 @@ public:
   ///   FINAL    - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
   ///   FLUSH  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
   void apply(AssemblyType type);
-
-  /// Set block of values using global indices
-  void set(const PetscScalar* block, int m, const PetscInt* rows, int n,
-           const PetscInt* cols);
-
-  /// Add block of values using local indices
-  void add_local(const PetscScalar* block, int m, const PetscInt* rows, int n,
-                 const PetscInt* cols);
 
   /// Return norm of matrix
   double norm(la::Norm norm_type) const;

@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Garth N. Wells
+// Copyright (C) 2018-2020 Garth N. Wells and Chris N. Richardson
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -24,24 +24,18 @@ class CoordinateElement
 {
 public:
   /// Create a coordinate element
-  /// @param[in] cell_type
-  /// @param[in] topological_dimension
-  /// @param[in] geometric_dimension
-  /// @param[in] signature
+  /// @param[in] cell_type Cell type
+  /// @param[in] topological_dimension Topological dimension
+  /// @param[in] geometric_dimension Geometric dimension
+  /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  /// @param[in] compute_physical_coordinates Push-forward function from
-  ///   reference to physical coordinates
-  /// @param[in] compute_reference_geometry Pull-back function from
-  ///   physical coordinates to reference coordinates
-  CoordinateElement(
-      mesh::CellType cell_type, int topological_dimension,
-      int geometric_dimension, const std::string& signature,
-      const ElementDofLayout& dof_layout,
-      std::function<void(double*, int, const double*, const double*)>
-          compute_physical_coordinates,
-      std::function<void(double*, double*, double*, double*, int, const double*,
-                         const double*)>
-          compute_reference_geometry);
+  /// @param[in] is_affine Boolean flag indicating affine mapping
+  /// @param[in] evaluate_basis_derivatives
+  CoordinateElement(mesh::CellType cell_type, int topological_dimension,
+                    int geometric_dimension, const std::string& signature,
+                    const ElementDofLayout& dof_layout, bool is_affine,
+                    const std::function<int(double*, int, int, const double*)>&
+                        evaluate_basis_derivatives);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -89,22 +83,31 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>& x,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
-          cell_geometry) const;
+          cell_geometry,
+      double eps = 1.0e-16) const;
 
 private:
+  // Topological and geometric dimensions
   int _tdim, _gdim;
 
+  // Cell type
   mesh::CellType _cell;
 
+  // Signature, usually from UFC
   std::string _signature;
 
+  // Layout of dofs on element
   ElementDofLayout _dof_layout;
 
-  std::function<void(double*, int, const double*, const double*)>
-      _compute_physical_coordinates;
+  // Flag denoting affine map
+  bool _is_affine;
 
-  std::function<void(double*, double*, double*, double*, int, const double*,
-                     const double*)>
-      _compute_reference_geometry;
+  // Function to evaluate the basis on the underlying element
+  // @param basis_values Returned values
+  // @param order
+  // @param num_points
+  // @param reference points
+  std::function<int(double*, int, int, const double*)>
+      _evaluate_basis_derivatives;
 };
 } // namespace dolfinx::fem

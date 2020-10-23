@@ -7,8 +7,10 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/la/Vector.h>
 #include <dolfinx/la/VectorSpaceBasis.h>
 #include <dolfinx/la/utils.h>
 #include <memory>
@@ -52,7 +54,14 @@ void la(py::module& m)
       .def("assemble", &dolfinx::la::SparsityPattern::assemble)
       .def("num_nonzeros", &dolfinx::la::SparsityPattern::num_nonzeros)
       .def("insert", &dolfinx::la::SparsityPattern::insert)
-      .def("insert_diagonal", &dolfinx::la::SparsityPattern::insert_diagonal);
+      .def("insert_diagonal", &dolfinx::la::SparsityPattern::insert_diagonal)
+      .def_property_readonly("diagonal_pattern",
+                             &dolfinx::la::SparsityPattern::diagonal_pattern,
+                             py::return_value_policy::reference_internal)
+      .def_property_readonly(
+          "off_diagonal_pattern",
+          &dolfinx::la::SparsityPattern::off_diagonal_pattern,
+          py::return_value_policy::reference_internal);
 
   // dolfinx::la::VectorSpaceBasis
   py::class_<dolfinx::la::VectorSpaceBasis,
@@ -80,6 +89,12 @@ void la(py::module& m)
       .def("__getitem__", [](const dolfinx::la::VectorSpaceBasis& self, int i) {
         return self[i]->vec();
       });
+
+  // dolfinx::la::Vector
+  py::class_<dolfinx::la::Vector<PetscScalar>,
+             std::shared_ptr<dolfinx::la::Vector<PetscScalar>>>(m, "Vector")
+      .def("array",
+           py::overload_cast<>(&dolfinx::la::Vector<PetscScalar>::array));
 
   // utils
   m.def("create_vector",

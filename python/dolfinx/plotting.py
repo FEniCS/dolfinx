@@ -8,8 +8,10 @@ import os
 import warnings
 
 import numpy as np
+import ufl
 
 from dolfinx import cpp, fem, function
+from dolfinx.mesh import create_mesh
 
 __all__ = ["plot"]
 
@@ -17,6 +19,33 @@ _matplotlib_plottable_types = (cpp.function.Function,
                                cpp.mesh.Mesh,
                                cpp.fem.DirichletBC)
 _all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types)))
+
+
+def create_boundary_mesh(mesh, comm, orient=False):
+    """
+    Create a mesh consisting of all exterior facets of a mesh
+    Input:
+      mesh   - The mesh
+      comm   - The MPI communicator
+      orient - Boolean flag for reorientation of facets to have
+               consistent outwards-pointing normal (default: True)
+    Output:
+      bmesh - The boundary mesh
+      bmesh_to_geometry - Map from cells of the boundary mesh
+                          to the geometry of the original mesh
+    """
+    ext_facets = cpp.mesh.exterior_facet_indices(mesh)
+    boundary_geometry = cpp.mesh.entities_to_geometry(
+        mesh, mesh.topology.dim - 1, ext_facets, orient)
+    facet_type = cpp.mesh.to_string(cpp.mesh.cell_entity_type(
+        mesh.topology.cell_type, mesh.topology.dim - 1))
+    facet_cell = ufl.Cell(facet_type,
+                          geometric_dimension=mesh.geometry.dim)
+    degree = mesh.ufl_domain().ufl_coordinate_element().degree()
+    ufl_domain = ufl.Mesh(ufl.VectorElement("Lagrange", facet_cell, degree))
+    bmesh = create_mesh(
+        comm, boundary_geometry, mesh.geometry.x, ufl_domain)
+    return bmesh, boundary_geometry
 
 
 def _has_matplotlib():
@@ -30,7 +59,7 @@ def _has_matplotlib():
 def mesh2triang(mesh):
     import matplotlib.tri as tri
     xy = mesh.geometry.x
-    cells = mesh.geometry.dofmap.array().reshape((-1, mesh.topology.dim + 1))
+    cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
     return tri.Triangulation(xy[:, 0], xy[:, 1], cells)
 
 
@@ -41,11 +70,11 @@ def mplot_mesh(ax, mesh, **kwargs):
         color = kwargs.pop("color", '#808080')
         return ax.triplot(mesh2triang(mesh), color=color, **kwargs)
     elif gdim == 3 and tdim == 3:
-        bmesh = cpp.mesh.BoundaryMesh(mesh, "exterior", order=False)
-        mplot_mesh(ax, bmesh, **kwargs)
+        bmesh = create_boundary_mesh(mesh, mesh.mpi_comm(), orient=False)
+        mplot_mesh(ax, bmesh[0], **kwargs)
     elif gdim == 3 and tdim == 2:
         xy = mesh.geometry.x
-        cells = mesh.geometry.dofmap.array().reshape((-1, mesh.topology.dim + 1))
+        cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
         return ax.plot_trisurf(
             *[xy[:, i] for i in range(gdim)], triangles=cells, **kwargs)
     elif tdim == 1:
@@ -133,7 +162,7 @@ def mplot_function(ax, f, **kwargs):
                 'Matplotlib plotting backend only supports 2D mesh for scalar functions.'
             )
 
-    elif f.value_rank == 0:
+    elif f.function_space.element.value_rank == 0:
         # Scalar function, interpolated to vertices
         # TODO: Handle DG1?
         C = f.compute_point_values()
@@ -197,7 +226,7 @@ def mplot_function(ax, f, **kwargs):
                 'Matplotlib plotting backend only supports 2D mesh for scalar functions.'
             )
 
-    elif f.value_rank == 1:
+    elif f.function_space.element.value_rank == 1:
         # Vector function, interpolated to vertices
         w0 = f.compute_point_values()
         if (w0.dtype.type is np.complex128):
@@ -231,7 +260,7 @@ def mplot_function(ax, f, **kwargs):
             import matplotlib.tri as tri
             if gdim == 2 and tdim == 2:
                 # FIXME: Not tested
-                cells = mesh.geometry.dofmap.array().reshape((-1, mesh.topology.dim + 1))
+                cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
                 triang = tri.Triangulation(Xdef[0], Xdef[1], cells)
                 shading = kwargs.pop("shading", "flat")
                 return ax.tripcolor(triang, C, shading=shading, **kwargs)
@@ -276,7 +305,7 @@ def _plot_matplotlib(obj, mesh, kwargs):
         ax = plt.gca(projection='3d')
     else:
         ax = plt.gca()
-    ax.set_aspect('equal')
+        ax.set_aspect('equal')
 
     title = kwargs.pop("title", None)
     if title is not None:

@@ -76,7 +76,7 @@ mesh::Geometry mesh::create_geometry(
 
   //  Build 'geometry' dofmap on the topology
   auto [dof_index_map, dofmap] = fem::DofMapBuilder::build(
-      comm, topology, coordinate_element.dof_layout(), 1);
+      comm, topology, coordinate_element.dof_layout());
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
@@ -93,14 +93,13 @@ mesh::Geometry mesh::create_geometry(
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
-  std::vector<std::int64_t> l2g
+  std::vector l2g
       = graph::Partitioning::compute_local_to_global_links(cell_nodes, dofmap);
 
   // Compute local (dof) to local (position in coords) map from (i)
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
-  std::vector<std::int32_t> l2l
-      = graph::Partitioning::compute_local_to_local(l2g, indices);
+  std::vector l2l = graph::Partitioning::compute_local_to_local(l2g, indices);
 
   // Build coordinate dof array
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(

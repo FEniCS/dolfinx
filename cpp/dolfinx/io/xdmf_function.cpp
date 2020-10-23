@@ -11,7 +11,9 @@
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
+#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Function.h>
+#include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <string>
@@ -42,10 +44,11 @@ std::string rank_to_string(int value_rank)
 //-----------------------------------------------------------------------------
 
 /// Returns true for DG0 function::Functions
-bool has_cell_centred_data(const function::Function& u)
+bool has_cell_centred_data(const function::Function<PetscScalar>& u)
 {
   int cell_based_dim = 1;
-  for (int i = 0; i < u.value_rank(); i++)
+  const int rank = u.function_space()->element()->value_rank();
+  for (int i = 0; i < rank; i++)
     cell_based_dim *= u.function_space()->mesh()->topology().dim();
 
   assert(u.function_space());
@@ -58,10 +61,10 @@ bool has_cell_centred_data(const function::Function& u)
 
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-int get_padded_width(const function::Function& u)
+int get_padded_width(const function::Function<PetscScalar>& u)
 {
-  const int width = u.value_size();
-  const int rank = u.value_rank();
+  const int width = u.function_space()->element()->value_size();
+  const int rank = u.function_space()->element()->value_rank();
   if (rank == 1 and width == 2)
     return 3;
   else if (rank == 2 and width == 4)
@@ -73,7 +76,8 @@ int get_padded_width(const function::Function& u)
 } // namespace
 
 //-----------------------------------------------------------------------------
-void xdmf_function::add_function(MPI_Comm comm, const function::Function& u,
+void xdmf_function::add_function(MPI_Comm comm,
+                                 const function::Function<PetscScalar>& u,
                                  const double t, pugi::xml_node& xml_node,
                                  const hid_t h5_id)
 {
@@ -94,8 +98,7 @@ void xdmf_function::add_function(MPI_Comm comm, const function::Function& u,
   auto map_c = mesh->topology().index_map(mesh->topology().dim());
   assert(map_c);
 
-  // FIXME: Should this be the geometry map?
-  auto map_v = mesh->topology().index_map(0);
+  auto map_v = mesh->geometry().index_map();
   assert(map_v);
 
   // Add attribute DataItem node and write data
@@ -103,6 +106,8 @@ void xdmf_function::add_function(MPI_Comm comm, const function::Function& u,
   assert(data_values.size() % width == 0);
   const int num_values
       = cell_centred ? map_c->size_global() : map_v->size_global();
+
+  const int value_rank = u.function_space()->element()->value_rank();
 
 #ifdef PETSC_USE_COMPLEX
   const std::vector<std::string> components = {"real", "imag"};
@@ -132,7 +137,7 @@ void xdmf_function::add_function(MPI_Comm comm, const function::Function& u,
     assert(attribute_node);
     attribute_node.append_attribute("Name") = attr_name.c_str();
     attribute_node.append_attribute("AttributeType")
-        = rank_to_string(u.value_rank()).c_str();
+        = rank_to_string(value_rank).c_str();
     attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
     const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);

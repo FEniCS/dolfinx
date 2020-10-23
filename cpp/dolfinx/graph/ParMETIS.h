@@ -17,20 +17,14 @@
 #include <parmetis.h>
 #endif
 
-namespace dolfinx::graph
-{
-
-/// This class provides an interface to ParMETIS
-
-class ParMETIS
+// Interface to ParMETIS parallel partitioner
+namespace dolfinx::graph::ParMETIS
 {
 #ifdef HAS_PARMETIS
-public:
-  // Standard ParMETIS partition
-  static AdjacencyList<std::int32_t>
-  partition(MPI_Comm mpi_comm, idx_t nparts,
-            const AdjacencyList<idx_t>& adj_graph, bool ghosting);
+// Standard ParMETIS partition
+AdjacencyList<std::int32_t> partition(MPI_Comm mpi_comm, idx_t nparts,
+                                      const AdjacencyList<idx_t>& adj_graph,
+                                      bool ghosting);
 
 #endif
-};
-} // namespace dolfinx::graph
+} // namespace dolfinx::graph::ParMETIS

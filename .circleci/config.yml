@@ -1,11 +1,5 @@
 version: 2.1
 
-# https://support.circleci.com/hc/en-us/articles/360041503393-A-workaround-to-trigger-a-single-job-with-2-1-config
-parameters:
-  build-and-push-docker-images:
-    type: boolean
-    default: false
-
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
@@ -108,37 +102,14 @@ demos-python-mpi: &demos-python-mpi
     python3 ./generate-demo-files.py
     python3 -m pytest -n=2 -v -m mpi test.py --num-proc=3
 
-commands:
-  build-and-push-target:
-    description: "Build and push target in docker/`dockerfile`"
-    parameters:
-      docker-target:
-        type: string
-      dockerfile:
-        type: string
-        default: "Dockerfile"
-      extra-args:
-        type: string
-        default: ""
-    steps:
-      - run: >
-          cd docker &&
-          sudo DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --cache-to=type=inline,mode=all
-          --progress plain
-          --build-arg MAKEFLAGS='-j3'
-          --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
-          --target << parameters.docker-target >>
-          --file << parameters.dockerfile >> << parameters.extra-args >>
-          --tag dolfinx/<< parameters.docker-target >>:latest . &&
-          sudo docker push dolfinx/<< parameters.docker-target >>:latest
-
 jobs:
   build-real:
     docker:
-      - image: dolfinx/dev-env-real:latest
+      - image: fenicsproject/test-env:mpich
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
+      PETSC_ARCH: "linux-gnu-real-32"
     steps:
       - checkout
       - run: *install-python-components
@@ -170,10 +141,11 @@ jobs:
 
   build-complex:
     docker:
-      - image: dolfinx/dev-env-complex:latest
+        - image: fenicsproject/test-env:mpich
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
+      PETSC_ARCH: "linux-gnu-complex-32"
     steps:
       - checkout
       - run: *install-python-components
@@ -197,96 +169,9 @@ jobs:
       - store_artifacts:
           path: ~/junit
 
-  pushdoc:
-    docker:
-      - image: circleci/python
-    working_directory: /tmp
-    steps:
-      - attach_workspace:
-          at: /tmp
-      - run:
-          name: Establish authenticity of fenicsproject.org
-          command: mkdir ~/.ssh && echo "fenicsproject.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFbD134YcxSNaHVyio0XPAvJYh8SF90xp/ARqfrbAwOmJaEPTl5CNXm6f3+Sy0k1QTp+j9WawiJON+4/FWQBTD4=" >> ~/.ssh/known_hosts
-      - run:
-          name: Push Python API doc to fenicsproject.org
-          command: cd /tmp/python/doc/build/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
-      - run:
-          name: Push C++ API doc to fenicsproject.org
-          command: cd /tmp/cpp/doc/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
-
-  build-and-push-complete-build-docker-images:
-    machine:
-      image: ubuntu-1604:201903-01
-    steps:
-      - checkout
-      - run:
-          name: Update Docker
-          command: |
-            sudo apt-get -y remove docker docker-engine docker.io containerd runc
-            sudo apt-get -y update
-            sudo apt-get -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-            sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-            sudo apt-get -y install docker-ce docker-ce-cli containerd.io
-            sudo docker run hello-world
-      - run:
-          name: Login to Dockerhub
-          command: echo ${DH_TOKEN} | sudo docker login -u ${DH_USERNAME} --password-stdin
-      - build-and-push-target:
-          docker-target: "base"
-      - build-and-push-target:
-          docker-target: "dev-env-real"
-      - build-and-push-target:
-          docker-target: "dev-env-complex"
-      - build-and-push-target:
-          docker-target: "real-onbuild"
-      - build-and-push-target:
-          docker-target: "complex-onbuild"
-      - build-and-push-target:
-          docker-target: "real"
-      - build-and-push-target:
-          docker-target: "complex"
-      - build-and-push-target:
-          docker-target: "notebook"
-      - build-and-push-target:
-          docker-target: "notebook-complex"
-      - build-and-push-target:
-          docker-target: "lab"
-      - build-and-push-target:
-          docker-target: "lab-complex"
-
 workflows:
-  build-and-pushdoc:
-    unless: << pipeline.parameters.build-and-push-docker-images >>
+  version: 2
+  build:
     jobs:
       - build-real
       - build-complex
-      - pushdoc:
-          requires:
-            - build-real
-          filters:
-            branches:
-              only:
-                - master
-
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 1 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - build-and-push-complete-build-docker-images:
-          context: dockerhub
-
-  build-and-push-docker-images:
-    when: << pipeline.parameters.build-and-push-docker-images >>
-    jobs:
-      - build-and-push-complete-build-docker-images:
-          filters:
-            branches:
-              only:
-                - master
-          context: dockerhub

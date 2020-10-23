@@ -5,23 +5,18 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import math
-# import os
 import sys
 
-
+import FIAT
 import numpy as np
 import pytest
-from mpi4py import MPI
-# from dolfinx.io import XDMFFile
-from dolfinx_utils.test.fixtures import tempdir
-from dolfinx_utils.test.skips import skip_in_parallel
-
-import dolfinx
-import FIAT
-from dolfinx import (BoxMesh, Mesh, MeshEntity, RectangleMesh,
-                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
+from dolfinx import (BoxMesh, RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, cpp)
 from dolfinx.cpp.mesh import CellType, is_simplex
 from dolfinx.fem import assemble_scalar
+from dolfinx_utils.test.fixtures import tempdir
+from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 from ufl import dx
 
 assert (tempdir)
@@ -70,19 +65,19 @@ def mesh3d():
 @pytest.fixture
 def c0(mesh3d):
     """Original tetrahedron from UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)"""
-    return MeshEntity(mesh3d, mesh3d.topology.dim, 0)
+    return mesh3d, mesh3d.topology.dim, 0
 
 
 @pytest.fixture
 def c1(mesh3d):
     # Degenerate cell
-    return MeshEntity(mesh3d, mesh3d.topology.dim, 1)
+    return mesh3d, mesh3d.topology.dim, 1
 
 
 @pytest.fixture
 def c5(mesh3d):
     # Regular tetrahedron with edge sqrt(2)
-    return MeshEntity(mesh3d, mesh3d.topology.dim, 5)
+    return mesh3d, mesh3d.topology.dim, 5
 
 
 @pytest.fixture
@@ -147,77 +142,6 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
     _check_ufl_domain(rectangle)
     _check_ufl_domain(cube)
     _check_ufl_domain(box)
-
-
-# pygmsh is problematic in parallel because it uses subprocess to call
-# gmsh. To be robust, it would need to call MPI 'spawn'.
-@pytest.mark.skip(
-    reason="pymsh calling gmsh fails in container (related to file creation)")
-@skip_in_parallel
-def test_mesh_construction_pygmsh():
-
-    pygmsh = pytest.importorskip("pygmsh")
-
-    if MPI.COMM_WORLD.rank == 0:
-        geom = pygmsh.opencascade.Geometry()
-        geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
-        pygmsh_mesh = pygmsh.generate_mesh(geom)
-        points, cells = pygmsh_mesh.points, pygmsh_mesh.cells
-    else:
-        points = np.zeros([0, 3])
-        cells = {
-            "tetra": np.zeros([0, 4], dtype=np.int64),
-            "triangle": np.zeros([0, 3], dtype=np.int64),
-            "line": np.zeros([0, 2], dtype=np.int64)
-        }
-
-    mesh = Mesh(MPI.COMM_WORLD, dolfinx.cpp.mesh.CellType.tetrahedron, points,
-                cells['tetra'], [], cpp.mesh.GhostMode.none)
-    assert mesh.geometry.degree() == 1
-    assert mesh.geometry.dim == 3
-    assert mesh.topology.dim == 3
-
-    mesh = Mesh(MPI.COMM_WORLD,
-                dolfinx.cpp.mesh.CellType.triangle, points,
-                cells['triangle'], [], cpp.mesh.GhostMode.none)
-    assert mesh.geometry.degree() == 1
-    assert mesh.geometry.dim == 3
-    assert mesh.topology.dim == 2
-
-    mesh = Mesh(MPI.COMM_WORLD,
-                dolfinx.cpp.mesh.CellType.interval, points,
-                cells['line'], [], cpp.mesh.GhostMode.none)
-    assert mesh.geometry.degree() == 1
-    assert mesh.geometry.dim == 3
-    assert mesh.topology.dim == 1
-
-    if MPI.COMM_WORLD.rank == 0:
-        print("Generate mesh")
-        geom = pygmsh.opencascade.Geometry()
-        geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
-        pygmsh_mesh = pygmsh.generate_mesh(
-            geom, extra_gmsh_arguments=['-order', '2'])
-        points, cells = pygmsh_mesh.points, pygmsh_mesh.cells
-        print("End Generate mesh", cells.keys())
-    else:
-        points = np.zeros([0, 3])
-        cells = {
-            "tetra10": np.zeros([0, 10], dtype=np.int64),
-            "triangle6": np.zeros([0, 6], dtype=np.int64),
-            "line3": np.zeros([0, 3], dtype=np.int64)
-        }
-
-    mesh = Mesh(MPI.COMM_WORLD, dolfinx.cpp.mesh.CellType.tetrahedron, points,
-                cells['tetra10'], [], cpp.mesh.GhostMode.none)
-    assert mesh.geometry.degree() == 2
-    assert mesh.geometry.dim == 3
-    assert mesh.topology.dim == 3
-
-    mesh = Mesh(MPI.COMM_WORLD, dolfinx.cpp.mesh.CellType.triangle, points,
-                cells['triangle6'], [], cpp.mesh.GhostMode.none)
-    assert mesh.geometry.degree() == 2
-    assert mesh.geometry.dim == 3
-    assert mesh.topology.dim == 2
 
 
 def test_UnitSquareMeshDistributed():
@@ -289,32 +213,32 @@ def test_GetCoordinates():
 
 @skip_in_parallel
 def xtest_cell_inradius(c0, c1, c5):
-    assert cpp.mesh.inradius(c0.mesh(), [c0.index()]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
-    assert cpp.mesh.inradius(c1.mesh(), [c1.index()]) == pytest.approx(0.0)
-    assert cpp.mesh.inradius(c5.mesh(), [c5.index()]) == pytest.approx(math.sqrt(3.0) / 6.0)
+    assert cpp.mesh.inradius(c0[0], [c0[2]]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
+    assert cpp.mesh.inradius(c1[0], [c1[2]]) == pytest.approx(0.0)
+    assert cpp.mesh.inradius(c5[0], [c5[2]]) == pytest.approx(math.sqrt(3.0) / 6.0)
 
 
 @skip_in_parallel
 def test_cell_circumradius(c0, c1, c5):
-    assert cpp.mesh.circumradius(c0.mesh(), [c0.index()], c0.dim) == pytest.approx(math.sqrt(3.0) / 2.0)
+    assert cpp.mesh.circumradius(c0[0], [c0[2]], c0[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
     # Implementation of diameter() does not work accurately
     # for degenerate cells - sometimes yields NaN
-    r_c1 = cpp.mesh.circumradius(c1.mesh(), [c1.index()], c1.dim)
+    r_c1 = cpp.mesh.circumradius(c1[0], [c1[2]], c1[1])
     assert math.isnan(r_c1)
-    assert cpp.mesh.circumradius(c5.mesh(), [c5.index()], c5.dim) == pytest.approx(math.sqrt(3.0) / 2.0)
+    assert cpp.mesh.circumradius(c5[0], [c5[2]], c5[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
 
 
 @skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
-        assert cpp.mesh.h(c.mesh(), [c.index()], c.dim) == pytest.approx(math.sqrt(2.0))
+        assert cpp.mesh.h(c[0], [c[2]], c[1]) == pytest.approx(math.sqrt(2.0))
 
 
 @skip_in_parallel
 def xtest_cell_radius_ratio(c0, c1, c5):
-    assert cpp.mesh.radius_ratio(c0.mesh(), [c0.index()]) == pytest.approx(math.sqrt(3.0) - 1.0)
-    assert np.isnan(cpp.mesh.radius_ratio(c1.mesh(), [c1.index()]))
-    assert cpp.mesh.radius_ratio(c5.mesh(), [c5.index()]) == pytest.approx(1.0)
+    assert cpp.mesh.radius_ratio(c0[0], c0[2]) == pytest.approx(math.sqrt(3.0) - 1.0)
+    assert np.isnan(cpp.mesh.radius_ratio(c1[0], c1[2]))
+    assert cpp.mesh.radius_ratio(c5[0], c5[2]) == pytest.approx(1.0)
 
 
 @skip_in_parallel
@@ -380,15 +304,14 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     map = mesh.topology.index_map(mesh.topology.dim)
     num_cells = map.size_local + map.num_ghosts
     for i in range(num_cells):
-        cell = MeshEntity(mesh, mesh.topology.dim, i)
-        # Get mesh-global (MPI-local) indices of cell vertices
-        vertex_global_indices = cell.entities(0)
+        # Get indices of cell vertices
+        vertex_global_indices = mesh.topology.connectivity(mesh.topology.dim, 0).links(i)
 
         # Loop over all dimensions of reference cell topology
         for d, d_topology in fiat_cell.get_topology().items():
 
             # Get entities of dimension d on the cell
-            entities = cell.entities(d)
+            entities = mesh.topology.connectivity(mesh.topology.dim, d).links(i)
             if len(entities) == 0:  # Fixup for highest dimension
                 entities = (i, )
 
@@ -396,8 +319,8 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
             for entity_index, entity_topology in d_topology.items():
 
                 # Check that entity vertices map to cell vertices in correct order
-                entity = MeshEntity(mesh, d, entities[entity_index])
-                vertices_dolfin = np.sort(entity.entities(0))
+                vertices = mesh.topology.connectivity(d, 0).links(entities[entity_index])
+                vertices_dolfin = np.sort(vertices)
                 vertices_fiat = np.sort(vertex_global_indices[np.array(entity_topology)])
                 assert all(vertices_fiat == vertices_dolfin)
 
@@ -432,36 +355,3 @@ def test_UnitHexMesh_assemble():
     vol = assemble_scalar(1 * dx(mesh))
     vol = mesh.mpi_comm().allreduce(vol, MPI.SUM)
     assert(vol == pytest.approx(1, rel=1e-9))
-
-
-def xtest_mesh_order_unchanged_triangle():
-    points = [[0, 0], [1, 0], [1, 1]]
-    cells = [[0, 1, 2]]
-    mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points,
-                cells, [], cpp.mesh.GhostMode.none)
-    assert (mesh.cells()[0] == cells[0]).all()
-
-
-def xtest_mesh_order_unchanged_quadrilateral():
-    points = [[0, 0], [1, 0], [0, 1], [1, 1]]
-    cells = [[0, 1, 2, 3]]
-    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points,
-                cells, [], cpp.mesh.GhostMode.none)
-    assert (mesh.cells()[0] == cells[0]).all()
-
-
-def xtest_mesh_order_unchanged_tetrahedron():
-    points = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 0, 1]]
-    cells = [[0, 1, 2, 3]]
-    mesh = Mesh(MPI.COMM_WORLD, CellType.tetrahedron, points,
-                cells, [], cpp.mesh.GhostMode.none)
-    assert (mesh.cells()[0] == cells[0]).all()
-
-
-def xtest_mesh_order_unchanged_hexahedron():
-    points = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0],
-              [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]]
-    cells = [[0, 1, 2, 3, 4, 5, 6, 7]]
-    mesh = Mesh(MPI.COMM_WORLD, CellType.hexahedron, points,
-                cells, [], cpp.mesh.GhostMode.none)
-    assert (mesh.cells()[0] == cells[0]).all()

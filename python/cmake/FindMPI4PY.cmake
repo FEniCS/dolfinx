@@ -15,11 +15,11 @@ if(NOT MPI4PY_INCLUDE_DIR)
       RESULT_VARIABLE MPI4PY_COMMAND_RESULT
       OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(MPI4PY_COMMAND_RESULT)
-        message("jfa: mpi4py not found")
+        message("mpi4py not found")
         set(MPI4PY_FOUND FALSE)
     else(MPI4PY_COMMAND_RESULT)
         if (MPI4PY_INCLUDE_DIR MATCHES "Traceback")
-            message("jfa: mpi4py matches traceback")
+            message("mpi4py matches traceback")
             ## Did not successfully include MPI4PY
             set(MPI4PY_FOUND FALSE)
         else (MPI4PY_INCLUDE_DIR MATCHES "Traceback")

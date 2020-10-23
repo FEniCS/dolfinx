@@ -5,14 +5,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly over domains"""
 
+import dolfinx
 import numpy
 import pytest
+import ufl
+from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI
 from petsc4py import PETSc
-
-import dolfinx
-from dolfinx.mesh import locate_entities_boundary
-import ufl
 
 
 @pytest.fixture
@@ -50,6 +49,8 @@ def test_assembly_dx_domains(mode):
     with w.vector.localForm() as w_local:
         w_local.set(0.5)
 
+    bc = dolfinx.fem.DirichletBC(dolfinx.Function(V), range(30))
+
     # Assemble matrix
     a = w * ufl.inner(u, v) * (dx(1) + dx(2) + dx(3))
     A = dolfinx.fem.assemble_matrix(a)
@@ -62,11 +63,18 @@ def test_assembly_dx_domains(mode):
     # Assemble vector
     L = ufl.inner(w, v) * (dx(1) + dx(2) + dx(3))
     b = dolfinx.fem.assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    dolfinx.fem.apply_lifting(b, [a], [[bc]])
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES,
+                  mode=PETSc.ScatterMode.REVERSE)
+    dolfinx.fem.set_bc(b, [bc])
+
     L2 = ufl.inner(w, v) * dx
     b2 = dolfinx.fem.assemble_vector(L2)
-    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    print(b2.norm())
+    dolfinx.fem.apply_lifting(b2, [a], [[bc]])
+    b2.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES,
+                   mode=PETSc.ScatterMode.REVERSE)
+    dolfinx.fem.set_bc(b2, [bc])
     assert (b - b2).norm() < 1.0e-12
 
     # Assemble scalar
@@ -122,6 +130,8 @@ def test_assembly_ds_domains(mode):
     with w.vector.localForm() as w_local:
         w_local.set(0.5)
 
+    bc = dolfinx.fem.DirichletBC(dolfinx.Function(V), range(30))
+
     # Assemble matrix
     a = w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6))
     A = dolfinx.fem.assemble_matrix(a)
@@ -136,10 +146,19 @@ def test_assembly_ds_domains(mode):
     # Assemble vector
     L = ufl.inner(w, v) * (ds(1) + ds(2) + ds(3) + ds(6))
     b = dolfinx.fem.assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    dolfinx.fem.apply_lifting(b, [a], [[bc]])
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES,
+                  mode=PETSc.ScatterMode.REVERSE)
+    dolfinx.fem.set_bc(b, [bc])
+
     L2 = ufl.inner(w, v) * ds
     b2 = dolfinx.fem.assemble_vector(L2)
-    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    dolfinx.fem.apply_lifting(b2, [a2], [[bc]])
+    b2.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES,
+                   mode=PETSc.ScatterMode.REVERSE)
+    dolfinx.fem.set_bc(b2, [bc])
+
     assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
 
     # Assemble scalar

@@ -15,10 +15,9 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
-from dolfinx import (BoxMesh, DirichletBC, Function, VectorFunctionSpace,
-                     cpp)
+from dolfinx import BoxMesh, DirichletBC, Function, VectorFunctionSpace, cpp
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
+from dolfinx.fem import (Form, apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.la import VectorSpaceBasis
@@ -39,15 +38,17 @@ def build_nullspace(V):
 
         # Build translational null space basis
         for i in range(3):
-            basis[i][V.sub(i).dofmap.list.array()] = 1.0
+            basis[i][V.sub(i).dofmap.list.array] = 1.0
 
         # Build rotational null space basis
-        V.sub(0).set_x(basis[3], -1.0, 1)
-        V.sub(1).set_x(basis[3], 1.0, 0)
-        V.sub(0).set_x(basis[4], 1.0, 2)
-        V.sub(2).set_x(basis[4], -1.0, 0)
-        V.sub(2).set_x(basis[5], 1.0, 1)
-        V.sub(1).set_x(basis[5], -1.0, 2)
+        x = V.tabulate_dof_coordinates()
+        dofs = [V.sub(i).dofmap.list.array for i in range(3)]
+        basis[3][dofs[0]] = -x[dofs[0], 1]
+        basis[3][dofs[1]] = x[dofs[1], 0]
+        basis[4][dofs[0]] = x[dofs[0], 2]
+        basis[4][dofs[2]] = -x[dofs[2], 0]
+        basis[5][dofs[2]] = x[dofs[2], 1]
+        basis[5][dofs[1]] = -x[dofs[1], 2]
 
     # Create vector space basis and orthogonalize
     basis = VectorSpaceBasis(nullspace_basis)
@@ -75,8 +76,8 @@ mesh = BoxMesh(
 
 
 def boundary(x):
-    return np.logical_or(x[0] < 10.0 * np.finfo(float).eps,
-                         x[0] > 1.0 - 10.0 * np.finfo(float).eps)
+    return np.logical_or(np.isclose(x[0], 0.0),
+                         np.isclose(x[1], 1.0))
 
 
 # Rotation rate and mass density
@@ -117,8 +118,11 @@ with u0.vector.localForm() as bc_local:
 # Set up boundary condition on inner surface
 bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
 
-# Assemble system, applying boundary conditions and preserving symmetry)
-A = assemble_matrix(a, [bc])
+# Explicitly compile a UFL Form into dolfinx Form
+form = Form(a, jit_parameters={"cffi_extra_compile_args": "-Ofast -march=native", "cffi_verbose": True})
+
+# Assemble system, applying boundary conditions and preserving symmetry
+A = assemble_matrix(form, [bc])
 A.assemble()
 
 b = assemble_vector(L)

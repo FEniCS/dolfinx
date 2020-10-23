@@ -66,13 +66,13 @@ def test_krylov_samg_solver_elasticity():
             vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
             basis = [np.asarray(x) for x in vec_local]
 
-            # Build translational null space basis
-            V.sub(0).dofmap.set(basis[0], 1.0)
-            V.sub(1).dofmap.set(basis[1], 1.0)
-
-            # Build rotational null space basis
-            V.sub(0).set_x(basis[2], -1.0, 1)
-            V.sub(1).set_x(basis[2], 1.0, 0)
+            # Build null space basis
+            dofs = [V.sub(i).dofmap.list.array for i in range(2)]
+            for i in range(2):
+                basis[i][dofs[i]] = 1.0
+            x = V.tabulate_dof_coordinates()
+            basis[2][dofs[0]] = -x[dofs[0], 1]
+            basis[2][dofs[1]] = x[dofs[1], 0]
 
         null_space = VectorSpaceBasis(nullspace_basis)
         null_space.orthonormalize()

@@ -31,22 +31,19 @@ class ElementDofLayout;
 
 /// Builds a DofMap on a mesh::Mesh
 
-class DofMapBuilder
+namespace DofMapBuilder
 {
 
-public:
-  /// Build dofmap
-  static std::tuple<std::shared_ptr<const ElementDofLayout>,
-                    std::shared_ptr<const common::IndexMap>,
-                    graph::AdjacencyList<std::int32_t>>
-  build(MPI_Comm comm, const mesh::Topology& topology,
-        std::shared_ptr<const ElementDofLayout> element_dof_layout);
+/// Build dofmap
+/// @param[in] comm MPI communicator
+/// @param[in] topology The mesh topology
+/// @param[in] element_dof_layout The element dof layout for the function
+/// space
+/// @return The index map and local to global DOF data for the DOF map.
+std::pair<std::shared_ptr<common::IndexMap>, graph::AdjacencyList<std::int32_t>>
+build(MPI_Comm comm, const mesh::Topology& topology,
+      const ElementDofLayout& element_dof_layout);
 
-  /// Build dofmap
-  static std::pair<std::shared_ptr<common::IndexMap>,
-                   graph::AdjacencyList<std::int32_t>>
-  build(MPI_Comm comm, const mesh::Topology& topology,
-        const ElementDofLayout& element_dof_layout, int block_size);
-};
+} // namespace DofMapBuilder
 } // namespace fem
 } // namespace dolfinx

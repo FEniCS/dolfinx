@@ -33,8 +33,12 @@ void test_scatter_fwd()
   std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
 
   // Create an IndexMap
-  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts,
-                           global_ghost_owner, 1);
+  common::IndexMap idx_map(
+      MPI_COMM_WORLD, size_local,
+      dolfinx::MPI::compute_graph_edges(
+          MPI_COMM_WORLD,
+          std::set<int>(global_ghost_owner.begin(), global_ghost_owner.end())),
+      ghosts, global_ghost_owner, 1);
 
   // Create some data to scatter
   const std::int64_t val = 11;
@@ -67,8 +71,12 @@ void test_scatter_rev()
   std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
 
   // Create an IndexMap
-  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts,
-                           global_ghost_owner, 1);
+  common::IndexMap idx_map(
+      MPI_COMM_WORLD, size_local,
+      dolfinx::MPI::compute_graph_edges(
+          MPI_COMM_WORLD,
+          std::set<int>(global_ghost_owner.begin(), global_ghost_owner.end())),
+      ghosts, global_ghost_owner, 1);
 
   // Create some data, setting ghost values
   std::int64_t value = 15;

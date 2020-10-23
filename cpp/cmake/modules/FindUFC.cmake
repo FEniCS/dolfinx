@@ -41,13 +41,13 @@
 # Two paths: Set UFC_INCLUDE_DIR manually, or ask Python/FFCX for location
 # of UFC headers.
 
-if (DEFINED UFC_INCLUDE_DIR)
-  MESSAGE(STATUS "Looking for UFC in ${UFC_INCLUDE_DIR}...")
+if (DEFINED ENV{UFC_INCLUDE_DIR})
+  MESSAGE(STATUS "Looking for UFC in $ENV{UFC_INCLUDE_DIR}...")
 
-  if (EXISTS "${UFC_INCLUDE_DIR}/ufc.h" AND EXISTS "${UFC_INCLUDE_DIR}/ufc_geometry.h")
-    set(UFC_INCLUDE_DIRS ${UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h and ufc_geometry.h")
+  if (EXISTS "$ENV{UFC_INCLUDE_DIR}/ufc.h" AND EXISTS "$ENV{UFC_INCLUDE_DIR}/ufc_geometry.h")
+    set(UFC_INCLUDE_DIRS $ENV{UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h and ufc_geometry.h")
     execute_process(
-      COMMAND /bin/bash -c "cat ${UFC_INCLUDE_DIR}/ufc.h ${UFC_INCLUDE_DIR}/ufc_geometry.h | sha1sum | cut -c 1-40"
+      COMMAND /bin/bash -c "cat $ENV{UFC_INCLUDE_DIR}/ufc.h $ENV{UFC_INCLUDE_DIR}/ufc_geometry.h | sha1sum | cut -c 1-40"
       OUTPUT_VARIABLE UFC_SIGNATURE OUTPUT_STRIP_TRAILING_WHITESPACE)
     # Assume user knows what they are doing.
     set(UFC_VERSION ${UFC_FIND_VERSION})
@@ -57,9 +57,8 @@ if (DEFINED UFC_INCLUDE_DIR)
    endif()
 else()
   MESSAGE(STATUS "Asking Python module FFCX for location of UFC...")
-  find_package(PythonInterp 3 REQUIRED)
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
+    COMMAND ${Python3_EXECUTABLE} -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
     OUTPUT_VARIABLE UFC_INCLUDE_DIR
     )
 
@@ -67,7 +66,7 @@ else()
     set(UFC_INCLUDE_DIRS ${UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h and ufc_geometry.h")
 
     execute_process(
-      COMMAND ${PYTHON_EXECUTABLE} -c "import ffcx, sys; sys.stdout.write(ffcx.__version__)"
+      COMMAND ${Python3_EXECUTABLE} -c "import ffcx, sys; sys.stdout.write(ffcx.__version__)"
       OUTPUT_VARIABLE UFC_VERSION
       )
 
@@ -83,7 +82,7 @@ else()
   endif()
 
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_signature())"
+    COMMAND ${Python3_EXECUTABLE} -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_signature())"
     OUTPUT_VARIABLE UFC_SIGNATURE
   )
 endif()

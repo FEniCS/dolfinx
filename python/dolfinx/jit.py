@@ -39,21 +39,17 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     """
 
     @functools.wraps(local_jit)
-    def mpi_jit(*args, **kwargs):
-
-        # FIXME: should require mpi_comm to be explicit and not default
-        # to comm_world?
-        mpi_comm = kwargs.pop("mpi_comm", MPI.COMM_WORLD)
+    def mpi_jit(comm, *args, **kwargs):
 
         # Just call JIT compiler when running in serial
-        if mpi_comm.size == 1:
+        if comm.size == 1:
             return local_jit(*args, **kwargs)
 
         # Default status (0 == ok, 1 == fail)
         status = 0
 
         # Compile first on process 0
-        root = mpi_comm.rank == 0
+        root = comm.rank == 0
         if root:
             try:
                 output = local_jit(*args, **kwargs)
@@ -71,7 +67,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
         # Wait for the compiling process to finish and get status TODO:
         # Would be better to broadcast the status from root but this
         # works.
-        global_status = mpi_comm.allreduce(status, op=MPI.MAX)
+        global_status = comm.allreduce(status, op=MPI.MAX)
         if global_status == 0:
             # Success, call jit on all other processes (this should just
             # read the cache)
@@ -90,35 +86,42 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 
 
 @mpi_jit_decorator
-def ffcx_jit(ufl_object, form_compiler_parameters=None):
+def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
     # Prepare form compiler parameters with overrides from dolfinx
     p = ffcx.default_parameters()
     p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
-    p.update(form_compiler_parameters or {})
+    p.update(form_compiler_parameters)
+
+    cache_dir_default = Path.joinpath(Path.home(), ".cache", "fenics")
 
     # CFFI compiler options/flags
-    extra_compile_args = ['-g0', '-O3', '-march=native']
-    user_cflags = os.getenv('DOLFINX_JIT_CFLAGS')
-    if user_cflags is not None:
-        extra_compile_args = user_cflags.split(" ")
-    cffi_options = dict(cffi_extra_compile_args=extra_compile_args, cffi_verbose=False,
-                        cffi_debug=False)
+    jit_params = {"cffi_extra_compile_args": ["-O2", "-g0"],
+                  "cffi_debug": False, "cffi_verbose": False,
+                  "cffi_libraries": None, "cache_dir": cache_dir_default, "timeout": 10}
+
+    jit_params.update(jit_parameters)
+
+    # Enviromental variable has the highest priority
+    cflags = os.getenv('DOLFINX_JIT_CFLAGS', jit_params["cffi_extra_compile_args"])
+    if isinstance(cflags, str):
+        cflags = cflags.split(" ")
+    jit_params["cffi_extra_compile_args"] = cflags
 
     # Set FFCX cache location
-    cache_dir = "~/.cache/fenics"
-    cache_dir = os.getenv('FENICS_CACHE_DIR', cache_dir)
+    cache_dir = os.getenv('DOLFINX_JIT_CACHE_DIR', jit_params["cache_dir"])
     cache_dir = Path(cache_dir).expanduser()
+    jit_params["cache_dir"] = cache_dir
 
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
-        r = ffcx.codegeneration.jit.compile_forms([ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
+        r = ffcx.codegeneration.jit.compile_forms([ufl_object], parameters=p, **jit_params)
     elif isinstance(ufl_object, ufl.FiniteElementBase):
-        r = ffcx.codegeneration.jit.compile_elements([ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
+        r = ffcx.codegeneration.jit.compile_elements([ufl_object], parameters=p, **jit_params)
     elif isinstance(ufl_object, ufl.Mesh):
         r = ffcx.codegeneration.jit.compile_coordinate_maps(
-            [ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
+            [ufl_object], parameters=p, **jit_params)
     elif isinstance(ufl_object, tuple) and isinstance(ufl_object[0], ufl.core.expr.Expr):
-        r = ffcx.codegeneration.jit.compile_expressions([ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
+        r = ffcx.codegeneration.jit.compile_expressions([ufl_object], parameters=p, **jit_params)
     else:
         raise TypeError(type(ufl_object))
 

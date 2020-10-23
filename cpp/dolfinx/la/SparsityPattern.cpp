@@ -61,9 +61,15 @@ SparsityPattern::SparsityPattern(
 
   // Create new IndexMaps
   _index_maps[0] = std::make_shared<common::IndexMap>(
-      comm, local_offset0.back(), ghosts0, ghost_owners0, 1);
+      comm, local_offset0.back(),
+      dolfinx::MPI::compute_graph_edges(
+          comm, std::set<int>(ghost_owners0.begin(), ghost_owners0.end())),
+      ghosts0, ghost_owners0, 1);
   _index_maps[1] = std::make_shared<common::IndexMap>(
-      comm, local_offset1.back(), ghosts1, ghost_owners1, 1);
+      comm, local_offset1.back(),
+      dolfinx::MPI::compute_graph_edges(
+          comm, std::set<int>(ghost_owners1.begin(), ghost_owners1.end())),
+      ghosts1, ghost_owners1, 1);
 
   // Size cache arrays
   const std::int32_t size_row = local_offset0.back() + ghosts0.size();
@@ -166,8 +172,8 @@ SparsityPattern::SparsityPattern(
 std::array<std::int64_t, 2> SparsityPattern::local_range(int dim) const
 {
   const int bs = _index_maps.at(dim)->block_size();
-  const std::array<std::int64_t, 2> lrange = _index_maps[dim]->local_range();
-  return {{bs * lrange[0], bs * lrange[1]}};
+  const std::array lrange = _index_maps[dim]->local_range();
+  return {bs * lrange[0], bs * lrange[1]};
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
@@ -256,16 +262,14 @@ void SparsityPattern::assemble()
   const int bs0 = _index_maps[0]->block_size();
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
-  const std::array<std::int64_t, 2> local_range0
-      = _index_maps[0]->local_range();
+  const std::array local_range0 = _index_maps[0]->local_range();
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts0
       = _index_maps[0]->ghosts();
 
   assert(_index_maps[1]);
   const int bs1 = _index_maps[1]->block_size();
   const std::int32_t local_size1 = _index_maps[1]->size_local();
-  const std::array<std::int64_t, 2> local_range1
-      = _index_maps[1]->local_range();
+  const std::array local_range1 = _index_maps[1]->local_range();
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
       = _index_maps[1]->ghosts();
 
@@ -307,43 +311,35 @@ void SparsityPattern::assemble()
     }
   }
 
-  // Get number of processes in neighbourhood
-  const std::vector<std::int32_t>& neighbours = _index_maps[0]->neighbours();
-  MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(_mpi_comm.comm(), neighbours.size(),
-                                 neighbours.data(), MPI_UNWEIGHTED,
-                                 neighbours.size(), neighbours.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::symmetric);
+  int num_neighbors(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
+  assert(num_neighbors == outdegree);
 
-  int num_neighbours(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree, &weighted);
-  assert(num_neighbours == outdegree);
-
-  // Figure out how much data to receive from each neighbour
+  // Figure out how much data to receive from each neighbor
   const int num_my_rows = ghost_data.size();
-  std::vector<int> num_rows_recv(num_neighbours);
+  std::vector<int> num_rows_recv(num_neighbors);
   MPI_Neighbor_allgather(&num_my_rows, 1, MPI_INT, num_rows_recv.data(), 1,
                          MPI_INT, comm);
 
   // Compute displacements for data to receive
-  std::vector<int> disp(num_neighbours + 1, 0);
+  std::vector<int> disp(num_neighbors + 1, 0);
   std::partial_sum(num_rows_recv.begin(), num_rows_recv.end(),
                    disp.begin() + 1);
 
-  // NOTE: Send unowned rows to all neighbours could be a bit 'lazy' and
+  // NOTE: Send unowned rows to all neighbors could be a bit 'lazy' and
   // MPI_Neighbor_alltoallv could be used to send just to the owner, but
-  // maybe the number of rows exchanged in the neighbourhood are
+  // maybe the number of rows exchanged in the neighborhood are
   // relatively small that MPI_Neighbor_allgatherv is simpler.
 
-  // Send all unowned rows to neighbours, and receive rows from
-  // neighbours
+  // Send all unowned rows to neighbors, and receive rows from
+  // neighbors
   std::vector<std::int64_t> ghost_data_received(disp.back());
   MPI_Neighbor_allgatherv(ghost_data.data(), ghost_data.size(), MPI_INT64_T,
                           ghost_data_received.data(), num_rows_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
-  MPI_Comm_free(&comm);
 
-  // Add data received from the neighbourhood
+  // Add data received from the neighborhood
   for (std::size_t i = 0; i < ghost_data_received.size(); i += 2)
   {
     const std::int64_t row = ghost_data_received[i];
