@@ -57,7 +57,7 @@ PYBIND11_MODULE(petsc_casters_cppimport, m)
         p = str(rel_path).replace("/", ".") + ".petsc_casters_cppimport"
         return cppimport.imp(p)
 
-    module = compile_module()
+    module = compile_module(MPI.COMM_WORLD)
 
     # Define ranges
     comm = MPI.COMM_WORLD
