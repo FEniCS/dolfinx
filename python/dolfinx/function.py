@@ -248,7 +248,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         # Compile dofmap and element and create DOLFIN objects
         ufc_element, ufc_dofmap_ptr = jit.ffcx_jit(
-            self.ufl_element(), mpi_comm=mesh.mpi_comm(), form_compiler_parameters=form_compiler_parameters,
+            mesh.mpi_comm(), self.ufl_element(), form_compiler_parameters=form_compiler_parameters,
             jit_parameters=jit_parameters)
 
         ffi = cffi.FFI()
