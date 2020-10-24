@@ -112,6 +112,16 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
     cache_dir = Path(cache_dir).expanduser()
     jit_params["cache_dir"] = cache_dir
 
+    libs = os.getenv("DOLFINX_JIT_CFFI_LIBRARIES", jit_params["cffi_libraries"])
+    if isinstance(libs, str):
+        libs = libs.split(" ")
+    jit_params["cffi_libraries"] = libs
+
+    verbose = os.getenv("DOLFINX_JIT_CFFI_VERBOSE", jit_params["cffi_verbose"])
+    if isinstance(verbose, str):
+        verbose = True if verbose != "0" else False
+    jit_params["cffi_verbose"] = verbose
+
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
         r = ffcx.codegeneration.jit.compile_forms([ufl_object], parameters=p, **jit_params)
