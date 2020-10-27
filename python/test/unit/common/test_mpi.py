@@ -66,7 +66,7 @@ PYBIND11_MODULE(mpi_comm_wrapper, m)
         p = str(rel_path).replace("/", ".") + ".mpi_comm_wrapper"
         return cppimport.imp(p)
 
-    module = compile_module()
+    module = compile_module(MPI.COMM_WORLD)
 
     w1 = MPI.COMM_WORLD
     w2 = module.test_comm_passing(w1)
