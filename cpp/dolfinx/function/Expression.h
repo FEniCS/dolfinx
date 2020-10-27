@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfinx/fem/FormCoefficients.h>
 #include <dolfinx/function/evaluate.h>
 #include <functional>
 #include <utility>
@@ -33,21 +32,19 @@ template <typename T>
 class Expression
 {
 public:
-  /// Create Expression (C++).
+  /// Create Expression.
   ///
-  /// @param[in] coefficients
-  /// @param[in] constants Vector of pairs (name, constant). The index
-  ///   in the vector is the position of the constant in the original
-  ///   (non-simplified) form
+  /// @param[in] coefficients Coefficients in the Expression
+  /// @param[in] constants Constants in the Expression
   /// @param[in] mesh
   /// @param[in] x points on reference cell, number of points rows
-  //    and tdim cols
+  ///   and tdim cols
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_size size of expression evaluated at single point
   Expression(
-      const fem::FormCoefficients<T>& coefficients,
-      const std::vector<
-          std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
+      const std::vector<std::shared_ptr<const function::Function<T>>>&
+          coefficients,
+      const std::vector<std::shared_ptr<const function::Constant<T>>>&
           constants,
       const std::shared_ptr<const mesh::Mesh>& mesh,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
@@ -60,26 +57,6 @@ public:
     // Do nothing
   }
 
-  /// Create Expression (Python).
-  ///
-  /// @warning Leaves class in unfinalised state. Only for use by Python
-  ///   wrappers to DOLFINX. C++ callers should use the other constructor.
-  ///   coefficients, constants and fn must be set later by caller.
-  ///
-  /// @param[in] mesh
-  /// @param[in] x points on reference cell, number of points rows and
-  ///   tdim cols
-  /// @param[in] value_size size of expression evaluated at single point
-  Expression(const std::shared_ptr<mesh::Mesh>& mesh,
-             const Eigen::Ref<const Eigen::Array<
-                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
-             const std::size_t value_size)
-      : Expression(fem::FormCoefficients<T>({}), {}, mesh, x, nullptr,
-                   value_size)
-  {
-    // Do nothing
-  }
-
   /// Move constructor
   Expression(Expression&& form) = default;
 
@@ -87,10 +64,26 @@ public:
   virtual ~Expression() = default;
 
   /// Access coefficients
-  fem::FormCoefficients<T>& coefficients() { return _coefficients; }
+  const std::vector<std::shared_ptr<const function::Function<T>>>&
+  coefficients() const
+  {
+    return _coefficients;
+  }
 
-  /// Access coefficients (const version)
-  const fem::FormCoefficients<T>& coefficients() const { return _coefficients; }
+  /// Offset for each coefficient expansion array on a cell. Used to
+  /// pack data for multiple coefficients in a flat array. The last
+  /// entry is the size required to store all coefficients.
+  std::vector<int> coefficient_offsets() const
+  {
+    std::vector<int> n{0};
+    for (const auto& c : _coefficients)
+    {
+      if (!c)
+        throw std::runtime_error("Not all form coefficients have been set.");
+      n.push_back(n.back() + c->function_space()->element()->space_dimension());
+    }
+    return n;
+  }
 
   /// Evaluate the expression on cells
   /// @param[in] active_cells Cells on which to evaluate the Expression
@@ -105,14 +98,6 @@ public:
     function::eval(values, *this, active_cells);
   }
 
-  /// Register the function for tabulate_expression.
-  /// @param[in] fn Function to tabulate expression.
-  void set_tabulate_expression(
-      const std::function<void(T*, const T*, const T*, const double*)>& fn)
-  {
-    _fn = fn;
-  }
-
   /// Get function for tabulate_expression.
   /// @param[out] fn Function to tabulate expression.
   const std::function<void(T*, const T*, const T*, const double*)>&
@@ -121,96 +106,14 @@ public:
     return _fn;
   }
 
-  /// Set coefficient with given name
-  /// @param[in] coefficients Map from coefficient name to the
-  ///   coefficient
-  void set_coefficients(
-      const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
-          coefficients)
-  {
-    std::for_each(coefficients.begin(), coefficients.end(),
-                  [this](auto& c) { _coefficients.set(c.first, c.second); });
-  }
-
-  /// Set constants based on their names
-  ///
-  /// This method is used in command-line workflow, when users set
-  /// constants to the form in cpp file.
-  ///
-  /// Names of the constants must agree with their names in UFL file.
-  void set_constants(
-      const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
-          constants)
-  {
-    for (auto const& constant : constants)
-    {
-      // Find matching string in existing constants
-      const std::string name = constant.first;
-      const auto it = std::find_if(
-          _constants.begin(), _constants.end(),
-          [&](const std::pair<
-              std::string, std::shared_ptr<const function::Constant<T>>>& q) {
-            return (q.first == name);
-          });
-      if (it != _constants.end())
-        it->second = constant.second;
-      else
-        throw std::runtime_error("Constant '" + name + "' not found in form");
-    }
-  }
-
-  /// Set constants based on their order (without names)
-  ///
-  /// This method is used in Python workflow, when constants are
-  /// automatically attached to the expression based on their order in the
-  /// original expression.
-  ///
-  /// The order of constants must match their order in original ufl
-  /// expression.
-  void
-  set_constants(const std::vector<std::shared_ptr<const function::Constant<T>>>&
-                    constants)
-  {
-    _constants.resize(constants.size());
-
-    // Loop over each constant that user wants to attach
-    for (std::size_t i = 0; i < constants.size(); ++i)
-    {
-      // In this case, the constants don't have names
-      _constants[i] = std::pair("", constants[i]);
-    }
-  }
-
   /// Access constants
   /// @return Vector of attached constants with their names. Names are
   ///   used to set constants in user's c++ code. Index in the vector is
   ///   the position of the constant in the original (nonsimplified) form.
-  const std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
+  const std::vector<std::shared_ptr<const function::Constant<T>>>&
   constants() const
   {
     return _constants;
-  }
-
-  /// Check if all constants associated with the expression have been set
-  /// @return True if all Form constants have been set
-  bool all_constants_set() const
-  {
-    for (const auto& constant : _constants)
-      if (!constant.second)
-        return false;
-    return true;
-  }
-
-  /// Return names of any constants that have not been set
-  /// @return Names of unset constants
-  std::set<std::string> get_unset_constants() const
-  {
-    std::set<std::string> unset;
-    for (const auto& constant : _constants)
-      if (!constant.second)
-        unset.insert(constant.first);
-    return unset;
   }
 
   /// Get mesh
@@ -235,12 +138,10 @@ public:
 
 private:
   // Coefficients associated with the Expression
-  fem::FormCoefficients<T> _coefficients;
+  std::vector<std::shared_ptr<const function::Function<T>>> _coefficients;
 
   // Constants associated with the Expression
-  std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
-      _constants;
+  std::vector<std::shared_ptr<const function::Constant<T>>> _constants;
 
   // Function to evaluate the Expression
   std::function<void(T*, const T*, const T*, const double*)> _fn;

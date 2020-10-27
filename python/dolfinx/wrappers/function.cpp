@@ -133,12 +133,17 @@ void function(py::module& m)
   py::class_<dolfinx::function::Expression<PetscScalar>,
              std::shared_ptr<dolfinx::function::Expression<PetscScalar>>>(
       m, "Expression", "An Expression")
-      .def(py::init<
-               const std::shared_ptr<dolfinx::mesh::Mesh>&,
+      .def(py::init([](
+               const std::vector<std::shared_ptr<const dolfinx::function::Function<PetscScalar>>>& coefficients,
+	       const std::vector<std::shared_ptr<const dolfinx::function::Constant<PetscScalar>>>& constants,
+	       const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, 
                const Eigen::Ref<const Eigen::Array<
-                   double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&,
-               const std::size_t>(),
-           "Create an Expression")
+                   double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
+	       py::object addr,
+               const std::size_t value_size) { auto tabulate_expression_ptr = (void (*)(
+                 PetscScalar*, const PetscScalar*, const PetscScalar*,
+                 const double*))addr.cast<std::uintptr_t>(); return dolfinx::function::Expression<PetscScalar>(coefficients, constants, mesh, x, tabulate_expression_ptr, value_size); }),
+	       py::arg("coefficients"), py::arg("constants"), py::arg("mesh"), py::arg("x"), py::arg("fn"), py::arg("value_size"))
       .def("eval", &dolfinx::function::Expression<PetscScalar>::eval)
       .def_property_readonly("mesh",
                              &dolfinx::function::Expression<PetscScalar>::mesh,
@@ -151,22 +156,6 @@ void function(py::module& m)
           py::return_value_policy::reference_internal)
       .def_property_readonly("x",
                              &dolfinx::function::Expression<PetscScalar>::x,
-                             py::return_value_policy::reference_internal)
-      .def("set_coefficient",
-           [](dolfinx::function::Expression<PetscScalar>& self, std::size_t i,
-              std::shared_ptr<const dolfinx::function::Function<PetscScalar>>
-                  f) { self.coefficients().set(i, f); })
-      .def("set_constants",
-           py::overload_cast<const std::vector<std::shared_ptr<
-               const dolfinx::function::Constant<PetscScalar>>>&>(
-               &dolfinx::function::Expression<PetscScalar>::set_constants))
-      .def("set_tabulate_expression",
-           [](dolfinx::function::Expression<PetscScalar>& self,
-              py::object addr) {
-             auto tabulate_expression_ptr = (void (*)(
-                 PetscScalar*, const PetscScalar*, const PetscScalar*,
-                 const double*))addr.cast<std::uintptr_t>();
-             self.set_tabulate_expression(tabulate_expression_ptr);
-           });
+                             py::return_value_policy::reference_internal);
 }
 } // namespace dolfinx_wrappers

@@ -38,8 +38,6 @@ void eval(
       = dolfinx::fem::pack_coefficients<T, function::Expression<T>>(e);
 
   // Prepare constants
-  if (!e.all_constants_set())
-    throw std::runtime_error("Unset constant in Form");
   const Eigen::Array<T, Eigen::Dynamic, 1> constant_values
       = dolfinx::fem::pack_constants<T, function::Expression<T>>(e);
 
