@@ -74,7 +74,8 @@ class Expression:
         mesh = ufl_expression.ufl_domain().ufl_cargo()
 
         # Compile UFL expression with JIT
-        ufc_expression = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x), form_compiler_parameters=form_compiler_parameters,
+        ufc_expression = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x),
+                                      form_compiler_parameters=form_compiler_parameters,
                                       jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
         self._ufc_expression = ufc_expression
