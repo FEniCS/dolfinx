@@ -453,7 +453,7 @@ Eigen::Array<T, Eigen::Dynamic, 1> pack_constants(const fem::Form<T>& form)
   // Calculate size of array needed to store packed constants.
   Eigen::Index size
       = std::accumulate(constants.begin(), constants.end(), 0,
-                        [&](Eigen::Index sum, const auto& constant) {
+                        [](Eigen::Index sum, const auto& constant) {
                           return sum + constant->value.size();
                         });
 
