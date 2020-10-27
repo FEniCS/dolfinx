@@ -74,30 +74,25 @@ class Expression:
         mesh = ufl_expression.ufl_domain().ufl_cargo()
 
         # Compile UFL expression with JIT
-        ufc_expression = jit.ffcx_jit((ufl_expression, x), form_compiler_parameters=form_compiler_parameters,
-                                      jit_parameters=jit_parameters, mpi_comm=mesh.mpi_comm())
+        ufc_expression = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x), form_compiler_parameters=form_compiler_parameters,
+                                      jit_parameters=jit_parameters)
         self._ufl_expression = ufl_expression
         self._ufc_expression = ufc_expression
 
-        # Setup data (evaluation points, coefficients, constants, mesh, value_shape).
-
+        # Setup data (evaluation points, coefficients, constants, mesh, value_size).
         # Tabulation function.
         ffi = cffi.FFI()
         fn = ffi.cast("uintptr_t", ufc_expression.tabulate_expression)
 
         value_size = ufl.product(self.ufl_expression.ufl_shape)
 
-        self._cpp_object = cpp.function.Expression(mesh, x, value_size)
-
-        coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
-        for i, coefficient in enumerate(coefficients):
-            self._cpp_object.set_coefficient(i, coefficient._cpp_object)
+        ufl_coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
+        coefficients = [ufl_coefficient._cpp_object for ufl_coefficient in ufl_coefficients]
 
         ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
         constants = [ufl_constant._cpp_object for ufl_constant in ufl_constants]
-        self._cpp_object.set_constants(constants)
 
-        self._cpp_object.set_tabulate_expression(fn)
+        self._cpp_object = cpp.function.Expression(coefficients, constants, mesh, x, fn, value_size)
 
     def eval(self, cells: np.ndarray, u: typing.Optional[np.ndarray] = None) -> np.ndarray:
         """Evaluate Expression in cells.
