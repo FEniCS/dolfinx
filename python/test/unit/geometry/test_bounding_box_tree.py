@@ -148,5 +148,8 @@ def test_compute_closest_entity_3d():
 def test_surface_bbtree():
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     sf = cpp.mesh.exterior_facet_indices(mesh)
-    bbtree = cpp.geometry.BoundingBoxTree(mesh, mesh.topology.dim - 1, sf)
+    tdim = mesh.topology.dim
+    f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
+    cells = [f_to_c.links(f)[0] for f in sf]
+    bbtree = cpp.geometry.BoundingBoxTree(mesh, tdim, cells)
     print(bbtree.num_bboxes())

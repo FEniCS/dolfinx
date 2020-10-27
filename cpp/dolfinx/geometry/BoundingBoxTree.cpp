@@ -126,7 +126,7 @@ int _build_from_leaf(
         = leaf_bboxes.block<2, 3>(2 * entity_index, 0);
 
     // Store bounding box data
-    bboxes.push_back({(int)bboxes.size(), entity_index});
+    bboxes.push_back({entity_index, entity_index});
     bbox_coordinates.insert(bbox_coordinates.end(), b.data(), b.data() + 3);
     bbox_coordinates.insert(bbox_coordinates.end(), b.data() + 3, b.data() + 6);
     return bboxes.size() - 1;
@@ -210,7 +210,7 @@ int _build_from_point(const std::vector<Eigen::Vector3d>& points,
     const int point_index = *begin;
     const int c0 = bboxes.size(); // child_0 == node denotes a leaf
     const int c1 = point_index;   // index of entity contained in leaf
-    bboxes.push_back({c0, c1});
+    bboxes.push_back({c1, c1});
     bbox_coordinates.insert(bbox_coordinates.end(), points[point_index].data(),
                             points[point_index].data() + 3);
     bbox_coordinates.insert(bbox_coordinates.end(), points[point_index].data(),
@@ -315,7 +315,7 @@ BoundingBoxTree::BoundingBoxTree(
   if (leaf_bboxes.rows() > 0)
     std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
 
-  // Remap indices
+  // Remap leaf indices
   for (int i = 0; i < _bboxes.rows(); ++i)
   {
     _bboxes(i, 0) = entity_indices_sorted[_bboxes(i, 0)];
