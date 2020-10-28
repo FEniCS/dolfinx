@@ -111,11 +111,11 @@ void assemble_matrix(
   const graph::AdjacencyList<std::int32_t>& dofs1 = dofmap1->list();
 
   // Prepare constants
-  const Eigen::Array<T, Eigen::Dynamic, 1> constants = pack_constants<T, fem::Form<T>>(a);
+  const Eigen::Array<T, Eigen::Dynamic, 1> constants = pack_constants(a);
 
   // Prepare coefficients
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = pack_coefficients<T, fem::Form<T>>(a);
+      = pack_coefficients(a);
 
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
@@ -148,7 +148,7 @@ void assemble_matrix(
         = needs_permutation_data
               ? mesh->topology().get_facet_permutations()
               : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
-                    facets_per_cell, num_cells);
+                  facets_per_cell, num_cells);
 
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {

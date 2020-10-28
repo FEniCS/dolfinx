@@ -267,6 +267,8 @@ public:
     return _constants;
   }
 
+  using scalar_type = T;
+
 private:
   /// Sets the entity indices to assemble over for kernels with a domain ID.
   /// @param[in] type Integral type

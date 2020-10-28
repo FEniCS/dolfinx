@@ -87,7 +87,7 @@ T assemble_scalar(const fem::Form<T>& M)
 
   // Prepare coefficients
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = pack_coefficients<T, fem::Form<T>>(M);
+      = pack_coefficients(M);
 
   const bool needs_permutation_data = M.needs_permutation_data();
   if (needs_permutation_data)
@@ -120,7 +120,7 @@ T assemble_scalar(const fem::Form<T>& M)
         = needs_permutation_data
               ? mesh->topology().get_facet_permutations()
               : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
-                    facets_per_cell, num_cells);
+                  facets_per_cell, num_cells);
 
     for (int i : M.integral_ids(IntegralType::exterior_facet))
     {

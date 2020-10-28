@@ -136,6 +136,8 @@ public:
   /// @return number of points
   const Eigen::Index num_points() const { return _x.rows(); }
 
+  using scalar_type = T;
+
 private:
   // Coefficients associated with the Expression
   std::vector<std::shared_ptr<const function::Function<T>>> _coefficients;

@@ -519,11 +519,11 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
   const graph::AdjacencyList<std::int32_t>& dofs = dofmap->list();
 
   // Prepare constants
-  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants<T, fem::Form<T>>(L);
+  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants(L);
 
   // Prepare coefficients
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = pack_coefficients<T, fem::Form<T>>(L);
+      = pack_coefficients(L);
 
   const bool needs_permutation_data = L.needs_permutation_data();
   if (needs_permutation_data)
@@ -873,11 +873,11 @@ void lift_bc(
       = a.function_spaces()[1]->dofmap()->list();
 
   // Prepare constants
-  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants<T, fem::Form<T>>(a);
+  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants(a);
 
   // Prepare coefficients
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = pack_coefficients<T, fem::Form<T>>(a);
+      = pack_coefficients(a);
 
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)

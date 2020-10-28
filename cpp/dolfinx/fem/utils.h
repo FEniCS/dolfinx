@@ -401,10 +401,13 @@ create_functionspace(ufc_function_space* (*fptr)(const char*),
 
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
-template <typename T, typename U>
-Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+template <typename U>
+Eigen::Array<typename U::scalar_type, Eigen::Dynamic, Eigen::Dynamic,
+             Eigen::RowMajor>
 pack_coefficients(const U& u)
 {
+  using T = typename U::scalar_type;
+
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const function::Function<T>>> coefficients
       = u.coefficients();
@@ -448,9 +451,12 @@ pack_coefficients(const U& u)
 
 // NOTE: This is subject to change
 /// Pack constants of u of generic type U ready for assembly
-template <typename T, typename U>
-Eigen::Array<T, Eigen::Dynamic, 1> pack_constants(const U& u)
+template <typename U>
+Eigen::Array<typename U::scalar_type, Eigen::Dynamic, 1>
+pack_constants(const U& u)
 {
+  using T = typename U::scalar_type;
+
   const auto& constants = u.constants();
 
   // Calculate size of array needed to store packed constants.

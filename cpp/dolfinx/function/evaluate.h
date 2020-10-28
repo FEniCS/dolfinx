@@ -35,11 +35,11 @@ void eval(
 
   // Prepare coefficients
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = dolfinx::fem::pack_coefficients<T, function::Expression<T>>(e);
+      = dolfinx::fem::pack_coefficients(e);
 
   // Prepare constants
   const Eigen::Array<T, Eigen::Dynamic, 1> constant_values
-      = dolfinx::fem::pack_constants<T, function::Expression<T>>(e);
+      = dolfinx::fem::pack_constants(e);
 
   const auto& fn = e.get_tabulate_expression();
 
