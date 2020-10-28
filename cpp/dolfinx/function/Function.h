@@ -201,7 +201,7 @@ public:
   ///   can be passed, and the corresponding point will be ignored.
   /// @param[in,out] u The values at the points. Values are not computed
   ///   for points with a negative cell index. This argument must be
-  ///   passed with the corrext size.
+  ///   passed with the correct size.
   void
   eval(const Eigen::Ref<
            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x,
