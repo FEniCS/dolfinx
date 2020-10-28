@@ -28,6 +28,12 @@ class Constant;
 /// Represents a mathematical expression evaluated at a pre-defined set of
 /// points on the reference cell. This class closely follows the concept of a
 /// UFC Expression.
+///
+/// This functionality can be used to evaluate a gradient of a Function at
+/// quadrature points in all cells. This evaluated gradient can then be used as
+/// input in to a non-FEniCS function that calculates a material constitutive
+/// model.
+
 template <typename T>
 class Expression
 {

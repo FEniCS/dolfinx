@@ -49,6 +49,15 @@ class Expression:
                  form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
         """Create dolfinx Expression.
 
+        Represents a mathematical expression evaluated at a pre-defined set of
+        points on the reference cell. This class closely follows the concept of a
+        UFC Expression.
+
+        This functionality can be used to evaluate a gradient of a Function at
+        the quadrature points in all cells. This evaluated gradient can then be
+        used as input to a non-FEniCS function that calculates a material
+        constitutive model.
+
         Parameters
         ----------
         ufl_expression
