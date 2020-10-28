@@ -267,6 +267,7 @@ public:
     return _constants;
   }
 
+  /// Scalar type (T).
   using scalar_type = T;
 
 private:

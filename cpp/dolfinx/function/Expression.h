@@ -142,6 +142,7 @@ public:
   /// @return number of points
   const Eigen::Index num_points() const { return _x.rows(); }
 
+  /// Scalar type (T).
   using scalar_type = T;
 
 private:
