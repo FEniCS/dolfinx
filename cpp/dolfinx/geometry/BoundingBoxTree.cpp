@@ -208,7 +208,6 @@ int _build_from_point(const std::vector<Eigen::Vector3d>& points,
   {
     // Store bounding box data
     const int point_index = *begin;
-    const int c0 = bboxes.size(); // child_0 == node denotes a leaf
     const int c1 = point_index;   // index of entity contained in leaf
     bboxes.push_back({c1, c1});
     bbox_coordinates.insert(bbox_coordinates.end(), points[point_index].data(),
