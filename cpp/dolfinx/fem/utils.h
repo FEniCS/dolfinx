@@ -451,15 +451,30 @@ pack_coefficients(const U& u)
 template <typename T, typename U>
 Eigen::Array<T, Eigen::Dynamic, 1> pack_constants(const U& u)
 {
-  std::vector<T> constant_values;
-  for (auto& constant : u.constants())
+  const auto& constants = u.constants();
+
+  // Calculate size of array needed to store packed constants.
+  Eigen::Index size
+      = std::accumulate(constants.begin(), constants.end(), 0,
+                        [](Eigen::Index sum, const auto& constant) {
+                          return sum + constant->value.size();
+                        });
+
+  // Pack constants.
+  Eigen::Array<T, Eigen::Dynamic, 1> constant_values(size);
+  Eigen::Index offset = 0;
+  for (const auto& constant : constants)
   {
-    const std::vector<T>& array = constant->value;
-    constant_values.insert(constant_values.end(), array.begin(), array.end());
+    const auto& value = constant->value;
+    const Eigen::Index value_size = value.size();
+
+    for (Eigen::Index i = 0; i < value_size; ++i)
+      constant_values[offset + i] = value[i];
+
+    offset += value_size;
   }
 
-  return Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1>>(
-      constant_values.data(), constant_values.size(), 1);
+  return constant_values;
 }
 
 } // namespace fem
