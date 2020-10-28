@@ -1,13 +1,14 @@
-# Copyright (C) 2019 Michal Habera and Andreas Zilian
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# .. _demo_static_condensation:
 #
-# SPDX-License-Identifier:    LGPL-3.0-or-later
-
+# Static condensation of linear elasticity
+# ========================================
+# Copyright (C) 2020  Michal Habera and Andreas Zilian
+#
 # This demo solves a Cook's plane stress elasticity test in a mixed space
 # formulation. The test is a sloped cantilever under upward traction force
 # at free end. Static condensation of internal (stress) degrees-of-freedom
-# is demonstrated.
+# is demonstrated. ::
 
 import os
 

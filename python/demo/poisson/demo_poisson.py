@@ -120,8 +120,8 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 # inside on the inside of :math:`\Gamma_D`. (Note that because of
 # rounding-off errors, it is often wise to instead specify :math:`x <
 # \epsilon` or :math:`x > 1 - \epsilon` where :math:`\epsilon` is a
-# small number (such as machine precision).) ::
-
+# small number (such as machine precision).)
+#
 # Now, the Dirichlet boundary condition can be created using the class
 # :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>`. A
 # :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>` takes two
