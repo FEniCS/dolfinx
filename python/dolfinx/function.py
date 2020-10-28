@@ -12,6 +12,9 @@ import cffi
 import numpy as np
 
 import ufl
+import ufl.algorithms
+import ufl.algorithms.analysis
+
 from dolfinx import common, cpp, fem, function, jit
 
 
@@ -37,6 +40,130 @@ class Constant(ufl.Constant):
     @value.setter
     def value(self, v):
         np.copyto(self._cpp_object.value(), np.asarray(v))
+
+
+class Expression:
+    def __init__(self,
+                 ufl_expression: ufl.core.expr.Expr,
+                 x: np.ndarray,
+                 form_compiler_parameters: dict = {}, jit_parameters: dict = {}):
+        """Create dolfinx Expression.
+
+        Represents a mathematical expression evaluated at a pre-defined set of
+        points on the reference cell. This class closely follows the concept of a
+        UFC Expression.
+
+        This functionality can be used to evaluate a gradient of a Function at
+        the quadrature points in all cells. This evaluated gradient can then be
+        used as input to a non-FEniCS function that calculates a material
+        constitutive model.
+
+        Parameters
+        ----------
+        ufl_expression
+            Pure UFL expression
+        x
+            Array of points of shape (num_points, tdim) on the reference
+            element.
+        form_compiler_parameters
+            Parameters used in FFCX compilation of this Expression. Run `ffcx
+            --help` in the commandline to see all available options.
+        jit_parameters
+            Parameters controlling JIT compilation of C code.
+
+        Note
+        ----
+        This wrapper is responsible for the FFCX compilation of the UFL Expr
+        and attaching the correct data to the underlying C++ Expression.
+        """
+        assert x.ndim < 3
+        num_points = x.shape[0] if x.ndim == 2 else 1
+        x = np.reshape(x, (num_points, -1))
+
+        mesh = ufl_expression.ufl_domain().ufl_cargo()
+
+        # Compile UFL expression with JIT
+        ufc_expression = jit.ffcx_jit(mesh.mpi_comm(), (ufl_expression, x),
+                                      form_compiler_parameters=form_compiler_parameters,
+                                      jit_parameters=jit_parameters)
+        self._ufl_expression = ufl_expression
+        self._ufc_expression = ufc_expression
+
+        # Setup data (evaluation points, coefficients, constants, mesh, value_size).
+        # Tabulation function.
+        ffi = cffi.FFI()
+        fn = ffi.cast("uintptr_t", ufc_expression.tabulate_expression)
+
+        value_size = ufl.product(self.ufl_expression.ufl_shape)
+
+        ufl_coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
+        coefficients = [ufl_coefficient._cpp_object for ufl_coefficient in ufl_coefficients]
+
+        ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
+        constants = [ufl_constant._cpp_object for ufl_constant in ufl_constants]
+
+        self._cpp_object = cpp.function.Expression(coefficients, constants, mesh, x, fn, value_size)
+
+    def eval(self, cells: np.ndarray, u: typing.Optional[np.ndarray] = None) -> np.ndarray:
+        """Evaluate Expression in cells.
+
+        Parameters
+        ----------
+        cells
+            local indices of cells to evaluate expression.
+        u: optional
+            array of shape (num_cells, num_points*value_size) to
+            store result of expression evaluation.
+
+        Returns
+        -------
+
+        u: np.ndarray
+            The i-th row of u contains the expression evaluated on cells[i].
+
+        Note
+        ----
+        This function allocates u of the appropriate size if u is not passed.
+        """
+        cells = np.asarray(cells, dtype=np.int32)
+        assert cells.ndim == 1
+        num_cells = cells.shape[0]
+
+        # Allocate memory for result if u was not provided
+        if u is None:
+            if common.has_petsc_complex:
+                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.complex128)
+            else:
+                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.float64)
+            self._cpp_object.eval(cells, u)
+        else:
+            assert u.ndim < 3
+            assert u.size == num_cells * self.num_points * self.value_size
+            assert u.shape[0] == num_cells
+            assert u.shape[1] == self.num_points * self.value_size
+            self._cpp_object.eval(cells, u)
+
+        return u
+
+    @property
+    def ufl_expression(self):
+        """Return the original UFL Expression"""
+        return self._ufl_expression
+
+    @property
+    def x(self):
+        """Return the evaluation points on the reference cell"""
+        return self._cpp_object.x
+
+    @property
+    def num_points(self):
+        """Return the number of evaluation points on the reference cell."""
+        return self._cpp_object.num_points
+
+    @property
+    def value_size(self):
+        """Return the value size of the expression"""
+        return self._cpp_object.value_size
 
 
 class Function(ufl.Coefficient):
@@ -102,7 +229,7 @@ class Function(ufl.Coefficient):
         point is ignored."""
 
         # Make sure input coordinates are a NumPy array
-        x = np.asarray(x, dtype=np.float)
+        x = np.asarray(x, dtype=np.float64)
         assert x.ndim < 3
         num_points = x.shape[0] if x.ndim == 2 else 1
         x = np.reshape(x, (num_points, -1))

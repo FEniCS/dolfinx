@@ -46,6 +46,9 @@ class Topology;
 namespace fem
 {
 
+template <typename T>
+class Form;
+
 /// Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
 ///
@@ -397,15 +400,18 @@ create_functionspace(ufc_function_space* (*fptr)(const char*),
                      std::shared_ptr<mesh::Mesh> mesh);
 
 // NOTE: This is subject to change
-/// Pack form coefficients ready for assembly
-template <typename T>
-Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-pack_coefficients(const fem::Form<T>& form)
+/// Pack coefficients of u of generic type U ready for assembly
+template <typename U>
+Eigen::Array<typename U::scalar_type, Eigen::Dynamic, Eigen::Dynamic,
+             Eigen::RowMajor>
+pack_coefficients(const U& u)
 {
-  // Get form coefficient offsets amd dofmaps
+  using T = typename U::scalar_type;
+
+  // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const function::Function<T>>> coefficients
-      = form.coefficients();
-  const std::vector<int> offsets = form.coefficient_offsets();
+      = u.coefficients();
+  const std::vector<int> offsets = u.coefficient_offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>> v;
   for (std::size_t i = 0; i < coefficients.size(); ++i)
@@ -415,7 +421,7 @@ pack_coefficients(const fem::Form<T>& form)
   }
 
   // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = form.mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = u.mesh();
   assert(mesh);
   const int tdim = mesh->topology().dim();
   const std::int32_t num_cells
@@ -444,11 +450,14 @@ pack_coefficients(const fem::Form<T>& form)
 }
 
 // NOTE: This is subject to change
-/// Pack form constants ready for assembly
-template <typename T>
-Eigen::Array<T, Eigen::Dynamic, 1> pack_constants(const fem::Form<T>& form)
+/// Pack constants of u of generic type U ready for assembly
+template <typename U>
+Eigen::Array<typename U::scalar_type, Eigen::Dynamic, 1>
+pack_constants(const U& u)
 {
-  const auto& constants = form.constants();
+  using T = typename U::scalar_type;
+
+  const auto& constants = u.constants();
 
   // Calculate size of array needed to store packed constants.
   Eigen::Index size
