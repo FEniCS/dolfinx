@@ -50,6 +50,8 @@ ARG SLEPC4PY_VERSION=3.14.0
 # Should be updated upon a new KaHIP release
 ARG KAHIP_VERSION=14be06c
 
+# Memory alignment bytes (set for PETSc, DOLFINX and FFCX generated code).
+ARG ALIGN_BYTES="32"
 # Flags to pass to ninja build system.
 ARG MAKEFLAGS
 # Compiler optimisation flags for SLEPc and PETSc, all languages.
@@ -76,6 +78,7 @@ ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
 
+ARG ALIGN_BYTES
 ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS
 ARG PETSC_SLEPC_DEBUGGING
@@ -203,7 +206,8 @@ RUN apt-get -qq update && \
     --download-suitesparse \
     --download-superlu \
     --download-superlu_dist \
-    --with-scalar-type=real && \
+    --with-scalar-type=real \
+    --with-memalign=${ALIGN_BYTES} && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 ${MAKEFLAGS} all && \
     # Complex, 32-bit int
     python3 ./configure \
@@ -223,7 +227,8 @@ RUN apt-get -qq update && \
     --download-suitesparse \
     --download-superlu \
     --download-superlu_dist \
-    --with-scalar-type=complex && \
+    --with-scalar-type=complex \
+    --with-memalign=${ALIGN_BYTES} && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 ${MAKEFLAGS} all && \
     # Real, 64-bit int
     python3 ./configure \
@@ -241,7 +246,8 @@ RUN apt-get -qq update && \
     --download-scalapack \
     --download-suitesparse \
     --download-superlu_dist \
-    --with-scalar-type=real && \
+    --with-scalar-type=real \
+    --with-memalign=${ALIGN_BYTES} && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-64 ${MAKEFLAGS} all && \
     # Complex, 64-bit int
     python3 ./configure \
@@ -259,7 +265,8 @@ RUN apt-get -qq update && \
     --download-scalapack \
     --download-suitesparse \
     --download-superlu_dist \
-    --with-scalar-type=complex && \
+    --with-scalar-type=complex \
+    --with-memalign=${ALIGN_BYTES} && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
@@ -311,6 +318,7 @@ ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
 ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
 RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
+ONBUILD ARG ALIGN_BYTES
 ONBUILD ARG MAKEFLAGS
 ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE
 ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
@@ -335,7 +343,7 @@ ONBUILD RUN cd fiat && pip3 install --no-cache-dir . && \
 ONBUILD RUN cd dolfinx && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
+    PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -DDOLFINX_EIGEN_MAX_ALIGN_BYTES=${ALIGN_BYTES} ../cpp && \
     ninja ${MAKEFLAGS} install && \
     cd ../python && \
     PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
@@ -355,7 +363,8 @@ ONBUILD RUN cd dolfinx && \
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
             PETSC_ARCH=linux-gnu-real-32 \
             PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
-            LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
+            LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
+            FFCX_ASSUME_ALIGNED=${MEM_ALIGN}
 
 ONBUILD WORKDIR /root
 
@@ -385,7 +394,8 @@ COPY --from=intermediate /usr/local/bin /usr/local/bin
 ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     PETSC_ARCH=linux-gnu-real-32 \
     PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
-    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
+    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
+    FFCX_ASSUME_ALIGNED=${MEM_ALIGN}
 
 ########################################
 

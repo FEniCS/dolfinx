@@ -20,13 +20,14 @@ jobs:
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-20.04
     env:
+      ALIGN_BYTES: "16"
       PETSC_SLEPC_OPTFLAGS: "-O2 -g"
       PETSC_SLEPC_DEBUGGING: "yes"
       MPI: "openmpi"
     steps:
       - uses: actions/checkout@v2
       - name: build the docker image
-        run: docker build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI} docker/
+        run: docker build --build-arg ALIGN_BYTES --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI} docker/
       - name: log into the dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: push to the dockerhub registry
@@ -37,6 +38,7 @@ jobs:
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-20.04
     env:
+      ALIGN_BYTES: "16"
       PETSC_SLEPC_OPTFLAGS: "-O2 -g"
       PETSC_SLEPC_DEBUGGING: "yes"
       MPI: "mpich"
@@ -54,13 +56,14 @@ jobs:
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-20.04
     env:
+      ALIGN_BYTES: "32"
       PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
       PETSC_SLEPC_DEBUGGING: "no"
       MPI: "mpich"
     steps:
       - uses: actions/checkout@v2
       - name: Build the Docker image
-        run: docker build --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env docker/
+        run: docker build --build-arg ALIGN_BYTES --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env docker/
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
