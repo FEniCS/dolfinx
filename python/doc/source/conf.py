@@ -140,7 +140,7 @@ man_pages = [
      [author], 1)
 ]
 
-autodoc_default_options = {'members': True, 'show-inheritance': True}
+autodoc_default_options = {'members': True, 'show-inheritance': True, 'imported-members': True, 'undoc-members': True}
 autosummary_generate = True
 autoclass_content = "both"
 

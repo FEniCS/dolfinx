@@ -82,6 +82,23 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 
 @mpi_jit_decorator
 def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
+    """Compile UFL object with FFCX.
+
+    Parameters
+    ----------
+    ufl_object
+    form_compiler_parameters
+        Parameters used in FFCX compilation of this form. Run `ffcx --help` in the commandline
+        to see all available options.
+    jit_parameters
+        Parameters controlling JIT compilation of C code.
+
+    Note
+    ----
+    Both ``form_compiler_parameters`` and ``jit_parameters`` are overwritten
+    with environmental variables, if set.
+
+    """
     # Prepare form compiler parameters with overrides from dolfinx
     p = ffcx.default_parameters()
     p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"

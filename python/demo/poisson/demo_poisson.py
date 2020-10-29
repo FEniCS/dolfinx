@@ -151,7 +151,7 @@ bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets))
 # :py:class:`TrialFunction <dolfinx.functions.function.TrialFunction>`
 # and a :py:class:`TestFunction
 # <dolfinx.functions.function.TrialFunction>` on the previously defined
-# :py:class:`FunctionSpace <dolfinx.functions.FunctionSpace>` ``V``.
+# :py:class:`FunctionSpace <dolfinx.function.FunctionSpace>` ``V``.
 #
 # Further, the source :math:`f` and the boundary normal derivative
 # :math:`g` are involved in the variational forms, and hence we must
