@@ -31,11 +31,6 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     in the cache, it will call the jit compiler on the remaining
     processes, which will then use the cached module.
 
-    *Example* .. code-block:: python
-
-            def jit_something(something):
-                ....
-
     """
 
     @functools.wraps(local_jit)

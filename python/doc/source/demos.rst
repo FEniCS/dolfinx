@@ -35,4 +35,7 @@ All documented demos
    demos/poisson/demo_poisson.py.rst
    demos/cahn-hilliard/demo_cahn-hilliard.py.rst
    demos/stokes-taylor-hood/demo_stokes-taylor-hood.py.rst
-   demos/mvc-from-array/demo_mvc_from_array.py.rst
+   demos/elasticity/demo_elasticity.py.rst
+   demos/gmsh/demo_gmsh.py.rst
+   demos/helmholtz2D/demo_helmholtz_2d.py.rst
+   demos/mixed-elasticity-sc/static-condensation-elasticity.py.rst
