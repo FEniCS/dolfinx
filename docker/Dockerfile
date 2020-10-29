@@ -30,7 +30,11 @@
 # You can build an optimised version of the complete FEniCS environment for
 # your platform using the command:
 #
-#    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" .
+#    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" --build-arg FFCX_JIT_CFLAGS="-O2 -march=native" --build-arg ALIGN_BYTES="32" .
+#
+# For the ALIGN_BYTES argument, we recommend:
+#
+# 16 bytes for SSE, 32 bytes for AVX/AVX2 and 64 bytes for AVX512.
 #
 # The pre-built images on Dockerhub are currently optimised for Intel Sandy
 # Bridge architectures and will run on all modern x86-64 chips (>~2012).
@@ -38,7 +42,7 @@
 # You can build an optimised version of the FEniCS development environment
 # (without the FEniCS components) for your platform using the command:
 #
-#    docker build --target dev-env --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
+#    docker build --target dev-env --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg ALIGN_BYTES="32" .
 #
 
 ARG GMSH_VERSION=4.6.0
@@ -50,8 +54,13 @@ ARG SLEPC4PY_VERSION=3.14.0
 # Should be updated upon a new KaHIP release
 ARG KAHIP_VERSION=14be06c
 
+# The following BUILD_ARGS are the defaults used to create the dolfinx/dev-env
+# and dolfinx/dolfinx builds that we push to Dockerhub.
+
 # Memory alignment bytes (set for PETSc, DOLFINX and FFCX generated code).
 ARG ALIGN_BYTES="32"
+# DOLFINX JIT compiler flags. This argument is only set as ENV in the dolfinx/dolfinx image.
+ARG DOLFINX_JIT_CFLAGS="-O2 -march=sandybridge"
 # Flags to pass to ninja build system.
 ARG MAKEFLAGS
 # Compiler optimisation flags for SLEPc and PETSc, all languages.
@@ -322,6 +331,7 @@ ONBUILD ARG ALIGN_BYTES
 ONBUILD ARG MAKEFLAGS
 ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE
 ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
+ONBUILD ARG DOLFINX_JIT_CFLAGS
 
 ONBUILD WORKDIR /src
 
@@ -351,7 +361,7 @@ ONBUILD RUN cd dolfinx && \
     rm -r build && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFIN_CMAKE_CXX_FLAGS} ../cpp && \
+    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFIN_CMAKE_CXX_FLAGS} -DDOLFINX_EIGEN_MAX_ALIGN_BYTES=${ALIGN_BYTES} ../cpp && \
     ninja ${MAKEFLAGS} install && \
     . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
     cd ../python && \
@@ -364,7 +374,8 @@ ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PA
             PETSC_ARCH=linux-gnu-real-32 \
             PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
             LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
-            FFCX_ASSUME_ALIGNED=${MEM_ALIGN}
+            FFCX_ASSUME_ALIGNED=${ALIGN_BYTES} \
+            DOLFINX_JIT_CFLAGS=${DOLFINX_JIT_CFLAGS}
 
 ONBUILD WORKDIR /root
 
@@ -376,6 +387,9 @@ FROM dolfinx-onbuild as intermediate
 
 FROM dev-env as dolfinx
 LABEL description="DOLFIN-X in 32-bit real and complex modes"
+
+ARG ALIGN_BYTES
+ARG DOLFINX_JIT_CFLAGS
 
 # This layer manually copies the build artifacts from intermediate into dev-env
 # to make the final image. This is a workaround for a well known limitation of
@@ -390,12 +404,13 @@ COPY --from=intermediate /usr/local/bin /usr/local/bin
 
 # Real by default.
 # Note that because we inherit from dev-env we do not inherit these ENV from
-# dolfinx-onbuild.
+# dolfinx-onbuild so this must be repeated here.
 ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     PETSC_ARCH=linux-gnu-real-32 \
     PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
     LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
-    FFCX_ASSUME_ALIGNED=${MEM_ALIGN}
+    FFCX_ASSUME_ALIGNED=${ALIGN_BYTES} \
+    DOLFINX_JIT_CFLAGS=${DOLFINX_JIT_CFLAGS}
 
 ########################################
 

@@ -51,19 +51,15 @@ jobs:
       - name: push to the dockerhub registry
         run: docker push fenicsproject/test-env:${MPI}
 
+  # Uses the default ARGs specified in the Dockerfile.
   build_dev_env:
     name: Build dolfinx/dev-env image
     if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-20.04
-    env:
-      ALIGN_BYTES: "32"
-      PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
-      PETSC_SLEPC_DEBUGGING: "no"
-      MPI: "mpich"
     steps:
       - uses: actions/checkout@v2
       - name: Build the Docker image
-        run: docker build --build-arg ALIGN_BYTES --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env docker/
+        run: docker build --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env docker/
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push to the DockerHub registry
