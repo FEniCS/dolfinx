@@ -101,7 +101,7 @@ jobs:
       - name: Push C++ documentation
         if: ${{ github.repository == 'FEniCS/dolfinx' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run: |
-          cd cpp/doc/build/html
+          cd cpp/doc/html
           scp -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
 
       - name: Push Python documentation
