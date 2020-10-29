@@ -69,8 +69,6 @@ ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
 
 # These are safe defaults that can be overridden.
-# Flags to pass to ninja build system.
-ARG MAKEFLAGS
 # Compiler optimisation flags for SLEPc and PETSc, all languages.
 ARG PETSC_SLEPC_OPTFLAGS="-O2"
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
@@ -200,7 +198,7 @@ RUN apt-get -qq update && \
     --download-suitesparse \
     --download-superlu \
     --download-superlu_dist \
-    --with-scalar-type=real \
+    --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 ${MAKEFLAGS} all && \
     # Complex, 32-bit int
     python3 ./configure \
@@ -220,7 +218,7 @@ RUN apt-get -qq update && \
     --download-suitesparse \
     --download-superlu \
     --download-superlu_dist \
-    --with-scalar-type=complex \
+    --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 ${MAKEFLAGS} all && \
     # Real, 64-bit int
     python3 ./configure \
@@ -238,7 +236,7 @@ RUN apt-get -qq update && \
     --download-scalapack \
     --download-suitesparse \
     --download-superlu_dist \
-    --with-scalar-type=real \
+    --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-64 ${MAKEFLAGS} all && \
     # Complex, 64-bit int
     python3 ./configure \
@@ -256,7 +254,7 @@ RUN apt-get -qq update && \
     --download-scalapack \
     --download-suitesparse \
     --download-superlu_dist \
-    --with-scalar-type=complex \
+    --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
