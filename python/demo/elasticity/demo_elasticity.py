@@ -35,6 +35,7 @@ from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
 # In the case of small deformation linear elasticity the nullspace
 # contains rigid body modes. ::
 
+
 def build_nullspace(V):
     """Function to build null space for 3D elasticity"""
 
