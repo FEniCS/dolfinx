@@ -117,6 +117,8 @@ with u0.vector.localForm() as bc_local:
 # Set up boundary condition on inner surface
 bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
 
+# .. _controlling-compilation-parameters:
+#
 # Controlling compilation parameters
 # ----------------------------------
 #
