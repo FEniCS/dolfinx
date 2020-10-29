@@ -124,13 +124,12 @@ bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
 # directly with the interface of :py:class:`Form <dolfinx.fem.Form>` or
 # via environmental variables.
 #
-# This demo shows a mixed approach, where C compiler and C compilation
+# This demo shows a mixed approach, where C compilation
 # flags are set with environmental variables.
 # Some parameters which control FFCX compilation are passed directly to the ``Form``.
 # ::
 
 os.environ["DOLFINX_JIT_CFLAGS"] = "-Ofast -march=native"
-os.environ["CC"] = "clang"
 os.environ["FFCX_VERBOSITY"] = "20"
 
 form = Form(a, form_compiler_parameters={"quadrature_degree": 1})
