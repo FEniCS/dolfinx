@@ -14,7 +14,6 @@ https://github.com/FEniCS/dolfinx.
    api
    demos
    developer
-   contributing
 
 
 Indices and tables

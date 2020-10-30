@@ -9,10 +9,11 @@ import types
 import numpy
 import ufl
 from dolfinx import cpp, fem
-from dolfinx.cpp.mesh import create_meshtags
+from dolfinx.cpp.mesh import create_meshtags, CellType
 
 __all__ = [
-    "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags"
+    "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags",
+    "CellType"
 ]
 
 

@@ -63,7 +63,7 @@ import dolfinx
 import dolfinx.plotting
 import ufl
 from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh, solve
-from dolfinx.cpp.mesh import CellType
+from dolfinx.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
@@ -139,10 +139,18 @@ dofs = locate_dofs_topological(V, 1, facets)
 # :py:class:`DirichletBC <dolfinx.fem.DirichletBC>`.
 # This class will be used to apply boundary conditions for a specific degrees-of-freedom
 # and with the values from :py:class:`dolfinx.function.Function`.
-# Degrees-of-freedom were found above, so we only need to prepare an empty function. ::
+# Degrees-of-freedom were found above, so we only need to prepare an empty function.
+#
+# We can access ``petsc4py`` vector of expansion coefficients with ``u0.vector``.
+# Full API of the vector could be found at https://www.mcs.anl.gov/petsc/petsc4py-current/docs/apiref/index.html.
+# In order to zero the vector (ghosted entries as well) we need to ask for
+# it's ``localForm()``, i.e.
+# ::
 
 u0 = Function(V)
-u0.vector.set(0.0)
+with u0.vector.localForm() as local:
+    local.set(0.0)
+
 bc = DirichletBC(u0, dofs)
 
 # Defining variational problem
