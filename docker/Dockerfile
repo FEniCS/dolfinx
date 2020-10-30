@@ -68,7 +68,8 @@ ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
 
-# These are safe defaults that can be overridden.
+# The following ARGS are used in the dev-env layer.
+# They are safe defaults. They can be overridden by the user.
 # Compiler optimisation flags for SLEPc and PETSc, all languages.
 ARG PETSC_SLEPC_OPTFLAGS="-O2"
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
@@ -98,11 +99,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     gfortran \
     libboost-dev \
     libboost-filesystem-dev \
-    libboost-iostreams-dev \
-    libboost-math-dev \
-    libboost-program-options-dev \
-    libboost-system-dev \
-    libboost-thread-dev \
     libboost-timer-dev \
     libeigen3-dev \
     libhdf5-${MPI}-dev \
@@ -122,9 +118,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     doxygen \
     git \
     graphviz \
-    sudo \
     valgrind \
     wget && \
+    #
     apt-get -y install \
     libglu1 \
     libxcursor-dev \
@@ -134,7 +130,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 
 # Install Python packages (via pip)
-# - First set of packages are required to build and run FEniCS.
+# - First set of packages are required to build and run DOLFINX Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 RUN pip3 install --no-cache-dir mpi4py numba && \
@@ -165,10 +161,8 @@ RUN cd /usr/local && \
     tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
     rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
 
-ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
-
-# Add gmsh python API
-ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
+ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH \
+    PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
 
 # Install PETSc with real and complex types
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
@@ -181,9 +175,9 @@ RUN apt-get -qq update && \
     # Real, 32-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-real-32 \
-    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -203,9 +197,9 @@ RUN apt-get -qq update && \
     # Complex, 32-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-complex-32 \
-    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -223,9 +217,9 @@ RUN apt-get -qq update && \
     # Real, 64-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-real-64 \
-    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -241,9 +235,9 @@ RUN apt-get -qq update && \
     # Complex, 64-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-complex-64 \
-    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -306,17 +300,6 @@ ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
 ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
 RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
-# The following ARGS are used in the dolfinx layer.
-# They are safe defaults.
-# CMake build type for DOLFINX C++ build. See CMake documentation.
-ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
-# Extra CMake C++ compiler flags for DOLFINX C++ build.
-ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS="-O2 -g"
-# DOLFINX JIT compiler flags. Set as ENV in final image.
-ONBUILD ARG DOLFINX_JIT_CFLAGS="-O2"
-# FFCX assumed alignment. Set as ENV in final image.
-ONBUILD ARG FFCX_ASSUME_ALIGNED="-1"
-
 ONBUILD WORKDIR /src
 
 # This leaves the sources inside the container. This is a limitation of Docker.
@@ -326,6 +309,13 @@ ONBUILD ADD fiat/ /src/fiat/
 ONBUILD ADD ufl/ /src/ufl/
 ONBUILD ADD ffcx/ /src/ffcx/
 ONBUILD ADD dolfinx/ /src/dolfinx/
+
+# The following ARGS are used in the dolfinx layer.
+# They are safe defaults.
+# CMake build type for DOLFINX C++ build. See CMake documentation.
+ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
+# Extra CMake C++ compiler flags for DOLFINX C++ build.
+ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
 # The dolfinx-onbuild container expects to have folders fiat/ ufl/ ffcx/ and
 # dolfinx/ mounted/shared at /src.
@@ -357,9 +347,7 @@ ONBUILD RUN cd dolfinx && \
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
             PETSC_ARCH=linux-gnu-real-32 \
             PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
-            LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
-            FFCX_ASSUME_ALIGNED=${FFCX_ASSUME_ALIGNED} \
-            DOLFINX_JIT_CFLAGS=${DOLFINX_JIT_CFLAGS}
+            LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ONBUILD WORKDIR /root
 
@@ -371,9 +359,6 @@ FROM dolfinx-onbuild as intermediate
 
 FROM dev-env as dolfinx
 LABEL description="DOLFIN-X in 32-bit real and complex modes"
-
-ARG FFCX_ASSUME_ALIGNED="-1"
-ARG DOLFINX_JIT_CFLAGS="-O2"
 
 # This layer manually copies the build artifacts from intermediate into dev-env
 # to make the final image. This is a workaround for a well known limitation of
@@ -392,9 +377,7 @@ COPY --from=intermediate /usr/local/bin /usr/local/bin
 ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     PETSC_ARCH=linux-gnu-real-32 \
     PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
-    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH \
-    FFCX_ASSUME_ALIGNED=${FFCX_ASSUME_ALIGNED} \
-    DOLFINX_JIT_CFLAGS=${DOLFINX_JIT_CFLAGS}
+    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ########################################
 
