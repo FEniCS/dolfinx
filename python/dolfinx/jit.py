@@ -146,6 +146,8 @@ def get_parameters(priority_parameters: Optional[dict] = None) -> dict:
     if priority_parameters is not None:
         parameters.update(priority_parameters)
 
+    parameters["cache_dir"] = Path(parameters["cache_dir"]).expanduser()
+
     return parameters
 
 
@@ -191,7 +193,7 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
     p_ffcx = ffcx.get_parameters(form_compiler_parameters)
     p_ffcx["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
 
-    p_jit = dolfinx.jit.get_parameters(jit_parameters)
+    p_jit = get_parameters(jit_parameters)
 
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
