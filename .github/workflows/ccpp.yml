@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install FEniCS Python components
-        run: python3 -m pip install git+https://github.com/FEniCS/fiat.git git+https://github.com/FEniCS/ufl.git git+https://github.com/FEniCS/ffcx.git
+        run: python3 -m pip install git+https://github.com/FEniCS/fiat.git git+https://github.com/FEniCS/ufl.git git+https://github.com/FEniCS/ffcx.git@jhale/config-files
 
       - name: Flake8 checks
         run: |
