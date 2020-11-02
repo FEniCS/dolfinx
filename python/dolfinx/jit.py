@@ -5,8 +5,10 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import functools
+import json
 import os
 from pathlib import Path
+from typing import Optional
 
 from mpi4py import MPI
 
@@ -98,7 +100,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 @functools.lru_cache(maxsize=None)
 def _load_parameters():
     """Loads parameters from JSON files."""
-    user_config_file = os.path.join(pathlib.Path.home(), ".config", "dolfinx", "dolfinx_parameters.json")
+    user_config_file = os.path.join(Path.home(), ".config", "dolfinx", "dolfinx_parameters.json")
     try:
         with open(user_config_file) as f:
             user_parameters = json.load(f)
