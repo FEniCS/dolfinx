@@ -208,7 +208,7 @@ int _build_from_point(const std::vector<Eigen::Vector3d>& points,
   {
     // Store bounding box data
     const int point_index = *begin;
-    const int c1 = point_index;   // index of entity contained in leaf
+    const int c1 = point_index; // index of entity contained in leaf
     bboxes.push_back({c1, c1});
     bbox_coordinates.insert(bbox_coordinates.end(), points[point_index].data(),
                             points[point_index].data() + 3);
@@ -317,8 +317,12 @@ BoundingBoxTree::BoundingBoxTree(
   // Remap leaf indices
   for (int i = 0; i < _bboxes.rows(); ++i)
   {
-    _bboxes(i, 0) = entity_indices_sorted[_bboxes(i, 0)];
-    _bboxes(i, 1) = entity_indices_sorted[_bboxes(i, 1)];
+    if (_bboxes(i, 0) == _bboxes(i, 1))
+    {
+      int mapped_index = entity_indices_sorted[_bboxes(i, 0)];
+      _bboxes(i, 0) = mapped_index;
+      _bboxes(i, 1) = mapped_index;
+    }
   }
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()

@@ -153,3 +153,7 @@ def test_surface_bbtree():
     cells = [f_to_c.links(f)[0] for f in sf]
     bbtree = cpp.geometry.BoundingBoxTree(mesh, tdim, cells)
     print(bbtree.num_bboxes())
+
+    # test collision (should not collide with any)
+    p = numpy.array([0.5, 0.5, 0.5])
+    assert len(cpp.geometry.compute_collisions_point(bbtree, p)) == 0
