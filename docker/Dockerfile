@@ -30,11 +30,7 @@
 # You can build an optimised version of the complete FEniCS environment for
 # your platform using the command:
 #
-#    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" --build-arg DOLFINX_JIT_CFLAGS="-O2 -march=native" --build-arg FFCX_ASSUME_ALIGNED="32" .
-#
-# For the FFCX_ASSUME_ALIGNED environment variable, choose:
-#
-# 16 bytes for SSE, 32 bytes for AVX/AVX2 and 64 bytes for AVX512, -1 if unsure (safe default).
+#    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" --build-arg DOLFINX_JIT_CFLAGS="-O2 -march=native" .
 #
 # The pre-built images on Dockerhub are currently optimised for Intel Sandy
 # Bridge architectures and will run on all modern x86-64 chips with AVX
@@ -309,6 +305,10 @@ ONBUILD ADD fiat/ /src/fiat/
 ONBUILD ADD ufl/ /src/ufl/
 ONBUILD ADD ffcx/ /src/ffcx/
 ONBUILD ADD dolfinx/ /src/dolfinx/
+
+# These files are empty by default, i.e. they do nothing.
+ONBUILD ADD dolfinx_parameters.cfg /root/.config/dolfinx/parameters.cfg
+ONBUILD ADD ffcx_parameters.cfg /root/.config/ffcx/parameters.cfg
 
 # The following ARGS are used in the dolfinx layer.
 # They are safe defaults.
