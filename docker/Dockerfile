@@ -307,8 +307,8 @@ ONBUILD ADD ffcx/ /src/ffcx/
 ONBUILD ADD dolfinx/ /src/dolfinx/
 
 # These files are empty by default, i.e. they do nothing.
-ONBUILD ADD dolfinx_parameters.cfg /root/.config/dolfinx/parameters.cfg
-ONBUILD ADD ffcx_parameters.cfg /root/.config/ffcx/parameters.cfg
+ONBUILD ADD dolfinx_jit_parameters.json /root/.config/dolfinx/dolfinx_jit_parameters.json
+ONBUILD ADD ffcx_parameters.json /root/.config/ffcx/ffcx_parameters.json
 
 # The following ARGS are used in the dolfinx layer.
 # They are safe defaults.
