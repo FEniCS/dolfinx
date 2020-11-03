@@ -100,14 +100,14 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 @functools.lru_cache(maxsize=None)
 def _load_parameters():
     """Loads parameters from JSON files."""
-    user_config_file = os.path.join(Path.home(), ".config", "dolfinx", "dolfinx_parameters.json")
+    user_config_file = os.path.join(Path.home(), ".config", "dolfinx", "dolfinx_jit_parameters.json")
     try:
         with open(user_config_file) as f:
             user_parameters = json.load(f)
     except FileNotFoundError:
         user_parameters = {}
 
-    pwd_config_file = os.path.join(os.getcwd(), "dolfinx_parameters.json")
+    pwd_config_file = os.path.join(os.getcwd(), "dolfinx_jit_parameters.json")
     try:
         with open(pwd_config_file) as f:
             pwd_parameters = json.load(f)
@@ -137,6 +137,8 @@ def get_parameters(priority_parameters: Optional[dict] = None) -> dict:
 
     for param, (value, desc) in DOLFINX_DEFAULT_JIT_PARAMETERS.items():
         parameters[param] = value
+
+    print(parameters)
 
     # NOTE: _load_parameters uses functools.lru_cache
     user_parameters, pwd_parameters = _load_parameters()
