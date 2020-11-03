@@ -12,10 +12,16 @@ from typing import Optional
 
 from mpi4py import MPI
 
+import dolfinx.pkgconfig
 import ffcx
 import ffcx.codegeneration.jit
 import ufl
 from dolfinx import common
+
+if dolfinx.pkgconfig.exists("dolfinx"):
+    dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
+else:
+    raise RuntimeError("Could not find DOLFINX pkg-config file. Make sure appropriate paths are set.")
 
 DOLFINX_DEFAULT_JIT_PARAMETERS = {
     "cache_dir":
@@ -188,6 +194,8 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
     p_ffcx["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
 
     p_jit = get_parameters(jit_parameters)
+
+    print(p_jit)
 
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
