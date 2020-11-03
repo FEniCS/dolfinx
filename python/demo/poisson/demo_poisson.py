@@ -120,8 +120,8 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 # inside on the inside of :math:`\Gamma_D`. (Note that because of
 # rounding-off errors, it is often wise to instead specify :math:`x <
 # \epsilon` or :math:`x > 1 - \epsilon` where :math:`\epsilon` is a
-# small number (such as machine precision).) ::
-
+# small number (such as machine precision).)
+#
 # Now, the Dirichlet boundary condition can be created using the class
 # :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>`. A
 # :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>` takes two
@@ -151,7 +151,7 @@ bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets))
 # :py:class:`TrialFunction <dolfinx.functions.function.TrialFunction>`
 # and a :py:class:`TestFunction
 # <dolfinx.functions.function.TrialFunction>` on the previously defined
-# :py:class:`FunctionSpace <dolfinx.functions.FunctionSpace>` ``V``.
+# :py:class:`FunctionSpace <dolfinx.function.FunctionSpace>` ``V``.
 #
 # Further, the source :math:`f` and the boundary normal derivative
 # :math:`g` are involved in the variational forms, and hence we must

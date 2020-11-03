@@ -1,14 +1,15 @@
-# Copyright (C) 2014 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# .. _demo_elasticity:
 #
-# SPDX-License-Identifier:    LGPL-3.0-or-later
-
-# This demo solves the equations of static linear elasticity for a
-# pulley subjected to centripetal accelerations. The solver uses
-# smoothed aggregation algebraic multigrid.
+# Elasticity equation
+# ===================
+# Copyright (C) 2020 Garth N. Wells and Michal Habera
+#
+# This demo solves the equations of static linear elasticity. The solver uses
+# smoothed aggregation algebraic multigrid. ::
 
 from contextlib import ExitStack
+import os
 
 import numpy as np
 from mpi4py import MPI
@@ -23,6 +24,16 @@ from dolfinx.io import XDMFFile
 from dolfinx.la import VectorSpaceBasis
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
                  as_vector, dx, grad, inner, sym, tr)
+
+# Nullspace and problem setup
+# ---------------------------
+#
+# Prepare a helper which builds PETSc' NullSpace.
+# Nullspace (or near nullspace) is needed to improve the
+# performance of algebraic multigrid.
+#
+# In the case of small deformation linear elasticity the nullspace
+# contains rigid body modes. ::
 
 
 def build_nullspace(V):
@@ -59,20 +70,10 @@ def build_nullspace(V):
     return nsp
 
 
-# Load mesh from file
-# mesh = Mesh(MPI.COMM_WORLD)
-# XDMFFile(MPI.COMM_WORLD, "../pulley.xdmf").read(mesh)
-
-# mesh = UnitCubeMesh(2, 2, 2)
 mesh = BoxMesh(
     MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
     CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.none)
-
-# Function to mark inner surface of pulley
-# def inner_surface(x, on_boundary):
-#    r = 3.75 - x[2]*0.17
-#    return (x[0]*x[0] + x[1]*x[1]) < r*r and on_boundary
 
 
 def boundary(x):
@@ -93,8 +94,6 @@ E = 1.0e9
 nu = 0.0
 mu = E / (2.0 * (1.0 + nu))
 lmbda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
-
-# Stress computation
 
 
 def sigma(v):
@@ -118,8 +117,36 @@ with u0.vector.localForm() as bc_local:
 # Set up boundary condition on inner surface
 bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
 
-# Explicitly compile a UFL Form into dolfinx Form
-form = Form(a, jit_parameters={"cffi_extra_compile_args": "-Ofast -march=native", "cffi_verbose": True})
+# Controlling compilation parameters
+# ----------------------------------
+#
+# Parameters which control FFCX and JIT compilation could be set
+# directly with the interface of :py:class:`Form <dolfinx.fem.Form>` or
+# via environmental variables.
+#
+# This demo shows a mixed approach, where C compilation
+# flags are set with environmental variables.
+# Some parameters which control FFCX compilation are passed directly to the ``Form``.
+# ::
+
+os.environ["DOLFINX_JIT_CFLAGS"] = "-Ofast -march=native"
+os.environ["FFCX_VERBOSITY"] = "20"
+
+form = Form(a, form_compiler_parameters={"quadrature_degree": 1})
+
+# The use of such aggresive compiler flags (e.g. ``-Ofast`` violates IEEE floating point standard)
+# often results in a faster assembly code, but slower JIT compilation.
+# FFCX verbosity levels follow Python std logging library levels, https://docs.python.org/3/library/logging.html.
+# To see all available form compiler parameters run ``ffcx --help`` in the commandline.
+#
+# .. warning::
+#    Environmental variables override any other parameters passed to the ``Form``, or directly stated
+#    in the metadata of an integral. Please make sure there are no environmental variables set
+#    with side-effects.
+#
+# Assembly and solve
+# ------------------
+# ::
 
 # Assemble system, applying boundary conditions and preserving symmetry
 A = assemble_matrix(form, [bc])

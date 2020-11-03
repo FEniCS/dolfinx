@@ -20,10 +20,9 @@ class Form:
         form
             Pure UFL form
         form_compiler_parameters
-            Parameters used in FFCX compilation of this form. Run `ffcx --help` in the commandline
-            to see all available options.
+            See :py:func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_parameters
-            Parameters controlling JIT compilation of C code.
+            See :py:func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
 
         Note
         ----
