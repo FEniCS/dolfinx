@@ -195,8 +195,6 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
 
     p_jit = get_parameters(jit_parameters)
 
-    print(p_jit)
-
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
         r = ffcx.codegeneration.jit.compile_forms([ufl_object], parameters=p_ffcx, **p_jit)
