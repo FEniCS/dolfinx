@@ -191,7 +191,8 @@ def test_sub_bbtree():
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
     cells = [f_to_c.links(f)[0] for f in top_facets]
     bbtree = cpp.geometry.BoundingBoxTree(mesh, tdim, cells)
-    ranks = cpp.geometry.compute_process_collisions(bbtree, numpy.array([[0.25, 0.25, 1]]).T)
+    process_bbtree = bbtree.compute_global_tree(mesh.mpi_comm())
+    ranks = cpp.geometry.compute_process_collisions(process_bbtree, numpy.array([[0.25, 0.25, 1]]).T)
     print("RANKS", ranks)
 # @skip_in_parallel
 

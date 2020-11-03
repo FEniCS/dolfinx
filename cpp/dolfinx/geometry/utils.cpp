@@ -248,8 +248,13 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
 {
   // Call recursive find function
   std::vector<std::array<int, 2>> entities;
-  _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,
-                           tree1.num_bboxes() - 1, entities);
+
+  if (tree0.num_bboxes() > 0 and tree1.num_bboxes() > 0)
+  {
+    _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,
+                             tree1.num_bboxes() - 1, entities);
+  }
+
   return entities;
 }
 //-----------------------------------------------------------------------------
