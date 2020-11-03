@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for BoundingBoxTree"""
 
+from dolfinx.fem.dirichletbc import locate_dofs_topological
 import numpy
 import pytest
 from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, geometry, cpp
@@ -178,7 +179,23 @@ def test_surface_bbtree():
     assert len(cpp.geometry.compute_collisions_point(bbtree, p)) == 0
 
 
+def test_sub_bbtree():
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4)
+    tdim = mesh.topology.dim
+    fdim = tdim - 1
+
+    def top_surface(x):
+        return numpy.logical_and(numpy.isclose(x[2], 1), x[0] < 0.5)
+
+    top_facets = locate_entities_boundary(mesh, fdim, top_surface)
+    f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
+    cells = [f_to_c.links(f)[0] for f in top_facets]
+    bbtree = cpp.geometry.BoundingBoxTree(mesh, tdim, cells)
+    ranks = cpp.geometry.compute_process_collisions(bbtree, numpy.array([[0.25, 0.25, 1]]).T)
+    print("RANKS", ranks)
 # @skip_in_parallel
+
+
 def test_surface_bbtree():
     # Rotated unit cube
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 4, 4, cpp.mesh.CellType.hexahedron)
