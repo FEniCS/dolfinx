@@ -125,7 +125,6 @@ jobs:
       - run: *build-python-interface
       - run: *build-documentation-python
       
-      - run: *set-default-jit-parameters
       - run: *unit-tests-python
       - run: *unit-tests-python-mpi
       - run: *demos-python
