@@ -138,8 +138,6 @@ def get_parameters(priority_parameters: Optional[dict] = None) -> dict:
     for param, (value, desc) in DOLFINX_DEFAULT_JIT_PARAMETERS.items():
         parameters[param] = value
 
-    print(parameters)
-
     # NOTE: _load_parameters uses functools.lru_cache
     user_parameters, pwd_parameters = _load_parameters()
 
@@ -196,6 +194,8 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
     p_ffcx["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
 
     p_jit = get_parameters(jit_parameters)
+
+    print(p_jit)
 
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):

@@ -80,7 +80,7 @@ jobs:
       - name: Set default DOLFINX JIT parameters
         run: |
           mkdir -p /root/.config/dolfinx
-          echo '{ "cffi_extra_compile_args": ["-O0", "-g0" ] }' > /root/.config/dolfinx/dolfinx_jit_parameters.json
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > /root/.config/dolfinx/dolfinx_jit_parameters.json
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
