@@ -159,7 +159,7 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
     ----------
     ufl_object
     form_compiler_parameters
-        Parameters used in FFCX compilation of this form. Run `ffcx --help` in
+        Parameters used in FFCX compilation of this form. Run `ffcx --help` at
         the commandline to see all available options. Takes priority over all
         other parameter values, except for 'scalar_type' which is determined by
         DOLFINX.
@@ -177,7 +177,7 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
         DOLFINX_DEFAULT_JIT_PARAMETERS in dolfinx.jit
 
     Priority ordering of parameters controlling FFCX from highest to lowest is:
-        priority_parameters (API)
+        form_compiler_parameters (API)
         $(pwd)/ffcx_parameters.json (local parameters)
         ~/.config/ffcx/ffcx_parameters.json (user parameters)
         FFCX_DEFAULT_PARAMETERS in ffcx.parameters
