@@ -5,11 +5,10 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for BoundingBoxTree"""
 
-from dolfinx.fem.dirichletbc import locate_dofs_topological
 import numpy
 import pytest
 from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, geometry, cpp
-from dolfinx.mesh import MeshTags, locate_entities_boundary
+from dolfinx.mesh import locate_entities_boundary
 from dolfinx.geometry import BoundingBoxTree
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -197,7 +196,7 @@ def test_sub_bbtree():
 # @skip_in_parallel
 
 
-def test_surface_bbtree():
+def test_surface_bbtree2():
     # Rotated unit cube
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 4, 4, cpp.mesh.CellType.hexahedron)
 
