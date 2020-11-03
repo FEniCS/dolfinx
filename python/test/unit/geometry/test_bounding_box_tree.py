@@ -8,11 +8,30 @@
 import numpy
 import pytest
 from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, geometry, cpp
+from dolfinx.mesh import MeshTags, locate_entities_boundary
 from dolfinx.geometry import BoundingBoxTree
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
 # --- compute_collisions with point ---
+
+
+def rotation_matrix(axis, angle):
+    # See https://en.wikipedia.org/wiki/Rotation_matrix,
+    # Subsection: Rotation_matrix_from_axis_and_angle.
+    if numpy.isclose(numpy.inner(axis, axis), 1):
+        n_axis = axis
+    else:
+        # Normalize axis
+        n_axis = axis / numpy.sqrt(numpy.inner(axis, axis))
+
+    # Define cross product matrix of axis
+    axis_x = numpy.array([[0, -n_axis[2], n_axis[1]],
+                          [n_axis[2], 0, -n_axis[0]],
+                          [-n_axis[1], n_axis[0], 0]])
+    id = numpy.cos(angle) * numpy.eye(3)
+    outer = (1 - numpy.cos(angle)) * numpy.outer(n_axis, n_axis)
+    return numpy.sin(angle) * axis_x + id + outer
 
 
 def test_empty_tree():
@@ -157,3 +176,58 @@ def test_surface_bbtree():
     # test collision (should not collide with any)
     p = numpy.array([0.5, 0.5, 0.5])
     assert len(cpp.geometry.compute_collisions_point(bbtree, p)) == 0
+
+
+# @skip_in_parallel
+def test_surface_bbtree():
+    # Rotated unit cube
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 4, 4, cpp.mesh.CellType.hexahedron)
+
+    def top_surface(x):
+        return numpy.isclose(x[2], 1)
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
+    top_facets = locate_entities_boundary(mesh, tdim - 1, top_surface)
+    top_cells = [f_to_c.links(f)[0] for f in top_facets]
+
+    r_matrix = rotation_matrix([1, 0, 0], numpy.pi / 6)
+    mesh.geometry.x[:, :] = numpy.dot(r_matrix, mesh.geometry.x.T).T
+    bb = cpp.geometry.BoundingBoxTree(mesh, tdim, top_cells)
+
+    # Translated unit cube
+    mesh2 = UnitCubeMesh(MPI.COMM_WORLD, 4, 2, 4, cpp.mesh.CellType.hexahedron)
+    mesh2.name = "MESH2"
+    mesh2.geometry.x[:, 2] += 1.25
+
+    def bottom_surface(x):
+        return numpy.isclose(x[2], 1.25)
+    tdim = mesh2.topology.dim
+    mesh2.topology.create_connectivity(tdim - 1, tdim)
+    f_to_c = mesh2.topology.connectivity(tdim - 1, tdim)
+    bottom_facets = locate_entities_boundary(mesh2, tdim - 1, bottom_surface)
+    bottom_cells = [f_to_c.links(f)[0] for f in bottom_facets]
+
+    bb2 = cpp.geometry.BoundingBoxTree(mesh2, tdim, bottom_cells)
+
+    # Compute collisions between sub bounding boxes
+    collisions = cpp.geometry.compute_collisions(bb, bb2)
+
+    # Compute collisions for the whole mesh
+    full_bb = cpp.geometry.BoundingBoxTree(mesh, tdim)
+    full_bb2 = cpp.geometry.BoundingBoxTree(mesh2, tdim)
+    collisions_full = cpp.geometry.compute_collisions(full_bb, full_bb2)
+    print(collisions)
+    print(collisions_full)
+    # import dolfinx.io
+    # mt = MeshTags(mesh, tdim, numpy.array(top_cells, dtype=numpy.int32), numpy.array(top_cells, dtype=numpy.int32))
+    # mt2 = MeshTags(mesh2, tdim, numpy.array(bottom_cells, dtype=numpy.int32),
+    #                numpy.array(bottom_cells, dtype=numpy.int32))
+    # mt2.name = "mt2"
+    # mesh2.name = "mesh2"
+    # xdmf = dolfinx.io.XDMFFile(MPI.COMM_WORLD, "test.xdmf", "w")
+    # xdmf.write_mesh(mesh)
+    # xdmf.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='mesh']/Geometry")
+    # xdmf.write_mesh(mesh2)
+    # xdmf.write_meshtags(mt2, geometry_xpath="/Xdmf/Domain/Grid[@Name='mesh2']/Geometry")
+    # xdmf.close()
