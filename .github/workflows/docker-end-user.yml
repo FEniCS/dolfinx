@@ -21,8 +21,6 @@ jobs:
     env:
       DOLFINX_CMAKE_BUILD_TYPE: "RelWithDebInfo"
       DOLFINX_CMAKE_CXX_FLAGS: "-O2 -march=sandybridge"
-      DOLFINX_JIT_CFLAGS: "-O2 -march=sandybridge"
-      FFCX_ASSUME_ALIGNED: "32"
     steps:
       - uses: actions/checkout@v2
         with:
@@ -43,6 +41,12 @@ jobs:
       - name: Pull dolfinx/dev-env
         run: |
           docker pull dolfinx/dev-env
+      - name: Set default FFCX parameters
+        run: |
+          echo '{ "assume_aligned" : 32 }' > dolfinx/docker/ffcx_parameters.json
+      - name: Set default DOLFINX JIT parameters
+        run: |
+          echo '{ "cffi_extra_compile_args" : ["-O2", "-march=sandybridge" ]}' > dolfinx/docker/dolfinx_jit_parameters.json
       - name: Build the Docker images
         run: |
           docker build --file dolfinx/docker/Dockerfile --build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS --build-arg DOLFINX_JIT_FLAGS --build-arg FFCX_ASSUME_ALIGNED --target dolfinx --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
