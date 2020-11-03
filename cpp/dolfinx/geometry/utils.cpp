@@ -20,7 +20,7 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // Check whether bounding box is a leaf node
-inline bool is_leaf(const std::array<int, 2>& bbox, int node)
+inline bool is_leaf(const std::array<int, 2>& bbox)
 {
   // Leaf nodes are marked by setting child_0 equal to child_1
   return bbox[0] == bbox[1];
@@ -61,7 +61,7 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
     // If bounding box is outside radius, then don't search further
     return {closest_entity, R2};
   }
-  else if (is_leaf(bbox, node))
+  else if (is_leaf(bbox))
   {
     // If box is leaf (which we know is inside radius), then shrink radius
 
@@ -101,7 +101,7 @@ _compute_closest_point(const geometry::BoundingBoxTree& tree,
   const std::array bbox = tree.bbox(node);
 
   // If box is leaf, then compute distance and shrink radius
-  if (is_leaf(bbox, node))
+  if (is_leaf(bbox))
   {
     const double r2 = (tree.get_bbox(node).row(0).transpose().matrix() - point)
                           .squaredNorm();
@@ -144,7 +144,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
     // If point is not in bounding box, then don't search further
     return;
   }
-  else if (is_leaf(bbox, node))
+  else if (is_leaf(bbox))
   {
     // If box is a leaf (which we know contains the point), then add it
 
@@ -177,8 +177,8 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
   const std::array bbox_B = B.bbox(node_B);
 
   // Check whether we've reached a leaf in A or B
-  const bool is_leaf_A = is_leaf(bbox_A, node_A);
-  const bool is_leaf_B = is_leaf(bbox_B, node_B);
+  const bool is_leaf_A = is_leaf(bbox_A);
+  const bool is_leaf_B = is_leaf(bbox_B);
   if (is_leaf_A and is_leaf_B)
   {
     // If both boxes are leaves (which we know collide), then add them
