@@ -84,20 +84,7 @@ class Timer:
 
 
 def timed(task: str):
-    """
-    Decorator for timing functions. Usage::
-
-    @timed(\"Do Foo\")
-    def do_foo(*args, **kwargs):
-        # Do something costly
-        pass
-
-    do_foo()
-    list_timings([TimingType.wall, TimingType.user])
-
-    t = timing(\"Do Foo\", TimingClear.clear)
-    print("Do foo wall time: %s" % t[1])
-    """
+    """Decorator for timing functions."""
 
     def decorator(func):
         @functools.wraps(func)

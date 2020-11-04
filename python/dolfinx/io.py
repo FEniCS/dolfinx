@@ -71,16 +71,7 @@ def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
     MSH element type integer. Each element type present
     in the model contains the cell topology of the elements
     and corresponding markers.
-    Input:
-          gmsh_model - The GMSH model
-          model_name - Name of model (Default: None)
-    Example:
-    MSH_triangle=2
-    MSH_tetra=4
-    topologies = {MSH_triangle: {"topology": triangle_topology,
-                             "cell_data": triangle_markers},
-              MSH_tetra: {"topology": tetra_topology,
-                          "cell_data": tetra_markers}}
+
     """
     if model_name is not None:
         gmsh_model.setCurrent(model_name)
@@ -128,7 +119,7 @@ def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
 def extract_gmsh_geometry(gmsh_model, model_name=None):
     """For a given gmsh model, extract the mesh geometry
     as a numpy (N,3) array where the i-th row
-    corresponds to the i-th node in the mesh
+    corresponds to the i-th node in the mesh.
     """
     if model_name is not None:
         gmsh_model.setCurrent(model_name)

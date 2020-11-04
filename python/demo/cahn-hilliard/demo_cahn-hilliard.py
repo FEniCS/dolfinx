@@ -130,9 +130,7 @@ log.set_output_file("log.txt")
 #
 # A class which will represent the Cahn-Hilliard in an abstract from for
 # use in the Newton solver is now defined. It is a subclass of
-# :py:class:`NonlinearProblem <dolfinx.cpp.NonlinearProblem>`. ::
-
-# Class for interfacing with the Newton solver
+# :py:class:`NonlinearProblem <dolfinx.cpp.NonlinearProblem>`.::
 
 
 class CahnHilliardEquation(NonlinearProblem):

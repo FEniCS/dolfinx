@@ -58,8 +58,8 @@
 # We shall the lid-driven cavity problem with the following definitions
 # domain and boundary conditions:
 #
-# * :math:`\Omega = [0,1]\times[0,1] (a unit square)
-# * :math:`\Gamma_D = \partial \Omega
+# * :math:`\Omega = [0,1]\times[0,1]` (a unit square)
+# * :math:`\Gamma_D = \partial \Omega`
 # * :math:`u_0 = (1, 0)^\top` at :math:`x_1 = 1` and :math:`u_0 = (0,
 #   0)^\top` otherwise
 # * :math:`f = (0, 0)^\top`
