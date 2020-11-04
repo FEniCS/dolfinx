@@ -22,50 +22,28 @@ namespace
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
 compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
-  // Get mesh entity data
+  // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   mesh.topology_mutable().create_connectivity(dim, tdim);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> entity(1);
+  entity(0, 0) = index;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
+  auto entity_indices = vertex_indices.row(0);
 
-  // Find attached cell
-  auto e_to_c = mesh.topology().connectivity(dim, tdim);
-  assert(e_to_c);
-  assert(e_to_c->num_links(index) > 0);
-  const std::int32_t c = e_to_c->links(index)[0];
-
-  auto dofs = x_dofmap.links(c);
-  auto c_to_v = mesh.topology().connectivity(tdim, 0);
-  assert(c_to_v);
-  auto cell_vertices = c_to_v->links(c);
-
-  auto vertices = mesh.topology().connectivity(dim, 0)->links(index);
-  assert(vertices.rows() >= 2);
-  const auto* it
-      = std::find(cell_vertices.data(),
-                  cell_vertices.data() + cell_vertices.rows(), vertices[0]);
-  assert(it != (cell_vertices.data() + cell_vertices.rows()));
-  const int local_vertex = std::distance(cell_vertices.data(), it);
-
-  const Eigen::Vector3d x0 = geometry.node(dofs(local_vertex));
+  const Eigen::Vector3d x0 = geometry.node(entity_indices[0]);
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
   b.row(0) = x0;
   b.row(1) = x0;
-
   // Compute min and max over remaining vertices
-  for (int i = 1; i < vertices.rows(); ++i)
+  for (int i = 1; i < entity_indices.size(); ++i)
   {
-    const auto* it
-        = std::find(cell_vertices.data(),
-                    cell_vertices.data() + cell_vertices.rows(), vertices[i]);
-    assert(it != (cell_vertices.data() + cell_vertices.rows()));
-    const int local_vertex = std::distance(cell_vertices.data(), it);
-
-    const Eigen::Vector3d x = geometry.node(dofs(local_vertex));
+    const int local_vertex = entity_indices[i];
+    const Eigen::Vector3d x = geometry.node(local_vertex);
     b.row(0) = b.row(0).min(x.transpose().array());
     b.row(1) = b.row(1).max(x.transpose().array());
   }
-
   return b;
 }
 //-----------------------------------------------------------------------------
