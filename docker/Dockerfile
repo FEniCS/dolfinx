@@ -313,8 +313,8 @@ ONBUILD ADD dolfinx/ /src/dolfinx/
 
 # These files are empty by default, i.e. they do nothing.
 # The user can set them at build time if they wish.
-ONBUILD ADD dolfinx_jit_parameters.json /root/.config/dolfinx/dolfinx_jit_parameters.json
-ONBUILD ADD ffcx_parameters.json /root/.config/ffcx/ffcx_parameters.json
+ONBUILD ADD dolfinx/docker/dolfinx_jit_parameters.json /root/.config/dolfinx/dolfinx_jit_parameters.json
+ONBUILD ADD dolfinx/docker/ffcx_parameters.json /root/.config/ffcx/ffcx_parameters.json
 
 # The following ARGS are used in the dolfinx layer.
 # They are safe defaults.
@@ -376,6 +376,7 @@ COPY --from=intermediate /usr/local/dolfinx-real /usr/local/dolfinx-real
 COPY --from=intermediate /usr/local/dolfinx-complex /usr/local/dolfinx-complex
 COPY --from=intermediate /usr/local/lib/python3.8/dist-packages /usr/local/lib/python3.8/dist-packages
 COPY --from=intermediate /usr/local/bin /usr/local/bin
+COPY --from=intermediate /root/.config /root/.config
 
 # Real by default.
 # Note that because we inherit from dev-env we do not inherit these ENV from
