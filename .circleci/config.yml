@@ -159,10 +159,12 @@ jobs:
 
       - run: *build-python-interface
       - run: *build-documentation-python
-      - run: *unit-tests-python
-      - run: *unit-tests-python-mpi
+      
       - run: *demos-python
       - run: *demos-python-mpi
+      - run: *set-jit-defaults
+      - run: *unit-tests-python
+      - run: *unit-tests-python-mpi
       - store_test_results:
           path: ~/junit
       - store_artifacts:
