@@ -262,7 +262,10 @@ std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
                                               const Eigen::Vector3d& p)
 {
   std::vector<int> entities;
-  _compute_collisions_point(tree, p, tree.num_bboxes() - 1, entities);
+
+  if (tree.num_bboxes() > 0)
+    _compute_collisions_point(tree, p, tree.num_bboxes() - 1, entities);
+
   return entities;
 }
 //-----------------------------------------------------------------------------
