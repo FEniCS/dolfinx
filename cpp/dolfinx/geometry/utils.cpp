@@ -266,12 +266,6 @@ std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
   return entities;
 }
 //-----------------------------------------------------------------------------
-std::vector<int> geometry::compute_process_collisions(
-    const geometry::BoundingBoxTree& global_tree, const Eigen::Vector3d& p)
-{
-  return geometry::compute_collisions(global_tree, p);
-}
-//-----------------------------------------------------------------------------
 double geometry::compute_squared_distance_bbox(
     const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
     const Eigen::Vector3d& x)

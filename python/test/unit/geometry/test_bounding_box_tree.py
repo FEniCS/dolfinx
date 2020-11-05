@@ -7,9 +7,10 @@
 
 import numpy
 import pytest
-from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, geometry, cpp
-from dolfinx.mesh import locate_entities_boundary
+from dolfinx import (BoxMesh, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
+                     cpp, geometry)
 from dolfinx.geometry import BoundingBoxTree
+from dolfinx.mesh import locate_entities_boundary
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
@@ -179,67 +180,131 @@ def test_surface_bbtree():
 
 
 def test_sub_bbtree():
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4)
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, cell_type=cpp.mesh.CellType.hexahedron)
     tdim = mesh.topology.dim
     fdim = tdim - 1
 
     def top_surface(x):
-        return numpy.logical_and(numpy.isclose(x[2], 1), x[0] < 0.5)
+        return numpy.isclose(x[2], 1)
 
     top_facets = locate_entities_boundary(mesh, fdim, top_surface)
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
     cells = [f_to_c.links(f)[0] for f in top_facets]
     bbtree = cpp.geometry.BoundingBoxTree(mesh, tdim, cells)
+
+    # Compute a BBtree for all the processors
     process_bbtree = bbtree.compute_global_tree(mesh.mpi_comm())
-    ranks = cpp.geometry.compute_process_collisions(process_bbtree, numpy.array([[0.25, 0.25, 1]]).T)
-    print("RANKS", ranks)
-# @skip_in_parallel
+    # Compute collisions across processors
+    point = numpy.array([[0.2, 0.2, 1]]).T
+    ranks = cpp.geometry.compute_collisions_point(process_bbtree, point)
+
+    # Compute local collisions
+    cells = cpp.geometry.compute_collisions_point(bbtree, point)
+    if MPI.COMM_WORLD.rank in ranks:
+        assert(len(cells) > 0)
+    else:
+        assert(len(cells) == 0)
+    print(MPI.COMM_WORLD, ranks, cells)
 
 
+@skip_in_parallel
 def test_surface_bbtree2():
-    # Rotated unit cube
+    """
+    Compute collision between two meshes, where only one cell of each mesh are colliding
+    """
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 4, 4, cpp.mesh.CellType.hexahedron)
 
     def top_surface(x):
         return numpy.isclose(x[2], 1)
+    # Tag top facets of cube
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim - 1, tdim)
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
     top_facets = locate_entities_boundary(mesh, tdim - 1, top_surface)
     top_cells = [f_to_c.links(f)[0] for f in top_facets]
 
-    r_matrix = rotation_matrix([1, 0, 0], numpy.pi / 6)
+    # Rotate cube
+    r_matrix = rotation_matrix([1, 1, 0], numpy.pi / 4)
     mesh.geometry.x[:, :] = numpy.dot(r_matrix, mesh.geometry.x.T).T
-    bb = cpp.geometry.BoundingBoxTree(mesh, tdim, top_cells)
 
-    # Translated unit cube
-    mesh2 = UnitCubeMesh(MPI.COMM_WORLD, 4, 2, 4, cpp.mesh.CellType.hexahedron)
-    mesh2.name = "MESH2"
-    mesh2.geometry.x[:, 2] += 1.25
+    # Compute global bounding box of top surface
+    bb = cpp.geometry.BoundingBoxTree(mesh, tdim, top_cells)
+    global_bbox = bb.compute_global_tree(mesh.mpi_comm())
+
+    mesh2 = BoxMesh(MPI.COMM_WORLD, [numpy.array([0, 0, 1.2]), numpy.array([1, 1, 2])],
+                    [3, 3, 3], cpp.mesh.CellType.hexahedron)
 
     def bottom_surface(x):
-        return numpy.isclose(x[2], 1.25)
+        return numpy.isclose(x[2], 1.2)
+
+    # Tag bottom surface
     tdim = mesh2.topology.dim
     mesh2.topology.create_connectivity(tdim - 1, tdim)
     f_to_c = mesh2.topology.connectivity(tdim - 1, tdim)
     bottom_facets = locate_entities_boundary(mesh2, tdim - 1, bottom_surface)
     bottom_cells = [f_to_c.links(f)[0] for f in bottom_facets]
 
+    # Compute local bounding box of bottom cells
     bb2 = cpp.geometry.BoundingBoxTree(mesh2, tdim, bottom_cells)
+    global_bbox2 = bb2.compute_global_tree(mesh.mpi_comm())
+    # Compute collisions between local box of mesh 2 and global box of mesh 1
+    collisions = cpp.geometry.compute_collisions(global_bbox, bb2)
+    # Compute collisions between local box of mesh 1 and global box of mesh 2
+    rev_collisions = cpp.geometry.compute_collisions(global_bbox2, bb)
 
-    # Compute collisions between sub bounding boxes
-    collisions = cpp.geometry.compute_collisions(bb, bb2)
+    local_collisions = []
+    remote_collisions = {i: [] for i in range(MPI.COMM_WORLD.size)}
+    remote_collisions.pop(MPI.COMM_WORLD.rank)
+    for collision in collisions:
+        if MPI.COMM_WORLD.rank == collision[0]:
+            local_collisions.append(collision[1])
+        else:
+            remote_collisions[collision[0]].append(collision[1])
+    rev_local_collisions = []
+    rev_remote_collisions = {i: [] for i in range(MPI.COMM_WORLD.size)}
+    rev_remote_collisions.pop(MPI.COMM_WORLD.rank)
+    for collision in rev_collisions:
+        if MPI.COMM_WORLD.rank == collision[0]:
+            rev_local_collisions.append(collision[1])
+        else:
+            rev_remote_collisions[collision[0]].append(collision[1])
 
-    # Compute collisions for the whole mesh
-    full_bb = cpp.geometry.BoundingBoxTree(mesh, tdim)
-    full_bb2 = cpp.geometry.BoundingBoxTree(mesh2, tdim)
-    collisions_full = cpp.geometry.compute_collisions(full_bb, full_bb2)
-    print(collisions)
-    print(collisions_full)
+    def extract_geometricial_data(mesh, dim, entities):
+        """
+        For a set of entities in a mesh, return the coordinates of the vertices
+        """
+        mesh_nodes = []
+        geom = mesh.geometry
+        g_indices = cpp.mesh.entities_to_geometry(mesh, dim,
+                                                  numpy.array(entities, dtype=numpy.int32),
+                                                  False)
+        for cell in g_indices:
+            nodes = numpy.zeros((len(cell), 3), dtype=numpy.float64)
+            for j, entity in enumerate(cell):
+                nodes[j] = geom.x[entity]
+            mesh_nodes.append(nodes)
+        return mesh_nodes
+    # Find colliding cells on local processor
+    actual_collisions = []
+    if len(local_collisions) > 0 and (rev_local_collisions):
+        mesh_nodes = extract_geometricial_data(mesh, mesh.topology.dim, rev_local_collisions)
+        mesh2_nodes = extract_geometricial_data(mesh2, mesh2.topology.dim, local_collisions)
+        for entity2, simplex2 in zip(local_collisions, mesh2_nodes):
+            for entity1, simplex1 in zip(rev_local_collisions, mesh_nodes):
+                distance = cpp.geometry.compute_distance_gjk(simplex1, simplex2)
+                if numpy.linalg.norm(distance) < 1e-15:
+                    actual_collisions.append([entity1, entity2])
+        assert(len(actual_collisions) == 1)
+
+    if len(remote_collisions.keys()) > 0 and len(rev_remote_collisions.keys()) > 0:
+        raise NotImplementedError("Test not implemented for parallel problems")
+
     # import dolfinx.io
-    # mt = MeshTags(mesh, tdim, numpy.array(top_cells, dtype=numpy.int32), numpy.array(top_cells, dtype=numpy.int32))
+    # from dolfinx import MeshTags
+    # mt = MeshTags(mesh, tdim, numpy.array(top_cells, dtype=numpy.int32),
+    #               numpy.full(len(top_cells), MPI.COMM_WORLD.rank, dtype=numpy.int32))
     # mt2 = MeshTags(mesh2, tdim, numpy.array(bottom_cells, dtype=numpy.int32),
-    #                numpy.array(bottom_cells, dtype=numpy.int32))
+    #                numpy.full(len(bottom_cells), MPI.COMM_WORLD.rank, dtype=numpy.int32))
     # mt2.name = "mt2"
     # mesh2.name = "mesh2"
     # xdmf = dolfinx.io.XDMFFile(MPI.COMM_WORLD, "test.xdmf", "w")

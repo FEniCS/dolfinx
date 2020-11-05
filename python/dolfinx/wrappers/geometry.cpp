@@ -52,10 +52,6 @@ void geometry(py::module& m)
         py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
                           const dolfinx::geometry::BoundingBoxTree&>(
             &dolfinx::geometry::compute_collisions));
-  m.def("compute_process_collisions",
-        py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
-                          const Eigen::Vector3d&>(
-            &dolfinx::geometry::compute_process_collisions));
 
   m.def("compute_distance_gjk", &dolfinx::geometry::compute_distance_gjk);
   m.def("squared_distance", &dolfinx::geometry::squared_distance);
