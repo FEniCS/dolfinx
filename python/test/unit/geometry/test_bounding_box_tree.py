@@ -180,6 +180,9 @@ def test_surface_bbtree():
 
 
 def test_sub_bbtree():
+    """
+    Testing point collision with a BoundingBoxTree of sub entitites
+    """
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, cell_type=cpp.mesh.CellType.hexahedron)
     tdim = mesh.topology.dim
     fdim = tdim - 1
@@ -207,8 +210,35 @@ def test_sub_bbtree():
     print(MPI.COMM_WORLD, ranks, cells)
 
 
+@pytest.mark.parametrize("ct", [cpp.mesh.CellType.hexahedron, cpp.mesh.CellType.tetrahedron])
+@pytest.mark.parametrize("N", [7, 13])
+def test_sub_bbtree_box(ct, N):
+    """
+    Test that the bounding box of the stem of the bounding box tree is what we expect
+    """
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, N, N, N, cell_type=ct)
+    tdim = mesh.topology.dim
+    fdim = tdim - 1
+    axis = 1
+
+    def marker(x):
+        return numpy.isclose(x[axis], 1)
+    facets = locate_entities_boundary(mesh, fdim, marker)
+    f_to_c = mesh.topology.connectivity(fdim, tdim)
+    cells = numpy.unique([f_to_c.links(f)[0] for f in facets])
+    bbtree = cpp.geometry.BoundingBoxTree(mesh, tdim, cells)
+    num_boxes = bbtree.num_bboxes()
+    if num_boxes > 0:
+        bbox = bbtree.get_bbox(num_boxes - 1)
+        assert(numpy.isclose(bbox[0][axis], (N - 1) / N))
+
+    tree = cpp.geometry.BoundingBoxTree(mesh, tdim)
+    all_boxes = tree.num_bboxes()
+    assert(num_boxes < all_boxes)
+
+
 @skip_in_parallel
-def test_surface_bbtree2():
+def test_surface_bbtree_collision():
     """
     Compute collision between two meshes, where only one cell of each mesh are colliding
     """
