@@ -20,7 +20,8 @@ namespace
 //-----------------------------------------------------------------------------
 // Compute bounding box of mesh entity
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
-compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
+compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index,
+                       double padding)
 {
   // Get mesh entity data
   const int tdim = mesh.topology().dim();
@@ -65,6 +66,8 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
     b.row(0) = b.row(0).min(x.transpose().array());
     b.row(1) = b.row(1).max(x.transpose().array());
   }
+  b.row(0) -= padding;
+  b.row(1) += padding;
 
   return b;
 }
@@ -259,7 +262,9 @@ BoundingBoxTree::BoundingBoxTree(
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
+BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
+                                 double padding)
+    : _tdim(tdim)
 {
   // Check dimension
   if (tdim < 1 or tdim > mesh.topology().dim())
@@ -277,8 +282,10 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   const std::int32_t num_leaves = map->size_local() + map->num_ghosts();
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> leaf_bboxes(
       2 * num_leaves, 3);
+
   for (int e = 0; e < num_leaves; ++e)
-    leaf_bboxes.block<2, 3>(2 * e, 0) = compute_bbox_of_entity(mesh, tdim, e);
+    leaf_bboxes.block<2, 3>(2 * e, 0)
+        = compute_bbox_of_entity(mesh, tdim, e, padding);
 
   // Recursively build the bounding box tree from the leaves
   std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);

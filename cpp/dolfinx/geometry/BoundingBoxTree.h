@@ -34,7 +34,9 @@ public:
   /// @param[in] mesh The mesh for building the bounding box tree
   /// @param[in] tdim The topological dimension of the mesh entities to
   ///                 by the bounding box tree for
-  BoundingBoxTree(const mesh::Mesh& mesh, int tdim);
+  /// @param[in] padding A float perscribing how much the bounding box of
+  /// each entity should be padded
+  BoundingBoxTree(const mesh::Mesh& mesh, int tdim, double padding = 0);
 
   /// Constructor
   /// @param[in] points Cloud of points to build the bounding box tree
