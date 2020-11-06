@@ -77,8 +77,7 @@ jobs:
       - name: Run DOLFIN-X (Python) tests
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env activate cpp
-          # spack env activate py
+          spack env activate py
           pip install cppimport numba
           cd ./dolfinx-test/python/test
           pytest -n auto --ignore=unit/fem/test_custom_jit_kernels.py --ignore=unit/geometry/test_gjk.py --ignore=unit/function/test_function.py .
