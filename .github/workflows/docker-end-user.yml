@@ -20,10 +20,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       DOLFINX_CMAKE_BUILD_TYPE: "RelWithDebInfo"
-      DOLFINX_CMAKE_CXX_FLAGS: "-march=sandybridge"
-      PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
-      PETSC_SLEPC_DEBUGGING: "no"
-      MPI: "mpich"
+      DOLFINX_CMAKE_CXX_FLAGS: "-O2 -march=sandybridge"
     steps:
       - uses: actions/checkout@v2
         with:
@@ -44,11 +41,16 @@ jobs:
       - name: Pull dolfinx/dev-env
         run: |
           docker pull dolfinx/dev-env
+      - name: Set default FFCX parameters
+        run: |
+          echo '{ "assume_aligned" : 32 }' > dolfinx/docker/ffcx_parameters.json
+      - name: Set default DOLFINX JIT parameters
+        run: |
+          echo '{ "cffi_extra_compile_args" : ["-O2", "-march=sandybridge" ]}' > dolfinx/docker/dolfinx_jit_parameters.json
       - name: Build the Docker images
         run: |
-          docker build --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
-          docker build --file dolfinx/docker/Dockerfile --build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS --target dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
-          docker build --file dolfinx/docker/Dockerfile --build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS --target lab --cache-from dolfinx/dolfinx --tag dolfinx/lab .
+          docker build --file dolfinx/docker/Dockerfile --build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS --target dolfinx --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
+          docker build --file dolfinx/docker/Dockerfile --target lab --cache-from dolfinx/dolfinx --cache-from dolfinx/dev-env --tag dolfinx/lab .
       - name: Run basic test inside container
         run: |
           docker run --rm dolfinx/dolfinx python3 -c "import dolfinx; from mpi4py import MPI; mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10); V = dolfinx.FunctionSpace(mesh, ('P', 1));"
