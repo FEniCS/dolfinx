@@ -79,6 +79,8 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env activate py
           pip install cppimport numba
+          mkdir -p ~/.config/dolfinx
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
           cd ./dolfinx-test/python/test
           pytest -n auto --ignore=unit/fem/test_custom_jit_kernels.py --ignore=unit/geometry/test_gjk.py --ignore=unit/function/test_function.py .
           mpirun -np 2 pytest --ignore=unit/fem/test_custom_jit_kernels.py --ignore=unit/geometry/test_gjk.py --ignore=unit/function/test_function.py .
