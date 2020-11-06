@@ -98,7 +98,7 @@ def refine(mesh, cell_markers=None, redistribute=True):
 
 def create_mesh(comm, cells, x, domain, ghost_mode=cpp.mesh.GhostMode.shared_facet):
     """Create a mesh from topology and geometry data"""
-    cmap = fem.create_coordinate_map(domain)
+    cmap = fem.create_coordinate_map(comm, domain)
     try:
         mesh = cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode)
     except TypeError:

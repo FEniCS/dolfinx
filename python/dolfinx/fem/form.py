@@ -20,10 +20,9 @@ class Form:
         form
             Pure UFL form
         form_compiler_parameters
-            Parameters used in FFCX compilation of this form. Run `ffcx --help` in the commandline
-            to see all available options.
+            See :py:func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_parameters
-            Parameters controlling JIT compilation of C code.
+            See :py:func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
 
         Note
         ----
@@ -42,10 +41,10 @@ class Form:
 
         # Compile UFL form with JIT
         ufc_form = jit.ffcx_jit(
+            mesh.mpi_comm(),
             form,
             form_compiler_parameters=form_compiler_parameters,
-            jit_parameters=jit_parameters,
-            mpi_comm=mesh.mpi_comm())
+            jit_parameters=jit_parameters)
 
         # For every argument in form extract its function space
         function_spaces = [

@@ -1,13 +1,14 @@
-# Copyright (C) 2019 Michal Habera and Andreas Zilian
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# .. _demo_static_condensation:
 #
-# SPDX-License-Identifier:    LGPL-3.0-or-later
-
+# Static condensation of linear elasticity
+# ========================================
+# Copyright (C) 2020  Michal Habera and Andreas Zilian
+#
 # This demo solves a Cook's plane stress elasticity test in a mixed space
 # formulation. The test is a sloped cantilever under upward traction force
 # at free end. Static condensation of internal (stress) degrees-of-freedom
-# is demonstrated.
+# is demonstrated. ::
 
 import os
 
@@ -94,13 +95,13 @@ f = ufl.as_vector([0.0, 1.0 / 16])
 b1 = - ufl.inner(f, v) * ds(1)
 
 # JIT compile individual blocks tabulation kernels
-ufc_form00 = dolfinx.jit.ffcx_jit(a00)
+ufc_form00 = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a00)
 kernel00 = ufc_form00.create_cell_integral(-1).tabulate_tensor
 
-ufc_form01 = dolfinx.jit.ffcx_jit(a01)
+ufc_form01 = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a01)
 kernel01 = ufc_form01.create_cell_integral(-1).tabulate_tensor
 
-ufc_form10 = dolfinx.jit.ffcx_jit(a10)
+ufc_form10 = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a10)
 kernel10 = ufc_form10.create_cell_integral(-1).tabulate_tensor
 
 ffi = cffi.FFI()

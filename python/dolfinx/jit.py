@@ -31,29 +31,20 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     in the cache, it will call the jit compiler on the remaining
     processes, which will then use the cached module.
 
-    *Example* .. code-block:: python
-
-            def jit_something(something):
-                ....
-
     """
 
     @functools.wraps(local_jit)
-    def mpi_jit(*args, **kwargs):
-
-        # FIXME: should require mpi_comm to be explicit and not default
-        # to comm_world?
-        mpi_comm = kwargs.pop("mpi_comm", MPI.COMM_WORLD)
+    def mpi_jit(comm, *args, **kwargs):
 
         # Just call JIT compiler when running in serial
-        if mpi_comm.size == 1:
+        if comm.size == 1:
             return local_jit(*args, **kwargs)
 
         # Default status (0 == ok, 1 == fail)
         status = 0
 
         # Compile first on process 0
-        root = mpi_comm.rank == 0
+        root = comm.rank == 0
         if root:
             try:
                 output = local_jit(*args, **kwargs)
@@ -71,7 +62,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
         # Wait for the compiling process to finish and get status TODO:
         # Would be better to broadcast the status from root but this
         # works.
-        global_status = mpi_comm.allreduce(status, op=MPI.MAX)
+        global_status = comm.allreduce(status, op=MPI.MAX)
         if global_status == 0:
             # Success, call jit on all other processes (this should just
             # read the cache)
@@ -91,6 +82,23 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 
 @mpi_jit_decorator
 def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
+    """Compile UFL object with FFCX.
+
+    Parameters
+    ----------
+    ufl_object
+    form_compiler_parameters
+        Parameters used in FFCX compilation of this form. Run `ffcx --help` in the commandline
+        to see all available options.
+    jit_parameters
+        Parameters controlling JIT compilation of C code.
+
+    Note
+    ----
+    Both ``form_compiler_parameters`` and ``jit_parameters`` are overwritten
+    with environmental variables, if set.
+
+    """
     # Prepare form compiler parameters with overrides from dolfinx
     p = ffcx.default_parameters()
     p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
@@ -115,6 +123,16 @@ def ffcx_jit(ufl_object, form_compiler_parameters={}, jit_parameters={}):
     cache_dir = os.getenv('DOLFINX_JIT_CACHE_DIR', jit_params["cache_dir"])
     cache_dir = Path(cache_dir).expanduser()
     jit_params["cache_dir"] = cache_dir
+
+    libs = os.getenv("DOLFINX_JIT_CFFI_LIBRARIES", jit_params["cffi_libraries"])
+    if isinstance(libs, str):
+        libs = libs.split(" ")
+    jit_params["cffi_libraries"] = libs
+
+    verbose = os.getenv("DOLFINX_JIT_CFFI_VERBOSE", jit_params["cffi_verbose"])
+    if isinstance(verbose, str):
+        verbose = True if verbose != "0" else False
+    jit_params["cffi_verbose"] = verbose
 
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):

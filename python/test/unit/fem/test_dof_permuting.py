@@ -69,7 +69,7 @@ def test_triangle_dof_positions(space_type):
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
         dofs = dofmap.cell_dofs(cell_n)
 
@@ -142,7 +142,7 @@ def test_tetrahedron_dof_positions(space_type):
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
         dofs = dofmap.cell_dofs(cell_n)
 
@@ -214,7 +214,7 @@ def test_quadrilateral_dof_positions(space_type):
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
         dofs = dofmap.cell_dofs(cell_n)
 
@@ -279,7 +279,7 @@ def test_hexahedron_dof_positions(space_type):
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
         dofs = dofmap.cell_dofs(cell_n)
 

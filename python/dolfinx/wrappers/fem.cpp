@@ -21,6 +21,7 @@
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/function/Constant.h>
+#include <dolfinx/function/Expression.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
@@ -100,10 +101,19 @@ void fem(py::module& m)
   m.def("create_sparsity_pattern",
         &dolfinx::fem::create_sparsity_pattern<PetscScalar>,
         "Create a sparsity pattern for bilinear form.");
-  m.def("pack_coefficients", &dolfinx::fem::pack_coefficients<PetscScalar>,
+  m.def("pack_coefficients",
+        &dolfinx::fem::pack_coefficients<dolfinx::fem::Form<PetscScalar>>,
         "Pack coefficients for a UFL form.");
-  m.def("pack_constants", &dolfinx::fem::pack_constants<PetscScalar>,
+  m.def("pack_coefficients",
+        &dolfinx::fem::pack_coefficients<dolfinx::fem::Form<PetscScalar>>,
+        "Pack coefficients for a UFL expression.");
+  m.def("pack_constants",
+        &dolfinx::fem::pack_constants<dolfinx::fem::Form<PetscScalar>>,
         "Pack constants for a UFL form.");
+  m.def(
+      "pack_constants",
+      &dolfinx::fem::pack_constants<dolfinx::function::Expression<PetscScalar>>,
+      "Pack constants for a UFL expression.");
   m.def(
       "create_matrix",
       [](const dolfinx::fem::Form<PetscScalar>& a) {
@@ -422,7 +432,9 @@ void fem(py::module& m)
       .def_property_readonly("rank", &dolfinx::fem::Form<PetscScalar>::rank)
       .def_property_readonly("mesh", &dolfinx::fem::Form<PetscScalar>::mesh)
       .def_property_readonly("function_spaces",
-                             &dolfinx::fem::Form<PetscScalar>::function_spaces);
+                             &dolfinx::fem::Form<PetscScalar>::function_spaces)
+      .def("integral_ids", &dolfinx::fem::Form<PetscScalar>::integral_ids)
+      .def("domains", &dolfinx::fem::Form<PetscScalar>::domains);
 
   m.def("locate_dofs_topological", &dolfinx::fem::locate_dofs_topological,
         py::arg("V"), py::arg("dim"), py::arg("entities"),
