@@ -10,6 +10,7 @@
 #include <mpi.h>
 #include <petscsys.h>
 #include <string>
+#include <vector>
 
 #ifdef HAS_SLEPC
 #include <slepcsys.h>
@@ -46,7 +47,13 @@ void SubSystemsManager::init_logging(int argc, char* argv[])
 {
   loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
   loguru::Options options = {"-dolfinx_loglevel", "main thread", false};
-  loguru::init(argc, argv, options);
+
+  // Make a copy of argv, as loguru may modify it.
+  std::vector<char*> argv_copy;
+  for (int i = 0; i < argc; ++i)
+    argv_copy.push_back(argv[i]);
+
+  loguru::init(argc, argv_copy.data(), options);
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()
