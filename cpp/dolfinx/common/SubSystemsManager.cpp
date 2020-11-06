@@ -52,6 +52,7 @@ void SubSystemsManager::init_logging(int argc, char* argv[])
   std::vector<char*> argv_copy;
   for (int i = 0; i < argc; ++i)
     argv_copy.push_back(argv[i]);
+  argv_copy.push_back(nullptr);
 
   loguru::init(argc, argv_copy.data(), options);
 }
