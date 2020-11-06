@@ -17,7 +17,6 @@ jobs:
     env:
       CC: clang-10
       CXX: clang++-10
-      DOLFINX_JIT_CFLAGS: -g0 -O0
       MPLBACKEND: agg
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -77,6 +76,11 @@ jobs:
         run: |
           cd python/demo && python3 ./generate-demo-files.py
           cd ../doc && make html
+
+      - name: Set default DOLFINX JIT parameters
+        run: |
+          mkdir -p ~/.config/dolfinx
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
