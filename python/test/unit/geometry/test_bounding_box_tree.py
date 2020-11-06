@@ -37,7 +37,7 @@ def rotation_matrix(axis, angle):
 
 def test_empty_tree():
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
-    bbtree = cpp.geometry.BoundingBoxTree(mesh, mesh.topology.dim, [])
+    bbtree = BoundingBoxTree(mesh, mesh.topology.dim, [])
     assert bbtree.num_bboxes() == 0
 
 
@@ -174,11 +174,11 @@ def test_surface_bbtree():
     tdim = mesh.topology.dim
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
     cells = [f_to_c.links(f)[0] for f in sf]
-    bbtree = cpp.geometry.BoundingBoxTree(mesh, tdim, cells)
+    bbtree = BoundingBoxTree(mesh, tdim, cells)
 
     # test collision (should not collide with any)
     p = numpy.array([0.5, 0.5, 0.5])
-    assert len(cpp.geometry.compute_collisions_point(bbtree, p)) == 0
+    assert len(geometry.compute_collisions_point(bbtree, p)) == 0
 
 
 def test_sub_bbtree():
@@ -195,16 +195,16 @@ def test_sub_bbtree():
     top_facets = locate_entities_boundary(mesh, fdim, top_surface)
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
     cells = [f_to_c.links(f)[0] for f in top_facets]
-    bbtree = cpp.geometry.BoundingBoxTree(mesh, tdim, cells)
+    bbtree = BoundingBoxTree(mesh, tdim, cells)
 
     # Compute a BBtree for all processes
     process_bbtree = bbtree.compute_global_tree(mesh.mpi_comm())
     # Find possible ranks for this point
     point = numpy.array([0.2, 0.2, 1.0])
-    ranks = cpp.geometry.compute_collisions_point(process_bbtree, point)
+    ranks = geometry.compute_collisions_point(process_bbtree, point)
 
     # Compute local collisions
-    cells = cpp.geometry.compute_collisions_point(bbtree, point)
+    cells = geometry.compute_collisions_point(bbtree, point)
     if MPI.COMM_WORLD.rank in ranks:
         assert(len(cells) > 0)
     else:
@@ -227,13 +227,13 @@ def test_sub_bbtree_box(ct, N):
     facets = locate_entities_boundary(mesh, fdim, marker)
     f_to_c = mesh.topology.connectivity(fdim, tdim)
     cells = numpy.unique([f_to_c.links(f)[0] for f in facets])
-    bbtree = cpp.geometry.BoundingBoxTree(mesh, tdim, cells)
+    bbtree = BoundingBoxTree(mesh, tdim, cells)
     num_boxes = bbtree.num_bboxes()
     if num_boxes > 0:
-        bbox = bbtree.get_bbox(num_boxes - 1)
+        bbox = bbtree._cpp_object.get_bbox(num_boxes - 1)
         assert(numpy.isclose(bbox[0][1], (N - 1) / N))
 
-    tree = cpp.geometry.BoundingBoxTree(mesh, tdim)
+    tree = BoundingBoxTree(mesh, tdim)
     all_boxes = tree.num_bboxes()
     assert(num_boxes < all_boxes)
 
@@ -252,12 +252,12 @@ def test_surface_bbtree_collision():
     f_to_c = mesh1.topology.connectivity(tdim - 1, tdim)
     # Compute unique set of cells (some will be counted multiple times)
     cells = list(set([f_to_c.links(f)[0] for f in sf]))
-    bbtree1 = cpp.geometry.BoundingBoxTree(mesh1, tdim, cells)
+    bbtree1 = BoundingBoxTree(mesh1, tdim, cells)
 
     sf = cpp.mesh.exterior_facet_indices(mesh2)
     f_to_c = mesh2.topology.connectivity(tdim - 1, tdim)
     cells = list(set([f_to_c.links(f)[0] for f in sf]))
-    bbtree2 = cpp.geometry.BoundingBoxTree(mesh2, tdim, cells)
+    bbtree2 = BoundingBoxTree(mesh2, tdim, cells)
 
-    collisions = cpp.geometry.compute_collisions(bbtree1, bbtree2)
+    collisions = geometry.compute_collisions(bbtree1, bbtree2)
     assert len(collisions) == 1
