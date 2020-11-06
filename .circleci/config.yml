@@ -5,7 +5,7 @@ install-python-components: &install-python-components
   command: |
     pip3 install git+https://github.com/FEniCS/fiat.git --upgrade
     pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
-    pip3 install git+https://github.com/FEniCS/ffcx.git@jhale/config-files --upgrade
+    pip3 install git+https://github.com/FEniCS/ffcx.git --upgrade
     rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
 
 flake8-python-code: &flake8-python-code
@@ -122,7 +122,7 @@ jobs:
 
       - run: *build-python-interface
       - run: *build-documentation-python
-      
+
       - run: *demos-python
       - run: *demos-python-mpi
       - run: *set-jit-defaults
@@ -159,7 +159,7 @@ jobs:
 
       - run: *build-python-interface
       - run: *build-documentation-python
-      
+
       - run: *demos-python
       - run: *demos-python-mpi
       - run: *set-jit-defaults
