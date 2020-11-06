@@ -166,13 +166,15 @@ def test_compute_closest_entity_3d():
 
 
 def test_surface_bbtree():
+    """
+    Test creation of BBTree on subset of entities (surface cells)
+    """
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     sf = cpp.mesh.exterior_facet_indices(mesh)
     tdim = mesh.topology.dim
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
     cells = [f_to_c.links(f)[0] for f in sf]
     bbtree = cpp.geometry.BoundingBoxTree(mesh, tdim, cells)
-    print(bbtree.num_bboxes())
 
     # test collision (should not collide with any)
     p = numpy.array([0.5, 0.5, 0.5])
@@ -195,10 +197,10 @@ def test_sub_bbtree():
     cells = [f_to_c.links(f)[0] for f in top_facets]
     bbtree = cpp.geometry.BoundingBoxTree(mesh, tdim, cells)
 
-    # Compute a BBtree for all the processors
+    # Compute a BBtree for all processes
     process_bbtree = bbtree.compute_global_tree(mesh.mpi_comm())
     # Compute collisions across processors
-    point = numpy.array([[0.2, 0.2, 1]]).T
+    point = numpy.array([0.2, 0.2, 1])
     ranks = cpp.geometry.compute_collisions_point(process_bbtree, point)
 
     # Compute local collisions
@@ -328,18 +330,3 @@ def test_surface_bbtree_collision():
 
     if len(remote_collisions.keys()) > 0 and len(rev_remote_collisions.keys()) > 0:
         raise NotImplementedError("Test not implemented for parallel problems")
-
-    # import dolfinx.io
-    # from dolfinx import MeshTags
-    # mt = MeshTags(mesh, tdim, numpy.array(top_cells, dtype=numpy.int32),
-    #               numpy.full(len(top_cells), MPI.COMM_WORLD.rank, dtype=numpy.int32))
-    # mt2 = MeshTags(mesh2, tdim, numpy.array(bottom_cells, dtype=numpy.int32),
-    #                numpy.full(len(bottom_cells), MPI.COMM_WORLD.rank, dtype=numpy.int32))
-    # mt2.name = "mt2"
-    # mesh2.name = "mesh2"
-    # xdmf = dolfinx.io.XDMFFile(MPI.COMM_WORLD, "test.xdmf", "w")
-    # xdmf.write_mesh(mesh)
-    # xdmf.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='mesh']/Geometry")
-    # xdmf.write_mesh(mesh2)
-    # xdmf.write_meshtags(mt2, geometry_xpath="/Xdmf/Domain/Grid[@Name='mesh2']/Geometry")
-    # xdmf.close()
