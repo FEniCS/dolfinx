@@ -49,7 +49,7 @@ jobs:
           echo '{ "cffi_extra_compile_args" : ["-O2", "-march=sandybridge" ]}' > dolfinx/docker/dolfinx_jit_parameters.json
       - name: Build the Docker images
         run: |
-          docker build --file dolfinx/docker/Dockerfile --build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS --build-arg DOLFINX_JIT_FLAGS --build-arg FFCX_ASSUME_ALIGNED --target dolfinx --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
+          docker build --file dolfinx/docker/Dockerfile --build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS --target dolfinx --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
           docker build --file dolfinx/docker/Dockerfile --target lab --cache-from dolfinx/dolfinx --cache-from dolfinx/dev-env --tag dolfinx/lab .
       - name: Run basic test inside container
         run: |
