@@ -12,7 +12,9 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/mesh/Partitioning.h>
 
 using namespace dolfinx;
 using namespace dolfinx::generation;
@@ -180,8 +182,28 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
-                           element, geom, ghost_mode);
+  int mpi_size = dolfinx::MPI::size(comm);
+  graph::AdjacencyList<std::int32_t> dest(0);
+  if (dolfinx::MPI::rank(comm) == 0)
+  {
+    int nparts{mpi_size};
+    dest = dolfinx::mesh::Partitioning::partition_cells(
+        MPI_COMM_SELF, nparts, element.cell_shape(),
+        graph::AdjacencyList<std::int64_t>(topo), ghost_mode);
+  }
+  graph::AdjacencyList<std::int64_t> cells_topology(topo);
+
+  // Distribute cells to destination ranks
+  const auto [cell_nodes, src, original_cell_index, ghost_owners]
+      = graph::Partitioning::distribute(comm, cells_topology, dest);
+
+  dolfinx::mesh::Topology topology
+      = mesh::create_topology(comm, cell_nodes, original_cell_index,
+                              ghost_owners, element.cell_shape(), ghost_mode);
+  dolfinx::mesh::Geometry geometry
+      = mesh::create_geometry(comm, topology, element, cell_nodes, geom);
+
+  return dolfinx::mesh::Mesh(comm, std::move(topology), std::move(geometry));
 }
 //-----------------------------------------------------------------------------
 
