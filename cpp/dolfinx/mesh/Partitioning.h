@@ -44,6 +44,8 @@ namespace Partitioning
 ///   included.
 /// @param[in] ghost_mode How to overlap the cell partitioning: none,
 ///   shared_facet or shared_vertex
+/// @param[in] partitioner External graph partitioner for partiotioning
+///   the mesh
 /// @return Destination processes for each cell on this process
 graph::AdjacencyList<std::int32_t>
 partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
