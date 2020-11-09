@@ -1,4 +1,4 @@
-# Copyright (C) 2013-2014 Anders Logg
+# Copyright (C) 2013-2020 Anders Logg, Jørgen S. Dokken, Chris Richardson
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -15,24 +15,6 @@ from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
 # --- compute_collisions with point ---
-
-
-def rotation_matrix(axis, angle):
-    # See https://en.wikipedia.org/wiki/Rotation_matrix,
-    # Subsection: Rotation_matrix_from_axis_and_angle.
-    if numpy.isclose(numpy.inner(axis, axis), 1):
-        n_axis = axis
-    else:
-        # Normalize axis
-        n_axis = axis / numpy.sqrt(numpy.inner(axis, axis))
-
-    # Define cross product matrix of axis
-    axis_x = numpy.array([[0, -n_axis[2], n_axis[1]],
-                          [n_axis[2], 0, -n_axis[0]],
-                          [-n_axis[1], n_axis[0], 0]])
-    id = numpy.cos(angle) * numpy.eye(3)
-    outer = (1 - numpy.cos(angle)) * numpy.outer(n_axis, n_axis)
-    return numpy.sin(angle) * axis_x + id + outer
 
 
 def test_empty_tree():
