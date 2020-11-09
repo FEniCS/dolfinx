@@ -18,6 +18,13 @@ enum class CellType;
 class Topology;
 enum class GhostMode : int;
 
+enum Partitioner
+{
+  scotch,
+  parmetis,
+  kahip
+};
+
 /// Tools for partitioning meshes
 namespace Partitioning
 {
@@ -40,7 +47,8 @@ namespace Partitioning
 graph::AdjacencyList<std::int32_t>
 partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
                 const graph::AdjacencyList<std::int64_t>& cells,
-                mesh::GhostMode ghost_mode);
+                mesh::GhostMode ghost_mode,
+                mesh::Partitioner partitioner = mesh::Partitioner::scotch);
 
 } // namespace Partitioning
 } // namespace dolfinx::mesh
