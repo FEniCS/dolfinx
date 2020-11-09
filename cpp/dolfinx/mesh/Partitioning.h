@@ -18,6 +18,7 @@ enum class CellType;
 class Topology;
 enum class GhostMode : int;
 
+/// External graph partitioner
 enum Partitioner
 {
   scotch,
