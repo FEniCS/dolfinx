@@ -54,8 +54,9 @@ jobs:
       - name: Build the Docker images
         run: |
           docker build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} --target dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx-onbuild .
-          docker build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} --target dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
-          docker build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} --target lab --cache-from dolfinx/dolfinx --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/lab .
+          docker build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} --target intermediate --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag intermediate .
+          docker build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} --target dolfinx --cache-from intermediate --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/dolfinx .
+          docker build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} --target lab --cache-from dolfinx/dolfinx --cache-from intermediate --cache-from dolfinx/dolfinx-onbuild --cache-from dolfinx/dev-env --tag dolfinx/lab .
       - name: Run basic test inside container
         run: |
           docker run --rm dolfinx/dolfinx python3 -c "import dolfinx; from mpi4py import MPI; mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 10, 10); V = dolfinx.FunctionSpace(mesh, ('P', 1));"
