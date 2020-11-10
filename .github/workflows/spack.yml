@@ -28,6 +28,12 @@ jobs:
 
     steps:
       # grub-efi: https://github.com/actions/virtual-environments/issues/1605
+      - name: Grub error workaround
+        run: |
+          sudo apt-get purge grub\*
+          sudo bash scripts/environment/bootstrap-ubuntu-20.04.sh
+        if: matrix.os == 'ubuntu-20.04'
+
       - name: Install compilers
         run: |
           sudo apt-get update
