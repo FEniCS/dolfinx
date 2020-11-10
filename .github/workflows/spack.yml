@@ -20,6 +20,7 @@ jobs:
     env:
       DOLFINX_JIT_CFLAGS: -g0 -O0
       MPLBACKEND: agg
+      OPENBLAS_NUM_THREADS: 1
 
     steps:
       - name: Install compilers
