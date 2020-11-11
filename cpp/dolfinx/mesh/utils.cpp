@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -458,31 +458,33 @@ mesh::radius_ratio(const mesh::Mesh& mesh,
   return mesh::cell_dim(mesh.topology().cell_type()) * r / cr;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-mesh::cell_normals(const mesh::Mesh& mesh, int dim)
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::cell_normals(
+    const mesh::Mesh& mesh, int dim,
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_indices)
 {
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
+  // Find geometry nodes for topology entities
   const mesh::Geometry& geometry = mesh.geometry();
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      geometry_entities
+      = entities_to_geometry(mesh, dim, entity_indices, false);
 
+  const std::int32_t num_entities = entity_indices.size();
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_entities, 3);
   switch (type)
   {
   case (mesh::CellType::interval):
   {
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
-    auto map = mesh.topology().index_map(1);
-    assert(map);
-    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
-    for (int i = 0; i < num_cells; ++i)
+    for (int i = 0; i < num_entities; ++i)
     {
       // Get the two vertices as points
-      auto vertices = mesh.topology().connectivity(1, 0)->links(i);
+      auto vertices = geometry_entities.row(i);
       Eigen::Vector3d p0 = geometry.node(vertices[0]);
       Eigen::Vector3d p1 = geometry.node(vertices[1]);
-
       // Define normal by rotating tangent counter-clockwise
       Eigen::Vector3d t = p1 - p0;
       n.row(i) = Eigen::Vector3d(-t[1], t[0], 0.0).normalized();
@@ -491,14 +493,10 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   }
   case (mesh::CellType::triangle):
   {
-    auto map = mesh.topology().index_map(2);
-    assert(map);
-    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
-    for (int i = 0; i < num_cells; ++i)
+    for (int i = 0; i < num_entities; ++i)
     {
       // Get the three vertices as points
-      auto vertices = mesh.topology().connectivity(2, 0)->links(i);
+      auto vertices = geometry_entities.row(i);
       const Eigen::Vector3d p0 = geometry.node(vertices[0]);
       const Eigen::Vector3d p1 = geometry.node(vertices[1]);
       const Eigen::Vector3d p2 = geometry.node(vertices[2]);
@@ -511,14 +509,10 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   case (mesh::CellType::quadrilateral):
   {
     // TODO: check
-    auto map = mesh.topology().index_map(2);
-    assert(map);
-    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
-    for (int i = 0; i < num_cells; ++i)
+    for (int i = 0; i < num_entities; ++i)
     {
       // Get three vertices as points
-      auto vertices = mesh.topology().connectivity(2, 0)->links(i);
+      auto vertices = geometry_entities.row(i);
       const Eigen::Vector3d p0 = geometry.node(vertices[0]);
       const Eigen::Vector3d p1 = geometry.node(vertices[1]);
       const Eigen::Vector3d p2 = geometry.node(vertices[2]);

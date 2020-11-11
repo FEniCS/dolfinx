@@ -96,6 +96,7 @@ void mesh(py::module& m)
   m.def("cell_dim", &dolfinx::mesh::cell_dim);
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
+  m.def("cell_normals", &dolfinx::mesh::cell_normals);
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
