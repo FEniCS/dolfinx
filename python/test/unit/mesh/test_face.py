@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Garth N. Wells
+# Copyright (C) 2020 Garth N. Wells, Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -6,7 +6,10 @@
 
 import dolfinx
 import pytest
+import numpy
 from dolfinx import UnitCubeMesh, UnitSquareMesh
+from dolfinx.mesh import locate_entities_boundary
+from dolfinx.cpp.mesh import cell_normals
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
@@ -36,3 +39,18 @@ def test_area(cube, square):
     cube.topology.create_entities(1)
     area = dolfinx.cpp.mesh.volume_entities(square, range(num_faces), 2).sum()
     assert area == pytest.approx(1.0)
+
+
+def test_normals(cube, square):
+    """ Test that cell normals of a set of facets """
+    def left_side(x):
+        return numpy.isclose(x[0], 0)
+    fdim = cube.topology.dim - 1
+    facets = locate_entities_boundary(cube, fdim, left_side)
+    normals = cell_normals(cube, fdim, facets)
+    assert(numpy.isclose(normals, [-1, 0, 0]).all(axis=1).all())
+
+    fdim = square.topology.dim - 1
+    facets = locate_entities_boundary(square, fdim, left_side)
+    normals = cell_normals(square, fdim, facets)
+    assert(numpy.isclose(normals, [-1, 0, 0]).all(axis=1).all())

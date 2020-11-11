@@ -467,8 +467,13 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::cell_normals(
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
   // Find geometry nodes for topology entities
   const mesh::Geometry& geometry = mesh.geometry();
+  // Orient cells if they are tetrahedron
+  bool orient = false;
+  if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
+    orient = true;
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      geometry_entities = entities_to_geometry(mesh, dim, entity_indices, true);
+      geometry_entities
+      = entities_to_geometry(mesh, dim, entity_indices, orient);
 
   const std::int32_t num_entities = entity_indices.size();
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_entities, 3);
