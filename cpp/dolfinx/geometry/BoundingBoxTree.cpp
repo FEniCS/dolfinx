@@ -295,7 +295,6 @@ BoundingBoxTree::BoundingBoxTree(
   for (std::size_t i = 0; i < entity_indices_sorted.size(); ++i)
     leaf_bboxes.block<2, 3>(2 * i, 0)
         = compute_bbox_of_entity(mesh, tdim, entity_indices_sorted[i], padding);
-
   // Recursively build the bounding box tree from the leaves
   if (leaf_bboxes.rows() > 0)
     std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
