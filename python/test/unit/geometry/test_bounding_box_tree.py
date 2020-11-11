@@ -1,4 +1,4 @@
-# Copyright (C) 2013-2020 Anders Logg, Jørgen S. Dokken
+# Copyright (C) 2013-2020 Anders Logg, Jørgen S. Dokken, Chris Richardson
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
