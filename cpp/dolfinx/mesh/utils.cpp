@@ -468,8 +468,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::cell_normals(
   // Find geometry nodes for topology entities
   const mesh::Geometry& geometry = mesh.geometry();
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      geometry_entities
-      = entities_to_geometry(mesh, dim, entity_indices, false);
+      geometry_entities = entities_to_geometry(mesh, dim, entity_indices, true);
 
   const std::int32_t num_entities = entity_indices.size();
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_entities, 3);
