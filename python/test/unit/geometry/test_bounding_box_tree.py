@@ -1,4 +1,4 @@
-# Copyright (C) 2013-2014 Anders Logg
+# Copyright (C) 2013-2020 Anders Logg, Jørgen S. Dokken, Chris Richardson
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -7,12 +7,20 @@
 
 import numpy
 import pytest
-from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, geometry
+from dolfinx import (UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
+                     cpp, geometry)
 from dolfinx.geometry import BoundingBoxTree
+from dolfinx.mesh import locate_entities_boundary
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
 # --- compute_collisions with point ---
+
+
+def test_empty_tree():
+    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
+    bbtree = BoundingBoxTree(mesh, mesh.topology.dim, [])
+    assert bbtree.num_bboxes() == 0
 
 
 @skip_in_parallel
@@ -137,3 +145,101 @@ def test_compute_closest_entity_3d():
     entity, distance = geometry.compute_closest_entity(tree, tree_mid, mesh, p)
     assert entity == reference[0]
     assert distance[0] == pytest.approx(reference[1], 1.0e-12)
+
+
+def test_surface_bbtree():
+    """
+    Test creation of BBTree on subset of entities (surface cells)
+    """
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
+    sf = cpp.mesh.exterior_facet_indices(mesh)
+    tdim = mesh.topology.dim
+    f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
+    cells = [f_to_c.links(f)[0] for f in sf]
+    bbtree = BoundingBoxTree(mesh, tdim, cells)
+
+    # test collision (should not collide with any)
+    p = numpy.array([0.5, 0.5, 0.5])
+    assert len(geometry.compute_collisions_point(bbtree, p)) == 0
+
+
+def test_sub_bbtree():
+    """
+    Testing point collision with a BoundingBoxTree of sub entitites
+    """
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, cell_type=cpp.mesh.CellType.hexahedron)
+    tdim = mesh.topology.dim
+    fdim = tdim - 1
+
+    def top_surface(x):
+        return numpy.isclose(x[2], 1)
+
+    top_facets = locate_entities_boundary(mesh, fdim, top_surface)
+    f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
+    cells = [f_to_c.links(f)[0] for f in top_facets]
+    bbtree = BoundingBoxTree(mesh, tdim, cells)
+
+    # Compute a BBtree for all processes
+    process_bbtree = bbtree.compute_global_tree(mesh.mpi_comm())
+    # Find possible ranks for this point
+    point = numpy.array([0.2, 0.2, 1.0])
+    ranks = geometry.compute_collisions_point(process_bbtree, point)
+
+    # Compute local collisions
+    cells = geometry.compute_collisions_point(bbtree, point)
+    if MPI.COMM_WORLD.rank in ranks:
+        assert(len(cells) > 0)
+    else:
+        assert(len(cells) == 0)
+
+
+@pytest.mark.parametrize("ct", [cpp.mesh.CellType.hexahedron, cpp.mesh.CellType.tetrahedron])
+@pytest.mark.parametrize("N", [7, 13])
+def test_sub_bbtree_box(ct, N):
+    """
+    Test that the bounding box of the stem of the bounding box tree is what we expect
+    """
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, N, N, N, cell_type=ct)
+    tdim = mesh.topology.dim
+    fdim = tdim - 1
+
+    def marker(x):
+        return numpy.isclose(x[1], 1.0)
+
+    facets = locate_entities_boundary(mesh, fdim, marker)
+    f_to_c = mesh.topology.connectivity(fdim, tdim)
+    cells = numpy.unique([f_to_c.links(f)[0] for f in facets])
+    bbtree = BoundingBoxTree(mesh, tdim, cells)
+    num_boxes = bbtree.num_bboxes()
+    if num_boxes > 0:
+        bbox = bbtree._cpp_object.get_bbox(num_boxes - 1)
+        assert(numpy.isclose(bbox[0][1], (N - 1) / N))
+
+    tree = BoundingBoxTree(mesh, tdim)
+    all_boxes = tree.num_bboxes()
+    assert(num_boxes < all_boxes)
+
+
+@skip_in_parallel
+def test_surface_bbtree_collision():
+    """
+    Compute collision between two meshes, where only one cell of each mesh are colliding
+    """
+    tdim = 3
+    mesh1 = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3, cpp.mesh.CellType.hexahedron)
+    mesh2 = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3, cpp.mesh.CellType.hexahedron)
+    mesh2.geometry.x[:, :] += numpy.array([0.9, 0.9, 0.9])
+
+    sf = cpp.mesh.exterior_facet_indices(mesh1)
+    f_to_c = mesh1.topology.connectivity(tdim - 1, tdim)
+    # Compute unique set of cells (some will be counted multiple times)
+    cells = list(set([f_to_c.links(f)[0] for f in sf]))
+    bbtree1 = BoundingBoxTree(mesh1, tdim, cells)
+
+    sf = cpp.mesh.exterior_facet_indices(mesh2)
+    f_to_c = mesh2.topology.connectivity(tdim - 1, tdim)
+    cells = list(set([f_to_c.links(f)[0] for f in sf]))
+    bbtree2 = BoundingBoxTree(mesh2, tdim, cells)
+
+    collisions = geometry.compute_collisions(bbtree1, bbtree2)
+    assert len(collisions) == 1

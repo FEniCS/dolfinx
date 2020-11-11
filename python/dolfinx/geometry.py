@@ -8,8 +8,14 @@ from dolfinx import cpp
 
 
 class BoundingBoxTree:
-    def __init__(self, obj, dim=None):
-        self._cpp_object = cpp.geometry.BoundingBoxTree(obj, dim)
+    def __init__(self, obj, dim=None, entities=None):
+        if entities is None:
+            self._cpp_object = cpp.geometry.BoundingBoxTree(obj, dim)
+        else:
+            self._cpp_object = cpp.geometry.BoundingBoxTree(obj, dim, entities)
+
+    def num_bboxes(self):
+        return self._cpp_object.num_bboxes()
 
     @classmethod
     def create_midpoint_tree(cls, mesh):
@@ -21,6 +27,12 @@ class BoundingBoxTree:
     def str(self):
         """Print for debugging"""
         return self._cpp_object.str()
+
+    def compute_global_tree(self, comm):
+        """Create a global BoundingBoxTree for per-process bounding boxes for a MPI communicator"""
+        tree = BoundingBoxTree.__new__(BoundingBoxTree)
+        tree._cpp_object = self._cpp_object.compute_global_tree(comm)
+        return tree
 
 
 def compute_closest_entity(tree: BoundingBoxTree, tree_midpoint, mesh, x):
