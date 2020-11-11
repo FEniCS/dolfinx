@@ -1,12 +1,9 @@
-# Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# .. _demo_gmsh:
 #
-# SPDX-License-Identifier:    LGPL-3.0-or-later
-#
-# =========================================
-# Mesh generation using the GMSH python API
-# =========================================
+# Mesh generation using GMSH python API
+# =====================================
+# Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken ::
 
 import numpy as np
 from dolfinx import cpp
@@ -18,11 +15,10 @@ from mpi4py import MPI
 
 import gmsh
 
-# Generating a mesh on each process rank
-# ======================================
-#
+
 # Generate a mesh on each rank with the gmsh API, and create a DOLFIN-X mesh
-# on each rank
+# on each rank. ::
+
 gmsh.initialize()
 gmsh.option.setNumber("General.Terminal", 0)
 model = gmsh.model()
@@ -50,10 +46,8 @@ mesh = create_mesh(MPI.COMM_SELF, cells, x, ufl_mesh_from_gmsh(element_types[0],
 with XDMFFile(MPI.COMM_SELF, "mesh_rank_{}.xdmf".format(MPI.COMM_WORLD.rank), "w") as file:
     file.write_mesh(mesh)
 
-# Create a distributed (parallel) mesh with affine geometry
-# =========================================================
-#
-# Generate mesh on rank 0, then build a distributed mesh
+# Create a distributed (parallel) mesh with affine geometry.
+# Generate mesh on rank 0, then build a distributed mesh ::
 
 if MPI.COMM_WORLD.rank == 0:
     # Generate a mesh
@@ -114,10 +108,8 @@ with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
     mesh.topology.create_connectivity(2, 3)
     file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='ball_d1']/Geometry")
 
-# Create a distributed (parallel) mesh with quadratic geometry
-# ============================================================
-#
-# Generate mesh on rank 0, then build a distributed mesh
+# Create a distributed (parallel) mesh with quadratic geometry.
+# Generate mesh on rank 0, then build a distributed mesh. ::
 
 if MPI.COMM_WORLD.rank == 0:
     # Using model.setCurrent(model_name) lets you change between models

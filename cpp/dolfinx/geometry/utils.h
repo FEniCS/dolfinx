@@ -40,11 +40,6 @@ compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 std::vector<int> compute_collisions(const BoundingBoxTree& tree,
                                     const Eigen::Vector3d& p);
 
-/// Compute all collisions between processes and Point returning a
-/// list of process ranks
-std::vector<int> compute_process_collisions(const BoundingBoxTree& tree,
-                                            const Eigen::Vector3d& p);
-
 /// Compute closest mesh entity and distance to the point. The tree must
 /// have been initialised with topological co-dimension 0.
 std::pair<int, double>
