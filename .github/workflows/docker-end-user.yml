@@ -36,8 +36,8 @@ jobs:
           path: "ffcx"
       - uses: actions/checkout@v2
         with:
-          repository: "FEniCS/fiat"
-          path: "fiat"
+          repository: "FEniCS/libtab"
+          path: "libtab"
       - uses: actions/checkout@v2
         with:
           repository: "FEniCS/ufl"
