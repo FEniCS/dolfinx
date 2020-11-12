@@ -164,8 +164,8 @@ Form<T> create_form(
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
-  if (ufc_form.rank != (int)spaces.size())
-    throw std::runtime_error("Wrong number of argument spaces for Form.");
+  //if (ufc_form.rank != (int)spaces.size())
+  //  throw std::runtime_error("Wrong number of argument spaces for Form.");
   if (ufc_form.num_coefficients != (int)coefficients.size())
   {
     throw std::runtime_error(
