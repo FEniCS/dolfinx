@@ -48,7 +48,7 @@ find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}")
-pkg_search_module(SLEPC slepc crayslepc_real SLEPc)
+pkg_search_module(SLEPC crayslepc_real slepc SLEPc)
 
 # Extract major, minor, etc from version string
 if (SLEPC_VERSION)
@@ -98,7 +98,7 @@ if (DOLFINX_SKIP_BUILD_TESTS)
 
 elseif (SLEPC_FOUND)
 
-  # Create SLEPc test program
+  # Create SLEPc test pr pogram
   set(SLEPC_TEST_LIB_CPP
     "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/slepc_test_lib.cpp")
   file(WRITE ${SLEPC_TEST_LIB_CPP} "
