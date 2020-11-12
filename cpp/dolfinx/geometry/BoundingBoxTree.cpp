@@ -20,8 +20,7 @@ namespace
 //-----------------------------------------------------------------------------
 // Compute bounding box of mesh entity
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
-compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index,
-                       double padding)
+compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
@@ -45,8 +44,6 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index,
     b.row(0) = b.row(0).min(x.transpose().array());
     b.row(1) = b.row(1).max(x.transpose().array());
   }
-  b.row(0) -= padding;
-  b.row(1) += padding;
 
   return b;
 }
@@ -258,8 +255,11 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
       2 * num_leaves, 3);
 
   for (int e = 0; e < num_leaves; ++e)
-    leaf_bboxes.block<2, 3>(2 * e, 0)
-        = compute_bbox_of_entity(mesh, tdim, e, padding);
+  {
+    leaf_bboxes.block<2, 3>(2 * e, 0) = compute_bbox_of_entity(mesh, tdim, e);
+    leaf_bboxes.block<1, 3>(2 * e, 0) -= padding;
+    leaf_bboxes.block<1, 3>(2 * e + 1, 0) += padding;
+  }
 
   // Recursively build the bounding box tree from the leaves
   std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
@@ -293,8 +293,12 @@ BoundingBoxTree::BoundingBoxTree(
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> leaf_bboxes(
       2 * entity_indices.size(), 3);
   for (std::size_t i = 0; i < entity_indices_sorted.size(); ++i)
+  {
     leaf_bboxes.block<2, 3>(2 * i, 0)
-        = compute_bbox_of_entity(mesh, tdim, entity_indices_sorted[i], padding);
+        = compute_bbox_of_entity(mesh, tdim, entity_indices_sorted[i]);
+    leaf_bboxes.block<1, 3>(2 * i, 0) -= padding;
+    leaf_bboxes.block<1, 3>(2 * i + 1, 0) += padding;
+  }
   // Recursively build the bounding box tree from the leaves
   if (leaf_bboxes.rows() > 0)
     std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
