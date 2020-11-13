@@ -7,14 +7,79 @@
 
 import numpy
 import pytest
-from dolfinx import (UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
+from dolfinx import (BoxMesh, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      cpp, geometry)
 from dolfinx.geometry import BoundingBoxTree
 from dolfinx.mesh import locate_entities_boundary
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 
-# --- compute_collisions with point ---
+
+def extract_geometricial_data(mesh, dim, entities):
+    """
+    For a set of entities in a mesh, return the coordinates of the vertices
+    """
+    mesh_nodes = []
+    geom = mesh.geometry
+    g_indices = cpp.mesh.entities_to_geometry(mesh, dim,
+                                              numpy.array(entities, dtype=numpy.int32),
+                                              False)
+    for cell in g_indices:
+        nodes = numpy.zeros((len(cell), 3), dtype=numpy.float64)
+        for j, entity in enumerate(cell):
+            nodes[j] = geom.x[entity]
+        mesh_nodes.append(nodes)
+    return mesh_nodes
+
+
+@pytest.mark.parametrize("padding", [True, False])
+@skip_in_parallel
+def test_padded_bbox(padding):
+    """
+    Test collision between two meshes separated by a distance of epsilon,
+    and check if padding the mesh creates a possible collision
+    """
+    eps = 1e-12
+    x0 = numpy.array([0, 0, 0])
+    x1 = numpy.array([1, 1, 1 - eps])
+    mesh_0 = BoxMesh(MPI.COMM_WORLD, [x0, x1], [1, 1, 2], cpp.mesh.CellType.hexahedron)
+    x2 = numpy.array([0, 0, 1 + eps])
+    x3 = numpy.array([1, 1, 2])
+    mesh_1 = BoxMesh(MPI.COMM_WORLD, [x2, x3], [1, 1, 2], cpp.mesh.CellType.hexahedron)
+    if padding:
+        pad = eps
+    else:
+        pad = 0
+    bbox_0 = BoundingBoxTree(mesh_0, mesh_0.topology.dim, padding=pad)
+    bbox_1 = BoundingBoxTree(mesh_1, mesh_1.topology.dim, padding=pad)
+    collisions = cpp.geometry.compute_collisions(bbox_0._cpp_object, bbox_1._cpp_object)
+    if padding:
+        assert(len(collisions) == 1)
+        # Check that the colliding elements are separated by a distance 2*epsilon
+        element_0 = extract_geometricial_data(mesh_0, mesh_0.topology.dim, [collisions[0][0]])[0]
+        element_1 = extract_geometricial_data(mesh_1, mesh_1.topology.dim, [collisions[0][1]])[0]
+        distance = numpy.linalg.norm(cpp.geometry.compute_distance_gjk(element_0, element_1))
+        assert(numpy.isclose(distance, 2 * eps))
+    else:
+        assert(len(collisions) == 0)
+
+
+def rotation_matrix(axis, angle):
+    # See https://en.wikipedia.org/wiki/Rotation_matrix,
+    # Subsection: Rotation_matrix_from_axis_and_angle.
+    if numpy.isclose(numpy.inner(axis, axis), 1):
+        n_axis = axis
+    else:
+        # Normalize axis
+        n_axis = axis / numpy.sqrt(numpy.inner(axis, axis))
+
+    # Define cross product matrix of axis
+    axis_x = numpy.array([[0, -n_axis[2], n_axis[1]],
+                          [n_axis[2], 0, -n_axis[0]],
+                          [-n_axis[1], n_axis[0], 0]])
+    id = numpy.cos(angle) * numpy.eye(3)
+    outer = (1 - numpy.cos(angle)) * numpy.outer(n_axis, n_axis)
+    return numpy.sin(angle) * axis_x + id + outer
 
 
 def test_empty_tree():

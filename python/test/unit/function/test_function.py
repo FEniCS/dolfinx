@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
-                     UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
+                     UnitCubeMesh, VectorFunctionSpace, geometry)
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from mpi4py import MPI
@@ -275,21 +275,26 @@ def test_interpolation_rank0(V):
 
 
 @skip_in_parallel
-def xtest_near_evaluations(R, mesh):
+def test_near_evaluations(R, mesh):
     # Test that we allow point evaluation that are slightly outside
-    bb_tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     u0 = Function(R)
     u0.vector.set(1.0)
-    a = mesh.geometry.x(0)
-    offset = 0.99 * np.finfo(float).eps
 
+    offset = 0.99 * np.finfo(float).eps
+    bb_tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    a = mesh.geometry.x[0]
+
+    cells = geometry.compute_colliding_cells(bb_tree, mesh, a, n=1)
     a_shift_x = np.array([a[0] - offset, a[1], a[2]])
-    assert u0.eval(a, bb_tree)[0] == pytest.approx(u0.eval(a_shift_x, bb_tree)[0])
+    cells_shift_x = geometry.compute_colliding_cells(bb_tree, mesh, a_shift_x, n=1)
+
+    assert u0.eval(a, cells)[0] == pytest.approx(u0.eval(a_shift_x, cells_shift_x)[0])
 
     a_shift_xyz = np.array([a[0] - offset / math.sqrt(3),
                             a[1] - offset / math.sqrt(3),
                             a[2] - offset / math.sqrt(3)])
-    assert u0.eval(a, bb_tree)[0] == pytest.approx(u0.eval(a_shift_xyz, bb_tree)[0])
+    cells_shift_xyz = geometry.compute_colliding_cells(bb_tree, mesh, a_shift_xyz, n=1)
+    assert u0.eval(a, cells)[0] == pytest.approx(u0.eval(a_shift_xyz, cells_shift_xyz)[0])
 
 
 def test_interpolation_rank1(W):
