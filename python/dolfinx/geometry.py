@@ -8,11 +8,11 @@ from dolfinx import cpp
 
 
 class BoundingBoxTree:
-    def __init__(self, obj, dim=None, entities=None):
+    def __init__(self, obj, dim=None, entities=None, padding=0):
         if entities is None:
-            self._cpp_object = cpp.geometry.BoundingBoxTree(obj, dim)
+            self._cpp_object = cpp.geometry.BoundingBoxTree(obj, dim, padding)
         else:
-            self._cpp_object = cpp.geometry.BoundingBoxTree(obj, dim, entities)
+            self._cpp_object = cpp.geometry.BoundingBoxTree(obj, dim, entities, padding)
 
     def num_bboxes(self):
         return self._cpp_object.num_bboxes()

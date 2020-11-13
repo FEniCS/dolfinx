@@ -12,15 +12,15 @@
 
 import os
 
-import numba
-import numba.core.typing.cffi_utils as cffi_support
-import numpy
-
 import cffi
 import dolfinx
 import dolfinx.cpp
+import dolfinx.geometry
 import dolfinx.io
 import dolfinx.la
+import numba
+import numba.core.typing.cffi_utils as cffi_support
+import numpy
 import ufl
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.mesh import locate_entities_boundary
@@ -162,11 +162,11 @@ A = dolfinx.fem.assemble_matrix(a, [bc])
 A.assemble()
 
 # Create bounding box for function evaluation
-bb_tree = dolfinx.cpp.geometry.BoundingBoxTree(mesh, 2)
+bb_tree = dolfinx.geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
 p = numpy.array([48.0, 52.0, 0.0], dtype=numpy.float64)
-cell_candidates = dolfinx.cpp.geometry.compute_collisions_point(bb_tree, p)
+cell_candidates = dolfinx.geometry.compute_collisions_point(bb_tree, p)
 cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, p, 1)
 
 if len(cell) > 0:
