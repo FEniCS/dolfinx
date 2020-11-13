@@ -20,17 +20,10 @@ ElementDofLayout::ElementDofLayout(
     int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs,
     const std::vector<int>& parent_map,
     const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps,
-    const mesh::CellType cell_type,
-    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        base_permutations)
+    const mesh::CellType cell_type)
     : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
-      _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps),
-      _base_permutations(base_permutations)
+      _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
 {
-  // TODO: Add size check on base_permutations. Size should be:
-  // number of rows = num_edges + 2*num_faces + 4*num_volumes
-  // number of columns = number of dofs
-
   // TODO: Handle global support dofs
 
   // Compute closure entities
@@ -76,25 +69,6 @@ ElementDofLayout::ElementDofLayout(
     {
       _num_dofs += entity_dofs[dim][entity_index].size();
     }
-  }
-
-  // Check that base_permutations has the correct shape
-  int perm_count = 0;
-  const std::array<int, 4> perms_per_dim = {0, 1, 2, 4};
-  for (std::size_t dim = 0; dim < entity_dofs.size() - 1; ++dim)
-  {
-    assert(dim < perms_per_dim.size());
-    assert(dim < entity_dofs.size());
-    perm_count += perms_per_dim[dim] * entity_dofs[dim].size();
-  }
-  if (base_permutations.rows() != perm_count
-      or _base_permutations.cols() != _num_dofs)
-  {
-    throw std::runtime_error("Permutation array has wrong shape. Expected "
-                             + std::to_string(perm_count) + " x "
-                             + std::to_string(_num_dofs) + " but got "
-                             + std::to_string(_base_permutations.rows()) + " x "
-                             + std::to_string(_base_permutations.cols()) + ".");
   }
 }
 //-----------------------------------------------------------------------------

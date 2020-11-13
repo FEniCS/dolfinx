@@ -12,7 +12,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/utils.h>
-#include <dolfinx/fem/dofs_permutation.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/BoostGraphOrdering.h>
 #include <dolfinx/graph/SCOTCH.h>
@@ -120,11 +119,6 @@ build_basic_dofmap(const mesh::Topology& topology,
   const std::vector<std::vector<std::set<int>>>& entity_dofs
       = element_dof_layout.entity_dofs_all();
 
-  // Compute cell dof permutations
-  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      permutations
-      = fem::compute_dof_permutations(topology, element_dof_layout);
-
   // Storage for local-to-global map
   std::vector<std::int64_t> local_to_global(local_size);
 
@@ -183,7 +177,7 @@ build_basic_dofmap(const mesh::Topology& topology,
           const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
           const std::int32_t dof
               = offset_local + num_entity_dofs * e_index_local + count;
-          dofs[cell_ptr[c] + permutations(c, *dof_local)] = dof;
+          dofs[cell_ptr[c] + *dof_local] = dof;
           local_to_global[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
           dof_entity[dof] = {d, e_index_local};

@@ -229,9 +229,7 @@ void fem(py::module& m)
                     const std::vector<int>&,
                     const std::vector<
                         std::shared_ptr<const dolfinx::fem::ElementDofLayout>>,
-                    const dolfinx::mesh::CellType,
-                    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic,
-                                       Eigen::RowMajor>&>())
+                    const dolfinx::mesh::CellType>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)
