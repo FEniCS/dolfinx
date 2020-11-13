@@ -8,6 +8,7 @@
 #include "VTKWriter.h"
 #include "pugixml.hpp"
 #include <boost/cstdint.hpp>
+#include <boost/filesystem.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -520,11 +521,14 @@ void pvtu_write_function(std::size_t dim, std::size_t rank,
   data_array_node.append_attribute("NumberOfComponents")
       = (unsigned int)num_components;
 
+  boost::filesystem::path p(filename);
+  std::string local_filename = p.filename().string();
+
   // Write vtu file list
   for (std::size_t i = 0; i < num_processes; i++)
   {
     const std::string tmp_string
-        = vtu_name(i, num_processes, counter, filename, ".vtu");
+        = vtu_name(i, num_processes, counter, local_filename, ".vtu");
     pugi::xml_node piece_node = grid_node.append_child("Piece");
     piece_node.append_attribute("Source") = tmp_string.c_str();
   }
