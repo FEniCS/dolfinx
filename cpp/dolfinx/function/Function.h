@@ -79,7 +79,7 @@ public:
   Function(const Function& v) = delete;
 
   /// Move constructor
-  Function(Function&& v)
+  Function(Function&& v) noexcept
       : name(std::move(v.name)), _id(std::move(v._id)),
         _function_space(std::move(v._function_space)), _x(std::move(v._x)),
         _petsc_vector(std::move(v._petsc_vector))
