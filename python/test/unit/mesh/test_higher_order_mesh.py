@@ -594,7 +594,7 @@ def test_gmsh_input_quad(order):
     #     values = np.empty((x.shape[0], 1))
     #     values[:, 0] = x[:, 0]
     #     return values
-    # cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    # cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     # mesh.geometry.coord_mapping = cmap
     # V = FunctionSpace(mesh, ("CG", order))
     # u = Function(V)

@@ -17,7 +17,6 @@ jobs:
     env:
       CC: clang-10
       CXX: clang++-10
-      DOLFINX_JIT_CFLAGS: -g0 -O0
       MPLBACKEND: agg
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -78,6 +77,11 @@ jobs:
           cd python/demo && python3 ./generate-demo-files.py
           cd ../doc && make html
 
+      - name: Set default DOLFINX JIT parameters
+        run: |
+          mkdir -p ~/.config/dolfinx
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
+
       - name: Run demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
@@ -101,11 +105,11 @@ jobs:
       - name: Push C++ documentation
         if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run: |
-          cd cpp/doc
+          cd cpp/doc/html
           scp -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
 
       - name: Push Python documentation
         if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run: |
-          cd python/doc
+          cd python/doc/build/html
           scp -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/

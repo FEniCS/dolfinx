@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2014 Anders Logg
+// Copyright (C) 2019-2020 Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -6,14 +6,11 @@
 
 #pragma once
 
-#include "FormCoefficients.h"
-#include "FormIntegrals.h"
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/fem/DofMap.h>
+#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <functional>
-#include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -26,18 +23,19 @@ template <typename T>
 class Constant;
 template <typename T>
 class Function;
-class FunctionSpace;
 } // namespace function
-
-namespace mesh
-{
-class Mesh;
-template <typename T>
-class MeshTags;
-} // namespace mesh
 
 namespace fem
 {
+
+/// Type of integral
+enum class IntegralType : std::int8_t
+{
+  cell = 0,
+  exterior_facet = 1,
+  interior_facet = 2,
+  vertex = 3
+};
 
 /// Class for variational forms
 ///
@@ -69,49 +67,70 @@ class Form
 public:
   /// Create form
   ///
-  /// @param[in] function_spaces Function Spaces
-  /// @param[in] integrals
+  /// @param[in] function_spaces Function spaces for the form arguments
+  /// @param[in] integrals The integrals in the form. The first key is
+  /// the domain type. For each key there is a pair (list[domain id,
+  /// integration kernel], domain markers).
   /// @param[in] coefficients
-  /// @param[in] constants Vector of pairs (name, constant). The index
-  ///   in the vector is the position of the constant in the original
-  ///   (nonsimplified) form.
+  /// @param[in] constants Constants in the Form
+  /// @param[in] needs_permutation_data Set to true is any of the
+  /// integration kernels require cell permutation data
+  /// @param[in] mesh The mesh of the domain. This is required when
+  /// there are not argument functions from which the mesh can be
+  /// extracted, e.g. for functionals
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
-       const FormIntegrals<T>& integrals,
-       const FormCoefficients<T>& coefficients,
-       const std::vector<
-           std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
-           constants)
-      : _integrals(integrals), _coefficients(coefficients),
-        _constants(constants), _function_spaces(function_spaces)
+       const std::map<
+           IntegralType,
+           std::pair<
+               std::vector<std::pair<
+                   int, std::function<void(
+                            T*, const T*, const T*, const double*, const int*,
+                            const std::uint8_t*, const std::uint32_t)>>>,
+               const mesh::MeshTags<int>*>>& integrals,
+       const std::vector<std::shared_ptr<const function::Function<T>>>&
+           coefficients,
+       const std::vector<std::shared_ptr<const function::Constant<T>>>&
+           constants,
+       bool needs_permutation_data,
+       const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+      : _function_spaces(function_spaces), _coefficients(coefficients),
+        _constants(constants), _mesh(mesh),
+        _needs_permutation_data(needs_permutation_data)
   {
-    // Set _mesh from function::FunctionSpace, and check they are the same
-    if (!function_spaces.empty())
+    // Extract _mesh from function::FunctionSpace, and check they are the same
+    if (!_mesh and !function_spaces.empty())
       _mesh = function_spaces[0]->mesh();
     for (const auto& V : function_spaces)
       if (_mesh != V->mesh())
         throw std::runtime_error("Incompatible mesh");
+    if (!_mesh)
+      throw std::runtime_error("No mesh could be associated with the Form.");
 
+    // Store kernels, looping over integrals by domain type (dimension)
+    for (auto& integral_type : integrals)
+    {
+      // Add key to map
+      const IntegralType type = integral_type.first;
+      auto it = _integrals.emplace(
+          type, std::map<int, std::pair<kern, std::vector<std::int32_t>>>());
+
+      // Loop over integrals kernels
+      for (auto& integral : integral_type.second.first)
+        it.first->second.insert({integral.first, {integral.second, {}}});
+
+      // FIXME: do this neatly via a static function
+      // Set domains for integral type
+      if (integral_type.second.second)
+      {
+        assert(_mesh == integral_type.second.second->mesh());
+        set_domains(type, *integral_type.second.second);
+      }
+    }
+
+    // FIXME: do this neatly via a static function
     // Set markers for default integrals
-    if (_mesh)
-      _integrals.set_default_domains(*_mesh);
-  }
-
-  /// @warning Experimental
-  ///
-  /// Create form (no UFC integrals). Integrals can be attached later
-  /// using FormIntegrals::set_cell_tabulate_tensor.
-  ///
-  /// @param[in] function_spaces Vector of function spaces
-  /// @param[in] need_mesh_permutation_data Set to true if mesh entity
-  ///   permutation data is required
-  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
-           function_spaces,
-       bool need_mesh_permutation_data)
-      : Form(function_spaces, FormIntegrals<T>({}, need_mesh_permutation_data),
-             FormCoefficients<T>({}), {})
-  {
-    // Do nothing
+    set_default_domains(*_mesh);
   }
 
   /// Copy constructor
@@ -128,153 +147,334 @@ public:
   /// @return The rank of the form
   int rank() const { return _function_spaces.size(); }
 
-  /// Set coefficient with given name
-  /// @param[in] coefficients Map from coefficient name to the
-  ///   coefficient
-  void set_coefficients(
-      const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
-          coefficients)
-  {
-    std::for_each(coefficients.begin(), coefficients.end(),
-                  [this](auto& c) { _coefficients.set(c.first, c.second); });
-  }
-
-  /// Set constants based on their names. Names of the constants must
-  /// agree with their names in UFL file.
-  void set_constants(
-      const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
-          constants)
-  {
-    for (auto const& constant : constants)
-    {
-      // Find matching string in existing constants
-      const std::string& name = constant.first;
-      auto it
-          = std::find_if(_constants.begin(), _constants.end(),
-                         [&name](const auto& q) { return q.first == name; });
-      if (it != _constants.end())
-        it->second = constant.second;
-      else
-        throw std::runtime_error("Constant '" + name + "' not found in form");
-    }
-  }
-
-  /// Check if all constants associated with the form have been set
-  /// @return True if all Form constants have been set
-  bool all_constants_set() const
-  {
-    for (const auto& constant : _constants)
-      if (!constant.second)
-        return false;
-    return true;
-  }
-
-  /// Return names of any constants that have not been set
-  /// @return Names of unset constants
-  std::set<std::string> get_unset_constants() const
-  {
-    std::set<std::string> unset;
-    std::for_each(_constants.begin(), _constants.end(), [&unset](auto& c) {
-      if (!c.second)
-        unset.insert(c.first);
-    });
-    return unset;
-  }
-
-  /// @todo Remove this function and make sure the mesh can be set via
-  /// the constructor
-  ///
-  /// Set mesh, necessary for functionals when there are no function
-  /// spaces
-  /// @param[in] mesh The mesh
-  void set_mesh(const std::shared_ptr<const mesh::Mesh>& mesh)
-  {
-    _mesh = mesh;
-    // Set markers for default integrals
-    _integrals.set_default_domains(*_mesh);
-  }
-
-  /// Extract common mesh from form
+  /// Extract common mesh for the form
   /// @return The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
 
-  /// Return function space for given argument
-  /// @param[in] i Index of the argument
-  /// @return Function space
-  std::shared_ptr<const function::FunctionSpace> function_space(int i) const
-  {
-    return _function_spaces.at(i);
-  }
-
   /// Return function spaces for all arguments
   /// @return Function spaces
-  std::vector<std::shared_ptr<const function::FunctionSpace>>
+  const std::vector<std::shared_ptr<const function::FunctionSpace>>&
   function_spaces() const
   {
     return _function_spaces;
   }
 
-  /// Register the function for 'tabulate_tensor' for cell integral i
-  void set_tabulate_tensor(
-      IntegralType type, int i,
-      const std::function<void(T*, const T*, const T*, const double*,
-                               const int*, const std::uint8_t*,
-                               const std::uint32_t)>& fn)
+  /// Get the function for 'kernel' for integral i of given
+  /// type
+  /// @param[in] type Integral type
+  /// @param[in] i Domain index
+  /// @return Function to call for tabulate_tensor
+  const std::function<void(T*, const T*, const T*, const double*, const int*,
+                           const std::uint8_t*, const std::uint32_t)>&
+  kernel(IntegralType type, int i) const
   {
-    _integrals.set_tabulate_tensor(type, i, fn);
-    if (i == -1 and _mesh)
-      _integrals.set_default_domains(*_mesh);
+    auto it0 = _integrals.find(type);
+    if (it0 == _integrals.end())
+      throw std::runtime_error("No kernels for requested type.");
+    auto it1 = it0->second.find(i);
+    if (it1 == it0->second.end())
+      throw std::runtime_error("No kernel for requested domain index.");
+
+    return it1->second.first;
+  }
+
+  /// Get types of integrals in the form
+  /// @return Integrals types
+  std::set<IntegralType> integral_types() const
+  {
+    std::set<IntegralType> set;
+    for (auto& type : _integrals)
+      set.insert(type.first);
+    return set;
+  }
+
+  /// Number of integrals of given type
+  /// @param[in] type Integral type
+  /// @return Number of integrals
+  int num_integrals(IntegralType type) const
+  {
+    if (auto it = _integrals.find(type); it == _integrals.end())
+      return 0;
+    else
+      return it->second.size();
+  }
+
+  /// Get the IDs for integrals (kernels) for given integral type. The
+  /// IDs correspond to the domain IDs which the integrals are defined
+  /// for in the form. ID=-1 is the default integral over the whole
+  /// domain.
+  /// @param[in] type Integral type
+  /// @return List of IDs for given integral type
+  std::vector<int> integral_ids(IntegralType type) const
+  {
+    std::vector<int> ids;
+    if (auto it = _integrals.find(type); it != _integrals.end())
+    {
+      for (auto& kernel : it->second)
+        ids.push_back(kernel.first);
+    }
+    return ids;
+  }
+
+  /// Get the list of mesh entity indices for the ith integral (kernel)
+  /// for the given domain type, i.e. for cell integrals a list of cell
+  /// indices, for facet integrals a list of facet indices, etc.
+  /// @param[in] type The integral type
+  /// @param[in] i Integral ID, i.e. (sub)domain index
+  /// @return List of active entities for the given integral (kernel)
+  const std::vector<std::int32_t>& domains(IntegralType type, int i) const
+  {
+    auto it0 = _integrals.find(type);
+    if (it0 == _integrals.end())
+      throw std::runtime_error("No mesh entities for requested type.");
+    auto it1 = it0->second.find(i);
+    if (it1 == it0->second.end())
+      throw std::runtime_error("No mesh entities for requested domain index.");
+    return it1->second.second;
   }
 
   /// Access coefficients
-  FormCoefficients<T>& coefficients() { return _coefficients; }
-
-  /// Access coefficients
-  const FormCoefficients<T>& coefficients() const { return _coefficients; }
-
-  /// Access form integrals
-  const FormIntegrals<T>& integrals() const { return _integrals; }
-
-  /// Access constants
-  /// @return Vector of attached constants with their names. Names are
-  ///   used to set constants in user's c++ code. Index in the vector is
-  ///   the position of the constant in the original (nonsimplified) form.
-  std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
-  constants()
+  const std::vector<std::shared_ptr<const function::Function<T>>>
+  coefficients() const
   {
-    return _constants;
+    return _coefficients;
+  }
+
+  /// Get bool indicating whether permutation data needs to be passed
+  /// into these integrals
+  /// @return True if cell permutation data is required
+  bool needs_permutation_data() const { return _needs_permutation_data; }
+
+  /// Offset for each coefficient expansion array on a cell. Used to
+  /// pack data for multiple coefficients in a flat array. The last
+  /// entry is the size required to store all coefficients.
+  std::vector<int> coefficient_offsets() const
+  {
+    std::vector<int> n{0};
+    for (const auto& c : _coefficients)
+    {
+      if (!c)
+        throw std::runtime_error("Not all form coefficients have been set.");
+      n.push_back(n.back() + c->function_space()->element()->space_dimension());
+    }
+    return n;
   }
 
   /// Access constants
-  /// @return Vector of attached constants with their names. Names are
-  ///   used to set constants in user's c++ code. Index in the vector is
-  ///   the position of the constant in the original (nonsimplified) form.
-  const std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>&
+  const std::vector<std::shared_ptr<const function::Constant<T>>>&
   constants() const
   {
     return _constants;
   }
 
+  /// Scalar type (T).
+  using scalar_type = T;
+
 private:
-  // Integrals associated with the Form
-  FormIntegrals<T> _integrals;
+  /// Sets the entity indices to assemble over for kernels with a domain ID.
+  /// @param[in] type Integral type
+  /// @param[in] marker MeshTags with domain ID. Entities with marker
+  /// 'i' will be assembled over using the kernel with ID 'i'. The
+  /// MeshTags is not stored.
+  void set_domains(IntegralType type, const mesh::MeshTags<int>& marker)
+  {
+    auto it0 = _integrals.find(type);
+    assert(it0 != _integrals.end());
 
-  // Coefficients associated with the Form
-  FormCoefficients<T> _coefficients;
+    std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
+    const mesh::Topology& topology = mesh->topology();
+    const int tdim = topology.dim();
+    int dim = tdim;
+    if (type == IntegralType::exterior_facet
+        or type == IntegralType::interior_facet)
+    {
+      dim = tdim - 1;
+      mesh->topology_mutable().create_connectivity(dim, tdim);
+    }
+    else if (type == IntegralType::vertex)
+      dim = 0;
 
-  // Constants associated with the Form
-  std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant<T>>>>
-      _constants;
+    if (dim != marker.dim())
+    {
+      throw std::runtime_error("Invalid MeshTags dimension:"
+                               + std::to_string(marker.dim()));
+    }
+
+    // Get all integrals for considered entity type
+    std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals
+        = it0->second;
+
+    // Get mesh tag data
+    const std::vector<int>& values = marker.values();
+    const std::vector<std::int32_t>& tagged_entities = marker.indices();
+    assert(topology.index_map(dim));
+    const auto entity_end
+        = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
+                           topology.index_map(dim)->size_local());
+
+    if (dim == tdim - 1)
+    {
+      auto f_to_c = topology.connectivity(tdim - 1, tdim);
+      assert(f_to_c);
+      if (type == IntegralType::exterior_facet)
+      {
+        // Only need to consider shared facets when there are no ghost
+        // cells
+        assert(topology.index_map(tdim));
+        std::set<std::int32_t> fwd_shared;
+        if (topology.index_map(tdim)->num_ghosts() == 0)
+        {
+          fwd_shared.insert(
+              topology.index_map(tdim - 1)->shared_indices().begin(),
+              topology.index_map(tdim - 1)->shared_indices().end());
+        }
+
+        for (auto f = tagged_entities.begin(); f != entity_end; ++f)
+        {
+          // All "owned" facets connected to one cell, that are not
+          // shared, should be external
+          if (f_to_c->num_links(*f) == 1
+              and fwd_shared.find(*f) == fwd_shared.end())
+          {
+            const std::size_t i = std::distance(tagged_entities.cbegin(), f);
+            if (auto it = integrals.find(values[i]); it != integrals.end())
+              it->second.second.push_back(*f);
+          }
+        }
+      }
+      else if (type == IntegralType::interior_facet)
+      {
+        for (auto f = tagged_entities.begin(); f != entity_end; ++f)
+        {
+          if (f_to_c->num_links(*f) == 2)
+          {
+            const std::size_t i = std::distance(tagged_entities.cbegin(), f);
+            if (auto it = integrals.find(values[i]); it != integrals.end())
+              it->second.second.push_back(*f);
+          }
+        }
+      }
+    }
+    else
+    {
+      // For cell and vertex integrals use all markers (but not on ghost
+      // entities)
+      for (auto e = tagged_entities.begin(); e != entity_end; ++e)
+      {
+        const std::size_t i = std::distance(tagged_entities.cbegin(), e);
+        if (auto it = integrals.find(values[i]); it != integrals.end())
+          it->second.second.push_back(*e);
+      }
+    }
+  }
+
+  /// If there exists a default integral of any type, set the list of
+  /// entities for those integrals from the mesh topology. For cell
+  /// integrals, this is all cells. For facet integrals, it is either
+  /// all interior or all exterior facets.
+  /// @param[in] mesh Mesh
+  void set_default_domains(const mesh::Mesh& mesh)
+  {
+    const mesh::Topology& topology = mesh.topology();
+    const int tdim = topology.dim();
+
+    // Cells. If there is a default integral, define it on all owned cells
+    if (auto kernels = _integrals.find(IntegralType::cell);
+        kernels != _integrals.end())
+    {
+      if (auto it = kernels->second.find(-1); it != kernels->second.end())
+      {
+        std::vector<std::int32_t>& active_entities = it->second.second;
+        const int num_cells = topology.index_map(tdim)->size_local();
+        active_entities.resize(num_cells);
+        std::iota(active_entities.begin(), active_entities.end(), 0);
+      }
+    }
+
+    // Exterior facets. If there is a default integral, define it only
+    // on owned surface facets.
+    if (auto kernels = _integrals.find(IntegralType::exterior_facet);
+        kernels != _integrals.end())
+    {
+      if (auto it = kernels->second.find(-1); it != kernels->second.end())
+      {
+        std::vector<std::int32_t>& active_entities = it->second.second;
+        active_entities.clear();
+
+        // Get number of facets owned by this process
+        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+        auto f_to_c = topology.connectivity(tdim - 1, tdim);
+        assert(topology.index_map(tdim - 1));
+        std::set<std::int32_t> fwd_shared_facets;
+
+        // Only need to consider shared facets when there are no ghost cells
+        if (topology.index_map(tdim)->num_ghosts() == 0)
+        {
+          fwd_shared_facets.insert(
+              topology.index_map(tdim - 1)->shared_indices().begin(),
+              topology.index_map(tdim - 1)->shared_indices().end());
+        }
+
+        const int num_facets = topology.index_map(tdim - 1)->size_local();
+        for (int f = 0; f < num_facets; ++f)
+        {
+          if (f_to_c->num_links(f) == 1
+              and fwd_shared_facets.find(f) == fwd_shared_facets.end())
+          {
+            active_entities.push_back(f);
+          }
+        }
+      }
+    }
+
+    // Interior facets. If there is a default integral, define it only on
+    // owned interior facets.
+    if (auto kernels = _integrals.find(IntegralType::interior_facet);
+        kernels != _integrals.end())
+    {
+      if (auto it = kernels->second.find(-1); it != kernels->second.end())
+      {
+        std::vector<std::int32_t>& active_entities = it->second.second;
+
+        // Get number of facets owned by this process
+        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+        assert(topology.index_map(tdim - 1));
+        const int num_facets = topology.index_map(tdim - 1)->size_local();
+        auto f_to_c = topology.connectivity(tdim - 1, tdim);
+        active_entities.clear();
+        active_entities.reserve(num_facets);
+        for (int f = 0; f < num_facets; ++f)
+        {
+          if (f_to_c->num_links(f) == 2)
+            active_entities.push_back(f);
+        }
+      }
+    }
+  }
 
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const function::FunctionSpace>> _function_spaces;
 
-  // The mesh (needed for functionals when we don't have any spaces)
+  // Form coefficients
+  std::vector<std::shared_ptr<const function::Function<T>>> _coefficients;
+
+  // Constants associated with the Form
+  std::vector<std::shared_ptr<const function::Constant<T>>> _constants;
+
+  // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
-};
+
+  using kern
+      = std::function<void(T*, const T*, const T*, const double*, const int*,
+                           const std::uint8_t*, const std::uint32_t)>;
+  std::map<IntegralType,
+           std::map<int, std::pair<kern, std::vector<std::int32_t>>>>
+      _integrals;
+
+  // True if permutation data needs to be passed into these integrals
+  bool _needs_permutation_data;
+
+}; // namespace fem
 
 } // namespace fem
 } // namespace dolfinx

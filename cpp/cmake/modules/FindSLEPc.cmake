@@ -13,7 +13,7 @@
 
 
 #=============================================================================
-# Copyright (C) 2010-2016 Garth N. Wells, Anders Logg and Johannes Ring
+# Copyright (C) 2010-2020 Garth N. Wells, Anders Logg, Johannes Ring and Drew Parsons
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@ find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}")
-pkg_search_module(SLEPC crayslepc_real SLEPc)
+pkg_search_module(SLEPC slepc crayslepc_real SLEPc)
 
 # Extract major, minor, etc from version string
 if (SLEPC_VERSION)
