@@ -257,8 +257,8 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
   for (int e = 0; e < num_leaves; ++e)
   {
     leaf_bboxes.block<2, 3>(2 * e, 0) = compute_bbox_of_entity(mesh, tdim, e);
-    leaf_bboxes.block<1, 3>(2 * e, 0) -= padding;
-    leaf_bboxes.block<1, 3>(2 * e + 1, 0) += padding;
+    leaf_bboxes.row(2 * e) -= padding;
+    leaf_bboxes.row(2 * e + 1) += padding;
   }
 
   // Recursively build the bounding box tree from the leaves
@@ -296,8 +296,8 @@ BoundingBoxTree::BoundingBoxTree(
   {
     leaf_bboxes.block<2, 3>(2 * i, 0)
         = compute_bbox_of_entity(mesh, tdim, entity_indices_sorted[i]);
-    leaf_bboxes.block<1, 3>(2 * i, 0) -= padding;
-    leaf_bboxes.block<1, 3>(2 * i + 1, 0) += padding;
+    leaf_bboxes.row(2 * i) -= padding;
+    leaf_bboxes.row(2 * i + 1) += padding;
   }
   // Recursively build the bounding box tree from the leaves
   if (leaf_bboxes.rows() > 0)
