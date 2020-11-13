@@ -79,7 +79,13 @@ public:
   Function(const Function& v) = delete;
 
   /// Move constructor
-  Function(Function&& v) = default;
+  Function(Function&& v)
+      : name(std::move(v.name)), _id(std::move(v._id)),
+        _function_space(std::move(v._function_space)), _x(std::move(v._x)),
+        _petsc_vector(std::move(v._petsc_vector))
+  {
+    v._petsc_vector = nullptr;
+  }
 
   /// Destructor
   virtual ~Function()
@@ -89,7 +95,15 @@ public:
   }
 
   /// Move assignment
-  Function& operator=(Function&& v) = default;
+  Function& operator=(Function&& v)
+  {
+    name = std::move(v.name);
+    _id = std::move(v._id);
+    _function_space = std::move(v._function_space);
+    _x = std::move(v._x);
+    _petsc_vector = std::move(v._petsc_vector);
+    v._petsc_vector = nullptr;
+  }
 
   // Assignment
   Function& operator=(const Function& v) = delete;
