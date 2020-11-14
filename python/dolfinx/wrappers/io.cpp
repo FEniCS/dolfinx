@@ -113,6 +113,11 @@ void io(py::module& m)
                &dolfinx::io::VTKFile::write),
            py::arg("u"))
       .def("write",
+           py::overload_cast<const dolfinx::function::Function<PetscScalar>&,
+                             double>(&dolfinx::io::VTKFile::write),
+           py::arg("u"), py::arg("t"))
+
+      .def("write",
            py::overload_cast<const dolfinx::mesh::Mesh&>(
                &dolfinx::io::VTKFile::write),
            py::arg("mesh"));
