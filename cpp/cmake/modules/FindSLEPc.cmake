@@ -98,7 +98,7 @@ if (DOLFINX_SKIP_BUILD_TESTS)
 
 elseif (SLEPC_FOUND)
 
-  # Create SLEPc test pr pogram
+  # Create SLEPc test program
   set(SLEPC_TEST_LIB_CPP
     "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/slepc_test_lib.cpp")
   file(WRITE ${SLEPC_TEST_LIB_CPP} "
