@@ -23,6 +23,7 @@
 #include <memory>
 #include <petscvec.h>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::function
@@ -82,9 +83,8 @@ public:
   Function(Function&& v) noexcept
       : name(std::move(v.name)), _id(std::move(v._id)),
         _function_space(std::move(v._function_space)), _x(std::move(v._x)),
-        _petsc_vector(std::move(v._petsc_vector))
+        _petsc_vector(std::exchange(v._petsc_vector, nullptr))
   {
-    v._petsc_vector = nullptr;
   }
 
   /// Destructor
@@ -103,8 +103,7 @@ public:
     _x = std::move(v._x);
     if (_petsc_vector)
       VecDestroy(&_petsc_vector);
-    _petsc_vector = std::move(v._petsc_vector);
-    v._petsc_vector = nullptr;
+    _petsc_vector = std::exchange(v._petsc_vector, nullptr);
   }
 
   // Assignment
