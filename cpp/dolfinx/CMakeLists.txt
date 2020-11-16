@@ -86,7 +86,6 @@ target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 
 # Eigen3
 target_include_directories(dolfinx SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
-target_compile_definitions(dolfinx PUBLIC "EIGEN_MAX_ALIGN_BYTES=${DOLFINX_EIGEN_MAX_ALIGN_BYTES}")
 
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
