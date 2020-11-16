@@ -1,10 +1,12 @@
-# Copyright (C) 2018 Chris N Richardson
+# Copyright (C) 2018-2020 Chris N Richardson, Jack S. Hale
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
+import numpy as np
+
+from dolfinx import FunctionSpace, MeshTags, UnitCubeMesh, UnitSquareMesh
 from dolfinx.cpp.mesh import GhostMode
 from dolfinx.mesh import refine
 from mpi4py import MPI
@@ -17,6 +19,24 @@ def test_RefineUnitSquareMesh():
     mesh = refine(mesh, redistribute=False)
     assert mesh.topology.index_map(0).size_global == 165
     assert mesh.topology.index_map(2).size_global == 280
+
+
+def test_NoOpRefineMarkedUnitSquareMesh():
+    """Refine a mesh of unit square with markers set to zero.
+
+    Should produce a mesh with the same number of cells as the unrefined mesh, i.e. a no-op.
+    """
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 7, ghost_mode=GhostMode.none)
+    mesh.topology.create_entities(1)
+
+    markers = np.zeros(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int8)
+    indices = np.arange(0, mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
+
+    markers_mesh_tags = MeshTags(mesh, mesh.topology.dim, indices, markers)
+    refined_mesh = refine(mesh, cell_markers=markers_mesh_tags)
+
+    for i in range(0, 2):
+        assert mesh.topology.index_map(i).size_global == refined_mesh.topology.index_map(i).size_global
 
 
 def test_RefineUnitCubeMesh_repartition():
