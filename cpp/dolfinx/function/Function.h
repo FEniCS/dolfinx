@@ -104,6 +104,8 @@ public:
     if (_petsc_vector)
       VecDestroy(&_petsc_vector);
     _petsc_vector = std::exchange(v._petsc_vector, nullptr);
+
+    return *this;
   }
 
   // Assignment
