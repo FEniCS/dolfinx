@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -458,31 +458,37 @@ mesh::radius_ratio(const mesh::Mesh& mesh,
   return mesh::cell_dim(mesh.topology().cell_type()) * r / cr;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-mesh::cell_normals(const mesh::Mesh& mesh, int dim)
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::cell_normals(
+    const mesh::Mesh& mesh, int dim,
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_indices)
 {
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
+  // Find geometry nodes for topology entities
   const mesh::Geometry& geometry = mesh.geometry();
+  // Orient cells if they are tetrahedron
+  bool orient = false;
+  if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
+    orient = true;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      geometry_entities
+      = entities_to_geometry(mesh, dim, entity_indices, orient);
 
+  const std::int32_t num_entities = entity_indices.size();
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_entities, 3);
   switch (type)
   {
   case (mesh::CellType::interval):
   {
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
-    auto map = mesh.topology().index_map(1);
-    assert(map);
-    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
-    for (int i = 0; i < num_cells; ++i)
+    for (int i = 0; i < num_entities; ++i)
     {
       // Get the two vertices as points
-      auto vertices = mesh.topology().connectivity(1, 0)->links(i);
+      auto vertices = geometry_entities.row(i);
       Eigen::Vector3d p0 = geometry.node(vertices[0]);
       Eigen::Vector3d p1 = geometry.node(vertices[1]);
-
       // Define normal by rotating tangent counter-clockwise
       Eigen::Vector3d t = p1 - p0;
       n.row(i) = Eigen::Vector3d(-t[1], t[0], 0.0).normalized();
@@ -491,14 +497,10 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   }
   case (mesh::CellType::triangle):
   {
-    auto map = mesh.topology().index_map(2);
-    assert(map);
-    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
-    for (int i = 0; i < num_cells; ++i)
+    for (int i = 0; i < num_entities; ++i)
     {
       // Get the three vertices as points
-      auto vertices = mesh.topology().connectivity(2, 0)->links(i);
+      auto vertices = geometry_entities.row(i);
       const Eigen::Vector3d p0 = geometry.node(vertices[0]);
       const Eigen::Vector3d p1 = geometry.node(vertices[1]);
       const Eigen::Vector3d p2 = geometry.node(vertices[2]);
@@ -511,14 +513,10 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   case (mesh::CellType::quadrilateral):
   {
     // TODO: check
-    auto map = mesh.topology().index_map(2);
-    assert(map);
-    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
-    for (int i = 0; i < num_cells; ++i)
+    for (int i = 0; i < num_entities; ++i)
     {
       // Get three vertices as points
-      auto vertices = mesh.topology().connectivity(2, 0)->links(i);
+      auto vertices = geometry_entities.row(i);
       const Eigen::Vector3d p0 = geometry.node(vertices[0]);
       const Eigen::Vector3d p1 = geometry.node(vertices[1]);
       const Eigen::Vector3d p2 = geometry.node(vertices[2]);
@@ -539,60 +537,25 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
     const mesh::Mesh& mesh, int dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities)
 {
-  const mesh::Topology& topology = mesh.topology();
   const mesh::Geometry& geometry = mesh.geometry();
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
       = geometry.x();
 
-  const int tdim = topology.dim();
-
-  // Get geometry dofmap
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
-  // Build map from vertex -> geometry dof
-  auto c_to_v = topology.connectivity(tdim, 0);
-  assert(c_to_v);
-  auto map_v = topology.index_map(0);
-  assert(map_v);
-  const std::int32_t num_vertices = map_v->size_local() + map_v->num_ghosts();
-  std::vector<std::int32_t> vertex_to_x(num_vertices);
-  auto map_c = topology.index_map(tdim);
-  assert(map_c);
-  for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
-  {
-    auto vertices = c_to_v->links(c);
-    auto dofs = x_dofmap.links(c);
-    for (int i = 0; i < vertices.rows(); ++i)
-    {
-      // FIXME: We are making an assumption here on the
-      // ElementDofLayout. We should use an ElementDofLayout to map
-      // between local vertex index an x dof index.
-      vertex_to_x[vertices[i]] = dofs(i);
-    }
-  }
+  // Build map from entity -> geometry dof
+  // FIXME: This assumes a linear geometry.
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      entity_to_geometry = entities_to_geometry(mesh, dim, entities, false);
 
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x_mid(
       entities.rows(), 3);
 
-  // Special case: a vertex is its own midpoint
-  if (dim == 0)
+  for (Eigen::Index e = 0; e < entity_to_geometry.rows(); ++e)
   {
-    for (Eigen::Index e = 0; e < entities.rows(); ++e)
-      x_mid.row(e) = x.row(vertex_to_x[e]);
-  }
-  else
-  {
-    // FIXME: This assumes a linear geometry.
-    auto e_to_v = topology.connectivity(dim, 0);
-    assert(e_to_v);
-    for (Eigen::Index e = 0; e < entities.rows(); ++e)
-    {
-      auto vertices = e_to_v->links(entities[e]);
-      x_mid.row(e) = 0.0;
-      for (int i = 0; i < vertices.rows(); ++i)
-        x_mid.row(e) += x.row(vertex_to_x[vertices[i]]);
-      x_mid.row(e) /= vertices.rows();
-    }
+    auto entity_vertices = entity_to_geometry.row(e);
+    x_mid.row(e) = 0.0;
+    for (Eigen::Index v = 0; v < entity_vertices.size(); ++v)
+      x_mid.row(e) += x.row(entity_vertices[v]);
+    x_mid.row(e) /= entity_vertices.size();
   }
 
   return x_mid;

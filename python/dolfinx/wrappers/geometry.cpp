@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "caster_mpi.h"
 #include <Eigen/Dense>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/GJK.h>
@@ -60,7 +61,16 @@ void geometry(py::module& m)
   py::class_<dolfinx::geometry::BoundingBoxTree,
              std::shared_ptr<dolfinx::geometry::BoundingBoxTree>>(
       m, "BoundingBoxTree")
-      .def(py::init<const dolfinx::mesh::Mesh&, int>())
-      .def(py::init<const std::vector<Eigen::Vector3d>&>());
+      .def(py::init<const dolfinx::mesh::Mesh&, int, double>())
+      .def(py::init<const dolfinx::mesh::Mesh&, int,
+                    const std::vector<std::int32_t>&, double>())
+      .def(py::init<const std::vector<Eigen::Vector3d>&>())
+      .def("num_bboxes", &dolfinx::geometry::BoundingBoxTree::num_bboxes)
+      .def("get_bbox", &dolfinx::geometry::BoundingBoxTree::get_bbox)
+      .def("compute_global_tree",
+           [](const dolfinx::geometry::BoundingBoxTree& self,
+              const MPICommWrapper comm) {
+             return self.compute_global_tree(comm.get());
+           });
 }
 } // namespace dolfinx_wrappers

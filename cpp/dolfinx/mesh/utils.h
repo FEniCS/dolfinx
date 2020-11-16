@@ -57,8 +57,9 @@ Eigen::ArrayXd radius_ratio(const Mesh& mesh,
                             const Eigen::Ref<const Eigen::ArrayXi>& entities);
 
 /// Compute normal to given cell (viewed as embedded in 3D)
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-cell_normals(const Mesh& mesh, int dim);
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> cell_normals(
+    const Mesh& mesh, int dim,
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_indices);
 
 /// Compute midpoints or mesh entities of a given dimension
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
