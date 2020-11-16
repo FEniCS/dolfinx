@@ -35,7 +35,7 @@ def test_NoOpRefineMarkedUnitSquareMesh():
     markers_mesh_tags = MeshTags(mesh, mesh.topology.dim, indices, markers)
     refined_mesh = refine(mesh, cell_markers=markers_mesh_tags)
 
-    for i in range(0, 2):
+    for i in range(0, 3):
         assert mesh.topology.index_map(i).size_global == refined_mesh.topology.index_map(i).size_global
 
 
