@@ -160,9 +160,9 @@ MatNullSpace la::create_petsc_nullspace(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::add_fn(Mat A)
+PETScMatrix::add_fn(Mat A, const InsertMode mode)
 {
-  return [A, cache = std::vector<PetscInt>()](
+  return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
              const std::int32_t* cols, const PetscScalar* vals) mutable {
     PetscErrorCode ierr;
@@ -171,9 +171,9 @@ PETScMatrix::add_fn(Mat A)
     std::copy(rows, rows + m, cache.begin());
     std::copy(cols, cols + n, cache.begin() + m);
     const PetscInt *_rows = cache.data(), *_cols = _rows + m;
-    ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, ADD_VALUES);
+    ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, mode);
 #else
-    ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, ADD_VALUES);
+    ierr = MatSetValuesLocal(A, m, rows, n, cols, vals, mode);
 #endif
 
 #ifdef DEBUG
@@ -182,6 +182,13 @@ PETScMatrix::add_fn(Mat A)
 #endif
     return 0;
   };
+}
+//-----------------------------------------------------------------------------
+std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                  const std::int32_t*, const PetscScalar*)>
+PETScMatrix::set_fn(Mat A)
+{
+  return add_fn(A, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
