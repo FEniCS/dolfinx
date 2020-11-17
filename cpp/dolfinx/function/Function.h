@@ -95,17 +95,13 @@ public:
   }
 
   /// Move assignment
-  Function& operator=(Function&& v)
+  Function& operator=(Function&& v) noexcept
   {
     name = std::move(v.name);
     _id = std::move(v._id);
     _function_space = std::move(v._function_space);
     _x = std::move(v._x);
-    if (_petsc_vector)
-    {
-      VecDestroy(&_petsc_vector);
-    }
-    _petsc_vector = std::exchange(v._petsc_vector, nullptr);
+    std::swap(_petsc_vector, v._petsc_vector);
 
     return *this;
   }
