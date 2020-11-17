@@ -41,7 +41,13 @@ public:
   /// matrix A
   static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                            const std::int32_t*, const PetscScalar*)>
-  add_fn(Mat A);
+  add_fn(Mat A, const InsertMode mode = ADD_VALUES);
+
+  /// Return a function with an interface for inserting values into the
+  /// matrix A
+  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                           const std::int32_t*, const PetscScalar*)>
+  set_fn(Mat A);
 
   /// Create holder of a PETSc Mat object from a sparsity pattern
   PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
