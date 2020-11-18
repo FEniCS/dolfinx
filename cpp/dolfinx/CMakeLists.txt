@@ -60,6 +60,10 @@ target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 # UFC
 target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 
+# libtab
+target_include_directories(dolfinx SYSTEM PUBLIC ${LIBTAB_INCLUDE_DIRS})
+target_link_libraries(dolfinx PUBLIC ${LIBTAB_LIBRARY})
+
 # Have left these well written comments about Eigen alignment 
 # here with the intention that this should be moved to build documentation.
 
