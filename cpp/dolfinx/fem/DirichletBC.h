@@ -32,9 +32,9 @@ namespace fem
 {
 
 /// Build an array of degree-of-freedom indices that are associated with
-/// give mesh entities (topological)
+/// the given mesh entities (topological)
 ///
-/// Finds degrees-of-freedom which belong to provided mesh entities.
+/// Finds degrees-of-freedom which belong to the provided mesh entities.
 /// Note that degrees-of-freedom for discontinuous elements are
 /// associated with the cell even if they may appear to be associated
 /// with a facet/edge/vertex.
@@ -53,7 +53,7 @@ namespace fem
 ///   entity as a marked. For example, a boundary condition dof at a
 ///   vertex where this process does not have the associated boundary
 ///   facet. This commonly occurs with partitioned meshes.
-/// @return Array of local DOF indices in the spaces V[0] (and V[1] is
+/// @return Array of local DOF indices in the spaces V[0] (and V[1] if
 ///   two spaces are passed in). If two spaces are passed in, the (i, 0)
 ///   entry is the DOF index in the space V[0] and (i, 1) is the
 ///   correspinding DOF entry in the space V[1].
@@ -224,7 +224,7 @@ public:
     }
   }
 
-  /// Set boundary condition value for entres with an applied boundary
+  /// Set boundary condition value for entries with an applied boundary
   /// condition. Other entries are not modified.
   /// @todo Clarify w.r.t ghosts
   void dof_values(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> values) const

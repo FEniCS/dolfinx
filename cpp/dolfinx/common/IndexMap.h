@@ -36,10 +36,10 @@ stack_index_maps(
 
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of N+1 block
-/// indices [0, 1, . . ., N] that are distributed across processes M
+/// indices [0, 1, . . ., N] that are distributed across M
 /// processes. On a given process, the IndexMap stores a portion of the
 /// index set using local indices [0, 1, . . . , n], and a map from the
-/// local block indices  to a unique global block index.
+/// local block indices to a unique global block index.
 
 class IndexMap
 {
