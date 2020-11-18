@@ -3,7 +3,7 @@
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-import libtab
+import libtab # noqa
 
 import os
 
