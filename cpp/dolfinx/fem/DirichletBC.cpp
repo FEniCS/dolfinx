@@ -306,7 +306,7 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
   const int tdim = mesh->topology().dim();
 
   // Initialise entity-cell connectivity
-  // FIXME: cleanup these calls? Some of the happen internally again.
+  // FIXME: cleanup these calls? Some of them happen internally again.
   mesh->topology_mutable().create_entities(tdim);
   mesh->topology_mutable().create_connectivity(entity_dim, tdim);
 
