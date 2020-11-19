@@ -9,6 +9,7 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
+#include <libtab.h>
 #include <memory>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
@@ -184,6 +185,8 @@ private:
   std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*,
                     const ufc_coordinate_mapping*)>
       _transform_values;
+
+  std::unique_ptr<libtab::FiniteElement> _libtab_element;
 
   // Block size for VectorElements and TensorElements
   // This gives the number of DOFs colocated at each point

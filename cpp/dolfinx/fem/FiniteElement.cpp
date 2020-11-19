@@ -63,6 +63,10 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   }
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
+  _libtab_element
+      = std::make_unique<libtab::FiniteElement>(libtab::create_element(
+          _family, mesh::to_string(_cell_shape), ufc_element.degree));
+
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
     _value_dimension.push_back(ufc_element.value_dimension(i));
@@ -107,6 +111,7 @@ void FiniteElement::evaluate_reference_basis(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
+  _libtab_element->tabulate(0, X);
   assert(_evaluate_reference_basis);
   const int num_points = X.rows();
   int ret = _evaluate_reference_basis(reference_values.data(), num_points,
