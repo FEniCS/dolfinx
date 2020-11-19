@@ -111,16 +111,12 @@ void FiniteElement::evaluate_reference_basis(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
-  _libtab_element->tabulate(0, X);
-  assert(_evaluate_reference_basis);
-  const int num_points = X.rows();
-  int ret = _evaluate_reference_basis(reference_values.data(), num_points,
-                                      X.data());
-  if (ret == -1)
-  {
-    throw std::runtime_error("Generated code returned error "
-                             "in evaluate_reference_basis");
-  }
+  Eigen::ArrayXXd libtab_data = _libtab_element->tabulate(0, X)[0];
+  for (int p = 0; p < X.rows(); ++p)
+    for (int d = 0; d < libtab_data.cols() / _reference_value_size; ++d)
+      for (int v = 0; v < _reference_value_size; ++v)
+        reference_values(p, d, v)
+            = libtab_data(p, d * _reference_value_size + v);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis_derivatives(
@@ -128,15 +124,15 @@ void FiniteElement::evaluate_reference_basis_derivatives(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
-  assert(_evaluate_reference_basis_derivatives);
-  const int num_points = X.rows();
-  int ret = _evaluate_reference_basis_derivatives(reference_values.data(),
-                                                  order, num_points, X.data());
-  if (ret == -1)
-  {
-    throw std::runtime_error("Generated code returned error "
-                             "in evaluate_reference_basis_derivatives");
-  }
+  assert(order == 1); // TODO: fix this for order > 1
+
+  std::vector<Eigen::ArrayXXd> libtab_data = _libtab_element->tabulate(1, X);
+  for (int p = 0; p < X.rows(); ++p)
+    for (int d = 0; d < libtab_data[0].cols() / _reference_value_size; ++d)
+      for (int v = 0; v < _reference_value_size; ++v)
+        for (std::size_t deriv = 0; deriv < libtab_data.size() - 1; ++deriv)
+          reference_values(p, d, v, deriv)
+              = libtab_data[deriv](p, d * _reference_value_size + v);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(

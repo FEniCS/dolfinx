@@ -172,10 +172,10 @@ private:
   std::vector<int> _value_dimension;
 
   // Functions for basis and derivatives evaluation
-  std::function<int(double*, int, const double*)> _evaluate_reference_basis;
+  // std::function<int(double*, int, const double*)> _evaluate_reference_basis;
 
-  std::function<int(double*, int, int, const double*)>
-      _evaluate_reference_basis_derivatives;
+  // std::function<int(double*, int, int, const double*)>
+  //    _evaluate_reference_basis_derivatives;
 
   std::function<int(double*, int, int, const double*, const double*,
                     const double*, const double*, const double*,
@@ -186,10 +186,10 @@ private:
                     const ufc_coordinate_mapping*)>
       _transform_values;
 
-  std::unique_ptr<libtab::FiniteElement> _libtab_element;
-
   // Block size for VectorElements and TensorElements
   // This gives the number of DOFs colocated at each point
   int _block_size;
+
+  std::unique_ptr<libtab::FiniteElement> _libtab_element;
 };
 } // namespace dolfinx::fem
