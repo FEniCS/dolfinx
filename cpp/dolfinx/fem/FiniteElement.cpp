@@ -43,28 +43,37 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   _refX.conservativeResize(_space_dim / _block_size, _tdim);
 
   const ufc_shape _shape = ufc_element.cell_shape;
+  std::string cellname;
   switch (_shape)
   {
   case interval:
     _cell_shape = mesh::CellType::interval;
+    cellname = "interval";
     break;
   case triangle:
     _cell_shape = mesh::CellType::triangle;
+    cellname = "triangle";
     break;
   case quadrilateral:
     _cell_shape = mesh::CellType::quadrilateral;
+    cellname = "quadrilateral";
     break;
   case tetrahedron:
     _cell_shape = mesh::CellType::tetrahedron;
+    cellname = "tetrahedron";
     break;
   case hexahedron:
     _cell_shape = mesh::CellType::hexahedron;
+    cellname = "hexahedron";
     break;
   default:
     throw std::runtime_error(
         "Unknown UFC cell type when building FiniteElement.");
   }
   assert(mesh::cell_dim(_cell_shape) == _tdim);
+
+  _libtab_element = std::make_unique<libtab::FiniteElement>(
+      libtab::create_element(_family, cellname, ufc_element.degree));
 
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
@@ -110,6 +119,7 @@ void FiniteElement::evaluate_reference_basis(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
+  _libtab_element->tabulate(0, X);
   assert(_evaluate_reference_basis);
   const int num_points = X.rows();
   int ret = _evaluate_reference_basis(reference_values.data(), num_points,
