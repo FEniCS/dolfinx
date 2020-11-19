@@ -23,6 +23,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
+#include <libtab.h>
 #include <memory>
 #include <string>
 #include <ufc.h>
@@ -212,10 +213,13 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
   std::free(dmap);
 
+  libtab::FiniteElement libtab_element = libtab::create_element(
+      ufc_cmap.element_family, mesh::to_string(cell_type),
+      ufc_cmap.element_degree);
+
   return fem::CoordinateElement(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
-      ufc_cmap.signature, dof_layout, ufc_cmap.is_affine,
-      ufc_cmap.evaluate_basis_derivatives);
+      ufc_cmap.signature, dof_layout, ufc_cmap.is_affine, libtab_element);
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement

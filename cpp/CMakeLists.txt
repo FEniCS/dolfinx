@@ -158,7 +158,7 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
   URL "https://www.hdfgroup.org/HDF5")
 
-find_package(SCOTCH REQUIRED) 
+find_package(SCOTCH REQUIRED)
 set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
   DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
   URL "https://www.labri.fr/perso/pelegrin/scotch"

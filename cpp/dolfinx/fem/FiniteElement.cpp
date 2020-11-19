@@ -23,9 +23,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
       _hash(std::hash<std::string>{}(_signature)),
-      _evaluate_reference_basis(ufc_element.evaluate_reference_basis),
-      _evaluate_reference_basis_derivatives(
-          ufc_element.evaluate_reference_basis_derivatives),
       _transform_reference_basis_derivatives(
           ufc_element.transform_reference_basis_derivatives),
       _transform_values(ufc_element.transform_values),

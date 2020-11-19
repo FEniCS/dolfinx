@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
+#include <libtab.h>
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -30,12 +31,11 @@ public:
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   /// @param[in] is_affine Boolean flag indicating affine mapping
-  /// @param[in] evaluate_basis_derivatives
+  /// @param[in] libtab_element
   CoordinateElement(mesh::CellType cell_type, int topological_dimension,
                     int geometric_dimension, const std::string& signature,
                     const ElementDofLayout& dof_layout, bool is_affine,
-                    const std::function<int(double*, int, int, const double*)>&
-                        evaluate_basis_derivatives);
+                    const libtab::FiniteElement libtab_element);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -102,12 +102,15 @@ private:
   // Flag denoting affine map
   bool _is_affine;
 
+  // Libtab element
+  libtab::FiniteElement _libtab_element;
+
   // Function to evaluate the basis on the underlying element
   // @param basis_values Returned values
   // @param order
   // @param num_points
   // @param reference points
-  std::function<int(double*, int, int, const double*)>
-      _evaluate_basis_derivatives;
+  // std::function<int(double*, int, int, const double*)>
+  //    _evaluate_basis_derivatives;
 };
 } // namespace dolfinx::fem

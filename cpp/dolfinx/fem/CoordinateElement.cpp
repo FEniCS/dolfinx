@@ -11,16 +11,16 @@ using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-CoordinateElement::CoordinateElement(
-    mesh::CellType cell_type, int topological_dimension,
-    int geometric_dimension, const std::string& signature,
-    const ElementDofLayout& dof_layout, bool is_affine,
-    const std::function<int(double*, int, int, const double*)>&
-        evaluate_basis_derivatives)
+CoordinateElement::CoordinateElement(mesh::CellType cell_type,
+                                     int topological_dimension,
+                                     int geometric_dimension,
+                                     const std::string& signature,
+                                     const ElementDofLayout& dof_layout,
+                                     bool is_affine,
+                                     const libtab::FiniteElement libtab_element)
     : _tdim(topological_dimension), _gdim(geometric_dimension),
       _cell(cell_type), _signature(signature), _dof_layout(dof_layout),
-      _is_affine(is_affine),
-      _evaluate_basis_derivatives(evaluate_basis_derivatives)
+      _is_affine(is_affine), _libtab_element(libtab_element)
 {
 }
 //-----------------------------------------------------------------------------
@@ -51,10 +51,10 @@ void CoordinateElement::push_forward(
   assert(X.cols() == _tdim);
 
   // Compute physical coordinates
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi(
-      X.rows(), cell_geometry.rows());
 
-  _evaluate_basis_derivatives(phi.data(), 0, X.rows(), X.data());
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi
+      = _libtab_element.tabulate(0, X)[0];
+
   x = phi * cell_geometry.matrix();
 }
 //-----------------------------------------------------------------------------
@@ -94,17 +94,23 @@ void CoordinateElement::compute_reference_geometry(
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
       d, _tdim);
 
+  std::vector<Eigen::ArrayXXd> tabulated_data;
+
   if (_is_affine)
   {
     Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> x0(_gdim);
     Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> X0(_tdim);
     X0.setZero();
+
+    tabulated_data = _libtab_element.tabulate(1, X0);
+
     // Compute physical coordinates at X=0.
-    _evaluate_basis_derivatives(phi.data(), 0, 1, X0.data());
+    phi = tabulated_data[0];
     x0 = cell_geometry.matrix().transpose() * phi;
 
     // Compute Jacobian and inverse
-    _evaluate_basis_derivatives(dphi.data(), 1, 1, X0.data());
+    for (std::size_t dim = 0; dim + 1 < tabulated_data.size(); ++dim)
+      dphi.row(dim) = tabulated_data[dim + 1];
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
         J0(_gdim, _tdim);
     J0 = cell_geometry.matrix().transpose() * dphi;
@@ -158,12 +164,16 @@ void CoordinateElement::compute_reference_geometry(
       int k;
       for (k = 0; k < max_its; ++k)
       {
+
+        tabulated_data = _libtab_element.tabulate(1, Xk);
+
         // Compute physical coordinates
-        _evaluate_basis_derivatives(phi.data(), 0, 1, Xk.data());
+        phi = tabulated_data[0];
         xk = cell_geometry.matrix().transpose() * phi;
 
         // Compute Jacobian and inverse
-        _evaluate_basis_derivatives(dphi.data(), 1, 1, Xk.data());
+        for (std::size_t dim = 0; dim + 1 < tabulated_data.size(); ++dim)
+          dphi.row(dim) = tabulated_data[dim + 1];
         Jview = cell_geometry.matrix().transpose() * dphi;
         if (_gdim == _tdim)
           Kview = Jview.inverse();
