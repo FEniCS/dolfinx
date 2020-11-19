@@ -43,28 +43,22 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   _refX.conservativeResize(_space_dim / _block_size, _tdim);
 
   const ufc_shape _shape = ufc_element.cell_shape;
-  std::string cellname;
   switch (_shape)
   {
   case interval:
     _cell_shape = mesh::CellType::interval;
-    cellname = "interval";
     break;
   case triangle:
     _cell_shape = mesh::CellType::triangle;
-    cellname = "triangle";
     break;
   case quadrilateral:
     _cell_shape = mesh::CellType::quadrilateral;
-    cellname = "quadrilateral";
     break;
   case tetrahedron:
     _cell_shape = mesh::CellType::tetrahedron;
-    cellname = "tetrahedron";
     break;
   case hexahedron:
     _cell_shape = mesh::CellType::hexahedron;
-    cellname = "hexahedron";
     break;
   default:
     throw std::runtime_error(
@@ -72,8 +66,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   }
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
-  _libtab_element = std::make_unique<libtab::FiniteElement>(
-      libtab::create_element(_family, cellname, ufc_element.degree));
+  _libtab_element
+      = std::make_unique<libtab::FiniteElement>(libtab::create_element(
+          _family, mesh::to_string(_cell_shape), ufc_element.degree));
 
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
