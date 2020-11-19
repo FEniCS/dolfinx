@@ -38,14 +38,15 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-# Two paths: Set LIBTAB_INCLUDE_DIR manually, or ask Python for location
+# Two paths: Set LIBTAB_PREFIX_DIR manually, or ask Python for location
 # of LIBTAB headers.
 
-if (DEFINED ENV{LIBTAB_INCLUDE_DIR})
-  MESSAGE(STATUS "Looking for LIBTAB in $ENV{LIBTAB_INCLUDE_DIR}...")
+if (DEFINED ENV{LIBTAB_PREFIX_DIR})
+  MESSAGE(STATUS "Looking for LIBTAB in $ENV{LIBTAB_PREFIX_DIR}...")
 
-  if (EXISTS "$ENV{LIBTAB_INCLUDE_DIR}/libtab.h")
-    set(LIBTAB_INCLUDE_DIRS $ENV{LIBTAB_INCLUDE_DIR} CACHE STRING "Where to find libtab.h")
+  if (EXISTS "$ENV{LIBTAB_PREFIX_DIR}/include/libtab.h")
+    set(LIBTAB_INCLUDE_DIRS $ENV{LIBTAB_PREFIX_DIR}/include CACHE STRING "Where to find libtab.h")
+    set(LIBTAB_LIBRARY $ENV{LIBTAB_PREFIX_DIR}/lib/libtab.so)
     # Assume user knows what they are doing.
     set(LIBTAB_VERSION ${LIBTAB_FIND_VERSION})
     set(LIBTAB_VERSION_OK TRUE)
@@ -55,14 +56,19 @@ if (DEFINED ENV{LIBTAB_INCLUDE_DIR})
 else()
   MESSAGE(STATUS "Asking Python module for location of libtab headers...")
   execute_process(
-    COMMAND ${Python3_EXECUTABLE} -c "import libtab, sys; sys.stdout.write(libtab.get_include_path())"
-    OUTPUT_VARIABLE LIBTAB_INCLUDE_DIR
+    COMMAND ${Python3_EXECUTABLE} -c "import libtab, sys; sys.stdout.write(libtab.get_prefix_dir())"
+    OUTPUT_VARIABLE LIBTAB_PREFIX_DIR
     )
 
-  if (LIBTAB_INCLUDE_DIR)
-    set(LIBTAB_INCLUDE_DIRS ${LIBTAB_INCLUDE_DIR} CACHE STRING "Where to find libtab.h")
-    # FIXME
-    set(LIBTAB_LIBRARY "${LIBTAB_INCLUDE_DIR}/../lib/libtab.so")
+  if (LIBTAB_PREFIX_DIR)
+    set(LIBTAB_INCLUDE_DIRS ${LIBTAB_PREFIX_DIR}/include CACHE STRING "Where to find libtab.h")
+ 
+    find_library(LIBTAB_LIBRARY
+      NAMES tab
+      HINTS ${LIBTAB_PREFIX_DIR}/lib  
+      NO_DEFAULT_PATH
+      DOC "The libtab library"
+      )
 
     execute_process(
       COMMAND ${Python3_EXECUTABLE} -c "import libtab, sys; sys.stdout.write(libtab.__version__)"
