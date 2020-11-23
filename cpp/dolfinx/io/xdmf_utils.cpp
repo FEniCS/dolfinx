@@ -541,6 +541,7 @@ xdmf_utils::extract_local_entities(
   {
     for (Eigen::Index i = 0; i < entities_local.cols(); ++i)
     {
+      assert(igi_to_vertex.count(recv_ents.array()[e * num_vertices_per_entity + i]) == 1);
       entities_local(e, i)
           = igi_to_vertex[recv_ents.array()[e * num_vertices_per_entity + i]];
     }
