@@ -527,26 +527,35 @@ xdmf_utils::extract_local_entities(
       igi_to_vertex[nodes_g[x_dofs[cell_vertex_dofs[v]]]] = vertices[v];
   }
 
-  // Apply map and obtain entities defined with local vertex numbers
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entities_local(recv_ents.array().rows() / num_vertices_per_entity,
-                     num_vertices_per_entity);
+  std::vector<std::int32_t> entities_new;
+  std::vector<std::int32_t> values_new;
 
-  std::vector<std::int32_t> values_new(recv_vals.array().data(),
-                                       recv_vals.array().data()
-                                           + recv_vals.array().rows());
-  assert(recv_vals.array().rows() == entities_local.rows());
-
-  for (Eigen::Index e = 0; e < entities_local.rows(); ++e)
+  for (Eigen::Index e = 0; e < recv_ents.array().rows() / num_vertices_per_entity; ++e)
   {
-    for (Eigen::Index i = 0; i < entities_local.cols(); ++i)
+    bool entity_found = true;
+    std::vector<std::int32_t> entity;
+    for (Eigen::Index i = 0; i < num_vertices_per_entity; ++i)
     {
-      assert(igi_to_vertex.count(recv_ents.array()[e * num_vertices_per_entity + i]) == 1);
-      entities_local(e, i)
-          = igi_to_vertex[recv_ents.array()[e * num_vertices_per_entity + i]];
+      if (igi_to_vertex.count(recv_ents.array()[e * num_vertices_per_entity + i]) != 1)
+      {
+        // As soon as this recieved index is not in locally owned input global indices
+        // skip the entire entity
+        entity_found = false;
+        break;
+      }
+    }
+
+    if (entity_found == true)
+    {
+      for (Eigen::Index i = 0; i < num_vertices_per_entity; ++i)
+        entities_new.push_back(igi_to_vertex[recv_ents.array()[e * num_vertices_per_entity + i]]);
+      values_new.push_back(recv_vals.array()[e]);
     }
   }
 
-  return {entities_local, values_new};
-}
+  return {Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>(entities_new.data(),
+                                                    entities_new.size() / num_vertices_per_entity, num_vertices_per_entity),
+          values_new};
+  }
 //-----------------------------------------------------------------------------
