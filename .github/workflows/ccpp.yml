@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install FEniCS Python components
-        run: python3 -m pip install git+https://github.com/FEniCS/libtab.git@mscroggs/family_strings git+https://github.com/FEniCS/ufl.git git+https://github.com/FEniCS/ffcx.git@mscroggs/libtab
+        run: python3 -m pip install git+https://github.com/FEniCS/libtab.git git+https://github.com/FEniCS/ufl.git git+https://github.com/FEniCS/ffcx.git@mscroggs/libtab
 
       - name: Flake8 checks
         run: |
