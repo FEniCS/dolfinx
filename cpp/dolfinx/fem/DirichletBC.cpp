@@ -383,8 +383,10 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
   return _dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
-    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
+_locate_dofs_geometrical(
+    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
+        V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker)
@@ -459,7 +461,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
     dofs(i, 1) = bc_dofs[i][1];
   }
 
-  return dofs;
+  return {dofs.col(0), dofs.col(1)};
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _locate_dofs_geometrical(
@@ -512,18 +514,23 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
   return _locate_dofs_topological(V, dim, entities, remote);
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
+std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
 fem::locate_dofs_geometrical(
-    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
+        V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker)
 {
-  if (V.size() == 2)
-    return _locate_dofs_geometrical(V, marker);
-  else if (V.size() == 1)
-    return _locate_dofs_geometrical(V[0].get(), marker);
-  else
-    throw std::runtime_error("Expected only 1 or 2 function spaces.");
+  return _locate_dofs_geometrical(V, marker);
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
+    const function::FunctionSpace& V,
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker)
+{
+  return _locate_dofs_geometrical(V, marker);
 }
 //-----------------------------------------------------------------------------

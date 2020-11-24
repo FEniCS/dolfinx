@@ -457,6 +457,25 @@ void fem(py::module& m)
         py::arg("V"), py::arg("dim"), py::arg("entities"),
         py::arg("remote") = true);
 
-  m.def("locate_dofs_geometrical", &dolfinx::fem::locate_dofs_geometrical);
+  m.def(
+      "locate_dofs_geometrical",
+      [](const std::vector<
+             std::reference_wrapper<const dolfinx::function::FunctionSpace>>& V,
+         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                                 Eigen::RowMajor>>&)>& marker) {
+        if (V.size() != 2)
+          throw std::runtime_error("Expected two function spaces.");
+        return dolfinx::fem::locate_dofs_geometrical({V[0], V[1]}, marker);
+      },
+      py::arg("V"), py::arg("marker"));
+  m.def("locate_dofs_geometrical",
+        py::overload_cast<
+            const dolfinx::function::FunctionSpace&,
+            const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+                const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                                    Eigen::RowMajor>>&)>&>(
+            &dolfinx::fem::locate_dofs_geometrical),
+        py::arg("V"), py::arg("marker"));
 }
 } // namespace dolfinx_wrappers

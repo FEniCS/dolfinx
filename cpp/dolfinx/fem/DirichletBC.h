@@ -87,9 +87,17 @@ locate_dofs_topological(const function::FunctionSpace& V, const int dim,
 ///     two spaces are passed in). If two spaces are passed in, the (i,
 ///     0) entry is the DOF index in the space V[0] and (i, 1) is the
 ///     correspinding DOF entry in the space V[1].
-Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
+std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
 locate_dofs_geometrical(
-    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
+        V,
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker);
+
+// TODO
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_dofs_geometrical(
+    const function::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
