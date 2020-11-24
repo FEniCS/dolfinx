@@ -479,6 +479,7 @@ def test_assembly_solve_taylor_hood(mesh):
     u0 = dolfinx.Function(P2)
     u0.vector.set(1.0)
     u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
     bc0 = dolfinx.DirichletBC(u0, bdofs0)
     bc1 = dolfinx.DirichletBC(u0, bdofs1)
 

@@ -174,8 +174,10 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   return dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
-    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
+_locate_dofs_topological(
+    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
+        V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote)
 {
@@ -288,7 +290,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
     dofs(i, 1) = bc_dofs[i][1];
   }
 
-  return dofs;
+  return {dofs.col(0), dofs.col(1)};
 }
 //-----------------------------------------------------------------------------
 
@@ -492,18 +494,22 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _locate_dofs_geometrical(
 } // namespace
 
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
+std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
 fem::locate_dofs_topological(
-    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
+        V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote)
 {
-  if (V.size() == 2)
-    return _locate_dofs_topological(V, dim, entities, remote);
-  else if (V.size() == 1)
-    return _locate_dofs_topological(V[0].get(), dim, entities, remote);
-  else
-    throw std::runtime_error("Expected only 1 or 2 function spaces.");
+  return _locate_dofs_topological(V, dim, entities, remote);
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
+                             const Eigen::Ref<const Eigen::ArrayXi>& entities,
+                             bool remote)
+{
+  return _locate_dofs_topological(V, dim, entities, remote);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>

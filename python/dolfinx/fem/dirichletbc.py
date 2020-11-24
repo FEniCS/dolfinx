@@ -101,13 +101,13 @@ def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.function.Functio
                 _V.append(space._cpp_object)
             except AttributeError:
                 _V.append(space)
+        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, remote)
     else:
         try:
-            _V = [V._cpp_object]
+            _V = V._cpp_object
         except AttributeError:
-            _V = [V]
-
-    return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, remote)
+            _V = V
+        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, remote)
 
 
 class DirichletBC(cpp.fem.DirichletBC):

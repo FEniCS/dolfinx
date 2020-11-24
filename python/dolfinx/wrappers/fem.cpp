@@ -7,6 +7,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <Eigen/Dense>
+#include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/CoordinateElement.h>
@@ -273,8 +274,8 @@ void fem(py::module& m)
   dirichletbc
       .def(py::init<
                std::shared_ptr<const dolfinx::function::Function<PetscScalar>>,
-               const Eigen::Ref<
-                   const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>&,
+               const std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>,
+                                2>&,
                std::shared_ptr<const dolfinx::function::FunctionSpace>>(),
            py::arg("V"), py::arg("g"), py::arg("V_g_dofs"))
       .def(py::init<
@@ -436,9 +437,26 @@ void fem(py::module& m)
       .def("integral_ids", &dolfinx::fem::Form<PetscScalar>::integral_ids)
       .def("domains", &dolfinx::fem::Form<PetscScalar>::domains);
 
-  m.def("locate_dofs_topological", &dolfinx::fem::locate_dofs_topological,
+  m.def(
+      "locate_dofs_topological",
+      [](const std::vector<
+             std::reference_wrapper<const dolfinx::function::FunctionSpace>>& V,
+         const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
+         bool remote) {
+        if (V.size() != 2)
+          throw std::runtime_error("Expected two function spaces.");
+        return dolfinx::fem::locate_dofs_topological({V[0], V[1]}, dim,
+                                                     entities, remote);
+      },
+      py::arg("V"), py::arg("dim"), py::arg("entities"),
+      py::arg("remote") = true);
+  m.def("locate_dofs_topological",
+        py::overload_cast<const dolfinx::function::FunctionSpace&, const int,
+                          const Eigen::Ref<const Eigen::ArrayXi>&, bool>(
+            &dolfinx::fem::locate_dofs_topological),
         py::arg("V"), py::arg("dim"), py::arg("entities"),
         py::arg("remote") = true);
+
   m.def("locate_dofs_geometrical", &dolfinx::fem::locate_dofs_geometrical);
 }
 } // namespace dolfinx_wrappers
