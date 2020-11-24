@@ -528,7 +528,9 @@ xdmf_utils::extract_local_entities(
   }
 
   std::vector<std::int32_t> entities_new;
+  entities_new.reserve(recv_ents.array().size());
   std::vector<std::int32_t> values_new;
+  values_new.reserve(recv_vals.array().size());
 
   for (Eigen::Index e = 0; e < recv_ents.array().rows() / num_vertices_per_entity; ++e)
   {
