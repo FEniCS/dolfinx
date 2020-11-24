@@ -31,13 +31,12 @@ class CoordinateElement
 {
 public:
   /// Create a coordinate element
-  /// @param[in] cell_type Cell type
+  /// @param[in] libtab_element Element from libtab
   /// @param[in] topological_dimension Topological dimension
   /// @param[in] geometric_dimension Geometric dimension
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   /// @param[in] is_affine Boolean flag indicating affine mapping
-  /// @param[in] libtab_element
   CoordinateElement(const libtab::FiniteElement& libtab_element,
                     int topological_dimension, int geometric_dimension,
                     const std::string& signature,
