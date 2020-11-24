@@ -95,7 +95,7 @@ locate_dofs_geometrical(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
 
-// TODO
+/// TODO
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_dofs_geometrical(
     const function::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
