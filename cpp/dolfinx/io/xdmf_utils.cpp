@@ -538,14 +538,15 @@ xdmf_utils::extract_local_entities(
     entities[0] = igi_to_vertex[recv_ents.array()[e * num_vertices_per_entity]];
     for (Eigen::Index i = 1; i < num_vertices_per_entity; ++i)
     {
-      if (igi_to_vertex.count(recv_ents.array()[e * num_vertices_per_entity + i]) != 1)
+      const auto it = igi_to_vertex.find(recv_ents.array()[e * num_vertices_per_entity + i]);
+      if (it == igi_to_vertex.end())
       {
         // As soon as this received index is not in locally owned input global indices
         // skip the entire entity
         entity_found = false;
         break;
       }
-      entities[i] = igi_to_vertex[recv_ents.array()[e * num_vertices_per_entity + i]];
+      entities[i] = it->second;
     }
 
     if (entity_found == true)
