@@ -9,13 +9,18 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
-#include <libtab.h>
 #include <memory>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 
 struct ufc_coordinate_mapping;
 struct ufc_finite_element;
+
+// Forward declaration
+namespace libtab
+{
+class FiniteElement;
+}
 
 namespace dolfinx::fem
 {
@@ -190,6 +195,6 @@ private:
   // This gives the number of DOFs colocated at each point
   int _block_size;
 
-  std::unique_ptr<libtab::FiniteElement> _libtab_element;
+  std::shared_ptr<const libtab::FiniteElement> _libtab_element;
 };
 } // namespace dolfinx::fem

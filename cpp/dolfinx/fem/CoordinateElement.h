@@ -11,9 +11,15 @@
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
-#include <libtab.h>
+#include <memory>
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
+
+// Forward declaration
+namespace libtab
+{
+class FiniteElement;
+}
 
 namespace dolfinx::fem
 {
@@ -32,10 +38,10 @@ public:
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   /// @param[in] is_affine Boolean flag indicating affine mapping
   /// @param[in] libtab_element
-  CoordinateElement(mesh::CellType cell_type, int topological_dimension,
-                    int geometric_dimension, const std::string& signature,
-                    const ElementDofLayout& dof_layout, bool is_affine,
-                    const libtab::FiniteElement libtab_element);
+  CoordinateElement(const libtab::FiniteElement& libtab_element,
+                    int topological_dimension, int geometric_dimension,
+                    const std::string& signature,
+                    const ElementDofLayout& dof_layout, bool is_affine);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -90,9 +96,6 @@ private:
   // Topological and geometric dimensions
   int _tdim, _gdim;
 
-  // Cell type
-  mesh::CellType _cell;
-
   // Signature, usually from UFC
   std::string _signature;
 
@@ -103,7 +106,7 @@ private:
   bool _is_affine;
 
   // Libtab element
-  libtab::FiniteElement _libtab_element;
+  std::shared_ptr<const libtab::FiniteElement> _libtab_element;
 
   // Function to evaluate the basis on the underlying element
   // @param basis_values Returned values

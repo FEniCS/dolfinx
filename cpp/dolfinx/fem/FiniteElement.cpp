@@ -9,7 +9,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <functional>
 #include <iostream>
-#include <memory>
+#include <libtab.h>
 #include <ufc.h>
 
 using namespace dolfinx;
@@ -64,7 +64,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
   _libtab_element
-      = std::make_unique<libtab::FiniteElement>(libtab::create_element(
+      = std::make_shared<const libtab::FiniteElement>(libtab::create_element(
           _family, mesh::to_string(_cell_shape), ufc_element.degree));
 
   // Fill value dimension

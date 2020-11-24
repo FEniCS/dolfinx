@@ -5,30 +5,49 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CoordinateElement.h"
+#include <libtab.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-CoordinateElement::CoordinateElement(mesh::CellType cell_type,
-                                     int topological_dimension,
-                                     int geometric_dimension,
-                                     const std::string& signature,
-                                     const ElementDofLayout& dof_layout,
-                                     bool is_affine,
-                                     const libtab::FiniteElement libtab_element)
+CoordinateElement::CoordinateElement(
+    const libtab::FiniteElement& libtab_element, int topological_dimension,
+    int geometric_dimension, const std::string& signature,
+    const ElementDofLayout& dof_layout, bool is_affine)
     : _tdim(topological_dimension), _gdim(geometric_dimension),
-      _cell(cell_type), _signature(signature), _dof_layout(dof_layout),
-      _is_affine(is_affine), _libtab_element(libtab_element)
+      _signature(signature), _dof_layout(dof_layout), _is_affine(is_affine),
+      _libtab_element(
+          std::make_shared<const libtab::FiniteElement>(libtab_element))
 {
 }
 //-----------------------------------------------------------------------------
 std::string CoordinateElement::signature() const { return _signature; }
 //-----------------------------------------------------------------------------
-mesh::CellType CoordinateElement::cell_shape() const { return _cell; }
+mesh::CellType CoordinateElement::cell_shape() const
+{
+  switch (_libtab_element->cell_type())
+  {
+  case libtab::cell::type::interval:
+    return mesh::CellType::interval;
+  case libtab::cell::type::triangle:
+    return mesh::CellType::triangle;
+  case libtab::cell::type::quadrilateral:
+    return mesh::CellType::quadrilateral;
+  case libtab::cell::type::hexahedron:
+    return mesh::CellType::hexahedron;
+  case libtab::cell::type::tetrahedron:
+    return mesh::CellType::tetrahedron;
+  default:
+    throw std::runtime_error("Invalid cell shape in CoordinateElement");
+  }
+}
 //-----------------------------------------------------------------------------
-int CoordinateElement::topological_dimension() const { return _tdim; }
+int CoordinateElement::topological_dimension() const
+{
+  return libtab::cell::topological_dimension(_libtab_element->cell_type());
+}
 //-----------------------------------------------------------------------------
 int CoordinateElement::geometric_dimension() const { return _gdim; }
 //-----------------------------------------------------------------------------
@@ -53,7 +72,7 @@ void CoordinateElement::push_forward(
   // Compute physical coordinates
 
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi
-      = _libtab_element.tabulate(0, X)[0];
+      = _libtab_element->tabulate(0, X)[0];
 
   x = phi * cell_geometry.matrix();
 }
@@ -89,6 +108,9 @@ void CoordinateElement::compute_reference_geometry(
   assert(K.dimension(1) == this->topological_dimension());
   assert(K.dimension(2) == this->geometric_dimension());
 
+  // FIXME: Array and matrix rows/cols transpose etc all very tortuous
+  // FIXME: tidy up and sort out
+
   const int d = cell_geometry.rows();
   Eigen::VectorXd phi(d);
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
@@ -99,18 +121,17 @@ void CoordinateElement::compute_reference_geometry(
   if (_is_affine)
   {
     Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> x0(_gdim);
-    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> X0(_tdim);
-    X0.setZero();
+    Eigen::ArrayXXd X0 = Eigen::ArrayXXd::Zero(1, _tdim);
 
-    tabulated_data = _libtab_element.tabulate(1, X0);
+    tabulated_data = _libtab_element->tabulate(1, X0);
 
     // Compute physical coordinates at X=0.
-    phi = tabulated_data[0];
+    phi = tabulated_data[0].transpose();
     x0 = cell_geometry.matrix().transpose() * phi;
 
     // Compute Jacobian and inverse
     for (std::size_t dim = 0; dim + 1 < tabulated_data.size(); ++dim)
-      dphi.row(dim) = tabulated_data[dim + 1];
+      dphi.col(dim) = tabulated_data[dim + 1].row(0);
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
         J0(_gdim, _tdim);
     J0 = cell_geometry.matrix().transpose() * dphi;
@@ -165,7 +186,7 @@ void CoordinateElement::compute_reference_geometry(
       for (k = 0; k < max_its; ++k)
       {
 
-        tabulated_data = _libtab_element.tabulate(1, Xk);
+        tabulated_data = _libtab_element->tabulate(1, Xk);
 
         // Compute physical coordinates
         phi = tabulated_data[0];
@@ -173,7 +194,7 @@ void CoordinateElement::compute_reference_geometry(
 
         // Compute Jacobian and inverse
         for (std::size_t dim = 0; dim + 1 < tabulated_data.size(); ++dim)
-          dphi.row(dim) = tabulated_data[dim + 1];
+          dphi.col(dim) = tabulated_data[dim + 1].row(0);
         Jview = cell_geometry.matrix().transpose() * dphi;
         if (_gdim == _tdim)
           Kview = Jview.inverse();
