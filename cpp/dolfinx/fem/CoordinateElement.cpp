@@ -13,11 +13,11 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
-    const libtab::FiniteElement& libtab_element, int topological_dimension,
-    int geometric_dimension, const std::string& signature,
-    const ElementDofLayout& dof_layout, bool is_affine)
-    : _tdim(topological_dimension), _gdim(geometric_dimension),
-      _signature(signature), _dof_layout(dof_layout), _is_affine(is_affine),
+    const libtab::FiniteElement& libtab_element, int geometric_dimension,
+    const std::string& signature, const ElementDofLayout& dof_layout,
+    bool is_affine)
+    : _gdim(geometric_dimension), _signature(signature),
+      _dof_layout(dof_layout), _is_affine(is_affine),
       _libtab_element(
           std::make_shared<const libtab::FiniteElement>(libtab_element))
 {
@@ -66,8 +66,8 @@ void CoordinateElement::push_forward(
                                         Eigen::RowMajor>>& cell_geometry) const
 {
   assert(x.rows() == X.rows());
-  assert(x.cols() == _gdim);
-  assert(X.cols() == _tdim);
+  assert(x.cols() == this->geometric_dimension());
+  assert(X.cols() == this->topological_dimension());
 
   // Compute physical coordinates
 
@@ -94,19 +94,21 @@ void CoordinateElement::compute_reference_geometry(
     return;
 
   // in-argument checks
-  assert(x.cols() == this->geometric_dimension());
-  assert(cell_geometry.cols() == this->geometric_dimension());
+  const int tdim = this->topological_dimension();
+  const int gdim = this->geometric_dimension();
+  assert(x.cols() == gdim);
+  assert(cell_geometry.cols() == gdim);
 
   // In/out size checks
   assert(X.rows() == num_points);
-  assert(X.cols() == this->topological_dimension());
+  assert(X.cols() == tdim);
   assert(J.dimension(0) == num_points);
-  assert(J.dimension(1) == this->geometric_dimension());
-  assert(J.dimension(2) == this->topological_dimension());
+  assert(J.dimension(1) == gdim);
+  assert(J.dimension(2) == tdim);
   assert(detJ.rows() == num_points);
   assert(K.dimension(0) == num_points);
-  assert(K.dimension(1) == this->topological_dimension());
-  assert(K.dimension(2) == this->geometric_dimension());
+  assert(K.dimension(1) == tdim);
+  assert(K.dimension(2) == gdim);
 
   // FIXME: Array and matrix rows/cols transpose etc all very tortuous
   // FIXME: tidy up and sort out
@@ -114,14 +116,14 @@ void CoordinateElement::compute_reference_geometry(
   const int d = cell_geometry.rows();
   Eigen::VectorXd phi(d);
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
-      d, _tdim);
+      d, tdim);
 
   std::vector<Eigen::ArrayXXd> tabulated_data;
 
   if (_is_affine)
   {
     Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> x0(_gdim);
-    Eigen::ArrayXXd X0 = Eigen::ArrayXXd::Zero(1, _tdim);
+    Eigen::ArrayXXd X0 = Eigen::ArrayXXd::Zero(1, tdim);
 
     tabulated_data = _libtab_element->tabulate(1, X0);
 
@@ -133,11 +135,13 @@ void CoordinateElement::compute_reference_geometry(
     for (std::size_t dim = 0; dim + 1 < tabulated_data.size(); ++dim)
       dphi.col(dim) = tabulated_data[dim + 1].row(0);
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
-        J0(_gdim, _tdim);
+        J0(gdim, tdim);
     J0 = cell_geometry.matrix().transpose() * dphi;
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
-        K0(_tdim, _gdim);
-    if (_gdim == _tdim)
+        K0(tdim, gdim);
+
+    // Fill result for J, K and detJ
+    if (gdim == tdim)
     {
       K0 = J0.inverse();
       detJ.fill(J0.determinant());
@@ -149,14 +153,13 @@ void CoordinateElement::compute_reference_geometry(
       detJ.fill(std::sqrt((J0.transpose() * J0).determinant()));
     }
 
-    // Fill result for J, K and detJ
     Eigen::Map<
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        Jview(J.data(), _gdim * num_points, _tdim);
+        Jview(J.data(), gdim * num_points, tdim);
     Jview = J0.replicate(num_points, 1);
     Eigen::Map<
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        Kview(K.data(), _tdim * num_points, _gdim);
+        Kview(K.data(), tdim * num_points, gdim);
     Kview = K0.replicate(num_points, 1);
 
     // Calculate X for each point
@@ -168,17 +171,16 @@ void CoordinateElement::compute_reference_geometry(
     // Newton's method for non-affine geometry
     Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> xk(x.cols(),
                                                                        1);
-    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> Xk(_tdim,
-                                                                       1);
+    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> Xk(tdim, 1);
 
     for (int ip = 0; ip < num_points; ++ip)
     {
       Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                Eigen::RowMajor>>
-          Jview(J.data() + ip * _gdim * _tdim, _gdim, _tdim);
+          Jview(J.data() + ip * gdim * tdim, gdim, tdim);
       Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                Eigen::RowMajor>>
-          Kview(K.data() + ip * _gdim * _tdim, _tdim, _gdim);
+          Kview(K.data() + ip * gdim * tdim, tdim, gdim);
       // TODO: Xk - use cell midpoint instead?
       Xk.setZero();
       const int max_its = 10;
@@ -189,14 +191,14 @@ void CoordinateElement::compute_reference_geometry(
         tabulated_data = _libtab_element->tabulate(1, Xk);
 
         // Compute physical coordinates
-        phi = tabulated_data[0];
+        phi = tabulated_data[0].transpose();
         xk = cell_geometry.matrix().transpose() * phi;
 
         // Compute Jacobian and inverse
         for (std::size_t dim = 0; dim + 1 < tabulated_data.size(); ++dim)
           dphi.col(dim) = tabulated_data[dim + 1].row(0);
         Jview = cell_geometry.matrix().transpose() * dphi;
-        if (_gdim == _tdim)
+        if (gdim == tdim)
           Kview = Jview.inverse();
         else
           // Penrose-Moore pseudo-inverse
@@ -215,7 +217,7 @@ void CoordinateElement::compute_reference_geometry(
             "Newton method failed to converge for non-affine geometry");
       }
       X.row(ip) = Xk;
-      if (_gdim == _tdim)
+      if (gdim == tdim)
         detJ.row(ip) = Jview.determinant();
       else
         detJ.row(ip) = std::sqrt((Jview.transpose() * Jview).determinant());

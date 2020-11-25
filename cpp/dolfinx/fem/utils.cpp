@@ -217,8 +217,7 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
       ufc_cmap.element_family, mesh::to_string(cell_type),
       ufc_cmap.element_degree);
 
-  return fem::CoordinateElement(libtab_element, ufc_cmap.topological_dimension,
-                                ufc_cmap.geometric_dimension,
+  return fem::CoordinateElement(libtab_element, ufc_cmap.geometric_dimension,
                                 ufc_cmap.signature, dof_layout,
                                 ufc_cmap.is_affine);
 }

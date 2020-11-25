@@ -38,8 +38,7 @@ public:
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   /// @param[in] is_affine Boolean flag indicating affine mapping
   CoordinateElement(const libtab::FiniteElement& libtab_element,
-                    int topological_dimension, int geometric_dimension,
-                    const std::string& signature,
+                    int geometric_dimension, const std::string& signature,
                     const ElementDofLayout& dof_layout, bool is_affine);
 
   /// Destructor
@@ -92,8 +91,8 @@ public:
       double eps = 1.0e-16) const;
 
 private:
-  // Topological and geometric dimensions
-  int _tdim, _gdim;
+  // Geometric dimensions
+  int _gdim;
 
   // Signature, usually from UFC
   std::string _signature;
