@@ -38,21 +38,16 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   const std::vector<std::int32_t>& active_entities = meshtags.indices();
   const std::vector<T>& values = meshtags.values();
 
-  // Remove ghost indices (note that indices are sorted)
-  std::int32_t num_entities = 0;
-  const std::int32_t num_active_entities = active_entities.size();
-  for (std::int32_t i = 0; i < num_active_entities; ++i)
-  {
-    if (active_entities[i] < num_local_entities)
-      ++num_entities;
-    else
-      break;
-  }
+  // Find number of tagged entities in local range
+  const int num_active_entities
+      = std::lower_bound(active_entities.begin(), active_entities.end(),
+                         num_local_entities)
+        - active_entities.begin();
 
   const std::vector<std::int32_t> local_entities(
-      active_entities.begin(), active_entities.begin() + num_entities);
+      active_entities.begin(), active_entities.begin() + num_active_entities);
   const std::vector<T> local_values(values.begin(),
-                                    values.begin() + num_entities);
+                                    values.begin() + num_active_entities);
   const std::string path_prefix = "/MeshTags/" + name;
   xdmf_mesh::add_topology_data(comm, xml_node, h5_id, path_prefix,
                                mesh->topology(), mesh->geometry(), dim,
