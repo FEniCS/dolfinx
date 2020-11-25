@@ -535,10 +535,8 @@ xdmf_utils::extract_local_entities(
   for (Eigen::Index e = 0; e < recv_ents.array().rows() / num_vertices_per_entity; ++e)
   {
     bool entity_found = true;
-    std::vector<std::int32_t> entities(num_vertices_per_entity);
-    // First entity is guaranteed to be on processor
-    entities[0] = igi_to_vertex[recv_ents.array()[e * num_vertices_per_entity]];
-    for (Eigen::Index i = 1; i < num_vertices_per_entity; ++i)
+    std::vector<std::int32_t> entity(num_vertices_per_entity);
+    for (Eigen::Index i = 0; i < num_vertices_per_entity; ++i)
     {
       const auto it = igi_to_vertex.find(recv_ents.array()[e * num_vertices_per_entity + i]);
       if (it == igi_to_vertex.end())
@@ -548,12 +546,12 @@ xdmf_utils::extract_local_entities(
         entity_found = false;
         break;
       }
-      entities[i] = it->second;
+      entity[i] = it->second;
     }
 
     if (entity_found == true)
     {
-      entities_new.insert(entities_new.end(), entities.begin(), entities.end());
+      entities_new.insert(entities_new.end(), entity.begin(), entity.end());
       values_new.push_back(recv_vals.array()[e]);
     }
   }
