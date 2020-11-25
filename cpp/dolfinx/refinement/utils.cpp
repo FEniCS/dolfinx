@@ -346,23 +346,14 @@ std::vector<std::int64_t> refinement::adjust_indices(
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh refinement::build_local(
-    const mesh::Mesh& old_mesh, const std::vector<std::int64_t>& cell_topology,
+    const mesh::Mesh& old_mesh,
+    const graph::AdjacencyList<std::int64_t>& cell_topology,
     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         new_vertex_coordinates)
 {
-  const std::size_t tdim = old_mesh.topology().dim();
-  const std::size_t num_cell_vertices = tdim + 1;
-  assert(cell_topology.size() % num_cell_vertices == 0);
-  const std::size_t num_cells = cell_topology.size() / num_cell_vertices;
-
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      cells(cell_topology.data(), num_cells, num_cell_vertices);
-
   mesh::Mesh mesh = mesh::create_mesh(
-      old_mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells),
-      old_mesh.geometry().cmap(), new_vertex_coordinates,
-      mesh::GhostMode::none);
+      old_mesh.mpi_comm(), cell_topology, old_mesh.geometry().cmap(),
+      new_vertex_coordinates, mesh::GhostMode::none);
   assert(mesh.geometry().dim() == old_mesh.geometry().dim());
   return mesh;
 }

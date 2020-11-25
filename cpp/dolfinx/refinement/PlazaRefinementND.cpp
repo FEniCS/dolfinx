@@ -8,6 +8,7 @@
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
@@ -398,7 +399,7 @@ mesh::Mesh compute_refinement(
       = refinement::create_new_vertices(neighbor_comm, shared_edges, mesh,
                                         marked_edges);
 
-  std::vector<std::size_t> parent_cell;
+  std::vector<std::int64_t> parent_cell;
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
   std::vector<int> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
@@ -503,9 +504,15 @@ mesh::Mesh compute_refinement(
     }
   }
 
+  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      cells(cell_topology.data(), num_cells, num_cell_vertices);
+
+  graph::AdjacencyList<std::int64_t> cell_adj(cells);
+
   const bool serial = (dolfinx::MPI::size(mesh.mpi_comm()) == 1);
   if (serial)
-    return refinement::build_local(mesh, cell_topology, new_vertex_coordinates);
+    return refinement::build_local(mesh, cell_adj, new_vertex_coordinates);
   else
     return refinement::partition(mesh, cell_topology, num_new_ghost_cells,
                                  new_vertex_coordinates, redistribute);

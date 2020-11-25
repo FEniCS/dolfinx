@@ -85,10 +85,11 @@ partition(const mesh::Mesh& old_mesh,
 /// @param[in] cell_topology
 /// @param[in] new_vertex_coordinates
 /// @return A Mesh
-mesh::Mesh build_local(
-    const mesh::Mesh& old_mesh, const std::vector<std::int64_t>& cell_topology,
-    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        new_vertex_coordinates);
+mesh::Mesh
+build_local(const mesh::Mesh& old_mesh,
+            const graph::AdjacencyList<std::int64_t>& cell_topology,
+            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>& new_vertex_coordinates);
 
 /// Adjust indices to account for extra n values on each process This
 /// is a utility to help add new topological vertices on each process
