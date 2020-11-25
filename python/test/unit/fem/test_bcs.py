@@ -27,11 +27,12 @@ def test_locate_dofs_geometrical():
 
     # Collect dofs from all processes (does not matter that the
     # numbering is local to each process for this test)
-    all_dofs = np.vstack(MPI.COMM_WORLD.allgather(dofs))
+    all_dofs0 = np.concatenate(MPI.COMM_WORLD.allgather(dofs[0]))
+    all_dofs1 = np.concatenate(MPI.COMM_WORLD.allgather(dofs[1]))
 
     # Check only one dof pair is returned
-    assert len(all_dofs[0]) == 1
-    assert len(all_dofs[1]) == 1
+    assert len(all_dofs0) == 1
+    assert len(all_dofs1) == 1
 
     # On process with the dof pair
     if len(dofs) == 1:
