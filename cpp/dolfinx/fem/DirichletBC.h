@@ -150,7 +150,7 @@ public:
       : _function_space(g->function_space()), _g(g), _dofs({dofs, dofs})
   {
     // Stack indices as columns, fits column-major _dofs layout
-    const int owned_size = _function_space->dofmap()->index_map->block_size()
+    const int owned_size = _function_space->dofmap()->index_map_bs()
                            * _function_space->dofmap()->index_map->size_local();
     auto* it = std::lower_bound(_dofs[0].data(),
                                 _dofs[0].data() + _dofs[0].rows(), owned_size);
@@ -172,7 +172,7 @@ public:
               std::shared_ptr<const function::FunctionSpace> V)
       : _function_space(V), _g(g), _dofs({V_g_dofs[0], V_g_dofs[1]})
   {
-    const int owned_size = _function_space->dofmap()->index_map->block_size()
+    const int owned_size = _function_space->dofmap()->index_map_bs()
                            * _function_space->dofmap()->index_map->size_local();
     auto* it = std::lower_bound(_dofs[0].data(),
                                 _dofs[0].data() + _dofs[0].rows(), owned_size);

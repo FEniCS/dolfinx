@@ -341,7 +341,7 @@ face_long_edge(const mesh::Mesh& mesh)
   auto f_to_e = mesh.topology().connectivity(2, 1);
   assert(f_to_e);
   const std::vector global_indices
-      = mesh.topology().index_map(0)->global_indices(true);
+      = mesh.topology().index_map(0)->global_indices();
   for (int f = 0; f < f_to_v->num_nodes(); ++f)
   {
     auto face_edges = f_to_e->links(f);

@@ -215,7 +215,8 @@ void refinement::update_logical_edgefunction(
             .array();
 
   // Flatten received values and set marked_edges at each index received
-  std::vector<std::int32_t> local_indices = map_e.global_to_local(data_to_recv);
+  std::vector<std::int32_t> local_indices
+      = map_e.global_to_local(data_to_recv, 1);
   for (std::int32_t local_index : local_indices)
     marked_edges[local_index] = true;
 }
@@ -305,7 +306,7 @@ refinement::create_new_vertices(
   for (int i = 0; i < received_values.size() / 2; ++i)
     recv_global_edge.push_back(received_values[i * 2]);
   std::vector<std::int32_t> recv_local_edge
-      = mesh.topology().index_map(1)->global_to_local(recv_global_edge);
+      = mesh.topology().index_map(1)->global_to_local(recv_global_edge, 1);
   for (int i = 0; i < received_values.size() / 2; ++i)
   {
     auto it = local_edge_to_new_vertex.insert(
@@ -332,7 +333,7 @@ std::vector<std::int64_t> refinement::adjust_indices(
   for (std::int32_t r : recvn)
     global_offsets.push_back(global_offsets.back() + r);
 
-  std::vector global_indices = index_map->global_indices(true);
+  std::vector global_indices = index_map->global_indices();
 
   Eigen::Array<int, Eigen::Dynamic, 1> ghost_owners
       = index_map->ghost_owner_rank();
@@ -438,7 +439,7 @@ mesh::Mesh refinement::partition(
     const int tdim = topology_local.dim();
     auto map = std::make_shared<common::IndexMap>(
         comm, cells_local.num_nodes(), std::vector<int>(),
-        std::vector<std::int64_t>(), std::vector<int>(), 1);
+        std::vector<std::int64_t>(), std::vector<int>());
     topology_local.set_index_map(tdim, map);
     auto _cells_local
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
@@ -447,7 +448,7 @@ mesh::Mesh refinement::partition(
     const int n = local_to_global_vertices.size();
     map = std::make_shared<common::IndexMap>(comm, n, std::vector<int>(),
                                              std::vector<std::int64_t>(),
-                                             std::vector<int>(), 1);
+                                             std::vector<int>());
     topology_local.set_index_map(0, map);
     auto _vertices_local
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(n);
@@ -491,7 +492,7 @@ mesh::Mesh refinement::partition(
     // Set cell IndexMap and cell-vertex connectivity
     auto index_map_c = std::make_shared<common::IndexMap>(
         comm, cells_d.num_nodes(), std::vector<int>(),
-        std::vector<std::int64_t>(), std::vector<int>(), 1);
+        std::vector<std::int64_t>(), std::vector<int>());
     topology.set_index_map(tdim, index_map_c);
     auto _cells_d
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);

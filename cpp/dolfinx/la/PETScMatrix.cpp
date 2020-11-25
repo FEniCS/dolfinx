@@ -33,8 +33,8 @@ Mat la::create_petsc_matrix(
   // Get IndexMaps from sparsity patterm, and block size
   std::array index_maps{sparsity_pattern.index_map(0),
                         sparsity_pattern.index_map(1)};
-  const int bs0 = index_maps[0]->block_size();
-  const int bs1 = index_maps[1]->block_size();
+  const int bs0 = sparsity_pattern.block_size(0);
+  const int bs1 = sparsity_pattern.block_size(1);
 
   // Get global and local dimensions
   const std::int64_t M = bs0 * index_maps[0]->size_global();
@@ -81,19 +81,19 @@ Mat la::create_petsc_matrix(
   // local-to-global map
 
   // Create PETSc local-to-global map/index set
-  const bool blocked = (bs0 == bs1 ? true : false);
-  const std::vector _map0 = index_maps[0]->global_indices(blocked);
-  const std::vector _map1 = index_maps[1]->global_indices(blocked);
+  // const bool blocked = (bs0 == bs1 ? true : false);
+  const std::vector _map0 = index_maps[0]->global_indices();
+  const std::vector _map1 = index_maps[1]->global_indices();
   const std::vector<PetscInt> map0(_map0.begin(), _map0.end());
   const std::vector<PetscInt> map1(_map1.begin(), _map1.end());
 
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
-  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs, map0.size(),
+  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs0, map0.size(),
                                       map0.data(), PETSC_COPY_VALUES,
                                       &petsc_local_to_global0);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
-  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs, map1.size(),
+  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs1, map1.size(),
                                       map1.data(), PETSC_COPY_VALUES,
                                       &petsc_local_to_global1);
   if (ierr != 0)

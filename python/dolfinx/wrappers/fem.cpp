@@ -80,8 +80,10 @@ void fem(py::module& m)
   m.def(
       "create_vector_block",
       [](const std::vector<
-          std::reference_wrapper<const dolfinx::common::IndexMap>>& maps) {
-        dolfinx::la::PETScVector x = dolfinx::fem::create_vector_block(maps);
+             std::reference_wrapper<const dolfinx::common::IndexMap>>& maps,
+         const std::vector<int>& bs) {
+        dolfinx::la::PETScVector x
+            = dolfinx::fem::create_vector_block(maps, bs);
         Vec _x = x.vec();
         PetscObjectReference((PetscObject)_x);
         return _x;
@@ -90,8 +92,9 @@ void fem(py::module& m)
       "Create a monolithic vector for multiple (stacked) linear forms.");
   m.def(
       "create_vector_nest",
-      [](const std::vector<const dolfinx::common::IndexMap*>& maps) {
-        auto x = dolfinx::fem::create_vector_nest(maps);
+      [](const std::vector<const dolfinx::common::IndexMap*>& maps,
+         const std::vector<int>& bs) {
+        auto x = dolfinx::fem::create_vector_nest(maps, bs);
         Vec _x = x.vec();
         PetscObjectReference((PetscObject)_x);
         return _x;
@@ -195,9 +198,9 @@ void fem(py::module& m)
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout) {
-        auto [map, dofmap] = dolfinx::fem::DofMapBuilder::build(
+        auto [map, bs, dofmap] = dolfinx::fem::DofMapBuilder::build(
             comm.get(), topology, element_dof_layout);
-        return std::pair(map, std::move(dofmap));
+        return std::tuple(map, bs, std::move(dofmap));
       },
       "Build and dofmap on a mesh.");
   m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
@@ -247,11 +250,13 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
       m, "DofMap", "DofMap object")
       .def(py::init<std::shared_ptr<const dolfinx::fem::ElementDofLayout>,
-                    std::shared_ptr<const dolfinx::common::IndexMap>,
+                    std::shared_ptr<const dolfinx::common::IndexMap>, int,
                     dolfinx::graph::AdjacencyList<std::int32_t>&>(),
            py::arg("element_dof_layout"), py::arg("index_map"),
-           py::arg("dofmap"))
+           py::arg("index_map_bs"), py::arg("dofmap"))
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)
+      .def_property_readonly("index_map_bs",
+                             &dolfinx::fem::DofMap::index_map_bs)
       .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
       .def("cell_dofs", &dolfinx::fem::DofMap::cell_dofs)
       .def("list", &dolfinx::fem::DofMap::list);

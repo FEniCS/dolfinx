@@ -40,7 +40,8 @@ public:
   /// Create an empty sparsity pattern with specified dimensions
   SparsityPattern(
       MPI_Comm comm,
-      const std::array<std::shared_ptr<const common::IndexMap>, 2>& index_maps);
+      const std::array<std::shared_ptr<const common::IndexMap>, 2>& index_maps,
+      const std::array<int, 2>& bs);
 
   /// Create a new sparsity pattern by concatenating sub-patterns, e.g.
   /// pattern =[ pattern00 ][ pattern 01]
@@ -55,8 +56,8 @@ public:
       MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>>& patterns,
       const std::array<
-          std::vector<std::reference_wrapper<const common::IndexMap>>, 2>&
-          maps);
+          std::vector<std::reference_wrapper<const common::IndexMap>>, 2>& maps,
+      const std::array<std::vector<int>, 2>& bs);
 
   SparsityPattern(const SparsityPattern& pattern) = delete;
 
@@ -74,6 +75,9 @@ public:
 
   /// Return index map for dimension dim
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
+
+  /// Return index map block size for dimension dim
+  int block_size(int dim) const;
 
   /// Insert non-zero locations using local (process-wise) indices
   void
@@ -112,6 +116,7 @@ private:
 
   // common::IndexMaps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
+  std::array<int, 2> _bs;
 
   // Caches for diagonal and off-diagonal blocks
   std::vector<std::vector<std::int32_t>> _diagonal_cache;

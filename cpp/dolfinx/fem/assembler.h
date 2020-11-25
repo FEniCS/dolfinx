@@ -102,15 +102,15 @@ void assemble_matrix(
   // Index maps for dof ranges
   auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
   auto map1 = a.function_spaces().at(1)->dofmap()->index_map;
+  auto bs0 = a.function_spaces().at(0)->dofmap()->index_map_bs();
+  auto bs1 = a.function_spaces().at(1)->dofmap()->index_map_bs();
 
   // Build dof markers
   std::vector<bool> dof_marker0, dof_marker1;
   assert(map0);
-  std::int32_t dim0
-      = map0->block_size() * (map0->size_local() + map0->num_ghosts());
+  std::int32_t dim0 = bs0 * (map0->size_local() + map0->num_ghosts());
   assert(map1);
-  std::int32_t dim1
-      = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+  std::int32_t dim1 = bs1 * (map1->size_local() + map1->num_ghosts());
   for (std::size_t k = 0; k < bcs.size(); ++k)
   {
     assert(bcs[k]);

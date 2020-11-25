@@ -35,9 +35,10 @@ void la(py::module& m)
                                                             "SparsityPattern")
       .def(py::init(
           [](const MPICommWrapper comm,
-             std::array<std::shared_ptr<const dolfinx::common::IndexMap>, 2>
-                 index_maps) {
-            return dolfinx::la::SparsityPattern(comm.get(), index_maps);
+             const std::array<std::shared_ptr<const dolfinx::common::IndexMap>,
+                              2>& index_maps,
+             const std::array<int, 2>& bs) {
+            return dolfinx::la::SparsityPattern(comm.get(), index_maps, bs);
           }))
       .def(py::init(
           [](const MPICommWrapper comm,
@@ -45,9 +46,10 @@ void la(py::module& m)
                  patterns,
              const std::array<std::vector<std::reference_wrapper<
                                   const dolfinx::common::IndexMap>>,
-                              2>& maps) {
+                              2>& maps,
+             const std::array<std::vector<int>, 2>& bs) {
             return std::make_unique<dolfinx::la::SparsityPattern>(
-                comm.get(), patterns, maps);
+                comm.get(), patterns, maps, bs);
           }))
       .def("local_range", &dolfinx::la::SparsityPattern::local_range)
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
@@ -98,7 +100,7 @@ void la(py::module& m)
 
   // utils
   m.def("create_vector",
-        py::overload_cast<const dolfinx::common::IndexMap&>(
+        py::overload_cast<const dolfinx::common::IndexMap&, int>(
             &dolfinx::la::create_petsc_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
@@ -106,9 +108,9 @@ void la(py::module& m)
       "create_vector",
       [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
          const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghost_indices,
-         int block_size) {
+         int bs) {
         return dolfinx::la::create_petsc_vector(comm.get(), range,
-                                                ghost_indices, block_size);
+                                                ghost_indices, bs);
       },
       py::return_value_policy::take_ownership, "Create a PETSc Vec.");
   m.def(

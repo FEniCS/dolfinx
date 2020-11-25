@@ -35,7 +35,7 @@ namespace
 /// @return List of local dofs with boundary conditions applied but
 ///   detected by other processes. It may contain duplicate entries.
 std::vector<std::int32_t>
-get_remote_bcs1(const common::IndexMap& map,
+get_remote_bcs1(const common::IndexMap& map, int bs,
                 const std::vector<std::int32_t>& dofs_local)
 {
   MPI_Comm comm = map.comm(common::IndexMap::Direction::symmetric);
@@ -57,7 +57,7 @@ get_remote_bcs1(const common::IndexMap& map,
   // NOTE: we could consider only dofs that we know are shared
   // Build array of global indices of dofs
   const std::vector<std::int64_t> dofs_global
-      = map.local_to_global(dofs_local, false);
+      = map.local_to_global(dofs_local, bs);
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
@@ -80,7 +80,7 @@ get_remote_bcs1(const common::IndexMap& map,
   // FIXME: check that dofs is sorted
   // Build vector of local dof indicies that have been marked by another
   // process
-  std::vector<std::int32_t> dofs = map.global_to_local(dofs_received, false);
+  std::vector<std::int32_t> dofs = map.global_to_local(dofs_received, bs);
   dofs.erase(std::remove(dofs.begin(), dofs.end(), -1), dofs.end());
 
   return dofs;
@@ -367,8 +367,8 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
 
   if (remote)
   {
-    const std::vector dofs_remote
-        = get_remote_bcs1(*V.dofmap()->index_map, dofs);
+    const std::vector dofs_remote = get_remote_bcs1(
+        *V.dofmap()->index_map, V.dofmap()->index_map_bs(), dofs);
 
     // Add received bc indices to dofs_local
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());

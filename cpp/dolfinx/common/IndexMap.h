@@ -24,6 +24,7 @@ class IndexMap;
 /// required to compute the new ghost indices.
 ///
 /// @param[in] maps List of index maps
+/// @param[in] bs Block size for each index map in maps
 /// @returns The (0) global offset of a stacked map for this rank, (1)
 ///   local offset for each submap in the stacked map, and (2) new
 ///   indices for the ghosts for each submap (3) owner rank of each ghost
@@ -32,14 +33,15 @@ std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>,
            std::vector<std::vector<int>>>
 stack_index_maps(
-    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps);
+    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps,
+    const std::vector<int>& bs);
 
 /// This class represents the distribution index arrays across
-/// processes. An index array is a contiguous collection of N+1 block
-/// indices [0, 1, . . ., N] that are distributed across M
-/// processes. On a given process, the IndexMap stores a portion of the
-/// index set using local indices [0, 1, . . . , n], and a map from the
-/// local block indices to a unique global block index.
+/// processes. An index array is a contiguous collection of N+1 indices
+/// [0, 1, . . ., N] that are distributed across M processes. On a given
+/// process, the IndexMap stores a portion of the index set using local
+/// indices [0, 1, . . . , n], and a map from the local indices to a
+/// unique global index.
 
 class IndexMap
 {
@@ -59,18 +61,16 @@ public:
     symmetric // Symmetric. NOTE: To be removed
   };
 
-  /// Create an non-overlapping index map with local_size owned blocks on this
+  /// Create an non-overlapping index map with local_size owned on this
   /// process.
   ///
   /// @note Collective
   /// @param[in] comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
   ///   of owned entries
-  /// @param[in] block_size The block size of the IndexMap
-  IndexMap(MPI_Comm comm, std::int32_t local_size, int block_size);
+  IndexMap(MPI_Comm comm, std::int32_t local_size);
 
-  /// Create an index map with local_size owned blocks on this process, and
-  /// blocks have size block_size.
+  /// Create an index map with local_size owned indiced on this process.
   ///
   /// @note Collective
   /// @param[in] mpi_comm The MPI communicator
@@ -82,11 +82,10 @@ public:
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] src_ranks Owner rank (on global communicator) of each
   ///   entry in @p ghosts
-  /// @param[in] block_size The block size of the IndexMap
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<int>& dest_ranks,
            const std::vector<std::int64_t>& ghosts,
-           const std::vector<int>& src_ranks, int block_size);
+           const std::vector<int>& src_ranks);
 
   /// Create an index map
   ///
@@ -99,13 +98,12 @@ public:
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] src_ranks Owner rank (on global communicator) of each
   ///   ghost entry
-  /// @param[in] block_size The block size of the IndexMap
   IndexMap(
       MPI_Comm mpi_comm, std::int32_t local_size,
       const std::vector<int>& dest_ranks,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
           ghosts,
-      const std::vector<int>& src_ranks, int block_size);
+      const std::vector<int>& src_ranks);
 
   /// Copy constructor
   IndexMap(const IndexMap& map) = delete;
@@ -118,9 +116,6 @@ public:
 
   /// Range of indices (global) owned by this process
   std::array<std::int64_t, 2> local_range() const noexcept;
-
-  /// Block size
-  int block_size() const noexcept;
 
   /// Number of ghost indices on this process
   std::int32_t num_ghosts() const;
@@ -144,53 +139,46 @@ public:
 
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
-  /// @param[in] blocked If true work with blocked indices. If false the
-  ///   input indices are not block-wise.
   /// @return The global index of the corresponding local index in
   ///   indices.
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global(
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
           indices,
-      bool blocked = true) const;
+      int bs) const;
 
   /// @todo Consider removing this function in favour of the version
   /// that accepts an Eigen array.
   ///
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
-  /// @param[in] blocked If true work with blocked indices. If false the
-  ///   input indices are not block-wise.
+  /// @param[in] bs
   /// @return The global index of the corresponding local index in
   ///   indices.
   std::vector<std::int64_t>
-  local_to_global(const std::vector<std::int32_t>& indices,
-                  bool blocked = true) const;
+  local_to_global(const std::vector<std::int32_t>& indices, int bs) const;
 
   /// Compute local indices for array of global indices
   /// @param[in] indices Global indices
-  /// @param[in] blocked If true work with blocked indices. If false the
-  ///   input indices are not block-wise.
+  /// @param[in] bs
   /// @return The local of the corresponding global index in indices.
   ///   Returns -1 if the local index does not exist on this process.
   std::vector<std::int32_t>
-  global_to_local(const std::vector<std::int64_t>& indices,
-                  bool blocked = true) const;
+  global_to_local(const std::vector<std::int64_t>& indices, int bs) const;
 
   /// Compute local indices for array of global indices
   /// @param[in] indices Global indices
-  /// @param[in] blocked If true work with blocked indices. If false the
-  ///   input indices are not block-wise.
+  /// @param[in] bs
   /// @return The local of the corresponding global index in indices.
   ///   Return -1 if the local index does not exist on this process.
   std::vector<std::int32_t> global_to_local(
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
           indices,
-      bool blocked = true) const;
+      int bs) const;
 
   /// Global indices
   /// @return The global index for all local indices (0, 1, 2, ...) on
   ///   this process, including ghosts
-  std::vector<std::int64_t> global_indices(bool blocked = true) const;
+  std::vector<std::int64_t> global_indices() const;
 
   /// @todo Reconsider name
   /// Local (owned) indices shared with neighbor processes, i.e. are
@@ -203,8 +191,7 @@ public:
 
   /// Return array of global indices for all indices on this process,
   /// including ghosts
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1>
-  indices(bool unroll_block) const;
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> indices() const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
   /// with neighborhood ranks?
@@ -292,8 +279,6 @@ public:
                    IndexMap::Mode op) const;
 
 private:
-  int _block_size;
-
   // Range of indices (global) owned by this process
   std::array<std::int64_t, 2> _local_range;
 

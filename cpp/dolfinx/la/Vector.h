@@ -20,11 +20,12 @@ class Vector
 {
 public:
   /// Create vector
-  Vector(const std::shared_ptr<const common::IndexMap>& map) : _map(map)
+  Vector(const std::shared_ptr<const common::IndexMap>& map, int bs)
+      : _map(map), _bs(bs)
   {
     assert(map);
     const std::int32_t local_size
-        = map->block_size() * (map->size_local() + map->num_ghosts());
+        = bs * (map->size_local() + map->num_ghosts());
     _x.resize(local_size);
   }
 
@@ -46,6 +47,9 @@ public:
   /// Get local part of the vector (const version)
   std::shared_ptr<const common::IndexMap> map() const { return _map; }
 
+  /// Get block size
+  int bs() const { return _bs; }
+
   /// Get local part of the vector (const version)
   const Eigen::Matrix<T, Eigen::Dynamic, 1>& array() const { return _x; }
 
@@ -55,6 +59,9 @@ public:
 private:
   // Map describing the data layout
   std::shared_ptr<const common::IndexMap> _map;
+
+  // Block size
+  int _bs;
 
   // Data
   Eigen::Matrix<T, Eigen::Dynamic, 1> _x;

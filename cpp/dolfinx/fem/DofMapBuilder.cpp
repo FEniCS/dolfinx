@@ -85,7 +85,8 @@ build_basic_dofmap(const mesh::Topology& topology,
     {
       auto map = topology.index_map(d);
       assert(map);
-      global_indices[d] = map->global_indices(false);
+      // FIXME X
+      global_indices[d] = map->global_indices();
     }
   }
 
@@ -482,7 +483,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<std::shared_ptr<common::IndexMap>, graph::AdjacencyList<std::int32_t>>
+std::tuple<std::shared_ptr<common::IndexMap>, int,
+           graph::AdjacencyList<std::int32_t>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                      const ElementDofLayout& element_dof_layout)
 {
@@ -532,7 +534,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
       dolfinx::MPI::compute_graph_edges(
           comm, std::set<int>(local_to_global_owner.begin(),
                               local_to_global_owner.end())),
-      local_to_global_unowned, local_to_global_owner, element_block_size);
+      local_to_global_unowned, local_to_global_owner);
   assert(index_map);
 
   // FIXME: There is an assumption here on the dof order for an element.
@@ -562,6 +564,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                           Eigen::RowMajor>>
       _dofmap(dofmap.data(), node_graph0.num_nodes(),
               dofmap.rows() / node_graph0.num_nodes());
-  return {std::move(index_map), graph::AdjacencyList<std::int32_t>(_dofmap)};
+  return {std::move(index_map), element_block_size,
+          graph::AdjacencyList<std::int32_t>(_dofmap)};
 }
 //-----------------------------------------------------------------------------

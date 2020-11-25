@@ -394,7 +394,7 @@ get_local_indexing(
       comm, num_local,
       dolfinx::MPI::compute_graph_edges(
           comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
-      ghost_indices, ghost_owners, 1);
+      ghost_indices, ghost_owners);
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
