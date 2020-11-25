@@ -174,8 +174,11 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   return dofs;
 }
 //-----------------------------------------------------------------------------
+} // namespace
+
+//-----------------------------------------------------------------------------
 std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
-_locate_dofs_topological(
+fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
         V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
@@ -283,22 +286,22 @@ _locate_dofs_topological(
     bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
   }
 
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 2> dofs(bc_dofs.size(), 2);
+  // Copy to Eigen array
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs0(bc_dofs.size());
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs1(bc_dofs.size());
   for (std::size_t i = 0; i < bc_dofs.size(); ++i)
   {
-    dofs(i, 0) = bc_dofs[i][0];
-    dofs(i, 1) = bc_dofs[i][1];
+    dofs0(i) = bc_dofs[i][0];
+    dofs1(i) = bc_dofs[i][1];
   }
 
-  return {dofs.col(0), dofs.col(1)};
+  return {std::move(dofs0), std::move(dofs1)};
 }
 //-----------------------------------------------------------------------------
-
-/// TODO: Add doc
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-_locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
-                         const Eigen::Ref<const Eigen::ArrayXi>& entities,
-                         bool remote)
+fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
+                             const Eigen::Ref<const Eigen::ArrayXi>& entities,
+                             bool remote)
 {
   assert(V.dofmap());
   std::shared_ptr<const DofMap> dofmap = V.dofmap();
@@ -310,26 +313,26 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
   // Initialise entity-cell connectivity
   // FIXME: cleanup these calls? Some of them happen internally again.
   mesh->topology_mutable().create_entities(tdim);
-  mesh->topology_mutable().create_connectivity(entity_dim, tdim);
+  mesh->topology_mutable().create_connectivity(dim, tdim);
 
   // Prepare an element - local dof layout for dofs on entities of the
   // entity_dim
   const int num_cell_entities
-      = mesh::cell_num_entities(mesh->topology().cell_type(), entity_dim);
+      = mesh::cell_num_entities(mesh->topology().cell_type(), dim);
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
-        dofmap->element_dof_layout->entity_closure_dofs(entity_dim, i));
+        dofmap->element_dof_layout->entity_closure_dofs(dim, i));
   }
 
-  auto e_to_c = mesh->topology().connectivity(entity_dim, tdim);
+  auto e_to_c = mesh->topology().connectivity(dim, tdim);
   assert(e_to_c);
-  auto c_to_e = mesh->topology().connectivity(tdim, entity_dim);
+  auto c_to_e = mesh->topology().connectivity(tdim, dim);
   assert(c_to_e);
 
   const int num_entity_closure_dofs
-      = dofmap->element_dof_layout->num_entity_closure_dofs(entity_dim);
+      = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
   const int block_size = dofmap->element_dof_layout->block_size();
   std::vector<std::int32_t> dofs;
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
@@ -375,16 +378,13 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
   }
 
-  // Copy to Eigen array
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _dofs
-      = Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
-                                                                  dofs.size());
-
-  return _dofs;
+  // Copy to Eigen array and return
+  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
+                                                                   dofs.size());
 }
 //-----------------------------------------------------------------------------
 std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
-_locate_dofs_geometrical(
+fem::locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
         V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
@@ -453,18 +453,19 @@ _locate_dofs_geometrical(
   std::sort(bc_dofs.begin(), bc_dofs.end());
   bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
 
-  // Copy to Eigen array
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 2> dofs(bc_dofs.size(), 2);
+  // Copy to Eigen arrays
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs0(bc_dofs.size());
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs1(bc_dofs.size());
   for (std::size_t i = 0; i < bc_dofs.size(); ++i)
   {
-    dofs(i, 0) = bc_dofs[i][0];
-    dofs(i, 1) = bc_dofs[i][1];
+    dofs0(i) = bc_dofs[i][0];
+    dofs1(i) = bc_dofs[i][1];
   }
 
-  return {dofs.col(0), dofs.col(1)};
+  return {std::move(dofs0), std::move(dofs1)};
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _locate_dofs_geometrical(
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
     const function::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -492,45 +493,5 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _locate_dofs_geometrical(
 
   return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
                                                                    dofs.size());
-}
-} // namespace
-
-//-----------------------------------------------------------------------------
-std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
-fem::locate_dofs_topological(
-    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
-        V,
-    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
-    bool remote)
-{
-  return _locate_dofs_topological(V, dim, entities, remote);
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
-                             const Eigen::Ref<const Eigen::ArrayXi>& entities,
-                             bool remote)
-{
-  return _locate_dofs_topological(V, dim, entities, remote);
-}
-//-----------------------------------------------------------------------------
-std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
-fem::locate_dofs_geometrical(
-    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
-        V,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker)
-{
-  return _locate_dofs_geometrical(V, marker);
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
-    const function::FunctionSpace& V,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker)
-{
-  return _locate_dofs_geometrical(V, marker);
 }
 //-----------------------------------------------------------------------------

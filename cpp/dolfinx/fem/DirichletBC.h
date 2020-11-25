@@ -32,15 +32,12 @@ class Mesh;
 namespace fem
 {
 
-/// Build an array of degree-of-freedom indices that are associated with
-/// the given mesh entities (topological)
+/// Find degrees-of-freedom which belong to the provided mesh entities
+/// (topological). Note that degrees-of-freedom for discontinuous
+/// elements are associated with the cell even if they may appear to be
+/// associated with a facet/edge/vertex.
 ///
-/// Finds degrees-of-freedom which belong to the provided mesh entities.
-/// Note that degrees-of-freedom for discontinuous elements are
-/// associated with the cell even if they may appear to be associated
-/// with a facet/edge/vertex.
-///
-/// @param[in] V The function (sub)space(s) on which degrees-of-freedom
+/// @param[in] V The function (sub)spaces on which degrees-of-freedom
 ///   (DOFs) will be located. The spaces must share the same mesh and
 ///   element type.
 /// @param[in] dim Topological dimension of mesh entities on which
@@ -54,10 +51,9 @@ namespace fem
 ///   entity as a marked. For example, a boundary condition dof at a
 ///   vertex where this process does not have the associated boundary
 ///   facet. This commonly occurs with partitioned meshes.
-/// @return Array of local DOF indices in the spaces V[0] (and V[1] if
-///   two spaces are passed in). If two spaces are passed in, the (i, 0)
-///   entry is the DOF index in the space V[0] and (i, 1) is the
-///   correspinding DOF entry in the space V[1].
+/// @return Array of local DOF indices in the spaces V[0] and V[1]. The
+///   array[0](i) entry is the DOF index in the space V[0] and array[1](i)
+///   is the correspinding DOF entry in the space V[1].
 std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
 locate_dofs_topological(
     const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
@@ -65,15 +61,30 @@ locate_dofs_topological(
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote = true);
 
-/// TODO
+/// Find degrees-of-freedom which belong to the provided mesh entities
+/// (topological). Note that degrees-of-freedom for discontinuous
+/// elements are associated with the cell even if they may appear to be
+/// associated with a facet/edge/vertex.
+///
+/// @param[in] V The function (sub)space on which degrees-of-freedom
+///   (DOFs) will be located.
+/// @param[in] dim Topological dimension of mesh entities on which
+///   degrees-of-freedom will be located
+/// @param[in] entities Indices of mesh entities. All DOFs associated
+///   with the closure of these indices will be returned
+/// @param[in] remote True to return also "remotely located"
+///   degree-of-freedom indices. Remotely located degree-of-freedom
+///   indices are local/owned by the current process, but which the
+///   current process cannot identify because it does not recognize mesh
+///   entity as a marked. For example, a boundary condition dof at a
+///   vertex where this process does not have the associated boundary
+///   facet. This commonly occurs with partitioned meshes.
+/// @return Array of local DOF indices in the spaces .
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 locate_dofs_topological(const function::FunctionSpace& V, const int dim,
                         const Eigen::Ref<const Eigen::ArrayXi>& entities,
                         bool remote = true);
 
-/// Build an array of degree-of-freedom indices based on coordinates of
-/// the degree-of-freedom (geometric).
-///
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
 ///
@@ -95,7 +106,15 @@ locate_dofs_geometrical(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
 
-/// TODO
+/// Finds degrees of freedom whose geometric coordinate is true for the
+/// provided marking function.
+///
+/// @attention This function is slower than the topological version
+///
+/// @param[in] V The function (sub)space on which degrees of freedom
+///     will be located.
+/// @param[in] marker Function marking tabulated degrees of freedom
+/// @return Array of local DOF indices in the spaces.
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_dofs_geometrical(
     const function::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
@@ -141,9 +160,9 @@ public:
   /// Create boundary condition
   ///
   /// @param[in] g The boundary condition value
-  /// @param[in] V_g_dofs 2D array of degree-of-freedom indices. First
-  ///   column are indices in the space where boundary condition is
-  ///   applied (V), second column are indices in the space of the
+  /// @param[in] V_g_dofs Two arrays of degree-of-freedom indices. First
+  ///   array are indices in the space where boundary condition is
+  ///   applied (V), second array are indices in the space of the
   ///   boundary condition value function g.
   /// @param[in] V The function (sub)space on which the boundary
   ///   condition is applied
@@ -151,10 +170,8 @@ public:
               const std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>,
                                2>& V_g_dofs,
               std::shared_ptr<const function::FunctionSpace> V)
-      : _function_space(V), _g(g)
+      : _function_space(V), _g(g), _dofs({V_g_dofs[0], V_g_dofs[1]})
   {
-    _dofs[0] = V_g_dofs[0];
-    _dofs[1] = V_g_dofs[1];
     const int owned_size = _function_space->dofmap()->index_map->block_size()
                            * _function_space->dofmap()->index_map->size_local();
     auto* it = std::lower_bound(_dofs[0].data(),
