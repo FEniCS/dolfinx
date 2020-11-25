@@ -183,7 +183,7 @@ SparsityPattern::index_map(int dim) const
   return _index_maps.at(dim);
 }
 //-----------------------------------------------------------------------------
-int SparsityPattern::block_size(int dim) const { return _bs[0]; }
+int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
 
 void SparsityPattern::insert(
