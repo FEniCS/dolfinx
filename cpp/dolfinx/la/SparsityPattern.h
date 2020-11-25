@@ -52,6 +52,7 @@ public:
   ///   patterns must not be finalised. Null block are permited
   /// @param[in] maps Index maps for each row block (maps[0]) and column
   ///   blocks (maps[1])
+  /// @param[in] bs
   SparsityPattern(
       MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>>& patterns,

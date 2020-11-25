@@ -139,6 +139,7 @@ public:
 
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
+  /// @param[in] bs
   /// @return The global index of the corresponding local index in
   ///   indices.
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global(
