@@ -79,11 +79,10 @@ void fem(py::module& m)
   // utils
   m.def(
       "create_vector_block",
-      [](const std::vector<
-             std::reference_wrapper<const dolfinx::common::IndexMap>>& maps,
-         const std::vector<int>& bs) {
-        dolfinx::la::PETScVector x
-            = dolfinx::fem::create_vector_block(maps, bs);
+      [](const std::vector<std::pair<
+             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
+             maps) {
+        dolfinx::la::PETScVector x = dolfinx::fem::create_vector_block(maps);
         Vec _x = x.vec();
         PetscObjectReference((PetscObject)_x);
         return _x;
@@ -92,9 +91,10 @@ void fem(py::module& m)
       "Create a monolithic vector for multiple (stacked) linear forms.");
   m.def(
       "create_vector_nest",
-      [](const std::vector<const dolfinx::common::IndexMap*>& maps,
-         const std::vector<int>& bs) {
-        auto x = dolfinx::fem::create_vector_nest(maps, bs);
+      [](const std::vector<std::pair<
+             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
+             maps) {
+        auto x = dolfinx::fem::create_vector_nest(maps);
         Vec _x = x.vec();
         PetscObjectReference((PetscObject)_x);
         return _x;

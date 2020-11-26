@@ -86,15 +86,16 @@ la::PETScMatrix fem::create_matrix_block(
   }
 
   // Compute offsets for the fields
-  std::array<std::vector<std::reference_wrapper<const common::IndexMap>>, 2>
+  std::array<std::vector<std::pair<
+                 std::reference_wrapper<const common::IndexMap>, int>>,
+             2>
       maps;
-  std::array<std::vector<int>, 2> bs;
   for (std::size_t d = 0; d < 2; ++d)
   {
     for (auto space : V[d])
     {
-      maps[d].push_back(*space->dofmap()->index_map.get());
-      bs[d].push_back(space->dofmap()->index_map_bs());
+      maps[d].push_back(
+          {*space->dofmap()->index_map.get(), space->dofmap()->index_map_bs()});
     }
   }
 
@@ -103,14 +104,14 @@ la::PETScMatrix fem::create_matrix_block(
   // local-to-global map. Compute outside and pass into SparsityPattern
   // constructor.
   auto [rank_offset, local_offset, ghosts, owner]
-      = common::stack_index_maps(maps[0], bs[0]);
+      = common::stack_index_maps(maps[0]);
 
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
   for (std::size_t row = 0; row < V[0].size(); ++row)
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
-  la::SparsityPattern pattern(mesh->mpi_comm(), p, maps, bs);
+  la::SparsityPattern pattern(mesh->mpi_comm(), p, maps);
   pattern.assemble();
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
@@ -126,12 +127,13 @@ la::PETScMatrix fem::create_matrix_block(
   {
     for (std::size_t f = 0; f < maps[d].size(); ++f)
     {
-      const common::IndexMap& map = maps[d][f].get();
-      const std::int32_t size_local = bs[d][f] * map.size_local();
+      const common::IndexMap& map = maps[d][f].first.get();
+      const int bs = maps[d][f].second;
+      const std::int32_t size_local = bs * map.size_local();
       const std::vector global = map.global_indices();
       for (std::int32_t i = 0; i < size_local; ++i)
         _maps[d].push_back(i + rank_offset + local_offset[f]);
-      for (std::size_t i = size_local; i < bs[d][f] * global.size(); ++i)
+      for (std::size_t i = size_local; i < bs * global.size(); ++i)
         _maps[d].push_back(ghosts[f][i - size_local]);
     }
   }
@@ -194,13 +196,13 @@ la::PETScMatrix fem::create_matrix_nest(
 }
 //-----------------------------------------------------------------------------
 la::PETScVector fem::create_vector_block(
-    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps,
-    const std::vector<int>& bs)
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
   // FIXME: handle constant block size > 1
 
   auto [rank_offset, local_offset, ghosts_new, ghost_new_owners]
-      = common::stack_index_maps(maps, bs);
+      = common::stack_index_maps(maps);
   std::int32_t local_size = local_offset.back();
 
   std::vector<std::int64_t> ghosts;
@@ -215,7 +217,7 @@ la::PETScVector fem::create_vector_block(
   for (auto& map : maps)
   {
     const auto [_, ranks] = dolfinx::MPI::neighbors(
-        map.get().comm(common::IndexMap::Direction::forward));
+        map.first.get().comm(common::IndexMap::Direction::forward));
     dest_ranks.insert(dest_ranks.end(), ranks.begin(), ranks.end());
   }
   std::sort(dest_ranks.begin(), dest_ranks.end());
@@ -223,30 +225,25 @@ la::PETScVector fem::create_vector_block(
                    dest_ranks.end());
 
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(maps[0].get().comm(), local_size, dest_ranks,
+  common::IndexMap index_map(maps[0].first.get().comm(), local_size, dest_ranks,
                              ghosts, ghost_owners);
 
   return la::PETScVector(index_map, 1);
 }
 //-----------------------------------------------------------------------------
-la::PETScVector
-fem::create_vector_nest(const std::vector<const common::IndexMap*>& maps,
-                        const std::vector<int>& bs)
+la::PETScVector fem::create_vector_nest(
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
   assert(!maps.empty());
 
   // Loop over each form and create vector
-  std::vector<std::shared_ptr<la::PETScVector>> vecs(maps.size());
-  std::vector<Vec> petsc_vecs(maps.size());
-  for (std::size_t i = 0; i < maps.size(); ++i)
+  std::vector<std::shared_ptr<la::PETScVector>> vecs;
+  std::vector<Vec> petsc_vecs;
+  for (auto& map : maps)
   {
-    if (!maps[i])
-    {
-      throw std::runtime_error(
-          "Cannot construct nested PETSc vectors with null blocks.");
-    }
-    vecs[i] = std::make_shared<la::PETScVector>(*maps[i], bs[i]);
-    petsc_vecs[i] = vecs[i]->vec();
+    vecs.push_back(std::make_shared<la::PETScVector>(map.first, map.second));
+    petsc_vecs.push_back(vecs.back()->vec());
   }
 
   // Create nested (VecNest) vector

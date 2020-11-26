@@ -57,8 +57,9 @@ public:
       MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>>& patterns,
       const std::array<
-          std::vector<std::reference_wrapper<const common::IndexMap>>, 2>& maps,
-      const std::array<std::vector<int>, 2>& bs);
+          std::vector<
+              std::pair<std::reference_wrapper<const common::IndexMap>, int>>,
+          2>& maps);
 
   SparsityPattern(const SparsityPattern& pattern) = delete;
 

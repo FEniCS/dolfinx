@@ -33,8 +33,8 @@ std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>,
            std::vector<std::vector<int>>>
 stack_index_maps(
-    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps,
-    const std::vector<int>& bs);
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of N+1 indices

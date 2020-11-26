@@ -31,18 +31,18 @@ SparsityPattern::SparsityPattern(
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
     const std::vector<std::vector<const SparsityPattern*>>& patterns,
-    const std::array<
-        std::vector<std::reference_wrapper<const common::IndexMap>>, 2>& maps,
-    const std::array<std::vector<int>, 2>& bs)
+    const std::array<std::vector<std::pair<
+                         std::reference_wrapper<const common::IndexMap>, int>>,
+                     2>& maps)
     : _mpi_comm(comm), _bs({1, 1})
 {
   // FIXME: - Add range/bound checks for each block
   //        - Check for compatible block sizes for each block
 
   const auto [rank_offset0, local_offset0, ghosts_new0, owners0]
-      = common::stack_index_maps(maps[0], bs[0]);
+      = common::stack_index_maps(maps[0]);
   const auto [rank_offset1, local_offset1, ghosts_new1, owners1]
-      = common::stack_index_maps(maps[1], bs[1]);
+      = common::stack_index_maps(maps[1]);
 
   std::vector<std::int64_t> ghosts0, ghosts1;
   std::vector<std::int32_t> ghost_offsets0(1, 0);
@@ -84,11 +84,10 @@ SparsityPattern::SparsityPattern(
       maps[1].size());
   for (std::size_t col = 0; col < maps[1].size(); ++col)
   {
-    auto map = maps[1][col];
-    // const int bs = map.get().block_size();
-    const int bs_col = bs[1][col];
+    const common::IndexMap& map = maps[1][col].first;
+    const int bs_col = maps[1][col].second;
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts_old
-        = map.get().ghosts();
+        = map.ghosts();
     assert(ghosts_new1[col].size()
            == (std::size_t)(bs_col * ghosts_old.rows()));
     for (int i = 0; i < ghosts_old.rows(); ++i)
@@ -104,8 +103,8 @@ SparsityPattern::SparsityPattern(
   // Iterate over block rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
-    const common::IndexMap& map_row = maps[0][row].get();
-    const int bs_row = bs[0][row];
+    const common::IndexMap& map_row = maps[0][row].first;
+    const int bs_row = maps[0][row].second;
     const std::int32_t num_rows_local = map_row.size_local() * bs_row;
     const std::int32_t num_rows_ghost = map_row.num_ghosts() * bs_row;
 

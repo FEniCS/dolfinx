@@ -39,15 +39,15 @@ def create_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
 
 def create_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
-    maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
-    bs = [form.function_spaces[0].dofmap.index_map_bs for form in _create_cpp_form(L)]
-    return cpp.fem.create_vector_block(maps, bs)
+    maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+            for form in _create_cpp_form(L)]
+    return cpp.fem.create_vector_block(maps)
 
 
 def create_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
-    maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
-    bs = [form.function_spaces[0].dofmap.index_map_bs for form in _create_cpp_form(L)]
-    return cpp.fem.create_vector_nest(maps, bs)
+    maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+            for form in _create_cpp_form(L)]
+    return cpp.fem.create_vector_nest(maps)
 
 
 # -- Matrix instantiation ----------------------------------------------------
@@ -113,9 +113,9 @@ def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     on the owning processes.
 
     """
-    maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
-    bs = [form.function_spaces[0].dofmap.index_map_bs for form in _create_cpp_form(L)]
-    b = cpp.fem.create_vector_nest(maps, bs)
+    maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+            for form in _create_cpp_form(L)]
+    b = cpp.fem.create_vector_nest(maps)
     for b_sub in b.getNestSubVecs():
         with b_sub.localForm() as b_local:
             b_local.set(0.0)
@@ -146,15 +146,15 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     finalised, i.e. ghost values are not accumulated.
 
     """
-    maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
-    bs = [form.function_spaces[0].dofmap.index_map_bs for form in _create_cpp_form(L)]
-    b = cpp.fem.create_vector_block(maps, bs)
+    maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+            for form in _create_cpp_form(L)]
+    b = cpp.fem.create_vector_block(maps)
     with b.localForm() as b_local:
         b_local.set(0.0)
     return assemble_vector_block(b, L, a, bcs, x0, scale)
 
 
-@assemble_vector_block.register(PETSc.Vec)
+@ assemble_vector_block.register(PETSc.Vec)
 def _(b: PETSc.Vec,
       L: typing.List[typing.Union[Form, cpp.fem.Form]],
       a,
@@ -166,29 +166,29 @@ def _(b: PETSc.Vec,
     accumulated.
 
     """
-    maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
-    bs = [form.function_spaces[0].dofmap.index_map_bs for form in _create_cpp_form(L)]
+    maps = [(form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+            for form in _create_cpp_form(L)]
     if x0 is not None:
-        x0_local = cpp.la.get_local_vectors(x0, maps, bs)
+        x0_local = cpp.la.get_local_vectors(x0, maps)
         x0_sub = x0_local
     else:
         x0_local = []
         x0_sub = [None] * len(maps)
 
     bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), bcs)
-    b_local = cpp.la.get_local_vectors(b, maps, bs)
+    b_local = cpp.la.get_local_vectors(b, maps)
     for b_sub, L_sub, a_sub, bc in zip(b_local, L, a, bcs1):
         cpp.fem.assemble_vector(b_sub, _create_cpp_form(L_sub))
         cpp.fem.apply_lifting(b_sub, _create_cpp_form(a_sub), bc, x0_local, scale)
 
-    cpp.la.scatter_local_vectors(b, b_local, maps, bs)
+    cpp.la.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     bcs0 = cpp.fem.bcs_rows(_create_cpp_form(L), bcs)
     offset = 0
     b_array = b.getArray(readonly=False)
-    for submap, _bs, bc, _x0 in zip(maps, bs, bcs0, x0_sub):
-        size = submap.size_local * _bs
+    for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
+        size = submap[0].size_local * submap[1]
         cpp.fem.set_bc(b_array[offset:offset + size], bc, _x0, scale)
         offset += size
 
@@ -198,7 +198,7 @@ def _(b: PETSc.Vec,
 # -- Matrix assembly ---------------------------------------------------------
 
 
-@functools.singledispatch
+@ functools.singledispatch
 def assemble_matrix(a: typing.Union[Form, cpp.fem.Form],
                     bcs: typing.List[DirichletBC] = [],
                     diagonal: float = 1.0) -> PETSc.Mat:
@@ -210,7 +210,7 @@ def assemble_matrix(a: typing.Union[Form, cpp.fem.Form],
     return assemble_matrix(A, a, bcs, diagonal)
 
 
-@assemble_matrix.register(PETSc.Mat)
+@ assemble_matrix.register(PETSc.Mat)
 def _(A: PETSc.Mat,
       a: typing.Union[Form, cpp.fem.Form],
       bcs: typing.List[DirichletBC] = [],
@@ -227,7 +227,7 @@ def _(A: PETSc.Mat,
 
 
 # FIXME: Revise this interface
-@functools.singledispatch
+@ functools.singledispatch
 def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
                          bcs: typing.List[DirichletBC] = [],
                          diagonal: float = 1.0) -> PETSc.Mat:
@@ -237,7 +237,7 @@ def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.F
     return A
 
 
-@assemble_matrix_nest.register(PETSc.Mat)
+@ assemble_matrix_nest.register(PETSc.Mat)
 def _(A: PETSc.Mat,
       a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
       bcs: typing.List[DirichletBC] = [],
@@ -253,7 +253,7 @@ def _(A: PETSc.Mat,
 
 
 # FIXME: Revise this interface
-@functools.singledispatch
+@ functools.singledispatch
 def assemble_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
                           bcs: typing.List[DirichletBC] = [],
                           diagonal: float = 1.0) -> PETSc.Mat:
@@ -292,7 +292,7 @@ def _extract_function_spaces(a: typing.List[typing.List[typing.Union[Form, cpp.f
     return rows, cols
 
 
-@assemble_matrix_block.register(PETSc.Mat)
+@ assemble_matrix_block.register(PETSc.Mat)
 def _(A: PETSc.Mat,
       a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
       bcs: typing.List[DirichletBC] = [],
@@ -300,10 +300,8 @@ def _(A: PETSc.Mat,
     """Assemble bilinear forms into matrix"""
     _a = _create_cpp_form(a)
     V = _extract_function_spaces(_a)
-    is_rows = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[0]],
-                                             [Vsub.dofmap.index_map_bs for Vsub in V[0]])
-    is_cols = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[1]],
-                                             [Vsub.dofmap.index_map_bs for Vsub in V[1]])
+    is_rows = cpp.la.create_petsc_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[0]])
+    is_cols = cpp.la.create_petsc_index_sets([(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[1]])
     for i, a_row in enumerate(_a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:

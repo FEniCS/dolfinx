@@ -44,12 +44,13 @@ void la(py::module& m)
           [](const MPICommWrapper comm,
              const std::vector<std::vector<const dolfinx::la::SparsityPattern*>>
                  patterns,
-             const std::array<std::vector<std::reference_wrapper<
-                                  const dolfinx::common::IndexMap>>,
-                              2>& maps,
-             const std::array<std::vector<int>, 2>& bs) {
+             const std::array<
+                 std::vector<std::pair<
+                     std::reference_wrapper<const dolfinx::common::IndexMap>,
+                     int>>,
+                 2>& maps) {
             return std::make_unique<dolfinx::la::SparsityPattern>(
-                comm.get(), patterns, maps, bs);
+                comm.get(), patterns, maps);
           }))
       .def("local_range", &dolfinx::la::SparsityPattern::local_range)
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
@@ -120,6 +121,7 @@ void la(py::module& m)
       },
       py::return_value_policy::take_ownership,
       "Create a PETSc Mat from sparsity pattern.");
+  // TODO: check reference counting for index sets
   m.def("create_petsc_index_sets", &dolfinx::la::create_petsc_index_sets,
         py::return_value_policy::take_ownership);
   m.def("scatter_local_vectors", &dolfinx::la::scatter_local_vectors,

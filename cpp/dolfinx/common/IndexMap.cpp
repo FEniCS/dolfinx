@@ -207,22 +207,21 @@ std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>,
            std::vector<std::vector<int>>>
 common::stack_index_maps(
-    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps,
-    const std::vector<int>& bs)
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
   // Get process offset
   std::int64_t process_offset = 0;
-  for (std::size_t i = 0; i < maps.size(); ++i)
-    process_offset += maps[i].get().local_range()[0] * bs[i];
-  // for (const common::IndexMap& map : maps)
-  //   process_offset += map.local_range()[0] * map.block_size();
+  for (auto& map : maps)
+    process_offset += map.first.get().local_range()[0] * map.second;
 
   // Get local map offset
   std::vector<std::int32_t> local_offset(maps.size() + 1, 0);
   for (std::size_t f = 1; f < local_offset.size(); ++f)
   {
     local_offset[f]
-        = local_offset[f - 1] + maps[f - 1].get().size_local() * bs[f - 1];
+        = local_offset[f - 1]
+          + maps[f - 1].first.get().size_local() * maps[f - 1].second;
   }
 
   // Pack old and new composite indices for owned entries that are ghost
@@ -231,16 +230,17 @@ common::stack_index_maps(
   for (std::size_t f = 0; f < maps.size(); ++f)
   {
     const std::vector<std::int32_t>& forward_indices
-        = maps[f].get().shared_indices();
-    const std::int64_t offset = bs[f] * maps[f].get().local_range()[0];
+        = maps[f].first.get().shared_indices();
+    const std::int64_t offset
+        = maps[f].second * maps[f].first.get().local_range()[0];
     for (std::int32_t local_index : forward_indices)
     {
-      for (std::int32_t i = 0; i < bs[f]; ++i)
+      for (std::int32_t i = 0; i < maps[f].second; ++i)
       {
         // Insert field index, global index, composite global index
         indices.push_back(f);
-        indices.push_back(bs[f] * local_index + i + offset);
-        indices.push_back(bs[f] * local_index + i + local_offset[f]
+        indices.push_back(maps[f].second * local_index + i + offset);
+        indices.push_back(maps[f].second * local_index + i + local_offset[f]
                           + process_offset);
       }
     }
@@ -248,9 +248,9 @@ common::stack_index_maps(
 
   // Build arrays of incoming and outcoming neighborhood ranks
   std::set<std::int32_t> in_neighbor_set, out_neighbor_set;
-  for (const common::IndexMap& map : maps)
+  for (auto& map : maps)
   {
-    MPI_Comm neighbor_comm = map.comm(IndexMap::Direction::forward);
+    MPI_Comm neighbor_comm = map.first.get().comm(IndexMap::Direction::forward);
     auto [source, dest] = dolfinx::MPI::neighbors(neighbor_comm);
     in_neighbor_set.insert(source.begin(), source.end());
     out_neighbor_set.insert(dest.begin(), dest.end());
@@ -263,10 +263,10 @@ common::stack_index_maps(
 
   // Create neighborhood communicator
   MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(maps.at(0).get().comm(), in_neighbors.size(),
-                                 in_neighbors.data(), MPI_UNWEIGHTED,
-                                 out_neighbors.size(), out_neighbors.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  MPI_Dist_graph_create_adjacent(
+      maps.at(0).first.get().comm(), in_neighbors.size(), in_neighbors.data(),
+      MPI_UNWEIGHTED, out_neighbors.size(), out_neighbors.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
@@ -303,14 +303,14 @@ common::stack_index_maps(
   for (std::size_t f = 0; f < maps.size(); ++f)
   {
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
-        = maps[f].get().ghosts();
+        = maps[f].first.get().ghosts();
     const Eigen::Array<int, Eigen::Dynamic, 1>& ghost_owners
-        = maps[f].get().ghost_owner_rank();
+        = maps[f].first.get().ghost_owner_rank();
     for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
     {
-      for (int j = 0; j < bs[f]; ++j)
+      for (int j = 0; j < maps[f].second; ++j)
       {
-        auto it = ghost_maps[f].find(bs[f] * ghosts[i] + j);
+        auto it = ghost_maps[f].find(maps[f].second * ghosts[i] + j);
         assert(it != ghost_maps[f].end());
         ghosts_new[f].push_back(it->second);
         ghost_owners_new[f].push_back(ghost_owners[i]);
