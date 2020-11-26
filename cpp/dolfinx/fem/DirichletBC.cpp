@@ -56,8 +56,19 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
 
   // NOTE: we could consider only dofs that we know are shared
   // Build array of global indices of dofs
-  const std::vector<std::int64_t> dofs_global
-      = map.local_to_global_block(dofs_local, bs);
+  // const std::vector<std::int64_t> dofs_global
+  //     = map.local_to_global_block(dofs_local, bs);
+  std::vector<std::int32_t> dofs_local_block = dofs_local;
+  std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
+                [bs](std::int32_t& n) { n / bs; });
+  const std::vector<std::int64_t> dofs_global_block
+      = map.local_to_global(dofs_local_block);
+  std::vector<std::int64_t> dofs_global(dofs_local.size());
+  for (std::size_t i = 0; i < dofs_local.size(); ++i)
+  {
+    const int offset = dofs_local[i] % bs;
+    dofs_global[i] = bs * dofs_global_block[i] + offset;
+  }
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
@@ -116,20 +127,32 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                          MPI_INT, comm0);
 
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs_local0(dofs_local.size()),
-      dofs_local1(dofs_local.size());
-  for (std::size_t i = 0; i < dofs_local.size(); ++i)
-  {
-    dofs_local0[i] = dofs_local[i][0];
-    dofs_local1[i] = dofs_local[i][1];
-  }
-
   // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
   Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> dofs_global(
       dofs_local.size(), 2);
-  dofs_global.col(0) = map0.local_to_global_block(dofs_local0, bs0);
-  dofs_global.col(1) = map1.local_to_global_block(dofs_local1, bs1);
+
+  // This is messy to handle block sizes
+  std::array<int, 2> _bs = {bs0, bs1};
+  std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
+      = {map0, map1};
+  std::vector<std::int32_t> dofs_local_block, _dofs_local(dofs_local.size());
+  std::vector<std::int64_t> dofs_global_block;
+  for (int i = 0; i < 2; ++i)
+  {
+    for (std::size_t j = 0; j < dofs_local.size(); ++j)
+      _dofs_local[j] = dofs_local[j][i];
+
+    dofs_local_block = _dofs_local;
+    std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
+                  [bs = _bs[i]](std::int32_t& n) { n / bs; });
+    dofs_global_block = maps[i].get().local_to_global(dofs_local_block);
+    for (std::size_t j = 0; j < dofs_local[i].size(); ++j)
+    {
+      const int offset = _dofs_local[j] % _bs[i];
+      dofs_global(j, i) = _bs[i] * dofs_global_block[j] + offset;
+    }
+  }
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.

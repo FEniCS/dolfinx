@@ -40,7 +40,7 @@ public:
   /// Create an empty sparsity pattern with specified dimensions
   SparsityPattern(
       MPI_Comm comm,
-      const std::array<std::shared_ptr<const common::IndexMap>, 2>& index_maps,
+      const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
       const std::array<int, 2>& bs);
 
   /// Create a new sparsity pattern by concatenating sub-patterns, e.g.

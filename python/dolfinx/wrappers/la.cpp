@@ -36,9 +36,9 @@ void la(py::module& m)
       .def(py::init(
           [](const MPICommWrapper comm,
              const std::array<std::shared_ptr<const dolfinx::common::IndexMap>,
-                              2>& index_maps,
+                              2>& maps,
              const std::array<int, 2>& bs) {
-            return dolfinx::la::SparsityPattern(comm.get(), index_maps, bs);
+            return dolfinx::la::SparsityPattern(comm.get(), maps, bs);
           }))
       .def(py::init(
           [](const MPICommWrapper comm,

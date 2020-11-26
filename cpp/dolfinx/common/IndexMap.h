@@ -104,7 +104,7 @@ public:
           ghosts,
       const std::vector<int>& src_ranks);
 
-  /// Copy constructor
+  // Copy constructor
   IndexMap(const IndexMap& map) = delete;
 
   /// Move constructor
@@ -112,6 +112,12 @@ public:
 
   /// Destructor
   ~IndexMap() = default;
+
+  /// Move assignment
+  IndexMap& operator=(IndexMap&& map) = default;
+
+  // Copy assignment
+  IndexMap& operator=(const IndexMap& map) = delete;
 
   /// Range of indices (global) owned by this process
   std::array<std::int64_t, 2> local_range() const noexcept;
@@ -137,10 +143,10 @@ public:
   MPI_Comm comm(Direction dir = Direction::symmetric) const;
 
   /// TODO
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_block(
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-          indices,
-      int bs) const;
+  // Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_block(
+  //     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+  //         indices,
+  //     int bs) const;
 
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
@@ -148,14 +154,11 @@ public:
   ///   indices.
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global(
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-          indices) const
-  {
-    return local_to_global_block(indices, 1);
-  }
+          indices) const;
 
   /// TODO
-  std::vector<std::int64_t>
-  local_to_global_block(const std::vector<std::int32_t>& indices, int bs) const;
+  // std::vector<std::int64_t>
+  // local_to_global_block(const std::vector<std::int32_t>& indices, int bs) const;
 
   /// @todo Consider removing this function in favour of the version
   /// that accepts an Eigen array.
@@ -165,10 +168,10 @@ public:
   /// @return The global index of the corresponding local index in
   ///   indices.
   std::vector<std::int64_t>
-  local_to_global(const std::vector<std::int32_t>& indices) const
-  {
-    return local_to_global_block(indices, 1);
-  }
+  local_to_global(const std::vector<std::int32_t>& indices) const;
+  // {
+  //   return local_to_global_block(indices, 1);
+  // }
 
   /// TODO
   std::vector<std::int32_t>

@@ -18,12 +18,13 @@ using namespace dolfinx::la;
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
-    const std::array<std::shared_ptr<const common::IndexMap>, 2>& index_maps,
+    const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
     const std::array<int, 2>& bs)
-    : _mpi_comm(comm), _index_maps(index_maps), _bs(bs)
+    : _mpi_comm(comm), _index_maps(maps), _bs(bs)
 {
+  assert(maps[0]);
   const std::int32_t local_size0
-      = bs[0] * (index_maps[0]->size_local() + index_maps[0]->num_ghosts());
+      = bs[0] * (maps[0]->size_local() + maps[0]->num_ghosts());
   _diagonal_cache.resize(local_size0);
   _off_diagonal_cache.resize(local_size0);
 }
