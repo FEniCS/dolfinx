@@ -61,7 +61,7 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
   // std::cout << "Case 2" << std::endl;
   std::vector<std::int32_t> dofs_local_block = dofs_local;
   // std::cout << "(A) dofs_local" << bs << std::endl;
-  int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
   // if (rank == 1)
   // {
   //   for (auto i : dofs_local_block)
