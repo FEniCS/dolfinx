@@ -20,18 +20,17 @@ void local_to_global_impl(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
         indices,
     const std::int64_t global_offset, const std::int32_t local_size,
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts, int bs)
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts)
 {
   for (Eigen::Index i = 0; i < indices.rows(); ++i)
   {
-    const std::div_t pos = std::div(indices[i], bs);
-    const std::int32_t index_block = pos.quot;
-    if (index_block < local_size)
-      global[i] = bs * (global_offset + index_block) + pos.rem;
+    const std::int32_t pos = indices[i];
+    if (pos < local_size)
+      global[i] = global_offset + pos;
     else
     {
-      assert((index_block - local_size) < ghosts.size());
-      global[i] = bs * ghosts[index_block - local_size] + pos.rem;
+      assert((pos - local_size) < ghosts.size());
+      global[i] = ghosts[pos - local_size];
     }
   }
 }
@@ -486,7 +485,7 @@ Eigen::Array<std::int64_t, Eigen::Dynamic, 1> IndexMap::local_to_global(
   const std::int64_t global_offset = _local_range[0];
   const std::int32_t local_size = _local_range[1] - _local_range[0];
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> global(indices.rows());
-  local_to_global_impl(global, indices, global_offset, local_size, _ghosts, 1);
+  local_to_global_impl(global, indices, global_offset, local_size, _ghosts);
   return global;
 }
 //-----------------------------------------------------------------------------
@@ -501,8 +500,7 @@ IndexMap::local_to_global(const std::vector<std::int32_t>& indices) const
       global.data(), global.size());
   const Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
       _indices(indices.data(), indices.size());
-  local_to_global_impl(_global, _indices, global_offset, local_size, _ghosts,
-                       1);
+  local_to_global_impl(_global, _indices, global_offset, local_size, _ghosts);
   return global;
 }
 //-----------------------------------------------------------------------------

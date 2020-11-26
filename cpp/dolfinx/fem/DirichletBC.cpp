@@ -58,11 +58,28 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
   // Build array of global indices of dofs
   // const std::vector<std::int64_t> dofs_global
   //     = map.local_to_global_block(dofs_local, bs);
+  // std::cout << "Case 2" << std::endl;
   std::vector<std::int32_t> dofs_local_block = dofs_local;
+  // std::cout << "(A) dofs_local" << bs << std::endl;
+  int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  // if (rank == 1)
+  // {
+  //   for (auto i : dofs_local_block)
+  //     std::cout << i << std::endl;
+  // }
   std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
-                [bs](std::int32_t& n) { n / bs; });
+                [bs](std::int32_t& n) { n /= bs; });
+  // std::cout << "(B) dofs_local" << std::endl;
+  // if (rank == 1)
+  // {
+  //   for (auto i : dofs_local_block)
+  //     std::cout << i << std::endl;
+  // }
+
   const std::vector<std::int64_t> dofs_global_block
       = map.local_to_global(dofs_local_block);
+  // std::cout << "post Case 2" << std::endl;
+
   std::vector<std::int64_t> dofs_global(dofs_local.size());
   for (std::size_t i = 0; i < dofs_local.size(); ++i)
   {
@@ -133,25 +150,43 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
       dofs_local.size(), 2);
 
   // This is messy to handle block sizes
-  std::array<int, 2> _bs = {bs0, bs1};
-  std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
-      = {map0, map1};
-  std::vector<std::int32_t> dofs_local_block, _dofs_local(dofs_local.size());
-  std::vector<std::int64_t> dofs_global_block;
-  for (int i = 0; i < 2; ++i)
   {
-    for (std::size_t j = 0; j < dofs_local.size(); ++j)
-      _dofs_local[j] = dofs_local[j][i];
-
-    dofs_local_block = _dofs_local;
-    std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
-                  [bs = _bs[i]](std::int32_t& n) { n / bs; });
-    dofs_global_block = maps[i].get().local_to_global(dofs_local_block);
-    for (std::size_t j = 0; j < dofs_local[i].size(); ++j)
+    // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+    // std::cout << "Case 1: " << rank << std::endl;
+    const std::array<int, 2> _bs = {bs0, bs1};
+    const std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
+        = {map0, map1};
+    std::vector<std::int32_t> dofs_local_block, _dofs_local(dofs_local.size());
+    std::vector<std::int64_t> dofs_global_block;
+    for (int i = 0; i < 2; ++i)
     {
-      const int offset = _dofs_local[j] % _bs[i];
-      dofs_global(j, i) = _bs[i] * dofs_global_block[j] + offset;
+      // if (rank == 0)
+      //   std::cout << "Test 1" << std::endl;
+      for (std::size_t j = 0; j < _dofs_local.size(); ++j)
+        _dofs_local[j] = dofs_local[j][i];
+
+      // if (rank == 0)
+      //   std::cout << "Test 2" << std::endl;
+
+      dofs_local_block = _dofs_local;
+      std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
+                    [bs = _bs[i]](std::int32_t& n) { return n /= bs; });
+      dofs_global_block = maps[i].get().local_to_global(dofs_local_block);
+
+      // if (rank == 0)
+      //   std::cout << "Test 3" << std::endl;
+
+      for (std::size_t j = 0; j < dofs_local.size(); ++j)
+      {
+        // assert(j < dofs_local.size());
+        const int offset = _dofs_local[j] % _bs[i];
+        dofs_global(j, i) = _bs[i] * dofs_global_block[j] + offset;
+      }
+      // if (rank == 0)
+      //   std::cout << "Test 4" << std::endl;
     }
+
+    // std::cout << "Post case 1: " << rank << std::endl;
   }
 
   // Compute displacements for data to receive. Last entry has total

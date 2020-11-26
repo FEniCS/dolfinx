@@ -142,12 +142,6 @@ public:
   /// @return A neighborhood communicator for the specified edge direction
   MPI_Comm comm(Direction dir = Direction::symmetric) const;
 
-  /// TODO
-  // Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_block(
-  //     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-  //         indices,
-  //     int bs) const;
-
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
   /// @return The global index of the corresponding local index in
@@ -155,10 +149,6 @@ public:
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global(
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
           indices) const;
-
-  /// TODO
-  // std::vector<std::int64_t>
-  // local_to_global_block(const std::vector<std::int32_t>& indices, int bs) const;
 
   /// @todo Consider removing this function in favour of the version
   /// that accepts an Eigen array.
@@ -169,9 +159,6 @@ public:
   ///   indices.
   std::vector<std::int64_t>
   local_to_global(const std::vector<std::int32_t>& indices) const;
-  // {
-  //   return local_to_global_block(indices, 1);
-  // }
 
   /// TODO
   std::vector<std::int32_t>
