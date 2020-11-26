@@ -72,7 +72,7 @@ e.g. ``mkdir -p build/`` and in the build run directory::
 
 To set the installation prefix::
 
-    cmake -DCMAKE_INSTALL_PATH=<my-install-path> ../
+    cmake -DCMAKE_INSTALL_PREFIX=<my-install-path> ../
     make install
 
 
