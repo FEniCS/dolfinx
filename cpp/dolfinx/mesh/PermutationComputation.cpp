@@ -30,13 +30,13 @@ compute_face_permutations_simplex(
 
   for (int c = 0; c < num_cells; ++c)
   {
-    auto cell_vertices = im->local_to_global(c_to_v.links(c), 1);
+    auto cell_vertices = im->local_to_global(c_to_v.links(c));
     auto cell_faces = c_to_f.links(c);
     for (int i = 0; i < faces_per_cell; ++i)
     {
       // Get the face
       const int face = cell_faces[i];
-      const auto vertices = im->local_to_global(f_to_v.links(face), 1);
+      const auto vertices = im->local_to_global(f_to_v.links(face));
 
       // Orient that triangle so the the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
@@ -110,13 +110,13 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
 
   for (int c = 0; c < num_cells; ++c)
   {
-    auto cell_vertices = im->local_to_global(c_to_v.links(c), 1);
+    auto cell_vertices = im->local_to_global(c_to_v.links(c));
     auto cell_faces = c_to_f.links(c);
     for (int i = 0; i < faces_per_cell; ++i)
     {
       // Get the face
       const int face = cell_faces[i];
-      auto vertices = im->local_to_global(f_to_v.links(face), 1);
+      auto vertices = im->local_to_global(f_to_v.links(face));
 
       // Orient that triangle so the the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
@@ -243,11 +243,11 @@ compute_edge_reflections(const mesh::Topology& topology)
       edges_per_cell, c_to_v->num_nodes());
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    auto cell_vertices = im->local_to_global(c_to_v->links(c), 1);
+    auto cell_vertices = im->local_to_global(c_to_v->links(c));
     auto cell_edges = c_to_e->links(c);
     for (int i = 0; i < edges_per_cell; ++i)
     {
-      auto vertices = im->local_to_global(e_to_v->links(cell_edges[i]), 1);
+      auto vertices = im->local_to_global(e_to_v->links(cell_edges[i]));
 
       // If the entity is an interval, it should be oriented pointing
       // from the lowest numbered vertex to the highest numbered vertex.

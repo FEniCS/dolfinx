@@ -208,7 +208,7 @@ get_local_indexing(
 
         vlocal.assign(entity_list.row(i).data(),
                       entity_list.row(i).data() + num_vertices);
-        vglobal = vertex_indexmap->local_to_global(vlocal, 1);
+        vglobal = vertex_indexmap->local_to_global(vlocal);
         std::sort(vglobal.begin(), vglobal.end());
 
         global_entity_to_entity_index.insert({vglobal, entity_index[i]});

@@ -57,7 +57,7 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
   // NOTE: we could consider only dofs that we know are shared
   // Build array of global indices of dofs
   const std::vector<std::int64_t> dofs_global
-      = map.local_to_global(dofs_local, bs);
+      = map.local_to_global_block(dofs_local, bs);
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
@@ -80,7 +80,7 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
   // FIXME: check that dofs is sorted
   // Build vector of local dof indicies that have been marked by another
   // process
-  std::vector<std::int32_t> dofs = map.global_to_local(dofs_received, bs);
+  std::vector<std::int32_t> dofs = map.global_to_local_block(dofs_received, bs);
   dofs.erase(std::remove(dofs.begin(), dofs.end(), -1), dofs.end());
 
   return dofs;
@@ -127,8 +127,9 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   // Build array of global indices of dofs
   Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> dofs_global(
       dofs_local.size(), 2);
-  dofs_global.col(0) = map0.local_to_global(dofs_local0, false);
-  dofs_global.col(1) = map1.local_to_global(dofs_local1, false);
+  throw std::runtime_error("Needs updating");
+  // dofs_global.col(0) = map0.local_to_global_block(dofs_local0, false);
+  // dofs_global.col(1) = map1.local_to_global_block(dofs_local1, false);
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
@@ -159,8 +160,9 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
     dofs_received1[i] = dofs_received(i, 1);
   }
 
-  std::vector dofs0 = map0.global_to_local(dofs_received0, false);
-  std::vector dofs1 = map1.global_to_local(dofs_received1, false);
+  throw std::runtime_error("Needs updating for bs");
+  std::vector dofs0 = map0.global_to_local_block(dofs_received0, 0);
+  std::vector dofs1 = map1.global_to_local_block(dofs_received1, 0);
 
   // FIXME: check that dofs is sorted
   dofs0.erase(std::remove(dofs0.begin(), dofs0.end(), -1), dofs0.end());

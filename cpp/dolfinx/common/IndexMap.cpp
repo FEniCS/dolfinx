@@ -479,7 +479,7 @@ const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& IndexMap::ghosts() const
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, 1> IndexMap::local_to_global(
+Eigen::Array<std::int64_t, Eigen::Dynamic, 1> IndexMap::local_to_global_block(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
         indices,
     int bs) const
@@ -492,8 +492,8 @@ Eigen::Array<std::int64_t, Eigen::Dynamic, 1> IndexMap::local_to_global(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
-IndexMap::local_to_global(const std::vector<std::int32_t>& indices,
-                          int bs) const
+IndexMap::local_to_global_block(const std::vector<std::int32_t>& indices,
+                                int bs) const
 {
   const std::int64_t global_offset = _local_range[0];
   const std::int32_t local_size = _local_range[1] - _local_range[0];
@@ -522,15 +522,15 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
-IndexMap::global_to_local(const std::vector<std::int64_t>& indices,
-                          int bs) const
+IndexMap::global_to_local_block(const std::vector<std::int64_t>& indices,
+                                int bs) const
 {
   const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>
       _indices(indices.data(), indices.size());
-  return this->global_to_local(_indices, bs);
+  return this->global_to_local_block(_indices, bs);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> IndexMap::global_to_local(
+std::vector<std::int32_t> IndexMap::global_to_local_block(
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
         indices,
     int bs) const

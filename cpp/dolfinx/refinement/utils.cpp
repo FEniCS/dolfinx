@@ -215,8 +215,7 @@ void refinement::update_logical_edgefunction(
             .array();
 
   // Flatten received values and set marked_edges at each index received
-  std::vector<std::int32_t> local_indices
-      = map_e.global_to_local(data_to_recv, 1);
+  std::vector<std::int32_t> local_indices = map_e.global_to_local(data_to_recv);
   for (std::int32_t local_index : local_indices)
     marked_edges[local_index] = true;
 }
@@ -306,7 +305,7 @@ refinement::create_new_vertices(
   for (int i = 0; i < received_values.size() / 2; ++i)
     recv_global_edge.push_back(received_values[i * 2]);
   std::vector<std::int32_t> recv_local_edge
-      = mesh.topology().index_map(1)->global_to_local(recv_global_edge, 1);
+      = mesh.topology().index_map(1)->global_to_local(recv_global_edge);
   for (int i = 0; i < received_values.size() / 2; ++i)
   {
     auto it = local_edge_to_new_vertex.insert(
