@@ -96,7 +96,8 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
 /// @return List of local dofs with boundary conditions applied but
 ///   detected by other processes. It may contain duplicate entries.
 std::vector<std::array<std::int32_t, 2>>
-get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
+get_remote_bcs2(const common::IndexMap& map0, int bs0,
+                const common::IndexMap& map1, int bs1,
                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
 {
   MPI_Comm comm0 = map0.comm(common::IndexMap::Direction::symmetric);
@@ -127,9 +128,8 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   // Build array of global indices of dofs
   Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> dofs_global(
       dofs_local.size(), 2);
-  throw std::runtime_error("Needs updating");
-  // dofs_global.col(0) = map0.local_to_global_block(dofs_local0, false);
-  // dofs_global.col(1) = map1.local_to_global_block(dofs_local1, false);
+  dofs_global.col(0) = map0.local_to_global_block(dofs_local0, bs0);
+  dofs_global.col(1) = map1.local_to_global_block(dofs_local1, bs1);
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
@@ -160,9 +160,8 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
     dofs_received1[i] = dofs_received(i, 1);
   }
 
-  throw std::runtime_error("Needs updating for bs");
-  std::vector dofs0 = map0.global_to_local_block(dofs_received0, 0);
-  std::vector dofs1 = map1.global_to_local_block(dofs_received1, 0);
+  std::vector dofs0 = map0.global_to_local_block(dofs_received0, bs0);
+  std::vector dofs1 = map1.global_to_local_block(dofs_received1, bs1);
 
   // FIXME: check that dofs is sorted
   dofs0.erase(std::remove(dofs0.begin(), dofs0.end(), -1), dofs0.end());
@@ -278,7 +277,8 @@ fem::locate_dofs_topological(
     // were found by other processes, e.g. a vertex dof on this process
     // that has no connected facets on the boundary.
     const std::vector dofs_remote = get_remote_bcs2(
-        *V0.dofmap()->index_map, *V1.dofmap()->index_map, bc_dofs);
+        *V0.dofmap()->index_map, V0.dofmap()->index_map_bs(),
+        *V1.dofmap()->index_map, V1.dofmap()->index_map_bs(), bc_dofs);
 
     // Add received bc indices to dofs_local
     bc_dofs.insert(bc_dofs.end(), dofs_remote.begin(), dofs_remote.end());

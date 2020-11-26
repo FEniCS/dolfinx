@@ -164,7 +164,7 @@ Form<T> create_form(
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
-  std::cout << "Create form 0" << std::endl;
+  // std::cout << "Create form 0" << std::endl;
 
   if (ufc_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
@@ -179,7 +179,7 @@ Form<T> create_form(
         "Mismatch between number of expected and provided Form constants.");
   }
 
-  std::cout << "Create form 1" << std::endl;
+  // std::cout << "Create form 1" << std::endl;
   // Check argument function spaces
 
 #ifdef DEBUG
@@ -198,7 +198,7 @@ Form<T> create_form(
   }
 #endif
 
-  std::cout << "Create form 2" << std::endl;
+  // std::cout << "Create form 2" << std::endl;
   // Get list of integral IDs, and load tabulate tensor into memory for each
 
   using kern = std::function<void(PetscScalar*, const PetscScalar*,
@@ -210,7 +210,7 @@ Form<T> create_form(
 
   bool needs_permutation_data = false;
 
-  std::cout << "Create form 3" << std::endl;
+  // std::cout << "Create form 3" << std::endl;
 
   // Attach cell kernels
   std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
@@ -235,7 +235,7 @@ Form<T> create_form(
 
   // FIXME: Can facets be handled better?
 
-  std::cout << "Create form 4" << std::endl;
+  // std::cout << "Create form 4" << std::endl;
 
   // Create facets, if required
   if (ufc_form.num_exterior_facet_integrals > 0
@@ -243,17 +243,17 @@ Form<T> create_form(
   {
     if (!spaces.empty())
     {
-      std::cout << "Create form 4a" << std::endl;
+      // std::cout << "Create form 4a" << std::endl;
       auto mesh = spaces[0]->mesh();
-      std::cout << "Create form 4b" << std::endl;
+      // std::cout << "Create form 4b" << std::endl;
       const int tdim = mesh->topology().dim();
-      std::cout << "Create form 4c" << std::endl;
+      // std::cout << "Create form 4c" << std::endl;
       spaces[0]->mesh()->topology_mutable().create_entities(tdim - 1);
-      std::cout << "Create form 4d" << std::endl;
+      // std::cout << "Create form 4d" << std::endl;
     }
   }
 
-  std::cout << "Create form 5" << std::endl;
+  // std::cout << "Create form 5" << std::endl;
 
   // Attach exterior facet kernels
   std::vector<int> exterior_facet_integral_ids(
@@ -308,7 +308,7 @@ Form<T> create_form(
         "Vertex integrals not supported. Under development.");
   }
 
-  std::cout << "Create form 5" << std::endl;
+  // std::cout << "Create form 5" << std::endl;
 
   return fem::Form(spaces, integral_data, coefficients, constants,
                    needs_permutation_data, mesh);

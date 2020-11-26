@@ -212,8 +212,10 @@ common::stack_index_maps(
 {
   // Get process offset
   std::int64_t process_offset = 0;
-  for (const common::IndexMap& map : maps)
-    process_offset += map.local_range()[0];
+  for (std::size_t i = 0; i < maps.size(); ++i)
+    process_offset += maps[i].get().local_range()[0] * bs[i];
+  // for (const common::IndexMap& map : maps)
+  //   process_offset += map.local_range()[0] * map.block_size();
 
   // Get local map offset
   std::vector<std::int32_t> local_offset(maps.size() + 1, 0);
@@ -228,18 +230,17 @@ common::stack_index_maps(
   std::vector<std::int64_t> indices;
   for (std::size_t f = 0; f < maps.size(); ++f)
   {
-    const int bs_f = bs[f];
     const std::vector<std::int32_t>& forward_indices
         = maps[f].get().shared_indices();
-    const std::int64_t offset = bs_f * maps[f].get().local_range()[0];
+    const std::int64_t offset = bs[f] * maps[f].get().local_range()[0];
     for (std::int32_t local_index : forward_indices)
     {
-      for (std::int32_t i = 0; i < bs_f; ++i)
+      for (std::int32_t i = 0; i < bs[f]; ++i)
       {
         // Insert field index, global index, composite global index
         indices.push_back(f);
-        indices.push_back(bs_f * local_index + i + offset);
-        indices.push_back(bs_f * local_index + i + local_offset[f]
+        indices.push_back(bs[f] * local_index + i + offset);
+        indices.push_back(bs[f] * local_index + i + local_offset[f]
                           + process_offset);
       }
     }
@@ -301,16 +302,15 @@ common::stack_index_maps(
   std::vector<std::vector<int>> ghost_owners_new(maps.size());
   for (std::size_t f = 0; f < maps.size(); ++f)
   {
-    const int bs_f = bs[f];
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
         = maps[f].get().ghosts();
     const Eigen::Array<int, Eigen::Dynamic, 1>& ghost_owners
         = maps[f].get().ghost_owner_rank();
     for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
     {
-      for (int j = 0; j < bs_f; ++j)
+      for (int j = 0; j < bs[f]; ++j)
       {
-        auto it = ghost_maps[f].find(bs_f * ghosts[i] + j);
+        auto it = ghost_maps[f].find(bs[f] * ghosts[i] + j);
         assert(it != ghost_maps[f].end());
         ghosts_new[f].push_back(it->second);
         ghost_owners_new[f].push_back(ghost_owners[i]);

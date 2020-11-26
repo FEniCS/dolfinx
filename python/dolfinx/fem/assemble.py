@@ -248,11 +248,11 @@ def _(A: PETSc.Mat,
         for j, a_block in enumerate(a_row):
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
-                print("I, J", i, j)
-                Asub.getLGMap()[0].view()
-                print("bs mat0:", Asub.getLGMap()[0].getBlockSize())
-                Asub.getLGMap()[1].view()
-                print("bs mat1:", Asub.getLGMap()[1].getBlockSize())
+                # print("I, J", i, j)
+                # Asub.getLGMap()[0].view()
+                # print("bs mat0:", Asub.getLGMap()[0].getBlockSize())
+                # Asub.getLGMap()[1].view()
+                # print("bs mat1:", Asub.getLGMap()[1].getBlockSize())
                 assemble_matrix(Asub, a_block, bcs)
     return A
 
@@ -263,7 +263,9 @@ def assemble_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.
                           bcs: typing.List[DirichletBC] = [],
                           diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
+    print("A: ********")
     A = cpp.fem.create_matrix_block(_create_cpp_form(a))
+    print("B: ********")
     return assemble_matrix_block(A, a, bcs, diagonal)
 
 
@@ -303,12 +305,16 @@ def _(A: PETSc.Mat,
       bcs: typing.List[DirichletBC] = [],
       diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
+    print("Main 0")
     _a = _create_cpp_form(a)
+    print("Main 1")
     V = _extract_function_spaces(_a)
+    print("Main 2")
     is_rows = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[0]],
                                              [Vsub.dofmap.index_map_bs for Vsub in V[0]])
     is_cols = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[1]],
                                              [Vsub.dofmap.index_map_bs for Vsub in V[1]])
+    print("Main 3")
     for i, a_row in enumerate(_a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:

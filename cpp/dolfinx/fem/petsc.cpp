@@ -34,6 +34,7 @@ la::PETScMatrix fem::create_matrix_block(
         const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
                            Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
+  std::cout << "Create block matrix 0" << std::endl;
   // Extract and check row/column ranges
   auto V = function::common_function_spaces(extract_function_spaces(a));
 
@@ -85,6 +86,8 @@ la::PETScMatrix fem::create_matrix_block(
     }
   }
 
+  std::cout << "Create block matrix 1" << std::endl;
+
   // Compute offsets for the fields
   std::array<std::vector<std::reference_wrapper<const common::IndexMap>>, 2>
       maps;
@@ -98,12 +101,16 @@ la::PETScMatrix fem::create_matrix_block(
     }
   }
 
+  std::cout << "Create block matrix 2" << std::endl;
+
   // FIXME: This is computed again inside the SparsityPattern
   // constructor, but we also need to outside to build the PETSc
   // local-to-global map. Compute outside and pass into SparsityPattern
   // constructor.
   auto [rank_offset, local_offset, ghosts, owner]
       = common::stack_index_maps(maps[0], bs[0]);
+
+  std::cout << "Create block matrix 3" << std::endl;
 
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
@@ -115,6 +122,8 @@ la::PETScMatrix fem::create_matrix_block(
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
   // Mat constructor.
+
+  std::cout << "Create block matrix 4" << std::endl;
 
   // Initialise matrix
   la::PETScMatrix A(mesh->mpi_comm(), pattern);
@@ -136,6 +145,9 @@ la::PETScMatrix fem::create_matrix_block(
     }
   }
 
+  std::cout << "Create block matrix 5" << std::endl;
+
+
   // Create PETSc local-to-global map/index sets and attach to matrix
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
   ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[0].size(),
@@ -150,6 +162,8 @@ la::PETScMatrix fem::create_matrix_block(
   // Clean up local-to-global maps
   ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
   ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
+
+  std::cout << "Create block matrix" << std::endl;
 
   return A;
 }
