@@ -75,21 +75,11 @@ create_new_vertices(
 /// @return New mesh
 mesh::Mesh
 partition(const mesh::Mesh& old_mesh,
-          const std::vector<std::int64_t>& cell_topology, int num_ghost_cells,
+          const graph::AdjacencyList<std::int64_t>& cell_topology,
+          int num_ghost_cells,
           const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                              Eigen::RowMajor>& new_vertex_coordinates,
           bool redistribute);
-
-/// Build local mesh from internal data when not running in parallel
-/// @param[in] old_mesh
-/// @param[in] cell_topology
-/// @param[in] new_vertex_coordinates
-/// @return A Mesh
-mesh::Mesh
-build_local(const mesh::Mesh& old_mesh,
-            const graph::AdjacencyList<std::int64_t>& cell_topology,
-            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>& new_vertex_coordinates);
 
 /// Adjust indices to account for extra n values on each process This
 /// is a utility to help add new topological vertices on each process

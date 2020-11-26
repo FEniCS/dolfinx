@@ -345,31 +345,15 @@ std::vector<std::int64_t> refinement::adjust_indices(
   return global_indices;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh refinement::build_local(
+mesh::Mesh refinement::partition(
     const mesh::Mesh& old_mesh,
     const graph::AdjacencyList<std::int64_t>& cell_topology,
-    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        new_vertex_coordinates)
-{
-  mesh::Mesh mesh = mesh::create_mesh(
-      old_mesh.mpi_comm(), cell_topology, old_mesh.geometry().cmap(),
-      new_vertex_coordinates, mesh::GhostMode::none);
-  assert(mesh.geometry().dim() == old_mesh.geometry().dim());
-  return mesh;
-}
-//-----------------------------------------------------------------------------
-mesh::Mesh refinement::partition(
-    const mesh::Mesh& old_mesh, const std::vector<std::int64_t>& cell_topology,
     int num_ghost_cells,
     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         new_vertex_coordinates,
     bool redistribute)
 {
-  const int num_vertices_per_cell
-      = mesh::cell_num_entities(old_mesh.topology().cell_type(), 0);
-
-  const std::int32_t num_local_cells
-      = cell_topology.size() / num_vertices_per_cell;
+  const std::int32_t num_local_cells = cell_topology.num_nodes();
   std::vector<std::int64_t> global_cell_indices(num_local_cells);
   const std::size_t idx_global_offset
       = MPI::global_offset(old_mesh.mpi_comm(), num_local_cells, true);
@@ -382,27 +366,15 @@ mesh::Mesh refinement::partition(
                 old_mesh.mpi_comm());
 
   // Build mesh
+  const mesh::GhostMode gm = (max_ghost_cells == 0)
+                                 ? mesh::GhostMode::none
+                                 : mesh::GhostMode::shared_facet;
+
   if (redistribute)
   {
-    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        cells(cell_topology.data(), num_local_cells - num_ghost_cells,
-              num_vertices_per_cell);
-
-    if (max_ghost_cells == 0)
-    {
-      return mesh::create_mesh(old_mesh.mpi_comm(),
-                               graph::AdjacencyList<std::int64_t>(cells),
-                               old_mesh.geometry().cmap(),
-                               new_vertex_coordinates, mesh::GhostMode::none);
-    }
-    else
-    {
-      return mesh::create_mesh(
-          old_mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells),
-          old_mesh.geometry().cmap(), new_vertex_coordinates,
-          mesh::GhostMode::shared_facet);
-    }
+    return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
+                             old_mesh.geometry().cmap(), new_vertex_coordinates,
+                             gm);
   }
 
   if (max_ghost_cells > 0)
@@ -411,16 +383,11 @@ mesh::Mesh refinement::partition(
                              "re-partitioning is not supported yet.");
   }
 
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      cells(cell_topology.data(), num_local_cells - num_ghost_cells,
-            num_vertices_per_cell);
   MPI_Comm comm = old_mesh.mpi_comm();
   mesh::Topology topology(comm, old_mesh.geometry().cmap().cell_shape());
-  const graph::AdjacencyList<std::int64_t> my_cells(cells);
   {
     auto [cells_local, local_to_global_vertices]
-        = graph::Partitioning::create_local_adjacency_list(my_cells);
+        = graph::Partitioning::create_local_adjacency_list(cell_topology);
 
     // Create (i) local topology object and (ii) IndexMap for cells, and
     // set cell-vertex topology
@@ -491,7 +458,7 @@ mesh::Mesh refinement::partition(
 
   mesh::Geometry geometry
       = mesh::create_geometry(comm, topology, old_mesh.geometry().cmap(),
-                              my_cells, new_vertex_coordinates);
+                              cell_topology, new_vertex_coordinates);
 
   return mesh::Mesh(comm, std::move(topology), std::move(geometry));
 }

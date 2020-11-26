@@ -422,10 +422,8 @@ mesh::Mesh compute_refinement(
       mesh.topology().index_map(0), num_new_vertices_local);
 
   const int num_cells = map_c->size_local();
-  const int num_ghost_cells = map_c->num_ghosts();
   std::vector<std::int64_t> cell_topology;
-  int num_new_ghost_cells = 0;
-  for (int c = 0; c < num_cells + num_ghost_cells; ++c)
+  for (int c = 0; c < num_cells; ++c)
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
@@ -494,10 +492,6 @@ mesh::Mesh compute_refinement(
       for (std::int32_t i = 0; i < ncells; ++i)
         parent_cell.push_back(c);
 
-      // Count up new ghost cells
-      if (c >= num_cells)
-        num_new_ghost_cells += ncells;
-
       // Convert from cell local index to mesh index and add to cells
       for (std::int32_t v : simplex_set)
         cell_topology.push_back(indices[v]);
@@ -514,10 +508,16 @@ mesh::Mesh compute_refinement(
 
   const bool serial = (dolfinx::MPI::size(mesh.mpi_comm()) == 1);
   if (serial)
-    return refinement::build_local(mesh, cell_adj, new_vertex_coordinates);
+  {
+    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+                             new_vertex_coordinates, mesh::GhostMode::none);
+  }
   else
-    return refinement::partition(mesh, cell_topology, num_new_ghost_cells,
+  {
+    const int num_ghost_cells = map_c->num_ghosts();
+    return refinement::partition(mesh, cell_adj, num_ghost_cells,
                                  new_vertex_coordinates, redistribute);
+  }
 }
 //-----------------------------------------------------------------------------
 } // namespace
