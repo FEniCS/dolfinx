@@ -205,7 +205,6 @@ def assemble_matrix(a: typing.Union[Form, cpp.fem.Form],
 
     """
     A = cpp.fem.create_matrix(_create_cpp_form(a))
-    A.zeroEntries()
     return assemble_matrix(A, a, bcs, diagonal)
 
 
@@ -232,7 +231,6 @@ def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.F
                          diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = cpp.fem.create_matrix_nest(_create_cpp_form(a))
-    A.zeroEntries()
     assemble_matrix_nest(A, a, bcs, diagonal)
     return A
 
@@ -248,6 +246,11 @@ def _(A: PETSc.Mat,
         for j, a_block in enumerate(a_row):
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
+                print("I, J", i, j)
+                Asub.getLGMap()[0].view()
+                print("bs mat0:", Asub.getLGMap()[0].getBlockSize())
+                Asub.getLGMap()[1].view()
+                print("bs mat1:", Asub.getLGMap()[1].getBlockSize())
                 assemble_matrix(Asub, a_block, bcs)
     return A
 
@@ -259,7 +262,6 @@ def assemble_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.
                           diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = cpp.fem.create_matrix_block(_create_cpp_form(a))
-    A.zeroEntries()
     return assemble_matrix_block(A, a, bcs, diagonal)
 
 

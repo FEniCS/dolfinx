@@ -174,7 +174,9 @@ la::PETScMatrix fem::create_matrix_nest(
     {
       if (a(i, j))
       {
+        std::cout << "*** Create PETSc mat: " << i << ", " << j << std::endl;
         mats(i, j) = std::make_shared<la::PETScMatrix>(create_matrix(*a(i, j)));
+        std::cout << "*** End Create PETSc mat" << std::endl;
         petsc_mats(i, j) = mats(i, j)->mat();
       }
       else
@@ -189,6 +191,7 @@ la::PETScMatrix fem::create_matrix_nest(
   MatNestSetSubMats(_A, petsc_mats.rows(), nullptr, petsc_mats.cols(), nullptr,
                     petsc_mats.data());
   MatSetUp(_A);
+  std::cout << "*** End Nest Create PETSc mat" << std::endl;
 
   return la::PETScMatrix(_A);
 }
