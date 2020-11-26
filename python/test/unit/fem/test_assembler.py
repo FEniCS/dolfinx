@@ -316,7 +316,6 @@ def test_assembly_solve_block(mode):
     V0 = dolfinx.function.FunctionSpace(mesh, P)
     V1 = V0.clone()
 
-
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
