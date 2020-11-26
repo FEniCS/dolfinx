@@ -50,9 +50,8 @@ public:
   /// @param[in] comm The MPI communicator
   /// @param[in] patterns Rectangular array of sparsity pattern. The
   ///   patterns must not be finalised. Null block are permited
-  /// @param[in] maps Index maps for each row block (maps[0]) and column
-  ///   blocks (maps[1])
-  /// @param[in] bs
+  /// @param[in] maps Pairs of (index map, block size) for each row
+  ///   block (maps[0]) and column blocks (maps[1])
   SparsityPattern(
       MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>>& patterns,
