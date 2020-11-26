@@ -429,8 +429,6 @@ compute_entities_by_key_matching(
         "Cannot create vertices for topology. Should already exist.");
   }
 
-  std::cout << "Compute by matching (0)" << std::endl;
-
   // Start timer
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
@@ -440,14 +438,12 @@ compute_entities_by_key_matching(
   const int num_vertices_per_entity
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
 
-  std::cout << "Compute by matching (1)" << std::endl;
   // Create map from cell vertices to entity vertices
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e_vertices
       = mesh::get_entity_vertices(cell_type, dim);
 
   const int num_cells = cells.num_nodes();
 
-  std::cout << "Compute by matching (2)" << std::endl;
   // List of vertices for each entity in each cell
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entity_list(num_cells * num_entities_per_cell, num_vertices_per_entity);
@@ -472,8 +468,6 @@ compute_entities_by_key_matching(
   std::vector<std::int32_t> entity_index(entity_list.rows());
   std::int32_t entity_count = 0;
 
-  std::cout << "Compute by matching (3)" << std::endl;
-
   // Copy list and sort vertices of each entity into order
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entity_list_sorted = entity_list;
@@ -482,8 +476,6 @@ compute_entities_by_key_matching(
     std::sort(entity_list_sorted.row(i).data(),
               entity_list_sorted.row(i).data() + num_vertices_per_entity);
   }
-
-  std::cout << "Compute by matching (4)" << std::endl;
 
   // Sort the list and label uniquely
   const std::vector sort_order = sort_by_perm<std::int32_t>(entity_list_sorted);
@@ -499,20 +491,16 @@ compute_entities_by_key_matching(
   }
   ++entity_count;
 
-  std::cout << "Compute by matching (5)" << std::endl;
-
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
   const auto [local_index, index_map] = get_local_indexing(
       comm, cell_index_map, vertex_index_map, entity_list, entity_index);
 
-  std::cout << "Compute by matching (6)" << std::endl;
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       connectivity_ce(num_cells, num_entities_per_cell);
   std::copy(local_index.begin(), local_index.end(), connectivity_ce.data());
 
-  std::cout << "Compute by matching (7)" << std::endl;
   // Cell-entity connectivity
   auto ce
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ce);
@@ -523,7 +511,6 @@ compute_entities_by_key_matching(
   for (int i = 0; i < entity_list.rows(); ++i)
     connectivity_ev.row(local_index[i]) = entity_list.row(i);
 
-  std::cout << "Compute by matching (8)" << std::endl;
   auto ev
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ev);
 
@@ -656,8 +643,6 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
   if (dim == 0)
     return {nullptr, nullptr, nullptr};
 
-  std::cout << "Compute ents:  " << dim << std::endl;
-
   if (topology.connectivity(dim, 0))
   {
     // Make sure we really have the connectivity
@@ -672,24 +657,19 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
     return {nullptr, nullptr, nullptr};
   }
 
-  std::cout << "Compute ents (A)" << std::endl;
-
   auto cells = topology.connectivity(tdim, 0);
   if (!cells)
     throw std::runtime_error("Cell connectivity missing.");
 
-  std::cout << "Compute ents (B)" << std::endl;
   auto vertex_map = topology.index_map(0);
   assert(vertex_map);
   auto cell_map = topology.index_map(tdim);
   assert(cell_map);
-  std::cout << "Compute ents (C)" << std::endl;
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<common::IndexMap>>
       data = compute_entities_by_key_matching(
           comm, *cells, vertex_map, cell_map, topology.cell_type(), dim);
-  std::cout << "Compute ents (D)" << std::endl;
 
   return data;
 }

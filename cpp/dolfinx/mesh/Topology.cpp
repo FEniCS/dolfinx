@@ -175,23 +175,18 @@ std::int32_t Topology::create_entities(int dim)
     return -1;
 
   // Create local entities
-  std::cout << "Create entities: " << dim << std::endl;
   const auto [cell_entity, entity_vertex, index_map]
       = TopologyComputation::compute_entities(_mpi_comm.comm(), *this, dim);
 
-  std::cout << "Create entities 0" << std::endl;
   if (cell_entity)
     set_connectivity(cell_entity, this->dim(), dim);
 
   // TODO: is this check necessary? Seems redundant after to the "skip check"
-  std::cout << "Create entities 1" << std::endl;
   if (entity_vertex)
     set_connectivity(entity_vertex, dim, 0);
 
-  std::cout << "Create entities 2" << std::endl;
   assert(index_map);
-  set_index_map(dim, index_map);
-  std::cout << "Create entities 3" << std::endl;
+  this->set_index_map(dim, index_map);
 
   return index_map->size_local();
 }

@@ -35,18 +35,12 @@ Mat la::create_petsc_matrix(
                         sparsity_pattern.index_map(1)};
   const int bs0 = sparsity_pattern.block_size(0);
   const int bs1 = sparsity_pattern.block_size(1);
-  // std::cout << "Block sizes: " << bs0 << ", " << bs1 << std::endl;
 
   // Get global and local dimensions
   const std::int64_t M = bs0 * index_maps[0]->size_global();
   const std::int64_t N = bs1 * index_maps[1]->size_global();
   const std::int32_t m = bs0 * index_maps[0]->size_local();
   const std::int32_t n = bs1 * index_maps[1]->size_local();
-
-  // std::cout << "Matrix sizes: " << M << ", " << N << std::endl;
-
-  // Find common block size across rows/columns
-  const int bs = (bs0 == bs1 ? bs0 : 1);
 
   // Set matrix size
   ierr = MatSetSizes(A, m, n, M, N);
@@ -65,6 +59,9 @@ Mat la::create_petsc_matrix(
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
+  // Find a common block size across rows/columns
+  const int bs = (bs0 == bs1 ? bs0 : 1);
+
   // Build data to initialise sparsity pattern (modify for block size)
   std::vector<PetscInt> _nnz_diag(index_maps[0]->size_local() * bs0 / bs),
       _nnz_offdiag(index_maps[0]->size_local() * bs0 / bs);
@@ -73,14 +70,6 @@ Mat la::create_petsc_matrix(
     _nnz_diag[i] = diagonal_pattern.links(bs * i).rows() / bs;
   for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
     _nnz_offdiag[i] = off_diagonal_pattern.links(bs * i).rows() / bs;
-
-  // std::cout << "Non zeros per row (D): " << bs << std::endl;
-  // for (auto i : _nnz_diag)
-  //   std::cout << i << std::endl;
-  // std::cout << "Non zeros per row (O): " << bs << std::endl;
-  // for (auto i : _nnz_offdiag)
-  //   std::cout << i << std::endl;
-  // std::cout << "----------------" << std::endl;
 
   // Allocate space for matrix
   ierr = MatXAIJSetPreallocation(A, bs, _nnz_diag.data(), _nnz_offdiag.data(),
@@ -94,18 +83,10 @@ Mat la::create_petsc_matrix(
   // local-to-global map
 
   // Create PETSc local-to-global map/index set
-  // const bool blocked = (bs0 == bs1 ? true : false);
   const std::vector _map0 = index_maps[0]->global_indices();
   const std::vector _map1 = index_maps[1]->global_indices();
   const std::vector<PetscInt> map0(_map0.begin(), _map0.end());
   const std::vector<PetscInt> map1(_map1.begin(), _map1.end());
-
-  // std::cout << "l2g0: " << bs0 << std::endl;
-  // for (auto i : map0)
-  //   std::cout << i << std::endl;
-  // std::cout << "l2g1: " << bs1 << std::endl;
-  // for (auto i : map1)
-  //   std::cout << i << std::endl;
 
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
   ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs0, map0.size(),
