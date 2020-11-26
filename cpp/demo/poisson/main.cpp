@@ -116,6 +116,8 @@ int main(int argc, char* argv[])
   common::SubSystemsManager::init_petsc(argc, argv);
 
   {
+    std::cout << "Stage 0" << std::endl;
+
     // Create mesh and function space
     auto cmap = fem::create_coordinate_map(create_coordinate_map_poisson);
     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
@@ -137,15 +139,19 @@ int main(int argc, char* argv[])
     // Prepare and set Constants for the bilinear form
     auto kappa = std::make_shared<function::Constant<PetscScalar>>(2.0);
 
+    std::cout << "Stage 1" << std::endl;
     auto f = std::make_shared<function::Function<PetscScalar>>(V);
+    std::cout << "Stage 1b" << std::endl;
     auto g = std::make_shared<function::Function<PetscScalar>>(V);
 
     // Define variational forms
+    std::cout << "Stage 1c" << std::endl;
     auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V}, {},
                                            {{"kappa", kappa}}, {});
+    std::cout << "Stage 1d" << std::endl;
     auto L = fem::create_form<PetscScalar>(create_form_poisson_L, {V},
                                            {{"f", f}, {"g", g}}, {}, {});
-
+    std::cout << "Stage 2" << std::endl;
     // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
     // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
     // takes two arguments: the value of the boundary condition,
@@ -189,10 +195,14 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Compute solution
+    std::cout << "Stage 3" << std::endl;
     function::Function<PetscScalar> u(V);
+    std::cout << "Stage 4" << std::endl;
     la::PETScMatrix A = fem::create_matrix(*a);
+    std::cout << "Stage 5" << std::endl;
     la::PETScVector b(*L->function_spaces()[0]->dofmap()->index_map,
                       L->function_spaces()[0]->dofmap()->index_map_bs());
+    std::cout << "Stage 6" << std::endl;
 
     MatZeroEntries(A.mat());
     fem::assemble_matrix(la::PETScMatrix::add_fn(A.mat()), *a, bc);
