@@ -145,7 +145,6 @@ public:
 
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
-  /// @param[in] bs
   /// @return The global index of the corresponding local index in
   ///   indices.
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global(
@@ -164,7 +163,6 @@ public:
   ///
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
-  /// @param[in] bs
   /// @return The global index of the corresponding local index in
   ///   indices.
   std::vector<std::int64_t>
@@ -179,7 +177,6 @@ public:
 
   /// Compute local indices for array of global indices
   /// @param[in] indices Global indices
-  /// @param[in] bs
   /// @return The local of the corresponding global index in indices.
   ///   Returns -1 if the local index does not exist on this process.
   std::vector<std::int32_t>
@@ -195,8 +192,7 @@ public:
       int bs) const;
 
   /// Compute local indices for array of global indices
-  /// @param[in] indices Global indices
-  /// @param[in] bs
+s  /// @param[in] indices Global indices
   /// @return The local of the corresponding global index in indices.
   ///   Return -1 if the local index does not exist on this process.
   std::vector<std::int32_t> global_to_local(
