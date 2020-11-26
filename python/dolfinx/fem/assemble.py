@@ -34,7 +34,8 @@ def _create_cpp_form(form):
 
 
 def create_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
-    return cpp.la.create_vector(_create_cpp_form(L).function_spaces[0].dofmap.index_map)
+    dofmap = _create_cpp_form(L).function_spaces[0].dofmap
+    return cpp.la.create_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
 def create_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
@@ -83,7 +84,8 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
     """
     _L = _create_cpp_form(L)
-    b = cpp.la.create_vector(_L.function_spaces[0].dofmap.index_map)
+    b = cpp.la.create_vector(_L.function_spaces[0].dofmap.index_map,
+                             _L.function_spaces[0].dofmap.index_map_bs)
     with b.localForm() as b_local:
         b_local.set(0.0)
         cpp.fem.assemble_vector(b_local.array_w, _L)
@@ -110,7 +112,8 @@ def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
     """
     maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
-    b = cpp.fem.create_vector_nest(maps)
+    bs = [form.function_spaces[0].dofmap.index_map_bs for form in _create_cpp_form(L)]
+    b = cpp.fem.create_vector_nest(maps, bs)
     for b_sub in b.getNestSubVecs():
         with b_sub.localForm() as b_local:
             b_local.set(0.0)
@@ -142,7 +145,8 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
 
     """
     maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
-    b = cpp.fem.create_vector_block(maps)
+    bs = [form.function_spaces[0].dofmap.index_map_bs for form in _create_cpp_form(L)]
+    b = cpp.fem.create_vector_block(maps, bs)
     with b.localForm() as b_local:
         b_local.set(0.0)
     return assemble_vector_block(b, L, a, bcs, x0, scale)
@@ -161,27 +165,28 @@ def _(b: PETSc.Vec,
 
     """
     maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
+    bs = [form.function_spaces[0].dofmap.index_map_bs for form in _create_cpp_form(L)]
     if x0 is not None:
-        x0_local = cpp.la.get_local_vectors(x0, maps)
+        x0_local = cpp.la.get_local_vectors(x0, maps, bs)
         x0_sub = x0_local
     else:
         x0_local = []
         x0_sub = [None] * len(maps)
 
     bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), bcs)
-    b_local = cpp.la.get_local_vectors(b, maps)
+    b_local = cpp.la.get_local_vectors(b, maps, bs)
     for b_sub, L_sub, a_sub, bc in zip(b_local, L, a, bcs1):
         cpp.fem.assemble_vector(b_sub, _create_cpp_form(L_sub))
         cpp.fem.apply_lifting(b_sub, _create_cpp_form(a_sub), bc, x0_local, scale)
 
-    cpp.la.scatter_local_vectors(b, b_local, maps)
+    cpp.la.scatter_local_vectors(b, b_local, maps, bs)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     bcs0 = cpp.fem.bcs_rows(_create_cpp_form(L), bcs)
     offset = 0
     b_array = b.getArray(readonly=False)
-    for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
-        size = submap.size_local * submap.block_size
+    for submap, _bs, bc, _x0 in zip(maps, bs, bcs0, x0_sub):
+        size = submap.size_local * _bs
         cpp.fem.set_bc(b_array[offset:offset + size], bc, _x0, scale)
         offset += size
 
@@ -296,8 +301,10 @@ def _(A: PETSc.Mat,
     """Assemble bilinear forms into matrix"""
     _a = _create_cpp_form(a)
     V = _extract_function_spaces(_a)
-    is_rows = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[0]])
-    is_cols = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[1]])
+    is_rows = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[0]],
+                                             [Vsub.dofmap.index_map_bs for Vsub in V[0]])
+    is_cols = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[1]],
+                                             [Vsub.dofmap.index_map_bs for Vsub in V[1]])
     for i, a_row in enumerate(_a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
