@@ -192,7 +192,7 @@ public:
       int bs) const;
 
   /// Compute local indices for array of global indices
-s  /// @param[in] indices Global indices
+  /// @param[in] indices Global indices
   /// @return The local of the corresponding global index in indices.
   ///   Return -1 if the local index does not exist on this process.
   std::vector<std::int32_t> global_to_local(
