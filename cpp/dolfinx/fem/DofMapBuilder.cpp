@@ -85,7 +85,6 @@ build_basic_dofmap(const mesh::Topology& topology,
     {
       auto map = topology.index_map(d);
       assert(map);
-      // FIXME X
       global_indices[d] = map->global_indices();
     }
   }
