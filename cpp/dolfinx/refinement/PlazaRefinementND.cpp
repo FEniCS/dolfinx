@@ -504,9 +504,11 @@ mesh::Mesh compute_refinement(
     }
   }
 
+  assert(cell_topology.size() % num_cell_vertices == 0);
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      cells(cell_topology.data(), num_cells, num_cell_vertices);
+      cells(cell_topology.data(), cell_topology.size() / num_cell_vertices,
+            num_cell_vertices);
 
   graph::AdjacencyList<std::int64_t> cell_adj(cells);
 
