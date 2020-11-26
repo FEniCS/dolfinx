@@ -40,12 +40,14 @@ def create_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
 def create_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
     maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
-    return cpp.fem.create_vector_block(maps)
+    bs = [form.function_spaces[0].dofmap.index_map_bs for form in _create_cpp_form(L)]
+    return cpp.fem.create_vector_block(maps, bs)
 
 
 def create_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
     maps = [form.function_spaces[0].dofmap.index_map for form in _create_cpp_form(L)]
-    return cpp.fem.create_vector_nest(maps)
+    bs = [form.function_spaces[0].dofmap.index_map_bs for form in _create_cpp_form(L)]
+    return cpp.fem.create_vector_nest(maps, bs)
 
 
 # -- Matrix instantiation ----------------------------------------------------
