@@ -303,20 +303,19 @@ def test_matrix_assembly_block(mode):
     assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
 
 
-# @pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
 @pytest.mark.parametrize("mode", [
     dolfinx.cpp.mesh.GhostMode.none,
-    # dolfinx.cpp.mesh.GhostMode.shared_facet,
+    dolfinx.cpp.mesh.GhostMode.shared_facet,
 ])
 def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same.
     """
-    # mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 1, 1, ghost_mode=mode)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     V0 = dolfinx.function.FunctionSpace(mesh, P)
     V1 = V0.clone()
+
 
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
