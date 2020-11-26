@@ -20,11 +20,12 @@ public:
       std::shared_ptr<fem::Form<PetscScalar>> J,
       std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bcs)
       : _u(u), _l(L), _j(J), _bcs(bcs),
-        _b(L->function_spaces()[0]->dofmap()->index_map),
+        _b(L->function_spaces()[0]->dofmap()->index_map,
+           L->function_spaces()[0]->dofmap()->index_map_bs()),
         _matA(fem::create_matrix(*J))
   {
     auto map = L->function_spaces()[0]->dofmap()->index_map;
-    const int bs = map->block_size();
+    const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();
     std::int32_t size_local = bs * map->size_local();
     std::int32_t num_ghosts = bs * map->num_ghosts();
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map->ghosts();
