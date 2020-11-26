@@ -27,11 +27,11 @@ void local_to_global_impl(
     const std::div_t pos = std::div(indices[i], bs);
     const std::int32_t index_block = pos.quot;
     if (index_block < local_size)
-      global[i] = global_offset + bs * index_block + pos.rem;
+      global[i] = bs * (global_offset + index_block) + pos.rem;
     else
     {
       assert((index_block - local_size) < ghosts.size());
-      global[i] = bs * ghosts[index_block - local_size] + pos.quot;
+      global[i] = bs * ghosts[index_block - local_size] + pos.rem;
     }
   }
 }

@@ -190,7 +190,7 @@ std::int32_t Topology::create_entities(int dim)
 
   std::cout << "Create entities 2" << std::endl;
   assert(index_map);
-  this->set_index_map(dim, index_map);
+  set_index_map(dim, index_map);
   std::cout << "Create entities 3" << std::endl;
 
   return index_map->size_local();
