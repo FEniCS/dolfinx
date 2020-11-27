@@ -120,6 +120,14 @@ Mat la::create_petsc_matrix(
     ierr = MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global1);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
+
+    // Clean up local-to-global maps
+    ierr = ISLocalToGlobalMappingDestroy(&local_to_global0);
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
+    ierr = ISLocalToGlobalMappingDestroy(&local_to_global1);
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
   }
 
   // Note: This should be called after having set the local-to-global
