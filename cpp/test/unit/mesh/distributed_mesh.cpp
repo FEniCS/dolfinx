@@ -35,7 +35,7 @@ void create_mesh_file()
 
 void test_distributed_mesh()
 {
-  MPI_Comm mpi_comm{MPI_COMM_WORLD};
+  MPI_Comm mpi_comm = MPI_COMM_WORLD;
   int mpi_size = dolfinx::MPI::size(mpi_comm);
 
   // Create a communicator with subset of the original group of processes
@@ -63,14 +63,13 @@ void test_distributed_mesh()
 
   if (subset_comm != MPI_COMM_NULL)
   {
-    int nparts{mpi_size};
+    int nparts = mpi_size;
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
     cells = infile.read_topology_data("mesh");
     x = infile.read_geometry_data("mesh");
     dest = dolfinx::mesh::Partitioning::partition_cells(
         subset_comm, nparts, cmap.cell_shape(),
-        graph::AdjacencyList<std::int64_t>(cells),
-        mesh::GhostMode::shared_facet);
+        graph::AdjacencyList<std::int64_t>(cells));
   }
 
   graph::AdjacencyList<std::int64_t> cells_topology(cells);
@@ -105,8 +104,5 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 {
   create_mesh_file();
 
-  SECTION("SCOTCH")
-  {
-    CHECK_NOTHROW(test_distributed_mesh());
-  }
+  SECTION("SCOTCH") { CHECK_NOTHROW(test_distributed_mesh()); }
 }
