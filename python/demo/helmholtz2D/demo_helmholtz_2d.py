@@ -42,7 +42,6 @@ else:
 
 # Test and trial function space
 V = FunctionSpace(mesh, ("Lagrange", deg))
-exit(0)
 
 # Define variational problem
 u = TrialFunction(V)

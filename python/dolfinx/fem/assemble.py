@@ -154,7 +154,7 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     return assemble_vector_block(b, L, a, bcs, x0, scale)
 
 
-@ assemble_vector_block.register(PETSc.Vec)
+@assemble_vector_block.register(PETSc.Vec)
 def _(b: PETSc.Vec,
       L: typing.List[typing.Union[Form, cpp.fem.Form]],
       a,
@@ -198,7 +198,7 @@ def _(b: PETSc.Vec,
 # -- Matrix assembly ---------------------------------------------------------
 
 
-@ functools.singledispatch
+@functools.singledispatch
 def assemble_matrix(a: typing.Union[Form, cpp.fem.Form],
                     bcs: typing.List[DirichletBC] = [],
                     diagonal: float = 1.0) -> PETSc.Mat:
@@ -210,7 +210,7 @@ def assemble_matrix(a: typing.Union[Form, cpp.fem.Form],
     return assemble_matrix(A, a, bcs, diagonal)
 
 
-@ assemble_matrix.register(PETSc.Mat)
+@assemble_matrix.register(PETSc.Mat)
 def _(A: PETSc.Mat,
       a: typing.Union[Form, cpp.fem.Form],
       bcs: typing.List[DirichletBC] = [],
@@ -227,7 +227,7 @@ def _(A: PETSc.Mat,
 
 
 # FIXME: Revise this interface
-@ functools.singledispatch
+@functools.singledispatch
 def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
                          bcs: typing.List[DirichletBC] = [],
                          diagonal: float = 1.0) -> PETSc.Mat:
@@ -237,7 +237,7 @@ def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.F
     return A
 
 
-@ assemble_matrix_nest.register(PETSc.Mat)
+@assemble_matrix_nest.register(PETSc.Mat)
 def _(A: PETSc.Mat,
       a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
       bcs: typing.List[DirichletBC] = [],
@@ -253,7 +253,7 @@ def _(A: PETSc.Mat,
 
 
 # FIXME: Revise this interface
-@ functools.singledispatch
+@functools.singledispatch
 def assemble_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
                           bcs: typing.List[DirichletBC] = [],
                           diagonal: float = 1.0) -> PETSc.Mat:
@@ -292,7 +292,7 @@ def _extract_function_spaces(a: typing.List[typing.List[typing.Union[Form, cpp.f
     return rows, cols
 
 
-@ assemble_matrix_block.register(PETSc.Mat)
+@assemble_matrix_block.register(PETSc.Mat)
 def _(A: PETSc.Mat,
       a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
       bcs: typing.List[DirichletBC] = [],
