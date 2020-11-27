@@ -56,30 +56,11 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
 
   // NOTE: we could consider only dofs that we know are shared
   // Build array of global indices of dofs
-  // const std::vector<std::int64_t> dofs_global
-  //     = map.local_to_global_block(dofs_local, bs);
-  // std::cout << "Case 2" << std::endl;
   std::vector<std::int32_t> dofs_local_block = dofs_local;
-  // std::cout << "(A) dofs_local" << bs << std::endl;
-  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-  // if (rank == 1)
-  // {
-  //   for (auto i : dofs_local_block)
-  //     std::cout << i << std::endl;
-  // }
   std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
                 [bs](std::int32_t& n) { n /= bs; });
-  // std::cout << "(B) dofs_local" << std::endl;
-  // if (rank == 1)
-  // {
-  //   for (auto i : dofs_local_block)
-  //     std::cout << i << std::endl;
-  // }
-
   const std::vector<std::int64_t> dofs_global_block
       = map.local_to_global(dofs_local_block);
-  // std::cout << "post Case 2" << std::endl;
-
   std::vector<std::int64_t> dofs_global(dofs_local.size());
   for (std::size_t i = 0; i < dofs_local.size(); ++i)
   {
@@ -123,10 +104,7 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
   for (std::size_t i = 0; i < dofs_received.size(); ++i)
   {
     if (dofs_received[i] >= bs * range[0] and dofs_received[i] < bs * range[1])
-    {
-      // Owned dof
       dofs.push_back(dofs_received[i] - bs * range[0]);
-    }
     else
     {
       // Search in ghosts
@@ -178,8 +156,6 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // This is messy to handle block sizes
   {
-    // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-    // std::cout << "Case 1: " << rank << std::endl;
     const std::array<int, 2> _bs = {bs0, bs1};
     const std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
         = {map0, map1};
@@ -187,33 +163,19 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
     std::vector<std::int64_t> dofs_global_block;
     for (int i = 0; i < 2; ++i)
     {
-      // if (rank == 0)
-      //   std::cout << "Test 1" << std::endl;
       for (std::size_t j = 0; j < _dofs_local.size(); ++j)
         _dofs_local[j] = dofs_local[j][i];
-
-      // if (rank == 0)
-      //   std::cout << "Test 2" << std::endl;
 
       dofs_local_block = _dofs_local;
       std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
                     [bs = _bs[i]](std::int32_t& n) { return n /= bs; });
       dofs_global_block = maps[i].get().local_to_global(dofs_local_block);
-
-      // if (rank == 0)
-      //   std::cout << "Test 3" << std::endl;
-
       for (std::size_t j = 0; j < dofs_local.size(); ++j)
       {
-        // assert(j < dofs_local.size());
         const int offset = _dofs_local[j] % _bs[i];
         dofs_global(j, i) = _bs[i] * dofs_global_block[j] + offset;
       }
-      // if (rank == 0)
-      //   std::cout << "Test 4" << std::endl;
     }
-
-    // std::cout << "Post case 1: " << rank << std::endl;
   }
 
   // Compute displacements for data to receive. Last entry has total
@@ -237,21 +199,6 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm0);
 
-  // std::vector<std::int64_t> dofs_received0(dofs_received.rows()),
-  //     dofs_received1(dofs_received.rows());
-  // for (Eigen::Index i = 0; i < dofs_received.rows(); ++i)
-  // {
-  //   dofs_received0[i] = dofs_received(i, 0);
-  //   dofs_received1[i] = dofs_received(i, 1);
-  // }
-
-  // std::vector dofs0 = map0.global_to_local_block(dofs_received0, bs0);
-  // std::vector dofs1 = map1.global_to_local_block(dofs_received1, bs1);
-
-  // // FIXME: check that dofs is sorted
-  // dofs0.erase(std::remove(dofs0.begin(), dofs0.end(), -1), dofs0.end());
-  // dofs1.erase(std::remove(dofs1.begin(), dofs1.end(), -1), dofs1.end());
-
   const std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
       = {map0, map1};
   const std::array bs = {bs0, bs1};
@@ -272,7 +219,6 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
       global_local_ghosts.emplace_back(ghosts[i], i + local_size);
     std::map<std::int64_t, std::int32_t> global_to_local(
         global_local_ghosts.begin(), global_local_ghosts.end());
-
     std::vector<std::int32_t>& dofs = dofs_array[b];
     for (Eigen::Index i = 0; i < dofs_received.rows(); ++i)
     {
@@ -293,6 +239,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
       }
     }
   }
+  assert(dofs_array[0].size() == dofs_array[1].size());
 
   std::vector<std::array<std::int32_t, 2>> dofs;
   dofs.reserve(dofs_array[0].size());
