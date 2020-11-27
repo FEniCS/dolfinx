@@ -43,9 +43,8 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
 /// Refine with markers, optionally redistributing
 ///
 /// @param[in] mesh Input mesh to be refined
-/// @param[in] refinement_marker MeshTags listing mesh entities which
-///   should be split by this refinement. Value == 1 means "refine",
-///   any other value means "do not refine".
+/// @param[in] refinement_marker MeshTags listing which mesh entities
+///   should be split by this refinement. The values are ignored.
 /// @param[in] redistribute Flag to call the Mesh Partitioner to
 ///   redistribute after refinement
 /// @return New Mesh

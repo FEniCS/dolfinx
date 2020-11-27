@@ -10,6 +10,7 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/GraphBuilder.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Partitioning.h>
@@ -17,55 +18,13 @@
 #include <dolfinx/mesh/TopologyComputation.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
+#include <mpi.h>
 #include <vector>
 
 using namespace dolfinx;
 
 namespace
 {
-
-/// Compute markers for interior/boundary vertices
-/// @param[in] topology_local Local topology
-/// @return Array where the ith entry is true if the ith vertex is on
-///   the boundary
-std::vector<bool>
-compute_vertex_exterior_markers(const mesh::Topology& topology_local)
-{
-  // Get list of boundary vertices
-  const int dim = topology_local.dim();
-  auto facet_cell = topology_local.connectivity(dim - 1, dim);
-  if (!facet_cell)
-  {
-    throw std::runtime_error(
-        "Need facet-cell connectivity to build distributed adjacency list.");
-  }
-
-  auto facet_vertex = topology_local.connectivity(dim - 1, 0);
-  if (!facet_vertex)
-  {
-    throw std::runtime_error(
-        "Need facet-vertex connectivity to build distributed adjacency list.");
-  }
-
-  auto map_vertex = topology_local.index_map(0);
-  if (!map_vertex)
-    throw std::runtime_error("Need vertex IndexMap from topology.");
-  assert(map_vertex->num_ghosts() == 0);
-
-  std::vector<bool> exterior_vertex(map_vertex->size_local(), false);
-  for (int f = 0; f < facet_cell->num_nodes(); ++f)
-  {
-    if (facet_cell->num_links(f) == 1)
-    {
-      auto vertices = facet_vertex->links(f);
-      for (int j = 0; j < vertices.rows(); ++j)
-        exterior_vertex[vertices[j]] = true;
-    }
-  }
-
-  return exterior_vertex;
-}
-//-------------------------------------------------------------
 
 std::int64_t local_to_global(std::int32_t local_index,
                              const common::IndexMap& map)
@@ -349,163 +308,77 @@ std::vector<std::int64_t> refinement::adjust_indices(
   return global_indices;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh refinement::build_local(
-    const mesh::Mesh& old_mesh, const std::vector<std::int64_t>& cell_topology,
-    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        new_vertex_coordinates)
-{
-  const std::size_t tdim = old_mesh.topology().dim();
-  const std::size_t num_cell_vertices = tdim + 1;
-  assert(cell_topology.size() % num_cell_vertices == 0);
-  const std::size_t num_cells = cell_topology.size() / num_cell_vertices;
-
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      cells(cell_topology.data(), num_cells, num_cell_vertices);
-
-  mesh::Mesh mesh = mesh::create_mesh(
-      old_mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells),
-      old_mesh.geometry().cmap(), new_vertex_coordinates,
-      mesh::GhostMode::none);
-  assert(mesh.geometry().dim() == old_mesh.geometry().dim());
-  return mesh;
-}
-//-----------------------------------------------------------------------------
 mesh::Mesh refinement::partition(
-    const mesh::Mesh& old_mesh, const std::vector<std::int64_t>& cell_topology,
-    int num_ghost_cells,
+    const mesh::Mesh& old_mesh,
+    const graph::AdjacencyList<std::int64_t>& cell_topology,
     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         new_vertex_coordinates,
-    bool redistribute)
+    bool redistribute, mesh::GhostMode gm)
 {
-  const int num_vertices_per_cell
-      = mesh::cell_num_entities(old_mesh.topology().cell_type(), 0);
 
-  const std::int32_t num_local_cells
-      = cell_topology.size() / num_vertices_per_cell;
-  std::vector<std::int64_t> global_cell_indices(num_local_cells);
-  const std::size_t idx_global_offset
-      = MPI::global_offset(old_mesh.mpi_comm(), num_local_cells, true);
-  for (std::int32_t i = 0; i < num_local_cells; i++)
-    global_cell_indices[i] = idx_global_offset + i;
-
-  // Check if mesh has ghost cells on any rank
-  int max_ghost_cells = 0;
-  MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                old_mesh.mpi_comm());
-
-  // Build mesh
   if (redistribute)
   {
-    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        cells(cell_topology.data(), num_local_cells - num_ghost_cells,
-              num_vertices_per_cell);
+    return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
+                             old_mesh.geometry().cmap(), new_vertex_coordinates,
+                             gm);
+  }
 
-    if (max_ghost_cells == 0)
+  auto partitioner = [](MPI_Comm mpi_comm, int, const mesh::CellType cell_type,
+                        const graph::AdjacencyList<std::int64_t>& cell_topology,
+                        mesh::GhostMode) {
+    // Find out the ghosting information
+    auto [graph, info] = mesh::GraphBuilder::compute_dual_graph(
+        mpi_comm, cell_topology, cell_type);
+
+    // FIXME: much of this is reverse engineering of data that is already
+    // known in the GraphBuilder
+
+    const int mpi_size = MPI::size(mpi_comm);
+    const int mpi_rank = MPI::rank(mpi_comm);
+    const std::int32_t local_size = graph.size();
+    std::vector<std::int32_t> local_sizes(mpi_size);
+    std::vector<std::int64_t> local_offsets(mpi_size + 1);
+
+    // Get the "local range" for all processes
+    MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1,
+                  MPI_INT32_T, mpi_comm);
+    for (int i = 0; i < mpi_size; ++i)
+      local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
+
+    // All cells should go to their currently assigned ranks (no change)
+    // but must also be sent to their ghost destinations, which are determined
+    // here.
+    std::vector<std::int32_t> destinations;
+    destinations.reserve(graph.size());
+    std::vector<std::int32_t> dest_offsets = {0};
+    dest_offsets.reserve(graph.size());
+    for (std::size_t i = 0; i < graph.size(); ++i)
     {
-      return mesh::create_mesh(old_mesh.mpi_comm(),
-                               graph::AdjacencyList<std::int64_t>(cells),
-                               old_mesh.geometry().cmap(),
-                               new_vertex_coordinates, mesh::GhostMode::none);
+      destinations.push_back(mpi_rank);
+      for (std::int64_t j : graph[i])
+      {
+        if (j < local_offsets[mpi_rank] or j >= local_offsets[mpi_rank + 1])
+        {
+          // Ghosted cell - identify which process it should be sent to.
+          for (std::size_t k = 0; k < local_offsets.size(); ++k)
+          {
+            if (j >= local_offsets[k] and j < local_offsets[k + 1])
+            {
+              destinations.push_back(k);
+              break;
+            }
+          }
+        }
+      }
+      dest_offsets.push_back(destinations.size());
     }
-    else
-    {
-      return mesh::create_mesh(
-          old_mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells),
-          old_mesh.geometry().cmap(), new_vertex_coordinates,
-          mesh::GhostMode::shared_facet);
-    }
-  }
 
-  if (max_ghost_cells > 0)
-  {
-    throw std::runtime_error("Refinement of ghosted meshes without "
-                             "re-partitioning is not supported yet.");
-  }
+    graph::AdjacencyList<std::int32_t> part(destinations, dest_offsets);
+    return part;
+  };
 
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      cells(cell_topology.data(), num_local_cells - num_ghost_cells,
-            num_vertices_per_cell);
-  MPI_Comm comm = old_mesh.mpi_comm();
-  mesh::Topology topology(comm, old_mesh.geometry().cmap().cell_shape());
-  const graph::AdjacencyList<std::int64_t> my_cells(cells);
-  {
-    auto [cells_local, local_to_global_vertices]
-        = graph::Partitioning::create_local_adjacency_list(my_cells);
-
-    // Create (i) local topology object and (ii) IndexMap for cells, and
-    // set cell-vertex topology
-    mesh::Topology topology_local(comm,
-                                  old_mesh.geometry().cmap().cell_shape());
-    const int tdim = topology_local.dim();
-    auto map = std::make_shared<common::IndexMap>(
-        comm, cells_local.num_nodes(), std::vector<int>(),
-        std::vector<std::int64_t>(), std::vector<int>());
-    topology_local.set_index_map(tdim, map);
-    auto _cells_local
-        = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
-    topology_local.set_connectivity(_cells_local, tdim, 0);
-
-    const int n = local_to_global_vertices.size();
-    map = std::make_shared<common::IndexMap>(comm, n, std::vector<int>(),
-                                             std::vector<std::int64_t>(),
-                                             std::vector<int>());
-    topology_local.set_index_map(0, map);
-    auto _vertices_local
-        = std::make_shared<graph::AdjacencyList<std::int32_t>>(n);
-    topology_local.set_connectivity(_vertices_local, 0, 0);
-
-    // Create facets for local topology, and attach to the topology
-    // object. This will be used to find possibly shared cells
-    auto [cf, fv, map0] = mesh::TopologyComputation::compute_entities(
-        comm, topology_local, tdim - 1);
-    if (cf)
-      topology_local.set_connectivity(cf, tdim, tdim - 1);
-    if (map0)
-      topology_local.set_index_map(tdim - 1, map0);
-    if (fv)
-      topology_local.set_connectivity(fv, tdim - 1, 0);
-    auto [fc, ignore] = mesh::TopologyComputation::compute_connectivity(
-        topology_local, tdim - 1, tdim);
-    if (fc)
-      topology_local.set_connectivity(fc, tdim - 1, tdim);
-
-    // Get facets that are on the boundary of the local topology, i.e
-    // are connect to one cell only
-    const std::vector boundary = mesh::compute_boundary_facets(topology_local);
-
-    // Build distributed cell-vertex AdjacencyList, IndexMap for
-    // vertices, and map from local index to old global index
-    const std::vector<bool>& exterior_vertices
-        = compute_vertex_exterior_markers(topology_local);
-    auto [cells_d, vertex_map]
-        = graph::Partitioning::create_distributed_adjacency_list(
-            comm, *_cells_local, local_to_global_vertices, exterior_vertices);
-
-    // Set vertex IndexMap, and vertex-vertex connectivity
-    auto _vertex_map
-        = std::make_shared<common::IndexMap>(std::move(vertex_map));
-    topology.set_index_map(0, _vertex_map);
-    auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-        _vertex_map->size_local() + _vertex_map->num_ghosts());
-    topology.set_connectivity(c0, 0, 0);
-
-    // Set cell IndexMap and cell-vertex connectivity
-    auto index_map_c = std::make_shared<common::IndexMap>(
-        comm, cells_d.num_nodes(), std::vector<int>(),
-        std::vector<std::int64_t>(), std::vector<int>());
-    topology.set_index_map(tdim, index_map_c);
-    auto _cells_d
-        = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
-    topology.set_connectivity(_cells_d, tdim, 0);
-  }
-
-  mesh::Geometry geometry
-      = mesh::create_geometry(comm, topology, old_mesh.geometry().cmap(),
-                              my_cells, new_vertex_coordinates);
-
-  return mesh::Mesh(comm, std::move(topology), std::move(geometry));
+  return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
+                           old_mesh.geometry().cmap(), new_vertex_coordinates,
+                           gm, partitioner);
 }
 //-----------------------------------------------------------------------------

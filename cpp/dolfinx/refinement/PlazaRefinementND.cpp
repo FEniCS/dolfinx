@@ -8,6 +8,7 @@
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
@@ -398,7 +399,7 @@ mesh::Mesh compute_refinement(
       = refinement::create_new_vertices(neighbor_comm, shared_edges, mesh,
                                         marked_edges);
 
-  std::vector<std::size_t> parent_cell;
+  std::vector<std::int64_t> parent_cell;
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
   std::vector<int> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
@@ -421,10 +422,8 @@ mesh::Mesh compute_refinement(
       mesh.topology().index_map(0), num_new_vertices_local);
 
   const int num_cells = map_c->size_local();
-  const int num_ghost_cells = map_c->num_ghosts();
   std::vector<std::int64_t> cell_topology;
-  int num_new_ghost_cells = 0;
-  for (int c = 0; c < num_cells + num_ghost_cells; ++c)
+  for (int c = 0; c < num_cells; ++c)
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
@@ -493,22 +492,43 @@ mesh::Mesh compute_refinement(
       for (std::int32_t i = 0; i < ncells; ++i)
         parent_cell.push_back(c);
 
-      // Count up new ghost cells
-      if (c >= num_cells)
-        num_new_ghost_cells += ncells;
-
       // Convert from cell local index to mesh index and add to cells
       for (std::int32_t v : simplex_set)
         cell_topology.push_back(indices[v]);
     }
   }
 
+  assert(cell_topology.size() % num_cell_vertices == 0);
+  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      cells(cell_topology.data(), cell_topology.size() / num_cell_vertices,
+            num_cell_vertices);
+
+  graph::AdjacencyList<std::int64_t> cell_adj(cells);
+
   const bool serial = (dolfinx::MPI::size(mesh.mpi_comm()) == 1);
   if (serial)
-    return refinement::build_local(mesh, cell_topology, new_vertex_coordinates);
+  {
+    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+                             new_vertex_coordinates, mesh::GhostMode::none);
+  }
   else
-    return refinement::partition(mesh, cell_topology, num_new_ghost_cells,
-                                 new_vertex_coordinates, redistribute);
+  {
+    const int num_ghost_cells = map_c->num_ghosts();
+    // Check if mesh has ghost cells on any rank
+    // FIXME: this is not a robust test. Should be user option.
+    int max_ghost_cells = 0;
+    MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
+                  mesh.mpi_comm());
+
+    // Build mesh
+    const mesh::GhostMode ghost_mode = (max_ghost_cells == 0)
+                                           ? mesh::GhostMode::none
+                                           : mesh::GhostMode::shared_facet;
+
+    return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
+                                 redistribute, ghost_mode);
+  }
 }
 //-----------------------------------------------------------------------------
 } // namespace
