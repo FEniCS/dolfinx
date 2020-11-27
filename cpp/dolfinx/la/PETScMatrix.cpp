@@ -80,9 +80,6 @@ Mat la::create_petsc_matrix(
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetBlockSizes");
 
-  // Find a common block size across rows/columns
-  const bool common_is = (maps[0] == maps[1] and bs[0] == bs[1] ? true : false);
-
   // Create PETSc local-to-global map/index sets
   ISLocalToGlobalMapping local_to_global0;
   const std::vector _map0 = maps[0]->global_indices();
@@ -93,17 +90,12 @@ Mat la::create_petsc_matrix(
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
 
-  if (common_is)
+  // Check for common index maps
+  if (maps[0] == maps[1] and bs[0] == bs[1])
   {
-    // Set matrix local-to-global maps
     ierr = MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global0);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
-
-    // Clean up local-to-global maps
-    ierr = ISLocalToGlobalMappingDestroy(&local_to_global0);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
   }
   else
   {
@@ -115,20 +107,18 @@ Mat la::create_petsc_matrix(
                                         &local_to_global1);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
-
-    // Set matrix local-to-global maps
     ierr = MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global1);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
-
-    // Clean up local-to-global maps
-    ierr = ISLocalToGlobalMappingDestroy(&local_to_global0);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
     ierr = ISLocalToGlobalMappingDestroy(&local_to_global1);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
   }
+
+  // Clean up local-to-global 0
+  ierr = ISLocalToGlobalMappingDestroy(&local_to_global0);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
 
   // Note: This should be called after having set the local-to-global
   // map for MATIS (this is a dummy call if A is not of type MATIS)
