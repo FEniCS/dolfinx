@@ -156,16 +156,17 @@ private:
 };
 
 /// Create a mesh
-Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                 const fem::CoordinateElement& element,
-                 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>& x,
-                 GhostMode ghost_mode,
-                 std::function<const graph::AdjacencyList<std::int32_t>(
-                     MPI_Comm, int, const mesh::CellType,
-                     const graph::AdjacencyList<std::int64_t>&)>
-                     partitioner
-                 = &Partitioning::partition_cells);
+Mesh create_mesh(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    const fem::CoordinateElement& element,
+    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        x,
+    GhostMode ghost_mode,
+    std::function<const graph::AdjacencyList<std::int32_t>(
+        MPI_Comm, int, const mesh::CellType,
+        const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>
+        partitioner
+    = &Partitioning::partition_cells);
 
 } // namespace mesh
 } // namespace dolfinx

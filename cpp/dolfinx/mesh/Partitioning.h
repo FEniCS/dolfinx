@@ -34,10 +34,13 @@ namespace Partitioning
 ///   across all processes can be greater than the number of vertices.
 ///   High-order 'nodes', e.g. mid-side points, should not be
 ///   included.
+/// @param[in] ghost_mode How to overlap the cell partitioning: none,
+///   shared_facet or shared_vertex
 /// @return Destination processes for each cell on this process
 graph::AdjacencyList<std::int32_t>
 partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
-                const graph::AdjacencyList<std::int64_t>& cells);
+                const graph::AdjacencyList<std::int64_t>& cells,
+                mesh::GhostMode ghost_mode);
 
 } // namespace Partitioning
 } // namespace dolfinx::mesh

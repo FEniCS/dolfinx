@@ -319,62 +319,59 @@ mesh::Mesh refinement::partition(
                              gm);
   }
 
-  // Create a "partitioner" that returns the current partition - slightly
-  // complicated by the need to find out the "ghosted cells" and their
-  // destinations
-  auto partitioner =
-      [](MPI_Comm mpi_comm, int, const mesh::CellType cell_type,
-         const graph::AdjacencyList<std::int64_t>& cell_topology) {
-        // Find out the ghosting information
-        auto [graph, info] = mesh::GraphBuilder::compute_dual_graph(
-            mpi_comm, cell_topology, cell_type);
+  auto partitioner = [](MPI_Comm mpi_comm, int, const mesh::CellType cell_type,
+                        const graph::AdjacencyList<std::int64_t>& cell_topology,
+                        mesh::GhostMode) {
+    // Find out the ghosting information
+    auto [graph, info] = mesh::GraphBuilder::compute_dual_graph(
+        mpi_comm, cell_topology, cell_type);
 
-        // FIXME: much of this is reverse engineering of data that is already
-        // known in the GraphBuilder
+    // FIXME: much of this is reverse engineering of data that is already
+    // known in the GraphBuilder
 
-        const int mpi_size = MPI::size(mpi_comm);
-        const int mpi_rank = MPI::rank(mpi_comm);
-        const std::int32_t local_size = graph.size();
-        std::vector<std::int32_t> local_sizes(mpi_size);
-        std::vector<std::int64_t> local_offsets(mpi_size + 1);
+    const int mpi_size = MPI::size(mpi_comm);
+    const int mpi_rank = MPI::rank(mpi_comm);
+    const std::int32_t local_size = graph.size();
+    std::vector<std::int32_t> local_sizes(mpi_size);
+    std::vector<std::int64_t> local_offsets(mpi_size + 1);
 
-        // Get the "local range" for all processes
-        MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1,
-                      MPI_INT32_T, mpi_comm);
-        for (int i = 0; i < mpi_size; ++i)
-          local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
+    // Get the "local range" for all processes
+    MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1,
+                  MPI_INT32_T, mpi_comm);
+    for (int i = 0; i < mpi_size; ++i)
+      local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
 
-        // All cells should go to their currently assigned ranks (no change)
-        // but must also be sent to their ghost destinations, which are
-        // determined here.
-        std::vector<std::int32_t> destinations;
-        destinations.reserve(graph.size());
-        std::vector<std::int32_t> dest_offsets = {0};
-        dest_offsets.reserve(graph.size());
-        for (const std::vector<std::int64_t>& row : graph)
+    // All cells should go to their currently assigned ranks (no change)
+    // but must also be sent to their ghost destinations, which are determined
+    // here.
+    std::vector<std::int32_t> destinations;
+    destinations.reserve(graph.size());
+    std::vector<std::int32_t> dest_offsets = {0};
+    dest_offsets.reserve(graph.size());
+    for (std::size_t i = 0; i < graph.size(); ++i)
+    {
+      destinations.push_back(mpi_rank);
+      for (std::int64_t j : graph[i])
+      {
+        if (j < local_offsets[mpi_rank] or j >= local_offsets[mpi_rank + 1])
         {
-          destinations.push_back(mpi_rank);
-          for (std::int64_t j : row)
+          // Ghosted cell - identify which process it should be sent to.
+          for (std::size_t k = 0; k < local_offsets.size(); ++k)
           {
-            if (j < local_offsets[mpi_rank] or j >= local_offsets[mpi_rank + 1])
+            if (j >= local_offsets[k] and j < local_offsets[k + 1])
             {
-              // Ghosted cell - identify which process it should be sent to.
-              for (int k = 0; k < mpi_size; ++k)
-              {
-                if (j >= local_offsets[k] and j < local_offsets[k + 1])
-                {
-                  destinations.push_back(k);
-                  break;
-                }
-              }
+              destinations.push_back(k);
+              break;
             }
           }
-          dest_offsets.push_back(destinations.size());
         }
+      }
+      dest_offsets.push_back(destinations.size());
+    }
 
-        graph::AdjacencyList<std::int32_t> part(destinations, dest_offsets);
-        return part;
-      };
+    graph::AdjacencyList<std::int32_t> part(destinations, dest_offsets);
+    return part;
+  };
 
   return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
                            old_mesh.geometry().cmap(), new_vertex_coordinates,
