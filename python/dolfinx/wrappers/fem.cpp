@@ -251,9 +251,9 @@ void fem(py::module& m)
       m, "DofMap", "DofMap object")
       .def(py::init<std::shared_ptr<const dolfinx::fem::ElementDofLayout>,
                     std::shared_ptr<const dolfinx::common::IndexMap>, int,
-                    dolfinx::graph::AdjacencyList<std::int32_t>&>(),
+                    dolfinx::graph::AdjacencyList<std::int32_t>&, int>(),
            py::arg("element_dof_layout"), py::arg("index_map"),
-           py::arg("index_map_bs"), py::arg("dofmap"))
+           py::arg("index_map_bs"), py::arg("dofmap"), py::arg("bs"))
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)
       .def_property_readonly("index_map_bs",
                              &dolfinx::fem::DofMap::index_map_bs)

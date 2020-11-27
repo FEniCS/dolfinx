@@ -42,8 +42,8 @@ void assemble_cells(
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Geometry& geometry,
     const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap0,
-    const graph::AdjacencyList<std::int32_t>& dofmap1,
+    const graph::AdjacencyList<std::int32_t>& dofmap0, const int bs0,
+    const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
@@ -108,7 +108,9 @@ void assemble_matrix(
   assert(dofmap0);
   assert(dofmap1);
   const graph::AdjacencyList<std::int32_t>& dofs0 = dofmap0->list();
+  const int bs0 = dofmap0->bs();
   const graph::AdjacencyList<std::int32_t>& dofs1 = dofmap1->list();
+  const int bs1 = dofmap1->bs();
 
   // Prepare constants
   const Eigen::Array<T, Eigen::Dynamic, 1> constants = pack_constants(a);
@@ -131,8 +133,8 @@ void assemble_matrix(
     const std::vector<std::int32_t>& active_cells
         = a.domains(IntegralType::cell, i);
     impl::assemble_cells<T>(mat_set_values, mesh->geometry(), active_cells,
-                            dofs0, dofs1, bc0, bc1, fn, coeffs, constants,
-                            cell_info);
+                            dofs0, bs0, dofs1, bs1, bc0, bc1, fn, coeffs,
+                            constants, cell_info);
   }
 
   if (a.num_integrals(IntegralType::exterior_facet) > 0
@@ -179,8 +181,8 @@ void assemble_cells(
                             const std::int32_t*, const T*)>& mat_set,
     const mesh::Geometry& geometry,
     const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap0,
-    const graph::AdjacencyList<std::int32_t>& dofmap1,
+    const graph::AdjacencyList<std::int32_t>& dofmap0, const int bs0,
+    const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
@@ -205,9 +207,11 @@ void assemble_cells(
   const int num_dofs0 = dofmap0.links(0).size();
   const int num_dofs1 = dofmap1.links(0).size();
   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae(
-      num_dofs0, num_dofs1);
+      bs0 * num_dofs0, bs1 * num_dofs1);
 
   // Iterate over active cells
+  std::cout << "bs: " << bs0 << ", " << bs1 << std::endl;
+  std::cout << "dofs: " << num_dofs0 << ", " << num_dofs0 << std::endl;
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
@@ -217,7 +221,7 @@ void assemble_cells(
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Tabulate tensor
-    std::fill(Ae.data(), Ae.data() + num_dofs0 * num_dofs1, 0);
+    std::fill(Ae.data(), Ae.data() + Ae.size(), 0);
     kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
@@ -226,21 +230,27 @@ void assemble_cells(
     auto dofs1 = dofmap1.links(c);
     if (!bc0.empty())
     {
-      for (Eigen::Index i = 0; i < Ae.rows(); ++i)
+      for (Eigen::Index i = 0; i < num_dofs0; ++i)
       {
-        if (bc0[dofs0[i]])
-          Ae.row(i).setZero();
+        for (int k = 0; k < bs0; ++k)
+        {
+          if (bc0[bs0 * dofs0[i] + k])
+            Ae.row(bs0 * i + k).setZero();
+        }
       }
-    }
-    if (!bc1.empty())
-    {
-      for (Eigen::Index j = 0; j < Ae.cols(); ++j)
-      {
-        if (bc1[dofs1[j]])
-          Ae.col(j).setZero();
-      }
-    }
 
+      if (!bc1.empty())
+      {
+        for (Eigen::Index j = 0; j < num_dofs1; ++j)
+        {
+          for (int k = 0; k < bs1; ++k)
+          {
+            if (bc1[bs1 * dofs1[j] + k])
+              Ae.col(bs1 * j + k).setZero();
+          }
+        }
+      }
+    }
     mat_set(dofs0.size(), dofs0.data(), dofs1.size(), dofs1.data(), Ae.data());
   }
 }

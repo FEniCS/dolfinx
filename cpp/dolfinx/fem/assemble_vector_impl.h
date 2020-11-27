@@ -42,7 +42,7 @@ void assemble_cells(
     Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
     const mesh::Geometry& geometry,
     const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap,
+    const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
@@ -55,7 +55,7 @@ template <typename T>
 void assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets,
-    const graph::AdjacencyList<std::int32_t>& dofmap,
+    const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
@@ -517,6 +517,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
       = L.function_spaces().at(0)->dofmap();
   assert(dofmap);
   const graph::AdjacencyList<std::int32_t>& dofs = dofmap->list();
+  const int bs = dofmap->bs();
 
   // Prepare constants
   const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants(L);
@@ -538,7 +539,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
     const auto& fn = L.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
         = L.domains(IntegralType::cell, i);
-    fem::impl::assemble_cells(b, mesh->geometry(), active_cells, dofs, fn,
+    fem::impl::assemble_cells(b, mesh->geometry(), active_cells, dofs, bs, fn,
                               coeffs, constant_values, cell_info);
   }
 
@@ -561,7 +562,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
       const auto& fn = L.kernel(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
           = L.domains(IntegralType::exterior_facet, i);
-      fem::impl::assemble_exterior_facets(b, *mesh, active_facets, dofs, fn,
+      fem::impl::assemble_exterior_facets(b, *mesh, active_facets, dofs, bs, fn,
                                           coeffs, constant_values, cell_info,
                                           perms);
     }
@@ -584,7 +585,7 @@ void assemble_cells(
     Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
     const mesh::Geometry& geometry,
     const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap,
+    const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
@@ -607,7 +608,7 @@ void assemble_cells(
   const int num_dofs = dofmap.links(0).size();
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
-  Eigen::Matrix<T, Eigen::Dynamic, 1> be(num_dofs);
+  Eigen::Matrix<T, Eigen::Dynamic, 1> be(bs * num_dofs);
 
   // Iterate over active cells
   for (std::int32_t c : active_cells)
@@ -619,14 +620,15 @@ void assemble_cells(
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Tabulate vector for cell
-    std::fill(be.data(), be.data() + num_dofs, 0);
+    std::fill(be.data(), be.data() + bs * num_dofs, 0);
     kernel(be.data(), coeffs.row(c).data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);
     for (Eigen::Index i = 0; i < num_dofs; ++i)
-      b[dofs[i]] += be[i];
+      for (int k = 0; k < bs; ++k)
+        b[bs * dofs[i] + k] += be[bs * i + k];
   }
 }
 //-----------------------------------------------------------------------------
@@ -634,7 +636,7 @@ template <typename T>
 void assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets,
-    const graph::AdjacencyList<std::int32_t>& dofmap,
+    const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
@@ -659,7 +661,7 @@ void assemble_exterior_facets(
   const int num_dofs = dofmap.links(0).size();
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
-  Eigen::Matrix<T, Eigen::Dynamic, 1> be(num_dofs);
+  Eigen::Matrix<T, Eigen::Dynamic, 1> be(bs * num_dofs);
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -684,7 +686,7 @@ void assemble_exterior_facets(
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Tabulate element vector
-    std::fill(be.data(), be.data() + num_dofs, 0);
+    std::fill(be.data(), be.data() + bs * num_dofs, 0);
     fn(be.data(), coeffs.row(cell).data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &perms(local_facet, cell),
        cell_info[cell]);
@@ -692,7 +694,8 @@ void assemble_exterior_facets(
     // Add element vector to global vector
     auto dofs = dofmap.links(cell);
     for (Eigen::Index i = 0; i < num_dofs; ++i)
-      b[dofs[i]] += be[i];
+      for (int k = 0; k < bs; ++k)
+        b[bs * dofs[i] + k] += be[bs * i + k];
   }
 }
 //-----------------------------------------------------------------------------

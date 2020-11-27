@@ -143,8 +143,9 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                           Eigen::RowMajor>>
       _dofmap(dofmap.data(), dofmap.rows() / cell_dimension, cell_dimension);
 
+  // FIXME X
   return fem::DofMap(element_dof_layout, index_map, 1,
-                     graph::AdjacencyList<std::int32_t>(_dofmap));
+                     graph::AdjacencyList<std::int32_t>(_dofmap), 1);
 }
 
 } // namespace
@@ -195,13 +196,15 @@ fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap,
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                std::shared_ptr<const common::IndexMap> index_map,
                int index_map_bs,
-               const graph::AdjacencyList<std::int32_t>& dofmap)
+               const graph::AdjacencyList<std::int32_t>& dofmap, int bs)
     : element_dof_layout(element_dof_layout), index_map(index_map),
-      _index_map_bs(index_map_bs), _dofmap(dofmap)
+      _index_map_bs(index_map_bs), _dofmap(dofmap), _bs(bs)
 {
   // Dofmap data is copied as the types for dofmap and _dofmap may
   // differ, typically 32- vs 64-bit integers
 }
+//-----------------------------------------------------------------------------
+int DofMap::bs() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 {
@@ -228,8 +231,9 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
       dofmap(c, i) = cell_dmap_parent[sub_element_map_view[i]];
   }
 
+  // FIXME X
   return DofMap(sub_element_dof_layout, this->index_map, this->index_map_bs(),
-                graph::AdjacencyList<std::int32_t>(dofmap));
+                graph::AdjacencyList<std::int32_t>(dofmap), 1);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
@@ -255,7 +259,7 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
     auto [index_map, bs, dofmap]
         = DofMapBuilder::build(comm, topology, *collapsed_dof_layout);
     dofmap_new = std::make_unique<DofMap>(element_dof_layout, index_map, bs,
-                                          std::move(dofmap));
+                                          std::move(dofmap), bs);
   }
   else
   {

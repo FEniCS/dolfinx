@@ -99,19 +99,24 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   auto map = mesh->topology().index_map(tdim);
   assert(map);
 
-  Eigen::Matrix<T, Eigen::Dynamic, 1>& expansion_coefficients = u.x()->array();
+  Eigen::Matrix<T, Eigen::Dynamic, 1>& coeffs = u.x()->array();
 
   // Iterate over mesh and interpolate on each cell
   const auto dofmap_u = u.function_space()->dofmap();
   const Eigen::Matrix<T, Eigen::Dynamic, 1>& v_array = v.x()->array();
   const int num_cells = map->size_local() + map->num_ghosts();
+  const int bs = dofmap_v->bs();
+  assert(bs == dofmap_u->bs());
   for (int c = 0; c < num_cells; ++c)
   {
     auto dofs_v = dofmap_v->cell_dofs(c);
     auto cell_dofs = dofmap_u->cell_dofs(c);
     assert(dofs_v.size() == cell_dofs.size());
     for (Eigen::Index i = 0; i < dofs_v.size(); ++i)
-      expansion_coefficients[cell_dofs[i]] = v_array[dofs_v[i]];
+    {
+      for (int k = 0; k < bs; ++k)
+        coeffs[bs * cell_dofs[i] + k] = v_array[bs * dofs_v[i] + k];
+    }
   }
 }
 

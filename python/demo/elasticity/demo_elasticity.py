@@ -149,54 +149,57 @@ form = Form(a, form_compiler_parameters={"quadrature_degree": 1})
 # ::
 
 # Assemble system, applying boundary conditions and preserving symmetry
-A = assemble_matrix(form, [bc])
+# A = assemble_matrix(form, [bc])
+A = assemble_matrix(form, [])
 A.assemble()
+print("A norm:", A.norm())
+exit(0)
 
-b = assemble_vector(L)
-apply_lifting(b, [a], [[bc]])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-set_bc(b, [bc])
+# b = assemble_vector(L)
+# apply_lifting(b, [a], [[bc]])
+# b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+# set_bc(b, [bc])
 
-# Create solution function
-u = Function(V)
+# # Create solution function
+# u = Function(V)
 
-# Create near null space basis (required for smoothed aggregation AMG).
-null_space = build_nullspace(V)
+# # Create near null space basis (required for smoothed aggregation AMG).
+# null_space = build_nullspace(V)
 
-# Attach near nullspace to matrix
-A.setNearNullSpace(null_space)
+# # Attach near nullspace to matrix
+# A.setNearNullSpace(null_space)
 
-# Set solver options
-opts = PETSc.Options()
-opts["ksp_type"] = "cg"
-opts["ksp_rtol"] = 1.0e-12
-opts["pc_type"] = "gamg"
+# # Set solver options
+# opts = PETSc.Options()
+# opts["ksp_type"] = "cg"
+# opts["ksp_rtol"] = 1.0e-12
+# opts["pc_type"] = "gamg"
 
-# Use Chebyshev smoothing for multigrid
-opts["mg_levels_ksp_type"] = "chebyshev"
-opts["mg_levels_pc_type"] = "jacobi"
+# # Use Chebyshev smoothing for multigrid
+# opts["mg_levels_ksp_type"] = "chebyshev"
+# opts["mg_levels_pc_type"] = "jacobi"
 
-# Improve estimate of eigenvalues for Chebyshev smoothing
-opts["mg_levels_esteig_ksp_type"] = "cg"
-opts["mg_levels_ksp_chebyshev_esteig_steps"] = 20
+# # Improve estimate of eigenvalues for Chebyshev smoothing
+# opts["mg_levels_esteig_ksp_type"] = "cg"
+# opts["mg_levels_ksp_chebyshev_esteig_steps"] = 20
 
-# Create CG Krylov solver and turn convergence monitoring on
-solver = PETSc.KSP().create(MPI.COMM_WORLD)
-solver.setFromOptions()
+# # Create CG Krylov solver and turn convergence monitoring on
+# solver = PETSc.KSP().create(MPI.COMM_WORLD)
+# solver.setFromOptions()
 
-# Set matrix operator
-solver.setOperators(A)
+# # Set matrix operator
+# solver.setOperators(A)
 
-# Compute solution
-solver.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
-solver.solve(b, u.vector)
-solver.view()
+# # Compute solution
+# solver.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
+# solver.solve(b, u.vector)
+# solver.view()
 
-# Save solution to XDMF format
-with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
-    file.write_mesh(mesh)
-    file.write_function(u)
+# # Save solution to XDMF format
+# with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
+#     file.write_mesh(mesh)
+#     file.write_function(u)
 
-unorm = u.vector.norm()
-if mesh.mpi_comm().rank == 0:
-    print("Solution vector norm:", unorm)
+# unorm = u.vector.norm()
+# if mesh.mpi_comm().rank == 0:
+#     print("Solution vector norm:", unorm)

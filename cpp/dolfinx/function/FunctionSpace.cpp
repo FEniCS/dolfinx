@@ -44,12 +44,10 @@ internal_tabulate_dof_coordinates(
   std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
   assert(index_map);
 
-  int bs = dofmap->index_map_bs();
+  // int bs = dofmap->index_map_bs();
   int element_block_size = element->block_size();
 
-  std::int32_t local_size
-      = bs * (index_map->size_local() + index_map->num_ghosts())
-        / element_block_size;
+  std::int32_t local_size = index_map->size_local() + index_map->num_ghosts();
   const int scalar_dofs = element->space_dimension() / element_block_size;
 
   // Dof coordinate on reference element
@@ -99,17 +97,7 @@ internal_tabulate_dof_coordinates(
 
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < scalar_dofs; ++i)
-    {
-      // FIXME: this depends on the dof layout
-      for (int j = 0; j < repeats; ++j)
-      {
-        x.row(dofs[i * element_block_size] / element_block_size * repeats + j)
-            .head(gdim)
-            = coordinates.row(i);
-      }
-      // TODO: cell_dofs should return values for scalar subspace, rather than
-      // fixing that here.
-    }
+      x.row(dofs[i]).head(gdim) = coordinates.row(i);
   }
 
   return x;
