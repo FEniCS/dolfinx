@@ -527,25 +527,38 @@ xdmf_utils::extract_local_entities(
       igi_to_vertex[nodes_g[x_dofs[cell_vertex_dofs[v]]]] = vertices[v];
   }
 
-  // Apply map and obtain entities defined with local vertex numbers
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entities_local(recv_ents.array().rows() / num_vertices_per_entity,
-                     num_vertices_per_entity);
+  std::vector<std::int32_t> entities_new;
+  entities_new.reserve(recv_ents.array().size());
+  std::vector<std::int32_t> values_new;
+  values_new.reserve(recv_vals.array().size());
 
-  std::vector<std::int32_t> values_new(recv_vals.array().data(),
-                                       recv_vals.array().data()
-                                           + recv_vals.array().rows());
-  assert(recv_vals.array().rows() == entities_local.rows());
-
-  for (Eigen::Index e = 0; e < entities_local.rows(); ++e)
+  for (Eigen::Index e = 0; e < recv_ents.array().rows() / num_vertices_per_entity; ++e)
   {
-    for (Eigen::Index i = 0; i < entities_local.cols(); ++i)
+    bool entity_found = true;
+    std::vector<std::int32_t> entity(num_vertices_per_entity);
+    for (Eigen::Index i = 0; i < num_vertices_per_entity; ++i)
     {
-      entities_local(e, i)
-          = igi_to_vertex[recv_ents.array()[e * num_vertices_per_entity + i]];
+      const auto it = igi_to_vertex.find(recv_ents.array()[e * num_vertices_per_entity + i]);
+      if (it == igi_to_vertex.end())
+      {
+        // As soon as this received index is not in locally owned input global indices
+        // skip the entire entity
+        entity_found = false;
+        break;
+      }
+      entity[i] = it->second;
+    }
+
+    if (entity_found == true)
+    {
+      entities_new.insert(entities_new.end(), entity.begin(), entity.end());
+      values_new.push_back(recv_vals.array()[e]);
     }
   }
 
-  return {entities_local, values_new};
-}
+  return {Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>(entities_new.data(),
+                                                    entities_new.size() / num_vertices_per_entity, num_vertices_per_entity),
+          values_new};
+  }
 //-----------------------------------------------------------------------------
