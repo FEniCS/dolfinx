@@ -108,8 +108,35 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
   // FIXME: check that dofs is sorted
   // Build vector of local dof indicies that have been marked by another
   // process
-  std::vector<std::int32_t> dofs = map.global_to_local_block(dofs_received, bs);
-  dofs.erase(std::remove(dofs.begin(), dofs.end(), -1), dofs.end());
+  const std::array<std::int64_t, 2> range = map.local_range();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map.ghosts();
+
+  // Build map from ghost to local position
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
+  const std::int32_t local_size = range[1] - range[0];
+  for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
+    global_local_ghosts.emplace_back(ghosts[i], i + local_size);
+  std::map<std::int64_t, std::int32_t> global_to_local(
+      global_local_ghosts.begin(), global_local_ghosts.end());
+
+  std::vector<std::int32_t> dofs;
+  for (std::size_t i = 0; i < dofs_received.size(); ++i)
+  {
+    if (dofs_received[i] >= bs * range[0] and dofs_received[i] < bs * range[1])
+    {
+      // Owned dof
+      dofs.push_back(dofs_received[i] - bs * range[0]);
+    }
+    else
+    {
+      // Search in ghosts
+      if (auto it = global_to_local.find(dofs_received[i] / bs);
+          it != global_to_local.end())
+      {
+        dofs.push_back(it->second * bs + dofs_received[i] % bs);
+      }
+    }
+  }
 
   return dofs;
 }
@@ -210,25 +237,67 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm0);
 
-  std::vector<std::int64_t> dofs_received0(dofs_received.rows()),
-      dofs_received1(dofs_received.rows());
-  for (Eigen::Index i = 0; i < dofs_received.rows(); ++i)
+  // std::vector<std::int64_t> dofs_received0(dofs_received.rows()),
+  //     dofs_received1(dofs_received.rows());
+  // for (Eigen::Index i = 0; i < dofs_received.rows(); ++i)
+  // {
+  //   dofs_received0[i] = dofs_received(i, 0);
+  //   dofs_received1[i] = dofs_received(i, 1);
+  // }
+
+  // std::vector dofs0 = map0.global_to_local_block(dofs_received0, bs0);
+  // std::vector dofs1 = map1.global_to_local_block(dofs_received1, bs1);
+
+  // // FIXME: check that dofs is sorted
+  // dofs0.erase(std::remove(dofs0.begin(), dofs0.end(), -1), dofs0.end());
+  // dofs1.erase(std::remove(dofs1.begin(), dofs1.end(), -1), dofs1.end());
+
+  const std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
+      = {map0, map1};
+  const std::array bs = {bs0, bs1};
+  std::array<std::vector<std::int32_t>, 2> dofs_array;
+  for (int b = 0; b < 2; ++b)
   {
-    dofs_received0[i] = dofs_received(i, 0);
-    dofs_received1[i] = dofs_received(i, 1);
+    // FIXME: check that dofs is sorted
+    // Build vector of local dof indicies that have been marked by another
+    // process
+    const std::array<std::int64_t, 2> range = maps[b].get().local_range();
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
+        = maps[b].get().ghosts();
+
+    // Build map from ghost to local position
+    std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
+    const std::int32_t local_size = range[1] - range[0];
+    for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
+      global_local_ghosts.emplace_back(ghosts[i], i + local_size);
+    std::map<std::int64_t, std::int32_t> global_to_local(
+        global_local_ghosts.begin(), global_local_ghosts.end());
+
+    std::vector<std::int32_t>& dofs = dofs_array[b];
+    for (Eigen::Index i = 0; i < dofs_received.rows(); ++i)
+    {
+      if (dofs_received(i, b) >= bs[b] * range[0]
+          and dofs_received(i, b) < bs[b] * range[1])
+      {
+        // Owned dof
+        dofs.push_back(dofs_received(i, b) - bs[b] * range[0]);
+      }
+      else
+      {
+        // Search in ghosts
+        if (auto it = global_to_local.find(dofs_received(i, b) / bs[b]);
+            it != global_to_local.end())
+        {
+          dofs.push_back(it->second * bs[b] + dofs_received(i, b) % bs[b]);
+        }
+      }
+    }
   }
 
-  std::vector dofs0 = map0.global_to_local_block(dofs_received0, bs0);
-  std::vector dofs1 = map1.global_to_local_block(dofs_received1, bs1);
-
-  // FIXME: check that dofs is sorted
-  dofs0.erase(std::remove(dofs0.begin(), dofs0.end(), -1), dofs0.end());
-  dofs1.erase(std::remove(dofs1.begin(), dofs1.end(), -1), dofs1.end());
-
   std::vector<std::array<std::int32_t, 2>> dofs;
-  dofs.reserve(dofs0.size());
-  for (std::size_t i = 0; i < dofs0.size(); ++i)
-    dofs.push_back({dofs0[i], dofs1[i]});
+  dofs.reserve(dofs_array[0].size());
+  for (std::size_t i = 0; i < dofs_array[0].size(); ++i)
+    dofs.push_back({dofs_array[0][i], dofs_array[1][i]});
 
   return dofs;
 }

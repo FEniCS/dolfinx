@@ -160,25 +160,12 @@ public:
   std::vector<std::int64_t>
   local_to_global(const std::vector<std::int32_t>& indices) const;
 
-  /// TODO
-  std::vector<std::int32_t>
-  global_to_local_block(const std::vector<std::int64_t>& indices, int bs) const;
-
   /// Compute local indices for array of global indices
   /// @param[in] indices Global indices
   /// @return The local of the corresponding global index in indices.
   ///   Returns -1 if the local index does not exist on this process.
   std::vector<std::int32_t>
-  global_to_local(const std::vector<std::int64_t>& indices) const
-  {
-    return global_to_local_block(indices, 1);
-  }
-
-  /// TODO
-  std::vector<std::int32_t> global_to_local_block(
-      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-          indices,
-      int bs) const;
+  global_to_local(const std::vector<std::int64_t>& indices) const;
 
   /// Compute local indices for array of global indices
   /// @param[in] indices Global indices
@@ -186,10 +173,7 @@ public:
   ///   Return -1 if the local index does not exist on this process.
   std::vector<std::int32_t> global_to_local(
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-          indices) const
-  {
-    return global_to_local_block(indices, 1);
-  }
+          indices) const;
 
   /// Global indices
   /// @return The global index for all local indices (0, 1, 2, ...) on

@@ -518,18 +518,16 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
-IndexMap::global_to_local_block(const std::vector<std::int64_t>& indices,
-                                int bs) const
+IndexMap::global_to_local(const std::vector<std::int64_t>& indices) const
 {
   const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>
       _indices(indices.data(), indices.size());
-  return this->global_to_local_block(_indices, bs);
+  return this->global_to_local(_indices);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> IndexMap::global_to_local_block(
+std::vector<std::int32_t> IndexMap::global_to_local(
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-        indices,
-    int bs) const
+        indices) const
 {
   const std::int32_t local_size = _local_range[1] - _local_range[0];
 
@@ -544,16 +542,12 @@ std::vector<std::int32_t> IndexMap::global_to_local_block(
   for (Eigen::Index i = 0; i < indices.size(); ++i)
   {
     const std::int64_t index = indices[i];
-    if (index >= bs * range[0] and index < bs * range[1])
-      local.push_back(index - bs * range[0]);
+    if (index >= range[0] and index < range[1])
+      local.push_back(index - range[0]);
     else
     {
-      const std::int64_t index_block = index / bs;
-      if (auto it = global_to_local.find(index_block);
-          it != global_to_local.end())
-      {
-        local.push_back(it->second * bs + index % bs);
-      }
+      if (auto it = global_to_local.find(index); it != global_to_local.end())
+        local.push_back(it->second + index);
       else
         local.push_back(-1);
     }
