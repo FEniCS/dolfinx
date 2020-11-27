@@ -307,39 +307,16 @@ std::vector<std::int64_t> refinement::adjust_indices(
 mesh::Mesh refinement::partition(
     const mesh::Mesh& old_mesh,
     const graph::AdjacencyList<std::int64_t>& cell_topology,
-    int num_ghost_cells,
     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         new_vertex_coordinates,
-    bool redistribute)
+    bool redistribute, mesh::GhostMode gm)
 {
-  const std::int32_t num_local_cells = cell_topology.num_nodes();
-  std::vector<std::int64_t> global_cell_indices(num_local_cells);
-  const std::size_t idx_global_offset
-      = MPI::global_offset(old_mesh.mpi_comm(), num_local_cells, true);
-  for (std::int32_t i = 0; i < num_local_cells; i++)
-    global_cell_indices[i] = idx_global_offset + i;
-
-  // Check if mesh has ghost cells on any rank
-  int max_ghost_cells = 0;
-  MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                old_mesh.mpi_comm());
-
-  // Build mesh
-  const mesh::GhostMode gm = (max_ghost_cells == 0)
-                                 ? mesh::GhostMode::none
-                                 : mesh::GhostMode::shared_facet;
 
   if (redistribute)
   {
     return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
                              old_mesh.geometry().cmap(), new_vertex_coordinates,
                              gm);
-  }
-
-  if (max_ghost_cells > 0)
-  {
-    throw std::runtime_error("Refinement of ghosted meshes without "
-                             "re-partitioning is not supported yet.");
   }
 
   // Find out the ghosting information

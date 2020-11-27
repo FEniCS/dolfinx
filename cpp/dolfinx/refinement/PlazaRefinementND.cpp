@@ -515,8 +515,19 @@ mesh::Mesh compute_refinement(
   else
   {
     const int num_ghost_cells = map_c->num_ghosts();
-    return refinement::partition(mesh, cell_adj, num_ghost_cells,
-                                 new_vertex_coordinates, redistribute);
+    // Check if mesh has ghost cells on any rank
+    // FIXME: this is not a robust test. Should be user option.
+    int max_ghost_cells = 0;
+    MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
+                  mesh.mpi_comm());
+
+    // Build mesh
+    const mesh::GhostMode ghost_mode = (max_ghost_cells == 0)
+                                           ? mesh::GhostMode::none
+                                           : mesh::GhostMode::shared_facet;
+
+    return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
+                                 redistribute, ghost_mode);
   }
 }
 //-----------------------------------------------------------------------------
