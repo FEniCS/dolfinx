@@ -319,50 +319,51 @@ mesh::Mesh refinement::partition(
                              gm);
   }
 
-  // Find out the ghosting information
-  auto [graph, info] = mesh::GraphBuilder::compute_dual_graph(
-      old_mesh.mpi_comm(), cell_topology, old_mesh.topology().cell_type());
+  auto partitioner = [](MPI_Comm mpi_comm, int, const mesh::CellType cell_type,
+                        const graph::AdjacencyList<std::int64_t>& cell_topology,
+                        mesh::GhostMode) {
+    // Find out the ghosting information
+    auto [graph, info] = mesh::GraphBuilder::compute_dual_graph(
+        mpi_comm, cell_topology, cell_type);
 
-  // FIXME: much of this is reverse engineering of data that is already known
-  // in the GraphBuilder
+    // FIXME: much of this is reverse engineering of data that is already
+    // known in the GraphBuilder
 
-  const int mpi_size = MPI::size(old_mesh.mpi_comm());
-  const int mpi_rank = MPI::rank(old_mesh.mpi_comm());
-  const std::int32_t local_size = graph.size();
-  std::vector<std::int32_t> local_sizes(mpi_size);
-  std::vector<std::int64_t> local_offsets(mpi_size + 1);
+    const int mpi_size = MPI::size(mpi_comm);
+    const int mpi_rank = MPI::rank(mpi_comm);
+    const std::int32_t local_size = graph.size();
+    std::vector<std::int32_t> local_sizes(mpi_size);
+    std::vector<std::int64_t> local_offsets(mpi_size + 1);
 
-  MPI_Allgather(&local_size, 1, MPI_INT, local_sizes.data(), 1, MPI_INT,
-                old_mesh.mpi_comm());
-  for (int i = 0; i < mpi_size; ++i)
-    local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
+    MPI_Allgather(&local_size, 1, MPI_INT, local_sizes.data(), 1, MPI_INT,
+                  mpi_comm);
+    for (int i = 0; i < mpi_size; ++i)
+      local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
 
-  std::vector<std::vector<std::int32_t>> destinations(graph.size(), {mpi_rank});
-  for (std::size_t i = 0; i < graph.size(); ++i)
-  {
-    for (std::int64_t j : graph[i])
+    std::vector<std::vector<std::int32_t>> destinations(graph.size(),
+                                                        {mpi_rank});
+    for (std::size_t i = 0; i < graph.size(); ++i)
     {
-      if (j < local_offsets[mpi_rank] or j >= local_offsets[mpi_rank + 1])
+      for (std::int64_t j : graph[i])
       {
-        // ghost cell - identify which process it is on.
-        for (std::size_t k = 0; k < local_offsets.size(); ++k)
+        if (j < local_offsets[mpi_rank] or j >= local_offsets[mpi_rank + 1])
         {
-          if (j >= local_offsets[k] and j < local_offsets[k + 1])
+          // ghost cell - identify which process it is on.
+          for (std::size_t k = 0; k < local_offsets.size(); ++k)
           {
-            destinations[i].push_back(k);
-            break;
+            if (j >= local_offsets[k] and j < local_offsets[k + 1])
+            {
+              destinations[i].push_back(k);
+              break;
+            }
           }
         }
       }
     }
-  }
 
-  auto partitioner
-      = [&](MPI_Comm, int, const mesh::CellType,
-            const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode) {
-          graph::AdjacencyList<std::int32_t> part(destinations);
-          return part;
-        };
+    graph::AdjacencyList<std::int32_t> part(destinations);
+    return part;
+  };
 
   return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
                            old_mesh.geometry().cmap(), new_vertex_coordinates,
