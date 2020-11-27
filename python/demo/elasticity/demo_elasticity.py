@@ -41,7 +41,7 @@ def build_nullspace(V):
 
     # Create list of vectors for null space
     index_map = V.dofmap.index_map
-    nullspace_basis = [cpp.la.create_vector(index_map) for i in range(6)]
+    nullspace_basis = [cpp.la.create_vector(index_map, V.dofmap.index_map_bs) for i in range(6)]
 
     with ExitStack() as stack:
         vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]

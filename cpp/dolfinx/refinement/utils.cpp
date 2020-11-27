@@ -176,7 +176,10 @@ void refinement::update_logical_edgefunction(
   // Flatten received values and set marked_edges at each index received
   std::vector<std::int32_t> local_indices = map_e.global_to_local(data_to_recv);
   for (std::int32_t local_index : local_indices)
+  {
+    assert(local_index != -1);
     marked_edges[local_index] = true;
+  }
 }
 //-----------------------------------------------------------------------------
 std::pair<std::map<std::int32_t, std::int64_t>,
@@ -267,6 +270,7 @@ refinement::create_new_vertices(
       = mesh.topology().index_map(1)->global_to_local(recv_global_edge);
   for (int i = 0; i < received_values.size() / 2; ++i)
   {
+    assert(recv_local_edge[i] != -1);
     auto it = local_edge_to_new_vertex.insert(
         {recv_local_edge[i], received_values[i * 2 + 1]});
     assert(it.second);
@@ -291,7 +295,7 @@ std::vector<std::int64_t> refinement::adjust_indices(
   for (std::int32_t r : recvn)
     global_offsets.push_back(global_offsets.back() + r);
 
-  std::vector global_indices = index_map->global_indices(true);
+  std::vector global_indices = index_map->global_indices();
 
   Eigen::Array<int, Eigen::Dynamic, 1> ghost_owners
       = index_map->ghost_owner_rank();

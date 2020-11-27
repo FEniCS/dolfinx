@@ -40,16 +40,14 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
       dofmap_view.element_dof_layout->copy());
   assert(element_dof_layout);
 
-  if (dofmap_view.index_map->block_size() == 1
-      and element_dof_layout->block_size() > 1)
+  if (dofmap_view.index_map_bs() == 1 and element_dof_layout->block_size() > 1)
   {
     throw std::runtime_error(
         "Cannot collapse dofmap with block size greater "
         "than 1 from parent with block size of 1. Create new dofmap first.");
   }
 
-  if (dofmap_view.index_map->block_size() > 1
-      and element_dof_layout->block_size() > 1)
+  if (dofmap_view.index_map_bs() > 1 and element_dof_layout->block_size() > 1)
   {
     throw std::runtime_error(
         "Cannot (yet) collapse dofmap with block size greater "
@@ -74,7 +72,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
   // Get block sizes
-  const int bs_view = dofmap_view.index_map->block_size();
+  const int bs_view = dofmap_view.index_map_bs();
 
   // Compute sizes
   const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
@@ -121,7 +119,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
       comm, num_owned,
       dolfinx::MPI::compute_graph_edges(
           comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
-      ghosts, ghost_owners, 1);
+      ghosts, ghost_owners);
 
   // Create array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
@@ -145,7 +143,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                           Eigen::RowMajor>>
       _dofmap(dofmap.data(), dofmap.rows() / cell_dimension, cell_dimension);
 
-  return fem::DofMap(element_dof_layout, index_map,
+  return fem::DofMap(element_dof_layout, index_map, 1,
                      graph::AdjacencyList<std::int32_t>(_dofmap));
 }
 
@@ -196,9 +194,10 @@ fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                std::shared_ptr<const common::IndexMap> index_map,
+               int index_map_bs,
                const graph::AdjacencyList<std::int32_t>& dofmap)
     : element_dof_layout(element_dof_layout), index_map(index_map),
-      _dofmap(dofmap)
+      _index_map_bs(index_map_bs), _dofmap(dofmap)
 {
   // Dofmap data is copied as the types for dofmap and _dofmap may
   // differ, typically 32- vs 64-bit integers
@@ -229,7 +228,7 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
       dofmap(c, i) = cell_dmap_parent[sub_element_map_view[i]];
   }
 
-  return DofMap(sub_element_dof_layout, this->index_map,
+  return DofMap(sub_element_dof_layout, this->index_map, this->index_map_bs(),
                 graph::AdjacencyList<std::int32_t>(dofmap));
 }
 //-----------------------------------------------------------------------------
@@ -245,8 +244,7 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   // new submap to get block structure for collapsed dofmap.
   // Create new dofmap
   std::unique_ptr<DofMap> dofmap_new;
-  if (this->index_map->block_size() == 1
-      and this->element_dof_layout->block_size() > 1)
+  if (this->index_map_bs() == 1 and this->element_dof_layout->block_size() > 1)
   {
     // Create new element dof layout and reset parent
     auto collapsed_dof_layout
@@ -254,9 +252,9 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
 
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.
-    auto [index_map, dofmap]
+    auto [index_map, bs, dofmap]
         = DofMapBuilder::build(comm, topology, *collapsed_dof_layout);
-    dofmap_new = std::make_unique<DofMap>(element_dof_layout, index_map,
+    dofmap_new = std::make_unique<DofMap>(element_dof_layout, index_map, bs,
                                           std::move(dofmap));
   }
   else
@@ -271,7 +269,7 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   auto index_map_new = dofmap_new->index_map;
   const std::int32_t size
       = (index_map_new->size_local() + index_map_new->num_ghosts())
-        * index_map_new->block_size();
+        * dofmap_new->index_map_bs();
   std::vector<std::int32_t> collapsed_map(size);
 
   const int tdim = topology.dim();
@@ -291,4 +289,11 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
 
   return {std::move(dofmap_new), std::move(collapsed_map)};
 }
+//-----------------------------------------------------------------------------
+const graph::AdjacencyList<std::int32_t>& DofMap::list() const
+{
+  return _dofmap;
+}
+//-----------------------------------------------------------------------------
+int DofMap::index_map_bs() const { return _index_map_bs; }
 //-----------------------------------------------------------------------------

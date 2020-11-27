@@ -31,8 +31,7 @@ def test_b_mesh_mapping(celltype):
     b_mesh.topology.create_connectivity(
         b_mesh.topology.dim, b_mesh.topology.dim)
     b_imap = b_mesh.topology.index_map(b_mesh.topology.dim)
-    tdim_entities = np.arange(b_imap.size_local * b_imap.block_size,
-                              dtype=np.int32)
+    tdim_entities = np.arange(b_imap.size_local, dtype=np.int32)
     boundary_geometry = cmesh.entities_to_geometry(
         b_mesh, b_mesh.topology.dim, tdim_entities, False)
 

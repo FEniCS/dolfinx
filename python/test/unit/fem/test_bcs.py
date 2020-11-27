@@ -25,12 +25,14 @@ def test_locate_dofs_geometrical():
     dofs = dolfinx.fem.locate_dofs_geometrical(
         (W.sub(0), V), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
 
-    # Collect dofs from all processes (does not matter that the numbering
-    # is local to each process for this test)
-    all_dofs = np.vstack(MPI.COMM_WORLD.allgather(dofs))
+    # Collect dofs from all processes (does not matter that the
+    # numbering is local to each process for this test)
+    all_dofs0 = np.concatenate(MPI.COMM_WORLD.allgather(dofs[0]))
+    all_dofs1 = np.concatenate(MPI.COMM_WORLD.allgather(dofs[1]))
 
     # Check only one dof pair is returned
-    assert len(all_dofs) == 1
+    assert len(all_dofs0) == 1
+    assert len(all_dofs1) == 1
 
     # On process with the dof pair
     if len(dofs) == 1:

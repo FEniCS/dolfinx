@@ -208,7 +208,7 @@ get_local_indexing(
 
         vlocal.assign(entity_list.row(i).data(),
                       entity_list.row(i).data() + num_vertices);
-        vglobal = vertex_indexmap->local_to_global(vlocal, false);
+        vglobal = vertex_indexmap->local_to_global(vlocal);
         std::sort(vglobal.begin(), vglobal.end());
 
         global_entity_to_entity_index.insert({vglobal, entity_index[i]});
@@ -394,7 +394,7 @@ get_local_indexing(
       comm, num_local,
       dolfinx::MPI::compute_graph_edges(
           comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
-      ghost_indices, ghost_owners, 1);
+      ghost_indices, ghost_owners);
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());

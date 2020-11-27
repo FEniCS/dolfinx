@@ -69,7 +69,7 @@ public:
   /// IndexMap defining the distribution of dofs across processes and a
   /// vector of indices
   DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
-         std::shared_ptr<const common::IndexMap> index_map,
+         std::shared_ptr<const common::IndexMap> index_map, int index_map_bs,
          const graph::AdjacencyList<std::int32_t>& dofmap);
 
   // Copy constructor
@@ -112,7 +112,7 @@ public:
 
   /// Get dofmap data
   /// @return The adjacency list with dof indices for each cell
-  const graph::AdjacencyList<std::int32_t>& list() const { return _dofmap; }
+  const graph::AdjacencyList<std::int32_t>& list() const;
 
   /// Layout of dofs on an element
   std::shared_ptr<const ElementDofLayout> element_dof_layout;
@@ -120,7 +120,13 @@ public:
   /// Index map that described the parallel distribution of the dofmap
   std::shared_ptr<const common::IndexMap> index_map;
 
+  /// Index map that described the parallel distribution of the dofmap
+  int index_map_bs() const;
+
 private:
+  // Cell-local-to-dof map (dofs for cell dofmap[cell])
+  int _index_map_bs = -1;
+
   // Cell-local-to-dof map (dofs for cell dofmap[cell])
   graph::AdjacencyList<std::int32_t> _dofmap;
 };
