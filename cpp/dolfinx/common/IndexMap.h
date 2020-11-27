@@ -123,17 +123,17 @@ public:
   std::array<std::int64_t, 2> local_range() const noexcept;
 
   /// Number of ghost indices on this process
-  std::int32_t num_ghosts() const;
+  std::int32_t num_ghosts() const noexcept;
 
   /// Number of indices owned by on this process
-  std::int32_t size_local() const;
+  std::int32_t size_local() const noexcept;
 
   /// Number indices across communicator
-  std::int64_t size_global() const;
+  std::int64_t size_global() const noexcept;
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts() const;
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts() const noexcept;
 
   /// Return a MPI communicator with attached distributed graph topology
   /// information
@@ -184,7 +184,7 @@ public:
   /// Local (owned) indices shared with neighbor processes, i.e. are
   /// ghosts on other processes
   /// @return List of indices that are ghosted on other processes
-  const std::vector<std::int32_t>& shared_indices() const;
+  const std::vector<std::int32_t>& shared_indices() const noexcept;
 
   /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<int, Eigen::Dynamic, 1> ghost_owner_rank() const;

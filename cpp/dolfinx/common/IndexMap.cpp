@@ -464,16 +464,17 @@ std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
   return _local_range;
 }
 //-----------------------------------------------------------------------------
-std::int32_t IndexMap::num_ghosts() const { return _ghosts.rows(); }
+std::int32_t IndexMap::num_ghosts() const noexcept { return _ghosts.rows(); }
 //-----------------------------------------------------------------------------
-std::int32_t IndexMap::size_local() const
+std::int32_t IndexMap::size_local() const noexcept
 {
   return _local_range[1] - _local_range[0];
 }
 //-----------------------------------------------------------------------------
-std::int64_t IndexMap::size_global() const { return _size_global; }
+std::int64_t IndexMap::size_global() const noexcept { return _size_global; }
 //-----------------------------------------------------------------------------
-const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& IndexMap::ghosts() const
+const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>&
+IndexMap::ghosts() const noexcept
 {
   return _ghosts;
 }
@@ -556,7 +557,7 @@ std::vector<std::int32_t> IndexMap::global_to_local(
   return local;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::int32_t>& IndexMap::shared_indices() const
+const std::vector<std::int32_t>& IndexMap::shared_indices() const noexcept
 {
   return _shared_indices;
 }
@@ -580,15 +581,12 @@ Eigen::Array<int, Eigen::Dynamic, 1> IndexMap::ghost_owner_rank() const
 //----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, 1> IndexMap::indices() const
 {
-  const int bs = 1;
   const std::array local_range = this->local_range();
-  const std::int32_t size_local = this->size_local() * bs;
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> indx(size_local
-                                                     + num_ghosts() * bs);
-  std::iota(indx.data(), indx.data() + size_local, bs * local_range[0]);
+  const std::int32_t size_local = this->size_local();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> indx(size_local + num_ghosts());
+  std::iota(indx.data(), indx.data() + size_local, local_range[0]);
   for (Eigen::Index i = 0; i < num_ghosts(); ++i)
-    for (Eigen::Index j = 0; j < bs; ++j)
-      indx[size_local + bs * i + j] = bs * _ghosts[i] + j;
+    indx[size_local * i] = _ghosts[i];
 
   return indx;
 }
