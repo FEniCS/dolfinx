@@ -14,13 +14,17 @@ using namespace dolfinx::fem;
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
     const libtab::FiniteElement& libtab_element, int geometric_dimension,
-    const std::string& signature, const ElementDofLayout& dof_layout,
-    bool is_affine)
+    const std::string& signature, const ElementDofLayout& dof_layout)
     : _gdim(geometric_dimension), _signature(signature),
-      _dof_layout(dof_layout), _is_affine(is_affine),
+      _dof_layout(dof_layout),
       _libtab_element(
           std::make_shared<const libtab::FiniteElement>(libtab_element))
 {
+  const mesh::CellType cell = cell_shape();
+  _is_affine
+      = ((cell == mesh::CellType::interval or cell == mesh::CellType::triangle
+          or cell == mesh::CellType::tetrahedron)
+         and _libtab_element->degree() == 1);
 }
 //-----------------------------------------------------------------------------
 std::string CoordinateElement::signature() const { return _signature; }
