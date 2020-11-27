@@ -335,33 +335,41 @@ mesh::Mesh refinement::partition(
     std::vector<std::int32_t> local_sizes(mpi_size);
     std::vector<std::int64_t> local_offsets(mpi_size + 1);
 
-    MPI_Allgather(&local_size, 1, MPI_INT, local_sizes.data(), 1, MPI_INT,
-                  mpi_comm);
+    // Get the "local range" for all processes
+    MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1,
+                  MPI_INT32_T, mpi_comm);
     for (int i = 0; i < mpi_size; ++i)
       local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
 
-    std::vector<std::vector<std::int32_t>> destinations(graph.size(),
-                                                        {mpi_rank});
+    // All cells should go to their currently assigned ranks (no change)
+    // but must also be sent to their ghost destinations, which are determined
+    // here.
+    std::vector<std::int32_t> destinations;
+    destinations.reserve(graph.size());
+    std::vector<std::int32_t> dest_offsets = {0};
+    dest_offsets.reserve(graph.size());
     for (std::size_t i = 0; i < graph.size(); ++i)
     {
+      destinations.push_back(mpi_rank);
       for (std::int64_t j : graph[i])
       {
         if (j < local_offsets[mpi_rank] or j >= local_offsets[mpi_rank + 1])
         {
-          // ghost cell - identify which process it is on.
+          // Ghosted cell - identify which process it should be sent to.
           for (std::size_t k = 0; k < local_offsets.size(); ++k)
           {
             if (j >= local_offsets[k] and j < local_offsets[k + 1])
             {
-              destinations[i].push_back(k);
+              destinations.push_back(k);
               break;
             }
           }
         }
       }
+      dest_offsets.push_back(destinations.size());
     }
 
-    graph::AdjacencyList<std::int32_t> part(destinations);
+    graph::AdjacencyList<std::int32_t> part(destinations, dest_offsets);
     return part;
   };
 
