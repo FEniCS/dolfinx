@@ -62,12 +62,26 @@ Mat la::create_petsc_matrix(
   const int _bs = (bs[0] == bs[1] ? bs[0] : 1);
 
   // Build data to initialise sparsity pattern (modify for block size)
-  std::vector<PetscInt> _nnz_diag(maps[0]->size_local() * bs[0] / _bs),
-      _nnz_offdiag(maps[0]->size_local() * bs[0] / _bs);
-  for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
-    _nnz_diag[i] = diagonal_pattern.links(_bs * i).rows() / _bs;
-  for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
-    _nnz_offdiag[i] = off_diagonal_pattern.links(_bs * i).rows() / _bs;
+  std::vector<PetscInt> _nnz_diag, _nnz_offdiag;
+  if (bs[0] == bs[1])
+  {
+    _nnz_diag.resize(maps[0]->size_local());
+    _nnz_offdiag.resize(maps[0]->size_local());
+    for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
+      _nnz_diag[i] = diagonal_pattern.links(i).rows();
+    for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
+      _nnz_offdiag[i] = off_diagonal_pattern.links(i).rows();
+  }
+  else
+  {
+    // Expand for block size 1
+    _nnz_diag.resize(maps[0]->size_local() * bs[0]);
+    _nnz_offdiag.resize(maps[0]->size_local() * bs[0]);
+    for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
+      _nnz_diag[i] = bs[1] * diagonal_pattern.links(i / bs[0]).rows();
+    for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
+      _nnz_offdiag[i] = bs[1] * off_diagonal_pattern.links(i / bs[0]).rows();
+  }
 
   // Allocate space for matrix
   ierr = MatXAIJSetPreallocation(A, _bs, _nnz_diag.data(), _nnz_offdiag.data(),
@@ -186,6 +200,32 @@ PETScMatrix::add_fn(Mat A)
 #ifdef DEBUG
     if (ierr != 0)
       la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
+    return 0;
+  };
+}
+//-----------------------------------------------------------------------------
+std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                  const std::int32_t*, const PetscScalar*)>
+PETScMatrix::add_block_fn(Mat A)
+{
+  return [A, cache = std::vector<PetscInt>()](
+             std::int32_t m, const std::int32_t* rows, std::int32_t n,
+             const std::int32_t* cols, const PetscScalar* vals) mutable {
+    PetscErrorCode ierr;
+#ifdef PETSC_USE_64BIT_INDICES
+    cache.resize(m + n);
+    std::copy(rows, rows + m, cache.begin());
+    std::copy(cols, cols + n, cache.begin() + m);
+    const PetscInt *_rows = cache.data(), *_cols = _rows + m;
+    ierr = MatSetValuesBlockedLocal(A, m, _rows, n, _cols, vals, ADD_VALUES);
+#else
+    ierr = MatSetValuesBlockedLocal(A, m, rows, n, cols, vals, ADD_VALUES);
+#endif
+
+#ifdef DEBUG
+    if (ierr != 0)
+      la::petsc_error(ierr, __FILE__, "MatSetValuesBlockedLocal");
 #endif
     return 0;
   };

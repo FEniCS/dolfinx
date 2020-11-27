@@ -52,7 +52,6 @@ void la(py::module& m)
             return std::make_unique<dolfinx::la::SparsityPattern>(
                 comm.get(), patterns, maps);
           }))
-      .def("local_range", &dolfinx::la::SparsityPattern::local_range)
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
       .def("assemble", &dolfinx::la::SparsityPattern::assemble)
       .def("num_nonzeros", &dolfinx::la::SparsityPattern::num_nonzeros)

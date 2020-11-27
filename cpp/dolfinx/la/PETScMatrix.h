@@ -38,10 +38,16 @@ class PETScMatrix : public PETScOperator
 {
 public:
   /// Return a function with an interface for adding values to the
-  /// matrix A
+  /// matrix A (calls MatSetValuesLocal)
   static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                            const std::int32_t*, const PetscScalar*)>
   add_fn(Mat A);
+
+  /// Return a function with an interface for adding values to the
+  /// matrix A (calls MatSetValuesBlockedLocal)
+  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                           const std::int32_t*, const PetscScalar*)>
+  add_block_fn(Mat A);
 
   /// Create holder of a PETSc Mat object from a sparsity pattern
   PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);

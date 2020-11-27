@@ -489,7 +489,8 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
 {
   common::Timer t0("Init dofmap");
 
-  const int element_block_size = element_dof_layout.block_size();
+  // const int element_block_size = element_dof_layout.block_size();
+  const int element_block_size = 1;
   const int D = topology.dim();
 
   // Build a simple dofmap based on mesh entity numbering, returning (i)
@@ -563,7 +564,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                           Eigen::RowMajor>>
       _dofmap(dofmap.data(), node_graph0.num_nodes(),
               dofmap.rows() / node_graph0.num_nodes());
-  return {std::move(index_map), element_block_size,
+  return {std::move(index_map), element_dof_layout.block_size(),
           graph::AdjacencyList<std::int32_t>(_dofmap)};
 }
 //-----------------------------------------------------------------------------

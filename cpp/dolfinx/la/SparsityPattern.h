@@ -71,9 +71,6 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Return local range for dimension dim
-  std::array<std::int64_t, 2> local_range(int dim) const;
-
   /// Return index map for dimension dim
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
@@ -108,7 +105,7 @@ public:
   /// indices for the columns.
   const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern() const;
 
-  /// Return MPI communicator
+  /// Return MPI communicatoradd_fn
   MPI_Comm mpi_comm() const;
 
 private:
