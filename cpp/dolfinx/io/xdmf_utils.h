@@ -118,7 +118,7 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
     data_item_node.append_attribute("Format") = "XML";
     assert(shape.size() == 2);
     data_item_node.append_child(pugi::node_pcdata)
-        .set_value(common::container_to_string(x, " ", 16, shape[1]).c_str());
+        .set_value(common::container_to_string(x, 16, shape[1]).c_str());
   }
   else
   {
