@@ -1,10 +1,11 @@
-# Copyright (C) 2020 Michal Habera
+# Copyright (C) 2020 Michal Habera, Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
+from xml.etree import ElementTree
 
 import numpy as np
 import pytest
@@ -78,4 +79,28 @@ def test_3d(tempdir, cell_type, encoding):
     lines_local_in = comm.allreduce(
         (mt_lines_in.indices < mesh_in.topology.index_map(1).size_local).sum(), op=MPI.SUM)
 
+    imap = mesh.topology.index_map(mesh_in.topology.dim)
+    num_cells = imap.size_local + imap.num_ghosts
+    indices = np.arange(num_cells, dtype=np.int32)
+    values = np.ones(num_cells + imap.num_ghosts, dtype=np.int32)
+    mt = MeshTags(mesh_in, mesh_in.topology.dim, indices, values)
+    mt.name = "cells"
+    with XDMFFile(comm, os.path.join(tempdir, "meshtags_3d_2_out.xdmf"), "w", encoding=encoding) as file:
+        file.write_mesh(mesh_in)
+        file.write_meshtags(mt)
+
     assert lines_local == lines_local_in
+
+    MPI.COMM_WORLD.barrier()
+    parser = ElementTree.XMLParser()
+    tree = ElementTree.parse(os.path.join(tempdir, "meshtags_3d_2_out.xdmf"), parser)
+    root = tree.getroot()
+    domain = list(root)[0]
+    meshes = list(domain)
+    num_cells = []
+    for mesh in meshes:
+        elements = list(mesh)
+        for element in elements:
+            if element.tag == "Topology":
+                num_cells.append(element.get("NumberOfElements"))
+    assert(num_cells[0] == num_cells[1])
