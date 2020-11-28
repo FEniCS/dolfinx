@@ -275,7 +275,7 @@ public:
         if (bs * _dofs[0](i) + k < x.rows())
         {
           x[bs * _dofs[0](i) + k]
-              = scale * (g[bs * _dofs[1](i) + k] - x0[bs * _dofs[0](i) + k]);
+              = scale * (g[_dofs[1](bs * i + k)] - x0[bs * _dofs[0](i) + k]);
         }
       }
     }

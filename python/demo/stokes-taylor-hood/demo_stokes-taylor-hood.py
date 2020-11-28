@@ -275,203 +275,203 @@ with XDMFFile(MPI.COMM_WORLD, "pressure.xdmf", "w") as pfile_xdmf:
     pfile_xdmf.write_function(p)
 
 
-# Monolithic block iterative solver
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-#
-# Next, we solve same problem, but now with monolithic (non-nested)
-# matrices and iterative solvers.
+# # Monolithic block iterative solver
+# # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# #
+# # Next, we solve same problem, but now with monolithic (non-nested)
+# # matrices and iterative solvers.
 
-A = dolfinx.fem.assemble_matrix_block(a, bcs)
-A.assemble()
-P = dolfinx.fem.assemble_matrix_block(a_p, bcs)
-P.assemble()
-b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs)
+# A = dolfinx.fem.assemble_matrix_block(a, bcs)
+# A.assemble()
+# P = dolfinx.fem.assemble_matrix_block(a_p, bcs)
+# P.assemble()
+# b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs)
 
-# Set near null space for pressure
-null_vec = A.createVecLeft()
-offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
-null_vec.array[offset:] = 1.0
-null_vec.normalize()
-nsp = PETSc.NullSpace().create(vectors=[null_vec])
-assert nsp.test(A)
-A.setNullSpace(nsp)
+# # Set near null space for pressure
+# null_vec = A.createVecLeft()
+# offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
+# null_vec.array[offset:] = 1.0
+# null_vec.normalize()
+# nsp = PETSc.NullSpace().create(vectors=[null_vec])
+# assert nsp.test(A)
+# A.setNullSpace(nsp)
 
-# Build IndexSets for each field (global dof indices for each field)
-V_map = V.dofmap.index_map
-Q_map = Q.dofmap.index_map
-offset_u = V_map.local_range[0] * V.dofmap.index_map_bs + Q_map.local_range[0]
-offset_p = offset_u + V_map.size_local * V.dofmap.index_map_bs
-is_u = PETSc.IS().createStride(V_map.size_local * V.dofmap.index_map_bs, offset_u, 1, comm=PETSc.COMM_SELF)
-is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
+# # Build IndexSets for each field (global dof indices for each field)
+# V_map = V.dofmap.index_map
+# Q_map = Q.dofmap.index_map
+# offset_u = V_map.local_range[0] * V.dofmap.index_map_bs + Q_map.local_range[0]
+# offset_p = offset_u + V_map.size_local * V.dofmap.index_map_bs
+# is_u = PETSc.IS().createStride(V_map.size_local * V.dofmap.index_map_bs, offset_u, 1, comm=PETSc.COMM_SELF)
+# is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
 
-# Create Krylov solver
-ksp = PETSc.KSP().create(mesh.mpi_comm())
-ksp.setOperators(A, P)
-ksp.setTolerances(rtol=1e-8)
-ksp.setType("minres")
-ksp.getPC().setType("fieldsplit")
-ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
-ksp.getPC().setFieldSplitIS(
-    ("u", is_u),
-    ("p", is_p))
+# # Create Krylov solver
+# ksp = PETSc.KSP().create(mesh.mpi_comm())
+# ksp.setOperators(A, P)
+# ksp.setTolerances(rtol=1e-8)
+# ksp.setType("minres")
+# ksp.getPC().setType("fieldsplit")
+# ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
+# ksp.getPC().setFieldSplitIS(
+#     ("u", is_u),
+#     ("p", is_p))
 
-# Configure velocity and pressure sub KSPs
-ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
-ksp_u.setType("preonly")
-ksp_u.getPC().setType("gamg")
-ksp_p.setType("preonly")
-ksp_p.getPC().setType("jacobi")
+# # Configure velocity and pressure sub KSPs
+# ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
+# ksp_u.setType("preonly")
+# ksp_u.getPC().setType("gamg")
+# ksp_p.setType("preonly")
+# ksp_p.getPC().setType("jacobi")
 
-# Monitor the convergence of the KSP
-opts = PETSc.Options()
-# opts["ksp_monitor"] = None
-# opts["ksp_view"] = None
+# # Monitor the convergence of the KSP
+# opts = PETSc.Options()
+# # opts["ksp_monitor"] = None
+# # opts["ksp_view"] = None
 
-ksp.setFromOptions()
+# ksp.setFromOptions()
 
-# We also need to create a block vector,``x``, to store the (full)
-# solution, which we initialize using the block RHS form ``L``.
+# # We also need to create a block vector,``x``, to store the (full)
+# # solution, which we initialize using the block RHS form ``L``.
 
-# Compute solution
-x = A.createVecRight()
-ksp.solve(b, x)
+# # Compute solution
+# x = A.createVecRight()
+# ksp.solve(b, x)
 
-# Create Functions and scatter x solution
-u, p = Function(V), Function(Q)
-offset = V_map.size_local * V.dofmap.index_map_bs
-u.vector.array[:] = x.array_r[:offset]
-p.vector.array[:] = x.array_r[offset:]
+# # Create Functions and scatter x solution
+# u, p = Function(V), Function(Q)
+# offset = V_map.size_local * V.dofmap.index_map_bs
+# u.vector.array[:] = x.array_r[:offset]
+# p.vector.array[:] = x.array_r[offset:]
 
-# We can calculate the :math:`L^2` norms of u and p as follows::
+# # We can calculate the :math:`L^2` norms of u and p as follows::
 
-norm_u_1 = u.vector.norm()
-norm_p_1 = p.vector.norm()
-if MPI.COMM_WORLD.rank == 0:
-    print("(B) Norm of velocity coefficient vector: {}".format(norm_u_1))
-    print("(B) Norm of pressure coefficient vector: {}".format(norm_p_1))
-assert np.isclose(norm_u_1, norm_u_0)
-assert np.isclose(norm_p_1, norm_p_0)
+# norm_u_1 = u.vector.norm()
+# norm_p_1 = p.vector.norm()
+# if MPI.COMM_WORLD.rank == 0:
+#     print("(B) Norm of velocity coefficient vector: {}".format(norm_u_1))
+#     print("(B) Norm of pressure coefficient vector: {}".format(norm_p_1))
+# assert np.isclose(norm_u_1, norm_u_0)
+# assert np.isclose(norm_p_1, norm_p_0)
 
-# Monolithic block direct solver
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-#
-# Solve same problem, but now with monolithic matrices and a direct solver
+# # Monolithic block direct solver
+# # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# #
+# # Solve same problem, but now with monolithic matrices and a direct solver
 
-# Create LU solver
-ksp = PETSc.KSP().create(mesh.mpi_comm())
-ksp.setOperators(A)
-ksp.setType("preonly")
-ksp.getPC().setType("lu")
-ksp.getPC().setFactorSolverType("superlu_dist")
+# # Create LU solver
+# ksp = PETSc.KSP().create(mesh.mpi_comm())
+# ksp.setOperators(A)
+# ksp.setType("preonly")
+# ksp.getPC().setType("lu")
+# ksp.getPC().setFactorSolverType("superlu_dist")
 
-# We also need to create a block vector,``x``, to store the (full)
-# solution, which we initialize using the block RHS form ``L``.
+# # We also need to create a block vector,``x``, to store the (full)
+# # solution, which we initialize using the block RHS form ``L``.
 
-# Compute solution
-x = A.createVecLeft()
-ksp.solve(b, x)
+# # Compute solution
+# x = A.createVecLeft()
+# ksp.solve(b, x)
 
-# Create Functions and scatter x solution
-u, p = Function(V), Function(Q)
-offset = V_map.size_local * V.dofmap.index_map_bs
-u.vector.array[:] = x.array_r[:offset]
-p.vector.array[:] = x.array_r[offset:]
+# # Create Functions and scatter x solution
+# u, p = Function(V), Function(Q)
+# offset = V_map.size_local * V.dofmap.index_map_bs
+# u.vector.array[:] = x.array_r[:offset]
+# p.vector.array[:] = x.array_r[offset:]
 
-# We can calculate the :math:`L^2` norms of u and p as follows::
+# # We can calculate the :math:`L^2` norms of u and p as follows::
 
-norm_u_2 = u.vector.norm()
-norm_p_2 = p.vector.norm()
-if MPI.COMM_WORLD.rank == 0:
-    print("(C) Norm of velocity coefficient vector: {}".format(norm_u_2))
-    print("(C) Norm of pressure coefficient vector: {}".format(norm_p_2))
-assert np.isclose(norm_u_2, norm_u_0)
-assert np.isclose(norm_p_2, norm_p_0)
+# norm_u_2 = u.vector.norm()
+# norm_p_2 = p.vector.norm()
+# if MPI.COMM_WORLD.rank == 0:
+#     print("(C) Norm of velocity coefficient vector: {}".format(norm_u_2))
+#     print("(C) Norm of pressure coefficient vector: {}".format(norm_p_2))
+# assert np.isclose(norm_u_2, norm_u_0)
+# assert np.isclose(norm_p_2, norm_p_0)
 
 
-# Non-blocked direct solver
-# ^^^^^^^^^^^^^^^^^^^^^^^^^
-#
-# Again, solve the same problem but this time with a non-blocked direct
-# solver approach
+# # Non-blocked direct solver
+# # ^^^^^^^^^^^^^^^^^^^^^^^^^
+# #
+# # Again, solve the same problem but this time with a non-blocked direct
+# # solver approach
 
-# Create the function space
-TH = P2 * P1
-W = FunctionSpace(mesh, TH)
-W0 = W.sub(0).collapse()
+# # Create the function space
+# TH = P2 * P1
+# W = FunctionSpace(mesh, TH)
+# W0 = W.sub(0).collapse()
 
-# No slip boundary condition
-noslip = Function(W0)
-facets = locate_entities_boundary(mesh, 1, noslip_boundary)
-dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
-bc0 = DirichletBC(noslip, dofs, W.sub(0))
+# # No slip boundary condition
+# noslip = Function(W0)
+# facets = locate_entities_boundary(mesh, 1, noslip_boundary)
+# dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
+# bc0 = DirichletBC(noslip, dofs, W.sub(0))
 
-# Driving velocity condition u = (1, 0) on top boundary (y = 1)
-lid_velocity = Function(W0)
-lid_velocity.interpolate(lid_velocity_expression)
-facets = locate_entities_boundary(mesh, 1, lid)
-dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
-bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
+# # Driving velocity condition u = (1, 0) on top boundary (y = 1)
+# lid_velocity = Function(W0)
+# lid_velocity.interpolate(lid_velocity_expression)
+# facets = locate_entities_boundary(mesh, 1, lid)
+# dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
+# bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
 
-# Since for this problem the pressure is only determined up to a constant,
-# we pin the pressure at the point (0, 0)
-zero = Function(Q)
-with zero.vector.localForm() as zero_local:
-    zero_local.set(0.0)
-dofs = locate_dofs_geometrical((W.sub(1), Q),
-                               lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
-bc2 = DirichletBC(zero, dofs, W.sub(1))
+# # Since for this problem the pressure is only determined up to a constant,
+# # we pin the pressure at the point (0, 0)
+# zero = Function(Q)
+# with zero.vector.localForm() as zero_local:
+#     zero_local.set(0.0)
+# dofs = locate_dofs_geometrical((W.sub(1), Q),
+#                                lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
+# bc2 = DirichletBC(zero, dofs, W.sub(1))
 
-# Collect Dirichlet boundary conditions
-bcs = [bc0, bc1, bc2]
+# # Collect Dirichlet boundary conditions
+# bcs = [bc0, bc1, bc2]
 
-# Define variational problem
-(u, p) = ufl.TrialFunctions(W)
-(v, q) = ufl.TestFunctions(W)
-f = Function(W0)
-a = (inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx
-L = inner(f, v) * dx
+# # Define variational problem
+# (u, p) = ufl.TrialFunctions(W)
+# (v, q) = ufl.TestFunctions(W)
+# f = Function(W0)
+# a = (inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx
+# L = inner(f, v) * dx
 
-# Assemble LHS matrix and RHS vector
-A = dolfinx.fem.assemble_matrix(a, bcs)
-A.assemble()
-b = dolfinx.fem.assemble.assemble_vector(L)
+# # Assemble LHS matrix and RHS vector
+# A = dolfinx.fem.assemble_matrix(a, bcs)
+# A.assemble()
+# b = dolfinx.fem.assemble.assemble_vector(L)
 
-dolfinx.fem.assemble.apply_lifting(b, [a], [bcs])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+# dolfinx.fem.assemble.apply_lifting(b, [a], [bcs])
+# b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-# Set Dirichlet boundary condition values in the RHS
-dolfinx.fem.assemble.set_bc(b, bcs)
+# # Set Dirichlet boundary condition values in the RHS
+# dolfinx.fem.assemble.set_bc(b, bcs)
 
-# Create and configure solver
-ksp = PETSc.KSP().create(mesh.mpi_comm())
-ksp.setOperators(A)
-ksp.setType("preonly")
-ksp.getPC().setType("lu")
-ksp.getPC().setFactorSolverType("superlu_dist")
+# # Create and configure solver
+# ksp = PETSc.KSP().create(mesh.mpi_comm())
+# ksp.setOperators(A)
+# ksp.setType("preonly")
+# ksp.getPC().setType("lu")
+# ksp.getPC().setFactorSolverType("superlu_dist")
 
-# Compute the solution
-U = Function(W)
-ksp.solve(b, U.vector)
+# # Compute the solution
+# U = Function(W)
+# ksp.solve(b, U.vector)
 
-# Split the mixed solution and collapse
-u = U.sub(0).collapse()
-p = U.sub(1).collapse()
+# # Split the mixed solution and collapse
+# u = U.sub(0).collapse()
+# p = U.sub(1).collapse()
 
-# Compute norms
-norm_u_3 = u.vector.norm()
-norm_p_3 = p.vector.norm()
-if MPI.COMM_WORLD.rank == 0:
-    print("(D) Norm of velocity coefficient vector: {}".format(norm_u_3))
-    print("(D) Norm of pressure coefficient vector: {}".format(norm_p_3))
-assert np.isclose(norm_u_3, norm_u_0)
+# # Compute norms
+# norm_u_3 = u.vector.norm()
+# norm_p_3 = p.vector.norm()
+# if MPI.COMM_WORLD.rank == 0:
+#     print("(D) Norm of velocity coefficient vector: {}".format(norm_u_3))
+#     print("(D) Norm of pressure coefficient vector: {}".format(norm_p_3))
+# assert np.isclose(norm_u_3, norm_u_0)
 
-# Write the solution to file
-with XDMFFile(MPI.COMM_WORLD, "new_velocity.xdmf", "w") as ufile_xdmf:
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    ufile_xdmf.write_mesh(mesh)
-    ufile_xdmf.write_function(u)
+# # Write the solution to file
+# with XDMFFile(MPI.COMM_WORLD, "new_velocity.xdmf", "w") as ufile_xdmf:
+#     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+#     ufile_xdmf.write_mesh(mesh)
+#     ufile_xdmf.write_function(u)
 
-with XDMFFile(MPI.COMM_WORLD, "new_pressure.xdmf", "w") as pfile_xdmf:
-    p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    ufile_xdmf.write_mesh(mesh)
-    ufile_xdmf.write_function(p)
+# with XDMFFile(MPI.COMM_WORLD, "new_pressure.xdmf", "w") as pfile_xdmf:
+#     p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+#     ufile_xdmf.write_mesh(mesh)
+#     ufile_xdmf.write_function(p)
