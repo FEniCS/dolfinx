@@ -82,20 +82,10 @@ def test_3d(tempdir, cell_type, encoding):
     assert lines_local == lines_local_in
 
     # Check that only owned data is written to file
-    tags = {tag.name: tag for tag in [mt_lines_in, mt_in]}
+    facets_local = comm.allreduce((mt.indices < mesh.topology.index_map(2).size_local).sum(), op=MPI.SUM)
     parser = ElementTree.XMLParser()
     tree = ElementTree.parse(os.path.join(tempdir, "meshtags_3d_out.xdmf"), parser)
-    root = tree.getroot()
-    domain = list(root)[0]
-    meshes = list(domain)
-    for mesh in meshes:
-        elements = list(mesh)
-        grid_name = mesh.get("Name")
-        if grid_name in tags.keys():
-            tag = tags[grid_name]
-            for element in elements:
-                if element.tag == "Topology":
-                    num_xdmf_indices = int(element.get("NumberOfElements"))
-                    num_global_tagged = comm.allreduce(
-                        (tag.indices < mesh_in.topology.index_map(tag.dim).size_local).sum(), op=MPI.SUM)
-                    assert(num_xdmf_indices == num_global_tagged)
+    num_lines = int(tree.findall(".//Grid[@Name='lines']/Topology")[0].get("NumberOfElements"))
+    num_facets = int(tree.findall(".//Grid[@Name='facets']/Topology")[0].get("NumberOfElements"))
+    assert(num_lines == lines_local)
+    assert(num_facets == facets_local)
