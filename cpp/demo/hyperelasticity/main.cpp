@@ -125,7 +125,6 @@ int main(int argc, char* argv[])
 
     // Define solution function
     auto u = std::make_shared<function::Function<PetscScalar>>(V);
-
     auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J,
                                            {V, V}, {{"u", u}}, {}, {});
     auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V},
