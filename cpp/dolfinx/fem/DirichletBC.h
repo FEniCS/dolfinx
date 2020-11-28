@@ -248,7 +248,7 @@ public:
     {
       for (int k = 0; k < bs; ++k)
       {
-        // if (bs * _dofs[0](i) + k < x.rows())
+        if (bs * _dofs[0](i) + k < x.rows())
           x[bs * _dofs[0](i) + k] = scale * g[bs * _dofs[1](i) + k];
       }
     }

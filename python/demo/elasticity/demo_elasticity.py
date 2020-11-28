@@ -155,12 +155,10 @@ form = Form(a, form_compiler_parameters={"quadrature_degree": 1})
 # Assemble system, applying boundary conditions and preserving symmetry
 A = assemble_matrix(form, [bc])
 A.assemble()
-
 b = assemble_vector(L)
 apply_lifting(b, [a], [[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 set_bc(b, [bc])
-
 
 # Create solution function
 u = Function(V)
