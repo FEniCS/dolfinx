@@ -34,8 +34,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   const int dim = meshtags.dim();
 
   const std::int32_t num_local_entities
-      = mesh->topology().index_map(dim)->size_local()
-        * mesh->topology().index_map(dim)->block_size();
+      = mesh->topology().index_map(dim)->size_local();
 
   // Find number of tagged entities in local range
   const int num_active_entities
