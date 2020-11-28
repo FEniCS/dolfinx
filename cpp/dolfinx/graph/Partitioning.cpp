@@ -412,7 +412,7 @@ Partitioning::create_distributed_adjacency_list(
                            dolfinx::MPI::compute_graph_edges(
                                comm, std::set<int>(ghost_owners.begin(),
                                                    ghost_owners.end())),
-                           ghosts, ghost_owners, 1)};
+                           ghosts, ghost_owners)};
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,

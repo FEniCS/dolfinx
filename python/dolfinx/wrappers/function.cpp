@@ -136,7 +136,7 @@ void function(py::module& m)
       .def(py::init([](
                const std::vector<std::shared_ptr<const dolfinx::function::Function<PetscScalar>>>& coefficients,
 	       const std::vector<std::shared_ptr<const dolfinx::function::Constant<PetscScalar>>>& constants,
-	       const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, 
+	       const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
                const Eigen::Ref<const Eigen::Array<
                    double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
 	       py::object addr,

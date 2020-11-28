@@ -30,5 +30,9 @@ class DofMap:
         return self._cpp_object.index_map
 
     @property
+    def index_map_bs(self):
+        return self._cpp_object.index_map_bs
+
+    @property
     def list(self):
         return self._cpp_object.list()

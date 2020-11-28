@@ -289,7 +289,7 @@ b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs)
 
 # Set near null space for pressure
 null_vec = A.createVecLeft()
-offset = V.dofmap.index_map.size_local * V.dofmap.index_map.block_size
+offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
 null_vec.array[offset:] = 1.0
 null_vec.normalize()
 nsp = PETSc.NullSpace().create(vectors=[null_vec])
@@ -299,9 +299,9 @@ A.setNullSpace(nsp)
 # Build IndexSets for each field (global dof indices for each field)
 V_map = V.dofmap.index_map
 Q_map = Q.dofmap.index_map
-offset_u = V_map.local_range[0] * V_map.block_size + Q_map.local_range[0]
-offset_p = offset_u + V_map.size_local * V_map.block_size
-is_u = PETSc.IS().createStride(V_map.size_local * V_map.block_size, offset_u, 1, comm=PETSc.COMM_SELF)
+offset_u = V_map.local_range[0] * V.dofmap.index_map_bs + Q_map.local_range[0]
+offset_p = offset_u + V_map.size_local * V.dofmap.index_map_bs
+is_u = PETSc.IS().createStride(V_map.size_local * V.dofmap.index_map_bs, offset_u, 1, comm=PETSc.COMM_SELF)
 is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
 
 # Create Krylov solver
@@ -338,7 +338,7 @@ ksp.solve(b, x)
 
 # Create Functions and scatter x solution
 u, p = Function(V), Function(Q)
-offset = V_map.size_local * V_map.block_size
+offset = V_map.size_local * V.dofmap.index_map_bs
 u.vector.array[:] = x.array_r[:offset]
 p.vector.array[:] = x.array_r[offset:]
 
@@ -373,7 +373,7 @@ ksp.solve(b, x)
 
 # Create Functions and scatter x solution
 u, p = Function(V), Function(Q)
-offset = V_map.size_local * V_map.block_size
+offset = V_map.size_local * V.dofmap.index_map_bs
 u.vector.array[:] = x.array_r[:offset]
 p.vector.array[:] = x.array_r[offset:]
 

@@ -19,7 +19,8 @@ namespace dolfinx
 namespace mesh
 {
 class Mesh;
-}
+enum class GhostMode;
+} // namespace mesh
 
 namespace common
 {
@@ -68,27 +69,16 @@ create_new_vertices(
 /// processes
 /// @param[in] old_mesh
 /// @param[in] cell_topology Topology of cells, (vertex indices)
-/// @param[in] num_ghost_cells Number of cells which are ghost (at end
-///   of list)
 /// @param[in] new_vertex_coordinates
 /// @param[in] redistribute Call graph partitioner if true
+/// @param[in] ghost_mode None or shared_facet
 /// @return New mesh
 mesh::Mesh
 partition(const mesh::Mesh& old_mesh,
-          const std::vector<std::int64_t>& cell_topology, int num_ghost_cells,
+          const graph::AdjacencyList<std::int64_t>& cell_topology,
           const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                              Eigen::RowMajor>& new_vertex_coordinates,
-          bool redistribute);
-
-/// Build local mesh from internal data when not running in parallel
-/// @param[in] old_mesh
-/// @param[in] cell_topology
-/// @param[in] new_vertex_coordinates
-/// @return A Mesh
-mesh::Mesh build_local(
-    const mesh::Mesh& old_mesh, const std::vector<std::int64_t>& cell_topology,
-    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        new_vertex_coordinates);
+          bool redistribute, mesh::GhostMode ghost_mode);
 
 /// Adjust indices to account for extra n values on each process This
 /// is a utility to help add new topological vertices on each process
