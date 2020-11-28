@@ -411,6 +411,11 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
       = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
   const int block_size = dofmap->element_dof_layout->block_size();
   std::vector<std::int32_t> dofs;
+
+  std::cout << "Element bs: " << block_size << std::endl;
+  std::cout << "Dofmap bs: " << V.dofmap()->bs() << std::endl;
+  std::cout << "Num closure dofs: " << num_entity_closure_dofs << std::endl;
+
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get first attached cell
@@ -431,8 +436,7 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
     for (int j = 0; j < num_entity_closure_dofs; j++)
     {
       const int index = entity_dofs[entity_local_index][j];
-      for (int block = 0; block < block_size; ++block)
-        dofs.push_back(cell_dofs[index * block_size + block]);
+      dofs.push_back(cell_dofs[index]);
     }
   }
 

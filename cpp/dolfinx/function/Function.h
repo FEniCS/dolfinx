@@ -268,20 +268,29 @@ public:
     std::shared_ptr<const fem::FiniteElement> element
         = _function_space->element();
     assert(element);
-    const int block_size = element->block_size();
+    // const int block_size = element->block_size();
+    // const int reference_value_size
+    //     = element->reference_value_size() / block_size;
+    // const int value_size = element->value_size() / block_size;
+    // const int space_dimension = element->space_dimension() / block_size;
+    const int bs_element = element->block_size();
     const int reference_value_size
-        = element->reference_value_size() / block_size;
-    const int value_size = element->value_size() / block_size;
-    const int space_dimension = element->space_dimension() / block_size;
+        = element->reference_value_size() / bs_element;
+    const int value_size = element->value_size() / bs_element;
+    const int space_dimension = element->space_dimension() / bs_element;
 
     // If the space has sub elements, concatenate the evaluations on the sub
     // elements
     const int num_sub_elements = element->num_sub_elements();
-    if (num_sub_elements > 1 && num_sub_elements != block_size)
+    if (num_sub_elements > 1 and num_sub_elements != bs_element)
     {
-      if (block_size != 1)
+      std::cout << "Oooops" << std::endl;
+
+      if (bs_element != 1)
+      {
         throw std::runtime_error(
             "Blocked elements of mixed spaces are not yet supported.");
+      }
       int offset = 0;
       for (int sub_e = 0; sub_e < num_sub_elements; ++sub_e)
       {
@@ -289,7 +298,7 @@ public:
             = element->extract_sub_element({sub_e});
 
         const int sub_value_size = sub_element->value_size();
-        const Function sub_f = sub(sub_e);
+        const Function sub_f = this->sub(sub_e);
         Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> sub_u(
             u.rows(), sub_value_size);
         sub_f.eval(x, cells, sub_u);
@@ -298,8 +307,10 @@ public:
           u.col(offset + i) = sub_u.col(i);
         offset += sub_value_size;
       }
+
       return;
     }
+
     // Prepare geometry data structures
     Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
     Eigen::Array<double, Eigen::Dynamic, 1> detJ(1);
@@ -315,11 +326,12 @@ public:
 
     // Create work vector for expansion coefficients
     Eigen::Matrix<T, 1, Eigen::Dynamic> coefficients(space_dimension
-                                                     * block_size);
+                                                     * bs_element);
 
     // Get dofmap
     std::shared_ptr<const fem::DofMap> dofmap = _function_space->dofmap();
     assert(dofmap);
+    const int bs_dof = dofmap->bs();
 
     mesh->topology_mutable().create_entity_permutations();
     const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
@@ -355,18 +367,20 @@ public:
       // Get degrees of freedom for current cell
       auto dofs = dofmap->cell_dofs(cell_index);
       for (Eigen::Index i = 0; i < dofs.size(); ++i)
-        coefficients[i] = _v[dofs[i]];
+        for (int k = 0; k < bs_dof; ++k)
+          coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 
       // Compute expansion
-      for (int block = 0; block < block_size; ++block)
+      auto u_row = u.row(p);
+      for (int k = 0; k < bs_element; ++k)
       {
         for (int i = 0; i < space_dimension; ++i)
         {
           for (int j = 0; j < value_size; ++j)
           {
-            // TODO: Find an Eigen shortcut for this operation
-            u.row(p)[j * block_size + block]
-                += coefficients[i * block_size + block] * basis_values(0, i, j);
+            // TODO: Find an Eigen shortcut for this operation?
+            u_row[j * bs_element + k]
+                += coefficients[bs_element * i + k] * basis_values(0, i, j);
           }
         }
       }
