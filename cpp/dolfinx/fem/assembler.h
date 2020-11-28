@@ -158,8 +158,9 @@ void assemble_matrix(
 /// normally be called only on the diagonal blocks, i.e. blocks for
 /// which the test and trial spaces are the same.
 /// @param[in] mat_add The function for adding values to a matrix
-/// @param[in] rows The rows, in local indices, for which to add a value
-///   to the diagonal
+/// @param[in] rows The row blocks, in local indices, for which to add a
+/// value to the diagonal
+/// @param bs Row block size
 /// @param[in] diagonal The value to add to the diagonal for the
 ///   specified rows
 template <typename T>
@@ -167,12 +168,15 @@ void add_diagonal(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
-    T diagonal = 1.0)
+    int bs, T diagonal = 1.0)
 {
   for (Eigen::Index i = 0; i < rows.size(); ++i)
   {
-    const std::int32_t row = rows(i);
-    mat_add(1, &row, 1, &row, &diagonal);
+    for (int k = 0; k < bs; ++k)
+    {
+      const std::int32_t row = bs * rows(i) + k;
+      mat_add(1, &row, 1, &row, &diagonal);
+    }
   }
 }
 
@@ -203,7 +207,10 @@ void add_diagonal(
   {
     assert(bc);
     if (V.contains(*bc->function_space()))
-      add_diagonal<T>(mat_add, bc->dofs_owned()[0], diagonal);
+    {
+      add_diagonal<T>(mat_add, bc->dofs_owned()[0],
+                      bc->function_space()->dofmap()->bs(), diagonal);
+    }
   }
 }
 

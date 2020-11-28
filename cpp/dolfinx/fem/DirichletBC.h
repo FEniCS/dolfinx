@@ -93,7 +93,7 @@ locate_dofs_topological(const function::FunctionSpace& V, const int dim,
 /// @param[in] V The function (sub)space(s) on which degrees of freedom
 ///     will be located. The spaces must share the same mesh and
 ///     element type.
-/// @param[in] marker Function marking tabulated degrees of freedom
+/// @param[in] marker_fn Function marking tabulated degrees of freedom
 /// @return Array of local DOF indices in the spaces V[0] (and V[1] is
 ///     two spaces are passed in). If two spaces are passed in, the (i,
 ///     0) entry is the DOF index in the space V[0] and (i, 1) is the
@@ -104,7 +104,7 @@ locate_dofs_geometrical(
         V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker);
+                                            Eigen::RowMajor>>&)>& marker_fn);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
@@ -112,14 +112,14 @@ locate_dofs_geometrical(
 /// @attention This function is slower than the topological version
 ///
 /// @param[in] V The function (sub)space on which degrees of freedom
-///     will be located.
-/// @param[in] marker Function marking tabulated degrees of freedom
-/// @return Array of local DOF indices in the spaces.
+/// will be located.
+/// @param[in] marker_fn Function marking tabulated degrees of freedom
+/// @return Array of local DOF indices in the spaces
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_dofs_geometrical(
     const function::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker);
+                                            Eigen::RowMajor>>&)>& marker_fn);
 
 /// Interface for setting (strong) Dirichlet boundary conditions
 ///
@@ -149,12 +149,13 @@ public:
           dofs)
       : _function_space(g->function_space()), _g(g), _dofs({dofs, dofs})
   {
-    // Stack indices as columns, fits column-major _dofs layout
-    const int owned_size = _function_space->dofmap()->index_map_bs()
-                           * _function_space->dofmap()->index_map->size_local();
+    // TODO: allows single dofs array (let one point to the other)
+
+    const int owned_size0 = _function_space->dofmap()->index_map->size_local();
     auto* it = std::lower_bound(_dofs[0].data(),
-                                _dofs[0].data() + _dofs[0].rows(), owned_size);
-    _owned_indices = std::distance(_dofs[0].data(), it);
+                                _dofs[0].data() + _dofs[0].rows(), owned_size0);
+    _owned_indices0 = std::distance(_dofs[0].data(), it);
+    _owned_indices1 = _owned_indices0;
   }
 
   /// Create boundary condition
@@ -172,11 +173,16 @@ public:
               std::shared_ptr<const function::FunctionSpace> V)
       : _function_space(V), _g(g), _dofs({V_g_dofs[0], V_g_dofs[1]})
   {
-    const int owned_size = _function_space->dofmap()->index_map_bs()
-                           * _function_space->dofmap()->index_map->size_local();
-    auto* it = std::lower_bound(_dofs[0].data(),
-                                _dofs[0].data() + _dofs[0].rows(), owned_size);
-    _owned_indices = std::distance(_dofs[0].data(), it);
+    const int owned_size0 = _function_space->dofmap()->index_map->size_local();
+    auto it0 = std::lower_bound(_dofs[0].data(),
+                                _dofs[0].data() + _dofs[0].rows(), owned_size0);
+    _owned_indices0 = std::distance(_dofs[0].data(), it0);
+
+    const int owned_size1
+        = g->function_space()->dofmap()->index_map->size_local();
+    auto it1 = std::lower_bound(_dofs[1].data(),
+                                _dofs[1].data() + _dofs[1].rows(), owned_size1);
+    _owned_indices1 = std::distance(_dofs[0].data(), it1);
   }
 
   /// Copy constructor
@@ -223,7 +229,7 @@ public:
       Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>, 2>
   dofs_owned() const
   {
-    return {_dofs[0].head(_owned_indices), _dofs[1].head(_owned_indices)};
+    return {_dofs[0].head(_owned_indices0), _dofs[1].head(_owned_indices1)};
   }
 
   /// Set bc entries in x to scale*x_bc
@@ -233,11 +239,18 @@ public:
   {
     // FIXME: This one excludes ghosts. Need to straighten out.
     assert(_g);
+    const int bs = _g->function_space()->dofmap()->bs();
+    // FIXME X: handle different block sizes for _function_space and g
+    if (bs != _function_space->dofmap()->bs())
+      throw std::runtime_error("Different block sizes not yet handled");
     auto& g = _g->x()->array();
     for (Eigen::Index i = 0; i < _dofs[0].rows(); ++i)
     {
-      if (_dofs[0](i) < x.rows())
-        x[_dofs[0](i)] = scale * g[_dofs[1](i)];
+      for (int k = 0; k < bs; ++k)
+      {
+        // if (bs * _dofs[0](i) + k < x.rows())
+          x[bs * _dofs[0](i) + k] = scale * g[bs * _dofs[1](i) + k];
+      }
     }
   }
 
@@ -249,12 +262,22 @@ public:
   {
     // FIXME: This one excludes ghosts. Need to straighten out.
     assert(_g);
+    const int bs = _g->function_space()->dofmap()->bs();
     auto& g = _g->x()->array();
+    // FIXME X: handle different block sizes for _function_space and g
+    if (bs != _function_space->dofmap()->bs())
+      throw std::runtime_error("Different block sizes not yet handled");
     assert(x.rows() <= x0.rows());
     for (Eigen::Index i = 0; i < _dofs[0].rows(); ++i)
     {
-      if (_dofs[0](i) < x.rows())
-        x[_dofs[0](i)] = scale * (g[_dofs[1](i)] - x0[_dofs[0](i)]);
+      for (int k = 0; k < bs; ++k)
+      {
+        if (_dofs[0](bs * i + k) < x.rows())
+        {
+          x[_dofs[0](bs * i + k)]
+              = scale * (g[_dofs[1](bs * i + k)] - x0[bs * _dofs[0](i) + k]);
+        }
+      }
     }
   }
 
@@ -264,9 +287,14 @@ public:
   void dof_values(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> values) const
   {
     assert(_g);
+    const int bs = _g->function_space()->dofmap()->bs();
     auto& g = _g->x()->array();
+    // FIXME X: handle different block sizes for _function_space and g
+    if (bs != _function_space->dofmap()->bs())
+      throw std::runtime_error("Different block sizes not yet handled");
     for (Eigen::Index i = 0; i < _dofs[0].rows(); ++i)
-      values[_dofs[0](i)] = g[_dofs[1](i)];
+      for (int k = 0; k < bs; ++k)
+        values[bs * _dofs[0](i) + k] = g[bs * _dofs[1](i) + k];
   }
 
   /// Set markers[i] = true if dof i has a boundary condition applied.
@@ -274,10 +302,14 @@ public:
   /// @todo Clarify w.r.t ghosts
   void mark_dofs(std::vector<bool>& markers) const
   {
+    const int bs = _function_space->dofmap()->bs();
     for (Eigen::Index i = 0; i < _dofs[0].rows(); ++i)
     {
-      assert(_dofs[0](i) < (std::int32_t)markers.size());
-      markers[_dofs[0](i)] = true;
+      for (int k = 0; k < bs; ++k)
+      {
+        assert(bs * _dofs[0](i) + k < (std::int32_t)markers.size());
+        markers[bs * _dofs[0](i) + k] = true;
+      }
     }
   }
 
@@ -288,12 +320,13 @@ private:
   // The function
   std::shared_ptr<const function::Function<T>> _g;
 
-  // Pairs of dof indices in _function_space (i, 0) and in the space of
-  // _g (i, 1)
+  // Pairs of dof indices in _function_space (0) and in the space of _g
+  // (1)
   std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2> _dofs;
 
   // The first _owned_indices in _dofs are owned by this process
-  int _owned_indices = -1;
-}; // namespace fem
+  int _owned_indices0 = -1;
+  int _owned_indices1 = -1;
+};
 } // namespace fem
 } // namespace dolfinx

@@ -132,8 +132,8 @@ void _lift_bc_cells(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap0,
-    const graph::AdjacencyList<std::int32_t>& dofmap1,
+    const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
+    const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values,
@@ -167,10 +167,13 @@ void _lift_bc_cells(
     bool has_bc = false;
     for (Eigen::Index j = 0; j < dmap1.size(); ++j)
     {
-      if (bc_markers1[dmap1[j]])
+      for (int k = 0; k < bs1; ++k)
       {
-        has_bc = true;
-        break;
+        if (bc_markers1[bs1 * dmap1[j] + k])
+        {
+          has_bc = true;
+          break;
+        }
       }
     }
 
@@ -187,27 +190,31 @@ void _lift_bc_cells(
     auto dmap0 = dofmap0.links(c);
 
     auto coeff_array = coeffs.row(c);
-    Ae.setZero(dmap0.size(), dmap1.size());
+    Ae.setZero(bs0 * dmap0.size(), bs1 * dmap1.size());
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Size data structure for assembly
-    be.setZero(dmap0.size());
+    be.setZero(bs0 * dmap0.size());
     for (Eigen::Index j = 0; j < dmap1.size(); ++j)
     {
-      const std::int32_t jj = dmap1[j];
-      if (bc_markers1[jj])
+      for (int k = 0; k < bs1; ++k)
       {
-        const T bc = bc_values1[jj];
-        if (x0.rows() > 0)
-          be -= Ae.col(j) * scale * (bc - x0[jj]);
-        else
-          be -= Ae.col(j) * scale * bc;
+        const std::int32_t jj = bs1 * dmap1[j] + k;
+        if (bc_markers1[jj])
+        {
+          const T bc = bc_values1[jj];
+          if (x0.rows() > 0)
+            be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
+          else
+            be -= Ae.col(bs1 * j + k) * scale * bc;
+        }
       }
     }
 
-    for (Eigen::Index k = 0; k < dmap0.size(); ++k)
-      b[dmap0[k]] += be[k];
+    for (Eigen::Index i = 0; i < dmap0.size(); ++i)
+      for (int k = 0; k < bs0; ++k)
+        b[bs0 * dmap0[i] + k] += be[bs0 * i + k];
   }
 }
 //----------------------------------------------------------------------------
@@ -217,8 +224,8 @@ void _lift_bc_exterior_facets(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const std::vector<std::int32_t>& active_facets,
-    const graph::AdjacencyList<std::int32_t>& dofmap0,
-    const graph::AdjacencyList<std::int32_t>& dofmap1,
+    const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
+    const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values,
@@ -273,10 +280,13 @@ void _lift_bc_exterior_facets(
     bool has_bc = false;
     for (Eigen::Index j = 0; j < dmap1.size(); ++j)
     {
-      if (bc_markers1[dmap1[j]])
+      for (int k = 0; k < bs1; ++k)
       {
-        has_bc = true;
-        break;
+        if (bc_markers1[bs1 * dmap1[j] + k])
+        {
+          has_bc = true;
+          break;
+        }
       }
     }
 
@@ -296,28 +306,32 @@ void _lift_bc_exterior_facets(
     // loop
 
     auto coeff_array = coeffs.row(cell);
-    Ae.setZero(dmap0.size(), dmap1.size());
+    Ae.setZero(bs0 * dmap0.size(), bs1 * dmap1.size());
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), &local_facet, &perms(local_facet, cell),
            cell_info[cell]);
 
     // Size data structure for assembly
-    be.setZero(dmap0.size());
+    be.setZero(bs0 * dmap0.size());
     for (Eigen::Index j = 0; j < dmap1.size(); ++j)
     {
-      const std::int32_t jj = dmap1[j];
-      if (bc_markers1[jj])
+      for (int k = 0; k < bs1; ++k)
       {
-        const T bc = bc_values1[jj];
-        if (x0.rows() > 0)
-          be -= Ae.col(j) * scale * (bc - x0[jj]);
-        else
-          be -= Ae.col(j) * scale * bc;
+        const std::int32_t jj = bs1 * dmap1[j] + k;
+        if (bc_markers1[jj])
+        {
+          const T bc = bc_values1[jj];
+          if (x0.rows() > 0)
+            be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
+          else
+            be -= Ae.col(bs1 * j + k) * scale * bc;
+        }
       }
     }
 
-    for (Eigen::Index k = 0; k < dmap0.size(); ++k)
-      b[dmap0[k]] += be[k];
+    for (Eigen::Index i = 0; i < dmap0.size(); ++i)
+      for (int k = 0; k < bs0; ++k)
+        b[bs0 * dmap0[i] + k] += be[bs0 * i + k];
   }
 }
 //----------------------------------------------------------------------------
@@ -327,8 +341,8 @@ void _lift_bc_interior_facets(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const std::vector<std::int32_t>& active_facets,
-    const graph::AdjacencyList<std::int32_t>& dofmap0,
-    const graph::AdjacencyList<std::int32_t>& dofmap1,
+    const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
+    const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<int>& offsets,
@@ -340,6 +354,9 @@ void _lift_bc_interior_facets(
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
+  throw std::runtime_error(
+      "_lift_bc_interior_facets code looks wrong. Needs checking.");
+
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
@@ -420,19 +437,25 @@ void _lift_bc_interior_facets(
     bool has_bc = false;
     for (Eigen::Index j = 0; j < dmap1_cell0.size(); ++j)
     {
-      if (bc_markers1[dmap1_cell0[j]])
+      for (int k = 0; k < bs1; ++k)
       {
-        has_bc = true;
-        break;
+        if (bc_markers1[bs1 * dmap1_cell0[j] + k])
+        {
+          has_bc = true;
+          break;
+        }
       }
     }
 
     for (Eigen::Index j = 0; j < dmap1_cell1.size(); ++j)
     {
-      if (bc_markers1[dmap1_cell1[j]])
+      for (int k = 0; k < bs1; ++k)
       {
-        has_bc = true;
-        break;
+        if (bc_markers1[bs1 * dmap1_cell1[j] + k])
+        {
+          has_bc = true;
+          break;
+        }
       }
     }
 
@@ -456,7 +479,7 @@ void _lift_bc_interior_facets(
     }
 
     // Tabulate tensor
-    Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
+    Ae.setZero(bs0 * dmapjoint0.size(), bs1 * dmapjoint1.size());
     const std::array perm{perms(local_facet[0], cells[0]),
                           perms(local_facet[1], cells[1])};
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
@@ -464,40 +487,48 @@ void _lift_bc_interior_facets(
            cell_info[cells[0]]);
 
     // Compute b = b - A*b for cell0
-    be.setZero(dmap0_cell0.size() + dmap1_cell0.size());
+    be.setZero(bs0 * (dmap0_cell0.size() + dmap0_cell1.size()));
     for (Eigen::Index j = 0; j < dmap1_cell0.size(); ++j)
     {
-      const std::int32_t jj = dmap1_cell0[j];
-      if (bc_markers1[jj])
+      for (int k = 0; k < bs1; ++k)
       {
-        const T bc = bc_values1[jj];
-        if (x0.rows() > 0)
-          be -= Ae.col(j) * scale * (bc - x0[jj]);
-        else
-          be -= Ae.col(j) * scale * bc;
+        const std::int32_t jj = bs1 * dmap1_cell0[j] + k;
+        if (bc_markers1[jj])
+        {
+          const T bc = bc_values1[jj];
+          if (x0.rows() > 0)
+            be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
+          else
+            be -= Ae.col(bs1 * j + k) * scale * bc;
+        }
       }
     }
 
-    for (Eigen::Index k = 0; k < dmap0_cell0.size(); ++k)
-      b[dmap0_cell0[k]] += be[k];
+    for (Eigen::Index i = 0; i < dmap0_cell0.size(); ++i)
+      for (int k = 0; k < bs0; ++k)
+        b[bs0 * dmap0_cell0[i] + k] += be[bs0 * i + k];
 
     // Compute b = b - A*b for cell1
-    be.setZero(dmap0_cell1.size() + dmap1_cell1.size());
+    be.setZero(bs0 * (dmap0_cell0.size() + dmap0_cell1.size()));
     for (Eigen::Index j = 0; j < dmap1_cell1.size(); ++j)
     {
-      const std::int32_t jj = dmap1_cell1[j];
-      if (bc_markers1[jj])
+      for (int k = 0; k < bs1; ++k)
       {
-        const T bc = bc_values1[jj];
-        if (x0.rows() > 0)
-          be -= Ae.col(j) * scale * (bc - x0[jj]);
-        else
-          be -= Ae.col(j) * scale * bc;
+        const std::int32_t jj = bs1 * dmap1_cell1[j] + k;
+        if (bc_markers1[jj])
+        {
+          const T bc = bc_values1[jj];
+          if (x0.rows() > 0)
+            be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
+          else
+            be -= Ae.col(bs1 * j + k) * scale * bc;
+        }
       }
     }
 
-    for (Eigen::Index k = 0; k < dmap0_cell1.size(); ++k)
-      b[dmap0_cell1[k]] += be[k];
+    for (Eigen::Index i = 0; i < dmap0_cell1.size(); ++i)
+      for (int k = 0; k < bs0; ++k)
+        b[bs0 * dmap0_cell1[i] + k] += be[bs0 * i + k];
   }
 }
 //-----------------------------------------------------------------------------
@@ -872,8 +903,10 @@ void lift_bc(
   assert(a.function_spaces().at(1));
   const graph::AdjacencyList<std::int32_t>& dofmap0
       = a.function_spaces()[0]->dofmap()->list();
+  const int bs0 = a.function_spaces()[0]->dofmap()->bs();
   const graph::AdjacencyList<std::int32_t>& dofmap1
       = a.function_spaces()[1]->dofmap()->list();
+  const int bs1 = a.function_spaces()[0]->dofmap()->bs();
 
   // Prepare constants
   const Eigen::Array<T, Eigen::Dynamic, 1> constant_values = pack_constants(a);
@@ -895,9 +928,9 @@ void lift_bc(
     const auto& kernel = a.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
         = a.domains(IntegralType::cell, i);
-    _lift_bc_cells(b, mesh->geometry(), kernel, active_cells, dofmap0, dofmap1,
-                   coeffs, constant_values, cell_info, bc_values1, bc_markers1,
-                   x0, scale);
+    _lift_bc_cells(b, mesh->geometry(), kernel, active_cells, dofmap0, bs0,
+                   dofmap1, bs1, coeffs, constant_values, cell_info, bc_values1,
+                   bc_markers1, x0, scale);
   }
 
   if (a.num_integrals(IntegralType::exterior_facet) > 0
@@ -919,8 +952,8 @@ void lift_bc(
       const auto& kernel = a.kernel(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
           = a.domains(IntegralType::exterior_facet, i);
-      _lift_bc_exterior_facets(b, *mesh, kernel, active_facets, dofmap0,
-                               dofmap1, coeffs, constant_values, cell_info,
+      _lift_bc_exterior_facets(b, *mesh, kernel, active_facets, dofmap0, bs0,
+                               dofmap1, bs1, coeffs, constant_values, cell_info,
                                perms, bc_values1, bc_markers1, x0, scale);
     }
 
@@ -930,8 +963,8 @@ void lift_bc(
       const auto& kernel = a.kernel(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
           = a.domains(IntegralType::interior_facet, i);
-      _lift_bc_interior_facets(b, *mesh, kernel, active_facets, dofmap0,
-                               dofmap1, coeffs, c_offsets, constant_values,
+      _lift_bc_interior_facets(b, *mesh, kernel, active_facets, dofmap0, bs0,
+                               dofmap1, bs1, coeffs, c_offsets, constant_values,
                                cell_info, perms, bc_values1, bc_markers1, x0,
                                scale);
     }

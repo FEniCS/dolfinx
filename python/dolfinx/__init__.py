@@ -42,7 +42,7 @@ from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
 
 from .cpp.mesh import Topology, Geometry
 
-from .cpp.nls import (NonlinearProblem, NewtonSolver)
+# from .cpp.nls import (NonlinearProblem, NewtonSolver)
 
 from .fem.form import Form
 from .fem.dirichletbc import DirichletBC

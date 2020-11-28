@@ -47,19 +47,23 @@ def build_nullspace(V):
         vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
         basis = [np.asarray(x) for x in vec_local]
 
+        # Dof indices for each subspace (x, y and z dofs)
+        dofs = [V.sub(i).dofmap.list.array for i in range(3)]
+
         # Build translational null space basis
         for i in range(3):
-            basis[i][V.sub(i).dofmap.list.array] = 1.0
+            basis[i][dofs[i]] = 1.0
 
         # Build rotational null space basis
         x = V.tabulate_dof_coordinates()
-        dofs = [V.sub(i).dofmap.list.array for i in range(3)]
-        basis[3][dofs[0]] = -x[dofs[0], 1]
-        basis[3][dofs[1]] = x[dofs[1], 0]
-        basis[4][dofs[0]] = x[dofs[0], 2]
-        basis[4][dofs[2]] = -x[dofs[2], 0]
-        basis[5][dofs[2]] = x[dofs[2], 1]
-        basis[5][dofs[1]] = -x[dofs[1], 2]
+        dofs_block = V.dofmap.list.array
+        x0, x1, x2 = x[dofs_block, 0], x[dofs_block, 1], x[dofs_block, 2]
+        basis[3][dofs[0]] = -x1
+        basis[3][dofs[1]] = x0
+        basis[4][dofs[0]] = x2
+        basis[4][dofs[2]] = -x0
+        basis[5][dofs[2]] = x1
+        basis[5][dofs[1]] = -x2
 
     # Create vector space basis and orthogonalize
     basis = VectorSpaceBasis(nullspace_basis)
@@ -149,57 +153,55 @@ form = Form(a, form_compiler_parameters={"quadrature_degree": 1})
 # ::
 
 # Assemble system, applying boundary conditions and preserving symmetry
-# A = assemble_matrix(form, [bc])
-A = assemble_matrix(form, [])
+A = assemble_matrix(form, [bc])
 A.assemble()
-print("A norm:", A.norm())
-exit(0)
 
-# b = assemble_vector(L)
-# apply_lifting(b, [a], [[bc]])
-# b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-# set_bc(b, [bc])
+b = assemble_vector(L)
+apply_lifting(b, [a], [[bc]])
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+set_bc(b, [bc])
 
-# # Create solution function
-# u = Function(V)
 
-# # Create near null space basis (required for smoothed aggregation AMG).
-# null_space = build_nullspace(V)
+# Create solution function
+u = Function(V)
 
-# # Attach near nullspace to matrix
-# A.setNearNullSpace(null_space)
+# Create near null space basis (required for smoothed aggregation AMG).
+null_space = build_nullspace(V)
 
-# # Set solver options
-# opts = PETSc.Options()
-# opts["ksp_type"] = "cg"
-# opts["ksp_rtol"] = 1.0e-12
-# opts["pc_type"] = "gamg"
+# Attach near nullspace to matrix
+A.setNearNullSpace(null_space)
 
-# # Use Chebyshev smoothing for multigrid
-# opts["mg_levels_ksp_type"] = "chebyshev"
-# opts["mg_levels_pc_type"] = "jacobi"
+# Set solver options
+opts = PETSc.Options()
+opts["ksp_type"] = "cg"
+opts["ksp_rtol"] = 1.0e-12
+opts["pc_type"] = "gamg"
 
-# # Improve estimate of eigenvalues for Chebyshev smoothing
-# opts["mg_levels_esteig_ksp_type"] = "cg"
-# opts["mg_levels_ksp_chebyshev_esteig_steps"] = 20
+# Use Chebyshev smoothing for multigrid
+opts["mg_levels_ksp_type"] = "chebyshev"
+opts["mg_levels_pc_type"] = "jacobi"
 
-# # Create CG Krylov solver and turn convergence monitoring on
-# solver = PETSc.KSP().create(MPI.COMM_WORLD)
-# solver.setFromOptions()
+# Improve estimate of eigenvalues for Chebyshev smoothing
+opts["mg_levels_esteig_ksp_type"] = "cg"
+opts["mg_levels_ksp_chebyshev_esteig_steps"] = 20
 
-# # Set matrix operator
-# solver.setOperators(A)
+# Create CG Krylov solver and turn convergence monitoring on
+solver = PETSc.KSP().create(MPI.COMM_WORLD)
+solver.setFromOptions()
 
-# # Compute solution
-# solver.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
-# solver.solve(b, u.vector)
-# solver.view()
+# Set matrix operator
+solver.setOperators(A)
 
-# # Save solution to XDMF format
-# with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
-#     file.write_mesh(mesh)
-#     file.write_function(u)
+# Compute solution
+solver.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
+solver.solve(b, u.vector)
+solver.view()
 
-# unorm = u.vector.norm()
-# if mesh.mpi_comm().rank == 0:
-#     print("Solution vector norm:", unorm)
+# Save solution to XDMF format
+with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
+    file.write_mesh(mesh)
+    file.write_function(u)
+
+unorm = u.vector.norm()
+if mesh.mpi_comm().rank == 0:
+    print("Solution vector norm:", unorm)

@@ -221,14 +221,19 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 
   // Build dofmap by extracting from parent
   const int num_cells = this->_dofmap.num_nodes();
+  // FIXME X: how does sub_element_map_view hand block sizes?
   const std::int32_t dofs_per_cell = sub_element_map_view.size();
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       dofmap(num_cells, dofs_per_cell);
+  const int bs_parent = this->bs();
   for (int c = 0; c < num_cells; ++c)
   {
     auto cell_dmap_parent = this->_dofmap.links(c);
     for (std::int32_t i = 0; i < dofs_per_cell; ++i)
-      dofmap(c, i) = cell_dmap_parent[sub_element_map_view[i]];
+    {
+      const std::div_t pos = std::div(sub_element_map_view[i], bs_parent);
+      dofmap(c, i) = bs_parent * cell_dmap_parent[pos.quot] + pos.rem;
+    }
   }
 
   // FIXME X

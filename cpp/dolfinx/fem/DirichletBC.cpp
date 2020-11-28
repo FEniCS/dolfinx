@@ -545,7 +545,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
     const function::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker)
+                                            Eigen::RowMajor>>&)>& marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
@@ -557,7 +557,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
 
   // Compute marker for each dof coordinate
   const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
-      = marker(dof_coordinates);
+      = marker_fn(dof_coordinates);
 
   std::vector<std::int32_t> dofs;
   dofs.reserve(marked_dofs.count());

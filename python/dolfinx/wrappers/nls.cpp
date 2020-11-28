@@ -85,43 +85,43 @@ void nls(py::module& m)
 
   // dolfinx::NonlinearProblem 'trampoline' for overloading from
   // Python
-  class PyNonlinearProblem : public dolfinx::nls::NonlinearProblem
-  {
-    using dolfinx::nls::NonlinearProblem::NonlinearProblem;
+  // class PyNonlinearProblem : public dolfinx::nls::NonlinearProblem
+  // {
+  //   using dolfinx::nls::NonlinearProblem::NonlinearProblem;
 
-    // pybdind11 has some issues when passing by reference (due to
-    // the return value policy), so the below is non-standard.  See
-    // https://github.com/pybind/pybind11/issues/250.
+  //   // pybdind11 has some issues when passing by reference (due to
+  //   // the return value policy), so the below is non-standard.  See
+  //   // https://github.com/pybind/pybind11/issues/250.
 
-    Mat J(const Vec x) override
-    {
-      PYBIND11_OVERLOAD_INT(Mat, dolfinx::nls::NonlinearProblem, "J", x);
-      py::pybind11_fail(
-          "Tried to call pure virtual function dolfinx::NonlinerProblem::J");
-    }
+  //   Mat J(const Vec x) override
+  //   {
+  //     PYBIND11_OVERLOAD_INT(Mat, dolfinx::nls::NonlinearProblem, "J", x);
+  //     py::pybind11_fail(
+  //         "Tried to call pure virtual function dolfinx::NonlinerProblem::J");
+  //   }
 
-    Vec F(const Vec x) override
-    {
-      PYBIND11_OVERLOAD_INT(Vec, dolfinx::nls::NonlinearProblem, "F", x);
-      py::pybind11_fail(
-          "Tried to call pure virtual function dolfinx::NonlinearProblem::F");
-    }
+  //   Vec F(const Vec x) override
+  //   {
+  //     PYBIND11_OVERLOAD_INT(Vec, dolfinx::nls::NonlinearProblem, "F", x);
+  //     py::pybind11_fail(
+  //         "Tried to call pure virtual function dolfinx::NonlinearProblem::F");
+  //   }
 
-    void form(Vec x) override
-    {
-      PYBIND11_OVERLOAD_INT(void, dolfinx::nls::NonlinearProblem, "form", x);
-      return dolfinx::nls::NonlinearProblem::form(x);
-    }
-  };
+  //   void form(Vec x) override
+  //   {
+  //     PYBIND11_OVERLOAD_INT(void, dolfinx::nls::NonlinearProblem, "form", x);
+  //     return dolfinx::nls::NonlinearProblem::form(x);
+  //   }
+  // };
 
-  // dolfinx::NonlinearProblem
-  py::class_<dolfinx::nls::NonlinearProblem,
-             std::shared_ptr<dolfinx::nls::NonlinearProblem>,
-             PyNonlinearProblem>(m, "NonlinearProblem")
-      .def(py::init<>())
-      .def("F", &dolfinx::nls::NonlinearProblem::F)
-      .def("J", &dolfinx::nls::NonlinearProblem::J)
-      .def("P", &dolfinx::nls::NonlinearProblem::P)
-      .def("form", &dolfinx::nls::NonlinearProblem::form);
+  // // dolfinx::NonlinearProblem
+  // py::class_<dolfinx::nls::NonlinearProblem,
+  //            std::shared_ptr<dolfinx::nls::NonlinearProblem>,
+  //            PyNonlinearProblem>(m, "NonlinearProblem")
+  //     .def(py::init<>())
+  //     .def("F", &dolfinx::nls::NonlinearProblem::F)
+  //     .def("J", &dolfinx::nls::NonlinearProblem::J)
+  //     .def("P", &dolfinx::nls::NonlinearProblem::P)
+  //     .def("form", &dolfinx::nls::NonlinearProblem::form);
 }
 } // namespace dolfinx_wrappers
