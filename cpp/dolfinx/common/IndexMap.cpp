@@ -218,9 +218,9 @@ common::stack_index_maps(
   std::vector<std::int32_t> local_offset(maps.size() + 1, 0);
   for (std::size_t f = 1; f < local_offset.size(); ++f)
   {
-    local_offset[f]
-        = local_offset[f - 1]
-          + maps[f - 1].first.get().size_local() * maps[f - 1].second;
+    const std::int32_t local_size = maps[f - 1].first.get().size_local();
+    const int bs = maps[f - 1].second;
+    local_offset[f] = local_offset[f - 1] + bs * local_size;
   }
 
   // Pack old and new composite indices for owned entries that are ghost
@@ -228,18 +228,18 @@ common::stack_index_maps(
   std::vector<std::int64_t> indices;
   for (std::size_t f = 0; f < maps.size(); ++f)
   {
+    const int bs = maps[f].second;
     const std::vector<std::int32_t>& forward_indices
         = maps[f].first.get().shared_indices();
-    const std::int64_t offset
-        = maps[f].second * maps[f].first.get().local_range()[0];
+    const std::int64_t offset = bs * maps[f].first.get().local_range()[0];
     for (std::int32_t local_index : forward_indices)
     {
-      for (std::int32_t i = 0; i < maps[f].second; ++i)
+      for (std::int32_t i = 0; i < bs; ++i)
       {
         // Insert field index, global index, composite global index
         indices.push_back(f);
-        indices.push_back(maps[f].second * local_index + i + offset);
-        indices.push_back(maps[f].second * local_index + i + local_offset[f]
+        indices.push_back(bs * local_index + i + offset);
+        indices.push_back(bs * local_index + i + local_offset[f]
                           + process_offset);
       }
     }
@@ -301,15 +301,16 @@ common::stack_index_maps(
   std::vector<std::vector<int>> ghost_owners_new(maps.size());
   for (std::size_t f = 0; f < maps.size(); ++f)
   {
+    const int bs = maps[f].second;
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
         = maps[f].first.get().ghosts();
     const Eigen::Array<int, Eigen::Dynamic, 1>& ghost_owners
         = maps[f].first.get().ghost_owner_rank();
     for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
     {
-      for (int j = 0; j < maps[f].second; ++j)
+      for (int j = 0; j < bs; ++j)
       {
-        auto it = ghost_maps[f].find(maps[f].second * ghosts[i] + j);
+        auto it = ghost_maps[f].find(bs * ghosts[i] + j);
         assert(it != ghost_maps[f].end());
         ghosts_new[f].push_back(it->second);
         ghost_owners_new[f].push_back(ghost_owners[i]);

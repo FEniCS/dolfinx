@@ -105,7 +105,7 @@ def nest_matrix_norm(A):
 mesh = RectangleMesh(
     MPI.COMM_WORLD,
     # [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [2, 2],
+    [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
 
 
@@ -178,14 +178,14 @@ a_p11 = inner(p, q) * dx
 a_p = [[a[0][0], None],
        [None, a_p11]]
 
-# # Nested matrix solver
-# # ^^^^^^^^^^^^^^^^^^^^
-# #
-# # We now assemble the bilinear form into a nested matrix `A`, and call
-# # the `assemble()` method to communicate shared entries in parallel.
-# # Rows and columns in `A` that correspond to degrees-of-freedom with
-# # Dirichlet boundary conditions are zeroed and a value of 1 is set on
-# # the diagonal.
+# Nested matrix solver
+# ^^^^^^^^^^^^^^^^^^^^
+#
+# We now assemble the bilinear form into a nested matrix `A`, and call
+# the `assemble()` method to communicate shared entries in parallel.
+# Rows and columns in `A` that correspond to degrees-of-freedom with
+# Dirichlet boundary conditions are zeroed and a value of 1 is set on
+# the diagonal.
 
 A = dolfinx.fem.assemble_matrix_nest(a, bcs)
 A.assemble()
@@ -304,18 +304,11 @@ with XDMFFile(MPI.COMM_WORLD, "pressure.xdmf", "w") as pfile_xdmf:
 # Next, we solve same problem, but now with monolithic (non-nested)
 # matrices and iterative solvers.
 
-# print("---------------")
 A = dolfinx.fem.assemble_matrix_block(a, bcs)
-# A = dolfinx.fem.assemble_matrix_block(a)
 A.assemble()
-# print("Ablock:", A.norm())
-# A.view()
 P = dolfinx.fem.assemble_matrix_block(a_p, bcs)
 P.assemble()
 b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs)
-# print("b-block:", b.norm())
-# b.view()
-
 
 # Set near null space for pressure
 null_vec = A.createVecLeft()
@@ -425,13 +418,13 @@ assert np.isclose(norm_p_2, norm_p_0)
 # solver approach
 
 # Create the function space
-TH = P2 * P1
-W = FunctionSpace(mesh, TH)
+# TH = P2 * P1
+# W = FunctionSpace(mesh, TH)
 # W0 = W.sub(0).collapse()
 
 # No slip boundary condition
-noslip = Function(V)
-facets = locate_entities_boundary(mesh, 1, noslip_boundary)
+# noslip = Function(V)
+# facets = locate_entities_boundary(mesh, 1, noslip_boundary)
 # dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 # bc0 = DirichletBC(noslip, dofs, W.sub(0))
 

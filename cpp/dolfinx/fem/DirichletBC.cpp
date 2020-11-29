@@ -35,7 +35,7 @@ namespace
 /// @return List of local dofs with boundary conditions applied but
 ///   detected by other processes. It may contain duplicate entries.
 std::vector<std::int32_t>
-get_remote_bcs1(const common::IndexMap& map, int bs,
+get_remote_bcs1(const common::IndexMap& map,
                 const std::vector<std::int32_t>& dofs_local)
 {
   MPI_Comm comm = map.comm(common::IndexMap::Direction::symmetric);
@@ -56,17 +56,16 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
 
   // NOTE: we could consider only dofs that we know are shared
   // Build array of global indices of dofs
-  std::vector<std::int32_t> dofs_local_block = dofs_local;
-  std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
-                [bs](std::int32_t& n) { n /= bs; });
-  const std::vector<std::int64_t> dofs_global_block
-      = map.local_to_global(dofs_local_block);
-  std::vector<std::int64_t> dofs_global(dofs_local.size());
-  for (std::size_t i = 0; i < dofs_local.size(); ++i)
-  {
-    const int offset = dofs_local[i] % bs;
-    dofs_global[i] = bs * dofs_global_block[i] + offset;
-  }
+  // std::vector<std::int32_t> dofs_local_block = dofs_local;
+  // std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
+  //               [bs](std::int32_t& n) { n /= bs; });
+  const std::vector<std::int64_t> dofs_global = map.local_to_global(dofs_local);
+  // std::vector<std::int64_t> dofs_global(dofs_local.size());
+  // for (std::size_t i = 0; i < dofs_local.size(); ++i)
+  // {
+  //   const int offset = dofs_local[i] % bs;
+  //   dofs_global[i] = bs * dofs_global_block[i] + offset;
+  // }
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
@@ -103,15 +102,15 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
   std::vector<std::int32_t> dofs;
   for (std::size_t i = 0; i < dofs_received.size(); ++i)
   {
-    if (dofs_received[i] >= bs * range[0] and dofs_received[i] < bs * range[1])
-      dofs.push_back(dofs_received[i] - bs * range[0]);
+    if (dofs_received[i] >= range[0] and dofs_received[i] < range[1])
+      dofs.push_back(dofs_received[i] - range[0]);
     else
     {
       // Search in ghosts
-      if (auto it = global_to_local.find(dofs_received[i] / bs);
+      if (auto it = global_to_local.find(dofs_received[i]);
           it != global_to_local.end())
       {
-        dofs.push_back(it->second * bs + dofs_received[i] % bs);
+        dofs.push_back(it->second);
       }
     }
   }
@@ -409,12 +408,7 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
 
   const int num_entity_closure_dofs
       = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
-  const int block_size = dofmap->element_dof_layout->block_size();
   std::vector<std::int32_t> dofs;
-
-  std::cout << "Element bs: " << block_size << std::endl;
-  std::cout << "Dofmap bs: " << V.dofmap()->bs() << std::endl;
-  std::cout << "Num closure dofs: " << num_entity_closure_dofs << std::endl;
 
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
@@ -447,8 +441,8 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
 
   if (remote)
   {
-    const std::vector dofs_remote = get_remote_bcs1(
-        *V.dofmap()->index_map, V.dofmap()->index_map_bs(), dofs);
+    const std::vector dofs_remote
+        = get_remote_bcs1(*V.dofmap()->index_map, dofs);
 
     // Add received bc indices to dofs_local
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());

@@ -326,6 +326,14 @@ public:
     {
       for (int k = 0; k < bs; ++k)
       {
+        if (bs * _dofs0(i) + k >= (std::int32_t)markers.size())
+        {
+          int rank = 0;
+          MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+          std::cout << "Too big: " << _dofs0.rows() << ", " << bs << ", " << i
+                    << ", " << k << ", " << _dofs0(i) << ", " << markers.size()
+                    << ", rank: " << rank << std::endl;
+        }
         assert(bs * _dofs0(i) + k < (std::int32_t)markers.size());
         markers[bs * _dofs0(i) + k] = true;
       }
