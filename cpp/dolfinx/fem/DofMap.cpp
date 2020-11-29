@@ -255,6 +255,7 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   std::unique_ptr<DofMap> dofmap_new;
   if (this->index_map_bs() == 1 and this->element_dof_layout->block_size() > 1)
   {
+    std::cout << "Build new dofmap" << std::endl;
     // Create new element dof layout and reset parent
     auto collapsed_dof_layout
         = std::make_shared<ElementDofLayout>(element_dof_layout->copy());
@@ -265,14 +266,19 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
         = DofMapBuilder::build(comm, topology, *collapsed_dof_layout);
     dofmap_new = std::make_unique<DofMap>(element_dof_layout, index_map, bs,
                                           std::move(dofmap), bs);
+    std::cout << "End Build new dofmap" << std::endl;
   }
   else
   {
+    std::cout << "Collapse without rebuild" << std::endl;
     // Collapse dof map, without build and re-ordering from scratch
     dofmap_new = std::make_unique<DofMap>(
         build_collapsed_dofmap(comm, *this, topology));
+    std::cout << "End Collapse without rebuild" << std::endl;
   }
   assert(dofmap_new);
+
+  std::cout << "Start remaping" << std::endl;
 
   // Build map from collapsed dof index to original dof index
   auto index_map_new = dofmap_new->index_map;
@@ -284,18 +290,25 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   const int tdim = topology.dim();
   auto cells = topology.connectivity(tdim, 0);
   assert(cells);
+  const int bs = dofmap_new->bs();
+  std::cout << "Start remaping loop" << std::endl;
   for (int c = 0; c < cells->num_nodes(); ++c)
   {
     auto cell_dofs_view = this->cell_dofs(c);
     auto cell_dofs = dofmap_new->cell_dofs(c);
-    assert(cell_dofs_view.rows() == cell_dofs.rows());
-    for (Eigen::Index i = 0; i < cell_dofs_view.rows(); ++i)
+    // assert(bs * cell_dofs_view.rows() == cell_dofs.rows());
+    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
     {
-      assert(cell_dofs[i] < (int)collapsed_map.size());
-      collapsed_map[cell_dofs[i]] = cell_dofs_view[i];
+      for (int k = 0; k < bs; ++k)
+      {
+        assert(bs * cell_dofs[i] + k < (int)collapsed_map.size());
+        assert(bs * i + k < cell_dofs_view.rows());
+        collapsed_map[bs * cell_dofs[i] + k] = cell_dofs_view[bs * i + k];
+      }
     }
   }
 
+  std::cout << "Done with dofmap collapse" << std::endl;
   return {std::move(dofmap_new), std::move(collapsed_map)};
 }
 //-----------------------------------------------------------------------------

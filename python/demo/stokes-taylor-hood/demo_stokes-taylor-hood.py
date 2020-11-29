@@ -77,8 +77,8 @@ import dolfinx
 import ufl
 from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
-# from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
 from dolfinx.fem import locate_dofs_topological
+# from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
 from ufl import div, dx, grad, inner
@@ -104,8 +104,8 @@ def nest_matrix_norm(A):
 # Create mesh
 mesh = RectangleMesh(
     MPI.COMM_WORLD,
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
-    # [np.array([0, 0, 0]), np.array([1, 1, 0])], [1, 1],
+    # [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
+    [np.array([0, 0, 0]), np.array([1, 1, 0])], [2, 2],
     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
 
 
@@ -382,56 +382,56 @@ if MPI.COMM_WORLD.rank == 0:
 assert np.isclose(norm_u_1, norm_u_0)
 assert np.isclose(norm_p_1, norm_p_0)
 
-# # Monolithic block direct solver
-# # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# #
-# # Solve same problem, but now with monolithic matrices and a direct solver
+# Monolithic block direct solver
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#
+# Solve same problem, but now with monolithic matrices and a direct solver
 
-# # Create LU solver
-# ksp = PETSc.KSP().create(mesh.mpi_comm())
-# ksp.setOperators(A)
-# ksp.setType("preonly")
-# ksp.getPC().setType("lu")
-# ksp.getPC().setFactorSolverType("superlu_dist")
+# Create LU solver
+ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp.setOperators(A)
+ksp.setType("preonly")
+ksp.getPC().setType("lu")
+ksp.getPC().setFactorSolverType("superlu_dist")
 
-# # We also need to create a block vector,``x``, to store the (full)
-# # solution, which we initialize using the block RHS form ``L``.
+# We also need to create a block vector,``x``, to store the (full)
+# solution, which we initialize using the block RHS form ``L``.
 
-# # Compute solution
-# x = A.createVecLeft()
-# ksp.solve(b, x)
+# Compute solution
+x = A.createVecLeft()
+ksp.solve(b, x)
 
-# # Create Functions and scatter x solution
-# u, p = Function(V), Function(Q)
-# offset = V_map.size_local * V.dofmap.index_map_bs
-# u.vector.array[:] = x.array_r[:offset]
-# p.vector.array[:] = x.array_r[offset:]
+# Create Functions and scatter x solution
+u, p = Function(V), Function(Q)
+offset = V_map.size_local * V.dofmap.index_map_bs
+u.vector.array[:] = x.array_r[:offset]
+p.vector.array[:] = x.array_r[offset:]
 
-# # We can calculate the :math:`L^2` norms of u and p as follows::
+# We can calculate the :math:`L^2` norms of u and p as follows::
 
-# norm_u_2 = u.vector.norm()
-# norm_p_2 = p.vector.norm()
-# if MPI.COMM_WORLD.rank == 0:
-#     print("(C) Norm of velocity coefficient vector: {}".format(norm_u_2))
-#     print("(C) Norm of pressure coefficient vector: {}".format(norm_p_2))
-# assert np.isclose(norm_u_2, norm_u_0)
-# assert np.isclose(norm_p_2, norm_p_0)
+norm_u_2 = u.vector.norm()
+norm_p_2 = p.vector.norm()
+if MPI.COMM_WORLD.rank == 0:
+    print("(C) Norm of velocity coefficient vector: {}".format(norm_u_2))
+    print("(C) Norm of pressure coefficient vector: {}".format(norm_p_2))
+assert np.isclose(norm_u_2, norm_u_0)
+assert np.isclose(norm_p_2, norm_p_0)
 
 
-# # Non-blocked direct solver
-# # ^^^^^^^^^^^^^^^^^^^^^^^^^
-# #
-# # Again, solve the same problem but this time with a non-blocked direct
-# # solver approach
+# Non-blocked direct solver
+# ^^^^^^^^^^^^^^^^^^^^^^^^^
+#
+# Again, solve the same problem but this time with a non-blocked direct
+# solver approach
 
-# # Create the function space
-# TH = P2 * P1
-# W = FunctionSpace(mesh, TH)
+# Create the function space
+TH = P2 * P1
+W = FunctionSpace(mesh, TH)
 # W0 = W.sub(0).collapse()
 
-# # No slip boundary condition
-# noslip = Function(W0)
-# facets = locate_entities_boundary(mesh, 1, noslip_boundary)
+# No slip boundary condition
+noslip = Function(V)
+facets = locate_entities_boundary(mesh, 1, noslip_boundary)
 # dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 # bc0 = DirichletBC(noslip, dofs, W.sub(0))
 
