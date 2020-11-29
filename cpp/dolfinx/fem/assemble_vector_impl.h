@@ -238,103 +238,99 @@ void _lift_bc_exterior_facets(
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
-  // const int gdim = mesh.geometry().dim();
-  // const int tdim = mesh.topology().dim();
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
 
-  // // Prepare cell geometry
-  // const graph::AdjacencyList<std::int32_t>& x_dofmap =
-  // mesh.geometry().dofmap();
-  // // FIXME: Add proper interface for num coordinate dofs
-  // const int num_dofs_g = x_dofmap.num_links(0);
-  // const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-  //     = mesh.geometry().x();
+  // Prepare cell geometry
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = x_dofmap.num_links(0);
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
+      = mesh.geometry().x();
 
-  // // Data structures used in bc application
-  // Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  //     coordinate_dofs(num_dofs_g, gdim);
-  // Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
-  // Eigen::Matrix<T, Eigen::Dynamic, 1> be;
+  // Data structures used in bc application
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs(num_dofs_g, gdim);
+  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
+  Eigen::Matrix<T, Eigen::Dynamic, 1> be;
 
-  // // Iterate over owned facets
-  // const mesh::Topology& topology = mesh.topology();
-  // auto connectivity = topology.connectivity(tdim - 1, tdim);
-  // assert(connectivity);
-  // auto c_to_f = topology.connectivity(tdim, tdim - 1);
-  // assert(c_to_f);
-  // auto map = topology.index_map(tdim - 1);
-  // assert(map);
+  // Iterate over owned facets
+  const mesh::Topology& topology = mesh.topology();
+  auto connectivity = topology.connectivity(tdim - 1, tdim);
+  assert(connectivity);
+  auto c_to_f = topology.connectivity(tdim, tdim - 1);
+  assert(c_to_f);
+  auto map = topology.index_map(tdim - 1);
+  assert(map);
 
   for (std::int32_t f : active_facets)
   {
     // Create attached cell
-    // assert(connectivity->num_links(f) == 1);
-    // const std::int32_t cell = connectivity->links(f)[0];
+    assert(connectivity->num_links(f) == 1);
+    const std::int32_t cell = connectivity->links(f)[0];
 
-    // // Get local index of facet with respect to the cell
-    // auto facets = c_to_f->links(cell);
-    // const auto* it = std::find(facets.data(), facets.data() + facets.rows(),
-    // f); assert(it != (facets.data() + facets.rows())); const int local_facet
-    // = std::distance(facets.data(), it);
+    // Get local index of facet with respect to the cell
+    auto facets = c_to_f->links(cell);
+    const auto* it = std::find(facets.data(), facets.data() + facets.rows(), f);
+    assert(it != (facets.data() + facets.rows()));
+    const int local_facet = std::distance(facets.data(), it);
 
     // Get dof maps for cell
-    // auto dmap1 = dofmap1.links(cell);
+    auto dmap1 = dofmap1.links(cell);
 
-    // // Check if bc is applied to cell
-    // bool has_bc = false;
-    // for (Eigen::Index j = 0; j < dmap1.size(); ++j)
-    // {
-    //   for (int k = 0; k < bs1; ++k)
-    //   {
-    //     if (bc_markers1[bs1 * dmap1[j] + k])
-    //     {
-    //       has_bc = true;
-    //       break;
-    //     }
-    //   }
-    // }
+    // Check if bc is applied to cell
+    bool has_bc = false;
+    for (Eigen::Index j = 0; j < dmap1.size(); ++j)
+    {
+      for (int k = 0; k < bs1; ++k)
+      {
+        if (bc_markers1[bs1 * dmap1[j] + k])
+        {
+          has_bc = true;
+          break;
+        }
+      }
+    }
 
-    // if (!has_bc)
-    //   continue;
+    if (!has_bc)
+      continue;
 
-    // // Get cell vertex coordinates
-    // auto x_dofs = x_dofmap.links(cell);
-    // for (int i = 0; i < num_dofs_g; ++i)
-    //   for (int j = 0; j < gdim; ++j)
-    //     coordinate_dofs(i, j) = x_g(x_dofs[i], j);
-
-    // // Size data structure for assembly
-    // auto dmap0 = dofmap0.links(cell);
-
-    // TODO: Move gathering of coefficients outside of main assembly
-    // loop
-
-    // auto coeff_array = coeffs.row(cell);
-    // Ae.setZero(bs0 * dmap0.size(), bs1 * dmap1.size());
-    // kernel(Ae.data(), coeff_array.data(), constant_values.data(),
-    //        coordinate_dofs.data(), &local_facet, &perms(local_facet, cell),
-    //        cell_info[cell]);
+    // Get cell vertex coordinates
+    auto x_dofs = x_dofmap.links(cell);
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Size data structure for assembly
-    // be.setZero(bs0 * dmap0.size());
-    // for (Eigen::Index j = 0; j < dmap1.size(); ++j)
-    // {
-    //   for (int k = 0; k < bs1; ++k)
-    //   {
-    //     const std::int32_t jj = bs1 * dmap1[j] + k;
-    //     if (bc_markers1[jj])
-    //     {
-    //       const T bc = bc_values1[jj];
-    //       if (x0.rows() > 0)
-    //         be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
-    //       else
-    //         be -= Ae.col(bs1 * j + k) * scale * bc;
-    //     }
-    //   }
-    // }
+    auto dmap0 = dofmap0.links(cell);
 
-    // for (Eigen::Index i = 0; i < dmap0.size(); ++i)
-    //   for (int k = 0; k < bs0; ++k)
-    //     b[bs0 * dmap0[i] + k] += be[bs0 * i + k];
+    auto coeff_array = coeffs.row(cell);
+    Ae.setZero(bs0 * dmap0.size(), bs1 * dmap1.size());
+    kernel(Ae.data(), coeff_array.data(), constant_values.data(),
+           coordinate_dofs.data(), &local_facet, &perms(local_facet, cell),
+           cell_info[cell]);
+
+    // Size data structure for assembly
+    be.setZero(bs0 * dmap0.size());
+    for (Eigen::Index j = 0; j < dmap1.size(); ++j)
+    {
+      for (int k = 0; k < bs1; ++k)
+      {
+        const std::int32_t jj = bs1 * dmap1[j] + k;
+        if (bc_markers1[jj])
+        {
+          const T bc = bc_values1[jj];
+          if (x0.rows() > 0)
+            be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
+          else
+            be -= Ae.col(bs1 * j + k) * scale * bc;
+        }
+      }
+    }
+
+    for (Eigen::Index i = 0; i < dmap0.size(); ++i)
+      for (int k = 0; k < bs0; ++k)
+        b[bs0 * dmap0[i] + k] += be[bs0 * i + k];
   }
 }
 //----------------------------------------------------------------------------
