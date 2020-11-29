@@ -222,21 +222,33 @@ public:
   /// Get array of dof indices to which a Dirichlet boundary condition
   /// is applied. The array is sorted and may contain ghost entries.
   // const std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>&
-  const std::array<
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>, 2>&
-  dofs() const
-  {
-    return {_dofs0, _dofs1_g};
-  }
+  // const std::array<
+  //     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>,
+  //     2>&
+  // dofs() const
+  // {
+  //   return {_dofs0, _dofs1_g};
+  // }
 
   /// Get array of dof indices owned by this process to which a
   /// Dirichlet BC is applied. The array is sorted and does not contain
   /// ghost entries.
-  const std::array<
-      Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>, 2>
-  dofs_owned() const
+  std::pair<Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>,
+            int>
+  dofs_owned(int dim) const
   {
-    return {_dofs0.head(_owned_indices0), _dofs1_g.head(_owned_indices1)};
+    if (dim == 0)
+    {
+      const int bs = _function_space->dofmap()->bs();
+      return {_dofs0.head(_owned_indices0), bs};
+    }
+    else if (dim == 1)
+    {
+      const int bs = _g->function_space()->dofmap()->bs();
+      return {_dofs1_g.head(_owned_indices1), bs};
+    }
+    else
+      throw std::runtime_error("Wrong dim index");
   }
 
   /// Set bc entries in x to scale*x_bc
@@ -282,7 +294,7 @@ public:
         if (bs * _dofs0(i) + k < x.rows())
         {
           x[bs * _dofs0(i) + k]
-              = scale * (g[_dofs1_g(bs * i + k)] - x0[bs * _dofs0(i) + k]);
+              = scale * (g[bs * _dofs1_g(i) + k] - x0[bs * _dofs0(i) + k]);
         }
       }
     }

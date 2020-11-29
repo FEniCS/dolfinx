@@ -208,8 +208,8 @@ void add_diagonal(
     assert(bc);
     if (V.contains(*bc->function_space()))
     {
-      add_diagonal<T>(mat_add, bc->dofs_owned()[0],
-                      bc->function_space()->dofmap()->bs(), diagonal);
+      const auto [dofs, bs] = bc->dofs_owned(0);
+      add_diagonal<T>(mat_add, dofs, bs, diagonal);
     }
   }
 }
