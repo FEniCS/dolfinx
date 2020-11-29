@@ -72,10 +72,10 @@ jobs:
 
       - name: Build Python interface
         run: python3 -m pip -v install python/
-      - name: Build Python interface documentation
-        run: |
-          cd python/demo && python3 ./generate-demo-files.py
-          cd ../doc && make html
+      # - name: Build Python interface documentation
+      #   run: |
+      #     cd python/demo && python3 ./generate-demo-files.py
+      #     cd ../doc && make html
 
       - name: Set default DOLFINX JIT parameters
         run: |
