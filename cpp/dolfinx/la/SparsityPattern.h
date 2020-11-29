@@ -52,13 +52,15 @@ public:
   ///   patterns must not be finalised. Null block are permited
   /// @param[in] maps Pairs of (index map, block size) for each row
   ///   block (maps[0]) and column blocks (maps[1])
+  /// @param[in] bs Block sizes for the sparsity pattern entries
   SparsityPattern(
       MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>>& patterns,
       const std::array<
           std::vector<
               std::pair<std::reference_wrapper<const common::IndexMap>, int>>,
-          2>& maps);
+          2>& maps,
+      const std::array<std::vector<int>, 2>& bs);
 
   SparsityPattern(const SparsityPattern& pattern) = delete;
 

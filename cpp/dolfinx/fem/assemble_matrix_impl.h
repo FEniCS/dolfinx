@@ -210,8 +210,8 @@ void assemble_cells(
       bs0 * num_dofs0, bs1 * num_dofs1);
 
   // Iterate over active cells
-  std::cout << "bs: " << bs0 << ", " << bs1 << std::endl;
-  std::cout << "dofs: " << num_dofs0 << ", " << num_dofs0 << std::endl;
+  // std::cout << "bs: " << bs0 << ", " << bs1 << std::endl;
+  // std::cout << "dofs: " << num_dofs0 << ", " << num_dofs0 << std::endl;
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry

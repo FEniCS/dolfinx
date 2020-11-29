@@ -48,9 +48,9 @@ void la(py::module& m)
                  std::vector<std::pair<
                      std::reference_wrapper<const dolfinx::common::IndexMap>,
                      int>>,
-                 2>& maps) {
-            return std::make_unique<dolfinx::la::SparsityPattern>(
-                comm.get(), patterns, maps);
+                 2>& maps,
+             const std::array<std::vector<int>, 2>& bs) {
+            return dolfinx::la::SparsityPattern(comm.get(), patterns, maps, bs);
           }))
       .def("index_map", &dolfinx::la::SparsityPattern::index_map)
       .def("assemble", &dolfinx::la::SparsityPattern::assemble)

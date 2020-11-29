@@ -82,12 +82,29 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
 from ufl import div, dx, grad, inner
 
+
+def nest_matrix_norm(A):
+    """Return norm of a MatNest matrix"""
+    import math
+    assert A.getType() == "nest"
+    norm = 0.0
+    nrows, ncols = A.getNestSize()
+    for row in range(nrows):
+        for col in range(ncols):
+            A_sub = A.getNestSubMatrix(row, col)
+            if A_sub:
+                _norm = A_sub.norm()
+                norm += _norm * _norm
+    return math.sqrt(norm)
+
 # We create a Mesh and attach a coordinate map to the mesh::
+
 
 # Create mesh
 mesh = RectangleMesh(
     MPI.COMM_WORLD,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
+    # [np.array([0, 0, 0]), np.array([1, 1, 0])], [1, 1],
     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
 
 
@@ -160,17 +177,19 @@ a_p11 = inner(p, q) * dx
 a_p = [[a[0][0], None],
        [None, a_p11]]
 
-# Nested matrix solver
-# ^^^^^^^^^^^^^^^^^^^^
-#
-# We now assemble the bilinear form into a nested matrix `A`, and call
-# the `assemble()` method to communicate shared entries in parallel.
-# Rows and columns in `A` that correspond to degrees-of-freedom with
-# Dirichlet boundary conditions are zeroed and a value of 1 is set on
-# the diagonal.
+# # Nested matrix solver
+# # ^^^^^^^^^^^^^^^^^^^^
+# #
+# # We now assemble the bilinear form into a nested matrix `A`, and call
+# # the `assemble()` method to communicate shared entries in parallel.
+# # Rows and columns in `A` that correspond to degrees-of-freedom with
+# # Dirichlet boundary conditions are zeroed and a value of 1 is set on
+# # the diagonal.
 
 A = dolfinx.fem.assemble_matrix_nest(a, bcs)
 A.assemble()
+# print("Anest:", nest_matrix_norm(A))
+
 
 # We create a nested matrix `P` to use as the preconditioner. The
 # top-left block of `P` is shared with the top-left block of `A`. The
@@ -195,6 +214,9 @@ for b_sub in b.getNestSubVecs():
 # Set Dirichlet boundary condition values in the RHS
 bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L), bcs)
 dolfinx.fem.assemble.set_bc_nest(b, bcs0)
+
+# print("b-nest:", b.norm())
+# b.view()
 
 # Ths pressure field for this problem is determined only up to a
 # constant. We can supply the vector that spans the nullspace and any
@@ -275,82 +297,89 @@ with XDMFFile(MPI.COMM_WORLD, "pressure.xdmf", "w") as pfile_xdmf:
     pfile_xdmf.write_function(p)
 
 
-# # Monolithic block iterative solver
-# # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# #
-# # Next, we solve same problem, but now with monolithic (non-nested)
-# # matrices and iterative solvers.
+# Monolithic block iterative solver
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#
+# Next, we solve same problem, but now with monolithic (non-nested)
+# matrices and iterative solvers.
 
-# A = dolfinx.fem.assemble_matrix_block(a, bcs)
-# A.assemble()
-# P = dolfinx.fem.assemble_matrix_block(a_p, bcs)
-# P.assemble()
-# b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs)
+# print("---------------")
+A = dolfinx.fem.assemble_matrix_block(a, bcs)
+# A = dolfinx.fem.assemble_matrix_block(a)
+A.assemble()
+# print("Ablock:", A.norm())
+# A.view()
+P = dolfinx.fem.assemble_matrix_block(a_p, bcs)
+P.assemble()
+b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs)
+# print("b-block:", b.norm())
+# b.view()
 
-# # Set near null space for pressure
-# null_vec = A.createVecLeft()
-# offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
-# null_vec.array[offset:] = 1.0
-# null_vec.normalize()
-# nsp = PETSc.NullSpace().create(vectors=[null_vec])
-# assert nsp.test(A)
-# A.setNullSpace(nsp)
 
-# # Build IndexSets for each field (global dof indices for each field)
-# V_map = V.dofmap.index_map
-# Q_map = Q.dofmap.index_map
-# offset_u = V_map.local_range[0] * V.dofmap.index_map_bs + Q_map.local_range[0]
-# offset_p = offset_u + V_map.size_local * V.dofmap.index_map_bs
-# is_u = PETSc.IS().createStride(V_map.size_local * V.dofmap.index_map_bs, offset_u, 1, comm=PETSc.COMM_SELF)
-# is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
+# Set near null space for pressure
+null_vec = A.createVecLeft()
+offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
+null_vec.array[offset:] = 1.0
+null_vec.normalize()
+nsp = PETSc.NullSpace().create(vectors=[null_vec])
+assert nsp.test(A)
+A.setNullSpace(nsp)
 
-# # Create Krylov solver
-# ksp = PETSc.KSP().create(mesh.mpi_comm())
-# ksp.setOperators(A, P)
-# ksp.setTolerances(rtol=1e-8)
-# ksp.setType("minres")
-# ksp.getPC().setType("fieldsplit")
-# ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
-# ksp.getPC().setFieldSplitIS(
-#     ("u", is_u),
-#     ("p", is_p))
+# Build IndexSets for each field (global dof indices for each field)
+V_map = V.dofmap.index_map
+Q_map = Q.dofmap.index_map
+offset_u = V_map.local_range[0] * V.dofmap.index_map_bs + Q_map.local_range[0]
+offset_p = offset_u + V_map.size_local * V.dofmap.index_map_bs
+is_u = PETSc.IS().createStride(V_map.size_local * V.dofmap.index_map_bs, offset_u, 1, comm=PETSc.COMM_SELF)
+is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
 
-# # Configure velocity and pressure sub KSPs
-# ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
-# ksp_u.setType("preonly")
-# ksp_u.getPC().setType("gamg")
-# ksp_p.setType("preonly")
-# ksp_p.getPC().setType("jacobi")
+# Create Krylov solver
+ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp.setOperators(A, P)
+ksp.setTolerances(rtol=1e-8)
+ksp.setType("minres")
+ksp.getPC().setType("fieldsplit")
+ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
+ksp.getPC().setFieldSplitIS(
+    ("u", is_u),
+    ("p", is_p))
 
-# # Monitor the convergence of the KSP
-# opts = PETSc.Options()
-# # opts["ksp_monitor"] = None
-# # opts["ksp_view"] = None
+# Configure velocity and pressure sub KSPs
+ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
+ksp_u.setType("preonly")
+ksp_u.getPC().setType("gamg")
+ksp_p.setType("preonly")
+ksp_p.getPC().setType("jacobi")
 
-# ksp.setFromOptions()
+# Monitor the convergence of the KSP
+opts = PETSc.Options()
+# opts["ksp_monitor"] = None
+# opts["ksp_view"] = None
 
-# # We also need to create a block vector,``x``, to store the (full)
-# # solution, which we initialize using the block RHS form ``L``.
+ksp.setFromOptions()
 
-# # Compute solution
-# x = A.createVecRight()
-# ksp.solve(b, x)
+# We also need to create a block vector,``x``, to store the (full)
+# solution, which we initialize using the block RHS form ``L``.
 
-# # Create Functions and scatter x solution
-# u, p = Function(V), Function(Q)
-# offset = V_map.size_local * V.dofmap.index_map_bs
-# u.vector.array[:] = x.array_r[:offset]
-# p.vector.array[:] = x.array_r[offset:]
+# Compute solution
+x = A.createVecRight()
+ksp.solve(b, x)
 
-# # We can calculate the :math:`L^2` norms of u and p as follows::
+# Create Functions and scatter x solution
+u, p = Function(V), Function(Q)
+offset = V_map.size_local * V.dofmap.index_map_bs
+u.vector.array[:] = x.array_r[:offset]
+p.vector.array[:] = x.array_r[offset:]
 
-# norm_u_1 = u.vector.norm()
-# norm_p_1 = p.vector.norm()
-# if MPI.COMM_WORLD.rank == 0:
-#     print("(B) Norm of velocity coefficient vector: {}".format(norm_u_1))
-#     print("(B) Norm of pressure coefficient vector: {}".format(norm_p_1))
-# assert np.isclose(norm_u_1, norm_u_0)
-# assert np.isclose(norm_p_1, norm_p_0)
+# We can calculate the :math:`L^2` norms of u and p as follows::
+
+norm_u_1 = u.vector.norm()
+norm_p_1 = p.vector.norm()
+if MPI.COMM_WORLD.rank == 0:
+    print("(B) Norm of velocity coefficient vector: {}".format(norm_u_1))
+    print("(B) Norm of pressure coefficient vector: {}".format(norm_p_1))
+assert np.isclose(norm_u_1, norm_u_0)
+assert np.isclose(norm_p_1, norm_p_0)
 
 # # Monolithic block direct solver
 # # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

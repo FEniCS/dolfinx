@@ -36,6 +36,12 @@ la::PETScMatrix fem::create_matrix_block(
 {
   // Extract and check row/column ranges
   auto V = function::common_function_spaces(extract_function_spaces(a));
+  std::array<std::vector<int>, 2> bs_dofs;
+  for (std::size_t i = 0; i < 2; ++i)
+  {
+    for (auto& _V : V[i])
+      bs_dofs[i].push_back(_V->dofmap()->bs());
+  }
 
   std::shared_ptr mesh = V[0][0]->mesh();
   assert(mesh);
@@ -111,7 +117,7 @@ la::PETScMatrix fem::create_matrix_block(
   for (std::size_t row = 0; row < V[0].size(); ++row)
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
-  la::SparsityPattern pattern(mesh->mpi_comm(), p, maps);
+  la::SparsityPattern pattern(mesh->mpi_comm(), p, maps, bs_dofs);
   pattern.assemble();
 
   // FIXME: Add option to pass customised local-to-global map to PETSc

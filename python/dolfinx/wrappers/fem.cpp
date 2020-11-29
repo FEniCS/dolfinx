@@ -259,6 +259,7 @@ void fem(py::module& m)
                              &dolfinx::fem::DofMap::index_map_bs)
       .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
       .def("cell_dofs", &dolfinx::fem::DofMap::cell_dofs)
+      .def_property_readonly("bs", &dolfinx::fem::DofMap::bs)
       .def("list", &dolfinx::fem::DofMap::list);
 
   // dolfinx::fem::CoordinateElement
@@ -317,6 +318,25 @@ void fem(py::module& m)
            const std::vector<bool>& rows0, const std::vector<bool>& rows1) {
           dolfinx::fem::assemble_matrix(
               dolfinx::la::PETScMatrix::add_block_fn(A), a, rows0, rows1);
+        });
+  m.def("assemble_matrix_petsc_unrolled",
+        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+           const std::vector<std::shared_ptr<
+               const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs) {
+          dolfinx::fem::assemble_matrix(
+              dolfinx::la::PETScMatrix::add_block_expand_fn(
+                  A, a.function_spaces()[0]->dofmap()->bs(),
+                  a.function_spaces()[1]->dofmap()->bs()),
+              a, bcs);
+        });
+  m.def("assemble_matrix_petsc_unrolled",
+        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+           const std::vector<bool>& rows0, const std::vector<bool>& rows1) {
+          dolfinx::fem::assemble_matrix(
+              dolfinx::la::PETScMatrix::add_block_expand_fn(
+                  A, a.function_spaces()[0]->dofmap()->bs(),
+                  a.function_spaces()[1]->dofmap()->bs()),
+              a, rows0, rows1);
         });
   m.def("add_diagonal",
         [](Mat A, const dolfinx::function::FunctionSpace& V,

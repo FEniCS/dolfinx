@@ -306,7 +306,11 @@ def _(A: PETSc.Mat,
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
-                assemble_matrix(Asub, a_sub, bcs, diagonal)
+                # Asub.setBlockSizes(a_sub.function_spaces[0].dofmap.bs,
+                #                    a_sub.function_spaces[1].dofmap.bs)
+                cpp.fem.assemble_matrix_petsc_unrolled(Asub, a_sub, bcs)
+                if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
+                    cpp.fem.add_diagonal(A, a_sub.function_spaces[0], bcs, diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
     return A
 

@@ -49,6 +49,12 @@ public:
                            const std::int32_t*, const PetscScalar*)>
   add_block_fn(Mat A);
 
+  /// Return a function with an interface for adding blocked values to
+  /// the matrix A using non-blocked insertion (calls MatSetValuesLocal)
+  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                           const std::int32_t*, const PetscScalar*)>
+  add_block_expand_fn(Mat A, int bs0, int bs1);
+
   /// Create holder of a PETSc Mat object from a sparsity pattern
   PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
 

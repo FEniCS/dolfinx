@@ -34,7 +34,8 @@ SparsityPattern::SparsityPattern(
     const std::vector<std::vector<const SparsityPattern*>>& patterns,
     const std::array<std::vector<std::pair<
                          std::reference_wrapper<const common::IndexMap>, int>>,
-                     2>& maps)
+                     2>& maps,
+    const std::array<std::vector<int>, 2>& bs)
     : _mpi_comm(comm), _bs({1, 1})
 {
   // FIXME: - Add range/bound checks for each block
@@ -124,23 +125,35 @@ SparsityPattern::SparsityPattern(
       }
 
       // Loop over owned rows
+      const int bs_dof0 = bs[0][row];
+      const int bs_dof1 = bs[1][col];
       for (int i = 0; i < num_rows_local; ++i)
       {
-        // New local row index
-        const std::int32_t r_new = i + local_offset0[row];
-
-        // Insert diagonal block entries (local column indices)
-        const std::vector<std::int32_t>& cols = p->_diagonal_cache[i];
-        for (std::size_t j = 0; j < cols.size(); ++j)
-          _diagonal_cache[r_new].push_back(cols[j] + local_offset1[col]);
-
-        // Insert Off-diagonal block entries (global column indices)
-        const std::vector<std::int64_t>& cols_off = p->_off_diagonal_cache[i];
-        for (std::size_t j = 0; j < cols_off.size(); ++j)
+        for (int k0 = 0; k0 < bs_dof0; ++k0)
         {
-          auto it = col_old_to_new[col].find(cols_off[j]);
-          assert(it != col_old_to_new[col].end());
-          _off_diagonal_cache[r_new].push_back(it->second);
+          // New local row index
+          const std::int32_t r_new = bs_dof0 * i + k0 + local_offset0[row];
+
+          // Insert diagonal block entries (local column indices)
+          const std::vector<std::int32_t>& cols = p->_diagonal_cache[i];
+          for (std::size_t j = 0; j < cols.size(); ++j)
+          {
+            for (int k1 = 0; k1 < bs_dof1; ++k1)
+            {
+              _diagonal_cache[r_new].push_back(bs_dof1 * cols[j] + k1
+                                               + local_offset1[col]);
+              // _diagonal_cache[r_new].push_back(cols[j] + local_offset1[col]);
+            }
+          }
+
+          // Insert Off-diagonal block entries (global column indices)
+          const std::vector<std::int64_t>& cols_off = p->_off_diagonal_cache[i];
+          for (std::size_t j = 0; j < cols_off.size(); ++j)
+          {
+            auto it = col_old_to_new[col].find(cols_off[j]);
+            assert(it != col_old_to_new[col].end());
+            _off_diagonal_cache[r_new].push_back(it->second);
+          }
         }
       }
 
