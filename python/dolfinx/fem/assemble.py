@@ -310,7 +310,7 @@ def _(A: PETSc.Mat,
                 #                    a_sub.function_spaces[1].dofmap.bs)
                 cpp.fem.assemble_matrix_petsc_unrolled(Asub, a_sub, bcs)
                 if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
-                    cpp.fem.add_diagonal(A, a_sub.function_spaces[0], bcs, diagonal)
+                    cpp.fem.add_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
     return A
 

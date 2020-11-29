@@ -417,7 +417,7 @@ assert np.isclose(norm_p_2, norm_p_0)
 # Again, solve the same problem but this time with a non-blocked direct
 # solver approach
 
-# Create the function space
+# # Create the function space
 # TH = P2 * P1
 # W = FunctionSpace(mesh, TH)
 # W0 = W.sub(0).collapse()

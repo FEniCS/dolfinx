@@ -116,13 +116,11 @@ void assemble_matrix(
     assert(bcs[k]->function_space());
     if (a.function_spaces().at(0)->contains(*bcs[k]->function_space()))
     {
-      // std::cout << "Marker size 0: " << bs0 << ", " << dim0 << std::endl;
       dof_marker0.resize(dim0, false);
       bcs[k]->mark_dofs(dof_marker0);
     }
     if (a.function_spaces().at(1)->contains(*bcs[k]->function_space()))
     {
-      // std::cout << "Marker size 1: " << bs1 << ", " << dim1 << std::endl;
       dof_marker1.resize(dim1, false);
       bcs[k]->mark_dofs(dof_marker1);
     }
