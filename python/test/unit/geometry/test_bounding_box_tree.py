@@ -9,7 +9,8 @@ import numpy
 import pytest
 from dolfinx import (BoxMesh, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      cpp)
-from dolfinx.geometry import BoundingBoxTree, compute_collisions, compute_collisions_point, compute_closest_entity, create_midpoint_tree
+from dolfinx.geometry import (BoundingBoxTree, compute_collisions,
+                              compute_collisions_point, compute_closest_entity, create_midpoint_tree)
 from dolfinx.mesh import locate_entities_boundary
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
