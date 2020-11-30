@@ -39,12 +39,13 @@ fem::create_sparsity_pattern(const mesh::Topology& topology,
   common::Timer t0("Build sparsity");
 
   // Get common::IndexMaps for each dimension
-  std::array index_maps{dofmaps[0]->index_map, dofmaps[1]->index_map};
+  const std::array index_maps{dofmaps[0]->index_map, dofmaps[1]->index_map};
+  const std::array bs = {dofmaps[0]->index_map_bs(), dofmaps[1]->index_map_bs()};
 
   // Create and build sparsity pattern
   assert(dofmaps[0]);
   assert(dofmaps[0]->index_map);
-  la::SparsityPattern pattern(dofmaps[0]->index_map->comm(), index_maps);
+  la::SparsityPattern pattern(dofmaps[0]->index_map->comm(), index_maps, bs);
   for (auto type : integrals)
   {
     if (type == fem::IntegralType::cell)
@@ -169,9 +170,9 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     }
   }
 
-  auto [index_map, dofmap]
+  auto [index_map, bs, dofmap]
       = DofMapBuilder::build(comm, topology, *element_dof_layout);
-  return DofMap(element_dof_layout, index_map, std::move(dofmap));
+  return DofMap(element_dof_layout, index_map, bs, std::move(dofmap));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::string> fem::get_coefficient_names(const ufc_form& ufc_form)

@@ -19,7 +19,7 @@ void xdmf_mesh::add_topology_data(
     MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
     const std::string path_prefix, const mesh::Topology& topology,
     const mesh::Geometry& geometry, const int dim,
-    const std::vector<std::int32_t>& active_entities)
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& active_entities)
 {
   LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
 
@@ -58,10 +58,10 @@ void xdmf_mesh::add_topology_data(
   assert(map_e);
   if (dim == tdim)
   {
-    for (std::int32_t c : active_entities)
+    for (Eigen::Index c = 0; c < active_entities.size(); ++c)
     {
-      assert(c < cells_g.num_nodes());
-      auto nodes = cells_g.links(c);
+      assert(active_entities[c] < cells_g.num_nodes());
+      auto nodes = cells_g.links(active_entities[c]);
       for (int i = 0; i < nodes.rows(); ++i)
       {
         std::int64_t global_index = nodes[vtk_map[i]];
@@ -82,15 +82,16 @@ void xdmf_mesh::add_topology_data(
     if (!c_to_e)
       throw std::runtime_error("Mesh is missing cell-entity connectivity.");
 
-    for (std::int32_t e : active_entities)
+    for (Eigen::Index e = 0; e < active_entities.size(); ++e)
     {
       // Get first attached cell
-      std::int32_t c = e_to_c->links(e)[0];
+      std::int32_t c = e_to_c->links(active_entities[e])[0];
 
       // Find local number of entity wrt. cell
       auto cell_entities = c_to_e->links(c);
-      const auto* it0 = std::find(
-          cell_entities.data(), cell_entities.data() + cell_entities.rows(), e);
+      const auto* it0 = std::find(cell_entities.data(),
+                                  cell_entities.data() + cell_entities.rows(),
+                                  active_entities[e]);
       assert(it0 != (cell_entities.data() + cell_entities.rows()));
       const int local_cell_entity = std::distance(cell_entities.data(), it0);
 
@@ -215,7 +216,9 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   std::iota(active_cells.begin(), active_cells.end(), 0);
 
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
-                    mesh.geometry(), tdim, active_cells);
+                    mesh.geometry(), tdim,
+                    Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
+                        active_cells.data(), num_cells, 1));
 
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());

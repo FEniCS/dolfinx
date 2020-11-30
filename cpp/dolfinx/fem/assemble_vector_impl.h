@@ -828,9 +828,9 @@ void apply_lifting(
       auto V1 = a[j]->function_spaces()[1];
       assert(V1);
       auto map1 = V1->dofmap()->index_map;
+      const int bs1 = V1->dofmap()->index_map_bs();
       assert(map1);
-      const int crange
-          = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+      const int crange = bs1 * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
       bc_values1 = Eigen::Matrix<T, Eigen::Dynamic, 1>::Zero(crange);
       for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs1[j])

@@ -87,7 +87,8 @@ def test_matrix_assembly_block():
     x0 = dolfinx.fem.create_vector_block(L_block)
     dolfinx.cpp.la.scatter_local_vectors(
         x0, [u.vector.array_r, p.vector.array_r],
-        [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
+        [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+         (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     # Ghosts are updated inside assemble_vector_block
@@ -186,7 +187,7 @@ class NonlinearPDE_SNESProblem():
         x_array = x.getArray(readonly=True)
         for var in self.soln_vars:
             size_local = var.vector.getLocalSize()
-            var.vector.array[:] = x_array[offset:offset + size_local]
+            var.vector.array[:] = x_array[offset: offset + size_local]
             var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             offset += size_local
 
@@ -313,7 +314,8 @@ def test_assembly_solve_block():
     x0 = dolfinx.fem.create_vector_block(F)
     dolfinx.cpp.la.scatter_local_vectors(
         x0, [u.vector.array_r, p.vector.array_r],
-        [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
+        [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+         (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     snes.solve(None, x0)
@@ -515,7 +517,8 @@ def test_assembly_solve_taylor_hood(mesh):
     with u.vector.localForm() as _u, p.vector.localForm() as _p:
         dolfinx.cpp.la.scatter_local_vectors(
             x0, [_u.array_r, _p.array_r],
-            [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
+            [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+             (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     snes.solve(None, x0)
