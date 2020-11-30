@@ -267,7 +267,9 @@ void fem(py::module& m)
       m, "CoordinateElement", "Coordinate map element")
       .def_property_readonly("dof_layout",
                              &dolfinx::fem::CoordinateElement::dof_layout)
-      .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward);
+      .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward)
+      .def_readwrite("non_affine_atol", &dolfinx::fem::CoordinateElement::non_affine_atol)
+      .def_readwrite("non_affine_max_its", &dolfinx::fem::CoordinateElement::non_affine_max_its);
 
   // dolfinx::fem::DirichletBC
   py::class_<dolfinx::fem::DirichletBC<PetscScalar>,

@@ -66,8 +66,7 @@ void CoordinateElement::compute_reference_geometry(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& cell_geometry,
-    double eps) const
+                                        Eigen::RowMajor>>& cell_geometry) const
 {
   // Number of points
   int num_points = x.rows();
@@ -154,9 +153,8 @@ void CoordinateElement::compute_reference_geometry(
           Kview(K.data() + ip * _gdim * _tdim, _tdim, _gdim);
       // TODO: Xk - use cell midpoint instead?
       Xk.setZero();
-      const int max_its = 10;
       int k;
-      for (k = 0; k < max_its; ++k)
+      for (k = 0; k < non_affine_max_its; ++k)
       {
         // Compute physical coordinates
         _evaluate_basis_derivatives(phi.data(), 0, 1, Xk.data());
@@ -174,11 +172,11 @@ void CoordinateElement::compute_reference_geometry(
         // Increment to new point in reference
         Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> dX
             = Kview * (x.row(ip).matrix().transpose() - xk);
-        if (dX.squaredNorm() < eps)
+        if (dX.norm() < non_affine_atol)
           break;
         Xk += dX;
       }
-      if (k == max_its)
+      if (k == non_affine_max_its)
       {
         throw std::runtime_error(
             "Newton method failed to converge for non-affine geometry");
