@@ -284,16 +284,21 @@ def test_near_evaluations(R, mesh):
     bb_tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     a = mesh.geometry.x[0]
 
-    cells = geometry.compute_colliding_cells(bb_tree, mesh, a, n=1)
+    cell_candidates = geometry.compute_collisions_point(bb_tree, a)
+    cells = geometry.select_colliding_cells(mesh, cell_candidates, a, 1)
     a_shift_x = np.array([a[0] - offset, a[1], a[2]])
-    cells_shift_x = geometry.compute_colliding_cells(bb_tree, mesh, a_shift_x, n=1)
+
+    cell_candidates = geometry.compute_collisions_point(bb_tree, a_shift_x)
+    cells_shift_x = geometry.select_colliding_cells(mesh, cell_candidates, a_shift_x, 1)
 
     assert u0.eval(a, cells)[0] == pytest.approx(u0.eval(a_shift_x, cells_shift_x)[0])
 
     a_shift_xyz = np.array([a[0] - offset / math.sqrt(3),
                             a[1] - offset / math.sqrt(3),
                             a[2] - offset / math.sqrt(3)])
-    cells_shift_xyz = geometry.compute_colliding_cells(bb_tree, mesh, a_shift_xyz, n=1)
+    cell_candidates = geometry.compute_collisions_point(bb_tree, a)
+    cells_shift_xyz = geometry.select_colliding_cells(mesh, cell_candidates, a_shift_xyz, 1)
+
     assert u0.eval(a, cells)[0] == pytest.approx(u0.eval(a_shift_xyz, cells_shift_xyz)[0])
 
 
