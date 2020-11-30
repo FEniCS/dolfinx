@@ -210,8 +210,6 @@ void assemble_cells(
       bs0 * num_dofs0, bs1 * num_dofs1);
 
   // Iterate over active cells
-  // std::cout << "bs: " << bs0 << ", " << bs1 << std::endl;
-  // std::cout << "dofs: " << num_dofs0 << ", " << num_dofs0 << std::endl;
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
@@ -238,22 +236,23 @@ void assemble_cells(
             Ae.row(bs0 * i + k).setZero();
         }
       }
+    }
 
-      if (!bc1.empty())
+    if (!bc1.empty())
+    {
+      for (Eigen::Index j = 0; j < num_dofs1; ++j)
       {
-        for (Eigen::Index j = 0; j < num_dofs1; ++j)
+        for (int k = 0; k < bs1; ++k)
         {
-          for (int k = 0; k < bs1; ++k)
-          {
-            if (bc1[bs1 * dofs1[j] + k])
-              Ae.col(bs1 * j + k).setZero();
-          }
+          if (bc1[bs1 * dofs1[j] + k])
+            Ae.col(bs1 * j + k).setZero();
         }
       }
     }
+
     mat_set(dofs0.size(), dofs0.data(), dofs1.size(), dofs1.data(), Ae.data());
   }
-}
+} // namespace dolfinx::fem::impl
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_exterior_facets(

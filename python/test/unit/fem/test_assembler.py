@@ -209,7 +209,11 @@ def test_assemble_manifold():
     assert numpy.isclose(A.norm(), 25.0199)
 
 
-@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize("mode",
+                         [
+                             dolfinx.cpp.mesh.GhostMode.none,
+                             dolfinx.cpp.mesh.GhostMode.shared_facet,
+                         ])
 def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
@@ -290,7 +294,6 @@ def test_matrix_assembly_block(mode):
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bdofsW_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), mesh.topology.dim - 1, bndry_facets)
-
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsW_V1, W.sub(1))
     A2 = dolfinx.fem.assemble_matrix(a, [bc])
     A2.assemble()

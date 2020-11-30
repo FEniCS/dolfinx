@@ -119,6 +119,7 @@ void assemble_matrix(
       dof_marker0.resize(dim0, false);
       bcs[k]->mark_dofs(dof_marker0);
     }
+
     if (a.function_spaces().at(1)->contains(*bcs[k]->function_space()))
     {
       dof_marker1.resize(dim1, false);
