@@ -58,32 +58,20 @@ std::pair<U, V> sort_unique(const U& indices, const V& values)
 /// Indent string block
 std::string indent(std::string block);
 
-/// Return string representation of given container of ints, floats,
-/// etc.
+/// Convert a container to string
 template <typename T>
-std::string container_to_string(const T& x, std::string delimiter,
-                                int precision, int linebreak = 0)
+std::string container_to_string(const T& x, const int precision,
+                                const int linebreak)
 {
   std::stringstream s;
   s.precision(precision);
-  if (!x.empty())
+
+  for (std::size_t i = 0; i < (std::size_t)x.size(); ++i)
   {
-    if (linebreak == 0)
-    {
-      s << *x.begin();
-      for (auto it = x.begin() + 1; it != x.end(); ++it)
-        s << delimiter << *it;
-    }
+    if ((i + 1) % linebreak == 0 && linebreak != 0)
+      s << x.data()[i] << std::endl;
     else
-    {
-      for (std::size_t i = 0; i != x.size(); ++i)
-      {
-        if ((i + 1) % linebreak == 0)
-          s << x[i] << std::endl;
-        else
-          s << x[i] << delimiter;
-      }
-    }
+      s << x.data()[i] << " ";
   }
   return s.str();
 }
