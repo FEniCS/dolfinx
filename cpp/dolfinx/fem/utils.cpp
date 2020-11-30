@@ -218,8 +218,7 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
       ufc_cmap.element_degree);
 
   return fem::CoordinateElement(libtab_element, ufc_cmap.geometric_dimension,
-                                ufc_cmap.signature, dof_layout,
-                                ufc_cmap.is_affine);
+                                ufc_cmap.signature, dof_layout);
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement

@@ -32,14 +32,12 @@ class CoordinateElement
 public:
   /// Create a coordinate element
   /// @param[in] libtab_element Element from libtab
-  /// @param[in] topological_dimension Topological dimension
   /// @param[in] geometric_dimension Geometric dimension
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  /// @param[in] is_affine Boolean flag indicating affine mapping
   CoordinateElement(const libtab::FiniteElement& libtab_element,
                     int geometric_dimension, const std::string& signature,
-                    const ElementDofLayout& dof_layout, bool is_affine);
+                    const ElementDofLayout& dof_layout);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
