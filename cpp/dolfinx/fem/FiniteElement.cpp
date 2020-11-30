@@ -67,6 +67,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       = std::make_shared<const libtab::FiniteElement>(libtab::create_element(
           _family, mesh::to_string(_cell_shape), ufc_element.degree));
 
+  // Copy over "dof coordinates" from libtab (only for Lagrange, so far)
+  _refX = _libtab_element->points();
+
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
     _value_dimension.push_back(ufc_element.value_dimension(i));
