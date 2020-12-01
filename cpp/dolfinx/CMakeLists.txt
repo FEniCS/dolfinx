@@ -107,6 +107,7 @@ target_include_directories(dolfinx SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
 # SCOTCH
 target_link_libraries(dolfinx PRIVATE ${SCOTCH_LIBRARIES})
 target_include_directories(dolfinx SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
+target_compile_definitions(dolfinx PUBLIC SCOTCH_INT_SIZE=${SCOTCH_INT_SIZE})
 
 #------------------------------------------------------------------------------
 # Optional packages
