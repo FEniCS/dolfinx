@@ -13,11 +13,13 @@
 #include <utility>
 #include <vector>
 
-#if SCOTCH_INT_SIZE == 4
-using SCOTCH_Num = std::int32_t;
-#elif SCOTCH_INT_SIZE == 8
-using SCOTCH_Num = std::int64_t;
-#endif
+// Developer note: ptscotch.h is not part of the public interface,
+// therefore this header (SCOTCH.h) should not be placed in the public
+// interface of DOLFIN.
+extern "C"
+{
+#include <ptscotch.h>
+}
 
 /// Interface to SCOTCH-PT (parallel version)
 namespace dolfinx::graph::SCOTCH

@@ -324,50 +324,6 @@ int main() {
   endif()
 endif()
 
-# Check the size of SCOTCH_Num
-set(SCOTCH_CONFIG_TEST_INT_SIZE_CPP
-"${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/scotch_config_test_int_size.cpp")
-file(WRITE ${SCOTCH_CONFIG_TEST_INT_SIZE_CPP} "
-#define MPICH_IGNORE_CXX_SEEK 1
-#include <stdint.h>
-#include <stdio.h>
-#include <mpi.h>
-#include <ptscotch.h>
-#include <iostream>
-
-int main() {
-  if (sizeof(SCOTCH_Num) == 4)
-    return 0;
-  else if(sizeof(SCOTCH_Num) == 8)
-    return 1;
-  else
-    return -1;
-}
-")
-
-try_run(
-  SCOTCH_CONFIG_INT_SIZE_EXITCODE
-  SCOTCH_CONFIG_INT_SIZE_COMPILED
-  ${CMAKE_CURRENT_BINARY_DIR}
-  ${SCOTCH_CONFIG_TEST_INT_SIZE_CPP}
-  CMAKE_FLAGS
-    "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-    "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
-  COMPILE_OUTPUT_VARIABLE COMPILE_OUTPUT
-  RUN_OUTPUT_VARIABLE OUTPUT
-)
-
-
-if(SCOTCH_CONFIG_INT_SIZE_EXITCODE EQUAL 0)
-  set(SCOTCH_INT_SIZE 4)
-elseif(SCOTCH_CONFIG_INT_SIZE_EXITCODE EQUAL 1)
-  set(SCOTCH_INT_SIZE 8)
-else()
-  set(SCOTCH_INT_SIZE -1)
-endif()
-
-# message(STATUS "${SCOTCH_INT_SIZE}")
-
 # Standard package handling
 find_package_handle_standard_args(SCOTCH
                                   "SCOTCH could not be found. Be sure to set SCOTCH_ROOT."
