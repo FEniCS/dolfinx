@@ -50,10 +50,9 @@ void common(py::module& m)
              const std::vector<int>& dest_ranks,
              const Eigen::Ref<
                  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>& ghosts,
-             const std::vector<int>& ghost_owners, int block_size) {
+             const std::vector<int>& ghost_owners) {
             return std::make_shared<dolfinx::common::IndexMap>(
-                comm.get(), local_size, dest_ranks, ghosts, ghost_owners,
-                block_size);
+                comm.get(), local_size, dest_ranks, ghosts, ghost_owners);
           }))
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMap::size_local)
@@ -61,9 +60,6 @@ void common(py::module& m)
                              &dolfinx::common::IndexMap::size_global)
       .def_property_readonly("num_ghosts",
                              &dolfinx::common::IndexMap::num_ghosts)
-      .def_property_readonly("block_size",
-                             &dolfinx::common::IndexMap::block_size,
-                             "Return block size")
       .def_property_readonly("local_range",
                              &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")

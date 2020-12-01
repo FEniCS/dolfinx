@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <array>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/la/utils.h>
 #include <functional>
@@ -31,15 +32,12 @@ class Mesh;
 namespace fem
 {
 
-/// Build an array of degree-of-freedom indices that are associated with
-/// the given mesh entities (topological)
+/// Find degrees-of-freedom which belong to the provided mesh entities
+/// (topological). Note that degrees-of-freedom for discontinuous
+/// elements are associated with the cell even if they may appear to be
+/// associated with a facet/edge/vertex.
 ///
-/// Finds degrees-of-freedom which belong to the provided mesh entities.
-/// Note that degrees-of-freedom for discontinuous elements are
-/// associated with the cell even if they may appear to be associated
-/// with a facet/edge/vertex.
-///
-/// @param[in] V The function (sub)space(s) on which degrees-of-freedom
+/// @param[in] V The function (sub)spaces on which degrees-of-freedom
 ///   (DOFs) will be located. The spaces must share the same mesh and
 ///   element type.
 /// @param[in] dim Topological dimension of mesh entities on which
@@ -53,19 +51,40 @@ namespace fem
 ///   entity as a marked. For example, a boundary condition dof at a
 ///   vertex where this process does not have the associated boundary
 ///   facet. This commonly occurs with partitioned meshes.
-/// @return Array of local DOF indices in the spaces V[0] (and V[1] if
-///   two spaces are passed in). If two spaces are passed in, the (i, 0)
-///   entry is the DOF index in the space V[0] and (i, 1) is the
-///   correspinding DOF entry in the space V[1].
-Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
+/// @return Array of local DOF indices in the spaces V[0] and V[1]. The
+///   array[0](i) entry is the DOF index in the space V[0] and array[1](i)
+///   is the correspinding DOF entry in the space V[1].
+std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
 locate_dofs_topological(
-    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
+        V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote = true);
 
-/// Build an array of degree-of-freedom indices based on coordinates of
-/// the degree-of-freedom (geometric).
+/// Find degrees-of-freedom which belong to the provided mesh entities
+/// (topological). Note that degrees-of-freedom for discontinuous
+/// elements are associated with the cell even if they may appear to be
+/// associated with a facet/edge/vertex.
 ///
+/// @param[in] V The function (sub)space on which degrees-of-freedom
+///   (DOFs) will be located.
+/// @param[in] dim Topological dimension of mesh entities on which
+///   degrees-of-freedom will be located
+/// @param[in] entities Indices of mesh entities. All DOFs associated
+///   with the closure of these indices will be returned
+/// @param[in] remote True to return also "remotely located"
+///   degree-of-freedom indices. Remotely located degree-of-freedom
+///   indices are local/owned by the current process, but which the
+///   current process cannot identify because it does not recognize mesh
+///   entity as a marked. For example, a boundary condition dof at a
+///   vertex where this process does not have the associated boundary
+///   facet. This commonly occurs with partitioned meshes.
+/// @return Array of local DOF indices in the spaces .
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+locate_dofs_topological(const function::FunctionSpace& V, const int dim,
+                        const Eigen::Ref<const Eigen::ArrayXi>& entities,
+                        bool remote = true);
+
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
 ///
@@ -79,9 +98,25 @@ locate_dofs_topological(
 ///     two spaces are passed in). If two spaces are passed in, the (i,
 ///     0) entry is the DOF index in the space V[0] and (i, 1) is the
 ///     correspinding DOF entry in the space V[1].
-Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
+std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
 locate_dofs_geometrical(
-    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
+        V,
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker);
+
+/// Finds degrees of freedom whose geometric coordinate is true for the
+/// provided marking function.
+///
+/// @attention This function is slower than the topological version
+///
+/// @param[in] V The function (sub)space on which degrees of freedom
+///     will be located.
+/// @param[in] marker Function marking tabulated degrees of freedom
+/// @return Array of local DOF indices in the spaces.
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_dofs_geometrical(
+    const function::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
@@ -112,39 +147,36 @@ public:
       const std::shared_ptr<const function::Function<T>>& g,
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
           dofs)
-      : _function_space(g->function_space()), _g(g), _dofs(dofs.rows(), 2)
+      : _function_space(g->function_space()), _g(g), _dofs({dofs, dofs})
   {
     // Stack indices as columns, fits column-major _dofs layout
-    _dofs.col(0) = dofs;
-    _dofs.col(1) = dofs;
-    const int owned_size = _function_space->dofmap()->index_map->block_size()
+    const int owned_size = _function_space->dofmap()->index_map_bs()
                            * _function_space->dofmap()->index_map->size_local();
-    auto* it = std::lower_bound(_dofs.col(0).data(),
-                                _dofs.col(0).data() + _dofs.rows(), owned_size);
-    _owned_indices = std::distance(_dofs.col(0).data(), it);
+    auto* it = std::lower_bound(_dofs[0].data(),
+                                _dofs[0].data() + _dofs[0].rows(), owned_size);
+    _owned_indices = std::distance(_dofs[0].data(), it);
   }
 
   /// Create boundary condition
   ///
   /// @param[in] g The boundary condition value
-  /// @param[in] V_g_dofs 2D array of degree-of-freedom indices. First
-  ///   column are indices in the space where boundary condition is
-  ///   applied (V), second column are indices in the space of the
+  /// @param[in] V_g_dofs Two arrays of degree-of-freedom indices. First
+  ///   array are indices in the space where boundary condition is
+  ///   applied (V), second array are indices in the space of the
   ///   boundary condition value function g.
   /// @param[in] V The function (sub)space on which the boundary
   ///   condition is applied
-  DirichletBC(
-      const std::shared_ptr<const function::Function<T>>& g,
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>&
-          V_g_dofs,
-      std::shared_ptr<const function::FunctionSpace> V)
-      : _function_space(V), _g(g), _dofs(V_g_dofs)
+  DirichletBC(const std::shared_ptr<const function::Function<T>>& g,
+              const std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>,
+                               2>& V_g_dofs,
+              std::shared_ptr<const function::FunctionSpace> V)
+      : _function_space(V), _g(g), _dofs({V_g_dofs[0], V_g_dofs[1]})
   {
-    const int owned_size = _function_space->dofmap()->index_map->block_size()
+    const int owned_size = _function_space->dofmap()->index_map_bs()
                            * _function_space->dofmap()->index_map->size_local();
-    auto* it = std::lower_bound(_dofs.col(0).data(),
-                                _dofs.col(0).data() + _dofs.rows(), owned_size);
-    _owned_indices = std::distance(_dofs.col(0).data(), it);
+    auto* it = std::lower_bound(_dofs[0].data(),
+                                _dofs[0].data() + _dofs[0].rows(), owned_size);
+    _owned_indices = std::distance(_dofs[0].data(), it);
   }
 
   /// Copy constructor
@@ -178,7 +210,8 @@ public:
 
   /// Get array of dof indices to which a Dirichlet boundary condition
   /// is applied. The array is sorted and may contain ghost entries.
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>& dofs() const
+  const std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>&
+  dofs() const
   {
     return _dofs;
   }
@@ -186,10 +219,11 @@ public:
   /// Get array of dof indices owned by this process to which a
   /// Dirichlet BC is applied. The array is sorted and does not contain
   /// ghost entries.
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>
+  const std::array<
+      Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>, 2>
   dofs_owned() const
   {
-    return _dofs.block<Eigen::Dynamic, 2>(0, 0, _owned_indices, 2);
+    return {_dofs[0].head(_owned_indices), _dofs[1].head(_owned_indices)};
   }
 
   /// Set bc entries in x to scale*x_bc
@@ -200,10 +234,10 @@ public:
     // FIXME: This one excludes ghosts. Need to straighten out.
     assert(_g);
     auto& g = _g->x()->array();
-    for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
+    for (Eigen::Index i = 0; i < _dofs[0].rows(); ++i)
     {
-      if (_dofs(i, 0) < x.rows())
-        x[_dofs(i, 0)] = scale * g[_dofs(i, 1)];
+      if (_dofs[0](i) < x.rows())
+        x[_dofs[0](i)] = scale * g[_dofs[1](i)];
     }
   }
 
@@ -217,10 +251,10 @@ public:
     assert(_g);
     auto& g = _g->x()->array();
     assert(x.rows() <= x0.rows());
-    for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
+    for (Eigen::Index i = 0; i < _dofs[0].rows(); ++i)
     {
-      if (_dofs(i, 0) < x.rows())
-        x[_dofs(i, 0)] = scale * (g[_dofs(i, 1)] - x0[_dofs(i, 0)]);
+      if (_dofs[0](i) < x.rows())
+        x[_dofs[0](i)] = scale * (g[_dofs[1](i)] - x0[_dofs[0](i)]);
     }
   }
 
@@ -231,8 +265,8 @@ public:
   {
     assert(_g);
     auto& g = _g->x()->array();
-    for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
-      values[_dofs(i, 0)] = g[_dofs(i, 1)];
+    for (Eigen::Index i = 0; i < _dofs[0].rows(); ++i)
+      values[_dofs[0](i)] = g[_dofs[1](i)];
   }
 
   /// Set markers[i] = true if dof i has a boundary condition applied.
@@ -240,10 +274,10 @@ public:
   /// @todo Clarify w.r.t ghosts
   void mark_dofs(std::vector<bool>& markers) const
   {
-    for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
+    for (Eigen::Index i = 0; i < _dofs[0].rows(); ++i)
     {
-      assert(_dofs(i, 0) < (std::int32_t)markers.size());
-      markers[_dofs(i, 0)] = true;
+      assert(_dofs[0](i) < (std::int32_t)markers.size());
+      markers[_dofs[0](i)] = true;
     }
   }
 
@@ -256,10 +290,10 @@ private:
 
   // Pairs of dof indices in _function_space (i, 0) and in the space of
   // _g (i, 1)
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _dofs;
+  std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2> _dofs;
 
   // The first _owned_indices in _dofs are owned by this process
   int _owned_indices = -1;
-};
+}; // namespace fem
 } // namespace fem
 } // namespace dolfinx

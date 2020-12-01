@@ -18,12 +18,13 @@ using namespace dolfinx::la;
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
-    const std::array<std::shared_ptr<const common::IndexMap>, 2>& index_maps)
-    : _mpi_comm(comm), _index_maps(index_maps)
+    const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
+    const std::array<int, 2>& bs)
+    : _mpi_comm(comm), _index_maps(maps), _bs(bs)
 {
+  assert(maps[0]);
   const std::int32_t local_size0
-      = index_maps[0]->block_size()
-        * (index_maps[0]->size_local() + index_maps[0]->num_ghosts());
+      = bs[0] * (maps[0]->size_local() + maps[0]->num_ghosts());
   _diagonal_cache.resize(local_size0);
   _off_diagonal_cache.resize(local_size0);
 }
@@ -31,9 +32,10 @@ SparsityPattern::SparsityPattern(
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
     const std::vector<std::vector<const SparsityPattern*>>& patterns,
-    const std::array<
-        std::vector<std::reference_wrapper<const common::IndexMap>>, 2>& maps)
-    : _mpi_comm(comm)
+    const std::array<std::vector<std::pair<
+                         std::reference_wrapper<const common::IndexMap>, int>>,
+                     2>& maps)
+    : _mpi_comm(comm), _bs({1, 1})
 {
   // FIXME: - Add range/bound checks for each block
   //        - Check for compatible block sizes for each block
@@ -64,12 +66,12 @@ SparsityPattern::SparsityPattern(
       comm, local_offset0.back(),
       dolfinx::MPI::compute_graph_edges(
           comm, std::set<int>(ghost_owners0.begin(), ghost_owners0.end())),
-      ghosts0, ghost_owners0, 1);
+      ghosts0, ghost_owners0);
   _index_maps[1] = std::make_shared<common::IndexMap>(
       comm, local_offset1.back(),
       dolfinx::MPI::compute_graph_edges(
           comm, std::set<int>(ghost_owners1.begin(), ghost_owners1.end())),
-      ghosts1, ghost_owners1, 1);
+      ghosts1, ghost_owners1);
 
   // Size cache arrays
   const std::int32_t size_row = local_offset0.back() + ghosts0.size();
@@ -83,17 +85,18 @@ SparsityPattern::SparsityPattern(
       maps[1].size());
   for (std::size_t col = 0; col < maps[1].size(); ++col)
   {
-    auto map = maps[1][col];
-    const int bs = map.get().block_size();
+    const common::IndexMap& map = maps[1][col].first;
+    const int bs_col = maps[1][col].second;
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts_old
-        = map.get().ghosts();
-    assert(ghosts_new1[col].size() == (std::size_t)(bs * ghosts_old.rows()));
+        = map.ghosts();
+    assert(ghosts_new1[col].size()
+           == (std::size_t)(bs_col * ghosts_old.rows()));
     for (int i = 0; i < ghosts_old.rows(); ++i)
     {
-      for (int j = 0; j < bs; ++j)
+      for (int j = 0; j < bs_col; ++j)
       {
         col_old_to_new[col].insert(
-            {bs * ghosts_old[i] + j, ghosts_new1[col][i * bs + j]});
+            {bs_col * ghosts_old[i] + j, ghosts_new1[col][i * bs_col + j]});
       }
     }
   }
@@ -101,11 +104,10 @@ SparsityPattern::SparsityPattern(
   // Iterate over block rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
-    const common::IndexMap& map_row = maps[0][row].get();
-    const std::int32_t num_rows_local
-        = map_row.size_local() * map_row.block_size();
-    const std::int32_t num_rows_ghost
-        = map_row.num_ghosts() * map_row.block_size();
+    const common::IndexMap& map_row = maps[0][row].first;
+    const int bs_row = maps[0][row].second;
+    const std::int32_t num_rows_local = map_row.size_local() * bs_row;
+    const std::int32_t num_rows_ghost = map_row.num_ghosts() * bs_row;
 
     // Iterate over block columns of current row (block)
     for (std::size_t col = 0; col < patterns[row].size(); ++col)
@@ -171,9 +173,8 @@ SparsityPattern::SparsityPattern(
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> SparsityPattern::local_range(int dim) const
 {
-  const int bs = _index_maps.at(dim)->block_size();
   const std::array lrange = _index_maps[dim]->local_range();
-  return {bs * lrange[0], bs * lrange[1]};
+  return {_bs[dim] * lrange[0], _bs[dim] * lrange[1]};
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
@@ -182,6 +183,9 @@ SparsityPattern::index_map(int dim) const
   return _index_maps.at(dim);
 }
 //-----------------------------------------------------------------------------
+int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
+//-----------------------------------------------------------------------------
+
 void SparsityPattern::insert(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& cols)
@@ -193,12 +197,10 @@ void SparsityPattern::insert(
   }
 
   assert(_index_maps[0]);
-  const int bs0 = _index_maps[0]->block_size();
   const std::int32_t size0
-      = bs0 * (_index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
+      = _bs[0] * (_index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
 
   assert(_index_maps[1]);
-  const int bs1 = _index_maps[1]->block_size();
   const std::int32_t local_size1 = _index_maps[1]->size_local();
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
       = _index_maps[1]->ghosts();
@@ -209,13 +211,14 @@ void SparsityPattern::insert(
     {
       for (Eigen::Index j = 0; j < cols.rows(); ++j)
       {
-        if (cols[j] < bs1 * local_size1)
+        if (cols[j] < _bs[1] * local_size1)
           _diagonal_cache[rows[i]].push_back(cols[j]);
         else
         {
-          const std::div_t div = std::div(cols[j], bs1);
+          const std::div_t div = std::div(cols[j], _bs[1]);
           const std::int64_t block_global = ghosts1[div.quot - local_size1];
-          _off_diagonal_cache[rows[i]].push_back(bs1 * block_global + div.rem);
+          _off_diagonal_cache[rows[i]].push_back(_bs[1] * block_global
+                                                 + div.rem);
         }
       }
     }
@@ -237,9 +240,8 @@ void SparsityPattern::insert_diagonal(
   }
 
   assert(_index_maps[0]);
-  const int bs0 = _index_maps[0]->block_size();
   const std::int32_t local_size0
-      = bs0 * (_index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
+      = _bs[0] * (_index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
     if (rows[i] < local_size0)
@@ -259,7 +261,6 @@ void SparsityPattern::assemble()
   assert(!_off_diagonal);
 
   assert(_index_maps[0]);
-  const int bs0 = _index_maps[0]->block_size();
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
   const std::array local_range0 = _index_maps[0]->local_range();
@@ -267,7 +268,6 @@ void SparsityPattern::assemble()
       = _index_maps[0]->ghosts();
 
   assert(_index_maps[1]);
-  const int bs1 = _index_maps[1]->block_size();
   const std::int32_t local_size1 = _index_maps[1]->size_local();
   const std::array local_range1 = _index_maps[1]->local_range();
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
@@ -280,10 +280,10 @@ void SparsityPattern::assemble()
   {
     const std::int64_t row_node_global = ghosts0[i];
     const std::int32_t row_node_local = local_size0 + i;
-    for (int j = 0; j < bs0; ++j)
+    for (int j = 0; j < _bs[0]; ++j)
     {
-      const std::int64_t row_global = bs0 * row_node_global + j;
-      const std::int32_t row_local = bs0 * row_node_local + j;
+      const std::int64_t row_global = _bs[0] * row_node_global + j;
+      const std::int32_t row_local = _bs[0] * row_node_local + j;
       assert((std::size_t)row_local < _diagonal_cache.size());
       const std::vector<std::int32_t>& cols = _diagonal_cache[row_local];
       for (std::size_t c = 0; c < cols.size(); ++c)
@@ -291,13 +291,13 @@ void SparsityPattern::assemble()
         ghost_data.push_back(row_global);
 
         // Convert to global column index
-        if (cols[c] < bs1 * local_size1)
-          ghost_data.push_back(cols[c] + bs1 * local_range1[0]);
+        if (cols[c] < _bs[1] * local_size1)
+          ghost_data.push_back(cols[c] + _bs[1] * local_range1[0]);
         else
         {
-          const std::div_t div = std::div(cols[c], bs1);
+          const std::div_t div = std::div(cols[c], _bs[1]);
           const std::int64_t block_global = ghosts1[div.quot - local_size1];
-          ghost_data.push_back(bs1 * block_global + div.rem);
+          ghost_data.push_back(_bs[1] * block_global + div.rem);
         }
       }
 
@@ -343,14 +343,14 @@ void SparsityPattern::assemble()
   for (std::size_t i = 0; i < ghost_data_received.size(); i += 2)
   {
     const std::int64_t row = ghost_data_received[i];
-    if (row >= bs0 * local_range0[0] and row < bs0 * local_range0[1])
+    if (row >= _bs[0] * local_range0[0] and row < _bs[0] * local_range0[1])
     {
-      const std::int32_t row_local = row - bs0 * local_range0[0];
+      const std::int32_t row_local = row - _bs[0] * local_range0[0];
       const std::int64_t col = ghost_data_received[i + 1];
-      if (col >= bs1 * local_range1[0] and col < bs1 * local_range1[1])
+      if (col >= _bs[1] * local_range1[0] and col < _bs[1] * local_range1[1])
       {
         // Convert to local column index
-        const std::int32_t J = col - bs1 * local_range1[0];
+        const std::int32_t J = col - _bs[1] * local_range1[0];
         _diagonal_cache[row_local].push_back(J);
       }
       else
@@ -361,7 +361,7 @@ void SparsityPattern::assemble()
     }
   }
 
-  _diagonal_cache.resize(bs0 * local_size0);
+  _diagonal_cache.resize(_bs[0] * local_size0);
   for (std::vector<std::int32_t>& row : _diagonal_cache)
   {
     std::sort(row.begin(), row.end());
@@ -371,7 +371,7 @@ void SparsityPattern::assemble()
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(_diagonal_cache);
   std::vector<std::vector<std::int32_t>>().swap(_diagonal_cache);
 
-  _off_diagonal_cache.resize(bs0 * local_size0);
+  _off_diagonal_cache.resize(_bs[0] * local_size0);
   for (std::vector<std::int64_t>& row : _off_diagonal_cache)
   {
     std::sort(row.begin(), row.end());

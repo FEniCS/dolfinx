@@ -66,10 +66,12 @@ const auto mat_add
 dolfinx::fem::assemble_matrix<T>(mat_add, a, bcs);
 
 auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
+int bs0 = a.function_spaces().at(0)->dofmap()->index_map_bs();
 auto map1 = a.function_spaces().at(1)->dofmap()->index_map;
+int bs1 = a.function_spaces().at(1)->dofmap()->index_map_bs();
 Eigen::SparseMatrix<T, Eigen::RowMajor> mat(
-    map0->block_size() * (map0->size_local() + map0->num_ghosts()),
-    map1->block_size() * (map1->size_local() + map1->num_ghosts()));
+    bs0 * (map0->size_local() + map0->num_ghosts()),
+    bs1 * (map1->size_local() + map1->num_ghosts()));
 mat.setFromTriplets(triplets.begin(), triplets.end());
 return mat;
 }
@@ -94,7 +96,7 @@ m.def("assemble_matrix", &assemble_csr<PetscScalar>);
         if _a.function_spaces[0].id == _a.function_spaces[1].id:
             for bc in bcs:
                 if _a.function_spaces[0].contains(bc.function_space):
-                    bc_dofs = bc.dof_indices[:, 0]
+                    bc_dofs = bc.dof_indices[0]
                     A[bc_dofs, bc_dofs] = 1.0
         return A
 

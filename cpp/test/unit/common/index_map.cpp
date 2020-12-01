@@ -38,7 +38,7 @@ void test_scatter_fwd()
       dolfinx::MPI::compute_graph_edges(
           MPI_COMM_WORLD,
           std::set<int>(global_ghost_owner.begin(), global_ghost_owner.end())),
-      ghosts, global_ghost_owner, 1);
+      ghosts, global_ghost_owner);
 
   // Create some data to scatter
   const std::int64_t val = 11;
@@ -76,7 +76,7 @@ void test_scatter_rev()
       dolfinx::MPI::compute_graph_edges(
           MPI_COMM_WORLD,
           std::set<int>(global_ghost_owner.begin(), global_ghost_owner.end())),
-      ghosts, global_ghost_owner, 1);
+      ghosts, global_ghost_owner);
 
   // Create some data, setting ghost values
   std::int64_t value = 15;

@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
         MPI_COMM_WORLD,
         {Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 0.0)},
-        {32, 32}, cmap, mesh::GhostMode::none));
+        {32, 32}, cmap, mesh::GhostMode::shared_facet));
 
     auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
                                        mesh);
@@ -136,7 +136,6 @@ int main(int argc, char* argv[])
 
     // Prepare and set Constants for the bilinear form
     auto kappa = std::make_shared<function::Constant<PetscScalar>>(2.0);
-
     auto f = std::make_shared<function::Function<PetscScalar>>(V);
     auto g = std::make_shared<function::Function<PetscScalar>>(V);
 
@@ -191,7 +190,8 @@ int main(int argc, char* argv[])
     // Compute solution
     function::Function<PetscScalar> u(V);
     la::PETScMatrix A = fem::create_matrix(*a);
-    la::PETScVector b(*L->function_spaces()[0]->dofmap()->index_map);
+    la::PETScVector b(*L->function_spaces()[0]->dofmap()->index_map,
+                      L->function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
     fem::assemble_matrix(la::PETScMatrix::add_fn(A.mat()), *a, bc);

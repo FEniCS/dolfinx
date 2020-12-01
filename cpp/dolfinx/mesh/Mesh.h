@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Geometry.h"
+#include "Partitioning.h"
 #include "Topology.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
@@ -155,11 +156,17 @@ private:
 };
 
 /// Create a mesh
-Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                 const fem::CoordinateElement& element,
-                 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>& x,
-                 GhostMode ghost_mode);
+Mesh create_mesh(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    const fem::CoordinateElement& element,
+    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        x,
+    GhostMode ghost_mode,
+    std::function<const graph::AdjacencyList<std::int32_t>(
+        MPI_Comm, int, const mesh::CellType,
+        const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>
+        partitioner
+    = &Partitioning::partition_cells);
 
 } // namespace mesh
 } // namespace dolfinx
