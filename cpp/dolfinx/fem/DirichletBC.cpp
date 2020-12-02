@@ -132,6 +132,9 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
                 const common::IndexMap& map1, int bs1,
                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
 {
+  // NOTE: assumes that dofs are unrolled, i.e. not blocked. Could be
+  // make more efficient to handle a common block size
+
   MPI_Comm comm0 = map0.comm(common::IndexMap::Direction::symmetric);
 
   int num_neighbors(-1), outdegree(-2), weighted(-1);
@@ -148,31 +151,79 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                          MPI_INT, comm0);
 
+  // Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+  // dofs_local0(dofs_local.size()),
+  //     dofs_local1(dofs_local.size());
+  // for (std::size_t i = 0; i < dofs_local.size(); ++i)
+  // {
+  //   dofs_local0[i] = dofs_local[i][0];
+  //   dofs_local1[i] = dofs_local[i][1];
+  // }
+
+  // // NOTE: we consider only dofs that we know are shared
+  // // Build array of global indices of dofs
+  // Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> dofs_global(
+  //     dofs_local.size(), 2);
+  // dofs_global.col(0) = map0.local_to_global(dofs_local0, false);
+  // dofs_global.col(1) = map1.local_to_global(dofs_local1, false);
+
+  // ---------------
+
   // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
   Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> dofs_global(
       dofs_local.size(), 2);
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   // This is messy to handle block sizes
   {
     const std::array<int, 2> _bs = {bs0, bs1};
     const std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
         = {map0, map1};
-    std::vector<std::int32_t> dofs_local_block, _dofs_local(dofs_local.size());
-    std::vector<std::int64_t> dofs_global_block;
+    std::vector<std::int32_t> _dofs_local(dofs_local.size());
     for (int i = 0; i < 2; ++i)
     {
+      // if (rank == 1)
+      //   std::cout << "bsx------------" << std::endl;
       for (std::size_t j = 0; j < _dofs_local.size(); ++j)
         _dofs_local[j] = dofs_local[j][i];
 
-      dofs_local_block = _dofs_local;
+      // Convert dofs indices to 'blocks' relative to index map
+      std::vector<std::int32_t> dofs_local_block = _dofs_local;
       std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
                     [bs = _bs[i]](std::int32_t& n) { return n /= bs; });
-      dofs_global_block = maps[i].get().local_to_global(dofs_local_block);
+
+      // if (rank == 1)
+      // {
+      //   std::cout << "Inp: " << std::endl;
+      //   for (auto _b : dofs_local_block)
+      //     std::cout << "   " << _b << std::endl;
+      // }
+
+      // Get global index of each block
+      std::vector<std::int64_t> dofs_global_block
+          = maps[i].get().local_to_global(dofs_local_block);
+
+      // if (rank == 1)
+      // {
+      //   std::cout << "Out: " << std::endl;
+      //   for (auto _b : dofs_global_block)
+      //     std::cout << "   " << _b << std::endl;
+      // }
+
+      // Convert from block to actual index
+      // const std::int64_t rank_offset = maps[i]->local_range()[0];
       for (std::size_t j = 0; j < dofs_local.size(); ++j)
       {
-        const int offset = _dofs_local[j] % _bs[i];
-        dofs_global(j, i) = _bs[i] * dofs_global_block[j] + offset;
+        const int index_offset = _dofs_local[j] % _bs[i];
+        dofs_global(j, i) = _bs[i] * dofs_global_block[j] + index_offset;
+        // if (rank == 1)
+        // {
+        //   std::cout << "Local, global: " << _dofs_local[j] << ", "
+        //             << dofs_global(j, i) << std::endl;
+        // }
       }
     }
   }
@@ -204,6 +255,12 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   std::array<std::vector<std::int32_t>, 2> dofs_array;
   for (int b = 0; b < 2; ++b)
   {
+    // if (rank == 0)
+    // {
+    //   std::cout << "Recv: " << std::endl;
+    //   std::cout << dofs_received.col(b) << std::endl;
+    // }
+
     // FIXME: check that dofs is sorted
     // Build vector of local dof indicies that have been marked by another
     // process
@@ -218,6 +275,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
       global_local_ghosts.emplace_back(ghosts[i], i + local_size);
     std::map<std::int64_t, std::int32_t> global_to_local(
         global_local_ghosts.begin(), global_local_ghosts.end());
+
     std::vector<std::int32_t>& dofs = dofs_array[b];
     for (Eigen::Index i = 0; i < dofs_received.rows(); ++i)
     {
@@ -233,8 +291,12 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
         if (auto it = global_to_local.find(dofs_received(i, b) / bs[b]);
             it != global_to_local.end())
         {
-          dofs.push_back(it->second * bs[b] + dofs_received(i, b) % bs[b]);
+          dofs.push_back(bs[b] * it->second + dofs_received(i, b) % bs[b]);
         }
+        // else
+        // {
+        //   dofs.push_back(-1);
+        // }
       }
     }
   }
@@ -244,6 +306,13 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   dofs.reserve(dofs_array[0].size());
   for (std::size_t i = 0; i < dofs_array[0].size(); ++i)
     dofs.push_back({dofs_array[0][i], dofs_array[1][i]});
+
+  // if (rank == 0)
+  // {
+  //   std::cout << "Return: " << std::endl;
+  //   for (auto _b : dofs)
+  //     std::cout << "   " << _b[0] << ", " << _b[1] << std::endl;
+  // }
 
   return dofs;
 }
@@ -258,6 +327,8 @@ fem::locate_dofs_topological(
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote)
 {
+  // std::cout << "Locate dofs topo" << std::endl;
+
   const function::FunctionSpace& V0 = V.at(0).get();
   const function::FunctionSpace& V1 = V.at(1).get();
 
@@ -269,6 +340,7 @@ fem::locate_dofs_topological(
     throw std::runtime_error("Meshes are not the same.");
   const int tdim = mesh->topology().dim();
 
+  // FIXME: Elements must be the same?
   assert(V0.element());
   assert(V1.element());
   if (!V0.has_element(*V1.element()))
@@ -277,6 +349,7 @@ fem::locate_dofs_topological(
                              "one be a subelement of another.");
   }
 
+  // std::cout << "Locate dofs topo 1" << std::endl;
   // Get dofmaps
   std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
   std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
@@ -289,14 +362,20 @@ fem::locate_dofs_topological(
   mesh->topology_mutable().create_connectivity(dim, tdim);
 
   // Allocate space
+  // FIXME: check that dof layouts ar the same
   assert(dofmap0->element_dof_layout);
   const int num_entity_dofs
       = dofmap0->element_dof_layout->num_entity_closure_dofs(dim);
-  const int block_size = dofmap0->element_dof_layout->block_size();
-  assert(block_size == dofmap1->element_dof_layout->block_size());
+  const int element_bs = dofmap0->element_dof_layout->block_size();
+  assert(element_bs == dofmap1->element_dof_layout->block_size());
+
+  // std::cout << "Locate dofs topo 2: " << num_entity_dofs << std::endl;
 
   // Build vector local dofs for each cell facet
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
+  // std::cout << "Num ents: " << dim << ", "
+  //           << mesh::cell_num_entities(mesh->topology().cell_type(), dim)
+  //           << std::endl;
   for (int i = 0;
        i < mesh::cell_num_entities(mesh->topology().cell_type(), dim); ++i)
   {
@@ -308,7 +387,16 @@ fem::locate_dofs_topological(
   auto c_to_e = mesh->topology().connectivity(tdim, dim);
   assert(c_to_e);
 
+  // std::cout << "Locate dofs topo 3" << std::endl;
+
+  const int bs0 = dofmap0->bs();
+  const int bs1 = dofmap1->bs();
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
   // Iterate over marked facets
+  // std::vector<std::array<std::int32_t, 2>> bc_dofs;
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
@@ -326,29 +414,48 @@ fem::locate_dofs_topological(
     // Get cell dofmap
     auto cell_dofs0 = dofmap0->cell_dofs(cell);
     auto cell_dofs1 = dofmap1->cell_dofs(cell);
+    assert(bs0 * cell_dofs0.rows() == bs1 * cell_dofs1.rows());
 
-    // Loop over facet dofs
+    // Loop over facet dofs and 'unpack' blocked dofs
     for (int i = 0; i < num_entity_dofs; ++i)
     {
       const int index = entity_dofs[entity_local_index][i];
-      for (int block = 0; block < block_size; ++block)
+      for (int block = 0; block < element_bs; ++block)
       {
-        bc_dofs.push_back({cell_dofs0[index * block_size + block],
-                           cell_dofs1[index * block_size + block]});
+        const int local_pos = element_bs * index + block;
+        const std::div_t pos0 = std::div(local_pos, bs0);
+        const std::div_t pos1 = std::div(local_pos, bs1);
+        const std::int32_t dof_index0 = bs0 * cell_dofs0[pos0.quot] + pos0.rem;
+        const std::int32_t dof_index1 = bs1 * cell_dofs1[pos1.quot] + pos1.rem;
+        // if (rank == 1)
+        // {
+        //   std::cout << "Pairs: " << dof_index0 << ", " << dof_index1
+        //             << std::endl;
+        // }
+        bc_dofs.push_back({dof_index0, dof_index1});
+        // bc_dofs.push_back({dof_index0, dof_index1});
       }
     }
   }
+
+  // std::cout << "Locate dofs topo 4" << std::endl;
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
   std::sort(bc_dofs.begin(), bc_dofs.end());
   bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
 
+  // std::vector<std::array<std::int32_t, 2>> bc_dofs;
+  // bc_dofs.reserve(bc_dofs_block.size());
+  // for (const auto& dofs : bc_dofs_block)
+  //   bc_dofs.push_back({dofs[0], dofs[2]});
+
   if (remote)
   {
     // Get bc dof indices (local) in (V, Vg) spaces on this process that
     // were found by other processes, e.g. a vertex dof on this process
     // that has no connected facets on the boundary.
+
     const std::vector dofs_remote = get_remote_bcs2(
         *V0.dofmap()->index_map, V0.dofmap()->index_map_bs(),
         *V1.dofmap()->index_map, V1.dofmap()->index_map_bs(), bc_dofs);
@@ -356,19 +463,40 @@ fem::locate_dofs_topological(
     // Add received bc indices to dofs_local
     bc_dofs.insert(bc_dofs.end(), dofs_remote.begin(), dofs_remote.end());
 
-    // Remove duplicates
+    // Remove duplicates and sort
     std::sort(bc_dofs.begin(), bc_dofs.end());
     bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
   }
 
-  // Copy to Eigen array
+  // Copy to Eigen arrays and compress for blocks
+  // assert(bc_dofs.size() % bs0 == 0);
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs0(bc_dofs.size());
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs1(bc_dofs.size());
-  for (std::size_t i = 0; i < bc_dofs.size(); ++i)
-  {
+  for (Eigen::Index i = 0; i < dofs0.rows(); ++i)
     dofs0(i) = bc_dofs[i][0];
+  // Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs0(bc_dofs.size() / bs0);
+  // for (Eigen::Index i = 0; i < dofs0.rows(); ++i)
+  //   dofs0(i) = bc_dofs[bs0 * i][0] / bs0;
+
+  // assert(bc_dofs.size() % bs1 == 0);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs1(bc_dofs.size());
+  for (Eigen::Index i = 0; i < dofs1.rows(); ++i)
     dofs1(i) = bc_dofs[i][1];
-  }
+  // for (Eigen::Index i = 0; i < dofs1.rows(); ++i)
+  //   dofs1(i) = bc_dofs[bs1 * i][1] / bs1;
+
+  // std::cout << "Dof lengths: " << dofs0.rows() << ", " << dofs1.rows()
+  //           << std::endl;
+
+  // if (rank == 1)
+  // {
+  //   std::cout << "BC dofs:" << std::endl;
+  //   std::cout << dofs0 << std::endl;
+  //   std::cout << dofs1 << std::endl;
+  // }
+
+  // Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs1(bc_dofs.size());
+  // for (std::size_t i = 0; i < bc_dofs.size(); ++i)
+  //   dofs1(i) = bc_dofs[i][1];
 
   return {std::move(dofs0), std::move(dofs1)};
 }
@@ -408,6 +536,7 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
 
   const int num_entity_closure_dofs
       = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
+  const int bs = dofmap->element_dof_layout->block_size();
   std::vector<std::int32_t> dofs;
 
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
@@ -452,9 +581,14 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
   }
 
-  // Copy to Eigen array and return
-  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
-                                                                   dofs.size());
+  // Expand for block size
+  // assert(dofs.size());
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs_expand(bs * dofs.size());
+  for (std::size_t i = 0; i < dofs.size(); ++i)
+    for (int k = 0; k < bs; ++k)
+      dofs_expand(bs * i + k) = bs * dofs[i] + k;
+
+  return dofs_expand;
 }
 //-----------------------------------------------------------------------------
 std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>

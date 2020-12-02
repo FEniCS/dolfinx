@@ -228,6 +228,7 @@ void assemble_cells(
     auto dofs1 = dofmap1.links(c);
     if (!bc0.empty())
     {
+      // std::cout << "Row bcs: " << c << ", " << num_dofs0 << bs0 << std::endl;
       for (Eigen::Index i = 0; i < num_dofs0; ++i)
       {
         for (int k = 0; k < bs0; ++k)

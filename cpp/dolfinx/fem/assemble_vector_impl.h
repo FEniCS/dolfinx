@@ -158,8 +158,20 @@ void _lift_bc_cells(
   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
   Eigen::Matrix<T, Eigen::Dynamic, 1> be;
 
+  // int size;
+  // MPI_Comm_size(MPI_COMM_WORLD, &size);
+  // int rank;
+  // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  // if (size > 1 and rank == 0)
+  //   return;
+
   for (std::int32_t c : active_cells)
   {
+    // if (size == 1 and c == 0)
+    //   continue;
+
+    // std::cout << "cell: " << c << std::endl;
+
     // Get dof maps for cell
     auto dmap1 = dofmap1.links(c);
 
@@ -181,11 +193,16 @@ void _lift_bc_cells(
     if (!has_bc)
       continue;
 
+    // if (rank == 0)
+    //   std::cout << "Apply bc: " << c << std::endl;
+
     // Get cell vertex coordinates
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+
+    // std::cout << "coords " << coordinate_dofs << std::endl;
 
     // Size data structure for assembly
     auto dmap0 = dofmap0.links(c);
@@ -206,6 +223,12 @@ void _lift_bc_cells(
         if (bc_markers1[jj])
         {
           const T bc = bc_values1[jj];
+          // if (rank == 0)
+          // std::cout << "   Modify (dof):   " << bs1 * dmap1[j] + k <<
+          // std::endl; std::cout << "   Modify (local): " << bs1 * j + k <<
+          // std::endl; std::cout << "   bc: " << bc << std::endl;
+          // {
+          // }
           if (x0.rows() > 0)
             be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
           else
@@ -213,6 +236,9 @@ void _lift_bc_cells(
         }
       }
     }
+
+    // if (rank == 0)
+    //   std::cout << "End apply bc: " << c << std::endl;
 
     for (Eigen::Index i = 0; i < dmap0.size(); ++i)
       for (int k = 0; k < bs0; ++k)
