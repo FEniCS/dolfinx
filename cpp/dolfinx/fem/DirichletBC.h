@@ -139,12 +139,11 @@ class DirichletBC
 public:
   /// Create boundary condition
   ///
-  /// @todo Comment required ordering for dofs
-  ///
   /// @param[in] g The boundary condition value. The boundary condition
   /// can be applied to a a function on the same space as g.
   /// @param[in] dofs Degree-of-freedom indices in the space of the
-  ///   boundary value function applied to V_dofs[i]
+  ///   boundary value function applied to V_dofs[i]. The dof indices must
+  ///   be sorted.
   DirichletBC(
       const std::shared_ptr<const function::Function<T>>& g,
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
@@ -164,13 +163,12 @@ public:
 
   /// Create boundary condition
   ///
-  /// @todo Comment required ordering for dofs
-  ///
   /// @param[in] g The boundary condition value
   /// @param[in] V_g_dofs Two arrays of degree-of-freedom indices. First
-  ///   array are indices in the space where boundary condition is
-  ///   applied (V), second array are indices in the space of the
-  ///   boundary condition value function g.
+  /// array are indices in the space where boundary condition is applied
+  /// (V), second array are indices in the space of the boundary
+  /// condition value function g. The arrays must be sorted by the
+  /// indices in the first array.
   /// @param[in] V The function (sub)space on which the boundary
   ///   condition is applied
   DirichletBC(const std::shared_ptr<const function::Function<T>>& g,
@@ -181,11 +179,7 @@ public:
   {
     assert(_dofs0.rows() == _dofs1_g.rows());
     assert(_function_space);
-    // const int bs0 = _function_space->dofmap()->bs();
     assert(_g);
-    // const int bs1 = g->function_space()->dofmap()->bs();
-    // if (bs0 * _dofs0.size() != bs1 * _dofs1_g.size())
-    //   throw std::runtime_error("Incompatible dof index arrays.");
 
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
@@ -204,13 +198,6 @@ public:
 
     // FIXME: Is this check needed?
     assert(_owned_indices0 == _owned_indices1);
-
-    // const int owned_size1
-    //     = g->function_space()->dofmap()->index_map->size_local();
-    // auto it1 = std::lower_bound(_dofs1_g.data(),
-    //                             _dofs1_g.data() + _dofs1_g.rows(),
-    //                             owned_size1);
-    // _owned_indices1 = std::distance(_dofs1_g.data(), it1);
   }
 
   /// Copy constructor
@@ -290,29 +277,14 @@ public:
   {
     // FIXME: This one excludes ghosts. Need to straighten out.
     assert(_g);
-    // const int bs0 = _function_space->dofmap()->bs();
-    // const int bs1 = _g->function_space()->dofmap()->bs();
     auto& g = _g->x()->array();
-    // assert(_dofs1_g.rows() == _dofs1_g.rows());
     for (Eigen::Index i = 0; i < _dofs0.rows(); ++i)
     {
-      // assert(_dofs0(i) < x.rows());
-      // assert(_dofs1_g(i) < g.rows());
       if (_dofs0(i) < x.rows())
       {
         assert(_dofs1_g(i) < g.rows());
         x[_dofs0(i)] = scale * g[_dofs1_g(i)];
       }
-      // for (int k0 = 0; k0 < bs0; ++k0)
-      // {
-      //   const std::int32_t pos = bs0 * i + k0;
-      //   if (bs0 * _dofs0(i) + k0 < x.rows())
-      //   {
-      //     std::div_t pos1 = std::div(pos, bs1);
-      //     x[bs0 * _dofs0(i) + k0]
-      //         = scale * g[bs1 * _dofs1_g(pos1.quot) + pos1.rem];
-      //   }
-      // }
     }
   }
 
@@ -324,8 +296,6 @@ public:
   {
     // FIXME: This one excludes ghosts. Need to straighten out.
     assert(_g);
-    const int bs0 = _function_space->dofmap()->bs();
-    const int bs1 = _g->function_space()->dofmap()->bs();
     auto& g = _g->x()->array();
     assert(x.rows() <= x0.rows());
     for (Eigen::Index i = 0; i < _dofs0.rows(); ++i)
@@ -335,18 +305,6 @@ public:
         assert(_dofs1_g(i) < g.rows());
         x[_dofs0(i)] = scale * (g[_dofs1_g(i)] - x0[_dofs0(i)]);
       }
-      // for (int k0 = 0; k0 < bs0; ++k0)
-      // {
-      //   const std::int32_t pos = bs0 * i + k0;
-      //   if (bs0 * _dofs0(i) + k0 < x.rows())
-      //   {
-      //     const std::div_t pos1 = std::div(pos, bs1);
-      //     x[bs0 * _dofs0(i) + k0]
-      //         = scale
-      //           * (g[bs1 * _dofs1_g(pos1.quot) + pos1.rem]
-      //              - x0[bs1 * _dofs0(pos1.quot) + pos1.rem]);
-      //   }
-      // }
     }
   }
 
@@ -356,25 +314,9 @@ public:
   void dof_values(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> values) const
   {
     assert(_g);
-    const int bs1 = _g->function_space()->dofmap()->bs();
     auto& g = _g->x()->array();
-    // std::cout << "Test sizes: " << _dofs1_g.rows() << ", " << values.rows()
-    //           << std::endl;
-    // assert(bs1 * _dofs1_g.rows() == values.rows());
     for (Eigen::Index i = 0; i < _dofs1_g.rows(); ++i)
-    {
       values[_dofs0(i)] = g[_dofs1_g(i)];
-      // for (int k1 = 0; k1 < bs1; ++k1)
-      // {
-      //   const std::int32_t pos = bs1 * i + k1;
-      //   const std::div_t pos1 = std::div(pos, bs1);
-      //   assert(pos < values.rows());
-      //   assert(bs1 * _dofs1_g(pos1.quot) + pos1.rem < g.rows());
-      //   values[pos] = g[bs1 * _dofs1_g(pos1.quot) + pos1.rem];
-      //   // values[bs0 * _dofs0(i) + k0] = g[bs1 * _dofs1_g(pos1.quot) +
-      //   // pos1.rem];
-      // }
-    }
   }
 
   /// Set markers[i] = true if dof i has a boundary condition applied.
@@ -382,18 +324,10 @@ public:
   /// @todo Clarify w.r.t ghosts
   void mark_dofs(std::vector<bool>& markers) const
   {
-    const int bs = _function_space->dofmap()->bs();
-    // std::cout << "Marker bs: " << bs << std::endl;
     for (Eigen::Index i = 0; i < _dofs0.rows(); ++i)
     {
       assert(_dofs0(i) < (std::int32_t)markers.size());
       markers[_dofs0(i)] = true;
-      // for (int k = 0; k < bs; ++k)
-      // {
-      //   assert(bs * _dofs0(i) + k < (std::int32_t)markers.size());
-      //   markers[bs * _dofs0(i) + k] = true;
-      //   // std::cout << "Mark true: " << bs * _dofs0(i) + k << std::endl;
-      // }
     }
   }
 
