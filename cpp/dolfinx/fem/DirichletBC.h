@@ -251,21 +251,13 @@ public:
   /// Get array of dof indices owned by this process to which a
   /// Dirichlet BC is applied. The array is sorted and does not contain
   /// ghost entries.
-  std::pair<
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>,
-      int>
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
   dofs_owned(int dim) const
   {
     if (dim == 0)
-    {
-      const int bs = _function_space->dofmap()->bs();
-      return {_dofs0.head(_owned_indices0), bs};
-    }
+      return _dofs0.head(_owned_indices0);
     else if (dim == 1)
-    {
-      const int bs = _g->function_space()->dofmap()->bs();
-      return {_dofs1_g.head(_owned_indices1), bs};
-    }
+      return _dofs1_g.head(_owned_indices1);
     else
       throw std::runtime_error("Wrong dim index");
   }

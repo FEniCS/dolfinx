@@ -163,7 +163,6 @@ void assemble_matrix(
 /// @param[in] mat_add The function for adding values to a matrix
 /// @param[in] rows The row blocks, in local indices, for which to add a
 /// value to the diagonal
-/// @param bs Row block size
 /// @param[in] diagonal The value to add to the diagonal for the
 ///   specified rows
 template <typename T>
@@ -171,17 +170,12 @@ void add_diagonal(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
-    int bs, T diagonal = 1.0)
+    T diagonal = 1.0)
 {
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
     const std::int32_t row = rows(i);
     mat_add(1, &row, 1, &row, &diagonal);
-    // for (int k = 0; k < bs; ++k)
-    // {
-    //   const std::int32_t row = bs * rows(i) + k;
-    //   mat_add(1, &row, 1, &row, &diagonal);
-    // }
   }
 }
 
@@ -212,10 +206,7 @@ void add_diagonal(
   {
     assert(bc);
     if (V.contains(*bc->function_space()))
-    {
-      const auto [dofs, bs] = bc->dofs_owned(0);
-      add_diagonal<T>(mat_add, dofs, bs, diagonal);
-    }
+      add_diagonal<T>(mat_add, bc->dofs_owned(0), diagonal);
   }
 }
 
