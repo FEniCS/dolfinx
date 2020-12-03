@@ -482,7 +482,7 @@ fem::locate_dofs_geometrical(
         V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker)
+                                            Eigen::RowMajor>>&)>& marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
@@ -514,20 +514,25 @@ fem::locate_dofs_geometrical(
 
   // Evaluate marker for each dof coordinate
   const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
-      = marker(dof_coordinates);
+      = marker_fn(dof_coordinates);
 
   // Get dofmaps
   std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
-  std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
   assert(dofmap0);
+  const int bs0 = dofmap0->bs();
+  std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
   assert(dofmap1);
+  const int bs1 = dofmap1->bs();
+
+  const int element_bs = dofmap0->element_dof_layout->block_size();
+  assert(element_bs == dofmap1->element_dof_layout->block_size());
 
   // Iterate over cells
   const mesh::Topology& topology = mesh->topology();
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
   for (int c = 0; c < topology.connectivity(tdim, 0)->num_nodes(); ++c)
   {
-    // Get cell dofmap
+    // Get cell dofmaps
     auto cell_dofs0 = dofmap0->cell_dofs(c);
     auto cell_dofs1 = dofmap1->cell_dofs(c);
 
@@ -536,8 +541,19 @@ fem::locate_dofs_geometrical(
     {
       if (marked_dofs[cell_dofs1[i]])
       {
-        bc_dofs.push_back(
-            {(std::int32_t)cell_dofs0[i], (std::int32_t)cell_dofs1[i]});
+        // Unroll over blocks
+        for (int k = 0; k < element_bs; ++k)
+        {
+          const int local_pos = element_bs * i + k;
+          const std::div_t pos0 = std::div(local_pos, bs0);
+          const std::div_t pos1 = std::div(local_pos, bs1);
+          const std::int32_t dof_index0
+              = bs0 * cell_dofs0[pos0.quot] + pos0.rem;
+          const std::int32_t dof_index1
+              = bs1 * cell_dofs1[pos1.quot] + pos1.rem;
+
+          bc_dofs.push_back({dof_index0, dof_index1});
+        }
       }
     }
   }

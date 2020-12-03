@@ -203,7 +203,7 @@ void add_diagonal(
   {
     assert(bc);
     if (V.contains(*bc->function_space()))
-      add_diagonal<T>(mat_add, bc->dofs_owned(0), diagonal);
+      add_diagonal<T>(mat_add, bc->dofs_owned(), diagonal);
   }
 }
 

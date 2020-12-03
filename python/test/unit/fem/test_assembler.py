@@ -361,7 +361,6 @@ def test_assembly_solve_block(mode):
         # print("Norm:", its, rnorm)
 
     A0 = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], bcs)
-    # A0 = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]])
     b0 = dolfinx.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
                                            bcs)
     A0.assemble()
