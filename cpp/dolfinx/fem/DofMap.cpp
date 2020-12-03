@@ -20,6 +20,7 @@ using namespace dolfinx::fem;
 
 namespace
 {
+//-----------------------------------------------------------------------------
 template <typename T>
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 remap_dofs(const std::vector<std::int32_t>& old_to_new,
@@ -32,7 +33,8 @@ remap_dofs(const std::vector<std::int32_t>& old_to_new,
   return dofmap;
 }
 //-----------------------------------------------------------------------------
-// Build a collapsed DofMap from a dofmap view
+// Build a collapsed DofMap from a dofmap view. Extracts dofs and
+// doesn't build a new re-ordered dofmap
 fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                                    const mesh::Topology& topology)
 {
@@ -40,19 +42,11 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
       dofmap_view.element_dof_layout->copy());
   assert(element_dof_layout);
 
-  if (dofmap_view.index_map_bs() == 1 and element_dof_layout->block_size() > 1)
+  if (element_dof_layout->block_size() > 1)
   {
     throw std::runtime_error(
         "Cannot collapse dofmap with block size greater "
         "than 1 from parent with block size of 1. Create new dofmap first.");
-  }
-
-  if (dofmap_view.index_map_bs() > 1 and element_dof_layout->block_size() > 1)
-  {
-    throw std::runtime_error(
-        "Cannot (yet) collapse dofmap with block size greater "
-        "than 1 from parent with block size greater than 1. Create new dofmap "
-        "first.");
   }
 
   // Get topological dimension
@@ -71,6 +65,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   std::sort(dofs_view.begin(), dofs_view.end());
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
+
   // Get block sizes
   const int bs_view = dofmap_view.index_map_bs();
 
@@ -143,7 +138,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                           Eigen::RowMajor>>
       _dofmap(dofmap.data(), dofmap.rows() / cell_dimension, cell_dimension);
 
-  // FIXME X
+
   return fem::DofMap(element_dof_layout, index_map, 1,
                      graph::AdjacencyList<std::int32_t>(_dofmap), 1);
 }
