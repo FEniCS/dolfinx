@@ -88,11 +88,6 @@ public:
   std::pair<std::shared_ptr<FunctionSpace>, std::vector<std::int32_t>>
   collapse() const;
 
-  /// Check if function space has given element
-  /// @param[in] element The finite element
-  /// @return  True if the function space has the given element
-  bool has_element(const fem::FiniteElement& element) const;
-
   /// Get the component with respect to the root superspace
   /// @return The component with respect to the root superspace , i.e.
   ///         W.sub(1).sub(0) == [1, 0]

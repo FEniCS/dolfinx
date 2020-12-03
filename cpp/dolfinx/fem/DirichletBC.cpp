@@ -123,8 +123,8 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
                 const common::IndexMap& map1, int bs1,
                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
 {
-  // NOTE: assumes that dofs are unrolled, i.e. not blocked. Could be
-  // make more efficient to handle a common block size
+  // NOTE: assumes that dofs are unrolled, i.e. not blocked. Could it be
+  // make more efficient to handle the case of a common block size?
 
   MPI_Comm comm0 = map0.comm(common::IndexMap::Direction::symmetric);
 
@@ -146,9 +146,6 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   // Build array of global indices of dofs
   Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> dofs_global(
       dofs_local.size(), 2);
-
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   // This is messy to handle block sizes
   {
@@ -274,11 +271,8 @@ fem::locate_dofs_topological(
   // FIXME: Elements must be the same?
   assert(V0.element());
   assert(V1.element());
-  if (!V0.has_element(*V1.element()))
-  {
-    throw std::runtime_error("Function spaces must have the same elements or "
-                             "one be a subelement of another.");
-  }
+  if (V0.element()->hash() != V1.element()->hash())
+    throw std::runtime_error("Function spaces must have the same element.");
 
   // Get dofmaps
   std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
@@ -374,12 +368,11 @@ fem::locate_dofs_topological(
     bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
   }
 
-  // Copy to Eigen arrays and compress for blocks
+  // Copy to Eigen arrays
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs0(bc_dofs.size());
   for (Eigen::Index i = 0; i < dofs0.rows(); ++i)
     dofs0(i) = bc_dofs[i][0];
 
-  // assert(bc_dofs.size() % bs1 == 0);
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs1(bc_dofs.size());
   for (Eigen::Index i = 0; i < dofs1.rows(); ++i)
     dofs1(i) = bc_dofs[i][1];
@@ -502,11 +495,8 @@ fem::locate_dofs_geometrical(
 
   assert(V0.element());
   assert(V1.element());
-  if (!V0.has_element(*V1.element()))
-  {
-    throw std::runtime_error("Function spaces must have the same elements or "
-                             "one be a subelement of another.");
-  }
+  if (V0.element()->hash() != V1.element()->hash())
+    throw std::runtime_error("Function spaces must have the same element.");
 
   // Compute dof coordinates
   const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
