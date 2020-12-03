@@ -97,7 +97,7 @@ public:
   PETScVector(const PETScVector& x) = delete;
 
   /// Move constructor
-  PETScVector(PETScVector&& x) noexcept;
+  PETScVector(PETScVector&& x);
 
   /// Create holder of a PETSc Vec object/pointer. The Vec x object
   /// should already be created. If inc_ref_count is true, the reference

@@ -21,7 +21,7 @@ PETScOperator::PETScOperator(Mat A, bool inc_ref_count) : _matA(A)
     PetscObjectReference((PetscObject)_matA);
 }
 //-----------------------------------------------------------------------------
-PETScOperator::PETScOperator(PETScOperator&& A) noexcept
+PETScOperator::PETScOperator(PETScOperator&& A)
     : _matA(std::exchange(A._matA, nullptr))
 {
 }
