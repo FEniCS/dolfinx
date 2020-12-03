@@ -26,8 +26,17 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _transform_reference_basis_derivatives(
           ufc_element.transform_reference_basis_derivatives),
       _transform_values(ufc_element.transform_values),
-      _block_size(ufc_element.block_size)
+      _block_size(ufc_element.block_size),
+      _interpolate_into_cell(ufc_element.interpolate_into_cell),
+      _interpolation_points(ufc_element.num_interpolation_points,
+                            ufc_element.topological_dimension),
+      _needs_permutation_data(ufc_element.needs_permutation_data)
 {
+  int n = 0;
+  for (int p = 0; p < ufc_element.num_interpolation_points; ++p)
+    for (int d = 0; d < ufc_element.topological_dimension; ++d)
+      _interpolation_points(p, d) = ufc_element.interpolation_points[n++];
+
   // Store dof coordinates on reference element if they exist
   assert(ufc_element.tabulate_reference_dof_coordinates);
   _refX.resize(_space_dim, _tdim);
@@ -263,5 +272,26 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   const std::vector<int> sub_component(component.begin() + 1, component.end());
 
   return extract_sub_element(*sub_element, sub_component);
+}
+//-----------------------------------------------------------------------------
+Eigen::ArrayXXd FiniteElement::interpolation_points() const
+{
+  return _interpolation_points;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+FiniteElement::interpolate_into_cell(
+    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        values,
+    const std::uint32_t cell_permutation) const
+{
+  Eigen::Array<double, Eigen::Dynamic, 1> output_values(_space_dim);
+  _interpolate_into_cell(output_values.data(), values.data(), cell_permutation);
+  return output_values;
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::needs_permutation_data() const
+{
+  return _needs_permutation_data;
 }
 //-----------------------------------------------------------------------------

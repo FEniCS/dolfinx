@@ -248,6 +248,8 @@ public:
     assert(mesh);
     const int gdim = mesh->geometry().dim();
     const int tdim = mesh->topology().dim();
+    auto map = mesh->topology().index_map(tdim);
+    const int num_cells = map->size_local() + map->num_ghosts();
 
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -321,9 +323,14 @@ public:
     std::shared_ptr<const fem::DofMap> dofmap = _function_space->dofmap();
     assert(dofmap);
 
-    mesh->topology_mutable().create_entity_permutations();
+    const bool needs_permutation_data = element->needs_permutation_data();
+    if (needs_permutation_data)
+      mesh->topology_mutable().create_entity_permutations();
+
     const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-        = mesh->topology().get_cell_permutation_info();
+        = needs_permutation_data
+              ? mesh->topology().get_cell_permutation_info()
+              : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
 
     // Loop over points
     u.setZero();

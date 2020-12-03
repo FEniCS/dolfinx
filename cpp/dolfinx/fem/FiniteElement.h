@@ -152,6 +152,16 @@ public:
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
 
+  /// TODO: doc
+  /// TODO: implement in .cpp
+  Eigen::ArrayXXd interpolation_points() const;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  interpolate_into_cell(const Eigen::Array<double, Eigen::Dynamic,
+                                           Eigen::Dynamic, Eigen::RowMajor>
+                            values,
+                        const std::uint32_t cell_permutation) const;
+  bool needs_permutation_data() const;
+
 private:
   std::string _signature, _family;
 
@@ -194,6 +204,13 @@ private:
   // Block size for VectorElements and TensorElements
   // This gives the number of DOFs colocated at each point
   int _block_size;
+
+  std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const uint32_t)>
+      _interpolate_into_cell;
+
+  Eigen::ArrayXXd _interpolation_points;
+
+  bool _needs_permutation_data;
 
   std::shared_ptr<const libtab::FiniteElement> _libtab_element;
 };
