@@ -23,6 +23,7 @@
 #include <memory>
 #include <petscvec.h>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::function
@@ -45,7 +46,8 @@ public:
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace> V)
       : _id(common::UniqueIdGenerator::id()), _function_space(V),
-        _x(std::make_shared<la::Vector<T>>(V->dofmap()->index_map))
+        _x(std::make_shared<la::Vector<T>>(V->dofmap()->index_map,
+                                           V->dofmap()->index_map_bs()))
   {
     if (!V->component().empty())
     {
@@ -70,16 +72,20 @@ public:
 
     // Assertion uses '<=' to deal with sub-functions
     assert(V->dofmap());
-    assert(V->dofmap()->index_map->size_global()
-               * V->dofmap()->index_map->block_size()
-           <= _x->map()->block_size() * _x->map()->size_global());
+    assert(V->dofmap()->index_map->size_global() * V->dofmap()->index_map_bs()
+           <= _x->bs() * _x->map()->size_global());
   }
 
   // Copy constructor
   Function(const Function& v) = delete;
 
   /// Move constructor
-  Function(Function&& v) = default;
+  Function(Function&& v)
+      : name(std::move(v.name)), _id(std::move(v._id)),
+        _function_space(std::move(v._function_space)), _x(std::move(v._x)),
+        _petsc_vector(std::exchange(v._petsc_vector, nullptr))
+  {
+  }
 
   /// Destructor
   virtual ~Function()
@@ -89,7 +95,16 @@ public:
   }
 
   /// Move assignment
-  Function& operator=(Function&& v) = default;
+  Function& operator=(Function&& v) noexcept
+  {
+    name = std::move(v.name);
+    _id = std::move(v._id);
+    _function_space = std::move(v._function_space);
+    _x = std::move(v._x);
+    std::swap(_petsc_vector, v._petsc_vector);
+
+    return *this;
+  }
 
   // Assignment
   Function& operator=(const Function& v) = delete;
@@ -116,7 +131,8 @@ public:
     // Create new vector
     assert(function_space_new);
     auto vector_new = std::make_shared<la::Vector<T>>(
-        function_space_new->dofmap()->index_map);
+        function_space_new->dofmap()->index_map,
+        function_space_new->dofmap()->index_map_bs());
 
     // Copy values into new vector
     const Eigen::Matrix<T, Eigen::Dynamic, 1>& x_old = _x->array();
@@ -146,9 +162,9 @@ public:
     // Check that this is not a sub function
     assert(_function_space->dofmap());
     assert(_function_space->dofmap()->index_map);
-    if (_x->map()->block_size() * _x->map()->size_global()
+    if (_x->bs() * _x->map()->size_global()
         != _function_space->dofmap()->index_map->size_global()
-               * _function_space->dofmap()->index_map->block_size())
+               * _function_space->dofmap()->index_map_bs())
     {
       throw std::runtime_error(
           "Cannot access a non-const vector from a subfunction");
@@ -160,7 +176,8 @@ public:
       if (!_petsc_vector)
       {
         _petsc_vector = la::create_ghosted_vector(
-            *_function_space->dofmap()->index_map, _x->array());
+            *_function_space->dofmap()->index_map,
+            _function_space->dofmap()->index_map_bs(), _x->array());
       }
       return _petsc_vector;
     }

@@ -194,7 +194,8 @@ Form<T> create_form(
   }
 #endif
 
-  // Get list of integral IDs, and load tabulate tensor into memory for each
+  // Get list of integral IDs, and load tabulate tensor into memory for
+  // each
   using kern = std::function<void(PetscScalar*, const PetscScalar*,
                                   const PetscScalar*, const double*, const int*,
                                   const std::uint8_t*, const std::uint32_t)>;

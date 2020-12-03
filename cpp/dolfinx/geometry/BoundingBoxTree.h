@@ -8,6 +8,7 @@
 
 #include <Eigen/Dense>
 #include <array>
+#include <dolfinx/common/MPI.h>
 #include <memory>
 #include <vector>
 
@@ -33,8 +34,22 @@ public:
   /// Constructor
   /// @param[in] mesh The mesh for building the bounding box tree
   /// @param[in] tdim The topological dimension of the mesh entities to
-  ///                 by the bounding box tree for
-  BoundingBoxTree(const mesh::Mesh& mesh, int tdim);
+  ///                 build the bounding box tree for
+  /// @param[in] entity_indices List of entity indices to compute the bounding
+  /// box for (may be empty, if none).
+  /// @param[in] padding A float perscribing how much the bounding box of
+  /// each entity should be padded
+  BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
+                  const std::vector<std::int32_t>& entity_indices,
+                  double padding = 0);
+
+  /// Constructor
+  /// @param[in] mesh The mesh for building the bounding box tree
+  /// @param[in] tdim The topological dimension of the mesh entities to
+  ///                 build the bounding box tree for
+  /// @param[in] padding A float perscribing how much the bounding box of
+  /// each entity should be padded
+  BoundingBoxTree(const mesh::Mesh& mesh, int tdim, double padding = 0);
 
   /// Constructor
   /// @param[in] points Cloud of points to build the bounding box tree
@@ -58,6 +73,13 @@ public:
   /// @return The bounding box where row(0) is the lower corner and
   ///         row(1) is the upper corner
   Eigen::Array<double, 2, 3, Eigen::RowMajor> get_bbox(int node) const;
+
+  /// Compute a global bounding tree (collective on comm)
+  /// This can be used to find which process a point might have a collision
+  /// with.
+  /// @param[in] comm MPI Communicator for collective communication
+  /// @return BoundingBoxTree where each node represents a process
+  BoundingBoxTree compute_global_tree(const MPI_Comm& comm) const;
 
   /// Return number of bounding boxes
   int num_bboxes() const;
@@ -98,11 +120,6 @@ private:
 
   // List of bounding box coordinates
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _bbox_coordinates;
-
-public:
-  /// Global tree for mesh ownership of each process (same on all
-  /// processes)
-  std::unique_ptr<BoundingBoxTree> global_tree;
 };
 } // namespace geometry
 } // namespace dolfinx
