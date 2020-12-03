@@ -191,13 +191,13 @@ void _lift_bc_cells(
     auto dmap0 = dofmap0.links(c);
 
     auto coeff_array = coeffs.row(c);
-    Ae.setZero(bs0 * dmap0.size(), bs1 * dmap1.size());
+    Ae.setZero(bs0 * dmap0.rows(), bs1 * dmap1.rows());
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Size data structure for assembly
-    be.setZero(bs0 * dmap0.size());
-    for (Eigen::Index j = 0; j < dmap1.size(); ++j)
+    be.setZero(bs0 * dmap0.rows());
+    for (Eigen::Index j = 0; j < dmap1.rows(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
@@ -305,14 +305,14 @@ void _lift_bc_exterior_facets(
     auto dmap0 = dofmap0.links(cell);
 
     auto coeff_array = coeffs.row(cell);
-    Ae.setZero(bs0 * dmap0.size(), bs1 * dmap1.size());
+    Ae.setZero(bs0 * dmap0.rows(), bs1 * dmap1.rows());
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), &local_facet, &perms(local_facet, cell),
            cell_info[cell]);
 
     // Size data structure for assembly
-    be.setZero(bs0 * dmap0.size());
-    for (Eigen::Index j = 0; j < dmap1.size(); ++j)
+    be.setZero(bs0 * dmap0.rows());
+    for (Eigen::Index j = 0; j < dmap1.rows(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
@@ -353,9 +353,6 @@ void _lift_bc_interior_facets(
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
-  throw std::runtime_error(
-      "_lift_bc_interior_facets code looks wrong. Needs checking.");
-
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
@@ -422,17 +419,17 @@ void _lift_bc_interior_facets(
     // Get dof maps for cells and pack
     auto dmap0_cell0 = dofmap0.links(cells[0]);
     auto dmap0_cell1 = dofmap0.links(cells[1]);
-    dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
-    dmapjoint0.head(dmap0_cell0.size()) = dmap0_cell0;
-    dmapjoint0.tail(dmap0_cell1.size()) = dmap0_cell1;
+    dmapjoint0.resize(dmap0_cell0.rows() + dmap0_cell1.rows());
+    dmapjoint0.head(dmap0_cell0.rows()) = dmap0_cell0;
+    dmapjoint0.tail(dmap0_cell1.rows()) = dmap0_cell1;
 
     auto dmap1_cell0 = dofmap1.links(cells[0]);
     auto dmap1_cell1 = dofmap1.links(cells[1]);
-    dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
-    dmapjoint1.head(dmap1_cell0.size()) = dmap1_cell0;
-    dmapjoint1.tail(dmap1_cell1.size()) = dmap1_cell1;
+    dmapjoint1.resize(dmap1_cell0.rows() + dmap1_cell1.rows());
+    dmapjoint1.head(dmap1_cell0.rows()) = dmap1_cell0;
+    dmapjoint1.tail(dmap1_cell1.rows()) = dmap1_cell1;
 
-    // Check if bc is applied to cell
+    // Check if bc is applied to cell0
     bool has_bc = false;
     for (Eigen::Index j = 0; j < dmap1_cell0.size(); ++j)
     {
@@ -446,6 +443,7 @@ void _lift_bc_interior_facets(
       }
     }
 
+    // Check if bc is applied to cell1
     for (Eigen::Index j = 0; j < dmap1_cell1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
@@ -485,9 +483,10 @@ void _lift_bc_interior_facets(
            coordinate_dofs.data(), local_facet.data(), perm.data(),
            cell_info[cells[0]]);
 
-    // Compute b = b - A*b for cell0
     be.setZero(bs0 * (dmap0_cell0.size() + dmap0_cell1.size()));
-    for (Eigen::Index j = 0; j < dmap1_cell0.size(); ++j)
+
+    // Compute b = b - A*b for cell0
+    for (Eigen::Index j = 0; j < dmap1_cell0.rows(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
@@ -503,12 +502,8 @@ void _lift_bc_interior_facets(
       }
     }
 
-    for (Eigen::Index i = 0; i < dmap0_cell0.size(); ++i)
-      for (int k = 0; k < bs0; ++k)
-        b[bs0 * dmap0_cell0[i] + k] += be[bs0 * i + k];
-
     // Compute b = b - A*b for cell1
-    be.setZero(bs0 * (dmap0_cell0.size() + dmap0_cell1.size()));
+    const int offset = bs1 * dmap1_cell0.rows();
     for (Eigen::Index j = 0; j < dmap1_cell1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
@@ -518,16 +513,20 @@ void _lift_bc_interior_facets(
         {
           const T bc = bc_values1[jj];
           if (x0.rows() > 0)
-            be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
+            be -= Ae.col(offset + bs1 * j + k) * scale * (bc - x0[jj]);
           else
-            be -= Ae.col(bs1 * j + k) * scale * bc;
+            be -= Ae.col(offset + bs1 * j + k) * scale * bc;
         }
       }
     }
 
+    for (Eigen::Index i = 0; i < dmap0_cell0.size(); ++i)
+      for (int k = 0; k < bs0; ++k)
+        b[bs0 * dmap0_cell0[i] + k] += be[bs0 * i + k];
+
     for (Eigen::Index i = 0; i < dmap0_cell1.size(); ++i)
       for (int k = 0; k < bs0; ++k)
-        b[bs0 * dmap0_cell1[i] + k] += be[bs0 * i + k];
+        b[bs0 * dmap0_cell1[i] + k] += be[offset + bs0 * i + k];
   }
 }
 //-----------------------------------------------------------------------------
