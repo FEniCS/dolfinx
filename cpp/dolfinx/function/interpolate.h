@@ -76,7 +76,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   assert(v.function_space());
   const auto element = u.function_space()->element();
   assert(element);
-  if (!v.function_space()->element()->hash() != element->hash())
+  if (v.function_space()->element()->hash() != element->hash())
   {
     throw std::runtime_error("Restricting finite elements function in "
                              "different elements not supported.");
