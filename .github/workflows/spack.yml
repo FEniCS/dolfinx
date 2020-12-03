@@ -55,7 +55,7 @@ jobs:
           spack add fenics-dolfinx
           # spack add fenics-dolfinx ^petsc@3.13.6
           # spack add py-fenics-dolfinx ^petsc@3.13.6+mumps
-          spack install
+          spack -v install
 
       - name: Get DOLFIN-X code (to access test files)
         uses: actions/checkout@v2
@@ -71,6 +71,7 @@ jobs:
           cd demo/poisson
           ffcx poisson.ufl
           cmake .
+          export VERBOSE=1
           make
           mpirun -np 2 ./demo_poisson
 
