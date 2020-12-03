@@ -235,6 +235,9 @@ std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
 PETScMatrix::add_block_expand_fn(Mat A, int bs0, int bs1)
 {
+  if (bs0 == 1 and bs1 == 1)
+    return add_fn(A);
+
   return [A, bs0, bs1, cache0 = std::vector<PetscInt>(),
           cache1 = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
