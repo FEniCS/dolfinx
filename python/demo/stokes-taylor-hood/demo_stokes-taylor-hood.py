@@ -83,25 +83,7 @@ from petsc4py import PETSc
 from ufl import div, dx, grad, inner
 
 
-rank = MPI.COMM_WORLD.Get_rank()
-
-
-def nest_matrix_norm(A):
-    """Return norm of a MatNest matrix"""
-    import math
-    assert A.getType() == "nest"
-    norm = 0.0
-    nrows, ncols = A.getNestSize()
-    for row in range(nrows):
-        for col in range(ncols):
-            A_sub = A.getNestSubMatrix(row, col)
-            if A_sub:
-                _norm = A_sub.norm()
-                norm += _norm * _norm
-    return math.sqrt(norm)
-
 # We create a Mesh and attach a coordinate map to the mesh::
-
 
 # Create mesh
 mesh = RectangleMesh(MPI.COMM_WORLD,

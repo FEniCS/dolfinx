@@ -90,7 +90,6 @@ Mat la::create_petsc_matrix(
     petsc_error(ierr, __FILE__, "MatXIJSetPreallocation");
 
   // Set block sizes
-  // std::cout << "Block sizes: " << bs[0] << ", " << bs[1] << std::endl;
   ierr = MatSetBlockSizes(A, bs[0], bs[1]);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetBlockSizes");

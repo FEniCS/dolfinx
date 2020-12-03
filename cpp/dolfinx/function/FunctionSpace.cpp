@@ -183,10 +183,8 @@ FunctionSpace::collapse() const
   // Create collapsed DofMap
   std::shared_ptr<fem::DofMap> collapsed_dofmap;
   std::vector<std::int32_t> collapsed_dofs;
-  // std::cout << "Call collpase" << std::endl;
   std::tie(collapsed_dofmap, collapsed_dofs)
       = _dofmap->collapse(_mesh->mpi_comm(), _mesh->topology());
-  // std::cout << "Post call collpase" << std::endl;
 
   // Create new FunctionSpace and return
   auto collapsed_sub_space

@@ -118,9 +118,6 @@ void assemble_matrix(
     {
       dof_marker0.resize(dim0, false);
       bcs[k]->mark_dofs(dof_marker0);
-      // std::cout << "Row marker: " << dim0 << std::endl;
-      // for (auto m : dof_marker0)
-      //   std::cout << m << std::endl;
     }
 
     if (a.function_spaces().at(1)->contains(*bcs[k]->function_space()))

@@ -107,7 +107,7 @@ public:
   /// indices for the columns.
   const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern() const;
 
-  /// Return MPI communicatoradd_fn
+  /// Return MPI communicator
   MPI_Comm mpi_comm() const;
 
 private:
