@@ -3,9 +3,9 @@ version: 2.1
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
-    pip3 install git+https://github.com/FEniCS/libtab.git@mscroggs/interpolation --upgrade
+    pip3 install git+https://github.com/FEniCS/libtab.git --upgrade
     pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
-    pip3 install git+https://github.com/FEniCS/ffcx.git@mscroggs/libtab-interpolation --upgrade
+    pip3 install git+https://github.com/FEniCS/ffcx.git@mscroggs/libtab --upgrade
     rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
 
 flake8-python-code: &flake8-python-code
