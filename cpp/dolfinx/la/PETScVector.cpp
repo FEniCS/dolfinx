@@ -66,19 +66,14 @@ Vec la::create_ghosted_vector(
     const common::IndexMap& map, int bs,
     const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x)
 {
-  std::int32_t size_local = bs * map.size_local();
-  std::int32_t num_ghosts = bs * map.num_ghosts();
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map.ghosts();
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts(bs * ghosts.rows());
-  for (int i = 0; i < ghosts.rows(); ++i)
-  {
-    for (int j = 0; j < bs; ++j)
-      _ghosts[i * bs + j] = bs * ghosts[i] + j;
-  }
-
+  const std::int32_t size_local = bs * map.size_local();
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts
+      = map.ghosts().cast<PetscInt>();
   Vec vec;
-  VecCreateGhostWithArray(map.comm(), size_local, PETSC_DECIDE, num_ghosts,
-                          _ghosts.data(), x.array().data(), &vec);
+  VecCreateGhostBlockWithArray(map.comm(), bs, size_local, PETSC_DECIDE,
+                               ghosts.rows(), ghosts.data(), x.array().data(),
+                               &vec);
+
   return vec;
 }
 //-----------------------------------------------------------------------------
@@ -101,9 +96,8 @@ Vec la::create_petsc_vector(
   const std::int32_t local_size = range[1] - range[0];
 
   Vec x;
-  std::vector<PetscInt> _ghost_indices(ghost_indices.rows());
-  for (std::size_t i = 0; i < _ghost_indices.size(); ++i)
-    _ghost_indices[i] = ghost_indices(i);
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghost_indices
+      = ghost_indices.cast<PetscInt>();
   ierr = VecCreateGhostBlock(comm, bs, bs * local_size, PETSC_DECIDE,
                              _ghost_indices.size(), _ghost_indices.data(), &x);
   CHECK_ERROR("VecCreateGhostBlock");
