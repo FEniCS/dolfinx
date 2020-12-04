@@ -49,8 +49,8 @@ public:
 
   void form(Vec x) final
   {
-    la::PETScVector _x(x, true);
-    _x.update_ghosts();
+    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
   }
 
   /// Compute F at current point x
