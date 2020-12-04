@@ -51,10 +51,7 @@ jobs:
           spack env create cpp
           spack env activate cpp
           echo "  concretization: together" >> ./spack/var/spack/environments/cpp/spack.yaml
-          # See issue with 3.14 at https://github.com/spack/spack/issues/19417
           spack add fenics-dolfinx
-          # spack add fenics-dolfinx ^petsc@3.13.6
-          # spack add py-fenics-dolfinx ^petsc@3.13.6+mumps
           spack -v install
 
       - name: Get DOLFIN-X code (to access test files)
@@ -82,7 +79,6 @@ jobs:
           spack env activate py
           echo "  concretization: together" >> ./spack/var/spack/environments/py/spack.yaml
           spack add py-fenics-dolfinx
-          # spack add py-fenics-dolfinx ^py-petsc4py@3.13.0
           spack add py-pip py-pytest py-pytest-xdist py-scipy
           spack install
 
@@ -92,9 +88,5 @@ jobs:
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate py
-          pip install cppimport numba
-          mkdir -p ~/.config/dolfinx
-          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
-          cd ./dolfinx-test/python/test
-          pytest -n auto --ignore=unit/fem/test_custom_jit_kernels.py --ignore=unit/geometry/test_gjk.py --ignore=unit/function/test_function.py .
-          mpirun -np 2 pytest --ignore=unit/fem/test_custom_jit_kernels.py --ignore=unit/geometry/test_gjk.py --ignore=unit/function/test_function.py .
+          pip install numba
+          pytest -v -m mpi --num-proc=2 ./dolfinx-test/python/demo/test.py
