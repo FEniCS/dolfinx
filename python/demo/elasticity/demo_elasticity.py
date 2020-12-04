@@ -77,7 +77,7 @@ def build_nullspace(V):
 mesh = BoxMesh(
     MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
-    CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.none)
+    CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.shared_facet)
 
 
 def boundary(x):
@@ -121,40 +121,14 @@ with u0.vector.localForm() as bc_local:
 # Set up boundary condition on inner surface
 bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
 
-# Controlling compilation parameters
-# ----------------------------------
-#
-# Parameters which control FFCX and JIT compilation could be set
-# directly with the interface of :py:class:`Form <dolfinx.fem.Form>` or
-# via environmental variables.
-#
-# This demo shows a mixed approach, where C compilation
-# flags are set with environmental variables.
-# Some parameters which control FFCX compilation are passed directly to the ``Form``.
-# ::
-
-os.environ["DOLFINX_JIT_CFLAGS"] = "-Ofast -march=native"
-os.environ["FFCX_VERBOSITY"] = "20"
-
-form = Form(a, form_compiler_parameters={"quadrature_degree": 1})
-
-# The use of such aggresive compiler flags (e.g. ``-Ofast`` violates IEEE floating point standard)
-# often results in a faster assembly code, but slower JIT compilation.
-# FFCX verbosity levels follow Python std logging library levels, https://docs.python.org/3/library/logging.html.
-# To see all available form compiler parameters run ``ffcx --help`` in the commandline.
-#
-# .. warning::
-#    Environmental variables override any other parameters passed to the ``Form``, or directly stated
-#    in the metadata of an integral. Please make sure there are no environmental variables set
-#    with side-effects.
-#
 # Assembly and solve
 # ------------------
 # ::
 
-# Assemble system, applying boundary conditions and preserving symmetry
-A = assemble_matrix(form, [bc])
+# Assemble system, applying boundary conditions
+A = assemble_matrix(a, [bc])
 A.assemble()
+
 b = assemble_vector(L)
 apply_lifting(b, [a], [[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -191,7 +165,7 @@ solver.setFromOptions()
 solver.setOperators(A)
 
 # Compute solution
-solver.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
+# solver.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
 solver.solve(b, u.vector)
 solver.view()
 

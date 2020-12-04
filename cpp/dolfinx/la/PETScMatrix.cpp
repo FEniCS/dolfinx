@@ -52,6 +52,8 @@ Mat la::create_petsc_matrix(
   const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern
       = sparsity_pattern.off_diagonal_pattern();
 
+  // MatSetType(A, MATBAIJ);
+
   // Apply PETSc options from the options database to the matrix (this
   // includes changing the matrix type to one specified by the user)
   ierr = MatSetFromOptions(A);

@@ -27,17 +27,13 @@ public:
     auto map = L->function_spaces()[0]->dofmap()->index_map;
     const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();
     std::int32_t size_local = bs * map->size_local();
-    std::int32_t num_ghosts = bs * map->num_ghosts();
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map->ghosts();
-    Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts(bs * ghosts.rows());
-    for (int i = 0; i < ghosts.rows(); ++i)
-    {
-      for (int j = 0; j < bs; ++j)
-        _ghosts[i * bs + j] = bs * ghosts[i] + j;
-    }
+    // std::int32_t num_ghosts = bs * map->num_ghosts();
 
-    VecCreateGhostWithArray(map->comm(), size_local, PETSC_DECIDE, num_ghosts,
-                            _ghosts.data(), _b.array().data(), &_b_petsc);
+    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts
+        = map->ghosts().cast<PetscInt>();
+    VecCreateGhostBlockWithArray(map->comm(), bs, size_local, PETSC_DECIDE,
+                                 ghosts.rows(), ghosts.data(),
+                                 _b.array().data(), &_b_petsc);
   }
 
   /// Destructor
