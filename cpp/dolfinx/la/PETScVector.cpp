@@ -50,15 +50,13 @@ std::vector<IS> la::create_petsc_index_sets(
   std::int64_t offset = 0;
   for (auto& map : maps)
   {
+    const int bs = map.second;
     const std::int32_t size
-        = map.first.get().size_local() + map.first.get().num_ghosts();
-    std::vector<PetscInt> index(map.second * size);
-    std::iota(index.begin(), index.end(), offset);
+        = bs * (map.first.get().size_local() + map.first.get().num_ghosts());
     IS _is;
-    ISCreateBlock(PETSC_COMM_SELF, 1, index.size(), index.data(),
-                  PETSC_COPY_VALUES, &_is);
+    ISCreateStride(PETSC_COMM_SELF, size, offset, 1, &_is);
     is.push_back(_is);
-    offset += map.second * size;
+    offset += bs * size;
   }
 
   return is;
@@ -281,46 +279,6 @@ std::array<std::int64_t, 2> PETScVector::local_range() const
   CHECK_ERROR("VecGetOwnershipRange");
   assert(n0 <= n1);
   return {{n0, n1}};
-}
-//-----------------------------------------------------------------------------
-void PETScVector::apply_ghosts()
-{
-  assert(_x);
-  PetscErrorCode ierr;
-
-  Vec xg;
-  ierr = VecGhostGetLocalForm(_x, &xg);
-  CHECK_ERROR("VecGhostGetLocalForm");
-  if (xg) // Vec is ghosted
-  {
-    ierr = VecGhostUpdateBegin(_x, ADD_VALUES, SCATTER_REVERSE);
-    CHECK_ERROR("VecGhostUpdateBegin");
-    ierr = VecGhostUpdateEnd(_x, ADD_VALUES, SCATTER_REVERSE);
-    CHECK_ERROR("VecGhostUpdateEnd");
-  }
-
-  ierr = VecGhostRestoreLocalForm(_x, &xg);
-  CHECK_ERROR("VecGhostRestoreLocalForm");
-}
-//-----------------------------------------------------------------------------
-void PETScVector::update_ghosts()
-{
-  assert(_x);
-  PetscErrorCode ierr;
-
-  Vec xg;
-  ierr = VecGhostGetLocalForm(_x, &xg);
-  CHECK_ERROR("VecGhostGetLocalForm");
-  if (xg) // Vec is ghosted
-  {
-    ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
-    CHECK_ERROR("VecGhostUpdateBegin");
-    ierr = VecGhostUpdateEnd(_x, INSERT_VALUES, SCATTER_FORWARD);
-    CHECK_ERROR("VecGhostUpdateEnd");
-  }
-
-  ierr = VecGhostRestoreLocalForm(_x, &xg);
-  CHECK_ERROR("VecGhostRestoreLocalForm");
 }
 //-----------------------------------------------------------------------------
 MPI_Comm PETScVector::mpi_comm() const

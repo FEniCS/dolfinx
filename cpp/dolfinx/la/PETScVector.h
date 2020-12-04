@@ -24,11 +24,11 @@ namespace la
 
 /// Create a PETSc Vec that wraps the data in x
 /// @param[in] map The index map that described the parallel layout of
-///   the distributed vector
+/// the distributed vector
 /// @param[in] bs Block size
 /// @param[in] x The local part of the vector, including ghost entries
 /// @return A PETSc Vec object that share the x data. The caller is
-///   responsible for destroying the Vec.
+/// responsible for destroying the Vec.
 Vec create_ghosted_vector(
     const common::IndexMap& map, int bs,
     const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x);
@@ -39,8 +39,8 @@ void petsc_error(int error_code, std::string filename,
 
 /// @todo This function could take just the local sizes
 ///
-/// Compute IndexSets (IS) for stacked index maps.  E.g., if map[0] =
-/// {0, 1, 2, 3, 4, 5, 6} and map[1] = {0, 1, 2, 4} (in local indices),
+/// Compute IndexSets (IS) for stacked index maps. E.g., if map[0] = {0,
+/// 1, 2, 3, 4, 5, 6} and map[1] = {0, 1, 2, 4} (in local indices),
 /// IS[0] = {0, 1, 2, 3, 4, 5, 6} and IS[1] = {7, 8, 9, 10}. Caller is
 /// responsible for destruction of each IS.
 ///
@@ -75,8 +75,9 @@ void scatter_local_vectors(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
-/// It is a simple wrapper for a PETSc vector pointer (Vec). Its main
-/// purpose is to assist memory management of PETSc Vec objects.
+/// PETScVector is a simple wrapper for a PETSc vector pointer (Vec).
+/// Its main purpose is to assist memory management of PETSc Vec
+/// objects.
 ///
 /// For advanced usage, access the PETSc Vec pointer using the function
 /// vec() and use the standard PETSc interface.
@@ -126,16 +127,6 @@ public:
 
   /// Return ownership range for process
   std::array<std::int64_t, 2> local_range() const;
-
-  /// Update owned entries owned by this process and which are ghosts on
-  /// other processes, i.e., have been added to by a remote process.
-  /// This is more efficient that apply() when processes only add/set
-  /// their owned entries and the pre-defined ghosts.
-  void apply_ghosts();
-
-  /// Update ghost values (gathers ghost values from the owning
-  /// processes)
-  void update_ghosts();
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
