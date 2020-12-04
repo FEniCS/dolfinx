@@ -50,13 +50,15 @@ std::vector<IS> la::create_petsc_index_sets(
   std::int64_t offset = 0;
   for (auto& map : maps)
   {
-    const int bs = map.second;
     const std::int32_t size
-        = bs * (map.first.get().size_local() + map.first.get().num_ghosts());
+        = map.first.get().size_local() + map.first.get().num_ghosts();
+    std::vector<PetscInt> index(map.second * size);
+    std::iota(index.begin(), index.end(), offset);
     IS _is;
-    ISCreateStride(PETSC_COMM_SELF, size, offset, 1, &_is);
+    ISCreateBlock(PETSC_COMM_SELF, 1, index.size(), index.data(),
+                  PETSC_COPY_VALUES, &_is);
     is.push_back(_is);
-    offset += bs * size;
+    offset += map.second * size;
   }
 
   return is;
