@@ -89,4 +89,4 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env activate py
           pip install numba
-          pytest -v -m mpi --num-proc=2 ./dolfinx-test/python/demo/test.py
+          mpirun -np 2 python3 ./dolfinx-test/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py
