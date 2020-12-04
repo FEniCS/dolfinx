@@ -8,7 +8,6 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/utils.h>
 #include <functional>
-#include <iostream>
 #include <libtab.h>
 #include <ufc.h>
 
@@ -124,6 +123,11 @@ void FiniteElement::evaluate_reference_basis(
                                         Eigen::RowMajor>>& X) const
 {
   Eigen::ArrayXXd libtab_data = _libtab_element->tabulate(0, X)[0];
+
+  assert(reference_values.dimension(0) == X.rows());
+  assert(reference_values.dimension(1)
+         == libtab_data.cols() / _reference_value_size);
+  assert(reference_values.dimension(2) == _reference_value_size);
   for (int p = 0; p < X.rows(); ++p)
     for (int d = 0; d < libtab_data.cols() / _reference_value_size; ++d)
       for (int v = 0; v < _reference_value_size; ++v)
@@ -159,6 +163,7 @@ void FiniteElement::transform_reference_basis(
 {
   assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();
+
   int ret = _transform_reference_basis_derivatives(
       values.data(), 0, num_points, reference_values.data(), X.data(), J.data(),
       detJ.data(), K.data(), permutation_info);

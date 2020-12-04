@@ -271,9 +271,8 @@ public:
         = _function_space->element();
     assert(element);
     const int block_size = element->block_size();
-    const int reference_value_size
-        = element->reference_value_size() / block_size;
-    const int value_size = element->value_size() / block_size;
+    const int reference_value_size = element->reference_value_size();
+    const int value_size = element->value_size();
     const int space_dimension = element->space_dimension() / block_size;
 
     // If the space has sub elements, concatenate the evaluations on the sub
@@ -302,6 +301,7 @@ public:
       }
       return;
     }
+
     // Prepare geometry data structures
     Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
     Eigen::Array<double, Eigen::Dynamic, 1> detJ(1);
@@ -334,6 +334,7 @@ public:
 
     // Loop over points
     u.setZero();
+
     const Eigen::Matrix<T, Eigen::Dynamic, 1>& _v = _x->array();
     for (Eigen::Index p = 0; p < cells.rows(); ++p)
     {

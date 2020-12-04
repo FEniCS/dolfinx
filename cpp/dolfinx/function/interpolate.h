@@ -164,7 +164,6 @@ void interpolate(
                                                 Eigen::RowMajor>>&)>& f)
 {
   const auto element = u.function_space()->element();
-  const int num_dofs_per_cell = element->space_dimension();
   const auto dofmap = u.function_space()->dofmap();
 
   if (element->family() == "Mixed")
@@ -202,14 +201,14 @@ void interpolate(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      mapped_points(num_dofs_per_cell, gdim);
+      mapped_points(reference_points.rows(), gdim);
   Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> interpolation_points(
-      3, num_dofs_per_cell);
+      3, reference_points.rows());
 
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
       element->value_size(), reference_points.rows());
 
-  Eigen::Array<T, Eigen::Dynamic, 1> coeffs(num_dofs_per_cell);
+  Eigen::Array<T, Eigen::Dynamic, 1> coeffs(element->space_dimension());
 
   Eigen::Array<T, Eigen::Dynamic, 1> interpolation_coeffs(
       u.function_space()->dim());
@@ -230,7 +229,7 @@ void interpolate(
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
     cmap.push_forward(mapped_points, reference_points, coordinate_dofs);
     interpolation_points.setZero();
-    interpolation_points.block(0, 0, gdim, num_dofs_per_cell)
+    interpolation_points.block(0, 0, gdim, mapped_points.rows())
         = mapped_points.transpose();
     values = f(interpolation_points);
     coeffs = element->interpolate_into_cell(values, cell_info[c]);
