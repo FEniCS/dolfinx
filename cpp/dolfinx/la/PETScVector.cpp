@@ -225,10 +225,7 @@ PETScVector::PETScVector(Vec x, bool inc_ref_count) : _x(x)
     PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(PETScVector&& v) noexcept : _x(v._x)
-{
-  v._x = nullptr;
-}
+PETScVector::PETScVector(PETScVector&& v) : _x(std::exchange(v._x, nullptr)) {}
 //-----------------------------------------------------------------------------
 PETScVector::~PETScVector()
 {
@@ -238,10 +235,8 @@ PETScVector::~PETScVector()
 //-----------------------------------------------------------------------------
 PETScVector& PETScVector::operator=(PETScVector&& v)
 {
-  if (_x)
-    VecDestroy(&_x);
-  _x = v._x;
-  v._x = nullptr;
+  std::swap(_x, v._x);
+
   return *this;
 }
 //-----------------------------------------------------------------------------
