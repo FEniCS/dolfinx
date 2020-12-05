@@ -130,12 +130,13 @@ with noslip.vector.localForm() as bc_local:
 facets = locate_entities_boundary(mesh, 1, noslip_boundary)
 bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets))
 
-
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
 lid_velocity.interpolate(lid_velocity_expression)
 facets = locate_entities_boundary(mesh, 1, lid)
 bc1 = DirichletBC(lid_velocity, locate_dofs_topological(V, 1, facets))
+
+exit(0)
 
 
 # Collect Dirichlet boundary conditions
@@ -288,7 +289,6 @@ P = dolfinx.fem.assemble_matrix_block(a_p, bcs)
 P.assemble()
 b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs)
 
-
 # Set near null space for pressure
 null_vec = A.createVecLeft()
 offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
@@ -352,7 +352,6 @@ if MPI.COMM_WORLD.rank == 0:
     print("(B) Norm of pressure coefficient vector (blocked, interative): {}".format(norm_p_1))
 assert np.isclose(norm_u_1, norm_u_0)
 assert np.isclose(norm_p_1, norm_p_0)
-
 
 # Monolithic block direct solver
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

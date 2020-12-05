@@ -153,17 +153,21 @@ public:
       const std::shared_ptr<const function::Function<T>>& g,
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
           dofs)
-      : _function_space(g->function_space()), _g(g)
+      : _function_space(g->function_space()), _g(g), _dofs0(dofs),
+        _dofs1_g(dofs)
   {
-    // Unroll for the block size
     const int bs = _function_space->dofmap()->bs();
-    _dofs0.resize(bs * dofs.rows());
-    for (Eigen::Index i = 0; i < dofs.rows(); ++i)
+    if (bs > 1)
     {
-      for (int k = 0; k < bs; ++k)
-        _dofs0[bs * i + k] = bs * dofs[i] + k;
+      // Unroll for the block size
+      _dofs0.resize(bs * dofs.rows());
+      for (Eigen::Index i = 0; i < dofs.rows(); ++i)
+      {
+        for (int k = 0; k < bs; ++k)
+          _dofs0[bs * i + k] = bs * dofs[i] + k;
+      }
+      _dofs1_g = _dofs0;
     }
-    _dofs1_g = _dofs0;
 
     // TODO: allows single dofs array (let one point to the other)
     const int owned_size0 = _function_space->dofmap()->index_map->size_local();

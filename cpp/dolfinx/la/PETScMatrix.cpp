@@ -35,6 +35,8 @@ Mat la::create_petsc_matrix(
   const std::array bs
       = {sparsity_pattern.block_size(0), sparsity_pattern.block_size(1)};
 
+  // MatSetType(A, MATBAIJ);
+
   // Get global and local dimensions
   const std::int64_t M = bs[0] * maps[0]->size_global();
   const std::int64_t N = bs[1] * maps[1]->size_global();
@@ -52,7 +54,6 @@ Mat la::create_petsc_matrix(
   const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern
       = sparsity_pattern.off_diagonal_pattern();
 
-  // MatSetType(A, MATBAIJ);
 
   // Apply PETSc options from the options database to the matrix (this
   // includes changing the matrix type to one specified by the user)

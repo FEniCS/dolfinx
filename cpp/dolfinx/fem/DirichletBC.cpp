@@ -415,7 +415,7 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
 
   const int num_entity_closure_dofs
       = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
-  const int bs = dofmap->element_dof_layout->block_size();
+  // const int bs = dofmap->element_dof_layout->block_size();
   std::vector<std::int32_t> dofs;
 
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
@@ -460,13 +460,8 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
   }
 
-  // Expand for block size
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs_expand(bs * dofs.size());
-  for (std::size_t i = 0; i < dofs.size(); ++i)
-    for (int k = 0; k < bs; ++k)
-      dofs_expand(bs * i + k) = bs * dofs[i] + k;
-
-  return dofs_expand;
+  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
+                                                                   dofs.size());
 }
 //-----------------------------------------------------------------------------
 std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
