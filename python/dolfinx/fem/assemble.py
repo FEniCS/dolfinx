@@ -53,8 +53,11 @@ def create_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETS
 # -- Matrix instantiation ----------------------------------------------------
 
 
-def create_matrix(a: typing.Union[Form, cpp.fem.Form]) -> PETSc.Mat:
-    return cpp.fem.create_matrix(_create_cpp_form(a))
+def create_matrix(a: typing.Union[Form, cpp.fem.Form], mat_type=None) -> PETSc.Mat:
+    if mat_type is not None:
+        return cpp.fem.create_matrix(_create_cpp_form(a), mat_type)
+    else:
+        return cpp.fem.create_matrix(_create_cpp_form(a))
 
 
 def create_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]]) -> PETSc.Mat:

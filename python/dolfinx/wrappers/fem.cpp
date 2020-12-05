@@ -120,14 +120,14 @@ void fem(py::module& m)
       "Pack constants for a UFL expression.");
   m.def(
       "create_matrix",
-      [](const dolfinx::fem::Form<PetscScalar>& a) {
-        auto A = dolfinx::fem::create_matrix(a);
+      [](const dolfinx::fem::Form<PetscScalar>& a, const std::string& type) {
+        dolfinx::la::PETScMatrix A = dolfinx::fem::create_matrix(a, type);
         Mat _A = A.mat();
         PetscObjectReference((PetscObject)_A);
         return _A;
       },
-      py::return_value_policy::take_ownership,
-      "Create a PETSc Mat for bilinear form.");
+      py::return_value_policy::take_ownership, py::arg("a"),
+      py::arg("type") = std::string(), "Create a PETSc Mat for bilinear form.");
   m.def(
       "create_matrix_block",
       [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&

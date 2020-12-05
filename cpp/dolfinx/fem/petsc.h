@@ -33,14 +33,13 @@ class Form;
 la::PETScMatrix create_matrix(const Form<PetscScalar>& a,
                               const std::string& type = std::string());
 
-/// Initialise monolithic matrix for an array for bilinear forms. Matrix
-/// is not zeroed.
+/// Initialise monolithic matrix for an array for bilinear forms
 la::PETScMatrix create_matrix_block(
     const Eigen::Ref<
         const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
                            Eigen::Dynamic, Eigen::RowMajor>>& a);
 
-/// Create nested (MatNest) matrix. Matrix is not zeroed.
+/// Create nested (MatNest) matrix
 la::PETScMatrix create_matrix_nest(
     const Eigen::Ref<
         const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
