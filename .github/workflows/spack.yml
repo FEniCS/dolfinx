@@ -13,17 +13,30 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-10.15]
+        # os: [ubuntu-20.04, macos-10.15]
+        os: [ubuntu-20.04]
       fail-fast: false
     runs-on: ${{ matrix.os }}
 
     env:
-      DOLFINX_JIT_CFLAGS: -g0 -O0
       MPLBACKEND: agg
+      OPENBLAS_NUM_THREADS: 1
+      OMPI_MCA_rmaps_base_oversubscribe: 1
+      OMPI_MCA_plm: isolated
+      OMPI_MCA_btl_vader_single_copy_mechanism: none
+      OMPI_MCA_mpi_yield_when_idle: 1
+      OMPI_MCA_hwloc_base_binding_policy: none
 
     steps:
+
+      # grub-efi: https://github.com/actions/virtual-environments/issues/1605
       - name: Install compilers
-        run: sudo apt-get update && sudo apt-get upgrade && sudo apt-get install g++-10 gfortran-10
+        run: |
+          sudo apt-get update
+          sudo apt-get install grub-efi
+          sudo update-grub
+          sudo apt-get upgrade
+          sudo apt-get install g++-10 gfortran-10 grub-efi
         if: matrix.os == 'ubuntu-20.04'
 
       - name: Get Spack
@@ -39,7 +52,7 @@ jobs:
           spack env activate cpp
           echo "  concretization: together" >> ./spack/var/spack/environments/cpp/spack.yaml
           spack add fenics-dolfinx
-          spack install
+          spack -v install
 
       - name: Get DOLFIN-X code (to access test files)
         uses: actions/checkout@v2
@@ -55,6 +68,7 @@ jobs:
           cd demo/poisson
           ffcx poisson.ufl
           cmake .
+          export VERBOSE=1
           make
           mpirun -np 2 ./demo_poisson
 
@@ -74,7 +88,5 @@ jobs:
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate py
-          pip install cppimport numba
-          cd ./dolfinx-test/python/test
-          pytest -n auto --ignore=unit/fem/test_custom_jit_kernels.py --ignore=unit/geometry/test_gjk.py --ignore=unit/function/test_function.py .
-          mpirun -np 2 pytest --ignore=unit/fem/test_custom_jit_kernels.py --ignore=unit/geometry/test_gjk.py --ignore=unit/function/test_function.py .
+          pip install numba
+          mpirun -np 2 python3 ./dolfinx-test/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py
