@@ -22,7 +22,8 @@ using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
 Mat la::create_petsc_matrix(
-    MPI_Comm comm, const dolfinx::la::SparsityPattern& sparsity_pattern)
+    MPI_Comm comm, const dolfinx::la::SparsityPattern& sparsity_pattern,
+    const std::string& type)
 {
   PetscErrorCode ierr;
   Mat A;
@@ -35,7 +36,8 @@ Mat la::create_petsc_matrix(
   const std::array bs
       = {sparsity_pattern.block_size(0), sparsity_pattern.block_size(1)};
 
-  // MatSetType(A, MATBAIJ);
+  if (!type.empty())
+    MatSetType(A, type.c_str());
 
   // Get global and local dimensions
   const std::int64_t M = bs[0] * maps[0]->size_global();
@@ -266,8 +268,9 @@ PETScMatrix::add_block_expand_fn(Mat A, int bs0, int bs1)
   };
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
-    : PETScOperator(create_petsc_matrix(comm, sparsity_pattern), false)
+PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern,
+                         const std::string& type)
+    : PETScOperator(create_petsc_matrix(comm, sparsity_pattern, type), false)
 {
   // Do nothing
 }

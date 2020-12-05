@@ -13,7 +13,8 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-la::PETScMatrix dolfinx::fem::create_matrix(const Form<PetscScalar>& a)
+la::PETScMatrix dolfinx::fem::create_matrix(const Form<PetscScalar>& a,
+                                            const std::string& type)
 {
   // Build sparsitypattern
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
@@ -23,7 +24,7 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form<PetscScalar>& a)
 
   // Initialize matrix
   common::Timer t1("Init tensor");
-  la::PETScMatrix A(a.mesh()->mpi_comm(), pattern);
+  la::PETScMatrix A(a.mesh()->mpi_comm(), pattern, type);
   t1.stop();
 
   return A;

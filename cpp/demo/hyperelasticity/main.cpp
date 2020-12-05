@@ -22,7 +22,7 @@ public:
       : _u(u), _l(L), _j(J), _bcs(bcs),
         _b(L->function_spaces()[0]->dofmap()->index_map,
            L->function_spaces()[0]->dofmap()->index_map_bs()),
-        _matA(fem::create_matrix(*J))
+        _matA(fem::create_matrix(*J, "baij"))
   {
     auto map = L->function_spaces()[0]->dofmap()->index_map;
     const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();

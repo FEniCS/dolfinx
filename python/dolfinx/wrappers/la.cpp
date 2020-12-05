@@ -115,10 +115,12 @@ void la(py::module& m)
       py::return_value_policy::take_ownership, "Create a PETSc Vec.");
   m.def(
       "create_matrix",
-      [](const MPICommWrapper comm, const dolfinx::la::SparsityPattern& p) {
-        return dolfinx::la::create_petsc_matrix(comm.get(), p);
+      [](const MPICommWrapper comm, const dolfinx::la::SparsityPattern& p,
+         const std::string& type) {
+        return dolfinx::la::create_petsc_matrix(comm.get(), p, type);
       },
-      py::return_value_policy::take_ownership,
+      py::return_value_policy::take_ownership, py::arg("comm"), py::arg("p"),
+      py::arg("type") = std::string(),
       "Create a PETSc Mat from sparsity pattern.");
   // TODO: check reference counting for index sets
   m.def("create_petsc_index_sets", &dolfinx::la::create_petsc_index_sets,

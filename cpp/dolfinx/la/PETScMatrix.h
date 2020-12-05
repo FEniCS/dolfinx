@@ -21,7 +21,8 @@ class VectorSpaceBasis;
 
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
-Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
+Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern,
+                        const std::string& type = std::string());
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.
@@ -63,7 +64,8 @@ public:
   add_block_expand_fn(Mat A, int bs0, int bs1);
 
   /// Create holder for a PETSc Mat object from a sparsity pattern
-  PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
+  PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern,
+              const std::string& type = std::string());
 
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
   /// should already be created. If inc_ref_count is true, the reference

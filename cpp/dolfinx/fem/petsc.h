@@ -27,9 +27,11 @@ template <typename T>
 class Form;
 
 /// Create a matrix
-/// @param[in] a  A bilinear form
-/// @return A matrix. The matrix is not zeroed.
-la::PETScMatrix create_matrix(const Form<PetscScalar>& a);
+/// @param[in] a A bilinear form
+/// @param[in] type The PETSc matrix type to create
+/// @return A sparse matrix
+la::PETScMatrix create_matrix(const Form<PetscScalar>& a,
+                              const std::string& type = std::string());
 
 /// Initialise monolithic matrix for an array for bilinear forms. Matrix
 /// is not zeroed.
