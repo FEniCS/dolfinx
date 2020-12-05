@@ -31,7 +31,8 @@ public:
 
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts
         = map->ghosts().cast<PetscInt>();
-    VecCreateGhostBlockWithArray(map->comm(), bs, size_local, PETSC_DECIDE,
+    std::int64_t size_global = bs * map->size_global();
+    VecCreateGhostBlockWithArray(map->comm(), bs, size_local, size_global,
                                  ghosts.rows(), ghosts.data(),
                                  _b.array().data(), &_b_petsc);
   }
