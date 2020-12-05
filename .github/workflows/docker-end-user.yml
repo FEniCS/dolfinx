@@ -47,7 +47,7 @@ jobs:
           docker pull dolfinx/dev-env
       - name: Set default FFCX parameters
         run: |
-          echo '{ "assume_aligned" : 32 }' > dolfinx/docker/ffcx_parameters.json
+          echo '{ }' > dolfinx/docker/ffcx_parameters.json
       - name: Set default DOLFINX JIT parameters
         run: |
           echo '{ "cffi_extra_compile_args" : ["-O2", "-march=sandybridge" ]}' > dolfinx/docker/dolfinx_jit_parameters.json
