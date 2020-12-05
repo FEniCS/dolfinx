@@ -54,7 +54,6 @@ Mat la::create_petsc_matrix(
   const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern
       = sparsity_pattern.off_diagonal_pattern();
 
-
   // Apply PETSc options from the options database to the matrix (this
   // includes changing the matrix type to one specified by the user)
   ierr = MatSetFromOptions(A);
@@ -99,11 +98,12 @@ Mat la::create_petsc_matrix(
 
   // Create PETSc local-to-global map/index sets
   ISLocalToGlobalMapping local_to_global0;
-  const std::vector _map0 = maps[0]->global_indices();
-  const std::vector<PetscInt> map0(_map0.begin(), _map0.end());
-  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs[0], map0.size(),
-                                      map0.data(), PETSC_COPY_VALUES,
+  const std::vector map0 = maps[0]->global_indices();
+  const std::vector<PetscInt> _map0(map0.begin(), map0.end());
+  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs[0], _map0.size(),
+                                      _map0.data(), PETSC_COPY_VALUES,
                                       &local_to_global0);
+
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
 
@@ -117,10 +117,10 @@ Mat la::create_petsc_matrix(
   else
   {
     ISLocalToGlobalMapping local_to_global1;
-    const std::vector _map1 = maps[1]->global_indices();
-    const std::vector<PetscInt> map1(_map1.begin(), _map1.end());
-    ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs[1], map1.size(),
-                                        map1.data(), PETSC_COPY_VALUES,
+    const std::vector map1 = maps[1]->global_indices();
+    const std::vector<PetscInt> _map1(map1.begin(), map1.end());
+    ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs[1], _map1.size(),
+                                        _map1.data(), PETSC_COPY_VALUES,
                                         &local_to_global1);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
