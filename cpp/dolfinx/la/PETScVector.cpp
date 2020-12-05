@@ -87,7 +87,7 @@ Vec la::create_petsc_vector(const dolfinx::common::IndexMap& map, int bs)
 Vec la::create_petsc_vector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-        ghost_indices,
+        ghosts,
     int bs)
 {
   PetscErrorCode ierr;
@@ -97,16 +97,12 @@ Vec la::create_petsc_vector(
   const std::int32_t local_size = range[1] - range[0];
 
   Vec x;
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghost_indices
-      = ghost_indices.cast<PetscInt>();
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts
+      = ghosts.cast<PetscInt>();
   ierr = VecCreateGhostBlock(comm, bs, bs * local_size, PETSC_DETERMINE,
-                             _ghost_indices.size(), _ghost_indices.data(), &x);
+                             ghosts.rows(), _ghosts.data(), &x);
   CHECK_ERROR("VecCreateGhostBlock");
   assert(x);
-
-  // Set from PETSc options. This will set the vector type.
-  // ierr = VecSetFromOptions(_x);
-  // CHECK_ERROR("VecSetFromOptions");
 
   return x;
 }
@@ -203,14 +199,6 @@ PETScVector::PETScVector(const common::IndexMap& map, int bs)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(
-    MPI_Comm comm, std::array<std::int64_t, 2> range,
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghost_indices, int bs)
-    : _x(la::create_petsc_vector(comm, range, ghost_indices, bs))
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 PETScVector::PETScVector(Vec x, bool inc_ref_count) : _x(x)
 {
   assert(x);
@@ -280,12 +268,12 @@ MPI_Comm PETScVector::mpi_comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
-PetscReal PETScVector::norm(la::Norm norm_type) const
+PetscReal PETScVector::norm(la::Norm type) const
 {
   assert(_x);
   PetscErrorCode ierr;
   PetscReal value = 0.0;
-  switch (norm_type)
+  switch (type)
   {
   case la::Norm::l1:
     ierr = VecNorm(_x, NORM_1, &value);
