@@ -290,7 +290,7 @@ FiniteElement::interpolate_into_cell(
         values,
     const std::uint32_t cell_permutation) const
 {
-  Eigen::Array<double, Eigen::Dynamic, 1> output_values(_space_dim);
+  Eigen::Array<double, Eigen::Dynamic, 1> output_values(_space_dim / _block_size);
   _interpolate_into_cell(output_values.data(), values.data(), cell_permutation);
   return output_values;
 }

@@ -165,6 +165,7 @@ void interpolate(
 {
   const auto element = u.function_space()->element();
   const auto dofmap = u.function_space()->dofmap();
+  const int block_size = element->block_size();
 
   if (element->family() == "Mixed")
     throw std::runtime_error("Mixed space interpolation not supported (yet?).");
@@ -208,10 +209,11 @@ void interpolate(
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
       element->value_size(), reference_points.rows());
 
-  Eigen::Array<T, Eigen::Dynamic, 1> coeffs(element->space_dimension());
+  const int num_scalar_dofs = element->space_dimension() / block_size;
 
-  Eigen::Array<T, Eigen::Dynamic, 1> interpolation_coeffs(
-      u.function_space()->dim());
+  Eigen::Array<T, Eigen::Dynamic, 1> coeff_block(num_scalar_dofs);
+
+  Eigen::Array<T, Eigen::Dynamic, 1> interpolation_coeffs(u.function_space()->dim());
 
   const bool needs_permutation_data = element->needs_permutation_data();
   if (needs_permutation_data)
@@ -232,10 +234,14 @@ void interpolate(
     interpolation_points.block(0, 0, gdim, mapped_points.rows())
         = mapped_points.transpose();
     values = f(interpolation_points);
-    coeffs = element->interpolate_into_cell(values, cell_info[c]);
     auto dofs = dofmap->cell_dofs(c);
-    for (int i = 0; i < dofs.size(); ++i)
-      interpolation_coeffs(dofs[i]) = coeffs[i];
+    for (int block=0; block < block_size; ++block)
+    {
+      coeff_block = element->interpolate_into_cell(block_size == 1 ? values: values.row(block), cell_info[c]);
+      assert(coeff_block.size() == num_scalar_dofs);
+      for (int i = 0; i < num_scalar_dofs; ++i)
+        interpolation_coeffs(dofs[block_size * i + block]) = coeff_block[i];
+    }
   }
 
   detail::interpolate_values<T>(u, interpolation_coeffs);
