@@ -122,7 +122,6 @@ dolfinx::graph::SCOTCH::compute_reordering(
 graph::AdjacencyList<std::int32_t>
 dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
                                   const AdjacencyList<std::int64_t>& graph,
-                                  const std::vector<std::size_t>& node_weights,
                                   std::int32_t num_ghost_nodes, bool ghosting)
 {
   LOG(INFO) << "Compute graph partition using PT-SCOTCH";
@@ -138,6 +137,8 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   // Number of local graph vertices (typically cells)
   const SCOTCH_Num vertlocnbr = local_graph.num_nodes();
   const std::size_t vertgstnbr = vertlocnbr + num_ghost_nodes;
+
+  std::vector<std::size_t> node_weights;
 
   // Get graph data. vertloctab needs to be copied to match the
   // SCOTCH_Num type.

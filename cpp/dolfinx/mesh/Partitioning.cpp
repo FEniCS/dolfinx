@@ -42,9 +42,9 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
   const auto [dual_graph, graph_info]
       = mesh::GraphBuilder::compute_dual_graph(comm, cells, cell_type);
 
-  // // Extract data from graph_info
-  // const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
-  //     = graph_info;
+  // Extract data from graph_info
+  const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
+      = graph_info;
 
   graph::AdjacencyList<std::int64_t> adj_graph(dual_graph);
 
@@ -52,11 +52,8 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
   bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
   // Call partitioner
-  // graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
-  //     comm, n, adj_graph, weights, num_ghost_nodes, ghosting);
-
-  graph::AdjacencyList<std::int32_t> partition
-      = graph::ParMETIS::partition(comm, n, adj_graph, ghosting);
+  graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
+      comm, n, adj_graph, num_ghost_nodes, ghosting);
 
   return partition;
 }
