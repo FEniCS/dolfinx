@@ -5,7 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly"""
 
-import libtab
 import pytest
 import ufl
 from dolfinx import fem

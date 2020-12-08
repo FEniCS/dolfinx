@@ -10,6 +10,7 @@ import dolfinx
 import numba
 import numpy as np
 import ufl
+import libtab
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -170,7 +171,7 @@ def test_simple_evaluation():
     assert(np.allclose(grad_f_evaluated, grad_f_exact))
 
 
-def xtest_assembly_into_quadrature_function():
+def test_assembly_into_quadrature_function():
     """Test assembly into a Quadrature function.
 
     This test evaluates a UFL Expression into a Quadrature function space by
@@ -199,8 +200,7 @@ def xtest_assembly_into_quadrature_function():
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 3, 6)
 
     quadrature_degree = 2
-    quadrature_points = FIAT.create_quadrature(FIAT.ufc_simplex(
-        mesh.topology.dim), quadrature_degree, scheme="default").get_points()
+    quadrature_points = libtab.make_quadrature("triangle", quadrature_degree)
     Q_element = ufl.VectorElement("Quadrature", ufl.triangle, quadrature_degree, quad_scheme="default")
     Q = dolfinx.FunctionSpace(mesh, Q_element)
 
