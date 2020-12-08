@@ -131,15 +131,16 @@ void fem(py::module& m)
   m.def(
       "create_matrix_block",
       [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&
-             a) {
+             a,
+         const std::string& type) {
         dolfinx::la::PETScMatrix A
-            = dolfinx::fem::create_matrix_block(forms_vector_to_array(a));
+            = dolfinx::fem::create_matrix_block(forms_vector_to_array(a), type);
         Mat _A = A.mat();
         PetscObjectReference((PetscObject)_A);
         return _A;
       },
-      py::return_value_policy::take_ownership,
-      "Create monolithic sparse matrix for stacked bilinear forms.");
+      py::return_value_policy::take_ownership, py::arg("a"), py::arg("type") = std::string(),
+        "Create monolithic sparse matrix for stacked bilinear forms.");
   m.def(
       "create_matrix_nest",
       [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&

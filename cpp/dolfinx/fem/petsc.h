@@ -37,7 +37,8 @@ la::PETScMatrix create_matrix(const Form<PetscScalar>& a,
 la::PETScMatrix create_matrix_block(
     const Eigen::Ref<
         const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a);
+                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+    const std::string& type = std::string());
 
 /// Create nested (MatNest) matrix
 la::PETScMatrix create_matrix_nest(

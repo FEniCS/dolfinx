@@ -33,10 +33,12 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form<PetscScalar>& a,
 la::PETScMatrix fem::create_matrix_block(
     const Eigen::Ref<
         const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a)
+                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+    const std::string& type)
 {
   // Extract and check row/column ranges
-  auto V = function::common_function_spaces(extract_function_spaces(a));
+  std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
+      = function::common_function_spaces(extract_function_spaces(a));
   std::array<std::vector<int>, 2> bs_dofs;
   for (std::size_t i = 0; i < 2; ++i)
   {
@@ -122,10 +124,10 @@ la::PETScMatrix fem::create_matrix_block(
   pattern.assemble();
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
-  // Mat constructor.
+  // Mat constructor
 
   // Initialise matrix
-  la::PETScMatrix A(mesh->mpi_comm(), pattern);
+  la::PETScMatrix A(mesh->mpi_comm(), pattern, type);
 
   // Create row and column local-to-global maps (field0, field1, field2,
   // etc), i.e. ghosts of field0 appear before owned indices of field1
@@ -146,19 +148,29 @@ la::PETScMatrix fem::create_matrix_block(
   }
 
   // Create PETSc local-to-global map/index sets and attach to matrix
-  ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
+  ISLocalToGlobalMapping petsc_local_to_global0;
   ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[0].size(),
                                _maps[0].data(), PETSC_COPY_VALUES,
                                &petsc_local_to_global0);
-  ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
-                               _maps[1].data(), PETSC_COPY_VALUES,
-                               &petsc_local_to_global1);
-  MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
-                             petsc_local_to_global1);
-
-  // Clean up local-to-global maps
-  ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
-  ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
+  if (V[0] == V[1])
+  {
+    MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
+                               petsc_local_to_global0);
+    ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+  }
+  else
+  {
+    ISLocalToGlobalMapping petsc_local_to_global1;
+    ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
+                                 _maps[1].data(), PETSC_COPY_VALUES,
+                                 &petsc_local_to_global1);
+    MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
+                               petsc_local_to_global1);
+    MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
+                               petsc_local_to_global1);
+    ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+    ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
+  }
 
   return A;
 }

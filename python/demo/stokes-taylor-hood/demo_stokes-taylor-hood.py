@@ -136,9 +136,6 @@ lid_velocity.interpolate(lid_velocity_expression)
 facets = locate_entities_boundary(mesh, 1, lid)
 bc1 = DirichletBC(lid_velocity, locate_dofs_topological(V, 1, facets))
 
-exit(0)
-
-
 # Collect Dirichlet boundary conditions
 bcs = [bc0, bc1]
 
