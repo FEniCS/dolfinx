@@ -189,10 +189,10 @@ public:
   /// Copy of the Adjacency List if the specified type is different from the
   /// current type, ele return a reference.
   template <typename X>
-  const decltype(auto) as_type() const
+  decltype(auto) as_type() const
   {
     if constexpr (std::is_same<X, T>::value)
-      return graph::AdjacencyList<X>(_array, _offsets);
+      return (*this);
     else
       return graph::AdjacencyList<X>(_array.template cast<X>(),
                                      _offsets.template cast<X>());
