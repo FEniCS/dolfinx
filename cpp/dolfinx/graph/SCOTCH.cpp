@@ -131,7 +131,7 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   // C-style array indexing
   const SCOTCH_Num baseval = 0;
 
-  const auto local_graph = graph.as_type<SCOTCH_Num>();
+  const auto& local_graph = graph.as_type<SCOTCH_Num>();
 
   // Local data ---------------------------------
 

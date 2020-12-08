@@ -13,14 +13,6 @@
 #include <utility>
 #include <vector>
 
-// Developer note: ptscotch.h is not part of the public interface,
-// therefore this header (SCOTCH.h) should not be placed in the public
-// interface of DOLFIN.
-extern "C"
-{
-#include <ptscotch.h>
-}
-
 /// Interface to SCOTCH-PT (parallel version)
 namespace dolfinx::graph::SCOTCH
 {
