@@ -121,7 +121,7 @@ dolfinx::graph::SCOTCH::compute_reordering(
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
 dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
-                                  const AdjacencyList<SCOTCH_Num>& local_graph,
+                                  const AdjacencyList<std::int64_t>& graph,
                                   const std::vector<std::size_t>& node_weights,
                                   std::int32_t num_ghost_nodes, bool ghosting)
 {
@@ -130,6 +130,8 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
 
   // C-style array indexing
   const SCOTCH_Num baseval = 0;
+
+  const auto local_graph = graph.as_type<SCOTCH_Num>();
 
   // Local data ---------------------------------
 

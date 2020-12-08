@@ -45,7 +45,7 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
   const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
       = graph_info;
 
-  graph::AdjacencyList<SCOTCH_Num> adj_graph(dual_graph);
+  graph::AdjacencyList<std::int64_t> adj_graph(dual_graph);
   std::vector<std::size_t> weights;
 
   // Just flag any kind of ghosting for now

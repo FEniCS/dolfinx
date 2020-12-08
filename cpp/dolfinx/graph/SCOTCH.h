@@ -37,7 +37,7 @@ namespace dolfinx::graph::SCOTCH
 /// @return Destination rank for each input node
 AdjacencyList<std::int32_t>
 partition(const MPI_Comm mpi_comm, const int nparts,
-          const AdjacencyList<SCOTCH_Num>& local_graph,
+          const AdjacencyList<std::int64_t>& local_graph,
           const std::vector<std::size_t>& node_weights,
           std::int32_t num_ghost_nodes, bool ghosting);
 
