@@ -289,13 +289,13 @@ Eigen::ArrayXXd FiniteElement::interpolation_points() const
   return _interpolation_points;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 FiniteElement::interpolate_into_cell(
-    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    const Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         values,
     const std::uint32_t cell_permutation) const
 {
-  Eigen::Array<double, Eigen::Dynamic, 1> output_values(_space_dim / _block_size);
+  Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1> output_values(_space_dim / _block_size);
   _interpolate_into_cell(output_values.data(), values.data(), cell_permutation);
   return output_values;
 }

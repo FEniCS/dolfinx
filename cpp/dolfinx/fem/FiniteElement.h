@@ -156,8 +156,8 @@ public:
   Eigen::ArrayXXd interpolation_points() const;
 
   /// TODO: doc
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  interpolate_into_cell(const Eigen::Array<double, Eigen::Dynamic,
+  Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  interpolate_into_cell(const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
                                            Eigen::Dynamic, Eigen::RowMajor>
                             values,
                         const std::uint32_t cell_permutation) const;
