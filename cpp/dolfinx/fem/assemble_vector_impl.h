@@ -548,14 +548,10 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
     // FIXME: cleanup these calls? Some of the happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    mesh->topology_mutable().create_entity_permutations();
 
-    const int facets_per_cell
-        = mesh::cell_num_entities(mesh->topology().cell_type(), tdim - 1);
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
-        = needs_permutation_data
-              ? mesh->topology().get_facet_permutations()
-              : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
-                  facets_per_cell, num_cells);
+        = mesh->topology().get_facet_permutations();
     for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
       const auto& fn = L.kernel(IntegralType::exterior_facet, i);
@@ -903,14 +899,10 @@ void lift_bc(
     // FIXME: cleanup these calls? Some of the happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    mesh->topology_mutable().create_entity_permutations();
 
-    const int facets_per_cell
-        = mesh::cell_num_entities(mesh->topology().cell_type(), tdim - 1);
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
-        = needs_permutation_data
-              ? mesh->topology().get_facet_permutations()
-              : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
-                  facets_per_cell, num_cells);
+        = mesh->topology().get_facet_permutations();
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
       const auto& kernel = a.kernel(IntegralType::exterior_facet, i);

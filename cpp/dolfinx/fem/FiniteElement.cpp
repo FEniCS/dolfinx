@@ -125,11 +125,16 @@ void FiniteElement::evaluate_reference_basis(
   Eigen::ArrayXXd libtab_data = _libtab_element->tabulate(0, X)[0];
 
   assert(reference_values.dimension(0) == X.rows());
-  assert(reference_values.dimension(1)
-         == libtab_data.cols() / _reference_value_size);
+  assert(reference_values.dimension(1) * _reference_value_size
+         == libtab_data.cols());
   assert(reference_values.dimension(2) == _reference_value_size);
+
+  assert(libtab_data.cols() == libtab_data.cols());
+  assert(libtab_data.cols() % _reference_value_size == 0);
+  assert(libtab_data.rows() == X.rows());
+
   for (int p = 0; p < X.rows(); ++p)
-    for (int d = 0; d < libtab_data.cols() / _reference_value_size; ++d)
+    for (int d = 0; d * _reference_value_size < libtab_data.cols(); ++d)
       for (int v = 0; v < _reference_value_size; ++v)
         reference_values(p, d, v)
             = libtab_data(p, d * _reference_value_size + v);

@@ -113,14 +113,10 @@ T assemble_scalar(const fem::Form<T>& M)
     // FIXME: cleanup these calls? Some of these happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    mesh->topology_mutable().create_entity_permutations();
 
-    const int facets_per_cell
-        = mesh::cell_num_entities(mesh->topology().cell_type(), tdim - 1);
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
-        = needs_permutation_data
-              ? mesh->topology().get_facet_permutations()
-              : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
-                  facets_per_cell, num_cells);
+        = mesh->topology().get_facet_permutations();
 
     for (int i : M.integral_ids(IntegralType::exterior_facet))
     {

@@ -334,7 +334,6 @@ public:
 
     // Loop over points
     u.setZero();
-
     const Eigen::Matrix<T, Eigen::Dynamic, 1>& _v = _x->array();
     for (Eigen::Index p = 0; p < cells.rows(); ++p)
     {
@@ -393,10 +392,11 @@ public:
 
     // Compute in tensor (one for scalar function, . . .)
     const int value_size_loc = _function_space->element()->value_size();
+    const int block_size = _function_space->element()->block_size();
 
     // Resize Array for holding point values
     Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        point_values(mesh->geometry().x().rows(), value_size_loc);
+        point_values(mesh->geometry().x().rows(), value_size_loc * block_size);
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -411,7 +411,7 @@ public:
     // not continuous, e.g. discontinuous Galerkin methods)
     Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(num_dofs_g, 3);
     Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
-        num_dofs_g, value_size_loc);
+        num_dofs_g, value_size_loc * block_size);
     auto map = mesh->topology().index_map(tdim);
     assert(map);
     const std::int32_t num_cells = map->size_local() + map->num_ghosts();
@@ -422,18 +422,15 @@ public:
       for (int i = 0; i < num_dofs_g; ++i)
         x.row(i) = x_g.row(dofs[i]);
 
-      values.resize(x.rows(), value_size_loc);
-
       // Call evaluate function
       Eigen::Array<int, Eigen::Dynamic, 1> cells(x.rows());
       cells = c;
       eval(x, cells, values);
 
       // Copy values to array of point values
-      for (int i = 0; i < x.rows(); ++i)
+      for (int i = 0; i < values.rows(); ++i)
         point_values.row(dofs[i]) = values.row(i);
     }
-
     return point_values;
   }
 
