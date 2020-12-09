@@ -87,40 +87,41 @@ compute_local_dual_graph_keyed(
   std::vector<std::vector<std::int32_t>> local_graph(num_local_cells);
   std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
       facet_cell_map;
+  bool this_equal, last_equal = false;
   for (std::size_t i = 1; i < facets.size(); ++i)
   {
-    const int ii = i;
-    const int jj = i - 1;
-
-    const auto& facet0 = facets[jj].first;
-    const auto& facet1 = facets[ii].first;
-    const int cell_index0 = facets[jj].second;
-    if (std::equal(facet1.begin(), facet1.end(), facet0.begin()))
+    const auto& facet0 = facets[i - 1].first;
+    const auto& facet1 = facets[i].first;
+    this_equal = std::equal(facet0.begin(), facet0.end(), facet1.begin());
+    if (this_equal)
     {
+      if (last_equal)
+      {
+        LOG(ERROR) << "Found three identical facets in mesh";
+        throw std::runtime_error("fail");
+      }
+
       // Add edges (directed graph, so add both ways)
-      const int cell_index1 = facets[ii].second;
+      const int cell_index0 = facets[i - 1].second;
+      const int cell_index1 = facets[i].second;
       local_graph[cell_index0].push_back(cell_index1);
       local_graph[cell_index1].push_back(cell_index0);
-
-      // Since we've just found a matching pair, the next pair cannot be
-      // matching, so advance 1
-      ++i;
-
       // Increment number of local edges found
       ++num_local_edges;
     }
-    else
+    else if (!this_equal and !last_equal)
     {
       // No match, so add facet0 to map
+      const int cell_index0 = facets[i - 1].second;
       facet_cell_map.emplace_back(
           std::vector<std::int32_t>(facet0.begin(), facet0.end()), cell_index0);
     }
+
+    last_equal = this_equal;
   }
 
-  // Add last facet, as it's not covered by the above loop. We could
-  // check it against the preceding facet, but it's easier to just
-  // insert it here
-  if (!facets.empty())
+  // Add last facet, as it's not covered by the above loop.
+  if (!facets.empty() and !last_equal)
   {
     const int k = facets.size() - 1;
     const int cell_index = facets[k].second;
@@ -131,7 +132,7 @@ compute_local_dual_graph_keyed(
   }
 
   return {std::move(local_graph), std::move(facet_cell_map), num_local_edges};
-}
+} // namespace
 //-----------------------------------------------------------------------------
 // Build nonlocal part of dual graph for mesh and return number of
 // non-local edges. Note: GraphBuilder::compute_local_dual_graph should
@@ -217,52 +218,115 @@ compute_nonlocal_dual_graph(
       = dolfinx::MPI::all_to_all(
           mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer));
 
+  assert(received_buffer.array().size() % (num_vertices_per_facet + 1) == 0);
+  const int num_facets
+      = received_buffer.array().size() / (num_vertices_per_facet + 1);
+  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>
+      received_buffer_array(received_buffer.array().data(), num_facets,
+                            num_vertices_per_facet + 1);
+
+  // Set up vector of owning processes for each received facet
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& received_buffer_offsets
+      = received_buffer.offsets();
+  std::vector<int> proc(num_facets);
+  for (int p = 0; p < num_processes; ++p)
+  {
+    for (int j = received_buffer_offsets[p] / (num_vertices_per_facet + 1);
+         j < received_buffer_offsets[p + 1] / (num_vertices_per_facet + 1); ++j)
+      proc[j] = p;
+  }
+
+  // Get permutation that takes facets into sorted order
+  std::vector<int> perm(num_facets);
+  std::iota(perm.begin(), perm.end(), 0);
+  // Lambda with capture for sort comparison
+  const auto cmp
+      = [&received_buffer_array, num_vertices_per_facet](int a, int b) {
+          const auto facet_a = received_buffer_array.row(a);
+          const auto facet_b = received_buffer_array.row(b);
+          return std::lexicographical_compare(
+              facet_a.data(), facet_a.data() + num_vertices_per_facet,
+              facet_b.data(), facet_b.data() + num_vertices_per_facet);
+        };
+
+  std::sort(perm.begin(), perm.end(), cmp);
+
   // Clear send buffer
   send_buffer = std::vector<std::vector<std::int64_t>>(num_processes);
 
-  // Map to connect processes and cells, using facet as key
-  typedef boost::unordered_map<std::vector<std::int64_t>,
-                               std::pair<std::int64_t, std::int64_t>>
-      MatchMap;
-  MatchMap matchmap;
-
-  // Look for matches to send back to other processes
-  std::pair<std::vector<std::int64_t>, std::pair<std::int64_t, std::int64_t>>
-      key;
-  key.first.resize(num_vertices_per_facet);
-  for (int p = 0; p < num_processes; ++p)
+  bool this_equal, last_equal = false;
+  for (int i = 1; i < num_facets; ++i)
   {
-    // Unpack into map
-    auto data_p = received_buffer.links(p);
-    for (int i = 0; i < data_p.rows(); i += (num_vertices_per_facet + 1))
+    const int i0 = perm[i - 1];
+    const int i1 = perm[i];
+    const auto facet0 = received_buffer_array.row(i0);
+    const auto facet1 = received_buffer_array.row(i1);
+    this_equal = std::equal(
+        facet0.data(), facet0.data() + num_vertices_per_facet, facet1.data());
+    if (this_equal)
     {
-      // Build map key
-      std::copy(data_p.data() + i, data_p.data() + i + num_vertices_per_facet,
-                key.first.begin());
-      key.second.first = p;
-      key.second.second = data_p[i + num_vertices_per_facet];
-
-      // Perform map insertion/look-up
-      std::pair<MatchMap::iterator, bool> data = matchmap.insert(key);
-
-      // If data is already in the map, extract data and remove from map
-      if (!data.second)
+      if (last_equal)
       {
-        // Found a match of two facets - send back to owners
-        const std::size_t proc1 = data.first->second.first;
-        const std::size_t proc2 = p;
-        const std::size_t cell1 = data.first->second.second;
-        const std::size_t cell2 = key.second.second;
-        send_buffer[proc1].push_back(cell1);
-        send_buffer[proc1].push_back(cell2);
-        send_buffer[proc2].push_back(cell2);
-        send_buffer[proc2].push_back(cell1);
-
-        // Remove facet - saves memory and search time
-        matchmap.erase(data.first);
+        LOG(ERROR) << "Found three identical facets in mesh";
+        throw std::runtime_error("fail");
       }
+      const std::int64_t cell0 = facet0[num_vertices_per_facet];
+      const std::int64_t cell1 = facet1[num_vertices_per_facet];
+      const int proc0 = proc[i0];
+      const int proc1 = proc[i1];
+      send_buffer[proc0].push_back(cell0);
+      send_buffer[proc0].push_back(cell1);
+      send_buffer[proc1].push_back(cell1);
+      send_buffer[proc1].push_back(cell0);
     }
+    last_equal = this_equal;
   }
+
+  // // Map to connect processes and cells, using facet as key
+  // typedef boost::unordered_map<std::vector<std::int64_t>,
+  //                              std::pair<std::int64_t, std::int64_t>>
+  //     MatchMap;
+  // MatchMap matchmap;
+
+  // // Look for matches to send back to other processes
+  // std::pair<std::vector<std::int64_t>, std::pair<std::int64_t, std::int64_t>>
+  //     key;
+  // key.first.resize(num_vertices_per_facet);
+  // for (int p = 0; p < num_processes; ++p)
+  // {
+  //   // Unpack into map
+  //   auto data_p = received_buffer.links(p);
+  //   for (int i = 0; i < data_p.rows(); i += (num_vertices_per_facet + 1))
+  //   {
+  //     // Build map key
+  //     std::copy(data_p.data() + i, data_p.data() + i +
+  //     num_vertices_per_facet,
+  //               key.first.begin());
+  //     key.second.first = p;
+  //     key.second.second = data_p[i + num_vertices_per_facet];
+
+  //     // Perform map insertion/look-up
+  //     std::pair<MatchMap::iterator, bool> data = matchmap.insert(key);
+
+  //     // If data is already in the map, extract data and remove from map
+  //     if (!data.second)
+  //     {
+  //       // Found a match of two facets - send back to owners
+  //       const std::size_t proc1 = data.first->second.first;
+  //       const std::size_t proc2 = p;
+  //       const std::size_t cell1 = data.first->second.second;
+  //       const std::size_t cell2 = key.second.second;
+  //       send_buffer[proc1].push_back(cell1);
+  //       send_buffer[proc1].push_back(cell2);
+  //       send_buffer[proc2].push_back(cell2);
+  //       send_buffer[proc2].push_back(cell1);
+
+  //       // Remove facet - saves memory and search time
+  //       matchmap.erase(data.first);
+  //     }
+  //   }
+  // }
 
   // Send matches to other processes
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_list
