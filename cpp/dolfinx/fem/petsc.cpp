@@ -178,10 +178,16 @@ la::PETScMatrix fem::create_matrix_block(
 la::PETScMatrix fem::create_matrix_nest(
     const Eigen::Ref<
         const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a)
+                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+    const std::vector<std::vector<std::string>>& types)
 {
   // Extract and check row/column ranges
   auto V = function::common_function_spaces(extract_function_spaces(a));
+
+  std::vector<std::vector<std::string>> _types(
+      a.rows(), std::vector<std::string>(a.cols()));
+  if (!types.empty())
+    _types = types;
 
   // Loop over each form and create matrix
   Eigen::Array<std::shared_ptr<la::PETScMatrix>, Eigen::Dynamic, Eigen::Dynamic,
@@ -195,7 +201,8 @@ la::PETScMatrix fem::create_matrix_nest(
     {
       if (a(i, j))
       {
-        mats(i, j) = std::make_shared<la::PETScMatrix>(create_matrix(*a(i, j)));
+        mats(i, j) = std::make_shared<la::PETScMatrix>(
+            create_matrix(*a(i, j), _types[i][j]));
         petsc_mats(i, j) = mats(i, j)->mat();
       }
       else

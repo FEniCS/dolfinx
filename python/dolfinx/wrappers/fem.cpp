@@ -139,19 +139,22 @@ void fem(py::module& m)
         PetscObjectReference((PetscObject)_A);
         return _A;
       },
-      py::return_value_policy::take_ownership, py::arg("a"), py::arg("type") = std::string(),
-        "Create monolithic sparse matrix for stacked bilinear forms.");
+      py::return_value_policy::take_ownership, py::arg("a"),
+      py::arg("type") = std::string(),
+      "Create monolithic sparse matrix for stacked bilinear forms.");
   m.def(
       "create_matrix_nest",
       [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&
-             a) {
+             a,
+         const std::vector<std::vector<std::string>>& types) {
         dolfinx::la::PETScMatrix A
-            = dolfinx::fem::create_matrix_nest(forms_vector_to_array(a));
+            = dolfinx::fem::create_matrix_nest(forms_vector_to_array(a), types);
         Mat _A = A.mat();
         PetscObjectReference((PetscObject)_A);
         return _A;
       },
-      py::return_value_policy::take_ownership,
+      py::return_value_policy::take_ownership, py::arg("a"),
+      py::arg("types") = std::vector<std::vector<std::string>>(),
       "Create nested sparse matrix for bilinear forms.");
   m.def(
       "create_element_dof_layout",

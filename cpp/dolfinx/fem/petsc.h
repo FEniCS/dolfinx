@@ -29,11 +29,18 @@ class Form;
 /// Create a matrix
 /// @param[in] a A bilinear form
 /// @param[in] type The PETSc matrix type to create
-/// @return A sparse matrix
+/// @return A sparse matrix with a layout and sparsity that matches the
+/// bilinear form
 la::PETScMatrix create_matrix(const Form<PetscScalar>& a,
                               const std::string& type = std::string());
 
-/// Initialise monolithic matrix for an array for bilinear forms
+/// Initialise a monolithic matrix for an array of bilinear forms
+/// @param[in] a Rectangular array of bilinear forms. The `a(i, j)` form
+/// will correspond to the `(i, j)` block in the returned matrix
+/// @param[in] type The type of PETSc Mat. If empty the PETSc default is
+/// used.
+/// @return A sparse matrix  with a layout and sparsity that
+/// matches the bilinear forms
 la::PETScMatrix create_matrix_block(
     const Eigen::Ref<
         const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
@@ -44,7 +51,8 @@ la::PETScMatrix create_matrix_block(
 la::PETScMatrix create_matrix_nest(
     const Eigen::Ref<
         const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a);
+                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+    const std::vector<std::vector<std::string>>& types);
 
 /// Initialise monolithic vector. Vector is not zeroed.
 la::PETScVector create_vector_block(

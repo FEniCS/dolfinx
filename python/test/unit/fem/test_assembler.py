@@ -268,7 +268,7 @@ def test_matrix_assembly_block(mode):
     bnorm0 = b0.norm()
 
     # Nested (MatNest)
-    A1 = dolfinx.fem.assemble_matrix_nest(a_block, [bc])
+    A1 = dolfinx.fem.assemble_matrix_nest(a_block, [bc], [["baij", "aij"], ["aij", ""]])
     A1.assemble()
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
@@ -510,10 +510,10 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # -- Blocked (nested)
 
-    A0 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1])
+    A0 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1], [["baij", "aij"], ["aij", ""]])
     A0.assemble()
     A0norm = nest_matrix_norm(A0)
-    P0 = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1])
+    P0 = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1], [["aij", "aij"], ["aij", ""]])
     P0.assemble()
     P0norm = nest_matrix_norm(P0)
     b0 = dolfinx.fem.assemble_vector_nest([L0, L1])

@@ -232,10 +232,10 @@ def _(A: PETSc.Mat,
 # FIXME: Revise this interface
 @functools.singledispatch
 def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
-                         bcs: typing.List[DirichletBC] = [],
+                         bcs: typing.List[DirichletBC] = [], mat_types=[],
                          diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    A = cpp.fem.create_matrix_nest(_create_cpp_form(a))
+    A = cpp.fem.create_matrix_nest(_create_cpp_form(a), mat_types)
     assemble_matrix_nest(A, a, bcs, diagonal)
     return A
 
