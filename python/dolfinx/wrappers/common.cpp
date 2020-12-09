@@ -90,10 +90,7 @@ void common(py::module& m)
 
   // dolfin/common free functions
   m.def("timing", &dolfinx::timing);
-  m.def("timings", [](std::vector<dolfinx::TimingType> type) {
-    std::set<dolfinx::TimingType> _type(type.begin(), type.end());
-    return dolfinx::timings(_type);
-  });
+
   m.def("list_timings",
         [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type) {
           std::set<dolfinx::TimingType> _type(type.begin(), type.end());
