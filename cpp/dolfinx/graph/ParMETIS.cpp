@@ -124,10 +124,12 @@ std::vector<int> refine(MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     MPI_Comm mpi_comm, idx_t nparts,
-    const graph::AdjacencyList<idx_t>& adj_graph, bool ghosting)
+    const graph::AdjacencyList<std::int64_t>& adj_graph, bool ghosting)
 {
   LOG(INFO) << "Compute graph partition using ParMETIS";
   common::Timer timer("Compute graph partition (ParMETIS)");
+
+  auto local_graph = adj_graph.as_type<idx_t>();
 
   std::map<std::int64_t, std::vector<int>> ghost_procs;
   const int rank = dolfinx::MPI::rank(mpi_comm);
@@ -152,7 +154,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
 
   // Communicate number of nodes between all processors
   std::vector<idx_t> node_distribution(size);
-  const idx_t num_local_cells = adj_graph.num_nodes();
+  const idx_t num_local_cells = local_graph.num_nodes();
   MPI_Allgather(&num_local_cells, 1, MPI::mpi_type<idx_t>(),
                 node_distribution.data(), 1, MPI::mpi_type<idx_t>(), mpi_comm);
 
@@ -167,12 +169,12 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
   common::Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
   std::vector<idx_t> part(num_local_cells);
   assert(!part.empty());
-  int err = ParMETIS_V3_PartKway(const_cast<idx_t*>(node_distribution.data()),
-                                 const_cast<idx_t*>(adj_graph.offsets().data()),
-                                 const_cast<idx_t*>(adj_graph.array().data()),
-                                 elmwgt, nullptr, &wgtflag, &numflag, &ncon,
-                                 &nparts, tpwgts.data(), ubvec.data(), options,
-                                 &edgecut, part.data(), &mpi_comm);
+  int err = ParMETIS_V3_PartKway(
+      const_cast<idx_t*>(node_distribution.data()),
+      const_cast<idx_t*>(local_graph.offsets().data()),
+      const_cast<idx_t*>(local_graph.array().data()), elmwgt, nullptr, &wgtflag,
+      &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), options, &edgecut,
+      part.data(), &mpi_comm);
   assert(err == METIS_OK);
   timer1.stop();
 
@@ -194,9 +196,9 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     // local indexing "i"
     for (int i = 0; i < ncells; i++)
     {
-      for (int j = 0; j < adj_graph.num_links(i); ++j)
+      for (int j = 0; j < local_graph.num_links(i); ++j)
       {
-        const unsigned long long other_cell = adj_graph.links(i)[j];
+        const unsigned long long other_cell = local_graph.links(i)[j];
         if (other_cell < elm_begin || other_cell >= elm_end)
         {
           const int remote
@@ -241,8 +243,8 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
       cell_ownership[recv_cell_partition[p]] = recv_cell_partition[p + 1];
 
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& xadj
-        = adj_graph.offsets();
-    const Eigen::Array<idx_t, Eigen::Dynamic, 1>& adjncy = adj_graph.array();
+        = local_graph.offsets();
+    const Eigen::Array<idx_t, Eigen::Dynamic, 1>& adjncy = local_graph.array();
 
     // Generate map for where new boundary cells need to be sent
     for (std::int32_t i = 0; i < ncells; i++)

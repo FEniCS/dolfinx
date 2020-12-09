@@ -12,18 +12,13 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <vector>
 
-// FIXME: Avoid exposing ParMETIS publicly
-#ifdef HAS_PARMETIS
-#include <parmetis.h>
-#endif
-
 // Interface to ParMETIS parallel partitioner
 namespace dolfinx::graph::ParMETIS
 {
 #ifdef HAS_PARMETIS
 // Standard ParMETIS partition
-AdjacencyList<std::int32_t> partition(MPI_Comm mpi_comm, idx_t nparts,
-                                      const AdjacencyList<idx_t>& adj_graph,
+AdjacencyList<std::int32_t> partition(MPI_Comm mpi_comm, int n,
+                                      const AdjacencyList<std::int64_t>& adj_graph,
                                       bool ghosting);
 
 #endif
