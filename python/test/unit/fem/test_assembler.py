@@ -378,7 +378,7 @@ def test_assembly_solve_block(mode):
     x0norm = x0.norm()
 
     # Nested (MatNest)
-    A1 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs, 1.0)
+    A1 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs, diagonal=1.0)
     A1.assemble()
     b1 = dolfinx.fem.assemble_vector_nest([L0, L1])
     dolfinx.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs)
