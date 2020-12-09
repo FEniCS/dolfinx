@@ -168,3 +168,51 @@ def xtest_mixed_interpolation(cell_type, order):
 
     for p, v in zip(points, values):
         assert np.allclose(v, f(p))
+
+
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+@pytest.mark.parametrize("order", [1, 2])
+def test_N1curl_interpolation(cell_type, order):
+    mesh = one_cell_mesh(cell_type)
+    tdim = mesh.topology.dim
+    V = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", order))
+    v = Function(V)
+
+    if tdim == 2:
+        def f(x):
+            return (x[0] ** (order - 1) - x[1] ** order, x[0] ** order)
+    else:
+        def f(x):
+            return (x[1] ** (order - 1) , x[2] ** order, x[0] ** (order - 1) - x[1] ** order)
+
+    v.interpolate(f)
+    points = [random_point_in_cell(cell_type) for count in range(5)]
+    cells = [0 for count in range(5)]
+    values = v.eval(points, cells)
+    print(values)
+    for p, v in zip(points, values):
+        assert np.allclose(v, f(p))
+
+
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+@pytest.mark.parametrize("order", [1, 2])
+def test_N2curl_interpolation(cell_type, order):
+    mesh = one_cell_mesh(cell_type)
+    tdim = mesh.topology.dim
+    V = FunctionSpace(mesh, ("Nedelec 2nd kind H(curl)", order))
+    v = Function(V)
+
+    if tdim == 2:
+        def f(x):
+            return (x[1] ** order, 2 * x[0])
+    else:
+        def f(x):
+            return (x[1] ** order + 2 * x[0], x[2] ** order, - 3 * x[2])
+
+    v.interpolate(f)
+    points = [random_point_in_cell(cell_type) for count in range(5)]
+    cells = [0 for count in range(5)]
+    values = v.eval(points, cells)
+    print(values)
+    for p, v in zip(points, values):
+        assert np.allclose(v, f(p))
