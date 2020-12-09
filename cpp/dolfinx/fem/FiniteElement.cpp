@@ -296,7 +296,10 @@ FiniteElement::interpolate_into_cell(
     const std::uint32_t cell_permutation) const
 {
   Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1> output_values(_space_dim / _block_size);
-  _interpolate_into_cell(output_values.data(), values.data(), cell_permutation);
+  int ret = _interpolate_into_cell(output_values.data(), values.data(),
+                                   cell_permutation);
+  if (ret == -1)
+    throw std::runtime_error("Interpolation into this space not supported.");
   return output_values;
 }
 //-----------------------------------------------------------------------------
