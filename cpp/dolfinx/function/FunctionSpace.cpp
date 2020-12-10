@@ -44,7 +44,6 @@ internal_tabulate_dof_coordinates(
   std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
   assert(index_map);
 
-  // int bs = dofmap->index_map_bs();
   const int element_block_size = element->block_size();
   std::int32_t local_size = index_map->size_local() + index_map->num_ghosts();
   const int scalar_dofs = element->space_dimension() / element_block_size;
