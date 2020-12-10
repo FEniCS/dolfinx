@@ -151,11 +151,6 @@ compute_nonlocal_dual_graph(
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
   common::Timer timer("Compute non-local part of mesh dual graph");
 
-  // Get cell offset for this process and add to local graph
-  const std::int32_t num_local_cells = cell_vertices.num_nodes();
-  const std::int64_t cell_offset
-      = dolfinx::MPI::global_offset(mpi_comm, num_local_cells, true);
-
   // Get number of MPI processes, and return if mesh is not distributed
   const int num_processes = dolfinx::MPI::size(mpi_comm);
   if (num_processes == 1)
@@ -166,16 +161,9 @@ compute_nonlocal_dual_graph(
             local_graph.array().cast<std::int64_t>(), local_graph.offsets()),
         0, 0};
   }
+
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries
-
-  // List of cell vertices
-  const int tdim = mesh::cell_dim(cell_type);
-  const int num_vertices_per_facet
-      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
-
-  // Compute local edges (cell-cell connections) using global (internal
-  // to this function, not the user numbering) numbering
 
   // Find the global range of the first vertex index of each facet in the list
   // and use this to divide up the facets between all processes.
@@ -198,12 +186,14 @@ compute_nonlocal_dual_graph(
   // Send facet-cell map to intermediary match-making processes
   std::vector<std::vector<std::int64_t>> send_buffer(num_processes);
 
+  // Get cell offset for this process to create global numbering for cells
+  const std::int32_t num_local_cells = cell_vertices.num_nodes();
+  const std::int64_t cell_offset
+      = dolfinx::MPI::global_offset(mpi_comm, num_local_cells, true);
+
   // Pack map data and send to match-maker process
   for (const auto& it : facet_cell_map)
   {
-    // FIXME: Could use a better index? First vertex is slightly
-    //        skewed towards low values - may not be important
-
     // Use first vertex of facet to partition into blocks
     const int dest_proc = dolfinx::MPI::index_owner(
         num_processes, (it.first)[0] - global_min, global_range);
@@ -220,6 +210,10 @@ compute_nonlocal_dual_graph(
   const graph::AdjacencyList<std::int64_t> received_buffer
       = dolfinx::MPI::all_to_all(
           mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer));
+
+  const int tdim = mesh::cell_dim(cell_type);
+  const int num_vertices_per_facet
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
   assert(received_buffer.array().size() % (num_vertices_per_facet + 1) == 0);
   const int num_facets
