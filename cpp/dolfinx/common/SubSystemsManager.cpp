@@ -46,7 +46,7 @@ void SubSystemsManager::init_mpi(int argc, char* argv[])
 void SubSystemsManager::init_logging(int argc, char* argv[])
 {
   loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
-  loguru::Options options = {"-dolfinx_loglevel", "main thread", false};
+  loguru::Options options = {"-dolfinx_loglevel", "main", false};
 
   // Make a copy of argv, as loguru may modify it.
   std::vector<char*> argv_copy;
