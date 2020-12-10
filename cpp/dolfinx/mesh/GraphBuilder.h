@@ -35,7 +35,7 @@ compute_dual_graph(const MPI_Comm mpi_comm,
 /// Compute local part of the dual graph, and return (local_graph,
 /// facet_cell_map, number of local edges in the graph (undirected)
 std::tuple<std::vector<std::vector<std::int32_t>>,
-           std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>,
+           std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>,
            std::int32_t>
 compute_local_dual_graph(
     const graph::AdjacencyList<std::int64_t>& cell_vertices,
