@@ -64,7 +64,7 @@ compute_local_dual_graph_keyed(
     for (int j = 0; j < num_facets_per_cell; ++j)
     {
       // Get list of facet vertices
-      auto& facet = facets[counter].first;
+      std::array<std::int32_t, N>& facet = facets[counter].first;
       for (int k = 0; k < N; ++k)
         facet[k] = vertices[facet_vertices(j, k)];
 
@@ -150,6 +150,8 @@ compute_nonlocal_dual_graph(
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
   common::Timer timer("Compute non-local part of mesh dual graph");
 
+  common::Timer t0("T0");
+
   const std::int32_t num_local_cells = cell_vertices.num_nodes();
 
   // Get offset for this process
@@ -183,6 +185,16 @@ compute_nonlocal_dual_graph(
 
   // Compute local edges (cell-cell connections) using global (internal
   // to this function, not the user numbering) numbering
+
+  std::int64_t local_min = std::numeric_limits<std::int64_t>::max();
+  std::int64_t local_max = 0;
+  for (const auto& it : facet_cell_map)
+  {
+    const std::vector<std::int32_t>& facet = it.first;
+    std::int64_t f0 = facet[0];
+    local_min = std::min(local_min, f0);
+    local_max = std::max(local_max, f0);
+  }
 
   // Get global range of vertex indices
   std::int64_t num_global_vertices = 0;
@@ -218,9 +230,15 @@ compute_nonlocal_dual_graph(
       = dolfinx::MPI::all_to_all(
           mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer));
 
+  MPI_Barrier(MPI_COMM_WORLD);
+  t0.stop();
+
   assert(received_buffer.array().size() % (num_vertices_per_facet + 1) == 0);
   const int num_facets
       = received_buffer.array().size() / (num_vertices_per_facet + 1);
+
+  common::Timer t1("T1 " + std::to_string(num_facets));
+
   const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>>
       received_buffer_array(received_buffer.array().data(), num_facets,
@@ -251,6 +269,10 @@ compute_nonlocal_dual_graph(
         };
 
   std::sort(perm.begin(), perm.end(), cmp);
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  t1.stop();
+  common::Timer t2("T2");
 
   // Clear send buffer
   send_buffer = std::vector<std::vector<std::int64_t>>(num_processes);
@@ -328,6 +350,10 @@ compute_nonlocal_dual_graph(
   //   }
   // }
 
+  MPI_Barrier(MPI_COMM_WORLD);
+  t2.stop();
+  common::Timer t3("T3");
+
   // Send matches to other processes
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_list
       = dolfinx::MPI::all_to_all(
@@ -378,6 +404,9 @@ mesh::GraphBuilder::compute_dual_graph(
   auto [graph, num_ghost_nodes, num_nonlocal_edges]
       = compute_nonlocal_dual_graph(mpi_comm, cell_vertices, cell_type,
                                     facet_cell_map, local_graph);
+
+  LOG(INFO) << "Graph edges (local:" << num_local_edges
+            << ", non-local:" << num_nonlocal_edges << ")";
 
   return {std::move(graph),
           {num_ghost_nodes, num_local_edges, num_nonlocal_edges}};
