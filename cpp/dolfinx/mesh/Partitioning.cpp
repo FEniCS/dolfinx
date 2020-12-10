@@ -12,6 +12,7 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/ParMETIS.h>
 #include <dolfinx/graph/SCOTCH.h>
 #include <dolfinx/mesh/GraphBuilder.h>
 
@@ -45,15 +46,14 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
   const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
       = graph_info;
 
-  graph::AdjacencyList<SCOTCH_Num> adj_graph(dual_graph);
-  std::vector<std::size_t> weights;
+  graph::AdjacencyList<std::int64_t> adj_graph(dual_graph);
 
   // Just flag any kind of ghosting for now
   bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
   // Call partitioner
   graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
-      comm, n, adj_graph, weights, num_ghost_nodes, ghosting);
+      comm, n, adj_graph, num_ghost_nodes, ghosting);
 
   return partition;
 }

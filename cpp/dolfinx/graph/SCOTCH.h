@@ -13,14 +13,6 @@
 #include <utility>
 #include <vector>
 
-// Developer note: ptscotch.h is not part of the public interface,
-// therefore this header (SCOTCH.h) should not be placed in the public
-// interface of DOLFIN.
-extern "C"
-{
-#include <ptscotch.h>
-}
-
 /// Interface to SCOTCH-PT (parallel version)
 namespace dolfinx::graph::SCOTCH
 {
@@ -29,7 +21,6 @@ namespace dolfinx::graph::SCOTCH
 /// @param mpi_comm MPI Communicator
 /// @param nparts Number of partitions to divide graph nodes into
 /// @param local_graph Node connectivity graph
-/// @param node_weights Weight for each node (optional)
 /// @param num_ghost_nodes Number of graph nodes which are owned on
 ///   other processes
 /// @param ghosting Flag to enable ghosting of the output node
@@ -37,8 +28,7 @@ namespace dolfinx::graph::SCOTCH
 /// @return Destination rank for each input node
 AdjacencyList<std::int32_t>
 partition(const MPI_Comm mpi_comm, const int nparts,
-          const AdjacencyList<SCOTCH_Num>& local_graph,
-          const std::vector<std::size_t>& node_weights,
+          const AdjacencyList<std::int64_t>& local_graph,
           std::int32_t num_ghost_nodes, bool ghosting);
 
 /// Compute reordering (map[old] -> new) using Gibbs-Poole-Stockmeyer
