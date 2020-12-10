@@ -303,7 +303,10 @@ def test_matrix_assembly_block(mode):
     assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
 
 
-@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize("mode", [
+    dolfinx.cpp.mesh.GhostMode.none,
+    dolfinx.cpp.mesh.GhostMode.shared_facet,
+])
 def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same.
@@ -479,6 +482,7 @@ def test_assembly_solve_taylor_hood(mesh):
     u0 = dolfinx.Function(P2)
     u0.vector.set(1.0)
     u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
     bc0 = dolfinx.DirichletBC(u0, bdofs0)
     bc1 = dolfinx.DirichletBC(u0, bdofs1)
 

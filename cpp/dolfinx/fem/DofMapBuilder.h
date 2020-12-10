@@ -40,7 +40,8 @@ namespace DofMapBuilder
 /// @param[in] element_dof_layout The element dof layout for the function
 /// space
 /// @return The index map and local to global DOF data for the DOF map.
-std::pair<std::shared_ptr<common::IndexMap>, graph::AdjacencyList<std::int32_t>>
+std::tuple<std::shared_ptr<common::IndexMap>, int,
+           graph::AdjacencyList<std::int32_t>>
 build(MPI_Comm comm, const mesh::Topology& topology,
       const ElementDofLayout& element_dof_layout);
 

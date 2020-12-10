@@ -72,14 +72,14 @@ e.g. ``mkdir -p build/`` and in the build run directory::
 
 To set the installation prefix::
 
-    cmake -DCMAKE_INSTALL_PATH=<my-install-path> ../
+    cmake -DCMAKE_INSTALL_PREFIX=<my-install-path> ../
     make install
 
 
 Python
 ------
 
-After installtion of the C++ core, from the ``python/`` directory the
+After installation of the C++ core, from the ``python/`` directory the
 Python interface can be installed using::
 
     pip3 install .
@@ -89,7 +89,7 @@ Docker container
 ================
 
 A Docker container is available at
-https://quay.io/repository/fenicsproject/dolfinx. The `Dockerfile
+https://hub.docker.com/r/dolfinx/dolfinx. The `Dockerfile
 <https://github.com/FEniCS/dolfinx/blob/master/Dockerfile>`_
 provides a definitive build recipe.
 

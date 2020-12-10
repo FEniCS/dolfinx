@@ -44,7 +44,7 @@ internal_tabulate_dof_coordinates(
   std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
   assert(index_map);
 
-  int bs = index_map->block_size();
+  int bs = dofmap->index_map_bs();
   int element_block_size = element->block_size();
 
   std::int32_t local_size
@@ -147,7 +147,7 @@ std::int64_t FunctionSpace::dim() const
   }
 
   assert(_dofmap->index_map);
-  return _dofmap->index_map->size_global() * _dofmap->index_map->block_size();
+  return _dofmap->index_map->size_global() * _dofmap->index_map_bs();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>

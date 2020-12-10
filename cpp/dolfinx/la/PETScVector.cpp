@@ -42,32 +42,32 @@ void la::petsc_error(int error_code, std::string filename,
                            + std::string(desc));
 }
 //-----------------------------------------------------------------------------
-std::vector<IS>
-la::create_petsc_index_sets(const std::vector<const common::IndexMap*>& maps)
+std::vector<IS> la::create_petsc_index_sets(
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
-  std::vector<IS> is(maps.size());
+  std::vector<IS> is;
   std::int64_t offset = 0;
-  for (std::size_t i = 0; i < maps.size(); ++i)
+  for (auto& map : maps)
   {
-    assert(maps[i]);
-    const std::int32_t size = maps[i]->size_local() + maps[i]->num_ghosts();
-    const int bs = maps[i]->block_size();
-    std::vector<PetscInt> index(bs * size);
+    const std::int32_t size
+        = map.first.get().size_local() + map.first.get().num_ghosts();
+    std::vector<PetscInt> index(map.second * size);
     std::iota(index.begin(), index.end(), offset);
-
+    IS _is;
     ISCreateBlock(PETSC_COMM_SELF, 1, index.size(), index.data(),
-                  PETSC_COPY_VALUES, &is[i]);
-    offset += bs * size;
+                  PETSC_COPY_VALUES, &_is);
+    is.push_back(_is);
+    offset += map.second * size;
   }
 
   return is;
 }
 //-----------------------------------------------------------------------------
 Vec la::create_ghosted_vector(
-    const common::IndexMap& map,
+    const common::IndexMap& map, int bs,
     const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x)
 {
-  const int bs = map.block_size();
   std::int32_t size_local = bs * map.size_local();
   std::int32_t num_ghosts = bs * map.num_ghosts();
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map.ghosts();
@@ -84,17 +84,17 @@ Vec la::create_ghosted_vector(
   return vec;
 }
 //-----------------------------------------------------------------------------
-Vec la::create_petsc_vector(const dolfinx::common::IndexMap& map)
+Vec la::create_petsc_vector(const dolfinx::common::IndexMap& map, int bs)
 {
   return la::create_petsc_vector(map.comm(), map.local_range(), map.ghosts(),
-                                 map.block_size());
+                                 bs);
 }
 //-----------------------------------------------------------------------------
 Vec la::create_petsc_vector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
         ghost_indices,
-    int block_size)
+    int bs)
 {
   PetscErrorCode ierr;
 
@@ -106,9 +106,8 @@ Vec la::create_petsc_vector(
   std::vector<PetscInt> _ghost_indices(ghost_indices.rows());
   for (std::size_t i = 0; i < _ghost_indices.size(); ++i)
     _ghost_indices[i] = ghost_indices(i);
-  ierr = VecCreateGhostBlock(comm, block_size, block_size * local_size,
-                             PETSC_DECIDE, _ghost_indices.size(),
-                             _ghost_indices.data(), &x);
+  ierr = VecCreateGhostBlock(comm, bs, bs * local_size, PETSC_DECIDE,
+                             _ghost_indices.size(), _ghost_indices.data(), &x);
   CHECK_ERROR("VecCreateGhostBlock");
   assert(x);
 
@@ -120,16 +119,15 @@ Vec la::create_petsc_vector(
 }
 //-----------------------------------------------------------------------------
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-la::get_local_vectors(const Vec x,
-                      const std::vector<const common::IndexMap*>& maps)
+la::get_local_vectors(
+    const Vec x,
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
   // Get ghost offset
   int offset_owned = 0;
-  for (const common::IndexMap* map : maps)
-  {
-    assert(map);
-    offset_owned += map->size_local() * map->block_size();
-  }
+  for (auto& map : maps)
+    offset_owned += map.first.get().size_local() * map.second;
 
   // Unwrap PETSc vector
   Vec x_local;
@@ -144,11 +142,10 @@ la::get_local_vectors(const Vec x,
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_b;
   int offset = 0;
   int offset_ghost = offset_owned; // Ghost DoFs start after owned
-  for (const common::IndexMap* map : maps)
+  for (auto map : maps)
   {
-    const int bs = map->block_size();
-    const std::int32_t size_owned = map->size_local() * bs;
-    const std::int32_t size_ghost = map->num_ghosts() * bs;
+    const std::int32_t size_owned = map.first.get().size_local() * map.second;
+    const std::int32_t size_ghost = map.first.get().num_ghosts() * map.second;
     x_b.emplace_back(
         Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>(size_owned + size_ghost));
     x_b.back().head(size_owned) = _x.segment(offset, size_owned);
@@ -167,18 +164,16 @@ la::get_local_vectors(const Vec x,
 void la::scatter_local_vectors(
     Vec x,
     const std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,
-    const std::vector<const common::IndexMap*>& maps)
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
   if (x_b.size() != maps.size())
     throw std::runtime_error("Mismatch in vector/map size.");
 
   // Get ghost offset
   int offset_owned = 0;
-  for (const common::IndexMap* map : maps)
-  {
-    assert(map);
-    offset_owned += map->size_local() * map->block_size();
-  }
+  for (auto& map : maps)
+    offset_owned += map.first.get().size_local() * map.second;
 
   // Copy Eigen vectors into PETSc Vec
   Vec x_local;
@@ -193,9 +188,10 @@ void la::scatter_local_vectors(
   int offset_ghost = offset_owned; // Ghost DoFs start after owned
   for (std::size_t i = 0; i < maps.size(); ++i)
   {
-    const int bs = maps[i]->block_size();
-    const int size_owned = maps[i]->size_local() * bs;
-    const int size_ghost = maps[i]->num_ghosts() * bs;
+    const std::int32_t size_owned
+        = maps[i].first.get().size_local() * maps[i].second;
+    const std::int32_t size_ghost
+        = maps[i].first.get().num_ghosts() * maps[i].second;
     _x.segment(offset, size_owned) = x_b[i].head(size_owned);
     _x.segment(offset_ghost, size_ghost) = x_b[i].tail(size_ghost);
 
@@ -208,17 +204,16 @@ void la::scatter_local_vectors(
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const common::IndexMap& map)
-    : _x(la::create_petsc_vector(map))
+PETScVector::PETScVector(const common::IndexMap& map, int bs)
+    : _x(la::create_petsc_vector(map, bs))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghost_indices,
-    int block_size)
-    : _x(la::create_petsc_vector(comm, range, ghost_indices, block_size))
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghost_indices, int bs)
+    : _x(la::create_petsc_vector(comm, range, ghost_indices, bs))
 {
   // Do nothing
 }
@@ -230,10 +225,7 @@ PETScVector::PETScVector(Vec x, bool inc_ref_count) : _x(x)
     PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(PETScVector&& v) noexcept : _x(v._x)
-{
-  v._x = nullptr;
-}
+PETScVector::PETScVector(PETScVector&& v) : _x(std::exchange(v._x, nullptr)) {}
 //-----------------------------------------------------------------------------
 PETScVector::~PETScVector()
 {
@@ -243,10 +235,8 @@ PETScVector::~PETScVector()
 //-----------------------------------------------------------------------------
 PETScVector& PETScVector::operator=(PETScVector&& v)
 {
-  if (_x)
-    VecDestroy(&_x);
-  _x = v._x;
-  v._x = nullptr;
+  std::swap(_x, v._x);
+
   return *this;
 }
 //-----------------------------------------------------------------------------
