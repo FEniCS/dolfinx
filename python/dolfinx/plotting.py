@@ -252,7 +252,13 @@ def mplot_function(ax, f, **kwargs):
             args = X + U + [C]
             if gdim == 3:
                 length = kwargs.pop("length", 0.1)
-                return ax.quiver(*args, length=length, **kwargs)
+                style = kwargs.pop("style", "quiver")
+                if style == "quiver":
+                  return ax.quiver(*args, length=length, **kwargs)
+                elif style == "streamline":
+                  return ax.streamplot(*args, length=length, **kwargs)
+                else:
+                  warning.warn("Plotting style {} not supported.".format(style))
             else:
                 return ax.quiver(*args, **kwargs)
         elif mode == "displacement":
