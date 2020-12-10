@@ -57,6 +57,12 @@ public:
   /// Return the dof layout
   const ElementDofLayout& dof_layout() const;
 
+  /// Absolute increment stopping criterium for non-affine Newton solver
+  double non_affine_atol = 1.0e-8;
+
+  /// Maximum number of iterations for non-affine Newton solver
+  int non_affine_max_its = 10;
+
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
   /// @param[in,out] x The physical coordinates of the reference points X
@@ -83,8 +89,7 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>& x,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
-          cell_geometry,
-      double eps = 1.0e-16) const;
+          cell_geometry) const;
 
 private:
   // Topological and geometric dimensions

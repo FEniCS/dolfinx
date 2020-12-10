@@ -27,7 +27,7 @@ namespace
 // facet_cell_map, number of local edges in the graph (undirected)
 template <int N>
 std::tuple<std::vector<std::vector<std::int32_t>>,
-           std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>,
+           std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>,
            std::int32_t>
 compute_local_dual_graph_keyed(
     const graph::AdjacencyList<std::int64_t>& cell_vertices,
@@ -51,7 +51,7 @@ compute_local_dual_graph_keyed(
 
   // Vector-of-arrays data structure, which is considerably faster than
   // vector-of-vectors
-  std::vector<std::pair<std::array<std::int32_t, N>, std::int32_t>> facets(
+  std::vector<std::pair<std::array<std::int64_t, N>, std::int32_t>> facets(
       num_facets_per_cell * num_local_cells);
 
   // Iterate over all cells and build list of all facets (keyed on
@@ -64,7 +64,7 @@ compute_local_dual_graph_keyed(
     for (int j = 0; j < num_facets_per_cell; ++j)
     {
       // Get list of facet vertices
-      auto& facet = facets[counter].first;
+      std::array<std::int64_t, N>& facet = facets[counter].first;
       for (int k = 0; k < N; ++k)
         facet[k] = vertices[facet_vertices(j, k)];
 
@@ -85,7 +85,7 @@ compute_local_dual_graph_keyed(
   // Find maching facets by comparing facet i and facet i -1
   std::size_t num_local_edges = 0;
   std::vector<std::vector<std::int32_t>> local_graph(num_local_cells);
-  std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
+  std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>
       facet_cell_map;
   for (std::size_t i = 1; i < facets.size(); ++i)
   {
@@ -113,7 +113,7 @@ compute_local_dual_graph_keyed(
     {
       // No match, so add facet0 to map
       facet_cell_map.emplace_back(
-          std::vector<std::int32_t>(facet0.begin(), facet0.end()), cell_index0);
+          std::vector<std::int64_t>(facet0.begin(), facet0.end()), cell_index0);
     }
   }
 
@@ -125,7 +125,7 @@ compute_local_dual_graph_keyed(
     const int k = facets.size() - 1;
     const int cell_index = facets[k].second;
     facet_cell_map.emplace_back(
-        std::vector<std::int32_t>(facets[k].first.begin(),
+        std::vector<std::int64_t>(facets[k].first.begin(),
                                   facets[k].first.end()),
         cell_index);
   }
@@ -142,7 +142,7 @@ compute_nonlocal_dual_graph(
     const MPI_Comm mpi_comm,
     const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type,
-    const std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>&
+    const std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>&
         facet_cell_map,
     const std::vector<std::vector<std::int32_t>>& local_graph)
 {
@@ -318,7 +318,7 @@ mesh::GraphBuilder::compute_dual_graph(
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::vector<std::int32_t>>,
-           std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>,
+           std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>,
            std::int32_t>
 dolfinx::mesh::GraphBuilder::compute_local_dual_graph(
     const graph::AdjacencyList<std::int64_t>& cell_vertices,
