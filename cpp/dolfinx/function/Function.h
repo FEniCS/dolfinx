@@ -366,17 +366,10 @@ public:
 
       // Compute expansion
       for (int block = 0; block < block_size; ++block)
-      {
         for (int i = 0; i < space_dimension; ++i)
-        {
           for (int j = 0; j < value_size; ++j)
-          {
-            // TODO: Find an Eigen shortcut for this operation
             u.row(p)[j * block_size + block]
                 += coefficients[i * block_size + block] * basis_values(0, i, j);
-          }
-        }
-      }
     }
   }
 
