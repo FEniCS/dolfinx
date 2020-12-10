@@ -268,11 +268,6 @@ public:
     std::shared_ptr<const fem::FiniteElement> element
         = _function_space->element();
     assert(element);
-    // const int block_size = element->block_size();
-    // const int reference_value_size
-    //     = element->reference_value_size() / block_size;
-    // const int value_size = element->value_size() / block_size;
-    // const int space_dimension = element->space_dimension() / block_size;
     const int bs_element = element->block_size();
     const int reference_value_size
         = element->reference_value_size() / bs_element;
@@ -284,8 +279,6 @@ public:
     const int num_sub_elements = element->num_sub_elements();
     if (num_sub_elements > 1 and num_sub_elements != bs_element)
     {
-      std::cout << "Oooops" << std::endl;
-
       if (bs_element != 1)
       {
         throw std::runtime_error(
