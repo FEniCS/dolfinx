@@ -180,21 +180,19 @@ def test_N1curl_interpolation(cell_type, order):
 
     if tdim == 2:
         def f(x):
-            return (x[0] ** (order - 1) - x[1] ** order, x[0] ** order)
+            return (x[0] ** (order - 1), 2 * x[0] ** (order - 1) + x[1] ** (order - 1))
     else:
         def f(x):
-            return (x[1] ** (order - 1) , x[2] ** order, x[0] ** (order - 1) - x[1] ** order)
+            return (x[1] ** (order - 1) , x[2] ** (order - 1), x[0] ** (order - 1) - 2 * x[1] ** (order - 1))
 
     v.interpolate(f)
     points = [random_point_in_cell(cell_type) for count in range(5)]
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
-    print(values)
-    for p, v in zip(points, values):
-        assert np.allclose(v, f(p))
+    assert np.allclose(values, [f(p) for p in points])
 
 
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+@pytest.mark.parametrize("cell_type", [CellType.triangle])
 @pytest.mark.parametrize("order", [1, 2])
 def test_N2curl_interpolation(cell_type, order):
     mesh = one_cell_mesh(cell_type)
@@ -213,6 +211,4 @@ def test_N2curl_interpolation(cell_type, order):
     points = [random_point_in_cell(cell_type) for count in range(5)]
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
-    print(values)
-    for p, v in zip(points, values):
-        assert np.allclose(v, f(p))
+    assert np.allclose(values, [f(p) for p in points])
