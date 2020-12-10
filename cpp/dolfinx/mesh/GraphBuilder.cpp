@@ -150,11 +150,8 @@ compute_nonlocal_dual_graph(
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
   common::Timer timer("Compute non-local part of mesh dual graph");
 
-  common::Timer t0("T0");
-
+  // Get cell offset for this process and add to local graph
   const std::int32_t num_local_cells = cell_vertices.num_nodes();
-
-  // Get offset for this process
   const std::int64_t offset
       = dolfinx::MPI::global_offset(mpi_comm, num_local_cells, true);
 
@@ -175,17 +172,18 @@ compute_nonlocal_dual_graph(
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries
 
-  const int tdim = mesh::cell_dim(cell_type);
-
   // List of cell vertices
+  const int tdim = mesh::cell_dim(cell_type);
   const int num_vertices_per_facet
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
-
-  //  assert(num_vertices_per_cell == (int)cell_vertices.cols());
 
   // Compute local edges (cell-cell connections) using global (internal
   // to this function, not the user numbering) numbering
 
+  // Find the global range of the first vertex index of each facet in the list
+  // and use this to divide up the facets between all processes.
+  // TODO: improve scalability, possibly by limiting the number of processes
+  // which do the matching, and using a neighbor comm?
   std::int64_t local_min = std::numeric_limits<std::int64_t>::max();
   std::int64_t local_max = 0;
   for (const auto& it : facet_cell_map)
@@ -196,13 +194,10 @@ compute_nonlocal_dual_graph(
     local_max = std::max(local_max, f0);
   }
 
-  // Get global range of vertex indices
-  std::int64_t num_global_vertices = 0;
-  const std::int64_t max_vertex
-      = (cell_vertices.num_nodes() > 0) ? cell_vertices.array().maxCoeff() : 0;
-  MPI_Allreduce(&max_vertex, &num_global_vertices, 1, MPI_INT64_T, MPI_SUM,
-                mpi_comm);
-  num_global_vertices += 1;
+  std::int64_t global_min, global_max;
+  MPI_Allreduce(&local_min, &global_min, 1, MPI_INT64_T, MPI_MIN, mpi_comm);
+  MPI_Allreduce(&local_max, &global_max, 1, MPI_INT64_T, MPI_MAX, mpi_comm);
+  const std::int64_t global_range = global_max - global_min + 1;
 
   // Send facet-cell map to intermediary match-making processes
   std::vector<std::vector<std::int64_t>> send_buffer(num_processes);
@@ -215,7 +210,7 @@ compute_nonlocal_dual_graph(
 
     // Use first vertex of facet to partition into blocks
     const int dest_proc = dolfinx::MPI::index_owner(
-        num_processes, (it.first)[0], num_global_vertices);
+        num_processes, (it.first)[0] - global_min, global_range);
 
     // Pack map into vectors to send
     send_buffer[dest_proc].insert(send_buffer[dest_proc].end(),
@@ -230,14 +225,9 @@ compute_nonlocal_dual_graph(
       = dolfinx::MPI::all_to_all(
           mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer));
 
-  MPI_Barrier(MPI_COMM_WORLD);
-  t0.stop();
-
   assert(received_buffer.array().size() % (num_vertices_per_facet + 1) == 0);
   const int num_facets
       = received_buffer.array().size() / (num_vertices_per_facet + 1);
-
-  common::Timer t1("T1 " + std::to_string(num_facets));
 
   const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>>
@@ -270,10 +260,6 @@ compute_nonlocal_dual_graph(
 
   std::sort(perm.begin(), perm.end(), cmp);
 
-  MPI_Barrier(MPI_COMM_WORLD);
-  t1.stop();
-  common::Timer t2("T2");
-
   // Clear send buffer
   send_buffer = std::vector<std::vector<std::int64_t>>(num_processes);
 
@@ -291,7 +277,7 @@ compute_nonlocal_dual_graph(
       if (last_equal)
       {
         LOG(ERROR) << "Found three identical facets in mesh";
-        throw std::runtime_error("fail");
+        throw std::runtime_error("Mesh inconsistency in dual graph");
       }
       const std::int64_t cell0 = facet0[num_vertices_per_facet];
       const std::int64_t cell1 = facet1[num_vertices_per_facet];
@@ -304,55 +290,6 @@ compute_nonlocal_dual_graph(
     }
     last_equal = this_equal;
   }
-
-  // // Map to connect processes and cells, using facet as key
-  // typedef boost::unordered_map<std::vector<std::int64_t>,
-  //                              std::pair<std::int64_t, std::int64_t>>
-  //     MatchMap;
-  // MatchMap matchmap;
-
-  // // Look for matches to send back to other processes
-  // std::pair<std::vector<std::int64_t>, std::pair<std::int64_t, std::int64_t>>
-  //     key;
-  // key.first.resize(num_vertices_per_facet);
-  // for (int p = 0; p < num_processes; ++p)
-  // {
-  //   // Unpack into map
-  //   auto data_p = received_buffer.links(p);
-  //   for (int i = 0; i < data_p.rows(); i += (num_vertices_per_facet + 1))
-  //   {
-  //     // Build map key
-  //     std::copy(data_p.data() + i, data_p.data() + i +
-  //     num_vertices_per_facet,
-  //               key.first.begin());
-  //     key.second.first = p;
-  //     key.second.second = data_p[i + num_vertices_per_facet];
-
-  //     // Perform map insertion/look-up
-  //     std::pair<MatchMap::iterator, bool> data = matchmap.insert(key);
-
-  //     // If data is already in the map, extract data and remove from map
-  //     if (!data.second)
-  //     {
-  //       // Found a match of two facets - send back to owners
-  //       const std::size_t proc1 = data.first->second.first;
-  //       const std::size_t proc2 = p;
-  //       const std::size_t cell1 = data.first->second.second;
-  //       const std::size_t cell2 = key.second.second;
-  //       send_buffer[proc1].push_back(cell1);
-  //       send_buffer[proc1].push_back(cell2);
-  //       send_buffer[proc2].push_back(cell2);
-  //       send_buffer[proc2].push_back(cell1);
-
-  //       // Remove facet - saves memory and search time
-  //       matchmap.erase(data.first);
-  //     }
-  //   }
-  // }
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  t2.stop();
-  common::Timer t3("T3");
 
   // Send matches to other processes
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_list
@@ -377,7 +314,10 @@ compute_nonlocal_dual_graph(
       ++num_nonlocal_edges;
     }
     else
-      LOG(ERROR) << "Received an edge I already had";
+    {
+      LOG(ERROR) << "Received same edge twice in dual graph";
+      throw std::runtime_error("Mesh inconsistency building dual graph");
+    }
     ghost_nodes.insert(cell_list[i + 1]);
   }
 
