@@ -350,6 +350,8 @@ compute_nonlocal_dual_graph(
       edges.push_back(cell_list[i + 1]);
       ++num_nonlocal_edges;
     }
+    else
+      LOG(ERROR) << "Received an edge I already had";
     ghost_nodes.insert(cell_list[i + 1]);
   }
 
