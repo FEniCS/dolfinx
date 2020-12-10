@@ -163,7 +163,7 @@ solver.setFromOptions()
 solver.setOperators(A)
 
 # Compute solution
-# solver.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
+solver.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
 solver.solve(b, u.vector)
 solver.view()
 

@@ -27,7 +27,6 @@ public:
     auto map = L->function_spaces()[0]->dofmap()->index_map;
     const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();
     std::int32_t size_local = bs * map->size_local();
-    // std::int32_t num_ghosts = bs * map->num_ghosts();
 
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts
         = map->ghosts().cast<PetscInt>();

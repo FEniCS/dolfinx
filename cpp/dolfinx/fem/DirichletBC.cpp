@@ -286,7 +286,7 @@ fem::locate_dofs_topological(
   mesh->topology_mutable().create_connectivity(dim, tdim);
 
   // Allocate space
-  // FIXME: check that dof layouts ar the same
+  // FIXME: check that dof layouts are the same
   assert(dofmap0->element_dof_layout);
   const int num_entity_dofs
       = dofmap0->element_dof_layout->num_entity_closure_dofs(dim);
@@ -415,9 +415,7 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
 
   const int num_entity_closure_dofs
       = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
-  // const int bs = dofmap->element_dof_layout->block_size();
   std::vector<std::int32_t> dofs;
-
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get first attached cell

@@ -210,10 +210,9 @@ def test_assemble_manifold():
 
 
 @pytest.mark.parametrize("mode",
-                         [
-                             dolfinx.cpp.mesh.GhostMode.none,
-                             dolfinx.cpp.mesh.GhostMode.shared_facet,
-                         ])
+                         [dolfinx.cpp.mesh.GhostMode.none,
+                          dolfinx.cpp.mesh.GhostMode.shared_facet,
+                          ])
 def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.

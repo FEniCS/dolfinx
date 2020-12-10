@@ -322,10 +322,10 @@ ksp_p.setType("preonly")
 ksp_p.getPC().setType("jacobi")
 
 # Monitor the convergence of the KSP
-# opts = PETSc.Options()
-# opts["ksp_monitor"] = None
-# opts["ksp_view"] = None
-# ksp.setFromOptions()
+opts = PETSc.Options()
+opts["ksp_monitor"] = None
+opts["ksp_view"] = None
+ksp.setFromOptions()
 
 # We also need to create a block vector,``x``, to store the (full)
 # solution, which we initialize using the block RHS form ``L``.

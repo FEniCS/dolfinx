@@ -247,7 +247,7 @@ public:
   /// Set bc entries in x to scale * x_bc
   ///
   /// @param[in] x The array in which to set scale * x_bc[i], where
-  /// x_bc[i] is the boundary value of x[i]. Entries in x that are not
+  /// x_bc[i] is the boundary value of x[i]. Entries in x that do not
   /// have a Dirichlet condition applied to them are unchanged. The
   /// length of x must be less than or equal to the index of the
   /// greatest boundary dof index. To set values only for
@@ -329,8 +329,8 @@ private:
   // The function
   std::shared_ptr<const function::Function<T>> _g;
 
-  // Pairs of dof indices in _function_space (0) and in the space of _g
-  // (1)
+  // Dof indices (_dofs0) in _function_space and ( _dofs1_g) in the
+  // space of _g
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _dofs0;
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _dofs1_g;
 
