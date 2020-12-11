@@ -489,7 +489,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
 {
   common::Timer t0("Init dofmap");
 
-  const int element_block_size = element_dof_layout.block_size();
   const int D = topology.dim();
 
   // Build a simple dofmap based on mesh entity numbering, returning (i)
@@ -507,8 +506,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     {
       assert(topology.index_map(d));
       const std::int64_t n = topology.index_map(d)->size_global();
-      global_dimension
-          += n * element_dof_layout.num_entity_dofs(d) * element_block_size;
+      global_dimension += n * element_dof_layout.num_entity_dofs(d);
     }
   }
 
@@ -538,9 +536,9 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
 
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.
-  // Build re-ordered dofmap, accounting for block size
+  // Build re-ordered dofmap
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap(
-      node_graph0.array().rows() * element_block_size);
+      node_graph0.array().rows());
 
   for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
   {
@@ -550,12 +548,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     {
       const std::int32_t old_node = old_nodes[j];
       const std::int32_t new_node = old_to_new[old_node];
-      for (std::int32_t block = 0; block < element_block_size; ++block)
-      {
-        dofmap[element_block_size * local_dim0 * cell + element_block_size * j
-               + block]
-            = element_block_size * new_node + block;
-      }
+      dofmap[local_dim0 * cell + j] = new_node;
     }
   }
   assert(dofmap.rows() % node_graph0.num_nodes() == 0);
@@ -563,7 +556,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                           Eigen::RowMajor>>
       _dofmap(dofmap.data(), node_graph0.num_nodes(),
               dofmap.rows() / node_graph0.num_nodes());
-  return {std::move(index_map), element_block_size,
+  return {std::move(index_map), element_dof_layout.block_size(),
           graph::AdjacencyList<std::int32_t>(_dofmap)};
 }
 //-----------------------------------------------------------------------------

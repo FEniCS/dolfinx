@@ -28,10 +28,10 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 internal_tabulate_dof_coordinates(
     std::shared_ptr<const mesh::Mesh> mesh,
     std::shared_ptr<const fem::FiniteElement> element,
-    std::shared_ptr<const fem::DofMap> dofmap, int repeats)
+    std::shared_ptr<const fem::DofMap> dofmap)
 {
-  // This function tabulates the DOF coordinates, with each coordinated repeated
-  // the given number of times
+  // This function tabulates the DOF coordinates, with each coordinated
+  // repeated the given number of times
 
   // Geometric dimension
   assert(mesh);
@@ -44,12 +44,8 @@ internal_tabulate_dof_coordinates(
   std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
   assert(index_map);
 
-  int bs = dofmap->index_map_bs();
-  int element_block_size = element->block_size();
-
-  std::int32_t local_size
-      = bs * (index_map->size_local() + index_map->num_ghosts())
-        / element_block_size;
+  const int element_block_size = element->block_size();
+  std::int32_t local_size = index_map->size_local() + index_map->num_ghosts();
   const int scalar_dofs = element->space_dimension() / element_block_size;
 
   // Dof coordinate on reference element
@@ -72,7 +68,7 @@ internal_tabulate_dof_coordinates(
   // Array to hold coordinates to return
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
-          local_size * repeats, 3);
+          local_size, 3);
 
   // Loop over cells and tabulate dofs
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -99,17 +95,7 @@ internal_tabulate_dof_coordinates(
 
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < scalar_dofs; ++i)
-    {
-      // FIXME: this depends on the dof layout
-      for (int j = 0; j < repeats; ++j)
-      {
-        x.row(dofs[i * element_block_size] / element_block_size * repeats + j)
-            .head(gdim)
-            = coordinates.row(i);
-      }
-      // TODO: cell_dofs should return values for scalar subspace, rather than
-      // fixing that here.
-    }
+      x.row(dofs[i]).head(gdim) = coordinates.row(i);
   }
 
   return x;
@@ -206,11 +192,6 @@ FunctionSpace::collapse() const
   return {std::move(collapsed_sub_space), std::move(collapsed_dofs)};
 }
 //-----------------------------------------------------------------------------
-bool FunctionSpace::has_element(const fem::FiniteElement& element) const
-{
-  return element.hash() == this->_element->hash();
-}
-//-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
@@ -222,8 +203,7 @@ FunctionSpace::tabulate_dof_coordinates() const
         "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
 
-  return internal_tabulate_dof_coordinates(_mesh, _element, _dofmap,
-                                           _element->block_size());
+  return internal_tabulate_dof_coordinates(_mesh, _element, _dofmap);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
@@ -235,7 +215,7 @@ FunctionSpace::tabulate_scalar_subspace_dof_coordinates() const
         "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
 
-  return internal_tabulate_dof_coordinates(_mesh, _element, _dofmap, 1);
+  return internal_tabulate_dof_coordinates(_mesh, _element, _dofmap);
 }
 //-----------------------------------------------------------------------------
 std::size_t FunctionSpace::id() const { return _id; }

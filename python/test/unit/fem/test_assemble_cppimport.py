@@ -96,7 +96,7 @@ m.def("assemble_matrix", &assemble_csr<PetscScalar>);
         if _a.function_spaces[0].id == _a.function_spaces[1].id:
             for bc in bcs:
                 if _a.function_spaces[0].contains(bc.function_space):
-                    bc_dofs = bc.dof_indices[0]
+                    bc_dofs = bc.dof_indices()
                     A[bc_dofs, bc_dofs] = 1.0
         return A
 

@@ -22,6 +22,10 @@ class DofMap:
         return self._cpp_object.cell_dofs(cell_index)
 
     @property
+    def bs(self):
+        return self._cpp_object.bs
+
+    @property
     def dof_layout(self):
         return self._cpp_object.dof_layout
 
