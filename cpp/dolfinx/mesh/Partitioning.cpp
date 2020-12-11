@@ -46,14 +46,12 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
   const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
       = graph_info;
 
-  graph::AdjacencyList<std::int64_t> adj_graph(dual_graph);
-
   // Just flag any kind of ghosting for now
   bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
   // Call partitioner
   graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
-      comm, n, adj_graph, num_ghost_nodes, ghosting);
+      comm, n, dual_graph, num_ghost_nodes, ghosting);
 
   return partition;
 }
