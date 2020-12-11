@@ -98,7 +98,8 @@ compute_local_dual_graph_keyed(
       if (last_equal)
       {
         LOG(ERROR) << "Found three identical facets in mesh (local)";
-        throw std::runtime_error("Inconsistent mesh data in GraphBuilder");
+        throw std::runtime_error(
+            "Inconsistent mesh data in GraphBuilder: three identical facets");
       }
 
       // Add edges (directed graph, so add both ways)
@@ -232,7 +233,9 @@ compute_nonlocal_dual_graph(
   {
     for (int j = received_buffer_offsets[p] / (num_vertices_per_facet + 1);
          j < received_buffer_offsets[p + 1] / (num_vertices_per_facet + 1); ++j)
+    {
       proc[j] = p;
+    }
   }
 
   // Get permutation that takes facets into sorted order
@@ -241,11 +244,11 @@ compute_nonlocal_dual_graph(
   // Lambda with capture for sort comparison
   const auto cmp
       = [&received_buffer_array, num_vertices_per_facet](int a, int b) {
-          const auto facet_a = received_buffer_array.row(a);
-          const auto facet_b = received_buffer_array.row(b);
+          const std::int64_t* facet_a = received_buffer_array.row(a).data();
+          const std::int64_t* facet_b = received_buffer_array.row(b).data();
           return std::lexicographical_compare(
-              facet_a.data(), facet_a.data() + num_vertices_per_facet,
-              facet_b.data(), facet_b.data() + num_vertices_per_facet);
+              facet_a, facet_a + num_vertices_per_facet, facet_b,
+              facet_b + num_vertices_per_facet);
         };
 
   std::sort(perm.begin(), perm.end(), cmp);
@@ -258,16 +261,16 @@ compute_nonlocal_dual_graph(
   {
     const int i0 = perm[i - 1];
     const int i1 = perm[i];
-    const auto facet0 = received_buffer_array.row(i0);
-    const auto facet1 = received_buffer_array.row(i1);
-    this_equal = std::equal(
-        facet0.data(), facet0.data() + num_vertices_per_facet, facet1.data());
+    const std::int64_t* facet0 = received_buffer_array.row(i0).data();
+    const std::int64_t* facet1 = received_buffer_array.row(i1).data();
+    this_equal = std::equal(facet0, facet0 + num_vertices_per_facet, facet1);
     if (this_equal)
     {
       if (last_equal)
       {
         LOG(ERROR) << "Found three identical facets in mesh (match process)";
-        throw std::runtime_error("Inconsistent mesh data in GraphBuilder");
+        throw std::runtime_error("Inconsistent mesh data in GraphBuilder: "
+                                 "found three identical facets");
       }
       const std::int64_t cell0 = facet0[num_vertices_per_facet];
       const std::int64_t cell1 = facet1[num_vertices_per_facet];
@@ -313,7 +316,8 @@ compute_nonlocal_dual_graph(
     else
     {
       LOG(ERROR) << "Received same edge twice in dual graph";
-      throw std::runtime_error("Inconsistent mesh data in GraphBuilder");
+      throw std::runtime_error("Inconsistent mesh data in GraphBuilder: "
+                               "received same edge twice in dual graph");
     }
     ghost_nodes.insert(cell_list[i + 1]);
   }
