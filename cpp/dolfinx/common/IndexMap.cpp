@@ -15,26 +15,6 @@ using namespace dolfinx::common;
 namespace
 {
 //-----------------------------------------------------------------------------
-void local_to_global_impl(
-    Eigen::Ref<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> global,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-        indices,
-    const std::int64_t global_offset, const std::int32_t local_size,
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts)
-{
-  for (Eigen::Index i = 0; i < indices.rows(); ++i)
-  {
-    const std::int32_t pos = indices[i];
-    if (pos < local_size)
-      global[i] = global_offset + pos;
-    else
-    {
-      assert((pos - local_size) < ghosts.size());
-      global[i] = ghosts[pos - local_size];
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 
 /// Compute the owning rank of ghost indices
 std::vector<int> get_ghost_ranks(
@@ -484,26 +464,26 @@ Eigen::Array<std::int64_t, Eigen::Dynamic, 1> IndexMap::local_to_global(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
         indices) const
 {
-  const std::int64_t global_offset = _local_range[0];
-  const std::int32_t local_size = _local_range[1] - _local_range[0];
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> global(indices.rows());
-  local_to_global_impl(global, indices, global_offset, local_size, _ghosts);
+  this->local_to_global(indices.data(), indices.rows(), global.data());
   return global;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-IndexMap::local_to_global(const std::vector<std::int32_t>& indices) const
+void IndexMap::local_to_global(const std::int32_t* local, int n,
+                               std::int64_t* global) const
 {
-  const std::int64_t global_offset = _local_range[0];
   const std::int32_t local_size = _local_range[1] - _local_range[0];
-
-  std::vector<std::int64_t> global(indices.size());
-  Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> _global(
-      global.data(), global.size());
-  const Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-      _indices(indices.data(), indices.size());
-  local_to_global_impl(_global, _indices, global_offset, local_size, _ghosts);
-  return global;
+  for (int i = 0; i < n; ++i)
+  {
+    const std::int32_t pos = local[i];
+    if (local[i] < local_size)
+      global[i] = _local_range[0] + local[i];
+    else
+    {
+      assert((local[i] - local_size) < _ghosts.size());
+      global[i] = _ghosts[local[i] - local_size];
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> IndexMap::global_indices() const
