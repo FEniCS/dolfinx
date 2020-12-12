@@ -47,9 +47,9 @@ void SubSystemsManager::init_logging(int argc, char* argv[])
 {
   loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
 #ifdef DEBUG
-  loguru::Options options = {"-dolfinx_loglevel", "main", true};
+  loguru::Options options = {"-dolfinx_loglevel", "main", loguru::SignalOptions{}};
 #else
-  loguru::Options options = {"-dolfinx_loglevel", "main", false};
+  loguru::Options options = {"-dolfinx_loglevel", "main", loguru::SignalOptions::none()};
 #endif
 
   // Make a copy of argv, as loguru may modify it.
