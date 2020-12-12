@@ -13,12 +13,10 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#ifdef DEBUG
 // Needed for typeid(_p_Mat) in debug mode
 #include <petsc/private/matimpl.h>
 // Needed for typeid(_p_Vec) in debug mode
 #include <petsc/private/vecimpl.h>
-#endif
 
 namespace py = pybind11;
 
@@ -43,12 +41,13 @@ void nls(py::module& m)
       PYBIND11_OVERLOAD_INT(bool, dolfinx::nls::NewtonSolver, "converged", &r,
                             &nonlinear_problem, iteration);
       return dolfinx::nls::NewtonSolver::converged(r, nonlinear_problem,
-                                                  iteration);
+                                                   iteration);
     }
 
-    void update_solution(Vec x, const Vec dx, double relaxation,
-                         const dolfinx::nls::NonlinearProblem& nonlinear_problem,
-                         std::size_t iteration)
+    void
+    update_solution(Vec x, const Vec dx, double relaxation,
+                    const dolfinx::nls::NonlinearProblem& nonlinear_problem,
+                    std::size_t iteration)
     {
       PYBIND11_OVERLOAD_INT(void, dolfinx::nls::NewtonSolver, "update_solution",
                             x, &dx, relaxation, &nonlinear_problem, iteration);

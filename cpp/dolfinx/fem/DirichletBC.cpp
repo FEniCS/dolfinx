@@ -35,7 +35,7 @@ namespace
 /// @return List of local dofs with boundary conditions applied but
 ///   detected by other processes. It may contain duplicate entries.
 std::vector<std::int32_t>
-get_remote_bcs1(const common::IndexMap& map, int bs,
+get_remote_bcs1(const common::IndexMap& map,
                 const std::vector<std::int32_t>& dofs_local)
 {
   MPI_Comm comm = map.comm(common::IndexMap::Direction::symmetric);
@@ -56,17 +56,7 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
 
   // NOTE: we could consider only dofs that we know are shared
   // Build array of global indices of dofs
-  std::vector<std::int32_t> dofs_local_block = dofs_local;
-  std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
-                [bs](std::int32_t& n) { n /= bs; });
-  const std::vector<std::int64_t> dofs_global_block
-      = map.local_to_global(dofs_local_block);
-  std::vector<std::int64_t> dofs_global(dofs_local.size());
-  for (std::size_t i = 0; i < dofs_local.size(); ++i)
-  {
-    const int offset = dofs_local[i] % bs;
-    dofs_global[i] = bs * dofs_global_block[i] + offset;
-  }
+  const std::vector<std::int64_t> dofs_global = map.local_to_global(dofs_local);
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
@@ -103,15 +93,15 @@ get_remote_bcs1(const common::IndexMap& map, int bs,
   std::vector<std::int32_t> dofs;
   for (std::size_t i = 0; i < dofs_received.size(); ++i)
   {
-    if (dofs_received[i] >= bs * range[0] and dofs_received[i] < bs * range[1])
-      dofs.push_back(dofs_received[i] - bs * range[0]);
+    if (dofs_received[i] >= range[0] and dofs_received[i] < range[1])
+      dofs.push_back(dofs_received[i] - range[0]);
     else
     {
       // Search in ghosts
-      if (auto it = global_to_local.find(dofs_received[i] / bs);
+      if (auto it = global_to_local.find(dofs_received[i]);
           it != global_to_local.end())
       {
-        dofs.push_back(it->second * bs + dofs_received[i] % bs);
+        dofs.push_back(it->second);
       }
     }
   }
@@ -133,6 +123,9 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
                 const common::IndexMap& map1, int bs1,
                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
 {
+  // NOTE: assumes that dofs are unrolled, i.e. not blocked. Could it be
+  // make more efficient to handle the case of a common block size?
+
   MPI_Comm comm0 = map0.comm(common::IndexMap::Direction::symmetric);
 
   int num_neighbors(-1), outdegree(-2), weighted(-1);
@@ -159,21 +152,26 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
     const std::array<int, 2> _bs = {bs0, bs1};
     const std::array<std::reference_wrapper<const common::IndexMap>, 2> maps
         = {map0, map1};
-    std::vector<std::int32_t> dofs_local_block, _dofs_local(dofs_local.size());
-    std::vector<std::int64_t> dofs_global_block;
+    std::vector<std::int32_t> _dofs_local(dofs_local.size());
     for (int i = 0; i < 2; ++i)
     {
       for (std::size_t j = 0; j < _dofs_local.size(); ++j)
         _dofs_local[j] = dofs_local[j][i];
 
-      dofs_local_block = _dofs_local;
+      // Convert dofs indices to 'blocks' relative to index map
+      std::vector<std::int32_t> dofs_local_block = _dofs_local;
       std::for_each(dofs_local_block.begin(), dofs_local_block.end(),
                     [bs = _bs[i]](std::int32_t& n) { return n /= bs; });
-      dofs_global_block = maps[i].get().local_to_global(dofs_local_block);
+
+      // Get global index of each block
+      std::vector<std::int64_t> dofs_global_block
+          = maps[i].get().local_to_global(dofs_local_block);
+
+      // Convert from block to actual index
       for (std::size_t j = 0; j < dofs_local.size(); ++j)
       {
-        const int offset = _dofs_local[j] % _bs[i];
-        dofs_global(j, i) = _bs[i] * dofs_global_block[j] + offset;
+        const int index_offset = _dofs_local[j] % _bs[i];
+        dofs_global(j, i) = _bs[i] * dofs_global_block[j] + index_offset;
       }
     }
   }
@@ -191,7 +189,6 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   // processes
 
   // Send/receive global index of dofs with bcs to all neighbors
-  // std::vector<std::int64_t> dofs_received(disp.back());
   assert(disp.back() % 2 == 0);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> dofs_received(
       disp.back() / 2, 2);
@@ -205,9 +202,9 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
   std::array<std::vector<std::int32_t>, 2> dofs_array;
   for (int b = 0; b < 2; ++b)
   {
-    // FIXME: check that dofs is sorted
-    // Build vector of local dof indicies that have been marked by another
-    // process
+    // FIXME: check that dofs is sorted?
+    // Build vector of local dof indicies that have been marked by
+    // another process
     const std::array<std::int64_t, 2> range = maps[b].get().local_range();
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
         = maps[b].get().ghosts();
@@ -219,6 +216,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
       global_local_ghosts.emplace_back(ghosts[i], i + local_size);
     std::map<std::int64_t, std::int32_t> global_to_local(
         global_local_ghosts.begin(), global_local_ghosts.end());
+
     std::vector<std::int32_t>& dofs = dofs_array[b];
     for (Eigen::Index i = 0; i < dofs_received.rows(); ++i)
     {
@@ -234,7 +232,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
         if (auto it = global_to_local.find(dofs_received(i, b) / bs[b]);
             it != global_to_local.end())
         {
-          dofs.push_back(it->second * bs[b] + dofs_received(i, b) % bs[b]);
+          dofs.push_back(bs[b] * it->second + dofs_received(i, b) % bs[b]);
         }
       }
     }
@@ -270,13 +268,11 @@ fem::locate_dofs_topological(
     throw std::runtime_error("Meshes are not the same.");
   const int tdim = mesh->topology().dim();
 
+  // FIXME: Elements must be the same?
   assert(V0.element());
   assert(V1.element());
-  if (!V0.has_element(*V1.element()))
-  {
-    throw std::runtime_error("Function spaces must have the same elements or "
-                             "one be a subelement of another.");
-  }
+  if (V0.element()->hash() != V1.element()->hash())
+    throw std::runtime_error("Function spaces must have the same element.");
 
   // Get dofmaps
   std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
@@ -290,11 +286,12 @@ fem::locate_dofs_topological(
   mesh->topology_mutable().create_connectivity(dim, tdim);
 
   // Allocate space
+  // FIXME: check that dof layouts are the same
   assert(dofmap0->element_dof_layout);
   const int num_entity_dofs
       = dofmap0->element_dof_layout->num_entity_closure_dofs(dim);
-  const int block_size = dofmap0->element_dof_layout->block_size();
-  assert(block_size == dofmap1->element_dof_layout->block_size());
+  const int element_bs = dofmap0->element_dof_layout->block_size();
+  assert(element_bs == dofmap1->element_dof_layout->block_size());
 
   // Build vector local dofs for each cell facet
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
@@ -308,6 +305,9 @@ fem::locate_dofs_topological(
   assert(e_to_c);
   auto c_to_e = mesh->topology().connectivity(tdim, dim);
   assert(c_to_e);
+
+  const int bs0 = dofmap0->bs();
+  const int bs1 = dofmap1->bs();
 
   // Iterate over marked facets
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
@@ -327,15 +327,20 @@ fem::locate_dofs_topological(
     // Get cell dofmap
     auto cell_dofs0 = dofmap0->cell_dofs(cell);
     auto cell_dofs1 = dofmap1->cell_dofs(cell);
+    assert(bs0 * cell_dofs0.rows() == bs1 * cell_dofs1.rows());
 
-    // Loop over facet dofs
+    // Loop over facet dofs and 'unpack' blocked dofs
     for (int i = 0; i < num_entity_dofs; ++i)
     {
       const int index = entity_dofs[entity_local_index][i];
-      for (int block = 0; block < block_size; ++block)
+      for (int block = 0; block < element_bs; ++block)
       {
-        bc_dofs.push_back({cell_dofs0[index * block_size + block],
-                           cell_dofs1[index * block_size + block]});
+        const int local_pos = element_bs * index + block;
+        const std::div_t pos0 = std::div(local_pos, bs0);
+        const std::div_t pos1 = std::div(local_pos, bs1);
+        const std::int32_t dof_index0 = bs0 * cell_dofs0[pos0.quot] + pos0.rem;
+        const std::int32_t dof_index1 = bs1 * cell_dofs1[pos1.quot] + pos1.rem;
+        bc_dofs.push_back({dof_index0, dof_index1});
       }
     }
   }
@@ -350,6 +355,7 @@ fem::locate_dofs_topological(
     // Get bc dof indices (local) in (V, Vg) spaces on this process that
     // were found by other processes, e.g. a vertex dof on this process
     // that has no connected facets on the boundary.
+
     const std::vector dofs_remote = get_remote_bcs2(
         *V0.dofmap()->index_map, V0.dofmap()->index_map_bs(),
         *V1.dofmap()->index_map, V1.dofmap()->index_map_bs(), bc_dofs);
@@ -357,19 +363,19 @@ fem::locate_dofs_topological(
     // Add received bc indices to dofs_local
     bc_dofs.insert(bc_dofs.end(), dofs_remote.begin(), dofs_remote.end());
 
-    // Remove duplicates
+    // Remove duplicates and sort
     std::sort(bc_dofs.begin(), bc_dofs.end());
     bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
   }
 
-  // Copy to Eigen array
+  // Copy to Eigen arrays
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs0(bc_dofs.size());
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs1(bc_dofs.size());
-  for (std::size_t i = 0; i < bc_dofs.size(); ++i)
-  {
+  for (Eigen::Index i = 0; i < dofs0.rows(); ++i)
     dofs0(i) = bc_dofs[i][0];
+
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs1(bc_dofs.size());
+  for (Eigen::Index i = 0; i < dofs1.rows(); ++i)
     dofs1(i) = bc_dofs[i][1];
-  }
 
   return {std::move(dofs0), std::move(dofs1)};
 }
@@ -409,7 +415,6 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
 
   const int num_entity_closure_dofs
       = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
-  const int block_size = dofmap->element_dof_layout->block_size();
   std::vector<std::int32_t> dofs;
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
@@ -431,8 +436,7 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
     for (int j = 0; j < num_entity_closure_dofs; j++)
     {
       const int index = entity_dofs[entity_local_index][j];
-      for (int block = 0; block < block_size; ++block)
-        dofs.push_back(cell_dofs[index * block_size + block]);
+      dofs.push_back(cell_dofs[index]);
     }
   }
 
@@ -443,8 +447,8 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
 
   if (remote)
   {
-    const std::vector dofs_remote = get_remote_bcs1(
-        *V.dofmap()->index_map, V.dofmap()->index_map_bs(), dofs);
+    const std::vector dofs_remote
+        = get_remote_bcs1(*V.dofmap()->index_map, dofs);
 
     // Add received bc indices to dofs_local
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
@@ -454,7 +458,6 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
   }
 
-  // Copy to Eigen array and return
   return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
                                                                    dofs.size());
 }
@@ -465,7 +468,7 @@ fem::locate_dofs_geometrical(
         V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker)
+                                            Eigen::RowMajor>>&)>& marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
@@ -485,11 +488,8 @@ fem::locate_dofs_geometrical(
 
   assert(V0.element());
   assert(V1.element());
-  if (!V0.has_element(*V1.element()))
-  {
-    throw std::runtime_error("Function spaces must have the same elements or "
-                             "one be a subelement of another.");
-  }
+  if (V0.element()->hash() != V1.element()->hash())
+    throw std::runtime_error("Function spaces must have the same element.");
 
   // Compute dof coordinates
   const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
@@ -497,20 +497,25 @@ fem::locate_dofs_geometrical(
 
   // Evaluate marker for each dof coordinate
   const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
-      = marker(dof_coordinates);
+      = marker_fn(dof_coordinates);
 
   // Get dofmaps
   std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
-  std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
   assert(dofmap0);
+  const int bs0 = dofmap0->bs();
+  std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
   assert(dofmap1);
+  const int bs1 = dofmap1->bs();
+
+  const int element_bs = dofmap0->element_dof_layout->block_size();
+  assert(element_bs == dofmap1->element_dof_layout->block_size());
 
   // Iterate over cells
   const mesh::Topology& topology = mesh->topology();
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
   for (int c = 0; c < topology.connectivity(tdim, 0)->num_nodes(); ++c)
   {
-    // Get cell dofmap
+    // Get cell dofmaps
     auto cell_dofs0 = dofmap0->cell_dofs(c);
     auto cell_dofs1 = dofmap1->cell_dofs(c);
 
@@ -519,8 +524,19 @@ fem::locate_dofs_geometrical(
     {
       if (marked_dofs[cell_dofs1[i]])
       {
-        bc_dofs.push_back(
-            {(std::int32_t)cell_dofs0[i], (std::int32_t)cell_dofs1[i]});
+        // Unroll over blocks
+        for (int k = 0; k < element_bs; ++k)
+        {
+          const int local_pos = element_bs * i + k;
+          const std::div_t pos0 = std::div(local_pos, bs0);
+          const std::div_t pos1 = std::div(local_pos, bs1);
+          const std::int32_t dof_index0
+              = bs0 * cell_dofs0[pos0.quot] + pos0.rem;
+          const std::int32_t dof_index1
+              = bs1 * cell_dofs1[pos1.quot] + pos1.rem;
+
+          bc_dofs.push_back({dof_index0, dof_index1});
+        }
       }
     }
   }
@@ -545,7 +561,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
     const function::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker)
+                                            Eigen::RowMajor>>&)>& marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
@@ -557,7 +573,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
 
   // Compute marker for each dof coordinate
   const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
-      = marker(dof_coordinates);
+      = marker_fn(dof_coordinates);
 
   std::vector<std::int32_t> dofs;
   dofs.reserve(marked_dofs.count());

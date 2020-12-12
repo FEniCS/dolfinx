@@ -13,7 +13,8 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-la::PETScMatrix dolfinx::fem::create_matrix(const Form<PetscScalar>& a)
+la::PETScMatrix dolfinx::fem::create_matrix(const Form<PetscScalar>& a,
+                                            const std::string& type)
 {
   // Build sparsitypattern
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
@@ -23,7 +24,7 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form<PetscScalar>& a)
 
   // Initialize matrix
   common::Timer t1("Init tensor");
-  la::PETScMatrix A(a.mesh()->mpi_comm(), pattern);
+  la::PETScMatrix A(a.mesh()->mpi_comm(), pattern, type);
   t1.stop();
 
   return A;
@@ -32,10 +33,18 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form<PetscScalar>& a)
 la::PETScMatrix fem::create_matrix_block(
     const Eigen::Ref<
         const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a)
+                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+    const std::string& type)
 {
   // Extract and check row/column ranges
-  auto V = function::common_function_spaces(extract_function_spaces(a));
+  std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
+      = function::common_function_spaces(extract_function_spaces(a));
+  std::array<std::vector<int>, 2> bs_dofs;
+  for (std::size_t i = 0; i < 2; ++i)
+  {
+    for (auto& _V : V[i])
+      bs_dofs[i].push_back(_V->dofmap()->bs());
+  }
 
   std::shared_ptr mesh = V[0][0]->mesh();
   assert(mesh);
@@ -111,14 +120,14 @@ la::PETScMatrix fem::create_matrix_block(
   for (std::size_t row = 0; row < V[0].size(); ++row)
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
-  la::SparsityPattern pattern(mesh->mpi_comm(), p, maps);
+  la::SparsityPattern pattern(mesh->mpi_comm(), p, maps, bs_dofs);
   pattern.assemble();
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
-  // Mat constructor.
+  // Mat constructor
 
   // Initialise matrix
-  la::PETScMatrix A(mesh->mpi_comm(), pattern);
+  la::PETScMatrix A(mesh->mpi_comm(), pattern, type);
 
   // Create row and column local-to-global maps (field0, field1, field2,
   // etc), i.e. ghosts of field0 appear before owned indices of field1
@@ -139,19 +148,29 @@ la::PETScMatrix fem::create_matrix_block(
   }
 
   // Create PETSc local-to-global map/index sets and attach to matrix
-  ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
+  ISLocalToGlobalMapping petsc_local_to_global0;
   ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[0].size(),
                                _maps[0].data(), PETSC_COPY_VALUES,
                                &petsc_local_to_global0);
-  ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
-                               _maps[1].data(), PETSC_COPY_VALUES,
-                               &petsc_local_to_global1);
-  MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
-                             petsc_local_to_global1);
-
-  // Clean up local-to-global maps
-  ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
-  ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
+  if (V[0] == V[1])
+  {
+    MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
+                               petsc_local_to_global0);
+    ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+  }
+  else
+  {
+    ISLocalToGlobalMapping petsc_local_to_global1;
+    ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
+                                 _maps[1].data(), PETSC_COPY_VALUES,
+                                 &petsc_local_to_global1);
+    MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
+                               petsc_local_to_global1);
+    MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
+                               petsc_local_to_global1);
+    ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+    ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
+  }
 
   return A;
 }
@@ -159,10 +178,16 @@ la::PETScMatrix fem::create_matrix_block(
 la::PETScMatrix fem::create_matrix_nest(
     const Eigen::Ref<
         const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a)
+                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+    const std::vector<std::vector<std::string>>& types)
 {
   // Extract and check row/column ranges
   auto V = function::common_function_spaces(extract_function_spaces(a));
+
+  std::vector<std::vector<std::string>> _types(
+      a.rows(), std::vector<std::string>(a.cols()));
+  if (!types.empty())
+    _types = types;
 
   // Loop over each form and create matrix
   Eigen::Array<std::shared_ptr<la::PETScMatrix>, Eigen::Dynamic, Eigen::Dynamic,
@@ -176,7 +201,8 @@ la::PETScMatrix fem::create_matrix_nest(
     {
       if (a(i, j))
       {
-        mats(i, j) = std::make_shared<la::PETScMatrix>(create_matrix(*a(i, j)));
+        mats(i, j) = std::make_shared<la::PETScMatrix>(
+            create_matrix(*a(i, j), _types[i][j]));
         petsc_mats(i, j) = mats(i, j)->mat();
       }
       else

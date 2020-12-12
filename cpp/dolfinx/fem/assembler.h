@@ -98,7 +98,6 @@ void assemble_matrix(
     const Form<T>& a,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
-
   // Index maps for dof ranges
   auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
   auto map1 = a.function_spaces().at(1)->dofmap()->index_map;
@@ -120,6 +119,7 @@ void assemble_matrix(
       dof_marker0.resize(dim0, false);
       bcs[k]->mark_dofs(dof_marker0);
     }
+
     if (a.function_spaces().at(1)->contains(*bcs[k]->function_space()))
     {
       dof_marker1.resize(dim1, false);
@@ -158,8 +158,8 @@ void assemble_matrix(
 /// normally be called only on the diagonal blocks, i.e. blocks for
 /// which the test and trial spaces are the same.
 /// @param[in] mat_add The function for adding values to a matrix
-/// @param[in] rows The rows, in local indices, for which to add a value
-///   to the diagonal
+/// @param[in] rows The row blocks, in local indices, for which to add a
+/// value to the diagonal
 /// @param[in] diagonal The value to add to the diagonal for the
 ///   specified rows
 template <typename T>
@@ -169,7 +169,7 @@ void add_diagonal(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
     T diagonal = 1.0)
 {
-  for (Eigen::Index i = 0; i < rows.size(); ++i)
+  for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
     const std::int32_t row = rows(i);
     mat_add(1, &row, 1, &row, &diagonal);
@@ -203,7 +203,7 @@ void add_diagonal(
   {
     assert(bc);
     if (V.contains(*bc->function_space()))
-      add_diagonal<T>(mat_add, bc->dofs_owned()[0], diagonal);
+      add_diagonal<T>(mat_add, bc->dofs_owned(), diagonal);
   }
 }
 
