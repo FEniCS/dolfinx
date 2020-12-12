@@ -475,7 +475,6 @@ void IndexMap::local_to_global(const std::int32_t* local, int n,
   const std::int32_t local_size = _local_range[1] - _local_range[0];
   for (int i = 0; i < n; ++i)
   {
-    const std::int32_t pos = local[i];
     if (local[i] < local_size)
       global[i] = _local_range[0] + local[i];
     else
