@@ -78,6 +78,7 @@ void nls(py::module& m)
       .def("update_solution", &PyPublicNewtonSolver::update_solution)
       .def_readwrite("atol", &dolfinx::nls::NewtonSolver::atol)
       .def_readwrite("rtol", &dolfinx::nls::NewtonSolver::rtol)
+      .def_readwrite("relaxation_parameter", &dolfinx::nls::NewtonSolver::relaxation_parameter)
       .def_readwrite("max_it", &dolfinx::nls::NewtonSolver::max_it)
       .def_readwrite("convergence_criterion",
                      &dolfinx::nls::NewtonSolver::convergence_criterion);
@@ -88,7 +89,7 @@ void nls(py::module& m)
   {
     using dolfinx::nls::NonlinearProblem::NonlinearProblem;
 
-    // pybdind11 has some issues when passing by reference (due to
+    // pybind11 has some issues when passing by reference (due to
     // the return value policy), so the below is non-standard.  See
     // https://github.com/pybind/pybind11/issues/250.
 
