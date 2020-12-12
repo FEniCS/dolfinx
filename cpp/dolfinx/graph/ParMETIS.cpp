@@ -7,6 +7,7 @@
 #include "ParMETIS.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/log.h>
 
 #ifdef HAS_PARMETIS
 #include <parmetis.h>
