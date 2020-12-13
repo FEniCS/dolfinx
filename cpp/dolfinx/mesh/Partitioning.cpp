@@ -24,8 +24,8 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
     MPI_Comm comm, int n, const mesh::CellType cell_type,
     const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode)
 {
-  common::Timer timer("Partition cells across processes");
-  LOG(INFO) << "Compute partition of cells across processes";
+  common::Timer timer("Partition cells across ranks");
+  LOG(INFO) << "Compute partition of cells across ranks";
 
   if (cells.num_nodes() > 0)
   {
