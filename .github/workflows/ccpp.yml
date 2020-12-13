@@ -34,6 +34,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
       - name: Install FEniCS Python components
         run: python3 -m pip install git+https://github.com/FEniCS/fiat.git git+https://github.com/FEniCS/ufl.git git+https://github.com/FEniCS/ffcx.git
 
@@ -96,20 +97,44 @@ jobs:
         if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run : |
           mkdir ~/.ssh
-          echo '${{ secrets.SSH_DOCS_KNOWN_HOSTS }}' > ~/.ssh/known_hosts
+          echo '${{ secrets.SSH_DOCS_KNOWN_HOSTS }}' >> ~/.ssh/known_hosts
           echo '${{ secrets.SSH_DOCS_PRIVATE_KEY }}' > ~/.ssh/id_rsa
           chmod 0700 ~/.ssh
           chmod 0644 ~/.ssh/known_hosts
           chmod 0600 ~/.ssh/id_rsa
 
-      - name: Push C++ documentation
+      - name: Push C++ documentation to fenicsproject.org
         if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run: |
           cd cpp/doc/html
           scp -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
 
-      - name: Push Python documentation
+      - name: Push Python documentation to fenicsproject.org
         if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run: |
           cd python/doc/build/html
           scp -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
+
+      uses: actions/checkout@v2
+      with:
+          repository: "FEniCS/docs"
+          path: "docs"
+          ssh-key: "${{ secrets.SSH_GITHUB_DOCS_PRIVATE_KEY }}"
+
+      - name: Push C++ documentation to repository FEniCS/docs
+        if: ${{ github.repository == 'FEniCS/dolfinx' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
+        run: |
+          mkdir -p docs/dolfinx/cpp
+          cp -r cpp/doc/html/* docs/dolfinx/cpp
+          cd docs
+          git commit -a -m "DOLFINX GitHub Actions C++ ${{ github.sha }}"
+          git push
+
+      - name: Push Python documentation to repository FEniCS/docs
+        if: ${{ github.repository == 'FEniCS/dolfinx' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
+        run: |
+          mkdir -p docs/dolfinx/python
+          cp -r python/doc/build/html/* docs/dolfinx/python
+          cd docs
+          git commit -a -m "DOLFINX GitHub Actions Python ${{ github.sha }}"
+          git push
