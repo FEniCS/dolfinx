@@ -56,7 +56,8 @@ get_remote_bcs1(const common::IndexMap& map,
 
   // NOTE: we could consider only dofs that we know are shared
   // Build array of global indices of dofs
-  const std::vector<std::int64_t> dofs_global = map.local_to_global(dofs_local);
+  std::vector<std::int64_t> dofs_global(dofs_local.size());
+  map.local_to_global(dofs_local.data(), dofs_local.size(), dofs_global.data());
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
@@ -164,8 +165,10 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
                     [bs = _bs[i]](std::int32_t& n) { return n /= bs; });
 
       // Get global index of each block
-      std::vector<std::int64_t> dofs_global_block
-          = maps[i].get().local_to_global(dofs_local_block);
+      std::vector<std::int64_t> dofs_global_block(dofs_local_block.size());
+      maps[i].get().local_to_global(dofs_local_block.data(),
+                                    dofs_local_block.size(),
+                                    dofs_global_block.data());
 
       // Convert from block to actual index
       for (std::size_t j = 0; j < dofs_local.size(); ++j)

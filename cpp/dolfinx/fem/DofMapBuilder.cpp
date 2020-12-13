@@ -487,7 +487,7 @@ std::tuple<std::shared_ptr<common::IndexMap>, int,
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                      const ElementDofLayout& element_dof_layout)
 {
-  common::Timer t0("Init dofmap");
+  common::Timer t0("Build dofmap data");
 
   const int D = topology.dim();
 
