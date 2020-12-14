@@ -12,9 +12,9 @@ from dolfinx import fem
 def FunctionSpace(mesh: _cpp.mesh.Mesh, element, degree=None):
     """Create a FunctionSpace from a mesh and an element"""
     if degree:
-        return function.FunctionSpace(mesh, (element, degree))
+        return fem.FunctionSpace(mesh, (element, degree))
     else:
-        return function.FunctionSpace(mesh, element, degree)
+        return fem.FunctionSpace(mesh, element, degree)
 
 
 def VectorFunctionSpace(mesh: _cpp.mesh.Mesh,
