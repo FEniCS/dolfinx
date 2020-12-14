@@ -28,15 +28,6 @@ namespace common
 class IndexMap;
 }
 
-namespace fem
-{
-template <typename T>
-class Constant;
-template <typename T>
-class Function;
-class FunctionSpace;
-} // namespace fem
-
 namespace mesh
 {
 class Mesh;
@@ -47,7 +38,12 @@ namespace fem
 {
 
 template <typename T>
+class Constant;
+template <typename T>
 class Form;
+template <typename T>
+class Function;
+class FunctionSpace;
 
 /// Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms

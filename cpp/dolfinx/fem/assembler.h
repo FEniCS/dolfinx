@@ -13,19 +13,14 @@
 #include <memory>
 #include <vector>
 
-namespace dolfinx
+namespace dolfinx::fem
 {
-namespace fem
-{
-class FunctionSpace;
-} // namespace fem
 
-namespace fem
-{
 template <typename T>
 class DirichletBC;
 template <typename T>
 class Form;
+class FunctionSpace;
 
 // -- Scalar ----------------------------------------------------------------
 
@@ -312,5 +307,4 @@ bcs_cols(const std::vector<std::vector<std::shared_ptr<const Form<T>>>>& a,
   return bcs1;
 }
 
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

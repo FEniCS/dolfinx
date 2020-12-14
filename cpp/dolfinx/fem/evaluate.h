@@ -7,11 +7,10 @@
 
 #pragma once
 
-#include <vector>
-
 #include <Eigen/Dense>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <vector>
 
 namespace dolfinx::fem
 {

@@ -11,11 +11,6 @@
 namespace dolfinx
 {
 
-namespace fem
-{
-class FunctionSpace;
-}
-
 namespace la
 {
 class PETScMatrix;
@@ -23,6 +18,7 @@ class PETScMatrix;
 
 namespace fem
 {
+class FunctionSpace;
 
 /// Discrete gradient operators providing derivatives of functions
 

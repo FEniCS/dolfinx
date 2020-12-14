@@ -17,13 +17,6 @@
 namespace dolfinx
 {
 
-namespace fem
-{
-template <typename T>
-class Function;
-class FunctionSpace;
-} // namespace fem
-
 namespace mesh
 {
 class Mesh;
@@ -31,6 +24,9 @@ class Mesh;
 
 namespace fem
 {
+template <typename T>
+class Function;
+class FunctionSpace;
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
 /// (topological). Note that degrees-of-freedom for discontinuous

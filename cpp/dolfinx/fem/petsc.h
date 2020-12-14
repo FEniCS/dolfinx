@@ -12,19 +12,14 @@
 #include <petscvec.h>
 #include <vector>
 
-namespace dolfinx
+namespace dolfinx::fem
 {
-namespace fem
-{
-class FunctionSpace;
-} // namespace fem
 
-namespace fem
-{
 template <typename T>
 class DirichletBC;
 template <typename T>
 class Form;
+class FunctionSpace;
 
 /// Create a matrix
 /// @param[in] a A bilinear form
@@ -116,5 +111,4 @@ void set_bc_petsc(
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     const Vec x0, double scale = 1.0);
 
-} // namespace fem
-} // namespace dolfinx
+}

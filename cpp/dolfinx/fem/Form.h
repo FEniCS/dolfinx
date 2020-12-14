@@ -14,19 +14,13 @@
 #include <string>
 #include <vector>
 
-namespace dolfinx
+namespace dolfinx::fem
 {
 
-namespace fem
-{
 template <typename T>
 class Constant;
 template <typename T>
 class Function;
-} // namespace fem
-
-namespace fem
-{
 
 /// Type of integral
 enum class IntegralType : std::int8_t
@@ -470,8 +464,5 @@ private:
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_permutation_data;
-
-}; // namespace fem
-
-} // namespace fem
-} // namespace dolfinx
+};
+} // namespace dolfinx::fem
