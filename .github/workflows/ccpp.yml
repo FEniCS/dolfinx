@@ -93,40 +93,23 @@ jobs:
       - name: Run Python unit tests (MPI, np=2)
         run: mpirun -np 2 python3 -m pytest python/test/unit/
 
-      - name: 'Upload Python documentation artifact'
+      - name: Upload C++ documentation artifact
         uses: actions/upload-artifact@v2
         with:
-          name: docs-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
-          path: python/doc/build/html/
+          name: doc-cpp-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
+          path: |
+            cpp/doc/html/
           retention-days: 2
           if-no-files-found: error
 
-      - name: 'Upload C++ documentation artifact'
+      - name: Upload Python documentation artifact
         uses: actions/upload-artifact@v2
         with:
-          name: docs-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
-          path: cpp/doc/html/
+          name: doc-python-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
+          path: |
+            python/doc/build/html/
+          retention-days: 2
           if-no-files-found: error
-
-      - name: Install SSH key for fenicsproject.org documentation push
-        if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
-        run : |
-          mkdir ~/.ssh
-          echo '${{ secrets.SSH_DOCS_KNOWN_HOSTS }}' >> ~/.ssh/known_hosts
-          echo '${{ secrets.SSH_DOCS_PRIVATE_KEY }}' > ~/.ssh/id_rsa
-          chmod 0700 ~/.ssh
-          chmod 0644 ~/.ssh/known_hosts
-          chmod 0600 ~/.ssh/id_rsa
-      - name: Push C++ documentation to fenicsproject.org
-        if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
-        run: |
-          cd cpp/doc/html
-          scp -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
-      - name: Push Python documentation to fenicsproject.org
-        if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
-        run: |
-          cd python/doc/build/html
-          scp -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
 
       - name: Checkout FEniCS/docs
         uses: actions/checkout@v2
@@ -134,23 +117,16 @@ jobs:
           repository: "FEniCS/docs"
           path: "docs"
           ssh-key: "${{ secrets.SSH_GITHUB_DOCS_PRIVATE_KEY }}"
-      - name: Push C++ documentation to repository FEniCS/docs
+      - name: Push documentation to repository FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run: |
           git config --global user.email "fenics@github.com"
           git config --global user.name "FEniCS GitHub Actions"
           mkdir -p docs/dolfinx/cpp
-          cp -r cpp/doc/html/* docs/dolfinx/cpp
-          cd docs
-          git add --all
-          git commit --allow-empty -m "C++ FEniCS/dolfinx@${{ github.sha }}"
-          git push
-      - name: Push Python documentation to repository FEniCS/docs
-        if: ${{ github.repository == 'FEniCS/dolfinx' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
-        run: |
           mkdir -p docs/dolfinx/python
+          cp -r cpp/doc/html/* docs/dolfinx/cpp
           cp -r python/doc/build/html/* docs/dolfinx/python
           cd docs
           git add --all
-          git commit --allow-empty -m "Python FEniCS/dolfinx@${{ github.sha }}"
+          git commit --allow-empty -m "C++ and Python FEniCS/dolfinx@${{ github.sha }}"
           git push
