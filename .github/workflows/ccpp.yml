@@ -127,7 +127,7 @@ jobs:
           cp -r cpp/doc/html/* docs/dolfinx/cpp
           cd docs
           git add --all
-          git commit -m "DOLFINX C++ ${{ github.sha }}"
+          git commit --allow-empty -m "C++ FEniCS/dolfinx@${{ github.sha }}"
           git push
       - name: Push Python documentation to repository FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
@@ -136,5 +136,5 @@ jobs:
           cp -r python/doc/build/html/* docs/dolfinx/python
           cd docs
           git add --all
-          git commit -m "DOLFINX Python ${{ github.sha }}"
+          git commit --allow-empty -m "Python FEniCS/dolfinx@${{ github.sha }}"
           git push
