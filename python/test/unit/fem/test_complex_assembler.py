@@ -22,7 +22,7 @@ def test_complex_assembly():
 
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
     P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)
-    V = dolfinx.function.FunctionSpace(mesh, P2)
+    V = dolfinx.fem.FunctionSpace(mesh, P2)
 
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
@@ -79,7 +79,7 @@ def test_complex_assembly_solve():
     degree = 3
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 20, 20)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), degree)
-    V = dolfinx.function.FunctionSpace(mesh, P)
+    V = dolfinx.fem.FunctionSpace(mesh, P)
 
     x = ufl.SpatialCoordinate(mesh)
 
@@ -114,7 +114,7 @@ def test_complex_assembly_solve():
     # Reference Solution
     def ref_eval(x):
         return np.cos(2 * np.pi * x[0]) * np.cos(2 * np.pi * x[1])
-    u_ref = dolfinx.function.Function(V)
+    u_ref = dolfinx.fem.Function(V)
     u_ref.interpolate(ref_eval)
 
     diff = (x - u_ref.vector).norm(PETSc.NormType.N2)

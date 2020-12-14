@@ -10,7 +10,7 @@ import warnings
 import numpy as np
 import ufl
 
-from dolfinx import cpp, fem, function
+from dolfinx import cpp, fem
 from dolfinx.mesh import create_mesh
 
 __all__ = ["plot"]
@@ -92,11 +92,11 @@ def mplot_mesh(ax, mesh, **kwargs):
 def create_cg1_function_space(mesh, sh):
     r = len(sh)
     if r == 0:
-        V = function.FunctionSpace(mesh, ("CG", 1))
+        V = fem.FunctionSpace(mesh, ("CG", 1))
     elif r == 1:
-        V = function.VectorFunctionSpace(mesh, ("CG", 1), dim=sh[0])
+        V = fem.VectorFunctionSpace(mesh, ("CG", 1), dim=sh[0])
     else:
-        V = function.TensorFunctionSpace(mesh, ("CG", 1), shape=sh)
+        V = fem.TensorFunctionSpace(mesh, ("CG", 1), shape=sh)
     return V
 
 
@@ -301,6 +301,7 @@ def _plot_matplotlib(obj, mesh, kwargs):
     if gdim == 3 or kwargs.get("mode") in ("warp", ):
         # Importing this toolkit has side effects enabling 3d support
         from mpl_toolkits.mplot3d import axes3d  # noqa
+
         # Enabling the 3d toolbox requires some additional arguments
         ax = plt.gca(projection='3d')
     else:
@@ -345,7 +346,7 @@ def plot(object, *args, **kwargs):
     *Arguments*
         object
             a :py:class:`Mesh <dolfinx.cpp.Mesh>`, a :py:class:`Function
-            <dolfinx.functions.function.Function>`, a :py:class:`Expression`
+            <dolfinx.functions.fem.Function>`, a :py:class:`Expression`
             <dolfinx.Expression>, a :py:class:`DirichletBC`
             <dolfinx.cpp.DirichletBC>, a :py:class:`FiniteElement
             <ufl.FiniteElement>`.
@@ -401,7 +402,7 @@ def plot(object, *args, **kwargs):
         cpp.log.info("Matplotlib is required to plot from Python.")
         return
 
-    # For dolfinx.function.Function, extract cpp_object
+    # For dolfinx.fem.Function, extract cpp_object
     if hasattr(object, "_cpp_object"):
         object = object._cpp_object
 

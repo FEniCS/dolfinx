@@ -107,7 +107,7 @@ m.def("assemble_matrix", &assemble_csr<PetscScalar>);
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
 
     bdofsQ = dolfinx.fem.locate_dofs_geometrical(Q, lambda x: numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6))
-    u_bc = dolfinx.function.Function(Q)
+    u_bc = dolfinx.fem.Function(Q)
     with u_bc.vector.localForm() as u_local:
         u_local.set(1.0)
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsQ)

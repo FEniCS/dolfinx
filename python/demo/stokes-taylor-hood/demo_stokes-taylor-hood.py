@@ -109,7 +109,7 @@ def lid_velocity_expression(x):
     return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
 
 # We define two :py:class:`FunctionSpace
-# <dolfinx.function.FunctionSpace>` instances with different finite
+# <dolfinx.fem.FunctionSpace>` instances with different finite
 # elements. ``P2`` corresponds to piecewise quadratics for the velocity
 # field and ``P1`` to continuous piecewise linears for the pressure
 # field::
@@ -243,7 +243,7 @@ ksp_p.getPC().setType("jacobi")
 ksp.setFromOptions()
 
 # To compute the solution, we create finite element :py:class:`Function
-# <dolfinx.function.Function>` for the velocity (on the space `V`) and
+# <dolfinx.fem.Function>` for the velocity (on the space `V`) and
 # for the pressure (on the space `Q`). The vectors for `u` and `p` are
 # combined to form a nested vector and the system is solved::
 

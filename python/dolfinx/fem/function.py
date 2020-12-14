@@ -10,12 +10,11 @@ from functools import singledispatch
 
 import cffi
 import numpy as np
-
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-
-from dolfinx import common, cpp, fem, function, jit
+from dolfinx import common, cpp, jit
+from dolfinx.fem import dofmap
 
 
 class Constant(ufl.Constant):
@@ -278,8 +277,8 @@ class Function(ufl.Coefficient):
         degree-of-freedom vector is copied.
 
         """
-        return function.Function(self.function_space,
-                                 self._cpp_object.vector.copy())
+        return Function(self.function_space,
+                        self._cpp_object.vector.copy())
 
     @property
     def vector(self):
@@ -333,8 +332,8 @@ class Function(ufl.Coefficient):
 
     def collapse(self):
         u_collapsed = self._cpp_object.collapse()
-        V_collapsed = function.FunctionSpace(None, self.ufl_element(),
-                                             u_collapsed.function_space)
+        V_collapsed = FunctionSpace(None, self.ufl_element(),
+                                    u_collapsed.function_space)
         return Function(V_collapsed, u_collapsed.x)
 
 
@@ -467,9 +466,9 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.element
 
     @property
-    def dofmap(self) -> "fem.dofmap.DofMap":
+    def dofmap(self) -> "dofmap.DofMap":
         """Return the degree-of-freedom map associated with the function space."""
-        return fem.dofmap.DofMap(self._cpp_object.dofmap)
+        return dofmap.DofMap(self._cpp_object.dofmap)
 
     @property
     def mesh(self):
