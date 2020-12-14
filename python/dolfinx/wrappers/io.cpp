@@ -6,8 +6,8 @@
 
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>

@@ -21,10 +21,10 @@
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/fem/utils.h>
-#include <dolfinx/function/Constant.h>
-#include <dolfinx/function/Expression.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Constant.h>
+#include <dolfinx/fem/Expression.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>

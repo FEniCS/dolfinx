@@ -8,7 +8,7 @@
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>

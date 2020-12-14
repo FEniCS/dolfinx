@@ -8,11 +8,11 @@
 #include <cstdint>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/function/Constant.h>
-#include <dolfinx/function/Expression.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
-#include <dolfinx/function/interpolate.h>
+#include <dolfinx/fem/Constant.h>
+#include <dolfinx/fem/Expression.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/fem/interpolate.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>

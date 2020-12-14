@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>

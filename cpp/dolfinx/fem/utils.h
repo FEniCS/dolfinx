@@ -11,7 +11,7 @@
 #include "ElementDofLayout.h"
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/Form.h>
-#include <dolfinx/function/Function.h>
+#include <dolfinx/fem/Function.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>

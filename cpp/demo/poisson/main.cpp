@@ -91,7 +91,7 @@
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/petsc.h>
-#include <dolfinx/function/Constant.h>
+#include <dolfinx/fem/Constant.h>
 
 using namespace dolfinx;
 

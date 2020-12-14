@@ -7,7 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfinx/function/evaluate.h>
+#include <dolfinx/fem/evaluate.h>
 #include <functional>
 #include <utility>
 #include <vector>

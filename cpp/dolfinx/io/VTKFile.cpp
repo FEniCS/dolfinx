@@ -15,8 +15,8 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>

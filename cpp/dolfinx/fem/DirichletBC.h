@@ -8,7 +8,7 @@
 
 #include <Eigen/Dense>
 #include <array>
-#include <dolfinx/function/Function.h>
+#include <dolfinx/fem/Function.h>
 #include <dolfinx/la/utils.h>
 #include <functional>
 #include <memory>

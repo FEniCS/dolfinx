@@ -7,7 +7,7 @@
 #include "petsc.h"
 #include "SparsityPatternBuilder.h"
 #include "assembler.h"
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/SparsityPattern.h>
 
 using namespace dolfinx;

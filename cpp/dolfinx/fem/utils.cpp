@@ -16,9 +16,9 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/SparsityPatternBuilder.h>
-#include <dolfinx/function/Constant.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Constant.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
