@@ -15,10 +15,10 @@
 
 namespace dolfinx
 {
-namespace function
+namespace fem
 {
 class FunctionSpace;
-} // namespace function
+} // namespace fem
 
 namespace fem
 {
@@ -195,7 +195,7 @@ template <typename T>
 void add_diagonal(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
-    const function::FunctionSpace& V,
+    const fem::FunctionSpace& V,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
     T diagonal = 1.0)
 {

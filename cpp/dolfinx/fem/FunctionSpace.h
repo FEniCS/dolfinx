@@ -27,7 +27,7 @@ namespace mesh
 class Mesh;
 }
 
-namespace function
+namespace fem
 {
 
 /// This class represents a finite element function space defined by a
@@ -154,5 +154,5 @@ std::array<std::vector<std::shared_ptr<const FunctionSpace>>, 2>
 common_function_spaces(
     const std::vector<
         std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>& V);
-} // namespace function
+} // namespace fem
 } // namespace dolfinx

@@ -19,8 +19,8 @@ using namespace dolfinx::fem;
 
 // //-----------------------------------------------------------------------------
 // la::PETScMatrix
-// DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
-//                                   const function::FunctionSpace& V1)
+// DiscreteOperators::build_gradient(const fem::FunctionSpace& V0,
+//                                   const fem::FunctionSpace& V1)
 // {
 //   // TODO: This function would be significantly simplified if it was
 //   // easier to build matrix sparsity patterns.

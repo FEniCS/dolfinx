@@ -17,12 +17,12 @@
 namespace dolfinx
 {
 
-namespace function
+namespace fem
 {
 template <typename T>
 class Function;
 class FunctionSpace;
-} // namespace function
+} // namespace fem
 
 namespace mesh
 {
@@ -57,7 +57,7 @@ namespace fem
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
 locate_dofs_topological(
-    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
+    const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>&
         V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote = true);
@@ -84,7 +84,7 @@ locate_dofs_topological(
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-locate_dofs_topological(const function::FunctionSpace& V, const int dim,
+locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
                         const Eigen::Ref<const Eigen::ArrayXi>& entities,
                         bool remote = true);
 
@@ -103,7 +103,7 @@ locate_dofs_topological(const function::FunctionSpace& V, const int dim,
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
 locate_dofs_geometrical(
-    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
+    const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>&
         V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -121,7 +121,7 @@ locate_dofs_geometrical(
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_dofs_geometrical(
-    const function::FunctionSpace& V,
+    const fem::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker_fn);
@@ -150,7 +150,7 @@ public:
   ///   boundary value function applied to V_dofs[i]. The dof indices must
   ///   be sorted.
   DirichletBC(
-      const std::shared_ptr<const function::Function<T>>& g,
+      const std::shared_ptr<const fem::Function<T>>& g,
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
           dofs)
       : _function_space(g->function_space()), _g(g), _dofs0(dofs),
@@ -187,10 +187,10 @@ public:
   /// indices in the first array.
   /// @param[in] V The function (sub)space on which the boundary
   ///   condition is applied
-  DirichletBC(const std::shared_ptr<const function::Function<T>>& g,
+  DirichletBC(const std::shared_ptr<const fem::Function<T>>& g,
               const std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>,
                                2>& V_g_dofs,
-              std::shared_ptr<const function::FunctionSpace> V)
+              std::shared_ptr<const fem::FunctionSpace> V)
       : _function_space(V), _g(g), _dofs0(V_g_dofs[0]), _dofs1_g(V_g_dofs[1])
   {
     assert(_dofs0.rows() == _dofs1_g.rows());
@@ -225,14 +225,14 @@ public:
 
   /// The function space to which boundary conditions are applied
   /// @return The function space
-  std::shared_ptr<const function::FunctionSpace> function_space() const
+  std::shared_ptr<const fem::FunctionSpace> function_space() const
   {
     return _function_space;
   }
 
   /// Return boundary value function g
   /// @return The boundary values Function
-  std::shared_ptr<const function::Function<T>> value() const { return _g; }
+  std::shared_ptr<const fem::Function<T>> value() const { return _g; }
 
   /// Get array of dof indices owned by this process to which a
   /// Dirichlet BC is applied. The array is sorted and does not contain
@@ -324,10 +324,10 @@ public:
 
 private:
   // The function space (possibly a sub function space)
-  std::shared_ptr<const function::FunctionSpace> _function_space;
+  std::shared_ptr<const fem::FunctionSpace> _function_space;
 
   // The function
-  std::shared_ptr<const function::Function<T>> _g;
+  std::shared_ptr<const fem::Function<T>> _g;
 
   // Dof indices (_dofs0) in _function_space and ( _dofs1_g) in the
   // space of _g

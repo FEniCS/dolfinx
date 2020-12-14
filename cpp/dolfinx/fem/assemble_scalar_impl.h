@@ -73,7 +73,7 @@ T assemble_scalar(const fem::Form<T>& M)
       = mesh->topology().connectivity(tdim, 0)->num_nodes();
 
   // Prepare constants
-  const std::vector<std::shared_ptr<const function::Constant<T>>>& constants
+  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants
       = M.constants();
 
   std::vector<T> constant_values;

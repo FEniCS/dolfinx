@@ -14,7 +14,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 
-namespace dolfinx::function
+namespace dolfinx::fem
 {
 
 template <typename T>
@@ -278,4 +278,4 @@ void interpolate_c(
 }
 //----------------------------------------------------------------------------
 
-} // namespace dolfinx::function
+} // namespace dolfinx::fem

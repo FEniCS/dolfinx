@@ -116,7 +116,7 @@ void fem(py::module& m)
         "Pack constants for a UFL form.");
   m.def(
       "pack_constants",
-      &dolfinx::fem::pack_constants<dolfinx::function::Expression<PetscScalar>>,
+      &dolfinx::fem::pack_constants<dolfinx::fem::Expression<PetscScalar>>,
       "Pack constants for a UFL expression.");
   m.def(
       "create_matrix",
@@ -177,11 +177,11 @@ void fem(py::module& m)
       "create_form",
       [](const std::uintptr_t form,
          const std::vector<
-             std::shared_ptr<const dolfinx::function::FunctionSpace>>& spaces,
+             std::shared_ptr<const dolfinx::fem::FunctionSpace>>& spaces,
          const std::vector<std::shared_ptr<
-             const dolfinx::function::Function<PetscScalar>>>& coefficients,
+             const dolfinx::fem::Function<PetscScalar>>>& coefficients,
          const std::vector<std::shared_ptr<
-             const dolfinx::function::Constant<PetscScalar>>>& constants,
+             const dolfinx::fem::Constant<PetscScalar>>>& constants,
          const std::map<dolfinx::fem::IntegralType,
                         const dolfinx::mesh::MeshTags<int>*>& subdomains,
          const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh) {
@@ -285,13 +285,13 @@ void fem(py::module& m)
 
   dirichletbc
       .def(py::init<
-               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>,
+               std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>,
                const std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>,
                                 2>&,
-               std::shared_ptr<const dolfinx::function::FunctionSpace>>(),
+               std::shared_ptr<const dolfinx::fem::FunctionSpace>>(),
            py::arg("V"), py::arg("g"), py::arg("V_g_dofs"))
       .def(py::init<
-               std::shared_ptr<const dolfinx::function::Function<PetscScalar>>,
+               std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>,
                const Eigen::Ref<
                    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&>(),
            py::arg("g"), py::arg("dofs"))
@@ -344,7 +344,7 @@ void fem(py::module& m)
               a, rows0, rows1);
         });
   m.def("add_diagonal",
-        [](Mat A, const dolfinx::function::FunctionSpace& V,
+        [](Mat A, const dolfinx::fem::FunctionSpace& V,
            const std::vector<std::shared_ptr<
                const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
            PetscScalar diagonal) {
@@ -390,8 +390,8 @@ void fem(py::module& m)
   //   py::class_<dolfinx::fem::DiscreteOperators>(m, "DiscreteOperators")
   //       .def_static(
   //           "build_gradient",
-  //           [](const dolfinx::function::FunctionSpace& V0,
-  //              const dolfinx::function::FunctionSpace& V1) {
+  //           [](const dolfinx::fem::FunctionSpace& V0,
+  //              const dolfinx::fem::FunctionSpace& V1) {
   //             dolfinx::la::PETScMatrix A
   //                 = dolfinx::fem::DiscreteOperators::build_gradient(V0, V1);
   //             Mat _A = A.mat();
@@ -411,17 +411,17 @@ void fem(py::module& m)
              std::shared_ptr<dolfinx::fem::Form<PetscScalar>>>(
       m, "Form", "Variational form object")
       .def(py::init([](const std::vector<std::shared_ptr<
-                           const dolfinx::function::FunctionSpace>>& spaces,
+                           const dolfinx::fem::FunctionSpace>>& spaces,
                        const std::map<
                            dolfinx::fem::IntegralType,
                            std::pair<std::vector<std::pair<int, py::object>>,
                                      const dolfinx::mesh::MeshTags<int>*>>&
                            integrals,
                        const std::vector<std::shared_ptr<
-                           const dolfinx::function::Function<PetscScalar>>>&
+                           const dolfinx::fem::Function<PetscScalar>>>&
                            coefficients,
                        const std::vector<std::shared_ptr<
-                           const dolfinx::function::Constant<PetscScalar>>>&
+                           const dolfinx::fem::Constant<PetscScalar>>>&
                            constants,
                        bool needs_permutation_data,
                        const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh) {
@@ -470,7 +470,7 @@ void fem(py::module& m)
   m.def(
       "locate_dofs_topological",
       [](const std::vector<
-             std::reference_wrapper<const dolfinx::function::FunctionSpace>>& V,
+             std::reference_wrapper<const dolfinx::fem::FunctionSpace>>& V,
          const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
          bool remote) {
         if (V.size() != 2)
@@ -481,7 +481,7 @@ void fem(py::module& m)
       py::arg("V"), py::arg("dim"), py::arg("entities"),
       py::arg("remote") = true);
   m.def("locate_dofs_topological",
-        py::overload_cast<const dolfinx::function::FunctionSpace&, const int,
+        py::overload_cast<const dolfinx::fem::FunctionSpace&, const int,
                           const Eigen::Ref<const Eigen::ArrayXi>&, bool>(
             &dolfinx::fem::locate_dofs_topological),
         py::arg("V"), py::arg("dim"), py::arg("entities"),
@@ -490,7 +490,7 @@ void fem(py::module& m)
   m.def(
       "locate_dofs_geometrical",
       [](const std::vector<
-             std::reference_wrapper<const dolfinx::function::FunctionSpace>>& V,
+             std::reference_wrapper<const dolfinx::fem::FunctionSpace>>& V,
          const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
              const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                  Eigen::RowMajor>>&)>& marker) {
@@ -501,7 +501,7 @@ void fem(py::module& m)
       py::arg("V"), py::arg("marker"));
   m.def("locate_dofs_geometrical",
         py::overload_cast<
-            const dolfinx::function::FunctionSpace&,
+            const dolfinx::fem::FunctionSpace&,
             const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
                 const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                     Eigen::RowMajor>>&)>&>(

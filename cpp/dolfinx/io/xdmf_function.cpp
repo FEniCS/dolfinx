@@ -43,8 +43,8 @@ std::string rank_to_string(int value_rank)
 }
 //-----------------------------------------------------------------------------
 
-/// Returns true for DG0 function::Functions
-bool has_cell_centred_data(const function::Function<PetscScalar>& u)
+/// Returns true for DG0 fem::Functions
+bool has_cell_centred_data(const fem::Function<PetscScalar>& u)
 {
   int cell_based_dim = 1;
   const int rank = u.function_space()->element()->value_rank();
@@ -61,7 +61,7 @@ bool has_cell_centred_data(const function::Function<PetscScalar>& u)
 
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-int get_padded_width(const function::Function<PetscScalar>& u)
+int get_padded_width(const fem::Function<PetscScalar>& u)
 {
   const int width = u.function_space()->element()->value_size();
   const int rank = u.function_space()->element()->value_rank();
@@ -77,7 +77,7 @@ int get_padded_width(const function::Function<PetscScalar>& u)
 
 //-----------------------------------------------------------------------------
 void xdmf_function::add_function(MPI_Comm comm,
-                                 const function::Function<PetscScalar>& u,
+                                 const fem::Function<PetscScalar>& u,
                                  const double t, pugi::xml_node& xml_node,
                                  const hid_t h5_id)
 {
@@ -87,7 +87,7 @@ void xdmf_function::add_function(MPI_Comm comm,
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
 
-  // Get function::Function data values and shape
+  // Get fem::Function data values and shape
   std::vector<PetscScalar> data_values;
   const bool cell_centred = has_cell_centred_data(u);
   if (cell_centred)

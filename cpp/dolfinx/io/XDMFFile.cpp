@@ -213,7 +213,7 @@ XDMFFile::read_geometry_data(const std::string name,
   return xdmf_mesh::read_geometry_data(_mpi_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_function(const function::Function<PetscScalar>& function,
+void XDMFFile::write_function(const fem::Function<PetscScalar>& function,
                               const double t, const std::string mesh_xpath)
 {
   const std::string timegrid_xpath

@@ -14,10 +14,10 @@
 
 namespace dolfinx
 {
-namespace function
+namespace fem
 {
 class FunctionSpace;
-} // namespace function
+} // namespace fem
 
 namespace fem
 {

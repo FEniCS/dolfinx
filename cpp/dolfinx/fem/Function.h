@@ -26,7 +26,7 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx::function
+namespace dolfinx::fem
 {
 
 class FunctionSpace;
@@ -196,7 +196,7 @@ public:
 
   /// Interpolate a Function (on possibly non-matching meshes)
   /// @param[in] v The function to be interpolated.
-  void interpolate(const Function<T>& v) { function::interpolate(*this, v); }
+  void interpolate(const Function<T>& v) { fem::interpolate(*this, v); }
 
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
@@ -206,7 +206,7 @@ public:
                   const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                       Eigen::RowMajor>>&)>& f)
   {
-    function::interpolate(*this, f);
+    fem::interpolate(*this, f);
   }
 
   /// Evaluate the Function at points
@@ -455,4 +455,4 @@ private:
   // PETSc wrapper of the expansion coefficients
   mutable Vec _petsc_vector = nullptr;
 };
-} // namespace dolfinx::function
+} // namespace dolfinx::fem

@@ -262,7 +262,7 @@ fem::create_coordinate_map(ufc_coordinate_mapping* (*fptr)())
   return element;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<function::FunctionSpace>
+std::shared_ptr<fem::FunctionSpace>
 fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
                           const std::string function_name,
                           std::shared_ptr<mesh::Mesh> mesh)
@@ -270,7 +270,7 @@ fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
   ufc_function_space* space = fptr(function_name.c_str());
   ufc_dofmap* ufc_map = space->create_dofmap();
   ufc_finite_element* ufc_element = space->create_element();
-  auto V = std::make_shared<function::FunctionSpace>(
+  auto V = std::make_shared<fem::FunctionSpace>(
       mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
       std::make_shared<fem::DofMap>(
           fem::create_dofmap(mesh->mpi_comm(), *ufc_map, mesh->topology())));

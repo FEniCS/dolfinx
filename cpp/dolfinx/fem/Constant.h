@@ -9,7 +9,7 @@
 #include <Eigen/Dense>
 #include <vector>
 
-namespace dolfinx::function
+namespace dolfinx::fem
 {
 
 /// A constant value which can be attached to a Form.
@@ -49,4 +49,4 @@ public:
   /// Values, stored as a flattened array.
   std::vector<T> value;
 };
-} // namespace dolfinx::function
+} // namespace dolfinx::fem

@@ -30,7 +30,7 @@ namespace
 {
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-std::int64_t get_padded_width(const function::Function<PetscScalar>& u)
+std::int64_t get_padded_width(const fem::Function<PetscScalar>& u)
 {
   const int width = u.function_space()->element()->value_size();
   const int rank = u.function_space()->element()->value_rank();
@@ -188,7 +188,7 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 }
 //----------------------------------------------------------------------------
 std::vector<PetscScalar>
-xdmf_utils::get_point_data_values(const function::Function<PetscScalar>& u)
+xdmf_utils::get_point_data_values(const fem::Function<PetscScalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
@@ -230,7 +230,7 @@ xdmf_utils::get_point_data_values(const function::Function<PetscScalar>& u)
 }
 //-----------------------------------------------------------------------------
 std::vector<PetscScalar>
-xdmf_utils::get_cell_data_values(const function::Function<PetscScalar>& u)
+xdmf_utils::get_cell_data_values(const fem::Function<PetscScalar>& u)
 {
   assert(u.function_space()->dofmap());
   const auto mesh = u.function_space()->mesh();

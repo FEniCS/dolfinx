@@ -13,7 +13,7 @@
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 
-namespace dolfinx::function
+namespace dolfinx::fem
 {
 
 template <typename T>
@@ -26,7 +26,7 @@ template <typename T>
 void eval(
     Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         values,
-    const function::Expression<T>& e,
+    const fem::Expression<T>& e,
     const std::vector<std::int32_t>& active_cells)
 {
   // Extract data from Expression
@@ -89,4 +89,4 @@ void eval(
   }
 }
 
-} // namespace dolfinx::function
+} // namespace dolfinx::fem

@@ -109,11 +109,11 @@ void io(py::module& m)
            }),
            py::arg("filename"))
       .def("write",
-           py::overload_cast<const dolfinx::function::Function<PetscScalar>&>(
+           py::overload_cast<const dolfinx::fem::Function<PetscScalar>&>(
                &dolfinx::io::VTKFile::write),
            py::arg("u"))
       .def("write",
-           py::overload_cast<const dolfinx::function::Function<PetscScalar>&,
+           py::overload_cast<const dolfinx::fem::Function<PetscScalar>&,
                              double>(&dolfinx::io::VTKFile::write),
            py::arg("u"), py::arg("t"))
 

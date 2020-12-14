@@ -11,7 +11,7 @@
 namespace dolfinx
 {
 
-namespace function
+namespace fem
 {
 class FunctionSpace;
 }
@@ -47,8 +47,8 @@ public:
   /// @param[in] V0 H(curl) space
   /// @param[in] V1 P1 Lagrange space
   /// @return The discrete operator matrix
-  static la::PETScMatrix build_gradient(const function::FunctionSpace& V0,
-                                        const function::FunctionSpace& V1);
+  static la::PETScMatrix build_gradient(const fem::FunctionSpace& V0,
+                                        const fem::FunctionSpace& V1);
 };
 } // namespace fem
 } // namespace dolfinx

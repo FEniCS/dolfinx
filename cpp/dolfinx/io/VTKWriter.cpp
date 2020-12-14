@@ -256,7 +256,7 @@ void VTKWriter::write_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   write_ascii_mesh(mesh, cell_dim, filename);
 }
 //----------------------------------------------------------------------------
-void VTKWriter::write_cell_data(const function::Function<PetscScalar>& u,
+void VTKWriter::write_cell_data(const fem::Function<PetscScalar>& u,
                                 std::string filename)
 {
   assert(u.function_space());
@@ -268,7 +268,7 @@ void VTKWriter::write_cell_data(const function::Function<PetscScalar>& u,
   const std::int32_t num_cells = mesh->topology().index_map(tdim)->size_local();
   std::string encode_string = "ascii";
 
-  // Get rank of function::Function
+  // Get rank of fem::Function
   const int rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
