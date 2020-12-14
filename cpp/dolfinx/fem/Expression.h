@@ -48,10 +48,8 @@ public:
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_size size of expression evaluated at single point
   Expression(
-      const std::vector<std::shared_ptr<const fem::Function<T>>>&
-          coefficients,
-      const std::vector<std::shared_ptr<const fem::Constant<T>>>&
-          constants,
+      const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
+      const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
       const std::shared_ptr<const mesh::Mesh>& mesh,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& x,
@@ -116,8 +114,7 @@ public:
   /// @return Vector of attached constants with their names. Names are
   ///   used to set constants in user's c++ code. Index in the vector is
   ///   the position of the constant in the original (nonsimplified) form.
-  const std::vector<std::shared_ptr<const fem::Constant<T>>>&
-  constants() const
+  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
   {
     return _constants;
   }

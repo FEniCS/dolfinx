@@ -57,8 +57,7 @@ namespace fem
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
 locate_dofs_topological(
-    const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>&
-        V,
+    const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote = true);
 
@@ -103,8 +102,7 @@ locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
 locate_dofs_geometrical(
-    const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>&
-        V,
+    const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker_fn);

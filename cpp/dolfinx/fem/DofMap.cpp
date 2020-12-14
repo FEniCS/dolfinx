@@ -138,7 +138,6 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                           Eigen::RowMajor>>
       _dofmap(dofmap.data(), dofmap.rows() / cell_dimension, cell_dimension);
 
-
   return fem::DofMap(element_dof_layout, index_map, 1,
                      graph::AdjacencyList<std::int32_t>(_dofmap), 1);
 }

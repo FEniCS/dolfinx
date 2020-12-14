@@ -532,17 +532,19 @@ xdmf_utils::extract_local_entities(
   std::vector<std::int32_t> values_new;
   values_new.reserve(recv_vals.array().size());
 
-  for (Eigen::Index e = 0; e < recv_ents.array().rows() / num_vertices_per_entity; ++e)
+  for (Eigen::Index e = 0;
+       e < recv_ents.array().rows() / num_vertices_per_entity; ++e)
   {
     bool entity_found = true;
     std::vector<std::int32_t> entity(num_vertices_per_entity);
     for (Eigen::Index i = 0; i < num_vertices_per_entity; ++i)
     {
-      const auto it = igi_to_vertex.find(recv_ents.array()[e * num_vertices_per_entity + i]);
+      const auto it = igi_to_vertex.find(
+          recv_ents.array()[e * num_vertices_per_entity + i]);
       if (it == igi_to_vertex.end())
       {
-        // As soon as this received index is not in locally owned input global indices
-        // skip the entire entity
+        // As soon as this received index is not in locally owned input global
+        // indices skip the entire entity
         entity_found = false;
         break;
       }
@@ -557,8 +559,10 @@ xdmf_utils::extract_local_entities(
   }
 
   return {Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>(entities_new.data(),
-                                                    entities_new.size() / num_vertices_per_entity, num_vertices_per_entity),
+                                  Eigen::RowMajor>>(
+              entities_new.data(),
+              entities_new.size() / num_vertices_per_entity,
+              num_vertices_per_entity),
           values_new};
-  }
+}
 //-----------------------------------------------------------------------------

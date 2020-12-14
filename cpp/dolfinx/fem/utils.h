@@ -63,12 +63,12 @@ extract_function_spaces(
     const Eigen::Ref<const Eigen::Array<const fem::Form<T>*, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
-  std::vector<std::vector<
-      std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>>
-      spaces(a.rows(),
-             std::vector<
-                 std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>(
-                 a.cols()));
+  std::vector<
+      std::vector<std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>>
+      spaces(
+          a.rows(),
+          std::vector<std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>(
+              a.cols()));
   for (int i = 0; i < a.rows(); ++i)
   {
     for (int j = 0; j < a.cols(); ++j)
@@ -158,8 +158,7 @@ template <typename T>
 Form<T> create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
-    const std::vector<std::shared_ptr<const fem::Function<T>>>&
-        coefficients,
+    const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)

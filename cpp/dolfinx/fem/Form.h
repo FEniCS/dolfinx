@@ -88,10 +88,8 @@ public:
                             T*, const T*, const T*, const double*, const int*,
                             const std::uint8_t*, const std::uint32_t)>>>,
                const mesh::MeshTags<int>*>>& integrals,
-       const std::vector<std::shared_ptr<const fem::Function<T>>>&
-           coefficients,
-       const std::vector<std::shared_ptr<const fem::Constant<T>>>&
-           constants,
+       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
+       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
        bool needs_permutation_data,
        const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
       : _function_spaces(function_spaces), _coefficients(coefficients),
@@ -261,8 +259,7 @@ public:
   }
 
   /// Access constants
-  const std::vector<std::shared_ptr<const fem::Constant<T>>>&
-  constants() const
+  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
   {
     return _constants;
   }

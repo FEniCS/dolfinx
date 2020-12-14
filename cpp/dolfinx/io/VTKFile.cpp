@@ -50,9 +50,8 @@ void pvtu_write_function(std::size_t dim, std::size_t rank,
 void pvtu_write_mesh(const std::string filename,
                      const std::string pvtu_filename, const std::size_t counter,
                      const std::size_t num_processes);
-void pvtu_write(const fem::Function<PetscScalar>& u,
-                const std::string filename, const std::string pvtu_filename,
-                const std::size_t counter);
+void pvtu_write(const fem::Function<PetscScalar>& u, const std::string filename,
+                const std::string pvtu_filename, const std::size_t counter);
 void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
                      const std::string vtu_filename);
 void vtk_header_close(std::string file);
@@ -562,9 +561,8 @@ void pvtu_write_mesh(const std::string filename, const std::string fname,
   xml_doc.save_file(fname.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void pvtu_write(const fem::Function<PetscScalar>& u,
-                const std::string filename, const std::string fname,
-                const std::size_t counter)
+void pvtu_write(const fem::Function<PetscScalar>& u, const std::string filename,
+                const std::string fname, const std::size_t counter)
 {
   assert(u.function_space()->element());
   const int rank = u.function_space()->element()->value_rank();
