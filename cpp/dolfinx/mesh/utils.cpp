@@ -521,7 +521,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::cell_normals(
       const Eigen::Vector3d p1 = geometry.node(vertices[1]);
       const Eigen::Vector3d p2 = geometry.node(vertices[2]);
 
-      // Defined cell normal via cross product of first two edges:
+      // Define cell normal via cross product of first two edges
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
     }
     return n;

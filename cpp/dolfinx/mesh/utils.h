@@ -61,12 +61,12 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> cell_normals(
     const Mesh& mesh, int dim,
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_indices);
 
-/// Compute midpoints or mesh entities of a given dimension
+/// Compute midpoints of mesh entities of a given dimension
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
     const mesh::Mesh& mesh, int dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities);
 
-/// Compute indicies of all mesh entities that evaluate to true for the
+/// Compute indices of all mesh entities that evaluate to true for the
 /// provided geometric marking function. An entity is considered marked
 /// if the marker function evaluates true for all of its vertices.
 ///
@@ -82,7 +82,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
 
-/// Compute indicies of all mesh entities that are attached to an owned
+/// Compute indices of all mesh entities that are attached to an owned
 /// boundary facet and evaluate to true for the provided geometric
 /// marking function. An entity is considered marked if the marker
 /// function evaluates true for all of its vertices.
