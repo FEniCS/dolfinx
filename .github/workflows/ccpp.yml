@@ -93,6 +93,21 @@ jobs:
       - name: Run Python unit tests (MPI, np=2)
         run: mpirun -np 2 python3 -m pytest python/test/unit/
 
+      - name: 'Upload Python documentation artifact'
+        uses: actions/upload-artifact@v2
+        with:
+          name: docs-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
+          path: python/doc/build/html
+          retention-days: 2
+          if-no-files-found: error
+
+      - name: 'Upload C++ documentation artifact'
+        uses: actions/upload-artifact@v2
+        with:
+          name: docs-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
+          path: cpp/doc/html
+          if-no-files-found: error
+
       - name: Install SSH key for fenicsproject.org documentation push
         if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
         run : |
@@ -113,7 +128,8 @@ jobs:
           cd python/doc/build/html
           scp -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
 
-      - uses: actions/checkout@v2
+      - name: Checkout FEniCS/docs
+        uses: actions/checkout@v2
         with:
           repository: "FEniCS/docs"
           path: "docs"
