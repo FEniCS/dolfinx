@@ -453,7 +453,7 @@ void assemble_interior_facets(
     }
 
     // Tabulate tensor
-    Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
+    Ae.setZero(bs0 * dmapjoint0.size(), bs1 * dmapjoint1.size());
     const std::array perm{perms(local_facet[0], cells[0]),
                           perms(local_facet[1], cells[1])};
     fn(Ae.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
@@ -464,16 +464,22 @@ void assemble_interior_facets(
     {
       for (Eigen::Index i = 0; i < dmapjoint0.size(); ++i)
       {
-        if (bc0[dmapjoint0[i]])
-          Ae.row(i).setZero();
+        for (int k = 0; k < bs0; ++k)
+        {
+          if (bc0[bs0 * dmapjoint0[i] + k])
+            Ae.row(bs0 * i + k).setZero();
+        }
       }
     }
     if (!bc1.empty())
     {
       for (Eigen::Index j = 0; j < dmapjoint1.size(); ++j)
       {
-        if (bc1[dmapjoint1[j]])
-          Ae.col(j).setZero();
+        for (int k = 0; k < bs0; ++k)
+        {
+          if (bc1[bs1 * dmapjoint0[j] + k])
+            Ae.col(bs1 * j + k).setZero();
+        }
       }
     }
 
