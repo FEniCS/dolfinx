@@ -17,7 +17,7 @@ import ufl
 from dolfinx import cpp, function
 
 
-def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.function.FunctionSpace, function.FunctionSpace]],
+def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.fem.FunctionSpace, function.FunctionSpace]],
                             marker: types.FunctionType):
     """Locate degrees-of-freedom geometrically using a marker function.
 
@@ -63,7 +63,7 @@ def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.function.Functio
         return cpp.fem.locate_dofs_geometrical(_V, marker)
 
 
-def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.function.FunctionSpace, function.FunctionSpace]],
+def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.fem.FunctionSpace, function.FunctionSpace]],
                             entity_dim: int,
                             entities: typing.List[int],
                             remote: bool = True):
@@ -113,7 +113,7 @@ def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.function.Functio
 class DirichletBC(cpp.fem.DirichletBC):
     def __init__(
             self,
-            value: typing.Union[ufl.Coefficient, function.Function, cpp.function.Function],
+            value: typing.Union[ufl.Coefficient, function.Function, cpp.fem.Function],
             dofs: typing.List[int],
             V: typing.Union[function.FunctionSpace] = None):
         """Representation of Dirichlet boundary condition which is imposed on
@@ -136,7 +136,7 @@ class DirichletBC(cpp.fem.DirichletBC):
         # Construct bc value
         if isinstance(value, ufl.Coefficient):
             _value = value._cpp_object
-        elif isinstance(value, cpp.function.Function):
+        elif isinstance(value, cpp.fem.Function):
             _value = value
         elif isinstance(value, function.Function):
             _value = value._cpp_object

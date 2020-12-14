@@ -15,7 +15,7 @@ from dolfinx.mesh import create_mesh
 
 __all__ = ["plot"]
 
-_matplotlib_plottable_types = (cpp.function.Function,
+_matplotlib_plottable_types = (cpp.fem.Function,
                                cpp.mesh.Mesh,
                                cpp.fem.DirichletBC)
 _all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types)))
@@ -326,9 +326,9 @@ def _plot_matplotlib(obj, mesh, kwargs):
             cpp.warning("Matplotlib backend does not support '%s' kwarg yet. "
                         "Ignoring it..." % kw)
 
-    if isinstance(obj, cpp.function.Function):
+    if isinstance(obj, cpp.fem.Function):
         return mplot_function(ax, obj, **kwargs)
-    # elif isinstance(obj, cpp.function.Expression):
+    # elif isinstance(obj, cpp.fem.Expression):
     #     return mplot_expression(ax, obj, mesh, **kwargs)
     elif isinstance(obj, cpp.mesh.Mesh):
         return mplot_mesh(ax, obj, **kwargs)
@@ -415,13 +415,13 @@ def plot(object, *args, **kwargs):
         mesh = object
 
     if mesh is None:
-        if isinstance(object, cpp.function.Function):
+        if isinstance(object, cpp.fem.Function):
             mesh = object.function_space.mesh
         elif hasattr(object, "mesh"):
             mesh = object.mesh
 
     # Expressions do not carry their own mesh
-    # if isinstance(object, cpp.function.Expression) and mesh is None:
+    # if isinstance(object, cpp.fem.Expression) and mesh is None:
     #     raise RuntimeError("Expecting a mesh as keyword argument")
 
     backend = kwargs.pop("backend", "matplotlib")
