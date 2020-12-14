@@ -97,7 +97,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: docs-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
-          path: python/doc/build/html
+          path: python/doc/build/html/
           retention-days: 2
           if-no-files-found: error
 
@@ -105,7 +105,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: docs-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
-          path: cpp/doc/html
+          path: cpp/doc/html/
           if-no-files-found: error
 
       - name: Install SSH key for fenicsproject.org documentation push
