@@ -21,7 +21,8 @@ class VectorSpaceBasis;
 
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
-Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
+Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern,
+                        const std::string& type = std::string());
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.
@@ -38,7 +39,8 @@ class PETScMatrix : public PETScOperator
 {
 public:
   /// Return a function with an interface for adding values to the
-  /// matrix A
+  /// matrix A (calls MatSetValuesLocal)
+  /// @param[in] A The matrix to set values in
   static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                            const std::int32_t*, const PetscScalar*)>
   add_fn(Mat A, const InsertMode mode = ADD_VALUES);
@@ -49,8 +51,27 @@ public:
                            const std::int32_t*, const PetscScalar*)>
   set_fn(Mat A);
 
-  /// Create holder of a PETSc Mat object from a sparsity pattern
-  PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
+  /// Return a function with an interface for adding values to the
+  /// matrix A using blocked indices (calls MatSetValuesBlockedLocal)
+  /// @param[in] A The matrix to set values in
+  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                           const std::int32_t*, const PetscScalar*)>
+  add_block_fn(Mat A);
+
+  /// Return a function with an interface for adding blocked values to
+  /// the matrix A using non-blocked insertion (calls
+  /// MatSetValuesLocal). Internally it expands the blocked indices into
+  /// non-blocked arrays.
+  /// @param[in] A The matrix to set values in
+  /// @param[in] bs0 Block size for the matrix rows
+  /// @param[in] bs1 Block size for the matrix columns
+  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                           const std::int32_t*, const PetscScalar*)>
+  add_block_expand_fn(Mat A, int bs0, int bs1);
+
+  /// Create holder for a PETSc Mat object from a sparsity pattern
+  PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern,
+              const std::string& type = std::string());
 
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
   /// should already be created. If inc_ref_count is true, the reference

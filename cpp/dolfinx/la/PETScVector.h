@@ -22,13 +22,13 @@ class IndexMap;
 namespace la
 {
 
-/// Create a PETSc Vec that wraps the data in x
-/// @param[in] map The index map that described the parallel layout of
-///   the distributed vector
+/// Create a PETSc Vec that wraps the data in an array
+/// @param[in] map The index map that describes the parallel layout of
+/// the distributed vector (by block)
 /// @param[in] bs Block size
 /// @param[in] x The local part of the vector, including ghost entries
-/// @return A PETSc Vec object that share the x data. The caller is
-///   responsible for destroying the Vec.
+/// @return A PETSc Vec object that shares the data in @p x. The caller
+/// is responsible for destroying the Vec.
 Vec create_ghosted_vector(
     const common::IndexMap& map, int bs,
     const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x);
@@ -39,27 +39,42 @@ void petsc_error(int error_code, std::string filename,
 
 /// @todo This function could take just the local sizes
 ///
-/// Compute IndexSets (IS) for stacked index maps.  E.g., if map[0] =
-/// {0, 1, 2, 3, 4, 5, 6} and map[1] = {0, 1, 2, 4} (in local indices),
-/// IS[0] = {0, 1, 2, 3, 4, 5, 6} and IS[1] = {7, 8, 9, 10}. Caller is
-/// responsible for destruction of each IS.
+/// Compute PETSc IndexSets (IS) for a stack of index maps. E.g., if
+/// `map[0] = {0, 1, 2, 3, 4, 5, 6}` and `map[1] = {0, 1, 2, 4}` (in
+/// local indices) then `IS[0] = {0, 1, 2, 3, 4, 5, 6}` and `IS[1] = {7, 8,
+/// 9, 10}`.
 ///
-/// @param[in] maps Vector of IndexMaps and corresponding block size
-/// @returns Vector of PETSc Index Sets, created on PETSc_COMM_SELF
+/// The caller is responsible for destruction of each IS.
+///
+/// @param[in] maps Vector of IndexMaps and corresponding block sizes
+/// @returns Vector of PETSc Index Sets, created on` PETSC_COMM_SELF`
 std::vector<IS> create_petsc_index_sets(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
-/// Create a ghosted PETSc Vec. Caller is responsible for destroying the
-/// returned object.
+/// Create a ghosted PETSc Vec.
+///
+/// Caller is responsible for destroying the returned object.
+///
+/// @param[in] map The index map describing the parallel layout (by block)
+/// @param[in] bs The block size
+/// @returns A PETSc Vec
 Vec create_petsc_vector(const common::IndexMap& map, int bs);
 
-/// Create a ghosted PETSc Vec. Caller is responsible for destroying the
-/// returned object.
+/// Create a ghosted PETSc Vec from a local range and ghost indices.
+///
+/// Caller is responsible for destroying the returned object.
+///
+/// @param[in] comm The MPI communicator
+/// @param[in] range The local ownership range (by blocks)
+/// @param[in] ghosts Ghost blocks
+/// @param[in] bs The block size. The total number of local entries is
+/// `bs * (range[1] - range[0])`.
+/// @returns A PETSc Vec
 Vec create_petsc_vector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-        ghost_indices,
+        ghosts,
     int bs);
 
 /// Copy blocks from Vec into Eigen vectors
@@ -75,23 +90,21 @@ void scatter_local_vectors(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
-/// It is a simple wrapper for a PETSc vector pointer (Vec). Its main
-/// purpose is to assist memory management of PETSc Vec objects.
+/// A simple wrapper for a PETSc vector pointer (Vec). Its main purpose
+/// is to assist with memory/lifetime management of PETSc Vec objects.
 ///
-/// For advanced usage, access the PETSc Vec pointer using the function
-/// vec() and use the standard PETSc interface.
-
+/// Access the underlying PETSc Vec pointer using the function vec() and
+/// use the full PETSc interface.
 class PETScVector
 {
 public:
   /// Create vector
+  ///
+  /// Collective
+  ///
+  /// @param[in] map Index map describing the parallel layout
+  /// @param[in] bs the block size
   PETScVector(const common::IndexMap& map, int bs);
-
-  /// Create vector
-  PETScVector(
-      MPI_Comm comm, std::array<std::int64_t, 2> range,
-      const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghost_indices,
-      int bs);
 
   // Delete copy constructor to avoid accidental copying of 'heavy' data
   PETScVector(const PETScVector& x) = delete;
@@ -104,6 +117,12 @@ public:
   /// counter of the Vec object will be increased. The Vec reference
   /// count will always be decreased upon destruction of the the
   /// PETScVector.
+  ///
+  /// Collective
+  ///
+  /// @param[in] x The PETSc Vec
+  /// @param[in] inc_ref_count True if the reference count of `x` should
+  /// be incremented
   PETScVector(Vec x, bool inc_ref_count);
 
   /// Destructor
@@ -115,7 +134,9 @@ public:
   /// Move Assignment operator
   PETScVector& operator=(PETScVector&& x);
 
-  /// Copy vector
+  /// Create a copy of the vector
+  ///
+  /// Collective
   PETScVector copy() const;
 
   /// Return global size of vector
@@ -124,24 +145,19 @@ public:
   /// Return local size of vector (belonging to this process)
   std::int32_t local_size() const;
 
-  /// Return ownership range for process
+  /// Return ownership range for calling rank
   std::array<std::int64_t, 2> local_range() const;
-
-  /// Update owned entries owned by this process and which are ghosts on
-  /// other processes, i.e., have been added to by a remote process.
-  /// This is more efficient that apply() when processes only add/set
-  /// their owned entries and the pre-defined ghosts.
-  void apply_ghosts();
-
-  /// Update ghost values (gathers ghost values from the owning
-  /// processes)
-  void update_ghosts();
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
 
-  /// Return norm of vector
-  PetscReal norm(la::Norm norm_type) const;
+  /// Compute norm of vector
+  ///
+  /// Collective
+  ///
+  /// @param[in] type The norm type
+  /// @returns The norm of the vector
+  PetscReal norm(la::Norm type) const;
 
   /// Sets the prefix used by PETSc when searching the options database
   void set_options_prefix(std::string options_prefix);

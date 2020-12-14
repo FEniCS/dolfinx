@@ -20,6 +20,7 @@ using namespace dolfinx::fem;
 
 namespace
 {
+//-----------------------------------------------------------------------------
 template <typename T>
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 remap_dofs(const std::vector<std::int32_t>& old_to_new,
@@ -32,7 +33,8 @@ remap_dofs(const std::vector<std::int32_t>& old_to_new,
   return dofmap;
 }
 //-----------------------------------------------------------------------------
-// Build a collapsed DofMap from a dofmap view
+// Build a collapsed DofMap from a dofmap view. Extracts dofs and
+// doesn't build a new re-ordered dofmap
 fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                                    const mesh::Topology& topology)
 {
@@ -40,19 +42,11 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
       dofmap_view.element_dof_layout->copy());
   assert(element_dof_layout);
 
-  if (dofmap_view.index_map_bs() == 1 and element_dof_layout->block_size() > 1)
+  if (element_dof_layout->block_size() > 1)
   {
     throw std::runtime_error(
         "Cannot collapse dofmap with block size greater "
         "than 1 from parent with block size of 1. Create new dofmap first.");
-  }
-
-  if (dofmap_view.index_map_bs() > 1 and element_dof_layout->block_size() > 1)
-  {
-    throw std::runtime_error(
-        "Cannot (yet) collapse dofmap with block size greater "
-        "than 1 from parent with block size greater than 1. Create new dofmap "
-        "first.");
   }
 
   // Get topological dimension
@@ -71,6 +65,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   std::sort(dofs_view.begin(), dofs_view.end());
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
+
   // Get block sizes
   const int bs_view = dofmap_view.index_map_bs();
 
@@ -143,8 +138,9 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                           Eigen::RowMajor>>
       _dofmap(dofmap.data(), dofmap.rows() / cell_dimension, cell_dimension);
 
+
   return fem::DofMap(element_dof_layout, index_map, 1,
-                     graph::AdjacencyList<std::int32_t>(_dofmap));
+                     graph::AdjacencyList<std::int32_t>(_dofmap), 1);
 }
 
 } // namespace
@@ -195,13 +191,15 @@ fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap,
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                std::shared_ptr<const common::IndexMap> index_map,
                int index_map_bs,
-               const graph::AdjacencyList<std::int32_t>& dofmap)
+               const graph::AdjacencyList<std::int32_t>& dofmap, int bs)
     : element_dof_layout(element_dof_layout), index_map(index_map),
-      _index_map_bs(index_map_bs), _dofmap(dofmap)
+      _index_map_bs(index_map_bs), _dofmap(dofmap), _bs(bs)
 {
   // Dofmap data is copied as the types for dofmap and _dofmap may
   // differ, typically 32- vs 64-bit integers
 }
+//-----------------------------------------------------------------------------
+int DofMap::bs() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 {
@@ -218,18 +216,24 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 
   // Build dofmap by extracting from parent
   const int num_cells = this->_dofmap.num_nodes();
+  // FIXME X: how does sub_element_map_view hand block sizes?
   const std::int32_t dofs_per_cell = sub_element_map_view.size();
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       dofmap(num_cells, dofs_per_cell);
+  const int bs_parent = this->bs();
   for (int c = 0; c < num_cells; ++c)
   {
     auto cell_dmap_parent = this->_dofmap.links(c);
     for (std::int32_t i = 0; i < dofs_per_cell; ++i)
-      dofmap(c, i) = cell_dmap_parent[sub_element_map_view[i]];
+    {
+      const std::div_t pos = std::div(sub_element_map_view[i], bs_parent);
+      dofmap(c, i) = bs_parent * cell_dmap_parent[pos.quot] + pos.rem;
+    }
   }
 
+  // FIXME X
   return DofMap(sub_element_dof_layout, this->index_map, this->index_map_bs(),
-                graph::AdjacencyList<std::int32_t>(dofmap));
+                graph::AdjacencyList<std::int32_t>(dofmap), 1);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
@@ -255,7 +259,7 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
     auto [index_map, bs, dofmap]
         = DofMapBuilder::build(comm, topology, *collapsed_dof_layout);
     dofmap_new = std::make_unique<DofMap>(element_dof_layout, index_map, bs,
-                                          std::move(dofmap));
+                                          std::move(dofmap), bs);
   }
   else
   {
@@ -275,15 +279,19 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   const int tdim = topology.dim();
   auto cells = topology.connectivity(tdim, 0);
   assert(cells);
+  const int bs = dofmap_new->bs();
   for (int c = 0; c < cells->num_nodes(); ++c)
   {
     auto cell_dofs_view = this->cell_dofs(c);
     auto cell_dofs = dofmap_new->cell_dofs(c);
-    assert(cell_dofs_view.rows() == cell_dofs.rows());
-    for (Eigen::Index i = 0; i < cell_dofs_view.rows(); ++i)
+    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
     {
-      assert(cell_dofs[i] < (int)collapsed_map.size());
-      collapsed_map[cell_dofs[i]] = cell_dofs_view[i];
+      for (int k = 0; k < bs; ++k)
+      {
+        assert(bs * cell_dofs[i] + k < (int)collapsed_map.size());
+        assert(bs * i + k < cell_dofs_view.rows());
+        collapsed_map[bs * cell_dofs[i] + k] = cell_dofs_view[bs * i + k];
+      }
     }
   }
 

@@ -209,7 +209,10 @@ def test_assemble_manifold():
     assert numpy.isclose(A.norm(), 25.0199)
 
 
-@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize("mode",
+                         [dolfinx.cpp.mesh.GhostMode.none,
+                          dolfinx.cpp.mesh.GhostMode.shared_facet,
+                          ])
 def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
@@ -264,7 +267,7 @@ def test_matrix_assembly_block(mode):
     bnorm0 = b0.norm()
 
     # Nested (MatNest)
-    A1 = dolfinx.fem.assemble_matrix_nest(a_block, [bc])
+    A1 = dolfinx.fem.assemble_matrix_nest(a_block, [bc], [["baij", "aij"], ["aij", ""]])
     A1.assemble()
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
@@ -290,7 +293,6 @@ def test_matrix_assembly_block(mode):
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bdofsW_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), mesh.topology.dim - 1, bndry_facets)
-
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsW_V1, W.sub(1))
     A2 = dolfinx.fem.assemble_matrix(a, [bc])
     A2.assemble()
@@ -375,7 +377,7 @@ def test_assembly_solve_block(mode):
     x0norm = x0.norm()
 
     # Nested (MatNest)
-    A1 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs)
+    A1 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs, diagonal=1.0)
     A1.assemble()
     b1 = dolfinx.fem.assemble_vector_nest([L0, L1])
     dolfinx.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs)
@@ -507,10 +509,10 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # -- Blocked (nested)
 
-    A0 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1])
+    A0 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1], [["baij", "aij"], ["aij", ""]])
     A0.assemble()
     A0norm = nest_matrix_norm(A0)
-    P0 = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1])
+    P0 = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1], [["aij", "aij"], ["aij", ""]])
     P0.assemble()
     P0norm = nest_matrix_norm(P0)
     b0 = dolfinx.fem.assemble_vector_nest([L0, L1])

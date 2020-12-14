@@ -70,25 +70,26 @@
 #
 # We first import the modules and function that the program uses::
 
-import numpy as np
-from mpi4py import MPI
-from petsc4py import PETSc
 import dolfinx
+import numpy as np
 import ufl
 from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import div, dx, grad, inner
+
 
 # We create a Mesh and attach a coordinate map to the mesh::
 
 # Create mesh
-mesh = RectangleMesh(
-    MPI.COMM_WORLD,
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
-    CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
+mesh = RectangleMesh(MPI.COMM_WORLD,
+                     [np.array([0, 0, 0]), np.array([1, 1, 0])],
+                     [32, 32],
+                     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
 
 
 # Function to mark x = 0, x = 1 and y = 0
@@ -129,11 +130,9 @@ with noslip.vector.localForm() as bc_local:
 facets = locate_entities_boundary(mesh, 1, noslip_boundary)
 bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets))
 
-
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
 lid_velocity.interpolate(lid_velocity_expression)
-
 facets = locate_entities_boundary(mesh, 1, lid)
 bc1 = DirichletBC(lid_velocity, locate_dofs_topological(V, 1, facets))
 
@@ -257,8 +256,8 @@ ksp.solve(b, x)
 norm_u_0 = u.vector.norm()
 norm_p_0 = p.vector.norm()
 if MPI.COMM_WORLD.rank == 0:
-    print("(A) Norm of velocity coefficient vector: {}".format(norm_u_0))
-    print("(A) Norm of pressure coefficient vector: {}".format(norm_p_0))
+    print("(A) Norm of velocity coefficient vector (nested, iterative): {}".format(norm_u_0))
+    print("(A) Norm of pressure coefficient vector (nested, iterative): {}".format(norm_p_0))
 
 # The solution fields can be saved to file in XDMF format for
 # visualization, e.g. with ParView. Before writing to file, ghost values
@@ -324,9 +323,8 @@ ksp_p.getPC().setType("jacobi")
 
 # Monitor the convergence of the KSP
 opts = PETSc.Options()
-# opts["ksp_monitor"] = None
-# opts["ksp_view"] = None
-
+opts["ksp_monitor"] = None
+opts["ksp_view"] = None
 ksp.setFromOptions()
 
 # We also need to create a block vector,``x``, to store the (full)
@@ -347,8 +345,8 @@ p.vector.array[:] = x.array_r[offset:]
 norm_u_1 = u.vector.norm()
 norm_p_1 = p.vector.norm()
 if MPI.COMM_WORLD.rank == 0:
-    print("(B) Norm of velocity coefficient vector: {}".format(norm_u_1))
-    print("(B) Norm of pressure coefficient vector: {}".format(norm_p_1))
+    print("(B) Norm of velocity coefficient vector (blocked, iterative): {}".format(norm_u_1))
+    print("(B) Norm of pressure coefficient vector (blocked, interative): {}".format(norm_p_1))
 assert np.isclose(norm_u_1, norm_u_0)
 assert np.isclose(norm_p_1, norm_p_0)
 
@@ -382,8 +380,8 @@ p.vector.array[:] = x.array_r[offset:]
 norm_u_2 = u.vector.norm()
 norm_p_2 = p.vector.norm()
 if MPI.COMM_WORLD.rank == 0:
-    print("(C) Norm of velocity coefficient vector: {}".format(norm_u_2))
-    print("(C) Norm of pressure coefficient vector: {}".format(norm_p_2))
+    print("(C) Norm of velocity coefficient vector (blocked, direct): {}".format(norm_u_2))
+    print("(C) Norm of pressure coefficient vector (blocked, direct): {}".format(norm_p_2))
 assert np.isclose(norm_u_2, norm_u_0)
 assert np.isclose(norm_p_2, norm_p_0)
 
@@ -400,10 +398,11 @@ W = FunctionSpace(mesh, TH)
 W0 = W.sub(0).collapse()
 
 # No slip boundary condition
-noslip = Function(W0)
+noslip = Function(V)
 facets = locate_entities_boundary(mesh, 1, noslip_boundary)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 bc0 = DirichletBC(noslip, dofs, W.sub(0))
+
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(W0)
@@ -412,8 +411,9 @@ facets = locate_entities_boundary(mesh, 1, lid)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
 
-# Since for this problem the pressure is only determined up to a constant,
-# we pin the pressure at the point (0, 0)
+
+# Since for this problem the pressure is only determined up to a
+# constant, we pin the pressure at the point (0, 0)
 zero = Function(Q)
 with zero.vector.localForm() as zero_local:
     zero_local.set(0.0)
@@ -428,6 +428,7 @@ bcs = [bc0, bc1, bc2]
 (u, p) = ufl.TrialFunctions(W)
 (v, q) = ufl.TestFunctions(W)
 f = Function(W0)
+zero = dolfinx.Constant(mesh, 0.0)
 a = (inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx
 L = inner(f, v) * dx
 
@@ -461,8 +462,8 @@ p = U.sub(1).collapse()
 norm_u_3 = u.vector.norm()
 norm_p_3 = p.vector.norm()
 if MPI.COMM_WORLD.rank == 0:
-    print("(D) Norm of velocity coefficient vector: {}".format(norm_u_3))
-    print("(D) Norm of pressure coefficient vector: {}".format(norm_p_3))
+    print("(D) Norm of velocity coefficient vector (monolithic, direct): {}".format(norm_u_3))
+    print("(D) Norm of pressure coefficient vector (monolithic, direct): {}".format(norm_p_3))
 assert np.isclose(norm_u_3, norm_u_0)
 
 # Write the solution to file
@@ -471,7 +472,7 @@ with XDMFFile(MPI.COMM_WORLD, "new_velocity.xdmf", "w") as ufile_xdmf:
     ufile_xdmf.write_mesh(mesh)
     ufile_xdmf.write_function(u)
 
-with XDMFFile(MPI.COMM_WORLD, "new_pressure.xdmf", "w") as pfile_xdmf:
+with XDMFFile(MPI.COMM_WORLD, "my.xdmf", "w") as pfile_xdmf:
     p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    ufile_xdmf.write_mesh(mesh)
-    ufile_xdmf.write_function(p)
+    pfile_xdmf.write_mesh(mesh)
+    pfile_xdmf.write_function(p)

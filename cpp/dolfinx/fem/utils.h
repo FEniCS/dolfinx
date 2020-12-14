@@ -414,10 +414,12 @@ pack_coefficients(const U& u)
       = u.coefficients();
   const std::vector<int> offsets = u.coefficient_offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
+  std::vector<int> bs(coefficients.size());
   std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>> v;
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
     dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
+    bs[i] = dofmaps[i]->bs();
     v.emplace_back(coefficients[i]->x()->array());
   }
 
@@ -441,8 +443,14 @@ pack_coefficients(const U& u)
         auto dofs = dofmaps[coeff]->cell_dofs(cell);
         const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& _v
             = v[coeff];
-        for (Eigen::Index k = 0; k < dofs.size(); ++k)
-          c(cell, k + offsets[coeff]) = _v[dofs[k]];
+        for (Eigen::Index i = 0; i < dofs.size(); ++i)
+        {
+          for (int k = 0; k < bs[coeff]; ++k)
+          {
+            c(cell, bs[coeff] * i + k + offsets[coeff])
+                = _v[bs[coeff] * dofs[i] + k];
+          }
+        }
       }
     }
   }
