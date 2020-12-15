@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "TopologyComputation.h"
+#include "topologycomputation.h"
 #include "Topology.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
