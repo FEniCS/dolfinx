@@ -78,18 +78,17 @@ fem::create_sparsity_pattern(const mesh::Topology& topology,
   {
     if (type == fem::IntegralType::cell)
     {
-      SparsityPatternBuilder::cells(pattern, topology,
-                                    {{dofmaps[0], dofmaps[1]}});
+      sparsitybuild::cells(pattern, topology, {{dofmaps[0], dofmaps[1]}});
     }
     else if (type == fem::IntegralType::interior_facet)
     {
-      SparsityPatternBuilder::interior_facets(pattern, topology,
-                                              {{dofmaps[0], dofmaps[1]}});
+      sparsitybuild::interior_facets(pattern, topology,
+                                     {{dofmaps[0], dofmaps[1]}});
     }
     else if (type == fem::IntegralType::exterior_facet)
     {
-      SparsityPatternBuilder::exterior_facets(pattern, topology,
-                                              {{dofmaps[0], dofmaps[1]}});
+      sparsitybuild::exterior_facets(pattern, topology,
+                                     {{dofmaps[0], dofmaps[1]}});
     }
   }
 

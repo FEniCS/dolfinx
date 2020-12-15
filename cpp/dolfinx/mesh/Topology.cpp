@@ -326,7 +326,7 @@ mesh::create_topology(MPI_Comm comm,
   {
     // Get global indices of ghost cells
     const std::vector cell_ghost_indices
-        = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,
+        = graph::partition::compute_ghost_indices(comm, original_cell_index,
                                                      ghost_owners);
     index_map_c = std::make_shared<common::IndexMap>(
         comm, num_local_cells,

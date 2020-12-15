@@ -95,7 +95,7 @@ Mesh mesh::create_mesh(
 
   // Distribute cells to destination rank
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
-      = graph::Partitioning::distribute(comm, cells, dest);
+      = graph::partition::distribute(comm, cells, dest);
 
   // Create cells and vertices with the ghosting requested. Input topology
   // includes cells shared via facet, but output will remove these, if not

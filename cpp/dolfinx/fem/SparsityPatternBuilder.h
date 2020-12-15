@@ -27,7 +27,7 @@ class DofMap;
 
 /// Functions to compute the sparsity pattern based on DOF maps
 
-namespace SparsityPatternBuilder
+namespace sparsitybuild
 {
 
 /// Iterate over cells and insert entries into sparsity pattern

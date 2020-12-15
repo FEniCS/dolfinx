@@ -75,18 +75,16 @@ la::PETScMatrix fem::create_matrix_block(
         assert(sp);
         const fem::Form<PetscScalar>& a_ = *a(row, col);
         if (a_.num_integrals(IntegralType::cell) > 0)
-          SparsityPatternBuilder::cells(*sp, mesh->topology(), dofmaps);
+          sparsitybuild::cells(*sp, mesh->topology(), dofmaps);
         if (a_.num_integrals(IntegralType::interior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
-          SparsityPatternBuilder::interior_facets(*sp, mesh->topology(),
-                                                  dofmaps);
+          sparsitybuild::interior_facets(*sp, mesh->topology(), dofmaps);
         }
         if (a_.num_integrals(IntegralType::exterior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
-          SparsityPatternBuilder::exterior_facets(*sp, mesh->topology(),
-                                                  dofmaps);
+          sparsitybuild::exterior_facets(*sp, mesh->topology(), dofmaps);
         }
       }
       else

@@ -89,17 +89,17 @@ mesh::Geometry mesh::create_geometry(
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
-      = graph::Partitioning::distribute_data<double>(comm, indices, x);
+      = graph::partition::distribute_data<double>(comm, indices, x);
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
   std::vector l2g
-      = graph::Partitioning::compute_local_to_global_links(cell_nodes, dofmap);
+      = graph::partition::compute_local_to_global_links(cell_nodes, dofmap);
 
   // Compute local (dof) to local (position in coords) map from (i)
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
-  std::vector l2l = graph::Partitioning::compute_local_to_local(l2g, indices);
+  std::vector l2l = graph::partition::compute_local_to_local(l2g, indices);
 
   // Build coordinate dof array
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(

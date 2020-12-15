@@ -56,33 +56,33 @@ void graph(py::module& m)
   declare_adjacency_list<std::int64_t>(m, "int64");
 
   m.def("create_local_adjacency_list",
-        &dolfinx::graph::Partitioning::create_local_adjacency_list);
+        &dolfinx::graph::partition::create_local_adjacency_list);
   m.def(
       "create_distributed_adjacency_list",
       [](const MPICommWrapper comm,
          const dolfinx::graph::AdjacencyList<std::int32_t>& list_local,
          const std::vector<std::int64_t>& global_links,
          const std::vector<bool>& exterior_links) {
-        return dolfinx::graph::Partitioning::create_distributed_adjacency_list(
+        return dolfinx::graph::partition::create_distributed_adjacency_list(
             comm.get(), list_local, global_links, exterior_links);
       });
   m.def("distribute",
         [](const MPICommWrapper comm,
            const dolfinx::graph::AdjacencyList<std::int64_t>& list,
            const dolfinx::graph::AdjacencyList<std::int32_t>& destinations) {
-          return dolfinx::graph::Partitioning::distribute(comm.get(), list,
+          return dolfinx::graph::partition::distribute(comm.get(), list,
                                                           destinations);
         });
   m.def("distribute_data",
         [](const MPICommWrapper comm, const std::vector<std::int64_t>& indices,
            const Eigen::Ref<const Eigen::Array<
                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x) {
-          return dolfinx::graph::Partitioning::distribute_data<double>(
+          return dolfinx::graph::partition::distribute_data<double>(
               comm.get(), indices, x);
         });
   m.def("compute_local_to_global_links",
-        &dolfinx::graph::Partitioning::compute_local_to_global_links);
+        &dolfinx::graph::partition::compute_local_to_global_links);
   m.def("compute_local_to_local",
-        &dolfinx::graph::Partitioning::compute_local_to_local);
+        &dolfinx::graph::partition::compute_local_to_local);
 }
 } // namespace dolfinx_wrappers
