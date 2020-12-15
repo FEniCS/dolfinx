@@ -38,20 +38,31 @@ public:
   /// Destructor
   virtual ~NewtonSolver();
 
-  /// Set F
+  /// Set the function for computing the residual and the vector to the
+  /// assemble the residual into
+  /// @param[in] F Function to compute the residual vector b (x, b)
+  /// @param[in] b The vector to assemble to residual into
   void setF(const std::function<void(const Vec, Vec)>& F, Vec b);
 
-  /// Set J
+  /// Set the function for computing the Jacobian (dF/dx) and the matrix
+  /// to assemble the residual into
+  /// @param[in] J Function to compute the Jacobian matrix b (x, A)
+  /// @param[in] Jmat The matrix to assemble the Jacobian into
   void setJ(const std::function<void(const Vec, Mat)>& J, Mat Jmat);
 
-  /// Set P
+  /// Set the function for computing the preconditioner matrix (optional)
+  /// @param[in] P Function to compute the preconditioner matrix b (x, P)
+  /// @param[in] Pmat The matrix to assemble the preconditioner into
   void setP(const std::function<void(const Vec, Mat)>& P, Mat Pmat);
 
-  /// Set P
+  /// Set the function that is called before the residual or Jacobian
+  /// are computed. It is commonly used to update ghost values.
+  /// @param[in] form The function to call. It takes the latest solution
+  /// vector @p x as an argument
   void set_form(const std::function<void(Vec x)>& form);
 
-  /// Solve abstract nonlinear problem \f$`F(x) = 0\f$ for given \f$F\f$
-  /// and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
+  /// Solve the nonlinear problem \f$`F(x) = 0\f$ for given \f$F\f$ and
+  /// Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
   ///
   /// @param[in,out] x The vector
   /// @return (number of Newton iterations, whether iteration converged)
