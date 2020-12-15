@@ -99,8 +99,8 @@ protected:
   ///
   /// @param r Residual for criterion evaluation
   /// @param iteration Newton iteration number
-  /// @returns  True if convergence achieved
-  virtual bool converged(const Vec r, std::size_t iteration);
+  /// @return True if convergence achieved
+  virtual bool converged(const Vec r, int iteration);
 
   /// Update solution vector by computed Newton step. Default update is
   /// given by formula::
@@ -112,17 +112,15 @@ protected:
   ///  @param[in] relaxation_parameter Newton relaxation parameter
   ///  @param[in] iteration Newton iteration number
   virtual void update_solution(Vec x, const Vec dx, double relaxation_parameter,
-                               std::size_t iteration);
+                               int iteration);
 
 private:
   std::function<void(const Vec, Vec)> _fnF;
-  std::function<void(const Vec, Mat)> _fnJ;
-  std::function<void(const Vec, Mat)> _fnP;
+  std::function<void(const Vec, Mat)> _fnJ, _fnP;
   std::function<void(const Vec x)> _system;
 
   Vec _b = nullptr;
-  Mat _matJ = nullptr;
-  Mat _matP = nullptr;
+  Mat _matJ = nullptr, _matP = nullptr;
 
   // Accumulated number of Krylov iterations since solve began
   int _krylov_iterations;
@@ -134,7 +132,7 @@ private:
   la::PETScKrylovSolver _solver;
 
   // Solution vector
-  Vec _dx;
+  Vec _dx = nullptr;
 
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;

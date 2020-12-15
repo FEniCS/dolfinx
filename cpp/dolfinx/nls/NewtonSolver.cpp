@@ -193,7 +193,7 @@ double nls::NewtonSolver::residual() const { return _residual; }
 //-----------------------------------------------------------------------------
 double nls::NewtonSolver::residual0() const { return _residual0; }
 //-----------------------------------------------------------------------------
-bool nls::NewtonSolver::converged(const Vec r, std::size_t newton_iteration)
+bool nls::NewtonSolver::converged(const Vec r, int newton_iteration)
 {
   la::PETScVector _r(r, true);
   _residual = _r.norm(la::Norm::l2);
@@ -222,7 +222,7 @@ bool nls::NewtonSolver::converged(const Vec r, std::size_t newton_iteration)
 }
 //-----------------------------------------------------------------------------
 void nls::NewtonSolver::update_solution(Vec x, const Vec dx, double relaxation,
-                                        std::size_t)
+                                        int)
 {
   VecAXPY(x, -relaxation, dx);
 }
