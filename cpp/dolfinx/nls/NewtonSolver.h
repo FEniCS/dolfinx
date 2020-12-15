@@ -103,7 +103,7 @@ public:
   /// Relaxation parameter
   double relaxation_parameter = 1.0;
 
-protected:
+private:
   /// Convergence test. It may be overloaded using virtual inheritance
   /// and this base criterion may be called from derived, both in C++
   /// and Python.
@@ -111,7 +111,7 @@ protected:
   /// @param r Residual for criterion evaluation
   /// @param iteration Newton iteration number
   /// @return True if convergence achieved
-  virtual bool converged(const Vec r, int iteration);
+  bool converged(const Vec r, int iteration);
 
   /// Update solution vector by computed Newton step. Default update is
   /// given by formula::
@@ -122,16 +122,20 @@ protected:
   ///  @param dx The update vector computed by Newton step
   ///  @param[in] relaxation_parameter Newton relaxation parameter
   ///  @param[in] iteration Newton iteration number
-  virtual void update_solution(Vec x, const Vec dx, double relaxation_parameter,
-                               int iteration);
+  void update_solution(Vec x, const Vec dx, double relaxation_parameter,
+                       int iteration);
 
-private:
   std::function<void(const Vec, Vec)> _fnF;
   std::function<void(const Vec, Mat)> _fnJ, _fnP;
   std::function<void(const Vec x)> _system;
 
   Vec _b = nullptr;
   Mat _matJ = nullptr, _matP = nullptr;
+
+  // std::function<bool(const Vec r, int iteration)> _converged;
+  // std::function<void(Vec x, const Vec dx, double relaxation_parameter,
+  //                    int iteration)>
+  //     _update_solution;
 
   // Accumulated number of Krylov iterations since solve began
   int _krylov_iterations;

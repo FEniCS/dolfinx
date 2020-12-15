@@ -38,8 +38,6 @@ void nls(py::module& m)
       .def("setP", &dolfinx::nls::NewtonSolver::setP)
       .def("set_form", &dolfinx::nls::NewtonSolver::set_form)
       .def("solve", &dolfinx::nls::NewtonSolver::solve)
-      // .def("converged", &PyPublicNewtonSolver::converged)
-      // .def("update_solution", &PyPublicNewtonSolver::update_solution)
       .def_readwrite("atol", &dolfinx::nls::NewtonSolver::atol)
       .def_readwrite("rtol", &dolfinx::nls::NewtonSolver::rtol)
       .def_readwrite("relaxation_parameter",

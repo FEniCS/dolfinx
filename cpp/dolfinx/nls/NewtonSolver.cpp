@@ -161,7 +161,7 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
 
   if (newton_converged)
   {
-    if (MPI::rank(_mpi_comm.comm()) == 0)
+    if (dolfinx::MPI::rank(_mpi_comm.comm()) == 0)
     {
       LOG(INFO) << "Newton solver finished in " << newton_iteration
                 << " iterations and " << _krylov_iterations
@@ -193,25 +193,24 @@ double nls::NewtonSolver::residual() const { return _residual; }
 //-----------------------------------------------------------------------------
 double nls::NewtonSolver::residual0() const { return _residual0; }
 //-----------------------------------------------------------------------------
-bool nls::NewtonSolver::converged(const Vec r, int newton_iteration)
+bool nls::NewtonSolver::converged(const Vec r, int iteration)
 {
   la::PETScVector _r(r, true);
   _residual = _r.norm(la::Norm::l2);
 
   // If this is the first iteration step, set initial residual
-  if (newton_iteration == 0)
+  if (iteration == 0)
     _residual0 = _residual;
 
   // Relative residual
   const double relative_residual = _residual / _residual0;
 
   // Output iteration number and residual
-  if (report && MPI::rank(_mpi_comm.comm()) == 0)
+  if (report and dolfinx::MPI::rank(_mpi_comm.comm()) == 0)
   {
-    LOG(INFO) << "Newton iteration " << newton_iteration
-              << ": r (abs) = " << _residual << " (tol = " << atol
-              << ") r (rel) = " << relative_residual << "(tol = " << rtol
-              << ")";
+    LOG(INFO) << "Newton iteration " << iteration << ": r (abs) = " << _residual
+              << " (tol = " << atol << ") r (rel) = " << relative_residual
+              << "(tol = " << rtol << ")";
   }
 
   // Return true if convergence criterion is met
