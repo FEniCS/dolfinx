@@ -40,7 +40,8 @@ jobs:
           apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
           echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
           apt update
-          apt install -y intel-hpckit
+          # apt install -y intel-hpckit
+          apt install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
 
       - name: Install FEniCS Python components
         run: |
