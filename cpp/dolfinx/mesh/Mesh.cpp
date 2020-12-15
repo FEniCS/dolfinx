@@ -7,9 +7,8 @@
 
 #include "Mesh.h"
 #include "Geometry.h"
-#include "Partitioning.h"
 #include "Topology.h"
-#include "TopologyComputation.h"
+#include "topologycomputation.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>

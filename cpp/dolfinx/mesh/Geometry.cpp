@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Geometry.h"
-#include "Partitioning.h"
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/dofmapbuilder.h>

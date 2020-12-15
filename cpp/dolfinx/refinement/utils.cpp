@@ -6,15 +6,16 @@
 
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/partition.h>
+#include <dolfinx/graph/scotch.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
-#include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/TopologyComputation.h>
+#include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/graphbuild.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
@@ -382,5 +383,42 @@ mesh::Mesh refinement::partition(
   return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
                            old_mesh.geometry().cmap(), new_vertex_coordinates,
                            gm, partitioner);
+}
+//-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t>
+mesh::partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
+                      const graph::AdjacencyList<std::int64_t>& cells,
+                      mesh::GhostMode ghost_mode)
+{
+  common::Timer timer("Partition cells across ranks");
+  LOG(INFO) << "Compute partition of cells across ranks";
+
+  if (cells.num_nodes() > 0)
+  {
+    if (cells.num_links(0) != mesh::num_cell_vertices(cell_type))
+    {
+      throw std::runtime_error(
+          "Inconsistent number of cell vertices. Got "
+          + std::to_string(cells.num_links(0)) + ", expected "
+          + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
+    }
+  }
+
+  // Compute distributed dual graph (for the cells on this process)
+  const auto [dual_graph, graph_info]
+      = mesh::build_dual_graph(comm, cells, cell_type);
+
+  // Extract data from graph_info
+  const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
+      = graph_info;
+
+  // Just flag any kind of ghosting for now
+  bool ghosting = (ghost_mode != mesh::GhostMode::none);
+
+  // Call partitioner
+  graph::AdjacencyList<std::int32_t> partition = graph::scotch::partition(
+      comm, n, dual_graph, num_ghost_nodes, ghosting);
+
+  return partition;
 }
 //-----------------------------------------------------------------------------

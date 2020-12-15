@@ -7,9 +7,9 @@
 #pragma once
 
 #include "Geometry.h"
-#include "Partitioning.h"
 #include "Topology.h"
 #include "cell_types.h"
+#include "utils.h"
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>

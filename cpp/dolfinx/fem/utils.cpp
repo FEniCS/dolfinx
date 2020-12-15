@@ -22,7 +22,7 @@
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/TopologyComputation.h>
+#include <dolfinx/mesh/topologycomputation.h>
 #include <memory>
 #include <string>
 #include <ufc.h>

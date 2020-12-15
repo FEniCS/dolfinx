@@ -15,7 +15,7 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/TopologyComputation.h>
+#include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
 #include <memory>

@@ -5,9 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
-#include "Partitioning.h"
-#include "PermutationComputation.h"
-#include "TopologyComputation.h"
+#include "permutationcomputation.h"
+#include "topologycomputation.h"
 #include "utils.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
