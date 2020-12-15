@@ -67,7 +67,8 @@ fem::create_sparsity_pattern(const mesh::Topology& topology,
 
   // Get common::IndexMaps for each dimension
   const std::array index_maps{dofmaps[0]->index_map, dofmaps[1]->index_map};
-  const std::array bs = {dofmaps[0]->index_map_bs(), dofmaps[1]->index_map_bs()};
+  const std::array bs
+      = {dofmaps[0]->index_map_bs(), dofmaps[1]->index_map_bs()};
 
   // Create and build sparsity pattern
   assert(dofmaps[0]);
@@ -204,7 +205,7 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
 
   auto [index_map, bs, dofmap]
       = DofMapBuilder::build(comm, topology, *element_dof_layout);
-  return DofMap(element_dof_layout, index_map, bs, std::move(dofmap));
+  return DofMap(element_dof_layout, index_map, bs, std::move(dofmap), bs);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::string> fem::get_coefficient_names(const ufc_form& ufc_form)

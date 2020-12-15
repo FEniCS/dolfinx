@@ -421,7 +421,7 @@ Partitioning::distribute(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& list,
                          const graph::AdjacencyList<std::int32_t>& destinations)
 {
-  common::Timer timer("Distribute AdjacencyList");
+  common::Timer timer("Distribute in graph creation AdjacencyList");
 
   assert(list.num_nodes() == (int)destinations.num_nodes());
   const std::int64_t offset_global

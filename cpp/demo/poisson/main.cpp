@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
         MPI_COMM_WORLD,
         {Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 0.0)},
-        {32, 32}, cmap, mesh::GhostMode::shared_facet));
+        {32, 32}, cmap, mesh::GhostMode::none));
 
     auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
                                        mesh);
@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
                       L->function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
-    fem::assemble_matrix(la::PETScMatrix::add_fn(A.mat()), *a, bc);
+    fem::assemble_matrix(la::PETScMatrix::add_block_fn(A.mat()), *a, bc);
     fem::add_diagonal(la::PETScMatrix::add_fn(A.mat()), *V, bc);
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);

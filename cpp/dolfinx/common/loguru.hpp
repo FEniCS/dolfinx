@@ -56,6 +56,7 @@ Website: www.ilikebigbits.com
 	* Version 1.9.0 - 2018-09-22 - Adjust terminal colors, add LOGURU_VERBOSE_SCOPE_ENDINGS, add LOGURU_SCOPE_TIME_PRECISION, add named log levels
 	* Version 2.0.0 - 2018-09-22 - Split loguru.hpp into loguru.hpp and loguru.cpp
 	* Version 2.1.0 - 2019-09-23 - Update fmtlib + add option to loguru::init to NOT set main thread name.
+	* Version 2.2.0 - 2020-07-31 - Replace LOGURU_CATCH_SIGABRT with struct SignalOptions
 
 # Compiling
 	Just include <loguru.hpp> where you want to use Loguru.
@@ -101,6 +102,12 @@ Website: www.ilikebigbits.com
 #include <sal.h>	// Needed for _In_z_ etc annotations
 #endif
 
+#if defined(__linux__) || defined(__APPLE__)
+#define LOGURU_SYSLOG 1
+#else
+#define LOGURU_SYSLOG 0
+#endif
+
 // ----------------------------------------------------------------------------
 
 #ifndef LOGURU_EXPORT
@@ -129,9 +136,8 @@ Website: www.ilikebigbits.com
 	#define LOGURU_SCOPE_TIME_PRECISION 3
 #endif
 
-#ifndef LOGURU_CATCH_SIGABRT
-	// Should Loguru catch SIGABRT to print stack trace etc?
-	#define LOGURU_CATCH_SIGABRT 1
+#ifdef LOGURU_CATCH_SIGABRT
+	#error "You are defining LOGURU_CATCH_SIGABRT. his is for older versions of Loguru. You should now instead set the options passed to loguru::init"
 #endif
 
 #ifndef LOGURU_VERBOSE_SCOPE_ENDINGS
@@ -357,6 +363,7 @@ namespace loguru
 	LOGURU_EXPORT extern Verbosity g_stderr_verbosity;
 	LOGURU_EXPORT extern bool      g_colorlogtostderr; // True by default.
 	LOGURU_EXPORT extern unsigned  g_flush_interval_ms; // 0 (unbuffered) by default.
+	LOGURU_EXPORT extern bool      g_preamble_header; // Prepend each log start by a descriptions line with all columns name? True by default.
 	LOGURU_EXPORT extern bool      g_preamble; // Prefix each log line with date, time etc? True by default.
 
 	/* Specify the verbosity used by loguru to log its info messages including the header
@@ -388,6 +395,49 @@ namespace loguru
 	// Verbosity_INVALID if name is not recognized.
 	typedef Verbosity (*name_to_verbosity_t)(const char* name);
 
+	struct SignalOptions
+	{
+		/// Make Loguru try to do unsafe but useful things,
+		/// like printing a stack trace, when catching signals.
+		/// This may lead to bad things like deadlocks in certain situations.
+		bool unsafe_signal_handler = true;
+
+		/// Should Loguru catch SIGABRT ?
+		bool sigabrt = true;
+
+		/// Should Loguru catch SIGBUS ?
+		bool sigbus = true;
+
+		/// Should Loguru catch SIGFPE ?
+		bool sigfpe = true;
+
+		/// Should Loguru catch SIGILL ?
+		bool sigill = true;
+
+		/// Should Loguru catch SIGINT ?
+		bool sigint = true;
+
+		/// Should Loguru catch SIGSEGV ?
+		bool sigsegv = true;
+
+		/// Should Loguru catch SIGTERM ?
+		bool sigterm = true;
+
+		static SignalOptions none()
+		{
+			SignalOptions options;
+			options.unsafe_signal_handler = false;
+			options.sigabrt = false;
+			options.sigbus = false;
+			options.sigfpe = false;
+			options.sigill = false;
+			options.sigint = false;
+			options.sigsegv = false;
+			options.sigterm = false;
+			return options;
+		}
+	};
+
 	// Runtime options passed to loguru::init
 	struct Options
 	{
@@ -403,10 +453,7 @@ namespace loguru
 		// To always set a thread name, use loguru::set_thread_name instead.
 		const char* main_thread_name = "main thread";
 
-		// Make Loguru try to do unsafe but useful things,
-		// like printing a stack trace, when catching signals.
-		// This may lead to bad things like deadlocks in certain situations.
-		bool unsafe_signal_handler = true;
+		SignalOptions signals;
 	};
 
 	/*  Should be called from the main thread.
@@ -497,6 +544,14 @@ namespace loguru
 	LOGURU_EXPORT
 	bool add_file(const char* path, FileMode mode, Verbosity verbosity);
 
+	LOGURU_EXPORT
+	// Send logs to syslog with LOG_USER facility (see next call)
+	bool add_syslog(const char* app_name, Verbosity verbosity);
+	LOGURU_EXPORT
+	// Send logs to syslog with your own choice of facility (LOG_USER, LOG_AUTH, ...)
+	// see loguru.cpp: syslog_log() for more details.
+	bool add_syslog(const char* app_name, Verbosity verbosity, int facility);
+
 	/*  Will be called right before abort().
 		You can for instance use this to print custom error messages, or throw an exception.
 		Feel free to call LOG:ing function from this, but not FATAL ones! */
@@ -557,7 +612,9 @@ namespace loguru
 
 #if LOGURU_USE_FMTLIB
 	// Internal functions
+    LOGURU_EXPORT
 	void vlog(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, fmt::format_args args);
+    LOGURU_EXPORT
 	void raw_vlog(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, fmt::format_args args);
 
 	// Actual logging function. Use the LOG macro instead of calling this directly.
@@ -668,15 +725,15 @@ namespace loguru
 	void set_thread_name(const char* name);
 
 	/* Returns the thread name for this thread.
-	   On OSX this will return the system thread name (settable from both within and without Loguru).
-	   On other systems it will return whatever you set in set_thread_name();
+	   On most *nix systems this will return the system thread name (settable from both within and without Loguru).
+	   On other systems it will return whatever you set in `set_thread_name()`;
 	   If no thread name is set, this will return a hexadecimal thread id.
-	   length should be the number of bytes available in the buffer.
+	   `length` should be the number of bytes available in the buffer.
 	   17 is a good number for length.
-	   right_align_hext_id means any hexadecimal thread id will be written to the end of buffer.
+	   `right_align_hex_id` means any hexadecimal thread id will be written to the end of buffer.
 	*/
 	LOGURU_EXPORT
-	void get_thread_name(char* buffer, unsigned long long length, bool right_align_hext_id);
+	void get_thread_name(char* buffer, unsigned long long length, bool right_align_hex_id);
 
 	/* Generates a readable stacktrace as a string.
 	   'skip' specifies how many stack frames to skip.

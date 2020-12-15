@@ -7,6 +7,7 @@
 #include "ParMETIS.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/log.h>
 
 #ifdef HAS_PARMETIS
 #include <parmetis.h>
@@ -126,6 +127,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     MPI_Comm mpi_comm, idx_t nparts,
     const graph::AdjacencyList<std::int64_t>& adj_graph, bool ghosting)
 {
+  LOG(INFO) << "Compute graph partition using ParMETIS";
   common::Timer timer("Compute graph partition (ParMETIS)");
 
   auto local_graph = adj_graph.as_type<idx_t>();

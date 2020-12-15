@@ -120,37 +120,41 @@ void fem(py::module& m)
       "Pack constants for a UFL expression.");
   m.def(
       "create_matrix",
-      [](const dolfinx::fem::Form<PetscScalar>& a) {
-        auto A = dolfinx::fem::create_matrix(a);
+      [](const dolfinx::fem::Form<PetscScalar>& a, const std::string& type) {
+        dolfinx::la::PETScMatrix A = dolfinx::fem::create_matrix(a, type);
         Mat _A = A.mat();
         PetscObjectReference((PetscObject)_A);
         return _A;
       },
-      py::return_value_policy::take_ownership,
-      "Create a PETSc Mat for bilinear form.");
+      py::return_value_policy::take_ownership, py::arg("a"),
+      py::arg("type") = std::string(), "Create a PETSc Mat for bilinear form.");
   m.def(
       "create_matrix_block",
       [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&
-             a) {
+             a,
+         const std::string& type) {
         dolfinx::la::PETScMatrix A
-            = dolfinx::fem::create_matrix_block(forms_vector_to_array(a));
+            = dolfinx::fem::create_matrix_block(forms_vector_to_array(a), type);
         Mat _A = A.mat();
         PetscObjectReference((PetscObject)_A);
         return _A;
       },
-      py::return_value_policy::take_ownership,
+      py::return_value_policy::take_ownership, py::arg("a"),
+      py::arg("type") = std::string(),
       "Create monolithic sparse matrix for stacked bilinear forms.");
   m.def(
       "create_matrix_nest",
       [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&
-             a) {
+             a,
+         const std::vector<std::vector<std::string>>& types) {
         dolfinx::la::PETScMatrix A
-            = dolfinx::fem::create_matrix_nest(forms_vector_to_array(a));
+            = dolfinx::fem::create_matrix_nest(forms_vector_to_array(a), types);
         Mat _A = A.mat();
         PetscObjectReference((PetscObject)_A);
         return _A;
       },
-      py::return_value_policy::take_ownership,
+      py::return_value_policy::take_ownership, py::arg("a"),
+      py::arg("types") = std::vector<std::vector<std::string>>(),
       "Create nested sparse matrix for bilinear forms.");
   m.def(
       "create_element_dof_layout",
@@ -251,14 +255,15 @@ void fem(py::module& m)
       m, "DofMap", "DofMap object")
       .def(py::init<std::shared_ptr<const dolfinx::fem::ElementDofLayout>,
                     std::shared_ptr<const dolfinx::common::IndexMap>, int,
-                    dolfinx::graph::AdjacencyList<std::int32_t>&>(),
+                    dolfinx::graph::AdjacencyList<std::int32_t>&, int>(),
            py::arg("element_dof_layout"), py::arg("index_map"),
-           py::arg("index_map_bs"), py::arg("dofmap"))
+           py::arg("index_map_bs"), py::arg("dofmap"), py::arg("bs"))
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)
       .def_property_readonly("index_map_bs",
                              &dolfinx::fem::DofMap::index_map_bs)
       .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
       .def("cell_dofs", &dolfinx::fem::DofMap::cell_dofs)
+      .def_property_readonly("bs", &dolfinx::fem::DofMap::bs)
       .def("list", &dolfinx::fem::DofMap::list);
 
   // dolfinx::fem::CoordinateElement
@@ -267,7 +272,9 @@ void fem(py::module& m)
       m, "CoordinateElement", "Coordinate map element")
       .def_property_readonly("dof_layout",
                              &dolfinx::fem::CoordinateElement::dof_layout)
-      .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward);
+      .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward)
+      .def_readwrite("non_affine_atol", &dolfinx::fem::CoordinateElement::non_affine_atol)
+      .def_readwrite("non_affine_max_its", &dolfinx::fem::CoordinateElement::non_affine_max_its);
 
   // dolfinx::fem::DirichletBC
   py::class_<dolfinx::fem::DirichletBC<PetscScalar>,
@@ -288,8 +295,7 @@ void fem(py::module& m)
                const Eigen::Ref<
                    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&>(),
            py::arg("g"), py::arg("dofs"))
-      .def_property_readonly("dof_indices",
-                             &dolfinx::fem::DirichletBC<PetscScalar>::dofs)
+      .def("dof_indices", &dolfinx::fem::DirichletBC<PetscScalar>::dofs_owned)
       .def_property_readonly(
           "function_space",
           &dolfinx::fem::DirichletBC<PetscScalar>::function_space)
@@ -309,14 +315,33 @@ void fem(py::module& m)
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<std::shared_ptr<
                const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs) {
-          dolfinx::fem::assemble_matrix(dolfinx::la::PETScMatrix::add_fn(A), a,
-                                        bcs);
+          dolfinx::fem::assemble_matrix(
+              dolfinx::la::PETScMatrix::add_block_fn(A), a, bcs);
         });
   m.def("assemble_matrix_petsc",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<bool>& rows0, const std::vector<bool>& rows1) {
-          dolfinx::fem::assemble_matrix(dolfinx::la::PETScMatrix::add_fn(A), a,
-                                        rows0, rows1);
+          dolfinx::fem::assemble_matrix(
+              dolfinx::la::PETScMatrix::add_block_fn(A), a, rows0, rows1);
+        });
+  m.def("assemble_matrix_petsc_unrolled",
+        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+           const std::vector<std::shared_ptr<
+               const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs) {
+          dolfinx::fem::assemble_matrix(
+              dolfinx::la::PETScMatrix::add_block_expand_fn(
+                  A, a.function_spaces()[0]->dofmap()->bs(),
+                  a.function_spaces()[1]->dofmap()->bs()),
+              a, bcs);
+        });
+  m.def("assemble_matrix_petsc_unrolled",
+        [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+           const std::vector<bool>& rows0, const std::vector<bool>& rows1) {
+          dolfinx::fem::assemble_matrix(
+              dolfinx::la::PETScMatrix::add_block_expand_fn(
+                  A, a.function_spaces()[0]->dofmap()->bs(),
+                  a.function_spaces()[1]->dofmap()->bs()),
+              a, rows0, rows1);
         });
   m.def("add_diagonal",
         [](Mat A, const dolfinx::function::FunctionSpace& V,

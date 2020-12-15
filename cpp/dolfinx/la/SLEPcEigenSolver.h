@@ -48,17 +48,17 @@ public:
   void solve(std::int64_t n);
 
   /// Get ith eigenvalue
-  std::complex<PetscReal> get_eigenvalue(std::size_t i) const;
+  std::complex<PetscReal> get_eigenvalue(int i) const;
 
   /// Get ith eigenpair
   void get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r, Vec c,
-                     std::size_t i) const;
+                     int i) const;
 
   /// Get the number of iterations used by the solver
-  std::size_t get_iteration_number() const;
+  int get_iteration_number() const;
 
   /// Get the number of converged eigenvalues
-  std::size_t get_number_converged() const;
+  std::int64_t get_number_converged() const;
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database

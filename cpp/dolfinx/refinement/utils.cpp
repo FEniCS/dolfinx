@@ -335,7 +335,7 @@ mesh::Mesh refinement::partition(
 
     const int mpi_size = MPI::size(mpi_comm);
     const int mpi_rank = MPI::rank(mpi_comm);
-    const std::int32_t local_size = graph.size();
+    const std::int32_t local_size = graph.num_nodes();
     std::vector<std::int32_t> local_sizes(mpi_size);
     std::vector<std::int64_t> local_offsets(mpi_size + 1);
 
@@ -349,20 +349,22 @@ mesh::Mesh refinement::partition(
     // but must also be sent to their ghost destinations, which are determined
     // here.
     std::vector<std::int32_t> destinations;
-    destinations.reserve(graph.size());
+    destinations.reserve(graph.num_nodes());
     std::vector<std::int32_t> dest_offsets = {0};
-    dest_offsets.reserve(graph.size());
-    for (std::size_t i = 0; i < graph.size(); ++i)
+    dest_offsets.reserve(graph.num_nodes());
+    for (int i = 0; i < graph.num_nodes(); ++i)
     {
       destinations.push_back(mpi_rank);
-      for (std::int64_t j : graph[i])
+      for (int j = 0; j < graph.num_links(i); ++j)
       {
-        if (j < local_offsets[mpi_rank] or j >= local_offsets[mpi_rank + 1])
+        std::int64_t index = graph.links(i)[j];
+        if (index < local_offsets[mpi_rank]
+            or index >= local_offsets[mpi_rank + 1])
         {
           // Ghosted cell - identify which process it should be sent to.
           for (std::size_t k = 0; k < local_offsets.size(); ++k)
           {
-            if (j >= local_offsets[k] and j < local_offsets[k + 1])
+            if (index >= local_offsets[k] and index < local_offsets[k + 1])
             {
               destinations.push_back(k);
               break;

@@ -50,15 +50,13 @@ std::vector<IS> la::create_petsc_index_sets(
   std::int64_t offset = 0;
   for (auto& map : maps)
   {
+    const int bs = map.second;
     const std::int32_t size
         = map.first.get().size_local() + map.first.get().num_ghosts();
-    std::vector<PetscInt> index(map.second * size);
-    std::iota(index.begin(), index.end(), offset);
     IS _is;
-    ISCreateBlock(PETSC_COMM_SELF, 1, index.size(), index.data(),
-                  PETSC_COPY_VALUES, &_is);
+    ISCreateStride(PETSC_COMM_SELF, bs * size, offset, 1, &_is);
     is.push_back(_is);
-    offset += map.second * size;
+    offset += bs * size;
   }
 
   return is;
@@ -68,19 +66,15 @@ Vec la::create_ghosted_vector(
     const common::IndexMap& map, int bs,
     const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x)
 {
-  std::int32_t size_local = bs * map.size_local();
-  std::int32_t num_ghosts = bs * map.num_ghosts();
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map.ghosts();
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts(bs * ghosts.rows());
-  for (int i = 0; i < ghosts.rows(); ++i)
-  {
-    for (int j = 0; j < bs; ++j)
-      _ghosts[i * bs + j] = bs * ghosts[i] + j;
-  }
-
+  const std::int32_t size_local = bs * map.size_local();
+  const std::int64_t size_global = bs * map.size_global();
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts
+      = map.ghosts().cast<PetscInt>();
   Vec vec;
-  VecCreateGhostWithArray(map.comm(), size_local, PETSC_DECIDE, num_ghosts,
-                          _ghosts.data(), x.array().data(), &vec);
+  VecCreateGhostBlockWithArray(map.comm(), bs, size_local, size_global,
+                               ghosts.rows(), ghosts.data(), x.array().data(),
+                               &vec);
+
   return vec;
 }
 //-----------------------------------------------------------------------------
@@ -93,7 +87,7 @@ Vec la::create_petsc_vector(const dolfinx::common::IndexMap& map, int bs)
 Vec la::create_petsc_vector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-        ghost_indices,
+        ghosts,
     int bs)
 {
   PetscErrorCode ierr;
@@ -103,17 +97,12 @@ Vec la::create_petsc_vector(
   const std::int32_t local_size = range[1] - range[0];
 
   Vec x;
-  std::vector<PetscInt> _ghost_indices(ghost_indices.rows());
-  for (std::size_t i = 0; i < _ghost_indices.size(); ++i)
-    _ghost_indices[i] = ghost_indices(i);
-  ierr = VecCreateGhostBlock(comm, bs, bs * local_size, PETSC_DECIDE,
-                             _ghost_indices.size(), _ghost_indices.data(), &x);
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts
+      = ghosts.cast<PetscInt>();
+  ierr = VecCreateGhostBlock(comm, bs, bs * local_size, PETSC_DETERMINE,
+                             ghosts.rows(), _ghosts.data(), &x);
   CHECK_ERROR("VecCreateGhostBlock");
   assert(x);
-
-  // Set from PETSc options. This will set the vector type.
-  // ierr = VecSetFromOptions(_x);
-  // CHECK_ERROR("VecSetFromOptions");
 
   return x;
 }
@@ -210,14 +199,6 @@ PETScVector::PETScVector(const common::IndexMap& map, int bs)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(
-    MPI_Comm comm, std::array<std::int64_t, 2> range,
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghost_indices, int bs)
-    : _x(la::create_petsc_vector(comm, range, ghost_indices, bs))
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 PETScVector::PETScVector(Vec x, bool inc_ref_count) : _x(x)
 {
   assert(x);
@@ -278,46 +259,6 @@ std::array<std::int64_t, 2> PETScVector::local_range() const
   return {{n0, n1}};
 }
 //-----------------------------------------------------------------------------
-void PETScVector::apply_ghosts()
-{
-  assert(_x);
-  PetscErrorCode ierr;
-
-  Vec xg;
-  ierr = VecGhostGetLocalForm(_x, &xg);
-  CHECK_ERROR("VecGhostGetLocalForm");
-  if (xg) // Vec is ghosted
-  {
-    ierr = VecGhostUpdateBegin(_x, ADD_VALUES, SCATTER_REVERSE);
-    CHECK_ERROR("VecGhostUpdateBegin");
-    ierr = VecGhostUpdateEnd(_x, ADD_VALUES, SCATTER_REVERSE);
-    CHECK_ERROR("VecGhostUpdateEnd");
-  }
-
-  ierr = VecGhostRestoreLocalForm(_x, &xg);
-  CHECK_ERROR("VecGhostRestoreLocalForm");
-}
-//-----------------------------------------------------------------------------
-void PETScVector::update_ghosts()
-{
-  assert(_x);
-  PetscErrorCode ierr;
-
-  Vec xg;
-  ierr = VecGhostGetLocalForm(_x, &xg);
-  CHECK_ERROR("VecGhostGetLocalForm");
-  if (xg) // Vec is ghosted
-  {
-    ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
-    CHECK_ERROR("VecGhostUpdateBegin");
-    ierr = VecGhostUpdateEnd(_x, INSERT_VALUES, SCATTER_FORWARD);
-    CHECK_ERROR("VecGhostUpdateEnd");
-  }
-
-  ierr = VecGhostRestoreLocalForm(_x, &xg);
-  CHECK_ERROR("VecGhostRestoreLocalForm");
-}
-//-----------------------------------------------------------------------------
 MPI_Comm PETScVector::mpi_comm() const
 {
   assert(_x);
@@ -327,12 +268,12 @@ MPI_Comm PETScVector::mpi_comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
-PetscReal PETScVector::norm(la::Norm norm_type) const
+PetscReal PETScVector::norm(la::Norm type) const
 {
   assert(_x);
   PetscErrorCode ierr;
   PetscReal value = 0.0;
-  switch (norm_type)
+  switch (type)
   {
   case la::Norm::l1:
     ierr = VecNorm(_x, NORM_1, &value);
