@@ -19,7 +19,7 @@
 using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
-void SubSystemsManager::init_mpi()
+void subsystem::init_mpi()
 {
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
@@ -29,10 +29,10 @@ void SubSystemsManager::init_mpi()
   // Init MPI
   std::string s("");
   char* c = const_cast<char*>(s.c_str());
-  SubSystemsManager::init_mpi(0, &c);
+  subsystem::init_mpi(0, &c);
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::init_mpi(int argc, char* argv[])
+void subsystem::init_mpi(int argc, char* argv[])
 {
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
@@ -43,7 +43,7 @@ void SubSystemsManager::init_mpi(int argc, char* argv[])
   MPI_Init(&argc, &argv);
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::init_logging(int argc, char* argv[])
+void subsystem::init_logging(int argc, char* argv[])
 {
   loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
 
@@ -64,14 +64,14 @@ void SubSystemsManager::init_logging(int argc, char* argv[])
   loguru::init(argc, argv_copy.data(), options);
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::init_petsc()
+void subsystem::init_petsc()
 {
   int argc = 0;
   char** argv = nullptr;
   init_petsc(argc, argv);
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::init_petsc(int argc, char* argv[])
+void subsystem::init_petsc(int argc, char* argv[])
 {
   if (argc > 1)
     LOG(INFO) << "Initializing PETSc with given command-line arguments.";
@@ -86,7 +86,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 #endif
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::finalize_mpi()
+void subsystem::finalize_mpi()
 {
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
@@ -108,7 +108,7 @@ void SubSystemsManager::finalize_mpi()
   }
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::finalize_petsc()
+void subsystem::finalize_petsc()
 {
   PetscFinalize();
 #ifdef HAS_SLEPC
@@ -116,7 +116,7 @@ void SubSystemsManager::finalize_petsc()
 #endif
 }
 //-----------------------------------------------------------------------------
-bool SubSystemsManager::mpi_initialized()
+bool subsystem::mpi_initialized()
 {
   // This function is not affected if MPI_Finalize has been called. It
   // returns true if MPI_Init has been called at any point, even if
@@ -126,7 +126,7 @@ bool SubSystemsManager::mpi_initialized()
   return mpi_initialized;
 }
 //-----------------------------------------------------------------------------
-bool SubSystemsManager::mpi_finalized()
+bool subsystem::mpi_finalized()
 {
   int mpi_finalized;
   MPI_Finalized(&mpi_finalized);

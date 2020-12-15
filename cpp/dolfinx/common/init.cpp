@@ -11,8 +11,8 @@
 //-----------------------------------------------------------------------------
 void dolfinx::init(int argc, char* argv[])
 {
-  common::SubSystemsManager::init_logging(argc, argv);
+  common::subsystem::init_logging(argc, argv);
   LOG(INFO) << "Initializing DOLFINX version" << DOLFINX_VERSION;
-  common::SubSystemsManager::init_petsc(argc, argv);
+  common::subsystem::init_petsc(argc, argv);
 }
 //-----------------------------------------------------------------------------

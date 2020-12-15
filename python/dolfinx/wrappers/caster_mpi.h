@@ -15,7 +15,7 @@
 #define VERIFY_MPI4PY(func)                                                    \
   if (!func)                                                                   \
   {                                                                            \
-    dolfinx::common::SubSystemsManager::init_mpi();                             \
+    dolfinx::common::subsystem::init_mpi();                                    \
     int rc = import_mpi4py();                                                  \
     if (rc != 0)                                                               \
     {                                                                          \

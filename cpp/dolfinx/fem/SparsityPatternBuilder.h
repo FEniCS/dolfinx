@@ -7,7 +7,6 @@
 #pragma once
 
 #include <array>
-#include <dolfinx/la/SparsityPattern.h>
 
 namespace dolfinx
 {
@@ -25,7 +24,7 @@ namespace fem
 {
 class DofMap;
 
-/// Functions to compute the sparsity pattern based on DOF maps
+/// Functions to build sparsity patterns from degree-of-freedom maps
 
 namespace sparsitybuild
 {
@@ -44,6 +43,6 @@ void exterior_facets(la::SparsityPattern& pattern,
                      const mesh::Topology& topology,
                      const std::array<const fem::DofMap*, 2> dofmaps);
 
-} // namespace SparsityPatternBuilder
+} // namespace sparsitybuild
 } // namespace fem
 } // namespace dolfinx

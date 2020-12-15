@@ -96,8 +96,8 @@ private:
 
 int main(int argc, char* argv[])
 {
-  common::SubSystemsManager::init_logging(argc, argv);
-  common::SubSystemsManager::init_petsc(argc, argv);
+  common::subsystem::init_logging(argc, argv);
+  common::subsystem::init_petsc(argc, argv);
 
   {
     // Inside the ``main`` function, we begin by defining a tetrahedral mesh
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
     file.write(*u);
   }
 
-  common::SubSystemsManager::finalize_petsc();
+  common::subsystem::finalize_petsc();
 
   return 0;
 }
