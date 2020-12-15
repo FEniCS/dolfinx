@@ -12,4 +12,4 @@ namespace dolfinx
 
 // DOLFINX graph interface
 
-#include <dolfinx/graph/boostgraph.h>
+#include <dolfinx/graph/boostordering.h>

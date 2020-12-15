@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "init.h"
-#include "SubSystemsManager.h"
+#include "subsystem.h"
 #include <dolfinx/common/log.h>
 
 //-----------------------------------------------------------------------------

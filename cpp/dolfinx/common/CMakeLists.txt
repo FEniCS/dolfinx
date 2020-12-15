@@ -7,7 +7,7 @@ set(HEADERS_common
   ${CMAKE_CURRENT_SOURCE_DIR}/log.h
   ${CMAKE_CURRENT_SOURCE_DIR}/loguru.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/MPI.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/SubSystemsManager.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/subsystem.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Table.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Timer.h
   ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.h
@@ -25,7 +25,7 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/init.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/log.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/MPI.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/SubSystemsManager.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/subsystem.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Table.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Timer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.cpp

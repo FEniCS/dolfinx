@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MPI.h"
-#include "SubSystemsManager.h"
+#include "subsystem.h"
 #include <algorithm>
 #include <numeric>
 
