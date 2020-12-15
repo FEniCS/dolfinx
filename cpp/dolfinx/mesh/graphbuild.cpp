@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "GraphBuilder.h"
+#include "graphbuild.h"
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 #include <dolfinx/common/MPI.h>

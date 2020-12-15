@@ -8,12 +8,12 @@
 #include "Mesh.h"
 #include "Topology.h"
 #include "cell_types.h"
+#include "graphbuild.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/scotch.h>
-#include <dolfinx/mesh/GraphBuilder.h>
 
 using namespace dolfinx;
 

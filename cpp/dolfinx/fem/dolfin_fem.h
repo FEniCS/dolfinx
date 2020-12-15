@@ -19,6 +19,6 @@ namespace dolfinx
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/SparsityPatternBuilder.h>
+#include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/utils.h>

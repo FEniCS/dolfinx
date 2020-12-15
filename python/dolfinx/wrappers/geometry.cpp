@@ -7,7 +7,7 @@
 #include "caster_mpi.h"
 #include <Eigen/Dense>
 #include <dolfinx/geometry/BoundingBoxTree.h>
-#include <dolfinx/geometry/GJK.h>
+#include <dolfinx/geometry/gjk.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>

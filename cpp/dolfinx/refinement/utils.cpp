@@ -10,12 +10,12 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/GraphBuilder.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
+#include <dolfinx/mesh/graphbuild.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
 #include <mpi.h>
