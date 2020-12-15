@@ -217,7 +217,6 @@ PETScVector::~PETScVector()
 PETScVector& PETScVector::operator=(PETScVector&& v)
 {
   std::swap(_x, v._x);
-
   return *this;
 }
 //-----------------------------------------------------------------------------

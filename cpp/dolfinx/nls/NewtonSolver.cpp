@@ -5,11 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "NewtonSolver.h"
-#include "NonlinearProblem.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/la/PETScKrylovSolver.h>
-#include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScOptions.h>
 #include <dolfinx/la/PETScVector.h>
 #include <string>
@@ -26,40 +24,83 @@ nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
   la::PETScOptions::set("nls_solve_ksp_type", "preonly");
   la::PETScOptions::set("nls_solve_pc_type", "lu");
 #if PETSC_HAVE_MUMPS
-  la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
+  la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "superlu_dist");
 #endif
   _solver.set_from_options();
 }
 //-----------------------------------------------------------------------------
 nls::NewtonSolver::~NewtonSolver()
 {
+  if (_b)
+    VecDestroy(&_b);
   if (_dx)
     VecDestroy(&_dx);
+  if (_matJ)
+    MatDestroy(&_matJ);
+  if (_matP)
+    MatDestroy(&_matP);
 }
 //-----------------------------------------------------------------------------
-std::pair<int, bool>
-dolfinx::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
+void nls::NewtonSolver::setF(const std::function<void(const Vec, Vec)>& F,
+                             Vec b)
+{
+  _fnF = F;
+  _b = b;
+  PetscObjectReference((PetscObject)_b);
+}
+//-----------------------------------------------------------------------------
+void nls::NewtonSolver::setJ(const std::function<void(const Vec, Mat)>& J,
+                             Mat Jmat)
+{
+  _fnJ = J;
+  _matJ = Jmat;
+  PetscObjectReference((PetscObject)_matJ);
+}
+//-----------------------------------------------------------------------------
+void nls::NewtonSolver::setP(const std::function<void(const Vec, Mat)>& P,
+                             Mat Pmat)
+{
+  _fnP = P;
+  _matP = Pmat;
+  PetscObjectReference((PetscObject)_matP);
+}
+//-----------------------------------------------------------------------------
+void nls::NewtonSolver::set_form(const std::function<void(Vec)>& form)
+{
+  _system = form;
+}
+//-----------------------------------------------------------------------------
+std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
 {
   // Reset iteration counts
   int newton_iteration = 0;
   _krylov_iterations = 0;
 
-  // Compute F(u) (assembled into _b)
-  Mat A(nullptr), P(nullptr);
-  Vec b = nullptr;
+  if (!_fnF)
+  {
+    throw std::runtime_error("Function for computing residual vector has not "
+                             "been provided to the NewtonSolver.");
+  }
 
-  nonlinear_problem.form(x);
-  b = nonlinear_problem.F(x);
-  assert(b);
+  if (!_fnJ)
+  {
+    throw std::runtime_error("Function for computing Jacobianhas not "
+                             "been provided to the NewtonSolver.");
+  }
+
+  if (_system)
+    _system(x);
+  assert(_b);
+  _fnF(x, _b);
 
   // Check convergence
   bool newton_converged = false;
   if (convergence_criterion == "residual")
-    newton_converged = converged(b, nonlinear_problem, 0);
+    newton_converged = converged(_b, 0);
   else if (convergence_criterion == "incremental")
   {
     // We need to do at least one Newton step with the ||dx||-stopping
-    // criterion.
+    // criterion
     newton_converged = false;
   }
   else
@@ -72,25 +113,27 @@ dolfinx::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
   while (!newton_converged and newton_iteration < max_it)
   {
     // Compute Jacobian
-    A = nonlinear_problem.J(x);
-    assert(A);
-    P = nonlinear_problem.P(x);
-    if (!P)
-      P = A;
+    assert(_matJ);
+    _fnJ(x, _matJ);
+
+    if (_fnP)
+      _fnP(x, _matP);
 
     if (!_dx)
-      MatCreateVecs(A, &_dx, nullptr);
+      MatCreateVecs(_matJ, &_dx, nullptr);
 
     // FIXME: check that this is efficient if A and/or P are unchanged
     // Set operators
-    _solver.set_operators(A, P);
+    if (_matP)
+      _solver.set_operators(_matJ, _matP);
+    else
+      _solver.set_operators(_matJ, _matJ);
 
     // Perform linear solve and update total number of Krylov iterations
-    _krylov_iterations += _solver.solve(_dx, b);
+    _krylov_iterations += _solver.solve(_dx, _b);
 
     // Update solution
-    update_solution(x, _dx, relaxation_parameter, nonlinear_problem,
-                    newton_iteration);
+    update_solution(x, _dx, relaxation_parameter, newton_iteration);
 
     // Increment iteration count
     ++newton_iteration;
@@ -99,18 +142,18 @@ dolfinx::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
     //        this has converged.
     // FIXME: But, this function call may update internal variables, etc.
     // Compute F
-    nonlinear_problem.form(x);
-    b = nonlinear_problem.F(x);
+    if (_system)
+      _system(x);
+    _fnF(x, _b);
 
     // Test for convergence
     if (convergence_criterion == "residual")
-      newton_converged = converged(b, nonlinear_problem, newton_iteration);
+      newton_converged = converged(_b, newton_iteration);
     else if (convergence_criterion == "incremental")
     {
       // Subtract 1 to make sure that the initial residual0 is
       // properly set.
-      newton_converged
-          = converged(_dx, nonlinear_problem, newton_iteration - 1);
+      newton_converged = converged(_dx, newton_iteration - 1);
     }
     else
       throw std::runtime_error("Unknown convergence criterion string.");
@@ -150,8 +193,7 @@ double nls::NewtonSolver::residual() const { return _residual; }
 //-----------------------------------------------------------------------------
 double nls::NewtonSolver::residual0() const { return _residual0; }
 //-----------------------------------------------------------------------------
-bool nls::NewtonSolver::converged(const Vec r, const NonlinearProblem&,
-                                  std::size_t newton_iteration)
+bool nls::NewtonSolver::converged(const Vec r, std::size_t newton_iteration)
 {
   la::PETScVector _r(r, true);
   _residual = _r.norm(la::Norm::l2);
@@ -180,7 +222,7 @@ bool nls::NewtonSolver::converged(const Vec r, const NonlinearProblem&,
 }
 //-----------------------------------------------------------------------------
 void nls::NewtonSolver::update_solution(Vec x, const Vec dx, double relaxation,
-                                        const NonlinearProblem&, std::size_t)
+                                        std::size_t)
 {
   VecAXPY(x, -relaxation, dx);
 }

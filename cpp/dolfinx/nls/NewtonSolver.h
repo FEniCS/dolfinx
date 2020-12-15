@@ -8,7 +8,9 @@
 
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/la/PETScKrylovSolver.h>
+#include <functional>
 #include <memory>
+#include <petscmat.h>
 #include <petscvec.h>
 #include <utility>
 
@@ -23,8 +25,6 @@ class PETScKrylovSolver;
 namespace nls
 {
 
-class NonlinearProblem;
-
 /// This class defines a Newton solver for nonlinear systems of
 /// equations of the form \f$F(x) = 0\f$.
 
@@ -38,6 +38,18 @@ public:
   /// Destructor
   virtual ~NewtonSolver();
 
+  /// Set F
+  void setF(const std::function<void(const Vec, Vec)>& F, Vec b);
+
+  /// Set J
+  void setJ(const std::function<void(const Vec, Mat)>& J, Mat Jmat);
+
+  /// Set P
+  void setP(const std::function<void(const Vec, Mat)>& P, Mat Pmat);
+
+  /// Set P
+  void set_form(const std::function<void(Vec x)>& form);
+
   /// Solve abstract nonlinear problem \f$`F(x) = 0\f$ for given \f$F\f$
   /// and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
   ///
@@ -45,7 +57,7 @@ public:
   /// @param[in,out] x The vector
   /// @return Pair of number of Newton iterations, and whether iteration
   ///         converged)
-  std::pair<int, bool> solve(NonlinearProblem& nonlinear_function, Vec x);
+  std::pair<int, bool> solve(Vec x);
 
   /// Return number of Krylov iterations elapsed since
   /// solve started
@@ -88,11 +100,9 @@ protected:
   /// and Python.
   ///
   /// @param r Residual for criterion evaluation
-  /// @param nonlinear_problem The nonlinear problem
   /// @param iteration Newton iteration number
   /// @returns  True if convergence achieved
-  virtual bool converged(const Vec r, const NonlinearProblem& nonlinear_problem,
-                         std::size_t iteration);
+  virtual bool converged(const Vec r, std::size_t iteration);
 
   /// Update solution vector by computed Newton step. Default update is
   /// given by formula::
@@ -102,13 +112,20 @@ protected:
   ///  @param[in,out] x The solution vector to be updated
   ///  @param dx The update vector computed by Newton step
   ///  @param[in] relaxation_parameter Newton relaxation parameter
-  ///  @param nonlinear_problem The nonlinear problem
   ///  @param[in] iteration Newton iteration number
   virtual void update_solution(Vec x, const Vec dx, double relaxation_parameter,
-                               const NonlinearProblem& nonlinear_problem,
                                std::size_t iteration);
 
 private:
+  std::function<void(const Vec, Vec)> _fnF;
+  std::function<void(const Vec, Mat)> _fnJ;
+  std::function<void(const Vec, Mat)> _fnP;
+  std::function<void(const Vec x)> _system;
+
+  Vec _b = nullptr;
+  Mat _matJ = nullptr;
+  Mat _matP = nullptr;
+
   // Accumulated number of Krylov iterations since solve began
   int _krylov_iterations;
 
