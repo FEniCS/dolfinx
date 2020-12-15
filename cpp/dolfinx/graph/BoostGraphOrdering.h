@@ -19,9 +19,6 @@ class AdjacencyList;
 
 /// This class computes graph re-orderings. It uses Boost Graph.
 
-namespace BoostGraphOrdering
-{
-
 /// Compute re-ordering (map[old] -> new) using Cuthill-McKee
 /// algorithm
 std::vector<int> compute_cuthill_mckee(const AdjacencyList<std::int32_t>& graph,
@@ -33,5 +30,4 @@ std::vector<int> compute_cuthill_mckee(
     const std::set<std::pair<std::size_t, std::size_t>>& edges,
     std::size_t size, bool reverse = false);
 
-} // namespace BoostGraphOrdering
 } // namespace dolfinx::graph
