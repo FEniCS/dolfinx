@@ -166,7 +166,7 @@ Mesh create_mesh(
         MPI_Comm, int, const mesh::CellType,
         const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>
         partitioner
-    = &Partitioning::partition_cells);
+    = &mesh::partition_cells);
 
 } // namespace mesh
 } // namespace dolfinx

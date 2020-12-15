@@ -3,7 +3,7 @@
 namespace dolfinx
 {
 /*! \namespace dolfinx::mesh
-    \brief Mesh data structures
+    \brief Mesh data structures and algorithms on meshes
 
     Representations of meshes and support for operations on meshes.
 */

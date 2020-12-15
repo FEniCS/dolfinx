@@ -15,12 +15,8 @@ namespace dolfinx::mesh
 {
 
 enum class CellType;
-class Topology;
 enum class GhostMode : int;
 
-/// Tools for partitioning meshes
-namespace Partitioning
-{
 /// Compute destination rank for mesh cells in this rank using a graph
 /// partitioner
 ///
@@ -42,5 +38,4 @@ partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
                 const graph::AdjacencyList<std::int64_t>& cells,
                 mesh::GhostMode ghost_mode);
 
-} // namespace Partitioning
 } // namespace dolfinx::mesh

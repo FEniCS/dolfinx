@@ -13,7 +13,6 @@
 #define BITSETSIZE 32
 
 using namespace dolfinx;
-using namespace dolfinx::mesh;
 
 namespace
 {
@@ -228,7 +227,7 @@ std::vector<std::bitset<BITSETSIZE>>
 compute_edge_reflections(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
-  const CellType cell_type = topology.cell_type();
+  const mesh::CellType cell_type = topology.cell_type();
   const int edges_per_cell = cell_num_entities(cell_type, 1);
 
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
@@ -295,9 +294,10 @@ compute_face_permutations(const mesh::Topology& topology)
 
   auto im = topology.index_map(0);
   assert(im);
-  const CellType cell_type = topology.cell_type();
+  const mesh::CellType cell_type = topology.cell_type();
   const int faces_per_cell = cell_num_entities(cell_type, 2);
-  if (cell_type == CellType::triangle or cell_type == CellType::tetrahedron)
+  if (cell_type == mesh::CellType::triangle
+      or cell_type == mesh::CellType::tetrahedron)
   {
     return compute_face_permutations_simplex(*c_to_v, *c_to_f, *f_to_v,
                                              faces_per_cell, im);
@@ -314,8 +314,7 @@ compute_face_permutations(const mesh::Topology& topology)
 //-----------------------------------------------------------------------------
 std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
           Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
-PermutationComputation::compute_entity_permutations(
-    const mesh::Topology& topology)
+mesh::compute_entity_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
   const CellType cell_type = topology.cell_type();

@@ -234,7 +234,7 @@ void Topology::create_entity_permutations()
     create_entities(d);
 
   auto [facet_permutations, cell_permutations]
-      = PermutationComputation::compute_entity_permutations(*this);
+      = mesh::compute_entity_permutations(*this);
   _facet_permutations = std::move(facet_permutations);
   _cell_permutations = std::move(cell_permutations);
 }
