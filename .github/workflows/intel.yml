@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-20.04
     container: fenicsproject/test-env:mpich
 
+    defaults:
+      run:
+        shell: bash
+
     # env:
     #   CC: clang-10
     #   CXX: clang++-10
