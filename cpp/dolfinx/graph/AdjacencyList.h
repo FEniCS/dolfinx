@@ -192,9 +192,9 @@ public:
   decltype(auto) as_type() const
   {
     if constexpr (std::is_same<X, T>::value)
-      return (*this);
-    else
-      return graph::AdjacencyList<X>(_array.template cast<X>(), _offsets);
+      return *this;
+
+    return graph::AdjacencyList<X>(_array.template cast<X>(), _offsets);
   }
 
   /// Return informal string representation (pretty-print)
