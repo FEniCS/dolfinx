@@ -50,7 +50,7 @@ mesh::partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
   bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
   // Call partitioner
-  graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
+  graph::AdjacencyList<std::int32_t> partition = graph::scotch::partition(
       comm, n, dual_graph, num_ghost_nodes, ghosting);
 
   return partition;

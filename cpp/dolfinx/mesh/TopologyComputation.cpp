@@ -27,7 +27,6 @@
 #include <vector>
 
 using namespace dolfinx;
-using namespace dolfinx::mesh;
 
 namespace
 {
@@ -574,7 +573,7 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
 graph::AdjacencyList<std::int32_t>
 compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
                  const graph::AdjacencyList<std::int32_t>& c_d1_0,
-                 CellType cell_type_d0, int d0, int d1)
+                 mesh::CellType cell_type_d0, int d0, int d1)
 {
   assert(d1 > 0);
   assert(d0 > d1);
@@ -634,8 +633,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>>
-TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
-                                      int dim)
+mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
 {
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
   const int tdim = topology.dim();
@@ -676,8 +674,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
 }
 //-----------------------------------------------------------------------------
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
-TopologyComputation::compute_connectivity(const Topology& topology, int d0,
-                                          int d1)
+mesh::compute_connectivity(const Topology& topology, int d0, int d1)
 {
   LOG(INFO) << "Requesting connectivity " << d0 << " - " << d1;
 

@@ -193,7 +193,7 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     {
       // Create local entities
       const auto [cell_entity, entity_vertex, index_map]
-          = mesh::TopologyComputation::compute_entities(comm, topology, d);
+          = mesh::compute_entities(comm, topology, d);
       if (cell_entity)
         topology.set_connectivity(cell_entity, topology.dim(), d);
       if (entity_vertex)

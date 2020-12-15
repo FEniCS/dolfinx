@@ -23,7 +23,7 @@ mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh,
     throw std::runtime_error("Refinement only defined for simplices");
   }
 
-  mesh::Mesh refined_mesh = PlazaRefinementND::refine(mesh, redistribute);
+  mesh::Mesh refined_mesh = plaza::refine(mesh, redistribute);
 
   // Report the number of refined cells
   const int D = mesh.topology().dim();
@@ -47,8 +47,7 @@ dolfinx::refinement::refine(const mesh::Mesh& mesh,
     throw std::runtime_error("Refinement only defined for simplices");
   }
 
-  mesh::Mesh refined_mesh
-      = PlazaRefinementND::refine(mesh, cell_markers, redistribute);
+  mesh::Mesh refined_mesh = plaza::refine(mesh, cell_markers, redistribute);
 
   // Report the number of refined cells
   const int D = mesh.topology().dim();

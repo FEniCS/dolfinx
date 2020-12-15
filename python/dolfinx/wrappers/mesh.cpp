@@ -160,14 +160,12 @@ void mesh(py::module& m)
                              &dolfinx::mesh::Geometry::input_global_indices);
 
   // dolfinx::mesh::TopologyComputation
-  m.def("compute_entities", [](const MPICommWrapper comm,
-                               const dolfinx::mesh::Topology& topology,
-                               int dim) {
-    return dolfinx::mesh::TopologyComputation::compute_entities(comm.get(),
-                                                                topology, dim);
-  });
-  m.def("compute_connectivity",
-        &dolfinx::mesh::TopologyComputation::compute_connectivity);
+  m.def("compute_entities",
+        [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
+           int dim) {
+          return dolfinx::mesh::compute_entities(comm.get(), topology, dim);
+        });
+  m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity);
 
   // dolfinx::mesh::Topology class
   py::class_<dolfinx::mesh::Topology, std::shared_ptr<dolfinx::mesh::Topology>>(
@@ -244,8 +242,8 @@ void mesh(py::module& m)
            dolfinx::mesh::CellType cell_type,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
            dolfinx::mesh::GhostMode ghost_mode) {
-          return dolfinx::mesh::Partitioning::partition_cells(
-              comm.get(), nparts, cell_type, cells, ghost_mode);
+          return dolfinx::mesh::partition_cells(comm.get(), nparts, cell_type,
+                                                cells, ghost_mode);
         });
 
   m.def("locate_entities", &dolfinx::mesh::locate_entities);

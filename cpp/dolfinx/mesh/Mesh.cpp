@@ -114,7 +114,7 @@ Mesh mesh::create_mesh(
     if (element.dof_layout().num_entity_dofs(e) > 0)
     {
       auto [cell_entity, entity_vertex, index_map]
-          = mesh::TopologyComputation::compute_entities(comm, topology, e);
+          = mesh::compute_entities(comm, topology, e);
       if (cell_entity)
         topology.set_connectivity(cell_entity, tdim, e);
       if (entity_vertex)

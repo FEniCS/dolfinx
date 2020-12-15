@@ -176,7 +176,7 @@ std::int32_t Topology::create_entities(int dim)
 
   // Create local entities
   const auto [cell_entity, entity_vertex, index_map]
-      = TopologyComputation::compute_entities(_mpi_comm.comm(), *this, dim);
+      = mesh::compute_entities(_mpi_comm.comm(), *this, dim);
 
   if (cell_entity)
     set_connectivity(cell_entity, this->dim(), dim);
@@ -198,8 +198,7 @@ void Topology::create_connectivity(int d0, int d1)
   create_entities(d1);
 
   // Compute connectivity
-  const auto [c_d0_d1, c_d1_d0]
-      = TopologyComputation::compute_connectivity(*this, d0, d1);
+  const auto [c_d0_d1, c_d1_d0] = mesh::compute_connectivity(*this, d0, d1);
 
   // NOTE: that to compute the (d0, d1) connections is it sometimes
   // necessary to compute the (d1, d0) connections. We store the (d1,

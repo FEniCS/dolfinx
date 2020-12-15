@@ -26,8 +26,8 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
-dolfinx::graph::SCOTCH::compute_gps(const AdjacencyList<std::int32_t>& graph,
-                                    std::size_t num_passes)
+graph::scotch::compute_gps(const AdjacencyList<std::int32_t>& graph,
+                           std::size_t num_passes)
 {
   // Create strategy string for Gibbs-Poole-Stockmeyer ordering
   std::string strategy = "g{pass= " + std::to_string(num_passes) + "}";
@@ -35,8 +35,8 @@ dolfinx::graph::SCOTCH::compute_gps(const AdjacencyList<std::int32_t>& graph,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
-dolfinx::graph::SCOTCH::compute_reordering(
-    const AdjacencyList<std::int32_t>& graph, std::string scotch_strategy)
+graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
+                                  std::string scotch_strategy)
 {
   common::Timer timer("Compute SCOTCH graph re-ordering");
 
@@ -120,9 +120,9 @@ dolfinx::graph::SCOTCH::compute_reordering(
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
-dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
-                                  const AdjacencyList<std::int64_t>& graph,
-                                  std::int32_t num_ghost_nodes, bool ghosting)
+graph::scotch::partition(const MPI_Comm mpi_comm, const int nparts,
+                         const AdjacencyList<std::int64_t>& graph,
+                         std::int32_t num_ghost_nodes, bool ghosting)
 {
   LOG(INFO) << "Compute graph partition using PT-SCOTCH";
   common::Timer timer("Compute graph partition (SCOTCH)");

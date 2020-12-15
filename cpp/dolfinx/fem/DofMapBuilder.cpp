@@ -288,7 +288,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   if (ordering_library == "Boost")
     node_remap = graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
   else if (ordering_library == "SCOTCH")
-    std::tie(node_remap, std::ignore) = graph::SCOTCH::compute_gps(graph);
+    std::tie(node_remap, std::ignore) = graph::scotch::compute_gps(graph);
   else if (ordering_library == "random")
   {
     // NOTE: Randomised dof ordering should only be used for
