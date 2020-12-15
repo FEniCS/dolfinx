@@ -11,8 +11,8 @@
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -255,13 +255,12 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 //-----------------------------------------------------------------------------
 std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
 fem::locate_dofs_topological(
-    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
-        V,
+    const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote)
 {
-  const function::FunctionSpace& V0 = V.at(0).get();
-  const function::FunctionSpace& V1 = V.at(1).get();
+  const fem::FunctionSpace& V0 = V.at(0).get();
+  const fem::FunctionSpace& V1 = V.at(1).get();
 
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = V0.mesh();
@@ -384,7 +383,7 @@ fem::locate_dofs_topological(
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
+fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
                              const Eigen::Ref<const Eigen::ArrayXi>& entities,
                              bool remote)
 {
@@ -467,8 +466,7 @@ fem::locate_dofs_topological(const function::FunctionSpace& V, const int dim,
 //-----------------------------------------------------------------------------
 std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
 fem::locate_dofs_geometrical(
-    const std::array<std::reference_wrapper<const function::FunctionSpace>, 2>&
-        V,
+    const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker_fn)
@@ -478,8 +476,8 @@ fem::locate_dofs_geometrical(
   // interface that computes dofs coordinates only for specified cell.
 
   // Get function spaces
-  const function::FunctionSpace& V0 = V.at(0).get();
-  const function::FunctionSpace& V1 = V.at(1).get();
+  const fem::FunctionSpace& V0 = V.at(0).get();
+  const fem::FunctionSpace& V1 = V.at(1).get();
 
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = V0.mesh();
@@ -561,7 +559,7 @@ fem::locate_dofs_geometrical(
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
-    const function::FunctionSpace& V,
+    const fem::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker_fn)

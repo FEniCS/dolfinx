@@ -181,7 +181,7 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 
 # A unit square mesh with 97 (= 96 + 1) vertices in each direction is
 # created, and on this mesh a
-# :py:class:`FunctionSpace<dolfinx.function.FunctionSpace>`
+# :py:class:`FunctionSpace<dolfinx.fem.FunctionSpace>`
 # ``ME`` is built using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space
@@ -198,12 +198,12 @@ q, v = TestFunctions(ME)
 # .. index:: split functions
 #
 # For the test functions,
-# :py:func:`TestFunctions<dolfinx.functions.function.TestFunctions>` (note
+# :py:func:`TestFunctions<dolfinx.functions.fem.TestFunctions>` (note
 # the 's' at the end) is used to define the scalar test functions ``q``
 # and ``v``. The
-# :py:class:`TrialFunction<dolfinx.functions.function.TrialFunction>`
+# :py:class:`TrialFunction<dolfinx.functions.fem.TrialFunction>`
 # ``du`` has dimension two. Some mixed objects of the
-# :py:class:`Function<dolfinx.functions.function.Function>` class on ``ME``
+# :py:class:`Function<dolfinx.functions.fem.Function>` class on ``ME``
 # are defined to represent :math:`u = (c_{n+1}, \mu_{n+1})` and :math:`u0
 # = (c_{n}, \mu_{n})`, and these are then split into sub-functions::
 

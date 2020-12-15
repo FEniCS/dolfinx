@@ -10,7 +10,7 @@
 #include "Form.h"
 #include "utils.h"
 #include <Eigen/Dense>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>

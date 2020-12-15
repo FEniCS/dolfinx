@@ -13,19 +13,14 @@
 #include <memory>
 #include <vector>
 
-namespace dolfinx
+namespace dolfinx::fem
 {
-namespace function
-{
-class FunctionSpace;
-} // namespace function
 
-namespace fem
-{
 template <typename T>
 class DirichletBC;
 template <typename T>
 class Form;
+class FunctionSpace;
 
 // -- Scalar ----------------------------------------------------------------
 
@@ -195,7 +190,7 @@ template <typename T>
 void add_diagonal(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
-    const function::FunctionSpace& V,
+    const fem::FunctionSpace& V,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
     T diagonal = 1.0)
 {
@@ -312,5 +307,4 @@ bcs_cols(const std::vector<std::vector<std::shared_ptr<const Form<T>>>>& a,
   return bcs1;
 }
 
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

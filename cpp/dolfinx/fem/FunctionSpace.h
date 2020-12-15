@@ -16,19 +16,15 @@
 namespace dolfinx
 {
 
-namespace fem
-{
-class DofMap;
-class FiniteElement;
-} // namespace fem
-
 namespace mesh
 {
 class Mesh;
 }
 
-namespace function
+namespace fem
 {
+class DofMap;
+class FiniteElement;
 
 /// This class represents a finite element function space defined by a
 /// mesh, a finite element, and a local-to-global map of the degrees of
@@ -154,5 +150,5 @@ std::array<std::vector<std::shared_ptr<const FunctionSpace>>, 2>
 common_function_spaces(
     const std::vector<
         std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>& V);
-} // namespace function
+} // namespace fem
 } // namespace dolfinx

@@ -11,7 +11,7 @@
 #include "ElementDofLayout.h"
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/Form.h>
-#include <dolfinx/function/Function.h>
+#include <dolfinx/fem/Function.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
@@ -28,15 +28,6 @@ namespace common
 class IndexMap;
 }
 
-namespace function
-{
-template <typename T>
-class Constant;
-template <typename T>
-class Function;
-class FunctionSpace;
-} // namespace function
-
 namespace mesh
 {
 class Mesh;
@@ -47,7 +38,12 @@ namespace fem
 {
 
 template <typename T>
+class Constant;
+template <typename T>
 class Form;
+template <typename T>
+class Function;
+class FunctionSpace;
 
 /// Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
@@ -58,17 +54,17 @@ class Form;
 ///   returned function space pair is (null, null).
 template <typename T>
 std::vector<
-    std::vector<std::array<std::shared_ptr<const function::FunctionSpace>, 2>>>
+    std::vector<std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>>
 extract_function_spaces(
     const Eigen::Ref<const Eigen::Array<const fem::Form<T>*, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
-  std::vector<std::vector<
-      std::array<std::shared_ptr<const function::FunctionSpace>, 2>>>
-      spaces(a.rows(),
-             std::vector<
-                 std::array<std::shared_ptr<const function::FunctionSpace>, 2>>(
-                 a.cols()));
+  std::vector<
+      std::vector<std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>>
+      spaces(
+          a.rows(),
+          std::vector<std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>(
+              a.cols()));
   for (int i = 0; i < a.rows(); ++i)
   {
     for (int j = 0; j < a.cols(); ++j)
@@ -157,10 +153,9 @@ std::vector<std::string> get_constant_names(const ufc_form& ufc_form);
 template <typename T>
 Form<T> create_form(
     const ufc_form& ufc_form,
-    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces,
-    const std::vector<std::shared_ptr<const function::Function<T>>>&
-        coefficients,
-    const std::vector<std::shared_ptr<const function::Constant<T>>>& constants,
+    const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
+    const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
+    const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
@@ -309,16 +304,16 @@ Form<T> create_form(
 template <typename T>
 Form<T> create_form(
     const ufc_form& ufc_form,
-    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces,
-    const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
+    const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
+    const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
         coefficients,
-    const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
+    const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
         constants,
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   // Place coefficients in appropriate order
-  std::vector<std::shared_ptr<const function::Function<T>>> coeff_map;
+  std::vector<std::shared_ptr<const fem::Function<T>>> coeff_map;
   for (const std::string& name : get_coefficient_names(ufc_form))
   {
     if (auto it = coefficients.find(name); it != coefficients.end())
@@ -331,7 +326,7 @@ Form<T> create_form(
   }
 
   // Place constants in appropriate order
-  std::vector<std::shared_ptr<const function::Constant<T>>> const_map;
+  std::vector<std::shared_ptr<const fem::Constant<T>>> const_map;
   for (const std::string& name : get_constant_names(ufc_form))
   {
     if (auto it = constants.find(name); it != constants.end())
@@ -359,10 +354,10 @@ Form<T> create_form(
 template <typename T>
 std::shared_ptr<Form<T>> create_form(
     ufc_form* (*fptr)(),
-    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces,
-    const std::map<std::string, std::shared_ptr<const function::Function<T>>>&
+    const std::vector<std::shared_ptr<const fem::FunctionSpace>>& spaces,
+    const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
         coefficients,
-    const std::map<std::string, std::shared_ptr<const function::Constant<T>>>&
+    const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
         constants,
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
@@ -395,7 +390,7 @@ fem::CoordinateElement create_coordinate_map(ufc_coordinate_mapping* (*fptr)());
 ///   in the UFL file.
 /// @param[in] mesh Mesh
 /// @return The created FunctionSpace
-std::shared_ptr<function::FunctionSpace>
+std::shared_ptr<fem::FunctionSpace>
 create_functionspace(ufc_function_space* (*fptr)(const char*),
                      const std::string function_name,
                      std::shared_ptr<mesh::Mesh> mesh);
@@ -410,7 +405,7 @@ pack_coefficients(const U& u)
   using T = typename U::scalar_type;
 
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const function::Function<T>>> coefficients
+  const std::vector<std::shared_ptr<const fem::Function<T>>> coefficients
       = u.coefficients();
   const std::vector<int> offsets = u.coefficient_offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());

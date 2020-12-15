@@ -15,7 +15,7 @@ class HyperElasticProblem : public nls::NonlinearProblem
 {
 public:
   HyperElasticProblem(
-      std::shared_ptr<function::Function<PetscScalar>> u,
+      std::shared_ptr<fem::Function<PetscScalar>> u,
       std::shared_ptr<fem::Form<PetscScalar>> L,
       std::shared_ptr<fem::Form<PetscScalar>> J,
       std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bcs)
@@ -85,7 +85,7 @@ public:
   }
 
 private:
-  std::shared_ptr<function::Function<PetscScalar>> _u;
+  std::shared_ptr<fem::Function<PetscScalar>> _u;
   std::shared_ptr<fem::Form<PetscScalar>> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> _bcs;
 
@@ -120,13 +120,13 @@ int main(int argc, char* argv[])
         create_functionspace_form_hyperelasticity_F, "u", mesh);
 
     // Define solution function
-    auto u = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u = std::make_shared<fem::Function<PetscScalar>>(V);
     auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J,
                                            {V, V}, {{"u", u}}, {}, {});
     auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V},
                                            {{"u", u}}, {}, {});
 
-    auto u_rotation = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u_rotation = std::make_shared<fem::Function<PetscScalar>>(V);
     u_rotation->interpolate([](auto& x) {
       const double scale = 0.005;
 
@@ -156,14 +156,14 @@ int main(int argc, char* argv[])
       return values;
     });
 
-    auto u_clamp = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
     u_clamp->interpolate([](auto& x) {
       return Eigen::Array<PetscScalar, 3, Eigen::Dynamic,
                           Eigen::RowMajor>::Zero(3, x.cols());
     });
 
     // Create Dirichlet boundary conditions
-    auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
     const auto bdofs_left = fem::locate_dofs_geometrical({*V}, [](auto& x) {
       static const double epsilon = std::numeric_limits<double>::epsilon();

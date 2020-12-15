@@ -13,8 +13,8 @@
 #include <Eigen/Dense>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/function/Constant.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Constant.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
