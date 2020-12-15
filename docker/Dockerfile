@@ -153,6 +153,7 @@ RUN cd /usr/local && \
     cd KaHIP/ && \
     git checkout ${KAHIP_VERSION} && \
     cmake -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} .. && \
+    mkdir build && cd build && \
     make && make install
 
 
