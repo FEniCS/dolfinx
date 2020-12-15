@@ -204,7 +204,7 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
   }
 
   auto [index_map, bs, dofmap]
-      = DofMapBuilder::build(comm, topology, *element_dof_layout);
+      = fem::build_dofmap_data(comm, topology, *element_dof_layout);
   return DofMap(element_dof_layout, index_map, bs, std::move(dofmap), bs);
 }
 //-----------------------------------------------------------------------------

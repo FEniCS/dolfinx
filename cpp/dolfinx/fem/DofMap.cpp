@@ -256,7 +256,7 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.
     auto [index_map, bs, dofmap]
-        = DofMapBuilder::build(comm, topology, *collapsed_dof_layout);
+        = fem::build_dofmap_data(comm, topology, *collapsed_dof_layout);
     dofmap_new = std::make_unique<DofMap>(element_dof_layout, index_map, bs,
                                           std::move(dofmap), bs);
   }

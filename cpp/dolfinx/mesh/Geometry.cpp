@@ -75,8 +75,8 @@ mesh::Geometry mesh::create_geometry(
   // fem::DofMapBuilder::build to take connectivities
 
   //  Build 'geometry' dofmap on the topology
-  auto [dof_index_map, bs, dofmap] = fem::DofMapBuilder::build(
-      comm, topology, coordinate_element.dof_layout());
+  auto [dof_index_map, bs, dofmap]
+      = fem::build_dofmap_data(comm, topology, coordinate_element.dof_layout());
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)

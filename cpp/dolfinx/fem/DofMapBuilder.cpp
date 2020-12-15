@@ -484,8 +484,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<common::IndexMap>, int,
            graph::AdjacencyList<std::int32_t>>
-DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
-                     const ElementDofLayout& element_dof_layout)
+fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
+                       const ElementDofLayout& element_dof_layout)
 {
   common::Timer t0("Build dofmap data");
 

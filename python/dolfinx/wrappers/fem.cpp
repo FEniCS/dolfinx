@@ -205,7 +205,7 @@ void fem(py::module& m)
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout) {
-        auto [map, bs, dofmap] = dolfinx::fem::DofMapBuilder::build(
+        auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
             comm.get(), topology, element_dof_layout);
         return std::tuple(map, bs, std::move(dofmap));
       },
