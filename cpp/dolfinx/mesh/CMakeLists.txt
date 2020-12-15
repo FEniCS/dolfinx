@@ -14,7 +14,7 @@ set(HEADERS_mesh
 target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/PermutationComputation.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/permutationcomputation.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/TopologyComputation.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.cpp

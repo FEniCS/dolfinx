@@ -22,7 +22,6 @@ class MeshTags;
 
 namespace refinement
 {
-class ParallelRefinement;
 
 /// Implementation of the refinement method described in Plaza and Carey
 /// "Local refinement of simplicial grids based on the skeleton"

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "refine.h"
-#include "PlazaRefinementND.h"
+#include "plaza.h"
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
