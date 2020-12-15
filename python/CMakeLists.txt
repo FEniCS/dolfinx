@@ -17,7 +17,6 @@ pybind11_add_module(cpp SHARED
   dolfinx/wrappers/dolfin.cpp
   dolfinx/wrappers/common.cpp
   dolfinx/wrappers/fem.cpp
-  dolfinx/wrappers/function.cpp
   dolfinx/wrappers/generation.cpp
   dolfinx/wrappers/geometry.cpp
   dolfinx/wrappers/graph.cpp

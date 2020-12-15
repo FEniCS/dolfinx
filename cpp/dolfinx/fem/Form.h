@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
@@ -14,19 +14,13 @@
 #include <string>
 #include <vector>
 
-namespace dolfinx
+namespace dolfinx::fem
 {
 
-namespace function
-{
 template <typename T>
 class Constant;
 template <typename T>
 class Function;
-} // namespace function
-
-namespace fem
-{
 
 /// Type of integral
 enum class IntegralType : std::int8_t
@@ -78,7 +72,7 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
-  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
+  Form(const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
            function_spaces,
        const std::map<
            IntegralType,
@@ -88,17 +82,15 @@ public:
                             T*, const T*, const T*, const double*, const int*,
                             const std::uint8_t*, const std::uint32_t)>>>,
                const mesh::MeshTags<int>*>>& integrals,
-       const std::vector<std::shared_ptr<const function::Function<T>>>&
-           coefficients,
-       const std::vector<std::shared_ptr<const function::Constant<T>>>&
-           constants,
+       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
+       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
        bool needs_permutation_data,
        const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
       : _function_spaces(function_spaces), _coefficients(coefficients),
         _constants(constants), _mesh(mesh),
         _needs_permutation_data(needs_permutation_data)
   {
-    // Extract _mesh from function::FunctionSpace, and check they are the same
+    // Extract _mesh from fem::FunctionSpace, and check they are the same
     if (!_mesh and !function_spaces.empty())
       _mesh = function_spaces[0]->mesh();
     for (const auto& V : function_spaces)
@@ -153,7 +145,7 @@ public:
 
   /// Return function spaces for all arguments
   /// @return Function spaces
-  const std::vector<std::shared_ptr<const function::FunctionSpace>>&
+  const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
   function_spaces() const
   {
     return _function_spaces;
@@ -234,7 +226,7 @@ public:
   }
 
   /// Access coefficients
-  const std::vector<std::shared_ptr<const function::Function<T>>>
+  const std::vector<std::shared_ptr<const fem::Function<T>>>
   coefficients() const
   {
     return _coefficients;
@@ -261,8 +253,7 @@ public:
   }
 
   /// Access constants
-  const std::vector<std::shared_ptr<const function::Constant<T>>>&
-  constants() const
+  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
   {
     return _constants;
   }
@@ -453,13 +444,13 @@ private:
   }
 
   // Function spaces (one for each argument)
-  std::vector<std::shared_ptr<const function::FunctionSpace>> _function_spaces;
+  std::vector<std::shared_ptr<const fem::FunctionSpace>> _function_spaces;
 
   // Form coefficients
-  std::vector<std::shared_ptr<const function::Function<T>>> _coefficients;
+  std::vector<std::shared_ptr<const fem::Function<T>>> _coefficients;
 
   // Constants associated with the Form
-  std::vector<std::shared_ptr<const function::Constant<T>>> _constants;
+  std::vector<std::shared_ptr<const fem::Constant<T>>> _constants;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
@@ -473,8 +464,5 @@ private:
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_permutation_data;
-
-}; // namespace fem
-
-} // namespace fem
-} // namespace dolfinx
+};
+} // namespace dolfinx::fem

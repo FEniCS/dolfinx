@@ -10,12 +10,11 @@ from functools import singledispatch
 
 import cffi
 import numpy as np
-
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-
-from dolfinx import common, cpp, fem, function, jit
+from dolfinx import common, cpp, jit
+from dolfinx.fem import dofmap
 
 
 class Constant(ufl.Constant):
@@ -30,7 +29,7 @@ class Constant(ufl.Constant):
         """
         c_np = np.asarray(c)
         super().__init__(domain, c_np.shape)
-        self._cpp_object = cpp.function.Constant(c_np.shape, c_np.flatten())
+        self._cpp_object = cpp.fem.Constant(c_np.shape, c_np.flatten())
 
     @property
     def value(self):
@@ -102,7 +101,7 @@ class Expression:
         ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
         constants = [ufl_constant._cpp_object for ufl_constant in ufl_constants]
 
-        self._cpp_object = cpp.function.Expression(coefficients, constants, mesh, x, fn, value_size)
+        self._cpp_object = cpp.fem.Expression(coefficients, constants, mesh, x, fn, value_size)
 
     def eval(self, cells: np.ndarray, u: typing.Optional[np.ndarray] = None) -> np.ndarray:
         """Evaluate Expression in cells.
@@ -181,9 +180,9 @@ class Function(ufl.Coefficient):
 
         # Create cpp Function
         if x is not None:
-            self._cpp_object = cpp.function.Function(V._cpp_object, x)
+            self._cpp_object = cpp.fem.Function(V._cpp_object, x)
         else:
-            self._cpp_object = cpp.function.Function(V._cpp_object)
+            self._cpp_object = cpp.fem.Function(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
         super().__init__(V.ufl_function_space(), count=self._cpp_object.id)
@@ -278,8 +277,8 @@ class Function(ufl.Coefficient):
         degree-of-freedom vector is copied.
 
         """
-        return function.Function(self.function_space,
-                                 self._cpp_object.vector.copy())
+        return Function(self.function_space,
+                        self._cpp_object.vector.copy())
 
     @property
     def vector(self):
@@ -333,8 +332,8 @@ class Function(ufl.Coefficient):
 
     def collapse(self):
         u_collapsed = self._cpp_object.collapse()
-        V_collapsed = function.FunctionSpace(None, self.ufl_element(),
-                                             u_collapsed.function_space)
+        V_collapsed = FunctionSpace(None, self.ufl_element(),
+                                    u_collapsed.function_space)
         return Function(V_collapsed, u_collapsed.x)
 
 
@@ -351,7 +350,7 @@ class FunctionSpace(ufl.FunctionSpace):
     def __init__(self,
                  mesh: cpp.mesh.Mesh,
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData],
-                 cppV: typing.Optional[cpp.function.FunctionSpace] = None,
+                 cppV: typing.Optional[cpp.fem.FunctionSpace] = None,
                  form_compiler_parameters: dict = {},
                  jit_parameters: dict = {}):
         """Create a finite element function space."""
@@ -383,7 +382,7 @@ class FunctionSpace(ufl.FunctionSpace):
         cpp_dofmap = cpp.fem.create_dofmap(mesh.mpi_comm(), ffi.cast("uintptr_t", ufc_dofmap_ptr), mesh.topology)
 
         # Initialize the cpp.FunctionSpace
-        self._cpp_object = cpp.function.FunctionSpace(mesh, cpp_element, cpp_dofmap)
+        self._cpp_object = cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
 
     def clone(self) -> "FunctionSpace":
         """Return a new FunctionSpace :math:`W` which shares data with this
@@ -399,7 +398,7 @@ class FunctionSpace(ufl.FunctionSpace):
         conditions.
 
         """
-        Vcpp = cpp.function.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+        Vcpp = cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
         return FunctionSpace(None, self.ufl_element(), Vcpp)
 
     def dolfin_element(self):
@@ -467,9 +466,9 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.element
 
     @property
-    def dofmap(self) -> "fem.dofmap.DofMap":
+    def dofmap(self) -> "dofmap.DofMap":
         """Return the degree-of-freedom map associated with the function space."""
-        return fem.dofmap.DofMap(self._cpp_object.dofmap)
+        return dofmap.DofMap(self._cpp_object.dofmap)
 
     @property
     def mesh(self):

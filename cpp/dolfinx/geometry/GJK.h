@@ -18,8 +18,8 @@ namespace geometry
 /// @param[in] p Body 1 list of points
 /// @param[in] q Body 2 list of points
 /// @return shortest vector between bodies
-Eigen::Vector3d
-compute_distance_gjk(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
-           const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& q);
+Eigen::Vector3d compute_distance_gjk(
+    const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
+    const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& q);
 } // namespace geometry
 } // namespace dolfinx

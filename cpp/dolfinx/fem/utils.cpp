@@ -11,14 +11,14 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
+#include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/DofMapBuilder.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/SparsityPatternBuilder.h>
-#include <dolfinx/function/Constant.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -262,7 +262,7 @@ fem::create_coordinate_map(ufc_coordinate_mapping* (*fptr)())
   return element;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<function::FunctionSpace>
+std::shared_ptr<fem::FunctionSpace>
 fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
                           const std::string function_name,
                           std::shared_ptr<mesh::Mesh> mesh)
@@ -270,7 +270,7 @@ fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
   ufc_function_space* space = fptr(function_name.c_str());
   ufc_dofmap* ufc_map = space->create_dofmap();
   ufc_finite_element* ufc_element = space->create_element();
-  auto V = std::make_shared<function::FunctionSpace>(
+  auto V = std::make_shared<fem::FunctionSpace>(
       mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
       std::make_shared<fem::DofMap>(
           fem::create_dofmap(mesh->mpi_comm(), *ufc_map, mesh->topology())));

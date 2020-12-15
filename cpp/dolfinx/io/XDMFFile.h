@@ -26,11 +26,11 @@ namespace fem
 class CoordinateElement;
 }
 
-namespace function
+namespace fem
 {
 template <typename T>
 class Function;
-} // namespace function
+} // namespace fem
 
 namespace mesh
 {
@@ -44,7 +44,7 @@ class MeshTags;
 namespace io
 {
 
-/// Read and write mesh::Mesh, function::Function and other objects in
+/// Read and write mesh::Mesh, fem::Function and other objects in
 /// XDMF.
 
 /// This class supports the output of meshes and functions in XDMF
@@ -136,7 +136,7 @@ public:
   /// @param[in] t The time stamp to associate with the Function
   /// @param[in] mesh_xpath XPath for a Grid under which Function will
   ///   be inserted
-  void write_function(const function::Function<PetscScalar>& function,
+  void write_function(const fem::Function<PetscScalar>& function,
                       const double t,
                       const std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");

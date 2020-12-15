@@ -7,7 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfinx/function/evaluate.h>
+#include <dolfinx/fem/evaluate.h>
 #include <functional>
 #include <utility>
 #include <vector>
@@ -20,7 +20,7 @@ namespace mesh
 class Mesh;
 }
 
-namespace function
+namespace fem
 {
 template <typename T>
 class Constant;
@@ -48,10 +48,8 @@ public:
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_size size of expression evaluated at single point
   Expression(
-      const std::vector<std::shared_ptr<const function::Function<T>>>&
-          coefficients,
-      const std::vector<std::shared_ptr<const function::Constant<T>>>&
-          constants,
+      const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
+      const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
       const std::shared_ptr<const mesh::Mesh>& mesh,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& x,
@@ -70,7 +68,7 @@ public:
   virtual ~Expression() = default;
 
   /// Access coefficients
-  const std::vector<std::shared_ptr<const function::Function<T>>>&
+  const std::vector<std::shared_ptr<const fem::Function<T>>>&
   coefficients() const
   {
     return _coefficients;
@@ -101,7 +99,7 @@ public:
            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
            values) const
   {
-    function::eval(values, *this, active_cells);
+    fem::eval(values, *this, active_cells);
   }
 
   /// Get function for tabulate_expression.
@@ -116,8 +114,7 @@ public:
   /// @return Vector of attached constants with their names. Names are
   ///   used to set constants in user's c++ code. Index in the vector is
   ///   the position of the constant in the original (nonsimplified) form.
-  const std::vector<std::shared_ptr<const function::Constant<T>>>&
-  constants() const
+  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
   {
     return _constants;
   }
@@ -147,10 +144,10 @@ public:
 
 private:
   // Coefficients associated with the Expression
-  std::vector<std::shared_ptr<const function::Function<T>>> _coefficients;
+  std::vector<std::shared_ptr<const fem::Function<T>>> _coefficients;
 
   // Constants associated with the Expression
-  std::vector<std::shared_ptr<const function::Constant<T>>> _constants;
+  std::vector<std::shared_ptr<const fem::Constant<T>>> _constants;
 
   // Function to evaluate the Expression
   std::function<void(T*, const T*, const T*, const double*)> _fn;
@@ -164,5 +161,5 @@ private:
   // Evaluation size
   std::size_t _value_size;
 };
-} // namespace function
+} // namespace fem
 } // namespace dolfinx

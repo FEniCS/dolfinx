@@ -20,7 +20,7 @@
 #include <vector>
 
 using namespace dolfinx;
-using namespace dolfinx::function;
+using namespace dolfinx::fem;
 
 namespace
 {
@@ -250,8 +250,8 @@ bool FunctionSpace::contains(const FunctionSpace& V) const
   return true;
 }
 //-----------------------------------------------------------------------------
-std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
-function::common_function_spaces(
+std::array<std::vector<std::shared_ptr<const fem::FunctionSpace>>, 2>
+fem::common_function_spaces(
     const std::vector<
         std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>& V)
 {

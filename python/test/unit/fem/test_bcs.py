@@ -19,7 +19,7 @@ def test_locate_dofs_geometrical():
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
 
-    W = dolfinx.function.FunctionSpace(mesh, P0 * P1)
+    W = dolfinx.fem.FunctionSpace(mesh, P0 * P1)
     V = W.sub(0).collapse()
 
     dofs = dolfinx.fem.locate_dofs_geometrical(

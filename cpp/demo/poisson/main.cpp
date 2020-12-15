@@ -91,7 +91,7 @@
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/petsc.h>
-#include <dolfinx/function/Constant.h>
+#include <dolfinx/fem/Constant.h>
 
 using namespace dolfinx;
 
@@ -135,9 +135,9 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Prepare and set Constants for the bilinear form
-    auto kappa = std::make_shared<function::Constant<PetscScalar>>(2.0);
-    auto f = std::make_shared<function::Function<PetscScalar>>(V);
-    auto g = std::make_shared<function::Function<PetscScalar>>(V);
+    auto kappa = std::make_shared<fem::Constant<PetscScalar>>(2.0);
+    auto f = std::make_shared<fem::Function<PetscScalar>>(V);
+    auto g = std::make_shared<fem::Function<PetscScalar>>(V);
 
     // Define variational forms
     auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V}, {},
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
 
     // FIXME: zero function and make sure ghosts are updated
     // Define boundary condition
-    auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
     const auto bdofs = fem::locate_dofs_geometrical({*V}, [](auto& x) {
       static const double epsilon = std::numeric_limits<double>::epsilon();
@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Compute solution
-    function::Function<PetscScalar> u(V);
+    fem::Function<PetscScalar> u(V);
     la::PETScMatrix A = fem::create_matrix(*a);
     la::PETScVector b(*L->function_spaces()[0]->dofmap()->index_map,
                       L->function_spaces()[0]->dofmap()->index_map_bs());

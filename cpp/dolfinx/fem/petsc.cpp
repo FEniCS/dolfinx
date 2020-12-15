@@ -7,7 +7,7 @@
 #include "petsc.h"
 #include "SparsityPatternBuilder.h"
 #include "assembler.h"
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/SparsityPattern.h>
 
 using namespace dolfinx;
@@ -37,8 +37,8 @@ la::PETScMatrix fem::create_matrix_block(
     const std::string& type)
 {
   // Extract and check row/column ranges
-  std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
-      = function::common_function_spaces(extract_function_spaces(a));
+  std::array<std::vector<std::shared_ptr<const fem::FunctionSpace>>, 2> V
+      = fem::common_function_spaces(extract_function_spaces(a));
   std::array<std::vector<int>, 2> bs_dofs;
   for (std::size_t i = 0; i < 2; ++i)
   {
@@ -182,7 +182,7 @@ la::PETScMatrix fem::create_matrix_nest(
     const std::vector<std::vector<std::string>>& types)
 {
   // Extract and check row/column ranges
-  auto V = function::common_function_spaces(extract_function_spaces(a));
+  auto V = fem::common_function_spaces(extract_function_spaces(a));
 
   std::vector<std::vector<std::string>> _types(
       a.rows(), std::vector<std::string>(a.cols()));
