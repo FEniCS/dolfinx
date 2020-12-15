@@ -331,16 +331,15 @@ compute_nonlocal_dual_graph(
 
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::array<std::int32_t, 3>>
-mesh::GraphBuilder::compute_dual_graph(
-    const MPI_Comm mpi_comm,
-    const graph::AdjacencyList<std::int64_t>& cell_vertices,
-    const mesh::CellType& cell_type)
+mesh::build_dual_graph(const MPI_Comm mpi_comm,
+                       const graph::AdjacencyList<std::int64_t>& cell_vertices,
+                       const mesh::CellType& cell_type)
 {
   LOG(INFO) << "Build mesh dual graph";
 
   // Compute local part of dual graph
   auto [local_graph, facet_cell_map, num_local_edges]
-      = mesh::GraphBuilder::compute_local_dual_graph(cell_vertices, cell_type);
+      = mesh::build_local_dual_graph(cell_vertices, cell_type);
 
   // Compute nonlocal part
   auto [graph, num_ghost_nodes, num_nonlocal_edges]
@@ -357,7 +356,7 @@ mesh::GraphBuilder::compute_dual_graph(
 std::tuple<graph::AdjacencyList<std::int32_t>,
            std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>,
            std::int32_t>
-dolfinx::mesh::GraphBuilder::compute_local_dual_graph(
+mesh::build_local_dual_graph(
     const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type)
 {

@@ -327,8 +327,8 @@ mesh::Mesh refinement::partition(
                         const graph::AdjacencyList<std::int64_t>& cell_topology,
                         mesh::GhostMode) {
     // Find out the ghosting information
-    auto [graph, info] = mesh::GraphBuilder::compute_dual_graph(
-        mpi_comm, cell_topology, cell_type);
+    auto [graph, info]
+        = mesh::build_dual_graph(mpi_comm, cell_topology, cell_type);
 
     // FIXME: much of this is reverse engineering of data that is already
     // known in the GraphBuilder

@@ -72,7 +72,7 @@ mesh::Geometry mesh::create_geometry(
                                         Eigen::RowMajor>>& x)
 {
   // TODO: make sure required entities are initialised, or extend
-  // fem::DofMapBuilder::build to take connectivities
+  // fem::build_dofmap_data
 
   //  Build 'geometry' dofmap on the topology
   auto [dof_index_map, bs, dofmap]

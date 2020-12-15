@@ -40,7 +40,7 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
 
   // Compute distributed dual graph (for the cells on this process)
   const auto [dual_graph, graph_info]
-      = mesh::GraphBuilder::compute_dual_graph(comm, cells, cell_type);
+      = mesh::build_dual_graph(comm, cells, cell_type);
 
   // Extract data from graph_info
   const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
