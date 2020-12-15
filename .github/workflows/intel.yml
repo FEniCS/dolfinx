@@ -64,7 +64,7 @@ jobs:
           # . /opt/intel/oneapi/setvars.sh
           # export CC=icc
           # export CXX=icpc
-          cmake -v --build build
+          cmake --build build
           cmake --install build
 
       # - name: Build and run C++ unit tests (serial and MPI)
