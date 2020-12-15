@@ -62,7 +62,7 @@ def test_refine_create_form():
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
-    A = dolfinx.fem.assemble_matrix(a)
+    dolfinx.fem.assemble_matrix(a)
 
 
 def xtest_refinement_gdim():
