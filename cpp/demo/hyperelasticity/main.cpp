@@ -42,10 +42,12 @@ public:
       VecDestroy(&_b_petsc);
   }
 
-  void form(Vec x)
+  auto form()
   {
-    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+    return [](Vec x) {
+      VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+      VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+    };
   }
 
   /// Compute F at current point x
@@ -187,6 +189,7 @@ int main(int argc, char* argv[])
     nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
+    newton_solver.set_form(problem.form());
     newton_solver.solve(u->vector());
 
     // Save solution in VTK format
