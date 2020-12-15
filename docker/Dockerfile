@@ -53,8 +53,7 @@ ARG PETSC_VERSION=3.14.1
 ARG SLEPC_VERSION=3.14.0
 ARG PETSC4PY_VERSION=3.14.0
 ARG SLEPC4PY_VERSION=3.14.0
-# Should be updated upon a new KaHIP release
-ARG KAHIP_VERSION=14be06c
+ARG KAHIP_VERSION=v3.10
 
 ########################################
 
@@ -148,13 +147,14 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     rm -rf /tmp/*
 
 # Install KaHIP
+ENV KAHIP_DIR=/usr/local/KaHIP/deploy
 RUN cd /usr/local && \
     git clone https://github.com/schulzchristian/KaHIP.git && \
     cd KaHIP/ && \
     git checkout ${KAHIP_VERSION} && \
-    ./compile_withcmake.sh
+    cmake -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} .. && \
+    make && make install
 
-ENV KAHIP_ROOT=/usr/local/KaHIP
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
