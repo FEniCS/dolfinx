@@ -8,7 +8,7 @@
 #include "Partitioning.h"
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/DofMapBuilder.h>
+#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/partition.h>
 #include <sstream>

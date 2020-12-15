@@ -17,7 +17,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/DofMapBuilder.h>
+#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>

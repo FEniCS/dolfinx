@@ -16,7 +16,7 @@
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DiscreteOperators.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/DofMapBuilder.h>
+#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Expression.h>
 #include <dolfinx/fem/FiniteElement.h>

@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "DofMapBuilder.h"
+#include "dofmapbuilder.h"
 #include "ElementDofLayout.h"
 #include <algorithm>
 #include <cstdlib>
