@@ -38,32 +38,32 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install Intel compilers
-        run: |
-          wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-          apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-          echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
-          apt update
-          # apt install -y intel-hpckit
-          apt install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
+      # - name: Install Intel compilers
+      #   run: |
+      #     wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+      #     apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+      #     echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
+      #     apt update
+      #     # apt install -y intel-hpckit
+      #     apt install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
 
       - name: Install FEniCS Python components
         run: |
-           . /opt/intel/oneapi/setvars.sh
+          #  . /opt/intel/oneapi/setvars.sh
            python3 -m pip install git+https://github.com/FEniCS/fiat.git git+https://github.com/FEniCS/ufl.git git+https://github.com/FEniCS/ffcx.git
 
       - name: Configure C++
         run: |
-          . /opt/intel/oneapi/setvars.sh
-          export CC=icc
-          export CXX=icpc
+          # . /opt/intel/oneapi/setvars.sh
+          # export CC=icc
+          # export CXX=icpc
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
 
       - name: Build and install C++ library
         run: |
-          . /opt/intel/oneapi/setvars.sh
-          export CC=icc
-          export CXX=icpc
+          # . /opt/intel/oneapi/setvars.sh
+          # export CC=icc
+          # export CXX=icpc
           cmake -v --build build
           cmake --install build
 
