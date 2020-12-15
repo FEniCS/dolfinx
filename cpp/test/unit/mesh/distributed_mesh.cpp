@@ -11,7 +11,6 @@
 #include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/io/XDMFFile.h>
-#include <dolfinx/mesh/Partitioning.h>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
