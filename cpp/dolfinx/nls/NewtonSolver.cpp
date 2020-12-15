@@ -109,6 +109,16 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
                              + convergence_criterion);
   }
 
+  // FIXME: check that this is efficient if A and/or P are unchanged
+  // Set operators
+  if (_matP)
+    _solver.set_operators(_matJ, _matP);
+  else
+    _solver.set_operators(_matJ, _matJ);
+
+  if (!_dx)
+    MatCreateVecs(_matJ, &_dx, nullptr);
+
   // Start iterations
   while (!newton_converged and newton_iteration < max_it)
   {
@@ -118,16 +128,6 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
 
     if (_fnP)
       _fnP(x, _matP);
-
-    if (!_dx)
-      MatCreateVecs(_matJ, &_dx, nullptr);
-
-    // FIXME: check that this is efficient if A and/or P are unchanged
-    // Set operators
-    if (_matP)
-      _solver.set_operators(_matJ, _matP);
-    else
-      _solver.set_operators(_matJ, _matJ);
 
     // Perform linear solve and update total number of Krylov iterations
     _krylov_iterations += _solver.solve(_dx, _b);

@@ -53,10 +53,8 @@ public:
   /// Solve abstract nonlinear problem \f$`F(x) = 0\f$ for given \f$F\f$
   /// and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
   ///
-  /// @param[in] nonlinear_function The nonlinear problem
   /// @param[in,out] x The vector
-  /// @return Pair of number of Newton iterations, and whether iteration
-  ///         converged)
+  /// @return (number of Newton iterations, whether iteration converged)
   std::pair<int, bool> solve(Vec x);
 
   /// Return number of Krylov iterations elapsed since
