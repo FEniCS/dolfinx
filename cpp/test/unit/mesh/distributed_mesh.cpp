@@ -67,7 +67,7 @@ void test_distributed_mesh()
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
     cells = infile.read_topology_data("mesh");
     x = infile.read_geometry_data("mesh");
-    dest = dolfinx::mesh::Partitioning::partition_cells(
+    dest = dolfinx::mesh::partition_cells(
         subset_comm, nparts, cmap.cell_shape(),
         graph::AdjacencyList<std::int64_t>(cells),
         mesh::GhostMode::shared_facet);
@@ -105,8 +105,5 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 {
   create_mesh_file();
 
-  SECTION("SCOTCH")
-  {
-    CHECK_NOTHROW(test_distributed_mesh());
-  }
+  SECTION("SCOTCH") { CHECK_NOTHROW(test_distributed_mesh()); }
 }
