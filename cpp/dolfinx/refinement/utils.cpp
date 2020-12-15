@@ -8,7 +8,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/GraphBuilder.h>
 #include <dolfinx/mesh/Mesh.h>

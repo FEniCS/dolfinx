@@ -4,13 +4,13 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "Partitioning.h"
+#include "partition.h"
 #include <Eigen/Dense>
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/SCOTCH.h>
+#include <dolfinx/graph/scotch.h>
 #include <unordered_map>
 
 using namespace dolfinx;
@@ -418,8 +418,8 @@ partition::create_distributed_adjacency_list(
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 partition::distribute(MPI_Comm comm,
-                         const graph::AdjacencyList<std::int64_t>& list,
-                         const graph::AdjacencyList<std::int32_t>& destinations)
+                      const graph::AdjacencyList<std::int64_t>& list,
+                      const graph::AdjacencyList<std::int32_t>& destinations)
 {
   common::Timer timer("Distribute in graph creation AdjacencyList");
 

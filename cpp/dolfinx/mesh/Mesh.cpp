@@ -19,7 +19,7 @@
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DofMapBuilder.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>

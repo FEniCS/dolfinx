@@ -10,7 +10,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMapBuilder.h>
 #include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/graph/partition.h>
 #include <sstream>
 
 using namespace dolfinx;

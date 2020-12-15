@@ -15,7 +15,7 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <numeric>
 #include <unordered_map>

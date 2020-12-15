@@ -13,7 +13,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ParMETIS.h>
-#include <dolfinx/graph/SCOTCH.h>
+#include <dolfinx/graph/scotch.h>
 #include <dolfinx/mesh/GraphBuilder.h>
 
 using namespace dolfinx;

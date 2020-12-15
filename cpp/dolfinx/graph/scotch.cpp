@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "SCOTCH.h"
+#include "scotch.h"
 #include "AdjacencyList.h"
 #include <algorithm>
 #include <dolfinx/common/MPI.h>

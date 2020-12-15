@@ -6,7 +6,7 @@
 
 #define BOOST_NO_HASH
 
-#include "BoostGraphOrdering.h"
+#include "boostordering.h"
 #include "AdjacencyList.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/compressed_sparse_row_graph.hpp>

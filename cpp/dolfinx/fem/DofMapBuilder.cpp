@@ -14,8 +14,8 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/dofs_permutation.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/BoostGraphOrdering.h>
-#include <dolfinx/graph/SCOTCH.h>
+#include <dolfinx/graph/boostordering.h>
+#include <dolfinx/graph/scotch.h>
 #include <dolfinx/mesh/Topology.h>
 #include <iterator>
 #include <memory>
