@@ -6,14 +6,13 @@
 
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <vector>
 
 // Interface to ParMETIS parallel partitioner
-namespace dolfinx::graph::ParMETIS
+namespace dolfinx::graph::parmetis
 {
 #ifdef HAS_PARMETIS
 // Standard ParMETIS partition
@@ -22,4 +21,4 @@ partition(MPI_Comm mpi_comm, int n,
           const AdjacencyList<std::int64_t>& adj_graph, bool ghosting);
 
 #endif
-} // namespace dolfinx::graph::ParMETIS
+} // namespace dolfinx::graph::parmetis
