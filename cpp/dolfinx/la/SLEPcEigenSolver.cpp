@@ -99,7 +99,7 @@ void SLEPcEigenSolver::solve(std::int64_t n)
             << num_iterations << " iterations.";
 }
 //-----------------------------------------------------------------------------
-std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(std::size_t i) const
+std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(int i) const
 {
   assert(_eps);
 
@@ -107,16 +107,15 @@ std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(std::size_t i) const
   PetscInt num_computed_eigenvalues;
   EPSGetConverged(_eps, &num_computed_eigenvalues);
 
-  const auto ii = static_cast<PetscInt>(i);
-  if (ii < num_computed_eigenvalues)
+  if (i < num_computed_eigenvalues)
   {
 #ifdef PETSC_USE_COMPLEX
     PetscScalar l;
-    EPSGetEigenvalue(_eps, ii, &l, nullptr);
+    EPSGetEigenvalue(_eps, i, &l, nullptr);
     return l;
 #else
     PetscScalar lr, li;
-    EPSGetEigenvalue(_eps, ii, &lr, &li);
+    EPSGetEigenvalue(_eps, i, &lr, &li);
     return std::complex<PetscReal>(lr, li);
 #endif
   }
@@ -128,7 +127,7 @@ std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(std::size_t i) const
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
-                                     Vec c, std::size_t i) const
+                                     Vec c, int i) const
 {
   assert(_eps);
   const auto ii = static_cast<PetscInt>(i);
@@ -145,7 +144,7 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t SLEPcEigenSolver::get_number_converged() const
+std::int64_t SLEPcEigenSolver::get_number_converged() const
 {
   PetscInt num_conv;
   assert(_eps);
@@ -179,7 +178,7 @@ void SLEPcEigenSolver::set_from_options() const
     petsc_error(ierr, __FILE__, "EPSSetFromOptions");
 }
 //-----------------------------------------------------------------------------
-std::size_t SLEPcEigenSolver::get_iteration_number() const
+int SLEPcEigenSolver::get_iteration_number() const
 {
   assert(_eps);
   PetscInt num_iter;

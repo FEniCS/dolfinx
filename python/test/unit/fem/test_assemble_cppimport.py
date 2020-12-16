@@ -96,7 +96,7 @@ m.def("assemble_matrix", &assemble_csr<PetscScalar>);
         if _a.function_spaces[0].id == _a.function_spaces[1].id:
             for bc in bcs:
                 if _a.function_spaces[0].contains(bc.function_space):
-                    bc_dofs = bc.dof_indices[0]
+                    bc_dofs = bc.dof_indices()
                     A[bc_dofs, bc_dofs] = 1.0
         return A
 
@@ -107,7 +107,7 @@ m.def("assemble_matrix", &assemble_csr<PetscScalar>);
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
 
     bdofsQ = dolfinx.fem.locate_dofs_geometrical(Q, lambda x: numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6))
-    u_bc = dolfinx.function.Function(Q)
+    u_bc = dolfinx.fem.Function(Q)
     with u_bc.vector.localForm() as u_local:
         u_local.set(1.0)
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsQ)

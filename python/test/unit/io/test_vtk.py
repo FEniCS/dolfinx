@@ -41,7 +41,7 @@ def type_conv():
 
 @pytest.fixture(scope="function")
 def tempfile(tempdir, request):
-    return os.path.join(tempdir, request.function.__name__)
+    return os.path.join(tempdir, request.fem.__name__)
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")

@@ -17,10 +17,6 @@ def timing(task: str):
     return cpp.common.timing(task)
 
 
-def timings(timing_types: list):
-    return cpp.common.timings(timing_types)
-
-
 def list_timings(mpi_comm, timing_types: list):
     return cpp.common.list_timings(mpi_comm, timing_types)
 

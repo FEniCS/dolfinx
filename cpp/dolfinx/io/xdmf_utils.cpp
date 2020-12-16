@@ -13,8 +13,8 @@
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -30,7 +30,7 @@ namespace
 {
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-std::int64_t get_padded_width(const function::Function<PetscScalar>& u)
+std::int64_t get_padded_width(const fem::Function<PetscScalar>& u)
 {
   const int width = u.function_space()->element()->value_size();
   const int rank = u.function_space()->element()->value_rank();
@@ -188,7 +188,7 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 }
 //----------------------------------------------------------------------------
 std::vector<PetscScalar>
-xdmf_utils::get_point_data_values(const function::Function<PetscScalar>& u)
+xdmf_utils::get_point_data_values(const fem::Function<PetscScalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
@@ -230,7 +230,7 @@ xdmf_utils::get_point_data_values(const function::Function<PetscScalar>& u)
 }
 //-----------------------------------------------------------------------------
 std::vector<PetscScalar>
-xdmf_utils::get_cell_data_values(const function::Function<PetscScalar>& u)
+xdmf_utils::get_cell_data_values(const fem::Function<PetscScalar>& u)
 {
   assert(u.function_space()->dofmap());
   const auto mesh = u.function_space()->mesh();
@@ -532,17 +532,19 @@ xdmf_utils::extract_local_entities(
   std::vector<std::int32_t> values_new;
   values_new.reserve(recv_vals.array().size());
 
-  for (Eigen::Index e = 0; e < recv_ents.array().rows() / num_vertices_per_entity; ++e)
+  for (Eigen::Index e = 0;
+       e < recv_ents.array().rows() / num_vertices_per_entity; ++e)
   {
     bool entity_found = true;
     std::vector<std::int32_t> entity(num_vertices_per_entity);
     for (Eigen::Index i = 0; i < num_vertices_per_entity; ++i)
     {
-      const auto it = igi_to_vertex.find(recv_ents.array()[e * num_vertices_per_entity + i]);
+      const auto it = igi_to_vertex.find(
+          recv_ents.array()[e * num_vertices_per_entity + i]);
       if (it == igi_to_vertex.end())
       {
-        // As soon as this received index is not in locally owned input global indices
-        // skip the entire entity
+        // As soon as this received index is not in locally owned input global
+        // indices skip the entire entity
         entity_found = false;
         break;
       }
@@ -557,8 +559,10 @@ xdmf_utils::extract_local_entities(
   }
 
   return {Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>(entities_new.data(),
-                                                    entities_new.size() / num_vertices_per_entity, num_vertices_per_entity),
+                                  Eigen::RowMajor>>(
+              entities_new.data(),
+              entities_new.size() / num_vertices_per_entity,
+              num_vertices_per_entity),
           values_new};
-  }
+}
 //-----------------------------------------------------------------------------

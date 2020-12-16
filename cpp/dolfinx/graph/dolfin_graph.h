@@ -12,4 +12,5 @@ namespace dolfinx
 
 // DOLFINX graph interface
 
-#include <dolfinx/graph/BoostGraphOrdering.h>
+#include <dolfinx/graph/boostordering.h>
+#include <dolfinx/graph/partition.h>

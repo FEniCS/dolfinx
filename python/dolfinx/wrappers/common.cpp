@@ -10,7 +10,7 @@
 #include <Eigen/Dense>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/SubSystemsManager.h>
+#include <dolfinx/common/subsystem.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/defines.h>
@@ -90,10 +90,7 @@ void common(py::module& m)
 
   // dolfin/common free functions
   m.def("timing", &dolfinx::timing);
-  m.def("timings", [](std::vector<dolfinx::TimingType> type) {
-    std::set<dolfinx::TimingType> _type(type.begin(), type.end());
-    return dolfinx::timings(_type);
-  });
+
   m.def("list_timings",
         [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type) {
           std::set<dolfinx::TimingType> _type(type.begin(), type.end());
@@ -104,7 +101,7 @@ void common(py::module& m)
     std::vector<char*> argv(args.size() + 1, nullptr);
     for (std::size_t i = 0; i < args.size(); ++i)
       argv[i] = const_cast<char*>(args[i].data());
-    dolfinx::common::SubSystemsManager::init_logging(args.size(), argv.data());
+    dolfinx::common::subsystem::init_logging(args.size(), argv.data());
   });
 }
 } // namespace dolfinx_wrappers

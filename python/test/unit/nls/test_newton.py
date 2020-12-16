@@ -9,7 +9,6 @@ import dolfinx
 import dolfinx.fem as fem
 import numpy as np
 import ufl
-from dolfinx import function
 from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
@@ -91,8 +90,8 @@ def test_linear_pde():
     """Test Newton solver for a linear PDE"""
     # Create mesh and function space
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
-    V = function.FunctionSpace(mesh, ("Lagrange", 1))
-    u = function.Function(V)
+    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+    u = fem.Function(V)
     v = TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
@@ -100,7 +99,7 @@ def test_linear_pde():
         """Define Dirichlet boundary (x = 0 or x = 1)."""
         return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
-    u_bc = function.Function(V)
+    u_bc = fem.Function(V)
     u_bc.vector.set(1.0)
     u_bc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bc = fem.DirichletBC(u_bc, fem.locate_dofs_geometrical(V, boundary))
@@ -126,8 +125,8 @@ def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 5)
-    V = function.FunctionSpace(mesh, ("Lagrange", 1))
-    u = dolfinx.function.Function(V)
+    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+    u = dolfinx.fem.Function(V)
     v = TestFunction(V)
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
@@ -136,7 +135,7 @@ def test_nonlinear_pde():
         """Define Dirichlet boundary (x = 0 or x = 1)."""
         return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
-    u_bc = function.Function(V)
+    u_bc = fem.Function(V)
     u_bc.vector.set(1.0)
     u_bc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bc = fem.DirichletBC(u_bc, fem.locate_dofs_geometrical(V, boundary))
@@ -164,8 +163,8 @@ def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 15)
-    V = function.FunctionSpace(mesh, ("Lagrange", 1))
-    u = function.Function(V)
+    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+    u = fem.Function(V)
     v = TestFunction(V)
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
@@ -174,7 +173,7 @@ def test_nonlinear_pde_snes():
         """Define Dirichlet boundary (x = 0 or x = 1)."""
         return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
-    u_bc = function.Function(V)
+    u_bc = fem.Function(V)
     u_bc.vector.set(1.0)
     u_bc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bc = fem.DirichletBC(u_bc, fem.locate_dofs_geometrical(V, boundary))
@@ -251,8 +250,8 @@ def test_newton_solver_inheritance_override_methods():
             return super().converged(r, problem, it)
 
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
-    V = function.FunctionSpace(mesh, ("Lagrange", 1))
-    u = function.Function(V)
+    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+    u = fem.Function(V)
     v = TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
@@ -260,7 +259,7 @@ def test_newton_solver_inheritance_override_methods():
         """Define Dirichlet boundary (x = 0 or x = 1)."""
         return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
-    u_bc = function.Function(V)
+    u_bc = fem.Function(V)
     bc = fem.DirichletBC(u_bc, fem.locate_dofs_geometrical(V, boundary))
 
     # Create nonlinear problem

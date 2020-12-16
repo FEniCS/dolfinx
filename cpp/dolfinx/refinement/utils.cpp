@@ -8,14 +8,13 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/graph/scotch.h>
 #include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/GraphBuilder.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
-#include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/TopologyComputation.h>
+#include <dolfinx/mesh/graphbuild.h>
+#include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
 #include <mpi.h>
@@ -25,7 +24,6 @@ using namespace dolfinx;
 
 namespace
 {
-
 std::int64_t local_to_global(std::int32_t local_index,
                              const common::IndexMap& map)
 {
@@ -327,15 +325,15 @@ mesh::Mesh refinement::partition(
                         const graph::AdjacencyList<std::int64_t>& cell_topology,
                         mesh::GhostMode) {
     // Find out the ghosting information
-    auto [graph, info] = mesh::GraphBuilder::compute_dual_graph(
-        mpi_comm, cell_topology, cell_type);
+    auto [graph, info]
+        = mesh::build_dual_graph(mpi_comm, cell_topology, cell_type);
 
     // FIXME: much of this is reverse engineering of data that is already
     // known in the GraphBuilder
 
     const int mpi_size = MPI::size(mpi_comm);
     const int mpi_rank = MPI::rank(mpi_comm);
-    const std::int32_t local_size = graph.size();
+    const std::int32_t local_size = graph.num_nodes();
     std::vector<std::int32_t> local_sizes(mpi_size);
     std::vector<std::int64_t> local_offsets(mpi_size + 1);
 
@@ -349,20 +347,22 @@ mesh::Mesh refinement::partition(
     // but must also be sent to their ghost destinations, which are determined
     // here.
     std::vector<std::int32_t> destinations;
-    destinations.reserve(graph.size());
+    destinations.reserve(graph.num_nodes());
     std::vector<std::int32_t> dest_offsets = {0};
-    dest_offsets.reserve(graph.size());
-    for (std::size_t i = 0; i < graph.size(); ++i)
+    dest_offsets.reserve(graph.num_nodes());
+    for (int i = 0; i < graph.num_nodes(); ++i)
     {
       destinations.push_back(mpi_rank);
-      for (std::int64_t j : graph[i])
+      for (int j = 0; j < graph.num_links(i); ++j)
       {
-        if (j < local_offsets[mpi_rank] or j >= local_offsets[mpi_rank + 1])
+        std::int64_t index = graph.links(i)[j];
+        if (index < local_offsets[mpi_rank]
+            or index >= local_offsets[mpi_rank + 1])
         {
           // Ghosted cell - identify which process it should be sent to.
           for (std::size_t k = 0; k < local_offsets.size(); ++k)
           {
-            if (j >= local_offsets[k] and j < local_offsets[k + 1])
+            if (index >= local_offsets[k] and index < local_offsets[k + 1])
             {
               destinations.push_back(k);
               break;

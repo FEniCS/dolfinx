@@ -29,7 +29,7 @@ public:
   PETScOperator(const PETScOperator& A) = delete;
 
   /// Move constructor
-  PETScOperator(PETScOperator&& A) noexcept;
+  PETScOperator(PETScOperator&& A);
 
   /// Destructor
   virtual ~PETScOperator();

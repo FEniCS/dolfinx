@@ -14,7 +14,7 @@
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
 #include <map>
 #include <memory>

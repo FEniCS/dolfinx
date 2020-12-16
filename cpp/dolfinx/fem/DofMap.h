@@ -70,7 +70,7 @@ public:
   /// vector of indices
   DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
          std::shared_ptr<const common::IndexMap> index_map, int index_map_bs,
-         const graph::AdjacencyList<std::int32_t>& dofmap);
+         const graph::AdjacencyList<std::int32_t>& dofmap, int bs);
 
   // Copy constructor
   DofMap(const DofMap& dofmap) = delete;
@@ -96,6 +96,9 @@ public:
   {
     return _dofmap.links(cell);
   }
+
+  /// Return the block size for the dofmap
+  int bs() const noexcept;
 
   /// Extract subdofmap component
   /// @param[in] component The component indices
@@ -124,10 +127,13 @@ public:
   int index_map_bs() const;
 
 private:
-  // Cell-local-to-dof map (dofs for cell dofmap[cell])
+  // Block size for the IndexMap
   int _index_map_bs = -1;
 
   // Cell-local-to-dof map (dofs for cell dofmap[cell])
   graph::AdjacencyList<std::int32_t> _dofmap;
+
+  // Block size for the dofmap
+  int _bs = -1;
 };
 } // namespace dolfinx::fem

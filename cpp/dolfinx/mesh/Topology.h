@@ -174,7 +174,7 @@ private:
                Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _connectivity;
 
-  // The facet permutations
+  // The facet permutations (local facet, cell))
   Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
       _facet_permutations;
 

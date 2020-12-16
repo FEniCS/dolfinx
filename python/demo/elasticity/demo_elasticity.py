@@ -9,19 +9,17 @@
 # smoothed aggregation algebraic multigrid. ::
 
 from contextlib import ExitStack
-import os
-
-import numpy as np
-from mpi4py import MPI
-from petsc4py import PETSc
 
 import dolfinx
+import numpy as np
 from dolfinx import BoxMesh, DirichletBC, Function, VectorFunctionSpace, cpp
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import (Form, apply_lifting, assemble_matrix, assemble_vector,
+from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.la import VectorSpaceBasis
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
                  as_vector, dx, grad, inner, sym, tr)
 
@@ -47,19 +45,23 @@ def build_nullspace(V):
         vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
         basis = [np.asarray(x) for x in vec_local]
 
+        # Dof indices for each subspace (x, y and z dofs)
+        dofs = [V.sub(i).dofmap.list.array for i in range(3)]
+
         # Build translational null space basis
         for i in range(3):
-            basis[i][V.sub(i).dofmap.list.array] = 1.0
+            basis[i][dofs[i]] = 1.0
 
         # Build rotational null space basis
         x = V.tabulate_dof_coordinates()
-        dofs = [V.sub(i).dofmap.list.array for i in range(3)]
-        basis[3][dofs[0]] = -x[dofs[0], 1]
-        basis[3][dofs[1]] = x[dofs[1], 0]
-        basis[4][dofs[0]] = x[dofs[0], 2]
-        basis[4][dofs[2]] = -x[dofs[2], 0]
-        basis[5][dofs[2]] = x[dofs[2], 1]
-        basis[5][dofs[1]] = -x[dofs[1], 2]
+        dofs_block = V.dofmap.list.array
+        x0, x1, x2 = x[dofs_block, 0], x[dofs_block, 1], x[dofs_block, 2]
+        basis[3][dofs[0]] = -x1
+        basis[3][dofs[1]] = x0
+        basis[4][dofs[0]] = x2
+        basis[4][dofs[2]] = -x0
+        basis[5][dofs[2]] = x1
+        basis[5][dofs[1]] = -x2
 
     # Create vector space basis and orthogonalize
     basis = VectorSpaceBasis(nullspace_basis)
@@ -73,7 +75,7 @@ def build_nullspace(V):
 mesh = BoxMesh(
     MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
-    CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.none)
+    CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.shared_facet)
 
 
 def boundary(x):
@@ -117,39 +119,12 @@ with u0.vector.localForm() as bc_local:
 # Set up boundary condition on inner surface
 bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
 
-# Controlling compilation parameters
-# ----------------------------------
-#
-# Parameters which control FFCX and JIT compilation could be set
-# directly with the interface of :py:class:`Form <dolfinx.fem.Form>` or
-# via environmental variables.
-#
-# This demo shows a mixed approach, where C compilation
-# flags are set with environmental variables.
-# Some parameters which control FFCX compilation are passed directly to the ``Form``.
-# ::
-
-os.environ["DOLFINX_JIT_CFLAGS"] = "-Ofast -march=native"
-os.environ["FFCX_VERBOSITY"] = "20"
-
-form = Form(a, form_compiler_parameters={"quadrature_degree": 1})
-
-# The use of such aggresive compiler flags (e.g. ``-Ofast`` violates IEEE floating point standard)
-# often results in a faster assembly code, but slower JIT compilation.
-# FFCX verbosity levels follow Python std logging library levels, https://docs.python.org/3/library/logging.html.
-# To see all available form compiler parameters run ``ffcx --help`` in the commandline.
-#
-# .. warning::
-#    Environmental variables override any other parameters passed to the ``Form``, or directly stated
-#    in the metadata of an integral. Please make sure there are no environmental variables set
-#    with side-effects.
-#
 # Assembly and solve
 # ------------------
 # ::
 
-# Assemble system, applying boundary conditions and preserving symmetry
-A = assemble_matrix(form, [bc])
+# Assemble system, applying boundary conditions
+A = assemble_matrix(a, [bc])
 A.assemble()
 
 b = assemble_vector(L)

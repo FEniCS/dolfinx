@@ -79,7 +79,7 @@ To set the installation prefix::
 Python
 ------
 
-After installtion of the C++ core, from the ``python/`` directory the
+After installation of the C++ core, from the ``python/`` directory the
 Python interface can be installed using::
 
     pip3 install .
@@ -89,7 +89,7 @@ Docker container
 ================
 
 A Docker container is available at
-https://quay.io/repository/fenicsproject/dolfinx. The `Dockerfile
+https://hub.docker.com/r/dolfinx/dolfinx. The `Dockerfile
 <https://github.com/FEniCS/dolfinx/blob/master/Dockerfile>`_
 provides a definitive build recipe.
 

@@ -14,7 +14,7 @@ as well as the solve function.
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import cpp, fem, function
+from dolfinx import cpp, fem
 
 # FIXME: The code is this file is outrageously convoluted because one
 # function an do a number of unrelated operations, depending in the
@@ -248,7 +248,7 @@ def _extract_eq(eq):
 
 def _extract_u(u):
     "Extract and check argument u"
-    if not isinstance(u, function.Function):
+    if not isinstance(u, fem.Function):
         raise RuntimeError("Expecting second argument to be a Function.")
     return u
 
