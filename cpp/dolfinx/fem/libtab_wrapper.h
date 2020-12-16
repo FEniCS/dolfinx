@@ -26,83 +26,83 @@ namespace dolfinx::fem
 class LibtabElement
 {
 public:
-  /// TODO: document
+  /// Constructor
   LibtabElement() {};
 
-  /// TODO: document
+  /// Wrapper for libtab points
   virtual const Eigen::ArrayXXd& points() const;
 
-  /// TODO: document
+  /// Wrapper for libtab tabulate
   virtual std::vector<Eigen::ArrayXXd> tabulate(int nd, const Eigen::ArrayXXd& x) const;
 
-  /// TODO: document
+  /// The block size of the element
   virtual int block_size() const;
 };
 
-/// TODO: document
+/// Subclass that wraps an element implemented in libtab
 class WrappedLibtabElement : public LibtabElement
 {
 public:
-  /// TODO: document
+  /// Constructor
   explicit WrappedLibtabElement(std::shared_ptr<const libtab::FiniteElement> libtab_element);
 
-  /// TODO: document
+  /// Wrapper for libtab points
   const Eigen::ArrayXXd& points() const override;
 
-  /// TODO: document
+  /// Wrapper for libtab tabulate
   std::vector<Eigen::ArrayXXd> tabulate(int nd, const Eigen::ArrayXXd& x) const override;
 
 private:
-  /// TODO: document
+  /// The libtab element being wrapped
   std::shared_ptr<const libtab::FiniteElement> _libtab_element;
 };
 
-/// TODO: document
+/// A blocked element (vector or tensor element)
 class BlockedLibtabElement : public LibtabElement
 {
 public:
-  /// TODO: document
+  /// Constructor
   explicit BlockedLibtabElement(std::shared_ptr<const libtab::FiniteElement> libtab_element, int block_size);
 
-  /// TODO: document
+  /// Wrapper for libtab points
   const Eigen::ArrayXXd& points() const override;
 
-  /// TODO: document
+  /// Wrapper for libtab tabulate
   std::vector<Eigen::ArrayXXd> tabulate(int nd, const Eigen::ArrayXXd& x) const override;
 
-  /// TODO: document
+  /// The block size of the element
   int block_size() const override;
 
 private:
-  /// TODO: document
+  /// The scalar element
   std::shared_ptr<const libtab::FiniteElement> _libtab_element;
 
-  /// TODO: document
+  /// The block size of the element
   int _block_size;
 };
 
-/// TODO: document
+/// A mixed element (combination of two or more elements)
 class MixedLibtabElement : public LibtabElement
 {
 public:
-  /// TODO: document
+  /// Constructor
   explicit MixedLibtabElement(std::vector<std::shared_ptr<const LibtabElement>> sub_elements);
 
-  /// TODO: document
+  /// Wrapper for libtab points
   const Eigen::ArrayXXd& points() const override;
 
-  /// TODO: document
+  /// Wrapper for libtab tabulate
   std::vector<Eigen::ArrayXXd> tabulate(int nd, const Eigen::ArrayXXd& x) const override;
 
 private:
-  /// TODO: document
+  /// The subelements
   std::vector<std::shared_ptr<const LibtabElement>> _sub_elements;
 
-  /// TODO: document
+  /// The points
   Eigen::ArrayXXd _points;
 };
 
-/// TODO: document
+/// Create a libtab element from a ufc element
 const std::shared_ptr<const LibtabElement> create_libtab_element(
     const ufc_finite_element& ufc_element);
 } // namespace dolfix::fem
