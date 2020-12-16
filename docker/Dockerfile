@@ -152,8 +152,8 @@ RUN cd /usr/local && \
     git clone https://github.com/schulzchristian/KaHIP.git && \
     cd KaHIP/ && \
     git checkout ${KAHIP_VERSION} && \
-    cmake -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} .. && \
     mkdir build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} .. && \
     make && make install
 
 
