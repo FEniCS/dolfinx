@@ -162,7 +162,7 @@ def _extract_args(*args, **kwargs):
     form_compiler_parameters = kwargs.get("form_compiler_parameters", {})
     petsc_options = kwargs.get("petsc_options", {})
 
-    return eq, u, bcs, J, tol, M, form_compiler_parameters, petsc_options
+    return eq, u, bcs, J, tol, form_compiler_parameters, petsc_options
 
 
 def _extract_eq(eq):
