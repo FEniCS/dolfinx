@@ -29,6 +29,9 @@ public:
   /// Constructor
   LibtabElement() {};
 
+  /// Destructor
+  virtual ~LibtabElement() = default;
+
   /// Wrapper for libtab points
   virtual const Eigen::ArrayXXd& points() const;
 
