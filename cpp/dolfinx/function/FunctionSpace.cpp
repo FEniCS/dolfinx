@@ -52,7 +52,16 @@ internal_tabulate_dof_coordinates(
         / element_block_size;
   const int scalar_dofs = element->space_dimension() / element_block_size;
 
-  // Dof coordinate on reference element
+  // Cell permutation data
+  // TODO: is this needed??
+//  const bool needs_permutation_data = L.needs_permutation_data();
+//  if (needs_permutation_data)
+//    mesh->topology_mutable().create_entity_permutations();
+//  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+//      = needs_permutation_data
+//            ? mesh->topology().get_cell_permutation_info()
+//            : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
+
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = element->dof_reference_coordinates();
 
@@ -86,6 +95,8 @@ internal_tabulate_dof_coordinates(
 
   for (int c = 0; c < num_cells; ++c)
   {
+//     X = element->dof_coordinates(cell_info[c]);
+
     // Update cell
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
