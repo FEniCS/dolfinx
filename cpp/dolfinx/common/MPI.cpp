@@ -143,7 +143,7 @@ std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
   std::vector<std::uint8_t> edge_count(dolfinx::MPI::size(comm), 0);
   for (auto e : edges)
     edge_count[e] = 1;
-  std::vector<std::uint8_t> in_edge_count(dolfinx::MPI::size(comm), -1);
+  std::vector<std::uint8_t> in_edge_count(dolfinx::MPI::size(comm));
   MPI_Alltoall(edge_count.data(), 1, MPI_UINT8_T, in_edge_count.data(), 1,
                MPI_UINT8_T, comm);
 
