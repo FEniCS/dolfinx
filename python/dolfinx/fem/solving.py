@@ -48,7 +48,7 @@ def solve(*args, **kwargs):
               petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
               form_compiler_parameters={"optimize": True})
 
-    For available choices for the 'petsc_options' kwarg, see the 
+    For available choices for the 'petsc_options' kwarg, see the
     `PETSc-documentation <https://www.mcs.anl.gov/petsc/documentation/index.html>`_
 
     """
