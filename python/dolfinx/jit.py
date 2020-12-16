@@ -3,6 +3,7 @@
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Just-in-time (JIT) compilation using ffcx"""
 
 import functools
 import json
@@ -17,6 +18,8 @@ import ffcx
 import ffcx.codegeneration.jit
 import ufl
 from dolfinx import common
+
+__all__ = ["ffcx_jit", "get_parameters"]
 
 if dolfinx.pkgconfig.exists("dolfinx"):
     dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")

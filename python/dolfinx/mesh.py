@@ -3,6 +3,7 @@
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Creation, refining and marking of meshes"""
 
 import types
 
@@ -12,7 +13,7 @@ from dolfinx import cpp, fem
 from dolfinx.cpp.mesh import create_meshtags
 
 __all__ = [
-    "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags"
+    "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags", "MeshTags"
 ]
 
 
