@@ -7,9 +7,9 @@
 #pragma once
 
 #include "Geometry.h"
-#include "Partitioning.h"
 #include "Topology.h"
 #include "cell_types.h"
+#include "utils.h"
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
@@ -166,7 +166,7 @@ Mesh create_mesh(
         MPI_Comm, int, const mesh::CellType,
         const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>
         partitioner
-    = &Partitioning::partition_cells);
+    = &mesh::partition_cells);
 
 } // namespace mesh
 } // namespace dolfinx

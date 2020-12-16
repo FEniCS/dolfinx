@@ -8,14 +8,13 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/graph/scotch.h>
 #include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/GraphBuilder.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
-#include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/TopologyComputation.h>
+#include <dolfinx/mesh/graphbuild.h>
+#include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
 #include <mpi.h>
@@ -25,7 +24,6 @@ using namespace dolfinx;
 
 namespace
 {
-
 std::int64_t local_to_global(std::int32_t local_index,
                              const common::IndexMap& map)
 {
@@ -327,8 +325,8 @@ mesh::Mesh refinement::partition(
                         const graph::AdjacencyList<std::int64_t>& cell_topology,
                         mesh::GhostMode) {
     // Find out the ghosting information
-    auto [graph, info] = mesh::GraphBuilder::compute_dual_graph(
-        mpi_comm, cell_topology, cell_type);
+    auto [graph, info]
+        = mesh::build_dual_graph(mpi_comm, cell_topology, cell_type);
 
     // FIXME: much of this is reverse engineering of data that is already
     // known in the GraphBuilder

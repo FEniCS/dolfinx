@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "PlazaRefinementND.h"
+#include "plaza.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
@@ -534,7 +534,7 @@ mesh::Mesh compute_refinement(
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
+mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
@@ -559,10 +559,9 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
   return new_mesh;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh
-PlazaRefinementND::refine(const mesh::Mesh& mesh,
-                          const mesh::MeshTags<std::int8_t>& refinement_marker,
-                          bool redistribute)
+mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
+                         const mesh::MeshTags<std::int8_t>& refinement_marker,
+                         bool redistribute)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)

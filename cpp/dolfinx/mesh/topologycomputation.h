@@ -31,11 +31,6 @@ namespace mesh
 {
 class Topology;
 
-/// This class implements a set of basic algorithms that automate the
-/// computation of mesh entities and connectivity
-
-namespace TopologyComputation
-{
 /// Compute mesh entities of given topological dimension by computing
 /// entity-to-vertex connectivity (dim, 0), and cell-to-entity
 /// connectivity (tdim, dim)
@@ -63,6 +58,5 @@ compute_entities(MPI_Comm comm, const Topology& topology, int dim);
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
 compute_connectivity(const Topology& topology, int d0, int d1);
 
-} // namespace TopologyComputation
 } // namespace mesh
 } // namespace dolfinx

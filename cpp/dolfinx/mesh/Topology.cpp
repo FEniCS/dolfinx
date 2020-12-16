@@ -5,9 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
-#include "Partitioning.h"
-#include "PermutationComputation.h"
-#include "TopologyComputation.h"
+#include "permutationcomputation.h"
+#include "topologycomputation.h"
 #include "utils.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
@@ -15,7 +14,7 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <numeric>
 #include <unordered_map>
@@ -176,7 +175,7 @@ std::int32_t Topology::create_entities(int dim)
 
   // Create local entities
   const auto [cell_entity, entity_vertex, index_map]
-      = TopologyComputation::compute_entities(_mpi_comm.comm(), *this, dim);
+      = mesh::compute_entities(_mpi_comm.comm(), *this, dim);
 
   if (cell_entity)
     set_connectivity(cell_entity, this->dim(), dim);
@@ -198,8 +197,7 @@ void Topology::create_connectivity(int d0, int d1)
   create_entities(d1);
 
   // Compute connectivity
-  const auto [c_d0_d1, c_d1_d0]
-      = TopologyComputation::compute_connectivity(*this, d0, d1);
+  const auto [c_d0_d1, c_d1_d0] = mesh::compute_connectivity(*this, d0, d1);
 
   // NOTE: that to compute the (d0, d1) connections is it sometimes
   // necessary to compute the (d1, d0) connections. We store the (d1,
@@ -234,7 +232,7 @@ void Topology::create_entity_permutations()
     create_entities(d);
 
   auto [facet_permutations, cell_permutations]
-      = PermutationComputation::compute_entity_permutations(*this);
+      = mesh::compute_entity_permutations(*this);
   _facet_permutations = std::move(facet_permutations);
   _cell_permutations = std::move(cell_permutations);
 }
@@ -327,7 +325,7 @@ mesh::create_topology(MPI_Comm comm,
   {
     // Get global indices of ghost cells
     const std::vector cell_ghost_indices
-        = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,
+        = graph::partition::compute_ghost_indices(comm, original_cell_index,
                                                      ghost_owners);
     index_map_c = std::make_shared<common::IndexMap>(
         comm, num_local_cells,

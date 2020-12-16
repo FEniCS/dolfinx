@@ -191,8 +191,14 @@ public:
   template <typename X>
   decltype(auto) as_type() const
   {
+// Workaround for Intel compler bug, see
+// https://community.intel.com/t5/Intel-C-Compiler/quot-if-constexpr-quot-and-quot-missing-return-statement-quot-in/td-p/1154551
+#ifdef __INTEL_COMPILER
+#pragma warning(disable : 1011)
+#endif
+
     if constexpr (std::is_same<X, T>::value)
-      return (*this);
+      return *this;
     else
       return graph::AdjacencyList<X>(_array.template cast<X>(), _offsets);
   }
