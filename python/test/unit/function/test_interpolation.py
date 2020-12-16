@@ -190,7 +190,7 @@ def test_N1curl_interpolation(cell_type, order):
             return (x[0] ** (order - 1), 2 * x[0] ** (order - 1) + x[1] ** (order - 1))
     else:
         def f(x):
-            return (x[1] ** (order - 1) , x[2] ** (order - 1), x[0] ** (order - 1) - 2 * x[1] ** (order - 1))
+            return (x[1] ** (order - 1), x[2] ** (order - 1), x[0] ** (order - 1) - 2 * x[1] ** (order - 1))
 
     v.interpolate(f)
     points = [random_point_in_cell(cell_type) for count in range(5)]
