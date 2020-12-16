@@ -8,7 +8,6 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/utils.h>
 #include <functional>
-#include <libtab.h>
 #include <ufc.h>
 
 using namespace dolfinx;
@@ -25,6 +24,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _transform_reference_basis_derivatives(
           ufc_element.transform_reference_basis_derivatives),
       _transform_values(ufc_element.transform_values),
+      _permute_dof_coordinates(ufc_element.permute_dof_coordinates),
       _block_size(ufc_element.block_size),
       _interpolate_into_cell(ufc_element.interpolate_into_cell),
       _interpolation_points(ufc_element.num_interpolation_points,
@@ -71,9 +71,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   }
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
-  _libtab_element
-      = std::make_shared<const libtab::FiniteElement>(libtab::create_element(
-          _family, mesh::to_string(_cell_shape), ufc_element.degree));
+  _libtab_element = create_libtab_element(ufc_element);
 
   // Copy over "dof coordinates" from libtab (only for Lagrange, so far)
   _refX = _libtab_element->points();
@@ -212,6 +210,30 @@ FiniteElement::dof_reference_coordinates() const
   }
 
   return _refX;
+}
+//-----------------------------------------------------------------------------
+const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+FiniteElement::dof_coordinates(int cell_perm) const
+{
+  if (_refX.size() == 0)
+  {
+    throw std::runtime_error(
+        "Dof reference coordinates do not exist for this element.");
+  }
+  if(!_needs_permutation_data or cell_perm == 0)
+    return _refX;
+
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    outX(_refX.rows(), _refX.cols());
+  outX = _refX;
+
+  int ret = _permute_dof_coordinates(outX.data(), cell_perm);
+
+  if (ret == -1)
+    throw std::runtime_error(
+        "Dof reference coordinates cannot be permuted for this element.");
+
+  return outX;
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_values(

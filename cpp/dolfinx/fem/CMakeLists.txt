@@ -13,6 +13,7 @@ set(HEADERS_fem
   ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/libtab_wrapper.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Form.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ReferenceCellGeometry.h
   ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPatternBuilder.h
@@ -28,6 +29,7 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/libtab_wrapper.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ReferenceCellGeometry.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPatternBuilder.cpp
 )

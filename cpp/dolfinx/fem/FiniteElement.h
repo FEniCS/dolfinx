@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "libtab_wrapper.h"
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -24,7 +25,6 @@ class FiniteElement;
 
 namespace dolfinx::fem
 {
-
 /// Finite Element, containing the dof layout on a reference element, and
 /// various methods for evaluating and transforming the basis.
 class FiniteElement
@@ -131,6 +131,10 @@ public:
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
   dof_reference_coordinates() const;
 
+  /// TODO: doc
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  dof_coordinates(int cell_perm) const;
+
   /// Map values of field from physical to reference space which has
   /// been evaluated at points given by dof_reference_coordinates()
   void transform_values(
@@ -204,6 +208,9 @@ private:
                     const ufc_coordinate_mapping*)>
       _transform_values;
 
+  std::function<int(double*, const std::uint32_t)>
+      _permute_dof_coordinates;
+
   // Block size for VectorElements and TensorElements
   // This gives the number of DOFs colocated at each point
   int _block_size;
@@ -215,6 +222,6 @@ private:
 
   bool _needs_permutation_data;
 
-  std::shared_ptr<const libtab::FiniteElement> _libtab_element;
+  std::shared_ptr<const LibtabElement> _libtab_element;
 };
 } // namespace dolfinx::fem
