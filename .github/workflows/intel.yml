@@ -18,17 +18,10 @@ jobs:
         shell: bash
 
     env:
-    #   CC: clang-10
-    #   CXX: clang++-10
+      CC: icc
+      CXX: icpc
     #   MPLBACKEND: agg
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
-    #   OMPI_ALLOW_RUN_AS_ROOT: 1
-    #   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-    #   OMPI_MCA_rmaps_base_oversubscribe: 1
-    #   OMPI_MCA_plm: isolated
-    #   OMPI_MCA_btl_vader_single_copy_mechanism: none
-    #   OMPI_MCA_mpi_yield_when_idle: 1
-    #   OMPI_MCA_hwloc_base_binding_policy: none
 
     strategy:
       matrix:
@@ -55,45 +48,38 @@ jobs:
       - name: Configure C++
         run: |
           . /opt/intel/oneapi/setvars.sh
-          export CC=icc
-          export CXX=icpc
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
 
       - name: Build and install C++ library
         run: |
           . /opt/intel/oneapi/setvars.sh
-          export CC=icc
-          export CXX=icpc
           cmake --build build
           cmake --install build
 
       - name: Build and run C++ unit tests (serial and MPI)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          export CC=icc
-          export CXX=icpc
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/unit/ -S build/test/unit/
           cmake --build build/test/unit
           cd build/test/unit
           ctest --output-on-failure -R unittests
           mpiexec -np 2 ctest --output-on-failure -R unittests
-      - name: Build and run C++ regression tests (serial and MPI (np=2))
+
+          - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           . /opt/intel/oneapi/setvars.sh
-          export CC=icc
-          export CXX=icpc
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/
           cmake --build build/demo
           cd build/demo
           ctest -R demo -R serial
           ctest -R demo -R mpi_2
 
-      - name: Build Python interface
-        run: |
-          . /opt/intel/oneapi/setvars.sh
-          export CC=icc
-          export CXX=icpc
-          python3 -m pip -v install python/
+      # - name: Build Python interface
+      #   run: |
+      #     . /opt/intel/oneapi/setvars.sh
+      #     export CC=icc
+      #     export CXX=icpc
+      #     python3 -m pip -v install python/
 
       # - name: Set default DOLFINX JIT parameters
       #   run: |
@@ -109,41 +95,3 @@ jobs:
       #   run: python3 -m pytest -n=auto --durations=50 python/test/unit/
       # - name: Run Python unit tests (MPI, np=2)
       #   run: mpirun -np 2 python3 -m pytest python/test/unit/
-
-      # - name: Upload C++ documentation artifact
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: doc-cpp-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
-      #     path: |
-      #       cpp/doc/html/
-      #     retention-days: 2
-      #     if-no-files-found: error
-
-      # - name: Upload Python documentation artifact
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: doc-python-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
-      #     path: |
-      #       python/doc/build/html/
-      #     retention-days: 2
-      #     if-no-files-found: error
-
-      # - name: Checkout FEniCS/docs
-      #   uses: actions/checkout@v2
-      #   with:
-      #     repository: "FEniCS/docs"
-      #     path: "docs"
-      #     ssh-key: "${{ secrets.SSH_GITHUB_DOCS_PRIVATE_KEY }}"
-      # - name: Push documentation to repository FEniCS/docs
-      #   if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == 32}}
-      #   run: |
-      #     git config --global user.email "fenics@github.com"
-      #     git config --global user.name "FEniCS GitHub Actions"
-      #     mkdir -p docs/dolfinx/cpp
-      #     mkdir -p docs/dolfinx/python
-      #     cp -r cpp/doc/html/* docs/dolfinx/cpp
-      #     cp -r python/doc/build/html/* docs/dolfinx/python
-      #     cd docs
-      #     git add --all
-      #     git commit --allow-empty -m "C++ and Python FEniCS/dolfinx@${{ github.sha }}"
-      #     git push

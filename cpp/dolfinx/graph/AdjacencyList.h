@@ -193,8 +193,10 @@ public:
   {
     if constexpr (std::is_same<X, T>::value)
       return *this;
+    else
+      return graph::AdjacencyList<X>(_array.template cast<X>(), _offsets);
 
-    return graph::AdjacencyList<X>(_array.template cast<X>(), _offsets);
+    // return graph::AdjacencyList<X>(_array.template cast<X>(), _offsets);
   }
 
   /// Return informal string representation (pretty-print)
