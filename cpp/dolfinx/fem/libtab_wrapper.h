@@ -21,7 +21,8 @@ class FiniteElement;
 
 namespace dolfinx::fem
 {
-/// TODO: document
+/// A wrapper class for libtab. This allows mixed, vector, and other elements to be handled
+/// more easily by dolfin.
 class LibtabElement
 {
 public:
@@ -101,6 +102,7 @@ private:
   Eigen::ArrayXXd _points;
 };
 
+/// TODO: document
 const std::shared_ptr<const LibtabElement> create_libtab_element(
     const ufc_finite_element& ufc_element);
 } // namespace dolfix::fem
