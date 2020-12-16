@@ -26,7 +26,7 @@ for f in demo_files:
 @pytest.mark.parametrize("path,name", demos)
 def test_demos(path, name):
     # TODO: fix these demos
-    if name in ["demo_elasticity.py", "path4-demo_gmsh.py", "demo_stokes-taylor-hood.py"]:
+    if name in ["demo_elasticity.py", "demo_gmsh.py", "demo_stokes-taylor-hood.py"]:
         pytest.skip()
 
     ret = subprocess.run([sys.executable, name],
@@ -40,7 +40,7 @@ def test_demos(path, name):
 @pytest.mark.parametrize("path,name", demos)
 def test_demos_mpi(num_proc, mpiexec, path, name):
     # TODO: fix these demos
-    if name in ["demo_elasticity.py", "path4-demo_gmsh.py", "demo_stokes-taylor-hood.py"]:
+    if name in ["demo_elasticity.py", "demo_gmsh.py", "demo_stokes-taylor-hood.py"]:
         pytest.skip()
 
     cmd = [mpiexec, "-np", str(num_proc), sys.executable, name]
