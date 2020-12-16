@@ -127,8 +127,8 @@ jobs:
           git rm -r dolfinx/master/python/*
           mkdir -p dolfinx/master/cpp
           mkdir -p dolfinx/master/python
-          cp -r ../cpp/doc/html/* docs/dolfinx/master/cpp
-          cp -r ../python/doc/build/html/* docs/dolfinx/master/python
+          cp -r ../cpp/doc/html/* dolfinx/master/cpp
+          cp -r ../python/doc/build/html/* dolfinx/master/python
           git add --all
           git commit --allow-empty -m "C++ and Python FEniCS/dolfinx@${{ github.sha }}"
           git push
