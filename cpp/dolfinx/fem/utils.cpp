@@ -13,16 +13,16 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/DofMapBuilder.h>
+#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/SparsityPatternBuilder.h>
+#include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/TopologyComputation.h>
+#include <dolfinx/mesh/topologycomputation.h>
 #include <memory>
 #include <string>
 #include <ufc.h>
@@ -78,18 +78,17 @@ fem::create_sparsity_pattern(const mesh::Topology& topology,
   {
     if (type == fem::IntegralType::cell)
     {
-      SparsityPatternBuilder::cells(pattern, topology,
-                                    {{dofmaps[0], dofmaps[1]}});
+      sparsitybuild::cells(pattern, topology, {{dofmaps[0], dofmaps[1]}});
     }
     else if (type == fem::IntegralType::interior_facet)
     {
-      SparsityPatternBuilder::interior_facets(pattern, topology,
-                                              {{dofmaps[0], dofmaps[1]}});
+      sparsitybuild::interior_facets(pattern, topology,
+                                     {{dofmaps[0], dofmaps[1]}});
     }
     else if (type == fem::IntegralType::exterior_facet)
     {
-      SparsityPatternBuilder::exterior_facets(pattern, topology,
-                                              {{dofmaps[0], dofmaps[1]}});
+      sparsitybuild::exterior_facets(pattern, topology,
+                                     {{dofmaps[0], dofmaps[1]}});
     }
   }
 
@@ -193,7 +192,7 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     {
       // Create local entities
       const auto [cell_entity, entity_vertex, index_map]
-          = mesh::TopologyComputation::compute_entities(comm, topology, d);
+          = mesh::compute_entities(comm, topology, d);
       if (cell_entity)
         topology.set_connectivity(cell_entity, topology.dim(), d);
       if (entity_vertex)
@@ -204,7 +203,7 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
   }
 
   auto [index_map, bs, dofmap]
-      = DofMapBuilder::build(comm, topology, *element_dof_layout);
+      = fem::build_dofmap_data(comm, topology, *element_dof_layout);
   return DofMap(element_dof_layout, index_map, bs, std::move(dofmap), bs);
 }
 //-----------------------------------------------------------------------------

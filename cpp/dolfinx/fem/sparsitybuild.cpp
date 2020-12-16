@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "SparsityPatternBuilder.h"
+#include "sparsitybuild.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -15,9 +15,9 @@ using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::cells(
-    la::SparsityPattern& pattern, const mesh::Topology& topology,
-    const std::array<const fem::DofMap*, 2> dofmaps)
+void sparsitybuild::cells(la::SparsityPattern& pattern,
+                          const mesh::Topology& topology,
+                          const std::array<const fem::DofMap*, 2> dofmaps)
 {
   assert(dofmaps[0]);
   assert(dofmaps[1]);
@@ -28,7 +28,7 @@ void SparsityPatternBuilder::cells(
     pattern.insert(dofmaps[0]->cell_dofs(c), dofmaps[1]->cell_dofs(c));
 }
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::interior_facets(
+void sparsitybuild::interior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const fem::DofMap*, 2> dofmaps)
 {
@@ -77,7 +77,7 @@ void SparsityPatternBuilder::interior_facets(
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::exterior_facets(
+void sparsitybuild::exterior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const fem::DofMap*, 2> dofmaps)
 {

@@ -13,7 +13,7 @@ namespace dolfinx::common
 /// initialisation and finalisation of various sub systems, such as MPI
 /// and PETSc.
 
-namespace SubSystemsManager
+namespace subsystem
 {
 
 /// Initialise MPI
@@ -47,5 +47,5 @@ void finalize_mpi();
 /// Finalize PETSc
 void finalize_petsc();
 
-} // namespace SubSystemsManager
+} // namespace subsystem
 } // namespace dolfinx::common

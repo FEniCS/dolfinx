@@ -14,11 +14,6 @@ namespace dolfinx::mesh
 {
 class Topology;
 
-/// Tools for computing mesh entity permutations
-
-namespace PermutationComputation
-{
-
 /// Compute (1) facet rotation and reflection data, and (2) cell
 /// permutation data. This information is used assemble of (1) facet
 /// inetgrals and (2) vector elements.
@@ -76,5 +71,4 @@ std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
           Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
 compute_entity_permutations(const Topology& topology);
 
-} // namespace PermutationComputation
 } // namespace dolfinx::mesh
