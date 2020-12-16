@@ -238,6 +238,15 @@ public:
     return _dofs0.head(_owned_indices0);
   }
 
+  /// Get array of dof indices, including ghosts to which a Dirichlet BC is
+  /// applied. The array is sorted
+  /// @return Sorted array of dof indices
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+  dof_indices() const
+  {
+    return _dofs0;
+  }
+
   /// Set bc entries in x to scale * x_bc
   ///
   /// @param[in] x The array in which to set scale * x_bc[i], where
