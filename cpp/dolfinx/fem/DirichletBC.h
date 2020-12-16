@@ -122,14 +122,14 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_dofs_geometrical(
 
 /// Interface for setting (strong) Dirichlet boundary conditions
 ///
-///     u = g on G,
+///     \f$u = g \ \text{on} \ G\f$,
 ///
-/// where u is the solution to be computed, g is a function and G is a
-/// sub domain of the mesh.
+/// where \f$u\f$ is the solution to be computed, \f$g\f$ is a function
+/// and \f$G\f$ is a sub domain of the mesh.
 ///
-/// A DirichletBC is specified by the function g, the function space
-/// (trial space) and degrees of freedom to which the boundary condition
-/// applies.
+/// A DirichletBC is specified by the function \f$g\f$, the function
+/// space (trial space) and degrees of freedom to which the boundary
+/// condition applies.
 
 template <typename T>
 class DirichletBC
