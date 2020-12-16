@@ -25,10 +25,6 @@ for f in demo_files:
 @pytest.mark.serial
 @pytest.mark.parametrize("path,name", demos)
 def test_demos(path, name):
-    # TODO: fix these demos
-    if name in ["demo_elasticity.py", "demo_gmsh.py", "demo_stokes-taylor-hood.py"]:
-        pytest.skip()
-
     ret = subprocess.run([sys.executable, name],
                          cwd=str(path),
                          env={**os.environ, 'MPLBACKEND': 'agg'},
@@ -39,10 +35,6 @@ def test_demos(path, name):
 @pytest.mark.mpi
 @pytest.mark.parametrize("path,name", demos)
 def test_demos_mpi(num_proc, mpiexec, path, name):
-    # TODO: fix these demos
-    if name in ["demo_elasticity.py", "demo_gmsh.py", "demo_stokes-taylor-hood.py"]:
-        pytest.skip()
-
     cmd = [mpiexec, "-np", str(num_proc), sys.executable, name]
     print(cmd)
     ret = subprocess.run(cmd,
