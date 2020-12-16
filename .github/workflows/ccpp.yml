@@ -123,10 +123,10 @@ jobs:
           cd docs
           git config --global user.email "fenics@github.com"
           git config --global user.name "FEniCS GitHub Actions"
-          mkdir -p dolfinx/master/cpp
-          mkdir -p dolfinx/master/python
           git rm -r dolfinx/master/cpp/*
           git rm -r dolfinx/master/python/*
+          mkdir -p dolfinx/master/cpp
+          mkdir -p dolfinx/master/python
           cp -r ../cpp/doc/html/* docs/dolfinx/master/cpp
           cp -r ../python/doc/build/html/* docs/dolfinx/master/python
           git add --all
