@@ -1,4 +1,4 @@
-name: DOLFINX CI with Intel compilers
+name: C++ testing with Intel compilers
 
 on:
   # Uncomment the below 'push' to trigger on push
