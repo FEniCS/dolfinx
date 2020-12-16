@@ -14,7 +14,7 @@
 #include <vector>
 
 /// Interface to SCOTCH-PT (parallel version)
-namespace dolfinx::graph::SCOTCH
+namespace dolfinx::graph::scotch
 {
 
 /// Compute distributed graph partition

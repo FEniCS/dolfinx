@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "GJK.h"
+#include "gjk.h"
 #include <Eigen/Geometry>
 #include <array>
 #include <iomanip>
@@ -82,7 +82,7 @@ nearest_simplex(
         }
       }
     }
-    return {smin, vmin};
+    return {std::move(smin), std::move(vmin)};
   }
 
   assert(s.rows() == 3);
@@ -111,7 +111,7 @@ nearest_simplex(
     Eigen::Vector3d p = (a + b + c) / 3.0;
     // Renormalise n in plane of ABC
     v *= v.dot(p) / v.squaredNorm();
-    return {s, v};
+    return {std::move(s), std::move(v)};
   }
 
   // Get closest point
@@ -142,9 +142,9 @@ nearest_simplex(
     }
   }
 
-  return {smin, vmin};
+  return {std::move(smin), std::move(vmin)};
 }
-//-------------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // Support function, finds point p in bd which maximises p.v
 Eigen::Vector3d
 support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
@@ -161,10 +161,11 @@ support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
       i = m;
     }
   }
+
   return bd.row(i);
 }
 } // namespace
-//-----------------------------------------------------
+//----------------------------------------------------------------------------
 Eigen::Vector3d geometry::compute_distance_gjk(
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& q)
@@ -216,6 +217,6 @@ Eigen::Vector3d geometry::compute_distance_gjk(
   if (k == maxk)
     throw std::runtime_error("GJK error: max iteration limit reached");
 
-  // Compute and return distance
   return v;
 }
+//----------------------------------------------------------------------------

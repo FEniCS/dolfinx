@@ -6,7 +6,7 @@
 
 #define BOOST_NO_HASH
 
-#include "BoostGraphOrdering.h"
+#include "boostordering.h"
 #include "AdjacencyList.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/compressed_sparse_row_graph.hpp>
@@ -46,7 +46,7 @@ T build_csr_directed_graph(const graph::AdjacencyList<X>& graph)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<int> dolfinx::graph::BoostGraphOrdering::compute_cuthill_mckee(
+std::vector<int> dolfinx::graph::compute_cuthill_mckee(
     const graph::AdjacencyList<std::int32_t>& graph, bool reverse)
 {
   common::Timer timer(
@@ -90,7 +90,7 @@ std::vector<int> dolfinx::graph::BoostGraphOrdering::compute_cuthill_mckee(
   return map;
 }
 //-----------------------------------------------------------------------------
-std::vector<int> dolfinx::graph::BoostGraphOrdering::compute_cuthill_mckee(
+std::vector<int> dolfinx::graph::compute_cuthill_mckee(
     const std::set<std::pair<std::size_t, std::size_t>>& edges,
     std::size_t size, bool reverse)
 {

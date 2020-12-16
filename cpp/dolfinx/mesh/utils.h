@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 
 namespace dolfinx
@@ -19,6 +20,7 @@ class ElementDofLayout;
 namespace mesh
 {
 enum class CellType;
+enum class GhostMode : int;
 class Mesh;
 
 /// Extract topology from cell data, i.e. extract cell vertices
@@ -132,6 +134,27 @@ entities_to_geometry(
 /// @return List of facet indices of exterior facets of the mesh
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 exterior_facet_indices(const Mesh& mesh);
+
+/// Compute destination rank for mesh cells in this rank using a graph
+/// partitioner
+///
+/// @param[in] comm MPI Communicator
+/// @param[in] n Number of partitions
+/// @param[in] cell_type Cell type
+/// @param[in] cells Cells on this process. The ith entry in list
+///   contains the global indices for the cell vertices. Each cell can
+///   appear only once across all processes. The cell vertex indices
+///   are not necessarily contiguous globally, i.e. the maximum index
+///   across all processes can be greater than the number of vertices.
+///   High-order 'nodes', e.g. mid-side points, should not be
+///   included.
+/// @param[in] ghost_mode How to overlap the cell partitioning: none,
+///   shared_facet or shared_vertex
+/// @return Destination rank for each cell on this process
+graph::AdjacencyList<std::int32_t>
+partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
+                const graph::AdjacencyList<std::int64_t>& cells,
+                mesh::GhostMode ghost_mode);
 
 } // namespace mesh
 } // namespace dolfinx

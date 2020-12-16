@@ -8,9 +8,7 @@
 
 #include <Eigen/Dense>
 
-namespace dolfinx
-{
-namespace geometry
+namespace dolfinx::geometry
 {
 
 /// Calculate the distance between two convex bodies p and q, each defined by a
@@ -21,5 +19,4 @@ namespace geometry
 Eigen::Vector3d compute_distance_gjk(
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& q);
-} // namespace geometry
-} // namespace dolfinx
+}

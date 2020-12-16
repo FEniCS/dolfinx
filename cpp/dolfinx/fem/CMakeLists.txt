@@ -4,7 +4,6 @@ set(HEADERS_fem
   ${CMAKE_CURRENT_SOURCE_DIR}/DirichletBC.h
   ${CMAKE_CURRENT_SOURCE_DIR}/DiscreteOperators.h
   ${CMAKE_CURRENT_SOURCE_DIR}/DofMap.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/DofMapBuilder.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Expression.h
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.h
@@ -12,16 +11,17 @@ set(HEADERS_fem
   ${CMAKE_CURRENT_SOURCE_DIR}/Function.h
   ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ReferenceCellGeometry.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPatternBuilder.h
   ${CMAKE_CURRENT_SOURCE_DIR}/assembler.h
   ${CMAKE_CURRENT_SOURCE_DIR}/assemble_matrix_impl.h
   ${CMAKE_CURRENT_SOURCE_DIR}/assemble_scalar_impl.h
   ${CMAKE_CURRENT_SOURCE_DIR}/assemble_vector_impl.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.h
   ${CMAKE_CURRENT_SOURCE_DIR}/dofs_permutation.h
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_fem.h
   ${CMAKE_CURRENT_SOURCE_DIR}/evaluate.h
   ${CMAKE_CURRENT_SOURCE_DIR}/interpolate.h
   ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
   PARENT_SCOPE)
 
@@ -30,13 +30,13 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateElement.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DiscreteOperators.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DofMap.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/DofMapBuilder.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ReferenceCellGeometry.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPatternBuilder.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/dofs_permutation.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
 )
