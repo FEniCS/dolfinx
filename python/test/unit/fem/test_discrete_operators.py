@@ -9,6 +9,7 @@ import numpy
 import pytest
 from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
 from dolfinx.cpp.fem import build_discrete_operator
+from dolfinx.cpp.mesh import GhostMode
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -16,10 +17,10 @@ from petsc4py import PETSc
 
 @skip_in_parallel
 @pytest.mark.parametrize("mesh", [
-    UnitSquareMesh(MPI.COMM_WORLD, 11, 6, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
-    UnitSquareMesh(MPI.COMM_WORLD, 11, 6, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet),
-    UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=dolfinx.cpp.mesh.GhostMode.none),
-    UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet)
+    UnitSquareMesh(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
+    UnitSquareMesh(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),
+    UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none),
+    UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet)
 ])
 def test_gradient(mesh):
     """Test discrete gradient computation (typically used for curl-curl
@@ -33,15 +34,15 @@ def test_gradient(mesh):
     m, n = G.getSize()
     assert m == num_edges
     assert n == mesh.topology.index_map(0).size_global
-    assert numpy.is_close(G.norm(PETSc.NormType.FROBENIUS), numpy.sqrt(2.0 * num_edges)
+    assert numpy.is_close(G.norm(PETSc.NormType.FROBENIUS), numpy.sqrt(2.0 * num_edges))
 
 
 def test_incompatible_spaces():
     """Test that error is thrown when function spaces are not compatible"""
 
-    mesh=UnitSquareMesh(MPI.COMM_WORLD, 13, 7)
-    V=FunctionSpace(mesh, ("Lagrange", 1))
-    W=FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 7)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
     with pytest.raises(RuntimeError):
         build_discrete_operator(V._cpp_object, W._cpp_object)
     with pytest.raises(RuntimeError):
@@ -49,6 +50,6 @@ def test_incompatible_spaces():
     with pytest.raises(RuntimeError):
         build_discrete_operator(W._cpp_object, W._cpp_object)
 
-    V=FunctionSpace(mesh, ("Lagrange", 2))
+    V = FunctionSpace(mesh, ("Lagrange", 2))
     with pytest.raises(RuntimeError):
         build_discrete_operator(W._cpp_object, V._cpp_object)
