@@ -16,6 +16,7 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/SparsityPatternBuilder.h>
+#include <dolfinx/fem/libtab_wrapper.h>
 #include <dolfinx/function/Constant.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
@@ -23,7 +24,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
-#include <libtab.h>
 #include <memory>
 #include <string>
 #include <ufc.h>
@@ -214,9 +214,8 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
   std::free(dmap);
 
-  const libtab::FiniteElement libtab_element = libtab::create_element(
-      ufc_cmap.element_family, mesh::to_string(cell_type),
-      ufc_cmap.element_degree);
+  const std::shared_ptr<const dolfinx::fem::LibtabElement> libtab_element
+      = create_libtab_element(ufc_cmap);
 
   return fem::CoordinateElement(libtab_element, ufc_cmap.geometric_dimension,
                                 ufc_cmap.signature, dof_layout);
