@@ -79,7 +79,7 @@ target_link_libraries(dolfinx PUBLIC ${LIBTAB_LIBRARY})
 # computes the ideal alignment based around -march.  If the ideal alignment is
 # greater than EIGEN_MAX_ALIGN_BYTES, the ideal alignment is used. If the ideal
 # alignment is less, then EIGEN_MAX_ALIGN_BYTES is used for alignment.
-set(DOLFINX_EIGEN_MAX_ALIGN_BYTES "32" CACHE STRING "\
+set(DOLFINX_EIGEN_MAX_ALIGN_BYTES "0" CACHE STRING "\
 Minimum alignment in bytes used for Eigen data structures. Set to 32 for \
 compatibility with AVX user-compiled code and 64 for AVX-512 user-compiled \
 code. Set to 0 for ideal alignment according to -march. Note that if an architecture \
