@@ -30,9 +30,8 @@ la::PETScMatrix DiscreteOperators::build_gradient(const fem::FunctionSpace& V0,
   assert(V1.mesh());
   if (&mesh != V1.mesh().get())
   {
-    throw std::runtime_error(
-        "Ccompute discrete gradient operator. Function spaces "
-        "do not share the same mesh");
+    throw std::runtime_error("Compute discrete gradient operator. Function "
+                             "spaces do not share the same mesh");
   }
 
   // Check that V0 is a (lowest-order) edge basis
