@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <functional>
 
 namespace dolfinx
 {
@@ -31,17 +32,20 @@ namespace sparsitybuild
 
 /// Iterate over cells and insert entries into sparsity pattern
 void cells(la::SparsityPattern& pattern, const mesh::Topology& topology,
-           const std::array<const fem::DofMap*, 2> dofmaps);
+           const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+               dofmaps);
 
 /// Iterate over interior facets and insert entries into sparsity pattern
-void interior_facets(la::SparsityPattern& pattern,
-                     const mesh::Topology& topology,
-                     const std::array<const fem::DofMap*, 2> dofmaps);
+void interior_facets(
+    la::SparsityPattern& pattern, const mesh::Topology& topology,
+    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+        dofmaps);
 
 /// Iterate over exterior facets and insert entries into sparsity pattern
-void exterior_facets(la::SparsityPattern& pattern,
-                     const mesh::Topology& topology,
-                     const std::array<const fem::DofMap*, 2> dofmaps);
+void exterior_facets(
+    la::SparsityPattern& pattern, const mesh::Topology& topology,
+    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+        dofmaps);
 
 } // namespace sparsitybuild
 } // namespace fem

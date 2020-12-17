@@ -94,8 +94,9 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
   }
 
   // Get dof maps and mesh
-  std::array dofmaps{a.function_spaces().at(0)->dofmap().get(),
-                     a.function_spaces().at(1)->dofmap().get()};
+  std::array<const std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
+      *a.function_spaces().at(0)->dofmap(),
+      *a.function_spaces().at(1)->dofmap()};
   std::shared_ptr mesh = a.mesh();
   assert(mesh);
 
@@ -115,10 +116,11 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
 /// Create a sparsity pattern for a given form. The pattern is not
 /// finalised, i.e. the caller is responsible for calling
 /// SparsityPattern::assemble.
-la::SparsityPattern
-create_sparsity_pattern(const mesh::Topology& topology,
-                        const std::array<const DofMap*, 2>& dofmaps,
-                        const std::set<IntegralType>& integrals);
+la::SparsityPattern create_sparsity_pattern(
+    const mesh::Topology& topology,
+    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+        dofmaps,
+    const std::set<IntegralType>& integrals);
 
 /// Create an ElementDofLayout from a ufc_dofmap
 ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
