@@ -58,7 +58,14 @@ public:
   /// @param[in] A The matrix to set values in
   static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                            const std::int32_t*, const PetscScalar*)>
-  add_block_fn(Mat A);
+  add_block_fn(Mat A, const InsertMode = ADD_VALUES);
+
+  /// Return a function with an interface for inserting values into the
+  /// matrix A using blocked indices (calls MatSetValuesBlockedLocal)
+  /// @param[in] A The matrix to set values in
+  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                           const std::int32_t*, const PetscScalar*)>
+  set_block_fn(Mat A);
 
   /// Return a function with an interface for adding blocked values to
   /// the matrix A using non-blocked insertion (calls
