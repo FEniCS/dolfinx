@@ -269,7 +269,7 @@ RUN apt-get -qq update && \
     ${PETSC_DIR}/share/ \
     ${PETSC_DIR}/src/ \
     ${PETSC_DIR}/systems/ \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install SLEPc
 WORKDIR /tmp
