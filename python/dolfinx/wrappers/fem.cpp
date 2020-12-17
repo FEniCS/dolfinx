@@ -16,7 +16,6 @@
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DiscreteOperators.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Expression.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -24,7 +23,9 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
+#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/interpolate.h>
+#include <dolfinx/fem/libtab_wrapper.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>

@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CoordinateElement.h"
-#include <libtab.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace dolfinx;
@@ -13,12 +12,11 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
-    const libtab::FiniteElement& libtab_element, int geometric_dimension,
-    const std::string& signature, const ElementDofLayout& dof_layout)
+    const std::shared_ptr<const LibtabElement>& libtab_element,
+    int geometric_dimension, const std::string& signature,
+    const ElementDofLayout& dof_layout)
     : _gdim(geometric_dimension), _signature(signature),
-      _dof_layout(dof_layout),
-      _libtab_element(
-          std::make_shared<const libtab::FiniteElement>(libtab_element))
+      _dof_layout(dof_layout), _libtab_element(libtab_element)
 {
   const mesh::CellType cell = cell_shape();
   _is_affine
@@ -31,26 +29,12 @@ std::string CoordinateElement::signature() const { return _signature; }
 //-----------------------------------------------------------------------------
 mesh::CellType CoordinateElement::cell_shape() const
 {
-  switch (_libtab_element->cell_type())
-  {
-  case libtab::cell::type::interval:
-    return mesh::CellType::interval;
-  case libtab::cell::type::triangle:
-    return mesh::CellType::triangle;
-  case libtab::cell::type::quadrilateral:
-    return mesh::CellType::quadrilateral;
-  case libtab::cell::type::hexahedron:
-    return mesh::CellType::hexahedron;
-  case libtab::cell::type::tetrahedron:
-    return mesh::CellType::tetrahedron;
-  default:
-    throw std::runtime_error("Invalid cell shape in CoordinateElement");
-  }
+  return _libtab_element->dolfinx_cell_type();
 }
 //-----------------------------------------------------------------------------
 int CoordinateElement::topological_dimension() const
 {
-  return libtab::cell::topological_dimension(_libtab_element->cell_type());
+  return _libtab_element->topological_dimension();
 }
 //-----------------------------------------------------------------------------
 int CoordinateElement::geometric_dimension() const { return _gdim; }
