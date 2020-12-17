@@ -11,8 +11,8 @@
 #include <Eigen/Dense>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/function/Constant.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Constant.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -73,7 +73,7 @@ T assemble_scalar(const fem::Form<T>& M)
       = mesh->topology().connectivity(tdim, 0)->num_nodes();
 
   // Prepare constants
-  const std::vector<std::shared_ptr<const function::Constant<T>>>& constants
+  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants
       = M.constants();
 
   std::vector<T> constant_values;

@@ -13,10 +13,15 @@
 #include <Eigen/Dense>
 
 struct ufc_finite_element;
+struct ufc_coordinate_mapping;
 
 namespace libtab
 {
 class FiniteElement;
+namespace cell
+{
+enum class type : int;
+}
 }
 
 namespace dolfinx::fem
@@ -40,6 +45,18 @@ public:
 
   /// The block size of the element
   virtual int block_size() const;
+
+  /// The degree of the element
+  virtual int degree() const;
+
+  /// The cell type of the element
+  virtual libtab::cell::type cell_type() const;
+
+  /// The cell type of the element
+  mesh::CellType dolfinx_cell_type() const;
+
+  /// The cell type of the element
+  int topological_dimension() const;
 };
 
 /// Subclass that wraps an element implemented in libtab
@@ -54,6 +71,12 @@ public:
 
   /// Wrapper for libtab tabulate
   std::vector<Eigen::ArrayXXd> tabulate(int nd, const Eigen::ArrayXXd& x) const override;
+
+  /// The degree of the element
+  int degree() const override;
+
+  /// The cell type of the element
+  libtab::cell::type cell_type() const override;
 
 private:
   /// The libtab element being wrapped
@@ -76,6 +99,12 @@ public:
   /// The block size of the element
   int block_size() const override;
 
+  /// The degree of the element
+  int degree() const override;
+
+  /// The cell type of the element
+  libtab::cell::type cell_type() const override;
+
 private:
   /// The scalar element
   std::shared_ptr<const libtab::FiniteElement> _libtab_element;
@@ -97,6 +126,12 @@ public:
   /// Wrapper for libtab tabulate
   std::vector<Eigen::ArrayXXd> tabulate(int nd, const Eigen::ArrayXXd& x) const override;
 
+  /// The degree of the element
+  int degree() const override;
+
+  /// The cell type of the element
+  libtab::cell::type cell_type() const override;
+
 private:
   /// The subelements
   std::vector<std::shared_ptr<const LibtabElement>> _sub_elements;
@@ -108,4 +143,9 @@ private:
 /// Create a libtab element from a ufc element
 const std::shared_ptr<const LibtabElement> create_libtab_element(
     const ufc_finite_element& ufc_element);
+
+/// Create a libtab element from a ufc cmap
+const std::shared_ptr<const LibtabElement>
+create_libtab_element(const ufc_coordinate_mapping& ufc_cmap);
+
 } // namespace dolfix::fem

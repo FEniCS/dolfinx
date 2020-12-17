@@ -7,6 +7,7 @@
 #pragma once
 
 #include "ElementDofLayout.h"
+#include "libtab_wrapper.h"
 #include <Eigen/Dense>
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
@@ -16,11 +17,6 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 
 // Forward declaration
-namespace libtab
-{
-class FiniteElement;
-}
-
 namespace dolfinx::fem
 {
 
@@ -35,7 +31,7 @@ public:
   /// @param[in] geometric_dimension Geometric dimension
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  CoordinateElement(const libtab::FiniteElement& libtab_element,
+  CoordinateElement(const std::shared_ptr<const LibtabElement>& libtab_element,
                     int geometric_dimension, const std::string& signature,
                     const ElementDofLayout& dof_layout);
 
@@ -58,6 +54,12 @@ public:
 
   /// Return the dof layout
   const ElementDofLayout& dof_layout() const;
+
+  /// Absolute increment stopping criterium for non-affine Newton solver
+  double non_affine_atol = 1.0e-8;
+
+  /// Maximum number of iterations for non-affine Newton solver
+  int non_affine_max_its = 10;
 
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
@@ -85,8 +87,7 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>& x,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
-          cell_geometry,
-      double eps = 1.0e-16) const;
+          cell_geometry) const;
 
 private:
   // Geometric dimensions
@@ -102,7 +103,7 @@ private:
   bool _is_affine;
 
   // Libtab element
-  std::shared_ptr<const libtab::FiniteElement> _libtab_element;
+  std::shared_ptr<const LibtabElement> _libtab_element;
 
   // Function to evaluate the basis on the underlying element
   // @param basis_values Returned values

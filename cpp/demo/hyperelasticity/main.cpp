@@ -15,29 +15,25 @@ class HyperElasticProblem : public nls::NonlinearProblem
 {
 public:
   HyperElasticProblem(
-      std::shared_ptr<function::Function<PetscScalar>> u,
+      std::shared_ptr<fem::Function<PetscScalar>> u,
       std::shared_ptr<fem::Form<PetscScalar>> L,
       std::shared_ptr<fem::Form<PetscScalar>> J,
       std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bcs)
       : _u(u), _l(L), _j(J), _bcs(bcs),
         _b(L->function_spaces()[0]->dofmap()->index_map,
            L->function_spaces()[0]->dofmap()->index_map_bs()),
-        _matA(fem::create_matrix(*J))
+        _matA(fem::create_matrix(*J, "baij"))
   {
     auto map = L->function_spaces()[0]->dofmap()->index_map;
     const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();
     std::int32_t size_local = bs * map->size_local();
-    std::int32_t num_ghosts = bs * map->num_ghosts();
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map->ghosts();
-    Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts(bs * ghosts.rows());
-    for (int i = 0; i < ghosts.rows(); ++i)
-    {
-      for (int j = 0; j < bs; ++j)
-        _ghosts[i * bs + j] = bs * ghosts[i] + j;
-    }
 
-    VecCreateGhostWithArray(map->comm(), size_local, PETSC_DECIDE, num_ghosts,
-                            _ghosts.data(), _b.array().data(), &_b_petsc);
+    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts
+        = map->ghosts().cast<PetscInt>();
+    std::int64_t size_global = bs * map->size_global();
+    VecCreateGhostBlockWithArray(map->comm(), bs, size_local, size_global,
+                                 ghosts.rows(), ghosts.data(),
+                                 _b.array().data(), &_b_petsc);
   }
 
   /// Destructor
@@ -49,8 +45,8 @@ public:
 
   void form(Vec x) final
   {
-    la::PETScVector _x(x, true);
-    _x.update_ghosts();
+    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
   }
 
   /// Compute F at current point x
@@ -81,7 +77,7 @@ public:
   Mat J(const Vec) final
   {
     MatZeroEntries(_matA.mat());
-    fem::assemble_matrix(la::PETScMatrix::add_fn(_matA.mat()), *_j, _bcs);
+    fem::assemble_matrix(la::PETScMatrix::add_block_fn(_matA.mat()), *_j, _bcs);
     fem::add_diagonal(la::PETScMatrix::add_fn(_matA.mat()),
                       *_j->function_spaces()[0], _bcs);
     _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
@@ -89,7 +85,7 @@ public:
   }
 
 private:
-  std::shared_ptr<function::Function<PetscScalar>> _u;
+  std::shared_ptr<fem::Function<PetscScalar>> _u;
   std::shared_ptr<fem::Form<PetscScalar>> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> _bcs;
 
@@ -100,8 +96,8 @@ private:
 
 int main(int argc, char* argv[])
 {
-  common::SubSystemsManager::init_logging(argc, argv);
-  common::SubSystemsManager::init_petsc(argc, argv);
+  common::subsystem::init_logging(argc, argv);
+  common::subsystem::init_petsc(argc, argv);
 
   {
     // Inside the ``main`` function, we begin by defining a tetrahedral mesh
@@ -124,14 +120,13 @@ int main(int argc, char* argv[])
         create_functionspace_form_hyperelasticity_F, "u", mesh);
 
     // Define solution function
-    auto u = std::make_shared<function::Function<PetscScalar>>(V);
-
+    auto u = std::make_shared<fem::Function<PetscScalar>>(V);
     auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J,
                                            {V, V}, {{"u", u}}, {}, {});
     auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V},
                                            {{"u", u}}, {}, {});
 
-    auto u_rotation = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u_rotation = std::make_shared<fem::Function<PetscScalar>>(V);
     u_rotation->interpolate([](auto& x) {
       const double scale = 0.005;
 
@@ -161,14 +156,14 @@ int main(int argc, char* argv[])
       return values;
     });
 
-    auto u_clamp = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
     u_clamp->interpolate([](auto& x) {
       return Eigen::Array<PetscScalar, 3, Eigen::Dynamic,
                           Eigen::RowMajor>::Zero(3, x.cols());
     });
 
     // Create Dirichlet boundary conditions
-    auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
     const auto bdofs_left = fem::locate_dofs_geometrical({*V}, [](auto& x) {
       static const double epsilon = std::numeric_limits<double>::epsilon();
@@ -194,7 +189,7 @@ int main(int argc, char* argv[])
     file.write(*u);
   }
 
-  common::SubSystemsManager::finalize_petsc();
+  common::subsystem::finalize_petsc();
 
   return 0;
 }

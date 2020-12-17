@@ -8,8 +8,9 @@
 import numpy
 import pytest
 from dolfinx import (BoxMesh, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                     cpp, geometry)
-from dolfinx.geometry import BoundingBoxTree
+                     cpp)
+from dolfinx.geometry import (BoundingBoxTree, compute_collisions,
+                              compute_collisions_point, compute_closest_entity, create_midpoint_tree)
 from dolfinx.mesh import locate_entities_boundary
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -52,7 +53,7 @@ def test_padded_bbox(padding):
         pad = 0
     bbox_0 = BoundingBoxTree(mesh_0, mesh_0.topology.dim, padding=pad)
     bbox_1 = BoundingBoxTree(mesh_1, mesh_1.topology.dim, padding=pad)
-    collisions = cpp.geometry.compute_collisions(bbox_0._cpp_object, bbox_1._cpp_object)
+    collisions = compute_collisions(bbox_0, bbox_1)
     if padding:
         assert(len(collisions) == 1)
         # Check that the colliding elements are separated by a distance 2*epsilon
@@ -97,7 +98,7 @@ def test_compute_collisions_point_1d():
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
     for dim in range(1, 2):
         tree = BoundingBoxTree(mesh, mesh.topology.dim)
-        entities = geometry.compute_collisions_point(tree, p)
+        entities = compute_collisions_point(tree, p)
         assert set(entities) == reference[dim]
 
 
@@ -115,7 +116,7 @@ def test_compute_collisions_tree_1d(point, cells):
 
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
     tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
-    entities = geometry.compute_collisions(tree_A, tree_B)
+    entities = compute_collisions(tree_A, tree_B)
 
     entities_A = set([q[0] for q in entities])
     entities_B = set([q[1] for q in entities])
@@ -136,7 +137,7 @@ def test_compute_collisions_tree_2d(point, cells):
     bgeom += point
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
     tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
-    entities = geometry.compute_collisions(tree_A, tree_B)
+    entities = compute_collisions(tree_A, tree_B)
 
     entities_A = set([q[0] for q in entities])
     entities_B = set([q[1] for q in entities])
@@ -168,7 +169,7 @@ def test_compute_collisions_tree_3d():
 
         tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
         tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
-        entities = geometry.compute_collisions(tree_A, tree_B)
+        entities = compute_collisions(tree_A, tree_B)
 
         entities_A = set([q[0] for q in entities])
         entities_B = set([q[1] for q in entities])
@@ -181,9 +182,9 @@ def test_compute_closest_entity_1d():
     reference = (0, 1.0)
     p = numpy.array([-1.0, 0, 0])
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
-    tree_mid = geometry.BoundingBoxTree.create_midpoint_tree(mesh)
+    tree_mid = create_midpoint_tree(mesh)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
-    entity, distance = geometry.compute_closest_entity(tree, tree_mid, mesh, p)
+    entity, distance = compute_closest_entity(tree, tree_mid, mesh, p)
     assert entity == reference[0]
     assert distance[0] == pytest.approx(reference[1], 1.0e-12)
 
@@ -193,9 +194,9 @@ def test_compute_closest_entity_2d():
     reference = (1, 1.0)
     p = numpy.array([-1.0, 0.01, 0.0])
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
-    tree_mid = geometry.BoundingBoxTree.create_midpoint_tree(mesh)
+    tree_mid = create_midpoint_tree(mesh)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
-    entity, distance = geometry.compute_closest_entity(tree, tree_mid, mesh, p)
+    entity, distance = compute_closest_entity(tree, tree_mid, mesh, p)
     assert entity == reference[0]
     assert distance[0] == pytest.approx(reference[1], 1.0e-12)
 
@@ -206,8 +207,8 @@ def test_compute_closest_entity_3d():
     p = numpy.array([0.1, 0.05, -0.1])
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
-    tree_mid = geometry.BoundingBoxTree.create_midpoint_tree(mesh)
-    entity, distance = geometry.compute_closest_entity(tree, tree_mid, mesh, p)
+    tree_mid = create_midpoint_tree(mesh)
+    entity, distance = compute_closest_entity(tree, tree_mid, mesh, p)
     assert entity == reference[0]
     assert distance[0] == pytest.approx(reference[1], 1.0e-12)
 
@@ -225,7 +226,7 @@ def test_surface_bbtree():
 
     # test collision (should not collide with any)
     p = numpy.array([0.5, 0.5, 0.5])
-    assert len(geometry.compute_collisions_point(bbtree, p)) == 0
+    assert len(compute_collisions_point(bbtree, p)) == 0
 
 
 def test_sub_bbtree():
@@ -248,10 +249,10 @@ def test_sub_bbtree():
     process_bbtree = bbtree.compute_global_tree(mesh.mpi_comm())
     # Find possible ranks for this point
     point = numpy.array([0.2, 0.2, 1.0])
-    ranks = geometry.compute_collisions_point(process_bbtree, point)
+    ranks = compute_collisions_point(process_bbtree, point)
 
     # Compute local collisions
-    cells = geometry.compute_collisions_point(bbtree, point)
+    cells = compute_collisions_point(bbtree, point)
     if MPI.COMM_WORLD.rank in ranks:
         assert(len(cells) > 0)
     else:
@@ -277,7 +278,7 @@ def test_sub_bbtree_box(ct, N):
     bbtree = BoundingBoxTree(mesh, tdim, cells)
     num_boxes = bbtree.num_bboxes()
     if num_boxes > 0:
-        bbox = bbtree._cpp_object.get_bbox(num_boxes - 1)
+        bbox = bbtree.get_bbox(num_boxes - 1)
         assert(numpy.isclose(bbox[0][1], (N - 1) / N))
 
     tree = BoundingBoxTree(mesh, tdim)
@@ -306,5 +307,5 @@ def test_surface_bbtree_collision():
     cells = list(set([f_to_c.links(f)[0] for f in sf]))
     bbtree2 = BoundingBoxTree(mesh2, tdim, cells)
 
-    collisions = geometry.compute_collisions(bbtree1, bbtree2)
+    collisions = compute_collisions(bbtree1, bbtree2)
     assert len(collisions) == 1

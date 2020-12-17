@@ -105,7 +105,7 @@ mesh = RectangleMesh(
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
 # The second argument to :py:class:`FunctionSpace
-# <dolfinx.function.FunctionSpace>` is the finite element
+# <dolfinx.fem.FunctionSpace>` is the finite element
 # family, while the third argument specifies the polynomial
 # degree. Thus, in this case, our space ``V`` consists of first-order,
 # continuous Lagrange finite element functions (or in order words,
@@ -148,10 +148,10 @@ bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets))
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,
 # both living in the function space :math:`V`. We do this by defining a
-# :py:class:`TrialFunction <dolfinx.functions.function.TrialFunction>`
+# :py:class:`TrialFunction <dolfinx.functions.fem.TrialFunction>`
 # and a :py:class:`TestFunction
-# <dolfinx.functions.function.TrialFunction>` on the previously defined
-# :py:class:`FunctionSpace <dolfinx.function.FunctionSpace>` ``V``.
+# <dolfinx.functions.fem.TrialFunction>` on the previously defined
+# :py:class:`FunctionSpace <dolfinx.fem.FunctionSpace>` ``V``.
 #
 # Further, the source :math:`f` and the boundary normal derivative
 # :math:`g` are involved in the variational forms, and hence we must
@@ -171,10 +171,10 @@ L = inner(f, v) * dx + inner(g, v) * ds
 
 # Now, we have specified the variational forms and can consider the
 # solution of the variational problem. First, we need to define a
-# :py:class:`Function <dolfinx.functions.function.Function>` ``u`` to
+# :py:class:`Function <dolfinx.functions.fem.Function>` ``u`` to
 # represent the solution. (Upon initialization, it is simply set to the
 # zero function.) A :py:class:`Function
-# <dolfinx.functions.function.Function>` represents a function living in
+# <dolfinx.functions.fem.Function>` represents a function living in
 # a finite element function space. Next, we can call the :py:func:`solve
 # <dolfinx.fem.solving.solve>` function with the arguments ``a == L``,
 # ``u`` and ``bc`` as follows: ::
@@ -189,7 +189,7 @@ solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 # used. However, the solution process can be controlled in much more
 # detail if desired.
 #
-# A :py:class:`Function <dolfinx.functions.function.Function>` can be
+# A :py:class:`Function <dolfinx.functions.fem.Function>` can be
 # manipulated in various ways, in particular, it can be plotted and
 # saved to file. Here, we output the solution to an ``XDMF`` file
 # for later visualization and also plot it using

@@ -26,29 +26,14 @@ const std::shared_ptr<const LibtabElement> dolfinx::fem::create_libtab_element(
     return std::make_shared<MixedLibtabElement>(MixedLibtabElement(sub_elements));
   }
 
-
-  std::string cell_shape;
-  switch (ufc_element.cell_shape)
-  {
-  case interval:
-    cell_shape = "interval";
-    break;
-  case triangle:
-    cell_shape = "triangle";
-    break;
-  case quadrilateral:
-    cell_shape = "quadrilateral";
-    break;
-  case tetrahedron:
-    cell_shape = "tetrahedron";
-    break;
-  case hexahedron:
-    cell_shape = "hexahedron";
-    break;
-  default:
-    throw std::runtime_error(
-        "Unknown UFC cell type when building LibtabElement.");
-  }
+  static const std::map<ufc_shape, std::string> ufc_to_cell
+      = {{vertex, "point"},
+         {interval, "interval"},
+         {triangle, "triangle"},
+         {tetrahedron, "tetrahedron"},
+         {quadrilateral, "quadrilateral"},
+         {hexahedron, "hexahedron"}};
+  const std::string cell_shape = ufc_to_cell.at(ufc_element.cell_shape);
 
   std::shared_ptr<const libtab::FiniteElement> libtab_e
     = std::make_shared<const libtab::FiniteElement>(libtab::create_element(
@@ -60,14 +45,35 @@ const std::shared_ptr<const LibtabElement> dolfinx::fem::create_libtab_element(
   return std::make_shared<WrappedLibtabElement>(WrappedLibtabElement(libtab_e));
 }
 //-----------------------------------------------------------------------------
+const std::shared_ptr<const LibtabElement>
+dolfinx::fem::create_libtab_element(const ufc_coordinate_mapping& ufc_cmap)
+{
+  const std::string family = ufc_cmap.element_family;
+
+  static const std::map<ufc_shape, std::string> ufc_to_cell
+      = {{vertex, "point"},
+         {interval, "interval"},
+         {triangle, "triangle"},
+         {tetrahedron, "tetrahedron"},
+         {quadrilateral, "quadrilateral"},
+         {hexahedron, "hexahedron"}};
+  const std::string cell_shape = ufc_to_cell.at(ufc_cmap.cell_shape);
+
+  std::shared_ptr<const libtab::FiniteElement> libtab_e
+      = std::make_shared<const libtab::FiniteElement>(
+          libtab::create_element(family, cell_shape, ufc_cmap.element_degree));
+
+  //  if(block_size != 1)
+  //    return
+  //    std::make_shared<BlockedLibtabElement>(BlockedLibtabElement(libtab_e,
+  //    block_size));
+
+  return std::make_shared<WrappedLibtabElement>(WrappedLibtabElement(libtab_e));
+}
+//-----------------------------------------------------------------------------
 const Eigen::ArrayXXd& LibtabElement::points() const
 {
   throw std::runtime_error("points not implemented for this element");
-}
-//-----------------------------------------------------------------------------
-int LibtabElement::block_size() const
-{
-  return 1;
 }
 //-----------------------------------------------------------------------------
 std::vector<Eigen::ArrayXXd> LibtabElement::tabulate(int nd, const Eigen::ArrayXXd& x) const
@@ -75,6 +81,42 @@ std::vector<Eigen::ArrayXXd> LibtabElement::tabulate(int nd, const Eigen::ArrayX
   assert(nd >= 0);
   assert(x.cols() > 0);
   throw std::runtime_error("tabulate not implemented for this element");
+}
+//-----------------------------------------------------------------------------
+int LibtabElement::block_size() const { return 1; }
+//-----------------------------------------------------------------------------
+int LibtabElement::degree() const
+{
+  throw std::runtime_error("degree not implemented for this element");
+}
+//-----------------------------------------------------------------------------
+libtab::cell::type LibtabElement::cell_type() const
+{
+  throw std::runtime_error("degree not implemented for this element");
+}
+//-----------------------------------------------------------------------------
+mesh::CellType LibtabElement::dolfinx_cell_type() const
+{
+  switch (cell_type())
+  {
+  case libtab::cell::type::interval:
+    return mesh::CellType::interval;
+  case libtab::cell::type::triangle:
+    return mesh::CellType::triangle;
+  case libtab::cell::type::quadrilateral:
+    return mesh::CellType::quadrilateral;
+  case libtab::cell::type::hexahedron:
+    return mesh::CellType::hexahedron;
+  case libtab::cell::type::tetrahedron:
+    return mesh::CellType::tetrahedron;
+  default:
+    throw std::runtime_error("Invalid cell shape in CoordinateElement");
+  }
+}
+//-----------------------------------------------------------------------------
+int LibtabElement::topological_dimension() const
+{
+  return libtab::cell::topological_dimension(cell_type());
 }
 //-----------------------------------------------------------------------------
 WrappedLibtabElement::WrappedLibtabElement(
@@ -92,6 +134,13 @@ std::vector<Eigen::ArrayXXd> WrappedLibtabElement::tabulate(int nd, const Eigen:
   return _libtab_element->tabulate(nd, x);
 }
 //-----------------------------------------------------------------------------
+int WrappedLibtabElement::degree() const { return _libtab_element->degree(); }
+//-----------------------------------------------------------------------------
+libtab::cell::type WrappedLibtabElement::cell_type() const
+{
+  return _libtab_element->cell_type();
+}
+//-----------------------------------------------------------------------------
 BlockedLibtabElement::BlockedLibtabElement(
   std::shared_ptr<const libtab::FiniteElement> libtab_element, int block_size)
  : _libtab_element(libtab_element), _block_size(block_size)
@@ -102,17 +151,21 @@ const Eigen::ArrayXXd& BlockedLibtabElement::points() const
   return _libtab_element->points();
 }
 //-----------------------------------------------------------------------------
-int BlockedLibtabElement::block_size() const
-{
-  return _block_size;
-}
-//-----------------------------------------------------------------------------
 std::vector<Eigen::ArrayXXd> BlockedLibtabElement::tabulate(int nd, const Eigen::ArrayXXd& x) const
 {
   // std::vector<Eigen::ArrayXXd> tables = _libtab_element->tabulate(nd, x);
   // TODO: make this function
   std::cout << "This is probably not correct...\n";
   return _libtab_element->tabulate(nd, x);
+}
+//-----------------------------------------------------------------------------
+int BlockedLibtabElement::block_size() const { return _block_size; }
+//-----------------------------------------------------------------------------
+int BlockedLibtabElement::degree() const { return _libtab_element->degree(); }
+//-----------------------------------------------------------------------------
+libtab::cell::type BlockedLibtabElement::cell_type() const
+{
+  return _libtab_element->cell_type();
 }
 //-----------------------------------------------------------------------------
 MixedLibtabElement::MixedLibtabElement(
@@ -159,5 +212,18 @@ std::vector<Eigen::ArrayXXd> MixedLibtabElement::tabulate(int nd, const Eigen::A
   assert(nd >= 0);
   assert(x.cols() > 0);
   throw std::runtime_error("tabulate not implemented for this element");
+}
+//-----------------------------------------------------------------------------
+int MixedLibtabElement::degree() const
+{
+  int out = 0;
+  for (std::size_t i = 0; i < _sub_elements.size(); ++i)
+    out = std::max(out, _sub_elements[i]->degree());
+  return out;
+}
+//-----------------------------------------------------------------------------
+libtab::cell::type MixedLibtabElement::cell_type() const
+{
+  return _sub_elements[0]->cell_type();
 }
 //-----------------------------------------------------------------------------

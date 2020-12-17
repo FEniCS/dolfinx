@@ -150,15 +150,12 @@ public:
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
           indices) const;
 
-  /// @todo Consider removing this function in favour of the version
-  /// that accepts an Eigen array.
-  ///
   /// Compute global indices for array of local indices
-  /// @param[in] indices Local indices
-  /// @return The global index of the corresponding local index in
-  ///   indices.
-  std::vector<std::int64_t>
-  local_to_global(const std::vector<std::int32_t>& indices) const;
+  /// @param[in] local Local indices
+  /// @param[in] n Number of indices
+  /// @param[out] global The global indices
+  void local_to_global(const std::int32_t* local, int n,
+                       std::int64_t* global) const;
 
   /// Compute local indices for array of global indices
   /// @param[in] indices Global indices
@@ -188,10 +185,6 @@ public:
 
   /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<int, Eigen::Dynamic, 1> ghost_owner_rank() const;
-
-  /// Return array of global indices for all indices on this process,
-  /// including ghosts
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> indices() const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
   /// with neighborhood ranks?

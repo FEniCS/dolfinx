@@ -53,8 +53,7 @@ ARG PETSC_VERSION=3.14.1
 ARG SLEPC_VERSION=3.14.0
 ARG PETSC4PY_VERSION=3.14.0
 ARG SLEPC4PY_VERSION=3.14.0
-# Should be updated upon a new KaHIP release
-ARG KAHIP_VERSION=14be06c
+ARG KAHIP_VERSION=v3.10
 
 ########################################
 
@@ -148,13 +147,15 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     rm -rf /tmp/*
 
 # Install KaHIP
+ENV KAHIP_DIR=/usr/local/KaHIP/deploy
 RUN cd /usr/local && \
     git clone https://github.com/schulzchristian/KaHIP.git && \
     cd KaHIP/ && \
     git checkout ${KAHIP_VERSION} && \
-    ./compile_withcmake.sh
+    mkdir build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} .. && \
+    make && make install
 
-ENV KAHIP_ROOT=/usr/local/KaHIP
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
@@ -336,7 +337,7 @@ ONBUILD RUN cd dolfinx && \
     PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
     cd ../ && \
     rm -r build && \
     mkdir build && \
@@ -345,7 +346,7 @@ ONBUILD RUN cd dolfinx && \
     ninja install && \
     . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies . && \
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies . && \
     cd ../ && \
     rm -r build
 
