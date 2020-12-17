@@ -214,11 +214,7 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
   std::free(dmap);
 
-<<<<<<< HEAD
-  const std::shared_ptr<const LibtabElement> libtab_element
-=======
   const std::shared_ptr<const dolfinx::fem::LibtabElement> libtab_element
->>>>>>> mscroggs/libtab-coordel
       = create_libtab_element(ufc_cmap);
 
   return fem::CoordinateElement(libtab_element, ufc_cmap.geometric_dimension,
