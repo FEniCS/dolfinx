@@ -10,7 +10,6 @@ set(HEADERS_fem
   ${CMAKE_CURRENT_SOURCE_DIR}/Form.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Function.h
   ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/ReferenceCellGeometry.h
   ${CMAKE_CURRENT_SOURCE_DIR}/assembler.h
   ${CMAKE_CURRENT_SOURCE_DIR}/assemble_matrix_impl.h
   ${CMAKE_CURRENT_SOURCE_DIR}/assemble_scalar_impl.h
@@ -33,7 +32,6 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ReferenceCellGeometry.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/dofs_permutation.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp

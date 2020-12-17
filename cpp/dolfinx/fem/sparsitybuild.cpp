@@ -15,26 +15,26 @@ using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-void sparsitybuild::cells(la::SparsityPattern& pattern,
-                          const mesh::Topology& topology,
-                          const std::array<const fem::DofMap*, 2> dofmaps)
+void sparsitybuild::cells(
+    la::SparsityPattern& pattern, const mesh::Topology& topology,
+    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+        dofmaps)
 {
-  assert(dofmaps[0]);
-  assert(dofmaps[1]);
   const int D = topology.dim();
   auto cells = topology.connectivity(D, 0);
   assert(cells);
   for (int c = 0; c < cells->num_nodes(); ++c)
-    pattern.insert(dofmaps[0]->cell_dofs(c), dofmaps[1]->cell_dofs(c));
+  {
+    pattern.insert(dofmaps[0].get().cell_dofs(c),
+                   dofmaps[1].get().cell_dofs(c));
+  }
 }
 //-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
-    const std::array<const fem::DofMap*, 2> dofmaps)
+    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+        dofmaps)
 {
-  assert(dofmaps[0]);
-  assert(dofmaps[1]);
-
   const int D = topology.dim();
   if (!topology.connectivity(D - 1, 0))
     throw std::runtime_error("Topology facets have not been created.");
@@ -64,8 +64,8 @@ void sparsitybuild::interior_facets(
     const int cell1 = cells[1];
     for (std::size_t i = 0; i < 2; i++)
     {
-      auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0);
-      auto cell_dofs1 = dofmaps[i]->cell_dofs(cell1);
+      auto cell_dofs0 = dofmaps[i].get().cell_dofs(cell0);
+      auto cell_dofs1 = dofmaps[i].get().cell_dofs(cell1);
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
       std::copy(cell_dofs0.data(), cell_dofs0.data() + cell_dofs0.size(),
                 macro_dofs[i].data());
@@ -79,7 +79,8 @@ void sparsitybuild::interior_facets(
 //-----------------------------------------------------------------------------
 void sparsitybuild::exterior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
-    const std::array<const fem::DofMap*, 2> dofmaps)
+    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+        dofmaps)
 {
   const int D = topology.dim();
   if (!topology.connectivity(D - 1, 0))
@@ -101,8 +102,8 @@ void sparsitybuild::exterior_facets(
 
     auto cells = connectivity->links(f);
     assert(cells.rows() == 1);
-    pattern.insert(dofmaps[0]->cell_dofs(cells[0]),
-                   dofmaps[1]->cell_dofs(cells[0]));
+    pattern.insert(dofmaps[0].get().cell_dofs(cells[0]),
+                   dofmaps[1].get().cell_dofs(cells[0]));
   }
 }
 //-----------------------------------------------------------------------------

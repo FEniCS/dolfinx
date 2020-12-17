@@ -68,8 +68,10 @@ la::PETScMatrix fem::create_matrix_block(
             mesh->mpi_comm(), index_maps, bs));
 
         // Build sparsity pattern for block
-        std::array dofmaps{V[0][row]->dofmap().get(),
-                           V[1][col]->dofmap().get()};
+        assert(V[0][row]->dofmap());
+        assert(V[1][col]->dofmap());
+        std::array<const std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
+            *V[0][row]->dofmap(), *V[1][col]->dofmap()};
         assert(patterns[row].back());
         auto& sp = patterns[row].back();
         assert(sp);
