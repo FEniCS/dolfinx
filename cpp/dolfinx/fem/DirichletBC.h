@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <array>
 #include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/utils.h>
 #include <functional>
 #include <memory>
@@ -24,9 +25,6 @@ class Mesh;
 
 namespace fem
 {
-template <typename T>
-class Function;
-class FunctionSpace;
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
 /// (topological). Note that degrees-of-freedom for discontinuous
@@ -281,7 +279,7 @@ public:
     }
   }
 
-  /// Set bc entries in x to scale*(x0 - x_bc).
+  /// Set bc entries in x to scale*(x0 - x_bc)
   /// @param[in] x The array in which to set scale * (x0 - x_bc)
   /// @param[in] x0 The array used in compute the value to set
   /// @param[in] scale The scaling value to apply
@@ -303,7 +301,7 @@ public:
   }
 
   /// @todo Review this function - it is almost identical to the
-  /// 'DirichletBC::set' functios
+  /// 'DirichletBC::set' function
   ///
   /// Set boundary condition value for entries with an applied boundary
   /// condition. Other entries are not modified.
