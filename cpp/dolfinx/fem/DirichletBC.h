@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <array>
 #include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/utils.h>
 #include <functional>
 #include <memory>
@@ -24,9 +25,6 @@ class Mesh;
 
 namespace fem
 {
-template <typename T>
-class Function;
-class FunctionSpace;
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
 /// (topological). Note that degrees-of-freedom for discontinuous
@@ -241,19 +239,23 @@ public:
   /// @return The boundary values Function
   std::shared_ptr<const fem::Function<T>> value() const { return _g; }
 
-  /// Get array of dof indices owned by this process to which a
-  /// Dirichlet BC is applied. The array is sorted and does not contain
-  /// ghost entries.
-  /// @return Sorted array of dof indices
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-  dofs_owned() const
+  /// Access dof indices (local indices, unrolled), including ghosts, to
+  /// which a Dirichlet condition is applied, and the index to the first
+  /// non-owned (ghost) index. The array of indices is sorted.
+  /// @return Sorted array of dof indices (unrolled) and index to the
+  /// first entry in the dof index array that is not owned. Entries
+  /// `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
+  std::pair<
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>,
+      std::int32_t>
+  dof_indices() const
   {
-    return _dofs0.head(_owned_indices0);
+    return {_dofs0, _owned_indices0};
   }
 
-  /// Set bc entries in x to scale * x_bc
+  /// Set bc entries in `x` to `scale * x_bc`
   ///
-  /// @param[in] x The array in which to set scale * x_bc[i], where
+  /// @param[in] x The array in which to set `scale * x_bc[i]`, where
   /// x_bc[i] is the boundary value of x[i]. Entries in x that do not
   /// have a Dirichlet condition applied to them are unchanged. The
   /// length of x must be less than or equal to the index of the
@@ -277,8 +279,8 @@ public:
     }
   }
 
-  /// Set bc entries in x to scale*(x0 - x_bc).
-  /// @param[in] x The array in which to set scale * (x0 - x_bc)
+  /// Set bc entries in `x` to `scale * (x0 - x_bc)`
+  /// @param[in] x The array in which to set `scale * (x0 - x_bc)`
   /// @param[in] x0 The array used in compute the value to set
   /// @param[in] scale The scaling value to apply
   void set(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> x,
@@ -299,7 +301,7 @@ public:
   }
 
   /// @todo Review this function - it is almost identical to the
-  /// 'DirichletBC::set' functios
+  /// 'DirichletBC::set' function
   ///
   /// Set boundary condition value for entries with an applied boundary
   /// condition. Other entries are not modified.
