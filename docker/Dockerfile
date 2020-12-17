@@ -152,7 +152,7 @@ RUN cd /usr/local && \
     git checkout ${KAHIP_VERSION} && \
     mkdir build && cd build && \
     cmake -G Ninja -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} .. && \
-    make && make install
+    ninja install
 
 
 # Download Install Gmsh SDK
