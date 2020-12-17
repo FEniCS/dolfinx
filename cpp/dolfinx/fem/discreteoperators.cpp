@@ -81,9 +81,10 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
   mesh->topology_mutable().create_connectivity(tdim, 0);
   auto c_to_v = mesh->topology().connectivity(tdim, 0);
 
-  // Build sparsity pattern
   std::vector<std::int32_t> rows;
   std::vector<std::int32_t> cols;
+
+  // Build sparsity pattern
   const std::int32_t num_edges = mesh->topology().index_map(1)->size_local()
                                  + mesh->topology().index_map(1)->num_ghosts();
   const std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
@@ -109,6 +110,7 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
     auto cell_vertices = c_to_v->links(cell);
 
     // Find local index of each of the vertices and map to local dof
+    auto dofs1 = V1.dofmap()->cell_dofs(cell);
     for (std::int32_t i = 0; i < 2; ++i)
     {
       const auto* it
@@ -118,7 +120,6 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
       const int local_vertex = std::distance(cell_vertices.data(), it);
       auto local_v_dofs = layout1->entity_dofs(0, local_vertex);
       assert(local_v_dofs.size() == 1);
-      auto dofs1 = V1.dofmap()->cell_dofs(cell);
       cols.push_back(dofs1[local_v_dofs[0]]);
     }
   }
@@ -135,13 +136,13 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
   Mat _A = A.mat();
 
   // Build discrete gradient operator/matrix
+  const std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
+  assert(dofmap1);
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().index_map(0)->global_indices();
   std::array<PetscScalar, 2> Ae;
   for (std::int32_t e = 0; e < num_edges; ++e)
   {
-    std::vector<std::int32_t> cols;
-
     // Find local index of edge in one of the cells it is part of
     auto cells = e_to_c->links(e);
     assert(cells.size() > 0);
@@ -158,14 +159,15 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
     const Eigen::Array<int, Eigen::Dynamic, 1> local_dofs
         = layout0->entity_dofs(1, local_edge);
     assert(local_dofs.size() == 1);
-    // FIXME: avoid this expensive call
-    std::int32_t row = dofs0[local_dofs[0]];
+    const PetscInt row = dofs0[local_dofs[0]];
 
     auto vertices = e_to_v->links(e);
     assert(vertices.size() == 2);
     auto cell_vertices = c_to_v->links(cell);
 
     // Find local index of each of the vertices and map to local dof
+    std::array<PetscInt, 2> cols;
+    auto dofs1 = dofmap1->cell_dofs(cell);
     for (std::int32_t i = 0; i < 2; ++i)
     {
       const auto* it
@@ -178,8 +180,7 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
       const Eigen::Array<int, Eigen::Dynamic, 1> local_v_dofs
           = layout1->entity_dofs(0, local_vertex);
       assert(local_v_dofs.size() == 1);
-      auto dofs1 = V1.dofmap()->cell_dofs(cell);
-      cols.push_back(dofs1[local_v_dofs[0]]);
+      cols[i] = dofs1[local_v_dofs[0]];
     }
 
     if (global_indices[vertices[1]] < global_indices[vertices[0]])
