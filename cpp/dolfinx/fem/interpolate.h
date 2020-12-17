@@ -212,7 +212,7 @@ void interpolate(
       3, reference_points.rows());
 
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
-      element->value_size(), reference_points.rows());
+      element->value_size() * element->block_size(), reference_points.rows());
 
   const int num_scalar_dofs = element->space_dimension() / block_size;
 
@@ -245,7 +245,7 @@ void interpolate(
       coeff_block = element->interpolate_into_cell(block_size == 1 ? values: values.row(block), cell_info[c]);
       assert(coeff_block.size() == num_scalar_dofs);
       for (int i = 0; i < num_scalar_dofs; ++i)
-        interpolation_coeffs(dofs[block_size * i + block]) = coeff_block[i];
+        interpolation_coeffs(block_size * dofs[i] + block) = coeff_block[i];
     }
   }
 
