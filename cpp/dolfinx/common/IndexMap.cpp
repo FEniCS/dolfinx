@@ -559,18 +559,6 @@ Eigen::Array<int, Eigen::Dynamic, 1> IndexMap::ghost_owner_rank() const
   return owners;
 }
 //----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, 1> IndexMap::indices() const
-{
-  const std::array local_range = this->local_range();
-  const std::int32_t size_local = this->size_local();
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> indx(size_local + num_ghosts());
-  std::iota(indx.data(), indx.data() + size_local, local_range[0]);
-  for (Eigen::Index i = 0; i < num_ghosts(); ++i)
-    indx[size_local * i] = _ghosts[i];
-
-  return indx;
-}
-//----------------------------------------------------------------------------
 MPI_Comm IndexMap::comm(Direction dir) const
 {
   switch (dir)
