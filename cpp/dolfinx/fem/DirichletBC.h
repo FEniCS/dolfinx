@@ -241,10 +241,10 @@ public:
 
   /// Access dof indices (local indices, unrolled), including ghosts, to
   /// which a Dirichlet condition is applied, and the index to the first
-  /// non-owned (ghost) index. The array of infices is sorted.
+  /// non-owned (ghost) index. The array of indices is sorted.
   /// @return Sorted array of dof indices (unrolled) and index to the
   /// first entry in the dof index array that is not owned. Entries
-  /// dofs[:pos] are owned and entries dofs[pos:] are ghosts.
+  /// `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
   std::pair<
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>,
       std::int32_t>
@@ -253,9 +253,9 @@ public:
     return {_dofs0, _owned_indices0};
   }
 
-  /// Set bc entries in x to scale * x_bc
+  /// Set bc entries in `x` to `scale * x_bc`
   ///
-  /// @param[in] x The array in which to set scale * x_bc[i], where
+  /// @param[in] x The array in which to set `scale * x_bc[i]`, where
   /// x_bc[i] is the boundary value of x[i]. Entries in x that do not
   /// have a Dirichlet condition applied to them are unchanged. The
   /// length of x must be less than or equal to the index of the
@@ -279,8 +279,8 @@ public:
     }
   }
 
-  /// Set bc entries in x to scale*(x0 - x_bc)
-  /// @param[in] x The array in which to set scale * (x0 - x_bc)
+  /// Set bc entries in `x` to `scale * (x0 - x_bc)`
+  /// @param[in] x The array in which to set `scale * (x0 - x_bc)`
   /// @param[in] x0 The array used in compute the value to set
   /// @param[in] scale The scaling value to apply
   void set(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> x,
