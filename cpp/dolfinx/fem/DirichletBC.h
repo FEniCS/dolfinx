@@ -241,23 +241,18 @@ public:
   /// @return The boundary values Function
   std::shared_ptr<const fem::Function<T>> value() const { return _g; }
 
-  /// Get array of dof indices owned by this process to which a
-  /// Dirichlet BC is applied. The array is sorted and does not contain
-  /// ghost entries.
-  /// @return Sorted array of dof indices
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-  dofs_owned() const
-  {
-    return _dofs0.head(_owned_indices0);
-  }
-
-  /// Get array of dof indices, including ghosts to which a Dirichlet BC is
-  /// applied. The array is sorted
-  /// @return Sorted array of dof indices
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+  /// Access dof indices (local indices, unrolled), including ghosts, to
+  /// which a Dirichlet condition is applied, and the index to the first
+  /// non-owned (ghost) index. The array of infices is sorted.
+  /// @return Sorted array of dof indices (unrolled) and index to the
+  /// first entry in the dof index array that is not owned. Entries
+  /// dofs[:pos] are owned and entries dofs[pos:] are ghosts.
+  std::pair<
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>,
+      std::int32_t>
   dof_indices() const
   {
-    return _dofs0;
+    return {_dofs0, _owned_indices0};
   }
 
   /// Set bc entries in x to scale * x_bc
