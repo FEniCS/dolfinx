@@ -51,7 +51,6 @@ ARG GMSH_VERSION=4.7.1
 ARG PYBIND11_VERSION=2.6.1
 ARG PETSC_VERSION=3.14.2
 ARG SLEPC_VERSION=3.14.1
-ARG PETSC4PY_VERSION=3.14.0
 ARG SLEPC4PY_VERSION=3.14.0
 ARG KAHIP_VERSION=v3.10
 
@@ -251,6 +250,10 @@ RUN apt-get -qq update && \
     --download-superlu_dist \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
+    # Install petsc4py
+    cd src/binding/petsc4py && \
+    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install . && \
+    # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
     apt-get clean && \
@@ -265,7 +268,7 @@ RUN apt-get -qq update && \
     ${PETSC_DIR}/share/ \
     ${PETSC_DIR}/src/ \
     ${PETSC_DIR}/systems/ \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 
 # Install SLEPc
 WORKDIR /tmp
@@ -287,8 +290,8 @@ RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
 
-# Install petsc4py and slepc4py with real and complex types
-RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} slepc4py==${SLEPC4PY_VERSION}
+# Install slepc4py with real and complex types
+RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
 WORKDIR /root
 
