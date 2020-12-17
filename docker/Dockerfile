@@ -47,10 +47,10 @@
 #    docker build --target dev-env --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
 
-ARG GMSH_VERSION=4.6.0
-ARG PYBIND11_VERSION=2.6.0
-ARG PETSC_VERSION=3.14.1
-ARG SLEPC_VERSION=3.14.0
+ARG GMSH_VERSION=4.7.1
+ARG PYBIND11_VERSION=2.6.1
+ARG PETSC_VERSION=3.14.2
+ARG SLEPC_VERSION=3.14.1
 ARG PETSC4PY_VERSION=3.14.0
 ARG SLEPC4PY_VERSION=3.14.0
 ARG KAHIP_VERSION=v3.10
@@ -184,7 +184,6 @@ RUN apt-get -qq update && \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
     --with-shared-libraries \
-    --download-blacs \
     --download-hypre \
     --download-metis \
     --download-mumps \
@@ -206,7 +205,7 @@ RUN apt-get -qq update && \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
     --with-shared-libraries \
-    --download-blacs \
+    --download-hypre \
     --download-metis \
     --download-mumps \
     --download-ptscotch \
