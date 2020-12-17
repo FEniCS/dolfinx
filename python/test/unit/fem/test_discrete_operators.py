@@ -1,6 +1,6 @@
 """Unit tests for the DiscreteOperator class"""
 
-# Copyright (C) 2015-2020 Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2015 Garth N. Wells
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
