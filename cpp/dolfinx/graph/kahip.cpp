@@ -4,11 +4,13 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "KaHIP.h"
+#include "kahip.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
+#include <set>
+#include <vector>
 
 #ifdef HAS_KAHIP
 #include <parhip_interface.h>
@@ -18,16 +20,18 @@ using namespace dolfinx;
 
 #ifdef HAS_KAHIP
 
-graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
-    MPI_Comm mpi_comm, int nparts,
-    const graph::AdjacencyList<std::int64_t>& adj_graph, bool ghosting)
+//----------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t>
+graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
+                        const graph::AdjacencyList<std::int64_t>& adj_graph,
+                        bool ghosting)
 {
   common::Timer timer("Compute graph partition (KaHIP)");
 
-  auto local_graph = adj_graph.as_type<unsigned long long>();
+  const auto& local_graph = adj_graph.as_type<unsigned long long>();
 
-  const std::int32_t num_processes = dolfinx::MPI::size(mpi_comm);
-  const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
+  const int num_processes = dolfinx::MPI::size(mpi_comm);
+  const int process_number = dolfinx::MPI::rank(mpi_comm);
 
   // Graph does not have vertex or adjacency weights, so we use null
   // pointers as arguments.
@@ -63,11 +67,12 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
       local_graph.offsets().data() + local_graph.offsets().size());
   int edgecut = 0;
 
-  ParHIPPartitionKWay(const_cast<unsigned long long*>(node_distribution.data()),
-                      const_cast<unsigned long long*>(adj_graph_offsets.data()),
-                      const_cast<unsigned long long*>(local_graph.array().data()),
-                      vwgt, adjcwgt, &nparts, &imbalance, suppress_output, seed,
-                      mode, &edgecut, part.data(), &mpi_comm);
+  ParHIPPartitionKWay(
+      const_cast<unsigned long long*>(node_distribution.data()),
+      const_cast<unsigned long long*>(adj_graph_offsets.data()),
+      const_cast<unsigned long long*>(local_graph.array().data()), vwgt,
+      adjcwgt, &nparts, &imbalance, suppress_output, seed, mode, &edgecut,
+      part.data(), &mpi_comm);
   timer1.stop();
 
   const unsigned long long elm_begin = node_distribution[process_number];
@@ -164,7 +169,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
 
   // Convert to offset format for AdjacencyList
   std::vector<std::int32_t> dests;
-  std::vector<std::int32_t> offsets = {0};
+  std::vector<std::int32_t> offsets(1, 0);
   for (std::int32_t i = 0; i < ncells; ++i)
   {
     dests.push_back(part[i]);
@@ -175,5 +180,5 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
 
   return graph::AdjacencyList<std::int32_t>(dests, offsets);
 }
-
+//----------------------------------------------------------------------------
 #endif

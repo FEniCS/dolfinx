@@ -11,13 +11,12 @@
 #include <mpi.h>
 
 // Interface to KaHIP parallel partitioner
-namespace dolfinx::graph::KaHIP
+namespace dolfinx::graph::kahip
 {
 #ifdef HAS_KAHIP
 // Standard KaHIP partition
 AdjacencyList<std::int32_t>
 partition(MPI_Comm mpi_comm, int nparts,
           const AdjacencyList<std::int64_t>& adj_graph, bool ghosting);
-
 #endif
-} // namespace dolfinx::graph::KaHIP
+} // namespace dolfinx::graph::kahip
