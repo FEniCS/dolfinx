@@ -63,7 +63,6 @@ LABEL description="FEniCS testing and development environment with PETSc real, c
 ARG GMSH_VERSION
 ARG PYBIND11_VERSION
 ARG PETSC_VERSION
-ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
 
@@ -152,7 +151,7 @@ RUN cd /usr/local && \
     cd KaHIP/ && \
     git checkout ${KAHIP_VERSION} && \
     mkdir build && cd build && \
-    cmake -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} .. && \
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} .. && \
     make && make install
 
 
@@ -165,7 +164,7 @@ RUN cd /usr/local && \
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH \
     PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
 
-# Install PETSc with real and complex types
+# Install PETSc and petsc4py with real and complex types
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 WORKDIR /tmp
 RUN apt-get -qq update && \
