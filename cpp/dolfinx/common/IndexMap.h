@@ -186,10 +186,6 @@ public:
   /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<int, Eigen::Dynamic, 1> ghost_owner_rank() const;
 
-  /// Return array of global indices for all indices on this process,
-  /// including ghosts
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> indices() const;
-
   /// @todo Aim to remove this function? If it's kept, should it work
   /// with neighborhood ranks?
   ///
