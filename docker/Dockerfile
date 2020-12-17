@@ -1,8 +1,10 @@
 # Dockerfile describing development builds of FEniCS-X
 #
-# Authors: Jack S. Hale <jack.hale@uni.lu> Lizao Li
-# <lzlarryli@gmail.com> Garth N. Wells <gnw20@cam.ac.uk> Jan Blechta
-# <blechta@karlin.mff.cuni.cz>
+# Authors:
+# Jack S. Hale <jack.hale@uni.lu>
+# Lizao Li <lzlarryli@gmail.com>
+# Garth N. Wells <gnw20@cam.ac.uk>
+# Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
 # To run a nightly build:
 #
