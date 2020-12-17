@@ -1,4 +1,4 @@
-// Copyright (C) 2015 Garth N. Wells
+// Copyright (C) 2015-2020 Garth N. Wells, Jørgen S. DOkken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -17,136 +17,179 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
-// //-----------------------------------------------------------------------------
-// la::PETScMatrix
-// DiscreteOperators::build_gradient(const fem::FunctionSpace& V0,
-//                                   const fem::FunctionSpace& V1)
-// {
-//   // TODO: This function would be significantly simplified if it was
-//   // easier to build matrix sparsity patterns.
+//-----------------------------------------------------------------------------
+la::PETScMatrix DiscreteOperators::build_gradient(const fem::FunctionSpace& V0,
+                                                  const fem::FunctionSpace& V1)
+{
 
-//   // Get mesh
-//   assert(V0.mesh());
-//   const mesh::Mesh& mesh = *(V0.mesh());
+  // Get mesh
+  assert(V0.mesh());
+  const mesh::Mesh& mesh = *(V0.mesh());
 
-//   // Check that mesh is the same for both function spaces
-//   assert(V1.mesh());
-//   if (&mesh != V1.mesh().get())
-//   {
-//     throw std::runtime_error(
-//         "Ccompute discrete gradient operator. Function spaces "
-//         "do not share the same mesh");
-//   }
+  // Check that mesh is the same for both function spaces
+  assert(V1.mesh());
+  if (&mesh != V1.mesh().get())
+  {
+    throw std::runtime_error(
+        "Ccompute discrete gradient operator. Function spaces "
+        "do not share the same mesh");
+  }
 
-//   // Check that V0 is a (lowest-order) edge basis
-//   mesh.topology_mutable().create_entities(1);
-//   if (V0.dim() != mesh.num_entities_global(1))
-//   {
-//     throw std::runtime_error(
-//         "Cannot compute discrete gradient operator. Function "
-//         "spaces is not a lowest-order edge space");
-//   }
+  // Check that V0 is a (lowest-order) edge basis
+  mesh.topology_mutable().create_entities(1);
+  std::int64_t num_edges_global = mesh.topology().index_map(1)->size_global();
 
-//   // Check that V1 is a linear nodal basis
-//   if (V1.dim() != mesh.num_entities_global(0))
-//   {
-//     throw std::runtime_error(
-//         "Cannot compute discrete gradient operator. Function "
-//         "space is not a linear nodal function space");
-//   }
+  if (V0.dim() != num_edges_global)
+  {
+    throw std::runtime_error(
+        "Cannot compute discrete gradient operator. Function "
+        "spaces is not a lowest-order edge space");
+  }
 
-//   // Build maps from entities to local dof indices
-//   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> edge_to_dof
-//       = V0.dofmap()->dofs(mesh.topology(), 1);
-//   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> vertex_to_dof
-//       = V1.dofmap()->dofs(mesh.topology(), 0);
+  // Check that V1 is a linear nodal basis
+  std::int64_t num_vertices_global
+      = mesh.topology().index_map(0)->size_global();
+  if (V1.dim() != num_vertices_global)
+  {
+    throw std::runtime_error(
+        "Cannot compute discrete gradient operator. Function "
+        "space is not a linear nodal function space");
+  }
 
-//   // Build maps from local dof numbering to global
-//   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map0
-//       = V0.dofmap()->index_map->indices(true);
-//   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map1
-//       = V1.dofmap()->index_map->indices(true);
+  // Build maps from entities to local dof indices
+  std::shared_ptr<const dolfinx::fem::ElementDofLayout> layout0
+      = V0.dofmap()->element_dof_layout;
+  std::shared_ptr<const dolfinx::fem::ElementDofLayout> layout1
+      = V1.dofmap()->element_dof_layout;
 
-//   // Initialize edge -> vertex connections
-//   mesh.create_connectivity(1, 0);
+  // Copy index maps from dofmaps
+  std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
+      = {{V0.dofmap()->index_map, V1.dofmap()->index_map}};
+  std::array<int, 2> block_sizes
+      = {V0.dofmap()->index_map_bs(), V1.dofmap()->index_map_bs()};
+  std::vector<std::array<std::int64_t, 2>> local_range
+      = {index_maps[0]->local_range(), index_maps[1]->local_range()};
+  assert(block_sizes[0] == block_sizes[1]);
 
-//   // Copy index maps from dofmaps
-//   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-//       = {{V0.dofmap()->index_map, V1.dofmap()->index_map}};
-//   std::vector<std::array<std::int64_t, 2>> local_range
-//       = {{index_maps[0]->block_size * index_maps[0]->local_range()[0],
-//           index_maps[0]->block_size * index_maps[0]->local_range()[1]},
-//          {index_maps[1]->block_size * index_maps[1]->local_range()[0],
-//           index_maps[1]->block_size * index_maps[1]->local_range()[1]}};
+  // Initialise sparsity pattern
+  la::SparsityPattern pattern(mesh.mpi_comm(), index_maps, block_sizes);
 
-//   // Initialise sparsity pattern
-//   la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
+  // Initialize required connectivities
+  const int tdim = mesh.topology().dim();
+  mesh.topology_mutable().create_connectivity(1, 0);
+  auto e_to_v = mesh.topology().connectivity(1, 0);
+  mesh.topology_mutable().create_connectivity(tdim, 1);
+  auto c_to_e = mesh.topology().connectivity(tdim, 1);
+  mesh.topology_mutable().create_connectivity(1, tdim);
+  auto e_to_c = mesh.topology().connectivity(1, tdim);
+  mesh.topology_mutable().create_connectivity(tdim, 0);
+  auto c_to_v = mesh.topology().connectivity(mesh.topology_mutable().dim(), 0);
 
-//   // Build sparsity pattern
-//   std::vector<PetscInt> rows;
-//   std::vector<PetscInt> cols;
-//   for (auto& edge : mesh::MeshRange(mesh, 1))
-//   {
-//     // Row index (global indices)
-//     const std::int64_t row = local_to_global_map0[edge_to_dof[edge.index()]];
-//     rows.push_back(row);
+  // Build sparsity pattern
+  std::vector<std::int32_t> rows;
+  std::vector<std::int32_t> cols;
+  const std::int32_t num_edges = mesh.topology().index_map(1)->size_local()
+                                 + mesh.topology().index_map(1)->num_ghosts();
+  for (std::int32_t e = 0; e < num_edges; ++e)
+  {
+    // Find local index of edge in one of the cells it is part of
+    auto cells = e_to_c->links(e);
+    assert(cells.size() > 0);
+    const std::int32_t cell = cells[0];
+    auto edges = c_to_e->links(cell);
+    const auto* it = std::find(edges.data(), edges.data() + edges.rows(), e);
+    assert(it != (edges.data() + edges.rows()));
+    const int local_edge = std::distance(edges.data(), it);
+    // Find the dofs located on the edge
+    auto dofs0 = V0.dofmap()->cell_dofs(cell);
+    auto local_dofs = layout0->entity_dofs(1, local_edge);
+    assert(local_dofs.size() == 1);
+    std::int32_t row = dofs0[local_dofs[0]];
+    rows.push_back(row);
+    auto vertices = e_to_v->links(e);
+    assert(vertices.size() == 2);
+    auto cell_vertices = c_to_v->links(cell);
+    // Find local index of each of the vertices and map to local dof
+    for (std::int32_t i = 0; i < 2; ++i)
+    {
+      const auto* it
+          = std::find(cell_vertices.data(),
+                      cell_vertices.data() + cell_vertices.rows(), vertices[i]);
+      assert(it != (cell_vertices.data() + cell_vertices.rows()));
+      const int local_vertex = std::distance(cell_vertices.data(), it);
+      auto local_v_dofs = layout1->entity_dofs(0, local_vertex);
+      assert(local_v_dofs.size() == 1);
+      auto dofs1 = V1.dofmap()->cell_dofs(cell);
+      cols.push_back(dofs1[local_v_dofs[0]]);
+    }
+  }
+  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> _rows(
+      rows.data(), rows.size());
+  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> _cols(
+      cols.data(), cols.size());
+  pattern.insert(_rows, _cols);
+  pattern.assemble();
 
-//     if (row >= local_range[0][0] and row < local_range[0][1])
-//     {
-//       // Column indices (global indices)
-//       const mesh::MeshEntity v0(mesh, 0, edge.entities(0)[0]);
-//       const mesh::MeshEntity v1(mesh, 0, edge.entities(0)[1]);
-//       std::size_t col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
-//       std::size_t col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
-//       cols.push_back(col0);
-//       cols.push_back(col1);
-//     }
-//   }
+  // Create matrix
+  la::PETScMatrix A(mesh.mpi_comm(), pattern);
+  auto mat_add = la::PETScMatrix::add_fn(A.mat());
 
-//   Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> _rows(
-//       rows.data(), rows.size());
-//   Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> _cols(
-//       cols.data(), cols.size());
-//   pattern.insert_global(_rows, _cols);
-//   pattern.assemble();
+  // Build discrete gradient operator/matrix
+  const std::vector<std::int64_t>& global_indices
+      = mesh.topology().index_map(0)->global_indices();
+  Eigen::Matrix<PetscScalar, 1, 2, Eigen::RowMajor> Ae(1, 2);
+  Ae.fill(0);
 
-//   // Create matrix
-//   la::PETScMatrix A(mesh.mpi_comm(), pattern);
+  for (std::int32_t e = 0; e < num_edges; ++e)
+  {
+    std::vector<std::int32_t> cols;
+    // Find local index of edge in one of the cells it is part of
+    auto cells = e_to_c->links(e);
+    assert(cells.size() > 0);
+    const std::int32_t cell = cells[0];
+    auto edges = c_to_e->links(cell);
+    const auto* it = std::find(edges.data(), edges.data() + edges.rows(), e);
+    assert(it != (edges.data() + edges.rows()));
+    const int local_edge = std::distance(edges.data(), it);
+    // Find the dofs located on the edge
+    auto dofs0 = V0.dofmap()->cell_dofs(cell);
+    auto local_dofs = layout0->entity_dofs(1, local_edge);
+    assert(local_dofs.size() == 1);
+    std::vector<std::int32_t> rows = {dofs0[local_dofs[0]]};
+    auto vertices = e_to_v->links(e);
+    assert(vertices.size() == 2);
+    auto cell_vertices = c_to_v->links(cell);
 
-//   // Build discrete gradient operator/matrix
-//   const std::vector<std::int64_t>& global_indices
-//       = mesh.topology().global_indices(0);
-//   for (auto& edge : mesh::MeshRange(mesh, 1))
-//   {
-//     PetscInt row;
-//     PetscInt cols[2];
-//     PetscScalar values[2];
+    // Find local index of each of the vertices and map to local dof
+    for (std::int32_t i = 0; i < 2; ++i)
+    {
+      const auto* it
+          = std::find(cell_vertices.data(),
+                      cell_vertices.data() + cell_vertices.rows(), vertices[i]);
+      assert(it != (cell_vertices.data() + cell_vertices.rows()));
+      const int local_vertex = std::distance(cell_vertices.data(), it);
+      auto local_v_dofs = layout1->entity_dofs(0, local_vertex);
+      assert(local_v_dofs.size() == 1);
+      auto dofs1 = V1.dofmap()->cell_dofs(cell);
+      cols.push_back(dofs1[local_v_dofs[0]]);
+    }
+    if (global_indices[vertices[1]] < global_indices[vertices[0]])
+    {
+      Ae.row(0)[0] = 1;
+      Ae.row(0)[1] = -1;
+    }
+    else
+    {
+      Ae.row(0)[0] = -1;
+      Ae.row(0)[1] = 1;
+    }
 
-//     row = local_to_global_map0[edge_to_dof[edge.index()]];
+    mat_add(1, rows.data(), 2, cols.data(), Ae.data());
+  }
 
-//     mesh::MeshEntity v0(mesh, 0, edge.entities(0)[0]);
-//     mesh::MeshEntity v1(mesh, 0, edge.entities(0)[1]);
+  // Finalise matrix
+  A.apply(la::PETScMatrix::AssemblyType::FINAL);
 
-//     cols[0] = local_to_global_map1[vertex_to_dof[v0.index()]];
-//     cols[1] = local_to_global_map1[vertex_to_dof[v1.index()]];
-//     if (global_indices[v1.index()] < global_indices[v0.index()])
-//     {
-//       values[0] = 1.0;
-//       values[1] = -1.0;
-//     }
-//     else
-//     {
-//       values[0] = -1.0;
-//       values[1] = 1.0;
-//     }
-
-//     // Set values in matrix
-//     A.set(values, 1, &row, 2, cols);
-//   }
-
-//   // Finalise matrix
-//   A.apply(la::PETScMatrix::AssemblyType::FINAL);
-
-//   return A;
-// }
-// //-----------------------------------------------------------------------------
+  return A;
+}
+//-----------------------------------------------------------------------------
