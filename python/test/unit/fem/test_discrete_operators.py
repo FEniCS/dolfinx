@@ -7,8 +7,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 
-import pytest
 import numpy
+import pytest
 from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
 from dolfinx.cpp.fem import DiscreteOperators
 from dolfinx_utils.test.skips import skip_in_parallel
