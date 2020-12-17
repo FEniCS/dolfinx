@@ -173,9 +173,10 @@ void CoordinateElement::compute_reference_geometry(
   else
   {
     // Newton's method for non-affine geometry
-    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> xk(x.cols(),
-                                                                       1);
-    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> Xk(tdim, 1);
+    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> xk(
+        x.cols());
+    Eigen::RowVectorXd Xk(tdim);
+    Eigen::RowVectorXd dX(tdim);
 
     for (int ip = 0; ip < num_points; ++ip)
     {
@@ -187,11 +188,10 @@ void CoordinateElement::compute_reference_geometry(
           Kview(K.data() + ip * gdim * tdim, tdim, gdim);
       // TODO: Xk - use cell midpoint instead?
       Xk.setZero();
-      const int max_its = 10;
-      int k;
-      for (k = 0; k < max_its; ++k)
-      {
 
+      int k;
+      for (k = 0; k < max_non_affine_its; ++k)
+      {
         tabulated_data = _libtab_element->tabulate(1, Xk);
 
         // Compute physical coordinates
@@ -209,8 +209,7 @@ void CoordinateElement::compute_reference_geometry(
           Kview = (Jview.transpose() * Jview).inverse() * Jview.transpose();
 
         // Increment to new point in reference
-        Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> dX
-            = Kview * (x.row(ip).matrix().transpose() - xk);
+        dX = Kview * (x.row(ip).matrix().transpose() - xk);
         if (dX.squaredNorm() < eps)
           break;
         Xk += dX;
