@@ -198,7 +198,10 @@ void add_diagonal(
   {
     assert(bc);
     if (V.contains(*bc->function_space()))
-      add_diagonal<T>(mat_add, bc->dofs_owned(), diagonal);
+    {
+      const auto [dofs, range] = bc->dof_indices();
+      add_diagonal<T>(mat_add, dofs.head(range), diagonal);
+    }
   }
 }
 

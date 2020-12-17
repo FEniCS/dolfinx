@@ -300,7 +300,7 @@ void fem(py::module& m)
                    const Eigen::Ref<
                        const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&>(),
           py::arg("g"), py::arg("dofs"))
-      .def("dof_indices", &dolfinx::fem::DirichletBC<PetscScalar>::dofs_owned)
+      .def("dof_indices", &dolfinx::fem::DirichletBC<PetscScalar>::dof_indices)
       .def_property_readonly(
           "function_space",
           &dolfinx::fem::DirichletBC<PetscScalar>::function_space)
