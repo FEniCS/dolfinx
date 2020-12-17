@@ -150,7 +150,7 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
 ENV KAHIP_DIR=/usr/local/KaHIP/deploy
 RUN cd /usr/local && \
     # git clone https://github.com/schulzchristian/KaHIP.git && \
-    git clone git@github.com:IgorBaratta/KaHIP.git && \
+    git clone https://github.com/IgorBaratta/KaHIP.git && \
     cd KaHIP/ && \
     # git checkout ${KAHIP_VERSION} && \
     mkdir build && cd build && \
