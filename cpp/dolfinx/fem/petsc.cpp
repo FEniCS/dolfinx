@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "petsc.h"
-#include "sparsitybuild.h"
 #include "assembler.h"
+#include "sparsitybuild.h"
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/SparsityPattern.h>
 
