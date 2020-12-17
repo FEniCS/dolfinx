@@ -56,6 +56,7 @@ public:
   /// Return a function with an interface for adding values to the
   /// matrix A using blocked indices (calls MatSetValuesBlockedLocal)
   /// @param[in] A The matrix to set values in
+  /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                            const std::int32_t*, const PetscScalar*)>
   add_block_fn(Mat A, const InsertMode = ADD_VALUES);
