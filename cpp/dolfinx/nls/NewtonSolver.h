@@ -68,6 +68,11 @@ public:
   /// @return (number of Newton iterations, whether iteration converged)
   std::pair<int, bool> solve(Vec x);
 
+  /// The number of Newton interations. It can can called by functions
+  /// that check for convergence during a solve.
+  /// @return The number of Newton iterations performed
+  int iteration() const;
+
   /// Return number of Krylov iterations elapsed since
   /// solve started
   /// @return Number of iterations.
@@ -104,15 +109,6 @@ public:
   double relaxation_parameter = 1.0;
 
 private:
-  /// Convergence test. It may be overloaded using virtual inheritance
-  /// and this base criterion may be called from derived, both in C++
-  /// and Python.
-  ///
-  /// @param r Residual for criterion evaluation
-  /// @param iteration Newton iteration number
-  /// @return True if convergence achieved
-  // bool converged(const Vec r, int iteration);
-
   /// Update solution vector by computed Newton step. Default update is
   /// given by formula::
   ///
@@ -140,10 +136,8 @@ private:
   // Accumulated number of Krylov iterations since solve began
   int _krylov_iterations;
 
-public:
-  double iteration;
+  double _iteration;
 
-private:
   // Most recent residual and initial residual
   double _residual;
   double _residual0;
