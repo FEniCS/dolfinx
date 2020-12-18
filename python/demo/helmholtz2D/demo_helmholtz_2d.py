@@ -16,7 +16,7 @@ import numpy as np
 from mpi4py import MPI
 
 from dolfinx import (Function, FunctionSpace, UnitSquareMesh,
-                     has_petsc_complex, solve)
+                     has_petsc_complex, LinearVariationalSolver)
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.io import XDMFFile
 from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
@@ -53,7 +53,8 @@ L = inner(f, v) * dx
 
 # Compute solution
 u = Function(V)
-solve(a == L, u, [])
+solver = LinearVariationalSolver(a == L, u, [])
+solver.solve()
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)
 with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w",

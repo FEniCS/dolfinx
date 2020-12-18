@@ -74,19 +74,19 @@
 #
 # First, the :py:mod:`dolfinx` module is imported: ::
 
-import matplotlib.pyplot as plt
-import numpy as np
-from mpi4py import MPI
-from petsc4py import PETSc
-
 import dolfinx
 import dolfinx.plotting
+import matplotlib.pyplot as plt
+import numpy as np
 import ufl
-from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh, solve
+from dolfinx import (DirichletBC, Function, FunctionSpace,
+                     LinearVariationalSolver, RectangleMesh)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import ds, dx, grad, inner
 
 # We begin by defining a mesh of the domain and a finite element
@@ -175,14 +175,16 @@ L = inner(f, v) * dx + inner(g, v) * ds
 # represent the solution. (Upon initialization, it is simply set to the
 # zero function.) A :py:class:`Function
 # <dolfinx.functions.fem.Function>` represents a function living in
-# a finite element function space. Next, we can call the :py:func:`solve
-# <dolfinx.fem.solving.solve>` function with the arguments ``a == L``,
-# ``u`` and ``bc`` as follows: ::
+# a finite element function space. Next, we initialize a solver using the :py:class:`LinearVariationalSolver
+# <dolfinx.fem.linearvariationalsolver.LinearVariationalSolver>`.
+# This class is initialized with the arguments ``a == L``, ``u`` and ``bc`` as follows: ::
 
-# Compute solution
 u = Function(V)
-solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+lin_solver = LinearVariationalSolver(a == L, u, [bc])
 
+# When we want to compute the solution to the problem, we can specify what kind of solver we want to use.
+# In this problem, we use a direct LU solver, which is defined through the dictionary ``petsc_options``.
+lin_solver.solve(petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 # The function ``u`` will be modified during the call to solve. The
 # default settings for solving a variational problem have been
