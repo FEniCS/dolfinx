@@ -4,11 +4,13 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "KaHIP.h"
+#include "kahip.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
+#include <set>
+#include <vector>
 
 #ifdef HAS_KAHIP
 #include <parhip_interface.h>
@@ -18,14 +20,18 @@ using namespace dolfinx;
 
 #ifdef HAS_KAHIP
 
-graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
-    MPI_Comm mpi_comm, int nparts,
-    const graph::AdjacencyList<unsigned long long>& adj_graph, bool ghosting)
+//----------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t>
+graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
+                        const graph::AdjacencyList<std::int64_t>& adj_graph,
+                        bool ghosting)
 {
   common::Timer timer("Compute graph partition (KaHIP)");
 
-  const std::int32_t num_processes = dolfinx::MPI::size(mpi_comm);
-  const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
+  const auto& local_graph = adj_graph.as_type<unsigned long long>();
+
+  const int num_processes = dolfinx::MPI::size(mpi_comm);
+  const int process_number = dolfinx::MPI::rank(mpi_comm);
 
   // Graph does not have vertex or adjacency weights, so we use null
   // pointers as arguments.
@@ -46,7 +52,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
   common::Timer timer1("KaHIP: call ParHIPPartitionKWay");
 
   std::vector<unsigned long long> node_distribution(num_processes);
-  const unsigned long long num_local_cells = adj_graph.num_nodes();
+  const unsigned long long num_local_cells = local_graph.num_nodes();
   MPI_Allgather(&num_local_cells, 1, MPI::mpi_type<unsigned long long>(),
                 node_distribution.data(), 1,
                 MPI::mpi_type<unsigned long long>(), mpi_comm);
@@ -57,15 +63,16 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
 
   std::vector<unsigned long long> part(num_local_cells);
   std::vector<unsigned long long> adj_graph_offsets(
-      adj_graph.offsets().data(),
-      adj_graph.offsets().data() + adj_graph.offsets().size());
+      local_graph.offsets().data(),
+      local_graph.offsets().data() + local_graph.offsets().size());
   int edgecut = 0;
 
-  ParHIPPartitionKWay(const_cast<unsigned long long*>(node_distribution.data()),
-                      const_cast<unsigned long long*>(adj_graph_offsets.data()),
-                      const_cast<unsigned long long*>(adj_graph.array().data()),
-                      vwgt, adjcwgt, &nparts, &imbalance, suppress_output, seed,
-                      mode, &edgecut, part.data(), &mpi_comm);
+  ParHIPPartitionKWay(
+      const_cast<unsigned long long*>(node_distribution.data()),
+      const_cast<unsigned long long*>(adj_graph_offsets.data()),
+      const_cast<unsigned long long*>(local_graph.array().data()), vwgt,
+      adjcwgt, &nparts, &imbalance, suppress_output, seed, mode, &edgecut,
+      part.data(), &mpi_comm);
   timer1.stop();
 
   const unsigned long long elm_begin = node_distribution[process_number];
@@ -84,9 +91,9 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
     // local indexing "i"
     for (int i = 0; i < ncells; i++)
     {
-      for (int j = 0; j < adj_graph.num_links(i); ++j)
+      for (int j = 0; j < local_graph.num_links(i); ++j)
       {
-        const unsigned long long other_cell = adj_graph.links(i)[j];
+        const unsigned long long other_cell = local_graph.links(i)[j];
         if (other_cell < elm_begin || other_cell >= elm_end)
         {
           const int remote
@@ -131,9 +138,9 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
       cell_ownership[recv_cell_partition[p]] = recv_cell_partition[p + 1];
 
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& xadj
-        = adj_graph.offsets();
+        = local_graph.offsets();
     const Eigen::Array<unsigned long long, Eigen::Dynamic, 1>& adjncy
-        = adj_graph.array();
+        = local_graph.array();
 
     // Generate map for where new boundary cells need to be sent
     for (std::int32_t i = 0; i < ncells; i++)
@@ -162,7 +169,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
 
   // Convert to offset format for AdjacencyList
   std::vector<std::int32_t> dests;
-  std::vector<std::int32_t> offsets = {0};
+  std::vector<std::int32_t> offsets(1, 0);
   for (std::int32_t i = 0; i < ncells; ++i)
   {
     dests.push_back(part[i]);
@@ -173,5 +180,5 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
 
   return graph::AdjacencyList<std::int32_t>(dests, offsets);
 }
-
+//----------------------------------------------------------------------------
 #endif

@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <array>
 #include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/utils.h>
 #include <functional>
 #include <memory>
@@ -24,9 +25,6 @@ class Mesh;
 
 namespace fem
 {
-template <typename T>
-class Function;
-class FunctionSpace;
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
 /// (topological). Note that degrees-of-freedom for discontinuous
@@ -122,27 +120,33 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_dofs_geometrical(
 
 /// Interface for setting (strong) Dirichlet boundary conditions
 ///
-///     u = g on G,
+///     \f$u = g \ \text{on} \ G\f$,
 ///
-/// where u is the solution to be computed, g is a function and G is a
-/// sub domain of the mesh.
+/// where \f$u\f$ is the solution to be computed, \f$g\f$ is a function
+/// and \f$G\f$ is a sub domain of the mesh.
 ///
-/// A DirichletBC is specified by the function g, the function space
-/// (trial space) and degrees of freedom to which the boundary condition
-/// applies.
+/// A DirichletBC is specified by the function \f$g\f$, the function
+/// space (trial space) and degrees of freedom to which the boundary
+/// condition applies.
 
 template <typename T>
 class DirichletBC
 {
 
 public:
-  /// Create boundary condition
+  /// Create a representation of a Dirichlet boundary condition where
+  /// the space being constrained is the same as the function that
+  /// defines the constraint values, i.e. share the same
+  /// `FunctionSpace`.
   ///
   /// @param[in] g The boundary condition value. The boundary condition
   /// can be applied to a a function on the same space as g.
-  /// @param[in] dofs Degree-of-freedom indices in the space of the
-  ///   boundary value function applied to V_dofs[i]. The dof indices must
-  ///   be sorted.
+  /// @param[in] dofs Degree-of-freedom block indices in the space of
+  /// the boundary value function applied to V_dofs[i]. The dof block
+  /// indices must be sorted.
+  /// @note The indices in `dofs` are for *blocks*, e.g. a block index
+  /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
+  /// block size 3
   DirichletBC(
       const std::shared_ptr<const fem::Function<T>>& g,
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
@@ -171,16 +175,23 @@ public:
     _owned_indices0 = std::distance(_dofs0.data(), it);
   }
 
-  /// Create boundary condition
+  /// Create a representation of a Dirichlet boundary condition where
+  /// the space being constrained and the function that defines the
+  /// constraint values do not share the same `FunctionSpace`. A typical
+  /// examples is when applying a constraint on a subspace. The
+  /// (sub)space and the constrain function must have the same finite
+  /// element.
   ///
   /// @param[in] g The boundary condition value
   /// @param[in] V_g_dofs Two arrays of degree-of-freedom indices. First
   /// array are indices in the space where boundary condition is applied
   /// (V), second array are indices in the space of the boundary
   /// condition value function g. The arrays must be sorted by the
-  /// indices in the first array.
+  /// indices in the first array. The dof indices are unrolled, i.e. are
+  /// not by dof block.
   /// @param[in] V The function (sub)space on which the boundary
-  ///   condition is applied
+  /// condition is applied
+  /// @note The indices in `dofs` are unrolled and not for blocks
   DirichletBC(const std::shared_ptr<const fem::Function<T>>& g,
               const std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>,
                                2>& V_g_dofs,
@@ -228,19 +239,23 @@ public:
   /// @return The boundary values Function
   std::shared_ptr<const fem::Function<T>> value() const { return _g; }
 
-  /// Get array of dof indices owned by this process to which a
-  /// Dirichlet BC is applied. The array is sorted and does not contain
-  /// ghost entries.
-  /// @return Sorted array of dof indices
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-  dofs_owned() const
+  /// Access dof indices (local indices, unrolled), including ghosts, to
+  /// which a Dirichlet condition is applied, and the index to the first
+  /// non-owned (ghost) index. The array of indices is sorted.
+  /// @return Sorted array of dof indices (unrolled) and index to the
+  /// first entry in the dof index array that is not owned. Entries
+  /// `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
+  std::pair<
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>,
+      std::int32_t>
+  dof_indices() const
   {
-    return _dofs0.head(_owned_indices0);
+    return {_dofs0, _owned_indices0};
   }
 
-  /// Set bc entries in x to scale * x_bc
+  /// Set bc entries in `x` to `scale * x_bc`
   ///
-  /// @param[in] x The array in which to set scale * x_bc[i], where
+  /// @param[in] x The array in which to set `scale * x_bc[i]`, where
   /// x_bc[i] is the boundary value of x[i]. Entries in x that do not
   /// have a Dirichlet condition applied to them are unchanged. The
   /// length of x must be less than or equal to the index of the
@@ -264,8 +279,8 @@ public:
     }
   }
 
-  /// Set bc entries in x to scale*(x0 - x_bc).
-  /// @param[in] x The array in which to set scale * (x0 - x_bc)
+  /// Set bc entries in `x` to `scale * (x0 - x_bc)`
+  /// @param[in] x The array in which to set `scale * (x0 - x_bc)`
   /// @param[in] x0 The array used in compute the value to set
   /// @param[in] scale The scaling value to apply
   void set(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> x,
@@ -286,7 +301,7 @@ public:
   }
 
   /// @todo Review this function - it is almost identical to the
-  /// 'DirichletBC::set' functios
+  /// 'DirichletBC::set' function
   ///
   /// Set boundary condition value for entries with an applied boundary
   /// condition. Other entries are not modified.

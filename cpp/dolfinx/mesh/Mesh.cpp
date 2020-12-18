@@ -7,9 +7,8 @@
 
 #include "Mesh.h"
 #include "Geometry.h"
-#include "Partitioning.h"
 #include "Topology.h"
-#include "TopologyComputation.h"
+#include "topologycomputation.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -17,9 +16,9 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/DofMapBuilder.h>
+#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
@@ -95,7 +94,7 @@ Mesh mesh::create_mesh(
 
   // Distribute cells to destination rank
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
-      = graph::Partitioning::distribute(comm, cells, dest);
+      = graph::partition::distribute(comm, cells, dest);
 
   // Create cells and vertices with the ghosting requested. Input topology
   // includes cells shared via facet, but output will remove these, if not
@@ -114,7 +113,7 @@ Mesh mesh::create_mesh(
     if (element.dof_layout().num_entity_dofs(e) > 0)
     {
       auto [cell_entity, entity_vertex, index_map]
-          = mesh::TopologyComputation::compute_entities(comm, topology, e);
+          = mesh::compute_entities(comm, topology, e);
       if (cell_entity)
         topology.set_connectivity(cell_entity, tdim, e);
       if (entity_vertex)

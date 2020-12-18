@@ -16,7 +16,6 @@
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DiscreteOperators.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/DofMapBuilder.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Expression.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -24,6 +23,7 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
+#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/interpolate.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/fem/utils.h>
@@ -205,7 +205,7 @@ void fem(py::module& m)
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout) {
-        auto [map, bs, dofmap] = dolfinx::fem::DofMapBuilder::build(
+        auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
             comm.get(), topology, element_dof_layout);
         return std::tuple(map, bs, std::move(dofmap));
       },
@@ -299,7 +299,7 @@ void fem(py::module& m)
                    const Eigen::Ref<
                        const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&>(),
           py::arg("g"), py::arg("dofs"))
-      .def("dof_indices", &dolfinx::fem::DirichletBC<PetscScalar>::dofs_owned)
+      .def("dof_indices", &dolfinx::fem::DirichletBC<PetscScalar>::dof_indices)
       .def_property_readonly(
           "function_space",
           &dolfinx::fem::DirichletBC<PetscScalar>::function_space)

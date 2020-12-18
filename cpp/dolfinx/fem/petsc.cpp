@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "petsc.h"
-#include "SparsityPatternBuilder.h"
 #include "assembler.h"
+#include "sparsitybuild.h"
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/SparsityPattern.h>
 
@@ -68,25 +68,25 @@ la::PETScMatrix fem::create_matrix_block(
             mesh->mpi_comm(), index_maps, bs));
 
         // Build sparsity pattern for block
-        std::array dofmaps{V[0][row]->dofmap().get(),
-                           V[1][col]->dofmap().get()};
+        assert(V[0][row]->dofmap());
+        assert(V[1][col]->dofmap());
+        std::array<const std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
+            *V[0][row]->dofmap(), *V[1][col]->dofmap()};
         assert(patterns[row].back());
         auto& sp = patterns[row].back();
         assert(sp);
         const fem::Form<PetscScalar>& a_ = *a(row, col);
         if (a_.num_integrals(IntegralType::cell) > 0)
-          SparsityPatternBuilder::cells(*sp, mesh->topology(), dofmaps);
+          sparsitybuild::cells(*sp, mesh->topology(), dofmaps);
         if (a_.num_integrals(IntegralType::interior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
-          SparsityPatternBuilder::interior_facets(*sp, mesh->topology(),
-                                                  dofmaps);
+          sparsitybuild::interior_facets(*sp, mesh->topology(), dofmaps);
         }
         if (a_.num_integrals(IntegralType::exterior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
-          SparsityPatternBuilder::exterior_facets(*sp, mesh->topology(),
-                                                  dofmaps);
+          sparsitybuild::exterior_facets(*sp, mesh->topology(), dofmaps);
         }
       }
       else

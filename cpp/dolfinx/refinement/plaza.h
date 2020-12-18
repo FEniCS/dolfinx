@@ -22,13 +22,12 @@ class MeshTags;
 
 namespace refinement
 {
-class ParallelRefinement;
 
 /// Implementation of the refinement method described in Plaza and Carey
 /// "Local refinement of simplicial grids based on the skeleton"
 /// (Applied Numerical Mathematics 32 (2000) 195-218)
 
-namespace PlazaRefinementND
+namespace plaza
 {
 
 /// Uniform refine, optionally redistributing and optionally
@@ -52,6 +51,6 @@ mesh::Mesh refine(const mesh::Mesh& mesh,
                   const mesh::MeshTags<std::int8_t>& refinement_marker,
                   bool redistribute);
 
-} // namespace PlazaRefinementND
+} // namespace plaza
 } // namespace refinement
 } // namespace dolfinx

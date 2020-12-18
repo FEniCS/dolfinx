@@ -10,10 +10,10 @@
 #include <Eigen/Dense>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/SubSystemsManager.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/defines.h>
+#include <dolfinx/common/subsystem.h>
 #include <dolfinx/common/timing.h>
 #include <memory>
 #include <pybind11/eigen.h>
@@ -68,9 +68,7 @@ void common(py::module& m)
       .def_property_readonly("ghosts", &dolfinx::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,
                              "Return list of ghost indices")
-      .def("global_indices", &dolfinx::common::IndexMap::global_indices)
-      .def("indices", &dolfinx::common::IndexMap::indices,
-           "Return array of global indices for all indices on this process");
+      .def("global_indices", &dolfinx::common::IndexMap::global_indices);
 
   // dolfinx::common::Timer
   py::class_<dolfinx::common::Timer, std::shared_ptr<dolfinx::common::Timer>>(
@@ -101,7 +99,7 @@ void common(py::module& m)
     std::vector<char*> argv(args.size() + 1, nullptr);
     for (std::size_t i = 0; i < args.size(); ++i)
       argv[i] = const_cast<char*>(args[i].data());
-    dolfinx::common::SubSystemsManager::init_logging(args.size(), argv.data());
+    dolfinx::common::subsystem::init_logging(args.size(), argv.data());
   });
 }
 } // namespace dolfinx_wrappers

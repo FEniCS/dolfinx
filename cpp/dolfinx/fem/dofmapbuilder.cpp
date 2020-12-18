@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "DofMapBuilder.h"
+#include "dofmapbuilder.h"
 #include "ElementDofLayout.h"
 #include <algorithm>
 #include <cstdlib>
@@ -14,8 +14,8 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/dofs_permutation.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/BoostGraphOrdering.h>
-#include <dolfinx/graph/SCOTCH.h>
+#include <dolfinx/graph/boostordering.h>
+#include <dolfinx/graph/scotch.h>
 #include <dolfinx/mesh/Topology.h>
 #include <iterator>
 #include <memory>
@@ -286,9 +286,9 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   const std::string ordering_library = "SCOTCH";
   std::vector<int> node_remap;
   if (ordering_library == "Boost")
-    node_remap = graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+    node_remap = graph::compute_cuthill_mckee(graph, true);
   else if (ordering_library == "SCOTCH")
-    std::tie(node_remap, std::ignore) = graph::SCOTCH::compute_gps(graph);
+    std::tie(node_remap, std::ignore) = graph::scotch::compute_gps(graph);
   else if (ordering_library == "random")
   {
     // NOTE: Randomised dof ordering should only be used for
@@ -484,8 +484,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<common::IndexMap>, int,
            graph::AdjacencyList<std::int32_t>>
-DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
-                     const ElementDofLayout& element_dof_layout)
+fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
+                       const ElementDofLayout& element_dof_layout)
 {
   common::Timer t0("Build dofmap data");
 

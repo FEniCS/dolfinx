@@ -50,35 +50,35 @@ cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 template<typename T>
 Eigen::SparseMatrix<T, Eigen::RowMajor>
 assemble_csr(const dolfinx::fem::Form<T>& a,
-        const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>& bcs)
+             const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>& bcs)
 {
-std::vector<Eigen::Triplet<T>> triplets;
-const auto mat_add
-    = [&triplets](std::int32_t nrow, const std::int32_t* rows,
-                std::int32_t ncol, const std::int32_t* cols, const T* v)
+  std::vector<Eigen::Triplet<T>> triplets;
+  const auto mat_add
+      = [&triplets](std::int32_t nrow, const std::int32_t* rows,
+                    std::int32_t ncol, const std::int32_t* cols, const T* v)
     {
-    for (int i = 0; i < nrow; ++i)
+      for (int i = 0; i < nrow; ++i)
         for (int j = 0; j < ncol; ++j)
-        triplets.emplace_back(rows[i], cols[j], v[i * ncol + j]);
-    return 0;
+          triplets.emplace_back(rows[i], cols[j], v[i * ncol + j]);
+      return 0;
     };
 
-dolfinx::fem::assemble_matrix<T>(mat_add, a, bcs);
+  dolfinx::fem::assemble_matrix<T>(mat_add, a, bcs);
 
-auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
-int bs0 = a.function_spaces().at(0)->dofmap()->index_map_bs();
-auto map1 = a.function_spaces().at(1)->dofmap()->index_map;
-int bs1 = a.function_spaces().at(1)->dofmap()->index_map_bs();
-Eigen::SparseMatrix<T, Eigen::RowMajor> mat(
-    bs0 * (map0->size_local() + map0->num_ghosts()),
-    bs1 * (map1->size_local() + map1->num_ghosts()));
-mat.setFromTriplets(triplets.begin(), triplets.end());
-return mat;
+  auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
+  int bs0 = a.function_spaces().at(0)->dofmap()->index_map_bs();
+  auto map1 = a.function_spaces().at(1)->dofmap()->index_map;
+  int bs1 = a.function_spaces().at(1)->dofmap()->index_map_bs();
+  Eigen::SparseMatrix<T, Eigen::RowMajor> mat(
+      bs0 * (map0->size_local() + map0->num_ghosts()),
+      bs1 * (map1->size_local() + map1->num_ghosts()));
+  mat.setFromTriplets(triplets.begin(), triplets.end());
+  return mat;
 }
 
 PYBIND11_MODULE(eigen_csr, m)
 {
-m.def("assemble_matrix", &assemble_csr<PetscScalar>);
+  m.def("assemble_matrix", &assemble_csr<PetscScalar>);
 }
 """
 
@@ -96,7 +96,7 @@ m.def("assemble_matrix", &assemble_csr<PetscScalar>);
         if _a.function_spaces[0].id == _a.function_spaces[1].id:
             for bc in bcs:
                 if _a.function_spaces[0].contains(bc.function_space):
-                    bc_dofs = bc.dof_indices()
+                    bc_dofs, _ = bc.dof_indices()
                     A[bc_dofs, bc_dofs] = 1.0
         return A
 
