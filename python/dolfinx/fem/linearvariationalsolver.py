@@ -21,8 +21,9 @@ class LinearVariationalSolver():
         and the linear algebra structures (the matrix and vector), that can be reused for multiple solve calls.
 
         .. code-block:: python
-            solver = LinearVariationalSolver(a==L, u, [bc0, bc1],
-                                             form_compiler_parameters={"optimize": True})
+
+            solver = LinearVariationalSolver(a==L, u, [bc0, bc1], form_compiler_parameters={"optimize": True})
+
         """
         if (len(variational_problem.lhs.arguments()) != 2):
             raise ValueError(
