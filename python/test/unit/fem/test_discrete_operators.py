@@ -34,7 +34,7 @@ def test_gradient(mesh):
     m, n = G.getSize()
     assert m == num_edges
     assert n == mesh.topology.index_map(0).size_global
-    assert numpy.is_close(G.norm(PETSc.NormType.FROBENIUS), numpy.sqrt(2.0 * num_edges))
+    assert numpy.isclose(G.norm(PETSc.NormType.FROBENIUS), numpy.sqrt(2.0 * num_edges))
 
 
 def test_incompatible_spaces():
