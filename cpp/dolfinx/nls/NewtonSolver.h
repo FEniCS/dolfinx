@@ -141,7 +141,6 @@ private:
   // Most recent residual and initial residual
   double _residual;
   double _residual0;
-  //   double _residual0;
 
   // Solver
   la::PETScKrylovSolver _solver;
