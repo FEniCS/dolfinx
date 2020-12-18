@@ -66,19 +66,14 @@ target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 # (ABI) if they use a different -march flag than that used to originally build
 # DOLFIN. DOLFINX_EIGEN_MAX_ALIGN_BYTES can be used to force alignment.
 # See: https://eigen.tuxfamily.org/dox/TopicPreprocessorDirectives.html
-# See: https://github.com/FEniCS/dolfinx/pull/143
 
-# Note: The name EIGEN_MAX_ALIGN_BYTES is confusing. In practice, Eigen
-# computes the ideal alignment based around -march.  If the ideal alignment is
-# greater than EIGEN_MAX_ALIGN_BYTES, the ideal alignment is used. If the ideal
-# alignment is less, then EIGEN_MAX_ALIGN_BYTES is used for alignment.
 set(DOLFINX_EIGEN_MAX_ALIGN_BYTES "0" CACHE STRING "\
-Minimum alignment in bytes used for Eigen data structures. Set to 32 for \
-compatibility with AVX user-compiled code and 64 for AVX-512 user-compiled \
-code. Set to 0 for ideal alignment according to -march. Note that if an architecture \
-flag (e.g. \"-march=skylake-avx512\") is set for DOLFIN, Eigen will use the \
-appropriate ideal alignment instead if it is stricter. Otherwise, the value \
-of this variable will be used by Eigen for the alignment of all data structures.\\
+Set to 0 to disable alignment completely, for compatibility with other libraries. 
+Otherwise, minimum alignment in bytes used for Eigen data structures. 
+Set to 32 for compatibility with AVX user-compiled code and 64 for AVX-512 
+user-compiled code. Note that if an architecture flag (e.g. \"-march=skylake-avx512\") 
+is set for DOLFIN, Eigen will use the appropriate ideal alignment instead if it is stricter. 
+Otherwise, the value of this variable will be used by Eigen for the alignment of all data structures.\\
 ")
 
 # Eigen3
