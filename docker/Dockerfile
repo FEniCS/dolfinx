@@ -33,11 +33,7 @@
 # your platform using the commands:
 #
 #    echo '{ "cffi_extra_compile_args" : ["-O2", "-march=native" ] }' > dolfinx/docker/dolfinx_jit_parameters.json
-#    echo '{ "assume_aligned" : 32 }' > dolfinx/docker/ffcx_parameters.json
 #    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" .
-#
-# The assume_aligned parameter should be set based on the instructions
-# supported by your CPU: 16 for SSE, 32 for AVX/AVX2, 64 for AVX512.
 #
 # The dolfinx/dolfinx image on Dockerhub is currently optimised for Intel Sandy
 # Bridge architectures and will run on all modern x86-64 chips with AVX
@@ -49,7 +45,7 @@
 #    docker build --target dev-env --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
 
-ARG GMSH_VERSION=4.7.1
+ARG GMSH_VERSION=4.6.0
 ARG PYBIND11_VERSION=2.6.1
 ARG PETSC_VERSION=3.14.2
 ARG SLEPC_VERSION=3.14.1
