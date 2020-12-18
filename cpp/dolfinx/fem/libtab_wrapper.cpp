@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "libtab_wrapper.h"
-#include <iostream>
 #include <libtab.h>
 #include <ufc.h>
 
@@ -153,9 +152,6 @@ const Eigen::ArrayXXd& BlockedLibtabElement::points() const
 //-----------------------------------------------------------------------------
 std::vector<Eigen::ArrayXXd> BlockedLibtabElement::tabulate(int nd, const Eigen::ArrayXXd& x) const
 {
-  // std::vector<Eigen::ArrayXXd> tables = _libtab_element->tabulate(nd, x);
-  // TODO: make this function
-  std::cout << "This is probably not correct...\n";
   return _libtab_element->tabulate(nd, x);
 }
 //-----------------------------------------------------------------------------
