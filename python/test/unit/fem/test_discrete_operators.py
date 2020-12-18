@@ -8,7 +8,7 @@
 import numpy
 import pytest
 from dolfinx import FunctionSpace, UnitCubeMesh, UnitSquareMesh
-from dolfinx.cpp.fem import build_discrete_operator
+from dolfinx.cpp.fem import build_discrete_gradient
 from dolfinx.cpp.mesh import GhostMode
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -28,7 +28,7 @@ def test_gradient(mesh):
 
     V = FunctionSpace(mesh, ("Lagrange", 1))
     W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
-    G = build_discrete_operator(W._cpp_object, V._cpp_object)
+    G = build_discrete_gradient(W._cpp_object, V._cpp_object)
     assert G.getRefCount() == 1
     num_edges = mesh.topology.index_map(1).size_global
     m, n = G.getSize()
@@ -44,12 +44,12 @@ def test_incompatible_spaces():
     V = FunctionSpace(mesh, ("Lagrange", 1))
     W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
     with pytest.raises(RuntimeError):
-        build_discrete_operator(V._cpp_object, W._cpp_object)
+        build_discrete_gradient(V._cpp_object, W._cpp_object)
     with pytest.raises(RuntimeError):
-        build_discrete_operator(V._cpp_object, V._cpp_object)
+        build_discrete_gradient(V._cpp_object, V._cpp_object)
     with pytest.raises(RuntimeError):
-        build_discrete_operator(W._cpp_object, W._cpp_object)
+        build_discrete_gradient(W._cpp_object, W._cpp_object)
 
     V = FunctionSpace(mesh, ("Lagrange", 2))
     with pytest.raises(RuntimeError):
-        build_discrete_operator(W._cpp_object, V._cpp_object)
+        build_discrete_gradient(W._cpp_object, V._cpp_object)
