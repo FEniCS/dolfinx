@@ -111,7 +111,7 @@ private:
   /// @param r Residual for criterion evaluation
   /// @param iteration Newton iteration number
   /// @return True if convergence achieved
-  bool converged(const Vec r, int iteration);
+  // bool converged(const Vec r, int iteration);
 
   /// Update solution vector by computed Newton step. Default update is
   /// given by formula::
@@ -140,8 +140,14 @@ private:
   // Accumulated number of Krylov iterations since solve began
   int _krylov_iterations;
 
+public:
+  double iteration;
+
+private:
   // Most recent residual and initial residual
-  double _residual, _residual0;
+  double _residual;
+  double _residual0;
+  //   double _residual0;
 
   // Solver
   la::PETScKrylovSolver _solver;
@@ -150,6 +156,7 @@ private:
   Vec _dx = nullptr;
 
   // MPI communicator
+public:
   dolfinx::MPI::Comm _mpi_comm;
 };
 } // namespace nls
