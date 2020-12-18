@@ -117,6 +117,20 @@ void nls::NewtonSolver::set_form(const std::function<void(Vec)>& form)
   _system = form;
 }
 //-----------------------------------------------------------------------------
+void nls::NewtonSolver::set_convergence_check(
+    const std::function<std::pair<double, bool>(const nls::NewtonSolver& solver,
+                                                const Vec r)>& c)
+{
+  _converged = c;
+}
+//-----------------------------------------------------------------------------
+void nls::NewtonSolver::set_update(
+    const std::function<void(const nls::NewtonSolver& solver, const Vec dx,
+                             Vec x)>& update)
+{
+  _update_solution = update;
+}
+//-----------------------------------------------------------------------------
 std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
 {
   // Reset iteration counts

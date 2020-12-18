@@ -61,6 +61,19 @@ public:
   /// vector @p x as an argument
   void set_form(const std::function<void(Vec x)>& form);
 
+  /// Set function that is called at the end of each Newton iteration to
+  /// test for convergence.
+  /// @param[in] c The function that tests for convergence
+  void
+  set_convergence_check(const std::function<std::pair<double, bool>(
+                            const nls::NewtonSolver& solver, const Vec r)>& c);
+
+  /// Set function that is called after each Newton iteration to update
+  /// the solution
+  /// @param[in] update The function that updates the solution
+  void set_update(const std::function<void(const nls::NewtonSolver& solver,
+                                           const Vec dx, Vec x)>& update);
+
   /// Solve the nonlinear problem \f$`F(x) = 0\f$ for given \f$F\f$ and
   /// Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
   ///
@@ -112,16 +125,37 @@ public:
   double relaxation_parameter = 1.0;
 
 private:
-  std::function<void(const Vec, Vec)> _fnF;
-  std::function<void(const Vec, Mat)> _fnJ, _fnP;
+  // Function for computing the residual vector. The first argument is
+  // the latest solution vector x and the second argument is the
+  // residual vector.
+  std::function<void(const Vec x, Vec b)> _fnF;
+
+  // Function for computing the Jacobian matrix operator. The first
+  // argument is the latest solution vector x and the second argument is
+  // the matrix operator.
+  std::function<void(const Vec x, Mat J)> _fnJ;
+
+  // Function for computing the preconditioner matrix operator. The
+  // first argument is the latest solution vector x and the second
+  // argument is the matrix operator.
+  std::function<void(const Vec x, Mat P)> _fnP;
+
+  // Function called before the residual and Jacobian function at each
+  // iteration.
   std::function<void(const Vec x)> _system;
 
+  // Residual vector
   Vec _b = nullptr;
+
+  // Jacobian matrix and preconditioner matrix
   Mat _matJ = nullptr, _matP = nullptr;
 
+  // Function to check for convergence
   std::function<std::pair<double, bool>(const nls::NewtonSolver& solver,
                                         const Vec r)>
       _converged;
+
+  // Function to update the solution once convergence is reached
   std::function<void(const nls::NewtonSolver& solver, const Vec dx, Vec x)>
       _update_solution;
 
@@ -134,7 +168,7 @@ private:
   // Most recent residual and initial residual
   double _residual, _residual0;
 
-  // Solver
+  // Linear solver
   la::PETScKrylovSolver _solver;
 
   // Solution vector
