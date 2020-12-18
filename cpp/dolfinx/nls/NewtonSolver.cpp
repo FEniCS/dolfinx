@@ -30,7 +30,7 @@ std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
   const double relative_residual = residual / solver.residual0();
 
   // Output iteration number and residual
-  if (solver.report and dolfinx::MPI::rank(solver._mpi_comm.comm()) == 0)
+  if (solver.report and dolfinx::MPI::rank(solver.mpi_comm()) == 0)
   {
     LOG(INFO) << "Newton iteration " << solver.iteration()
               << ": r (abs) = " << residual << " (tol = " << solver.atol
@@ -45,11 +45,25 @@ std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
     return {residual, false};
 }
 //-----------------------------------------------------------------------------
+/// Update solution vector by computed Newton step. Default update is
+/// given by formula::
+///
+///   x -= relaxation_parameter*dx
+///
+///  @param solver The Newton solver
+///  @param dx The update vector computed by Newton step
+///  @param[in,out] x The solution vector to be updated
+void update_solution(const nls::NewtonSolver& solver, const Vec dx, Vec x)
+{
+  VecAXPY(x, -solver.relaxation_parameter, dx);
+}
+//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
 nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
-    : _krylov_iterations(0), _iteration(0), _residual(0.0), _residual0(0.0),
+    : _converged(converged), _update_solution(update_solution),
+      _krylov_iterations(0), _iteration(0), _residual(0.0), _residual0(0.0),
       _solver(comm), _dx(nullptr), _mpi_comm(comm)
 {
   // Create linear solver if not already created. Default to LU.
@@ -130,7 +144,7 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
   // Check convergence
   bool newton_converged = false;
   if (convergence_criterion == "residual")
-    std::tie(_residual, newton_converged) = converged(*this, _b);
+    std::tie(_residual, newton_converged) = this->_converged(*this, _b);
   else if (convergence_criterion == "incremental")
   {
     // We need to do at least one Newton step with the ||dx||-stopping
@@ -167,7 +181,7 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
     _krylov_iterations += _solver.solve(_dx, _b);
 
     // Update solution
-    update_solution(x, _dx, relaxation_parameter, _iteration);
+    this->_update_solution(*this, _dx, x);
 
     // Increment iteration count
     ++_iteration;
@@ -182,7 +196,7 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
 
     // Test for convergence
     if (convergence_criterion == "residual")
-      std::tie(_residual, newton_converged) = converged(*this, _b);
+      std::tie(_residual, newton_converged) = this->_converged(*this, _b);
     else if (convergence_criterion == "incremental")
     {
       // Subtract 1 to make sure that the initial residual0 is properly
@@ -196,7 +210,7 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
         newton_converged = false;
       }
       else
-        std::tie(_residual, newton_converged) = converged(*this, _dx);
+        std::tie(_residual, newton_converged) = this->_converged(*this, _dx);
     }
     else
       throw std::runtime_error("Unknown convergence criterion string.");
@@ -238,9 +252,5 @@ double nls::NewtonSolver::residual() const { return _residual; }
 //-----------------------------------------------------------------------------
 double nls::NewtonSolver::residual0() const { return _residual0; }
 //-----------------------------------------------------------------------------
-void nls::NewtonSolver::update_solution(Vec x, const Vec dx, double relaxation,
-                                        int)
-{
-  VecAXPY(x, -relaxation, dx);
-}
+MPI_Comm nls::NewtonSolver::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------

@@ -86,6 +86,9 @@ public:
   /// @return Initial residual
   double residual0() const;
 
+  /// Return MPI communicator
+  MPI_Comm mpi_comm() const;
+
   /// Maximum number of iterations
   int max_it = 50;
 
@@ -109,18 +112,6 @@ public:
   double relaxation_parameter = 1.0;
 
 private:
-  /// Update solution vector by computed Newton step. Default update is
-  /// given by formula::
-  ///
-  ///   x -= relaxation_parameter*dx
-  ///
-  ///  @param[in,out] x The solution vector to be updated
-  ///  @param dx The update vector computed by Newton step
-  ///  @param[in] relaxation_parameter Newton relaxation parameter
-  ///  @param[in] iteration Newton iteration number
-  void update_solution(Vec x, const Vec dx, double relaxation_parameter,
-                       int iteration);
-
   std::function<void(const Vec, Vec)> _fnF;
   std::function<void(const Vec, Mat)> _fnJ, _fnP;
   std::function<void(const Vec x)> _system;
@@ -128,19 +119,20 @@ private:
   Vec _b = nullptr;
   Mat _matJ = nullptr, _matP = nullptr;
 
-  // std::function<bool(const Vec r, int iteration)> _converged;
-  // std::function<void(Vec x, const Vec dx, double relaxation_parameter,
-  //                    int iteration)>
-  //     _update_solution;
+  std::function<std::pair<double, bool>(const nls::NewtonSolver& solver,
+                                        const Vec r)>
+      _converged;
+  std::function<void(const nls::NewtonSolver& solver, const Vec dx, Vec x)>
+      _update_solution;
 
   // Accumulated number of Krylov iterations since solve began
   int _krylov_iterations;
 
-  double _iteration;
+  // Number of iterations
+  int _iteration;
 
   // Most recent residual and initial residual
-  double _residual;
-  double _residual0;
+  double _residual, _residual0;
 
   // Solver
   la::PETScKrylovSolver _solver;
@@ -149,7 +141,6 @@ private:
   Vec _dx = nullptr;
 
   // MPI communicator
-public:
   dolfinx::MPI::Comm _mpi_comm;
 };
 } // namespace nls
