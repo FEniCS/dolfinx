@@ -31,7 +31,8 @@ void declare_adjacency_list(py::module& m, std::string type)
       .def(
           "links",
           [](const dolfinx::graph::AdjacencyList<T>& self, int i) {
-            return self.links(i);
+            auto link = self.links(i);
+            return py::array_t<T>(link.size(), link.data(), py::cast(self));
           },
           "Links (edges) of a node",
           py::return_value_policy::reference_internal)
@@ -57,28 +58,27 @@ void graph(py::module& m)
 
   m.def("create_local_adjacency_list",
         &dolfinx::graph::partition::create_local_adjacency_list);
-  m.def(
-      "create_distributed_adjacency_list",
-      [](const MPICommWrapper comm,
-         const dolfinx::graph::AdjacencyList<std::int32_t>& list_local,
-         const std::vector<std::int64_t>& global_links,
-         const std::vector<bool>& exterior_links) {
-        return dolfinx::graph::partition::create_distributed_adjacency_list(
-            comm.get(), list_local, global_links, exterior_links);
-      });
+  m.def("create_distributed_adjacency_list",
+        [](const MPICommWrapper comm,
+           const dolfinx::graph::AdjacencyList<std::int32_t>& list_local,
+           const std::vector<std::int64_t>& global_links,
+           const std::vector<bool>& exterior_links) {
+          return dolfinx::graph::partition::create_distributed_adjacency_list(
+              comm.get(), list_local, global_links, exterior_links);
+        });
   m.def("distribute",
         [](const MPICommWrapper comm,
            const dolfinx::graph::AdjacencyList<std::int64_t>& list,
            const dolfinx::graph::AdjacencyList<std::int32_t>& destinations) {
           return dolfinx::graph::partition::distribute(comm.get(), list,
-                                                          destinations);
+                                                       destinations);
         });
   m.def("distribute_data",
         [](const MPICommWrapper comm, const std::vector<std::int64_t>& indices,
            const Eigen::Ref<const Eigen::Array<
                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x) {
-          return dolfinx::graph::partition::distribute_data<double>(
-              comm.get(), indices, x);
+          return dolfinx::graph::partition::distribute_data<double>(comm.get(),
+                                                                    indices, x);
         });
   m.def("compute_local_to_global_links",
         &dolfinx::graph::partition::compute_local_to_global_links);
