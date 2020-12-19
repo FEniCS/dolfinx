@@ -300,7 +300,7 @@ void fem(py::module& m)
            [](const dolfinx::fem::DirichletBC<PetscScalar>& self) {
              auto [dofs, owned] = self.dof_indices();
              return std::pair(py::array_t<std::int32_t>(
-                                  dofs.size(), dofs.data(), py::none()),
+                                  dofs.size(), dofs.data(), py::cast(self)),
                               owned);
            })
       .def_property_readonly(
