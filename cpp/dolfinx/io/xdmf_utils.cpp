@@ -472,14 +472,13 @@ xdmf_utils::extract_local_entities(
   // Figure out which processes are owners of received nodes
   std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
   std::vector<std::vector<std::int32_t>> send_vals_owned(comm_size);
-
   const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>>
       _entities_recv(entities_recv.array().data(),
                      entities_recv.array().size() / num_vertices_per_entity,
                      num_vertices_per_entity);
-  auto _values_recv = values_recv.array();
-  assert((int)_values_recv.size() == _entities_recv.size());
+  const std::vector<std::int32_t>& _values_recv = values_recv.array();
+  assert((int)_values_recv.size() == _entities_recv.rows());
   for (int e = 0; e < _entities_recv.rows(); ++e)
   {
     // Find ranks that have node0
