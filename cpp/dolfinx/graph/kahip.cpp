@@ -134,7 +134,7 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
     // Construct a map from all currently foreign cells to their new
     // partition number
     std::map<std::int64_t, std::int32_t> cell_ownership;
-    for (int p = 0; p < recv_cell_partition.rows(); p += 2)
+    for (std::size_t p = 0; p < recv_cell_partition.size(); p += 2)
       cell_ownership[recv_cell_partition[p]] = recv_cell_partition[p + 1];
 
     const std::vector<std::int32_t>& xadj = local_graph.offsets();
