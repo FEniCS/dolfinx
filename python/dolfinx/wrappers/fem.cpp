@@ -290,15 +290,12 @@ void fem(py::module& m)
 
   dirichletbc
       .def(py::init<std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>,
-                    const std::array<
-                        Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>&,
+                    const std::array<std::vector<std::int32_t>, 2>&,
                     std::shared_ptr<const dolfinx::fem::FunctionSpace>>(),
            py::arg("V"), py::arg("g"), py::arg("V_g_dofs"))
-      .def(
-          py::init<std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>,
-                   const Eigen::Ref<
-                       const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&>(),
-          py::arg("g"), py::arg("dofs"))
+      .def(py::init<std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>,
+                    const std::vector<std::int32_t>&>(),
+           py::arg("g"), py::arg("dofs"))
       .def("dof_indices", &dolfinx::fem::DirichletBC<PetscScalar>::dof_indices)
       .def_property_readonly(
           "function_space",

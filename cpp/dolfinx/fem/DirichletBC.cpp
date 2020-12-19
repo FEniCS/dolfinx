@@ -253,8 +253,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
-fem::locate_dofs_topological(
+std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote)
@@ -371,18 +370,18 @@ fem::locate_dofs_topological(
   }
 
   // Copy to Eigen arrays
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs0(bc_dofs.size());
-  for (Eigen::Index i = 0; i < dofs0.rows(); ++i)
-    dofs0(i) = bc_dofs[i][0];
+  std::array dofs = {std::vector<std::int32_t>(bc_dofs.size()),
+                     std::vector<std::int32_t>(bc_dofs.size())};
+  for (std::size_t i = 0; i < dofs[0].size(); ++i)
+  {
+    dofs[0][i] = bc_dofs[i][0];
+    dofs[1][i] = bc_dofs[i][1];
+  }
 
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs1(bc_dofs.size());
-  for (Eigen::Index i = 0; i < dofs1.rows(); ++i)
-    dofs1(i) = bc_dofs[i][1];
-
-  return {std::move(dofs0), std::move(dofs1)};
+  return dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+std::vector<std::int32_t>
 fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
                              const Eigen::Ref<const Eigen::ArrayXi>& entities,
                              bool remote)
@@ -460,12 +459,10 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
   }
 
-  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
-                                                                   dofs.size());
+  return dofs;
 }
 //-----------------------------------------------------------------------------
-std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
-fem::locate_dofs_geometrical(
+std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -546,19 +543,19 @@ fem::locate_dofs_geometrical(
   std::sort(bc_dofs.begin(), bc_dofs.end());
   bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
 
-  // Copy to Eigen arrays
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs0(bc_dofs.size());
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs1(bc_dofs.size());
+  // Copy to separate array
+  std::array dofs = {std::vector<std::int32_t>(bc_dofs.size()),
+                     std::vector<std::int32_t>(bc_dofs.size())};
   for (std::size_t i = 0; i < bc_dofs.size(); ++i)
   {
-    dofs0(i) = bc_dofs[i][0];
-    dofs1(i) = bc_dofs[i][1];
+    dofs[0][i] = bc_dofs[i][0];
+    dofs[1][i] = bc_dofs[i][1];
   }
 
-  return {std::move(dofs0), std::move(dofs1)};
+  return dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
+std::vector<std::int32_t> fem::locate_dofs_geometrical(
     const fem::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -584,7 +581,6 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
       dofs.push_back(i);
   }
 
-  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
-                                                                   dofs.size());
+  return dofs;
 }
 //-----------------------------------------------------------------------------

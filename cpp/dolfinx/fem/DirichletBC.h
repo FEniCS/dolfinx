@@ -50,8 +50,7 @@ namespace fem
 /// V[0] and V[1]. The array[0](i) entry is the DOF index in the space
 /// V[0] and array[1](i) is the correspinding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
-std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
-locate_dofs_topological(
+std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote = true);
@@ -77,7 +76,7 @@ locate_dofs_topological(
 /// @return Array of DOF index blocks (local to the MPI rank) in the
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+std::vector<std::int32_t>
 locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
                         const Eigen::Ref<const Eigen::ArrayXi>& entities,
                         bool remote = true);
@@ -95,8 +94,7 @@ locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 /// V[0] and V[1]. The array[0](i) entry is the DOF index in the space
 /// V[0] and array[1](i) is the correspinding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
-std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
-locate_dofs_geometrical(
+std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -113,7 +111,7 @@ locate_dofs_geometrical(
 /// @return Array of DOF index blocks (local to the MPI rank) in the
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_dofs_geometrical(
+std::vector<std::int32_t> locate_dofs_geometrical(
     const fem::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -148,19 +146,17 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
   /// block size 3
-  DirichletBC(
-      const std::shared_ptr<const fem::Function<T>>& g,
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-          dofs)
-      : _function_space(g->function_space()), _g(g),
-        _dofs0(dofs.data(), dofs.data() + dofs.rows()), _dofs1_g(_dofs0)
+  DirichletBC(const std::shared_ptr<const fem::Function<T>>& g,
+              const std::vector<std::int32_t>& dofs)
+      : _function_space(g->function_space()), _g(g), _dofs0(dofs),
+        _dofs1_g(dofs)
   {
     const int bs = _function_space->dofmap()->bs();
     if (bs > 1)
     {
       // Unroll for the block size
-      _dofs0.resize(bs * dofs.rows());
-      for (Eigen::Index i = 0; i < dofs.rows(); ++i)
+      _dofs0.resize(bs * dofs.size());
+      for (Eigen::Index i = 0; i < dofs.size(); ++i)
       {
         for (int k = 0; k < bs; ++k)
           _dofs0[bs * i + k] = bs * dofs[i] + k;
@@ -194,13 +190,9 @@ public:
   /// condition is applied
   /// @note The indices in `dofs` are unrolled and not for blocks
   DirichletBC(const std::shared_ptr<const fem::Function<T>>& g,
-              const std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>,
-                               2>& V_g_dofs,
+              const std::array<std::vector<std::int32_t>, 2>& V_g_dofs,
               std::shared_ptr<const fem::FunctionSpace> V)
-      : _function_space(V), _g(g),
-        _dofs0(V_g_dofs[0].data(), V_g_dofs[0].data() + V_g_dofs[0].rows()),
-        _dofs1_g(V_g_dofs[1].data(), V_g_dofs[1].data() + V_g_dofs[1].rows())
-  // _dofs0(V_g_dofs[0]), _dofs1_g(V_g_dofs[1])
+      : _function_space(V), _g(g), _dofs0(V_g_dofs[0]), _dofs1_g(V_g_dofs[1])
   {
     assert(_dofs0.size() == _dofs1_g.size());
     assert(_function_space);
@@ -248,7 +240,8 @@ public:
   /// @return Sorted array of dof indices (unrolled) and index to the
   /// first entry in the dof index array that is not owned. Entries
   /// `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
-  std::pair<const tcb::span<const std::int32_t>, std::int32_t> dof_indices() const
+  std::pair<const tcb::span<const std::int32_t>, std::int32_t>
+  dof_indices() const
   {
     return {tcb::make_span(_dofs0), _owned_indices0};
   }
