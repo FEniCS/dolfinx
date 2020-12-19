@@ -25,7 +25,7 @@ void declare_adjacency_list(py::module& m, std::string type)
   py::class_<dolfinx::graph::AdjacencyList<T>,
              std::shared_ptr<dolfinx::graph::AdjacencyList<T>>>(
       m, pyclass_name.c_str(), "Adjacency List")
-      .def(py::init<std::int32_t>())
+      // .def(py::init<std::int32_t>())
       .def(py::init<const Eigen::Ref<const Eigen::Array<
                T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&>())
       .def(

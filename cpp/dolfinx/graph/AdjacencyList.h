@@ -12,7 +12,7 @@
 #include <dolfinx/common/span.hpp>
 #include <numeric>
 #include <sstream>
-#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::graph
@@ -37,32 +37,11 @@ public:
     std::iota(_offsets.begin(), _offsets.end(), 0);
   }
 
-  /// Construct adjacency list from arrays of data (Eigen data types)
+  /// Construct adjacency list from arrays of data
   /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data
   ///   array for node i
-  template <typename U, typename V,
-            std::enable_if_t<std::is_base_of<Eigen::EigenBase<std::decay_t<V>>,
-                                             std::decay_t<V>>::value,
-                             int> = 0>
-  AdjacencyList(U& data, V& offsets)
-      : _array(data.rows()), _offsets(offsets.rows())
-  {
-    for (std::size_t i = 0; i < data.size(); ++i)
-      _array[i] = data[i];
-    for (std::size_t i = 0; i < offsets.size(); ++i)
-      _offsets[i] = offsets[i];
-  }
-
-  /// Construct adjacency list from arrays of data  (non-Eigen data
-  /// types)
-  /// @param [in] data Adjacency array
-  /// @param [in] offsets The index to the adjacency list in the data
-  ///   array for node i
-  template <typename U, typename V,
-            std::enable_if_t<!std::is_base_of<Eigen::EigenBase<std::decay_t<V>>,
-                                              std::decay_t<V>>::value,
-                             int> = 0>
+  template <typename U, typename V>
   AdjacencyList(U&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {
@@ -208,14 +187,13 @@ public:
     std::stringstream s;
     s << "<AdjacencyList> with " + std::to_string(this->num_nodes()) + " nodes"
       << std::endl;
-    // for (Eigen::Index e = 0; e < _offsets.size() - 1; e++)
-    // {
-    //   s << "  " << e << ": "
-    //     << _array.segment(_offsets[e], _offsets[e + 1] - _offsets[e])
-    //            .transpose()
-    //     << std::endl;
-    // }
-
+    for (std::size_t e = 0; e < _offsets.size() - 1; ++e)
+    {
+      s << "  " << e << ": [";
+      for (auto link : this->links(e))
+        s << link << " ";
+      s << "[" << std::endl;
+    }
     return s.str();
   }
 
@@ -225,5 +203,5 @@ private:
 
   // Position of first connection for each entity (using local index)
   std::vector<std::int32_t> _offsets;
-}; // namespace graph
+};
 } // namespace dolfinx::graph
