@@ -156,7 +156,7 @@ public:
     {
       // Unroll for the block size
       _dofs0.resize(bs * dofs.size());
-      for (Eigen::Index i = 0; i < dofs.size(); ++i)
+      for (std::size_t i = 0; i < dofs.size(); ++i)
       {
         for (int k = 0; k < bs; ++k)
           _dofs0[bs * i + k] = bs * dofs[i] + k;
