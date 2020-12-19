@@ -265,7 +265,12 @@ void fem(py::module& m)
       .def_property_readonly("index_map_bs",
                              &dolfinx::fem::DofMap::index_map_bs)
       .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
-      .def("cell_dofs", &dolfinx::fem::DofMap::cell_dofs)
+      .def("cell_dofs",
+           [](const dolfinx::fem::DofMap& self, int cell) {
+             tcb::span<const std::int32_t> dofs = self.cell_dofs(cell);
+             return py::array_t<std::int32_t>(dofs.size(), dofs.data(),
+                                              py::cast(self));
+           })
       .def_property_readonly("bs", &dolfinx::fem::DofMap::bs)
       .def("list", &dolfinx::fem::DofMap::list);
 
