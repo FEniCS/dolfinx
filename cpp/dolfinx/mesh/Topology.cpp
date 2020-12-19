@@ -220,7 +220,7 @@ void Topology::create_connectivity(int d0, int d1)
 //-----------------------------------------------------------------------------
 void Topology::create_entity_permutations()
 {
-  if (_cell_permutations.size() > 0)
+  if (!_cell_permutations.empty())
     return;
 
   const int tdim = this->dim();
@@ -272,10 +272,9 @@ size_t Topology::hash() const
   return this->connectivity(dim(), 0)->hash();
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
-Topology::get_cell_permutation_info() const
+const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
-  if (_cell_permutations.size() == 0)
+  if (_cell_permutations.empty())
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
@@ -286,7 +285,7 @@ Topology::get_cell_permutation_info() const
 const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_facet_permutations() const
 {
-  if (_cell_permutations.size() == 0)
+  if (_cell_permutations.empty())
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");

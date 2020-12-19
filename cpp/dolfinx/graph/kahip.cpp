@@ -126,7 +126,7 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
     }
 
     // Actual halo exchange
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_cell_partition
+    const std::vector<std::int64_t> recv_cell_partition
         = dolfinx::MPI::all_to_all(
               mpi_comm, graph::AdjacencyList<std::int64_t>(send_cell_partition))
               .array();
@@ -137,10 +137,8 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
     for (int p = 0; p < recv_cell_partition.rows(); p += 2)
       cell_ownership[recv_cell_partition[p]] = recv_cell_partition[p + 1];
 
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& xadj
-        = local_graph.offsets();
-    const Eigen::Array<unsigned long long, Eigen::Dynamic, 1>& adjncy
-        = local_graph.array();
+    const std::vector<std::int32_t>& xadj = local_graph.offsets();
+    const std::vector<unsigned long long>& adjncy = local_graph.array();
 
     // Generate map for where new boundary cells need to be sent
     for (std::int32_t i = 0; i < ncells; i++)

@@ -313,7 +313,7 @@ compute_face_permutations(const mesh::Topology& topology)
 
 //-----------------------------------------------------------------------------
 std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
-          Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+          std::vector<std::uint32_t>>
 mesh::compute_entity_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
@@ -322,8 +322,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
   const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> cell_permutation_info
-      = Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>::Zero(num_cells);
+  std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
   Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> facet_permutations(
       facets_per_cell, num_cells);
 

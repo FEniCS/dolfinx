@@ -111,8 +111,7 @@ public:
                         int d0, int d1);
 
   /// Returns the permutation information
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
-  get_cell_permutation_info() const;
+  const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
   /// Get the permutation number to apply to a facet. The permutations
   /// are numbered so that:
@@ -180,7 +179,7 @@ private:
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _cell_permutations;
+  std::vector<std::uint32_t> _cell_permutations;
 };
 
 /// Create distributed topology

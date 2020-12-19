@@ -48,7 +48,7 @@ void assemble_cells(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info);
+    const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over cells and accumulate result in vector
 template <typename T>
@@ -61,7 +61,7 @@ void assemble_exterior_facets(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
+    const std::vector<std::uint32_t>& cell_info,
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
@@ -75,7 +75,7 @@ void assemble_interior_facets(
         coeffs,
     const std::vector<int>& offsets,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
+    const std::vector<std::uint32_t>& cell_info,
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
 
 /// Modify b such that:
@@ -137,7 +137,7 @@ void _lift_bc_cells(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
+    const std::vector<std::uint32_t>& cell_info,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
@@ -231,7 +231,7 @@ void _lift_bc_exterior_facets(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
+    const std::vector<std::uint32_t>& cell_info,
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1,
@@ -346,7 +346,7 @@ void _lift_bc_interior_facets(
         coeffs,
     const std::vector<int>& offsets,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
+    const std::vector<std::uint32_t>& cell_info,
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms,
     const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
     const std::vector<bool>& bc_markers1,
@@ -570,10 +570,9 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
   const bool needs_permutation_data = L.needs_permutation_data();
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-      = needs_permutation_data
-            ? mesh->topology().get_cell_permutation_info()
-            : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
+  const std::vector<std::uint32_t>& cell_info
+      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                               : std::vector<std::uint32_t>(num_cells);
 
   for (int i : L.integral_ids(IntegralType::cell))
   {
@@ -632,7 +631,7 @@ void assemble_cells(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info)
+    const std::vector<std::uint32_t>& cell_info)
 {
   const int gdim = geometry.dim();
 
@@ -683,7 +682,7 @@ void assemble_exterior_facets(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
+    const std::vector<std::uint32_t>& cell_info,
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
 {
   const int gdim = mesh.geometry().dim();
@@ -750,7 +749,7 @@ void assemble_interior_facets(
         coeffs,
     const std::vector<int>& offsets,
     const Eigen::Array<T, Eigen::Dynamic, 1>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
+    const std::vector<std::uint32_t>& cell_info,
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
 {
   const int gdim = mesh.geometry().dim();
@@ -930,10 +929,9 @@ void lift_bc(
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-      = needs_permutation_data
-            ? mesh->topology().get_cell_permutation_info()
-            : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
+  const std::vector<std::uint32_t>& cell_info
+      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                               : std::vector<std::uint32_t>(num_cells);
 
   for (int i : a.integral_ids(IntegralType::cell))
   {

@@ -327,7 +327,7 @@ public:
     const int bs_dof = dofmap->bs();
 
     mesh->topology_mutable().create_entity_permutations();
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+    const std::vector<std::uint32_t>& cell_info
         = mesh->topology().get_cell_permutation_info();
 
     // Loop over points
