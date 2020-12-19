@@ -37,8 +37,8 @@ std::int64_t local_to_global(std::int32_t local_index,
   }
   else
   {
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map.ghosts();
-    assert((local_index - local_size) < ghosts.size());
+    const std::vector<std::int64_t>& ghosts = map.ghosts();
+    assert((local_index - local_size) < (int)ghosts.size());
     return ghosts[local_index - local_size];
   }
 }
@@ -295,12 +295,11 @@ std::vector<std::int64_t> refinement::adjust_indices(
 
   std::vector global_indices = index_map->global_indices();
 
-  Eigen::Array<int, Eigen::Dynamic, 1> ghost_owners
-      = index_map->ghost_owner_rank();
+  const std::vector<int>& ghost_owners = index_map->ghost_owner_rank();
   int local_size = index_map->size_local();
   for (int i = 0; i < local_size; ++i)
     global_indices[i] += global_offsets[mpi_rank];
-  for (int i = 0; i < ghost_owners.size(); ++i)
+  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
     global_indices[local_size + i] += global_offsets[ghost_owners[i]];
 
   return global_indices;

@@ -88,11 +88,10 @@ SparsityPattern::SparsityPattern(
   {
     const common::IndexMap& map = maps[1][col].first;
     const int bs_col = maps[1][col].second;
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts_old
-        = map.ghosts();
+    const std::vector<std::int64_t>& ghosts_old = map.ghosts();
     assert(ghosts_new1[col].size()
-           == (std::size_t)(bs_col * ghosts_old.rows()));
-    for (int i = 0; i < ghosts_old.rows(); ++i)
+           == (std::size_t)(bs_col * ghosts_old.size()));
+    for (std::size_t i = 0; i < ghosts_old.size(); ++i)
       col_old_to_new[col].insert({ghosts_old[i], ghosts_new1[col][bs_col * i]});
   }
 
@@ -218,8 +217,7 @@ void SparsityPattern::insert(const tcb::span<const std::int32_t>& rows,
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
-      = _index_maps[1]->ghosts();
+  const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
@@ -277,14 +275,12 @@ void SparsityPattern::assemble()
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
   const std::array local_range0 = _index_maps[0]->local_range();
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts0
-      = _index_maps[0]->ghosts();
+  const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
   const std::array local_range1 = _index_maps[1]->local_range();
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
-      = _index_maps[1]->ghosts();
+  const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
   // For each ghost row, pack and send (global row, global col) pairs to
   // send to neighborhood

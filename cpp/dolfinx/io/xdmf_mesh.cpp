@@ -50,8 +50,7 @@ void xdmf_mesh::add_topology_data(
   assert(map_g);
   const std::int64_t offset_g = map_g->local_range()[0];
 
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map_g->ghosts();
-
+  const std::vector<std::int64_t>& ghosts = map_g->ghosts();
   const std::vector vtk_map = io::cells::transpose(
       io::cells::perm_vtk(entity_cell_type, num_nodes_per_entity));
   auto map_e = topology.index_map(dim);

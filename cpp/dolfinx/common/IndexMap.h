@@ -133,7 +133,7 @@ public:
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts() const noexcept;
+  const std::vector<std::int64_t>& ghosts() const noexcept;
 
   /// Return a MPI communicator with attached distributed graph topology
   /// information
@@ -184,7 +184,7 @@ public:
   const std::vector<std::int32_t>& shared_indices() const noexcept;
 
   /// Owner rank (on global communicator) of each ghost entry
-  Eigen::Array<int, Eigen::Dynamic, 1> ghost_owner_rank() const;
+  std::vector<int> ghost_owner_rank() const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
   /// with neighborhood ranks?
@@ -298,11 +298,11 @@ private:
   dolfinx::MPI::Comm _comm_symmetric;
 
   // Local-to-global map for ghost indices
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
+  std::vector<std::int64_t> _ghosts;
 
   // Owning neighborhood rank (out edge) on '_comm_owner_to_ghost'
   // communicator for each ghost index
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
+  std::vector<std::int32_t> _ghost_owners;
 
   // TODO: replace _shared_disp and _shared_disp by an AdjacencyList
 

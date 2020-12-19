@@ -81,12 +81,12 @@ get_remote_bcs1(const common::IndexMap& map,
   // Build vector of local dof indicies that have been marked by another
   // process
   const std::array<std::int64_t, 2> range = map.local_range();
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map.ghosts();
+  const std::vector<std::int64_t>& ghosts = map.ghosts();
 
   // Build map from ghost to local position
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
   const std::int32_t local_size = range[1] - range[0];
-  for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
+  for (std::size_t i = 0; i < ghosts.size(); ++i)
     global_local_ghosts.emplace_back(ghosts[i], i + local_size);
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
@@ -209,13 +209,12 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
     // Build vector of local dof indicies that have been marked by
     // another process
     const std::array<std::int64_t, 2> range = maps[b].get().local_range();
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
-        = maps[b].get().ghosts();
+    const std::vector<std::int64_t>& ghosts = maps[b].get().ghosts();
 
     // Build map from ghost to local position
     std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
     const std::int32_t local_size = range[1] - range[0];
-    for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
+    for (std::size_t i = 0; i < ghosts.size(); ++i)
       global_local_ghosts.emplace_back(ghosts[i], i + local_size);
     std::map<std::int64_t, std::int32_t> global_to_local(
         global_local_ghosts.begin(), global_local_ghosts.end());
