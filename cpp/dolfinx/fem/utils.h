@@ -437,10 +437,10 @@ pack_coefficients(const U& u)
     {
       for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
       {
-        auto dofs = dofmaps[coeff]->cell_dofs(cell);
+        tcb::span<const std::int32_t> dofs = dofmaps[coeff]->cell_dofs(cell);
         const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& _v
             = v[coeff];
-        for (Eigen::Index i = 0; i < dofs.size(); ++i)
+        for (std::size_t i = 0; i < dofs.size(); ++i)
         {
           for (int k = 0; k < bs[coeff]; ++k)
           {

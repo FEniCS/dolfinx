@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <boost/functional/hash.hpp>
 #include <cassert>
+#include <dolfinx/common/span.hpp>
 #include <numeric>
 #include <sstream>
 #include <type_traits>
@@ -163,6 +164,13 @@ public:
   links(int node) const
   {
     return _array.segment(_offsets[node], _offsets[node + 1] - _offsets[node]);
+  }
+
+  /// New style links
+  tcb::span<const T> links_new(int node) const
+  {
+    return tcb::span(_array.data() + _offsets[node],
+                     _offsets[node + 1] - _offsets[node]);
   }
 
   /// TODO: attempt to remove

@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DofMap.h"
-#include "dofmapbuilder.h"
 #include "ElementDofLayout.h"
+#include "dofmapbuilder.h"
 #include "utils.h"
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -58,8 +58,8 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   std::vector<std::int32_t> dofs_view;
   for (int i = 0; i < cells->num_nodes(); ++i)
   {
-    auto cell_dofs = dofmap_view.cell_dofs(i);
-    for (Eigen::Index dof = 0; dof < cell_dofs.rows(); ++dof)
+    tcb::span<const std::int32_t> cell_dofs = dofmap_view.cell_dofs(i);
+    for (std::size_t dof = 0; dof < cell_dofs.size(); ++dof)
       dofs_view.push_back(cell_dofs[dof]);
   }
   std::sort(dofs_view.begin(), dofs_view.end());
@@ -281,14 +281,14 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   const int bs = dofmap_new->bs();
   for (int c = 0; c < cells->num_nodes(); ++c)
   {
-    auto cell_dofs_view = this->cell_dofs(c);
-    auto cell_dofs = dofmap_new->cell_dofs(c);
-    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
+    tcb::span<const std::int32_t> cell_dofs_view = this->cell_dofs(c);
+    tcb::span<const std::int32_t> cell_dofs = dofmap_new->cell_dofs(c);
+    for (std::size_t i = 0; i < cell_dofs.size(); ++i)
     {
       for (int k = 0; k < bs; ++k)
       {
         assert(bs * cell_dofs[i] + k < (int)collapsed_map.size());
-        assert(bs * i + k < cell_dofs_view.rows());
+        assert(bs * i + k < cell_dofs_view.size());
         collapsed_map[bs * cell_dofs[i] + k] = cell_dofs_view[bs * i + k];
       }
     }

@@ -384,7 +384,7 @@ void assemble_interior_facets(
   assert(offsets.back() == coeffs.cols());
 
   // Temporaries for joint dofmaps
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dmapjoint0, dmapjoint1;
+  std::vector<std::int32_t> dmapjoint0, dmapjoint1;
 
   // Iterate over all facets
   auto c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -424,17 +424,25 @@ void assemble_interior_facets(
     }
 
     // Get dof maps for cells and pack
-    auto dmap0_cell0 = dofmap0.cell_dofs(cells[0]);
-    auto dmap0_cell1 = dofmap0.cell_dofs(cells[1]);
-    dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
-    dmapjoint0.head(dmap0_cell0.size()) = dmap0_cell0;
-    dmapjoint0.tail(dmap0_cell1.size()) = dmap0_cell1;
+    tcb::span<const std::int32_t> dmap0_cell0 = dofmap0.cell_dofs(cells[0]);
+    tcb::span<const std::int32_t> dmap0_cell1 = dofmap0.cell_dofs(cells[1]);
+    dmapjoint0.insert(dmapjoint0.begin(), dmap0_cell0.begin(),
+                      dmap0_cell0.end());
+    dmapjoint0.insert(dmapjoint0.begin() + dmap0_cell0.size(),
+                      dmap0_cell1.begin(), dmap0_cell1.end());
+    // dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
+    // dmapjoint0.head(dmap0_cell0.size()) = dmap0_cell0;
+    // dmapjoint0.tail(dmap0_cell1.size()) = dmap0_cell1;
 
-    auto dmap1_cell0 = dofmap1.cell_dofs(cells[0]);
-    auto dmap1_cell1 = dofmap1.cell_dofs(cells[1]);
-    dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
-    dmapjoint1.head(dmap1_cell0.size()) = dmap1_cell0;
-    dmapjoint1.tail(dmap1_cell1.size()) = dmap1_cell1;
+    tcb::span<const std::int32_t> dmap1_cell0 = dofmap1.cell_dofs(cells[0]);
+    tcb::span<const std::int32_t> dmap1_cell1 = dofmap1.cell_dofs(cells[1]);
+    dmapjoint1.insert(dmapjoint1.begin(), dmap1_cell0.begin(),
+                      dmap1_cell0.end());
+    dmapjoint1.insert(dmapjoint1.begin() + dmap1_cell0.size(),
+                      dmap1_cell1.begin(), dmap1_cell1.end());
+    // dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
+    // dmapjoint1.head(dmap1_cell0.size()) = dmap1_cell0;
+    // dmapjoint1.tail(dmap1_cell1.size()) = dmap1_cell1;
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
@@ -462,7 +470,7 @@ void assemble_interior_facets(
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
     {
-      for (Eigen::Index i = 0; i < dmapjoint0.size(); ++i)
+      for (std::size_t i = 0; i < dmapjoint0.size(); ++i)
       {
         for (int k = 0; k < bs0; ++k)
         {
@@ -473,7 +481,7 @@ void assemble_interior_facets(
     }
     if (!bc1.empty())
     {
-      for (Eigen::Index j = 0; j < dmapjoint1.size(); ++j)
+      for (std::size_t j = 0; j < dmapjoint1.size(); ++j)
       {
         for (int k = 0; k < bs0; ++k)
         {

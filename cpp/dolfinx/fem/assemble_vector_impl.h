@@ -810,11 +810,11 @@ void assemble_interior_facets(
     }
 
     // Get dofmaps for cells
-    auto dmap0 = dofmap.cell_dofs(cells[0]);
-    auto dmap1 = dofmap.cell_dofs(cells[1]);
+    tcb::span<const std::int32_t> dmap0 = dofmap.cell_dofs(cells[0]);
+    tcb::span<const std::int32_t> dmap1 = dofmap.cell_dofs(cells[1]);
 
     // Tabulate element vector
-    be.resize(bs * (dmap0.rows() + dmap1.rows()));
+    be.resize(bs * (dmap0.size() + dmap1.size()));
     std::fill(be.begin(), be.end(), 0.0);
     const std::array perm{perms(local_facet[0], cells[0]),
                           perms(local_facet[1], cells[1])};
@@ -823,12 +823,12 @@ void assemble_interior_facets(
        cell_info[cells[0]]);
 
     // Add element vector to global vector
-    for (Eigen::Index i = 0; i < dmap0.rows(); ++i)
+    for (std::size_t i = 0; i < dmap0.size(); ++i)
       for (int k = 0; k < bs; ++k)
         b[bs * dmap0[i] + k] += be[bs * i + k];
-    for (Eigen::Index i = 0; i < dmap1.rows(); ++i)
+    for (std::size_t i = 0; i < dmap1.size(); ++i)
       for (int k = 0; k < bs; ++k)
-        b[bs * dmap1[i] + k] += be[bs * (i + dmap0.rows()) + k];
+        b[bs * dmap1[i] + k] += be[bs * (i + dmap0.size()) + k];
   }
 }
 //-----------------------------------------------------------------------------

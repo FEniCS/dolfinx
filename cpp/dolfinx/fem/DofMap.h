@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -90,11 +89,10 @@ public:
   /// Local-to-global mapping of dofs on a cell
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
-  ///   indices)
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::ConstSegmentReturnType
-  cell_dofs(int cell) const
+  /// indices)
+  tcb::span<const std::int32_t> cell_dofs(int cell) const
   {
-    return _dofmap.links(cell);
+    return _dofmap.links_new(cell);
   }
 
   /// Return the block size for the dofmap

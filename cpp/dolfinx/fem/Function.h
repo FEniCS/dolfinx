@@ -358,8 +358,8 @@ public:
                                          X, J, detJ, K, cell_info[cell_index]);
 
       // Get degrees of freedom for current cell
-      auto dofs = dofmap->cell_dofs(cell_index);
-      for (Eigen::Index i = 0; i < dofs.size(); ++i)
+      tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
+      for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 

@@ -203,9 +203,8 @@ SparsityPattern::index_map(int dim) const
 //-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert(
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& cols)
+void SparsityPattern::insert(const tcb::span<const std::int32_t>& rows,
+                             const tcb::span<const std::int32_t>& cols)
 {
   if (_diagonal)
   {
@@ -222,11 +221,11 @@ void SparsityPattern::insert(
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
       = _index_maps[1]->ghosts();
 
-  for (Eigen::Index i = 0; i < rows.rows(); ++i)
+  for (std::size_t i = 0; i < rows.size(); ++i)
   {
     if (rows[i] < size0)
     {
-      for (Eigen::Index j = 0; j < cols.rows(); ++j)
+      for (std::size_t j = 0; j < cols.size(); ++j)
       {
         if (cols[j] < local_size1)
           _diagonal_cache[rows[i]].push_back(cols[j]);

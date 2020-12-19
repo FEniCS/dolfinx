@@ -326,9 +326,9 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const int entity_local_index = std::distance(entities_d.data(), it);
 
     // Get cell dofmap
-    auto cell_dofs0 = dofmap0->cell_dofs(cell);
-    auto cell_dofs1 = dofmap1->cell_dofs(cell);
-    assert(bs0 * cell_dofs0.rows() == bs1 * cell_dofs1.rows());
+    tcb::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
+    tcb::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
+    assert(bs0 * cell_dofs0.size() == bs1 * cell_dofs1.size());
 
     // Loop over facet dofs and 'unpack' blocked dofs
     for (int i = 0; i < num_entity_dofs; ++i)
@@ -518,7 +518,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     auto cell_dofs1 = dofmap1->cell_dofs(c);
 
     // Loop over cell dofs and add to bc_dofs if marked.
-    for (Eigen::Index i = 0; i < cell_dofs1.rows(); ++i)
+    for (std::size_t i = 0; i < cell_dofs1.size(); ++i)
     {
       if (marked_dofs[cell_dofs1[i]])
       {
