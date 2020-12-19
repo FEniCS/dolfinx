@@ -431,9 +431,10 @@ mesh::Mesh compute_refinement(
 
     // Get cell-local indices of marked edges
     marked_edge_list.clear();
-    for (auto e : c_to_e->links(c))
-      if (marked_edges[e])
-        marked_edge_list.push_back(e);
+    auto edges = c_to_e->links(c);
+    for (std::size_t ei = 0; ei < edges.size(); ++ei)
+      if (marked_edges[edges[ei]])
+        marked_edge_list.push_back(ei);
 
     if (marked_edge_list.empty())
     {
