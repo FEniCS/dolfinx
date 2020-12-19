@@ -167,7 +167,7 @@ void refinement::update_logical_edgefunction(
 
   // Send all shared edges marked for update and receive from other
   // processes
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> data_to_recv
+  const std::vector<std::int64_t> data_to_recv
       = MPI::neighbor_all_to_all(neighbor_comm, send_offsets, data_to_send)
             .array();
 
@@ -255,18 +255,18 @@ refinement::create_new_vertices(
     send_offsets.push_back(send_values.size());
   }
 
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> received_values
+  const std::vector<std::int64_t> received_values
       = MPI::neighbor_all_to_all(neighbor_comm, send_offsets, send_values)
             .array();
 
   // Add received remote global vertex indices to map
   std::vector<std::int64_t> recv_global_edge;
   assert(received_values.size() % 2 == 0);
-  for (int i = 0; i < received_values.size() / 2; ++i)
+  for (std::size_t i = 0; i < received_values.size() / 2; ++i)
     recv_global_edge.push_back(received_values[i * 2]);
   std::vector<std::int32_t> recv_local_edge
       = mesh.topology().index_map(1)->global_to_local(recv_global_edge);
-  for (int i = 0; i < received_values.size() / 2; ++i)
+  for (std::size_t i = 0; i < received_values.size() / 2; ++i)
   {
     assert(recv_local_edge[i] != -1);
     auto it = local_edge_to_new_vertex.insert(

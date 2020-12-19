@@ -244,8 +244,7 @@ void SparsityPattern::insert(const tcb::span<const std::int32_t>& rows,
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_diagonal(
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows)
+void SparsityPattern::insert_diagonal(const std::vector<int32_t>& rows)
 {
   if (_diagonal)
   {
@@ -256,10 +255,10 @@ void SparsityPattern::insert_diagonal(
   assert(_index_maps[0]);
   const std::int32_t local_size0
       = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts();
-  for (Eigen::Index i = 0; i < rows.rows(); ++i)
+  for (auto row : rows)
   {
-    if (rows[i] < local_size0)
-      _diagonal_cache[rows[i]].push_back(rows[i]);
+    if (row < local_size0)
+      _diagonal_cache[row].push_back(row);
     else
     {
       throw std::runtime_error(
@@ -389,7 +388,7 @@ std::int64_t SparsityPattern::num_nonzeros() const
   if (!_diagonal)
     throw std::runtime_error("Sparsity pattern has not be assembled.");
   assert(_off_diagonal);
-  return _diagonal->array().rows() + _off_diagonal->array().rows();
+  return _diagonal->array().size() + _off_diagonal->array().size();
 }
 //-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>&

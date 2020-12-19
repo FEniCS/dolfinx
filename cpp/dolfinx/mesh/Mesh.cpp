@@ -14,6 +14,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/dofmapbuilder.h>
@@ -127,12 +128,14 @@ Mesh mesh::create_mesh(
                       + topology.index_map(tdim)->num_ghosts();
 
   // Remove ghost cells from geometry data, if not required.
-  const Eigen::Matrix<std::int32_t, Eigen::Dynamic, 1>& off1
-      = cell_nodes.offsets().head(n_cells_local + 1);
-  const Eigen::Matrix<std::int64_t, Eigen::Dynamic, 1>& data1
-      = cell_nodes.array().head(off1[n_cells_local]);
-  graph::AdjacencyList<std::int64_t> cell_nodes_2(data1, off1);
-
+  std::vector<std::int32_t> off1(
+      cell_nodes.offsets().begin(),
+      std::next(cell_nodes.offsets().begin(), n_cells_local + 1));
+  std::vector<std::int64_t> data1(
+      cell_nodes.array().begin(),
+      std::next(cell_nodes.array().begin(), off1[n_cells_local]));
+  graph::AdjacencyList<std::int64_t> cell_nodes_2(std::move(data1),
+                                                  std::move(off1));
   Geometry geometry
       = mesh::create_geometry(comm, topology, element, cell_nodes_2, x);
 

@@ -246,10 +246,8 @@ get_local_indexing(
   const graph::AdjacencyList<std::int64_t> recv_data
       = dolfinx::MPI::neighbor_all_to_all(neighbor_comm, send_offsets,
                                           send_entities_data);
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_entities_data
-      = recv_data.array();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& recv_offsets
-      = recv_data.offsets();
+  const std::vector<std::int64_t>& recv_entities_data = recv_data.array();
+  const std::vector<std::int32_t>& recv_offsets = recv_data.offsets();
 
   // Compare received with sent for each process
   // Any which are not found will have -1 in recv_index
@@ -362,15 +360,12 @@ get_local_indexing(
         = dolfinx::MPI::neighbor_all_to_all(
             neighbor_comm, send_global_index_offsets, send_global_index_data);
 
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_global_index_data
-        = recv_data.array();
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& recv_offsets
-        = recv_data.offsets();
-
-    assert(recv_global_index_data.size() == (int)recv_index.size());
+    const std::vector<std::int64_t>& recv_global_index_data = recv_data.array();
+    const std::vector<std::int32_t>& recv_offsets = recv_data.offsets();
+    assert(recv_global_index_data.size() == recv_index.size());
 
     // Map back received indices
-    for (int j = 0; j < recv_global_index_data.size(); ++j)
+    for (std::size_t j = 0; j < recv_global_index_data.size(); ++j)
     {
       const std::int64_t gi = recv_global_index_data[j];
       const std::int32_t idx = recv_index[j];
@@ -378,9 +373,9 @@ get_local_indexing(
       {
         assert(local_index[idx] >= num_local);
         ghost_indices[local_index[idx] - num_local] = gi;
-        const auto pos = std::upper_bound(
-            recv_offsets.data(), recv_offsets.data() + recv_offsets.rows(), j);
-        const int owner = std::distance(recv_offsets.data(), pos) - 1;
+        const auto pos
+            = std::upper_bound(recv_offsets.begin(), recv_offsets.end(), j);
+        const int owner = std::distance(recv_offsets.begin(), pos) - 1;
         ghost_owners[local_index[idx] - num_local] = neighbors[owner];
       }
     }
@@ -541,15 +536,12 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
   }
 
   // Compute offsets
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> offsets
-      = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(
-          num_connections.size() + 1);
+  std::vector<std::int32_t> offsets(num_connections.size() + 1, 0);
   std::partial_sum(num_connections.begin(), num_connections.end(),
-                   offsets.data() + 1);
+                   std::next(offsets.begin()));
 
   std::vector<std::int32_t> counter(num_connections.size(), 0);
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> connections(
-      offsets[offsets.rows() - 1]);
+  std::vector<std::int32_t> connections(offsets[offsets.size() - 1]);
   for (int e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
   {
     for (std::int32_t e0 : c_d1_d0.links(e1))

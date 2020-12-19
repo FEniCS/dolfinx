@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/span.hpp>
 #include <memory>
@@ -87,9 +86,7 @@ public:
   /// Insert non-zero locations on the diagonal
   /// @param[in] rows The rows in local (process-wise) indices. The
   ///   indices must exist in the row IndexMap.
-  void insert_diagonal(
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-          rows);
+  void insert_diagonal(const std::vector<std::int32_t>& rows);
 
   /// Finalize sparsity pattern and communicate off-process entries
   void assemble();

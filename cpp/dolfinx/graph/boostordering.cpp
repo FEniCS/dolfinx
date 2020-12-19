@@ -27,7 +27,7 @@ T build_csr_directed_graph(const graph::AdjacencyList<X>& graph)
 
   // Build list of graph edges
   std::vector<std::pair<std::size_t, std::size_t>> edges;
-  edges.reserve(graph.array().rows());
+  edges.reserve(graph.array().size());
   for (int v = 0; v < graph.num_nodes(); ++v)
   {
     auto links = graph.links(v);

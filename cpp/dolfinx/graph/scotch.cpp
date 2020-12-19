@@ -44,12 +44,10 @@ graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
   const SCOTCH_Num vertnbr = graph.num_nodes();
 
   // Copy graph into array with SCOTCH_Num types
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data = graph.array();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
-      = graph.offsets();
-  const std::vector<SCOTCH_Num> verttab(offsets.data(),
-                                        offsets.data() + offsets.rows());
-  const std::vector<SCOTCH_Num> edgetab(data.data(), data.data() + data.rows());
+  const std::vector<std::int32_t>& data = graph.array();
+  const std::vector<std::int32_t>& offsets = graph.offsets();
+  const std::vector<SCOTCH_Num> verttab(offsets.begin(), offsets.end());
+  const std::vector<SCOTCH_Num> edgetab(data.begin(), data.end());
 
   // Create SCOTCH graph
   SCOTCH_Graph scotch_graph;
@@ -144,9 +142,8 @@ graph::scotch::partition(const MPI_Comm mpi_comm, const int nparts,
   // SCOTCH_Num type.
   const SCOTCH_Num* edgeloctab = local_graph.array().data();
   const std::int32_t edgeloctab_size = local_graph.array().size();
-  std::vector<SCOTCH_Num> vertloctab(local_graph.offsets().data(),
-                                     local_graph.offsets().data()
-                                         + local_graph.offsets().rows());
+  std::vector<SCOTCH_Num> vertloctab(local_graph.offsets().begin(),
+                                     local_graph.offsets().end());
 
   // Global data ---------------------------------
 

@@ -450,14 +450,14 @@ mesh::create_topology(MPI_Comm comm,
     qsend_offsets.push_back(qsend_data.size());
   }
 
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
+  std::vector<std::int64_t> recv_pairs
       = dolfinx::MPI::neighbor_all_to_all(neighbor_comm, qsend_offsets,
                                           qsend_data)
             .array();
 
   std::vector<std::int64_t> ghost_vertices;
   // Unpack received data and make list of ghosts
-  for (int i = 0; i < recv_pairs.rows(); i += 2)
+  for (std::size_t i = 0; i < recv_pairs.size(); i += 2)
   {
     std::int64_t gi = recv_pairs[i];
     const auto it = global_to_local_index.find(gi);
@@ -529,13 +529,13 @@ mesh::create_topology(MPI_Comm comm,
       }
     }
 
-    Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
+    std::vector<std::int64_t> recv_pairs
         = dolfinx::MPI::neighbor_all_to_all(neighbor_comm, send_offsets,
                                             send_pair_data)
               .array();
 
     // Unpack received data and add to ghosts
-    for (int i = 0; i < recv_pairs.rows(); i += 2)
+    for (std::size_t i = 0; i < recv_pairs.size(); i += 2)
     {
       std::int64_t gi = recv_pairs[i];
       const auto it = global_to_local_index.find(gi);
@@ -573,13 +573,12 @@ mesh::create_topology(MPI_Comm comm,
 
   MPI_Comm_free(&neighbor_comm);
 
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& cells_array
-      = cells.array();
+  const std::vector<std::int64_t>& cells_array = cells.array();
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> my_local_cells;
   if (ghost_mode == mesh::GhostMode::none)
   {
-    // Convert non-ghost cells (global indexing) to my_local_cells (local
-    // indexing) and discard ghost cells
+    // Convert non-ghost cells (global indexing) to my_local_cells
+    // (local indexing) and discard ghost cells
     std::vector<std::int32_t> local_offsets(
         cells.offsets().data(), cells.offsets().data() + num_local_cells + 1);
     std::vector<std::int32_t> my_local_cells_array(local_offsets.back());
@@ -591,9 +590,8 @@ mesh::create_topology(MPI_Comm comm,
   else
   {
     // Convert my_cells (global indexing) to my_local_cells (local indexing)
-    Eigen::Array<std::int32_t, Eigen::Dynamic, 1> my_local_cells_array(
-        cells_array.size());
-    for (int i = 0; i < my_local_cells_array.size(); ++i)
+    std::vector<std::int32_t> my_local_cells_array(cells_array.size());
+    for (std::size_t i = 0; i < my_local_cells_array.size(); ++i)
       my_local_cells_array[i] = global_to_local_index[cells_array[i]];
     my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         my_local_cells_array, cells.offsets());

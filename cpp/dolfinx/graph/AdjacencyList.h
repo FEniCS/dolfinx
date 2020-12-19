@@ -33,8 +33,8 @@ public:
   /// @param [in] n Number of nodes
   explicit AdjacencyList(const std::int32_t n) : _array(n), _offsets(n + 1)
   {
-    std::iota(_array.data(), _array.data() + n, 0);
-    std::iota(_offsets.data(), _offsets.data() + n + 1, 0);
+    std::iota(_array.begin(), _array.end(), 0);
+    std::iota(_offsets.begin(), _offsets.end(), 0);
   }
 
   /// Construct adjacency list from arrays of data (Eigen data types)
@@ -45,10 +45,13 @@ public:
             std::enable_if_t<std::is_base_of<Eigen::EigenBase<std::decay_t<V>>,
                                              std::decay_t<V>>::value,
                              int> = 0>
-  AdjacencyList(U&& data, V&& offsets)
-      : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
+  AdjacencyList(U& data, V& offsets)
+      : _array(data.rows()), _offsets(offsets.rows())
   {
-    // Do nothing
+    for (std::size_t i = 0; i < data.size(); ++i)
+      _array[i] = data[i];
+    for (std::size_t i = 0; i < offsets.size(); ++i)
+      _offsets[i] = offsets[i];
   }
 
   /// Construct adjacency list from arrays of data  (non-Eigen data
@@ -61,11 +64,9 @@ public:
                                               std::decay_t<V>>::value,
                              int> = 0>
   AdjacencyList(U&& data, V&& offsets)
-      : _array(data.size()), _offsets(offsets.size())
+      : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {
-    assert(offsets.back() == (std::int32_t)data.size());
-    std::copy(data.begin(), data.end(), _array.data());
-    std::copy(offsets.begin(), offsets.end(), _offsets.data());
+    assert(_offsets.back() == (std::int32_t)_array.size());
   }
 
   /// Construct adjacency list for a problem with a fixed number of
@@ -78,13 +79,14 @@ public:
       : _array(matrix.rows() * matrix.cols()), _offsets(matrix.rows() + 1)
   {
     const std::int32_t num_links = matrix.cols();
-    for (Eigen::Index e = 0; e < _offsets.rows(); e++)
+    for (std::size_t e = 0; e < _offsets.size(); e++)
       _offsets[e] = e * num_links;
 
     // NOTE: Do not directly copy data from matrix because it may be a
     // view into a larger array
     for (Eigen::Index i = 0; i < matrix.rows(); ++i)
-      _array.segment(_offsets(i), num_links) = matrix.row(i);
+      for (int j = 0; j < num_links; ++j)
+        _array[_offsets[i] + j] = matrix(i, j);
   }
 
   /// Set all connections for all entities (T is a '2D' container, e.g.
@@ -103,13 +105,9 @@ public:
     }
     _offsets[data.size()] = size;
 
-    std::vector<T> c;
-    c.reserve(size);
+    _array.reserve(size);
     for (auto e = data.begin(); e != data.end(); ++e)
-      c.insert(c.end(), e->begin(), e->end());
-
-    _array = Eigen::Array<T, Eigen::Dynamic, 1>(c.size());
-    std::copy(c.begin(), c.end(), _array.data());
+      _array.insert(_array.end(), e->begin(), e->end());
   }
 
   /// Copy constructor
@@ -130,36 +128,36 @@ public:
   /// Equality operator
   bool operator==(const AdjacencyList& list) const
   {
-    return (this->_array == list._array).all()
-           and (this->_offsets == list._offsets).all();
+    return this->_array == list._array and this->_offsets == list._offsets;
   }
 
   /// Number of nodes
   /// @return The number of nodes
-  std::int32_t num_nodes() const { return _offsets.rows() - 1; }
+  std::int32_t num_nodes() const { return _offsets.size() - 1; }
 
   /// Number of connections for given node
   /// @param [in] node Node index
   /// @return The number of outgoing links (edges) from the node
   int num_links(int node) const
   {
-    assert((node + 1) < _offsets.rows());
+    assert((node + 1) < (int)_offsets.size());
     return _offsets[node + 1] - _offsets[node];
   }
 
   /// Links (edges) for given node
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
-  ///   AdjacencyList:num_links(node).
-  typename Eigen::Array<T, Eigen::Dynamic, 1>::SegmentReturnType links(int node)
+  /// AdjacencyList:num_links(node).
+  tcb::span<T> links(int node)
   {
-    return _array.segment(_offsets[node], _offsets[node + 1] - _offsets[node]);
+    return tcb::span(_array.data() + _offsets[node],
+                     _offsets[node + 1] - _offsets[node]);
   }
 
   /// Links (edges) for given node (const version)
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
-  ///   AdjacencyList:num_links(node).
+  /// AdjacencyList:num_links(node).
   tcb::span<const T> links(int node) const
   {
     return tcb::span(_array.data() + _offsets[node],
@@ -173,13 +171,10 @@ public:
   }
 
   /// Return contiguous array of links for all nodes (const version)
-  const Eigen::Array<T, Eigen::Dynamic, 1>& array() const { return _array; }
+  const std::vector<T>& array() const { return _array; }
 
   /// Offset for each node in array() (const version)
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets() const
-  {
-    return _offsets;
-  }
+  const std::vector<std::int32_t>& offsets() const { return _offsets; }
 
   /// Hash of graph
   std::size_t hash() const
@@ -201,7 +196,10 @@ public:
     if constexpr (std::is_same<X, T>::value)
       return *this;
     else
-      return graph::AdjacencyList<X>(_array.template cast<X>(), _offsets);
+    {
+      return graph::AdjacencyList<X>(
+          std::vector<X>(_array.begin(), _array.end()), this->_offsets);
+    }
   }
 
   /// Return informal string representation (pretty-print)
@@ -210,22 +208,22 @@ public:
     std::stringstream s;
     s << "<AdjacencyList> with " + std::to_string(this->num_nodes()) + " nodes"
       << std::endl;
-    for (Eigen::Index e = 0; e < _offsets.size() - 1; e++)
-    {
-      s << "  " << e << ": "
-        << _array.segment(_offsets[e], _offsets[e + 1] - _offsets[e])
-               .transpose()
-        << std::endl;
-    }
+    // for (Eigen::Index e = 0; e < _offsets.size() - 1; e++)
+    // {
+    //   s << "  " << e << ": "
+    //     << _array.segment(_offsets[e], _offsets[e + 1] - _offsets[e])
+    //            .transpose()
+    //     << std::endl;
+    // }
 
     return s.str();
   }
 
 private:
   // Connections for all entities stored as a contiguous array
-  Eigen::Array<T, Eigen::Dynamic, 1> _array;
+  std::vector<T> _array;
 
   // Position of first connection for each entity (using local index)
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _offsets;
+  std::vector<std::int32_t> _offsets;
 }; // namespace graph
 } // namespace dolfinx::graph

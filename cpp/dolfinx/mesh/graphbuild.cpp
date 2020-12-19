@@ -157,10 +157,11 @@ compute_nonlocal_dual_graph(
   if (num_processes == 1)
   {
     // Convert graph to int64
-    return {
-        graph::AdjacencyList<std::int64_t>(
-            local_graph.array().cast<std::int64_t>(), local_graph.offsets()),
-        0, 0};
+    return {graph::AdjacencyList<std::int64_t>(
+                std::vector<std::int64_t>(local_graph.array().begin(),
+                                          local_graph.array().end()),
+                local_graph.offsets()),
+            0, 0};
   }
 
   // At this stage facet_cell map only contains facets->cells with edge
@@ -226,7 +227,7 @@ compute_nonlocal_dual_graph(
                             num_vertices_per_facet + 1);
 
   // Set up vector of owning processes for each received facet
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& received_buffer_offsets
+  const std::vector<std::int32_t>& received_buffer_offsets
       = received_buffer.offsets();
   std::vector<int> proc(num_facets);
   for (int p = 0; p < num_processes; ++p)
@@ -285,7 +286,7 @@ compute_nonlocal_dual_graph(
   }
 
   // Send matches to other processes
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_list
+  const std::vector<std::int64_t> cell_list
       = dolfinx::MPI::all_to_all(
             mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer))
             .array();
@@ -300,7 +301,7 @@ compute_nonlocal_dual_graph(
   }
   std::set<std::int64_t> ghost_nodes;
   std::int32_t num_nonlocal_edges = 0;
-  for (int i = 0; i < cell_list.rows(); i += 2)
+  for (std::size_t i = 0; i < cell_list.size(); i += 2)
   {
     assert((std::int64_t)cell_list[i] >= cell_offset);
     assert((std::int64_t)(cell_list[i] - cell_offset)

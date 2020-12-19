@@ -7,8 +7,8 @@
 #include "Geometry.h"
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/partition.h>
 #include <sstream>
 
@@ -79,9 +79,7 @@ mesh::Geometry mesh::create_geometry(
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
-  std::vector<std::int64_t> indices(cell_nodes.array().data(),
-                                    cell_nodes.array().data()
-                                        + cell_nodes.array().rows());
+  std::vector<std::int64_t> indices = cell_nodes.array();
   std::sort(indices.begin(), indices.end());
   indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 

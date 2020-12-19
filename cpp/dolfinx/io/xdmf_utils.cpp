@@ -476,10 +476,10 @@ xdmf_utils::extract_local_entities(
   const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>>
       _entities_recv(entities_recv.array().data(),
-                     entities_recv.array().rows() / num_vertices_per_entity,
+                     entities_recv.array().size() / num_vertices_per_entity,
                      num_vertices_per_entity);
   auto _values_recv = values_recv.array();
-  assert(_values_recv.rows() == _entities_recv.rows());
+  assert((int)_values_recv.size() == _entities_recv.size());
   for (int e = 0; e < _entities_recv.rows(); ++e)
   {
     // Find ranks that have node0
@@ -490,7 +490,7 @@ xdmf_utils::extract_local_entities(
       send_nodes_owned[p1].insert(
           send_nodes_owned[p1].end(), _entities_recv.row(e).data(),
           _entities_recv.row(e).data() + _entities_recv.cols());
-      send_vals_owned[p1].push_back(_values_recv(e));
+      send_vals_owned[p1].push_back(_values_recv[e]);
     }
   }
 
@@ -530,8 +530,8 @@ xdmf_utils::extract_local_entities(
   entities_new.reserve(recv_ents.array().size());
   std::vector<std::int32_t> values_new;
   values_new.reserve(recv_vals.array().size());
-  for (Eigen::Index e = 0;
-       e < recv_ents.array().rows() / num_vertices_per_entity; ++e)
+  for (std::size_t e = 0;
+       e < recv_ents.array().size() / num_vertices_per_entity; ++e)
   {
     bool entity_found = true;
     std::vector<std::int32_t> entity(num_vertices_per_entity);

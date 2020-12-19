@@ -51,7 +51,7 @@ class ElementDofLayout;
 /// @return Map from global (process-wise) index to positions in an
 ///   unaassembled array. The links for each node are sorted.
 graph::AdjacencyList<std::int32_t>
-transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap,
+transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
                  std::int32_t num_cells);
 
 /// Degree-of-freedom map

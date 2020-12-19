@@ -22,13 +22,13 @@ namespace
 {
 //-----------------------------------------------------------------------------
 template <typename T>
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+std::vector<std::int32_t>
 remap_dofs(const std::vector<std::int32_t>& old_to_new,
            const graph::AdjacencyList<T>& dofs_old)
 {
-  const Eigen::Array<T, Eigen::Dynamic, 1>& _dofs_old = dofs_old.array();
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap(_dofs_old.rows());
-  for (Eigen::Index i = 0; i < dofmap.size(); ++i)
+  const std::vector<T>& _dofs_old = dofs_old.array();
+  std::vector<std::int32_t> dofmap(_dofs_old.size());
+  for (std::size_t i = 0; i < dofmap.size(); ++i)
     dofmap[i] = old_to_new[_dofs_old[i]];
   return dofmap;
 }
@@ -124,19 +124,18 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
 
   // Build new dofmap
   const graph::AdjacencyList<std::int32_t>& dof_array_view = dofmap_view.list();
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap
-      = remap_dofs(old_to_new, dof_array_view);
+  std::vector<std::int32_t> dofmap = remap_dofs(old_to_new, dof_array_view);
 
   // Dimension sanity checks
   assert(element_dof_layout);
-  assert(dofmap.rows()
+  assert((int)dofmap.size()
          == (cells->num_nodes() * element_dof_layout->num_dofs()));
 
   const int cell_dimension = element_dof_layout->num_dofs();
-  assert(dofmap.rows() % cell_dimension == 0);
+  assert(dofmap.size() % cell_dimension == 0);
   Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
                           Eigen::RowMajor>>
-      _dofmap(dofmap.data(), dofmap.rows() / cell_dimension, cell_dimension);
+      _dofmap(dofmap.data(), dofmap.size() / cell_dimension, cell_dimension);
 
   return fem::DofMap(element_dof_layout, index_map, 1,
                      graph::AdjacencyList<std::int32_t>(_dofmap), 1);
@@ -146,18 +145,19 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
 
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
-fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap,
+fem::transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
                       std::int32_t num_cells)
 {
   // Count number of cell contributions to each global index
-  const std::int32_t max_index
-      = dofmap.array().head(dofmap.offsets()(num_cells)).maxCoeff();
+  const std::int32_t max_index = *std::max_element(
+      dofmap.array().begin(),
+      std::next(dofmap.array().begin(), dofmap.offsets()[num_cells]));
+
   std::vector<int> num_local_contributions(max_index + 1, 0);
   for (int c = 0; c < num_cells; ++c)
   {
-    auto dofs = dofmap.links(c);
-    for (int i = 0; i < dofs.rows(); ++i)
-      num_local_contributions[dofs[i]]++;
+    for (auto dof : dofmap.links(c))
+      num_local_contributions[dof]++;
   }
 
   // Compute offset for each global index
@@ -170,9 +170,8 @@ fem::transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap,
   int cell_offset = 0;
   for (int c = 0; c < num_cells; ++c)
   {
-    auto dofs = dofmap.links(c);
-    for (int i = 0; i < dofs.rows(); ++i)
-      data[pos[dofs[i]]++] = cell_offset++;
+    for (auto dof : dofmap.links(c))
+      data[pos[dof]++] = cell_offset++;
   }
 
   // Sort the source indices for each global index
