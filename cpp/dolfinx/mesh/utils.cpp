@@ -331,9 +331,8 @@ mesh::extract_topology(const CellType& cell_type,
   std::vector<int> local_vertices(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
-    const Eigen::Array<int, Eigen::Dynamic, 1> local_index
-        = layout.entity_dofs(0, i);
-    assert(local_index.rows() == 1);
+    const std::vector<int> local_index = layout.entity_dofs(0, i);
+    assert(local_index.size() == 1);
     local_vertices[i] = local_index[0];
   }
 
@@ -823,8 +822,7 @@ mesh::entities_to_geometry(
   return entity_geometry;
 }
 //------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-mesh::exterior_facet_indices(const Mesh& mesh)
+std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
 {
   // Note: Possible duplication of mesh::Topology::compute_boundary_facets
 
@@ -856,9 +854,7 @@ mesh::exterior_facet_indices(const Mesh& mesh)
       surface_facets.push_back(f);
   }
 
-  // Copy over to Eigen::Array
-  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-      surface_facets.data(), surface_facets.size());
+  return surface_facets;
 }
 //------------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>

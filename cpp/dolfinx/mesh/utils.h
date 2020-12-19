@@ -132,8 +132,7 @@ entities_to_geometry(
 /// co-dimension 0).
 /// @param[in] mesh Mesh
 /// @return List of facet indices of exterior facets of the mesh
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-exterior_facet_indices(const Mesh& mesh);
+std::vector<std::int32_t> exterior_facet_indices(const Mesh& mesh);
 
 /// Compute destination rank for mesh cells in this rank using a graph
 /// partitioner

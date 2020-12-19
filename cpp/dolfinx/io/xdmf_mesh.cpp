@@ -95,13 +95,14 @@ void xdmf_mesh::add_topology_data(
       assert(it0 != (cell_entities.data() + cell_entities.rows()));
       const int local_cell_entity = std::distance(cell_entities.data(), it0);
 
+      // FIXME: Move dynamic  allocation outside of loop
       // Tabulate geometry dofs for the entity
-      const Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs
+      const std::vector<int> entity_dofs
           = geometry.cmap().dof_layout().entity_closure_dofs(dim,
                                                              local_cell_entity);
 
       auto nodes = cells_g.links(c);
-      for (Eigen::Index i = 0; i < entity_dofs.rows(); ++i)
+      for (std::size_t i = 0; i < entity_dofs.size(); ++i)
       {
         std::int64_t global_index = nodes[entity_dofs[vtk_map[i]]];
         if (global_index < map_g->size_local())

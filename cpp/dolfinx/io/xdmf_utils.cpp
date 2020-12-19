@@ -339,9 +339,9 @@ xdmf_utils::extract_local_entities(
     throw std::runtime_error("Number of entities and values must match");
 
   // Get layout of dofs on 0th entity
-  const Eigen::Array<int, Eigen::Dynamic, 1> entity_layout
+  const std::vector<int> entity_layout
       = mesh.geometry().cmap().dof_layout().entity_closure_dofs(entity_dim, 0);
-  assert(entity_layout.rows() == entities.cols());
+  assert((int)entity_layout.size() == entities.cols());
 
   auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
   if (!c_to_v)
@@ -353,9 +353,9 @@ xdmf_utils::extract_local_entities(
   std::vector<int> cell_vertex_dofs(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
-    const Eigen::Array<int, Eigen::Dynamic, 1> local_index
+    const std::vector<int> local_index
         = mesh.geometry().cmap().dof_layout().entity_dofs(0, i);
-    assert(local_index.rows() == 1);
+    assert(local_index.size() == 1);
     cell_vertex_dofs[i] = local_index[0];
   }
 
@@ -365,11 +365,10 @@ xdmf_utils::extract_local_entities(
   std::vector<int> entity_vertex_dofs;
   for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
   {
-    const auto* it = std::find(entity_layout.data(),
-                               entity_layout.data() + entity_layout.rows(),
-                               cell_vertex_dofs[i]);
-    if (it != (entity_layout.data() + entity_layout.rows()))
-      entity_vertex_dofs.push_back(std::distance(entity_layout.data(), it));
+    auto it = std::find(entity_layout.begin(), entity_layout.end(),
+                        cell_vertex_dofs[i]);
+    if (it != entity_layout.end())
+      entity_vertex_dofs.push_back(std::distance(entity_layout.begin(), it));
   }
 
   const mesh::CellType entity_type

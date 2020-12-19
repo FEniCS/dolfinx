@@ -371,13 +371,13 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 
     // Tabulate geometry dofs for the entity
     auto dofs = x_dofmap.links(c);
-    const Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs
+    const std::vector<int> entity_dofs
         = geometry.cmap().dof_layout().entity_closure_dofs(dim,
                                                            local_cell_entity);
     Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(
         entity_dofs.size(), 3);
-    for (int i = 0; i < entity_dofs.size(); i++)
-      nodes.row(i) = geometry.node(dofs(entity_dofs(i)));
+    for (std::size_t i = 0; i < entity_dofs.size(); i++)
+      nodes.row(i) = geometry.node(dofs(entity_dofs[i]));
 
     return geometry::compute_distance_gjk(p.transpose(), nodes).squaredNorm();
   }
