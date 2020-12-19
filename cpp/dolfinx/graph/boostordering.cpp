@@ -31,7 +31,7 @@ T build_csr_directed_graph(const graph::AdjacencyList<X>& graph)
   for (int v = 0; v < graph.num_nodes(); ++v)
   {
     auto links = graph.links(v);
-    for (int e = 0; e < links.rows(); ++e)
+    for (std::size_t e = 0; e < links.size(); ++e)
       edges.emplace_back(v, links[e]);
   }
 

@@ -465,8 +465,8 @@ xdmf_utils::extract_local_entities(
   for (int p = 0; p < nodes_g_recv.num_nodes(); ++p)
   {
     auto nodes = nodes_g_recv.links(p);
-    for (int i = 0; i < nodes.rows(); ++i)
-      node_to_rank.insert({nodes(i), p});
+    for (std::int32_t node : nodes)
+      node_to_rank.insert({node, p});
   }
 
   // Figure out which processes are owners of received nodes
@@ -522,7 +522,7 @@ xdmf_utils::extract_local_entities(
   {
     auto vertices = c_to_v->links(c);
     auto x_dofs = x_dofmap.links(c);
-    for (int v = 0; v < vertices.rows(); ++v)
+    for (std::size_t v = 0; v < vertices.size(); ++v)
       igi_to_vertex[nodes_g[x_dofs[cell_vertex_dofs[v]]]] = vertices[v];
   }
 
@@ -530,7 +530,6 @@ xdmf_utils::extract_local_entities(
   entities_new.reserve(recv_ents.array().size());
   std::vector<std::int32_t> values_new;
   values_new.reserve(recv_vals.array().size());
-
   for (Eigen::Index e = 0;
        e < recv_ents.array().rows() / num_vertices_per_entity; ++e)
   {

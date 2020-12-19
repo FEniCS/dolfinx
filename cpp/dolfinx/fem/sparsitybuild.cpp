@@ -44,7 +44,7 @@ void sparsitybuild::interior_facets(
     throw std::runtime_error("Facet-cell connectivity has not been computed.");
 
   // Array to store macro-dofs, if required (for interior facets)
-  std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2> macro_dofs;
+  std::array<std::vector<std::int32_t>, 2> macro_dofs;
 
   // Loop over owned facets
   auto map = topology.index_map(D - 1);
@@ -55,11 +55,11 @@ void sparsitybuild::interior_facets(
     // Get cells incident with facet
     auto cells = connectivity->links(f);
     // Proceed to next facet if only ony connection
-    if (cells.rows() == 1)
+    if (cells.size() == 1)
       continue;
 
     // Tabulate dofs for each dimension on macro element
-    assert(cells.rows() == 2);
+    assert(cells.size() == 2);
     const int cell0 = cells[0];
     const int cell1 = cells[1];
     for (std::size_t i = 0; i < 2; i++)
@@ -67,10 +67,9 @@ void sparsitybuild::interior_facets(
       auto cell_dofs0 = dofmaps[i].get().cell_dofs(cell0);
       auto cell_dofs1 = dofmaps[i].get().cell_dofs(cell1);
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
-      std::copy(cell_dofs0.data(), cell_dofs0.data() + cell_dofs0.size(),
-                macro_dofs[i].data());
-      std::copy(cell_dofs1.data(), cell_dofs1.data() + cell_dofs1.size(),
-                macro_dofs[i].data() + cell_dofs0.size());
+      std::copy(cell_dofs0.begin(), cell_dofs0.end(), macro_dofs[i].begin());
+      std::copy(cell_dofs1.begin(), cell_dofs1.end(),
+                std::next(macro_dofs[i].begin(), cell_dofs0.size()));
     }
 
     pattern.insert(macro_dofs[0], macro_dofs[1]);
@@ -101,7 +100,7 @@ void sparsitybuild::exterior_facets(
       continue;
 
     auto cells = connectivity->links(f);
-    assert(cells.rows() == 1);
+    assert(cells.size() == 1);
     pattern.insert(dofmaps[0].get().cell_dofs(cells[0]),
                    dofmaps[1].get().cell_dofs(cells[0]));
   }

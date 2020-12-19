@@ -174,8 +174,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     for (int c = 0; c < x_dofmap.num_nodes(); ++c)
     {
       auto x_dofs = x_dofmap.links(c);
-      for (int i = 0; i < x_dofs.rows(); ++i)
-        file << x_dofs(map[i]) << " ";
+      for (std::size_t i = 0; i < x_dofs.size(); ++i)
+        file << x_dofs[map[i]] << " ";
       file << " ";
     }
     file << "</DataArray>" << std::endl;
@@ -199,8 +199,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     {
       auto vertices = c_to_v->links(c);
       auto x_dofs = x_dofmap.links(c);
-      for (int i = 0; i < vertices.rows(); ++i)
-        vertex_to_node[vertices[i]] = x_dofs(i);
+      for (std::size_t i = 0; i < vertices.size(); ++i)
+        vertex_to_node[vertices[i]] = x_dofs[i];
     }
 
     const mesh::CellType e_type
@@ -217,7 +217,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     {
       auto vertices = e_to_v->links(e);
       for (int i = 0; i < num_vertices; ++i)
-        file << vertex_to_node[vertices(map_vtk[i])] << " ";
+        file << vertex_to_node[vertices[map_vtk[i]]] << " ";
       file << " ";
     }
     file << "</DataArray>" << std::endl;

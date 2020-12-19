@@ -160,14 +160,7 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   ///   AdjacencyList:num_links(node).
-  typename Eigen::Array<T, Eigen::Dynamic, 1>::ConstSegmentReturnType
-  links(int node) const
-  {
-    return _array.segment(_offsets[node], _offsets[node + 1] - _offsets[node]);
-  }
-
-  /// New style links
-  tcb::span<const T> links_new(int node) const
+  tcb::span<const T> links(int node) const
   {
     return tcb::span(_array.data() + _offsets[node],
                      _offsets[node + 1] - _offsets[node]);
@@ -202,7 +195,7 @@ public:
 // Workaround for Intel compler bug, see
 // https://community.intel.com/t5/Intel-C-Compiler/quot-if-constexpr-quot-and-quot-missing-return-statement-quot-in/td-p/1154551
 #ifdef __INTEL_COMPILER
-#pragma warning(disable : 1011)
+#pragma warning(disable : 1011) Ì
 #endif
 
     if constexpr (std::is_same<X, T>::value)
@@ -218,7 +211,13 @@ public:
     s << "<AdjacencyList> with " + std::to_string(this->num_nodes()) + " nodes"
       << std::endl;
     for (Eigen::Index e = 0; e < _offsets.size() - 1; e++)
-      s << "  " << e << ": " << this->links(e).transpose() << std::endl;
+    {
+      s << "  " << e << ": "
+        << _array.segment(_offsets[e], _offsets[e + 1] - _offsets[e])
+               .transpose()
+        << std::endl;
+    }
+
     return s.str();
   }
 

@@ -140,7 +140,7 @@ build_basic_dofmap(const mesh::Topology& topology,
       if (needs_entities[d])
       {
         auto entities = connectivity[d]->links(c);
-        for (int i = 0; i < entities.rows(); ++i)
+        for (std::size_t i = 0; i < entities.size(); ++i)
         {
           entity_indices_local[d][i] = entities[i];
           entity_indices_global[d][i] = global_indices[d][entities[i]];
@@ -252,7 +252,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
     auto nodes = dofmap.links(cell);
-    for (std::int32_t i = 0; i < nodes.rows(); ++i)
+    for (std::size_t i = 0; i < nodes.size(); ++i)
     {
       const std::int32_t node_i = original_to_contiguous[nodes[i]];
 
@@ -260,7 +260,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
       if (node_i == -1)
         continue;
 
-      for (std::int32_t j = 0; j < nodes.rows(); ++j)
+      for (std::size_t j = 0; j < nodes.size(); ++j)
       {
         // Skip diagonal
         if (i == j)

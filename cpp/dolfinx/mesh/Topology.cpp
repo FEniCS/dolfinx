@@ -62,7 +62,7 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
   for (int p = 0; p < recv_indices.num_nodes(); ++p)
   {
     auto recv_p = recv_indices.links(p);
-    for (int j = 0; j < recv_p.rows(); ++j)
+    for (std::size_t j = 0; j < recv_p.size(); ++j)
       index_to_owner[recv_p[j]].push_back(p);
   }
 
@@ -79,7 +79,7 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
   for (int p = 0; p < recv_indices.num_nodes(); ++p)
   {
     auto recv_p = recv_indices.links(p);
-    for (int j = 0; j < recv_p.rows(); ++j)
+    for (std::size_t j = 0; j < recv_p.size(); ++j)
     {
       const auto it = index_to_owner.find(recv_p[j]);
       assert(it != index_to_owner.end());
@@ -101,8 +101,8 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
   {
     const std::vector<std::int64_t>& send_v = send_indices[p];
     auto r_owner = recv_owner.links(p);
-    int c(0), i(0);
-    while (c < r_owner.rows())
+    std::size_t c(0), i(0);
+    while (c < r_owner.size())
     {
       int count = r_owner[c++];
       for (int j = 0; j < count; ++j)
@@ -326,7 +326,7 @@ mesh::create_topology(MPI_Comm comm,
     // Get global indices of ghost cells
     const std::vector cell_ghost_indices
         = graph::partition::compute_ghost_indices(comm, original_cell_index,
-                                                     ghost_owners);
+                                                  ghost_owners);
     index_map_c = std::make_shared<common::IndexMap>(
         comm, num_local_cells,
         dolfinx::MPI::compute_graph_edges(
@@ -343,7 +343,7 @@ mesh::create_topology(MPI_Comm comm,
   for (std::size_t i = 0; i < ghost_owners.size(); ++i)
   {
     auto v = cells.links(num_local_cells + i);
-    for (int j = 0; j < v.size(); ++j)
+    for (std::size_t j = 0; j < v.size(); ++j)
       global_to_local_index.insert({v[j], -1});
   }
 
@@ -354,16 +354,15 @@ mesh::create_topology(MPI_Comm comm,
   std::set<std::int64_t> local_vertex_set;
   for (int i = 0; i < num_local_cells; ++i)
   {
-    auto v = cells.links(i);
-    for (int j = 0; j < v.size(); ++j)
+    for (auto v : cells.links(i))
     {
-      if (auto it = global_to_local_index.find(v[j]);
+      if (auto it = global_to_local_index.find(v);
           it != global_to_local_index.end())
       {
-        ghost_boundary_vertices.insert(v[j]);
+        ghost_boundary_vertices.insert(v);
       }
       else
-        local_vertex_set.insert(v[j]);
+        local_vertex_set.insert(v);
     }
   }
 
@@ -480,13 +479,12 @@ mesh::create_topology(MPI_Comm comm,
     {
       if (auto it = shared_cells.find(i); it != shared_cells.end())
       {
-        auto v = cells.links(i);
-        for (int j = 0; j < v.size(); ++j)
+        for (std::int32_t v : cells.links(i))
         {
-          if (auto vit = fwd_shared_vertices.find(v[j]);
+          if (auto vit = fwd_shared_vertices.find(v);
               vit == fwd_shared_vertices.end())
           {
-            fwd_shared_vertices.insert({v[j], it->second});
+            fwd_shared_vertices.insert({v, it->second});
           }
           else
             vit->second.insert(it->second.begin(), it->second.end());

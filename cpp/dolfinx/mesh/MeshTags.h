@@ -163,8 +163,7 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
     // Prepare a map from ordered local vertex indices to local entity number
     // This map is used to identify if received entity is owned or ghost
     auto vertices = e_to_v->links(e);
-    for (int v = 0; v < vertices.rows(); ++v)
-      key[v] = vertices[v];
+    std::copy(vertices.begin(), vertices.end(), key.begin());
     std::sort(key.begin(), key.end());
     entity_key_to_index.insert({key, e});
   }

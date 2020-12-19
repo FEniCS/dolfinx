@@ -27,7 +27,7 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
   std::vector<std::int64_t> cell_vertices, vertices;
   for (int c = 0; c < num_cells; ++c)
   {
-    cell_vertices.resize(c_to_v.links(c).rows());
+    cell_vertices.resize(c_to_v.links(c).size());
     im->local_to_global(c_to_v.links(c).data(), cell_vertices.size(),
                         cell_vertices.data());
     auto cell_faces = c_to_f.links(c);
@@ -35,7 +35,7 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
     {
       // Get the face
       const int face = cell_faces[i];
-      vertices.resize(f_to_v.links(face).rows());
+      vertices.resize(f_to_v.links(face).size());
       im->local_to_global(f_to_v.links(face).data(), vertices.size(),
                           vertices.data());
 
@@ -110,7 +110,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
   std::vector<std::int64_t> cell_vertices, vertices;
   for (int c = 0; c < num_cells; ++c)
   {
-    cell_vertices.resize(c_to_v.links(c).rows());
+    cell_vertices.resize(c_to_v.links(c).size());
     im->local_to_global(c_to_v.links(c).data(), cell_vertices.size(),
                         cell_vertices.data());
 
@@ -119,7 +119,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
     {
       // Get the face
       const int face = cell_faces[i];
-      vertices.resize(f_to_v.links(face).rows());
+      vertices.resize(f_to_v.links(face).size());
       im->local_to_global(f_to_v.links(face).data(), vertices.size(),
                           vertices.data());
 
@@ -246,13 +246,13 @@ compute_edge_reflections(const mesh::Topology& topology)
   std::vector<std::int64_t> cell_vertices, vertices;
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    cell_vertices.resize(c_to_v->links(c).rows());
+    cell_vertices.resize(c_to_v->links(c).size());
     im->local_to_global(c_to_v->links(c).data(), cell_vertices.size(),
                         cell_vertices.data());
     auto cell_edges = c_to_e->links(c);
     for (int i = 0; i < edges_per_cell; ++i)
     {
-      vertices.resize(e_to_v->links(cell_edges[i]).rows());
+      vertices.resize(e_to_v->links(cell_edges[i]).size());
       im->local_to_global(e_to_v->links(cell_edges[i]).data(), vertices.size(),
                           vertices.data());
 

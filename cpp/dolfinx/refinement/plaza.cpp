@@ -70,9 +70,8 @@ void enforce_rules(
         continue;
 
       bool any_marked = false;
-      auto edges = f_to_e->links(f);
-      for (int i = 0; i < edges.rows(); ++i)
-        any_marked = any_marked or marked_edges[edges[i]];
+      for (auto edge : f_to_e->links(f))
+        any_marked = any_marked or marked_edges[edge];
 
       if (any_marked)
       {
@@ -319,17 +318,14 @@ face_long_edge(const mesh::Mesh& mesh)
     auto edge_vertices = e_to_v->links(e);
 
     // Find local index of edge vertices in the cell geometry map
-    const auto* it0 = std::find(cell_vertices.data(),
-                                cell_vertices.data() + cell_vertices.rows(),
-                                edge_vertices[0]);
-    assert(it0 != (cell_vertices.data() + cell_vertices.rows()));
-    const int local0 = std::distance(cell_vertices.data(), it0);
-
-    const auto* it1 = std::find(cell_vertices.data(),
-                                cell_vertices.data() + cell_vertices.rows(),
-                                edge_vertices[1]);
-    assert(it1 != (cell_vertices.data() + cell_vertices.rows()));
-    const int local1 = std::distance(cell_vertices.data(), it1);
+    auto it0 = std::find(cell_vertices.begin(), cell_vertices.end(),
+                         edge_vertices[0]);
+    assert(it0 != cell_vertices.end());
+    const int local0 = std::distance(cell_vertices.begin(), it0);
+    auto it1 = std::find(cell_vertices.begin(), cell_vertices.end(),
+                         edge_vertices[1]);
+    assert(it1 != cell_vertices.end());
+    const int local1 = std::distance(cell_vertices.begin(), it1);
 
     auto x_dofs = x_dofmap.links(c);
     edge_length[e]
@@ -430,21 +426,20 @@ mesh::Mesh compute_refinement(
 
     // Copy vertices
     auto vertices = c_to_v->links(c);
-    for (int v = 0; v < vertices.rows(); ++v)
+    for (std::size_t v = 0; v < vertices.size(); ++v)
       indices[v] = global_indices[vertices[v]];
 
     // Get cell-local indices of marked edges
     marked_edge_list.clear();
-    auto edges = c_to_e->links(c);
-    for (int ei = 0; ei < edges.rows(); ++ei)
-      if (marked_edges[edges[ei]])
-        marked_edge_list.push_back(ei);
+    for (auto e : c_to_e->links(c))
+      if (marked_edges[e])
+        marked_edge_list.push_back(e);
 
     if (marked_edge_list.empty())
     {
       // Copy over existing Cell to new topology
-      for (int v = 0; v < vertices.rows(); ++v)
-        cell_topology.push_back(global_indices[vertices[v]]);
+      for (auto v : vertices)
+        cell_topology.push_back(global_indices[v]);
       parent_cell.push_back(c);
     }
     else
@@ -452,6 +447,7 @@ mesh::Mesh compute_refinement(
       // Get the marked edge indices for new vertices and make bool
       // vector of marked edges
       std::vector<bool> markers(num_cell_edges, false);
+      auto edges = c_to_e->links(c);
       for (int p : marked_edge_list)
       {
         markers[p] = true;
@@ -460,19 +456,16 @@ mesh::Mesh compute_refinement(
         indices[num_cell_vertices + p] = it->second;
       }
 
-      // Need longest edges of each face in cell local indexing.
-      // NB in 2D the face is the cell itself, and there is just one
-      // entry
+      // Need longest edges of each face in cell local indexing. NB in
+      // 2D the face is the cell itself, and there is just one entry.
       std::vector<std::int32_t> longest_edge;
-      auto faces = c_to_f->links(c);
-      for (int f = 0; f < faces.rows(); ++f)
-        longest_edge.push_back(long_edge[faces(f)]);
+      for (auto f : c_to_f->links(c))
+        longest_edge.push_back(long_edge[f]);
 
       // Convert to cell local index
-      auto edges = c_to_e->links(c);
       for (std::int32_t& p : longest_edge)
       {
-        for (int ej = 0; ej < edges.rows(); ++ej)
+        for (std::size_t ej = 0; ej < edges.size(); ++ej)
         {
           if (p == edges[ej])
           {
@@ -594,13 +587,11 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
   assert(indegree == outdegree);
   const int num_neighbors = indegree;
   std::vector<std::vector<std::int32_t>> marked_for_update(num_neighbors);
-
   for (std::int32_t i : marker_indices)
   {
-    const auto edges = ent_to_edge->links(i);
-    for (int j = 0; j < edges.rows(); ++j)
+    auto edges = ent_to_edge->links(i);
+    for (auto edge : edges)
     {
-      const std::int32_t edge = edges[j];
       // Already marked, so nothing to do
       if (!marked_edges[edge])
       {

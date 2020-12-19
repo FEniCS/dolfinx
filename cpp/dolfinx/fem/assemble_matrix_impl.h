@@ -215,7 +215,7 @@ void assemble_cells(
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < x_dofs.rows(); ++i)
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
@@ -298,13 +298,13 @@ void assemble_exterior_facets(
   for (std::int32_t f : active_facets)
   {
     auto cells = f_to_c->links(f);
-    assert(cells.rows() == 1);
+    assert(cells.size() == 1);
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cells[0]);
-    const auto* it = std::find(facets.data(), facets.data() + facets.rows(), f);
-    assert(it != (facets.data() + facets.rows()));
-    const int local_facet = std::distance(facets.data(), it);
+    const auto* it = std::find(facets.begin(), facets.end(), f);
+    assert(it != facets.end());
+    const int local_facet = std::distance(facets.begin(), it);
 
     // Get cell vertex coordinates
     auto x_dofs = x_dofmap.links(cells[0]);
@@ -396,19 +396,17 @@ void assemble_interior_facets(
   {
     // Create attached cells
     auto cells = c->links(facet_index);
-    assert(cells.rows() == 2);
+    assert(cells.size() == 2);
 
     // Get local index of facet with respect to the cell
     auto facets0 = c_to_f->links(cells[0]);
-    const auto* it0 = std::find(facets0.data(), facets0.data() + facets0.rows(),
-                                facet_index);
-    assert(it0 != (facets0.data() + facets0.rows()));
-    const int local_facet0 = std::distance(facets0.data(), it0);
+    const auto* it0 = std::find(facets0.begin(), facets0.end(), facet_index);
+    assert(it0 != facets0.end());
+    const int local_facet0 = std::distance(facets0.begin(), it0);
     auto facets1 = c_to_f->links(cells[1]);
-    const auto* it1 = std::find(facets1.data(), facets1.data() + facets1.rows(),
-                                facet_index);
-    assert(it1 != (facets1.data() + facets1.rows()));
-    const int local_facet1 = std::distance(facets1.data(), it1);
+    const auto* it1 = std::find(facets1.begin(), facets1.end(), facet_index);
+    assert(it1 != facets1.end());
+    const int local_facet1 = std::distance(facets1.begin(), it1);
 
     const std::array local_facet{local_facet0, local_facet1};
 

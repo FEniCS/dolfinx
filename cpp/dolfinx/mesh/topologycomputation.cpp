@@ -536,9 +536,8 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
   std::vector<std::int32_t> num_connections(num_entities_d0, 0);
   for (int e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
   {
-    auto e = c_d1_d0.links(e1);
-    for (int i = 0; i < e.rows(); ++i)
-      num_connections[e[i]]++;
+    for (std::int32_t e0 : c_d1_d0.links(e1))
+      num_connections[e0]++;
   }
 
   // Compute offsets
@@ -553,9 +552,8 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
       offsets[offsets.rows() - 1]);
   for (int e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
   {
-    auto e = c_d1_d0.links(e1);
-    for (int e0 = 0; e0 < e.rows(); ++e0)
-      connections[offsets[e[e0]] + counter[e[e0]]++] = e1;
+    for (std::int32_t e0 : c_d1_d0.links(e1))
+      connections[offsets[e0] + counter[e0]++] = e1;
   }
 
   return graph::AdjacencyList<std::int32_t>(std::move(connections),

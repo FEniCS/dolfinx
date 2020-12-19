@@ -230,9 +230,8 @@ T assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cell);
-    const auto* it
-        = std::find(facets.data(), facets.data() + facets.rows(), facet);
-    assert(it != (facets.data() + facets.rows()));
+    auto it = std::find(facets.begin(), facets.end(), facet);
+    assert(it != facets.end());
     const int local_facet = std::distance(facets.data(), it);
 
     auto x_dofs = x_dofmap.links(cell);
@@ -288,17 +287,16 @@ T assemble_interior_facets(
   {
     // Create attached cell
     auto cells = f_to_c->links(f);
-    assert(cells.rows() == 2);
+    assert(cells.size() == 2);
 
     // Get local index of facet with respect to the cell
     std::array<int, 2> local_facet;
     for (int i = 0; i < 2; ++i)
     {
       auto facets = c_to_f->links(cells[i]);
-      const auto* it
-          = std::find(facets.data(), facets.data() + facets.rows(), f);
-      assert(it != (facets.data() + facets.rows()));
-      local_facet[i] = std::distance(facets.data(), it);
+      auto it = std::find(facets.begin(), facets.end(), f);
+      assert(it != facets.end());
+      local_facet[i] = std::distance(facets.begin(), it);
     }
 
     // Get cell geometry

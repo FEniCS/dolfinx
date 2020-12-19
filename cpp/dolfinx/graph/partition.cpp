@@ -190,8 +190,11 @@ partition::reorder_global_indices(
     assert(it != global_to_local.end());
     if (sharing_processes->num_links(i) == 1)
       global_to_local_owned0.insert(*it);
-    else if (sharing_processes->links(i).minCoeff() == rank)
+    else if (auto links = sharing_processes->links(i);
+             *std::min_element(links.begin(), links.end()) == rank)
+    {
       global_to_local_owned1.insert(*it);
+    }
     else
       global_to_local_unowned.insert(*it);
   }
@@ -225,8 +228,9 @@ partition::reorder_global_indices(
     // Get old global -> local
     auto it = global_to_local.find(indices_send[i]);
     assert(it != global_to_local.end());
-    if (sharing_processes->num_links(i) == 1
-        and sharing_processes->links(i).minCoeff() == rank)
+    if (auto links = sharing_processes->links(i);
+        links.size() == 1
+        and *std::min_element(links.begin(), links.end()) == rank)
     {
       global_to_local_owned1.insert(*it);
     }
@@ -260,8 +264,8 @@ partition::reorder_global_indices(
     for (int j = 0; j < sharing_processes->num_nodes(); ++j)
     {
       auto p = sharing_processes->links(j);
-      const auto* it = std::find(p.data(), p.data() + p.rows(), neighbors[i]);
-      if (it != (p.data() + p.rows()))
+      auto it = std::find(p.begin(), p.end(), neighbors[i]);
+      if (it != p.end())
         number_send_neigh[i] += 2;
     }
   }
@@ -299,7 +303,7 @@ partition::reorder_global_indices(
         global_new += offset_global;
 
       auto procs = sharing_processes->links(i);
-      for (int k = 0; k < procs.rows(); ++k)
+      for (std::size_t k = 0; k < procs.size(); ++k)
       {
         if (procs[k] == neighbor)
         {
@@ -464,9 +468,9 @@ partition::distribute(MPI_Comm comm,
       auto links = list.links(i);
       data_send[offset[dest]++] = dests[0];
       data_send[offset[dest]++] = i + offset_global;
-      data_send[offset[dest]++] = links.rows();
-      for (int k = 0; k < links.rows(); ++k)
-        data_send[offset[dest]++] = links(k);
+      data_send[offset[dest]++] = links.size();
+      for (std::size_t k = 0; k < links.size(); ++k)
+        data_send[offset[dest]++] = links[k];
     }
   }
 

@@ -320,10 +320,10 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
-    const auto* it = std::find(
-        entities_d.data(), entities_d.data() + entities_d.rows(), entities[e]);
-    assert(it != (entities_d.data() + entities_d.rows()));
-    const int entity_local_index = std::distance(entities_d.data(), it);
+    const auto* it
+        = std::find(entities_d.begin(), entities_d.end(), entities[e]);
+    assert(it != entities_d.end());
+    const int entity_local_index = std::distance(entities_d.begin(), it);
 
     // Get cell dofmap
     tcb::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
@@ -425,9 +425,9 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
-    const auto* it = std::find(
-        entities_d.data(), entities_d.data() + entities_d.rows(), entities[i]);
-    assert(it != (entities_d.data() + entities_d.rows()));
+    const auto* it
+        = std::find(entities_d.begin(), entities_d.end(), entities[i]);
+    assert(it != entities_d.end());
     const int entity_local_index = std::distance(entities_d.data(), it);
 
     // Get cell dofmap

@@ -69,12 +69,12 @@ create_new_geometry(
   {
     auto vertices = c_to_v->links(c);
     auto dofs = x_dofmap.links(c);
-    for (int i = 0; i < vertices.rows(); ++i)
+    for (std::size_t i = 0; i < vertices.size(); ++i)
     {
       // FIXME: We are making an assumption here on the
       // ElementDofLayout. We should use an ElementDofLayout to map
       // between local vertex index and x dof index.
-      vertex_to_x[vertices[i]] = dofs(i);
+      vertex_to_x[vertices[i]] = dofs[i];
     }
   }
 

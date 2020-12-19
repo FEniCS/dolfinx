@@ -92,7 +92,7 @@ public:
   /// indices)
   tcb::span<const std::int32_t> cell_dofs(int cell) const
   {
-    return _dofmap.links_new(cell);
+    return _dofmap.links(cell);
   }
 
   /// Return the block size for the dofmap

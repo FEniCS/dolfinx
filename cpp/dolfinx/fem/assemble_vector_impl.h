@@ -165,7 +165,7 @@ void _lift_bc_cells(
 
     // Check if bc is applied to cell
     bool has_bc = false;
-    for (Eigen::Index j = 0; j < dmap1.size(); ++j)
+    for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
@@ -191,13 +191,13 @@ void _lift_bc_cells(
     auto dmap0 = dofmap0.links(c);
 
     auto coeff_array = coeffs.row(c);
-    Ae.setZero(bs0 * dmap0.rows(), bs1 * dmap1.rows());
+    Ae.setZero(bs0 * dmap0.size(), bs1 * dmap1.size());
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Size data structure for assembly
-    be.setZero(bs0 * dmap0.rows());
-    for (Eigen::Index j = 0; j < dmap1.rows(); ++j)
+    be.setZero(bs0 * dmap0.size());
+    for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
@@ -214,7 +214,7 @@ void _lift_bc_cells(
       }
     }
 
-    for (Eigen::Index i = 0; i < dmap0.size(); ++i)
+    for (std::size_t i = 0; i < dmap0.size(); ++i)
       for (int k = 0; k < bs0; ++k)
         b[bs0 * dmap0[i] + k] += be[bs0 * i + k];
   }
@@ -271,16 +271,16 @@ void _lift_bc_exterior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cell);
-    const auto* it = std::find(facets.data(), facets.data() + facets.rows(), f);
-    assert(it != (facets.data() + facets.rows()));
-    const int local_facet = std::distance(facets.data(), it);
+    auto it = std::find(facets.begin(), facets.end(), f);
+    assert(it != facets.end());
+    const int local_facet = std::distance(facets.begin(), it);
 
     // Get dof maps for cell
     auto dmap1 = dofmap1.links(cell);
 
     // Check if bc is applied to cell
     bool has_bc = false;
-    for (Eigen::Index j = 0; j < dmap1.size(); ++j)
+    for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
@@ -305,14 +305,14 @@ void _lift_bc_exterior_facets(
     auto dmap0 = dofmap0.links(cell);
 
     auto coeff_array = coeffs.row(cell);
-    Ae.setZero(bs0 * dmap0.rows(), bs1 * dmap1.rows());
+    Ae.setZero(bs0 * dmap0.size(), bs1 * dmap1.size());
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), &local_facet, &perms(local_facet, cell),
            cell_info[cell]);
 
     // Size data structure for assembly
-    be.setZero(bs0 * dmap0.rows());
-    for (Eigen::Index j = 0; j < dmap1.rows(); ++j)
+    be.setZero(bs0 * dmap0.size());
+    for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
@@ -328,7 +328,7 @@ void _lift_bc_exterior_facets(
       }
     }
 
-    for (Eigen::Index i = 0; i < dmap0.size(); ++i)
+    for (std::size_t i = 0; i < dmap0.size(); ++i)
       for (int k = 0; k < bs0; ++k)
         b[bs0 * dmap0[i] + k] += be[bs0 * i + k];
   }
@@ -372,7 +372,7 @@ void _lift_bc_interior_facets(
   Eigen::Matrix<T, Eigen::Dynamic, 1> be;
 
   // Temporaries for joint dofmaps
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dmapjoint0, dmapjoint1;
+  std::vector<std::int32_t> dmapjoint0, dmapjoint1;
 
   const mesh::Topology& topology = mesh.topology();
   auto connectivity = topology.connectivity(tdim - 1, tdim);
@@ -388,19 +388,17 @@ void _lift_bc_interior_facets(
   {
     // Create attached cells
     auto cells = f_to_c->links(f);
-    assert(cells.rows() == 2);
+    assert(cells.size() == 2);
 
     // Get local index of facet with respect to the cell
     auto facets0 = c_to_f->links(cells[0]);
-    const auto* it0
-        = std::find(facets0.data(), facets0.data() + facets0.rows(), f);
-    assert(it0 != (facets0.data() + facets0.rows()));
-    const int local_facet0 = std::distance(facets0.data(), it0);
+    auto it0 = std::find(facets0.begin(), facets0.end(), f);
+    assert(it0 != facets0.end());
+    const int local_facet0 = std::distance(facets0.begin(), it0);
     auto facets1 = c_to_f->links(cells[1]);
-    const auto* it1
-        = std::find(facets1.data(), facets1.data() + facets1.rows(), f);
-    assert(it1 != (facets1.data() + facets1.rows()));
-    const int local_facet1 = std::distance(facets1.data(), it1);
+    auto it1 = std::find(facets1.begin(), facets1.end(), f);
+    assert(it1 != facets1.end());
+    const int local_facet1 = std::distance(facets1.begin(), it1);
 
     const std::array local_facet{local_facet0, local_facet1};
 
@@ -417,21 +415,35 @@ void _lift_bc_interior_facets(
     }
 
     // Get dof maps for cells and pack
-    auto dmap0_cell0 = dofmap0.links(cells[0]);
-    auto dmap0_cell1 = dofmap0.links(cells[1]);
-    dmapjoint0.resize(dmap0_cell0.rows() + dmap0_cell1.rows());
-    dmapjoint0.head(dmap0_cell0.rows()) = dmap0_cell0;
-    dmapjoint0.tail(dmap0_cell1.rows()) = dmap0_cell1;
+    tcb::span<const std::int32_t> dmap0_cell0 = dofmap0.links(cells[0]);
+    tcb::span<const std::int32_t> dmap0_cell1 = dofmap0.links(cells[1]);
+    dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
+    std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
+    std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
+              std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    auto dmap1_cell0 = dofmap1.links(cells[0]);
-    auto dmap1_cell1 = dofmap1.links(cells[1]);
-    dmapjoint1.resize(dmap1_cell0.rows() + dmap1_cell1.rows());
-    dmapjoint1.head(dmap1_cell0.rows()) = dmap1_cell0;
-    dmapjoint1.tail(dmap1_cell1.rows()) = dmap1_cell1;
+    tcb::span<const std::int32_t> dmap1_cell0 = dofmap1.links(cells[0]);
+    tcb::span<const std::int32_t> dmap1_cell1 = dofmap1.links(cells[1]);
+    dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
+    std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
+    std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
+              std::next(dmapjoint1.begin(), dmap1_cell0.size()));
+
+    // auto dmap0_cell0 = dofmap0.links(cells[0]);
+    // auto dmap0_cell1 = dofmap0.links(cells[1]);
+    // dmapjoint0.resize(dmap0_cell0.rows() + dmap0_cell1.rows());
+    // dmapjoint0.head(dmap0_cell0.rows()) = dmap0_cell0;
+    // dmapjoint0.tail(dmap0_cell1.rows()) = dmap0_cell1;
+
+    // auto dmap1_cell0 = dofmap1.links(cells[0]);
+    // auto dmap1_cell1 = dofmap1.links(cells[1]);
+    // dmapjoint1.resize(dmap1_cell0.rows() + dmap1_cell1.rows());
+    // dmapjoint1.head(dmap1_cell0.rows()) = dmap1_cell0;
+    // dmapjoint1.tail(dmap1_cell1.rows()) = dmap1_cell1;
 
     // Check if bc is applied to cell0
     bool has_bc = false;
-    for (Eigen::Index j = 0; j < dmap1_cell0.size(); ++j)
+    for (std::size_t j = 0; j < dmap1_cell0.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
@@ -444,7 +456,7 @@ void _lift_bc_interior_facets(
     }
 
     // Check if bc is applied to cell1
-    for (Eigen::Index j = 0; j < dmap1_cell1.size(); ++j)
+    for (std::size_t j = 0; j < dmap1_cell1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
@@ -486,7 +498,7 @@ void _lift_bc_interior_facets(
     be.setZero(bs0 * (dmap0_cell0.size() + dmap0_cell1.size()));
 
     // Compute b = b - A*b for cell0
-    for (Eigen::Index j = 0; j < dmap1_cell0.rows(); ++j)
+    for (std::size_t j = 0; j < dmap1_cell0.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
@@ -503,8 +515,8 @@ void _lift_bc_interior_facets(
     }
 
     // Compute b = b - A*b for cell1
-    const int offset = bs1 * dmap1_cell0.rows();
-    for (Eigen::Index j = 0; j < dmap1_cell1.size(); ++j)
+    const int offset = bs1 * dmap1_cell0.size();
+    for (std::size_t j = 0; j < dmap1_cell1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
@@ -520,11 +532,11 @@ void _lift_bc_interior_facets(
       }
     }
 
-    for (Eigen::Index i = 0; i < dmap0_cell0.size(); ++i)
+    for (std::size_t i = 0; i < dmap0_cell0.size(); ++i)
       for (int k = 0; k < bs0; ++k)
         b[bs0 * dmap0_cell0[i] + k] += be[bs0 * i + k];
 
-    for (Eigen::Index i = 0; i < dmap0_cell1.size(); ++i)
+    for (std::size_t i = 0; i < dmap0_cell1.size(); ++i)
       for (int k = 0; k < bs0; ++k)
         b[bs0 * dmap0_cell1[i] + k] += be[offset + bs0 * i + k];
   }
@@ -704,9 +716,9 @@ void assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cell);
-    const auto* it = std::find(facets.data(), facets.data() + facets.rows(), f);
-    assert(it != (facets.data() + facets.rows()));
-    const int local_facet = std::distance(facets.data(), it);
+    auto it = std::find(facets.begin(), facets.end(), f);
+    assert(it != facets.end());
+    const int local_facet = std::distance(facets.begin(), it);
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
@@ -768,17 +780,16 @@ void assemble_interior_facets(
   {
     // Get attached cell indices
     auto cells = f_to_c->links(f);
-    assert(cells.rows() == 2);
+    assert(cells.size() == 2);
 
     // Create attached cells
     std::array<int, 2> local_facet;
     for (int i = 0; i < 2; ++i)
     {
       auto facets = c_to_f->links(cells[i]);
-      const auto* it
-          = std::find(facets.data(), facets.data() + facets.rows(), f);
-      assert(it != (facets.data() + facets.rows()));
-      local_facet[i] = std::distance(facets.data(), it);
+      auto it = std::find(facets.begin(), facets.end(), f);
+      assert(it != facets.end());
+      local_facet[i] = std::distance(facets.begin(), it);
     }
 
     // Get cell geometry
