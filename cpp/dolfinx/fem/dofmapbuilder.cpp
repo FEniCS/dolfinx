@@ -549,11 +549,8 @@ fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
     }
   }
   assert(dofmap.size() % node_graph0.num_nodes() == 0);
-  Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
-                          Eigen::RowMajor>>
-      _dofmap(dofmap.data(), node_graph0.num_nodes(),
-              dofmap.size() / node_graph0.num_nodes());
   return {std::move(index_map), element_dof_layout.block_size(),
-          graph::AdjacencyList<std::int32_t>(_dofmap)};
+          graph::build_adjacency_list(std::move(dofmap),
+                                      dofmap.size() / node_graph0.num_nodes())};
 }
 //-----------------------------------------------------------------------------

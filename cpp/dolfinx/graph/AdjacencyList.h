@@ -198,4 +198,22 @@ private:
   // Position of first connection for each entity (using local index)
   std::vector<std::int32_t> _offsets;
 };
+
+/// Construct adjacency list from array of data for a graph with
+/// constant degree (valency). A constant degree graph has the same
+/// number of edges for every node.
+/// @param [in] data Adjacency array
+/// @param [in] degree The number of (outgoing) edges for each node
+template <typename U>
+AdjacencyList<typename U::value_type> build_adjacency_list(U&& data, int degree)
+{
+  assert(data.size() % degree == 0);
+  std::vector<std::int32_t> offsets(data.size() / degree + 1, 0);
+  for (std::size_t i = 1; i < offsets.size(); ++i)
+    offsets[i] = offsets[i - 1] + degree;
+  return AdjacencyList<typename U::value_type>(std::forward<U>(data),
+                                               std::move(offsets));
+}
+
+
 } // namespace dolfinx::graph
