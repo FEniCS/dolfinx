@@ -458,32 +458,28 @@ pack_coefficients(const U& u)
 // NOTE: This is subject to change
 /// Pack constants of u of generic type U ready for assembly
 template <typename U>
-Eigen::Array<typename U::scalar_type, Eigen::Dynamic, 1>
-pack_constants(const U& u)
+std::vector<typename U::scalar_type> pack_constants(const U& u)
 {
   using T = typename U::scalar_type;
+  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants
+      = u.constants();
 
-  const auto& constants = u.constants();
-
-  // Calculate size of array needed to store packed constants.
-  Eigen::Index size
+  // Calculate size of array needed to store packed constants
+  std::int32_t size
       = std::accumulate(constants.begin(), constants.end(), 0,
-                        [](Eigen::Index sum, const auto& constant) {
+                        [](std::int32_t sum, const auto& constant) {
                           return sum + constant->value.size();
                         });
 
-  // Pack constants.
-  Eigen::Array<T, Eigen::Dynamic, 1> constant_values(size);
-  Eigen::Index offset = 0;
+  // Pack constants
+  std::vector<T> constant_values(size);
+  std::int32_t offset = 0;
   for (const auto& constant : constants)
   {
-    const auto& value = constant->value;
-    const Eigen::Index value_size = value.size();
-
-    for (Eigen::Index i = 0; i < value_size; ++i)
+    const std::vector<T>& value = constant->value;
+    for (std::size_t i = 0; i < value.size(); ++i)
       constant_values[offset + i] = value[i];
-
-    offset += value_size;
+    offset += value.size();
   }
 
   return constant_values;

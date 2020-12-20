@@ -63,8 +63,7 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
 
   std::vector<unsigned long long> part(num_local_cells);
   std::vector<unsigned long long> adj_graph_offsets(
-      local_graph.offsets().data(),
-      local_graph.offsets().data() + local_graph.offsets().size());
+      local_graph.offsets().begin(), local_graph.offsets().end());
   int edgecut = 0;
 
   ParHIPPartitionKWay(

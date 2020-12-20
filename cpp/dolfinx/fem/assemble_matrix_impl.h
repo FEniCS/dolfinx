@@ -50,7 +50,7 @@ void assemble_cells(
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
-    const Eigen::Array<T, Eigen::Dynamic, 1>& constants,
+    const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
@@ -66,7 +66,7 @@ void assemble_exterior_facets(
                              const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
-    const Eigen::Array<T, Eigen::Dynamic, 1> constants,
+    const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
 
@@ -82,8 +82,7 @@ void assemble_interior_facets(
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
-    const std::vector<int>& offsets,
-    const Eigen::Array<T, Eigen::Dynamic, 1>& constants,
+    const std::vector<int>& offsets, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
 
@@ -114,7 +113,7 @@ void assemble_matrix(
   const int bs1 = dofmap1->bs();
 
   // Prepare constants
-  const Eigen::Array<T, Eigen::Dynamic, 1> constants = pack_constants(a);
+  const std::vector<T> constants = pack_constants(a);
 
   // Prepare coefficients
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
@@ -188,7 +187,7 @@ void assemble_cells(
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
-    const Eigen::Array<T, Eigen::Dynamic, 1>& constants,
+    const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info)
 {
   const int gdim = geometry.dim();
@@ -266,7 +265,7 @@ void assemble_exterior_facets(
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
-    const Eigen::Array<T, Eigen::Dynamic, 1> constants,
+    const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
 {
@@ -359,8 +358,7 @@ void assemble_interior_facets(
                              const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
-    const std::vector<int>& offsets,
-    const Eigen::Array<T, Eigen::Dynamic, 1>& constants,
+    const std::vector<int>& offsets, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
 {

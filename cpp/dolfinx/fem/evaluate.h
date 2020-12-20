@@ -36,8 +36,7 @@ void eval(
       = dolfinx::fem::pack_coefficients(e);
 
   // Prepare constants
-  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values
-      = dolfinx::fem::pack_constants(e);
+  const std::vector<T> constant_values = dolfinx::fem::pack_constants(e);
 
   const auto& fn = e.get_tabulate_expression();
 
