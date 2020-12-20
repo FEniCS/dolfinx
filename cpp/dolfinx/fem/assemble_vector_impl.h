@@ -413,31 +413,19 @@ void _lift_bc_interior_facets(
     }
 
     // Get dof maps for cells and pack
-    tcb::span<const std::int32_t> dmap0_cell0 = dofmap0.links(cells[0]);
-    tcb::span<const std::int32_t> dmap0_cell1 = dofmap0.links(cells[1]);
+    const tcb::span<const std::int32_t> dmap0_cell0 = dofmap0.links(cells[0]);
+    const tcb::span<const std::int32_t> dmap0_cell1 = dofmap0.links(cells[1]);
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
     std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
               std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    tcb::span<const std::int32_t> dmap1_cell0 = dofmap1.links(cells[0]);
-    tcb::span<const std::int32_t> dmap1_cell1 = dofmap1.links(cells[1]);
+    const tcb::span<const std::int32_t> dmap1_cell0 = dofmap1.links(cells[0]);
+    const tcb::span<const std::int32_t> dmap1_cell1 = dofmap1.links(cells[1]);
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
     std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
               std::next(dmapjoint1.begin(), dmap1_cell0.size()));
-
-    // auto dmap0_cell0 = dofmap0.links(cells[0]);
-    // auto dmap0_cell1 = dofmap0.links(cells[1]);
-    // dmapjoint0.resize(dmap0_cell0.rows() + dmap0_cell1.rows());
-    // dmapjoint0.head(dmap0_cell0.rows()) = dmap0_cell0;
-    // dmapjoint0.tail(dmap0_cell1.rows()) = dmap0_cell1;
-
-    // auto dmap1_cell0 = dofmap1.links(cells[0]);
-    // auto dmap1_cell1 = dofmap1.links(cells[1]);
-    // dmapjoint1.resize(dmap1_cell0.rows() + dmap1_cell1.rows());
-    // dmapjoint1.head(dmap1_cell0.rows()) = dmap1_cell0;
-    // dmapjoint1.tail(dmap1_cell1.rows()) = dmap1_cell1;
 
     // Check if bc is applied to cell0
     bool has_bc = false;
