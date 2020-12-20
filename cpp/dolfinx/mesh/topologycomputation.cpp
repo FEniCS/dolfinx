@@ -575,12 +575,12 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 
   const std::size_t num_verts_d1
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type_d0, d1));
-
   std::vector<std::int32_t> key(num_verts_d1);
   for (int e = 0; e < c_d1_0.num_nodes(); ++e)
   {
-    const std::int32_t* v = c_d1_0.links_ptr(e);
-    std::partial_sort_copy(v, v + num_verts_d1, key.begin(), key.end());
+    tcb::span<const std::int32_t> v = c_d1_0.links(e);
+    assert(v.size() == key.size());
+    std::partial_sort_copy(v.begin(), v.end(), key.begin(), key.end());
     entity_to_index.insert({key, e});
   }
 

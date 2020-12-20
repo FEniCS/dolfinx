@@ -82,18 +82,15 @@ public:
   /// std::vector<<std::set<std::size_t>>, etc)
   /// @param [in] data TODO
   template <typename X>
-  explicit AdjacencyList(const std::vector<X>& data) : _offsets(data.size() + 1)
+  explicit AdjacencyList(const std::vector<X>& data)
   {
     // Initialize offsets and compute total size
-    std::int32_t size = 0;
-    for (std::size_t e = 0; e < data.size(); e++)
-    {
-      _offsets[e] = size;
-      size += data[e].size();
-    }
-    _offsets[data.size()] = size;
+    _offsets.reserve(data.size() + 1);
+    _offsets.push_back(0);
+    for (auto row = data.begin(); row != data.end(); ++row)
+      _offsets.push_back(_offsets.back() + row->size());
 
-    _array.reserve(size);
+    _array.reserve(_offsets.back());
     for (auto e = data.begin(); e != data.end(); ++e)
       _array.insert(_array.end(), e->begin(), e->end());
   }
@@ -119,7 +116,7 @@ public:
     return this->_array == list._array and this->_offsets == list._offsets;
   }
 
-  /// Number of nodes
+  /// Ge the number of nodes
   /// @return The number of nodes
   std::int32_t num_nodes() const { return _offsets.size() - 1; }
 
@@ -132,7 +129,7 @@ public:
     return _offsets[node + 1] - _offsets[node];
   }
 
-  /// Links (edges) for given node
+  /// Get the links (edges) for given node
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList:num_links(node).
@@ -142,7 +139,7 @@ public:
                      _offsets[node + 1] - _offsets[node]);
   }
 
-  /// Links (edges) for given node (const version)
+  /// Get the links (edges) for given node (const version)
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList:num_links(node).
@@ -150,12 +147,6 @@ public:
   {
     return tcb::span(_array.data() + _offsets[node],
                      _offsets[node + 1] - _offsets[node]);
-  }
-
-  /// TODO: attempt to remove
-  const std::int32_t* links_ptr(int node) const
-  {
-    return &_array[_offsets[node]];
   }
 
   /// Return contiguous array of links for all nodes (const version)
@@ -172,7 +163,7 @@ public:
 // Workaround for Intel compler bug, see
 // https://community.intel.com/t5/Intel-C-Compiler/quot-if-constexpr-quot-and-quot-missing-return-statement-quot-in/td-p/1154551
 #ifdef __INTEL_COMPILER
-#pragma warning(disable : 1011) Ì
+#pragma warning(disable : 1011)
 #endif
 
     if constexpr (std::is_same<X, T>::value)
