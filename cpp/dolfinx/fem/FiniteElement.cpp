@@ -83,7 +83,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   const std::string family = ufc_element.family;
 
-  if (family == "mixed_element")
+  if (family == "mixed element")
   {
     // This will cause an error, if actually used
     _libtab_element_handle = -1;
