@@ -17,6 +17,7 @@
 #include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
+#include <memory>
 #include <mpi.h>
 #include <vector>
 
