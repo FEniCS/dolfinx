@@ -81,11 +81,18 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
          {hexahedron, "hexahedron"}};
   const std::string cell_shape = ufc_to_cell.at(ufc_element.cell_shape);
 
-  _libtab_element_handle = libtab::register_element(
-      ufc_element.family, cell_shape, ufc_element.degree);
+  const std::string family = ufc_element.family;
 
-  // Copy over "dof coordinates" from libtab (only for Lagrange, so far)
-  _refX = libtab::points(_libtab_element_handle);
+  if (family == "mixed_element")
+    _libtab_element_handle = -1;
+  else
+  {
+    _libtab_element_handle
+        = libtab::register_element(family, cell_shape, ufc_element.degree);
+
+    // Copy over "dof coordinates" from libtab
+    _refX = libtab::points(_libtab_element_handle);
+  }
 
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
