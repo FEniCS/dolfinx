@@ -25,7 +25,6 @@
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/interpolate.h>
-#include <dolfinx/fem/libtab_wrapper.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
@@ -227,8 +226,7 @@ void fem(py::module& m)
       .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
       .def("dof_reference_coordinates",
            &dolfinx::fem::FiniteElement::dof_reference_coordinates)
-      .def("dof_coordinates",
-           &dolfinx::fem::FiniteElement::dof_coordinates)
+      .def("dof_coordinates", &dolfinx::fem::FiniteElement::dof_coordinates)
       .def_property_readonly("value_rank",
                              &dolfinx::fem::FiniteElement::value_rank)
       .def("space_dimension", &dolfinx::fem::FiniteElement::space_dimension)
