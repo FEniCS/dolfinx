@@ -19,7 +19,6 @@ set(HEADERS_fem
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_fem.h
   ${CMAKE_CURRENT_SOURCE_DIR}/evaluate.h
   ${CMAKE_CURRENT_SOURCE_DIR}/interpolate.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/libtab_wrapper.h
   ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
   ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
@@ -35,7 +34,6 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ReferenceCellGeometry.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/libtab_wrapper.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp

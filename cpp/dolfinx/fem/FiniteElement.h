@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "libtab_wrapper.h"
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -16,12 +15,6 @@
 
 struct ufc_coordinate_mapping;
 struct ufc_finite_element;
-
-// Forward declaration
-namespace libtab
-{
-class FiniteElement;
-}
 
 namespace dolfinx::fem
 {
@@ -222,6 +215,6 @@ private:
 
   bool _needs_permutation_data;
 
-  std::shared_ptr<const LibtabElement> _libtab_element;
+  int _libtab_element_handle;
 };
 } // namespace dolfinx::fem

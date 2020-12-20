@@ -8,6 +8,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/utils.h>
 #include <functional>
+#include <libtab.h>
 #include <ufc.h>
 
 using namespace dolfinx;
@@ -71,10 +72,20 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   }
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
-  _libtab_element = create_libtab_element(ufc_element);
+  static const std::map<ufc_shape, std::string> ufc_to_cell
+      = {{vertex, "point"},
+         {interval, "interval"},
+         {triangle, "triangle"},
+         {tetrahedron, "tetrahedron"},
+         {quadrilateral, "quadrilateral"},
+         {hexahedron, "hexahedron"}};
+  const std::string cell_shape = ufc_to_cell.at(ufc_element.cell_shape);
+
+  _libtab_element_handle = libtab::register_element(
+      ufc_element.family, cell_shape, ufc_element.degree);
 
   // Copy over "dof coordinates" from libtab (only for Lagrange, so far)
-  _refX = _libtab_element->points();
+  _refX = libtab::points(_libtab_element_handle);
 
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
@@ -120,7 +131,8 @@ void FiniteElement::evaluate_reference_basis(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
-  Eigen::ArrayXXd libtab_data = _libtab_element->tabulate(0, X)[0];
+  Eigen::ArrayXXd libtab_data
+      = libtab::tabulate(_libtab_element_handle, 0, X)[0];
 
   const int scalar_reference_value_size = _reference_value_size / _block_size;
 
@@ -133,12 +145,10 @@ void FiniteElement::evaluate_reference_basis(
 
   assert(libtab_data.rows() == X.rows());
 
-
   for (int p = 0; p < X.rows(); ++p)
     for (int d = 0; d < scalar_dofs; ++d)
       for (int v = 0; v < scalar_reference_value_size; ++v)
-        reference_values(p, d, v)
-            = libtab_data(p, d + scalar_dofs * v);
+        reference_values(p, d, v) = libtab_data(p, d + scalar_dofs * v);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis_derivatives(
@@ -148,7 +158,8 @@ void FiniteElement::evaluate_reference_basis_derivatives(
 {
   assert(order == 1); // TODO: fix this for order > 1
 
-  std::vector<Eigen::ArrayXXd> libtab_data = _libtab_element->tabulate(1, X);
+  std::vector<Eigen::ArrayXXd> libtab_data
+      = libtab::tabulate(_libtab_element_handle, 1, X);
   for (int p = 0; p < X.rows(); ++p)
     for (int d = 0; d < libtab_data[0].cols() / _reference_value_size; ++d)
       for (int v = 0; v < _reference_value_size; ++v)
@@ -222,11 +233,11 @@ FiniteElement::dof_coordinates(int cell_perm) const
     throw std::runtime_error(
         "Dof reference coordinates do not exist for this element.");
   }
-  if(!_needs_permutation_data or cell_perm == 0)
+  if (!_needs_permutation_data or cell_perm == 0)
     return _refX;
 
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-    outX(_refX.rows(), _refX.cols());
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> outX(
+      _refX.rows(), _refX.cols());
   outX = _refX;
 
   int ret = _permute_dof_coordinates(outX.data(), cell_perm);
@@ -316,11 +327,13 @@ Eigen::ArrayXXd FiniteElement::interpolation_points() const
 //-----------------------------------------------------------------------------
 Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 FiniteElement::interpolate_into_cell(
-    const Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    const Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>
         values,
     const std::uint32_t cell_permutation) const
 {
-  Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1> output_values(_space_dim / _block_size);
+  Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1> output_values(_space_dim
+                                                              / _block_size);
   int ret = _interpolate_into_cell(output_values.data(), values.data(),
                                    cell_permutation);
   if (ret == -1)

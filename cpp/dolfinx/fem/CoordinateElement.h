@@ -7,7 +7,6 @@
 #pragma once
 
 #include "ElementDofLayout.h"
-#include "libtab_wrapper.h"
 #include <Eigen/Dense>
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
@@ -31,7 +30,7 @@ public:
   /// @param[in] geometric_dimension Geometric dimension
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  CoordinateElement(const std::shared_ptr<const LibtabElement>& libtab_element,
+  CoordinateElement(int libtab_element_handle,
                     int geometric_dimension, const std::string& signature,
                     const ElementDofLayout& dof_layout);
 
@@ -103,14 +102,7 @@ private:
   bool _is_affine;
 
   // Libtab element
-  std::shared_ptr<const LibtabElement> _libtab_element;
+  int _libtab_element_handle;
 
-  // Function to evaluate the basis on the underlying element
-  // @param basis_values Returned values
-  // @param order
-  // @param num_points
-  // @param reference points
-  // std::function<int(double*, int, int, const double*)>
-  //    _evaluate_basis_derivatives;
 };
 } // namespace dolfinx::fem

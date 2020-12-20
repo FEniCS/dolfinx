@@ -18,12 +18,12 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/dofmapbuilder.h>
-#include <dolfinx/fem/libtab_wrapper.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/topologycomputation.h>
+#include <libtab.h>
 #include <memory>
 #include <string>
 #include <ufc.h>
@@ -214,10 +214,18 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
   std::free(dmap);
 
-  const std::shared_ptr<const dolfinx::fem::LibtabElement> libtab_element
-      = create_libtab_element(ufc_cmap);
+  static const std::map<ufc_shape, std::string> ufc_to_string
+      = {{vertex, "no point"},
+         {interval, "interval"},
+         {triangle, "triangle"},
+         {tetrahedron, "tetrahedron"},
+         {quadrilateral, "quadrilateral"},
+         {hexahedron, "hexahedron"}};
+  const std::string cell_name = ufc_to_string.at(ufc_cmap.cell_shape);
 
-  return fem::CoordinateElement(libtab_element, ufc_cmap.geometric_dimension,
+  int handle = libtab::register_element(ufc_cmap.element_family, cell_name,
+                                        ufc_cmap.element_degree);
+  return fem::CoordinateElement(handle, ufc_cmap.geometric_dimension,
                                 ufc_cmap.signature, dof_layout);
 }
 //-----------------------------------------------------------------------------
