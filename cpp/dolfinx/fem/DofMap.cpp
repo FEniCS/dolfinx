@@ -131,10 +131,13 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
          == (cells->num_nodes() * element_dof_layout->num_dofs()));
 
   const int cell_dimension = element_dof_layout->num_dofs();
+  assert(dofmap.size() % cell_dimension == 0);
+  Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
+                          Eigen::RowMajor>>
+      _dofmap(dofmap.data(), dofmap.size() / cell_dimension, cell_dimension);
+
   return fem::DofMap(element_dof_layout, index_map, 1,
-                     graph::build_adjacency_list<std::int32_t>(
-                         std::move(dofmap), cell_dimension),
-                     1);
+                     graph::AdjacencyList<std::int32_t>(_dofmap), 1);
 }
 
 } // namespace
@@ -179,8 +182,7 @@ fem::transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
               data.begin() + index_offsets[index + 1]);
   }
 
-  return graph::AdjacencyList<std::int32_t>(std::move(data),
-                                            std::move(index_offsets));
+  return graph::AdjacencyList<std::int32_t>(data, index_offsets);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
@@ -213,7 +215,8 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
   const int num_cells = this->_dofmap.num_nodes();
   // FIXME X: how does sub_element_map_view hand block sizes?
   const std::int32_t dofs_per_cell = sub_element_map_view.size();
-  std::vector<std::int32_t> dofmap(num_cells * dofs_per_cell);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      dofmap(num_cells, dofs_per_cell);
   const int bs_parent = this->bs();
   for (int c = 0; c < num_cells; ++c)
   {
@@ -221,15 +224,13 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
     for (std::int32_t i = 0; i < dofs_per_cell; ++i)
     {
       const std::div_t pos = std::div(sub_element_map_view[i], bs_parent);
-      dofmap[dofs_per_cell * +i]
-          = bs_parent * cell_dmap_parent[pos.quot] + pos.rem;
+      dofmap(c, i) = bs_parent * cell_dmap_parent[pos.quot] + pos.rem;
     }
   }
 
   // FIXME X
-  return DofMap(
-      sub_element_dof_layout, this->index_map, this->index_map_bs(),
-      graph::AdjacencyList<std::int32_t>(std::move(dofmap), dofs_per_cell), 1);
+  return DofMap(sub_element_dof_layout, this->index_map, this->index_map_bs(),
+                graph::AdjacencyList<std::int32_t>(dofmap), 1);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
