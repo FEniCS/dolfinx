@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::common
@@ -69,7 +69,7 @@ public:
   ///   of owned entries
   IndexMap(MPI_Comm comm, std::int32_t local_size);
 
-  /// Create an index map with local_size owned indiced on this process.
+  /// Create an index map with local_size owned indiced on this process
   ///
   /// @note Collective
   /// @param[in] mpi_comm The MPI communicator
@@ -85,24 +85,6 @@ public:
            const std::vector<int>& dest_ranks,
            const std::vector<std::int64_t>& ghosts,
            const std::vector<int>& src_ranks);
-
-  /// Create an index map
-  ///
-  /// @note Collective
-  /// @param[in] mpi_comm The MPI communicator
-  /// @param[in] local_size Local size of the IndexMap, i.e. the number
-  ///   of owned entries
-  /// @param[in] dest_ranks Ranks that ghost indices owned by the
-  ///   calling rank
-  /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] src_ranks Owner rank (on global communicator) of each
-  ///   ghost entry
-  IndexMap(
-      MPI_Comm mpi_comm, std::int32_t local_size,
-      const std::vector<int>& dest_ranks,
-      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-          ghosts,
-      const std::vector<int>& src_ranks);
 
   // Copy constructor
   IndexMap(const IndexMap& map) = delete;
@@ -143,14 +125,6 @@ public:
   MPI_Comm comm(Direction dir = Direction::symmetric) const;
 
   /// Compute global indices for array of local indices
-  /// @param[in] indices Local indices
-  /// @return The global index of the corresponding local index in
-  ///   indices.
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global(
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-          indices) const;
-
-  /// Compute global indices for array of local indices
   /// @param[in] local Local indices
   /// @param[in] n Number of indices
   /// @param[out] global The global indices
@@ -163,14 +137,6 @@ public:
   ///   Returns -1 if the local index does not exist on this process.
   std::vector<std::int32_t>
   global_to_local(const std::vector<std::int64_t>& indices) const;
-
-  /// Compute local indices for array of global indices
-  /// @param[in] indices Global indices
-  /// @return The local of the corresponding global index in indices.
-  ///   Return -1 if the local index does not exist on this process.
-  std::vector<std::int32_t> global_to_local(
-      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-          indices) const;
 
   /// Global indices
   /// @return The global index for all local indices (0, 1, 2, ...) on

@@ -340,29 +340,13 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
   _comm_symmetric = dolfinx::MPI::Comm(comm2, false);
 }
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
+IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<int>& dest_ranks,
                    const std::vector<std::int64_t>& ghosts,
                    const std::vector<int>& src_ranks)
-    : IndexMap(comm, local_size, dest_ranks,
-               Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
-                   ghosts.data(), ghosts.size()),
-               src_ranks)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-IndexMap::IndexMap(
-    MPI_Comm mpi_comm, std::int32_t local_size,
-    const std::vector<int>& dest_ranks,
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-        ghosts,
-    const std::vector<int>& src_ranks)
     : _comm_owner_to_ghost(MPI_COMM_NULL), _comm_ghost_to_owner(MPI_COMM_NULL),
-      _comm_symmetric(MPI_COMM_NULL)
+      _comm_symmetric(MPI_COMM_NULL), _ghosts(ghosts)
 {
-  _ghosts
-      = std::vector<std::int64_t>(ghosts.data(), ghosts.data() + ghosts.size());
   assert(size_t(ghosts.size()) == src_ranks.size());
   assert(src_ranks == get_ghost_ranks(mpi_comm, local_size, _ghosts));
 
@@ -457,15 +441,6 @@ const std::vector<std::int64_t>& IndexMap::ghosts() const noexcept
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, 1> IndexMap::local_to_global(
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-        indices) const
-{
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> global(indices.rows());
-  this->local_to_global(indices.data(), indices.rows(), global.data());
-  return global;
-}
-//-----------------------------------------------------------------------------
 void IndexMap::local_to_global(const std::int32_t* local, int n,
                                std::int64_t* global) const
 {
@@ -498,28 +473,18 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 std::vector<std::int32_t>
 IndexMap::global_to_local(const std::vector<std::int64_t>& indices) const
 {
-  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>
-      _indices(indices.data(), indices.size());
-  return this->global_to_local(_indices);
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int32_t> IndexMap::global_to_local(
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-        indices) const
-{
   const std::int32_t local_size = _local_range[1] - _local_range[0];
 
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
     global_local_ghosts.emplace_back(_ghosts[i], i + local_size);
+
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
-
-  std::vector<std::int32_t> local;
   const std::array<std::int64_t, 2> range = this->local_range();
-  for (Eigen::Index i = 0; i < indices.size(); ++i)
+  std::vector<std::int32_t> local;
+  for (std::int64_t index : indices)
   {
-    const std::int64_t index = indices[i];
     if (index >= range[0] and index < range[1])
       local.push_back(index - range[0]);
     else

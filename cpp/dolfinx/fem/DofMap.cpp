@@ -97,7 +97,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   const std::vector ghost_owner_old = dofmap_view.index_map->ghost_owner_rank();
 
   // Compute ghosts for collapsed dofmap
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(num_unowned);
+  std::vector<std::int64_t> ghosts(num_unowned);
   std::vector<int> ghost_owners(num_unowned);
   for (auto it = it_unowned0; it != dofs_view.end(); ++it)
   {
