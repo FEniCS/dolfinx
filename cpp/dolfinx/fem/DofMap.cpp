@@ -132,10 +132,6 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
 
   const int cell_dimension = element_dof_layout->num_dofs();
   assert(dofmap.size() % cell_dimension == 0);
-  Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
-                          Eigen::RowMajor>>
-      _dofmap(dofmap.data(), dofmap.size() / cell_dimension, cell_dimension);
-
   return fem::DofMap(element_dof_layout, index_map, 1,
                      graph::build_adjacency_list<std::int32_t>(
                          std::move(dofmap), cell_dimension),

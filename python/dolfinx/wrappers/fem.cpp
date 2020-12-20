@@ -301,13 +301,15 @@ void fem(py::module& m)
       .def(py::init<std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>,
                     const std::vector<std::int32_t>&>(),
            py::arg("g"), py::arg("dofs"))
-      .def("dof_indices",
-           [](const dolfinx::fem::DirichletBC<PetscScalar>& self) {
-             auto [dofs, owned] = self.dof_indices();
-             return std::pair(py::array_t<std::int32_t>(
-                                  dofs.size(), dofs.data(), py::cast(self)),
-                              owned);
-           })
+      .def(
+          "dof_indices",
+          [](const dolfinx::fem::DirichletBC<PetscScalar>& self) {
+            auto [dofs, owned] = self.dof_indices();
+            return std::pair(
+                py::array_t<std::int32_t>(dofs.size(), dofs.data(), nullptr),
+                owned);
+          },
+          py::return_value_policy::reference_internal)
       .def_property_readonly(
           "function_space",
           &dolfinx::fem::DirichletBC<PetscScalar>::function_space)

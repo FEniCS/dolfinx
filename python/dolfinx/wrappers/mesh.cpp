@@ -14,8 +14,8 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
 #include <memory>
 #include <pybind11/eigen.h>
@@ -50,20 +50,16 @@ void declare_meshtags(py::module& m, std::string type)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)
       .def("ufl_id", &dolfinx::mesh::MeshTags<T>::id)
-      .def_property_readonly(
-          "values",
-          [](dolfinx::mesh::MeshTags<T>& self) {
-            return py::array_t<T>(self.values().size(), self.values().data(),
-                                  py::none());
-          },
-          py::return_value_policy::reference_internal)
-      .def_property_readonly(
-          "indices",
-          [](dolfinx::mesh::MeshTags<T>& self) {
-            return py::array_t<std::int32_t>(self.indices().size(),
-                                             self.indices().data(), py::none());
-          },
-          py::return_value_policy::reference_internal);
+      .def_property_readonly("values",
+                             [](dolfinx::mesh::MeshTags<T>& self) {
+                               return py::array_t<T>(self.values().size(),
+                                                     self.values().data(),
+                                                     py::cast(self));
+                             })
+      .def_property_readonly("indices", [](dolfinx::mesh::MeshTags<T>& self) {
+        return py::array_t<std::int32_t>(self.indices().size(),
+                                         self.indices().data(), py::cast(self));
+      });
 
   m.def("create_meshtags",
         [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
