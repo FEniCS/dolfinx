@@ -90,8 +90,8 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   }
   else
   {
-    _libtab_element_handle
-        = libtab::register_element(family, cell_shape, ufc_element.degree);
+    _libtab_element_handle = libtab::register_element(
+        family.c_str(), cell_shape.c_str(), ufc_element.degree);
 
     // Copy over "dof coordinates" from libtab
     _refX = libtab::points(_libtab_element_handle);

@@ -223,8 +223,8 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
          {hexahedron, "hexahedron"}};
   const std::string cell_name = ufc_to_string.at(ufc_cmap.cell_shape);
 
-  int handle = libtab::register_element(ufc_cmap.element_family, cell_name,
-                                        ufc_cmap.element_degree);
+  int handle = libtab::register_element(
+      ufc_cmap.element_family, cell_name.c_str(), ufc_cmap.element_degree);
   return fem::CoordinateElement(handle, ufc_cmap.geometric_dimension,
                                 ufc_cmap.signature, dof_layout);
 }

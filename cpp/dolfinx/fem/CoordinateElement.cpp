@@ -42,7 +42,7 @@ mesh::CellType CoordinateElement::cell_shape() const
 int CoordinateElement::topological_dimension() const
 {
   const std::string cell = libtab::cell_type(_libtab_element_handle);
-  return libtab::topology(cell).size() - 1;
+  return libtab::topology(cell.c_str()).size() - 1;
 }
 //-----------------------------------------------------------------------------
 int CoordinateElement::geometric_dimension() const { return _gdim; }
