@@ -550,7 +550,7 @@ fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
   }
   assert(dofmap.size() % node_graph0.num_nodes() == 0);
   return {std::move(index_map), element_dof_layout.block_size(),
-          graph::build_adjacency_list(std::move(dofmap),
-                                      dofmap.size() / node_graph0.num_nodes())};
+          graph::build_adjacency_list<std::int32_t>(
+              std::move(dofmap), dofmap.size() / node_graph0.num_nodes())};
 }
 //-----------------------------------------------------------------------------
