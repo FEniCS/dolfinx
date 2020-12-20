@@ -186,12 +186,6 @@ private:
   // Dimension of each value space
   std::vector<int> _value_dimension;
 
-  // Functions for basis and derivatives evaluation
-  // std::function<int(double*, int, const double*)> _evaluate_reference_basis;
-
-  // std::function<int(double*, int, int, const double*)>
-  //    _evaluate_reference_basis_derivatives;
-
   std::function<int(double*, int, int, const double*, const double*,
                     const double*, const double*, const double*,
                     const std::uint32_t)>
@@ -201,8 +195,7 @@ private:
                     const ufc_coordinate_mapping*)>
       _transform_values;
 
-  std::function<int(double*, const std::uint32_t)>
-      _permute_dof_coordinates;
+  std::function<int(double*, const std::uint32_t)> _permute_dof_coordinates;
 
   // Block size for VectorElements and TensorElements
   // This gives the number of DOFs colocated at each point
