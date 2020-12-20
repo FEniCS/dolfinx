@@ -10,6 +10,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/scotch.h>
+#include <memory>
 #include <unordered_map>
 
 using namespace dolfinx;
