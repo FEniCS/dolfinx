@@ -572,7 +572,8 @@ mesh::create_topology(MPI_Comm comm,
     // Convert non-ghost cells (global indexing) to my_local_cells
     // (local indexing) and discard ghost cells
     std::vector<std::int32_t> local_offsets(
-        cells.offsets().data(), cells.offsets().data() + num_local_cells + 1);
+        cells.offsets().begin(),
+        std::next(cells.offsets().begin(), num_local_cells + 1));
     std::vector<std::int32_t> my_local_cells_array(local_offsets.back());
     for (std::size_t i = 0; i < my_local_cells_array.size(); ++i)
       my_local_cells_array[i] = global_to_local_index[cells_array[i]];

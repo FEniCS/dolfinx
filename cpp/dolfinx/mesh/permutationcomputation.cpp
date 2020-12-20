@@ -50,11 +50,10 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 3; ++j)
       {
-        auto it = std::find(cell_vertices.data(),
-                            cell_vertices.data() + cell_vertices.size(),
+        auto it = std::find(cell_vertices.begin(), cell_vertices.end(),
                             vertices[j]);
         // Get the actual local vertex indices
-        e_vertices[j] = it - cell_vertices.data();
+        e_vertices[j] = std::distance(cell_vertices.begin(), it);
       }
 
       // Number of rotations
@@ -134,11 +133,10 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 4; ++j)
       {
-        auto it = std::find(cell_vertices.data(),
-                            cell_vertices.data() + cell_vertices.size(),
+        auto it = std::find(cell_vertices.begin(), cell_vertices.end(),
                             vertices[j]);
         // Get the actual local vertex indices
-        e_vertices[j] = it - cell_vertices.data();
+        e_vertices[j] = std::distance(cell_vertices.begin(), it);
       }
 
       // Number of rotations
@@ -261,11 +259,9 @@ compute_edge_reflections(const mesh::Topology& topology)
 
       // Find iterators pointing to cell vertex given a vertex on facet
       const auto it0
-          = std::find(cell_vertices.data(),
-                      cell_vertices.data() + cell_vertices.size(), vertices[0]);
+          = std::find(cell_vertices.begin(), cell_vertices.end(), vertices[0]);
       const auto it1
-          = std::find(cell_vertices.data(),
-                      cell_vertices.data() + cell_vertices.size(), vertices[1]);
+          = std::find(cell_vertices.begin(), cell_vertices.end(), vertices[1]);
 
       // The number of reflections. Comparing iterators directly instead
       // of values they point to is sufficient here.

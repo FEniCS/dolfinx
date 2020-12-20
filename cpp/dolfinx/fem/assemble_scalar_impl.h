@@ -81,8 +81,7 @@ T assemble_scalar(const fem::Form<T>& M)
   {
     // Get underlying data array of this Constant
     const std::vector<T>& array = constant->value;
-    constant_values.insert(constant_values.end(), array.data(),
-                           array.data() + array.size());
+    constant_values.insert(constant_values.end(), array.begin(), array.end());
   }
 
   // Prepare coefficients
@@ -272,7 +271,7 @@ T assemble_interior_facets(
   // Creat data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(2 * num_dofs_g, gdim);
-  Eigen::Array<T, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
+  std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -320,10 +319,12 @@ T assemble_interior_facets(
     {
       // Loop over entries for coefficient i
       const int num_entries = offsets[i + 1] - offsets[i];
-      coeff_array.segment(2 * offsets[i], num_entries)
-          = coeff_cell0.segment(offsets[i], num_entries);
-      coeff_array.segment(offsets[i + 1] + offsets[i], num_entries)
-          = coeff_cell1.segment(offsets[i], num_entries);
+      std::copy(coeff_cell0.data() + offsets[i],
+                coeff_cell0.data() + offsets[i] + num_entries,
+                std::next(coeff_array.begin(), 2 * offsets[i]));
+      std::copy(coeff_cell1.data() + offsets[i],
+                coeff_cell1.data() + offsets[i] + num_entries,
+                std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
     }
 
     const std::array perm{perms(local_facet[0], cells[0]),

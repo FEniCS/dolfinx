@@ -173,13 +173,11 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
   std::vector<std::int32_t> indices_new;
   std::vector<T> values_new;
   std::vector<std::int32_t> entity(num_vertices_per_entity);
-
   for (Eigen::Index e = 0; e < entities.num_nodes(); ++e)
   {
     // This would fail for mixed cell type meshes
     assert(num_vertices_per_entity == entities.num_links(e));
-    std::copy(entities.links(e).data(),
-              entities.links(e).data() + num_vertices_per_entity,
+    std::copy(entities.links(e).begin(), entities.links(e).end(),
               entity.begin());
     std::sort(entity.begin(), entity.end());
 

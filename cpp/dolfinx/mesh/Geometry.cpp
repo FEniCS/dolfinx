@@ -51,16 +51,6 @@ const std::vector<std::int64_t>& Geometry::input_global_indices() const
   return _input_global_indices;
 }
 //-----------------------------------------------------------------------------
-std::size_t Geometry::hash() const
-{
-  // Compute local hash
-  boost::hash<std::vector<double>> dhash;
-
-  std::vector<double> data(_x.data(), _x.data() + _x.size());
-  const std::size_t local_hash = dhash(data);
-  return local_hash;
-}
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 mesh::Geometry mesh::create_geometry(
