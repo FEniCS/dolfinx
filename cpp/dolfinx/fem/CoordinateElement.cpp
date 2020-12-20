@@ -35,6 +35,8 @@ mesh::CellType CoordinateElement::cell_shape() const
   const std::string cell = libtab::cell_type(_libtab_element_handle);
   if (cell == "triangle")
     return mesh::CellType::triangle;
+  else if (cell == "tetrahedron")
+    return mesh::CellType::tetrahedron;
   else
     throw std::runtime_error("problem");
 }
