@@ -265,13 +265,6 @@ void Topology::set_connectivity(
   _connectivity(d0, d1) = c;
 }
 //-----------------------------------------------------------------------------
-size_t Topology::hash() const
-{
-  if (!this->connectivity(dim(), 0))
-    throw std::runtime_error("AdjacencyList has not been computed.");
-  return this->connectivity(dim(), 0)->hash();
-}
-//-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
   if (_cell_permutations.empty())

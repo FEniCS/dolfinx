@@ -190,7 +190,6 @@ void mesh(py::module& m)
       .def("connectivity",
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        py::const_))
-      .def("hash", &dolfinx::mesh::Topology::hash)
       .def("index_map", &dolfinx::mesh::Topology::index_map)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
       .def("cell_name",
@@ -212,7 +211,6 @@ void mesh(py::module& m)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
-      .def("hash", &dolfinx::mesh::Mesh::hash)
       .def("hmax", &dolfinx::mesh::Mesh::hmax)
       .def("hmin", &dolfinx::mesh::Mesh::hmin)
       .def("mpi_comm",

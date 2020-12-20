@@ -125,9 +125,6 @@ public:
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations() const;
 
-  /// Return hash based on the hash of cell-vertex connectivity
-  size_t hash() const;
-
   /// Cell type
   /// @return Cell type that the topology is for
   mesh::CellType cell_type() const;

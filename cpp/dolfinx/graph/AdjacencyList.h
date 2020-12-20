@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <boost/functional/hash.hpp>
 #include <cassert>
 #include <dolfinx/common/span.hpp>
 #include <numeric>
@@ -18,12 +17,30 @@
 namespace dolfinx::graph
 {
 
+/// Construct adjacency list data for a problem with a fixed number of
+/// links (edges) for each node
+/// @param [in] matrix Two-dimensional array of adjacency data where
+/// matrix(i, j) is the jth neighbor of the ith node
+/// @return Adjacency list data and offset array
+template <typename T>
+auto create_adjacency_data(const Eigen::DenseBase<T>& matrix)
+{
+  std::vector<typename T::Scalar> data(matrix.rows() * matrix.cols());
+  std::vector<std::int32_t> offset(matrix.rows() + 1, 0);
+  for (Eigen::Index i = 0; i < matrix.rows(); ++i)
+  {
+    for (Eigen::Index j = 0; j < matrix.cols(); ++j)
+      data[i * matrix.cols() + j] = matrix(i, j);
+    offset[i + 1] = offset[i] + matrix.cols();
+  }
+  return std::pair(std::move(data), std::move(offset));
+}
+
 /// This class provides a static adjacency list data structure. It is
 /// commonly used to store directed graphs. For each node in the
 /// contiguous list of nodes [0, 1, 2, ..., n) it stores the connected
 /// nodes. The representation is strictly local, i.e. it is not parallel
 /// aware.
-
 template <typename T>
 class AdjacencyList
 {
@@ -40,7 +57,7 @@ public:
   /// Construct adjacency list from arrays of data
   /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data
-  ///   array for node i
+  /// array for node i
   template <typename U, typename V>
   AdjacencyList(U&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
@@ -48,24 +65,16 @@ public:
     assert(_offsets.back() == (std::int32_t)_array.size());
   }
 
+  /// @todo To be removed
   /// Construct adjacency list for a problem with a fixed number of
   /// links (edges) for each node
   /// @param [in] matrix Two-dimensional array of adjacency data where
-  ///   matrix(i, j) is the jth neighbor of the ith node
+  /// matrix(i, j) is the jth neighbor of the ith node
   explicit AdjacencyList(
       const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                           Eigen::RowMajor>>& matrix)
-      : _array(matrix.rows() * matrix.cols()), _offsets(matrix.rows() + 1)
   {
-    const std::int32_t num_links = matrix.cols();
-    for (std::size_t e = 0; e < _offsets.size(); e++)
-      _offsets[e] = e * num_links;
-
-    // NOTE: Do not directly copy data from matrix because it may be a
-    // view into a larger array
-    for (Eigen::Index i = 0; i < matrix.rows(); ++i)
-      for (int j = 0; j < num_links; ++j)
-        _array[_offsets[i] + j] = matrix(i, j);
+    std::tie(_array, _offsets) = create_adjacency_data(matrix);
   }
 
   /// Set all connections for all entities (T is a '2D' container, e.g.
@@ -154,12 +163,6 @@ public:
 
   /// Offset for each node in array() (const version)
   const std::vector<std::int32_t>& offsets() const { return _offsets; }
-
-  /// Hash of graph
-  std::size_t hash() const
-  {
-    return boost::hash_range(_array.data(), _array.data() + _array.size());
-  }
 
   /// Copy of the Adjacency List if the specified type is different from the
   /// current type, ele return a reference.

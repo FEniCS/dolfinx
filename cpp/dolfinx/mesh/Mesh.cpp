@@ -162,19 +162,5 @@ double Mesh::rmin() const { return cell_r(*this).minCoeff(); }
 //-----------------------------------------------------------------------------
 double Mesh::rmax() const { return cell_r(*this).maxCoeff(); }
 //-----------------------------------------------------------------------------
-std::size_t Mesh::hash() const
-{
-  // Get local hashes
-  const std::size_t kt_local = _topology.hash();
-  const std::size_t kg_local = _geometry.hash();
-
-  // Compute global hash
-  const std::size_t kt = common::hash_global(_mpi_comm.comm(), kt_local);
-  const std::size_t kg = common::hash_global(_mpi_comm.comm(), kg_local);
-
-  // Compute hash based on the Cantor pairing function
-  return (kt + kg) * (kt + kg + 1) / 2 + kg;
-}
-//-----------------------------------------------------------------------------
 MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
