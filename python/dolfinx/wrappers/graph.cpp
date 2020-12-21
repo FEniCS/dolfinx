@@ -31,24 +31,21 @@ void declare_adjacency_list(py::module& m, std::string type)
           "links",
           [](const dolfinx::graph::AdjacencyList<T>& self, int i) {
             tcb::span<const T> link = self.links(i);
-            return py::array_t<T>(link.size(), link.data(), py::none());
+            return py::array_t<T>(link.size(), link.data(), py::cast(self));
           },
-          py::return_value_policy::reference_internal,
           "Links (edges) of a node")
-      .def_property_readonly(
-          "array",
-          [](const dolfinx::graph::AdjacencyList<T>& self) {
-            return py::array_t<T>(self.array().size(), self.array().data(),
-                                  py::none());
-          },
-          py::return_value_policy::reference_internal)
-      .def_property_readonly(
-          "offsets",
-          [](const dolfinx::graph::AdjacencyList<T>& self) {
-            return py::array_t<std::int32_t>(self.offsets().size(),
-                                             self.offsets().data(), py::none());
-          },
-          py::return_value_policy::reference_internal)
+      .def_property_readonly("array",
+                             [](const dolfinx::graph::AdjacencyList<T>& self) {
+                               return py::array_t<T>(self.array().size(),
+                                                     self.array().data(),
+                                                     py::cast(self));
+                             })
+      .def_property_readonly("offsets",
+                             [](const dolfinx::graph::AdjacencyList<T>& self) {
+                               return py::array_t<std::int32_t>(
+                                   self.offsets().size(), self.offsets().data(),
+                                   py::cast(self));
+                             })
       .def_property_readonly("num_nodes",
                              &dolfinx::graph::AdjacencyList<T>::num_nodes)
       .def("__eq__", &dolfinx::graph::AdjacencyList<T>::operator==,

@@ -52,20 +52,16 @@ void declare_meshtags(py::module& m, std::string type)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)
       .def("ufl_id", &dolfinx::mesh::MeshTags<T>::id)
-      .def_property_readonly(
-          "values",
-          [](dolfinx::mesh::MeshTags<T>& self) {
-            return py::array_t<T>(self.values().size(), self.values().data(),
-                                  py::none());
-          },
-          py::return_value_policy::reference_internal)
-      .def_property_readonly(
-          "indices",
-          [](dolfinx::mesh::MeshTags<T>& self) {
-            return py::array_t<std::int32_t>(self.indices().size(),
-                                             self.indices().data(), py::none());
-          },
-          py::return_value_policy::reference_internal);
+      .def_property_readonly("values",
+                             [](dolfinx::mesh::MeshTags<T>& self) {
+                               return py::array_t<T>(self.values().size(),
+                                                     self.values().data(),
+                                                     py::cast(self));
+                             })
+      .def_property_readonly("indices", [](dolfinx::mesh::MeshTags<T>& self) {
+        return py::array_t<std::int32_t>(self.indices().size(),
+                                         self.indices().data(), py::cast(self));
+      });
 
   m.def("create_meshtags",
         [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
@@ -74,7 +70,8 @@ void declare_meshtags(py::module& m, std::string type)
            const py::array_t<T, py::array::c_style>& values) {
           py::buffer_info buf = values.request();
           std::vector<T> vals((T*)buf.ptr, (T*)buf.ptr + buf.size);
-          return dolfinx::mesh::create_meshtags(mesh, dim, entities, vals);
+          return dolfinx::mesh::create_meshtags(mesh, dim, entities,
+                                                std::move(vals));
         });
 }
 
