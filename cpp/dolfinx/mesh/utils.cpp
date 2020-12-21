@@ -16,6 +16,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/graph/kahip.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/graph/scotch.h>
 #include <stdexcept>
@@ -894,6 +895,43 @@ mesh::partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
   // Call partitioner
   graph::AdjacencyList<std::int32_t> partition = graph::scotch::partition(
       comm, n, dual_graph, num_ghost_nodes, ghosting);
+
+  return partition;
+}
+//-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t> mesh::partition_cells_kahip(
+    MPI_Comm comm, int n, const mesh::CellType cell_type,
+    const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode)
+{
+  common::Timer timer("Partition cells across ranks");
+  LOG(INFO) << "Compute partition of cells across ranks";
+
+  if (cells.num_nodes() > 0)
+  {
+    if (cells.num_links(0) != mesh::num_cell_vertices(cell_type))
+    {
+      throw std::runtime_error(
+          "Inconsistent number of cell vertices. Got "
+          + std::to_string(cells.num_links(0)) + ", expected "
+          + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
+    }
+  }
+
+  // Compute distributed dual graph (for the cells on this process)
+  const auto [dual_graph, graph_info]
+      = mesh::build_dual_graph(comm, cells, cell_type);
+
+  // Just flag any kind of ghosting for now
+  bool ghosting = (ghost_mode != mesh::GhostMode::none);
+
+#ifdef HAS_KAHIP
+  // Call partitioner
+  graph::AdjacencyList<std::int32_t> partition
+      = graph::kahip::partition(comm, n, dual_graph, ghosting);
+#else
+  throw std::runtime_error("Kahip is not available");
+  graph::AdjacencyList<std::int32_t> partition(0);
+#endif
 
   return partition;
 }
