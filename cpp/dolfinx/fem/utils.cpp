@@ -31,22 +31,24 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-la::SparsityPattern
-fem::create_sparsity_pattern(const mesh::Topology& topology,
-                             const std::array<const DofMap*, 2>& dofmaps,
-                             const std::set<IntegralType>& integrals)
+la::SparsityPattern fem::create_sparsity_pattern(
+    const mesh::Topology& topology,
+    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+        dofmaps,
+    const std::set<IntegralType>& integrals)
 {
   common::Timer t0("Build sparsity");
 
   // Get common::IndexMaps for each dimension
-  const std::array index_maps{dofmaps[0]->index_map, dofmaps[1]->index_map};
+  const std::array index_maps{dofmaps[0].get().index_map,
+                              dofmaps[1].get().index_map};
   const std::array bs
-      = {dofmaps[0]->index_map_bs(), dofmaps[1]->index_map_bs()};
+      = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
 
   // Create and build sparsity pattern
-  assert(dofmaps[0]);
-  assert(dofmaps[0]->index_map);
-  la::SparsityPattern pattern(dofmaps[0]->index_map->comm(), index_maps, bs);
+  assert(dofmaps[0].get().index_map);
+  la::SparsityPattern pattern(dofmaps[0].get().index_map->comm(), index_maps,
+                              bs);
   for (auto type : integrals)
   {
     if (type == fem::IntegralType::cell)
