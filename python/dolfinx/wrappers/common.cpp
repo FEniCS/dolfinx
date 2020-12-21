@@ -68,9 +68,8 @@ void common(py::module& m)
           [](const dolfinx::common::IndexMap& self) {
             const std::vector<std::int64_t>& ghosts = self.ghosts();
             return py::array_t<std::int64_t>(ghosts.size(), ghosts.data(),
-                                             py::none());
+                                             py::cast(self));
           },
-          py::return_value_policy::reference_internal,
           "Return list of ghost indices")
       .def("global_indices", &dolfinx::common::IndexMap::global_indices);
 

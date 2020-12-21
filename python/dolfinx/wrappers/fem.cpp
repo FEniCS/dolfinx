@@ -317,14 +317,13 @@ void fem(py::module& m)
                                    V_g_dofs[1].data() + V_g_dofs[1].size())};
             return dolfinx::fem::DirichletBC(g, std::move(dofs), V);
           }))
-      .def(
-          "dof_indices",
-          [](const dolfinx::fem::DirichletBC<PetscScalar>& self) {
-            auto [dofs, owned] = self.dof_indices();
-            return std::pair(
-                py::array_t<std::int32_t>(dofs.size(), dofs.data(), py::cast(self)),
-                owned);
-          })
+      .def("dof_indices",
+           [](const dolfinx::fem::DirichletBC<PetscScalar>& self) {
+             auto [dofs, owned] = self.dof_indices();
+             return std::pair(py::array_t<std::int32_t>(
+                                  dofs.size(), dofs.data(), py::cast(self)),
+                              owned);
+           })
       .def_property_readonly(
           "function_space",
           &dolfinx::fem::DirichletBC<PetscScalar>::function_space)
