@@ -26,11 +26,11 @@ class CoordinateElement
 {
 public:
   /// Create a coordinate element
-  /// @param[in] libtab_element_handle Element handle from libtab
+  /// @param[in] basix_element_handle Element handle from basix
   /// @param[in] geometric_dimension Geometric dimension
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  CoordinateElement(int libtab_element_handle,
+  CoordinateElement(int basix_element_handle,
                     int geometric_dimension, const std::string& signature,
                     const ElementDofLayout& dof_layout);
 
@@ -102,7 +102,7 @@ private:
   bool _is_affine;
 
   // Libtab element
-  int _libtab_element_handle;
+  int _basix_element_handle;
 
 };
 } // namespace dolfinx::fem

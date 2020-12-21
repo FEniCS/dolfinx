@@ -208,6 +208,6 @@ private:
 
   bool _needs_permutation_data;
 
-  int _libtab_element_handle;
+  int _basix_element_handle;
 };
 } // namespace dolfinx::fem

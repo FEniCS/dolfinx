@@ -8,7 +8,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/utils.h>
 #include <functional>
-#include <libtab.h>
+#include <basix.h>
 #include <ufc.h>
 
 using namespace dolfinx;
@@ -86,15 +86,15 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   if (family == "mixed element")
   {
     // This will cause an error, if actually used
-    _libtab_element_handle = -1;
+    _basix_element_handle = -1;
   }
   else
   {
-    _libtab_element_handle = libtab::register_element(
+    _basix_element_handle = basix::register_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree);
 
-    // Copy over "dof coordinates" from libtab
-    _refX = libtab::points(_libtab_element_handle);
+    // Copy over "dof coordinates" from basix
+    _refX = basix::points(_basix_element_handle);
   }
 
   // Fill value dimension
@@ -141,24 +141,24 @@ void FiniteElement::evaluate_reference_basis(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
-  Eigen::ArrayXXd libtab_data
-      = libtab::tabulate(_libtab_element_handle, 0, X)[0];
+  Eigen::ArrayXXd basix_data
+      = basix::tabulate(_basix_element_handle, 0, X)[0];
 
   const int scalar_reference_value_size = _reference_value_size / _block_size;
 
-  assert(libtab_data.cols() % scalar_reference_value_size == 0);
-  const int scalar_dofs = libtab_data.cols() / scalar_reference_value_size;
+  assert(basix_data.cols() % scalar_reference_value_size == 0);
+  const int scalar_dofs = basix_data.cols() / scalar_reference_value_size;
 
   assert(reference_values.dimension(0) == X.rows());
   assert(reference_values.dimension(1) == scalar_dofs);
   assert(reference_values.dimension(2) == scalar_reference_value_size);
 
-  assert(libtab_data.rows() == X.rows());
+  assert(basix_data.rows() == X.rows());
 
   for (int p = 0; p < X.rows(); ++p)
     for (int d = 0; d < scalar_dofs; ++d)
       for (int v = 0; v < scalar_reference_value_size; ++v)
-        reference_values(p, d, v) = libtab_data(p, d + scalar_dofs * v);
+        reference_values(p, d, v) = basix_data(p, d + scalar_dofs * v);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis_derivatives(
@@ -168,14 +168,14 @@ void FiniteElement::evaluate_reference_basis_derivatives(
 {
   assert(order == 1); // TODO: fix this for order > 1
 
-  std::vector<Eigen::ArrayXXd> libtab_data
-      = libtab::tabulate(_libtab_element_handle, 1, X);
+  std::vector<Eigen::ArrayXXd> basix_data
+      = basix::tabulate(_basix_element_handle, 1, X);
   for (int p = 0; p < X.rows(); ++p)
-    for (int d = 0; d < libtab_data[0].cols() / _reference_value_size; ++d)
+    for (int d = 0; d < basix_data[0].cols() / _reference_value_size; ++d)
       for (int v = 0; v < _reference_value_size; ++v)
-        for (std::size_t deriv = 0; deriv < libtab_data.size() - 1; ++deriv)
+        for (std::size_t deriv = 0; deriv < basix_data.size() - 1; ++deriv)
           reference_values(p, d, v, deriv)
-              = libtab_data[deriv](p, d * _reference_value_size + v);
+              = basix_data[deriv](p, d * _reference_value_size + v);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(

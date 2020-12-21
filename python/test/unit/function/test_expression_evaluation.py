@@ -10,7 +10,7 @@ import dolfinx
 import numba
 import numpy as np
 import ufl
-import libtab
+import basix
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -200,7 +200,7 @@ def test_assembly_into_quadrature_function():
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 3, 6)
 
     quadrature_degree = 2
-    quadrature_points = libtab.make_quadrature(libtab.CellType.triangle, quadrature_degree)
+    quadrature_points = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
     Q_element = ufl.VectorElement("Quadrature", ufl.triangle, quadrature_degree, quad_scheme="default")
     Q = dolfinx.FunctionSpace(mesh, Q_element)
 

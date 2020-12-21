@@ -5,22 +5,22 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CoordinateElement.h"
-#include <libtab.h>
+#include <basix.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-CoordinateElement::CoordinateElement(int libtab_element_handle,
+CoordinateElement::CoordinateElement(int basix_element_handle,
                                      int geometric_dimension,
                                      const std::string& signature,
                                      const ElementDofLayout& dof_layout)
     : _gdim(geometric_dimension), _signature(signature),
-      _dof_layout(dof_layout), _libtab_element_handle(libtab_element_handle)
+      _dof_layout(dof_layout), _basix_element_handle(basix_element_handle)
 {
   const mesh::CellType cell = cell_shape();
-  int degree = libtab::degree(libtab_element_handle);
+  int degree = basix::degree(basix_element_handle);
   _is_affine
       = ((cell == mesh::CellType::interval or cell == mesh::CellType::triangle
           or cell == mesh::CellType::tetrahedron)
@@ -32,7 +32,7 @@ std::string CoordinateElement::signature() const { return _signature; }
 mesh::CellType CoordinateElement::cell_shape() const
 {
   // TODO
-  const std::string cell = libtab::cell_type(_libtab_element_handle);
+  const std::string cell = basix::cell_type(_basix_element_handle);
 
   const std::map<std::string, mesh::CellType> str_to_type
       = {{"interval", mesh::CellType::interval},
@@ -49,8 +49,8 @@ mesh::CellType CoordinateElement::cell_shape() const
 //-----------------------------------------------------------------------------
 int CoordinateElement::topological_dimension() const
 {
-  const std::string cell = libtab::cell_type(_libtab_element_handle);
-  return libtab::topology(cell.c_str()).size() - 1;
+  const std::string cell = basix::cell_type(_basix_element_handle);
+  return basix::topology(cell.c_str()).size() - 1;
 }
 //-----------------------------------------------------------------------------
 int CoordinateElement::geometric_dimension() const { return _gdim; }
@@ -76,7 +76,7 @@ void CoordinateElement::push_forward(
   // Compute physical coordinates
 
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi
-      = libtab::tabulate(_libtab_element_handle, 0, X)[0];
+      = basix::tabulate(_basix_element_handle, 0, X)[0];
 
   x = phi * cell_geometry.matrix();
 }
@@ -128,7 +128,7 @@ void CoordinateElement::compute_reference_geometry(
     Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> x0(_gdim);
     Eigen::ArrayXXd X0 = Eigen::ArrayXXd::Zero(1, tdim);
 
-    tabulated_data = libtab::tabulate(_libtab_element_handle, 1, X0);
+    tabulated_data = basix::tabulate(_basix_element_handle, 1, X0);
 
     // Compute physical coordinates at X=0.
     phi = tabulated_data[0].transpose();
@@ -190,7 +190,7 @@ void CoordinateElement::compute_reference_geometry(
       int k;
       for (k = 0; k < non_affine_max_its; ++k)
       {
-        tabulated_data = libtab::tabulate(_libtab_element_handle, 1, Xk);
+        tabulated_data = basix::tabulate(_basix_element_handle, 1, Xk);
 
         // Compute physical coordinates
         phi = tabulated_data[0].transpose();
