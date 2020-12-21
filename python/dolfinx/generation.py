@@ -72,11 +72,9 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
     cmap = fem.create_coordinate_map(comm, domain)
-    print("create")
     mesh = cpp.generation.RectangleMesh.create(comm, points, n, cmap, ghost_mode, diagonal)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
-    print("return")
     return mesh
 
 
