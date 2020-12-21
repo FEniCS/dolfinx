@@ -7,18 +7,12 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/nls/NewtonSolver.h>
-// #include <dolfinx/nls/NonlinearProblem.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-// // Needed for typeid(_p_Mat) in debug mode
-// #include <petsc/private/matimpl.h>
-// // Needed for typeid(_p_Vec) in debug mode
-#include <petsc/private/vecimpl.h>
 
 namespace py = pybind11;
 
