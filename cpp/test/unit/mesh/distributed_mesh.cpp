@@ -35,12 +35,12 @@ void create_mesh_file()
   file.write_mesh(*mesh);
 }
 
-using PartitionerFunction
+using PartitioningFunction
     = std::function<const graph::AdjacencyList<std::int32_t>(
         MPI_Comm, int, const mesh::CellType,
         const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>;
 
-void test_distributed_mesh(PartitionerFunction partitioner)
+void test_distributed_mesh(PartitioningFunction partitioner)
 {
   MPI_Comm mpi_comm{MPI_COMM_WORLD};
   int mpi_size = dolfinx::MPI::size(mpi_comm);
