@@ -155,18 +155,19 @@ private:
   std::size_t _unique_id = common::UniqueIdGenerator::id();
 };
 
+using PartitioningFunction
+    = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
+        MPI_Comm, int, const dolfinx::mesh::CellType,
+        const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        dolfinx::mesh::GhostMode)>;
+
 /// Create a mesh
-Mesh create_mesh(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-    const fem::CoordinateElement& element,
-    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        x,
-    GhostMode ghost_mode,
-    std::function<const graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, const mesh::CellType,
-        const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>
-        partitioner
-    = &mesh::partition_cells);
+Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+                 const fem::CoordinateElement& element,
+                 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>& x,
+                 GhostMode ghost_mode,
+                 PartitioningFunction partitioner = &mesh::partition_cells);
 
 } // namespace mesh
 } // namespace dolfinx

@@ -12,12 +12,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <mpi.h>
 
-using PartitioningFunction
-    = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, const dolfinx::mesh::CellType,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&,
-        dolfinx::mesh::GhostMode)>;
-
 namespace dolfinx
 {
 
@@ -53,7 +47,7 @@ public:
   create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
          std::array<std::size_t, 3> n, const fem::CoordinateElement& element,
          const mesh::GhostMode ghost_mode,
-         PartitioningFunction partitioner = mesh::partition_cells);
+         mesh::PartitioningFunction partitioner = &mesh::partition_cells);
 };
 } // namespace generation
 } // namespace dolfinx
