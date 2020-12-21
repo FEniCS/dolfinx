@@ -62,10 +62,10 @@ else()
 
   if (BASIX_PREFIX_DIR)
     set(BASIX_INCLUDE_DIRS ${BASIX_PREFIX_DIR}/include CACHE STRING "Where to find basix.h")
- 
+
     find_library(BASIX_LIBRARY
-      NAMES tab
-      HINTS ${BASIX_PREFIX_DIR}/lib  
+      NAMES basix
+      HINTS ${BASIX_PREFIX_DIR}/lib
       NO_DEFAULT_PATH
       DOC "The basix library"
       )
