@@ -14,8 +14,8 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
 #include <memory>
 #include <pybind11/eigen.h>
@@ -118,9 +118,11 @@ void mesh(py::module& m)
          const dolfinx::fem::CoordinateElement& element,
          const Eigen::Ref<const Eigen::Array<
              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
-         dolfinx::mesh::GhostMode ghost_mode) {
+         dolfinx::mesh::GhostMode ghost_mode,
+         dolfinx::mesh::PartitioningFunction partitioner
+         = &dolfinx::mesh::partition_cells) {
         return dolfinx::mesh::create_mesh(comm.get(), cells, element, x,
-                                          ghost_mode);
+                                          ghost_mode, partitioner);
       },
       "Helper function for creating meshes.");
 
@@ -243,6 +245,16 @@ void mesh(py::module& m)
            dolfinx::mesh::GhostMode ghost_mode) {
           return dolfinx::mesh::partition_cells(comm.get(), nparts, cell_type,
                                                 cells, ghost_mode);
+        });
+
+  // Partitioning interface
+  m.def("partition_cells_kahip",
+        [](const MPICommWrapper comm, int nparts,
+           dolfinx::mesh::CellType cell_type,
+           const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+           dolfinx::mesh::GhostMode ghost_mode) {
+          return dolfinx::mesh::partition_cells_kahip(
+              comm.get(), nparts, cell_type, cells, ghost_mode);
         });
 
   m.def("locate_entities", &dolfinx::mesh::locate_entities);
