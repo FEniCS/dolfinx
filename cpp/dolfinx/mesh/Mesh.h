@@ -33,6 +33,13 @@ class AdjacencyList;
 namespace mesh
 {
 
+/// Signature for the partitioning function
+using PartitioningFunction
+    = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
+        MPI_Comm, int, const dolfinx::mesh::CellType,
+        const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        dolfinx::mesh::GhostMode)>;
+
 /// Enum for different partitioning ghost modes
 enum class GhostMode : int
 {
@@ -155,11 +162,6 @@ private:
   std::size_t _unique_id = common::UniqueIdGenerator::id();
 };
 
-using PartitioningFunction
-    = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, const dolfinx::mesh::CellType,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&,
-        dolfinx::mesh::GhostMode)>;
 
 /// Create a mesh
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,

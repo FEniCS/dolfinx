@@ -60,16 +60,13 @@ Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
 } // namespace
 
 //-----------------------------------------------------------------------------
-Mesh mesh::create_mesh(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-    const fem::CoordinateElement& element,
-    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        x,
-    mesh::GhostMode ghost_mode,
-    std::function<const graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, const mesh::CellType,
-        const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>
-        partitioner)
+Mesh mesh::create_mesh(MPI_Comm comm,
+                       const graph::AdjacencyList<std::int64_t>& cells,
+                       const fem::CoordinateElement& element,
+                       const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>& x,
+                       mesh::GhostMode ghost_mode,
+                       PartitioningFunction partitioner)
 {
   if (ghost_mode == mesh::GhostMode::shared_vertex)
     throw std::runtime_error("Ghost mode via vertex currently disabled.");
