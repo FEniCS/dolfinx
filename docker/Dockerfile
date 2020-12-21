@@ -50,7 +50,8 @@ ARG PYBIND11_VERSION=2.6.1
 ARG PETSC_VERSION=3.14.2
 ARG SLEPC_VERSION=3.14.1
 ARG SLEPC4PY_VERSION=3.14.0
-ARG KAHIP_VERSION=v3.10
+# Todo: Update KaHIP version upon a release.
+ARG KAHIP_VERSION=623decb
 
 ########################################
 
@@ -145,12 +146,11 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
 # Install KaHIP
 ENV KAHIP_DIR=/usr/local/KaHIP/deploy
 RUN cd /usr/local && \
-    # git clone https://github.com/schulzchristian/KaHIP.git && \
-    git clone https://github.com/IgorBaratta/KaHIP.git && \
+    git clone https://github.com/schulzchristian/KaHIP.git && \
     cd KaHIP/ && \
-    # git checkout ${KAHIP_VERSION} && \
+    git checkout ${KAHIP_VERSION} && \
     mkdir build && cd build && \
-    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} .. && \
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} -DNONATIVEOPTIMIZATIONS=On .. && \
     ninja install
 
 
