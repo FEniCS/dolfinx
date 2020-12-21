@@ -29,11 +29,8 @@ T build_csr_directed_graph(const graph::AdjacencyList<X>& graph)
   std::vector<std::pair<std::size_t, std::size_t>> edges;
   edges.reserve(graph.array().size());
   for (int v = 0; v < graph.num_nodes(); ++v)
-  {
-    auto links = graph.links(v);
-    for (std::size_t e = 0; e < links.size(); ++e)
-      edges.emplace_back(v, links[e]);
-  }
+    for (auto e : graph.links(v))
+      edges.emplace_back(v, e);
 
   // Number of vertices
   const std::size_t n = graph.num_nodes();

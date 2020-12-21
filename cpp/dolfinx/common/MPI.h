@@ -211,9 +211,8 @@ dolfinx::MPI::all_to_all(MPI_Comm comm,
 
   // Data size per destination rank
   std::vector<int> send_size(comm_size);
-  std::adjacent_difference(send_offsets.data() + 1,
-                           send_offsets.data() + send_offsets.size(),
-                           send_size.begin());
+  std::adjacent_difference(std::next(send_offsets.begin(), +1),
+                           send_offsets.end(), send_size.begin());
 
   // Get received data sizes from each rank
   std::vector<int> recv_size(comm_size);

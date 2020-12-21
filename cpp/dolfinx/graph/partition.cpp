@@ -262,8 +262,7 @@ partition::reorder_global_indices(
     for (int j = 0; j < sharing_processes->num_nodes(); ++j)
     {
       auto p = sharing_processes->links(j);
-      auto it = std::find(p.begin(), p.end(), neighbors[i]);
-      if (it != p.end())
+      if (auto it = std::find(p.begin(), p.end(), neighbors[i]); it != p.end())
         number_send_neigh[i] += 2;
     }
   }

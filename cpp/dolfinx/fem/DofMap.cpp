@@ -54,13 +54,13 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   auto cells = topology.connectivity(tdim, 0);
   assert(cells);
 
+  // TODO: The below is just copying the dofmap adjacency list?
   // Build set of dofs that are in the new dofmap
   std::vector<std::int32_t> dofs_view;
   for (int i = 0; i < cells->num_nodes(); ++i)
   {
-    tcb::span<const std::int32_t> cell_dofs = dofmap_view.cell_dofs(i);
-    for (std::size_t dof = 0; dof < cell_dofs.size(); ++dof)
-      dofs_view.push_back(cell_dofs[dof]);
+    for (auto dof : dofmap_view.cell_dofs(i))
+      dofs_view.push_back(dof);
   }
   std::sort(dofs_view.begin(), dofs_view.end());
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
@@ -214,8 +214,6 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
   const int num_cells = this->_dofmap.num_nodes();
   // FIXME X: how does sub_element_map_view hand block sizes?
   const std::int32_t dofs_per_cell = sub_element_map_view.size();
-  // Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  //     dofmap(num_cells, dofs_per_cell);
   std::vector<std::int32_t> dofmap(num_cells * dofs_per_cell);
   const int bs_parent = this->bs();
   for (int c = 0; c < num_cells; ++c)

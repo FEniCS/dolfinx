@@ -102,8 +102,8 @@ build_basic_dofmap(const mesh::Topology& topology,
   std::vector<std::int32_t> dofs(num_cells * local_dim);
   std::vector<std::int32_t> cell_ptr(num_cells + 1, local_dim);
   cell_ptr[0] = 0;
-  std::partial_sum(cell_ptr.begin() + 1, cell_ptr.begin() + cell_ptr.size(),
-                   cell_ptr.begin() + 1);
+  std::partial_sum(std::next(cell_ptr.begin(), 1), cell_ptr.end(),
+                   std::next(cell_ptr.begin(), 1));
 
   // Allocate entity indices array
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);

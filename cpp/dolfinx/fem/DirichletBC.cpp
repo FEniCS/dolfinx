@@ -319,8 +319,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
-    const auto* it
-        = std::find(entities_d.begin(), entities_d.end(), entities[e]);
+    auto it = std::find(entities_d.begin(), entities_d.end(), entities[e]);
     assert(it != entities_d.end());
     const int entity_local_index = std::distance(entities_d.begin(), it);
 
@@ -368,7 +367,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
   }
 
-  // Copy to Eigen arrays
+  // Copy to separate vector
   std::array dofs = {std::vector<std::int32_t>(bc_dofs.size()),
                      std::vector<std::int32_t>(bc_dofs.size())};
   for (std::size_t i = 0; i < dofs[0].size(); ++i)
@@ -424,8 +423,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
-    const auto* it
-        = std::find(entities_d.begin(), entities_d.end(), entities[i]);
+    auto it = std::find(entities_d.begin(), entities_d.end(), entities[i]);
     assert(it != entities_d.end());
     const int entity_local_index = std::distance(entities_d.data(), it);
 

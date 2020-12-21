@@ -116,7 +116,7 @@ public:
     return this->_array == list._array and this->_offsets == list._offsets;
   }
 
-  /// Gee the number of nodes
+  /// Get the number of nodes
   /// @return The number of nodes
   std::int32_t num_nodes() const { return _offsets.size() - 1; }
 

@@ -38,18 +38,6 @@ void io(py::module& m)
   // TODO: Template for different values dtypes
   m.def("extract_local_entities",
         &dolfinx::io::xdmf_utils::extract_local_entities);
-  //   m.def("extract_local_entities",
-  //         [](const dolfinx::mesh::Mesh& mesh, const int entity_dim,
-  //            const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-  //                               Eigen::RowMajor>& entities,
-  //            const py::array_t<std::int32_t>& values) {
-  //           py::buffer_info buf = values.request();
-  //           std::vector<std::int32_t> vals((std::int32_t*)buf.ptr,
-  //                                          (std::int32_t*)buf.ptr +
-  //                                          buf.size);
-  //           return dolfinx::io::xdmf_utils::extract_local_entities(
-  //               mesh, entity_dim, entities, vals);
-  //         });
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
