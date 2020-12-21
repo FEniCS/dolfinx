@@ -310,10 +310,10 @@ void fem(py::module& m)
              const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V) {
             std::array dofs = {std::vector<std::int32_t>(
                                    V_g_dofs[0].data(),
-                                   V_g_dofs[1].data() + V_g_dofs[0].size()),
+                                   V_g_dofs[0].data() + V_g_dofs[0].size()),
                                std::vector<std::int32_t>(
-                                   V_g_dofs[0].data(),
-                                   V_g_dofs[1].data() + V_g_dofs[0].size())};
+                                   V_g_dofs[1].data(),
+                                   V_g_dofs[1].data() + V_g_dofs[1].size())};
             return dolfinx::fem::DirichletBC(g, std::move(dofs), V);
           }))
       .def("dof_indices",
