@@ -8,198 +8,13 @@
 #include "Geometry.h"
 #include <Eigen/Dense>
 #include <algorithm>
+#include <basix.h>
 #include <cfloat>
 #include <cstdlib>
 #include <numeric>
 #include <stdexcept>
 
 using namespace dolfinx;
-
-namespace
-{
-//-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_entity_vertices_interval(int dim)
-{
-  const static Eigen::Array<int, 2, 1> e0
-      = (Eigen::Array<int, 2, 1>() << 0, 1).finished();
-  const static Eigen::Array<int, 1, 2, Eigen::RowMajor> e1
-      = (Eigen::Array<int, 1, 2, Eigen::RowMajor>() << 0, 1).finished();
-  switch (dim)
-  {
-  case 0:
-    return e0;
-  case 1:
-    return e1;
-  default:
-    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
-  }
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_entity_vertices_triangle(int dim)
-{
-  // We only need to know how to create edges
-  assert(dim == 1);
-
-  // Create the three edges
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e(3, 2);
-  e(0, 0) = 1;
-  e(0, 1) = 2;
-  e(1, 0) = 0;
-  e(1, 1) = 2;
-  e(2, 0) = 0;
-  e(2, 1) = 1;
-
-  return e;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_entity_vertices_quadrilateral(int dim)
-{
-  assert(dim == 1);
-
-  // Create the four edges
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e(4, 2);
-  e(0, 0) = 0;
-  e(0, 1) = 1;
-  e(1, 0) = 2;
-  e(1, 1) = 3;
-  e(2, 0) = 0;
-  e(2, 1) = 2;
-  e(3, 0) = 1;
-  e(3, 1) = 3;
-
-  return e;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_entity_vertices_tetrahedron(int dim)
-{
-  // We only need to know how to create edges and faces
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e;
-  switch (dim)
-  {
-  case 1:
-    // Resize data structure
-    e.resize(6, 2);
-
-    // Create the six edges
-    e(0, 0) = 2;
-    e(0, 1) = 3;
-    e(1, 0) = 1;
-    e(1, 1) = 3;
-    e(2, 0) = 1;
-    e(2, 1) = 2;
-    e(3, 0) = 0;
-    e(3, 1) = 3;
-    e(4, 0) = 0;
-    e(4, 1) = 2;
-    e(5, 0) = 0;
-    e(5, 1) = 1;
-    break;
-  case 2:
-    // Resize data structure
-    e.resize(4, 3);
-
-    // Create the four faces
-    e(0, 0) = 1;
-    e(0, 1) = 2;
-    e(0, 2) = 3;
-    e(1, 0) = 0;
-    e(1, 1) = 2;
-    e(1, 2) = 3;
-    e(2, 0) = 0;
-    e(2, 1) = 1;
-    e(2, 2) = 3;
-    e(3, 0) = 0;
-    e(3, 1) = 1;
-    e(3, 2) = 2;
-    break;
-  default:
-    throw std::runtime_error("Illegal topological dimension");
-  }
-
-  return e;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_entity_vertices_hexahedron(int dim)
-{
-  // We need to know how to create edges and faces
-
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e;
-  switch (dim)
-  {
-  case 1:
-    // Resize data structure
-    e.resize(12, 2);
-
-    // Create the 12 edges
-    e(0, 0) = 0;
-    e(0, 1) = 1;
-    e(1, 0) = 2;
-    e(1, 1) = 3;
-    e(2, 0) = 4;
-    e(2, 1) = 5;
-    e(3, 0) = 6;
-    e(3, 1) = 7;
-    e(4, 0) = 0;
-    e(4, 1) = 2;
-    e(5, 0) = 1;
-    e(5, 1) = 3;
-    e(6, 0) = 4;
-    e(6, 1) = 6;
-    e(7, 0) = 5;
-    e(7, 1) = 7;
-    e(8, 0) = 0;
-    e(8, 1) = 4;
-    e(9, 0) = 1;
-    e(9, 1) = 5;
-    e(10, 0) = 2;
-    e(10, 1) = 6;
-    e(11, 0) = 3;
-    e(11, 1) = 7;
-    break;
-  case 2:
-    // Resize data structure
-    e.resize(6, 4);
-
-    // Create the 6 faces
-    e(0, 0) = 0;
-    e(0, 1) = 1;
-    e(0, 2) = 2;
-    e(0, 3) = 3;
-    e(1, 0) = 4;
-    e(1, 1) = 5;
-    e(1, 2) = 6;
-    e(1, 3) = 7;
-    e(2, 0) = 0;
-    e(2, 1) = 1;
-    e(2, 2) = 4;
-    e(2, 3) = 5;
-    e(3, 0) = 2;
-    e(3, 1) = 3;
-    e(3, 2) = 6;
-    e(3, 3) = 7;
-    e(4, 0) = 0;
-    e(4, 1) = 2;
-    e(4, 2) = 4;
-    e(4, 3) = 6;
-    e(5, 0) = 1;
-    e(5, 1) = 3;
-    e(5, 2) = 5;
-    e(5, 3) = 7;
-    break;
-  default:
-    throw std::runtime_error("Illegal topological dimension. Must be 1 or 2.");
-  }
-
-  return e;
-}
-//-----------------------------------------------------------------------------
-
-} // namespace
 
 //-----------------------------------------------------------------------------
 std::string mesh::to_string(mesh::CellType type)
@@ -280,24 +95,19 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 mesh::get_entity_vertices(mesh::CellType type, int dim)
 {
-  switch (type)
-  {
-  // case mesh::CellType::point:
-  //   return create_entities_point(e, v);
-  case mesh::CellType::interval:
-    return get_entity_vertices_interval(dim);
-  case mesh::CellType::triangle:
-    return get_entity_vertices_triangle(dim);
-  case mesh::CellType::tetrahedron:
-    return get_entity_vertices_tetrahedron(dim);
-  case mesh::CellType::quadrilateral:
-    return get_entity_vertices_quadrilateral(dim);
-  case mesh::CellType::hexahedron:
-    return get_entity_vertices_hexahedron(dim);
-  default:
-    throw std::runtime_error("Unsupported cell type.");
-    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
-  }
+  assert(dim >= 0);
+  // assert(dim < basix::topological_dimension(celltype));
+
+  std::vector<std::vector<int>> topology
+      = basix::topology(to_string(type).c_str())[dim];
+
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e(
+      topology.size(), topology[0].size());
+  for (std::size_t i = 0; i < topology.size(); ++i)
+    for (std::size_t j = 0; j < topology[0].size(); ++j)
+      e(i, j) = topology[i][j];
+
+  return e;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -313,17 +123,18 @@ mesh::get_sub_entities(CellType type, int dim0, int dim1)
     throw std::runtime_error(
         "mesh::get_sub_entities supports getting edges (d=1) at present.");
   }
+  // TODO: get this data from basix
   const static Eigen::Array<int, 1, 3, Eigen::RowMajor> triangle
       = (Eigen::Array<int, 1, 3, Eigen::RowMajor>() << 0, 1, 2).finished();
   const static Eigen::Array<int, 1, 4, Eigen::RowMajor> quadrilateral
-      = (Eigen::Array<int, 1, 4, Eigen::RowMajor>() << 0, 3, 1, 2).finished();
+      = (Eigen::Array<int, 1, 4, Eigen::RowMajor>() << 0, 2, 3, 1).finished();
   const static Eigen::Array<int, 4, 3, Eigen::RowMajor> tetrahedron
       = (Eigen::Array<int, 4, 3, Eigen::RowMajor>() << 0, 1, 2, 0, 3, 4, 1, 3,
          5, 2, 4, 5)
             .finished();
   const static Eigen::Array<int, 6, 4, Eigen::RowMajor> hexahedron
-      = (Eigen::Array<int, 6, 4, Eigen::RowMajor>() << 0, 1, 4, 5, 2, 3, 6, 7,
-         0, 2, 8, 9, 1, 3, 10, 11, 4, 6, 8, 10, 5, 7, 9, 11)
+      = (Eigen::Array<int, 6, 4, Eigen::RowMajor>() << 0, 3, 5, 1, 0, 4, 8, 2,
+         1, 6, 9, 2, 3, 7, 10, 4, 5, 7, 11, 6, 8, 10, 11, 9)
             .finished();
 
   switch (type)
