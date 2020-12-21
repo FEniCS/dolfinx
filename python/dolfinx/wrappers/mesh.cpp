@@ -37,15 +37,17 @@ void declare_meshtags(py::module& m, std::string type)
   py::class_<dolfinx::mesh::MeshTags<T>,
              std::shared_ptr<dolfinx::mesh::MeshTags<T>>>(
       m, pyclass_name.c_str(), "MeshTags object")
-      .def(py::init([](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
-                       int dim, const py::array_t<std::int32_t>& indices,
-                       const py::array_t<T>& values) {
-        std::vector<std::int32_t> indices_vec(indices.data(),
-                                              indices.data() + indices.size());
-        std::vector<T> values_vec(values.data(), values.data() + values.size());
-        return dolfinx::mesh::MeshTags<T>(mesh, dim, std::move(indices_vec),
-                                          std::move(values_vec));
-      }))
+      .def(py::init(
+          [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, int dim,
+             const py::array_t<std::int32_t, py::array::c_style>& indices,
+             const py::array_t<T, py::array::c_style>& values) {
+            std::vector<std::int32_t> indices_vec(
+                indices.data(), indices.data() + indices.size());
+            std::vector<T> values_vec(values.data(),
+                                      values.data() + values.size());
+            return dolfinx::mesh::MeshTags<T>(mesh, dim, std::move(indices_vec),
+                                              std::move(values_vec));
+          }))
       .def_readwrite("name", &dolfinx::mesh::MeshTags<T>::name)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)

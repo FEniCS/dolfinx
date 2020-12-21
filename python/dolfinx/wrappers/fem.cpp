@@ -297,14 +297,16 @@ void fem(py::module& m)
       .def(py::init(
           [](const std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>&
                  g,
-             const py::array_t<std::int32_t>& dofs) {
-            std::vector<std::int32_t> _dofs(dofs.data(), dofs.data() + dofs.size());
+             const py::array_t<std::int32_t, py::array::c_style>& dofs) {
+            std::vector<std::int32_t> _dofs(dofs.data(),
+                                            dofs.data() + dofs.size());
             return dolfinx::fem::DirichletBC<PetscScalar>(g, std::move(_dofs));
           }))
       .def(py::init(
           [](const std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>&
                  g,
-             const std::array<py::array_t<std::int32_t>, 2>& V_g_dofs,
+             const std::array<py::array_t<std::int32_t, py::array::c_style>, 2>&
+                 V_g_dofs,
              const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V) {
             std::array dofs = {std::vector<std::int32_t>(
                                    V_g_dofs[0].data(),
@@ -393,7 +395,7 @@ void fem(py::module& m)
       [](Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
          const std::vector<std::shared_ptr<
              const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
-         const py::array_t<PetscScalar>& x0, double scale) {
+         const py::array_t<PetscScalar, py::array::c_style>& x0, double scale) {
         if (x0.ndim() == 0)
           dolfinx::fem::set_bc<PetscScalar>(b, bcs, scale);
         else if (x0.ndim() == 1)

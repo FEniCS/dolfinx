@@ -107,7 +107,8 @@ void la(py::module& m)
   m.def(
       "create_vector",
       [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
-         const py::array_t<std::int32_t>& ghost_indices, int bs) {
+         const py::array_t<std::int32_t, py::array::c_style>& ghost_indices,
+         int bs) {
         return dolfinx::la::create_petsc_vector(
             comm.get(), range,
             std::vector<std::int64_t>(ghost_indices.data(),
