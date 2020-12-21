@@ -63,9 +63,15 @@ void common(py::module& m)
                              "Range of indices owned by this map")
       .def("ghost_owner_rank", &dolfinx::common::IndexMap::ghost_owner_rank,
            "Return owning process for each ghost index")
-      .def_property_readonly("ghosts", &dolfinx::common::IndexMap::ghosts,
-                             py::return_value_policy::reference_internal,
-                             "Return list of ghost indices")
+      .def_property_readonly(
+          "ghosts",
+          [](const dolfinx::common::IndexMap& self) {
+            const std::vector<std::int64_t>& ghosts = self.ghosts();
+            return py::array_t<std::int64_t>(ghosts.size(), ghosts.data(),
+                                             py::none());
+          },
+          py::return_value_policy::reference_internal,
+          "Return list of ghost indices")
       .def("global_indices", &dolfinx::common::IndexMap::global_indices);
 
   // dolfinx::common::Timer

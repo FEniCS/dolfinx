@@ -102,6 +102,16 @@ mesh = RectangleMesh(
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
 
+# map = mesh.topology.index_map(0)
+# ghosts = map.ghosts
+# print(ghosts)
+
+# del mesh
+# print("B", ghosts)
+
+exit(0)
+
+
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
 # The second argument to :py:class:`FunctionSpace

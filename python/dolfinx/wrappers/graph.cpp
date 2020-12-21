@@ -31,21 +31,24 @@ void declare_adjacency_list(py::module& m, std::string type)
           "links",
           [](const dolfinx::graph::AdjacencyList<T>& self, int i) {
             tcb::span<const T> link = self.links(i);
-            return py::array_t<T>(link.size(), link.data(), py::cast(self));
+            return py::array_t<T>(link.size(), link.data(), py::none());
           },
+          py::return_value_policy::reference_internal,
           "Links (edges) of a node")
-      .def_property_readonly("array",
-                             [](const dolfinx::graph::AdjacencyList<T>& self) {
-                               return py::array_t<T>(self.array().size(),
-                                                     self.array().data(),
-                                                     py::cast(self));
-                             })
-      .def_property_readonly("offsets",
-                             [](const dolfinx::graph::AdjacencyList<T>& self) {
-                               return py::array_t<std::int32_t>(
-                                   self.offsets().size(), self.offsets().data(),
-                                   py::cast(self));
-                             })
+      .def_property_readonly(
+          "array",
+          [](const dolfinx::graph::AdjacencyList<T>& self) {
+            return py::array_t<T>(self.array().size(), self.array().data(),
+                                  py::none());
+          },
+          py::return_value_policy::reference_internal)
+      .def_property_readonly(
+          "offsets",
+          [](const dolfinx::graph::AdjacencyList<T>& self) {
+            return py::array_t<std::int32_t>(self.offsets().size(),
+                                             self.offsets().data(), py::none());
+          },
+          py::return_value_policy::reference_internal)
       .def_property_readonly("num_nodes",
                              &dolfinx::graph::AdjacencyList<T>::num_nodes)
       .def("__eq__", &dolfinx::graph::AdjacencyList<T>::operator==,
@@ -59,34 +62,5 @@ void graph(py::module& m)
 
   declare_adjacency_list<std::int32_t>(m, "int32");
   declare_adjacency_list<std::int64_t>(m, "int64");
-
-  m.def("create_local_adjacency_list",
-        &dolfinx::graph::partition::create_local_adjacency_list);
-  m.def("create_distributed_adjacency_list",
-        [](const MPICommWrapper comm,
-           const dolfinx::graph::AdjacencyList<std::int32_t>& list_local,
-           const std::vector<std::int64_t>& global_links,
-           const std::vector<bool>& exterior_links) {
-          return dolfinx::graph::partition::create_distributed_adjacency_list(
-              comm.get(), list_local, global_links, exterior_links);
-        });
-  m.def("distribute",
-        [](const MPICommWrapper comm,
-           const dolfinx::graph::AdjacencyList<std::int64_t>& list,
-           const dolfinx::graph::AdjacencyList<std::int32_t>& destinations) {
-          return dolfinx::graph::partition::distribute(comm.get(), list,
-                                                       destinations);
-        });
-  m.def("distribute_data",
-        [](const MPICommWrapper comm, const std::vector<std::int64_t>& indices,
-           const Eigen::Ref<const Eigen::Array<
-               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x) {
-          return dolfinx::graph::partition::distribute_data<double>(comm.get(),
-                                                                    indices, x);
-        });
-  m.def("compute_local_to_global_links",
-        &dolfinx::graph::partition::compute_local_to_global_links);
-  m.def("compute_local_to_local",
-        &dolfinx::graph::partition::compute_local_to_local);
 }
 } // namespace dolfinx_wrappers

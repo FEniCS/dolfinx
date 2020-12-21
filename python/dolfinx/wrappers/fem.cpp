@@ -265,12 +265,14 @@ void fem(py::module& m)
       .def_property_readonly("index_map_bs",
                              &dolfinx::fem::DofMap::index_map_bs)
       .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
-      .def("cell_dofs",
-           [](const dolfinx::fem::DofMap& self, int cell) {
-             tcb::span<const std::int32_t> dofs = self.cell_dofs(cell);
-             return py::array_t<std::int32_t>(dofs.size(), dofs.data(),
-                                              py::cast(self));
-           })
+      .def(
+          "cell_dofs",
+          [](const dolfinx::fem::DofMap& self, int cell) {
+            tcb::span<const std::int32_t> dofs = self.cell_dofs(cell);
+            return py::array_t<std::int32_t>(dofs.size(), dofs.data(),
+                                             py::none());
+          },
+          py::return_value_policy::reference_internal)
       .def_property_readonly("bs", &dolfinx::fem::DofMap::bs)
       .def("list", &dolfinx::fem::DofMap::list);
 
@@ -316,13 +318,15 @@ void fem(py::module& m)
                                    V_g_dofs[1].data() + V_g_dofs[1].size())};
             return dolfinx::fem::DirichletBC(g, std::move(dofs), V);
           }))
-      .def("dof_indices",
-           [](const dolfinx::fem::DirichletBC<PetscScalar>& self) {
-             auto [dofs, owned] = self.dof_indices();
-             return std::pair(py::array_t<std::int32_t>(
-                                  dofs.size(), dofs.data(), py::cast(self)),
-                              owned);
-           })
+      .def(
+          "dof_indices",
+          [](const dolfinx::fem::DirichletBC<PetscScalar>& self) {
+            auto [dofs, owned] = self.dof_indices();
+            return std::pair(
+                py::array_t<std::int32_t>(dofs.size(), dofs.data(), py::none()),
+                owned);
+          },
+          py::return_value_policy::reference_internal)
       .def_property_readonly(
           "function_space",
           &dolfinx::fem::DirichletBC<PetscScalar>::function_space)
@@ -544,7 +548,7 @@ void fem(py::module& m)
              const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                  Eigen::RowMajor>>&)>& marker) {
         std::vector<std::int32_t> dofs
-            = dolfinx::fem::locate_dofs_geometrical(V, remote);
+            = dolfinx::fem::locate_dofs_geometrical(V, marker);
         return py::array_t<std::int32_t>(dofs.size(), dofs.data());
       },
       py::arg("V"), py::arg("marker"));
