@@ -537,14 +537,17 @@ void fem(py::module& m)
                 py::array_t<std::int32_t>(dofs[1].size(), dofs[1].data())};
       },
       py::arg("V"), py::arg("marker"));
-  m.def("locate_dofs_geometrical",
-        py::overload_cast<
-            const dolfinx::fem::FunctionSpace&,
-            const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-                const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                    Eigen::RowMajor>>&)>&>(
-            &dolfinx::fem::locate_dofs_geometrical),
-        py::arg("V"), py::arg("marker"));
+  m.def(
+      "locate_dofs_geometrical",
+      [](const dolfinx::fem::FunctionSpace& V,
+         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                                 Eigen::RowMajor>>&)>& marker) {
+        std::vector<std::int32_t> dofs
+            = dolfinx::fem::locate_dofs_geometrical(V, remote);
+        return py::array_t<std::int32_t>(dofs.size(), dofs.data());
+      },
+      py::arg("V"), py::arg("marker"));
 
   // dolfinx::fem::Function
   py::class_<dolfinx::fem::Function<PetscScalar>,
