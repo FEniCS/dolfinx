@@ -294,13 +294,26 @@ void fem(py::module& m)
           "Object for representing Dirichlet (essential) boundary conditions");
 
   dirichletbc
-      .def(py::init<std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>,
-                    const std::array<std::vector<std::int32_t>, 2>&,
-                    std::shared_ptr<const dolfinx::fem::FunctionSpace>>(),
-           py::arg("V"), py::arg("g"), py::arg("V_g_dofs"))
-      .def(py::init<std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>,
-                    const std::vector<std::int32_t>&>(),
-           py::arg("g"), py::arg("dofs"))
+      .def(py::init(
+          [](const std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>&
+                 g,
+             const py::array_t<std::int32_t>& dofs) {
+            std::vector<std::int32_t> _dofs(dofs.data(), dofs.data() + dofs.size());
+            return dolfinx::fem::DirichletBC<PetscScalar>(g, std::move(_dofs));
+          }))
+      .def(py::init(
+          [](const std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>&
+                 g,
+             const std::array<py::array_t<std::int32_t>, 2>& V_g_dofs,
+             const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V) {
+            std::array dofs = {std::vector<std::int32_t>(
+                                   V_g_dofs[0].data(),
+                                   V_g_dofs[1].data() + V_g_dofs[0].size()),
+                               std::vector<std::int32_t>(
+                                   V_g_dofs[0].data(),
+                                   V_g_dofs[1].data() + V_g_dofs[0].size())};
+            return dolfinx::fem::DirichletBC(g, std::move(dofs), V);
+          }))
       .def("dof_indices",
            [](const dolfinx::fem::DirichletBC<PetscScalar>& self) {
              auto [dofs, owned] = self.dof_indices();
