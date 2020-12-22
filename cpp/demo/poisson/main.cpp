@@ -168,8 +168,8 @@ int main(int argc, char* argv[])
               or (x.row(0) - 1.0).abs() < 10.0 * epsilon);
     });
 
-    std::vector bc{
-        std::make_shared<const fem::DirichletBC<PetscScalar>>(u0, bdofs)};
+    std::vector bc{std::make_shared<const fem::DirichletBC<PetscScalar>>(
+        u0, std::move(bdofs))};
 
     f->interpolate([](auto& x) {
       auto dx = Eigen::square(x - 0.5);

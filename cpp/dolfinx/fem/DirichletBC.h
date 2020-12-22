@@ -150,20 +150,22 @@ public:
   template <typename U>
   DirichletBC(const std::shared_ptr<const fem::Function<T>>& g, U&& dofs)
       : _function_space(g->function_space()), _g(g),
-        _dofs0(std::forward<U>(dofs)), _dofs1_g(_dofs0)
+        _dofs0(std::forward<U>(dofs))
   {
     const int bs = _function_space->dofmap()->bs();
     if (bs > 1)
     {
       // Unroll for the block size
-      _dofs0.resize(bs * dofs.size());
-      for (std::size_t i = 0; i < dofs.size(); ++i)
+      const std::vector<std::int32_t> dof_tmp = _dofs0;
+      _dofs0.resize(bs * dof_tmp.size());
+      for (std::size_t i = 0; i < dof_tmp.size(); ++i)
       {
         for (int k = 0; k < bs; ++k)
-          _dofs0[bs * i + k] = bs * dofs[i] + k;
+          _dofs0[bs * i + k] = bs * dof_tmp[i] + k;
       }
-      _dofs1_g = _dofs0;
     }
+
+    _dofs1_g = _dofs0;
 
     // TODO: allows single dofs array (let one point to the other)
     const int owned_size0 = _function_space->dofmap()->index_map->size_local();
@@ -332,7 +334,7 @@ private:
   // The function
   std::shared_ptr<const fem::Function<T>> _g;
 
-  // Dof indices (_dofs0) in _function_space and ( _dofs1_g) in the
+  // Dof indices (_dofs0) in _function_space and (_dofs1_g) in the
   // space of _g
   std::vector<std::int32_t> _dofs0, _dofs1_g;
 
