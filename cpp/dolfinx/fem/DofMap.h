@@ -80,7 +80,7 @@ public:
   DofMap(std::shared_ptr<const ElementDofLayout> element,
          std::shared_ptr<const common::IndexMap> index_map, int index_map_bs,
          U&& dofmap, int bs)
-      : element_dof_layout(element_dof_layout), index_map(index_map),
+      : element_dof_layout(element), index_map(index_map),
         _index_map_bs(index_map_bs), _dofmap(std::forward<U>(dofmap)), _bs(bs)
   {
     // Do nothing
