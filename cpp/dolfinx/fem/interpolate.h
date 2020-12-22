@@ -184,7 +184,7 @@ void interpolate(
   const int tdim = mesh->topology().dim();
   const int gdim = mesh->geometry().dim();
 
-  // Get cell geometry
+   // Get cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -200,8 +200,10 @@ void interpolate(
   // Get coordinate map
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
+
   // Get interpolation points on reference
   Eigen::ArrayXXd reference_points = element->interpolation_points();
+
 
   // Loop over cells and interpolate on each cell
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -211,14 +213,20 @@ void interpolate(
   Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> interpolation_points(
       3, reference_points.rows());
 
+
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
       element->value_size() * element->block_size(), reference_points.rows());
+
 
   const int num_scalar_dofs = element->space_dimension() / block_size;
 
   Eigen::Array<T, Eigen::Dynamic, 1> coeff_block(num_scalar_dofs);
 
-  Eigen::Array<T, Eigen::Dynamic, 1> interpolation_coeffs(u.function_space()->dim());
+  auto dof_indexmap = dofmap->index_map;
+  const std::int32_t space_dim
+      = dofmap->index_map_bs()
+        * (dof_indexmap->size_local() + dof_indexmap->num_ghosts());
+  Eigen::Array<T, Eigen::Dynamic, 1> interpolation_coeffs(space_dim);
 
   const bool needs_permutation_data = element->needs_permutation_data();
   if (needs_permutation_data)
@@ -240,9 +248,10 @@ void interpolate(
         = mapped_points.transpose();
     values = f(interpolation_points);
     auto dofs = dofmap->cell_dofs(c);
-    for (int block=0; block < block_size; ++block)
+    for (int block = 0; block < block_size; ++block)
     {
-      coeff_block = element->interpolate_into_cell(block_size == 1 ? values: values.row(block), cell_info[c]);
+      coeff_block = element->interpolate_into_cell(
+          block_size == 1 ? values : values.row(block), cell_info[c]);
       assert(coeff_block.size() == num_scalar_dofs);
       for (int i = 0; i < num_scalar_dofs; ++i)
         interpolation_coeffs(block_size * dofs[i] + block) = coeff_block[i];

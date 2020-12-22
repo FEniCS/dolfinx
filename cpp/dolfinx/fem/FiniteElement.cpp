@@ -5,10 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FiniteElement.h"
+#include <basix.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/utils.h>
 #include <functional>
-#include <basix.h>
 #include <ufc.h>
 
 using namespace dolfinx;
@@ -141,8 +141,7 @@ void FiniteElement::evaluate_reference_basis(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
-  Eigen::ArrayXXd basix_data
-      = basix::tabulate(_basix_element_handle, 0, X)[0];
+  Eigen::ArrayXXd basix_data = basix::tabulate(_basix_element_handle, 0, X)[0];
 
   const int scalar_reference_value_size = _reference_value_size / _block_size;
 

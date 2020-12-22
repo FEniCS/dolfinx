@@ -438,6 +438,7 @@ public:
       for (int i = 0; i < values.rows(); ++i)
         point_values.row(dofs[i]) = values.row(i);
     }
+
     return point_values;
   }
 
