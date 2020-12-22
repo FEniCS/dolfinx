@@ -107,10 +107,14 @@ void la(py::module& m)
   m.def(
       "create_vector",
       [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
-         const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghost_indices,
+         const py::array_t<std::int32_t, py::array::c_style>& ghost_indices,
          int bs) {
-        return dolfinx::la::create_petsc_vector(comm.get(), range,
-                                                ghost_indices, bs);
+        return dolfinx::la::create_petsc_vector(
+            comm.get(), range,
+            std::vector<std::int64_t>(ghost_indices.data(),
+                                      ghost_indices.data()
+                                          + ghost_indices.size()),
+            bs);
       },
       py::return_value_policy::take_ownership, "Create a PETSc Vec.");
   m.def(

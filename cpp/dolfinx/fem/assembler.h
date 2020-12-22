@@ -10,6 +10,7 @@
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
 #include <Eigen/Dense>
+#include <dolfinx/common/span.hpp>
 #include <memory>
 #include <vector>
 
@@ -161,12 +162,11 @@ template <typename T>
 void add_diagonal(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
-    T diagonal = 1.0)
+    const tcb::span<const std::int32_t>& rows, T diagonal = 1.0)
 {
-  for (Eigen::Index i = 0; i < rows.rows(); ++i)
+  for (std::size_t i = 0; i < rows.size(); ++i)
   {
-    const std::int32_t row = rows(i);
+    const std::int32_t row = rows[i];
     mat_add(1, &row, 1, &row, &diagonal);
   }
 }
@@ -200,7 +200,7 @@ void add_diagonal(
     if (V.contains(*bc->function_space()))
     {
       const auto [dofs, range] = bc->dof_indices();
-      add_diagonal<T>(mat_add, dofs.head(range), diagonal);
+      add_diagonal<T>(mat_add, dofs.first(range), diagonal);
     }
   }
 }

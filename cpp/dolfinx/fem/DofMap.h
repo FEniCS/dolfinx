@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -52,7 +51,7 @@ class ElementDofLayout;
 /// @return Map from global (process-wise) index to positions in an
 ///   unaassembled array. The links for each node are sorted.
 graph::AdjacencyList<std::int32_t>
-transpose_dofmap(graph::AdjacencyList<std::int32_t>& dofmap,
+transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
                  std::int32_t num_cells);
 
 /// Degree-of-freedom map
@@ -90,9 +89,8 @@ public:
   /// Local-to-global mapping of dofs on a cell
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
-  ///   indices)
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::ConstSegmentReturnType
-  cell_dofs(int cell) const
+  /// indices)
+  tcb::span<const std::int32_t> cell_dofs(int cell) const
   {
     return _dofmap.links(cell);
   }

@@ -36,8 +36,7 @@ void eval(
       = dolfinx::fem::pack_coefficients(e);
 
   // Prepare constants
-  const Eigen::Array<T, Eigen::Dynamic, 1> constant_values
-      = dolfinx::fem::pack_constants(e);
+  const std::vector<T> constant_values = dolfinx::fem::pack_constants(e);
 
   const auto& fn = e.get_tabulate_expression();
 
@@ -55,35 +54,26 @@ void eval(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
-  Eigen::Array<T, Eigen::Dynamic, 1> values_e;
-  const Eigen::Index num_points = e.num_points();
-  const Eigen::Index value_size = e.value_size();
-  const Eigen::Index size = num_points * value_size;
-  values_e.setZero(size);
-
   // Iterate over cells and 'assemble' into values
-  Eigen::Index i = 0;
-  for (std::int32_t c : active_cells)
+  std::vector<T> values_e(e.num_points() * e.value_size(), 0);
+  for (std::size_t i = 0; i < active_cells.size(); ++i)
   {
+    const std::int32_t c = active_cells[i];
     auto x_dofs = x_dofmap.links(c);
-    for (Eigen::Index j = 0; j < num_dofs_g; ++j)
+    for (int j = 0; j < num_dofs_g; ++j)
     {
       const auto x_dof = x_dofs[j];
-      for (Eigen::Index k = 0; k < gdim; ++k)
+      for (int k = 0; k < gdim; ++k)
         coordinate_dofs(j, k) = x_g(x_dof, k);
     }
 
     auto coeff_cell = coeffs.row(c);
-
-    // Experimentally faster than .setZero().
-    for (Eigen::Index j = 0; j < size; j++)
-      values_e(j) = 0.0;
-
+    std::fill(values_e.begin(), values_e.end(), 0.0);
     fn(values_e.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data());
 
-    values.row(i) = values_e;
-    ++i;
+    for (std::size_t j = 0; j < values_e.size(); ++j)
+      values(i, j) = values_e[j];
   }
 }
 

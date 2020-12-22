@@ -265,9 +265,15 @@ void fem(py::module& m)
       .def_property_readonly("index_map_bs",
                              &dolfinx::fem::DofMap::index_map_bs)
       .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
-      .def("cell_dofs", &dolfinx::fem::DofMap::cell_dofs)
+      .def("cell_dofs",
+           [](const dolfinx::fem::DofMap& self, int cell) {
+             tcb::span<const std::int32_t> dofs = self.cell_dofs(cell);
+             return py::array_t<std::int32_t>(dofs.size(), dofs.data(),
+                                              py::cast(self));
+           })
       .def_property_readonly("bs", &dolfinx::fem::DofMap::bs)
-      .def("list", &dolfinx::fem::DofMap::list);
+      .def("list", &dolfinx::fem::DofMap::list,
+           py::return_value_policy::reference_internal);
 
   // dolfinx::fem::CoordinateElement
   py::class_<dolfinx::fem::CoordinateElement,
@@ -289,17 +295,35 @@ void fem(py::module& m)
           "Object for representing Dirichlet (essential) boundary conditions");
 
   dirichletbc
-      .def(py::init<std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>,
-                    const std::array<
-                        Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>&,
-                    std::shared_ptr<const dolfinx::fem::FunctionSpace>>(),
-           py::arg("V"), py::arg("g"), py::arg("V_g_dofs"))
-      .def(
-          py::init<std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>,
-                   const Eigen::Ref<
-                       const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&>(),
-          py::arg("g"), py::arg("dofs"))
-      .def("dof_indices", &dolfinx::fem::DirichletBC<PetscScalar>::dof_indices)
+      .def(py::init(
+          [](const std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>&
+                 g,
+             const py::array_t<std::int32_t, py::array::c_style>& dofs) {
+            std::vector<std::int32_t> _dofs(dofs.data(),
+                                            dofs.data() + dofs.size());
+            return dolfinx::fem::DirichletBC<PetscScalar>(g, std::move(_dofs));
+          }))
+      .def(py::init(
+          [](const std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>&
+                 g,
+             const std::array<py::array_t<std::int32_t, py::array::c_style>, 2>&
+                 V_g_dofs,
+             const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V) {
+            std::array dofs = {std::vector<std::int32_t>(
+                                   V_g_dofs[0].data(),
+                                   V_g_dofs[0].data() + V_g_dofs[0].size()),
+                               std::vector<std::int32_t>(
+                                   V_g_dofs[1].data(),
+                                   V_g_dofs[1].data() + V_g_dofs[1].size())};
+            return dolfinx::fem::DirichletBC(g, std::move(dofs), V);
+          }))
+      .def("dof_indices",
+           [](const dolfinx::fem::DirichletBC<PetscScalar>& self) {
+             auto [dofs, owned] = self.dof_indices();
+             return std::pair(py::array_t<std::int32_t>(
+                                  dofs.size(), dofs.data(), py::cast(self)),
+                              owned);
+           })
       .def_property_readonly(
           "function_space",
           &dolfinx::fem::DirichletBC<PetscScalar>::function_space)
@@ -372,7 +396,7 @@ void fem(py::module& m)
       [](Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
          const std::vector<std::shared_ptr<
              const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
-         const py::array_t<PetscScalar>& x0, double scale) {
+         const py::array_t<PetscScalar, py::array::c_style>& x0, double scale) {
         if (x0.ndim() == 0)
           dolfinx::fem::set_bc<PetscScalar>(b, bcs, scale);
         else if (x0.ndim() == 1)
@@ -477,41 +501,54 @@ void fem(py::module& m)
       [](const std::vector<
              std::reference_wrapper<const dolfinx::fem::FunctionSpace>>& V,
          const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
-         bool remote) {
+         bool remote) -> std::array<py::array_t<std::int32_t>, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
-        return dolfinx::fem::locate_dofs_topological({V[0], V[1]}, dim,
-                                                     entities, remote);
+        std::array<std::vector<std::int32_t>, 2> dofs
+            = dolfinx::fem::locate_dofs_topological({V[0], V[1]}, dim, entities,
+                                                    remote);
+        return {py::array_t<std::int32_t>(dofs[0].size(), dofs[0].data()),
+                py::array_t<std::int32_t>(dofs[1].size(), dofs[1].data())};
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
       py::arg("remote") = true);
-  m.def("locate_dofs_topological",
-        py::overload_cast<const dolfinx::fem::FunctionSpace&, const int,
-                          const Eigen::Ref<const Eigen::ArrayXi>&, bool>(
-            &dolfinx::fem::locate_dofs_topological),
-        py::arg("V"), py::arg("dim"), py::arg("entities"),
-        py::arg("remote") = true);
-
+  m.def(
+      "locate_dofs_topological",
+      [](const dolfinx::fem::FunctionSpace& V, const int dim,
+         const Eigen::Ref<const Eigen::ArrayXi>& entities, bool remote) {
+        std::vector<std::int32_t> dofs
+            = dolfinx::fem::locate_dofs_topological(V, dim, entities, remote);
+        return py::array_t<std::int32_t>(dofs.size(), dofs.data());
+      },
+      py::arg("V"), py::arg("dim"), py::arg("entities"),
+      py::arg("remote") = true);
   m.def(
       "locate_dofs_geometrical",
       [](const std::vector<
              std::reference_wrapper<const dolfinx::fem::FunctionSpace>>& V,
          const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
              const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                 Eigen::RowMajor>>&)>& marker) {
+                                                 Eigen::RowMajor>>&)>& marker)
+          -> std::array<py::array_t<std::int32_t>, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
-        return dolfinx::fem::locate_dofs_geometrical({V[0], V[1]}, marker);
+        std::array<std::vector<std::int32_t>, 2> dofs
+            = dolfinx::fem::locate_dofs_geometrical({V[0], V[1]}, marker);
+        return {py::array_t<std::int32_t>(dofs[0].size(), dofs[0].data()),
+                py::array_t<std::int32_t>(dofs[1].size(), dofs[1].data())};
       },
       py::arg("V"), py::arg("marker"));
-  m.def("locate_dofs_geometrical",
-        py::overload_cast<
-            const dolfinx::fem::FunctionSpace&,
-            const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-                const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                    Eigen::RowMajor>>&)>&>(
-            &dolfinx::fem::locate_dofs_geometrical),
-        py::arg("V"), py::arg("marker"));
+  m.def(
+      "locate_dofs_geometrical",
+      [](const dolfinx::fem::FunctionSpace& V,
+         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                                 Eigen::RowMajor>>&)>& marker) {
+        std::vector<std::int32_t> dofs
+            = dolfinx::fem::locate_dofs_geometrical(V, marker);
+        return py::array_t<std::int32_t>(dofs.size(), dofs.data());
+      },
+      py::arg("V"), py::arg("marker"));
 
   // dolfinx::fem::Function
   py::class_<dolfinx::fem::Function<PetscScalar>,
@@ -574,8 +611,7 @@ void fem(py::module& m)
 
   // dolfinx::fem::FunctionSpace
   py::class_<dolfinx::fem::FunctionSpace,
-             std::shared_ptr<dolfinx::fem::FunctionSpace>>(m, "FunctionSpace",
-                                                           py::dynamic_attr())
+             std::shared_ptr<dolfinx::fem::FunctionSpace>>(m, "FunctionSpace")
       .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh>,
                     std::shared_ptr<dolfinx::fem::FiniteElement>,
                     std::shared_ptr<dolfinx::fem::DofMap>>())

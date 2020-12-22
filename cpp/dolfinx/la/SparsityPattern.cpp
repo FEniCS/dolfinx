@@ -88,11 +88,10 @@ SparsityPattern::SparsityPattern(
   {
     const common::IndexMap& map = maps[1][col].first;
     const int bs_col = maps[1][col].second;
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts_old
-        = map.ghosts();
+    const std::vector<std::int64_t>& ghosts_old = map.ghosts();
     assert(ghosts_new1[col].size()
-           == (std::size_t)(bs_col * ghosts_old.rows()));
-    for (int i = 0; i < ghosts_old.rows(); ++i)
+           == (std::size_t)(bs_col * ghosts_old.size()));
+    for (std::size_t i = 0; i < ghosts_old.size(); ++i)
       col_old_to_new[col].insert({ghosts_old[i], ghosts_new1[col][bs_col * i]});
   }
 
@@ -203,9 +202,8 @@ SparsityPattern::index_map(int dim) const
 //-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert(
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& cols)
+void SparsityPattern::insert(const tcb::span<const std::int32_t>& rows,
+                             const tcb::span<const std::int32_t>& cols)
 {
   if (_diagonal)
   {
@@ -219,14 +217,13 @@ void SparsityPattern::insert(
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
-      = _index_maps[1]->ghosts();
+  const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
-  for (Eigen::Index i = 0; i < rows.rows(); ++i)
+  for (std::size_t i = 0; i < rows.size(); ++i)
   {
     if (rows[i] < size0)
     {
-      for (Eigen::Index j = 0; j < cols.rows(); ++j)
+      for (std::size_t j = 0; j < cols.size(); ++j)
       {
         if (cols[j] < local_size1)
           _diagonal_cache[rows[i]].push_back(cols[j]);
@@ -245,8 +242,7 @@ void SparsityPattern::insert(
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_diagonal(
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows)
+void SparsityPattern::insert_diagonal(const std::vector<int32_t>& rows)
 {
   if (_diagonal)
   {
@@ -257,10 +253,10 @@ void SparsityPattern::insert_diagonal(
   assert(_index_maps[0]);
   const std::int32_t local_size0
       = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts();
-  for (Eigen::Index i = 0; i < rows.rows(); ++i)
+  for (auto row : rows)
   {
-    if (rows[i] < local_size0)
-      _diagonal_cache[rows[i]].push_back(rows[i]);
+    if (row < local_size0)
+      _diagonal_cache[row].push_back(row);
     else
     {
       throw std::runtime_error(
@@ -279,14 +275,12 @@ void SparsityPattern::assemble()
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
   const std::array local_range0 = _index_maps[0]->local_range();
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts0
-      = _index_maps[0]->ghosts();
+  const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
   const std::array local_range1 = _index_maps[1]->local_range();
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1
-      = _index_maps[1]->ghosts();
+  const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
   // For each ghost row, pack and send (global row, global col) pairs to
   // send to neighborhood
@@ -390,7 +384,7 @@ std::int64_t SparsityPattern::num_nonzeros() const
   if (!_diagonal)
     throw std::runtime_error("Sparsity pattern has not be assembled.");
   assert(_off_diagonal);
-  return _diagonal->array().rows() + _off_diagonal->array().rows();
+  return _diagonal->array().size() + _off_diagonal->array().size();
 }
 //-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>&

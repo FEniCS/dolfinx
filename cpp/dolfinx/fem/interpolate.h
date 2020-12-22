@@ -109,10 +109,10 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   assert(bs == dofmap_u->bs());
   for (int c = 0; c < num_cells; ++c)
   {
-    auto dofs_v = dofmap_v->cell_dofs(c);
-    auto cell_dofs = dofmap_u->cell_dofs(c);
+    tcb::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
+    tcb::span<const std::int32_t> cell_dofs = dofmap_u->cell_dofs(c);
     assert(dofs_v.size() == cell_dofs.size());
-    for (Eigen::Index i = 0; i < dofs_v.size(); ++i)
+    for (std::size_t i = 0; i < dofs_v.size(); ++i)
     {
       for (int k = 0; k < bs; ++k)
         coeffs[bs * cell_dofs[i] + k] = v_array[bs * dofs_v[i] + k];
@@ -210,12 +210,16 @@ void interpolate(
       const int element_block_size = sub_element->block_size();
       for (std::size_t cell = 0; cell < num_cells; ++cell)
       {
-        const auto cell_dofs = sub_dofmap.cell_dofs(cell);
-        const std::size_t scalar_dofs = cell_dofs.rows() / element_block_size;
+        tcb::span<const std::int32_t> cell_dofs = sub_dofmap.cell_dofs(cell);
+        const std::size_t scalar_dofs = cell_dofs.size() / element_block_size;
         for (std::size_t dof = 0; dof < scalar_dofs; ++dof)
+        {
           for (int b = 0; b < element_block_size; ++b)
+          {
             mixed_values(cell_dofs[element_block_size * dof + b])
                 = values(value_offset + b, cell_dofs[element_block_size * dof]);
+          }
+        }
       }
       value_offset += element_block_size;
     }
