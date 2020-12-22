@@ -20,10 +20,6 @@ parametrize_cell_types = pytest.mark.parametrize(
     "cell_type", [CellType.interval, CellType.triangle, CellType.tetrahedron,
                   CellType.quadrilateral, CellType.hexahedron])
 
-# TODO: turn quads and hexes back on
-parametrize_cell_types = pytest.mark.parametrize(
-    "cell_type", [CellType.interval, CellType.triangle, CellType.tetrahedron])
-
 
 def random_point_in_cell(cell_type):
     if cell_type == CellType.interval:
