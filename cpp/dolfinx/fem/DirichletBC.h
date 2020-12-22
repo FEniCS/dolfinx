@@ -152,6 +152,11 @@ public:
       : _function_space(g->function_space()), _g(g),
         _dofs0(std::forward<U>(dofs))
   {
+    const int owned_size0 = _function_space->dofmap()->index_map->size_local();
+    auto it = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
+    const int map0_bs = _function_space->dofmap()->index_map_bs();
+    _owned_indices0 = map0_bs * std::distance(_dofs0.begin(), it);
+
     const int bs = _function_space->dofmap()->bs();
     if (bs > 1)
     {
@@ -165,14 +170,8 @@ public:
       }
     }
 
-    _dofs1_g = _dofs0;
-
     // TODO: allows single dofs array (let one point to the other)
-    const int owned_size0 = _function_space->dofmap()->index_map->size_local();
-    const int map0_bs = _function_space->dofmap()->index_map_bs();
-    auto it
-        = std::lower_bound(_dofs0.begin(), _dofs0.end(), map0_bs * owned_size0);
-    _owned_indices0 = std::distance(_dofs0.begin(), it);
+    _dofs1_g = _dofs0;
   }
 
   /// Create a representation of a Dirichlet boundary condition where
@@ -203,7 +202,7 @@ public:
 
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
-    const int owned_size0 = (map0_bs * map0_size);
+    const int owned_size0 = map0_bs * map0_size;
     auto it0 = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
     _owned_indices0 = std::distance(_dofs0.begin(), it0);
   }
