@@ -103,11 +103,6 @@ public:
   /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const;
 
-  /// Hash of coordinate values
-  /// @return A tree-hashed value of the coordinates over all MPI
-  ///   processes
-  std::size_t hash() const;
-
 private:
   // Geometric dimension
   int _dim;

@@ -11,7 +11,6 @@
 #include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/io/XDMFFile.h>
-#include <dolfinx/mesh/Partitioning.h>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -67,7 +66,7 @@ void test_distributed_mesh()
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
     cells = infile.read_topology_data("mesh");
     x = infile.read_geometry_data("mesh");
-    dest = dolfinx::mesh::Partitioning::partition_cells(
+    dest = dolfinx::mesh::partition_cells(
         subset_comm, nparts, cmap.cell_shape(),
         graph::AdjacencyList<std::int64_t>(cells),
         mesh::GhostMode::shared_facet);
@@ -77,7 +76,7 @@ void test_distributed_mesh()
 
   // Distribute cells to destination ranks
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
-      = graph::Partitioning::distribute(mpi_comm, cells_topology, dest);
+      = graph::partition::distribute(mpi_comm, cells_topology, dest);
 
   dolfinx::mesh::Topology topology = mesh::create_topology(
       mpi_comm, cell_nodes, original_cell_index, ghost_owners,
@@ -105,8 +104,5 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 {
   create_mesh_file();
 
-  SECTION("SCOTCH")
-  {
-    CHECK_NOTHROW(test_distributed_mesh());
-  }
+  SECTION("SCOTCH") { CHECK_NOTHROW(test_distributed_mesh()); }
 }

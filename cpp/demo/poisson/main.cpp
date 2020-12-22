@@ -90,8 +90,8 @@
 #include "poisson.h"
 #include <cmath>
 #include <dolfinx.h>
+#include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
-#include <dolfinx/function/Constant.h>
 
 using namespace dolfinx;
 
@@ -112,8 +112,8 @@ using namespace dolfinx;
 
 int main(int argc, char* argv[])
 {
-  common::SubSystemsManager::init_logging(argc, argv);
-  common::SubSystemsManager::init_petsc(argc, argv);
+  common::subsystem::init_logging(argc, argv);
+  common::subsystem::init_petsc(argc, argv);
 
   {
     // Create mesh and function space
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
         MPI_COMM_WORLD,
         {Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 0.0)},
-        {32, 32}, cmap, mesh::GhostMode::shared_facet));
+        {32, 32}, cmap, mesh::GhostMode::none));
 
     auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
                                        mesh);
@@ -135,9 +135,9 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Prepare and set Constants for the bilinear form
-    auto kappa = std::make_shared<function::Constant<PetscScalar>>(2.0);
-    auto f = std::make_shared<function::Function<PetscScalar>>(V);
-    auto g = std::make_shared<function::Function<PetscScalar>>(V);
+    auto kappa = std::make_shared<fem::Constant<PetscScalar>>(2.0);
+    auto f = std::make_shared<fem::Function<PetscScalar>>(V);
+    auto g = std::make_shared<fem::Function<PetscScalar>>(V);
 
     // Define variational forms
     auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V}, {},
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
 
     // FIXME: zero function and make sure ghosts are updated
     // Define boundary condition
-    auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
     const auto bdofs = fem::locate_dofs_geometrical({*V}, [](auto& x) {
       static const double epsilon = std::numeric_limits<double>::epsilon();
@@ -168,8 +168,8 @@ int main(int argc, char* argv[])
               or (x.row(0) - 1.0).abs() < 10.0 * epsilon);
     });
 
-    std::vector bc{
-        std::make_shared<const fem::DirichletBC<PetscScalar>>(u0, bdofs)};
+    std::vector bc{std::make_shared<const fem::DirichletBC<PetscScalar>>(
+        u0, std::move(bdofs))};
 
     f->interpolate([](auto& x) {
       auto dx = Eigen::square(x - 0.5);
@@ -188,13 +188,13 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Compute solution
-    function::Function<PetscScalar> u(V);
+    fem::Function<PetscScalar> u(V);
     la::PETScMatrix A = fem::create_matrix(*a);
     la::PETScVector b(*L->function_spaces()[0]->dofmap()->index_map,
                       L->function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
-    fem::assemble_matrix(la::PETScMatrix::add_fn(A.mat()), *a, bc);
+    fem::assemble_matrix(la::PETScMatrix::add_block_fn(A.mat()), *a, bc);
     fem::add_diagonal(la::PETScMatrix::add_fn(A.mat()), *V, bc);
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
@@ -228,6 +228,6 @@ int main(int argc, char* argv[])
     file.write(u);
   }
 
-  common::SubSystemsManager::finalize_petsc();
+  common::subsystem::finalize_petsc();
   return 0;
 }

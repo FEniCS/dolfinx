@@ -13,10 +13,9 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
-#include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/TopologyComputation.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
 #include <memory>
 #include <pybind11/eigen.h>
@@ -38,42 +37,41 @@ void declare_meshtags(py::module& m, std::string type)
   py::class_<dolfinx::mesh::MeshTags<T>,
              std::shared_ptr<dolfinx::mesh::MeshTags<T>>>(
       m, pyclass_name.c_str(), "MeshTags object")
-      .def(py::init([](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
-                       int dim, const py::array_t<std::int32_t>& indices,
-                       const py::array_t<T>& values) {
-        std::vector<std::int32_t> indices_vec(indices.data(),
-                                              indices.data() + indices.size());
-        std::vector<T> values_vec(values.data(), values.data() + values.size());
-        return dolfinx::mesh::MeshTags<T>(mesh, dim, std::move(indices_vec),
-                                          std::move(values_vec));
-      }))
+      .def(py::init(
+          [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, int dim,
+             const py::array_t<std::int32_t, py::array::c_style>& indices,
+             const py::array_t<T, py::array::c_style>& values) {
+            std::vector<std::int32_t> indices_vec(
+                indices.data(), indices.data() + indices.size());
+            std::vector<T> values_vec(values.data(),
+                                      values.data() + values.size());
+            return dolfinx::mesh::MeshTags<T>(mesh, dim, std::move(indices_vec),
+                                              std::move(values_vec));
+          }))
       .def_readwrite("name", &dolfinx::mesh::MeshTags<T>::name)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)
       .def("ufl_id", &dolfinx::mesh::MeshTags<T>::id)
-      .def_property_readonly(
-          "values",
-          [](dolfinx::mesh::MeshTags<T>& self) {
-            return py::array_t<T>(self.values().size(), self.values().data(),
-                                  py::none());
-          },
-          py::return_value_policy::reference_internal)
-      .def_property_readonly(
-          "indices",
-          [](dolfinx::mesh::MeshTags<T>& self) {
-            return py::array_t<std::int32_t>(self.indices().size(),
-                                             self.indices().data(), py::none());
-          },
-          py::return_value_policy::reference_internal);
+      .def_property_readonly("values",
+                             [](dolfinx::mesh::MeshTags<T>& self) {
+                               return py::array_t<T>(self.values().size(),
+                                                     self.values().data(),
+                                                     py::cast(self));
+                             })
+      .def_property_readonly("indices", [](dolfinx::mesh::MeshTags<T>& self) {
+        return py::array_t<std::int32_t>(self.indices().size(),
+                                         self.indices().data(), py::cast(self));
+      });
 
   m.def("create_meshtags",
         [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
            const int dim,
            const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
-           const py::array_t<T>& values) {
+           const py::array_t<T, py::array::c_style>& values) {
           py::buffer_info buf = values.request();
           std::vector<T> vals((T*)buf.ptr, (T*)buf.ptr + buf.size);
-          return dolfinx::mesh::create_meshtags(mesh, dim, entities, vals);
+          return dolfinx::mesh::create_meshtags(mesh, dim, entities,
+                                                std::move(vals));
         });
 }
 
@@ -160,14 +158,12 @@ void mesh(py::module& m)
                              &dolfinx::mesh::Geometry::input_global_indices);
 
   // dolfinx::mesh::TopologyComputation
-  m.def("compute_entities", [](const MPICommWrapper comm,
-                               const dolfinx::mesh::Topology& topology,
-                               int dim) {
-    return dolfinx::mesh::TopologyComputation::compute_entities(comm.get(),
-                                                                topology, dim);
-  });
-  m.def("compute_connectivity",
-        &dolfinx::mesh::TopologyComputation::compute_connectivity);
+  m.def("compute_entities",
+        [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
+           int dim) {
+          return dolfinx::mesh::compute_entities(comm.get(), topology, dim);
+        });
+  m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity);
 
   // dolfinx::mesh::Topology class
   py::class_<dolfinx::mesh::Topology, std::shared_ptr<dolfinx::mesh::Topology>>(
@@ -193,7 +189,6 @@ void mesh(py::module& m)
       .def("connectivity",
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        py::const_))
-      .def("hash", &dolfinx::mesh::Topology::hash)
       .def("index_map", &dolfinx::mesh::Topology::index_map)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
       .def("cell_name",
@@ -215,7 +210,6 @@ void mesh(py::module& m)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
-      .def("hash", &dolfinx::mesh::Mesh::hash)
       .def("hmax", &dolfinx::mesh::Mesh::hmax)
       .def("hmin", &dolfinx::mesh::Mesh::hmin)
       .def("mpi_comm",
@@ -244,8 +238,8 @@ void mesh(py::module& m)
            dolfinx::mesh::CellType cell_type,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
            dolfinx::mesh::GhostMode ghost_mode) {
-          return dolfinx::mesh::Partitioning::partition_cells(
-              comm.get(), nparts, cell_type, cells, ghost_mode);
+          return dolfinx::mesh::partition_cells(comm.get(), nparts, cell_type,
+                                                cells, ghost_mode);
         });
 
   m.def("locate_entities", &dolfinx::mesh::locate_entities);

@@ -10,10 +10,10 @@
 #include <Eigen/Dense>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/SubSystemsManager.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/defines.h>
+#include <dolfinx/common/subsystem.h>
 #include <dolfinx/common/timing.h>
 #include <memory>
 #include <pybind11/eigen.h>
@@ -45,15 +45,13 @@ void common(py::module& m)
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,
              std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
-      .def(py::init(
-          [](const MPICommWrapper comm, std::int32_t local_size,
-             const std::vector<int>& dest_ranks,
-             const Eigen::Ref<
-                 const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>& ghosts,
-             const std::vector<int>& ghost_owners) {
-            return std::make_shared<dolfinx::common::IndexMap>(
-                comm.get(), local_size, dest_ranks, ghosts, ghost_owners);
-          }))
+      .def(py::init([](const MPICommWrapper comm, std::int32_t local_size,
+                       const std::vector<int>& dest_ranks,
+                       const std::vector<std::int64_t>& ghosts,
+                       const std::vector<int>& ghost_owners) {
+        return std::make_shared<dolfinx::common::IndexMap>(
+            comm.get(), local_size, dest_ranks, ghosts, ghost_owners);
+      }))
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMap::size_local)
       .def_property_readonly("size_global",
@@ -65,12 +63,15 @@ void common(py::module& m)
                              "Range of indices owned by this map")
       .def("ghost_owner_rank", &dolfinx::common::IndexMap::ghost_owner_rank,
            "Return owning process for each ghost index")
-      .def_property_readonly("ghosts", &dolfinx::common::IndexMap::ghosts,
-                             py::return_value_policy::reference_internal,
-                             "Return list of ghost indices")
-      .def("global_indices", &dolfinx::common::IndexMap::global_indices)
-      .def("indices", &dolfinx::common::IndexMap::indices,
-           "Return array of global indices for all indices on this process");
+      .def_property_readonly(
+          "ghosts",
+          [](const dolfinx::common::IndexMap& self) {
+            const std::vector<std::int64_t>& ghosts = self.ghosts();
+            return py::array_t<std::int64_t>(ghosts.size(), ghosts.data(),
+                                             py::cast(self));
+          },
+          "Return list of ghost indices")
+      .def("global_indices", &dolfinx::common::IndexMap::global_indices);
 
   // dolfinx::common::Timer
   py::class_<dolfinx::common::Timer, std::shared_ptr<dolfinx::common::Timer>>(
@@ -101,7 +102,7 @@ void common(py::module& m)
     std::vector<char*> argv(args.size() + 1, nullptr);
     for (std::size_t i = 0; i < args.size(); ++i)
       argv[i] = const_cast<char*>(args[i].data());
-    dolfinx::common::SubSystemsManager::init_logging(args.size(), argv.data());
+    dolfinx::common::subsystem::init_logging(args.size(), argv.data());
   });
 }
 } // namespace dolfinx_wrappers

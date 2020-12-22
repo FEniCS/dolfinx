@@ -11,7 +11,7 @@ import dolfinx
 import numpy
 import pytest
 import ufl
-from dolfinx import function
+from dolfinx import fem
 from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -67,8 +67,8 @@ def test_assemble_derivatives():
     v = ufl.TestFunction(Q)
     du = ufl.TrialFunction(Q)
     b = dolfinx.Function(Q)
-    c1 = function.Constant(mesh, [[1.0, 0.0], [3.0, 4.0]])
-    c2 = function.Constant(mesh, 2.0)
+    c1 = fem.Constant(mesh, [[1.0, 0.0], [3.0, 4.0]])
+    c2 = fem.Constant(mesh, 2.0)
 
     with b.vector.localForm() as b_local:
         b_local.set(2.0)
@@ -146,7 +146,7 @@ def test_assembly_bcs(mode):
 
     bdofsV = dolfinx.fem.locate_dofs_geometrical(V, boundary)
 
-    u_bc = dolfinx.function.Function(V)
+    u_bc = dolfinx.fem.Function(V)
     with u_bc.vector.localForm() as u_local:
         u_local.set(1.0)
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsV)
@@ -209,7 +209,10 @@ def test_assemble_manifold():
     assert numpy.isclose(A.norm(), 25.0199)
 
 
-@pytest.mark.parametrize("mode", [dolfinx.cpp.mesh.GhostMode.none, dolfinx.cpp.mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize("mode",
+                         [dolfinx.cpp.mesh.GhostMode.none,
+                          dolfinx.cpp.mesh.GhostMode.shared_facet,
+                          ])
 def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
@@ -220,8 +223,8 @@ def test_matrix_assembly_block(mode):
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
 
-    V0 = dolfinx.function.FunctionSpace(mesh, P0)
-    V1 = dolfinx.function.FunctionSpace(mesh, P1)
+    V0 = dolfinx.fem.FunctionSpace(mesh, P0)
+    V1 = dolfinx.fem.FunctionSpace(mesh, P1)
 
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
@@ -232,7 +235,7 @@ def test_matrix_assembly_block(mode):
 
     bdofsV1 = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
 
-    u_bc = dolfinx.function.Function(V1)
+    u_bc = dolfinx.fem.Function(V1)
     with u_bc.vector.localForm() as u_local:
         u_local.set(50.0)
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsV1)
@@ -264,7 +267,7 @@ def test_matrix_assembly_block(mode):
     bnorm0 = b0.norm()
 
     # Nested (MatNest)
-    A1 = dolfinx.fem.assemble_matrix_nest(a_block, [bc])
+    A1 = dolfinx.fem.assemble_matrix_nest(a_block, [bc], [["baij", "aij"], ["aij", ""]])
     A1.assemble()
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
@@ -282,7 +285,7 @@ def test_matrix_assembly_block(mode):
 
     # Monolithic version
     E = P0 * P1
-    W = dolfinx.function.FunctionSpace(mesh, E)
+    W = dolfinx.fem.FunctionSpace(mesh, E)
     u0, u1 = ufl.TrialFunctions(W)
     v0, v1 = ufl.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
@@ -290,7 +293,6 @@ def test_matrix_assembly_block(mode):
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bdofsW_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), mesh.topology.dim - 1, bndry_facets)
-
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsW_V1, W.sub(1))
     A2 = dolfinx.fem.assemble_matrix(a, [bc])
     A2.assemble()
@@ -313,7 +315,7 @@ def test_assembly_solve_block(mode):
     """
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    V0 = dolfinx.function.FunctionSpace(mesh, P)
+    V0 = dolfinx.fem.FunctionSpace(mesh, P)
     V1 = V0.clone()
 
     def boundary(x):
@@ -326,11 +328,11 @@ def test_assembly_solve_block(mode):
     bdofsV0 = dolfinx.fem.locate_dofs_topological(V0, facetdim, bndry_facets)
     bdofsV1 = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
 
-    u_bc0 = dolfinx.function.Function(V0)
+    u_bc0 = dolfinx.fem.Function(V0)
     u_bc0.vector.set(50.0)
     u_bc0.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    u_bc1 = dolfinx.function.Function(V1)
+    u_bc1 = dolfinx.fem.Function(V1)
     u_bc1.vector.set(20.0)
     u_bc1.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -375,7 +377,7 @@ def test_assembly_solve_block(mode):
     x0norm = x0.norm()
 
     # Nested (MatNest)
-    A1 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs)
+    A1 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs, diagonal=1.0)
     A1.assemble()
     b1 = dolfinx.fem.assemble_vector_nest([L0, L1])
     dolfinx.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs)
@@ -404,17 +406,17 @@ def test_assembly_solve_block(mode):
 
     # Monolithic version
     E = P * P
-    W = dolfinx.function.FunctionSpace(mesh, E)
+    W = dolfinx.fem.FunctionSpace(mesh, E)
     u0, u1 = ufl.TrialFunctions(W)
     v0, v1 = ufl.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx
     L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
-    u0_bc = dolfinx.function.Function(V0)
+    u0_bc = dolfinx.fem.Function(V0)
     u0_bc.vector.set(50.0)
     u0_bc.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    u1_bc = dolfinx.function.Function(V1)
+    u1_bc = dolfinx.fem.Function(V1)
     u1_bc.vector.set(20.0)
     u1_bc.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -460,8 +462,8 @@ def test_assembly_solve_block(mode):
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
-    P2 = function.VectorFunctionSpace(mesh, ("Lagrange", 2))
-    P1 = function.FunctionSpace(mesh, ("Lagrange", 1))
+    P2 = fem.VectorFunctionSpace(mesh, ("Lagrange", 2))
+    P1 = fem.FunctionSpace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
         """Define boundary x = 0"""
@@ -507,10 +509,10 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # -- Blocked (nested)
 
-    A0 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1])
+    A0 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1], [["baij", "aij"], ["aij", ""]])
     A0.assemble()
     A0norm = nest_matrix_norm(A0)
-    P0 = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1])
+    P0 = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1], [["aij", "aij"], ["aij", ""]])
     P0.assemble()
     P0norm = nest_matrix_norm(P0)
     b0 = dolfinx.fem.assemble_vector_nest([L0, L1])
@@ -647,7 +649,7 @@ def test_basic_interior_facet_assembly():
                                  cell_type=dolfinx.cpp.mesh.CellType.triangle,
                                  ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet)
 
-    V = function.FunctionSpace(mesh, ("DG", 1))
+    V = fem.FunctionSpace(mesh, ("DG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     a = ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS
@@ -671,10 +673,10 @@ def test_basic_assembly_constant(mode):
 
     """
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5, ghost_mode=mode)
-    V = function.FunctionSpace(mesh, ("Lagrange", 1))
+    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    c = function.Constant(mesh, [[1.0, 2.0], [5.0, 3.0]])
+    c = fem.Constant(mesh, [[1.0, 2.0], [5.0, 3.0]])
 
     a = inner(c[1, 0] * u, v) * dx + inner(c[1, 0] * u, v) * ds
     L = inner(c[1, 0], v) * dx + inner(c[1, 0], v) * ds

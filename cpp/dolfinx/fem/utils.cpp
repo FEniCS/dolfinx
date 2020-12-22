@@ -11,18 +11,18 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
+#include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/DofMapBuilder.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
-#include <dolfinx/fem/SparsityPatternBuilder.h>
-#include <dolfinx/function/Constant.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/fem/dofmapbuilder.h>
+#include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/TopologyComputation.h>
+#include <dolfinx/mesh/topologycomputation.h>
 #include <memory>
 #include <string>
 #include <ufc.h>
@@ -58,37 +58,39 @@ int get_num_permutations(const mesh::CellType cell_type)
 } // namespace
 
 //-----------------------------------------------------------------------------
-la::SparsityPattern
-fem::create_sparsity_pattern(const mesh::Topology& topology,
-                             const std::array<const DofMap*, 2>& dofmaps,
-                             const std::set<IntegralType>& integrals)
+la::SparsityPattern fem::create_sparsity_pattern(
+    const mesh::Topology& topology,
+    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+        dofmaps,
+    const std::set<IntegralType>& integrals)
 {
   common::Timer t0("Build sparsity");
 
   // Get common::IndexMaps for each dimension
-  const std::array index_maps{dofmaps[0]->index_map, dofmaps[1]->index_map};
-  const std::array bs = {dofmaps[0]->index_map_bs(), dofmaps[1]->index_map_bs()};
+  const std::array index_maps{dofmaps[0].get().index_map,
+                              dofmaps[1].get().index_map};
+  const std::array bs
+      = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
 
   // Create and build sparsity pattern
-  assert(dofmaps[0]);
-  assert(dofmaps[0]->index_map);
-  la::SparsityPattern pattern(dofmaps[0]->index_map->comm(), index_maps, bs);
+  assert(dofmaps[0].get().index_map);
+  la::SparsityPattern pattern(dofmaps[0].get().index_map->comm(), index_maps,
+                              bs);
   for (auto type : integrals)
   {
     if (type == fem::IntegralType::cell)
     {
-      SparsityPatternBuilder::cells(pattern, topology,
-                                    {{dofmaps[0], dofmaps[1]}});
+      sparsitybuild::cells(pattern, topology, {{dofmaps[0], dofmaps[1]}});
     }
     else if (type == fem::IntegralType::interior_facet)
     {
-      SparsityPatternBuilder::interior_facets(pattern, topology,
-                                              {{dofmaps[0], dofmaps[1]}});
+      sparsitybuild::interior_facets(pattern, topology,
+                                     {{dofmaps[0], dofmaps[1]}});
     }
     else if (type == fem::IntegralType::exterior_facet)
     {
-      SparsityPatternBuilder::exterior_facets(pattern, topology,
-                                              {{dofmaps[0], dofmaps[1]}});
+      sparsitybuild::exterior_facets(pattern, topology,
+                                     {{dofmaps[0], dofmaps[1]}});
     }
   }
 
@@ -192,7 +194,7 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     {
       // Create local entities
       const auto [cell_entity, entity_vertex, index_map]
-          = mesh::TopologyComputation::compute_entities(comm, topology, d);
+          = mesh::compute_entities(comm, topology, d);
       if (cell_entity)
         topology.set_connectivity(cell_entity, topology.dim(), d);
       if (entity_vertex)
@@ -203,8 +205,8 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
   }
 
   auto [index_map, bs, dofmap]
-      = DofMapBuilder::build(comm, topology, *element_dof_layout);
-  return DofMap(element_dof_layout, index_map, bs, std::move(dofmap));
+      = fem::build_dofmap_data(comm, topology, *element_dof_layout);
+  return DofMap(element_dof_layout, index_map, bs, std::move(dofmap), bs);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::string> fem::get_coefficient_names(const ufc_form& ufc_form)
@@ -261,7 +263,7 @@ fem::create_coordinate_map(ufc_coordinate_mapping* (*fptr)())
   return element;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<function::FunctionSpace>
+std::shared_ptr<fem::FunctionSpace>
 fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
                           const std::string function_name,
                           std::shared_ptr<mesh::Mesh> mesh)
@@ -269,7 +271,7 @@ fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
   ufc_function_space* space = fptr(function_name.c_str());
   ufc_dofmap* ufc_map = space->create_dofmap();
   ufc_finite_element* ufc_element = space->create_element();
-  auto V = std::make_shared<function::FunctionSpace>(
+  auto V = std::make_shared<fem::FunctionSpace>(
       mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
       std::make_shared<fem::DofMap>(
           fem::create_dofmap(mesh->mpi_comm(), *ufc_map, mesh->topology())));

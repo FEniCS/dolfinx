@@ -13,12 +13,10 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#ifdef DEBUG
 // Needed for typeid(_p_Mat) in debug mode
 #include <petsc/private/matimpl.h>
 // Needed for typeid(_p_Vec) in debug mode
 #include <petsc/private/vecimpl.h>
-#endif
 
 namespace py = pybind11;
 
@@ -43,12 +41,13 @@ void nls(py::module& m)
       PYBIND11_OVERLOAD_INT(bool, dolfinx::nls::NewtonSolver, "converged", &r,
                             &nonlinear_problem, iteration);
       return dolfinx::nls::NewtonSolver::converged(r, nonlinear_problem,
-                                                  iteration);
+                                                   iteration);
     }
 
-    void update_solution(Vec x, const Vec dx, double relaxation,
-                         const dolfinx::nls::NonlinearProblem& nonlinear_problem,
-                         std::size_t iteration)
+    void
+    update_solution(Vec x, const Vec dx, double relaxation,
+                    const dolfinx::nls::NonlinearProblem& nonlinear_problem,
+                    std::size_t iteration)
     {
       PYBIND11_OVERLOAD_INT(void, dolfinx::nls::NewtonSolver, "update_solution",
                             x, &dx, relaxation, &nonlinear_problem, iteration);
@@ -79,6 +78,7 @@ void nls(py::module& m)
       .def("update_solution", &PyPublicNewtonSolver::update_solution)
       .def_readwrite("atol", &dolfinx::nls::NewtonSolver::atol)
       .def_readwrite("rtol", &dolfinx::nls::NewtonSolver::rtol)
+      .def_readwrite("relaxation_parameter", &dolfinx::nls::NewtonSolver::relaxation_parameter)
       .def_readwrite("max_it", &dolfinx::nls::NewtonSolver::max_it)
       .def_readwrite("convergence_criterion",
                      &dolfinx::nls::NewtonSolver::convergence_criterion);
@@ -89,7 +89,7 @@ void nls(py::module& m)
   {
     using dolfinx::nls::NonlinearProblem::NonlinearProblem;
 
-    // pybdind11 has some issues when passing by reference (due to
+    // pybind11 has some issues when passing by reference (due to
     // the return value policy), so the below is non-standard.  See
     // https://github.com/pybind/pybind11/issues/250.
 

@@ -7,9 +7,9 @@
 #pragma once
 
 #include "Geometry.h"
-#include "Partitioning.h"
 #include "Topology.h"
 #include "cell_types.h"
+#include "utils.h"
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
@@ -120,12 +120,6 @@ public:
   /// @return The maximum of cells' inscribed sphere radii
   double rmax() const;
 
-  /// Compute hash of mesh, currently based on the has of the mesh
-  /// geometry and mesh topology
-  /// @return A tree-hashed value of the coordinates over all MPI
-  ///         processes
-  std::size_t hash() const;
-
   /// Get unique identifier for the mesh
   /// @returns The unique identifier associated with the object
   std::size_t id() const { return _unique_id; }
@@ -166,7 +160,7 @@ Mesh create_mesh(
         MPI_Comm, int, const mesh::CellType,
         const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>
         partitioner
-    = &Partitioning::partition_cells);
+    = &mesh::partition_cells);
 
 } // namespace mesh
 } // namespace dolfinx

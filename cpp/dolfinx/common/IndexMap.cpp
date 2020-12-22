@@ -15,32 +15,10 @@ using namespace dolfinx::common;
 namespace
 {
 //-----------------------------------------------------------------------------
-void local_to_global_impl(
-    Eigen::Ref<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> global,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-        indices,
-    const std::int64_t global_offset, const std::int32_t local_size,
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts)
-{
-  for (Eigen::Index i = 0; i < indices.rows(); ++i)
-  {
-    const std::int32_t pos = indices[i];
-    if (pos < local_size)
-      global[i] = global_offset + pos;
-    else
-    {
-      assert((pos - local_size) < ghosts.size());
-      global[i] = ghosts[pos - local_size];
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 
 /// Compute the owning rank of ghost indices
-std::vector<int> get_ghost_ranks(
-    MPI_Comm comm, std::int32_t local_size,
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-        ghosts)
+std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
+                                 const std::vector<std::int64_t>& ghosts)
 {
   int mpi_size = -1;
   MPI_Comm_size(comm, &mpi_size);
@@ -54,7 +32,7 @@ std::vector<int> get_ghost_ranks(
 
   // Compute rank of ghost owners
   std::vector<int> ghost_ranks(ghosts.size(), -1);
-  for (int i = 0; i < ghosts.size(); ++i)
+  for (std::size_t i = 0; i < ghosts.size(); ++i)
   {
     auto it = std::upper_bound(all_ranges.begin(), all_ranges.end(), ghosts[i]);
     const int p = std::distance(all_ranges.begin(), it) - 1;
@@ -79,9 +57,8 @@ std::vector<int> get_ghost_ranks(
 ///   a list of my global indices that are ghost on the rank and (ii)
 ///   displacement vector for each rank
 std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>>
-compute_owned_shared(
-    MPI_Comm comm, const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts,
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& ghost_src_ranks)
+compute_owned_shared(MPI_Comm comm, const std::vector<std::int64_t>& ghosts,
+                     const std::vector<std::int32_t>& ghost_src_ranks)
 {
   assert(ghosts.size() == ghost_src_ranks.size());
 
@@ -92,7 +69,7 @@ compute_owned_shared(
 
   // Compute number of ghost indices to send to each owning rank
   std::vector<int> out_edges_num(dest_ranks.size(), 0);
-  for (int i = 0; i < ghost_src_ranks.size(); ++i)
+  for (std::size_t i = 0; i < ghost_src_ranks.size(); ++i)
     out_edges_num[ghost_src_ranks[i]]++;
 
   // Send number of my ghost indices to each owner, and receive number
@@ -113,7 +90,7 @@ compute_owned_shared(
   std::vector<std::int64_t> send_indices(send_disp.back());
   {
     std::vector<int> insert_disp(send_disp);
-    for (int i = 0; i < ghosts.size(); ++i)
+    for (std::size_t i = 0; i < ghosts.size(); ++i)
     {
       const int owner_rank = ghost_src_ranks[i];
       send_indices[insert_disp[owner_rank]] = ghosts[i];
@@ -218,9 +195,9 @@ common::stack_index_maps(
   std::vector<std::int32_t> local_offset(maps.size() + 1, 0);
   for (std::size_t f = 1; f < local_offset.size(); ++f)
   {
-    local_offset[f]
-        = local_offset[f - 1]
-          + maps[f - 1].first.get().size_local() * maps[f - 1].second;
+    const std::int32_t local_size = maps[f - 1].first.get().size_local();
+    const int bs = maps[f - 1].second;
+    local_offset[f] = local_offset[f - 1] + bs * local_size;
   }
 
   // Pack old and new composite indices for owned entries that are ghost
@@ -228,18 +205,18 @@ common::stack_index_maps(
   std::vector<std::int64_t> indices;
   for (std::size_t f = 0; f < maps.size(); ++f)
   {
+    const int bs = maps[f].second;
     const std::vector<std::int32_t>& forward_indices
         = maps[f].first.get().shared_indices();
-    const std::int64_t offset
-        = maps[f].second * maps[f].first.get().local_range()[0];
+    const std::int64_t offset = bs * maps[f].first.get().local_range()[0];
     for (std::int32_t local_index : forward_indices)
     {
-      for (std::int32_t i = 0; i < maps[f].second; ++i)
+      for (std::int32_t i = 0; i < bs; ++i)
       {
         // Insert field index, global index, composite global index
         indices.push_back(f);
-        indices.push_back(maps[f].second * local_index + i + offset);
-        indices.push_back(maps[f].second * local_index + i + local_offset[f]
+        indices.push_back(bs * local_index + i + offset);
+        indices.push_back(bs * local_index + i + local_offset[f]
                           + process_offset);
       }
     }
@@ -301,15 +278,15 @@ common::stack_index_maps(
   std::vector<std::vector<int>> ghost_owners_new(maps.size());
   for (std::size_t f = 0; f < maps.size(); ++f)
   {
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
-        = maps[f].first.get().ghosts();
-    const Eigen::Array<int, Eigen::Dynamic, 1>& ghost_owners
+    const int bs = maps[f].second;
+    const std::vector<std::int64_t>& ghosts = maps[f].first.get().ghosts();
+    const std::vector<int>& ghost_owners
         = maps[f].first.get().ghost_owner_rank();
-    for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
+    for (std::size_t i = 0; i < ghosts.size(); ++i)
     {
-      for (int j = 0; j < maps[f].second; ++j)
+      for (int j = 0; j < bs; ++j)
       {
-        auto it = ghost_maps[f].find(maps[f].second * ghosts[i] + j);
+        auto it = ghost_maps[f].find(bs * ghosts[i] + j);
         assert(it != ghost_maps[f].end());
         ghosts_new[f].push_back(it->second);
         ghost_owners_new[f].push_back(ghost_owners[i]);
@@ -363,24 +340,10 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
   _comm_symmetric = dolfinx::MPI::Comm(comm2, false);
 }
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
+IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<int>& dest_ranks,
                    const std::vector<std::int64_t>& ghosts,
                    const std::vector<int>& src_ranks)
-    : IndexMap(comm, local_size, dest_ranks,
-               Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
-                   ghosts.data(), ghosts.size()),
-               src_ranks)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-IndexMap::IndexMap(
-    MPI_Comm mpi_comm, std::int32_t local_size,
-    const std::vector<int>& dest_ranks,
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-        ghosts,
-    const std::vector<int>& src_ranks)
     : _comm_owner_to_ghost(MPI_COMM_NULL), _comm_ghost_to_owner(MPI_COMM_NULL),
       _comm_symmetric(MPI_COMM_NULL), _ghosts(ghosts)
 {
@@ -411,7 +374,7 @@ IndexMap::IndexMap(
   int myrank = -1;
   MPI_Comm_rank(mpi_comm, &myrank);
   _ghost_owners.resize(ghosts.size());
-  for (int j = 0; j < _ghosts.size(); ++j)
+  for (std::size_t j = 0; j < _ghosts.size(); ++j)
   {
     // Get rank of owner on the neighborhood communicator (rank of out
     // edge on _comm_owner_to_ghost)
@@ -464,7 +427,7 @@ std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
   return _local_range;
 }
 //-----------------------------------------------------------------------------
-std::int32_t IndexMap::num_ghosts() const noexcept { return _ghosts.rows(); }
+std::int32_t IndexMap::num_ghosts() const noexcept { return _ghosts.size(); }
 //-----------------------------------------------------------------------------
 std::int32_t IndexMap::size_local() const noexcept
 {
@@ -473,46 +436,35 @@ std::int32_t IndexMap::size_local() const noexcept
 //-----------------------------------------------------------------------------
 std::int64_t IndexMap::size_global() const noexcept { return _size_global; }
 //-----------------------------------------------------------------------------
-const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>&
-IndexMap::ghosts() const noexcept
+const std::vector<std::int64_t>& IndexMap::ghosts() const noexcept
 {
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, 1> IndexMap::local_to_global(
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-        indices) const
+void IndexMap::local_to_global(const std::int32_t* local, int n,
+                               std::int64_t* global) const
 {
-  const std::int64_t global_offset = _local_range[0];
   const std::int32_t local_size = _local_range[1] - _local_range[0];
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> global(indices.rows());
-  local_to_global_impl(global, indices, global_offset, local_size, _ghosts);
-  return global;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-IndexMap::local_to_global(const std::vector<std::int32_t>& indices) const
-{
-  const std::int64_t global_offset = _local_range[0];
-  const std::int32_t local_size = _local_range[1] - _local_range[0];
-
-  std::vector<std::int64_t> global(indices.size());
-  Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> _global(
-      global.data(), global.size());
-  const Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-      _indices(indices.data(), indices.size());
-  local_to_global_impl(_global, _indices, global_offset, local_size, _ghosts);
-  return global;
+  for (int i = 0; i < n; ++i)
+  {
+    if (local[i] < local_size)
+      global[i] = _local_range[0] + local[i];
+    else
+    {
+      assert((local[i] - local_size) < (int)_ghosts.size());
+      global[i] = _ghosts[local[i] - local_size];
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> IndexMap::global_indices() const
 {
   const std::int32_t local_size = _local_range[1] - _local_range[0];
-  const std::int32_t num_ghosts = _ghosts.rows();
+  const std::int32_t num_ghosts = _ghosts.size();
   const std::int64_t global_offset = _local_range[0];
   std::vector<std::int64_t> global(local_size + num_ghosts);
   std::iota(global.begin(), global.begin() + local_size, global_offset);
-  for (Eigen::Index i = 0; i < _ghosts.rows(); ++i)
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
     global[local_size + i] = _ghosts[i];
 
   return global;
@@ -521,28 +473,18 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 std::vector<std::int32_t>
 IndexMap::global_to_local(const std::vector<std::int64_t>& indices) const
 {
-  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>
-      _indices(indices.data(), indices.size());
-  return this->global_to_local(_indices);
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int32_t> IndexMap::global_to_local(
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-        indices) const
-{
   const std::int32_t local_size = _local_range[1] - _local_range[0];
 
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
-  for (Eigen::Index i = 0; i < _ghosts.rows(); ++i)
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
     global_local_ghosts.emplace_back(_ghosts[i], i + local_size);
+
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
-
-  std::vector<std::int32_t> local;
   const std::array<std::int64_t, 2> range = this->local_range();
-  for (Eigen::Index i = 0; i < indices.size(); ++i)
+  std::vector<std::int32_t> local;
+  for (std::int64_t index : indices)
   {
-    const std::int64_t index = indices[i];
     if (index >= range[0] and index < range[1])
       local.push_back(index - range[0]);
     else
@@ -562,7 +504,7 @@ const std::vector<std::int32_t>& IndexMap::shared_indices() const noexcept
   return _shared_indices;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, 1> IndexMap::ghost_owner_rank() const
+std::vector<int> IndexMap::ghost_owner_rank() const
 {
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
@@ -572,23 +514,11 @@ Eigen::Array<int, Eigen::Dynamic, 1> IndexMap::ghost_owner_rank() const
                            neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
                            neighbors_out.data(), MPI_UNWEIGHTED);
 
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> owners(_ghost_owners.size());
-  for (int i = 0; i < owners.size(); ++i)
+  std::vector<std::int32_t> owners(_ghost_owners.size());
+  for (std::size_t i = 0; i < owners.size(); ++i)
     owners[i] = neighbors_in[_ghost_owners[i]];
 
   return owners;
-}
-//----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, 1> IndexMap::indices() const
-{
-  const std::array local_range = this->local_range();
-  const std::int32_t size_local = this->size_local();
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> indx(size_local + num_ghosts());
-  std::iota(indx.data(), indx.data() + size_local, local_range[0]);
-  for (Eigen::Index i = 0; i < num_ghosts(); ++i)
-    indx[size_local * i] = _ghosts[i];
-
-  return indx;
 }
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::comm(Direction dir) const
@@ -690,13 +620,13 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
 
   // For my ghosts, add owning rank to list of sharing ranks
   const std::int32_t size_local = this->size_local();
-  for (int i = 0; i < _ghosts.size(); ++i)
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
     shared_indices[size_local + i].insert(neighbors_in[_ghost_owners[i]]);
 
   // Build map from global index to local index for ghosts
   std::unordered_map<std::int64_t, std::int32_t> ghosts;
   ghosts.reserve(_ghosts.size());
-  for (int i = 0; i < _ghosts.size(); ++i)
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
     ghosts.emplace(_ghosts[i], i + size_local);
 
   // Wait for all-to-all to complete
@@ -786,7 +716,7 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
 
   // Create displacement vectors
   std::vector<std::int32_t> sizes_recv(indegree, 0);
-  for (std::int32_t i = 0; i < _ghosts.size(); ++i)
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
     sizes_recv[_ghost_owners[i]] += n;
 
   std::vector displs_send = _shared_disp;
@@ -817,7 +747,7 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
 
   // Copy into ghost area ("remote_data")
   std::vector<std::int32_t> displs(displs_recv);
-  for (int i = 0; i < _ghosts.size(); ++i)
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
   {
     const int np = _ghost_owners[i];
     for (int j = 0; j < n; ++j)
@@ -848,7 +778,7 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
   // Compute number of items to send to each process
   std::vector<std::int32_t> send_sizes(outdegree, 0);
   std::vector<std::int32_t> recv_sizes(indegree, 0);
-  for (int i = 0; i < _ghosts.size(); ++i)
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
     send_sizes[_ghost_owners[i]] += n;
 
   // Create displacement vectors
@@ -866,7 +796,7 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
   // Fill sending data
   std::vector<T> send_data(displs_send.back());
   std::vector<std::int32_t> displs(displs_send);
-  for (std::int32_t i = 0; i < _ghosts.size(); ++i)
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
   {
     const int np = _ghost_owners[i];
     for (std::int32_t j = 0; j < n; ++j)

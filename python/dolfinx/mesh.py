@@ -3,6 +3,7 @@
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Creation, refining and marking of meshes"""
 
 import types
 
@@ -12,7 +13,7 @@ from dolfinx import cpp, fem
 from dolfinx.cpp.mesh import create_meshtags
 
 __all__ = [
-    "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags"
+    "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags", "MeshTags"
 ]
 
 
@@ -92,7 +93,9 @@ def refine(mesh, cell_markers=None, redistribute=True):
         mesh_refined = cpp.refinement.refine(mesh, redistribute)
     else:
         mesh_refined = cpp.refinement.refine(mesh, cell_markers, redistribute)
-    mesh_refined._ufl_domain = mesh._ufl_domain
+    domain = mesh._ufl_domain
+    domain._ufl_cargo = mesh_refined
+    mesh_refined._ufl_domain = domain
     return mesh_refined
 
 
@@ -123,7 +126,7 @@ def MeshTags(mesh, dim, indices, values):
         raise KeyError("Datatype {} of values array not recognised".format(dtype))
 
     fn = _meshtags_types[dtype]
-    return fn(mesh, dim, indices, values)
+    return fn(mesh, dim, indices.astype(numpy.int32), values)
 
 
 # Functions to extend cpp.mesh.Mesh with

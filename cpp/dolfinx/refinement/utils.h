@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -84,7 +85,7 @@ partition(const mesh::Mesh& old_mesh,
 /// is a utility to help add new topological vertices on each process
 /// into the space of the index map.
 ///
-/// @param index_map IndexMap of current mesh vertices
+/// @param index_map Index map for the current mesh vertices
 /// @param n Number of new entries to be accommodated on this process
 /// @return Global indices as if "n" extra values are appended on each
 ///   process

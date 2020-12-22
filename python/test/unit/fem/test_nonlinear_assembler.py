@@ -42,8 +42,8 @@ def test_matrix_assembly_block():
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
 
-    V0 = dolfinx.function.FunctionSpace(mesh, P0)
-    V1 = dolfinx.function.FunctionSpace(mesh, P1)
+    V0 = dolfinx.fem.FunctionSpace(mesh, P0)
+    V1 = dolfinx.fem.FunctionSpace(mesh, P1)
 
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
@@ -60,14 +60,14 @@ def test_matrix_assembly_block():
     facetdim = mesh.topology.dim - 1
     bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
 
-    u_bc = dolfinx.function.Function(V1)
+    u_bc = dolfinx.fem.Function(V1)
     u_bc.interpolate(bc_value)
     bdofs = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofs)
 
     # Define variational problem
     du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
-    u, p = dolfinx.function.Function(V0), dolfinx.function.Function(V1)
+    u, p = dolfinx.fem.Function(V0), dolfinx.fem.Function(V1)
     v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
     u.interpolate(initial_guess_u)
@@ -122,9 +122,9 @@ def test_matrix_assembly_block():
 
     # Monolithic version
     E = P0 * P1
-    W = dolfinx.function.FunctionSpace(mesh, E)
+    W = dolfinx.fem.FunctionSpace(mesh, E)
     dU = ufl.TrialFunction(W)
-    U = dolfinx.function.Function(W)
+    U = dolfinx.fem.Function(W)
     u0, u1 = ufl.split(U)
     v0, v1 = ufl.TestFunctions(W)
 
@@ -247,7 +247,7 @@ def test_assembly_solve_block():
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11)
     p = 1
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p)
-    V0 = dolfinx.function.FunctionSpace(mesh, P)
+    V0 = dolfinx.fem.FunctionSpace(mesh, P)
     V1 = V0.clone()
 
     def bc_val_0(x):
@@ -268,9 +268,9 @@ def test_assembly_solve_block():
     facetdim = mesh.topology.dim - 1
     bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
 
-    u_bc0 = dolfinx.function.Function(V0)
+    u_bc0 = dolfinx.fem.Function(V0)
     u_bc0.interpolate(bc_val_0)
-    u_bc1 = dolfinx.function.Function(V1)
+    u_bc1 = dolfinx.fem.Function(V1)
     u_bc1.interpolate(bc_val_1)
 
     bdofs0 = dolfinx.fem.locate_dofs_topological(V0, facetdim, bndry_facets)
@@ -280,7 +280,7 @@ def test_assembly_solve_block():
            dolfinx.fem.dirichletbc.DirichletBC(u_bc1, bdofs1)]
 
     # Block and Nest variational problem
-    u, p = dolfinx.function.Function(V0), dolfinx.function.Function(V1)
+    u, p = dolfinx.fem.Function(V0), dolfinx.fem.Function(V1)
     du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
     v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
@@ -381,8 +381,8 @@ def test_assembly_solve_block():
 
     # -- Monolithic version
     E = P * P
-    W = dolfinx.function.FunctionSpace(mesh, E)
-    U = dolfinx.function.Function(W)
+    W = dolfinx.fem.FunctionSpace(mesh, E)
+    U = dolfinx.fem.Function(W)
     dU = ufl.TrialFunction(W)
     u0, u1 = ufl.split(U)
     v0, v1 = ufl.TestFunctions(W)
@@ -392,9 +392,9 @@ def test_assembly_solve_block():
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
     J = derivative(F, U, dU)
 
-    u0_bc = dolfinx.function.Function(V0)
+    u0_bc = dolfinx.fem.Function(V0)
     u0_bc.interpolate(bc_val_0)
-    u1_bc = dolfinx.function.Function(V1)
+    u1_bc = dolfinx.fem.Function(V1)
     u1_bc.interpolate(bc_val_1)
 
     bdofsW0_V0 = dolfinx.fem.locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
@@ -445,8 +445,8 @@ def test_assembly_solve_block():
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     gdim = mesh.geometry.dim
-    P2 = dolfinx.function.VectorFunctionSpace(mesh, ("Lagrange", 2))
-    P1 = dolfinx.function.FunctionSpace(mesh, ("Lagrange", 1))
+    P2 = dolfinx.fem.VectorFunctionSpace(mesh, ("Lagrange", 2))
+    P1 = dolfinx.fem.FunctionSpace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
         """Define boundary x = 0"""

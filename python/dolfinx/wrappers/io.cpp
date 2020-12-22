@@ -6,8 +6,8 @@
 
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
@@ -37,16 +37,7 @@ void io(py::module& m)
 
   // TODO: Template for different values dtypes
   m.def("extract_local_entities",
-        [](const dolfinx::mesh::Mesh& mesh, const int entity_dim,
-           const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                              Eigen::RowMajor>& entities,
-           const py::array_t<std::int32_t>& values) {
-          py::buffer_info buf = values.request();
-          std::vector<std::int32_t> vals((std::int32_t*)buf.ptr,
-                                         (std::int32_t*)buf.ptr + buf.size);
-          return dolfinx::io::xdmf_utils::extract_local_entities(
-              mesh, entity_dim, entities, vals);
-        });
+        &dolfinx::io::xdmf_utils::extract_local_entities);
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
@@ -109,13 +100,14 @@ void io(py::module& m)
            }),
            py::arg("filename"))
       .def("write",
-           py::overload_cast<const dolfinx::function::Function<PetscScalar>&>(
+           py::overload_cast<const dolfinx::fem::Function<PetscScalar>&>(
                &dolfinx::io::VTKFile::write),
            py::arg("u"))
-      .def("write",
-           py::overload_cast<const dolfinx::function::Function<PetscScalar>&,
-                             double>(&dolfinx::io::VTKFile::write),
-           py::arg("u"), py::arg("t"))
+      .def(
+          "write",
+          py::overload_cast<const dolfinx::fem::Function<PetscScalar>&, double>(
+              &dolfinx::io::VTKFile::write),
+          py::arg("u"), py::arg("t"))
 
       .def("write",
            py::overload_cast<const dolfinx::mesh::Mesh&>(

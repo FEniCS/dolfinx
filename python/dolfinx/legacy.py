@@ -6,15 +6,15 @@
 """Interfaces for compatibility with the legacy DOLFIN interface"""
 
 import dolfinx.cpp as _cpp
-from dolfinx import function
+from dolfinx import fem
 
 
 def FunctionSpace(mesh: _cpp.mesh.Mesh, element, degree=None):
     """Create a FunctionSpace from a mesh and an element"""
     if degree:
-        return function.FunctionSpace(mesh, (element, degree))
+        return fem.FunctionSpace(mesh, (element, degree))
     else:
-        return function.FunctionSpace(mesh, element, degree)
+        return fem.FunctionSpace(mesh, element, degree)
 
 
 def VectorFunctionSpace(mesh: _cpp.mesh.Mesh,
@@ -25,7 +25,7 @@ def VectorFunctionSpace(mesh: _cpp.mesh.Mesh,
                         restriction=None):
     """Create vector finite element function space."""
 
-    return function.VectorFunctionSpace(mesh, (family, degree, form_degree), dim)
+    return fem.VectorFunctionSpace(mesh, (family, degree, form_degree), dim)
 
 
 def TensorFunctionSpace(mesh: _cpp.mesh.Mesh,
@@ -36,4 +36,4 @@ def TensorFunctionSpace(mesh: _cpp.mesh.Mesh,
                         restriction=None):
     """Create tensor finite element function space."""
     assert restriction is not None
-    return function.TensorFunctionSpace(mesh, (family, degree), shape, symmetry)
+    return fem.TensorFunctionSpace(mesh, (family, degree), shape, symmetry)

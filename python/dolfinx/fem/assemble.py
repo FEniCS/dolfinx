@@ -53,8 +53,11 @@ def create_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETS
 # -- Matrix instantiation ----------------------------------------------------
 
 
-def create_matrix(a: typing.Union[Form, cpp.fem.Form]) -> PETSc.Mat:
-    return cpp.fem.create_matrix(_create_cpp_form(a))
+def create_matrix(a: typing.Union[Form, cpp.fem.Form], mat_type=None) -> PETSc.Mat:
+    if mat_type is not None:
+        return cpp.fem.create_matrix(_create_cpp_form(a), mat_type)
+    else:
+        return cpp.fem.create_matrix(_create_cpp_form(a))
 
 
 def create_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]]) -> PETSc.Mat:
@@ -229,10 +232,10 @@ def _(A: PETSc.Mat,
 # FIXME: Revise this interface
 @functools.singledispatch
 def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
-                         bcs: typing.List[DirichletBC] = [],
+                         bcs: typing.List[DirichletBC] = [], mat_types=[],
                          diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    A = cpp.fem.create_matrix_nest(_create_cpp_form(a))
+    A = cpp.fem.create_matrix_nest(_create_cpp_form(a), mat_types)
     assemble_matrix_nest(A, a, bcs, diagonal)
     return A
 
@@ -306,7 +309,9 @@ def _(A: PETSc.Mat,
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
-                assemble_matrix(Asub, a_sub, bcs, diagonal)
+                cpp.fem.assemble_matrix_petsc_unrolled(Asub, a_sub, bcs)
+                if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
+                    cpp.fem.add_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
     return A
 

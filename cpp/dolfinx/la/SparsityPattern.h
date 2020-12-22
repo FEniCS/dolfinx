@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/span.hpp>
 #include <memory>
 #include <string>
 #include <utility>
@@ -52,13 +52,15 @@ public:
   ///   patterns must not be finalised. Null block are permited
   /// @param[in] maps Pairs of (index map, block size) for each row
   ///   block (maps[0]) and column blocks (maps[1])
+  /// @param[in] bs Block sizes for the sparsity pattern entries
   SparsityPattern(
       MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>>& patterns,
       const std::array<
           std::vector<
               std::pair<std::reference_wrapper<const common::IndexMap>, int>>,
-          2>& maps);
+          2>& maps,
+      const std::array<std::vector<int>, 2>& bs);
 
   SparsityPattern(const SparsityPattern& pattern) = delete;
 
@@ -71,9 +73,6 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Return local range for dimension dim
-  std::array<std::int64_t, 2> local_range(int dim) const;
-
   /// Return index map for dimension dim
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
@@ -81,18 +80,13 @@ public:
   int block_size(int dim) const;
 
   /// Insert non-zero locations using local (process-wise) indices
-  void
-  insert(const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-             rows,
-         const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-             cols);
+  void insert(const tcb::span<const std::int32_t>& rows,
+              const tcb::span<const std::int32_t>& cols);
 
   /// Insert non-zero locations on the diagonal
   /// @param[in] rows The rows in local (process-wise) indices. The
   ///   indices must exist in the row IndexMap.
-  void insert_diagonal(
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-          rows);
+  void insert_diagonal(const std::vector<std::int32_t>& rows);
 
   /// Finalize sparsity pattern and communicate off-process entries
   void assemble();
