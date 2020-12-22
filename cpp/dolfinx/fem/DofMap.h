@@ -76,7 +76,9 @@ public:
   /// (graph::AdjacencyList<std::int32_t>) with the degrees-of-freedom
   /// for each cell
   /// @param[in] bs The block size of the @p dofmap
-  template <typename U>
+  template <typename U,
+            typename = std::enable_if_t<std::is_same<
+                graph::AdjacencyList<std::int32_t>, std::decay_t<U>>::value>>
   DofMap(std::shared_ptr<const ElementDofLayout> element,
          std::shared_ptr<const common::IndexMap> index_map, int index_map_bs,
          U&& dofmap, int bs)
