@@ -175,9 +175,9 @@ int main(int argc, char* argv[])
 
     auto bcs
         = std::vector({std::make_shared<const fem::DirichletBC<PetscScalar>>(
-                           u_clamp, bdofs_left),
+                           u_clamp, std::move(bdofs_left)),
                        std::make_shared<const fem::DirichletBC<PetscScalar>>(
-                           u_rotation, bdofs_right)});
+                           u_rotation, std::move(bdofs_right))});
 
     HyperElasticProblem problem(u, L, a, bcs);
     nls::NewtonSolver newton_solver(MPI_COMM_WORLD);

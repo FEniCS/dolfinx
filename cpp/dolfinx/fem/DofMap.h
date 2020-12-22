@@ -43,13 +43,13 @@ class ElementDofLayout;
 ///  Unassembled index: [ [0, 11], [10], [4, 8, 9], [1, 3, 7], [5, 6], [2] ]
 ///
 /// @param[in] dofmap The standard dof map that for each cell (node)
-///   gives the global (process-wise) index of each local (cell-wise)
-///   index.
+/// gives the global (process-wise) index of each local (cell-wise)
+/// index.
 /// @param[in] num_cells The number of cells (nodes) in @p dofmap to
-///   consider. The first @p num_cells are used. This is argument is
-///   typically used to exclude ghost cell contributions.
+/// consider. The first @p num_cells are used. This is argument is
+/// typically used to exclude ghost cell contributions.
 /// @return Map from global (process-wise) index to positions in an
-///   unaassembled array. The links for each node are sorted.
+/// unaassembled array. The links for each node are sorted.
 graph::AdjacencyList<std::int32_t>
 transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
                  std::int32_t num_cells);
@@ -67,9 +67,26 @@ public:
   /// Create a DofMap from the layout of dofs on a reference element, an
   /// IndexMap defining the distribution of dofs across processes and a
   /// vector of indices
-  DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
+  /// @param[in] element The layout of the degrees of freedom on an element
+  /// @param[in] index_map The map describing the parallel distribution
+  /// of the degrees of freedom
+  /// @param[in] index_map_bs The block size associated with the @p
+  /// index_map
+  /// @param[in] dofmap Adjacency list
+  /// (graph::AdjacencyList<std::int32_t>) with the degrees-of-freedom
+  /// for each cell
+  /// @param[in] bs The block size of the @p dofmap
+  template <typename U,
+            typename = std::enable_if_t<std::is_same<
+                graph::AdjacencyList<std::int32_t>, std::decay_t<U>>::value>>
+  DofMap(std::shared_ptr<const ElementDofLayout> element,
          std::shared_ptr<const common::IndexMap> index_map, int index_map_bs,
-         const graph::AdjacencyList<std::int32_t>& dofmap, int bs);
+         U&& dofmap, int bs)
+      : element_dof_layout(element), index_map(index_map),
+        _index_map_bs(index_map_bs), _dofmap(std::forward<U>(dofmap)), _bs(bs)
+  {
+    // Do nothing
+  }
 
   // Copy constructor
   DofMap(const DofMap& dofmap) = delete;
@@ -106,7 +123,7 @@ public:
   /// Create a "collapsed" dofmap (collapses a sub-dofmap)
   /// @param[in] comm MPI Communicator
   /// @param[in] topology The mesh topology that the dofmap is defined
-  ///   on
+  /// on
   /// @return The collapsed dofmap
   std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
   collapse(MPI_Comm comm, const mesh::Topology& topology) const;
