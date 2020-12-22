@@ -175,28 +175,27 @@ std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
 
   // Vertices
   map[0] = 0;
-  map[1] = n;
-  map[2] = n + 1;
-  map[3] = 1;
+  map[1] = 1;
+  map[2] = 3;
+  map[3] = 2;
 
   int j = 4;
 
+  const int edge_nodes = n - 2;
+
   // Edges
-  for (int k = 2; k < n; ++k)
-    map[j++] = n * k;
-  for (int k = n + 2; k < 2 * n; ++k)
-    map[j++] = k;
-  for (int k = 2; k < n; ++k)
-    map[j++] = k * n + 1;
-  for (int k = 2; k < n; ++k)
-    map[j++] = k;
+  for (int k = 0; k < edge_nodes; ++k)
+    map[j++] = 4 + k;
+  for (int k = 0; k < edge_nodes; ++k)
+    map[j++] = 4 + 2 * edge_nodes + k;
+  for (int k = 0; k < edge_nodes; ++k)
+    map[j++] = 4 + 3 * edge_nodes + k;
+  for (int k = 0; k < edge_nodes; ++k)
+    map[j++] = 4 + edge_nodes + k;
 
   // Face
-  for (int k = 2; k < n; ++k)
-    for (int l = 2; l < n; ++l)
-      map[j++] = l * n + k;
-  assert(j == num_nodes);
-
+  for (int k = 0; k < edge_nodes * edge_nodes; ++k)
+    map[j++] = 4 + edge_nodes * 4 + k;
   return map;
 }
 //-----------------------------------------------------------------------------
@@ -205,11 +204,11 @@ std::vector<std::uint8_t> vtk_hexahedron(int num_nodes)
   switch (num_nodes)
   {
   case 8:
-    return {0, 4, 6, 2, 1, 5, 7, 3};
+    return {0, 1, 3, 2, 4, 5, 7, 6};
   case 27:
     // This is the documented VTK ordering
-    return {0,  9, 12, 3,  1,  10, 13, 4,  18, 15, 21, 6,  19, 16,
-            22, 7, 2,  11, 14, 5,  8,  17, 20, 23, 24, 25, 26};
+    return {0,  1,  3,  2,  4,  5,  7,  6,  8,  11, 13, 9,  10, 18,
+            19, 17, 10, 12, 15, 14, 22, 23, 21, 24, 20, 25, 26};
   default:
     throw std::runtime_error("Higher order hexahedron not supported.");
   }
@@ -251,10 +250,10 @@ std::vector<std::uint8_t> gmsh_hexahedron(int num_nodes)
   switch (num_nodes)
   {
   case 8:
-    return {0, 4, 6, 2, 1, 5, 7, 3};
+    return {0, 1, 3, 2, 4, 5, 7, 6};
   case 27:
-    return {0,  9, 12, 3, 1,  10, 13, 4,  18, 6,  2,  15, 11, 21,
-            14, 5, 19, 7, 16, 22, 24, 20, 8,  17, 23, 25, 26};
+    return {0,  1,  3,  2,  4,  5,  7,  6,  8,  9,  10, 11, 12, 13,
+            15, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
   default:
     throw std::runtime_error("Higher order GMSH hexahedron not supported");
   }
@@ -265,11 +264,11 @@ std::vector<std::uint8_t> gmsh_quadrilateral(int num_nodes)
   switch (num_nodes)
   {
   case 4:
-    return {0, 2, 3, 1};
+    return {0, 1, 3, 2};
   case 9:
-    return {0, 3, 4, 1, 6, 5, 7, 2, 8};
+    return {0, 1, 3, 2, 4, 6, 7, 5, 8};
   case 16:
-    return {0, 4, 5, 1, 8, 12, 6, 7, 13, 9, 3, 2, 10, 14, 15, 11};
+    return {0, 4, 3, 2, 4, 5, 8, 9, 11, 10, 7, 6, 12, 13, 15, 14};
   default:
     throw std::runtime_error("Higher order GMSH quadrilateral not supported");
   }

@@ -15,10 +15,6 @@ from mpi4py import MPI
 
 import gmsh
 
-
-print("Disabled for now")
-exit(0)
-
 # Generate a mesh on each rank with the gmsh API, and create a DOLFIN-X mesh
 # on each rank. ::
 
