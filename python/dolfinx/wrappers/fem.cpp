@@ -298,9 +298,9 @@ void fem(py::module& m)
           [](const std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>&
                  g,
              const py::array_t<std::int32_t, py::array::c_style>& dofs) {
-            std::vector<std::int32_t> _dofs(dofs.data(),
-                                            dofs.data() + dofs.size());
-            return dolfinx::fem::DirichletBC<PetscScalar>(g, std::move(_dofs));
+            return dolfinx::fem::DirichletBC<PetscScalar>(
+                g, std::vector<std::int32_t>(dofs.data(),
+                                             dofs.data() + dofs.size()));
           }))
       .def(py::init(
           [](const std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>&

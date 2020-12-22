@@ -337,16 +337,16 @@ mesh::extract_topology(const CellType& cell_type,
   }
 
   // Extract vertices
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      topology(cells.num_nodes(), num_vertices_per_cell);
-  for (int i = 0; i < cells.num_nodes(); ++i)
+  std::vector<std::int64_t> topology(cells.num_nodes() * num_vertices_per_cell);
+  for (int c = 0; c < cells.num_nodes(); ++c)
   {
-    auto p = cells.links(i);
+    auto p = cells.links(c);
     for (int j = 0; j < num_vertices_per_cell; ++j)
-      topology(i, j) = p[local_vertices[j]];
+      topology[num_vertices_per_cell * c + j] = p[local_vertices[j]];
   }
 
-  return graph::AdjacencyList<std::int64_t>(topology);
+  return graph::build_adjacency_list<std::int64_t>(std::move(topology),
+                                                   num_vertices_per_cell);
 }
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd
