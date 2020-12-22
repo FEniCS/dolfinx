@@ -67,9 +67,22 @@ public:
   /// Create a DofMap from the layout of dofs on a reference element, an
   /// IndexMap defining the distribution of dofs across processes and a
   /// vector of indices
+  /// @param[in] element_dof_layout
+  /// @param[in] index_map
+  /// @param[in] index_map_bs
+  /// @param[in] dofmap Adjacency list
+  /// (graph::AdjacencyList<std::int32_t>) with the degrees-of-freedom
+  /// for each cell
+  /// @param[in] bs The block size of the @p dofmap
+  template <typename U>
   DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
          std::shared_ptr<const common::IndexMap> index_map, int index_map_bs,
-         const graph::AdjacencyList<std::int32_t>& dofmap, int bs);
+         U&& dofmap, int bs)
+      : element_dof_layout(element_dof_layout), index_map(index_map),
+        _index_map_bs(index_map_bs), _dofmap(std::forward<U>(dofmap)), _bs(bs)
+  {
+    // Do nothing
+  }
 
   // Copy constructor
   DofMap(const DofMap& dofmap) = delete;

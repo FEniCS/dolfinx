@@ -140,16 +140,17 @@ public:
   ///
   /// @param[in] g The boundary condition value. The boundary condition
   /// can be applied to a a function on the same space as g.
-  /// @param[in] dofs Degree-of-freedom block indices in the space of
-  /// the boundary value function applied to V_dofs[i]. The dof block
-  /// indices must be sorted.
+  /// @param[in] dofs Degree-of-freedom block indices (@p
+  /// std::vector<std::int32_t>) in the space of the boundary value
+  /// function applied to V_dofs[i]. The dof block indices must be
+  /// sorted.
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
   /// block size 3
-  DirichletBC(const std::shared_ptr<const fem::Function<T>>& g,
-              const std::vector<std::int32_t>& dofs)
-      : _function_space(g->function_space()), _g(g), _dofs0(dofs),
-        _dofs1_g(dofs)
+  template <typename U>
+  DirichletBC(const std::shared_ptr<const fem::Function<T>>& g, U&& dofs)
+      : _function_space(g->function_space()), _g(g),
+        _dofs0(std::forward<U>(dofs)), _dofs1_g(_dofs0)
   {
     const int bs = _function_space->dofmap()->bs();
     if (bs > 1)
