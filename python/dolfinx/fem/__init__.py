@@ -25,7 +25,7 @@ from dolfinx.fem.formmanipulations import (adjoint, derivative, increase_order,
 from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
                                   VectorFunctionSpace)
-from dolfinx.fem.linearsolver import LinearSolver
+from dolfinx.fem.linearproblem import LinearProblem
 
 __all__ = [
     "Constant", "Expression", "Function",
@@ -39,5 +39,5 @@ __all__ = [
     "assemble_matrix", "set_bc", "set_bc_nest", "create_coordinate_map",
     "DirichletBC", "DofMap", "Form", "IntegralType",
     "derivative", "adjoint", "increase_order",
-    "tear", "LinearSolver", "locate_dofs_geometrical", "locate_dofs_topological"
+    "tear", "LinearProblem", "locate_dofs_geometrical", "locate_dofs_topological"
 ]

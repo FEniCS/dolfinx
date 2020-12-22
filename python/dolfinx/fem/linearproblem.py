@@ -11,7 +11,7 @@ from ufl import form
 from dolfinx import fem
 
 
-class LinearSolver():
+class LinearProblem():
 
     def __init__(self, a: form.Form, L: form.Form, bcs: typing.List[fem.DirichletBC] = [],
                  petsc_options={}, form_compiler_parameters={}, jit_parameters={}):
@@ -44,7 +44,7 @@ class LinearSolver():
 
         .. code-block:: python
 
-            solver = LinearSolver(a, L, [bc0, bc1],
+            problem = LinearProblem(a, L, [bc0, bc1],
                                   petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
         """

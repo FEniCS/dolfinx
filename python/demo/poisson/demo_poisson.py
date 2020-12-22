@@ -81,7 +81,7 @@ import numpy as np
 import ufl
 from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh)
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import locate_dofs_topological, LinearSolver
+from dolfinx.fem import locate_dofs_topological, LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI
@@ -174,14 +174,14 @@ L = inner(f, v) * dx + inner(g, v) * ds
 # represent the solution. (Upon initialization, it is simply set to the
 # zero function.) A :py:class:`Function
 # <dolfinx.functions.fem.Function>` represents a function living in
-# a finite element function space. Next, we initialize a solver using the :py:class:`LinearSolver
-# <dolfinx.fem.linearsolver.LinearSolver>`.
+# a finite element function space. Next, we initialize a solver using the :py:class:`LinearProblem
+# <dolfinx.fem.linearproblem.LinearProblem>`.
 # This class is initialized with the arguments ``a``, ``L``, and ``bc`` as follows: ::
-solver = LinearSolver(a, L, [bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+# In this problem, we use a direct LU solver, which is defined through the dictionary ``petsc_options``.
+problem = LinearProblem(a, L, [bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 # When we want to compute the solution to the problem, we can specify what kind of solver we want to use.
-# In this problem, we use a direct LU solver, which is defined through the dictionary ``petsc_options``.
-uh = solver.solve()
+uh = problem.solve()
 
 # The function ``u`` will be modified during the call to solve. The
 # default settings for solving a variational problem have been

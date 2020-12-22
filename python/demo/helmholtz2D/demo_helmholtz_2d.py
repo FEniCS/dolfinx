@@ -15,9 +15,8 @@
 import numpy as np
 from mpi4py import MPI
 
-from dolfinx import (Function, FunctionSpace, UnitSquareMesh,
-                     has_petsc_complex)
-from dolfinx.fem import LinearSolver
+from dolfinx import Function, FunctionSpace, UnitSquareMesh, has_petsc_complex
+from dolfinx.fem import LinearProblem
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.io import XDMFFile
 from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
@@ -53,8 +52,8 @@ a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
 # Compute solution
-solver = LinearSolver(a, L)
-uh = solver.solve()
+problem = LinearProblem(a, L)
+uh = problem.solve()
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)
 with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w",
