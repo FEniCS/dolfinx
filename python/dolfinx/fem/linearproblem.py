@@ -12,11 +12,14 @@ from dolfinx import fem
 
 
 class LinearProblem():
+    """
+    Class for solving a linear variational problem of the form a(u,v)=L(v)
+    using PETSc as a linear algebra backend.
+    """
 
     def __init__(self, a: form.Form, L: form.Form, bcs: typing.List[fem.DirichletBC] = [],
                  petsc_options={}, form_compiler_parameters={}, jit_parameters={}):
-        """
-        Initialize solver for a linear variational problem.
+        """Initialize solver for a linear variational problem.
 
         Parameters
         ----------
@@ -46,10 +49,7 @@ class LinearProblem():
             parameters. Takes priority over all other parameter values.
 
         .. code-block:: python
-
-            problem = LinearProblem(a, L, [bc0, bc1],
-                                  petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
-
+            problem = LinearProblem(a, L, [bc0, bc1], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
         """
         self.a = fem.Form(a, form_compiler_parameters=form_compiler_parameters,
                           jit_parameters=jit_parameters)
