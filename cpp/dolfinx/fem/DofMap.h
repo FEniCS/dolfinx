@@ -70,6 +70,8 @@ public:
   /// @param[in] element The layout of the degrees of freedom on an element
   /// @param[in] index_map The map describing the parallel distribution
   /// of the degrees of freedom
+  /// @param[in] index_map_bs The block size associated with the @p
+  /// index_map
   /// @param[in] dofmap Adjacency list
   /// (graph::AdjacencyList<std::int32_t>) with the degrees-of-freedom
   /// for each cell
@@ -119,7 +121,7 @@ public:
   /// Create a "collapsed" dofmap (collapses a sub-dofmap)
   /// @param[in] comm MPI Communicator
   /// @param[in] topology The mesh topology that the dofmap is defined
-  ///   on
+  /// on
   /// @return The collapsed dofmap
   std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
   collapse(MPI_Comm comm, const mesh::Topology& topology) const;
