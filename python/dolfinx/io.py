@@ -56,7 +56,8 @@ class XDMFFile(cpp.io.XDMFFile):
         cmap = fem.create_coordinate_map(self.comm(), domain)
 
         # Build the mesh
-        mesh = cpp.mesh.create_mesh(self.comm(), cpp.graph.AdjacencyList_int64(cells), cmap, x, ghost_mode)
+        mesh = cpp.mesh.create_mesh(self.comm(), cpp.graph.AdjacencyList_int64(cells),
+                                    cmap, x, ghost_mode, cpp.mesh.partition_cells)
         mesh.name = name
         domain._ufl_cargo = mesh
         mesh._ufl_domain = domain
