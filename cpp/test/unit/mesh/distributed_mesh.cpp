@@ -112,7 +112,7 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
   }
 
 #ifdef HASKIP
-  SECTION("KAHIP")
+  SECTION("KAHIP with Lambda")
   {
     auto kahip = [](MPI_Comm mpi_comm, int nparts,
                     const mesh::CellType cell_type,

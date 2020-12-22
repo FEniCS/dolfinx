@@ -67,7 +67,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                        const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>& x,
                        mesh::GhostMode ghost_mode,
-                       PartitioningFunction partitioner)
+                       mesh::PartitioningFunction partitioner)
 {
   if (ghost_mode == mesh::GhostMode::shared_vertex)
     throw std::runtime_error("Ghost mode via vertex currently disabled.");

@@ -155,8 +155,8 @@ partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
                 const graph::AdjacencyList<std::int64_t>& cells,
                 mesh::GhostMode ghost_mode);
 
-/// Compute destination rank for mesh cells in this rank using KahIP graph
-/// partitioner
+/// Compute destination rank for mesh cells in this rank using the KaHIP 
+/// parallel graph partitioner
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] n Number of partitions
