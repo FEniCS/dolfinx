@@ -71,11 +71,8 @@ Vec create_petsc_vector(const common::IndexMap& map, int bs);
 /// @param[in] bs The block size. The total number of local entries is
 /// `bs * (range[1] - range[0])`.
 /// @returns A PETSc Vec
-Vec create_petsc_vector(
-    MPI_Comm comm, std::array<std::int64_t, 2> range,
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-        ghosts,
-    int bs);
+Vec create_petsc_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
+                        const std::vector<std::int64_t>& ghosts, int bs);
 
 /// Copy blocks from Vec into Eigen vectors
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> get_local_vectors(

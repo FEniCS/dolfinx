@@ -8,6 +8,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <map>
 
 #ifdef HAS_PARMETIS
 #include <parmetis.h>
@@ -233,7 +234,7 @@ graph::parmetis::partition(MPI_Comm mpi_comm, idx_t nparts,
     }
 
     // Actual halo exchange
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_cell_partition
+    const std::vector<std::int64_t> recv_cell_partition
         = dolfinx::MPI::all_to_all(
               mpi_comm, graph::AdjacencyList<std::int64_t>(send_cell_partition))
               .array();
@@ -241,12 +242,11 @@ graph::parmetis::partition(MPI_Comm mpi_comm, idx_t nparts,
     // Construct a map from all currently foreign cells to their new
     // partition number
     std::map<std::int64_t, std::int32_t> cell_ownership;
-    for (int p = 0; p < recv_cell_partition.rows(); p += 2)
+    for (std::size_t p = 0; p < recv_cell_partition.size(); p += 2)
       cell_ownership[recv_cell_partition[p]] = recv_cell_partition[p + 1];
 
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& xadj
-        = local_graph.offsets();
-    const Eigen::Array<idx_t, Eigen::Dynamic, 1>& adjncy = local_graph.array();
+    const std::vector<std::int32_t>& xadj = local_graph.offsets();
+    const std::vector<idx_t>& adjncy = local_graph.array();
 
     // Generate map for where new boundary cells need to be sent
     for (std::int32_t i = 0; i < ncells; i++)

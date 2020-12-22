@@ -339,9 +339,9 @@ xdmf_utils::extract_local_entities(
     throw std::runtime_error("Number of entities and values must match");
 
   // Get layout of dofs on 0th entity
-  const Eigen::Array<int, Eigen::Dynamic, 1> entity_layout
+  const std::vector<int> entity_layout
       = mesh.geometry().cmap().dof_layout().entity_closure_dofs(entity_dim, 0);
-  assert(entity_layout.rows() == entities.cols());
+  assert((int)entity_layout.size() == entities.cols());
 
   auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
   if (!c_to_v)
@@ -353,9 +353,9 @@ xdmf_utils::extract_local_entities(
   std::vector<int> cell_vertex_dofs(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
-    const Eigen::Array<int, Eigen::Dynamic, 1> local_index
+    const std::vector<int> local_index
         = mesh.geometry().cmap().dof_layout().entity_dofs(0, i);
-    assert(local_index.rows() == 1);
+    assert(local_index.size() == 1);
     cell_vertex_dofs[i] = local_index[0];
   }
 
@@ -365,11 +365,10 @@ xdmf_utils::extract_local_entities(
   std::vector<int> entity_vertex_dofs;
   for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
   {
-    const auto* it = std::find(entity_layout.data(),
-                               entity_layout.data() + entity_layout.rows(),
-                               cell_vertex_dofs[i]);
-    if (it != (entity_layout.data() + entity_layout.rows()))
-      entity_vertex_dofs.push_back(std::distance(entity_layout.data(), it));
+    auto it = std::find(entity_layout.begin(), entity_layout.end(),
+                        cell_vertex_dofs[i]);
+    if (it != entity_layout.end())
+      entity_vertex_dofs.push_back(std::distance(entity_layout.begin(), it));
   }
 
   const mesh::CellType entity_type
@@ -466,21 +465,20 @@ xdmf_utils::extract_local_entities(
   for (int p = 0; p < nodes_g_recv.num_nodes(); ++p)
   {
     auto nodes = nodes_g_recv.links(p);
-    for (int i = 0; i < nodes.rows(); ++i)
-      node_to_rank.insert({nodes(i), p});
+    for (std::int32_t node : nodes)
+      node_to_rank.insert({node, p});
   }
 
   // Figure out which processes are owners of received nodes
   std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
   std::vector<std::vector<std::int32_t>> send_vals_owned(comm_size);
-
   const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>>
       _entities_recv(entities_recv.array().data(),
-                     entities_recv.array().rows() / num_vertices_per_entity,
+                     entities_recv.array().size() / num_vertices_per_entity,
                      num_vertices_per_entity);
-  auto _values_recv = values_recv.array();
-  assert(_values_recv.rows() == _entities_recv.rows());
+  const std::vector<std::int32_t>& _values_recv = values_recv.array();
+  assert((int)_values_recv.size() == _entities_recv.rows());
   for (int e = 0; e < _entities_recv.rows(); ++e)
   {
     // Find ranks that have node0
@@ -491,7 +489,7 @@ xdmf_utils::extract_local_entities(
       send_nodes_owned[p1].insert(
           send_nodes_owned[p1].end(), _entities_recv.row(e).data(),
           _entities_recv.row(e).data() + _entities_recv.cols());
-      send_vals_owned[p1].push_back(_values_recv(e));
+      send_vals_owned[p1].push_back(_values_recv[e]);
     }
   }
 
@@ -523,7 +521,7 @@ xdmf_utils::extract_local_entities(
   {
     auto vertices = c_to_v->links(c);
     auto x_dofs = x_dofmap.links(c);
-    for (int v = 0; v < vertices.rows(); ++v)
+    for (std::size_t v = 0; v < vertices.size(); ++v)
       igi_to_vertex[nodes_g[x_dofs[cell_vertex_dofs[v]]]] = vertices[v];
   }
 
@@ -531,9 +529,8 @@ xdmf_utils::extract_local_entities(
   entities_new.reserve(recv_ents.array().size());
   std::vector<std::int32_t> values_new;
   values_new.reserve(recv_vals.array().size());
-
-  for (Eigen::Index e = 0;
-       e < recv_ents.array().rows() / num_vertices_per_entity; ++e)
+  for (std::size_t e = 0;
+       e < recv_ents.array().size() / num_vertices_per_entity; ++e)
   {
     bool entity_found = true;
     std::vector<std::int32_t> entity(num_vertices_per_entity);

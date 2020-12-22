@@ -50,8 +50,7 @@ void xdmf_mesh::add_topology_data(
   assert(map_g);
   const std::int64_t offset_g = map_g->local_range()[0];
 
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map_g->ghosts();
-
+  const std::vector<std::int64_t>& ghosts = map_g->ghosts();
   const std::vector vtk_map = io::cells::transpose(
       io::cells::perm_vtk(entity_cell_type, num_nodes_per_entity));
   auto map_e = topology.index_map(dim);
@@ -62,7 +61,7 @@ void xdmf_mesh::add_topology_data(
     {
       assert(active_entities[c] < cells_g.num_nodes());
       auto nodes = cells_g.links(active_entities[c]);
-      for (int i = 0; i < nodes.rows(); ++i)
+      for (std::size_t i = 0; i < nodes.size(); ++i)
       {
         std::int64_t global_index = nodes[vtk_map[i]];
         if (global_index < map_g->size_local())
@@ -89,19 +88,19 @@ void xdmf_mesh::add_topology_data(
 
       // Find local number of entity wrt. cell
       auto cell_entities = c_to_e->links(c);
-      const auto* it0 = std::find(cell_entities.data(),
-                                  cell_entities.data() + cell_entities.rows(),
-                                  active_entities[e]);
-      assert(it0 != (cell_entities.data() + cell_entities.rows()));
-      const int local_cell_entity = std::distance(cell_entities.data(), it0);
+      auto it0 = std::find(cell_entities.begin(), cell_entities.end(),
+                           active_entities[e]);
+      assert(it0 != cell_entities.end());
+      const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
+      // FIXME: Move dynamic  allocation outside of loop
       // Tabulate geometry dofs for the entity
-      const Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs
+      const std::vector<int> entity_dofs
           = geometry.cmap().dof_layout().entity_closure_dofs(dim,
                                                              local_cell_entity);
 
       auto nodes = cells_g.links(c);
-      for (Eigen::Index i = 0; i < entity_dofs.rows(); ++i)
+      for (std::size_t i = 0; i < entity_dofs.size(); ++i)
       {
         std::int64_t global_index = nodes[entity_dofs[vtk_map[i]]];
         if (global_index < map_g->size_local())

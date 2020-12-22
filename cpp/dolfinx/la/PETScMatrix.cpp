@@ -72,9 +72,9 @@ Mat la::create_petsc_matrix(
     _nnz_diag.resize(maps[0]->size_local());
     _nnz_offdiag.resize(maps[0]->size_local());
     for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
-      _nnz_diag[i] = diagonal_pattern.links(i).rows();
+      _nnz_diag[i] = diagonal_pattern.links(i).size();
     for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
-      _nnz_offdiag[i] = off_diagonal_pattern.links(i).rows();
+      _nnz_offdiag[i] = off_diagonal_pattern.links(i).size();
   }
   else
   {
@@ -82,9 +82,9 @@ Mat la::create_petsc_matrix(
     _nnz_diag.resize(maps[0]->size_local() * bs[0]);
     _nnz_offdiag.resize(maps[0]->size_local() * bs[0]);
     for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
-      _nnz_diag[i] = bs[1] * diagonal_pattern.links(i / bs[0]).rows();
+      _nnz_diag[i] = bs[1] * diagonal_pattern.links(i / bs[0]).size();
     for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
-      _nnz_offdiag[i] = bs[1] * off_diagonal_pattern.links(i / bs[0]).rows();
+      _nnz_offdiag[i] = bs[1] * off_diagonal_pattern.links(i / bs[0]).size();
   }
 
   // Allocate space for matrix
