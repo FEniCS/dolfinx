@@ -97,7 +97,10 @@ PYBIND11_MODULE(eigen_csr, m)
             for bc in bcs:
                 if _a.function_spaces[0].contains(bc.function_space):
                     bc_dofs, _ = bc.dof_indices()
-                    A[bc_dofs, bc_dofs] = 1.0
+                    # See https://github.com/numpy/numpy/issues/14132
+                    # for why we copy bc_dofs as a work-around
+                    dofs = bc_dofs.copy()
+                    A[dofs, dofs] = 1.0
         return A
 
     mesh = UnitSquareMesh(MPI.COMM_SELF, 12, 12)

@@ -91,25 +91,21 @@ int ElementDofLayout::num_entity_closure_dofs(int dim) const
   return _num_entity_closure_dofs.at(dim);
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, 1>
-ElementDofLayout::entity_dofs(int entity_dim, int cell_entity_index) const
+std::vector<int> ElementDofLayout::entity_dofs(int entity_dim,
+                                               int cell_entity_index) const
 {
   const std::set<int>& edofs
       = _entity_dofs.at(entity_dim).at(cell_entity_index);
-  Eigen::Array<int, Eigen::Dynamic, 1> dofs(edofs.size());
-  std::copy(edofs.begin(), edofs.end(), dofs.data());
-  return dofs;
+  return std::vector<int>(edofs.begin(), edofs.end());
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, 1>
+std::vector<int>
 ElementDofLayout::entity_closure_dofs(int entity_dim,
                                       int cell_entity_index) const
 {
   const std::set<int>& edofs
       = _entity_closure_dofs.at(entity_dim).at(cell_entity_index);
-  Eigen::Array<int, Eigen::Dynamic, 1> dofs(edofs.size());
-  std::copy(edofs.begin(), edofs.end(), dofs.data());
-  return dofs;
+  return std::vector<int>(edofs.begin(), edofs.end());
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::vector<std::set<int>>>&
@@ -150,7 +146,6 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
   std::iota(dof_list.begin(), dof_list.end(), 0);
 
   const ElementDofLayout* element_dofmap_current = this;
-
   for (int i : component)
   {
     // Switch to sub-dofmap

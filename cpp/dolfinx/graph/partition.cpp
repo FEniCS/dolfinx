@@ -5,12 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "partition.h"
-#include <Eigen/Dense>
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/scotch.h>
+#include <memory>
 #include <unordered_map>
 
 using namespace dolfinx;
@@ -190,8 +190,11 @@ partition::reorder_global_indices(
     assert(it != global_to_local.end());
     if (sharing_processes->num_links(i) == 1)
       global_to_local_owned0.insert(*it);
-    else if (sharing_processes->links(i).minCoeff() == rank)
+    else if (auto links = sharing_processes->links(i);
+             *std::min_element(links.begin(), links.end()) == rank)
+    {
       global_to_local_owned1.insert(*it);
+    }
     else
       global_to_local_unowned.insert(*it);
   }
@@ -225,17 +228,16 @@ partition::reorder_global_indices(
     // Get old global -> local
     auto it = global_to_local.find(indices_send[i]);
     assert(it != global_to_local.end());
-    if (sharing_processes->num_links(i) == 1
-        and sharing_processes->links(i).minCoeff() == rank)
+    if (auto links = sharing_processes->links(i);
+        links.size() == 1
+        and *std::min_element(links.begin(), links.end()) == rank)
     {
       global_to_local_owned1.insert(*it);
     }
   }
 
   // Get array of unique neighboring process ranks, and remove self
-  const Eigen::Array<int, Eigen::Dynamic, 1>& procs
-      = sharing_processes->array();
-  std::vector<int> neighbors(procs.data(), procs.data() + procs.rows());
+  std::vector<int> neighbors = sharing_processes->array();
   std::sort(neighbors.begin(), neighbors.end());
   neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
                   neighbors.end());
@@ -260,8 +262,7 @@ partition::reorder_global_indices(
     for (int j = 0; j < sharing_processes->num_nodes(); ++j)
     {
       auto p = sharing_processes->links(j);
-      const auto* it = std::find(p.data(), p.data() + p.rows(), neighbors[i]);
-      if (it != (p.data() + p.rows()))
+      if (auto it = std::find(p.begin(), p.end(), neighbors[i]); it != p.end())
         number_send_neigh[i] += 2;
     }
   }
@@ -299,7 +300,7 @@ partition::reorder_global_indices(
         global_new += offset_global;
 
       auto procs = sharing_processes->links(i);
-      for (int k = 0; k < procs.rows(); ++k)
+      for (std::size_t k = 0; k < procs.size(); ++k)
       {
         if (procs[k] == neighbor)
         {
@@ -359,15 +360,15 @@ std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
 partition::create_local_adjacency_list(
     const graph::AdjacencyList<std::int64_t>& cells)
 {
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& array = cells.array();
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> array_local(array.rows());
+  const std::vector<std::int64_t>& array = cells.array();
+  std::vector<std::int32_t> array_local(array.size());
 
   // Re-map global to local
   int local = 0;
   std::unordered_map<std::int64_t, std::int32_t> global_to_local;
-  for (int i = 0; i < array.rows(); ++i)
+  for (std::size_t i = 0; i < array.size(); ++i)
   {
-    const std::int64_t global = array(i);
+    const std::int64_t global = array[i];
     const auto [it, inserted] = global_to_local.insert({global, local});
     if (inserted)
     {
@@ -399,10 +400,9 @@ partition::create_distributed_adjacency_list(
   const auto [local_to_local_new, ghosts, ghost_owners]
       = reorder_global_indices(comm, local_to_global_links, shared_links);
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old
-      = list_local.array();
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> data_new(data_old.rows());
-  for (int i = 0; i < data_new.rows(); ++i)
+  const std::vector<std::int32_t>& data_old = list_local.array();
+  std::vector<std::int32_t> data_new(data_old.size());
+  for (std::size_t i = 0; i < data_new.size(); ++i)
     data_new[i] = local_to_local_new[data_old[i]];
 
   const int num_owned_vertices = local_to_local_new.size() - ghosts.size();
@@ -464,9 +464,9 @@ partition::distribute(MPI_Comm comm,
       auto links = list.links(i);
       data_send[offset[dest]++] = dests[0];
       data_send[offset[dest]++] = i + offset_global;
-      data_send[offset[dest]++] = links.rows();
-      for (int k = 0; k < links.rows(); ++k)
-        data_send[offset[dest]++] = links(k);
+      data_send[offset[dest]++] = links.size();
+      for (std::size_t k = 0; k < links.size(); ++k)
+        data_send[offset[dest]++] = links[k];
     }
   }
 
@@ -662,18 +662,20 @@ std::vector<std::int64_t> partition::compute_local_to_global_links(
                              "global adjacency lists.");
   }
 
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& _global = global.array();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& _local = local.array();
-  if (_global.rows() != _local.rows())
+  const std::vector<std::int64_t>& _global = global.array();
+  const std::vector<std::int32_t>& _local = local.array();
+  if (_global.size() != _local.size())
   {
     throw std::runtime_error("Data size mismatch between local and "
                              "global adjacency lists.");
   }
 
-  const std::int32_t max_local = _local.maxCoeff();
+  // const std::int32_t max_local = _local.maxCoeff();
+  const std::int32_t max_local
+      = *std::max_element(_local.begin(), _local.end());
   std::vector<bool> marker(max_local, false);
   std::vector<std::int64_t> local_to_global_list(max_local + 1, -1);
-  for (Eigen::Index i = 0; i < _local.rows(); ++i)
+  for (std::size_t i = 0; i < _local.size(); ++i)
   {
     if (local_to_global_list[_local[i]] == -1)
       local_to_global_list[_local[i]] = _global[i];

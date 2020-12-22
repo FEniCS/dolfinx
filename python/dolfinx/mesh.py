@@ -126,7 +126,7 @@ def MeshTags(mesh, dim, indices, values):
         raise KeyError("Datatype {} of values array not recognised".format(dtype))
 
     fn = _meshtags_types[dtype]
-    return fn(mesh, dim, indices, values)
+    return fn(mesh, dim, indices.astype(numpy.int32), values)
 
 
 # Functions to extend cpp.mesh.Mesh with

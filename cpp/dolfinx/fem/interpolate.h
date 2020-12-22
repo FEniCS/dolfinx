@@ -109,10 +109,10 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   assert(bs == dofmap_u->bs());
   for (int c = 0; c < num_cells; ++c)
   {
-    auto dofs_v = dofmap_v->cell_dofs(c);
-    auto cell_dofs = dofmap_u->cell_dofs(c);
+    tcb::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
+    tcb::span<const std::int32_t> cell_dofs = dofmap_u->cell_dofs(c);
     assert(dofs_v.size() == cell_dofs.size());
-    for (Eigen::Index i = 0; i < dofs_v.size(); ++i)
+    for (std::size_t i = 0; i < dofs_v.size(); ++i)
     {
       for (int k = 0; k < bs; ++k)
         coeffs[bs * cell_dofs[i] + k] = v_array[bs * dofs_v[i] + k];
@@ -184,7 +184,7 @@ void interpolate(
   const int tdim = mesh->topology().dim();
   const int gdim = mesh->geometry().dim();
 
-   // Get cell geometry
+  // Get cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -200,10 +200,8 @@ void interpolate(
   // Get coordinate map
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
-
   // Get interpolation points on reference
   Eigen::ArrayXXd reference_points = element->interpolation_points();
-
 
   // Loop over cells and interpolate on each cell
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -213,10 +211,8 @@ void interpolate(
   Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> interpolation_points(
       3, reference_points.rows());
 
-
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
       element->value_size() * element->block_size(), reference_points.rows());
-
 
   const int num_scalar_dofs = element->space_dimension() / block_size;
 
@@ -232,10 +228,9 @@ void interpolate(
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
 
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-      = needs_permutation_data
-            ? mesh->topology().get_cell_permutation_info()
-            : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
+  const std::vector<std::uint32_t>& cell_info
+      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                               : std::vector<std::uint32_t>(num_cells);
 
   for (int c = 0; c < num_cells; ++c)
   {

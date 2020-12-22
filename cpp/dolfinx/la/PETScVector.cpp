@@ -68,13 +68,11 @@ Vec la::create_ghosted_vector(
 {
   const std::int32_t size_local = bs * map.size_local();
   const std::int64_t size_global = bs * map.size_global();
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts
-      = map.ghosts().cast<PetscInt>();
+  const std::vector<PetscInt> ghosts(map.ghosts().begin(), map.ghosts().end());
   Vec vec;
   VecCreateGhostBlockWithArray(map.comm(), bs, size_local, size_global,
-                               ghosts.rows(), ghosts.data(), x.array().data(),
+                               ghosts.size(), ghosts.data(), x.array().data(),
                                &vec);
-
   return vec;
 }
 //-----------------------------------------------------------------------------
@@ -84,11 +82,8 @@ Vec la::create_petsc_vector(const dolfinx::common::IndexMap& map, int bs)
                                  bs);
 }
 //-----------------------------------------------------------------------------
-Vec la::create_petsc_vector(
-    MPI_Comm comm, std::array<std::int64_t, 2> range,
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
-        ghosts,
-    int bs)
+Vec la::create_petsc_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
+                            const std::vector<std::int64_t>& ghosts, int bs)
 {
   PetscErrorCode ierr;
 
@@ -97,10 +92,9 @@ Vec la::create_petsc_vector(
   const std::int32_t local_size = range[1] - range[0];
 
   Vec x;
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts
-      = ghosts.cast<PetscInt>();
+  const std::vector<PetscInt> _ghosts(ghosts.begin(), ghosts.end());
   ierr = VecCreateGhostBlock(comm, bs, bs * local_size, PETSC_DETERMINE,
-                             ghosts.rows(), _ghosts.data(), &x);
+                             _ghosts.size(), _ghosts.data(), &x);
   CHECK_ERROR("VecCreateGhostBlock");
   assert(x);
 

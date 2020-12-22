@@ -203,18 +203,16 @@ graph::AdjacencyList<T>
 dolfinx::MPI::all_to_all(MPI_Comm comm,
                          const graph::AdjacencyList<T>& send_data)
 {
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& send_offsets
-      = send_data.offsets();
-  const Eigen::Array<T, Eigen::Dynamic, 1>& values_in = send_data.array();
+  const std::vector<std::int32_t>& send_offsets = send_data.offsets();
+  const std::vector<T>& values_in = send_data.array();
 
   const int comm_size = MPI::size(comm);
   assert(send_data.num_nodes() == comm_size);
 
   // Data size per destination rank
   std::vector<int> send_size(comm_size);
-  std::adjacent_difference(send_offsets.data() + 1,
-                           send_offsets.data() + send_offsets.rows(),
-                           send_size.begin());
+  std::adjacent_difference(std::next(send_offsets.begin(), +1),
+                           send_offsets.end(), send_size.begin());
 
   // Get received data sizes from each rank
   std::vector<int> recv_size(comm_size);
@@ -222,12 +220,12 @@ dolfinx::MPI::all_to_all(MPI_Comm comm,
                mpi_type<int>(), comm);
 
   // Compute receive offset
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> recv_offset(comm_size + 1);
-  recv_offset(0) = 0;
+  std::vector<std::int32_t> recv_offset(comm_size + 1);
+  recv_offset[0] = 0;
   std::partial_sum(recv_size.begin(), recv_size.end(), recv_offset.data() + 1);
 
   // Send/receive data
-  Eigen::Array<T, Eigen::Dynamic, 1> recv_values(recv_offset(comm_size));
+  std::vector<T> recv_values(recv_offset[comm_size]);
   MPI_Alltoallv(values_in.data(), send_size.data(), send_offsets.data(),
                 mpi_type<T>(), recv_values.data(), recv_size.data(),
                 recv_offset.data(), mpi_type<T>(), comm);
@@ -260,13 +258,12 @@ dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
                         neighbor_comm);
 
   // Work out recv offsets
-  Eigen::Array<int, Eigen::Dynamic, 1> recv_offsets(recv_sizes.size() + 1);
-  recv_offsets(0) = 0;
+  std::vector<int> recv_offsets(recv_sizes.size() + 1);
+  recv_offsets[0] = 0;
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    recv_offsets.data() + 1);
 
-  Eigen::Array<T, Eigen::Dynamic, 1> recv_data(
-      recv_offsets(recv_offsets.rows() - 1));
+  std::vector<T> recv_data(recv_offsets[recv_offsets.size() - 1]);
   MPI_Neighbor_alltoallv(
       send_data.data(), send_sizes.data(), send_offsets.data(),
       MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),

@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 

@@ -332,10 +332,9 @@ public:
     if (needs_permutation_data)
       mesh->topology_mutable().create_entity_permutations();
 
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-        = needs_permutation_data
-              ? mesh->topology().get_cell_permutation_info()
-              : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
+    const std::vector<std::uint32_t>& cell_info
+        = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                                 : std::vector<std::uint32_t>(num_cells);
 
     // Loop over points
     u.setZero();
@@ -365,8 +364,8 @@ public:
                                          X, J, detJ, K, cell_info[cell_index]);
 
       // Get degrees of freedom for current cell
-      auto dofs = dofmap->cell_dofs(cell_index);
-      for (Eigen::Index i = 0; i < dofs.size(); ++i)
+      tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
+      for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 

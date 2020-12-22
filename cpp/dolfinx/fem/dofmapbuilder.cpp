@@ -98,12 +98,11 @@ build_basic_dofmap(const mesh::Topology& topology,
 
   // Allocate dofmap memory
   const int num_cells = topology.connectivity(D, 0)->num_nodes();
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs(num_cells * local_dim);
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> cell_ptr(num_cells + 1);
-  cell_ptr = local_dim;
+  std::vector<std::int32_t> dofs(num_cells * local_dim);
+  std::vector<std::int32_t> cell_ptr(num_cells + 1, local_dim);
   cell_ptr[0] = 0;
-  std::partial_sum(cell_ptr.data() + 1, cell_ptr.data() + cell_ptr.rows(),
-                   cell_ptr.data() + 1);
+  std::partial_sum(std::next(cell_ptr.begin(), 1), cell_ptr.end(),
+                   std::next(cell_ptr.begin(), 1));
 
   // Allocate entity indices array
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);
@@ -134,7 +133,7 @@ build_basic_dofmap(const mesh::Topology& topology,
       if (needs_entities[d])
       {
         auto entities = connectivity[d]->links(c);
-        for (int i = 0; i < entities.rows(); ++i)
+        for (std::size_t i = 0; i < entities.size(); ++i)
         {
           entity_indices_local[d][i] = entities[i];
           entity_indices_global[d][i] = global_indices[d][entities[i]];
@@ -246,7 +245,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
     auto nodes = dofmap.links(cell);
-    for (std::int32_t i = 0; i < nodes.rows(); ++i)
+    for (std::size_t i = 0; i < nodes.size(); ++i)
     {
       const std::int32_t node_i = original_to_contiguous[nodes[i]];
 
@@ -254,7 +253,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
       if (node_i == -1)
         continue;
 
-      for (std::int32_t j = 0; j < nodes.rows(); ++j)
+      for (std::size_t j = 0; j < nodes.size(); ++j)
       {
         // Skip diagonal
         if (i == j)
@@ -531,9 +530,7 @@ fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.
   // Build re-ordered dofmap
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap(
-      node_graph0.array().rows());
-
+  std::vector<std::int32_t> dofmap(node_graph0.array().size());
   for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
   {
     const std::int32_t local_dim0 = node_graph0.num_links(cell);
@@ -545,12 +542,9 @@ fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
       dofmap[local_dim0 * cell + j] = new_node;
     }
   }
-  assert(dofmap.rows() % node_graph0.num_nodes() == 0);
-  Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
-                          Eigen::RowMajor>>
-      _dofmap(dofmap.data(), node_graph0.num_nodes(),
-              dofmap.rows() / node_graph0.num_nodes());
+  assert(dofmap.size() % node_graph0.num_nodes() == 0);
   return {std::move(index_map), element_dof_layout.block_size(),
-          graph::AdjacencyList<std::int32_t>(_dofmap)};
+          graph::build_adjacency_list<std::int32_t>(
+              std::move(dofmap), dofmap.size() / node_graph0.num_nodes())};
 }
 //-----------------------------------------------------------------------------
