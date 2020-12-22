@@ -79,10 +79,9 @@ import dolfinx.plotting
 import matplotlib.pyplot as plt
 import numpy as np
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace,
-                     LinearVariationalSolver, RectangleMesh)
+from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh)
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import locate_dofs_topological
+from dolfinx.fem import locate_dofs_topological, LinearSolver
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI
@@ -175,16 +174,14 @@ L = inner(f, v) * dx + inner(g, v) * ds
 # represent the solution. (Upon initialization, it is simply set to the
 # zero function.) A :py:class:`Function
 # <dolfinx.functions.fem.Function>` represents a function living in
-# a finite element function space. Next, we initialize a solver using the :py:class:`LinearVariationalSolver
-# <dolfinx.fem.linearvariationalsolver.LinearVariationalSolver>`.
-# This class is initialized with the arguments ``a == L``, ``u`` and ``bc`` as follows: ::
-
-u = Function(V)
-lin_solver = LinearVariationalSolver(a == L, u, [bc])
+# a finite element function space. Next, we initialize a solver using the :py:class:`LinearSolver
+# <dolfinx.fem.linearsolver.LinearSolver>`.
+# This class is initialized with the arguments ``a``, ``L``, and ``bc`` as follows: ::
+solver = LinearSolver(a, L, [bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 # When we want to compute the solution to the problem, we can specify what kind of solver we want to use.
 # In this problem, we use a direct LU solver, which is defined through the dictionary ``petsc_options``.
-lin_solver.solve(petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+uh = solver.solve()
 
 # The function ``u`` will be modified during the call to solve. The
 # default settings for solving a variational problem have been
@@ -200,9 +197,9 @@ lin_solver.solve(petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 # Save solution in XDMF format
 with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
     file.write_mesh(mesh)
-    file.write_function(u)
+    file.write_function(uh)
 
 # Update ghost entries and plot
-u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-dolfinx.plotting.plot(u)
+uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+dolfinx.plotting.plot(uh)
 plt.show()

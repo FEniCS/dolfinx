@@ -46,7 +46,6 @@ from .cpp.nls import (NonlinearProblem, NewtonSolver)
 
 from .fem.form import Form
 from .fem.dirichletbc import DirichletBC
-from .fem.linearvariationalsolver import LinearVariationalSolver
 from .fem import (FunctionSpace, VectorFunctionSpace,
                   TensorFunctionSpace, Constant, Expression, Function)
 
