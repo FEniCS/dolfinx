@@ -31,7 +31,7 @@ def test_partition_box_mesh(partitioner, Nx, cell_type):
 
 
 @pytest.mark.parametrize("Nx", [2, 5, 10])
-@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+@pytest.mark.parametrize("cell_type", [CellType.tetrahedron])
 def test_custom_partitioner(Nx, cell_type):
     comm = MPI.COMM_WORLD
     points = [np.array([0, 0, 0]), np.array([1, 1, 1])]
