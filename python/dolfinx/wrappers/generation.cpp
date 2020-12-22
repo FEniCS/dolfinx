@@ -14,6 +14,7 @@
 #include <iostream>
 #include <memory>
 #include <pybind11/eigen.h>
+#include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -57,6 +58,12 @@ void generation(py::module& m)
           py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("element"),
           py::arg("ghost_mode"), py::arg("diagonal") = "right");
 
+  using PythonPartitioningFunction
+      = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
+          MPICommWrapper, int, const dolfinx::mesh::CellType,
+          const dolfinx::graph::AdjacencyList<std::int64_t>&,
+          dolfinx::mesh::GhostMode)>;
+
   // dolfinx::BoxMesh
   py::class_<dolfinx::generation::BoxMesh,
              std::shared_ptr<dolfinx::generation::BoxMesh>>(m, "BoxMesh")
@@ -65,11 +72,21 @@ void generation(py::module& m)
           [](const MPICommWrapper comm, std::array<Eigen::Vector3d, 2> p,
              std::array<std::size_t, 3> n,
              const dolfinx::fem::CoordinateElement& element,
-             const dolfinx::mesh::GhostMode ghost_mode) {
-            return dolfinx::generation::BoxMesh::create(comm.get(), p, n,
-                                                        element, ghost_mode);
+             const dolfinx::mesh::GhostMode ghost_mode,
+             PythonPartitioningFunction partitioner) {
+            auto partitioner_wrapper
+                = [partitioner](
+                      MPI_Comm comm, int n,
+                      const dolfinx::mesh::CellType cell_type,
+                      const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+                      dolfinx::mesh::GhostMode ghost_mode) {
+                    return partitioner(MPICommWrapper(comm), n, cell_type,
+                                       cells, ghost_mode);
+                  };
+            return dolfinx::generation::BoxMesh::create(
+                comm.get(), p, n, element, ghost_mode, partitioner_wrapper);
           },
           py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("element"),
-          py::arg("ghost_mode"));
+          py::arg("ghost_mode"), py::arg("partitioner"));
 }
 } // namespace dolfinx_wrappers

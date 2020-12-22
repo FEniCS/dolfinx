@@ -101,7 +101,8 @@ def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
 
 def BoxMesh(comm, points: typing.List[numpy.array], n: list,
             cell_type=cpp.mesh.CellType.tetrahedron,
-            ghost_mode=cpp.mesh.GhostMode.shared_facet):
+            ghost_mode=cpp.mesh.GhostMode.shared_facet,
+            partitioner=cpp.mesh.partition_cells):
     """Create box mesh
 
     Parameters
@@ -116,7 +117,7 @@ def BoxMesh(comm, points: typing.List[numpy.array], n: list,
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
     cmap = fem.create_coordinate_map(comm, domain)
-    mesh = cpp.generation.BoxMesh.create(comm, points, n, cmap, ghost_mode)
+    mesh = cpp.generation.BoxMesh.create(comm, points, n, cmap, ghost_mode, partitioner)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
     return mesh
