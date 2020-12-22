@@ -34,11 +34,27 @@ namespace mesh
 {
 
 /// Signature for the partitioning function
+/// Compute destination rank for mesh cells in this rank using KahIP graph
+/// partitioner
+///
+/// @param[in] comm MPI Communicator
+/// @param[in] n Number of partitions
+/// @param[in] cell_type Cell type
+/// @param[in] cells Cells on this process. The ith entry in list
+///   contains the global indices for the cell vertices. Each cell can
+///   appear only once across all processes. The cell vertex indices
+///   are not necessarily contiguous globally, i.e. the maximum index
+///   across all processes can be greater than the number of vertices.
+///   High-order 'nodes', e.g. mid-side points, should not be
+///   included.
+/// @param[in] ghost_mode How to overlap the cell partitioning: none,
+///   shared_facet or shared_vertex
+/// @return Destination rank for each cell on this process
 using PartitioningFunction
     = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, const dolfinx::mesh::CellType,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&,
-        dolfinx::mesh::GhostMode)>;
+        MPI_Comm mpi_comm, int nparts, const dolfinx::mesh::CellType cell_type,
+        const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+        dolfinx::mesh::GhostMode ghost_mode)>;
 
 /// Enum for different partitioning ghost modes
 enum class GhostMode : int
@@ -155,7 +171,6 @@ private:
   // Unique identifier
   std::size_t _unique_id = common::UniqueIdGenerator::id();
 };
-
 
 /// Create a mesh
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
