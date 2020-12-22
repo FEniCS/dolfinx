@@ -101,7 +101,7 @@ def refine(mesh, cell_markers=None, redistribute=True):
 
 def create_mesh(comm, cells, x, domain,
                 ghost_mode=cpp.mesh.GhostMode.shared_facet,
-                partitioner=cpp.mesh.partitione_cells):
+                partitioner=cpp.mesh.partition_cells):
     """Create a mesh from topology and geometry data"""
     cmap = fem.create_coordinate_map(comm, domain)
     try:
