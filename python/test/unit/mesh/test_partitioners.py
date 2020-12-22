@@ -29,22 +29,5 @@ def test_partition_box_mesh(partitioner, Nx, cell_type):
     assert mesh.topology.index_map(0).size_global == (Nx + 1)**3
 
 
-def test_custom_partitioner(): 
+def test_custom_partitioner():
     pass
-
-
-# if __name__ == "__main__":
-#     Nx = 10
-#     partitioner = partition_cells
-#     tdim = mesh.topology.dim
-#     mesh = dolfinx.BoxMesh(MPI.COMM_WORLD, [np.array([0, 0, 0]),
-#                                             np.array([1, 1, 1])], [Nx, Nx, Nx], CellType.hexahedron,
-#                            GhostMode.none, partitioner)
-    
-#     num_cells = mesh.topology.index_map(tdim).size_local
-#     def custom_partitioner(mpi_comm, nparts, cell_type, cells, ghost_mode)
-#         adj = numpy.full(num_cells, mpi_comm.rank, dtype=numpy.int32)
-#         return adj
-    
-    
-        
