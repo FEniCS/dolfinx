@@ -120,12 +120,6 @@ public:
   /// @return The maximum of cells' inscribed sphere radii
   double rmax() const;
 
-  /// Compute hash of mesh, currently based on the has of the mesh
-  /// geometry and mesh topology
-  /// @return A tree-hashed value of the coordinates over all MPI
-  ///         processes
-  std::size_t hash() const;
-
   /// Get unique identifier for the mesh
   /// @returns The unique identifier associated with the object
   std::size_t id() const { return _unique_id; }

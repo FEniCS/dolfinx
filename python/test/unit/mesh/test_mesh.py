@@ -196,14 +196,6 @@ def test_UnitHexMesh():
     assert mesh.mpi_comm().allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
 
 
-def test_hash():
-    h1 = UnitSquareMesh(MPI.COMM_WORLD, 4, 4).hash()
-    h2 = UnitSquareMesh(MPI.COMM_WORLD, 4, 5).hash()
-    h3 = UnitSquareMesh(MPI.COMM_WORLD, 4, 4).hash()
-    assert h1 == h3
-    assert h1 != h2
-
-
 @skip_in_parallel
 def test_GetCoordinates():
     """Get coordinates of vertices"""

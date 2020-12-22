@@ -28,11 +28,10 @@ public:
     const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();
     std::int32_t size_local = bs * map->size_local();
 
-    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts
-        = map->ghosts().cast<PetscInt>();
+    std::vector<PetscInt> ghosts(map->ghosts().begin(), map->ghosts().end());
     std::int64_t size_global = bs * map->size_global();
     VecCreateGhostBlockWithArray(map->comm(), bs, size_local, size_global,
-                                 ghosts.rows(), ghosts.data(),
+                                 ghosts.size(), ghosts.data(),
                                  _b.array().data(), &_b_petsc);
   }
 

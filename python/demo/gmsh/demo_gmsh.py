@@ -15,7 +15,6 @@ from mpi4py import MPI
 
 import gmsh
 
-
 # Generate a mesh on each rank with the gmsh API, and create a DOLFIN-X mesh
 # on each rank. ::
 
@@ -39,7 +38,6 @@ element_types, element_tags, node_tags = model.mesh.getElements(dim=3)
 assert len(element_types) == 1
 name, dim, order, num_nodes, local_coords, num_first_order_nodes = model.mesh.getElementProperties(element_types[0])
 cells = node_tags[0].reshape(-1, num_nodes) - 1
-
 
 mesh = create_mesh(MPI.COMM_SELF, cells, x, ufl_mesh_from_gmsh(element_types[0], x.shape[1]))
 
@@ -97,7 +95,6 @@ else:
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, 3))
 mesh.name = "ball_d1"
 local_entities, local_values = extract_local_entities(mesh, 2, marked_facets, facet_values)
-
 
 mesh.topology.create_connectivity(2, 0)
 mt = create_meshtags(mesh, 2, cpp.graph.AdjacencyList_int32(local_entities), np.int32(local_values))

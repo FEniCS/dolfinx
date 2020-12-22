@@ -45,15 +45,13 @@ void common(py::module& m)
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,
              std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
-      .def(py::init(
-          [](const MPICommWrapper comm, std::int32_t local_size,
-             const std::vector<int>& dest_ranks,
-             const Eigen::Ref<
-                 const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>& ghosts,
-             const std::vector<int>& ghost_owners) {
-            return std::make_shared<dolfinx::common::IndexMap>(
-                comm.get(), local_size, dest_ranks, ghosts, ghost_owners);
-          }))
+      .def(py::init([](const MPICommWrapper comm, std::int32_t local_size,
+                       const std::vector<int>& dest_ranks,
+                       const std::vector<std::int64_t>& ghosts,
+                       const std::vector<int>& ghost_owners) {
+        return std::make_shared<dolfinx::common::IndexMap>(
+            comm.get(), local_size, dest_ranks, ghosts, ghost_owners);
+      }))
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMap::size_local)
       .def_property_readonly("size_global",
@@ -65,9 +63,14 @@ void common(py::module& m)
                              "Range of indices owned by this map")
       .def("ghost_owner_rank", &dolfinx::common::IndexMap::ghost_owner_rank,
            "Return owning process for each ghost index")
-      .def_property_readonly("ghosts", &dolfinx::common::IndexMap::ghosts,
-                             py::return_value_policy::reference_internal,
-                             "Return list of ghost indices")
+      .def_property_readonly(
+          "ghosts",
+          [](const dolfinx::common::IndexMap& self) {
+            const std::vector<std::int64_t>& ghosts = self.ghosts();
+            return py::array_t<std::int64_t>(ghosts.size(), ghosts.data(),
+                                             py::cast(self));
+          },
+          "Return list of ghost indices")
       .def("global_indices", &dolfinx::common::IndexMap::global_indices);
 
   // dolfinx::common::Timer
