@@ -345,8 +345,8 @@ mesh::extract_topology(const CellType& cell_type,
       topology[num_vertices_per_cell * c + j] = p[local_vertices[j]];
   }
 
-  return graph::AdjacencyList<std::int64_t>(std::move(topology),
-                                            num_vertices_per_cell);
+  return graph::build_adjacency_list<std::int64_t>(std::move(topology),
+                                                   num_vertices_per_cell);
 }
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd
