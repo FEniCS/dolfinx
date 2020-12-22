@@ -90,7 +90,6 @@ def test_save_3d_scalar(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2d_vector(tempdir, encoding, cell_type):
-    pytest.skip()  # TODO: fix this
     filename = os.path.join(tempdir, "u_2dv.xdmf")
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 13, cell_type)
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
@@ -104,7 +103,6 @@ def test_save_2d_vector(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3d_vector(tempdir, encoding, cell_type):
-    pytest.skip()  # TODO: fix this
     filename = os.path.join(tempdir, "u_3Dv.xdmf")
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2, cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
@@ -117,7 +115,6 @@ def test_save_3d_vector(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2d_tensor(tempdir, encoding, cell_type):
-    pytest.skip()  # TODO: fix this
     filename = os.path.join(tempdir, "tensor.xdmf")
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16, cell_type)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
@@ -130,7 +127,6 @@ def test_save_2d_tensor(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3d_tensor(tempdir, encoding, cell_type):
-    pytest.skip()  # TODO: fix this
     filename = os.path.join(tempdir, "u3t.xdmf")
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, cell_type)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
@@ -143,7 +139,6 @@ def test_save_3d_tensor(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3d_vector_series(tempdir, encoding, cell_type):
-    pytest.skip()  # TODO: fix this
     filename = os.path.join(tempdir, "u_3D.xdmf")
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 2, 2, 2, cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
