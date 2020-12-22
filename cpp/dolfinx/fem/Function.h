@@ -398,11 +398,10 @@ public:
 
     // Compute in tensor (one for scalar function, . . .)
     const int value_size_loc = _function_space->element()->value_size();
-    const int block_size = _function_space->element()->block_size();
 
     // Resize Array for holding point values
     Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        point_values(mesh->geometry().x().rows(), value_size_loc * block_size);
+        point_values(mesh->geometry().x().rows(), value_size_loc);
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -417,7 +416,7 @@ public:
     // not continuous, e.g. discontinuous Galerkin methods)
     Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(num_dofs_g, 3);
     Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
-        num_dofs_g, value_size_loc * block_size);
+        num_dofs_g, value_size_loc);
     auto map = mesh->topology().index_map(tdim);
     assert(map);
     const std::int32_t num_cells = map->size_local() + map->num_ghosts();
