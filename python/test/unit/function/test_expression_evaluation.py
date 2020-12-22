@@ -171,7 +171,7 @@ def test_simple_evaluation():
     assert(np.allclose(grad_f_evaluated, grad_f_exact))
 
 
-def test_assembly_into_quadrature_function():
+def xtest_assembly_into_quadrature_function():
     """Test assembly into a Quadrature function.
 
     This test evaluates a UFL Expression into a Quadrature function space by
