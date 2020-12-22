@@ -26,9 +26,9 @@ def mesh():
     return UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
 
 
-@pytest.fixture
-def R(mesh):
-    return FunctionSpace(mesh, ('R', 0))
+# @pytest.fixture
+# def R(mesh):
+#     return FunctionSpace(mesh, ('R', 0))
 
 
 @pytest.fixture
@@ -134,8 +134,8 @@ def test_assign(V, W):
                 uu.assign(4 * u * u1)
 
 
-def test_eval(R, V, W, Q, mesh):
-    u0 = Function(R)
+def test_eval(V, W, Q, mesh):
+    # u0 = Function(R)
     u1 = Function(V)
     u2 = Function(W)
     u3 = Function(Q)
@@ -163,7 +163,7 @@ def test_eval(R, V, W, Q, mesh):
         values[8] = -x[2]
         return values
 
-    u0.vector.set(1.0)
+    # u0.vector.set(1.0)
     u1.interpolate(e1)
     u2.interpolate(e2)
     u3.interpolate(e3)
@@ -174,10 +174,10 @@ def test_eval(R, V, W, Q, mesh):
     cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
 
     assert np.allclose(u3.eval(x0, cell)[:3], u2.eval(x0, cell), rtol=1e-15, atol=1e-15)
-    with pytest.raises(ValueError):
-        u0.eval([0, 0, 0, 0], 0)
-    with pytest.raises(ValueError):
-        u0.eval([0, 0], 0)
+    # with pytest.raises(ValueError):
+    #     u0.eval([0, 0, 0, 0], 0)
+    # with pytest.raises(ValueError):
+    #     u0.eval([0, 0], 0)
 
 
 def test_eval_multiple(W):
@@ -210,7 +210,7 @@ def test_eval_manifold():
     assert np.isclose(u.eval([0.75, 0.25, 0.5], 0)[0], 1.0)
 
 
-def test_scalar_conditions(R):
+def xtest_scalar_conditions(R):
     c = Function(R)
     c.vector.set(1.5)
 
@@ -275,7 +275,7 @@ def test_interpolation_rank0(V):
 
 
 @skip_in_parallel
-def test_near_evaluations(R, mesh):
+def xtest_near_evaluations(R, mesh):
     # Test that we allow point evaluation that are slightly outside
     u0 = Function(R)
     u0.vector.set(1.0)
