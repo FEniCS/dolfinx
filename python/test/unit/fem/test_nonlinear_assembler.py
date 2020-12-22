@@ -128,7 +128,8 @@ def test_matrix_assembly_block():
     u0, u1 = ufl.split(U)
     v0, v1 = ufl.TestFunctions(W)
 
-    U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
+    U.sub(0).interpolate(initial_guess_u)
+    U.sub(1).interpolate(initial_guess_p)
 
     F = inner(u0, v0) * dx + inner(u1, v0) * dx + inner(u0, v1) * dx + inner(u1, v1) * dx \
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
