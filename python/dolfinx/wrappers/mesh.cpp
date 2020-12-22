@@ -117,11 +117,37 @@ void mesh(py::module& m)
          const dolfinx::fem::CoordinateElement& element,
          const Eigen::Ref<const Eigen::Array<
              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
-         dolfinx::mesh::GhostMode ghost_mode,
-         dolfinx::mesh::PartitioningFunction partitioner
-         = &dolfinx::mesh::partition_cells) {
+         dolfinx::mesh::GhostMode ghost_mode) {
         return dolfinx::mesh::create_mesh(comm.get(), cells, element, x,
-                                          ghost_mode, partitioner);
+                                          ghost_mode);
+      },
+      "Helper function for creating meshes.");
+
+  using PythonPartitioningFunction
+      = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
+          MPICommWrapper, int, const dolfinx::mesh::CellType,
+          const dolfinx::graph::AdjacencyList<std::int64_t>&,
+          dolfinx::mesh::GhostMode)>;
+
+  m.def(
+      "create_mesh",
+      [](const MPICommWrapper comm,
+         const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+         const dolfinx::fem::CoordinateElement& element,
+         const Eigen::Ref<const Eigen::Array<
+             double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
+         dolfinx::mesh::GhostMode ghost_mode,
+         PythonPartitioningFunction partitioner) {
+        auto partitioner_wrapper
+            = [partitioner](
+                  MPI_Comm comm, int n, const dolfinx::mesh::CellType cell_type,
+                  const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+                  dolfinx::mesh::GhostMode ghost_mode) {
+                return partitioner(MPICommWrapper(comm), n, cell_type, cells,
+                                   ghost_mode);
+              };
+        return dolfinx::mesh::create_mesh(comm.get(), cells, element, x,
+                                          ghost_mode, partitioner_wrapper);
       },
       "Helper function for creating meshes.");
 
