@@ -179,7 +179,7 @@ L = inner(f, v) * dx + inner(g, v) * ds
 # <dolfinx.fem.linearproblem.LinearProblem>`.
 # This class is initialized with the arguments ``a``, ``L``, and ``bc`` as follows: ::
 # In this problem, we use a direct LU solver, which is defined through the dictionary ``petsc_options``.
-problem = fem.LinearProblem(a, L, [bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = fem.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 # When we want to compute the solution to the problem, we can specify what kind of solver we want to use.
 uh = problem.solve()

@@ -51,8 +51,10 @@ a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
 # Compute solution
-problem = fem.LinearProblem(a, L)
-uh = problem.solve()
+uh = fem.Function(V)
+uh.name = "u"
+problem = fem.LinearProblem(a, L, u=uh)
+problem.solve()
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)
 with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w",
