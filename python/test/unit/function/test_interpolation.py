@@ -66,6 +66,7 @@ def one_cell_mesh(cell_type):
     order = list(range(num_points))
     random.shuffle(order)
     ordered_points = np.zeros(points.shape)
+    ordered_points = np.zeros(points.shape)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
@@ -105,8 +106,15 @@ def test_scalar_interpolation(cell_type, order):
 
 
 @skip_in_parallel
-@parametrize_cell_types
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
+@pytest.mark.parametrize(
+    "cell_type", [
+        CellType.interval,
+        CellType.triangle,
+        CellType.tetrahedron,
+        CellType.quadrilateral,
+        CellType.hexahedron
+    ])
 def test_vector_interpolation(cell_type, order):
     """Test that interpolation is correct in a VectorFunctionSpace."""
     mesh = one_cell_mesh(cell_type)
@@ -127,10 +135,9 @@ def test_vector_interpolation(cell_type, order):
 
     v.interpolate(f)
     points = [random_point_in_cell(cell_type) for count in range(5)]
-    cells = [0 for count in range(5)]
-    values = v.eval(points, cells)
+    cells = [0 for count in len(points)]
     for p, v in zip(points, values):
-        assert np.allclose(v, f(p))
+        assert np.allclose(f(p), v)
 
 
 @skip_in_parallel

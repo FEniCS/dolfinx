@@ -254,13 +254,10 @@ public:
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
-
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
     const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
         = mesh->geometry().x();
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        coordinate_dofs(num_dofs_g, gdim);
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -281,29 +278,31 @@ public:
     const int num_sub_elements = element->num_sub_elements();
     if (num_sub_elements > 1 and num_sub_elements != bs_element)
     {
-      if (bs_element != 1)
-      {
-        throw std::runtime_error(
-            "Blocked elements of mixed spaces are not yet supported.");
-      }
-      int offset = 0;
-      for (int sub_e = 0; sub_e < num_sub_elements; ++sub_e)
-      {
-        std::shared_ptr<const fem::FiniteElement> sub_element
-            = element->extract_sub_element({sub_e});
+      throw std::runtime_error("Not supported");
+      // if (bs_element != 1)
+      // {
+      //   throw std::runtime_error(
+      //       "Blocked elements of mixed spaces are not yet supported.");
+      // }
+      // int offset = 0;
+      // for (int sub_e = 0; sub_e < num_sub_elements; ++sub_e)
+      // {
+      //   std::shared_ptr<const fem::FiniteElement> sub_element
+      //       = element->extract_sub_element({sub_e});
 
-        const int sub_value_size = sub_element->value_size();
-        const Function sub_f = this->sub(sub_e);
-        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> sub_u(
-            u.rows(), sub_value_size);
-        sub_f.eval(x, cells, sub_u);
+      //   const int sub_value_size = sub_element->value_size();
+      //   const Function sub_f = this->sub(sub_e);
+      //   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      //   sub_u(
+      //       u.rows(), sub_value_size);
+      //   sub_f.eval(x, cells, sub_u);
 
-        for (int i = 0; i < sub_value_size; ++i)
-          u.col(offset + i) = sub_u.col(i);
-        offset += sub_value_size;
-      }
+      //   for (int i = 0; i < sub_value_size; ++i)
+      //     u.col(offset + i) = sub_u.col(i);
+      //   offset += sub_value_size;
+      // }
 
-      return;
+      // return;
     }
 
     // Prepare geometry data structures
@@ -331,10 +330,12 @@ public:
     const bool needs_permutation_data = element->needs_permutation_data();
     if (needs_permutation_data)
       mesh->topology_mutable().create_entity_permutations();
-
     const std::vector<std::uint32_t>& cell_info
         = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
                                  : std::vector<std::uint32_t>(num_cells);
+
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        coordinate_dofs(num_dofs_g, gdim);
 
     // Loop over points
     u.setZero();

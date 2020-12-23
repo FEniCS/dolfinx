@@ -190,7 +190,7 @@ public:
       s << "  " << e << ": [";
       for (auto link : this->links(e))
         s << link << " ";
-      s << "[" << std::endl;
+      s << "]" << std::endl;
     }
     return s.str();
   }

@@ -229,7 +229,11 @@ void interpolate(
             Eigen::InnerStride<Eigen::Dynamic>(gdim));
   }
 
-  // Evaluate function at physical points
+  // Evaluate function at physical points. The returned array has a
+  // number of rows equal to the number of components of the function,
+  // and the number of columns is equal to the number of evaluation
+  // points. Scalar case needs special handling as pybind11 will return
+  // a column array when we need a row array.
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values;
   if (element_bs == 1)
     values = f(_x).transpose();
@@ -264,10 +268,8 @@ void interpolate(
     for (int k = 0; k < element_bs; ++k)
     {
       // Extract computed values for element block k
-      _vals = Eigen::Map<Eigen::Array<T, Eigen::Dynamic, 1>, 0,
-                         Eigen::InnerStride<Eigen::Dynamic>>(
-          values.data() + c * num_element_dofs + k, num_scalar_dofs,
-          Eigen::InnerStride<Eigen::Dynamic>(element_bs));
+      _vals = Eigen::Map<Eigen::Array<T, Eigen::Dynamic, 1>>(
+          values.data() + c * X.rows() + k * values.cols(), num_scalar_dofs);
 
       // Get element degrees of freedom for block
       _coeffs = element->interpolate_into_cell(_vals, cell_info[c]);
