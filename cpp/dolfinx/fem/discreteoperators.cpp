@@ -96,8 +96,8 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
     assert(cells.size() > 0);
     const std::int32_t cell = cells[0];
     auto edges = c_to_e->links(cell);
-    const auto* it = std::find(edges.data(), edges.data() + edges.rows(), e);
-    assert(it != (edges.data() + edges.rows()));
+    const auto* it = std::find(edges.data(), edges.data() + edges.size(), e);
+    assert(it != (edges.data() + edges.size()));
     const int local_edge = std::distance(edges.data(), it);
 
     // Find the dofs located on the edge
@@ -115,8 +115,8 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
     {
       const auto* it
           = std::find(cell_vertices.data(),
-                      cell_vertices.data() + cell_vertices.rows(), vertices[i]);
-      assert(it != (cell_vertices.data() + cell_vertices.rows()));
+                      cell_vertices.data() + cell_vertices.size(), vertices[i]);
+      assert(it != (cell_vertices.data() + cell_vertices.size()));
       const int local_vertex = std::distance(cell_vertices.data(), it);
       auto local_v_dofs = layout1->entity_dofs(0, local_vertex);
       assert(local_v_dofs.size() == 1);
@@ -148,16 +148,15 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
     assert(cells.size() > 0);
     const std::int32_t cell = cells[0];
     auto edges = c_to_e->links(cell);
-    const auto* it = std::find(edges.data(), edges.data() + edges.rows(), e);
-    assert(it != (edges.data() + edges.rows()));
+    const auto* it = std::find(edges.data(), edges.data() + edges.size(), e);
+    assert(it != (edges.data() + edges.size()));
     const int local_edge = std::distance(edges.data(), it);
 
     // Find the dofs located on the edge
     auto dofs0 = dofmap0->cell_dofs(cell);
 
     // FIXME: avoid this expensive call
-    const Eigen::Array<int, Eigen::Dynamic, 1> local_dofs
-        = layout0->entity_dofs(1, local_edge);
+    const std::vector<int32_t> local_dofs = layout0->entity_dofs(1, local_edge);
     assert(local_dofs.size() == 1);
     const PetscInt row = dofs0[local_dofs[0]];
 
@@ -172,12 +171,12 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
     {
       const auto* it
           = std::find(cell_vertices.data(),
-                      cell_vertices.data() + cell_vertices.rows(), vertices[i]);
-      assert(it != (cell_vertices.data() + cell_vertices.rows()));
+                      cell_vertices.data() + cell_vertices.size(), vertices[i]);
+      assert(it != (cell_vertices.data() + cell_vertices.size()));
       const int local_vertex = std::distance(cell_vertices.data(), it);
 
       // FIXME: avoid this expensive call
-      const Eigen::Array<int, Eigen::Dynamic, 1> local_v_dofs
+      const std::vector<int32_t> local_v_dofs
           = layout1->entity_dofs(0, local_vertex);
       assert(local_v_dofs.size() == 1);
       cols[i] = dofs1[local_v_dofs[0]];
