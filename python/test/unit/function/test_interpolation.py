@@ -174,6 +174,7 @@ def xtest_mixed_interpolation(cell_type, order):
         assert np.allclose(v, f(p))
 
 
+@skip_in_parallel
 @pytest.mark.parametrize("cell_type",
                          [
                              CellType.triangle,
@@ -207,6 +208,7 @@ def test_N1curl_interpolation(cell_type, order):
     assert np.allclose(values, [f(p) for p in points])
 
 
+@skip_in_parallel
 @pytest.mark.parametrize("cell_type", [CellType.triangle])
 @pytest.mark.parametrize("order", [1, 2])
 def test_N2curl_interpolation(cell_type, order):
