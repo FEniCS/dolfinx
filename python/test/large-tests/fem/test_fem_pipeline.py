@@ -331,22 +331,25 @@ def test_vector_P_tp(family, degree, cell_type, datadir):
     run_vector_test(mesh, V, degree)
 
 
-# TODO: Implement DPC spaces
 @parametrize_cell_types_quad
-@pytest.mark.parametrize("family", ["DQ"])
-# @pytest.mark.parametrize("family", ["DQ", "DPC"])
+@pytest.mark.parametrize("family", ["DQ", "DPC"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_dP_quad(family, degree, cell_type, datadir):
+    if family == "DPC":
+        pytest.skip()  # These space currently not implemented in basix
+
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
 
 
 @parametrize_cell_types_hex
-@pytest.mark.parametrize("family", ["DQ"])
-# @pytest.mark.parametrize("family", ["DQ", "DPC"])
+@pytest.mark.parametrize("family", ["DQ", "DPC"])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_dP_hex(family, degree, cell_type, datadir):
+    if family == "DPC":
+        pytest.skip()  # These space currently not implemented in basix
+
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
@@ -356,6 +359,9 @@ def test_dP_hex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["RTCE", "RTCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_RTC_quad(family, degree, cell_type, datadir):
+    if family == "DPC":
+        pytest.skip()  # These space currently not implemented in basix
+
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
@@ -365,33 +371,29 @@ def test_RTC_quad(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["NCE", "NCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_NC_hex(family, degree, cell_type, datadir):
-    # TODO: Implement higher order NCE/NCF spaces
-    if family == "NCE" and degree >= 3:
-        return
-    if family == "NCF" and degree >= 2:
-        return
+    pytest.skip()  # These space currently not implemented in basix
+
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
 
 
-# TODO: Implement BDMCE spaces
-# Note: These are currently not supported in FIAT
 @parametrize_cell_types_quad
 @pytest.mark.parametrize("family", ["BDMCE", "BDMCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def xtest_BDM_quad(family, degree, cell_type, datadir):
+def test_BDM_quad(family, degree, cell_type, datadir):
+    pytest.skip()  # These space currently not implemented in basix
+
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
 
 
-# TODO: Implement AA spaces
-# Note: These are currently not supported in FIAT
 @parametrize_cell_types_hex
 @pytest.mark.parametrize("family", ["AAE", "AAF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def xtest_AA_hex(family, degree, cell_type, datadir):
+def test_AA_hex(family, degree, cell_type, datadir):
+    pytest.skip()  # These space currently not implemented in basix
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)

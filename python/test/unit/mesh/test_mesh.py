@@ -313,8 +313,8 @@ def test_mesh_topology_against_basix(mesh_factory, ghost_mode=cpp.mesh.GhostMode
                 # Check that entity vertices map to cell vertices in correct order
                 vertices = mesh.topology.connectivity(d, 0).links(entities[entity_index])
                 vertices_dolfin = np.sort(vertices)
-                vertices_fiat = np.sort(vertex_global_indices[np.array(entity_topology)])
-                assert all(vertices_fiat == vertices_dolfin)
+                vertices2 = np.sort(vertex_global_indices[np.array(entity_topology)])
+                assert all(vertices2 == vertices_dolfin)
 
 
 def test_mesh_topology_lifetime():
