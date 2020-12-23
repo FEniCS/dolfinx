@@ -274,7 +274,7 @@ xdmf_utils::get_cell_data_values(const fem::Function<PetscScalar>& u)
     for (int j = (num_local_cells - 1); j >= 0; --j)
     {
       PetscScalar nd[3] = {data_values[j * 2], data_values[j * 2 + 1], 0};
-      std::copy(nd, nd + 3, &data_values[j * 3]);
+      std::copy_n(nd, 3, &data_values[j * 3]);
     }
   }
   else if (value_rank == 2 && value_size == 4)
@@ -291,7 +291,7 @@ xdmf_utils::get_cell_data_values(const fem::Function<PetscScalar>& u)
                            0,
                            0,
                            0};
-      std::copy(nd, nd + 9, &data_values[j * 9]);
+      std::copy_n(nd, 9, &data_values[j * 9]);
     }
   }
   return data_values;

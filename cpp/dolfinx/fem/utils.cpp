@@ -108,8 +108,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 
   // Copy over number of dofs per entity type
   std::array<int, 4> num_entity_dofs;
-  std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
-            num_entity_dofs.data());
+  std::copy_n(dofmap.num_entity_dofs, 4, num_entity_dofs.data());
 
   int dof_count = 0;
 

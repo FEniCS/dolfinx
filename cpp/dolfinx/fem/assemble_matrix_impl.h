@@ -218,7 +218,7 @@ void assemble_cells(
     }
 
     // Tabulate tensor
-    std::fill(Ae.data(), Ae.data() + Ae.size(), 0);
+    std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
@@ -322,7 +322,7 @@ void assemble_exterior_facets(
     }
 
     // Tabulate tensor
-    std::fill(Ae.data(), Ae.data() + Ae.size(), 0);
+    std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
            coordinate_dofs.data(), &local_facet, &perms(local_facet, cells[0]),
            cell_info[cells[0]]);

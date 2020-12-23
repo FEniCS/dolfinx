@@ -322,12 +322,10 @@ T assemble_interior_facets(
     {
       // Loop over entries for coefficient i
       const int num_entries = offsets[i + 1] - offsets[i];
-      std::copy(coeff_cell0.data() + offsets[i],
-                coeff_cell0.data() + offsets[i] + num_entries,
-                std::next(coeff_array.begin(), 2 * offsets[i]));
-      std::copy(coeff_cell1.data() + offsets[i],
-                coeff_cell1.data() + offsets[i] + num_entries,
-                std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
+      std::copy_n(coeff_cell0.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), 2 * offsets[i]));
+      std::copy_n(coeff_cell1.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
     }
 
     const std::array perm{perms(local_facet[0], cells[0]),
