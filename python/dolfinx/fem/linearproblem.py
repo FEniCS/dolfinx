@@ -52,33 +52,34 @@ class LinearProblem():
         .. code-block:: python
             problem = LinearProblem(a, L, [bc0, bc1], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
         """
-        self.a = fem.Form(a, form_compiler_parameters=form_compiler_parameters,
-                          jit_parameters=jit_parameters)
-        self.A = fem.create_matrix(self.a)
+        self._a = fem.Form(a, form_compiler_parameters=form_compiler_parameters,
+                           jit_parameters=jit_parameters)
+        self._A = fem.create_matrix(self._a)
 
-        self.L = fem.Form(L, form_compiler_parameters=form_compiler_parameters,
-                          jit_parameters=jit_parameters)
-        self.b = fem.create_vector(self.L)
+        self._L = fem.Form(L, form_compiler_parameters=form_compiler_parameters,
+                           jit_parameters=jit_parameters)
+        self._b = fem.create_vector(self._L)
 
         # Extract function space from TrialFunction (which is at the end of the argument
         # list as it is numbered as 1, while the Test function is numbered as 0)
         self.u = fem.Function(a.arguments()[-1].ufl_function_space())
         self.bcs = bcs
 
-        self.solver = PETSc.KSP().create(self.u.function_space.mesh.mpi_comm())
-        self.solver.setOperators(self.A)
+        self._solver = PETSc.KSP().create(self.u.function_space.mesh.mpi_comm())
+        self._solver.setOperators(self._A)
 
         # Give unique prefix linked to the dolfinx.fem.Function's unique ID.
         ufl.utils.counted.counted_init(self, countedclass=LinearProblem)
-        self.solver.setOptionsPrefix("dolfinx_solve_{0:d}".format(self._count))
+        solver_prefix = "dolfinx_solve_{0:d}".format(self._count)
+        self._solver.setOptionsPrefix(solver_prefix)
 
         # Set PETSc options
         opts = PETSc.Options()
-        opts.prefixPush("dolfinx_solve_{0:d}".format(self.u.id))
+        opts.prefixPush(solver_prefix)
         for k, v in petsc_options.items():
             opts[k] = v
         opts.prefixPop()
-        self.solver.setFromOptions()
+        self._solver.setFromOptions()
 
     def solve(self):
         """
@@ -86,21 +87,51 @@ class LinearProblem():
 
         """
         # Assemble lhs
-        self.A.zeroEntries()
-        fem.assemble_matrix(self.A, self.a, bcs=self.bcs)
-        self.A.assemble()
+        self._A.zeroEntries()
+        fem.assemble_matrix(self._A, self._a, bcs=self.bcs)
+        self._A.assemble()
 
         # Assemble rhs
-        with self.b.localForm() as loc:
+        with self._b.localForm() as loc:
             loc.set(0)
-        fem.assemble_vector(self.b, self.L)
+        fem.assemble_vector(self._b, self._L)
 
         # Apply boundary conditions
-        fem.apply_lifting(self.b, [self.a], [self.bcs])
-        self.b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        fem.set_bc(self.b, self.bcs)
+        fem.apply_lifting(self._b, [self._a], [self.bcs])
+        self._b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        fem.set_bc(self._b, self.bcs)
 
         # Solve linear algebra problem using PETSc
-        self.solver.solve(self.b, self.u.vector)
+        self._solver.solve(self._b, self.u.vector)
         self.u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         return self.u
+
+    def get_L(self):
+        """
+        Return the variational form for the right hand side of the linear variational problem.
+        """
+        return self._L
+
+    def get_a(self):
+        """
+        Return the variational form for the right hand side of the linear variational problem.
+        """
+        return self._a
+
+    def get_A(self):
+        """
+        Return the PETScMatrix for the left hand side.
+        """
+        return self._A
+
+    def get_b(self):
+        """
+        Return the PETScVector for the right hand side.
+        """
+        return self._b
+
+    def get_solver(self):
+        """
+        Return the PETSc KSP solver.
+        """
+        return self._solver
