@@ -235,7 +235,7 @@ void interpolate(
   // points. Scalar case needs special handling as pybind11 will return
   // a column array when we need a row array.
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values;
-  if (element_bs == 1)
+  if (element->value_size() == 1)
     values = f(_x).transpose();
   else
     values = f(_x);
@@ -258,8 +258,10 @@ void interpolate(
   // Loop over cells and compute interpolation dofs
   const int num_element_dofs = element->space_dimension();
   const int num_scalar_dofs = element->space_dimension() / element_bs;
+  const int value_size = element->value_size() / element_bs;
   Eigen::Matrix<T, Eigen::Dynamic, 1>& coeffs = u.x()->array();
-  Eigen::Array<T, Eigen::Dynamic, 1> _coeffs, _vals;
+  Eigen::Array<T, Eigen::Dynamic, 1> _coeffs;
+  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
   for (int c = 0; c < num_cells; ++c)
   {
     // Interpolate dofs for each block and copy on Function coefficient
@@ -268,8 +270,7 @@ void interpolate(
     for (int k = 0; k < element_bs; ++k)
     {
       // Extract computed values for element block k
-      _vals = Eigen::Map<Eigen::Array<T, Eigen::Dynamic, 1>>(
-          values.data() + c * X.rows() + k * values.cols(), num_scalar_dofs);
+      _vals = values.block(k, c * X.rows(), value_size, X.rows());
 
       // Get element degrees of freedom for block
       _coeffs = element->interpolate_into_cell(_vals, cell_info[c]);

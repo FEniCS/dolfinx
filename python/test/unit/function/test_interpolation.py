@@ -135,7 +135,8 @@ def test_vector_interpolation(cell_type, order):
 
     v.interpolate(f)
     points = [random_point_in_cell(cell_type) for count in range(5)]
-    cells = [0 for count in len(points)]
+    cells = [0 for count in range(5)]
+    values = v.eval(points, cells)
     for p, v in zip(points, values):
         assert np.allclose(f(p), v)
 
@@ -173,7 +174,11 @@ def xtest_mixed_interpolation(cell_type, order):
         assert np.allclose(v, f(p))
 
 
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+@pytest.mark.parametrize("cell_type",
+                         [
+                             CellType.triangle,
+                             CellType.tetrahedron
+                         ])
 @pytest.mark.parametrize("order", [1, 2, 3])
 def test_N1curl_interpolation(cell_type, order):
     mesh = one_cell_mesh(cell_type)
