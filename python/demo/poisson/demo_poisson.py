@@ -79,9 +79,9 @@ import dolfinx.plotting
 import matplotlib.pyplot as plt
 import numpy as np
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh)
+from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh, fem
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import locate_dofs_topological, LinearProblem
+from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI
@@ -178,7 +178,7 @@ L = inner(f, v) * dx + inner(g, v) * ds
 # <dolfinx.fem.linearproblem.LinearProblem>`.
 # This class is initialized with the arguments ``a``, ``L``, and ``bc`` as follows: ::
 # In this problem, we use a direct LU solver, which is defined through the dictionary ``petsc_options``.
-problem = LinearProblem(a, L, [bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = fem.LinearProblem(a, L, [bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 # When we want to compute the solution to the problem, we can specify what kind of solver we want to use.
 uh = problem.solve()

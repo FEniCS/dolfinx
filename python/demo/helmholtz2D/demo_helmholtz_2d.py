@@ -13,12 +13,11 @@
 # solution and source term. ::
 
 import numpy as np
-from mpi4py import MPI
-
-from dolfinx import Function, FunctionSpace, UnitSquareMesh, has_petsc_complex
-from dolfinx.fem import LinearProblem
+from dolfinx import (Function, FunctionSpace, UnitSquareMesh, fem,
+                     has_petsc_complex)
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.io import XDMFFile
+from mpi4py import MPI
 from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
 
 # wavenumber
@@ -52,7 +51,7 @@ a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
 # Compute solution
-problem = LinearProblem(a, L)
+problem = fem.LinearProblem(a, L)
 uh = problem.solve()
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)

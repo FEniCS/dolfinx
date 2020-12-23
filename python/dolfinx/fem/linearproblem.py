@@ -6,9 +6,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 import typing
 
-from petsc4py import PETSc
-from ufl import form
+import ufl
 from dolfinx import fem
+from petsc4py import PETSc
 
 
 class LinearProblem():
@@ -16,8 +16,9 @@ class LinearProblem():
     Class for solving a linear variational problem of the form a(u,v)=L(v)
     using PETSc as a linear algebra backend.
     """
+    _globalcount = 0
 
-    def __init__(self, a: form.Form, L: form.Form, bcs: typing.List[fem.DirichletBC] = [],
+    def __init__(self, a: ufl.form.Form, L: ufl.form.Form, bcs: typing.List[fem.DirichletBC] = [],
                  petsc_options={}, form_compiler_parameters={}, jit_parameters={}):
         """Initialize solver for a linear variational problem.
 
@@ -66,8 +67,12 @@ class LinearProblem():
 
         self.solver = PETSc.KSP().create(self.u.function_space.mesh.mpi_comm())
         self.solver.setOperators(self.A)
+
         # Give unique prefix linked to the dolfinx.fem.Function's unique ID.
-        self.solver.setOptionsPrefix("dolfinx_solve_{0:d}".format(self.u.id))
+        ufl.utils.counted.counted_init(self, countedclass=LinearProblem)
+        self.solver.setOptionsPrefix("dolfinx_solve_{0:d}".format(self._count))
+
+        # Set PETSc options
         opts = PETSc.Options()
         opts.prefixPush("dolfinx_solve_{0:d}".format(self.u.id))
         for k, v in petsc_options.items():
