@@ -256,7 +256,6 @@ void interpolate(
   // e.g. Lagrange, where the interpolation is just the identity.
 
   // Loop over cells and compute interpolation dofs
-  const int num_element_dofs = element->space_dimension();
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
   Eigen::Matrix<T, Eigen::Dynamic, 1>& coeffs = u.x()->array();
