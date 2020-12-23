@@ -344,8 +344,8 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     auto dofs = x_dofmap.links(index);
     Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(dofs.size(),
                                                                     3);
-    for (int i = 0; i < dofs.size(); i++)
-      nodes.row(i) = geometry.node(dofs(i));
+    for (std::size_t i = 0; i < dofs.size(); i++)
+      nodes.row(i) = geometry.node(dofs[i]);
 
     return geometry::compute_distance_gjk(p.transpose(), nodes).squaredNorm();
   }
@@ -363,21 +363,19 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     auto c_to_e = mesh.topology_mutable().connectivity(tdim, dim);
     assert(c_to_e);
     auto cell_entities = c_to_e->links(c);
-    const auto* it0
-        = std::find(cell_entities.data(),
-                    cell_entities.data() + cell_entities.rows(), index);
-    assert(it0 != (cell_entities.data() + cell_entities.rows()));
-    const int local_cell_entity = std::distance(cell_entities.data(), it0);
+    auto it0 = std::find(cell_entities.begin(), cell_entities.end(), index);
+    assert(it0 != cell_entities.end());
+    const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
     // Tabulate geometry dofs for the entity
     auto dofs = x_dofmap.links(c);
-    const Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs
+    const std::vector<int> entity_dofs
         = geometry.cmap().dof_layout().entity_closure_dofs(dim,
                                                            local_cell_entity);
     Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(
         entity_dofs.size(), 3);
-    for (int i = 0; i < entity_dofs.size(); i++)
-      nodes.row(i) = geometry.node(dofs(entity_dofs(i)));
+    for (std::size_t i = 0; i < entity_dofs.size(); i++)
+      nodes.row(i) = geometry.node(dofs[entity_dofs[i]]);
 
     return geometry::compute_distance_gjk(p.transpose(), nodes).squaredNorm();
   }

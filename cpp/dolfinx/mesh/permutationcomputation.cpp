@@ -27,7 +27,7 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
   std::vector<std::int64_t> cell_vertices, vertices;
   for (int c = 0; c < num_cells; ++c)
   {
-    cell_vertices.resize(c_to_v.links(c).rows());
+    cell_vertices.resize(c_to_v.links(c).size());
     im->local_to_global(c_to_v.links(c).data(), cell_vertices.size(),
                         cell_vertices.data());
     auto cell_faces = c_to_f.links(c);
@@ -35,7 +35,7 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
     {
       // Get the face
       const int face = cell_faces[i];
-      vertices.resize(f_to_v.links(face).rows());
+      vertices.resize(f_to_v.links(face).size());
       im->local_to_global(f_to_v.links(face).data(), vertices.size(),
                           vertices.data());
 
@@ -50,11 +50,10 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 3; ++j)
       {
-        auto it = std::find(cell_vertices.data(),
-                            cell_vertices.data() + cell_vertices.size(),
+        auto it = std::find(cell_vertices.begin(), cell_vertices.end(),
                             vertices[j]);
         // Get the actual local vertex indices
-        e_vertices[j] = it - cell_vertices.data();
+        e_vertices[j] = std::distance(cell_vertices.begin(), it);
       }
 
       // Number of rotations
@@ -110,7 +109,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
   std::vector<std::int64_t> cell_vertices, vertices;
   for (int c = 0; c < num_cells; ++c)
   {
-    cell_vertices.resize(c_to_v.links(c).rows());
+    cell_vertices.resize(c_to_v.links(c).size());
     im->local_to_global(c_to_v.links(c).data(), cell_vertices.size(),
                         cell_vertices.data());
 
@@ -119,7 +118,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
     {
       // Get the face
       const int face = cell_faces[i];
-      vertices.resize(f_to_v.links(face).rows());
+      vertices.resize(f_to_v.links(face).size());
       im->local_to_global(f_to_v.links(face).data(), vertices.size(),
                           vertices.data());
 
@@ -134,11 +133,10 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 4; ++j)
       {
-        auto it = std::find(cell_vertices.data(),
-                            cell_vertices.data() + cell_vertices.size(),
+        auto it = std::find(cell_vertices.begin(), cell_vertices.end(),
                             vertices[j]);
         // Get the actual local vertex indices
-        e_vertices[j] = it - cell_vertices.data();
+        e_vertices[j] = std::distance(cell_vertices.begin(), it);
       }
 
       // Number of rotations
@@ -246,13 +244,13 @@ compute_edge_reflections(const mesh::Topology& topology)
   std::vector<std::int64_t> cell_vertices, vertices;
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    cell_vertices.resize(c_to_v->links(c).rows());
+    cell_vertices.resize(c_to_v->links(c).size());
     im->local_to_global(c_to_v->links(c).data(), cell_vertices.size(),
                         cell_vertices.data());
     auto cell_edges = c_to_e->links(c);
     for (int i = 0; i < edges_per_cell; ++i)
     {
-      vertices.resize(e_to_v->links(cell_edges[i]).rows());
+      vertices.resize(e_to_v->links(cell_edges[i]).size());
       im->local_to_global(e_to_v->links(cell_edges[i]).data(), vertices.size(),
                           vertices.data());
 
@@ -261,11 +259,9 @@ compute_edge_reflections(const mesh::Topology& topology)
 
       // Find iterators pointing to cell vertex given a vertex on facet
       const auto it0
-          = std::find(cell_vertices.data(),
-                      cell_vertices.data() + cell_vertices.size(), vertices[0]);
+          = std::find(cell_vertices.begin(), cell_vertices.end(), vertices[0]);
       const auto it1
-          = std::find(cell_vertices.data(),
-                      cell_vertices.data() + cell_vertices.size(), vertices[1]);
+          = std::find(cell_vertices.begin(), cell_vertices.end(), vertices[1]);
 
       // The number of reflections. Comparing iterators directly instead
       // of values they point to is sufficient here.
@@ -313,7 +309,7 @@ compute_face_permutations(const mesh::Topology& topology)
 
 //-----------------------------------------------------------------------------
 std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
-          Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+          std::vector<std::uint32_t>>
 mesh::compute_entity_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
@@ -322,8 +318,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
   const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> cell_permutation_info
-      = Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>::Zero(num_cells);
+  std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
   Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> facet_permutations(
       facets_per_cell, num_cells);
 

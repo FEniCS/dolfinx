@@ -63,8 +63,7 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
 
   std::vector<unsigned long long> part(num_local_cells);
   std::vector<unsigned long long> adj_graph_offsets(
-      local_graph.offsets().data(),
-      local_graph.offsets().data() + local_graph.offsets().size());
+      local_graph.offsets().begin(), local_graph.offsets().end());
   int edgecut = 0;
 
   ParHIPPartitionKWay(
@@ -126,7 +125,7 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
     }
 
     // Actual halo exchange
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_cell_partition
+    const std::vector<std::int64_t> recv_cell_partition
         = dolfinx::MPI::all_to_all(
               mpi_comm, graph::AdjacencyList<std::int64_t>(send_cell_partition))
               .array();
@@ -134,13 +133,11 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
     // Construct a map from all currently foreign cells to their new
     // partition number
     std::map<std::int64_t, std::int32_t> cell_ownership;
-    for (int p = 0; p < recv_cell_partition.rows(); p += 2)
+    for (std::size_t p = 0; p < recv_cell_partition.size(); p += 2)
       cell_ownership[recv_cell_partition[p]] = recv_cell_partition[p + 1];
 
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& xadj
-        = local_graph.offsets();
-    const Eigen::Array<unsigned long long, Eigen::Dynamic, 1>& adjncy
-        = local_graph.array();
+    const std::vector<std::int32_t>& xadj = local_graph.offsets();
+    const std::vector<unsigned long long>& adjncy = local_graph.array();
 
     // Generate map for where new boundary cells need to be sent
     for (std::int32_t i = 0; i < ncells; i++)
