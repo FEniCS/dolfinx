@@ -106,32 +106,22 @@ class LinearProblem():
         self.u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         return self.u
 
-    def get_L(self):
-        """
-        Return the variational form for the right hand side of the linear variational problem.
-        """
+    @property
+    def L(self) -> fem.Form:
         return self._L
 
-    def get_a(self):
-        """
-        Return the variational form for the right hand side of the linear variational problem.
-        """
+    @property
+    def a(self) -> fem.Form:
         return self._a
 
-    def get_A(self):
-        """
-        Return the PETScMatrix for the left hand side.
-        """
+    @property
+    def A(self) -> PETSc.Mat:
         return self._A
 
-    def get_b(self):
-        """
-        Return the PETScVector for the right hand side.
-        """
+    @property
+    def b(self) -> PETSc.Vec:
         return self._b
 
-    def get_solver(self):
-        """
-        Return the PETSc KSP solver.
-        """
+    @property
+    def solver(self) -> PETSc.KSP:
         return self._solver
