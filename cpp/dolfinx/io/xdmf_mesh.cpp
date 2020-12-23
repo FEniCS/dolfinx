@@ -169,7 +169,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);
   if (width == 3)
-    std::copy(_x.data(), _x.data() + num_values, x.begin());
+    std::copy_n(_x.data(), num_values, x.begin());
   else
   {
     for (int i = 0; i < num_points_local; ++i)

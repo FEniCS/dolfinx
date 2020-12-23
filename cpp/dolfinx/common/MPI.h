@@ -222,7 +222,8 @@ dolfinx::MPI::all_to_all(MPI_Comm comm,
   // Compute receive offset
   std::vector<std::int32_t> recv_offset(comm_size + 1);
   recv_offset[0] = 0;
-  std::partial_sum(recv_size.begin(), recv_size.end(), recv_offset.data() + 1);
+  std::partial_sum(recv_size.begin(), recv_size.end(),
+                   std::next(recv_offset.begin()));
 
   // Send/receive data
   std::vector<T> recv_values(recv_offset[comm_size]);
@@ -251,7 +252,7 @@ dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
   // Get receive sizes
   std::vector<int> send_sizes(outdegree, 0);
   std::vector<int> recv_sizes(indegree);
-  std::adjacent_difference(send_offsets.begin() + 1, send_offsets.end(),
+  std::adjacent_difference(std::next(send_offsets.begin()), send_offsets.end(),
                            send_sizes.begin());
   MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI::mpi_type<int>(),
                         recv_sizes.data(), 1, MPI::mpi_type<int>(),
@@ -261,7 +262,7 @@ dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
   std::vector<int> recv_offsets(recv_sizes.size() + 1);
   recv_offsets[0] = 0;
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                   recv_offsets.data() + 1);
+                   std::next(recv_offsets.begin(), 1));
 
   std::vector<T> recv_data(recv_offsets[recv_offsets.size() - 1]);
   MPI_Neighbor_alltoallv(
