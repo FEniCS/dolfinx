@@ -335,7 +335,7 @@ Eigen::ArrayXXd FiniteElement::interpolation_points() const
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-FiniteElement::interpolate_into_cell(
+FiniteElement::interpolate(
     const Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& values,
     const std::uint32_t cell_permutation) const

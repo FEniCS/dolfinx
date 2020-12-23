@@ -152,9 +152,20 @@ public:
   /// TODO: doc
   Eigen::ArrayXXd interpolation_points() const;
 
-  /// TODO: doc
+  /// @todo Document shape/layout of @p values
+  /// @todo Make the interpolating dofs in/out argument for efficiency
+  /// as this function is often called from within tight loops
+  /// @todo Consider handling block size > 1
+  ///
+  /// Interpolate a function in the finite element space on a cell.
+  /// Given the evaluation of the function to be interpolated at points
+  /// provided by @p FiniteElement::interpolation_points, it evaluates
+  /// the degrees of freedom for the interpolant.
+  /// @param[in] values The values of the function
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @return The degrees of the freedom of the interpolant
   Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  interpolate_into_cell(
+  interpolate(
       const Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic,
                          Eigen::RowMajor>& values,
       const std::uint32_t cell_permutation) const;

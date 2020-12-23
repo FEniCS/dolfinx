@@ -273,10 +273,10 @@ void interpolate(
       _vals = values.block(k, c * X.rows(), value_size, X.rows());
 
       // Get element degrees of freedom for block
-      _coeffs = element->interpolate_into_cell(_vals, cell_info[c]);
+      _coeffs = element->interpolate(_vals, cell_info[c]);
       assert(_coeffs.size() == num_scalar_dofs);
 
-      // Copy dofs into coefficient vector
+      // Copy interpolation dofs into coefficient vector
       for (int i = 0; i < num_scalar_dofs; ++i)
       {
         const int dof = i * element_bs + k;
