@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
         MPI_COMM_WORLD,
         {Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 0.0)},
-        {2, 2}, cmap, mesh::GhostMode::none));
+        {32, 32}, cmap, mesh::GhostMode::none));
 
     auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
                                        mesh);

@@ -235,10 +235,13 @@ void interpolate(
   // points. Scalar case needs special handling as pybind11 will return
   // a column array when we need a row array.
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values;
-  if (element->value_size() == 1)
-    values = f(_x).transpose();
-  else
-    values = f(_x);
+  // std::cout << "Value size: " << element->value_size() << std::endl;
+  values = f(_x);
+
+  // FIXME: This is hack for NumPy/pybind11/Eigen that returns 1D arrays a
+  // column vectors. Fix in the pybind11 layer?
+  if (element->value_size() == 1 and values.rows() > 1)
+    values = values.transpose().eval();
 
   const bool needs_permutation_data = element->needs_permutation_data();
   if (needs_permutation_data)
@@ -263,11 +266,13 @@ void interpolate(
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
   for (int c = 0; c < num_cells; ++c)
   {
+    // std::cout << "Cell: " << c << std::endl;
     // Interpolate dofs for each block and copy on Function coefficient
     // vector
     auto dofs = dofmap->cell_dofs(c);
     for (int k = 0; k < element_bs; ++k)
     {
+      // std::cout << "  Block: " << k << std::endl;
       // Extract computed values for element block k
       _vals = values.block(k, c * X.rows(), value_size, X.rows());
 
