@@ -169,154 +169,119 @@ void interpolate(
                                                 Eigen::RowMajor>>&)>& f)
 {
   const auto element = u.function_space()->element();
-  const auto dofmap = u.function_space()->dofmap();
-  const int block_size = element->block_size();
-
-  const int dofmap_bs = dofmap->bs();
+  assert(element);
+  const int element_bs = element->block_size();
 
   if (element->family() == "Mixed")
     throw std::runtime_error("Mixed space interpolation not supported (yet?).");
 
-  // u.function_space()->interpolate(u.x()->array(), f);
-  assert(u.function_space());
-
   // Get mesh
+  assert(u.function_space());
   auto mesh = u.function_space()->mesh();
   assert(mesh);
   const int tdim = mesh->topology().dim();
   const int gdim = mesh->geometry().dim();
+  auto cell_map = mesh->topology().index_map(tdim);
+  assert(cell_map);
+  const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
 
-  // Get cell geometry
+  // Get mesh geometry data and the element coordinate map
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
       = mesh->geometry().x();
-
-  auto cell_map = mesh->topology().index_map(tdim);
-  assert(cell_map);
-  const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
-
-  // Get coordinate map
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
-  // Get interpolation points on reference cell
+  // Get the interpolation points on the reference cells
   const Eigen::ArrayXXd X = element->interpolation_points();
 
+  // Push reference coordinates forward to the physical coordinates for
+  // each cell
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_cell(
+      X.rows(), gdim);
+  std::vector<double> x;
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
-
-  // Storage for points in the physical space
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x(
-      X.rows(), gdim);
-  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_eval(3, X.rows());
-
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
-      element->value_size() * element->block_size(), X.rows());
-
-  const int num_scalar_dofs = element->space_dimension() / block_size;
-
-  // FIXME: review this - not really correct for subspaces
-  auto dof_indexmap = dofmap->index_map;
-  const std::int32_t space_dim
-      = dofmap->index_map_bs()
-        * (dof_indexmap->size_local() + dof_indexmap->num_ghosts());
-  Eigen::Array<T, Eigen::Dynamic, 1> coeffs(space_dim);
-
-  const bool needs_permutation_data = element->needs_permutation_data();
-  if (needs_permutation_data)
-    mesh->topology_mutable().create_entity_permutations();
-
-  const std::vector<std::uint32_t>& cell_info
-      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
-                               : std::vector<std::uint32_t>(num_cells);
-
-  std::cout << "Ref X: " << std::endl << X << std::endl;
-
-  // Loop over cells and interpolate on each cell
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeff_block(
-      num_scalar_dofs, block_size);
   for (int c = 0; c < num_cells; ++c)
   {
-    // Get geometry data
+    // Get geometry data for current cell
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
-    // Push basis forward (X -> x)
-    cmap.push_forward(x, X, coordinate_dofs);
-
-    std::cout << "Phys x: " << std::endl << x << std::endl;
-
-    // Make 3D (each component is a row) to pass to eval function
-    x_eval.setZero();
-    x_eval.block(0, 0, gdim, x.rows()) = x.transpose();
-
-    std::cout << "Interp x: " << std::endl << x_eval << std::endl;
-
-    if (block_size == 1)
-      values = f(x_eval).transpose();
-    else
-      values = f(x_eval);
-    std::cout << "Interp f: " << std::endl << values << std::endl;
-
-    std::cout << "Sizes: " << block_size << ", " << dofmap_bs << std::endl;
-
-    // Interpolate dofs for each
-    for (int block = 0; block < block_size; ++block)
-    {
-      std::cout << "Passing in: " << values.row(block) << std::endl;
-      coeff_block.col(block)
-          = element->interpolate_into_cell(values.row(block), cell_info[c]);
-      assert(coeff_block.size() == num_scalar_dofs);
-    }
-
-    std::cout << "Remapping: " << coeff_block.rows() << ", "
-              << coeff_block.cols() << std::endl;
-    auto dofs = dofmap->cell_dofs(c);
-    std::cout << "Dof sizes: " << dofs.size() << " " << num_scalar_dofs
-              << std::endl;
-    for (int i = 0; i < num_scalar_dofs; ++i)
-    {
-      std::cout << "Index: " << i << std::endl;
-      for (int k = 0; k < coeff_block.cols(); ++k)
-      {
-        std::cout << "   block: " << k << std::endl;
-        const int dof = i * block_size + k;
-        std::div_t pos = std::div(dof, dofmap_bs);
-        assert(pos.quot < dofs.size());
-        assert(dofmap_bs * dofs[pos.quot] + pos.rem < coeffs.size());
-        assert(pos.quot < dofs.size());
-        assert(i < coeff_block.rows());
-        assert(k < coeff_block.cols());
-        std::cout << "   Assign to coeffs" << std::endl;
-        coeffs(dofmap_bs * dofs[pos.quot] + pos.rem) = coeff_block(i, k);
-        std::cout << "   Post Assign to coeffs" << std::endl;
-      }
-    }
-
-    // auto dofs = dofmap->cell_dofs(c);
-    // for (int i = 0; i < dofs.size(); ++i)
-    // {
-    //   for (int k = 0; k < dofmap_bs; ++k)
-    //   {
-    //     assert(coeffs.rows() < dofmap_bs * dofs[i] + k);
-    //     assert(i < coeff_block.rows());
-    //     assert(i < coeff_block.());
-    //     coeffs(dofmap_bs * dofs[i] + k) = coeff_block(i, k);
-    //   }
-    // } // for (int i = 0; i < num_scalar_dofs; ++i)
-    //   //   coeffs(block_size * dofs[i] + block) = coeff_block[i];
+    // Push forward coordinates (X -> x)
+    cmap.push_forward(x_cell, X, coordinate_dofs);
+    x.insert(x.end(), x_cell.data(), x_cell.data() + x_cell.size());
   }
 
-  std::cout << "Done" << std::endl;
+  // Re-pack points (each row for a given coordinate component) and pad
+  // up to gdim with zero
+  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> _x
+      = Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>::Zero(
+          3, x.size() / gdim);
+  for (int i = 0; i < gdim; ++i)
+  {
+    _x.row(i)
+        = Eigen::Map<Eigen::ArrayXd, 0, Eigen::InnerStride<Eigen::Dynamic>>(
+            x.data() + i, x.size() / gdim,
+            Eigen::InnerStride<Eigen::Dynamic>(gdim));
+  }
 
-  detail::interpolate_values<T>(u, coeffs);
+  // Evaluate function at physical points
+  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values;
+  if (element_bs == 1)
+    values = f(_x).transpose();
+  else
+    values = f(_x);
 
-  std::cout<< *u.x() << std::endl;
+  const bool needs_permutation_data = element->needs_permutation_data();
+  if (needs_permutation_data)
+    mesh->topology_mutable().create_entity_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                               : std::vector<std::uint32_t>(num_cells);
 
+  // Get dofmap
+  const auto dofmap = u.function_space()->dofmap();
+  assert(dofmap);
+  const int dofmap_bs = dofmap->bs();
 
+  // NOTE: The below loop over cells could be skipped for some elements,
+  // e.g. Lagrange, where the interpolation is just the identity.
+
+  // Loop over cells and compute interpolation dofs
+  const int num_element_dofs = element->space_dimension();
+  const int num_scalar_dofs = element->space_dimension() / element_bs;
+  Eigen::Matrix<T, Eigen::Dynamic, 1>& coeffs = u.x()->array();
+  Eigen::Array<T, Eigen::Dynamic, 1> _coeffs, _vals;
+  for (int c = 0; c < num_cells; ++c)
+  {
+    // Interpolate dofs for each block and copy on Function coefficient
+    // vector
+    auto dofs = dofmap->cell_dofs(c);
+    for (int k = 0; k < element_bs; ++k)
+    {
+      // Extract computed values for element block k
+      _vals = Eigen::Map<Eigen::Array<T, Eigen::Dynamic, 1>, 0,
+                         Eigen::InnerStride<Eigen::Dynamic>>(
+          values.data() + c * num_element_dofs + k, num_scalar_dofs,
+          Eigen::InnerStride<Eigen::Dynamic>(element_bs));
+
+      // Get element degrees of freedom for block
+      _coeffs = element->interpolate_into_cell(_vals, cell_info[c]);
+      assert(_coeffs.size() == num_scalar_dofs);
+
+      // Copy dofs into coefficient vector
+      for (int i = 0; i < num_scalar_dofs; ++i)
+      {
+        const int dof = i * element_bs + k;
+        std::div_t pos = std::div(dof, dofmap_bs);
+        coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+      }
+    }
+  }
 }
 //----------------------------------------------------------------------------
 template <typename T>

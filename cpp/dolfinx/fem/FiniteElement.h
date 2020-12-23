@@ -154,10 +154,10 @@ public:
 
   /// TODO: doc
   Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  interpolate_into_cell(const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
-                                           Eigen::Dynamic, Eigen::RowMajor>
-                            values,
-                        const std::uint32_t cell_permutation) const;
+  interpolate_into_cell(
+      const Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic,
+                         Eigen::RowMajor>& values,
+      const std::uint32_t cell_permutation) const;
 
   /// TODO: doc
   bool needs_permutation_data() const;

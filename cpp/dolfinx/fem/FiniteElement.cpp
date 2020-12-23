@@ -337,8 +337,7 @@ Eigen::ArrayXXd FiniteElement::interpolation_points() const
 Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 FiniteElement::interpolate_into_cell(
     const Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic,
-                       Eigen::RowMajor>
-        values,
+                       Eigen::RowMajor>& values,
     const std::uint32_t cell_permutation) const
 {
   Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1> output_values(_space_dim
