@@ -331,23 +331,22 @@ mesh::extract_topology(const CellType& cell_type,
   std::vector<int> local_vertices(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
-    const Eigen::Array<int, Eigen::Dynamic, 1> local_index
-        = layout.entity_dofs(0, i);
-    assert(local_index.rows() == 1);
+    const std::vector<int> local_index = layout.entity_dofs(0, i);
+    assert(local_index.size() == 1);
     local_vertices[i] = local_index[0];
   }
 
   // Extract vertices
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      topology(cells.num_nodes(), num_vertices_per_cell);
-  for (int i = 0; i < cells.num_nodes(); ++i)
+  std::vector<std::int64_t> topology(cells.num_nodes() * num_vertices_per_cell);
+  for (int c = 0; c < cells.num_nodes(); ++c)
   {
-    auto p = cells.links(i);
+    auto p = cells.links(c);
     for (int j = 0; j < num_vertices_per_cell; ++j)
-      topology(i, j) = p(local_vertices[j]);
+      topology[num_vertices_per_cell * c + j] = p[local_vertices[j]];
   }
 
-  return graph::AdjacencyList<std::int64_t>(topology);
+  return graph::build_adjacency_list<std::int64_t>(std::move(topology),
+                                                   num_vertices_per_cell);
 }
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd
@@ -591,7 +590,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities(
   {
     auto x_dofs = x_dofmap.links(c);
     auto vertices = c_to_v->links(c);
-    for (int i = 0; i < vertices.size(); ++i)
+    for (std::size_t i = 0; i < vertices.size(); ++i)
       vertex_to_node[vertices[i]] = x_dofs[i];
   }
 
@@ -616,10 +615,9 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities(
   {
     // Iterate over entity vertices
     bool all_vertices_marked = true;
-    auto vertices = e_to_v->links(e);
-    for (int i = 0; i < vertices.rows(); ++i)
+    for (std::int32_t v : e_to_v->links(e))
     {
-      if (!marked[vertices[i]])
+      if (!marked[v])
       {
         all_vertices_marked = false;
         break;
@@ -671,13 +669,11 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
   {
     if (boundary_facet[f])
     {
-      auto entities = f_to_e->links(f);
-      for (int i = 0; i < entities.size(); ++i)
-        facet_entities.insert(entities[i]);
+      for (auto e : f_to_e->links(f))
+        facet_entities.insert(e);
 
-      auto vertices = f_to_v->links(f);
-      for (int i = 0; i < vertices.size(); ++i)
-        boundary_vertices.insert(vertices[i]);
+      for (auto v : f_to_v->links(f))
+        boundary_vertices.insert(v);
     }
   }
 
@@ -705,10 +701,9 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
     // Get first cell and find position
     const int c = v_to_c->links(v)[0];
     auto vertices = c_to_v->links(c);
-    const auto* it
-        = std::find(vertices.data(), vertices.data() + vertices.rows(), v);
-    assert(it != (vertices.data() + vertices.rows()));
-    const int local_pos = std::distance(vertices.data(), it);
+    auto it = std::find(vertices.begin(), vertices.end(), v);
+    assert(it != vertices.end());
+    const int local_pos = std::distance(vertices.begin(), it);
 
     auto dofs = x_dofmap.links(c);
     x_vertices.col(i) = x_nodes.row(dofs[local_pos]);
@@ -731,11 +726,9 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
     bool all_vertices_marked = true;
 
     // Iterate over entity vertices
-    auto vertices = e_to_v->links(e);
-    for (int i = 0; i < vertices.rows(); ++i)
+    for (auto v : e_to_v->links(e))
     {
-      const std::int32_t idx = vertices[i];
-      const std::int32_t pos = vertex_to_pos[idx];
+      const std::int32_t pos = vertex_to_pos[v];
       if (!marked[pos])
       {
         all_vertices_marked = false;
@@ -788,15 +781,14 @@ mesh::entities_to_geometry(
   {
     const std::int32_t idx = entity_list[i];
     const std::int32_t cell = e_to_c->links(idx)[0];
-    const auto ev = e_to_v->links(idx);
-    assert(ev.size() == num_entity_vertices);
+    auto ev = e_to_v->links(idx);
+    assert((int)ev.size() == num_entity_vertices);
     const auto cv = c_to_v->links(cell);
     const auto xc = xdofs.links(cell);
     for (int j = 0; j < num_entity_vertices; ++j)
     {
-      int k = std::distance(cv.data(),
-                            std::find(cv.data(), cv.data() + cv.size(), ev[j]));
-      assert(k < cv.size());
+      int k = std::distance(cv.begin(), std::find(cv.begin(), cv.end(), ev[j]));
+      assert(k < (int)cv.size());
       entity_geometry(i, j) = xc[k];
     }
 
@@ -804,8 +796,8 @@ mesh::entities_to_geometry(
     {
       // Compute cell midpoint
       Eigen::Vector3d midpoint(0.0, 0.0, 0.0);
-      for (int j = 0; j < xc.size(); ++j)
-        midpoint += geometry.node(xc[j]);
+      for (auto j : xc)
+        midpoint += geometry.node(j);
       midpoint /= xc.size();
       // Compute vector triple product of two edges and vector to midpoint
       Eigen::Vector3d p0 = geometry.node(entity_geometry(i, 0));
@@ -813,8 +805,8 @@ mesh::entities_to_geometry(
       a.row(0) = midpoint - p0;
       a.row(1) = geometry.node(entity_geometry(i, 1)) - p0;
       a.row(2) = geometry.node(entity_geometry(i, 2)) - p0;
-      // Midpoint direction should be opposite to normal, hence this should be
-      // negative. Switch points if not.
+      // Midpoint direction should be opposite to normal, hence this
+      // should be negative. Switch points if not.
       if (a.determinant() > 0.0)
         std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
     }
@@ -823,8 +815,7 @@ mesh::entities_to_geometry(
   return entity_geometry;
 }
 //------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-mesh::exterior_facet_indices(const Mesh& mesh)
+std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
 {
   // Note: Possible duplication of mesh::Topology::compute_boundary_facets
 
@@ -856,9 +847,7 @@ mesh::exterior_facet_indices(const Mesh& mesh)
       surface_facets.push_back(f);
   }
 
-  // Copy over to Eigen::Array
-  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-      surface_facets.data(), surface_facets.size());
+  return surface_facets;
 }
 //------------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>

@@ -24,14 +24,13 @@ from dolfinx import cpp, fem
 # compilation
 
 
-# Solve function handles both linear systems and variational problems
 def solve(*args, **kwargs):
-    """Solve variational problem a == L or F == 0.
+    """Solve variational problem a == L
 
     The following list explains the
     various ways in which the solve() function can be used.
 
-    *1. Solving linear variational problems*
+    *Solving linear variational problems*
 
     A linear variational problem a(u, v) = L(v) for all v may be
     solved by calling solve(a == L, u, ...), where a is a bilinear
@@ -46,65 +45,11 @@ def solve(*args, **kwargs):
         solve(a == L, u, bcs=[bc1, bc2])
 
         solve(a == L, u, bcs=bcs,
-              solver_parameters={"linear_solver": "lu"},
-              form_compiler_parameters={"optimize": True})
-
-    For available choices for the 'solver_parameters' kwarg, look at:
-
-    .. code-block:: python
-
-        info(LinearVariationalSolver.default_parameters(), True)
-
-    *2. Solving nonlinear variational problems*
-
-    A nonlinear variational problem F(u; v) = 0 for all v may be
-    solved by calling solve(F == 0, u, ...), where the residual F is a
-    linear form (linear in the test function v but possibly nonlinear
-    in the unknown u) and u is a Function (the solution). Optional
-    arguments may be supplied to specify boundary conditions, the
-    Jacobian form or solver parameters. If the Jacobian is not
-    supplied, it will be computed by automatic differentiation of the
-    residual form. Some examples are given below:
-
-    .. code-block:: python
-
-        solve(F == 0, u)
-        solve(F == 0, u, bcs=bc)
-        solve(F == 0, u, bcs=[bc1, bc2])
-
-        solve(F == 0, u, bcs, J=J,
               petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
               form_compiler_parameters={"optimize": True})
 
-
-    For available choices for the 'solver_parameters' kwarg, look at:
-
-    .. code-block:: python
-
-        info(NonlinearVariationalSolver.default_parameters(), True)
-
-    *4. Solving linear/nonlinear variational problems adaptively*
-
-    Linear and nonlinear variational problems maybe solved adaptively,
-    with automated goal-oriented error control. The automated error
-    control algorithm is based on adaptive mesh refinement in
-    combination with automated generation of dual-weighted
-    residual-based error estimates and error indicators.
-
-    An adaptive solve may be invoked by giving two additional
-    arguments to the solve call, a numerical error tolerance and a
-    goal functional (a Form).
-
-    .. code-block:: python
-
-        M = u*dx()
-        tol = 1.e-6
-
-        # Linear variational problem
-        solve(a == L, u, bcs=bc, tol=tol, M=M)
-
-        # Nonlinear problem:
-        solve(F == 0, u, bcs=bc, tol=tol, M=M)
+    For available choices for the 'petsc_options' kwarg, see the
+    `PETSc-documentation <https://www.mcs.anl.gov/petsc/documentation/index.html>`_
 
     """
 
@@ -117,7 +62,7 @@ def _solve_varproblem(*args, **kwargs):
     "Solve variational problem a == L or F == 0"
 
     # Extract arguments
-    eq, u, bcs, J, tol, M, form_compiler_parameters, petsc_options \
+    eq, u, bcs, J, tol, form_compiler_parameters, petsc_options \
         = _extract_args(*args, **kwargs)
 
     # Solve linear variational problem
@@ -137,7 +82,6 @@ def _solve_varproblem(*args, **kwargs):
         comm = L._cpp_object.mesh.mpi_comm()
         ksp = PETSc.KSP().create(comm)
         ksp.setOperators(A)
-
         ksp.setOptionsPrefix("dolfin_solve_")
         opts = PETSc.Options()
         opts.prefixPush("dolfin_solve_")
@@ -151,24 +95,9 @@ def _solve_varproblem(*args, **kwargs):
     # Solve nonlinear variational problem
     else:
 
-        raise RuntimeError("Not implemented")
-        # Create Jacobian if missing
-        # if J is None:
-        #    cpp.log.info(
-        #        "No Jacobian form specified for nonlinear variational problem.")
-        #    cpp.log.info(
-        #        "Differentiating residual form F to obtain Jacobian J = F'.")
-        #    F = eq.lhs
-        #    J = formmanipulations.derivative(F, u)
-
-        # Create problem
-        # problem = NonlinearVariationalProblem(eq.lhs, u, bcs, J,
-        #                                      form_compiler_parameters=form_compiler_parameters)
-
-        # Create solver and call solve
-        # solver = NonlinearVariationalSolver(problem)
-        # solver.parameters.update(petsc_options)
-        # solver.solve()
+        raise RuntimeError(
+            "Non-linear variational problems should not be solved with the `solve`-command."
+            + "Please use a Newton-solver.")
 
 
 def _extract_args(*args, **kwargs):
@@ -176,7 +105,7 @@ def _extract_args(*args, **kwargs):
 
     # Check for use of valid kwargs
     valid_kwargs = [
-        "bcs", "J", "tol", "M", "form_compiler_parameters", "petsc_options"
+        "bcs", "J", "tol", "form_compiler_parameters", "petsc_options"
     ]
     for kwarg in kwargs.keys():
         if kwarg not in valid_kwargs:
@@ -233,7 +162,7 @@ def _extract_args(*args, **kwargs):
     form_compiler_parameters = kwargs.get("form_compiler_parameters", {})
     petsc_options = kwargs.get("petsc_options", {})
 
-    return eq, u, bcs, J, tol, M, form_compiler_parameters, petsc_options
+    return eq, u, bcs, J, tol, form_compiler_parameters, petsc_options
 
 
 def _extract_eq(eq):

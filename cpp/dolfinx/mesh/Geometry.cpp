@@ -7,8 +7,8 @@
 #include "Geometry.h"
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/partition.h>
 #include <sstream>
 
@@ -51,16 +51,6 @@ const std::vector<std::int64_t>& Geometry::input_global_indices() const
   return _input_global_indices;
 }
 //-----------------------------------------------------------------------------
-std::size_t Geometry::hash() const
-{
-  // Compute local hash
-  boost::hash<std::vector<double>> dhash;
-
-  std::vector<double> data(_x.data(), _x.data() + _x.size());
-  const std::size_t local_hash = dhash(data);
-  return local_hash;
-}
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 mesh::Geometry mesh::create_geometry(
@@ -79,9 +69,7 @@ mesh::Geometry mesh::create_geometry(
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
-  std::vector<std::int64_t> indices(cell_nodes.array().data(),
-                                    cell_nodes.array().data()
-                                        + cell_nodes.array().rows());
+  std::vector<std::int64_t> indices = cell_nodes.array();
   std::sort(indices.begin(), indices.end());
   indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 
