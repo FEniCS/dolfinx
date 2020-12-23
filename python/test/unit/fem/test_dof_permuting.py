@@ -181,8 +181,6 @@ def test_tetrahedron_dof_positions(space_type):
 def test_quadrilateral_dof_positions(space_type):
     """Checks that dofs on shared quadrilateral edges match up"""
 
-    pytest.skip()
-
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
     if MPI.COMM_WORLD.rank == 0:
         # Create a quadrilateral mesh
@@ -244,8 +242,6 @@ def test_quadrilateral_dof_positions(space_type):
 ])
 def test_hexahedron_dof_positions(space_type):
     """Checks that dofs on shared hexahedron edges match up"""
-
-    pytest.skip()
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "hexahedron", 1))
     if MPI.COMM_WORLD.rank == 0:
@@ -320,8 +316,6 @@ def test_hexahedron_dof_positions(space_type):
 @pytest.mark.parametrize('space_type', ["P", "N1curl", "RT", "BDM", "N2curl"])
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_triangle_evaluation(space_type, space_order):
-    if space_type == "BDM":
-        pytest.skip()
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 1))
     temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.], [0., 1.]])
 
@@ -368,7 +362,8 @@ def test_triangle_evaluation(space_type, space_order):
 @pytest.mark.parametrize('space_type', ["Q", "RTCE", "RTCF"])
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_quadrilateral_evaluation(space_type, space_order):
-    pytest.skip()
+    if space_type != "Q":
+        pytest.skip()  # TODO: remove this skip once RTCE/F are implemented
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
     temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.],
@@ -423,8 +418,6 @@ def test_quadrilateral_evaluation(space_type, space_order):
 @pytest.mark.parametrize('space_type', ["P", "N1curl", "RT", "BDM", "N2curl"])
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_tetrahedron_evaluation(space_type, space_order):
-    if space_type == "BDM" or space_type == "N2curl":
-        pytest.skip()
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "tetrahedron", 1))
     temp_points = np.array([[-1., 0., -1.], [0., 0., 0.], [1., 0., 1.],
                             [0., 1., 0.], [0., 0., 1.]])
@@ -473,7 +466,8 @@ def test_tetrahedron_evaluation(space_type, space_order):
 @pytest.mark.parametrize('space_type', ["Q", "NCE", "NCF"])
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_hexahedron_evaluation(space_type, space_order):
-    pytest.skip()
+    if space_type != "Q":
+        pytest.skip()  # TODO: remove this skip once NCE/F are implemented
 
     if space_type == "NCF" and space_order >= 3:
         print("Eval in this space not supported yet")
@@ -539,8 +533,6 @@ def test_hexahedron_evaluation(space_type, space_order):
 @pytest.mark.parametrize('space_type', ["P", "N1curl", "RT", "BDM", "N2curl"])
 @pytest.mark.parametrize('space_order', range(1, 4))
 def xtest_triangle_integral(space_type, space_order):
-    if space_type == "BDM":
-        pytest.skip()
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 1))
     temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.], [0., 1.]])
 
@@ -661,8 +653,6 @@ def xtest_quadrilateral_integral(space_type, space_order):
 @pytest.mark.parametrize('space_type', ["P", "N1curl", "RT", "BDM", "N2curl"])
 @pytest.mark.parametrize('space_order', range(1, 4))
 def xtest_tetrahedron_integral(space_type, space_order):
-    if space_type == "BDM":
-        pytest.skip()
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "tetrahedron", 1))
     temp_points = np.array([[-1., 0., -1.], [0., 0., 0.], [1., 0., 1.],
                             [0., 1., 0.], [0., 0., 1.]])
