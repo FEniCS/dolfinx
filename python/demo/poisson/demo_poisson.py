@@ -16,7 +16,8 @@
 #
 # The solution for :math:`u` in this demo will look as follows:
 #
-# .. image:: poisson_u.png :scale: 75 %
+# .. image:: poisson_u.png
+#    :scale: 75 %
 #
 #
 # Equation and problem definition
