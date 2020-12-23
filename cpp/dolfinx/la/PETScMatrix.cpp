@@ -194,8 +194,8 @@ PETScMatrix::add_fn(Mat A)
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
-    std::copy(rows, rows + m, cache.begin());
-    std::copy(cols, cols + n, cache.begin() + m);
+    std::copy_n(rows, m, cache.begin());
+    std::copy_n(cols, n, cache.begin() + m);
     const PetscInt *_rows = cache.data(), *_cols = _rows + m;
     ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, ADD_VALUES);
 #else
@@ -220,8 +220,8 @@ PETScMatrix::add_block_fn(Mat A)
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
-    std::copy(rows, rows + m, cache.begin());
-    std::copy(cols, cols + n, cache.begin() + m);
+    std::copy_n(rows, m, cache.begin());
+    std::copy_n(cols, n, cache.begin() + m);
     const PetscInt *_rows = cache.data(), *_cols = _rows + m;
     ierr = MatSetValuesBlockedLocal(A, m, _rows, n, _cols, vals, ADD_VALUES);
 #else
