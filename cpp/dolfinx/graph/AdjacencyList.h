@@ -58,7 +58,11 @@ public:
   /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data
   /// array for node i
-  template <typename U, typename V>
+  template <
+      typename U, typename V,
+      typename = std::enable_if_t<
+          std::is_same<std::vector<T>, std::decay_t<U>>::value
+          && std::is_same<std::vector<std::int32_t>, std::decay_t<V>>::value>>
   AdjacencyList(U&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {

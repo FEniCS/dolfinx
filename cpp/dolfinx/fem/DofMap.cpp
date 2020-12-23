@@ -14,6 +14,8 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
+#include <memory>
+#include <utility>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -182,17 +184,6 @@ fem::transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
 
   return graph::AdjacencyList<std::int32_t>(std::move(data),
                                             std::move(index_offsets));
-}
-//-----------------------------------------------------------------------------
-DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
-               std::shared_ptr<const common::IndexMap> index_map,
-               int index_map_bs,
-               const graph::AdjacencyList<std::int32_t>& dofmap, int bs)
-    : element_dof_layout(element_dof_layout), index_map(index_map),
-      _index_map_bs(index_map_bs), _dofmap(dofmap), _bs(bs)
-{
-  // Dofmap data is copied as the types for dofmap and _dofmap may
-  // differ, typically 32- vs 64-bit integers
 }
 //-----------------------------------------------------------------------------
 int DofMap::bs() const noexcept { return _bs; }

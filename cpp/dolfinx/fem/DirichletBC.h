@@ -140,36 +140,38 @@ public:
   ///
   /// @param[in] g The boundary condition value. The boundary condition
   /// can be applied to a a function on the same space as g.
-  /// @param[in] dofs Degree-of-freedom block indices in the space of
-  /// the boundary value function applied to V_dofs[i]. The dof block
-  /// indices must be sorted.
+  /// @param[in] dofs Degree-of-freedom block indices (@p
+  /// std::vector<std::int32_t>) in the space of the boundary value
+  /// function applied to V_dofs[i]. The dof block indices must be
+  /// sorted.
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
   /// block size 3
-  DirichletBC(const std::shared_ptr<const fem::Function<T>>& g,
-              const std::vector<std::int32_t>& dofs)
-      : _function_space(g->function_space()), _g(g), _dofs0(dofs),
-        _dofs1_g(dofs)
+  template <typename U>
+  DirichletBC(const std::shared_ptr<const fem::Function<T>>& g, U&& dofs)
+      : _function_space(g->function_space()), _g(g),
+        _dofs0(std::forward<U>(dofs))
   {
+    const int owned_size0 = _function_space->dofmap()->index_map->size_local();
+    auto it = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
+    const int map0_bs = _function_space->dofmap()->index_map_bs();
+    _owned_indices0 = map0_bs * std::distance(_dofs0.begin(), it);
+
     const int bs = _function_space->dofmap()->bs();
     if (bs > 1)
     {
       // Unroll for the block size
-      _dofs0.resize(bs * dofs.size());
-      for (std::size_t i = 0; i < dofs.size(); ++i)
+      const std::vector<std::int32_t> dof_tmp = _dofs0;
+      _dofs0.resize(bs * dof_tmp.size());
+      for (std::size_t i = 0; i < dof_tmp.size(); ++i)
       {
         for (int k = 0; k < bs; ++k)
-          _dofs0[bs * i + k] = bs * dofs[i] + k;
+          _dofs0[bs * i + k] = bs * dof_tmp[i] + k;
       }
-      _dofs1_g = _dofs0;
     }
 
     // TODO: allows single dofs array (let one point to the other)
-    const int owned_size0 = _function_space->dofmap()->index_map->size_local();
-    const int map0_bs = _function_space->dofmap()->index_map_bs();
-    auto it
-        = std::lower_bound(_dofs0.begin(), _dofs0.end(), map0_bs * owned_size0);
-    _owned_indices0 = std::distance(_dofs0.begin(), it);
+    _dofs1_g = _dofs0;
   }
 
   /// Create a representation of a Dirichlet boundary condition where
@@ -200,7 +202,7 @@ public:
 
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
-    const int owned_size0 = (map0_bs * map0_size);
+    const int owned_size0 = map0_bs * map0_size;
     auto it0 = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
     _owned_indices0 = std::distance(_dofs0.begin(), it0);
   }
@@ -331,7 +333,7 @@ private:
   // The function
   std::shared_ptr<const fem::Function<T>> _g;
 
-  // Dof indices (_dofs0) in _function_space and ( _dofs1_g) in the
+  // Dof indices (_dofs0) in _function_space and (_dofs1_g) in the
   // space of _g
   std::vector<std::int32_t> _dofs0, _dofs1_g;
 
