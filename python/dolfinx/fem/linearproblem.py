@@ -81,7 +81,7 @@ class LinearProblem():
         opts.prefixPop()
         self._solver.setFromOptions()
 
-    def solve(self):
+    def solve(self) -> fem.Function:
         """
         Solves the linear variational problem using PETSc.
 
