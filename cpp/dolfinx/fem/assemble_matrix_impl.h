@@ -252,7 +252,7 @@ void assemble_cells(
             // Zero column bs1 * j + k
             const int col = bs1 * j + k;
             for (int row = 0; row < ndim0; ++row)
-              Ae[row * ndim0 + col] = 0.0;
+              Ae[row * ndim1 + col] = 0.0;
           }
         }
       }
@@ -356,7 +356,7 @@ void assemble_exterior_facets(
             // Zero column bs1 * j + k
             const int col = bs1 * j + k;
             for (int row = 0; row < ndim0; ++row)
-              Ae[row * ndim0 + col] = 0.0;
+              Ae[row * ndim1 + col] = 0.0;
           }
         }
       }
