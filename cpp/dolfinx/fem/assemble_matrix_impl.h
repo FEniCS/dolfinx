@@ -196,25 +196,25 @@ void assemble_cells(
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = geometry.x();
 
-  // Data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  // Iterate over active cells
   const int num_dofs0 = dofmap0.links(0).size();
   const int num_dofs1 = dofmap1.links(0).size();
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae(
-      bs0 * num_dofs0, bs1 * num_dofs1);
-
-  // Iterate over active cells
+  const int ndim0 = bs0 * num_dofs0;
+  const int ndim1 = bs1 * num_dofs1;
+  std::vector<T> Ae(ndim0 * ndim1);
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    {
+      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Tabulate tensor
-    std::fill(Ae.data(), Ae.data() + Ae.size(), 0);
+    std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
@@ -223,24 +223,33 @@ void assemble_cells(
     auto dofs1 = dofmap1.links(c);
     if (!bc0.empty())
     {
-      for (Eigen::Index i = 0; i < num_dofs0; ++i)
+      for (int i = 0; i < num_dofs0; ++i)
       {
         for (int k = 0; k < bs0; ++k)
         {
           if (bc0[bs0 * dofs0[i] + k])
-            Ae.row(bs0 * i + k).setZero();
+          {
+            // Zero row bs0 * i + k
+            const int row = bs0 * i + k;
+            std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0.0);
+          }
         }
       }
     }
 
     if (!bc1.empty())
     {
-      for (Eigen::Index j = 0; j < num_dofs1; ++j)
+      for (int j = 0; j < num_dofs1; ++j)
       {
         for (int k = 0; k < bs1; ++k)
         {
           if (bc1[bs1 * dofs1[j] + k])
-            Ae.col(bs1 * j + k).setZero();
+          {
+            // Zero column bs1 * j + k
+            const int col = bs1 * j + k;
+            for (int row = 0; row < ndim0; ++row)
+              Ae[row * ndim1 + col] = 0.0;
+          }
         }
       }
     }
@@ -277,12 +286,12 @@ void assemble_exterior_facets(
       = mesh.geometry().x();
 
   // Data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   const int num_dofs0 = dofmap0.links(0).size();
   const int num_dofs1 = dofmap1.links(0).size();
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae(
-      bs0 * num_dofs0, bs1 * num_dofs1);
+  const int ndim0 = bs0 * num_dofs0;
+  const int ndim1 = bs1 * num_dofs1;
+  std::vector<T> Ae(ndim0 * ndim1);
 
   // Iterate over all facets
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -296,49 +305,60 @@ void assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cells[0]);
-    const auto* it = std::find(facets.begin(), facets.end(), f);
+    auto it = std::find(facets.begin(), facets.end(), f);
     assert(it != facets.end());
     const int local_facet = std::distance(facets.begin(), it);
 
-    // Get cell vertex coordinates
+    // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cells[0]);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Tabulate tensor
-    std::fill(Ae.data(), Ae.data() + Ae.size(), 0);
+    std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
            coordinate_dofs.data(), &local_facet, &perms(local_facet, cells[0]),
            cell_info[cells[0]]);
 
     // Zero rows/columns for essential bcs
-    auto dmap0 = dofmap0.links(cells[0]);
-    auto dmap1 = dofmap1.links(cells[0]);
+    auto dofs0 = dofmap0.links(cells[0]);
+    auto dofs1 = dofmap1.links(cells[0]);
     if (!bc0.empty())
     {
-      for (Eigen::Index i = 0; i < num_dofs0; ++i)
+      for (int i = 0; i < num_dofs0; ++i)
       {
         for (int k = 0; k < bs0; ++k)
         {
-          if (bc0[bs0 * dmap0[i] + k])
-            Ae.row(bs0 * i + k).setZero();
+          if (bc0[bs0 * dofs0[i] + k])
+          {
+            // Zero row bs0 * i + k
+            const int row = bs0 * i + k;
+            std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0.0);
+          }
         }
       }
     }
     if (!bc1.empty())
     {
-      for (Eigen::Index j = 0; j < num_dofs1; ++j)
+      for (int j = 0; j < num_dofs1; ++j)
       {
         for (int k = 0; k < bs1; ++k)
         {
-          if (bc1[bs1 * dmap1[j] + k])
-            Ae.col(bs1 * j + k).setZero();
+          if (bc1[bs1 * dofs1[j] + k])
+          {
+            // Zero column bs1 * j + k
+            const int col = bs1 * j + k;
+            for (int row = 0; row < ndim0; ++row)
+              Ae[row * ndim1 + col] = 0.0;
+          }
         }
       }
     }
 
-    mat_set_values(dmap0.size(), dmap0.data(), dmap1.size(), dmap1.data(),
+    mat_set_values(dofs0.size(), dofs0.data(), dofs1.size(), dofs1.data(),
                    Ae.data());
   }
 }
