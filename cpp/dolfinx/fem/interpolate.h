@@ -20,14 +20,15 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
-/// Interpolate a Function (on possibly non-matching meshes)
-/// @param[in,out] u The function to interpolate into
+/// Interpolate a finite element Function (on possibly non-matching
+/// meshes) in another finite element space
+/// @param[out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
 template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v);
 
-/// Interpolate an expression
-/// @param[in,out] u The function to interpolate into
+/// Interpolate an expression in a finite element space
+/// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
 template <typename T>
 void interpolate(
@@ -37,13 +38,16 @@ void interpolate(
             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                 Eigen::RowMajor>>&)>& f);
 
-/// Interpolate an expression f(x). This interface uses an expression
-/// function f that has an in/out argument for the expression values. It
-/// is primarily to support C code implementations of the expression,
-/// e.g. using Numba. Generally the interface where the expression
-/// function is a pure function, i.e. the expression values
-/// are the return argument, should be preferred.
-/// @param[in,out] u The function to interpolate into
+/// Interpolate an expression f(x)
+///
+/// @note  This interface uses an expression function f that has an
+/// in/out argument for the expression values. It is primarily to
+/// support C code implementations of the expression, e.g. using Numba.
+/// Generally the interface where the expression function is a pure
+/// function, i.e. the expression values are the return argument, should
+/// be preferred.
+///
+/// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
 template <typename T>
 void interpolate_c(
