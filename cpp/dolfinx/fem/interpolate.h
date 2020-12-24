@@ -57,19 +57,6 @@ void interpolate_c(
 namespace detail
 {
 
-// Interpolate data. Fills coefficients using 'values', which are the
-// values of an expression at each dof.
-template <typename T>
-void interpolate_values(
-    Function<T>& u,
-    const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& values)
-{
-  Eigen::Matrix<T, Eigen::Dynamic, 1>& coefficients = u.x()->array();
-  coefficients = Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1>>(
-      values.data(), coefficients.rows());
-}
-
 template <typename T>
 void interpolate_from_any(Function<T>& u, const Function<T>& v)
 {
@@ -310,7 +297,9 @@ void interpolate_c(
       x.rows(), value_size);
   f(values, x);
 
-  detail::interpolate_values<T>(u, values);
+  // FIXME: This looks strange. Check and add comments
+  u.x()->array() = Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1>>(
+      values.data(), u.x()->array().rows());
 }
 //----------------------------------------------------------------------------
 
