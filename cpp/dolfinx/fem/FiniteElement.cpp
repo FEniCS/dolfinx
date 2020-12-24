@@ -27,6 +27,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _transform_values(ufc_element.transform_values),
       _permute_dof_coordinates(ufc_element.permute_dof_coordinates),
       _bs(ufc_element.block_size),
+      _interpolation_is_ident(ufc_element.interpolation_is_identity),
       _interpolate_into_cell(ufc_element.interpolate_into_cell),
       _interpolationX(ufc_element.num_interpolation_points,
                       ufc_element.topological_dimension),
@@ -229,18 +230,6 @@ void FiniteElement::transform_reference_basis_derivatives(
   }
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-FiniteElement::dof_reference_coordinates() const
-{
-  if (_refX.size() == 0)
-  {
-    throw std::runtime_error(
-        "Dof reference coordinates do not exist for this element.");
-  }
-
-  return _refX;
-}
-//-----------------------------------------------------------------------------
 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 FiniteElement::dof_coordinates(int cell_perm) const
 {
@@ -337,6 +326,11 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   const std::vector<int> sub_component(component.begin() + 1, component.end());
 
   return extract_sub_element(*sub_element, sub_component);
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::interpolation_ident() const noexcept
+{
+  return _interpolation_is_ident;
 }
 //-----------------------------------------------------------------------------
 const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&

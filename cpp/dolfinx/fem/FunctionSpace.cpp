@@ -63,8 +63,13 @@ internal_tabulate_dof_coordinates(
   //            : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
 
   // Get the dof coordinates on the reference element
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
-      = element->dof_reference_coordinates();
+  if (!element->interpolation_ident())
+  {
+    throw std::runtime_error("Cannot evaluate dof coordinates - this element "
+                             "does not have pointwise evaluation.");
+  }
+  const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
+      = element->interpolation_points();
 
   // Get coordinate map
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();

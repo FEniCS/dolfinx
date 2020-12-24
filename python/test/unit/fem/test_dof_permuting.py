@@ -213,7 +213,7 @@ def test_quadrilateral_dof_positions(space_type):
 
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
-    X = V.element.dof_reference_coordinates()
+    X = V.element.interpolation_points
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
@@ -278,7 +278,7 @@ def test_hexahedron_dof_positions(space_type):
 
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
-    X = V.element.dof_reference_coordinates()
+    X = V.element.interpolation_points
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
