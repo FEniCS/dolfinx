@@ -41,12 +41,12 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(
       _space_dim, _tdim);
   if (ufc_element.tabulate_reference_dof_coordinates(X.data()) != -1)
-    _refX = X;
+  {
+    // FIXME: this should really be fixed in ffcx
+    _refX = X.topRows(_space_dim / _bs);
+  }
   else
     _refX.resize(0, 0);
-
-  // FIXME: this should really be fixed in ffcx
-  _refX = _refX.topRows(_space_dim / _bs).eval();
 
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
