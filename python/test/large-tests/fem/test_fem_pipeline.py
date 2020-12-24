@@ -260,6 +260,9 @@ def run_dg_test(mesh, V, degree):
 @pytest.mark.parametrize("family", ["Lagrange"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_P_simplex(family, degree, cell_type, datadir):
+    if cell_type == CellType.tetrahedron and degree == 4:
+        pytest.skip()  # Skip slowest test on tetrahedron
+
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)
@@ -269,6 +272,9 @@ def test_P_simplex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["Lagrange"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_vector_P_simplex(family, degree, cell_type, datadir):
+    if cell_type == CellType.tetrahedron and degree == 4:
+        pytest.skip()  # Skip slowest test on tetrahedron
+
     mesh = get_mesh(cell_type, datadir)
     V = VectorFunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
@@ -287,6 +293,9 @@ def test_dP_simplex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["RT", "N1curl"])
 @pytest.mark.parametrize("degree", [1, 2, 3, 4])
 def test_RT_N1curl_simplex(family, degree, cell_type, datadir):
+    if cell_type == CellType.tetrahedron and degree == 4:
+        pytest.skip()  # Skip slowest test on tetrahedron
+
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
