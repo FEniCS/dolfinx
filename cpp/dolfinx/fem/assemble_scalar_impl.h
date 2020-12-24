@@ -166,8 +166,7 @@ T assemble_cells(
       = geometry.x();
 
   // Create data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
 
   // Iterate over all cells
   T value(0);
@@ -175,9 +174,11 @@ T assemble_cells(
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     auto coeff_cell = coeffs.row(c);
     fn(&value, coeff_cell.data(), constant_values.data(),
@@ -210,8 +211,7 @@ T assemble_exterior_facets(
       = mesh.geometry().x();
 
   // Creat data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -232,10 +232,13 @@ T assemble_exterior_facets(
     assert(it != facets.end());
     const int local_facet = std::distance(facets.data(), it);
 
+    // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     auto coeff_cell = coeffs.row(cell);
     fn(&value, coeff_cell.data(), constant_values.data(),
@@ -319,12 +322,10 @@ T assemble_interior_facets(
     {
       // Loop over entries for coefficient i
       const int num_entries = offsets[i + 1] - offsets[i];
-      std::copy(coeff_cell0.data() + offsets[i],
-                coeff_cell0.data() + offsets[i] + num_entries,
-                std::next(coeff_array.begin(), 2 * offsets[i]));
-      std::copy(coeff_cell1.data() + offsets[i],
-                coeff_cell1.data() + offsets[i] + num_entries,
-                std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
+      std::copy_n(coeff_cell0.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), 2 * offsets[i]));
+      std::copy_n(coeff_cell1.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
     }
 
     const std::array perm{perms(local_facet[0], cells[0]),

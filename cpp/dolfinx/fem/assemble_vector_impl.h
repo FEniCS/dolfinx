@@ -152,8 +152,7 @@ void _lift_bc_cells(
       = geometry.x();
 
   // Data structures used in bc application
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
   Eigen::Matrix<T, Eigen::Dynamic, 1> be;
 
@@ -180,11 +179,13 @@ void _lift_bc_cells(
     if (!has_bc)
       continue;
 
-    // Get cell vertex coordinates
+    // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Size data structure for assembly
     auto dmap0 = dofmap0.links(c);
@@ -248,8 +249,7 @@ void _lift_bc_exterior_facets(
       = mesh.geometry().x();
 
   // Data structures used in bc application
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
   Eigen::Matrix<T, Eigen::Dynamic, 1> be;
 
@@ -294,11 +294,13 @@ void _lift_bc_exterior_facets(
     if (!has_bc)
       continue;
 
-    // Get cell vertex coordinates
+    // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Size data structure for assembly
     auto dmap0 = dofmap0.links(cell);
@@ -623,7 +625,6 @@ void assemble_cells(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
@@ -632,8 +633,7 @@ void assemble_cells(
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   const int num_dofs = dofmap.links(0).size();
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   std::vector<T> be(bs * num_dofs);
 
   // Iterate over active cells
@@ -641,9 +641,11 @@ void assemble_cells(
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Tabulate vector for cell
     std::fill(be.begin(), be.end(), 0);
@@ -652,7 +654,7 @@ void assemble_cells(
 
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);
-    for (Eigen::Index i = 0; i < num_dofs; ++i)
+    for (int i = 0; i < num_dofs; ++i)
       for (int k = 0; k < bs; ++k)
         b[bs * dofs[i] + k] += be[bs * i + k];
   }
@@ -685,8 +687,7 @@ void assemble_exterior_facets(
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   const int num_dofs = dofmap.links(0).size();
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   std::vector<T> be(bs * num_dofs);
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -707,9 +708,11 @@ void assemble_exterior_facets(
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
@@ -719,7 +722,7 @@ void assemble_exterior_facets(
 
     // Add element vector to global vector
     auto dofs = dofmap.links(cell);
-    for (Eigen::Index i = 0; i < num_dofs; ++i)
+    for (int i = 0; i < num_dofs; ++i)
       for (int k = 0; k < bs; ++k)
         b[bs * dofs[i] + k] += be[bs * i + k];
   }
