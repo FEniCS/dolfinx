@@ -21,21 +21,19 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _space_dim(ufc_element.space_dimension),
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
-      _hash(std::hash<std::string>{}(_signature)),
+      _refX(_space_dim, _tdim), _hash(std::hash<std::string>{}(_signature)),
       _transform_reference_basis_derivatives(
           ufc_element.transform_reference_basis_derivatives),
       _transform_values(ufc_element.transform_values),
       _permute_dof_coordinates(ufc_element.permute_dof_coordinates),
-      _block_size(ufc_element.block_size),
+      _bs(ufc_element.block_size),
       _interpolate_into_cell(ufc_element.interpolate_into_cell),
-      _interpolation_points(ufc_element.num_interpolation_points,
-                            ufc_element.topological_dimension),
+      _interpolationX(ufc_element.num_interpolation_points,
+                      ufc_element.topological_dimension),
       _needs_permutation_data(ufc_element.needs_permutation_data)
 {
-  int n = 0;
-  for (int p = 0; p < ufc_element.num_interpolation_points; ++p)
-    for (int d = 0; d < ufc_element.topological_dimension; ++d)
-      _interpolation_points(p, d) = ufc_element.interpolation_points[n++];
+  std::copy_n(ufc_element.interpolation_points, _interpolationX.size(),
+              _interpolationX.data());
 
   // Store dof coordinates on reference element if they exist
   assert(ufc_element.tabulate_reference_dof_coordinates);
@@ -44,9 +42,11 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _space_dim, _tdim);
   if (ufc_element.tabulate_reference_dof_coordinates(X.data()) != -1)
     _refX = X;
+  else
+    _refX.resize(0, 0);
 
-  // FIXME: this should really be fixed in ffcx.
-  _refX.conservativeResize(_space_dim / _block_size, _tdim);
+  // FIXME: this should really be fixed in ffcx
+  _refX = _refX.topRows(_space_dim / _bs).eval();
 
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
@@ -110,31 +110,38 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   }
 }
 //-----------------------------------------------------------------------------
-std::string FiniteElement::signature() const { return _signature; }
+std::string FiniteElement::signature() const noexcept { return _signature; }
 //-----------------------------------------------------------------------------
-mesh::CellType FiniteElement::cell_shape() const { return _cell_shape; }
+mesh::CellType FiniteElement::cell_shape() const noexcept
+{
+  return _cell_shape;
+}
 //-----------------------------------------------------------------------------
-int FiniteElement::space_dimension() const { return _space_dim; }
+int FiniteElement::space_dimension() const noexcept { return _space_dim; }
 //-----------------------------------------------------------------------------
-int FiniteElement::value_size() const { return _value_size; }
+int FiniteElement::value_size() const noexcept { return _value_size; }
 //-----------------------------------------------------------------------------
-int FiniteElement::reference_value_size() const
+int FiniteElement::reference_value_size() const noexcept
 {
   return _reference_value_size;
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::value_rank() const { return _value_dimension.size(); }
+int FiniteElement::value_rank() const noexcept
+{
+  return _value_dimension.size();
+}
 //-----------------------------------------------------------------------------
-int FiniteElement::block_size() const { return _block_size; }
+int FiniteElement::block_size() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
 int FiniteElement::value_dimension(int i) const
 {
   if (i >= (int)_value_dimension.size())
     return 1;
-  return _value_dimension.at(i);
+  else
+    return _value_dimension.at(i);
 }
 //-----------------------------------------------------------------------------
-std::string FiniteElement::family() const { return _family; }
+std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis(
     Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
@@ -143,7 +150,7 @@ void FiniteElement::evaluate_reference_basis(
 {
   Eigen::ArrayXXd basix_data = basix::tabulate(_basix_element_handle, 0, X)[0];
 
-  const int scalar_reference_value_size = _reference_value_size / _block_size;
+  const int scalar_reference_value_size = _reference_value_size / _bs;
 
   assert(basix_data.cols() % scalar_reference_value_size == 0);
   const int scalar_dofs = basix_data.cols() / scalar_reference_value_size;
@@ -273,9 +280,12 @@ void FiniteElement::transform_values(
 }
 
 //-----------------------------------------------------------------------------
-int FiniteElement::num_sub_elements() const { return _sub_elements.size(); }
+int FiniteElement::num_sub_elements() const noexcept
+{
+  return _sub_elements.size();
+}
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::hash() const { return _hash; }
+std::size_t FiniteElement::hash() const noexcept { return _hash; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FiniteElement>
 FiniteElement::extract_sub_element(const std::vector<int>& component) const
@@ -329,27 +339,26 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   return extract_sub_element(*sub_element, sub_component);
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXXd FiniteElement::interpolation_points() const
+const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+FiniteElement::interpolation_points() const noexcept
 {
-  return _interpolation_points;
+  return _interpolationX;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-FiniteElement::interpolate(
+void FiniteElement::interpolate(
     const Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& values,
-    const std::uint32_t cell_permutation) const
+    const std::uint32_t cell_permutation,
+    Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1>& dofs) const
 {
-  Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1> output_values(_space_dim
-                                                              / _block_size);
-  int ret = _interpolate_into_cell(output_values.data(), values.data(),
-                                   cell_permutation);
+  assert(dofs.size() == _space_dim / _bs);
+  int ret
+      = _interpolate_into_cell(dofs.data(), values.data(), cell_permutation);
   if (ret == -1)
     throw std::runtime_error("Interpolation into this space not supported.");
-  return output_values;
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::needs_permutation_data() const
+bool FiniteElement::needs_permutation_data() const noexcept
 {
   return _needs_permutation_data;
 }

@@ -168,6 +168,9 @@ void interpolate(
             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                 Eigen::RowMajor>>&)>& f)
 {
+  using EigenMatrixRowXd
+      = Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
   const auto element = u.function_space()->element();
   assert(element);
   const int element_bs = element->block_size();
@@ -189,9 +192,7 @@ void interpolate(
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const int num_dofs_g = x_dofmap.num_links(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-      x_g
-      = mesh->geometry().x();
+  const EigenMatrixRowXd& x_g = mesh->geometry().x();
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
   // Get the interpolation points on the reference cells
@@ -199,11 +200,9 @@ void interpolate(
 
   // Push reference coordinates forward to the physical coordinates for
   // each cell
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_cell(
-      X.rows(), gdim);
+  EigenMatrixRowXd x_cell(X.rows(), gdim);
   std::vector<double> x;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  EigenMatrixRowXd coordinate_dofs(num_dofs_g, gdim);
   for (int c = 0; c < num_cells; ++c)
   {
     // Get geometry data for current cell
@@ -235,7 +234,6 @@ void interpolate(
   // points. Scalar case needs special handling as pybind11 will return
   // a column array when we need a row array.
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values;
-  // std::cout << "Value size: " << element->value_size() << std::endl;
   values = f(_x);
 
   // FIXME: This is hack for NumPy/pybind11/Eigen that returns 1D arrays a
@@ -262,22 +260,18 @@ void interpolate(
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
   Eigen::Matrix<T, Eigen::Dynamic, 1>& coeffs = u.x()->array();
-  Eigen::Array<T, Eigen::Dynamic, 1> _coeffs;
+  Eigen::Array<T, Eigen::Dynamic, 1> _coeffs(num_scalar_dofs);
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
   for (int c = 0; c < num_cells; ++c)
   {
-    // std::cout << "Cell: " << c << std::endl;
-    // Interpolate dofs for each block and copy on Function coefficient
-    // vector
     auto dofs = dofmap->cell_dofs(c);
     for (int k = 0; k < element_bs; ++k)
     {
-      // std::cout << "  Block: " << k << std::endl;
-      // Extract computed values for element block k
+      // Extract computed expression values for element block k
       _vals = values.block(k, c * X.rows(), value_size, X.rows());
 
       // Get element degrees of freedom for block
-      _coeffs = element->interpolate(_vals, cell_info[c]);
+      element->interpolate(_vals, cell_info[c], _coeffs);
       assert(_coeffs.size() == num_scalar_dofs);
 
       // Copy interpolation dofs into coefficient vector

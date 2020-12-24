@@ -44,41 +44,41 @@ public:
 
   /// String identifying the finite element
   /// @return Element signature
-  std::string signature() const;
+  std::string signature() const noexcept;
 
   /// Cell shape
   /// @return Element cell shape
-  mesh::CellType cell_shape() const;
+  mesh::CellType cell_shape() const noexcept;
 
   /// Dimension of the finite element function space
   /// @return Dimension of the finite element space
-  int space_dimension() const;
+  int space_dimension() const noexcept;
 
   /// Block size of the finite element function space. For VectorElements and
   /// TensorElements, this is the number of DOFs colocated at each DOF point.
   /// For other elements, this is always 1.
   /// @return Block size of the finite element space
-  int block_size() const;
+  int block_size() const noexcept;
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
   /// @return The value size
-  int value_size() const;
+  int value_size() const noexcept;
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
   /// for the reference element
   /// @return The value size for the reference element
-  int reference_value_size() const;
+  int reference_value_size() const noexcept;
 
   /// Rank of the value space
   /// @return The value rank
-  int value_rank() const;
+  int value_rank() const noexcept;
 
   /// Return the dimension of the value space for axis i
   int value_dimension(int i) const;
 
   /// The finite element family
   /// @return The string of the finite element family
-  std::string family() const;
+  std::string family() const noexcept;
 
   /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
@@ -117,6 +117,7 @@ public:
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
       const std::uint32_t permutation_info) const;
 
+  /// @todo Can this be removed in favour of interpolation_points?
   /// Tabulate the reference coordinates of all dofs on an element
   /// @return The coordinates of all dofs on the reference cell
   ///
@@ -124,7 +125,7 @@ public:
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
   dof_reference_coordinates() const;
 
-  /// TODO: doc
+  /// @todo Add documentation
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   dof_coordinates(int cell_perm) const;
 
@@ -139,18 +140,25 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           coordinate_dofs) const;
 
-  /// Return the number of sub elements (for a mixed element)
-  int num_sub_elements() const;
+  /// Get the number of sub elements (for a mixed element)
+  /// @return the Number of sub elements
+  int num_sub_elements() const noexcept;
 
   /// Return simple hash of the signature string
-  std::size_t hash() const;
+  std::size_t hash() const noexcept;
 
   /// Extract sub finite element for component
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
 
-  /// TODO: doc
-  Eigen::ArrayXXd interpolation_points() const;
+  /// Points on the reference cell at which an expression need to be
+  /// evaluated in order to interpolate the expression in the finite
+  /// element space. For Lagrange elements the points will just be the
+  /// nodal positions. For other elements the points will typically be
+  /// the quadrature points used to evaluate moment degrees of freedom.
+  /// @return Points on the reference cell. Shape is (num_points, tdim).
+  const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  interpolation_points() const noexcept;
 
   /// @todo Document shape/layout of @p values
   /// @todo Make the interpolating dofs in/out argument for efficiency
@@ -161,17 +169,23 @@ public:
   /// Given the evaluation of the function to be interpolated at points
   /// provided by @p FiniteElement::interpolation_points, it evaluates
   /// the degrees of freedom for the interpolant.
-  /// @param[in] values The values of the function
+  ///
+  /// @param[in] values The values of the function. It has shape
+  /// (value_size, num_points), where `num_points` is the number of
+  /// points given by FiniteElement::interpolation_points.
   /// @param[in] cell_permutation Permutation data for the cell
-  /// @return The degrees of the freedom of the interpolant
-  Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  interpolate(
-      const Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic,
-                         Eigen::RowMajor>& values,
-      const std::uint32_t cell_permutation) const;
+  /// @param[out] dofs The element degrees of freedom (interpolants) of
+  /// the expression. The call must allocate the space. Is has
+  void interpolate(const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>& values,
+                   const std::uint32_t cell_permutation,
+                   Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1>& dofs) const;
 
-  /// TODO: doc
-  bool needs_permutation_data() const;
+  /// @todo Expand on when permutation data might be required
+  ///
+  /// Check if cell permutation data is required for this element
+  /// @return True if cell permutation data is required
+  bool needs_permutation_data() const noexcept;
 
 private:
   std::string _signature, _family;
@@ -208,14 +222,19 @@ private:
 
   std::function<int(double*, const std::uint32_t)> _permute_dof_coordinates;
 
-  // Block size for VectorElements and TensorElements
-  // This gives the number of DOFs colocated at each point
-  int _block_size;
+  // Block size for VectorElements and TensorElements. This gives the
+  // number of DOFs colocated at each point.
+  int _bs;
 
+  // Function to compute element degrees of freedom from an expression
+  // evaluated at specfic points
   std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const uint32_t)>
       _interpolate_into_cell;
 
-  Eigen::ArrayXXd _interpolation_points;
+  // Points in the reference cell where functions must be evaluated for
+  // interpolation
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      _interpolationX;
 
   bool _needs_permutation_data;
 
