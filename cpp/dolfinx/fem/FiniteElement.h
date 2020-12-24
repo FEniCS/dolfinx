@@ -117,14 +117,6 @@ public:
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
       const std::uint32_t permutation_info) const;
 
-  /// @todo Can this be removed in favour of interpolation_points?
-  /// Tabulate the reference coordinates of all dofs on an element
-  /// @return The coordinates of all dofs on the reference cell
-  ///
-  /// @note Throws an exception if dofs cannot be associated with points
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-  dof_reference_coordinates() const;
-
   /// @todo Add documentation
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   dof_coordinates(int cell_perm) const;
@@ -150,6 +142,14 @@ public:
   /// Extract sub finite element for component
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
+
+  /// Check if interpolation into the finite element space is an
+  /// identity operation given the evaluation on an expression at
+  /// specific points, i.e. the degree-of-freedom are equal to point
+  /// evaluations. The function will return `true` for Lagrange
+  /// elements.
+  ///  @return True is interpolation is an identity operation
+  bool interpolation_ident() const noexcept;
 
   /// Points on the reference cell at which an expression need to be
   /// evaluated in order to interpolate the expression in the finite
@@ -225,6 +225,10 @@ private:
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.
   int _bs;
+
+  // True if interpolation is indetity, i.e. call to
+  // _interpolate_into_cell is not required
+  bool _interpolation_is_ident;
 
   // Function to compute element degrees of freedom from an expression
   // evaluated at specfic points

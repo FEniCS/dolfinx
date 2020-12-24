@@ -21,32 +21,21 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _space_dim(ufc_element.space_dimension),
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
-      _refX(_space_dim, _tdim), _hash(std::hash<std::string>{}(_signature)),
+      _hash(std::hash<std::string>{}(_signature)),
       _transform_reference_basis_derivatives(
           ufc_element.transform_reference_basis_derivatives),
       _transform_values(ufc_element.transform_values),
       _permute_dof_coordinates(ufc_element.permute_dof_coordinates),
       _bs(ufc_element.block_size),
+      _interpolation_is_ident(ufc_element.interpolation_is_identity),
       _interpolate_into_cell(ufc_element.interpolate_into_cell),
       _interpolationX(ufc_element.num_interpolation_points,
                       ufc_element.topological_dimension),
       _needs_permutation_data(ufc_element.needs_permutation_data)
 {
+  // Store interpolation points on the reference element
   std::copy_n(ufc_element.interpolation_points, _interpolationX.size(),
               _interpolationX.data());
-
-  // Store dof coordinates on reference element if they exist
-  assert(ufc_element.tabulate_reference_dof_coordinates);
-  _refX.resize(_space_dim, _tdim);
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(
-      _space_dim, _tdim);
-  if (ufc_element.tabulate_reference_dof_coordinates(X.data()) != -1)
-  {
-    // FIXME: this should really be fixed in ffcx
-    _refX = X.topRows(_space_dim / _bs);
-  }
-  else
-    _refX.resize(0, 0);
 
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
@@ -229,18 +218,6 @@ void FiniteElement::transform_reference_basis_derivatives(
   }
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-FiniteElement::dof_reference_coordinates() const
-{
-  if (_refX.size() == 0)
-  {
-    throw std::runtime_error(
-        "Dof reference coordinates do not exist for this element.");
-  }
-
-  return _refX;
-}
-//-----------------------------------------------------------------------------
 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 FiniteElement::dof_coordinates(int cell_perm) const
 {
@@ -337,6 +314,11 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   const std::vector<int> sub_component(component.begin() + 1, component.end());
 
   return extract_sub_element(*sub_element, sub_component);
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::interpolation_ident() const noexcept
+{
+  return _interpolation_is_ident;
 }
 //-----------------------------------------------------------------------------
 const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
