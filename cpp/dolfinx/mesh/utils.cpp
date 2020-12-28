@@ -896,7 +896,7 @@ graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> mesh::partition_cells_kahip(
     [[maybe_unused]] MPI_Comm comm, [[maybe_unused]] int n,
-    [[maybe_unused]] [[maybe_unused]] const mesh::CellType cell_type,
+    [[maybe_unused]] const mesh::CellType cell_type,
     [[maybe_unused]] const graph::AdjacencyList<std::int64_t>& cells,
     [[maybe_unused]] mesh::GhostMode ghost_mode)
 {
