@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <vector>
 
 // Interface to ParMETIS parallel partitioner
 namespace dolfinx::graph::parmetis

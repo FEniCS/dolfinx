@@ -17,6 +17,7 @@
 #include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
+#include <memory>
 #include <mpi.h>
 #include <vector>
 
@@ -37,8 +38,8 @@ std::int64_t local_to_global(std::int32_t local_index,
   }
   else
   {
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map.ghosts();
-    assert((local_index - local_size) < ghosts.size());
+    const std::vector<std::int64_t>& ghosts = map.ghosts();
+    assert((local_index - local_size) < (int)ghosts.size());
     return ghosts[local_index - local_size];
   }
 }
@@ -69,12 +70,12 @@ create_new_geometry(
   {
     auto vertices = c_to_v->links(c);
     auto dofs = x_dofmap.links(c);
-    for (int i = 0; i < vertices.rows(); ++i)
+    for (std::size_t i = 0; i < vertices.size(); ++i)
     {
       // FIXME: We are making an assumption here on the
       // ElementDofLayout. We should use an ElementDofLayout to map
       // between local vertex index and x dof index.
-      vertex_to_x[vertices[i]] = dofs(i);
+      vertex_to_x[vertices[i]] = dofs[i];
     }
   }
 
@@ -167,7 +168,7 @@ void refinement::update_logical_edgefunction(
 
   // Send all shared edges marked for update and receive from other
   // processes
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> data_to_recv
+  const std::vector<std::int64_t> data_to_recv
       = MPI::neighbor_all_to_all(neighbor_comm, send_offsets, data_to_send)
             .array();
 
@@ -255,18 +256,18 @@ refinement::create_new_vertices(
     send_offsets.push_back(send_values.size());
   }
 
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> received_values
+  const std::vector<std::int64_t> received_values
       = MPI::neighbor_all_to_all(neighbor_comm, send_offsets, send_values)
             .array();
 
   // Add received remote global vertex indices to map
   std::vector<std::int64_t> recv_global_edge;
   assert(received_values.size() % 2 == 0);
-  for (int i = 0; i < received_values.size() / 2; ++i)
+  for (std::size_t i = 0; i < received_values.size() / 2; ++i)
     recv_global_edge.push_back(received_values[i * 2]);
   std::vector<std::int32_t> recv_local_edge
       = mesh.topology().index_map(1)->global_to_local(recv_global_edge);
-  for (int i = 0; i < received_values.size() / 2; ++i)
+  for (std::size_t i = 0; i < received_values.size() / 2; ++i)
   {
     assert(recv_local_edge[i] != -1);
     auto it = local_edge_to_new_vertex.insert(
@@ -295,12 +296,11 @@ std::vector<std::int64_t> refinement::adjust_indices(
 
   std::vector global_indices = index_map->global_indices();
 
-  Eigen::Array<int, Eigen::Dynamic, 1> ghost_owners
-      = index_map->ghost_owner_rank();
+  const std::vector<int>& ghost_owners = index_map->ghost_owner_rank();
   int local_size = index_map->size_local();
   for (int i = 0; i < local_size; ++i)
     global_indices[i] += global_offsets[mpi_rank];
-  for (int i = 0; i < ghost_owners.size(); ++i)
+  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
     global_indices[local_size + i] += global_offsets[ghost_owners[i]];
 
   return global_indices;

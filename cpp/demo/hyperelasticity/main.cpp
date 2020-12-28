@@ -28,11 +28,10 @@ public:
     const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();
     std::int32_t size_local = bs * map->size_local();
 
-    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts
-        = map->ghosts().cast<PetscInt>();
+    std::vector<PetscInt> ghosts(map->ghosts().begin(), map->ghosts().end());
     std::int64_t size_global = bs * map->size_global();
     VecCreateGhostBlockWithArray(map->comm(), bs, size_local, size_global,
-                                 ghosts.rows(), ghosts.data(),
+                                 ghosts.size(), ghosts.data(),
                                  _b.array().data(), &_b_petsc);
   }
 
@@ -176,9 +175,9 @@ int main(int argc, char* argv[])
 
     auto bcs
         = std::vector({std::make_shared<const fem::DirichletBC<PetscScalar>>(
-                           u_clamp, bdofs_left),
+                           u_clamp, std::move(bdofs_left)),
                        std::make_shared<const fem::DirichletBC<PetscScalar>>(
-                           u_rotation, bdofs_right)});
+                           u_rotation, std::move(bdofs_right))});
 
     HyperElasticProblem problem(u, L, a, bcs);
     nls::NewtonSolver newton_solver(MPI_COMM_WORLD);

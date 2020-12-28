@@ -81,12 +81,12 @@ get_remote_bcs1(const common::IndexMap& map,
   // Build vector of local dof indicies that have been marked by another
   // process
   const std::array<std::int64_t, 2> range = map.local_range();
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map.ghosts();
+  const std::vector<std::int64_t>& ghosts = map.ghosts();
 
   // Build map from ghost to local position
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
   const std::int32_t local_size = range[1] - range[0];
-  for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
+  for (std::size_t i = 0; i < ghosts.size(); ++i)
     global_local_ghosts.emplace_back(ghosts[i], i + local_size);
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
@@ -209,13 +209,12 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
     // Build vector of local dof indicies that have been marked by
     // another process
     const std::array<std::int64_t, 2> range = maps[b].get().local_range();
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
-        = maps[b].get().ghosts();
+    const std::vector<std::int64_t>& ghosts = maps[b].get().ghosts();
 
     // Build map from ghost to local position
     std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
     const std::int32_t local_size = range[1] - range[0];
-    for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
+    for (std::size_t i = 0; i < ghosts.size(); ++i)
       global_local_ghosts.emplace_back(ghosts[i], i + local_size);
     std::map<std::int64_t, std::int32_t> global_to_local(
         global_local_ghosts.begin(), global_local_ghosts.end());
@@ -253,8 +252,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
-fem::locate_dofs_topological(
+std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote)
@@ -296,7 +294,7 @@ fem::locate_dofs_topological(
   assert(element_bs == dofmap1->element_dof_layout->block_size());
 
   // Build vector local dofs for each cell facet
-  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
+  std::vector<std::vector<int>> entity_dofs;
   for (int i = 0;
        i < mesh::cell_num_entities(mesh->topology().cell_type(), dim); ++i)
   {
@@ -321,15 +319,14 @@ fem::locate_dofs_topological(
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
-    const auto* it = std::find(
-        entities_d.data(), entities_d.data() + entities_d.rows(), entities[e]);
-    assert(it != (entities_d.data() + entities_d.rows()));
-    const int entity_local_index = std::distance(entities_d.data(), it);
+    auto it = std::find(entities_d.begin(), entities_d.end(), entities[e]);
+    assert(it != entities_d.end());
+    const int entity_local_index = std::distance(entities_d.begin(), it);
 
     // Get cell dofmap
-    auto cell_dofs0 = dofmap0->cell_dofs(cell);
-    auto cell_dofs1 = dofmap1->cell_dofs(cell);
-    assert(bs0 * cell_dofs0.rows() == bs1 * cell_dofs1.rows());
+    tcb::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
+    tcb::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
+    assert(bs0 * cell_dofs0.size() == bs1 * cell_dofs1.size());
 
     // Loop over facet dofs and 'unpack' blocked dofs
     for (int i = 0; i < num_entity_dofs; ++i)
@@ -370,19 +367,19 @@ fem::locate_dofs_topological(
     bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
   }
 
-  // Copy to Eigen arrays
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs0(bc_dofs.size());
-  for (Eigen::Index i = 0; i < dofs0.rows(); ++i)
-    dofs0(i) = bc_dofs[i][0];
+  // Copy to separate vector
+  std::array dofs = {std::vector<std::int32_t>(bc_dofs.size()),
+                     std::vector<std::int32_t>(bc_dofs.size())};
+  for (std::size_t i = 0; i < dofs[0].size(); ++i)
+  {
+    dofs[0][i] = bc_dofs[i][0];
+    dofs[1][i] = bc_dofs[i][1];
+  }
 
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs1(bc_dofs.size());
-  for (Eigen::Index i = 0; i < dofs1.rows(); ++i)
-    dofs1(i) = bc_dofs[i][1];
-
-  return {std::move(dofs0), std::move(dofs1)};
+  return dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+std::vector<std::int32_t>
 fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
                              const Eigen::Ref<const Eigen::ArrayXi>& entities,
                              bool remote)
@@ -403,7 +400,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
   // entity_dim
   const int num_cell_entities
       = mesh::cell_num_entities(mesh->topology().cell_type(), dim);
-  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
+  std::vector<std::vector<int>> entity_dofs;
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
@@ -426,9 +423,8 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
-    const auto* it = std::find(
-        entities_d.data(), entities_d.data() + entities_d.rows(), entities[i]);
-    assert(it != (entities_d.data() + entities_d.rows()));
+    auto it = std::find(entities_d.begin(), entities_d.end(), entities[i]);
+    assert(it != entities_d.end());
     const int entity_local_index = std::distance(entities_d.data(), it);
 
     // Get cell dofmap
@@ -460,12 +456,10 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
   }
 
-  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
-                                                                   dofs.size());
+  return dofs;
 }
 //-----------------------------------------------------------------------------
-std::array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 2>
-fem::locate_dofs_geometrical(
+std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -521,7 +515,7 @@ fem::locate_dofs_geometrical(
     auto cell_dofs1 = dofmap1->cell_dofs(c);
 
     // Loop over cell dofs and add to bc_dofs if marked.
-    for (Eigen::Index i = 0; i < cell_dofs1.rows(); ++i)
+    for (std::size_t i = 0; i < cell_dofs1.size(); ++i)
     {
       if (marked_dofs[cell_dofs1[i]])
       {
@@ -546,19 +540,19 @@ fem::locate_dofs_geometrical(
   std::sort(bc_dofs.begin(), bc_dofs.end());
   bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
 
-  // Copy to Eigen arrays
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs0(bc_dofs.size());
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs1(bc_dofs.size());
+  // Copy to separate array
+  std::array dofs = {std::vector<std::int32_t>(bc_dofs.size()),
+                     std::vector<std::int32_t>(bc_dofs.size())};
   for (std::size_t i = 0; i < bc_dofs.size(); ++i)
   {
-    dofs0(i) = bc_dofs[i][0];
-    dofs1(i) = bc_dofs[i][1];
+    dofs[0][i] = bc_dofs[i][0];
+    dofs[1][i] = bc_dofs[i][1];
   }
 
-  return {std::move(dofs0), std::move(dofs1)};
+  return dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
+std::vector<std::int32_t> fem::locate_dofs_geometrical(
     const fem::FunctionSpace& V,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -584,7 +578,6 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
       dofs.push_back(i);
   }
 
-  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
-                                                                   dofs.size());
+  return dofs;
 }
 //-----------------------------------------------------------------------------
