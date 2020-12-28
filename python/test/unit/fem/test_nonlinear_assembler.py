@@ -611,7 +611,8 @@ def test_assembly_solve_taylor_hood(mesh):
     snes.setFunction(problem.F_mono, Fvec2)
     snes.setJacobian(problem.J_mono, J=Jmat2, P=Pmat2)
 
-    U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
+    U.sub(0).interpolate(initial_guess_u)
+    U.sub(1).interpolate(initial_guess_p)
 
     x2 = dolfinx.fem.create_vector(F)
     x2.array = U.vector.array_r

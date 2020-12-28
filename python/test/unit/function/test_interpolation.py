@@ -142,36 +142,14 @@ def test_vector_interpolation(cell_type, order):
 
 
 @skip_in_parallel
-@parametrize_cell_types
-@pytest.mark.parametrize('order', [1, 2])
-def xtest_mixed_interpolation(cell_type, order):
+def test_mixed_interpolation():
     """Test that interpolation is correct in a MixedElement."""
-    mesh = one_cell_mesh(cell_type)
-    tdim = mesh.topology.dim
-
-    A = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), order)
-    B = ufl.VectorElement("Lagrange", mesh.ufl_cell(), order)
-
-    V = FunctionSpace(mesh, ufl.MixedElement([A, B]))
-    v = Function(V)
-
-    if tdim == 1:
-        def f(x):
-            return (x[0] ** order, 2 * x[0])
-    elif tdim == 2:
-        def f(x):
-            return (x[1], 2 * x[0] ** order, 3 * x[1])
-    else:
-        def f(x):
-            return (x[1], 2 * x[0] ** order, 3 * x[2], 4 * x[0])
-
-    v.interpolate(f)
-    points = [random_point_in_cell(cell_type) for count in range(5)]
-    cells = [0 for count in range(5)]
-    values = v.eval(points, cells)
-
-    for p, v in zip(points, values):
-        assert np.allclose(v, f(p))
+    mesh = one_cell_mesh(CellType.triangle)
+    A = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    B = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    v = Function(FunctionSpace(mesh, ufl.MixedElement([A, B])))
+    with pytest.raises(RuntimeError):
+        v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
 
 
 @skip_in_parallel

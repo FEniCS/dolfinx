@@ -166,8 +166,12 @@ void interpolate(
   assert(element);
   const int element_bs = element->block_size();
 
-  if (element->family() == "Mixed")
-    throw std::runtime_error("Mixed space interpolation not supported (yet?).");
+  if (int num_sub = element->num_sub_elements();
+      num_sub > 0 and num_sub != element_bs)
+  {
+    throw std::runtime_error("Cannot directly interpolate a mixed space. "
+                             "Interpolate into subspaces.");
+  }
 
   // Get mesh
   assert(u.function_space());
