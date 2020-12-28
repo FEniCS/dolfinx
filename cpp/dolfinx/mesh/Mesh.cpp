@@ -66,6 +66,17 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                        const fem::CoordinateElement& element,
                        const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>& x,
+                       mesh::GhostMode ghost_mode)
+{
+  return create_mesh(comm, cells, element, x, ghost_mode,
+                     &mesh::partition_cells);
+}
+//-----------------------------------------------------------------------------
+Mesh mesh::create_mesh(MPI_Comm comm,
+                       const graph::AdjacencyList<std::int64_t>& cells,
+                       const fem::CoordinateElement& element,
+                       const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>& x,
                        mesh::GhostMode ghost_mode,
                        mesh::PartitioningFunction partitioner)
 {

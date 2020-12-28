@@ -33,8 +33,8 @@ class AdjacencyList;
 namespace mesh
 {
 
-/// Signature for the partitioning function.
-/// The function should compute the destination rank for mesh cells in this rank
+/// Signature for the partitioning function. The function should compute
+/// the destination rank for mesh cells in this rank
 using PartitioningFunction
     = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
         MPI_Comm mpi_comm, int nparts, const dolfinx::mesh::CellType cell_type,
@@ -157,13 +157,19 @@ private:
   std::size_t _unique_id = common::UniqueIdGenerator::id();
 };
 
-/// Create a mesh
+/// Create a mesh using the default partitioner
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
                  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>& x,
-                 GhostMode ghost_mode,
-                 PartitioningFunction partitioner = &mesh::partition_cells);
+                 GhostMode ghost_mode);
+
+/// Create a mesh using a provided partitioning function
+Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+                 const fem::CoordinateElement& element,
+                 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>& x,
+                 GhostMode ghost_mode, PartitioningFunction partitioner);
 
 } // namespace mesh
 } // namespace dolfinx

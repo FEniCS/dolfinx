@@ -856,7 +856,6 @@ mesh::partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
                       const graph::AdjacencyList<std::int64_t>& cells,
                       mesh::GhostMode ghost_mode)
 {
-  common::Timer timer("Partition cells across ranks");
   LOG(INFO) << "Compute partition of cells across ranks";
 
   if (cells.num_nodes() > 0)
@@ -881,19 +880,23 @@ mesh::partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
   // Just flag any kind of ghosting for now
   bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
-  // Call partitioner
-  graph::AdjacencyList<std::int32_t> partition = graph::scotch::partition(
-      comm, n, dual_graph, num_ghost_nodes, ghosting);
-
-  return partition;
+  // Compute partition
+  return graph::scotch::partition(comm, n, dual_graph, num_ghost_nodes,
+                                  ghosting);
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> mesh::partition_cells_kahip(
-    MPI_Comm comm, int n, const mesh::CellType cell_type,
-    const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode)
+    [[maybe_unused]] MPI_Comm comm, [[maybe_unused]] int n,
+    [[maybe_unused]] [[maybe_unused]] const mesh::CellType cell_type,
+    [[maybe_unused]] const graph::AdjacencyList<std::int64_t>& cells,
+    [[maybe_unused]] mesh::GhostMode ghost_mode)
 {
   common::Timer timer("Partition cells across ranks");
   LOG(INFO) << "Compute partition of cells across ranks";
+
+#ifndef HAS_KAHIP
+  throw std::runtime_error("Kahip is not available");
+#else
 
   if (cells.num_nodes() > 0)
   {
@@ -913,15 +916,8 @@ graph::AdjacencyList<std::int32_t> mesh::partition_cells_kahip(
   // Just flag any kind of ghosting for now
   bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
-#ifdef HAS_KAHIP
-  // Call partitioner
-  graph::AdjacencyList<std::int32_t> partition
-      = graph::kahip::partition(comm, n, dual_graph, ghosting);
-#else
-  throw std::runtime_error("Kahip is not available");
-  graph::AdjacencyList<std::int32_t> partition(0);
+  // Compute partition
+  return graph::kahip::partition(comm, n, dual_graph, ghosting);
 #endif
-
-  return partition;
 }
 //-----------------------------------------------------------------------------
