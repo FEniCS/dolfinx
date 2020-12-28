@@ -851,10 +851,20 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   return surface_facets;
 }
 //------------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-mesh::partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
-                      const graph::AdjacencyList<std::int64_t>& cells,
-                      mesh::GhostMode ghost_mode)
+graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
+    MPI_Comm comm, int n, const mesh::CellType cell_type,
+    const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode)
+{
+  return partition_cells_graph(comm, n, cell_type, cells, ghost_mode,
+                               &graph::scotch::partition);
+}
+//-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
+    MPI_Comm comm, int n, const mesh::CellType cell_type,
+    const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode,
+    const std::function<graph::AdjacencyList<std::int32_t>(
+        const MPI_Comm, const int, const graph::AdjacencyList<std::int64_t>&,
+        std::int32_t, bool)>& partfn)
 {
   LOG(INFO) << "Compute partition of cells across ranks";
 
@@ -881,8 +891,7 @@ mesh::partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
   bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
   // Compute partition
-  return graph::scotch::partition(comm, n, dual_graph, num_ghost_nodes,
-                                  ghosting);
+  return partfn(comm, n, dual_graph, num_ghost_nodes, ghosting);
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> mesh::partition_cells_kahip(

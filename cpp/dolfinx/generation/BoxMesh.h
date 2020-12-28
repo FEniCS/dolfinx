@@ -43,11 +43,20 @@ public:
   /// @param[in] ghost_mode Ghost mode
   /// @param[in] partitioner Partitioning function to use
   /// @return Mesh
+  // static mesh::Mesh
+  // create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+  //        std::array<std::size_t, 3> n, const fem::CoordinateElement& element,
+  //        const mesh::GhostMode ghost_mode,
+  //        mesh::PartitioningFunction partitioner = &mesh::partition_cells);
   static mesh::Mesh
   create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
          std::array<std::size_t, 3> n, const fem::CoordinateElement& element,
          const mesh::GhostMode ghost_mode,
-         mesh::PartitioningFunction partitioner = &mesh::partition_cells);
+         const mesh::PartitioningFunction& partitioner
+         = static_cast<graph::AdjacencyList<std::int32_t> (*)(
+             MPI_Comm, int, const mesh::CellType,
+             const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
+             &mesh::partition_cells_graph));
 };
 } // namespace generation
 } // namespace dolfinx

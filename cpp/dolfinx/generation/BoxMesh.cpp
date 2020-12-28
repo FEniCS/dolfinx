@@ -90,7 +90,7 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 3> n,
                      const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode,
-                     mesh::PartitioningFunction partitioner)
+                     const mesh::PartitioningFunction& partitioner)
 {
   common::Timer timer("Build BoxMesh");
 
@@ -147,7 +147,7 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 3> n,
                      const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode,
-                     mesh::PartitioningFunction partitioner)
+                     const mesh::PartitioningFunction& partitioner)
 {
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom
       = create_geom(comm, p, n);
@@ -195,7 +195,7 @@ mesh::Mesh BoxMesh::create(MPI_Comm comm,
                            std::array<std::size_t, 3> n,
                            const fem::CoordinateElement& element,
                            const mesh::GhostMode ghost_mode,
-                           mesh::PartitioningFunction partitioner)
+                           const mesh::PartitioningFunction& partitioner)
 {
   if (element.cell_shape() == mesh::CellType::tetrahedron)
     return build_tet(comm, p, n, element, ghost_mode, partitioner);

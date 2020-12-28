@@ -68,8 +68,12 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                                           Eigen::Dynamic, Eigen::RowMajor>& x,
                        mesh::GhostMode ghost_mode)
 {
-  return create_mesh(comm, cells, element, x, ghost_mode,
-                     &mesh::partition_cells);
+  return create_mesh(
+      comm, cells, element, x, ghost_mode,
+      static_cast<graph::AdjacencyList<std::int32_t> (*)(
+          MPI_Comm, int, const mesh::CellType,
+          const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
+          &mesh::partition_cells_graph));
 }
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
