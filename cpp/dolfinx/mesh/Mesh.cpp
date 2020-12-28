@@ -98,8 +98,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                                cells);
 
   // Compute the destination rank for cells on this process via graph
-  // partitioning. Always get the ghost cells via facet, though these may be
-  // discarded later.
+  // partitioning. Always get the ghost cells via facet, though these
+  // may be discarded later.
   const int size = dolfinx::MPI::size(comm);
   const graph::AdjacencyList<std::int32_t> dest
       = partitioner(comm, size, element.cell_shape(), cells_topology,
@@ -109,9 +109,9 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
       = graph::partition::distribute(comm, cells, dest);
 
-  // Create cells and vertices with the ghosting requested. Input topology
-  // includes cells shared via facet, but output will remove these, if not
-  // required by ghost_mode.
+  // Create cells and vertices with the ghosting requested. Input
+  // topology includes cells shared via facet, but output will remove
+  // these, if not required by ghost_mode.
   Topology topology = mesh::create_topology(
       comm,
       mesh::extract_topology(element.cell_shape(), element.dof_layout(),

@@ -108,7 +108,11 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 
   SECTION("SCOTCH")
   {
-    CHECK_NOTHROW(test_distributed_mesh(dolfinx::mesh::partition_cells));
+    CHECK_NOTHROW(test_distributed_mesh(
+        static_cast<graph::AdjacencyList<std::int32_t> (*)(
+            MPI_Comm, int, const mesh::CellType,
+            const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
+            &mesh::partition_cells_graph)));
   }
 
 #ifdef HASKIP
