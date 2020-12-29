@@ -119,8 +119,8 @@ graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
 graph::scotch::partition(const MPI_Comm mpi_comm, int nparts,
-                         const AdjacencyList<std::int64_t>& graph,
-                         std::int32_t, bool ghosting)
+                         const AdjacencyList<std::int64_t>& graph, std::int32_t,
+                         bool ghosting)
 {
   LOG(INFO) << "Compute graph partition using PT-SCOTCH";
   common::Timer timer("Compute graph partition (SCOTCH)");
@@ -146,7 +146,8 @@ graph::scotch::partition(const MPI_Comm mpi_comm, int nparts,
   // SCOTCH_Num type.
   const SCOTCH_Num* edgeloctab = local_graph.array().data();
   const std::int32_t edgeloctab_size = local_graph.array().size();
-  const SCOTCH_Num* vertloctab = local_graph.offsets().data();
+  std::vector<SCOTCH_Num> vertloctab(local_graph.offsets().begin(),
+                                     local_graph.offsets().end());
 
   // Global data ---------------------------------
 
@@ -168,10 +169,9 @@ graph::scotch::partition(const MPI_Comm mpi_comm, int nparts,
   // throw away constness and trust SCOTCH.
   common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
-                         const_cast<SCOTCH_Num*>(vertloctab), nullptr,
-                         vload.data(), nullptr, edgeloctab_size,
-                         edgeloctab_size, const_cast<SCOTCH_Num*>(edgeloctab),
-                         nullptr, nullptr))
+                         vertloctab.data(), nullptr, vload.data(), nullptr,
+                         edgeloctab_size, edgeloctab_size,
+                         const_cast<SCOTCH_Num*>(edgeloctab), nullptr, nullptr))
   {
     throw std::runtime_error("Error building SCOTCH graph");
   }
