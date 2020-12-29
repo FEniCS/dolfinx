@@ -6,22 +6,27 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
-#include <set>
 #include <utility>
 #include <vector>
 
 namespace dolfinx::graph
 {
 
+/// Partition graph across processes using  the default graph partitioner
+AdjacencyList<std::int32_t>
+partition_graph(const MPI_Comm comm, int nparts,
+                const AdjacencyList<std::int64_t>& local_graph,
+                std::int32_t num_ghost_nodes, bool ghosting);
+
 /// Tools for distributed graphs
 ///
 /// TODO: Add a function that sends data (Eigen arrays) to the 'owner'
-
 namespace partition
 {
 /// @todo Return the list of neighbor processes which is computed
@@ -55,10 +60,10 @@ reorder_global_indices(MPI_Comm comm,
 /// AdjacencyList that may have non-contiguous data
 ///
 /// @param[in] list Adjacency list with links that might not have
-///   contiguous numdering
-/// @return Adjacency list with contiguous ordering [0, 1, ..., n),
-///   and a map from local indices in the returned Adjacency list to
-///   the global indices in @p list
+/// contiguous numdering
+/// @return Adjacency list with contiguous ordering [0, 1, ..., n), and
+/// a map from local indices in the returned Adjacency list to the
+/// global indices in @p list
 std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
 create_local_adjacency_list(const graph::AdjacencyList<std::int64_t>& list);
 

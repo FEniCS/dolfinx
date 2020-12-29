@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "partition.h"
+#include "scotch.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
@@ -16,6 +17,15 @@
 using namespace dolfinx;
 using namespace dolfinx::graph;
 
+//-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t>
+graph::partition_graph(const MPI_Comm comm, int nparts,
+                       const AdjacencyList<std::int64_t>& local_graph,
+                       std::int32_t num_ghost_nodes, bool ghosting)
+{
+  return graph::scotch::partition(comm, nparts, local_graph, num_ghost_nodes,
+                                  ghosting);
+}
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>,
            std::vector<int>>

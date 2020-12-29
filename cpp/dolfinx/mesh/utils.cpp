@@ -18,7 +18,6 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/kahip.h>
 #include <dolfinx/graph/partition.h>
-#include <dolfinx/graph/scotch.h>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -856,7 +855,7 @@ graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
     const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode)
 {
   return partition_cells_graph(comm, n, cell_type, cells, ghost_mode,
-                               &graph::scotch::partition);
+                               &graph::partition_graph);
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
