@@ -82,7 +82,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                        const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>& x,
                        mesh::GhostMode ghost_mode,
-                       mesh::PartitioningFunction partitioner)
+                       const mesh::CellPartitionFunction& cell_partitioner)
 {
   if (ghost_mode == mesh::GhostMode::shared_vertex)
     throw std::runtime_error("Ghost mode via vertex currently disabled.");
@@ -102,8 +102,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // may be discarded later.
   const int size = dolfinx::MPI::size(comm);
   const graph::AdjacencyList<std::int32_t> dest
-      = partitioner(comm, size, element.cell_shape(), cells_topology,
-                    GhostMode::shared_facet);
+      = cell_partitioner(comm, size, element.cell_shape(), cells_topology,
+                         GhostMode::shared_facet);
 
   // Distribute cells to destination rank
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
