@@ -922,11 +922,16 @@ graph::AdjacencyList<std::int32_t> mesh::partition_cells_kahip(
   const auto [dual_graph, graph_info]
       = mesh::build_dual_graph(comm, cells, cell_type);
 
+  // Extract data from graph_info
+  const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
+      = graph_info;
+
   // Just flag any kind of ghosting for now
   bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
   // Compute partition
-  return graph::kahip::partition(comm, n, dual_graph, ghosting);
+  return graph::kahip::partition(comm, n, dual_graph, num_ghost_nodes,
+                                 ghosting);
 #endif
 }
 //-----------------------------------------------------------------------------

@@ -15,8 +15,9 @@ namespace dolfinx::graph::kahip
 {
 #ifdef HAS_KAHIP
 // Standard KaHIP partition
-AdjacencyList<std::int32_t>
-partition(MPI_Comm mpi_comm, int nparts,
-          const AdjacencyList<std::int64_t>& adj_graph, bool ghosting);
+AdjacencyList<std::int32_t> partition(MPI_Comm mpi_comm, int nparts,
+                                      const AdjacencyList<std::int64_t>& graph,
+                                      std::int32_t num_ghost_nodes,
+                                      bool ghosting);
 #endif
 } // namespace dolfinx::graph::kahip

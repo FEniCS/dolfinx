@@ -125,13 +125,13 @@ std::vector<int> refine(MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
 graph::parmetis::partition(MPI_Comm mpi_comm, idx_t nparts,
-                           const graph::AdjacencyList<std::int64_t>& adj_graph,
-                           bool ghosting)
+                           const graph::AdjacencyList<std::int64_t>& graph,
+                           std::int32_t, bool ghosting)
 {
   LOG(INFO) << "Compute graph partition using ParMETIS";
   common::Timer timer("Compute graph partition (ParMETIS)");
 
-  const auto& local_graph = adj_graph.as_type<idx_t>();
+  const auto& local_graph = graph.as_type<idx_t>();
 
   std::map<std::int64_t, std::vector<int>> ghost_procs;
   const int rank = dolfinx::MPI::rank(mpi_comm);

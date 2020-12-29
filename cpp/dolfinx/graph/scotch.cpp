@@ -10,7 +10,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <numeric>
 #include <set>
@@ -119,8 +118,8 @@ graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
 graph::scotch::partition(const MPI_Comm mpi_comm, int nparts,
-                         const AdjacencyList<std::int64_t>& graph, std::int32_t,
-                         bool ghosting)
+                         const AdjacencyList<std::int64_t>& graph,
+                         std::int32_t num_ghost_nodes, bool ghosting)
 {
   LOG(INFO) << "Compute graph partition using PT-SCOTCH";
   common::Timer timer("Compute graph partition (SCOTCH)");
@@ -135,10 +134,6 @@ graph::scotch::partition(const MPI_Comm mpi_comm, int nparts,
 
   // Number of local graph vertices
   const SCOTCH_Num vertlocnbr = local_graph.num_nodes();
-  const std::int32_t vertgstnbr
-      = std::set<SCOTCH_Num>(local_graph.array().begin(),
-                             local_graph.array().end())
-            .size();
 
   std::vector<SCOTCH_Num> node_weights;
 
@@ -200,6 +195,7 @@ graph::scotch::partition(const MPI_Comm mpi_comm, int nparts,
   // space for ghost cell partition information too. When there are no
   // nodes, vertgstnbr may be zero, and at least one dummy location must
   // be created.
+  const std::int32_t vertgstnbr = vertlocnbr + num_ghost_nodes;
   std::vector<SCOTCH_Num> cell_partition(std::max(1, vertgstnbr), 0);
 
   // Reset SCOTCH random number generator to produce deterministic
@@ -274,7 +270,7 @@ graph::scotch::partition(const MPI_Comm mpi_comm, int nparts,
 
   // Convert to offset format for AdjacencyList
   std::vector<std::int32_t> dests;
-  std::vector<std::int32_t> offsets = {0};
+  std::vector<std::int32_t> offsets(1, 0);
   for (SCOTCH_Num i = 0; i < vertlocnbr; ++i)
   {
     dests.push_back(cell_partition[i]);

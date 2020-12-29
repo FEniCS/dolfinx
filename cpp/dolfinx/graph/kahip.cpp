@@ -23,12 +23,12 @@ using namespace dolfinx;
 //----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
 graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
-                        const graph::AdjacencyList<std::int64_t>& adj_graph,
-                        bool ghosting)
+                        const graph::AdjacencyList<std::int64_t>& graph,
+                        std::int32_t, bool ghosting)
 {
   common::Timer timer("Compute graph partition (KaHIP)");
 
-  const auto& local_graph = adj_graph.as_type<unsigned long long>();
+  const auto& local_graph = graph.as_type<unsigned long long>();
 
   const int num_processes = dolfinx::MPI::size(mpi_comm);
   const int process_number = dolfinx::MPI::rank(mpi_comm);

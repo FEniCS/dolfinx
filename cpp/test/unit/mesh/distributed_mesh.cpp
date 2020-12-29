@@ -118,15 +118,16 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 #ifdef HASKIP
   SECTION("KAHIP with Lambda")
   {
-    auto kahip = [](MPI_Comm mpi_comm, int nparts,
-                    const mesh::CellType cell_type,
-                    const graph::AdjacencyList<std::int64_t>& cells,
-                    mesh::GhostMode ghost_mode) {
-      const auto [dual_graph, graph_info]
-          = mesh::build_dual_graph(mpi_comm, cells, cell_type);
-      bool ghosting = (ghost_mode != mesh::GhostMode::none);
-      return graph::kahip::partition(mpi_comm, nparts, dual_graph, ghosting);
-    };
+    auto kahip
+        = [](MPI_Comm mpi_comm, int nparts, const mesh::CellType cell_type,
+             const graph::AdjacencyList<std::int64_t>& cells,
+             mesh::GhostMode ghost_mode) {
+            const auto [dual_graph, graph_info]
+                = mesh::build_dual_graph(mpi_comm, cells, cell_type);
+            bool ghosting = (ghost_mode != mesh::GhostMode::none);
+            return graph::kahip::partition(mpi_comm, nparts, dual_graph, -1,
+                                           ghosting);
+          };
     CHECK_NOTHROW(test_distributed_mesh(kahip));
   }
 #endif

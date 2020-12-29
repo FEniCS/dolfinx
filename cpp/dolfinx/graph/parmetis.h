@@ -15,9 +15,10 @@ namespace dolfinx::graph::parmetis
 {
 #ifdef HAS_PARMETIS
 // Standard ParMETIS partition
-AdjacencyList<std::int32_t>
-partition(MPI_Comm mpi_comm, int n,
-          const AdjacencyList<std::int64_t>& adj_graph, bool ghosting);
+AdjacencyList<std::int32_t> partition(MPI_Comm mpi_comm, int n,
+                                      const AdjacencyList<std::int64_t>& graph,
+                                      std::int32_t num_ghost_nodes,
+                                      bool ghosting);
 
 #endif
 } // namespace dolfinx::graph::parmetis
