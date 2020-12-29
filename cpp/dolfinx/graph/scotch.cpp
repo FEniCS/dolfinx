@@ -118,32 +118,35 @@ graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
-graph::scotch::partition(const MPI_Comm mpi_comm, const int nparts,
+graph::scotch::partition(const MPI_Comm mpi_comm, int nparts,
                          const AdjacencyList<std::int64_t>& graph,
-                         std::int32_t num_ghost_nodes, bool ghosting)
+                         std::int32_t, bool ghosting)
 {
   LOG(INFO) << "Compute graph partition using PT-SCOTCH";
   common::Timer timer("Compute graph partition (SCOTCH)");
 
   // C-style array indexing
-  const SCOTCH_Num baseval = 0;
+  constexpr SCOTCH_Num baseval = 0;
 
+  // Cast graph to SCOTCH type
   const auto& local_graph = graph.as_type<SCOTCH_Num>();
 
   // Local data ---------------------------------
 
-  // Number of local graph vertices (typically cells)
+  // Number of local graph vertices
   const SCOTCH_Num vertlocnbr = local_graph.num_nodes();
-  const std::size_t vertgstnbr = vertlocnbr + num_ghost_nodes;
+  const std::int32_t vertgstnbr
+      = std::set<SCOTCH_Num>(local_graph.array().begin(),
+                             local_graph.array().end())
+            .size();
 
-  std::vector<std::size_t> node_weights;
+  std::vector<SCOTCH_Num> node_weights;
 
   // Get graph data. vertloctab needs to be copied to match the
   // SCOTCH_Num type.
   const SCOTCH_Num* edgeloctab = local_graph.array().data();
   const std::int32_t edgeloctab_size = local_graph.array().size();
-  std::vector<SCOTCH_Num> vertloctab(local_graph.offsets().begin(),
-                                     local_graph.offsets().end());
+  const SCOTCH_Num* vertloctab = local_graph.offsets().data();
 
   // Global data ---------------------------------
 
@@ -161,13 +164,14 @@ graph::scotch::partition(const MPI_Comm mpi_comm, const int nparts,
   if (!node_weights.empty())
     vload.assign(node_weights.begin(), node_weights.end());
 
-  // Build SCOTCH distributed graph. SCOTCH is not const-correct, so we throw
-  // away constness and trust SCOTCH.
+  // Build SCOTCH distributed graph. SCOTCH is not const-correct, so we
+  // throw away constness and trust SCOTCH.
   common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
-                         vertloctab.data(), nullptr, vload.data(), nullptr,
-                         edgeloctab_size, edgeloctab_size,
-                         const_cast<SCOTCH_Num*>(edgeloctab), nullptr, nullptr))
+                         const_cast<SCOTCH_Num*>(vertloctab), nullptr,
+                         vload.data(), nullptr, edgeloctab_size,
+                         edgeloctab_size, const_cast<SCOTCH_Num*>(edgeloctab),
+                         nullptr, nullptr))
   {
     throw std::runtime_error("Error building SCOTCH graph");
   }
@@ -194,10 +198,9 @@ graph::scotch::partition(const MPI_Comm mpi_comm, const int nparts,
 
   // Resize vector to hold cell partition indices with enough extra
   // space for ghost cell partition information too. When there are no
-  // nodes, vertgstnbr may be zero, and at least one dummy location
-  // must be created.
-  std::vector<SCOTCH_Num> cell_partition(std::max((std::size_t)1, vertgstnbr),
-                                         0);
+  // nodes, vertgstnbr may be zero, and at least one dummy location must
+  // be created.
+  std::vector<SCOTCH_Num> cell_partition(std::max(1, vertgstnbr), 0);
 
   // Reset SCOTCH random number generator to produce deterministic
   // partitions
@@ -209,8 +212,8 @@ graph::scotch::partition(const MPI_Comm mpi_comm, const int nparts,
     throw std::runtime_error("Error during SCOTCH partitioning");
   timer2.stop();
 
-  // Create a map of local nodes to their additional destination processes,
-  // due to ghosting. If no ghosting, this will remain empty.
+  // Create a map of local nodes to their additional destination
+  // processes, due to ghosting. If no ghosting, this will remain empty.
   std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
   if (ghosting)
   {
