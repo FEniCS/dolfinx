@@ -287,6 +287,7 @@ graph::scotch::partition(const MPI_Comm mpi_comm, int nparts,
   SCOTCH_dgraphExit(&dgrafdat);
   SCOTCH_stratExit(&strat);
 
-  return graph::AdjacencyList<std::int32_t>(dests, offsets);
+  return graph::AdjacencyList<std::int32_t>(std::move(dests),
+                                            std::move(offsets));
 }
 //-----------------------------------------------------------------------------

@@ -35,8 +35,8 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
 
   // Graph does not have vertex or adjacency weights, so we use null
   // pointers as arguments.
-  unsigned long long* vwgt{nullptr};
-  unsigned long long* adjcwgt{nullptr};
+  unsigned long long* vwgt = nullptr;
+  unsigned long long* adjcwgt = nullptr;
 
   // TODO: Allow the user to set the parameters
   int mode = 4; // Fast Mode
@@ -51,17 +51,15 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
   // Call KaHIP to partition graph
   common::Timer timer1("KaHIP: call ParHIPPartitionKWay");
 
-  std::vector<unsigned long long> node_distribution(num_processes);
-  const unsigned long long num_local_cells = local_graph.num_nodes();
-  MPI_Allgather(&num_local_cells, 1, MPI::mpi_type<unsigned long long>(),
-                node_distribution.data(), 1,
-                MPI::mpi_type<unsigned long long>(), mpi_comm);
-
-  node_distribution.insert(node_distribution.begin(), 0);
+  std::vector<unsigned long long> node_distribution(num_processes + 1, 0);
+  const unsigned long long num_local_nodes = local_graph.num_nodes();
+  MPI_Allgather(&num_local_nodes, 1, MPI_UNSIGNED_LONG_LONG,
+                node_distribution.data() + 1, 1, MPI_UNSIGNED_LONG_LONG,
+                mpi_comm);
   for (std::size_t i = 1; i != node_distribution.size(); ++i)
     node_distribution[i] += node_distribution[i - 1];
 
-  std::vector<unsigned long long> part(num_local_cells);
+  std::vector<unsigned long long> part(num_local_nodes);
   std::vector<unsigned long long> adj_graph_offsets(
       local_graph.offsets().begin(), local_graph.offsets().end());
   int edgecut = 0;
@@ -78,8 +76,8 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
   const unsigned long long elm_end = node_distribution[process_number + 1];
   const std::int32_t ncells = elm_end - elm_begin;
 
-  // Create a map of local nodes to their additional destination processes,
-  // due to ghosting. If no ghosting, this will remain empty.
+  // Create a map of local nodes to their additional destination
+  // processes, due to ghosting. If no ghosting, this will remain empty.
   std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
   if (ghosting)
   {
@@ -112,7 +110,7 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
     std::vector<std::vector<std::int64_t>> send_cell_partition(num_processes);
     for (const auto& hcell : halo_cell_to_remotes)
     {
-      for (auto proc : hcell.second)
+      for (std::int64_t proc : hcell.second)
       {
         assert(proc < num_processes);
 
@@ -150,9 +148,9 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
 
         if (other_cell < elm_begin || other_cell >= elm_end)
         { // remote cell - should be in map
-          const auto find_other_proc = cell_ownership.find(other_cell);
-          assert(find_other_proc != cell_ownership.end());
-          proc_other = find_other_proc->second;
+          const auto it = cell_ownership.find(other_cell);
+          assert(it != cell_ownership.end());
+          proc_other = it->second;
         }
         else
           proc_other = part[other_cell - elm_begin];
@@ -175,7 +173,8 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
     offsets.push_back(dests.size());
   }
 
-  return graph::AdjacencyList<std::int32_t>(dests, offsets);
+  return graph::AdjacencyList<std::int32_t>(std::move(dests),
+                                            std::move(offsets));
 }
 //----------------------------------------------------------------------------
 #endif

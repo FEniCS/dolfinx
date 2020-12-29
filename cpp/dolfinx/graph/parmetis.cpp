@@ -76,7 +76,7 @@ std::vector<int> refine(MPI_Comm mpi_comm,
   common::Timer timer("Compute graph partition (ParMETIS Refine)");
 
   // Get some MPI data
-  const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
+  const int process_number = dolfinx::MPI::rank(mpi_comm);
 
   // Options for ParMETIS
   idx_t options[4];
@@ -120,7 +120,6 @@ std::vector<int> refine(MPI_Comm mpi_comm,
   return std::vector<int>(part.begin(), part.end());
   //-----------------------------------------------------------------------------
 }
-
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -132,17 +131,14 @@ graph::parmetis::partition(MPI_Comm mpi_comm, idx_t nparts,
   LOG(INFO) << "Compute graph partition using ParMETIS";
   common::Timer timer("Compute graph partition (ParMETIS)");
 
-  auto local_graph = adj_graph.as_type<idx_t>();
+  const auto& local_graph = adj_graph.as_type<idx_t>();
 
   std::map<std::int64_t, std::vector<int>> ghost_procs;
   const int rank = dolfinx::MPI::rank(mpi_comm);
   const int size = dolfinx::MPI::size(mpi_comm);
 
   // Options for ParMETIS
-  idx_t options[3];
-  options[0] = 1;
-  options[1] = 0;
-  options[2] = 15;
+  std::array<idx_t, 3> options = {1, 0, 15};
 
   // Strange weight arrays needed by ParMETIS
   idx_t ncon = 1;
@@ -156,12 +152,11 @@ graph::parmetis::partition(MPI_Comm mpi_comm, idx_t nparts,
   std::vector<real_t> ubvec(ncon, 1.05);
 
   // Communicate number of nodes between all processors
-  std::vector<idx_t> node_distribution(size);
+  std::vector<idx_t> node_distribution(size + 1, 0);
   const idx_t num_local_cells = local_graph.num_nodes();
   MPI_Allgather(&num_local_cells, 1, MPI::mpi_type<idx_t>(),
-                node_distribution.data(), 1, MPI::mpi_type<idx_t>(), mpi_comm);
-
-  node_distribution.insert(node_distribution.begin(), 0);
+                node_distribution.data() + 1, 1, MPI::mpi_type<idx_t>(),
+                mpi_comm);
   for (std::size_t i = 1; i != node_distribution.size(); ++i)
     node_distribution[i] += node_distribution[i - 1];
 
@@ -176,8 +171,8 @@ graph::parmetis::partition(MPI_Comm mpi_comm, idx_t nparts,
       const_cast<idx_t*>(node_distribution.data()),
       const_cast<idx_t*>(local_graph.offsets().data()),
       const_cast<idx_t*>(local_graph.array().data()), elmwgt, nullptr, &wgtflag,
-      &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), options, &edgecut,
-      part.data(), &mpi_comm);
+      &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), options.data(),
+      &edgecut, part.data(), &mpi_comm);
   assert(err == METIS_OK);
   timer1.stop();
 
@@ -275,7 +270,7 @@ graph::parmetis::partition(MPI_Comm mpi_comm, idx_t nparts,
 
   // Convert to offset format for AdjacencyList
   std::vector<std::int32_t> dests;
-  std::vector<std::int32_t> offsets = {0};
+  std::vector<std::int32_t> offsets(1, 0);
   for (std::int32_t i = 0; i < ncells; ++i)
   {
     dests.push_back(part[i]);
@@ -287,7 +282,8 @@ graph::parmetis::partition(MPI_Comm mpi_comm, idx_t nparts,
     offsets.push_back(dests.size());
   }
 
-  return graph::AdjacencyList<std::int32_t>(dests, offsets);
+  return graph::AdjacencyList<std::int32_t>(std::move(dests),
+                                            std::move(offsets));
 }
 //-----------------------------------------------------------------------------
 #endif
