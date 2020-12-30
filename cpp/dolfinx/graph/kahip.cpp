@@ -28,10 +28,10 @@ std::function<graph::AdjacencyList<std::int32_t>(
 graph::kahip::partitioner(int mode, int seed, double imbalance,
                           bool suppress_output)
 {
-  auto part = [mode, seed, imbalance,
-               suppress_output](MPI_Comm mpi_comm, int nparts,
-                                const graph::AdjacencyList<std::int64_t>& graph,
-                                std::int32_t, bool ghosting) {
+  return [mode, seed, imbalance,
+          suppress_output](MPI_Comm mpi_comm, int nparts,
+                           const graph::AdjacencyList<std::int64_t>& graph,
+                           std::int32_t, bool ghosting) {
     common::Timer timer("Compute graph partition (KaHIP)");
 
     const auto& local_graph = graph.as_type<unsigned long long>();
@@ -56,13 +56,11 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
     // Call KaHIP to partition graph
     common::Timer timer1("KaHIP: call ParHIPPartitionKWay");
 
-    std::vector<unsigned long long> node_distribution(num_processes + 1, 0);
+    std::vector<unsigned long long> node_dist(num_processes + 1, 0);
     const unsigned long long num_local_nodes = local_graph.num_nodes();
     MPI_Allgather(&num_local_nodes, 1, MPI_UNSIGNED_LONG_LONG,
-                  node_distribution.data() + 1, 1, MPI_UNSIGNED_LONG_LONG,
-                  mpi_comm);
-    std::partial_sum(node_distribution.begin(), node_distribution.end(),
-                     node_distribution.begin());
+                  node_dist.data() + 1, 1, MPI_UNSIGNED_LONG_LONG, mpi_comm);
+    std::partial_sum(node_dist.begin(), node_dist.end(), node_dist.begin());
 
     std::vector<unsigned long long> part(num_local_nodes);
     std::vector<unsigned long long> adj_graph_offsets(
@@ -72,15 +70,15 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
     // Partition graph
     double _imbalance = imbalance;
     ParHIPPartitionKWay(
-        const_cast<unsigned long long*>(node_distribution.data()),
+        const_cast<unsigned long long*>(node_dist.data()),
         const_cast<unsigned long long*>(adj_graph_offsets.data()),
         const_cast<unsigned long long*>(local_graph.array().data()), vwgt,
         adjcwgt, &nparts, &_imbalance, suppress_output, seed, mode, &edgecut,
         part.data(), &mpi_comm);
     timer1.stop();
 
-    const unsigned long long elm_begin = node_distribution[process_number];
-    const unsigned long long elm_end = node_distribution[process_number + 1];
+    const unsigned long long elm_begin = node_dist[process_number];
+    const unsigned long long elm_end = node_dist[process_number + 1];
     const std::int32_t ncells = elm_end - elm_begin;
 
     // Create a map of local nodes to their additional destination
@@ -95,15 +93,15 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
       // local indexing "i"
       for (int i = 0; i < ncells; i++)
       {
-        auto edges = local_graph.links(i);
+        const auto edges = local_graph.links(i);
         for (std::size_t j = 0; j < edges.size(); ++j)
         {
           const unsigned long long other_cell = edges[j];
           if (other_cell < elm_begin or other_cell >= elm_end)
           {
-            auto it = std::upper_bound(node_distribution.begin(),
-                                       node_distribution.end(), other_cell);
-            const int remote = std::distance(node_distribution.begin(), it) - 1;
+            auto it = std::upper_bound(node_dist.begin(), node_dist.end(),
+                                       other_cell);
+            const int remote = std::distance(node_dist.begin(), it) - 1;
             assert(remote < num_processes);
             if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
               halo_cell_to_remotes[i] = std::set<std::int32_t>();
@@ -183,8 +181,6 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
     return graph::AdjacencyList<std::int32_t>(std::move(dests),
                                               std::move(offsets));
   };
-
-  return part;
 }
 //----------------------------------------------------------------------------
 #endif

@@ -18,13 +18,6 @@ namespace dolfinx::graph::scotch
 {
 
 /// Create a graph partitioning function that uses PT-SCOTCH
-///
-/// @param[in] mode The KaHiP partitioning mode (see
-/// https://github.com/KaHIP/KaHIP/blob/master/parallel/parallel_src/interface/parhip_interface.h)
-/// @param[in] seed The KaHiP random number generator seed
-/// @param[in] imbalance The allowable imbalance
-/// @param[in] suppress_output Suppresses KaHIP output if true
-/// @return A SCOTCH graph partitioning function
 std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm, int, const AdjacencyList<std::int64_t>&, std::int32_t, bool)>
 partitioner();
