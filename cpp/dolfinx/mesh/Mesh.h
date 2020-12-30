@@ -33,6 +33,8 @@ class AdjacencyList;
 namespace mesh
 {
 
+/// @todo Document fully
+///
 /// Signature for the cell partitioning function. The function should
 /// compute the destination rank for cells currently on this rank.
 using CellPartitionFunction
@@ -51,7 +53,6 @@ enum class GhostMode : int
 
 /// A Mesh consists of a set of connected and numbered mesh topological
 /// entities, and geometry data
-
 class Mesh
 {
 public:

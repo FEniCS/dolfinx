@@ -16,7 +16,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/graph/kahip.h>
 #include <dolfinx/graph/partition.h>
 #include <stdexcept>
 #include <unordered_set>
@@ -861,9 +860,7 @@ graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
 graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
     MPI_Comm comm, int n, const mesh::CellType cell_type,
     const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode,
-    const std::function<graph::AdjacencyList<std::int32_t>(
-        const MPI_Comm, const int, const graph::AdjacencyList<std::int64_t>&,
-        std::int32_t, bool)>& partfn)
+    const graph::partition_fn& partfn)
 {
   LOG(INFO) << "Compute partition of cells across ranks";
 

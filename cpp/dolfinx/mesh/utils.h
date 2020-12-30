@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/partition.h>
 #include <functional>
 
 namespace dolfinx
@@ -157,12 +158,11 @@ partition_cells_graph(MPI_Comm comm, int n, const mesh::CellType cell_type,
 
 /// Compute destination rank for mesh cells on this rank by applying the
 /// a provided graph partitioner to the dual graph of the mesh
-graph::AdjacencyList<std::int32_t> partition_cells_graph(
-    MPI_Comm comm, int n, const mesh::CellType cell_type,
-    const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode,
-    const std::function<graph::AdjacencyList<std::int32_t>(
-        const MPI_Comm, const int, const graph::AdjacencyList<std::int64_t>&,
-        std::int32_t, bool)>& partfn);
+graph::AdjacencyList<std::int32_t>
+partition_cells_graph(MPI_Comm comm, int n, const mesh::CellType cell_type,
+                      const graph::AdjacencyList<std::int64_t>& cells,
+                      mesh::GhostMode ghost_mode,
+                      const graph::partition_fn& partfn);
 
 } // namespace mesh
 } // namespace dolfinx
