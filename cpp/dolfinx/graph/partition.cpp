@@ -26,8 +26,8 @@ graph::partition_graph(const MPI_Comm comm, int nparts,
 {
   // return graph::scotch::partition(comm, nparts, local_graph, num_ghost_nodes,
   //                                 ghosting);
-  return graph::kahip::partition(comm, nparts, local_graph, num_ghost_nodes,
-                                 ghosting);
+  return graph::kahip::partitioner()(comm, nparts, local_graph, num_ghost_nodes,
+                                     ghosting);
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>,

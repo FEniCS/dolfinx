@@ -8,16 +8,24 @@
 
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
 #include <mpi.h>
 
 // Interface to KaHIP parallel partitioner
 namespace dolfinx::graph::kahip
 {
 #ifdef HAS_KAHIP
-// Standard KaHIP partition
-AdjacencyList<std::int32_t> partition(MPI_Comm mpi_comm, int nparts,
-                                      const AdjacencyList<std::int64_t>& graph,
-                                      std::int32_t num_ghost_nodes,
-                                      bool ghosting);
+/// Create a KaHIP partitioner
+///
+/// @param[in] mode The KaHiP partitioning mode (see
+/// https://github.com/KaHIP/KaHIP/blob/master/parallel/parallel_src/interface/parhip_interface.h)
+/// @param[in] seed The KaHiP random number generator seed
+/// @param[in] imbalance The allowable imbalance
+/// @param[in] suppress_output Suppresses KaHIP output if true
+std::function<graph::AdjacencyList<std::int32_t>(
+    MPI_Comm, int, const AdjacencyList<std::int64_t>&, std::int32_t, bool)>
+partitioner(int mode = 4, int seed = 0, double imbalance = 0.03,
+            bool suppress_output = true);
+
 #endif
 } // namespace dolfinx::graph::kahip
