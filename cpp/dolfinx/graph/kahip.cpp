@@ -56,14 +56,15 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
   MPI_Allgather(&num_local_nodes, 1, MPI_UNSIGNED_LONG_LONG,
                 node_distribution.data() + 1, 1, MPI_UNSIGNED_LONG_LONG,
                 mpi_comm);
-  for (std::size_t i = 1; i != node_distribution.size(); ++i)
-    node_distribution[i] += node_distribution[i - 1];
+  std::partial_sum(node_distribution.begin(), node_distribution.end(),
+                   node_distribution.begin());
 
   std::vector<unsigned long long> part(num_local_nodes);
   std::vector<unsigned long long> adj_graph_offsets(
       local_graph.offsets().begin(), local_graph.offsets().end());
   int edgecut = 0;
 
+  // Partition graph
   ParHIPPartitionKWay(
       const_cast<unsigned long long*>(node_distribution.data()),
       const_cast<unsigned long long*>(adj_graph_offsets.data()),
@@ -92,12 +93,16 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
       for (std::size_t j = 0; j < edges.size(); ++j)
       {
         const unsigned long long other_cell = edges[j];
-        if (other_cell < elm_begin || other_cell >= elm_end)
+        if (other_cell < elm_begin or other_cell >= elm_end)
         {
-          const int remote
-              = std::upper_bound(node_distribution.begin(),
-                                 node_distribution.end(), other_cell)
-                - node_distribution.begin() - 1;
+          auto it = std::upper_bound(node_distribution.begin(),
+                                     node_distribution.end(), other_cell);
+          const int remote = std::distance(node_distribution.begin(), it) - 1;
+
+          // const int remote
+          //     = std::upper_bound(node_distribution.begin(),
+          //                        node_distribution.end(), other_cell)
+          //       - node_distribution.begin() - 1;
 
           assert(remote < num_processes);
           if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
@@ -146,8 +151,7 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
       {
         const unsigned long long other_cell = adjncy[j];
         std::int32_t proc_other;
-
-        if (other_cell < elm_begin || other_cell >= elm_end)
+        if (other_cell < elm_begin or other_cell >= elm_end)
         { // remote cell - should be in map
           const auto it = cell_ownership.find(other_cell);
           assert(it != cell_ownership.end());
