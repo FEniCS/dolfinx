@@ -275,8 +275,10 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
             pytest.xfail(reason="Missing functionality in \'{}\' with \'{}\' mode".format(mesh_factory, ghost_mode))
 
 
+@pytest.mark.parametrize("ghost_mode",
+                         [cpp.mesh.GhostMode.none, cpp.mesh.GhostMode.shared_facet, cpp.mesh.GhostMode.shared_vertex])
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
-def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.none):
+def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to FIAT reference
     cell they were created from.
     """
