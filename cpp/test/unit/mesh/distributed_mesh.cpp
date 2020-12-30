@@ -35,7 +35,7 @@ void create_mesh_file()
   file.write_mesh(*mesh);
 }
 
-void test_distributed_mesh(mesh::PartitioningFunction partitioner)
+void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
   MPI_Comm mpi_comm{MPI_COMM_WORLD};
   int mpi_size = dolfinx::MPI::size(mpi_comm);
