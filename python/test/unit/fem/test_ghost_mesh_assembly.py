@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 Garth N. Wells
+# Copyright (C) 2018-2020 Garth N. Wells
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -9,7 +9,7 @@ import pytest
 import ufl
 from dolfinx import fem
 from dolfinx.cpp.mesh import GhostMode
-from dolfinx.function import Function, FunctionSpace
+from dolfinx.fem import Function, FunctionSpace
 from dolfinx.generation import UnitSquareMesh
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -29,13 +29,9 @@ def dS_from_ufl(mesh):
 
 
 @pytest.mark.parametrize("mode",
-                         [pytest.param(GhostMode.none),
-                          pytest.param(GhostMode.shared_facet,
-                                       marks=pytest.mark.xfail(condition=MPI.COMM_WORLD.size == 1,
-                                                               reason="Shared ghost modes fail in serial")),
+                         [GhostMode.none, GhostMode.shared_facet,
                           pytest.param(GhostMode.shared_vertex,
-                                       marks=pytest.mark.xfail(condition=MPI.COMM_WORLD.size == 1,
-                                                               reason="Shared ghost modes fail in serial"))])
+                                       marks=pytest.mark.xfail(reason="Shared vertex currently disabled"))])
 @pytest.mark.parametrize("dx", [dx_from_ufl])
 @pytest.mark.parametrize("ds", [ds_from_ufl])
 def test_ghost_mesh_assembly(mode, dx, ds):
@@ -68,15 +64,13 @@ def test_ghost_mesh_assembly(mode, dx, ds):
 
 
 @pytest.mark.parametrize("mode",
-                         [pytest.param(GhostMode.none,
+                         [GhostMode.shared_facet,
+                          pytest.param(GhostMode.none,
                                        marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size > 1,
                                                                 reason="Unghosted interior facets fail in parallel")),
-                          pytest.param(GhostMode.shared_facet,
-                                       marks=pytest.mark.xfail(condition=MPI.COMM_WORLD.size == 1,
-                                                               reason="Shared ghost modes fail in serial")),
-                          pytest.param(GhostMode.shared_vertex,
-                                       marks=pytest.mark.xfail(condition=MPI.COMM_WORLD.size == 1,
-                                                               reason="Shared ghost modes fail in serial"))])
+                             pytest.param(GhostMode.shared_vertex,
+                                          marks=pytest.mark.xfail(
+                                              reason="Shared vertex currently disabled"))])
 @pytest.mark.parametrize("dS", [dS_from_ufl])
 def test_ghost_mesh_dS_assembly(mode, dS):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
