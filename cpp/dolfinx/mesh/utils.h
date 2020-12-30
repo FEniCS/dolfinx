@@ -155,7 +155,7 @@ partition_cells_graph(MPI_Comm comm, int n, const mesh::CellType cell_type,
                       const graph::AdjacencyList<std::int64_t>& cells,
                       mesh::GhostMode ghost_mode);
 
-/// Compute destination rank for mesh cells in this rank by applying the
+/// Compute destination rank for mesh cells on this rank by applying the
 /// a provided graph partitioner to the dual graph of the mesh
 graph::AdjacencyList<std::int32_t> partition_cells_graph(
     MPI_Comm comm, int n, const mesh::CellType cell_type,
