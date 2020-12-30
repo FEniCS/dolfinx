@@ -248,7 +248,7 @@ void mesh(py::module& m)
   declare_meshtags<std::int64_t>(m, "int64");
 
   // Partitioning interface
-  m.def("partition_cells_grapg",
+  m.def("partition_cells_graph",
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,

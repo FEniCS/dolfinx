@@ -157,7 +157,22 @@ private:
   std::size_t _unique_id = common::UniqueIdGenerator::id();
 };
 
-/// Create a mesh using the default partitioner
+/// Create a mesh using the default partitioner. This function takes
+/// mesh input data that is distributed across processes and creates a
+/// @p Mesh, with the cell distribution determined by the default cell
+/// partitioner. The default partitioner is based a graph partitioning.
+///
+/// @param[in] comm The MPI communicator to build the mesh on
+/// @param[in] cells The cells on the this MPI rank. Each cell (node in
+/// the `AdjacencyList`) is defined by its 'nodes' (using global
+/// indices). For lowest order cells this will be just the cell
+/// vertices. For higher-order cells, other cells 'nodes' will be
+/// included.
+/// @param[in] element The coordinate element that describes the
+/// geometrica mapping for cells
+/// @param[in] x The coordinates of mesh nodes
+/// @param[in] ghost_mode The requested type of cell ghosting/overlap
+/// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
                  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,

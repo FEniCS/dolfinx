@@ -88,9 +88,10 @@ graph::kahip::partition(MPI_Comm mpi_comm, int nparts,
     // local indexing "i"
     for (int i = 0; i < ncells; i++)
     {
-      for (int j = 0; j < local_graph.num_links(i); ++j)
+      auto edges = local_graph.links(i);
+      for (std::size_t j = 0; j < edges.size(); ++j)
       {
-        const unsigned long long other_cell = local_graph.links(i)[j];
+        const unsigned long long other_cell = edges[j];
         if (other_cell < elm_begin || other_cell >= elm_end)
         {
           const int remote
