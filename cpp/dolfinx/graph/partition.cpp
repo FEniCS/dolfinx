@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "partition.h"
+#include "kahip.h"
 #include "scotch.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
