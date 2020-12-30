@@ -35,7 +35,6 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
     common::Timer timer("Compute graph partition (KaHIP)");
 
     const auto& local_graph = graph.as_type<unsigned long long>();
-
     const int num_processes = dolfinx::MPI::size(mpi_comm);
     const int process_number = dolfinx::MPI::rank(mpi_comm);
 
@@ -43,31 +42,21 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
     // pointers as arguments
     unsigned long long *vwgt(nullptr), *adjcwgt(nullptr);
 
-    // // TODO: Allow the user to set the parameters
-    // int mode = 4; // Fast Mode
-    // int seed = 0;
-
-    // The amount of imbalance that is allowed. (3%)
-    // double imbalance = 0.03;
-
-    // Suppress output from the partitioning library.
-    // bool suppress_output = true;
-
     // Call KaHIP to partition graph
     common::Timer timer1("KaHIP: call ParHIPPartitionKWay");
 
+    // Compute distribution across all ranks
     std::vector<unsigned long long> node_dist(num_processes + 1, 0);
     const unsigned long long num_local_nodes = local_graph.num_nodes();
     MPI_Allgather(&num_local_nodes, 1, MPI_UNSIGNED_LONG_LONG,
                   node_dist.data() + 1, 1, MPI_UNSIGNED_LONG_LONG, mpi_comm);
     std::partial_sum(node_dist.begin(), node_dist.end(), node_dist.begin());
 
+    // Partition graph
     std::vector<unsigned long long> part(num_local_nodes);
     std::vector<unsigned long long> adj_graph_offsets(
         local_graph.offsets().begin(), local_graph.offsets().end());
     int edgecut = 0;
-
-    // Partition graph
     double _imbalance = imbalance;
     ParHIPPartitionKWay(
         const_cast<unsigned long long*>(node_dist.data()),
