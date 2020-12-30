@@ -194,8 +194,8 @@ int main(int argc, char* argv[])
                       L->function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
-    fem::assemble_matrix(la::PETScMatrix::add_block_fn(A.mat()), *a, bc);
-    fem::add_diagonal(la::PETScMatrix::add_fn(A.mat()), *V, bc);
+    fem::assemble_matrix(la::PETScMatrix::set_block_fn_add(A.mat()), *a, bc);
+    fem::add_diagonal(la::PETScMatrix::set_fn_add(A.mat()), *V, bc);
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
