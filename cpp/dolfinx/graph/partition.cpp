@@ -24,10 +24,8 @@ graph::partition_graph(const MPI_Comm comm, int nparts,
                        const AdjacencyList<std::int64_t>& local_graph,
                        std::int32_t num_ghost_nodes, bool ghosting)
 {
-  // return graph::scotch::partition(comm, nparts, local_graph, num_ghost_nodes,
-  //                                 ghosting);
-  return graph::kahip::partition(comm, nparts, local_graph, num_ghost_nodes,
-                                 ghosting);
+  return graph::scotch::partition(comm, nparts, local_graph, num_ghost_nodes,
+                                  ghosting);
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>,
