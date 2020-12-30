@@ -38,35 +38,62 @@ MatNullSpace create_petsc_nullspace(MPI_Comm comm,
 class PETScMatrix : public PETScOperator
 {
 public:
-  /// Return a function with an interface for adding values to the
-  /// matrix A (calls MatSetValuesLocal)
+  /// Return a function with an interface for adding or inserting values
+  /// into the matrix A (calls MatSetValuesLocal)
   /// @param[in] A The matrix to set values in
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                            const std::int32_t*, const PetscScalar*)>
-  add_fn(Mat A, const InsertMode mode = ADD_VALUES);
+  set_fn(Mat A, const InsertMode mode);
+
+  /// Return a function with an interface for adding values to the
+  /// matrix A
+  /// @param[in] A The matrix to set values in
+  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                           const std::int32_t*, const PetscScalar*)>
+  set_fn_add(Mat A);
 
   /// Return a function with an interface for inserting values into the
   /// matrix A
   /// @param[in] A The matrix to set values in
   static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                            const std::int32_t*, const PetscScalar*)>
-  set_fn(Mat A);
+  set_fn_insert(Mat A);
 
-  /// Return a function with an interface for adding values to the
-  /// matrix A using blocked indices (calls MatSetValuesBlockedLocal)
+  /// Return a function with an interface for adding or inserting values
+  /// into the matrix A using blocked indices
+  /// (calls MatSetValuesBlockedLocal)
   /// @param[in] A The matrix to set values in
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                            const std::int32_t*, const PetscScalar*)>
-  add_block_fn(Mat A, const InsertMode = ADD_VALUES);
+  set_block_fn(Mat A, const InsertMode mode);
+
+  /// Return a function with an interface for adding values into the
+  /// matrix A using blocked indices (calls MatSetValuesBlockedLocal)
+  /// @param[in] A The matrix to set values in
+  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                           const std::int32_t*, const PetscScalar*)>
+  set_block_fn_add(Mat A);
 
   /// Return a function with an interface for inserting values into the
   /// matrix A using blocked indices (calls MatSetValuesBlockedLocal)
   /// @param[in] A The matrix to set values in
   static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                            const std::int32_t*, const PetscScalar*)>
-  set_block_fn(Mat A);
+  set_block_fn_insert(Mat A);
+
+  /// Return a function with an interface for adding or inserting blocked
+  /// values to the matrix A using non-blocked insertion (calls
+  /// MatSetValuesLocal). Internally it expands the blocked indices into
+  /// non-blocked arrays.
+  /// @param[in] A The matrix to set values in
+  /// @param[in] bs0 Block size for the matrix rows
+  /// @param[in] bs1 Block size for the matrix columns
+  /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
+  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                           const std::int32_t*, const PetscScalar*)>
+  set_block_expand_fn(Mat A, int bs0, int bs1, const InsertMode mode);
 
   /// Return a function with an interface for adding blocked values to
   /// the matrix A using non-blocked insertion (calls
@@ -77,7 +104,18 @@ public:
   /// @param[in] bs1 Block size for the matrix columns
   static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                            const std::int32_t*, const PetscScalar*)>
-  add_block_expand_fn(Mat A, int bs0, int bs1);
+  set_block_expand_fn_add(Mat A, int bs0, int bs1);
+
+  /// Return a function with an interface for inserting blocked values
+  /// into the matrix A using non-blocked insertion (calls
+  /// MatSetValuesLocal). Internally it expands the blocked indices into
+  /// non-blocked arrays.
+  /// @param[in] A The matrix to set values in
+  /// @param[in] bs0 Block size for the matrix rows
+  /// @param[in] bs1 Block size for the matrix columns
+  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                           const std::int32_t*, const PetscScalar*)>
+  set_block_expand_fn_insert(Mat A, int bs0, int bs1);
 
   /// Create holder for a PETSc Mat object from a sparsity pattern
   PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern,
