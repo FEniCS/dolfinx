@@ -78,7 +78,7 @@ public:
     MatZeroEntries(_matA.mat());
     fem::assemble_matrix(la::PETScMatrix::set_block_fn_add(_matA.mat()), *_j,
                          _bcs);
-    fem::add_diagonal(la::PETScMatrix::set_fn_addsy(_matA.mat()),
+    fem::add_diagonal(la::PETScMatrix::set_fn_add(_matA.mat()),
                       *_j->function_spaces()[0], _bcs);
     _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
     return _matA.mat();
