@@ -37,13 +37,12 @@
 # outward directed boundary normal. The most standard variational form
 # of Poisson equation reads: find :math:`u \in V` such that
 #
-# .. math::
-#    a(u, v) = L(v) \quad \forall \ v \in V,
+# .. math:: a(u, v) = L(v) \quad \forall \ v \in V,
 #
 # where :math:`V` is a suitable function space and
 #
-# .. math::
-#    a(u, v) &= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
+# .. math:: a(u, v) &= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d}
+#    x, \\
 #    L(v)    &= \int_{\Omega} f v \, {\rm d} x
 #    + \int_{\Gamma_{N}} g v \, {\rm d} s.
 #
@@ -74,26 +73,25 @@
 #
 # First, the :py:mod:`dolfinx` module is imported: ::
 
-import matplotlib.pyplot as plt
-import numpy as np
-from mpi4py import MPI
-from petsc4py import PETSc
-
 import dolfinx
 import dolfinx.plotting
+import matplotlib.pyplot as plt
+import numpy as np
 import ufl
-from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh, solve
+from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh, fem
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import locate_entities_boundary
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import ds, dx, grad, inner
 
 # We begin by defining a mesh of the domain and a finite element
 # function space :math:`V` relative to this mesh. As the unit square is
 # a very standard domain, we can use a built-in mesh provided by the
-# class :py:class:`UnitSquareMesh <dolfinx.cpp.UnitSquareMesh>`. In order
-# to create a mesh consisting of 32 x 32 squares with each square
+# class :py:class:`UnitSquareMesh <dolfinx.cpp.UnitSquareMesh>`. In
+# order to create a mesh consisting of 32 x 32 squares with each square
 # divided into two triangles, we do as follows ::
 
 # Create mesh and define function space
@@ -105,11 +103,11 @@ mesh = RectangleMesh(
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
 # The second argument to :py:class:`FunctionSpace
-# <dolfinx.fem.FunctionSpace>` is the finite element
-# family, while the third argument specifies the polynomial
-# degree. Thus, in this case, our space ``V`` consists of first-order,
-# continuous Lagrange finite element functions (or in order words,
-# continuous piecewise linear polynomials).
+# <dolfinx.fem.FunctionSpace>` is the finite element family, while the
+# third argument specifies the polynomial degree. Thus, in this case,
+# our space ``V`` consists of first-order, continuous Lagrange finite
+# element functions (or in order words, continuous piecewise linear
+# polynomials).
 #
 # Next, we want to consider the Dirichlet boundary condition. A simple
 # Python function, returning a boolean, can be used to define the
@@ -125,13 +123,12 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 # Now, the Dirichlet boundary condition can be created using the class
 # :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>`. A
 # :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>` takes two
-# arguments: the value of the boundary condition
-# and the part of the boundary on which the condition applies.
-# This boundary part is identified with degrees of
-# freedom in the function space to which we apply the boundary conditions.
-# A method ``locate_dofs_geometrical`` is provided to extract the boundary
-# degrees of freedom using a geometrical criterium.
-# In our example, the function space is ``V``,
+# arguments: the value of the boundary condition and the part of the
+# boundary on which the condition applies. This boundary part is
+# identified with degrees of freedom in the function space to which we
+# apply the boundary conditions. A method ``locate_dofs_geometrical`` is
+# provided to extract the boundary degrees of freedom using a
+# geometrical criterium. In our example, the function space is ``V``,
 # the value of the boundary condition (0.0) can represented using a
 # :py:class:`Function <dolfinx.functions.Function>` and the Dirichlet
 # boundary is defined immediately above. The definition of the Dirichlet
@@ -139,7 +136,8 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 
 # Define boundary condition on x = 0 or x = 1
 u0 = Function(V)
-u0.vector.set(0.0)
+with u0.vector.localForm() as u0_loc:
+    u0_loc.set(0)
 facets = locate_entities_boundary(mesh, 1,
                                   lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                           np.isclose(x[0], 1.0)))
@@ -148,10 +146,10 @@ bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets))
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,
 # both living in the function space :math:`V`. We do this by defining a
-# :py:class:`TrialFunction <dolfinx.functions.fem.TrialFunction>`
-# and a :py:class:`TestFunction
-# <dolfinx.functions.fem.TrialFunction>` on the previously defined
-# :py:class:`FunctionSpace <dolfinx.fem.FunctionSpace>` ``V``.
+# :py:class:`TrialFunction <dolfinx.functions.fem.TrialFunction>` and a
+# :py:class:`TestFunction <dolfinx.functions.fem.TrialFunction>` on the
+# previously defined :py:class:`FunctionSpace
+# <dolfinx.fem.FunctionSpace>` ``V``.
 #
 # Further, the source :math:`f` and the boundary normal derivative
 # :math:`g` are involved in the variational forms, and hence we must
@@ -161,8 +159,7 @@ bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets))
 # the linear form ``L`` (using UFL operators). In summary, this reads ::
 
 # Define variational problem
-u = ufl.TrialFunction(V)
-v = ufl.TestFunction(V)
+u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(mesh)
 f = 10 * ufl.exp(-((x[0] - 0.5)**2 + (x[1] - 0.5)**2) / 0.02)
 g = ufl.sin(5 * x[0])
@@ -174,33 +171,35 @@ L = inner(f, v) * dx + inner(g, v) * ds
 # :py:class:`Function <dolfinx.functions.fem.Function>` ``u`` to
 # represent the solution. (Upon initialization, it is simply set to the
 # zero function.) A :py:class:`Function
-# <dolfinx.functions.fem.Function>` represents a function living in
-# a finite element function space. Next, we can call the :py:func:`solve
-# <dolfinx.fem.solving.solve>` function with the arguments ``a == L``,
-# ``u`` and ``bc`` as follows: ::
+# <dolfinx.functions.fem.Function>` represents a function living in a
+# finite element function space. Next, we initialize a solver using the
+# :py:class:`LinearProblem <dolfinx.fem.linearproblem.LinearProblem>`.
+# This class is initialized with the arguments ``a``, ``L``, and ``bc``
+# as follows: :: In this problem, we use a direct LU solver, which is
+# defined through the dictionary ``petsc_options``.
+problem = fem.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
-# Compute solution
-u = Function(V)
-solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
-
+# When we want to compute the solution to the problem, we can specify
+# what kind of solver we want to use.
+uh = problem.solve()
 
 # The function ``u`` will be modified during the call to solve. The
-# default settings for solving a variational problem have been
-# used. However, the solution process can be controlled in much more
-# detail if desired.
+# default settings for solving a variational problem have been used.
+# However, the solution process can be controlled in much more detail if
+# desired.
 #
 # A :py:class:`Function <dolfinx.functions.fem.Function>` can be
 # manipulated in various ways, in particular, it can be plotted and
-# saved to file. Here, we output the solution to an ``XDMF`` file
-# for later visualization and also plot it using
-# the :py:func:`plot <dolfinx.common.plot.plot>` command: ::
+# saved to file. Here, we output the solution to an ``XDMF`` file for
+# later visualization and also plot it using the :py:func:`plot
+# <dolfinx.common.plot.plot>` command: ::
 
 # Save solution in XDMF format
 with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
     file.write_mesh(mesh)
-    file.write_function(u)
+    file.write_function(uh)
 
 # Update ghost entries and plot
-u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-dolfinx.plotting.plot(u)
+uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+dolfinx.plotting.plot(uh)
 plt.show()
