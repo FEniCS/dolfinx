@@ -22,7 +22,7 @@ namespace dolfinx::graph
 ///
 /// TODO: Add a function that sends data (Eigen arrays) to the 'owner'
 
-namespace partition
+namespace build
 {
 /// @todo Return the list of neighbor processes which is computed
 /// internally
@@ -154,7 +154,7 @@ compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
 //---------------------------------------------------------------------------
 template <typename T>
 Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-partition::distribute_data(
+build::distribute_data(
     MPI_Comm comm, const std::vector<std::int64_t>& indices,
     const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)

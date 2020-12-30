@@ -19,7 +19,7 @@ using namespace dolfinx::graph;
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>,
            std::vector<int>>
-partition::reorder_global_indices(
+build::reorder_global_indices(
     MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
     const std::vector<bool>& shared_indices)
 {
@@ -357,7 +357,7 @@ partition::reorder_global_indices(
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
-partition::create_local_adjacency_list(
+build::create_local_adjacency_list(
     const graph::AdjacencyList<std::int64_t>& cells)
 {
   const std::vector<std::int64_t>& array = cells.array();
@@ -389,7 +389,7 @@ partition::create_local_adjacency_list(
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
-partition::create_distributed_adjacency_list(
+build::create_distributed_adjacency_list(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& list_local,
     const std::vector<std::int64_t>& local_to_global_links,
     const std::vector<bool>& shared_links)
@@ -417,7 +417,7 @@ partition::create_distributed_adjacency_list(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
-partition::distribute(MPI_Comm comm,
+build::distribute(MPI_Comm comm,
                       const graph::AdjacencyList<std::int64_t>& list,
                       const graph::AdjacencyList<std::int32_t>& destinations)
 {
@@ -532,7 +532,7 @@ partition::distribute(MPI_Comm comm,
           std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> partition::compute_ghost_indices(
+std::vector<std::int64_t> build::compute_ghost_indices(
     MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
     const std::vector<int>& ghost_owners)
 {
@@ -648,7 +648,7 @@ std::vector<std::int64_t> partition::compute_ghost_indices(
   return ghost_global_indices;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> partition::compute_local_to_global_links(
+std::vector<std::int64_t> build::compute_local_to_global_links(
     const graph::AdjacencyList<std::int64_t>& global,
     const graph::AdjacencyList<std::int32_t>& local)
 {
@@ -684,7 +684,7 @@ std::vector<std::int64_t> partition::compute_local_to_global_links(
   return local_to_global_list;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> partition::compute_local_to_local(
+std::vector<std::int32_t> build::compute_local_to_local(
     const std::vector<std::int64_t>& local0_to_global,
     const std::vector<std::int64_t>& local1_to_global)
 {
