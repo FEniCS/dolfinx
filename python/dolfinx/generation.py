@@ -102,7 +102,7 @@ def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
 def BoxMesh(comm, points: typing.List[numpy.array], n: list,
             cell_type=cpp.mesh.CellType.tetrahedron,
             ghost_mode=cpp.mesh.GhostMode.shared_facet,
-            partitioner=cpp.mesh.partition_cells):
+            partitioner=cpp.mesh.partition_cells_graph):
     """Create box mesh
 
     Parameters

@@ -248,22 +248,12 @@ void mesh(py::module& m)
   declare_meshtags<std::int64_t>(m, "int64");
 
   // Partitioning interface
-  m.def("partition_cells",
+  m.def("partition_cells_grapg",
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
            dolfinx::mesh::GhostMode ghost_mode) {
           return dolfinx::mesh::partition_cells_graph(
-              comm.get(), nparts, cell_type, cells, ghost_mode);
-        });
-
-  // Partitioning interface
-  m.def("partition_cells_kahip",
-        [](const MPICommWrapper comm, int nparts,
-           dolfinx::mesh::CellType cell_type,
-           const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-           dolfinx::mesh::GhostMode ghost_mode) {
-          return dolfinx::mesh::partition_cells_kahip(
               comm.get(), nparts, cell_type, cells, ghost_mode);
         });
 
