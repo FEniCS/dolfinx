@@ -40,7 +40,8 @@ public:
   /// @param[in] n Number of cells in each direction.
   /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] ghost_mode Ghost mode
-  /// @param[in] partitioner Partitioning function to use
+  /// @param[in] partitioner Partitioning function to use for
+  /// determining the parallel distribution of cells across MPI ranks
   /// @return Mesh
   static mesh::Mesh
   create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,

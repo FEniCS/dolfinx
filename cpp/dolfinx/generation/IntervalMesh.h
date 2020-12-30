@@ -8,6 +8,7 @@
 
 #include <array>
 #include <cstddef>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 
 namespace dolfinx
@@ -33,11 +34,18 @@ public:
   /// @param[in] x The end points
   /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] ghost_mode Ghosting mode
+  /// @param[in] partitioner Partitioning function to use for
+  /// determining the parallel distribution of cells across MPI ranks
   /// @return A mesh
-  static mesh::Mesh create(MPI_Comm comm, std::size_t n,
-                           std::array<double, 2> x,
-                           const fem::CoordinateElement& element,
-                           const mesh::GhostMode ghost_mode);
+  static mesh::Mesh
+  create(MPI_Comm comm, std::size_t n, std::array<double, 2> x,
+         const fem::CoordinateElement& element,
+         const mesh::GhostMode ghost_mode,
+         const mesh::CellPartitionFunction& partitioner
+         = static_cast<graph::AdjacencyList<std::int32_t> (*)(
+             MPI_Comm, int, const mesh::CellType,
+             const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
+             &mesh::partition_cells_graph));
 };
 } // namespace generation
 } // namespace dolfinx

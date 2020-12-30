@@ -25,7 +25,6 @@ namespace generation
 /// Given the number of cells (nx, ny) in each direction, the total
 /// number of triangles will be 2*nx*ny and the total number of vertices
 /// will be (nx + 1)*(ny + 1).
-
 class RectangleMesh
 {
 public:
@@ -35,12 +34,31 @@ public:
   /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] ghost_mode Mesh ghosting mode
   /// @param[in] diagonal Direction of diagonals: "left", "right",
-  ///   "left/right", "crossed"
+  /// "left/right", "crossed"
   /// @return Mesh
+
   static mesh::Mesh
   create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
          std::array<std::size_t, 2> n, const fem::CoordinateElement& element,
          const mesh::GhostMode ghost_mode, std::string diagonal = "right");
+
+  /// @param[in] comm MPI communicator to build the mesh on
+  /// @param[in] p Two corner points
+  /// @param[in] n Number of cells in each direction
+  /// @param[in] element Element that describes the geometry of a cell
+  /// @param[in] ghost_mode Mesh ghosting mode
+  /// @param[in] partitioner Partitioning function to use for
+  /// determining the parallel distribution of cells across MPI ranks
+  /// @param[in] diagonal Direction of diagonals: "left", "right",
+  /// "left/right", "crossed"
+  /// @return Mesh
+  static mesh::Mesh create(MPI_Comm comm,
+                           const std::array<Eigen::Vector3d, 2>& p,
+                           std::array<std::size_t, 2> n,
+                           const fem::CoordinateElement& element,
+                           const mesh::GhostMode ghost_mode,
+                           const mesh::CellPartitionFunction& partitioner,
+                           std::string diagonal = "right");
 };
 } // namespace generation
 } // namespace dolfinx
