@@ -277,6 +277,7 @@ graph::parmetis::partitioner(std::array<int, 3> options)
 
     // Convert to offset format for AdjacencyList
     std::vector<std::int32_t> dests;
+    dests.reserve(ncells);
     std::vector<std::int32_t> offsets(1, 0);
     for (std::int32_t i = 0; i < ncells; ++i)
     {

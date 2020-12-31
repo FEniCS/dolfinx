@@ -37,10 +37,12 @@ public:
   /// "left/right", "crossed"
   /// @return Mesh
 
-  static mesh::Mesh
-  create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-         std::array<std::size_t, 2> n, const fem::CoordinateElement& element,
-         const mesh::GhostMode ghost_mode, std::string diagonal = "right");
+  static mesh::Mesh create(MPI_Comm comm,
+                           const std::array<Eigen::Vector3d, 2>& p,
+                           std::array<std::size_t, 2> n,
+                           const fem::CoordinateElement& element,
+                           const mesh::GhostMode ghost_mode,
+                           const std::string& diagonal = "right");
 
   /// @param[in] comm MPI communicator to build the mesh on
   /// @param[in] p Two corner points
@@ -58,7 +60,7 @@ public:
                            const fem::CoordinateElement& element,
                            const mesh::GhostMode ghost_mode,
                            const mesh::CellPartitionFunction& partitioner,
-                           std::string diagonal = "right");
+                           const std::string& diagonal = "right");
 };
 } // namespace generation
 } // namespace dolfinx

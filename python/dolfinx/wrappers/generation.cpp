@@ -77,7 +77,7 @@ void generation(py::module& m)
              const dolfinx::fem::CoordinateElement& element,
              dolfinx::mesh::GhostMode ghost_mode,
              const PythonCellPartitionFunction& partitioner,
-             std::string diagonal) {
+             const std::string& diagonal) {
             return dolfinx::generation::RectangleMesh::create(
                 comm.get(), p, n, element, ghost_mode,
                 create_partitioner_wrapper(partitioner), diagonal);

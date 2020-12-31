@@ -157,13 +157,16 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
 
     // Convert to offset format for AdjacencyList
     std::vector<std::int32_t> dests;
+    dests.reserve(ncells);
     std::vector<std::int32_t> offsets(1, 0);
     for (std::int32_t i = 0; i < ncells; ++i)
     {
       dests.push_back(part[i]);
       if (auto it = local_node_to_dests.find(i);
           it != local_node_to_dests.end())
+      {
         dests.insert(dests.end(), it->second.begin(), it->second.end());
+      }
       offsets.push_back(dests.size());
     }
 

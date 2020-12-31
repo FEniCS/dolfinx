@@ -23,7 +23,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner,
-                     std::string diagonal)
+                     const std::string& diagonal)
 {
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
@@ -265,7 +265,7 @@ mesh::Mesh RectangleMesh::create(MPI_Comm comm,
                                  std::array<std::size_t, 2> n,
                                  const fem::CoordinateElement& element,
                                  const mesh::GhostMode ghost_mode,
-                                 std::string diagonal)
+                                 const std::string& diagonal)
 {
   return RectangleMesh::create(
       comm, p, n, element, ghost_mode,
@@ -282,7 +282,7 @@ mesh::Mesh RectangleMesh::create(MPI_Comm comm,
                                  const fem::CoordinateElement& element,
                                  const mesh::GhostMode ghost_mode,
                                  const mesh::CellPartitionFunction& partitioner,
-                                 std::string diagonal)
+                                 const std::string& diagonal)
 {
   if (element.cell_shape() == mesh::CellType::triangle)
     return build_tri(comm, p, n, element, ghost_mode, partitioner, diagonal);
