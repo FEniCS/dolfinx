@@ -26,7 +26,6 @@ namespace refinement
 /// Implementation of the refinement method described in Plaza and Carey
 /// "Local refinement of simplicial grids based on the skeleton"
 /// (Applied Numerical Mathematics 32 (2000) 195-218)
-
 namespace plaza
 {
 
@@ -34,8 +33,8 @@ namespace plaza
 /// calculating the parent-child relation for facets (in 2D)
 ///
 /// @param[in] mesh Input mesh to be refined
-/// @param[in] redistribute Flag to call the Mesh Partitioner to
-///   redistribute after refinement
+/// @param[in] redistribute Flag to call the mesh partitioner to
+/// redistribute after refinement
 /// @return New mesh
 mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
 
@@ -43,9 +42,9 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] refinement_marker MeshTags listing which mesh entities
-///   should be split by this refinement. The values are ignored.
+/// should be split by this refinement. The values are ignored.
 /// @param[in] redistribute Flag to call the Mesh Partitioner to
-///   redistribute after refinement
+/// redistribute after refinement
 /// @return New Mesh
 mesh::Mesh refine(const mesh::Mesh& mesh,
                   const mesh::MeshTags<std::int8_t>& refinement_marker,

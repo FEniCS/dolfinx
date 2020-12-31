@@ -30,7 +30,7 @@ std::int64_t local_to_global(std::int32_t local_index,
 {
   assert(local_index >= 0);
   const std::array local_range = map.local_range();
-  const std::int32_t local_size = (local_range[1] - local_range[0]);
+  const std::int32_t local_size = local_range[1] - local_range[0];
   if (local_index < local_size)
   {
     const std::int64_t global_offset = local_range[0];
@@ -85,7 +85,7 @@ create_new_geometry(
 
   const std::int32_t num_vertices = map_v->size_local();
   const std::int32_t num_new_vertices = local_edge_to_new_vertex.size();
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
       new_vertex_coordinates(num_vertices + num_new_vertices, 3);
 
   for (int v = 0; v < num_vertices; ++v)
@@ -147,7 +147,7 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
     shared_edges.insert({q.first, neighbor_set});
   }
 
-  return {neighbor_comm, shared_edges};
+  return {neighbor_comm, std::move(shared_edges)};
 }
 //-----------------------------------------------------------------------------
 void refinement::update_logical_edgefunction(
@@ -248,7 +248,7 @@ refinement::create_new_vertices(
 
   // Send new vertex indices to edge neighbors and receive
   std::vector<std::int64_t> send_values;
-  std::vector<int> send_offsets = {0};
+  std::vector<int> send_offsets(1, 0);
   for (int i = 0; i < num_neighbors; ++i)
   {
     send_values.insert(send_values.end(), values_to_send[i].begin(),
@@ -265,7 +265,7 @@ refinement::create_new_vertices(
   assert(received_values.size() % 2 == 0);
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
     recv_global_edge.push_back(received_values[i * 2]);
-  std::vector<std::int32_t> recv_local_edge
+  const std::vector<std::int32_t> recv_local_edge
       = mesh.topology().index_map(1)->global_to_local(recv_global_edge);
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
   {
@@ -275,7 +275,8 @@ refinement::create_new_vertices(
     assert(it.second);
   }
 
-  return {local_edge_to_new_vertex, new_vertex_coordinates};
+  return {std::move(local_edge_to_new_vertex),
+          std::move(new_vertex_coordinates)};
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> refinement::adjust_indices(
@@ -373,8 +374,8 @@ mesh::Mesh refinement::partition(
       dest_offsets.push_back(destinations.size());
     }
 
-    graph::AdjacencyList<std::int32_t> part(destinations, dest_offsets);
-    return part;
+    return graph::AdjacencyList<std::int32_t>(std::move(destinations),
+                                              std::move(dest_offsets));
   };
 
   return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
