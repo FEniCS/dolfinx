@@ -6,22 +6,52 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
-#include <set>
 #include <utility>
 #include <vector>
 
 namespace dolfinx::graph
 {
 
+/// Signature of functions for computing the parallel partitioning of a
+/// distributed graph
+///
+/// @param comm MPI Communicator that the graph is distributed across
+/// @param nparts Number of partitions to divide graph nodes into
+/// @param local_graph Node connectivity graph
+/// @param num_ghost_nodes Number of graph nodes appearing in @p
+/// local_graph that are owned on other processes
+/// @param ghosting Flag to enable ghosting of the output node
+/// distribution
+/// @return Destination rank for each input node
+using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
+    MPI_Comm comm, int nparts, const AdjacencyList<std::int64_t>& local_graph,
+    std::int32_t num_ghost_nodes, bool ghosting)>;
+
+/// Partition graph across processes using  the default graph
+/// partitioner
+///
+/// @param comm MPI Communicator that the graph is distributed across
+/// @param nparts Number of partitions to divide graph nodes into
+/// @param local_graph Node connectivity graph
+/// @param num_ghost_nodes Number of graph nodes appearing in @p
+/// local_graph that are owned on other processes
+/// @param ghosting Flag to enable ghosting of the output node
+/// distribution
+/// @return Destination rank for each input node
+AdjacencyList<std::int32_t>
+partition_graph(const MPI_Comm comm, int nparts,
+                const AdjacencyList<std::int64_t>& local_graph,
+                std::int32_t num_ghost_nodes, bool ghosting);
+
 /// Tools for distributed graphs
 ///
-/// TODO: Add a function that sends data (Eigen arrays) to the 'owner'
-
+/// @todo Add a function that sends data (Eigen arrays) to the 'owner'
 namespace build
 {
 /// @todo Return the list of neighbor processes which is computed
@@ -55,10 +85,10 @@ reorder_global_indices(MPI_Comm comm,
 /// AdjacencyList that may have non-contiguous data
 ///
 /// @param[in] list Adjacency list with links that might not have
-///   contiguous numdering
-/// @return Adjacency list with contiguous ordering [0, 1, ..., n),
-///   and a map from local indices in the returned Adjacency list to
-///   the global indices in @p list
+/// contiguous numdering
+/// @return Adjacency list with contiguous ordering [0, 1, ..., n), and
+/// a map from local indices in the returned Adjacency list to the
+/// global indices in @p list
 std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
 create_local_adjacency_list(const graph::AdjacencyList<std::int64_t>& list);
 

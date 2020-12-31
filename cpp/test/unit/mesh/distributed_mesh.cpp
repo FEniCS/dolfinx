@@ -10,7 +10,10 @@
 #include <catch.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/kahip.h>
 #include <dolfinx/io/XDMFFile.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/graphbuild.h>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -32,7 +35,7 @@ void create_mesh_file()
   file.write_mesh(*mesh);
 }
 
-void test_distributed_mesh()
+void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
   MPI_Comm mpi_comm{MPI_COMM_WORLD};
   int mpi_size = dolfinx::MPI::size(mpi_comm);
@@ -66,10 +69,9 @@ void test_distributed_mesh()
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
     cells = infile.read_topology_data("mesh");
     x = infile.read_geometry_data("mesh");
-    dest = dolfinx::mesh::partition_cells(
-        subset_comm, nparts, cmap.cell_shape(),
-        graph::AdjacencyList<std::int64_t>(cells),
-        mesh::GhostMode::shared_facet);
+    dest = partitioner(subset_comm, nparts, cmap.cell_shape(),
+                       graph::AdjacencyList<std::int64_t>(cells),
+                       mesh::GhostMode::shared_facet);
   }
 
   graph::AdjacencyList<std::int64_t> cells_topology(cells);
@@ -104,5 +106,29 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 {
   create_mesh_file();
 
-  SECTION("SCOTCH") { CHECK_NOTHROW(test_distributed_mesh()); }
+  SECTION("SCOTCH")
+  {
+    CHECK_NOTHROW(test_distributed_mesh(
+        static_cast<graph::AdjacencyList<std::int32_t> (*)(
+            MPI_Comm, int, const mesh::CellType,
+            const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
+            &mesh::partition_cells_graph)));
+  }
+
+#ifdef HASKIP
+  SECTION("KAHIP with Lambda")
+  {
+    auto kahip
+        = [](MPI_Comm mpi_comm, int nparts, const mesh::CellType cell_type,
+             const graph::AdjacencyList<std::int64_t>& cells,
+             mesh::GhostMode ghost_mode) {
+            const auto [dual_graph, graph_info]
+                = mesh::build_dual_graph(mpi_comm, cells, cell_type);
+            bool ghosting = (ghost_mode != mesh::GhostMode::none);
+            return graph::kahip::partition(mpi_comm, nparts, dual_graph, -1,
+                                           ghosting);
+          };
+    CHECK_NOTHROW(test_distributed_mesh(kahip));
+  }
+#endif
 }

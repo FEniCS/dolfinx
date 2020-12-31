@@ -307,7 +307,7 @@ compute_nonlocal_dual_graph(
     assert((std::int64_t)(cell_list[i] - cell_offset)
            < (std::int64_t)local_graph.num_nodes());
 
-    auto& edges = graph[cell_list[i] - cell_offset];
+    std::vector<std::int64_t>& edges = graph[cell_list[i] - cell_offset];
     auto it = std::find(edges.begin(), edges.end(), cell_list[i + 1]);
     if (it == graph[cell_list[i] - cell_offset].end())
     {

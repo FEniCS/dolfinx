@@ -79,7 +79,8 @@ void enforce_rules(
         {
           marked_edges[long_e] = true;
 
-          // If it is a shared edge, add all sharing neighbors to update set
+          // If it is a shared edge, add all sharing neighbors to update
+          // set
           if (auto map_it = shared_edges.find(long_e);
               map_it != shared_edges.end())
           {
@@ -575,8 +576,10 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
 
   auto ent_to_edge = mesh.topology().connectivity(entity_dim, 1);
   if (!ent_to_edge)
+  {
     throw std::runtime_error("Connectivity missing: ("
                              + std::to_string(entity_dim) + ", 1)");
+  }
 
   std::vector<bool> marked_edges(map_e->size_local() + map_e->num_ghosts(),
                                  false);
@@ -613,8 +616,8 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
   refinement::update_logical_edgefunction(neighbor_comm, marked_for_update,
                                           marked_edges, *map_e);
 
-  // Enforce rules about refinement (i.e. if any edge is marked in a triangle,
-  // then the longest edge must also be marked).
+  // Enforce rules about refinement (i.e. if any edge is marked in a
+  // triangle, then the longest edge must also be marked).
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh, long_edge);
 
