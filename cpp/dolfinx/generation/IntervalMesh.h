@@ -18,34 +18,29 @@ namespace fem
 class CoordinateElement;
 }
 
-namespace generation
+/// Interval mesh creation
+namespace generation::IntervalMesh
 {
 
-/// Interval mesh of the 1D line [a,b].  Given the number of cells
-/// (n) in the axial direction, the total number of intervals will
-/// be n and the total number of vertices will be (n + 1).
-
-class IntervalMesh
-{
-public:
-  /// Factory
-  /// @param[in] comm MPI communicator to build the mesh on
-  /// @param[in] n The number of cells.
-  /// @param[in] x The end points
-  /// @param[in] element Element that describes the geometry of a cell
-  /// @param[in] ghost_mode Ghosting mode
-  /// @param[in] partitioner Partitioning function to use for
-  /// determining the parallel distribution of cells across MPI ranks
-  /// @return A mesh
-  static mesh::Mesh
-  create(MPI_Comm comm, std::size_t n, std::array<double, 2> x,
-         const fem::CoordinateElement& element,
-         const mesh::GhostMode ghost_mode,
-         const mesh::CellPartitionFunction& partitioner
-         = static_cast<graph::AdjacencyList<std::int32_t> (*)(
-             MPI_Comm, int, const mesh::CellType,
-             const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
-             &mesh::partition_cells_graph));
-};
-} // namespace generation
+/// Interval mesh of the 1D line `[a, b]`.  Given @p n cells in the
+/// axial direction, the total number of intervals will be `n` and the
+/// total number of vertices will be `n + 1`.
+///
+/// @param[in] comm MPI communicator to build the mesh on
+/// @param[in] n The number of cells
+/// @param[in] x The end points of the interval
+/// @param[in] element Element that describes the geometry of a cell
+/// @param[in] ghost_mode Ghosting mode
+/// @param[in] partitioner Partitioning function to use for
+/// determining the parallel distribution of cells across MPI ranks
+/// @return A mesh
+mesh::Mesh
+create(MPI_Comm comm, std::size_t n, std::array<double, 2> x,
+       const fem::CoordinateElement& element, const mesh::GhostMode ghost_mode,
+       const mesh::CellPartitionFunction& partitioner
+       = static_cast<graph::AdjacencyList<std::int32_t> (*)(
+           MPI_Comm, int, const mesh::CellType,
+           const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
+           &mesh::partition_cells_graph));
+} // namespace generation::IntervalMesh
 } // namespace dolfinx
