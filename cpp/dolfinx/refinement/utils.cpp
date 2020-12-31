@@ -8,7 +8,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/graph/scotch.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
