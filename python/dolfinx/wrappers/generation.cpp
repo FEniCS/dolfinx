@@ -11,6 +11,7 @@
 #include <dolfinx/generation/BoxMesh.h>
 #include <dolfinx/generation/IntervalMesh.h>
 #include <dolfinx/generation/RectangleMesh.h>
+#include <pybind11/eigen.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -45,7 +46,6 @@ namespace dolfinx_wrappers
 
 void generation(py::module& m)
 {
-
   m.def(
       "create_interval_mesh",
       [](const MPICommWrapper comm, std::size_t n, std::array<double, 2> p,
