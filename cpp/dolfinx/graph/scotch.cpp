@@ -119,13 +119,13 @@ graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
 std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm x, int, const graph::AdjacencyList<std::int64_t>&, std::int32_t,
     bool)>
-graph::scotch::partitioner(graph::scotch::strategy strat, double imbalance,
+graph::scotch::partitioner(graph::scotch::strategy strategy, double imbalance,
                            int seed)
 {
-  return [imbalance, strat_type = strat,
-          seed](const MPI_Comm mpi_comm, int nparts,
-                const AdjacencyList<std::int64_t>& graph,
-                std::int32_t num_ghost_nodes, bool ghosting) {
+  return [imbalance, strategy, seed](const MPI_Comm mpi_comm, int nparts,
+                                     const AdjacencyList<std::int64_t>& graph,
+                                     std::int32_t num_ghost_nodes,
+                                     bool ghosting) {
     LOG(INFO) << "Compute graph partition using PT-SCOTCH";
     common::Timer timer("Compute graph partition (SCOTCH)");
 
@@ -194,7 +194,7 @@ graph::scotch::partitioner(graph::scotch::strategy strat, double imbalance,
 
     // Set SCOTCH strategy
     SCOTCH_Num strat_val;
-    switch (strat_type)
+    switch (strategy)
     {
     case strategy::none:
       strat_val = SCOTCH_STRATDEFAULT;

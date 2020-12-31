@@ -36,7 +36,7 @@ enum class strategy
 /// smaller value the more balanced the partitioning must be.
 /// @param[in] seed Random number generator seed
 /// @return A graph partitioning function
-graph::partition_fn partitioner(scotch::strategy strat = strategy::none,
+graph::partition_fn partitioner(scotch::strategy strategy = strategy::none,
                                 double imbalance = 0.025, int seed = 0);
 
 /// Compute reordering (map[old] -> new) using Gibbs-Poole-Stockmeyer
