@@ -78,7 +78,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   // Distribute cells to destination ranks
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
-      = graph::partition::distribute(mpi_comm, cells_topology, dest);
+      = graph::build::distribute(mpi_comm, cells_topology, dest);
 
   dolfinx::mesh::Topology topology = mesh::create_topology(
       mpi_comm, cell_nodes, original_cell_index, ghost_owners,
