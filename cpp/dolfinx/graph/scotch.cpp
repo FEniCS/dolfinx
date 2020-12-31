@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2013 Garth N. Wells, Anders Logg and Chris Richardson
+// Copyright (C) 2010-2020 Garth N. Wells, Anders Logg and Chris Richardson
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -119,11 +119,13 @@ graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
 std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm x, int, const graph::AdjacencyList<std::int64_t>&, std::int32_t,
     bool)>
-graph::scotch::partitioner()
+graph::scotch::partitioner(graph::scotch::strategy strat, double imbalance,
+                           int seed)
 {
-  return [](const MPI_Comm mpi_comm, int nparts,
-            const AdjacencyList<std::int64_t>& graph,
-            std::int32_t num_ghost_nodes, bool ghosting) {
+  return [imbalance, strat_type = strat,
+          seed](const MPI_Comm mpi_comm, int nparts,
+                const AdjacencyList<std::int64_t>& graph,
+                std::int32_t num_ghost_nodes, bool ghosting) {
     LOG(INFO) << "Compute graph partition using PT-SCOTCH";
     common::Timer timer("Compute graph partition (SCOTCH)");
 
@@ -163,8 +165,13 @@ graph::scotch::partitioner()
     if (!node_weights.empty())
       vload.assign(node_weights.begin(), node_weights.end());
 
-    // Build SCOTCH distributed graph. SCOTCH is not const-correct, so we
-    // throw away constness and trust SCOTCH.
+    // Set seed and reset SCOTCH random number generator to produce
+    // deterministic partitions on repeated calls
+    SCOTCH_randomSeed(seed);
+    SCOTCH_randomReset();
+
+    // Build SCOTCH distributed graph (SCOTCH is not const-correct, so
+    // we throw away constness and trust SCOTCH)
     common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
     if (SCOTCH_dgraphBuild(
             &dgrafdat, baseval, vertlocnbr, vertlocnbr, vertloctab.data(),
@@ -186,13 +193,31 @@ graph::scotch::partitioner()
     SCOTCH_stratInit(&strat);
 
     // Set SCOTCH strategy
-    // SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATDEFAULT, nparts, nparts,
-    // 0.05);
-    SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATSPEED, nparts, nparts, 0.05);
-    // SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATQUALITY, nparts, nparts,
-    // 0.05);
-    // SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATSCALABILITY, nparts,
-    // nparts, 0.15);
+    SCOTCH_Num strat_val;
+    switch (strat_type)
+    {
+    case strategy::none:
+      strat_val = SCOTCH_STRATDEFAULT;
+      break;
+    case strategy::balance:
+      strat_val = SCOTCH_STRATBALANCE;
+      break;
+    case strategy::quality:
+      strat_val = SCOTCH_STRATQUALITY;
+      break;
+    case strategy::safety:
+      strat_val = SCOTCH_STRATSAFETY;
+      break;
+    case strategy::speed:
+      strat_val = SCOTCH_STRATSPEED;
+      break;
+    case strategy::scalability:
+      strat_val = SCOTCH_STRATSCALABILITY;
+      break;
+    default:
+      throw("Unknown SCOTCH strategy");
+    }
+    SCOTCH_stratDgraphMapBuild(&strat, strat_val, nparts, nparts, imbalance);
 
     // Resize vector to hold cell partition indices with enough extra
     // space for ghost cell partition information too. When there are no
@@ -201,11 +226,7 @@ graph::scotch::partitioner()
     const std::int32_t vertgstnbr = vertlocnbr + num_ghost_nodes;
     std::vector<SCOTCH_Num> cell_partition(std::max(1, vertgstnbr), 0);
 
-    // Reset SCOTCH random number generator to produce deterministic
-    // partitions
-    SCOTCH_randomReset();
-
-    // Partition graph
+    // Partition the graph
     common::Timer timer2("SCOTCH: call SCOTCH_dgraphPart");
     if (SCOTCH_dgraphPart(&dgrafdat, nparts, &strat, cell_partition.data()))
       throw std::runtime_error("Error during SCOTCH partitioning");
