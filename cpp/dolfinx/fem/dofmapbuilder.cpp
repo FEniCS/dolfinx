@@ -208,7 +208,7 @@ build_basic_dofmap(const mesh::Topology& topology,
 /// @param [in] dofmap The basic dofmap data
 /// @param [in] topology The mesh topology
 /// @return The pair (old-to-new local index map, M), where M is the
-///   number of dofs owned by this process
+/// number of dofs owned by this process
 std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     const graph::AdjacencyList<std::int32_t>& dofmap,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
@@ -250,73 +250,75 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // Build local graph, based on dof map with contiguous numbering
   // (unowned dofs excluded)
 
-  // Compute maximum number of graph out edges edges per dof
-  std::vector<int> num_edges(owned_size);
-  for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
+  std::vector<std::int32_t> graph_data, graph_offsets;
   {
-    auto nodes = dofmap.links(cell);
-    for (std::size_t i = 0; i < nodes.size(); ++i)
+    // Compute maximum number of graph out edges edges per dof
+    std::vector<int> num_edges(owned_size);
+    for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
     {
-      const std::int32_t node_i = original_to_contiguous[nodes[i]];
-
-      // Skip unowned node
-      if (node_i == -1)
-        continue;
-
-      for (std::size_t j = 0; j < nodes.size(); ++j)
+      auto nodes = dofmap.links(cell);
+      for (std::size_t i = 0; i < nodes.size(); ++i)
       {
-        // Skip diagonal
-        if (i == j)
+        const std::int32_t node_i = original_to_contiguous[nodes[i]];
+
+        // Skip unowned node
+        if (node_i == -1)
           continue;
 
-        const std::int32_t node_j = original_to_contiguous[nodes[j]];
-        if (node_j != -1)
-          ++num_edges[node_i];
+        for (std::size_t j = 0; j < nodes.size(); ++j)
+        {
+          // Skip diagonal
+          if (i == j)
+            continue;
+
+          const std::int32_t node_j = original_to_contiguous[nodes[j]];
+          if (node_j != -1)
+            ++num_edges[node_i];
+        }
       }
     }
-  }
 
-  // Compute adjacency list with duplicate edges
-  std::vector<std::int32_t> offsets_tmp(num_edges.size() + 1, 0);
-  std::partial_sum(num_edges.begin(), num_edges.end(),
-                   std::next(offsets_tmp.begin(), 1));
-  std::vector<std::int32_t> edges_tmp(offsets_tmp.back());
-  std::vector<int> pos(num_edges.size(), 0);
-  for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
-  {
-    auto nodes = dofmap.links(cell);
-    for (std::size_t i = 0; i < nodes.size(); ++i)
+    // Compute adjacency list with duplicate edges
+    std::vector<std::int32_t> offsets_tmp(num_edges.size() + 1, 0);
+    std::partial_sum(num_edges.begin(), num_edges.end(),
+                     std::next(offsets_tmp.begin(), 1));
+    std::vector<std::int32_t> edges_tmp(offsets_tmp.back());
+    std::vector<int> pos(num_edges.size(), 0);
+    for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
     {
-      const std::int32_t node_i = original_to_contiguous[nodes[i]];
-      if (node_i == -1)
-        continue;
-      for (std::size_t j = 0; j < nodes.size(); ++j)
+      auto nodes = dofmap.links(cell);
+      for (std::size_t i = 0; i < nodes.size(); ++i)
       {
-        if (i == j)
+        const std::int32_t node_i = original_to_contiguous[nodes[i]];
+        if (node_i == -1)
           continue;
-        const std::int32_t node_j = original_to_contiguous[nodes[j]];
-        if (node_j != -1)
-          edges_tmp[offsets_tmp[node_i] + pos[node_i]++] = node_j;
+        for (std::size_t j = 0; j < nodes.size(); ++j)
+        {
+          if (i == j)
+            continue;
+          const std::int32_t node_j = original_to_contiguous[nodes[j]];
+          if (node_j != -1)
+            edges_tmp[offsets_tmp[node_i] + pos[node_i]++] = node_j;
+        }
       }
     }
-  }
 
-  // Eliminate duplicate edges and create AdjacencyList
-  std::vector<std::int32_t> graph_data_new;
-  std::vector<std::int32_t> graph_offsets(offsets_tmp.size(), 0);
-  for (std::size_t i = 0; i < offsets_tmp.size() - 1; ++i)
-  {
-    std::sort(std::next(edges_tmp.begin(), offsets_tmp[i]),
-              std::next(edges_tmp.begin(), offsets_tmp[i + 1]));
-    auto it = std::unique(std::next(edges_tmp.begin(), offsets_tmp[i]),
-                          std::next(edges_tmp.begin(), offsets_tmp[i + 1]));
-    graph_data_new.insert(graph_data_new.end(),
-                          std::next(edges_tmp.begin(), offsets_tmp[i]), it);
-    graph_offsets[i + 1]
-        = graph_offsets[i]
-          + std::distance(std::next(edges_tmp.begin(), offsets_tmp[i]), it);
+    // Eliminate duplicate edges and create AdjacencyList
+    graph_offsets.resize(offsets_tmp.size(), 0);
+    for (std::size_t i = 0; i < offsets_tmp.size() - 1; ++i)
+    {
+      std::sort(std::next(edges_tmp.begin(), offsets_tmp[i]),
+                std::next(edges_tmp.begin(), offsets_tmp[i + 1]));
+      auto it = std::unique(std::next(edges_tmp.begin(), offsets_tmp[i]),
+                            std::next(edges_tmp.begin(), offsets_tmp[i + 1]));
+      graph_data.insert(graph_data.end(),
+                        std::next(edges_tmp.begin(), offsets_tmp[i]), it);
+      graph_offsets[i + 1]
+          = graph_offsets[i]
+            + std::distance(std::next(edges_tmp.begin(), offsets_tmp[i]), it);
+    }
   }
-  const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data_new),
+  const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data),
                                                  std::move(graph_offsets));
 
   // Reorder owned nodes
@@ -512,7 +514,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     }
   }
 
-  return {local_to_global_new, local_to_global_new_owner};
+  return {std::move(local_to_global_new), std::move(local_to_global_new_owner)};
 }
 //-----------------------------------------------------------------------------
 
@@ -537,7 +539,7 @@ fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
 
   // Compute global dofmap dimension
   std::int64_t global_dimension = 0;
-  for (int d = 0; d < D + 1; ++d)
+  for (int d = 0; d <= D; ++d)
   {
     if (element_dof_layout.num_entity_dofs(d) > 0)
     {
@@ -577,8 +579,8 @@ fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
   std::vector<std::int32_t> dofmap(node_graph0.array().size());
   for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
   {
-    const std::int32_t local_dim0 = node_graph0.num_links(cell);
     auto old_nodes = node_graph0.links(cell);
+    const std::int32_t local_dim0 = old_nodes.size();
     for (std::int32_t j = 0; j < local_dim0; ++j)
     {
       const std::int32_t old_node = old_nodes[j];
@@ -586,6 +588,7 @@ fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
       dofmap[local_dim0 * cell + j] = new_node;
     }
   }
+
   assert(dofmap.size() % node_graph0.num_nodes() == 0);
   return {std::move(index_map), element_dof_layout.block_size(),
           graph::build_adjacency_list<std::int32_t>(
