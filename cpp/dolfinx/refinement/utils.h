@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>

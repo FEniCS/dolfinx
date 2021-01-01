@@ -6,7 +6,7 @@
 
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
