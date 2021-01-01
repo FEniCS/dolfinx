@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2018 Garth N. Wells
+// Copyright (C) 2005-2021 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -18,9 +18,10 @@ namespace
 {
 //-----------------------------------------------------------------------------
 /// Convergence test
-/// @param r Residual for criterion evaluation
-/// @param iteration Newton iteration number
-/// @return True if convergence achieved
+/// @param solver The Newton solver
+/// @param r The residual vector
+/// @return The pair `(residual norm, converged)`, where `converged` is
+// and true` if convergence achieved
 std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
 {
   la::PETScVector _r(r, true);
