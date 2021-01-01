@@ -69,12 +69,16 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
     cells = infile.read_topology_data("mesh");
     x = infile.read_geometry_data("mesh");
-    dest = partitioner(subset_comm, nparts, cmap.cell_shape(),
-                       graph::AdjacencyList<std::int64_t>(cells),
-                       mesh::GhostMode::shared_facet);
+    auto [data, offsets] = graph::create_adjacency_data(cells);
+    dest = partitioner(
+        subset_comm, nparts, cmap.cell_shape(),
+        graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
+        mesh::GhostMode::shared_facet);
   }
 
-  graph::AdjacencyList<std::int64_t> cells_topology(cells);
+  auto [data, offsets] = graph::create_adjacency_data(cells);
+  graph::AdjacencyList<std::int64_t> cells_topology(std::move(data),
+                                                    std::move(offsets));
 
   // Distribute cells to destination ranks
   const auto [cell_nodes, src, original_cell_index, ghost_owners]

@@ -68,8 +68,6 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
       element, geom, ghost_mode, partitioner);
-  // return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
-  //                          element, geom, ghost_mode, partitioner);
 }
 } // namespace
 
