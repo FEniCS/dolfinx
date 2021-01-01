@@ -11,15 +11,14 @@ using namespace dolfinx;
 //
 // .. code-block:: cpp
 
-class HyperElasticProblem : public nls::NonlinearProblem
+class HyperElasticProblem
 {
 public:
   HyperElasticProblem(
-      std::shared_ptr<fem::Function<PetscScalar>> u,
       std::shared_ptr<fem::Form<PetscScalar>> L,
       std::shared_ptr<fem::Form<PetscScalar>> J,
       std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bcs)
-      : _u(u), _l(L), _j(J), _bcs(bcs),
+      : _l(L), _j(J), _bcs(bcs),
         _b(L->function_spaces()[0]->dofmap()->index_map,
            L->function_spaces()[0]->dofmap()->index_map_bs()),
         _matA(fem::create_matrix(*J, "baij"))
@@ -42,52 +41,58 @@ public:
       VecDestroy(&_b_petsc);
   }
 
-  void form(Vec x) final
+  auto form()
   {
-    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+    return [](Vec x) {
+      VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+      VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+    };
   }
 
   /// Compute F at current point x
-  Vec F(const Vec x) final
+  auto F()
   {
-    // Assemble b and update ghosts
-    _b.array().setZero();
-    fem::assemble_vector<PetscScalar>(_b.array(), *_l);
-    VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
-    VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
+    return [&](const Vec x, Vec) {
+      // Assemble b and update ghosts
+      _b.array().setZero();
+      fem::assemble_vector<PetscScalar>(_b.array(), *_l);
+      VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
+      VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
 
-    // Set bcs
-    Vec x_local;
-    VecGhostGetLocalForm(x, &x_local);
-    PetscInt n = 0;
-    VecGetSize(x_local, &n);
-    const PetscScalar* array = nullptr;
-    VecGetArrayRead(x_local, &array);
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x(array,
-                                                                       n);
-    fem::set_bc<PetscScalar>(_b.array(), _bcs, _x, -1.0);
-    VecRestoreArrayRead(x, &array);
-
-    return _b_petsc;
+      // Set bcs
+      Vec x_local;
+      VecGhostGetLocalForm(x, &x_local);
+      PetscInt n = 0;
+      VecGetSize(x_local, &n);
+      const PetscScalar* array = nullptr;
+      VecGetArrayRead(x_local, &array);
+      Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x(array,
+                                                                         n);
+      fem::set_bc<PetscScalar>(_b.array(), _bcs, _x, -1.0);
+      VecRestoreArrayRead(x, &array);
+    };
   }
 
   /// Compute J = F' at current point x
-  Mat J(const Vec) final
+  auto J()
   {
-    MatZeroEntries(_matA.mat());
-    fem::assemble_matrix(la::PETScMatrix::add_block_fn(_matA.mat()), *_j, _bcs);
-    fem::add_diagonal(la::PETScMatrix::add_fn(_matA.mat()),
-                      *_j->function_spaces()[0], _bcs);
-    _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
-    return _matA.mat();
+    return [&](const Vec, Mat A) {
+      MatZeroEntries(A);
+      fem::assemble_matrix(la::PETScMatrix::add_block_fn(A), *_j, _bcs);
+      fem::add_diagonal(la::PETScMatrix::add_fn(A), *_j->function_spaces()[0],
+                        _bcs);
+      MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+      MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+    };
   }
 
+  Vec vector() { return _b_petsc; }
+
+  Mat matrix() { return _matA.mat(); }
+
 private:
-  std::shared_ptr<fem::Function<PetscScalar>> _u;
   std::shared_ptr<fem::Form<PetscScalar>> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> _bcs;
-
   la::Vector<PetscScalar> _b;
   Vec _b_petsc = nullptr;
   la::PETScMatrix _matA;
@@ -179,9 +184,12 @@ int main(int argc, char* argv[])
                        std::make_shared<const fem::DirichletBC<PetscScalar>>(
                            u_rotation, std::move(bdofs_right))});
 
-    HyperElasticProblem problem(u, L, a, bcs);
+    HyperElasticProblem problem(L, a, bcs);
     nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
-    newton_solver.solve(problem, u->vector());
+    newton_solver.setF(problem.F(), problem.vector());
+    newton_solver.setJ(problem.J(), problem.matrix());
+    newton_solver.set_form(problem.form());
+    newton_solver.solve(u->vector());
 
     // Save solution in VTK format
     io::VTKFile file("u.pvd");

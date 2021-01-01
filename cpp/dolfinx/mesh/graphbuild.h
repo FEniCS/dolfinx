@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "graphbuild.h"
+#include <Eigen/Core>
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 #include <dolfinx/common/MPI.h>
@@ -209,22 +210,15 @@ compute_nonlocal_dual_graph(
   }
 
   // Send data
-  const graph::AdjacencyList<std::int64_t> received_buffer
-      = dolfinx::MPI::all_to_all(
-          mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer));
+  graph::AdjacencyList<std::int64_t> received_buffer = dolfinx::MPI::all_to_all(
+      mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer));
 
   const int tdim = mesh::cell_dim(cell_type);
   const int num_vertices_per_facet
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
-
   assert(received_buffer.array().size() % (num_vertices_per_facet + 1) == 0);
   const int num_facets
       = received_buffer.array().size() / (num_vertices_per_facet + 1);
-
-  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>
-      received_buffer_array(received_buffer.array().data(), num_facets,
-                            num_vertices_per_facet + 1);
 
   // Set up vector of owning processes for each received facet
   const std::vector<std::int32_t>& received_buffer_offsets
@@ -239,20 +233,23 @@ compute_nonlocal_dual_graph(
     }
   }
 
+  // Reshape the return buffer
+  std::vector<std::int32_t> offsets(num_facets + 1, 0);
+  for (std::size_t i = 0; i < offsets.size() - 1; ++i)
+    offsets[i + 1] = offsets[i] + num_vertices_per_facet + 1;
+  received_buffer = graph::AdjacencyList<std::int64_t>(
+      std::move(received_buffer.array()), std::move(offsets));
+
   // Get permutation that takes facets into sorted order
   std::vector<int> perm(num_facets);
   std::iota(perm.begin(), perm.end(), 0);
-  // Lambda with capture for sort comparison
-  const auto cmp
-      = [&received_buffer_array, num_vertices_per_facet](int a, int b) {
-          const std::int64_t* facet_a = received_buffer_array.row(a).data();
-          const std::int64_t* facet_b = received_buffer_array.row(b).data();
-          return std::lexicographical_compare(
-              facet_a, facet_a + num_vertices_per_facet, facet_b,
-              facet_b + num_vertices_per_facet);
-        };
-
-  std::sort(perm.begin(), perm.end(), cmp);
+  std::sort(perm.begin(), perm.end(), [&received_buffer](int a, int b) {
+    return std::lexicographical_compare(
+        received_buffer.links(a).begin(),
+        std::prev(received_buffer.links(a).end()),
+        received_buffer.links(b).begin(),
+        std::prev(received_buffer.links(b).end()));
+  });
 
   // Clear send buffer
   send_buffer = std::vector<std::vector<std::int64_t>>(num_processes);
@@ -262,9 +259,10 @@ compute_nonlocal_dual_graph(
   {
     const int i0 = perm[i - 1];
     const int i1 = perm[i];
-    const std::int64_t* facet0 = received_buffer_array.row(i0).data();
-    const std::int64_t* facet1 = received_buffer_array.row(i1).data();
-    this_equal = std::equal(facet0, facet0 + num_vertices_per_facet, facet1);
+    const auto facet0 = received_buffer.links(i0);
+    const auto facet1 = received_buffer.links(i1);
+    this_equal
+        = std::equal(facet0.begin(), std::prev(facet0.end()), facet1.begin());
     if (this_equal)
     {
       if (last_equal)
@@ -291,6 +289,10 @@ compute_nonlocal_dual_graph(
             mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer))
             .array();
 
+  // TODO: Replace std::vector<std::vector> with two loops: (i) to
+  // compute the number of edges and offsets, and (ii) to build the
+  // AdjacencyList data directly.
+
   // Ghost nodes: insert connected cells into local map
   std::vector<std::vector<std::int64_t>> graph(local_graph.num_nodes());
   for (int i = 0; i < local_graph.num_nodes(); ++i)
@@ -299,6 +301,7 @@ compute_nonlocal_dual_graph(
     for (int j = 0; j < local_graph.num_links(i); ++j)
       graph[i].push_back(local_graph_i[j] + cell_offset);
   }
+
   std::set<std::int64_t> ghost_nodes;
   std::int32_t num_nonlocal_edges = 0;
   for (std::size_t i = 0; i < cell_list.size(); i += 2)
