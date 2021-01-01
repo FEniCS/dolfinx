@@ -84,7 +84,7 @@ compute_local_dual_graph_keyed(
 
   // Find maching facets by comparing facet i and facet i -1
   std::size_t num_local_edges = 0;
-  std::vector<std::vector<std::int32_t>> local_graph(num_local_cells);
+  std::vector<std::int32_t> num_local_graph(num_local_cells, 0);
   std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>
       facet_cell_map;
   bool this_equal, last_equal = false;
@@ -105,8 +105,9 @@ compute_local_dual_graph_keyed(
       // Add edges (directed graph, so add both ways)
       const int cell_index0 = facets[i - 1].second;
       const int cell_index1 = facets[i].second;
-      local_graph[cell_index0].push_back(cell_index1);
-      local_graph[cell_index1].push_back(cell_index0);
+      num_local_graph[cell_index0] += 1;
+      num_local_graph[cell_index1] += 1;
+
       // Increment number of local edges found
       ++num_local_edges;
     }
@@ -121,7 +122,7 @@ compute_local_dual_graph_keyed(
     last_equal = this_equal;
   }
 
-  // Add last facet, as it's not covered by the above loop.
+  // Add last facet, as it's not covered by the above loop
   if (!facets.empty() and !last_equal)
   {
     const int k = facets.size() - 1;
@@ -132,7 +133,28 @@ compute_local_dual_graph_keyed(
         cell_index);
   }
 
-  return {graph::AdjacencyList<std::int32_t>(local_graph),
+  // Build adjacency list data
+  std::vector<std::int32_t> offsets(num_local_graph.size() + 1, 0);
+  std::partial_sum(num_local_graph.begin(), num_local_graph.end(),
+                   std::next(offsets.begin(), 1));
+  std::vector<std::int32_t> local_graph_data(offsets.back());
+  std::vector<int> pos(num_local_cells, 0);
+  for (std::size_t i = 1; i < facets.size(); ++i)
+  {
+    const auto& facet0 = facets[i - 1].first;
+    const auto& facet1 = facets[i].first;
+    if (std::equal(facet0.begin(), facet0.end(), facet1.begin()))
+    {
+      // Add edges (directed graph, so add both ways)
+      const int cell_index0 = facets[i - 1].second;
+      const int cell_index1 = facets[i].second;
+      local_graph_data[offsets[cell_index0] + pos[cell_index0]++] = cell_index1;
+      local_graph_data[offsets[cell_index1] + pos[cell_index1]++] = cell_index0;
+    }
+  }
+
+  return {graph::AdjacencyList<std::int32_t>(std::move(local_graph_data),
+                                             std::move(offsets)),
           std::move(facet_cell_map), num_local_edges};
 } // namespace
 //-----------------------------------------------------------------------------
