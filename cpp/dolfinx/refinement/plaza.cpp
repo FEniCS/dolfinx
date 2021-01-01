@@ -494,12 +494,12 @@ mesh::Mesh compute_refinement(
   }
 
   assert(cell_topology.size() % num_cell_vertices == 0);
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      cells(cell_topology.data(), cell_topology.size() / num_cell_vertices,
-            num_cell_vertices);
-
-  graph::AdjacencyList<std::int64_t> cell_adj(cells);
+  std::vector<std::int32_t> offsets(
+      cell_topology.size() / num_cell_vertices + 1, 0);
+  for (std::size_t i = 0; i < offsets.size() - 1; ++i)
+    offsets[i + 1] = offsets[i] + num_cell_vertices;
+  graph::AdjacencyList<std::int64_t> cell_adj(std::move(cell_topology),
+                                              std::move(offsets));
 
   const bool serial = (dolfinx::MPI::size(mesh.mpi_comm()) == 1);
   if (serial)
