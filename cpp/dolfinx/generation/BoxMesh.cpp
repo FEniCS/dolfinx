@@ -137,8 +137,11 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
-                           element, geom, ghost_mode, partitioner);
+  auto [data, offset] = graph::create_adjacency_data(topo);
+  return mesh::create_mesh(
+      comm,
+      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
+      element, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
@@ -180,8 +183,11 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
-                           element, geom, ghost_mode, partitioner);
+  auto [data, offset] = graph::create_adjacency_data(topo);
+  return mesh::create_mesh(
+      comm,
+      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
+      element, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 
