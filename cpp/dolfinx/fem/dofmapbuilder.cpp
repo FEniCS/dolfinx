@@ -267,12 +267,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 
         for (std::size_t j = 0; j < nodes.size(); ++j)
         {
-          // Skip diagonal
-          if (i == j)
-            continue;
-
-          const std::int32_t node_j = original_to_contiguous[nodes[j]];
-          if (node_j != -1)
+          if (i != j and original_to_contiguous[nodes[j]] != -1)
             ++num_edges[node_i];
         }
       }
@@ -294,11 +289,11 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
           continue;
         for (std::size_t j = 0; j < nodes.size(); ++j)
         {
-          if (i == j)
-            continue;
-          const std::int32_t node_j = original_to_contiguous[nodes[j]];
-          if (node_j != -1)
+          if (const std::int32_t node_j = original_to_contiguous[nodes[j]];
+              i != j and node_j != -1)
+          {
             edges_tmp[offsets_tmp[node_i] + pos[node_i]++] = node_j;
+          }
         }
       }
     }
