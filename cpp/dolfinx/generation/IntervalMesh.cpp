@@ -6,7 +6,7 @@
 
 #include "IntervalMesh.h"
 #include "dolfinx/common/MPI.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/fem/ElementDofLayout.h>

@@ -7,7 +7,7 @@
 #include "MPICommWrapper.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Table.h>

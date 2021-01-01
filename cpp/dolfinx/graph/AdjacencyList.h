@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <cassert>
 #include <dolfinx/common/span.hpp>
 #include <numeric>

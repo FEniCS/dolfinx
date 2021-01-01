@@ -7,7 +7,7 @@
 #pragma once
 
 #include "cell_types.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
