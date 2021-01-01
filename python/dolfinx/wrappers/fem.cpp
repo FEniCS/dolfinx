@@ -596,7 +596,7 @@ void fem(py::module& m)
           "vector",
           [](const dolfinx::fem::Function<PetscScalar>&
                  self) { return self.vector(); },
-          "Return the vector associated with the finite element Function")
+          "Return the PETSc vector associated with the finite element Function")
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::fem::Function<PetscScalar>::x),
           "Return the vector associated with the finite element Function")
