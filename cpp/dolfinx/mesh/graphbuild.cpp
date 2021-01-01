@@ -289,6 +289,10 @@ compute_nonlocal_dual_graph(
             mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer))
             .array();
 
+  // TODO: Replace std::vector<std::vector> with two loops: (i) to
+  // compute the number of edges and offsets, and (ii) to build the
+  // AdjacencyList data directly.
+
   // Ghost nodes: insert connected cells into local map
   std::vector<std::vector<std::int64_t>> graph(local_graph.num_nodes());
   for (int i = 0; i < local_graph.num_nodes(); ++i)
