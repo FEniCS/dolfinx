@@ -19,7 +19,8 @@ namespace
 {
 mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
                  const fem::CoordinateElement& element,
-                 const mesh::GhostMode ghost_mode)
+                 const mesh::GhostMode ghost_mode,
+                 const mesh::CellPartitionFunction& partitioner)
 {
   // Receive mesh according to parallel policy
   if (dolfinx::MPI::rank(comm) != 0)
@@ -60,7 +61,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
     topo.row(ix) << ix, ix + 1;
 
   return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
-                           element, geom, ghost_mode);
+                           element, geom, ghost_mode, partitioner);
 }
 } // namespace
 
@@ -68,8 +69,9 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
 mesh::Mesh IntervalMesh::create(MPI_Comm comm, std::size_t n,
                                 std::array<double, 2> x,
                                 const fem::CoordinateElement& element,
-                                const mesh::GhostMode ghost_mode)
+                                const mesh::GhostMode ghost_mode,
+                                const mesh::CellPartitionFunction& partitioner)
 {
-  return build(comm, n, x, element, ghost_mode);
+  return build(comm, n, x, element, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
