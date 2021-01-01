@@ -156,6 +156,9 @@ public:
   /// Return contiguous array of links for all nodes (const version)
   const std::vector<T>& array() const { return _array; }
 
+  /// Return contiguous array of links for all nodes
+  std::vector<T>& array() { return _array; }
+
   /// Offset for each node in array() (const version)
   const std::vector<std::int32_t>& offsets() const { return _offsets; }
 

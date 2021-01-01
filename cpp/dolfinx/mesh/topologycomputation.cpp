@@ -52,24 +52,20 @@ int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
 /// the rows in ascending order
 /// @param[in] array The input array
 /// @return The permutation vector that would order the rows in
-///   ascending order
+/// ascending order
 /// @pre Each row of @p array must be sorted
 template <typename T>
-std::vector<int>
-sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>& array)
+std::vector<int> sort_by_perm(const graph::AdjacencyList<T>& array)
 {
   // Sort an Eigen::Array by creating a permutation vector
-  std::vector<int> index(array.rows());
+  std::vector<int> index(array.num_nodes());
   std::iota(index.begin(), index.end(), 0);
-  const int cols = array.cols();
 
   // Lambda with capture for sort comparison
-  const auto cmp = [&array, &cols](int a, int b) {
-    const T* row_a = array.row(a).data();
-    const T* row_b = array.row(b).data();
-    return std::lexicographical_compare(row_a, row_a + cols, row_b,
-                                        row_b + cols);
+  const auto cmp = [&array](int a, int b) {
+    return std::lexicographical_compare(
+        array.links(a).begin(), array.links(a).end(), array.links(b).begin(),
+        array.links(b).end());
   };
 
   std::sort(index.begin(), index.end(), cmp);
@@ -440,47 +436,54 @@ compute_entities_by_key_matching(
   const int num_cells = cells.num_nodes();
 
   // List of vertices for each entity in each cell
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entity_list(num_cells * num_entities_per_cell, num_vertices_per_entity);
+  std::vector<std::int32_t> offsets_e(num_cells * num_entities_per_cell + 1, 0);
+  for (std::size_t i = 0; i < offsets_e.size() - 1; ++i)
+    offsets_e[i + 1] = offsets_e[i] + num_vertices_per_entity;
+  graph::AdjacencyList<std::int32_t> entity_list(
+      std::vector<std::int32_t>(num_cells * num_entities_per_cell
+                                * num_vertices_per_entity),
+      std::move(offsets_e));
+
   int k = 0;
+  std::vector<std::int32_t>& entity_array = entity_list.array();
   for (int c = 0; c < num_cells; ++c)
   {
     // Get vertices from cell
     auto vertices = cells.links(c);
 
-    // Iterate over entities of cell
     for (int i = 0; i < num_entities_per_cell; ++i)
     {
       // Get entity vertices
+      const int offset = k * num_vertices_per_entity;
       for (int j = 0; j < num_vertices_per_entity; ++j)
-        entity_list(k, j) = vertices[e_vertices(i, j)];
-
+        entity_array[offset + j] = vertices[e_vertices(i, j)];
       ++k;
     }
   }
-  assert(k == entity_list.rows());
-
-  std::vector<std::int32_t> entity_index(entity_list.rows());
-  std::int32_t entity_count = 0;
+  assert(k == entity_list.num_nodes());
 
   // Copy list and sort vertices of each entity into order
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entity_list_sorted = entity_list;
-  for (int i = 0; i < entity_list_sorted.rows(); ++i)
+  graph::AdjacencyList<std::int32_t> entity_list_sorted = entity_list;
+  for (int i = 0; i < entity_list_sorted.num_nodes(); ++i)
   {
-    std::sort(entity_list_sorted.row(i).data(),
-              entity_list_sorted.row(i).data() + num_vertices_per_entity);
+    std::sort(entity_list_sorted.links(i).begin(),
+              entity_list_sorted.links(i).end());
   }
 
   // Sort the list and label uniquely
   const std::vector sort_order = sort_by_perm<std::int32_t>(entity_list_sorted);
+  std::vector<std::int32_t> entity_index(entity_list.num_nodes(), 0);
+  std::int32_t entity_count = 0;
   std::int32_t last = sort_order[0];
-  entity_index[last] = 0;
   for (std::size_t i = 1; i < sort_order.size(); ++i)
   {
     std::int32_t j = sort_order[i];
-    if ((entity_list_sorted.row(j) != entity_list_sorted.row(last)).any())
+    if (!std::equal(entity_list_sorted.links(j).begin(),
+                    entity_list_sorted.links(j).end(),
+                    entity_list_sorted.links(last).begin()))
+    {
       ++entity_count;
+    }
     entity_index[j] = entity_count;
     last = j;
   }
@@ -489,8 +492,12 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
+  const Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>
+      _entity_list(entity_list.array().data(),
+                   num_cells * num_entities_per_cell, num_vertices_per_entity);
   const auto [local_index, index_map] = get_local_indexing(
-      comm, cell_index_map, vertex_index_map, entity_list, entity_index);
+      comm, cell_index_map, vertex_index_map, _entity_list, entity_index);
 
   // Entity-vertex connectivity
   std::vector<std::int32_t> offsets_ev(entity_count + 1, 0);
@@ -499,10 +506,9 @@ compute_entities_by_key_matching(
   auto ev = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::vector<std::int32_t>(entity_count * num_vertices_per_entity),
       std::move(offsets_ev));
-  for (int i = 0; i < entity_list.rows(); ++i)
+  for (int i = 0; i < entity_list.num_nodes(); ++i)
   {
-    std::copy(entity_list.row(i).data(),
-              entity_list.row(i).data() + entity_list.cols(),
+    std::copy(entity_list.links(i).begin(), entity_list.links(i).end(),
               ev->links(local_index[i]).begin());
   }
 
