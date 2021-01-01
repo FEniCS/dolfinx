@@ -492,22 +492,29 @@ compute_entities_by_key_matching(
   const auto [local_index, index_map] = get_local_indexing(
       comm, cell_index_map, vertex_index_map, entity_list, entity_index);
 
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      connectivity_ce(num_cells, num_entities_per_cell);
-  std::copy(local_index.begin(), local_index.end(), connectivity_ce.data());
+  // Entity-vertex connectivity
+  std::vector<std::int32_t> offsets_ev(entity_count + 1, 0);
+  for (std::size_t i = 0; i < offsets_ev.size() - 1; ++i)
+    offsets_ev[i + 1] = offsets_ev[i] + num_vertices_per_entity;
+  auto ev = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      std::vector<std::int32_t>(entity_count * num_vertices_per_entity),
+      std::move(offsets_ev));
+  for (int i = 0; i < entity_list.rows(); ++i)
+  {
+    std::copy(entity_list.row(i).data(),
+              entity_list.row(i).data() + entity_list.cols(),
+              ev->links(local_index[i]).begin());
+  }
+
+  // NOTE: Cell-entity connectivity comes after ev creation because
+  // below we use std::move(local_index)
 
   // Cell-entity connectivity
-  auto ce
-      = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ce);
-
-  // Entity-vertex connectivity
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      connectivity_ev(entity_count, num_vertices_per_entity);
-  for (int i = 0; i < entity_list.rows(); ++i)
-    connectivity_ev.row(local_index[i]) = entity_list.row(i);
-
-  auto ev
-      = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ev);
+  std::vector<std::int32_t> offsets_ce(num_cells + 1, 0);
+  for (std::size_t i = 0; i < offsets_ce.size() - 1; ++i)
+    offsets_ce[i + 1] = offsets_ce[i] + num_entities_per_cell;
+  auto ce = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      std::move(local_index), std::move(offsets_ce));
 
   return {ce, ev, index_map};
 }
