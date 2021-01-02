@@ -30,9 +30,9 @@ graph::partition_graph(const MPI_Comm comm, int nparts,
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>,
            std::vector<int>>
-build::reorder_global_indices(
-    MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
-    const std::vector<bool>& shared_indices)
+build::reorder_global_indices(MPI_Comm comm,
+                              const std::vector<std::int64_t>& global_indices,
+                              const std::vector<bool>& shared_indices)
 {
   common::Timer timer("Re-order global indices");
 
@@ -178,7 +178,7 @@ build::reorder_global_indices(
     }
 
     sharing_processes = std::make_unique<const graph::AdjacencyList<int>>(
-        processes, process_offsets);
+        std::move(processes), std::move(process_offsets));
   }
 
   // Build global-to-local map for non-shared indices (0)
@@ -428,9 +428,8 @@ build::create_distributed_adjacency_list(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
-build::distribute(MPI_Comm comm,
-                      const graph::AdjacencyList<std::int64_t>& list,
-                      const graph::AdjacencyList<std::int32_t>& destinations)
+build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
+                  const graph::AdjacencyList<std::int32_t>& destinations)
 {
   common::Timer timer("Distribute in graph creation AdjacencyList");
 
@@ -538,14 +537,16 @@ build::distribute(MPI_Comm comm,
   list_offset.insert(list_offset.end(), ghost_list_offset.begin(),
                      ghost_list_offset.end());
 
-  return {graph::AdjacencyList<std::int64_t>(array, list_offset),
+  return {graph::AdjacencyList<std::int64_t>(std::move(array),
+                                             std::move(list_offset)),
           std::move(src), std::move(global_indices),
           std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> build::compute_ghost_indices(
-    MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
-    const std::vector<int>& ghost_owners)
+std::vector<std::int64_t>
+build::compute_ghost_indices(MPI_Comm comm,
+                             const std::vector<std::int64_t>& global_indices,
+                             const std::vector<int>& ghost_owners)
 {
   LOG(INFO) << "Compute ghost indices";
 
@@ -695,9 +696,9 @@ std::vector<std::int64_t> build::compute_local_to_global_links(
   return local_to_global_list;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> build::compute_local_to_local(
-    const std::vector<std::int64_t>& local0_to_global,
-    const std::vector<std::int64_t>& local1_to_global)
+std::vector<std::int32_t>
+build::compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
+                              const std::vector<std::int64_t>& local1_to_global)
 {
   common::Timer timer("Compute local-to-local map");
   assert(local0_to_global.size() == local1_to_global.size());
