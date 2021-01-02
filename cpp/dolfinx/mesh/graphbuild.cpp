@@ -7,7 +7,6 @@
 #include "graphbuild.h"
 #include <Eigen/Core>
 #include <algorithm>
-#include <boost/unordered_map.hpp>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -233,10 +232,6 @@ compute_nonlocal_dual_graph(
   // Send data
   graph::AdjacencyList<std::int64_t> received_buffer = dolfinx::MPI::all_to_all(
       comm, graph::AdjacencyList<std::int64_t>(send_buffer));
-
-  // const int tdim = mesh::cell_dim(cell_type);
-  // const int num_vertices_per_facet
-  //     = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
   assert(received_buffer.array().size() % (num_vertices_per_facet + 1) == 0);
   const int num_facets
       = received_buffer.array().size() / (num_vertices_per_facet + 1);
@@ -257,7 +252,7 @@ compute_nonlocal_dual_graph(
   // Reshape the return buffer
   std::vector<std::int32_t> offsets(num_facets + 1, 0);
   for (std::size_t i = 0; i < offsets.size() - 1; ++i)
-    offsets[i + 1] = offsets[i] + num_vertices_per_facet + 1;
+    offsets[i + 1] = offsets[i] + (num_vertices_per_facet + 1);
   received_buffer = graph::AdjacencyList<std::int64_t>(
       std::move(received_buffer.array()), std::move(offsets));
 
