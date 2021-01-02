@@ -216,7 +216,7 @@ compute_nonlocal_dual_graph(
        i += num_vertices_per_facet + 1)
   {
     tcb::span<const std::int64_t> facet(&facet_cell_map[i],
-                                        num_vertices_per_facet);
+                                        num_vertices_per_facet + 1);
 
     // Use first vertex of facet to partition into blocks
     const int dest_proc = dolfinx::MPI::index_owner(
@@ -227,8 +227,7 @@ compute_nonlocal_dual_graph(
                                   facet.end());
 
     // Add offset to cell numbers sent off process
-    const std::int64_t cell_index = facet_cell_map[num_vertices_per_facet];
-    send_buffer[dest_proc].push_back(cell_index + cell_offset);
+    send_buffer[dest_proc].back() += cell_offset;
   }
 
   // Send data
