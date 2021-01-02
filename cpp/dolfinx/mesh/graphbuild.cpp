@@ -306,10 +306,6 @@ compute_nonlocal_dual_graph(
             comm, graph::AdjacencyList<std::int64_t>(send_buffer))
             .array();
 
-  // TODO: Replace std::vector<std::vector> with two loops: (i) to
-  // compute the number of edges and offsets, and (ii) to build the
-  // AdjacencyList data directly.
-
   // Ghost nodes: insert connected cells into local map
 
   // Count number of adjacency list edges
@@ -343,8 +339,9 @@ compute_nonlocal_dual_graph(
   {
     const std::size_t node = cell_list[i] - cell_offset;
     auto edges = graph.links(node);
+    auto it_end = std::next(edges.begin(), pos[node]);
 #ifdef DEBUG
-    if (std::find(edges.begin(), edges.end(), cell_list[i + 1]) != edges.end())
+    if (std::find(edges.begin(), it_end, cell_list[i + 1]) != it_end)
     {
       LOG(ERROR) << "Received same edge twice in dual graph";
       throw std::runtime_error("Inconsistent mesh data in GraphBuilder: "
