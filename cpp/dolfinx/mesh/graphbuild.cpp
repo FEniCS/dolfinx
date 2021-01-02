@@ -13,8 +13,6 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <set>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 

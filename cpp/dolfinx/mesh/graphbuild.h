@@ -9,7 +9,6 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <tuple>
 #include <utility>
