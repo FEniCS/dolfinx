@@ -28,8 +28,7 @@ namespace
 // facet_cell_map, number of local edges in the graph (undirected)
 template <int N>
 std::tuple<graph::AdjacencyList<std::int32_t>,
-           std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>,
-           std::int32_t>
+           std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>>
 compute_local_dual_graph_keyed(
     const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type)
@@ -84,7 +83,6 @@ compute_local_dual_graph_keyed(
   std::sort(facets.begin(), facets.end());
 
   // Find maching facets by comparing facet i and facet i -1
-  std::size_t num_local_edges = 0;
   std::vector<std::int32_t> num_local_graph(num_local_cells, 0);
   std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>
       facet_cell_map;
@@ -108,9 +106,6 @@ compute_local_dual_graph_keyed(
       const int cell_index1 = facets[i].second;
       num_local_graph[cell_index0] += 1;
       num_local_graph[cell_index1] += 1;
-
-      // Increment number of local edges found
-      ++num_local_edges;
     }
     else if (!this_equal and !last_equal)
     {
@@ -156,7 +151,7 @@ compute_local_dual_graph_keyed(
 
   return {graph::AdjacencyList<std::int32_t>(std::move(local_graph_data),
                                              std::move(offsets)),
-          std::move(facet_cell_map), num_local_edges};
+          std::move(facet_cell_map)};
 } // namespace
 //-----------------------------------------------------------------------------
 // Build nonlocal part of dual graph for mesh and return number of
@@ -377,7 +372,7 @@ mesh::build_dual_graph(const MPI_Comm mpi_comm,
   LOG(INFO) << "Build mesh dual graph";
 
   // Compute local part of dual graph
-  auto [local_graph, facet_cell_map, num_local_edges]
+  auto [local_graph, facet_cell_map]
       = mesh::build_local_dual_graph(cell_vertices, cell_type);
 
   // Compute nonlocal part
@@ -385,16 +380,15 @@ mesh::build_dual_graph(const MPI_Comm mpi_comm,
       = compute_nonlocal_dual_graph(mpi_comm, cell_vertices, cell_type,
                                     facet_cell_map, local_graph);
 
-  LOG(INFO) << "Graph edges (local:" << num_local_edges
+  LOG(INFO) << "Graph edges (local:" << local_graph.offsets().back()
             << ", non-local:" << num_nonlocal_edges << ")";
 
   return {std::move(graph),
-          {num_ghost_nodes, num_local_edges, num_nonlocal_edges}};
+          {num_ghost_nodes, local_graph.offsets().back(), num_nonlocal_edges}};
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>,
-           std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>,
-           std::int32_t>
+           std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>>
 mesh::build_local_dual_graph(
     const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type)
