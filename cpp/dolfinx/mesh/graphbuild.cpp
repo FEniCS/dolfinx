@@ -165,7 +165,7 @@ compute_local_dual_graph_keyed(
 // num_nonlocal_edges)
 std::tuple<graph::AdjacencyList<std::int64_t>, std::int32_t, std::int32_t>
 compute_nonlocal_dual_graph(
-    const MPI_Comm mpi_comm,
+    const MPI_Comm comm,
     const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type,
     const std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>&
@@ -176,7 +176,7 @@ compute_nonlocal_dual_graph(
   common::Timer timer("Compute non-local part of mesh dual graph");
 
   // Get number of MPI processes, and return if mesh is not distributed
-  const int num_processes = dolfinx::MPI::size(mpi_comm);
+  const int num_processes = dolfinx::MPI::size(comm);
   if (num_processes == 1)
   {
     // Convert graph to int64
@@ -204,8 +204,8 @@ compute_nonlocal_dual_graph(
   }
 
   std::int64_t global_min, global_max;
-  MPI_Allreduce(&local_min, &global_min, 1, MPI_INT64_T, MPI_MIN, mpi_comm);
-  MPI_Allreduce(&local_max, &global_max, 1, MPI_INT64_T, MPI_MAX, mpi_comm);
+  MPI_Allreduce(&local_min, &global_min, 1, MPI_INT64_T, MPI_MIN, comm);
+  MPI_Allreduce(&local_max, &global_max, 1, MPI_INT64_T, MPI_MAX, comm);
   const std::int64_t global_range = global_max - global_min + 1;
 
   // Send facet-cell map to intermediary match-making processes
@@ -214,7 +214,7 @@ compute_nonlocal_dual_graph(
   // Get cell offset for this process to create global numbering for cells
   const std::int32_t num_local_cells = cell_vertices.num_nodes();
   const std::int64_t cell_offset
-      = dolfinx::MPI::global_offset(mpi_comm, num_local_cells, true);
+      = dolfinx::MPI::global_offset(comm, num_local_cells, true);
 
   // Pack map data and send to match-maker process
   for (const auto& it : facet_cell_map)
@@ -233,7 +233,7 @@ compute_nonlocal_dual_graph(
 
   // Send data
   graph::AdjacencyList<std::int64_t> received_buffer = dolfinx::MPI::all_to_all(
-      mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer));
+      comm, graph::AdjacencyList<std::int64_t>(send_buffer));
 
   const int tdim = mesh::cell_dim(cell_type);
   const int num_vertices_per_facet
@@ -308,7 +308,7 @@ compute_nonlocal_dual_graph(
   // Send matches to other processes
   const std::vector<std::int64_t> cell_list
       = dolfinx::MPI::all_to_all(
-            mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer))
+            comm, graph::AdjacencyList<std::int64_t>(send_buffer))
             .array();
 
   // TODO: Replace std::vector<std::vector> with two loops: (i) to
@@ -316,40 +316,53 @@ compute_nonlocal_dual_graph(
   // AdjacencyList data directly.
 
   // Ghost nodes: insert connected cells into local map
-  std::vector<std::vector<std::int64_t>> graph(local_graph.num_nodes());
-  for (int i = 0; i < local_graph.num_nodes(); ++i)
-  {
-    const auto& local_graph_i = local_graph.links(i);
-    for (int j = 0; j < local_graph.num_links(i); ++j)
-      graph[i].push_back(local_graph_i[j] + cell_offset);
-  }
 
-  std::set<std::int64_t> ghost_nodes;
-  std::int32_t num_nonlocal_edges = 0;
+  // Count number of adjacency list edges
+  std::vector<int> edge_count(local_graph.num_nodes(), 0);
+  for (int i = 0; i < local_graph.num_nodes(); ++i)
+    edge_count[i] += local_graph.num_links(i);
   for (std::size_t i = 0; i < cell_list.size(); i += 2)
   {
-    assert((std::int64_t)cell_list[i] >= cell_offset);
-    assert((std::int64_t)(cell_list[i] - cell_offset)
-           < (std::int64_t)local_graph.num_nodes());
+    assert(cell_list[i] - cell_offset >= 0);
+    assert(cell_list[i] - cell_offset < (std::int64_t)edge_count.size());
+    edge_count[cell_list[i] - cell_offset] += 1;
+  }
 
-    std::vector<std::int64_t>& edges = graph[cell_list[i] - cell_offset];
-    auto it = std::find(edges.begin(), edges.end(), cell_list[i + 1]);
-    if (it == graph[cell_list[i] - cell_offset].end())
-    {
-      edges.push_back(cell_list[i + 1]);
-      ++num_nonlocal_edges;
-    }
-    else
+  // Build adjacency list
+  std::vector<std::int32_t> offsets_g(edge_count.size() + 1, 0);
+  std::partial_sum(edge_count.begin(), edge_count.end(),
+                   std::next(offsets_g.begin(), 1));
+  graph::AdjacencyList<std::int64_t> graph(
+      std::vector<std::int64_t>(offsets_g.back()), std::move(offsets_g));
+  std::vector<int> pos(graph.num_nodes(), 0);
+  std::set<std::int64_t> ghost_nodes;
+  for (int i = 0; i < local_graph.num_nodes(); ++i)
+  {
+    auto local_graph_i = local_graph.links(i);
+    auto graph_i = graph.links(i);
+    for (std::size_t j = 0; j < local_graph_i.size(); ++j)
+      graph_i[pos[i]++] = local_graph_i[j] + cell_offset;
+  }
+
+  for (std::size_t i = 0; i < cell_list.size(); i += 2)
+  {
+    const std::size_t node = cell_list[i] - cell_offset;
+    auto edges = graph.links(node);
+#ifdef DEBUG
+    if (std::find(edges.begin(), edges.end(), cell_list[i + 1]) != edges.end())
     {
       LOG(ERROR) << "Received same edge twice in dual graph";
       throw std::runtime_error("Inconsistent mesh data in GraphBuilder: "
                                "received same edge twice in dual graph");
     }
+#endif
+    edges[pos[node]++] = cell_list[i + 1];
     ghost_nodes.insert(cell_list[i + 1]);
   }
 
-  return {graph::AdjacencyList<std::int64_t>(graph), ghost_nodes.size(),
-          num_nonlocal_edges};
+  std::int32_t num_nonlocal_edges
+      = graph.offsets().back() - local_graph.offsets().back();
+  return {std::move(graph), ghost_nodes.size(), num_nonlocal_edges};
 }
 //-----------------------------------------------------------------------------
 
