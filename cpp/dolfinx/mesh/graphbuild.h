@@ -23,7 +23,7 @@ enum class CellType;
 /// Build distributed dual graph (cell-cell connections) from minimal
 /// mesh data, and return (graph, ghost_vertices, [num local edges,
 /// num non-local edges])
-std::pair<graph::AdjacencyList<std::int64_t>, std::array<std::int32_t, 3>>
+std::pair<graph::AdjacencyList<std::int64_t>, std::array<std::int32_t, 2>>
 build_dual_graph(const MPI_Comm comm,
                  const graph::AdjacencyList<std::int64_t>& cell_vertices,
                  const mesh::CellType& cell_type);
