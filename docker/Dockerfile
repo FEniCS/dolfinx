@@ -1,8 +1,10 @@
 # Dockerfile describing development builds of FEniCS-X
 #
-# Authors: Jack S. Hale <jack.hale@uni.lu> Lizao Li
-# <lzlarryli@gmail.com> Garth N. Wells <gnw20@cam.ac.uk> Jan Blechta
-# <blechta@karlin.mff.cuni.cz>
+# Authors:
+# Jack S. Hale <jack.hale@uni.lu>
+# Lizao Li <lzlarryli@gmail.com>
+# Garth N. Wells <gnw20@cam.ac.uk>
+# Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
 # To run a nightly build:
 #
@@ -31,11 +33,7 @@
 # your platform using the commands:
 #
 #    echo '{ "cffi_extra_compile_args" : ["-O2", "-march=native" ] }' > dolfinx/docker/dolfinx_jit_parameters.json
-#    echo '{ "assume_aligned" : 32 }' > dolfinx/docker/ffcx_parameters.json
 #    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" .
-#
-# The assume_aligned parameter should be set based on the instructions
-# supported by your CPU: 16 for SSE, 32 for AVX/AVX2, 64 for AVX512.
 #
 # The dolfinx/dolfinx image on Dockerhub is currently optimised for Intel Sandy
 # Bridge architectures and will run on all modern x86-64 chips with AVX
@@ -48,13 +46,12 @@
 #
 
 ARG GMSH_VERSION=4.6.0
-ARG PYBIND11_VERSION=2.6.0
-ARG PETSC_VERSION=3.14.1
-ARG SLEPC_VERSION=3.14.0
-ARG PETSC4PY_VERSION=3.14.0
+ARG PYBIND11_VERSION=2.6.1
+ARG PETSC_VERSION=3.14.2
+ARG SLEPC_VERSION=3.14.1
 ARG SLEPC4PY_VERSION=3.14.0
-# Should be updated upon a new KaHIP release
-ARG KAHIP_VERSION=14be06c
+# Todo: Update KaHIP version upon a release.
+ARG KAHIP_VERSION=623decb
 
 ########################################
 
@@ -65,7 +62,6 @@ LABEL description="FEniCS testing and development environment with PETSc real, c
 ARG GMSH_VERSION
 ARG PYBIND11_VERSION
 ARG PETSC_VERSION
-ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
 
@@ -148,13 +144,15 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     rm -rf /tmp/*
 
 # Install KaHIP
+ENV KAHIP_DIR=/usr/local/KaHIP/deploy
 RUN cd /usr/local && \
     git clone https://github.com/schulzchristian/KaHIP.git && \
     cd KaHIP/ && \
     git checkout ${KAHIP_VERSION} && \
-    ./compile_withcmake.sh
+    mkdir build && cd build && \
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} -DNONATIVEOPTIMIZATIONS=On .. && \
+    ninja install
 
-ENV KAHIP_ROOT=/usr/local/KaHIP
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
@@ -165,7 +163,7 @@ RUN cd /usr/local && \
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH \
     PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
 
-# Install PETSc with real and complex types
+# Install PETSc and petsc4py with real and complex types
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 WORKDIR /tmp
 RUN apt-get -qq update && \
@@ -183,7 +181,6 @@ RUN apt-get -qq update && \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
     --with-shared-libraries \
-    --download-blacs \
     --download-hypre \
     --download-metis \
     --download-mumps \
@@ -205,7 +202,7 @@ RUN apt-get -qq update && \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
     --with-shared-libraries \
-    --download-blacs \
+    --download-hypre \
     --download-metis \
     --download-mumps \
     --download-ptscotch \
@@ -251,6 +248,10 @@ RUN apt-get -qq update && \
     --download-superlu_dist \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
+    # Install petsc4py
+    cd src/binding/petsc4py && \
+    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir . && \
+    # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
     apt-get clean && \
@@ -287,8 +288,8 @@ RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
 
-# Install petsc4py and slepc4py with real and complex types
-RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} slepc4py==${SLEPC4PY_VERSION}
+# Install slepc4py with real and complex types
+RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
 WORKDIR /root
 
@@ -336,7 +337,7 @@ ONBUILD RUN cd dolfinx && \
     PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
     cd ../ && \
     rm -r build && \
     mkdir build && \
@@ -345,7 +346,7 @@ ONBUILD RUN cd dolfinx && \
     ninja install && \
     . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies . && \
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies . && \
     cd ../ && \
     rm -r build
 

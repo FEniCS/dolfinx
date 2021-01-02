@@ -17,8 +17,8 @@ Solving Environment in Python and C++.
 
 Documentation can be viewed at:
 
-- https://fenicsproject.org/docs/dolfinx/dev/cpp/
-- https://fenicsproject.org/docs/dolfinx/dev/python/
+- https://docs.fenicsproject.org/dolfinx/master/cpp/
+- https://docs.fenicsproject.org/dolfinx/master/python/
 
 ## Installation
 

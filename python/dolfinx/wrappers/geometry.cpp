@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "caster_mpi.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <dolfinx/geometry/BoundingBoxTree.h>
-#include <dolfinx/geometry/GJK.h>
+#include <dolfinx/geometry/gjk.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
@@ -61,9 +61,12 @@ void geometry(py::module& m)
   py::class_<dolfinx::geometry::BoundingBoxTree,
              std::shared_ptr<dolfinx::geometry::BoundingBoxTree>>(
       m, "BoundingBoxTree")
-      .def(py::init<const dolfinx::mesh::Mesh&, int>())
+      .def(py::init<const dolfinx::mesh::Mesh&, int, double>(), py::arg("mesh"),
+           py::arg("tdim"), py::arg("padding") = 0)
       .def(py::init<const dolfinx::mesh::Mesh&, int,
-                    const std::vector<std::int32_t>&>())
+                    const std::vector<std::int32_t>&, double>(),
+           py::arg("mesh"), py::arg("tdim"), py::arg("entity_indices"),
+           py::arg("padding") = 0)
       .def(py::init<const std::vector<Eigen::Vector3d>&>())
       .def("num_bboxes", &dolfinx::geometry::BoundingBoxTree::num_bboxes)
       .def("get_bbox", &dolfinx::geometry::BoundingBoxTree::get_bbox)

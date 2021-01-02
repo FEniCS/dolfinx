@@ -13,12 +13,11 @@
 # solution and source term. ::
 
 import numpy as np
-from mpi4py import MPI
-
-from dolfinx import (Function, FunctionSpace, UnitSquareMesh,
-                     has_petsc_complex, solve)
+from dolfinx import (Function, FunctionSpace, UnitSquareMesh, fem,
+                     has_petsc_complex)
 from dolfinx.fem.assemble import assemble_scalar
 from dolfinx.io import XDMFFile
+from mpi4py import MPI
 from ufl import FacetNormal, TestFunction, TrialFunction, dx, grad, inner
 
 # wavenumber
@@ -52,14 +51,16 @@ a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
 # Compute solution
-u = Function(V)
-solve(a == L, u, [])
+uh = fem.Function(V)
+uh.name = "u"
+problem = fem.LinearProblem(a, L, u=uh)
+problem.solve()
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)
 with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w",
               encoding=XDMFFile.Encoding.HDF5) as file:
     file.write_mesh(mesh)
-    file.write_function(u)
+    file.write_function(uh)
 
 # Calculate L2 and H1 errors of FEM solution and best approximation.
 # This demonstrates the error bounds given in Ihlenburg. Pollution errors
@@ -77,7 +78,7 @@ u_exact = Function(V_exact)
 u_exact.interpolate(lambda x: A * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
 
 # H1 errors
-diff = u - u_exact
+diff = uh - u_exact
 H1_diff = mesh.mpi_comm().allreduce(assemble_scalar(inner(grad(diff), grad(diff)) * dx), op=MPI.SUM)
 H1_exact = mesh.mpi_comm().allreduce(assemble_scalar(inner(grad(u_exact), grad(u_exact)) * dx), op=MPI.SUM)
 print("Relative H1 error of FEM solution:", abs(np.sqrt(H1_diff) / np.sqrt(H1_exact)))

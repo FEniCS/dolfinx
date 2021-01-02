@@ -8,8 +8,8 @@
 import typing
 
 import numpy
-
 import ufl
+
 from dolfinx import cpp, fem
 
 __all__ = [
@@ -18,7 +18,8 @@ __all__ = [
 ]
 
 
-def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.shared_facet):
+def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.shared_facet,
+                 partitioner=cpp.mesh.partition_cells_graph):
     """Create an interval mesh
 
     Parameters
@@ -34,13 +35,14 @@ def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.shar
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
     cmap = fem.create_coordinate_map(comm, domain)
-    mesh = cpp.generation.IntervalMesh.create(comm, nx, points, cmap, ghost_mode)
+    mesh = cpp.generation.create_interval_mesh(comm, nx, points, cmap, ghost_mode, partitioner)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
     return mesh
 
 
-def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.shared_facet):
+def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.shared_facet,
+                     partitioner=cpp.mesh.partition_cells_graph):
     """Create a mesh on the unit interval
 
     Parameters
@@ -55,7 +57,8 @@ def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.shared_facet):
 
 
 def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp.mesh.CellType.triangle,
-                  ghost_mode=cpp.mesh.GhostMode.shared_facet, diagonal: str = "right"):
+                  ghost_mode=cpp.mesh.GhostMode.shared_facet, partitioner=cpp.mesh.partition_cells_graph,
+                  diagonal: str = "right"):
     """Create rectangle mesh
 
     Parameters
@@ -72,14 +75,15 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
     cmap = fem.create_coordinate_map(comm, domain)
-    mesh = cpp.generation.RectangleMesh.create(comm, points, n, cmap, ghost_mode, diagonal)
+    mesh = cpp.generation.create_rectangle_mesh(comm, points, n, cmap, ghost_mode, partitioner, diagonal)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
     return mesh
 
 
 def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
-                   ghost_mode=cpp.mesh.GhostMode.shared_facet, diagonal="right"):
+                   ghost_mode=cpp.mesh.GhostMode.shared_facet,
+                   partitioner=cpp.mesh.partition_cells_graph, diagonal="right"):
     """Create a mesh of a unit square
 
     Parameters
@@ -96,12 +100,13 @@ def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
     """
     return RectangleMesh(comm, [numpy.array([0.0, 0.0, 0.0]),
                                 numpy.array([1.0, 1.0, 0.0])], [nx, ny], cell_type, ghost_mode,
-                         diagonal)
+                         partitioner, diagonal)
 
 
 def BoxMesh(comm, points: typing.List[numpy.array], n: list,
             cell_type=cpp.mesh.CellType.tetrahedron,
-            ghost_mode=cpp.mesh.GhostMode.shared_facet):
+            ghost_mode=cpp.mesh.GhostMode.shared_facet,
+            partitioner=cpp.mesh.partition_cells_graph):
     """Create box mesh
 
     Parameters
@@ -116,14 +121,14 @@ def BoxMesh(comm, points: typing.List[numpy.array], n: list,
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
     cmap = fem.create_coordinate_map(comm, domain)
-    mesh = cpp.generation.BoxMesh.create(comm, points, n, cmap, ghost_mode)
+    mesh = cpp.generation.create_box_mesh(comm, points, n, cmap, ghost_mode, partitioner)
     domain._ufl_cargo = mesh
     mesh._ufl_domain = domain
     return mesh
 
 
 def UnitCubeMesh(comm, nx, ny, nz, cell_type=cpp.mesh.CellType.tetrahedron,
-                 ghost_mode=cpp.mesh.GhostMode.shared_facet):
+                 ghost_mode=cpp.mesh.GhostMode.shared_facet, partitioner=cpp.mesh.partition_cells_graph):
     """Create a mesh of a unit cube
 
     Parameters
@@ -139,4 +144,4 @@ def UnitCubeMesh(comm, nx, ny, nz, cell_type=cpp.mesh.CellType.tetrahedron,
 
     """
     return BoxMesh(comm, [numpy.array([0.0, 0.0, 0.0]), numpy.array(
-        [1.0, 1.0, 1.0])], [nx, ny, nz], cell_type, ghost_mode)
+        [1.0, 1.0, 1.0])], [nx, ny, nz], cell_type, ghost_mode, partitioner)

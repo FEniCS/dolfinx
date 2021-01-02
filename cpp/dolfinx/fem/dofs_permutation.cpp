@@ -16,7 +16,7 @@ using namespace dolfinx;
 namespace
 {
 //-----------------------------------------------------------------------------
-int get_num_permutations(mesh::CellType cell_type)
+constexpr int get_num_permutations(mesh::CellType cell_type)
 {
   // In general, this will return num_edges + 2*num_faces + 4*num_volumes
   switch (cell_type)
@@ -45,7 +45,7 @@ int get_num_permutations(mesh::CellType cell_type)
 /// @param[in] v1, v2, v3 The global vertex numbers of the triangle's vertices
 /// @return The rotation and reflection orders for the triangle
 template <typename T>
-std::array<std::int8_t, 2> calculate_triangle_orders(T v1, T v2, T v3)
+constexpr std::array<std::int8_t, 2> calculate_triangle_orders(T v1, T v2, T v3)
 {
   if (v1 < v2 and v1 < v3)
     return {0, v2 > v3};
@@ -64,7 +64,7 @@ std::array<std::int8_t, 2> calculate_triangle_orders(T v1, T v2, T v3)
 /// vertices
 /// @return The rotation and reflection orders for the quadrilateral
 template <typename T>
-std::array<std::int8_t, 2> calculate_quadrilateral_orders(T v1, T v2, T v3,
+constexpr std::array<std::int8_t, 2> calculate_quadrilateral_orders(T v1, T v2, T v3,
                                                           T v4)
 {
   if (v1 < v2 and v1 < v3 and v1 < v4)

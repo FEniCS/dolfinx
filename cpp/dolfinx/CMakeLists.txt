@@ -16,8 +16,7 @@ add_library(dolfinx "")  # The "" is needed for older CMake. Remove later.
 #------------------------------------------------------------------------------
 # Add source files to the target
 
-set(DOLFINX_DIRS common fem function generation geometry graph io la mesh nls
-                refinement)
+set(DOLFINX_DIRS common fem generation geometry graph io la mesh nls refinement)
 
 install(FILES dolfinx.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development)
 
