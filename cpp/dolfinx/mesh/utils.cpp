@@ -880,8 +880,7 @@ graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
       = mesh::build_dual_graph(comm, cells, cell_type);
 
   // Extract data from graph_info
-  const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
-      = graph_info;
+  const auto [num_ghost_nodes, num_local_edges] = graph_info;
 
   // Just flag any kind of ghosting for now
   bool ghosting = (ghost_mode != mesh::GhostMode::none);

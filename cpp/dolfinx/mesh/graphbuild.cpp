@@ -13,8 +13,6 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <set>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -27,9 +25,8 @@ namespace
 // Compute local part of the dual graph, and return return (local_graph,
 // facet_cell_map, number of local edges in the graph (undirected)
 template <int N>
-std::tuple<graph::AdjacencyList<std::int32_t>,
-           std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>,
-           std::int32_t>
+std::pair<graph::AdjacencyList<std::int32_t>,
+          std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>>
 compute_local_dual_graph_keyed(
     const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type)
@@ -84,7 +81,6 @@ compute_local_dual_graph_keyed(
   std::sort(facets.begin(), facets.end());
 
   // Find maching facets by comparing facet i and facet i -1
-  std::size_t num_local_edges = 0;
   std::vector<std::int32_t> num_local_graph(num_local_cells, 0);
   std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>
       facet_cell_map;
@@ -108,9 +104,6 @@ compute_local_dual_graph_keyed(
       const int cell_index1 = facets[i].second;
       num_local_graph[cell_index0] += 1;
       num_local_graph[cell_index1] += 1;
-
-      // Increment number of local edges found
-      ++num_local_edges;
     }
     else if (!this_equal and !last_equal)
     {
@@ -156,16 +149,16 @@ compute_local_dual_graph_keyed(
 
   return {graph::AdjacencyList<std::int32_t>(std::move(local_graph_data),
                                              std::move(offsets)),
-          std::move(facet_cell_map), num_local_edges};
+          std::move(facet_cell_map)};
 } // namespace
 //-----------------------------------------------------------------------------
 // Build nonlocal part of dual graph for mesh and return number of
 // non-local edges. Note: GraphBuilder::compute_local_dual_graph should
 // be called before this function is called. Returns (ghost vertices,
 // num_nonlocal_edges)
-std::tuple<graph::AdjacencyList<std::int64_t>, std::int32_t, std::int32_t>
+std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 compute_nonlocal_dual_graph(
-    const MPI_Comm mpi_comm,
+    const MPI_Comm comm,
     const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type,
     const std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>&
@@ -176,7 +169,7 @@ compute_nonlocal_dual_graph(
   common::Timer timer("Compute non-local part of mesh dual graph");
 
   // Get number of MPI processes, and return if mesh is not distributed
-  const int num_processes = dolfinx::MPI::size(mpi_comm);
+  const int num_processes = dolfinx::MPI::size(comm);
   if (num_processes == 1)
   {
     // Convert graph to int64
@@ -184,7 +177,7 @@ compute_nonlocal_dual_graph(
                 std::vector<std::int64_t>(local_graph.array().begin(),
                                           local_graph.array().end()),
                 local_graph.offsets()),
-            0, 0};
+            0};
   }
 
   // At this stage facet_cell map only contains facets->cells with edge
@@ -204,8 +197,8 @@ compute_nonlocal_dual_graph(
   }
 
   std::int64_t global_min, global_max;
-  MPI_Allreduce(&local_min, &global_min, 1, MPI_INT64_T, MPI_MIN, mpi_comm);
-  MPI_Allreduce(&local_max, &global_max, 1, MPI_INT64_T, MPI_MAX, mpi_comm);
+  MPI_Allreduce(&local_min, &global_min, 1, MPI_INT64_T, MPI_MIN, comm);
+  MPI_Allreduce(&local_max, &global_max, 1, MPI_INT64_T, MPI_MAX, comm);
   const std::int64_t global_range = global_max - global_min + 1;
 
   // Send facet-cell map to intermediary match-making processes
@@ -214,7 +207,7 @@ compute_nonlocal_dual_graph(
   // Get cell offset for this process to create global numbering for cells
   const std::int32_t num_local_cells = cell_vertices.num_nodes();
   const std::int64_t cell_offset
-      = dolfinx::MPI::global_offset(mpi_comm, num_local_cells, true);
+      = dolfinx::MPI::global_offset(comm, num_local_cells, true);
 
   // Pack map data and send to match-maker process
   for (const auto& it : facet_cell_map)
@@ -233,7 +226,7 @@ compute_nonlocal_dual_graph(
 
   // Send data
   graph::AdjacencyList<std::int64_t> received_buffer = dolfinx::MPI::all_to_all(
-      mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer));
+      comm, graph::AdjacencyList<std::int64_t>(send_buffer));
 
   const int tdim = mesh::cell_dim(cell_type);
   const int num_vertices_per_facet
@@ -308,55 +301,67 @@ compute_nonlocal_dual_graph(
   // Send matches to other processes
   const std::vector<std::int64_t> cell_list
       = dolfinx::MPI::all_to_all(
-            mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer))
+            comm, graph::AdjacencyList<std::int64_t>(send_buffer))
             .array();
 
-  // TODO: Replace std::vector<std::vector> with two loops: (i) to
-  // compute the number of edges and offsets, and (ii) to build the
-  // AdjacencyList data directly.
-
   // Ghost nodes: insert connected cells into local map
-  std::vector<std::vector<std::int64_t>> graph(local_graph.num_nodes());
-  for (int i = 0; i < local_graph.num_nodes(); ++i)
-  {
-    const auto& local_graph_i = local_graph.links(i);
-    for (int j = 0; j < local_graph.num_links(i); ++j)
-      graph[i].push_back(local_graph_i[j] + cell_offset);
-  }
 
-  std::set<std::int64_t> ghost_nodes;
-  std::int32_t num_nonlocal_edges = 0;
+  // Count number of adjacency list edges
+  std::vector<int> edge_count(local_graph.num_nodes(), 0);
+  for (int i = 0; i < local_graph.num_nodes(); ++i)
+    edge_count[i] += local_graph.num_links(i);
   for (std::size_t i = 0; i < cell_list.size(); i += 2)
   {
-    assert((std::int64_t)cell_list[i] >= cell_offset);
-    assert((std::int64_t)(cell_list[i] - cell_offset)
-           < (std::int64_t)local_graph.num_nodes());
+    assert(cell_list[i] - cell_offset >= 0);
+    assert(cell_list[i] - cell_offset < (std::int64_t)edge_count.size());
+    edge_count[cell_list[i] - cell_offset] += 1;
+  }
 
-    std::vector<std::int64_t>& edges = graph[cell_list[i] - cell_offset];
-    auto it = std::find(edges.begin(), edges.end(), cell_list[i + 1]);
-    if (it == graph[cell_list[i] - cell_offset].end())
-    {
-      edges.push_back(cell_list[i + 1]);
-      ++num_nonlocal_edges;
-    }
-    else
+  // Build adjacency list
+  std::vector<std::int32_t> offsets_g(edge_count.size() + 1, 0);
+  std::partial_sum(edge_count.begin(), edge_count.end(),
+                   std::next(offsets_g.begin(), 1));
+  graph::AdjacencyList<std::int64_t> graph(
+      std::vector<std::int64_t>(offsets_g.back()), std::move(offsets_g));
+  std::vector<int> pos(graph.num_nodes(), 0);
+  std::vector<std::int64_t> ghost_nodes;
+  for (int i = 0; i < local_graph.num_nodes(); ++i)
+  {
+    auto local_graph_i = local_graph.links(i);
+    auto graph_i = graph.links(i);
+    for (std::size_t j = 0; j < local_graph_i.size(); ++j)
+      graph_i[pos[i]++] = local_graph_i[j] + cell_offset;
+  }
+
+  for (std::size_t i = 0; i < cell_list.size(); i += 2)
+  {
+    const std::size_t node = cell_list[i] - cell_offset;
+    auto edges = graph.links(node);
+    auto it_end = std::next(edges.begin(), pos[node]);
+#ifdef DEBUG
+    if (std::find(edges.begin(), it_end, cell_list[i + 1]) != it_end)
     {
       LOG(ERROR) << "Received same edge twice in dual graph";
       throw std::runtime_error("Inconsistent mesh data in GraphBuilder: "
                                "received same edge twice in dual graph");
     }
-    ghost_nodes.insert(cell_list[i + 1]);
+#endif
+    edges[pos[node]++] = cell_list[i + 1];
+    ghost_nodes.push_back(cell_list[i + 1]);
   }
 
-  return {graph::AdjacencyList<std::int64_t>(graph), ghost_nodes.size(),
-          num_nonlocal_edges};
+  std::sort(ghost_nodes.begin(), ghost_nodes.end());
+  const std::int32_t num_ghost_nodes = std::distance(
+      ghost_nodes.begin(), std::unique(ghost_nodes.begin(), ghost_nodes.end()));
+
+  return {std::move(graph), num_ghost_nodes};
 }
 //-----------------------------------------------------------------------------
 
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int64_t>, std::array<std::int32_t, 3>>
+std::pair<graph::AdjacencyList<std::int64_t>, std::array<std::int32_t, 2>>
 mesh::build_dual_graph(const MPI_Comm mpi_comm,
                        const graph::AdjacencyList<std::int64_t>& cell_vertices,
                        const mesh::CellType& cell_type)
@@ -364,24 +369,22 @@ mesh::build_dual_graph(const MPI_Comm mpi_comm,
   LOG(INFO) << "Build mesh dual graph";
 
   // Compute local part of dual graph
-  auto [local_graph, facet_cell_map, num_local_edges]
+  auto [local_graph, facet_cell_map]
       = mesh::build_local_dual_graph(cell_vertices, cell_type);
 
   // Compute nonlocal part
-  auto [graph, num_ghost_nodes, num_nonlocal_edges]
-      = compute_nonlocal_dual_graph(mpi_comm, cell_vertices, cell_type,
-                                    facet_cell_map, local_graph);
+  auto [graph, num_ghost_nodes] = compute_nonlocal_dual_graph(
+      mpi_comm, cell_vertices, cell_type, facet_cell_map, local_graph);
 
-  LOG(INFO) << "Graph edges (local:" << num_local_edges
-            << ", non-local:" << num_nonlocal_edges << ")";
+  LOG(INFO) << "Graph edges (local:" << local_graph.offsets().back()
+            << ", non-local:"
+            << graph.offsets().back() - local_graph.offsets().back() << ")";
 
-  return {std::move(graph),
-          {num_ghost_nodes, num_local_edges, num_nonlocal_edges}};
+  return {std::move(graph), {num_ghost_nodes, local_graph.offsets().back()}};
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>,
-           std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>,
-           std::int32_t>
+           std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>>
 mesh::build_local_dual_graph(
     const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type)
