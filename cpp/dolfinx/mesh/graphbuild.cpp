@@ -189,7 +189,7 @@ compute_nonlocal_dual_graph(
   // processes which do the matching, and using a neighbor comm?
   std::int64_t local_min = std::numeric_limits<std::int64_t>::max();
   std::int64_t local_max = 0;
-  assert(facet_cell_map % (num_vertices_per_facet + 1) == 0);
+  assert(facet_cell_map.size() % (num_vertices_per_facet + 1) == 0);
   for (std::size_t i = 0; i < facet_cell_map.size();
        i += num_vertices_per_facet + 1)
   {
