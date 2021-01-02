@@ -10,7 +10,6 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -29,9 +28,8 @@ build_dual_graph(const MPI_Comm comm,
 
 /// Compute local part of the dual graph, and return (local_graph,
 /// facet_cell_map, number of local edges in the graph (undirected)
-std::tuple<graph::AdjacencyList<std::int32_t>,
-           std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>>
+std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
 build_local_dual_graph(const graph::AdjacencyList<std::int64_t>& cell_vertices,
                        const mesh::CellType& cell_type);
 
-}
+} // namespace dolfinx::mesh
