@@ -299,8 +299,8 @@ compute_nonlocal_dual_graph(
         throw std::runtime_error("Inconsistent mesh data in GraphBuilder: "
                                  "found three identical facets");
       }
-      const std::int64_t cell0 = facet0[num_vertices_per_facet];
-      const std::int64_t cell1 = facet1[num_vertices_per_facet];
+      // const std::int64_t cell0 = facet0[num_vertices_per_facet];
+      // const std::int64_t cell1 = facet1[num_vertices_per_facet];
       p_count[proc[i0]] += 2;
       p_count[proc[i1]] += 2;
     }
