@@ -226,7 +226,6 @@ compute_nonlocal_dual_graph(
                    std::next(offsets_send.begin(), 1));
   graph::AdjacencyList<std::int64_t> send_buffer0(
       std::vector<std::int64_t>(offsets_send.back()), std::move(offsets_send));
-
   {
     // Pack map data and send to match-maker process
     std::vector<int> pos(send_buffer0.num_nodes(), 0);
@@ -240,6 +239,7 @@ compute_nonlocal_dual_graph(
       tcb::span<std::int64_t> buffer = send_buffer0.links(dest_proc);
       std::copy(facet.begin(), facet.end(),
                 std::next(buffer.begin(), pos[dest_proc]));
+      buffer[pos[dest_proc] + num_vertices_per_facet] += cell_offset;
       pos[dest_proc] += facet.size();
     }
   }
@@ -280,11 +280,44 @@ compute_nonlocal_dual_graph(
         recvd_buffer.links(b).begin(), std::prev(recvd_buffer.links(b).end()));
   });
 
-  // Clear send buffer
-  // send_buffer = std::vector<std::vector<std::int64_t>>(num_processes);
-  std::vector<std::vector<std::int64_t>> send_buffer(num_processes);
-
+  // Count data items to send to each rank
+  p_count.assign(num_processes, 0);
   bool this_equal, last_equal = false;
+  for (int i = 1; i < num_facets; ++i)
+  {
+    const int i0 = perm[i - 1];
+    const int i1 = perm[i];
+    const auto facet0 = recvd_buffer.links(i0);
+    const auto facet1 = recvd_buffer.links(i1);
+    this_equal
+        = std::equal(facet0.begin(), std::prev(facet0.end()), facet1.begin());
+    if (this_equal)
+    {
+      if (last_equal)
+      {
+        LOG(ERROR) << "Found three identical facets in mesh (match process)";
+        throw std::runtime_error("Inconsistent mesh data in GraphBuilder: "
+                                 "found three identical facets");
+      }
+      const std::int64_t cell0 = facet0[num_vertices_per_facet];
+      const std::int64_t cell1 = facet1[num_vertices_per_facet];
+      p_count[proc[i0]] += 2;
+      p_count[proc[i1]] += 2;
+    }
+    last_equal = this_equal;
+  }
+
+  // offsets_send(num_processes + 1, 0);
+
+  // Create back adjacency list send buffer
+  offsets_send.assign(num_processes + 1, 0);
+  std::partial_sum(p_count.begin(), p_count.end(),
+                   std::next(offsets_send.begin(), 1));
+  send_buffer0 = graph::AdjacencyList<std::int64_t>(
+      std::vector<std::int64_t>(offsets_send.back()), std::move(offsets_send));
+
+  std::vector<int> pos(send_buffer0.num_nodes(), 0);
+  last_equal = false;
   for (int i = 1; i < num_facets; ++i)
   {
     const int i0 = perm[i - 1];
@@ -305,19 +338,62 @@ compute_nonlocal_dual_graph(
       const std::int64_t cell1 = facet1[num_vertices_per_facet];
       const int proc0 = proc[i0];
       const int proc1 = proc[i1];
-      send_buffer[proc0].push_back(cell0);
-      send_buffer[proc0].push_back(cell1);
-      send_buffer[proc1].push_back(cell1);
-      send_buffer[proc1].push_back(cell0);
+      // send_buffer[proc0].push_back(cell0);
+      // send_buffer[proc0].push_back(cell1);
+      // send_buffer[proc1].push_back(cell1);
+      // send_buffer[proc1].push_back(cell0);
+      auto buffer0 = send_buffer0.links(proc0);
+      buffer0[pos[proc0]++] = cell0;
+      buffer0[pos[proc0]++] = cell1;
+      auto buffer1 = send_buffer0.links(proc1);
+      buffer1[pos[proc1]++] = cell1;
+      buffer1[pos[proc1]++] = cell0;
+
+      // send_buffer[proc0].push_back(cell0);
+      // send_buffer[proc0].push_back(cell1);
+      // send_buffer[proc1].push_back(cell1);
+      // send_buffer[proc1].push_back(cell0);
     }
     last_equal = this_equal;
   }
 
+  // // Clear send buffer
+  // // send_buffer = std::vector<std::vector<std::int64_t>>(num_processes);
+  // std::vector<std::vector<std::int64_t>> send_buffer(num_processes);
+
+  // bool this_equal, last_equal = false;
+  // for (int i = 1; i < num_facets; ++i)
+  // {
+  //   const int i0 = perm[i - 1];
+  //   const int i1 = perm[i];
+  //   const auto facet0 = recvd_buffer.links(i0);
+  //   const auto facet1 = recvd_buffer.links(i1);
+  //   this_equal
+  //       = std::equal(facet0.begin(), std::prev(facet0.end()),
+  //       facet1.begin());
+  //   if (this_equal)
+  //   {
+  //     if (last_equal)
+  //     {
+  //       LOG(ERROR) << "Found three identical facets in mesh (match process)";
+  //       throw std::runtime_error("Inconsistent mesh data in GraphBuilder: "
+  //                                "found three identical facets");
+  //     }
+  //     const std::int64_t cell0 = facet0[num_vertices_per_facet];
+  //     const std::int64_t cell1 = facet1[num_vertices_per_facet];
+  //     const int proc0 = proc[i0];
+  //     const int proc1 = proc[i1];
+  //     send_buffer[proc0].push_back(cell0);
+  //     send_buffer[proc0].push_back(cell1);
+  //     send_buffer[proc1].push_back(cell1);
+  //     send_buffer[proc1].push_back(cell0);
+  //   }
+  //   last_equal = this_equal;
+  // }
+
   // Send matches to other processes
   const std::vector<std::int64_t> cell_list
-      = dolfinx::MPI::all_to_all(
-            comm, graph::AdjacencyList<std::int64_t>(send_buffer))
-            .array();
+      = dolfinx::MPI::all_to_all(comm, send_buffer0).array();
 
   // Ghost nodes: insert connected cells into local map
 
@@ -338,7 +414,7 @@ compute_nonlocal_dual_graph(
                    std::next(offsets_g.begin(), 1));
   graph::AdjacencyList<std::int64_t> graph(
       std::vector<std::int64_t>(offsets_g.back()), std::move(offsets_g));
-  std::vector<int> pos(graph.num_nodes(), 0);
+  pos.assign(graph.num_nodes(), 0);
   std::vector<std::int64_t> ghost_nodes;
   for (int i = 0; i < local_graph.num_nodes(); ++i)
   {
