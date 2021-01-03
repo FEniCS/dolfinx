@@ -136,9 +136,6 @@ compute_local_dual_graph_keyed(
   {
     if (facet_match[i])
     {
-      const auto& facet0 = facets[i - 1].first;
-      const auto& facet1 = facets[i].first;
-
       // Add edges (directed graph, so add both ways)
       const int cell_index0 = facets[i - 1].second;
       const int cell_index1 = facets[i].second;
