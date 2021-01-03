@@ -274,10 +274,10 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     }
 
     // Compute adjacency list with duplicate edges
-    std::vector<std::int32_t> offsets_tmp(num_edges.size() + 1, 0);
+    std::vector<std::int32_t> offsets(num_edges.size() + 1, 0);
     std::partial_sum(num_edges.begin(), num_edges.end(),
-                     std::next(offsets_tmp.begin(), 1));
-    std::vector<std::int32_t> edges_tmp(offsets_tmp.back());
+                     std::next(offsets.begin(), 1));
+    std::vector<std::int32_t> edges(offsets.back());
     std::vector<int> pos(num_edges.size(), 0);
     for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
     {
@@ -292,25 +292,25 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
           if (const std::int32_t node_j = original_to_contiguous[nodes[j]];
               i != j and node_j != -1)
           {
-            edges_tmp[offsets_tmp[node_i] + pos[node_i]++] = node_j;
+            edges[offsets[node_i] + pos[node_i]++] = node_j;
           }
         }
       }
     }
 
     // Eliminate duplicate edges and create AdjacencyList
-    graph_offsets.resize(offsets_tmp.size(), 0);
-    for (std::size_t i = 0; i < offsets_tmp.size() - 1; ++i)
+    graph_offsets.resize(offsets.size(), 0);
+    for (std::size_t i = 0; i < offsets.size() - 1; ++i)
     {
-      std::sort(std::next(edges_tmp.begin(), offsets_tmp[i]),
-                std::next(edges_tmp.begin(), offsets_tmp[i + 1]));
-      auto it = std::unique(std::next(edges_tmp.begin(), offsets_tmp[i]),
-                            std::next(edges_tmp.begin(), offsets_tmp[i + 1]));
-      graph_data.insert(graph_data.end(),
-                        std::next(edges_tmp.begin(), offsets_tmp[i]), it);
+      std::sort(std::next(edges.begin(), offsets[i]),
+                std::next(edges.begin(), offsets[i + 1]));
+      auto it = std::unique(std::next(edges.begin(), offsets[i]),
+                            std::next(edges.begin(), offsets[i + 1]));
+      graph_data.insert(graph_data.end(), std::next(edges.begin(), offsets[i]),
+                        it);
       graph_offsets[i + 1]
           = graph_offsets[i]
-            + std::distance(std::next(edges_tmp.begin(), offsets_tmp[i]), it);
+            + std::distance(std::next(edges.begin(), offsets[i]), it);
     }
   }
   const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data),
