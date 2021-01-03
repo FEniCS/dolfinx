@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2013 Garth N. Wells
+// Copyright (C) 2010-2021 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -81,6 +81,7 @@ compute_local_dual_graph_keyed(
   // Find maching facets by comparing facet i and facet i -1
   std::vector<std::int32_t> num_local_graph(num_local_cells, 0);
   std::vector<std::int64_t> facet_cell_map;
+  std::vector<bool> facet_match(facets.size(), false);
   bool this_equal, last_equal = false;
   for (std::size_t i = 1; i < facets.size(); ++i)
   {
@@ -101,6 +102,8 @@ compute_local_dual_graph_keyed(
       const int cell_index1 = facets[i].second;
       num_local_graph[cell_index0] += 1;
       num_local_graph[cell_index1] += 1;
+
+      facet_match[i] = true;
     }
     else if (!this_equal and !last_equal)
     {
@@ -131,10 +134,11 @@ compute_local_dual_graph_keyed(
   std::vector<int> pos(num_local_cells, 0);
   for (std::size_t i = 1; i < facets.size(); ++i)
   {
-    const auto& facet0 = facets[i - 1].first;
-    const auto& facet1 = facets[i].first;
-    if (std::equal(facet0.begin(), facet0.end(), facet1.begin()))
+    if (facet_match[i])
     {
+      const auto& facet0 = facets[i - 1].first;
+      const auto& facet1 = facets[i].first;
+
       // Add edges (directed graph, so add both ways)
       const int cell_index0 = facets[i - 1].second;
       const int cell_index1 = facets[i].second;
@@ -146,7 +150,7 @@ compute_local_dual_graph_keyed(
   return {graph::AdjacencyList<std::int32_t>(std::move(local_graph_data),
                                              std::move(offsets)),
           std::move(facet_cell_map)};
-} // namespace
+}
 //-----------------------------------------------------------------------------
 // Build nonlocal part of dual graph for mesh and return number of
 // non-local edges. Note: GraphBuilder::compute_local_dual_graph should
@@ -394,7 +398,7 @@ compute_nonlocal_dual_graph(
       ghost_nodes.begin(), std::unique(ghost_nodes.begin(), ghost_nodes.end()));
 
   return {std::move(graph), num_ghost_nodes};
-} // namespace
+}
 //-----------------------------------------------------------------------------
 
 } // namespace
