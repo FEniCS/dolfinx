@@ -59,13 +59,12 @@ std::vector<int> sort_by_perm(const graph::AdjacencyList<T>& array)
 {
   std::vector<int> index(array.num_nodes());
   std::iota(index.begin(), index.end(), 0);
-  const auto cmp = [&array](int a, int b) {
+  std::sort(index.begin(), index.end(), [&array](int a, int b) {
     return std::lexicographical_compare(
         array.links(a).begin(), array.links(a).end(), array.links(b).begin(),
         array.links(b).end());
-  };
+  });
 
-  std::sort(index.begin(), index.end(), cmp);
   return index;
 }
 //-----------------------------------------------------------------------------
@@ -111,7 +110,7 @@ get_local_indexing(
   // 2 = entities that are only in ghost cells (i.e. not owned)
   // 3 = entities with ownership that needs deciding (used also for unghosted
   // case)
-  std::vector<std::int8_t> ghost_status(entity_count, 0);
+  std::vector<int> ghost_status(entity_count, 0);
   {
     if (cell_indexmap->num_ghosts() == 0)
       std::fill(ghost_status.begin(), ghost_status.end(), 3);
@@ -164,8 +163,8 @@ get_local_indexing(
   std::vector<std::vector<std::int64_t>> send_entities(neighbor_size);
   std::vector<std::vector<std::int32_t>> send_index(neighbor_size);
 
-  // Get all "possibly shared" entities, based on vertex sharing. Send to
-  // other processes, and see if we get the same back.
+  // Get all "possibly shared" entities, based on vertex sharing. Send
+  // to other processes, and see if we get the same back.
 
   // Map for entities to entity index, using global vertex indices
   std::map<std::vector<std::int64_t>, std::int32_t>
@@ -222,9 +221,6 @@ get_local_indexing(
   // Get shared entities of this dimension, and also match up an index
   // for the received entities (from other processes) with the indices
   // of the sent entities (to other processes)
-  std::unordered_map<std::int32_t, std::set<std::int32_t>> shared_entities;
-  std::unordered_map<std::int32_t, std::vector<std::int64_t>>
-      shared_entity_to_global_vertices;
 
   // Prepare data for neighbor all to all
   std::vector<std::int64_t> send_entities_data;
@@ -246,6 +242,9 @@ get_local_indexing(
   // Any which are not found will have -1 in recv_index
   std::vector<std::int32_t> recv_index;
   std::vector<std::int64_t> recv_vec;
+  std::unordered_map<std::int32_t, std::vector<std::int64_t>>
+      shared_entity_to_global_vertices;
+  std::unordered_map<std::int32_t, std::set<std::int32_t>> shared_entities;
   for (int np = 0; np < neighbor_size; ++np)
   {
     const int p = neighbors[np];
@@ -499,8 +498,7 @@ compute_entities_by_key_matching(
   for (std::size_t i = 0; i < offsets_ev.size() - 1; ++i)
     offsets_ev[i + 1] = offsets_ev[i] + num_vertices_per_entity;
   auto ev = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-      std::vector<std::int32_t>(entity_count * num_vertices_per_entity),
-      std::move(offsets_ev));
+      std::vector<std::int32_t>(offsets_ev.back()), std::move(offsets_ev));
   for (int i = 0; i < entity_list.num_nodes(); ++i)
   {
     std::copy(entity_list.links(i).begin(), entity_list.links(i).end(),
