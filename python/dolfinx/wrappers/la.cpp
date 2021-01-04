@@ -145,8 +145,9 @@ void la(py::module& m)
   //         "Create a PETSc MatNullSpace.");
   m.def(
       "flush_matrix",
-      [](dolfinx::la::PETScMatrix& A) {
-        A.apply(dolfinx::la::PETScMatrix::AssemblyType::FLUSH);
+      [](Mat A) {
+        MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
+        MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
       },
       "Flush a matrix (to be called when switching between PETSc insert "
       "modes).");
