@@ -143,5 +143,12 @@ void la(py::module& m)
   //         },
   //         py::return_value_policy::take_ownership,
   //         "Create a PETSc MatNullSpace.");
+  m.def(
+      "flush_matrix",
+      [](dolfinx::la::PETScMatrix& A) {
+        A.apply(dolfinx::la::PETScMatrix::AssemblyType::FLUSH);
+      },
+      "Flush a matrix (to be called when switching between PETSc insert "
+      "modes).");
 }
 } // namespace dolfinx_wrappers

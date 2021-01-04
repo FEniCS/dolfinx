@@ -225,7 +225,8 @@ def _(A: PETSc.Mat,
     _a = _create_cpp_form(a)
     cpp.fem.assemble_matrix_petsc(A, _a, bcs)
     if _a.function_spaces[0].id == _a.function_spaces[1].id:
-        cpp.fem.add_diagonal(A, _a.function_spaces[0], bcs, diagonal)
+        cpp.fem.flush_matrix(A)
+        cpp.fem.insert_diagonal(A, _a.function_spaces[0], bcs, diagonal)
     return A
 
 
@@ -311,7 +312,8 @@ def _(A: PETSc.Mat,
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 cpp.fem.assemble_matrix_petsc_unrolled(Asub, a_sub, bcs)
                 if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
-                    cpp.fem.add_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
+                    cpp.fem.flush_matrix(Asub)
+                    cpp.fem.insert_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
     return A
 

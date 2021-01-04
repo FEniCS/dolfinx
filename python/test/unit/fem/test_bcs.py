@@ -79,7 +79,6 @@ def test_overlapping_bcs():
     b = dolfinx.fem.create_vector(L)
 
     dolfinx.fem.assemble_matrix(A, a, bcs=bcs)
-    dolfinx.fem.insert_diagonal(A, V, bcs)
     A.assemble()
 
     with b.localForm() as b_loc:
