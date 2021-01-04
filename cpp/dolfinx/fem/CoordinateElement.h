@@ -30,9 +30,12 @@ public:
   /// @param[in] geometric_dimension Geometric dimension
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  CoordinateElement(int basix_element_handle,
-                    int geometric_dimension, const std::string& signature,
-                    const ElementDofLayout& dof_layout);
+  CoordinateElement(
+      int basix_element_handle, int geometric_dimension,
+      const std::string& signature, const ElementDofLayout& dof_layout,
+      bool needs_permutation_data,
+      const std::function<int(double*, const std::uint32_t, const int)>
+          permute_dof_coordinates);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -47,6 +50,10 @@ public:
 
   /// Return the topological dimension of the cell shape
   int topological_dimension() const;
+
+  /// TODO
+  int permute_dof_coordinates(double* coords, const uint32_t cell_permutation,
+                              int dim) const;
 
   /// Return the geometric dimension of the cell shape
   int geometric_dimension() const;
@@ -73,7 +80,8 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
-          cell_geometry) const;
+          cell_geometry,
+      const std::uint32_t cell_permutation) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
@@ -88,6 +96,10 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_geometry) const;
 
+  /// Indicated whether the coordinate map needs permutation data passing in
+  /// (for higher order geometries)
+  bool needs_permutation_data() const;
+
 private:
   // Geometric dimensions
   int _gdim;
@@ -101,8 +113,14 @@ private:
   // Flag denoting affine map
   bool _is_affine;
 
-  // Libtab element
+  // Basix element
   int _basix_element_handle;
 
+  // Needs permutation data
+  bool _needs_permutation_data;
+
+  // Permute_dof_coordinates
+  std::function<int(double*, const std::uint32_t, const int)>
+      _permute_dof_coordinates;
 };
 } // namespace dolfinx::fem

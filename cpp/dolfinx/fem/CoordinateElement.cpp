@@ -12,12 +12,16 @@ using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-CoordinateElement::CoordinateElement(int basix_element_handle,
-                                     int geometric_dimension,
-                                     const std::string& signature,
-                                     const ElementDofLayout& dof_layout)
+CoordinateElement::CoordinateElement(
+    int basix_element_handle, int geometric_dimension,
+    const std::string& signature, const ElementDofLayout& dof_layout,
+    const bool needs_permutation_data,
+    const std::function<int(double*, const std::uint32_t, const int)>
+        permute_dof_coordinates)
     : _gdim(geometric_dimension), _signature(signature),
-      _dof_layout(dof_layout), _basix_element_handle(basix_element_handle)
+      _dof_layout(dof_layout), _basix_element_handle(basix_element_handle),
+      _needs_permutation_data(needs_permutation_data),
+      _permute_dof_coordinates(permute_dof_coordinates)
 {
   const mesh::CellType cell = cell_shape();
   int degree = basix::degree(basix_element_handle);
@@ -60,6 +64,13 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
   return _dof_layout;
 }
 //-----------------------------------------------------------------------------
+int CoordinateElement::permute_dof_coordinates(double* coords,
+                                               const uint32_t cell_permutation,
+                                               int dim) const
+{
+  return _permute_dof_coordinates(coords, cell_permutation, dim);
+}
+//-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(
     Eigen::Ref<
         Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
@@ -67,16 +78,29 @@ void CoordinateElement::push_forward(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& cell_geometry) const
+                                        Eigen::RowMajor>>& cell_geometry,
+    const std::uint32_t cell_permutation) const
 {
+  if (cell_permutation != 0)
+    assert(cell_permutation > 0);
   assert(x.rows() == X.rows());
   assert(x.cols() == this->geometric_dimension());
   assert(X.cols() == this->topological_dimension());
 
   // Compute physical coordinates
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> outX(
+      X.rows(), X.cols());
+  outX = X;
+
+  int ret
+      = _permute_dof_coordinates(outX.data(), cell_permutation, outX.cols());
+
+  if (ret == -1)
+    throw std::runtime_error(
+        "Dof reference coordinates could not be computed.");
 
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi
-      = basix::tabulate(_basix_element_handle, 0, X)[0];
+      = basix::tabulate(_basix_element_handle, 0, outX)[0];
 
   x = phi * cell_geometry.matrix();
 }
@@ -224,5 +248,10 @@ void CoordinateElement::compute_reference_geometry(
         detJ.row(ip) = std::sqrt((Jview.transpose() * Jview).determinant());
     }
   }
+}
+//-----------------------------------------------------------------------------
+bool CoordinateElement::needs_permutation_data() const
+{
+  return _needs_permutation_data;
 }
 //-----------------------------------------------------------------------------

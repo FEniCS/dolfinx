@@ -220,7 +220,8 @@ private:
                     const ufc_coordinate_mapping*)>
       _transform_values;
 
-  std::function<int(double*, const std::uint32_t)> _permute_dof_coordinates;
+  std::function<int(double*, const std::uint32_t, const int)>
+      _permute_dof_coordinates;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.

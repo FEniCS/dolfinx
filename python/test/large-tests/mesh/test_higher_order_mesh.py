@@ -463,6 +463,10 @@ def test_third_order_quad(L, H, Z):
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                       [1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
     cells = cells[:, perm_vtk(CellType.quadrilateral, cells.shape[1])]
+
+    assert (cells[0] == [0, 1, 3, 2, 4, 5, 10, 11, 6, 7, 8, 9, 12, 13, 14, 15]).all()
+    assert (cells[1] == [1, 16, 2, 17, 18, 19, 6, 7, 20, 21, 22, 23, 24, 25, 26, 27]).all()
+
     cell = ufl.Cell("quadrilateral", geometric_dimension=points.shape[1])
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 3))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
