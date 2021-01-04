@@ -279,13 +279,8 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
 @pytest.mark.parametrize("ghost_mode",
                          [cpp.mesh.GhostMode.none, cpp.mesh.GhostMode.shared_facet, cpp.mesh.GhostMode.shared_vertex])
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
-<<<<<<< HEAD
-def test_mesh_topology_against_basix(mesh_factory, ghost_mode=cpp.mesh.GhostMode.none):
-    """Test that mesh cells have topology matching to basix reference
-=======
 def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to FIAT reference
->>>>>>> origin/master
     cell they were created from.
     """
     func, args = mesh_factory
