@@ -127,7 +127,7 @@ mesh::get_sub_entities(CellType type, int dim0, int dim1)
   const static Eigen::Array<int, 1, 3, Eigen::RowMajor> triangle
       = (Eigen::Array<int, 1, 3, Eigen::RowMajor>() << 0, 1, 2).finished();
   const static Eigen::Array<int, 1, 4, Eigen::RowMajor> quadrilateral
-      = (Eigen::Array<int, 1, 4, Eigen::RowMajor>() << 0, 2, 3, 1).finished();
+      = (Eigen::Array<int, 1, 4, Eigen::RowMajor>() << 0, 1, 2, 3).finished();
   const static Eigen::Array<int, 4, 3, Eigen::RowMajor> tetrahedron
       = (Eigen::Array<int, 4, 3, Eigen::RowMajor>() << 0, 1, 2, 0, 3, 4, 1, 3,
          5, 2, 4, 5)
