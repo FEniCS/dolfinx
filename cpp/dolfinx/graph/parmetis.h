@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Niclas Jansson, Ola Skavhaug, Anders Logg,
+// Copyright (C) 2020 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -10,14 +10,18 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 
-// Interface to ParMETIS parallel partitioner
 namespace dolfinx::graph::parmetis
 {
 #ifdef HAS_PARMETIS
-// Standard ParMETIS partition
-AdjacencyList<std::int32_t>
-partition(MPI_Comm mpi_comm, int n,
-          const AdjacencyList<std::int64_t>& adj_graph, bool ghosting);
+
+/// Create a graph partitioning function that uses ParMETIS
+///
+/// param[in] options The ParMETIS option. See ParMETIS manual for
+/// details.
+std::function<graph::AdjacencyList<std::int32_t>(
+    MPI_Comm, int, const graph::AdjacencyList<std::int64_t>&, std::int32_t,
+    bool)>
+partitioner(std::array<int, 3> options = {0, 0, 0});
 
 #endif
 } // namespace dolfinx::graph::parmetis

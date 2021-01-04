@@ -61,16 +61,28 @@ Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
 } // namespace
 
 //-----------------------------------------------------------------------------
-Mesh mesh::create_mesh(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-    const fem::CoordinateElement& element,
-    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        x,
-    mesh::GhostMode ghost_mode,
-    std::function<const graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, const mesh::CellType,
-        const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>
-        partitioner)
+Mesh mesh::create_mesh(MPI_Comm comm,
+                       const graph::AdjacencyList<std::int64_t>& cells,
+                       const fem::CoordinateElement& element,
+                       const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>& x,
+                       mesh::GhostMode ghost_mode)
+{
+  return create_mesh(
+      comm, cells, element, x, ghost_mode,
+      static_cast<graph::AdjacencyList<std::int32_t> (*)(
+          MPI_Comm, int, const mesh::CellType,
+          const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
+          &mesh::partition_cells_graph));
+}
+//-----------------------------------------------------------------------------
+Mesh mesh::create_mesh(MPI_Comm comm,
+                       const graph::AdjacencyList<std::int64_t>& cells,
+                       const fem::CoordinateElement& element,
+                       const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>& x,
+                       mesh::GhostMode ghost_mode,
+                       const mesh::CellPartitionFunction& cell_partitioner)
 {
   if (ghost_mode == mesh::GhostMode::shared_vertex)
     throw std::runtime_error("Ghost mode via vertex currently disabled.");
@@ -86,20 +98,20 @@ Mesh mesh::create_mesh(
                                cells);
 
   // Compute the destination rank for cells on this process via graph
-  // partitioning. Always get the ghost cells via facet, though these may be
-  // discarded later.
+  // partitioning. Always get the ghost cells via facet, though these
+  // may be discarded later.
   const int size = dolfinx::MPI::size(comm);
   const graph::AdjacencyList<std::int32_t> dest
-      = partitioner(comm, size, element.cell_shape(), cells_topology,
-                    GhostMode::shared_facet);
+      = cell_partitioner(comm, size, element.cell_shape(), cells_topology,
+                         GhostMode::shared_facet);
 
   // Distribute cells to destination rank
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
-      = graph::partition::distribute(comm, cells, dest);
+      = graph::build::distribute(comm, cells, dest);
 
-  // Create cells and vertices with the ghosting requested. Input topology
-  // includes cells shared via facet, but output will remove these, if not
-  // required by ghost_mode.
+  // Create cells and vertices with the ghosting requested. Input
+  // topology includes cells shared via facet, but output will remove
+  // these, if not required by ghost_mode.
   Topology topology = mesh::create_topology(
       comm,
       mesh::extract_topology(element.cell_shape(), element.dof_layout(),

@@ -169,6 +169,7 @@ p = numpy.array([48.0, 52.0, 0.0], dtype=numpy.float64)
 cell_candidates = dolfinx.geometry.compute_collisions_point(bb_tree, p)
 cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, p, 1)
 
+uc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 if len(cell) > 0:
     value = uc.eval(p, cell)
     print(value[1])

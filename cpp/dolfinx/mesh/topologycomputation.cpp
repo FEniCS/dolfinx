@@ -7,7 +7,7 @@
 #include "topologycomputation.h"
 #include "Topology.h"
 #include "cell_types.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
@@ -52,27 +52,19 @@ int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
 /// the rows in ascending order
 /// @param[in] array The input array
 /// @return The permutation vector that would order the rows in
-///   ascending order
+/// ascending order
 /// @pre Each row of @p array must be sorted
 template <typename T>
-std::vector<int>
-sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>& array)
+std::vector<int> sort_by_perm(const graph::AdjacencyList<T>& array)
 {
-  // Sort an Eigen::Array by creating a permutation vector
-  std::vector<int> index(array.rows());
+  std::vector<int> index(array.num_nodes());
   std::iota(index.begin(), index.end(), 0);
-  const int cols = array.cols();
+  std::sort(index.begin(), index.end(), [&array](int a, int b) {
+    return std::lexicographical_compare(
+        array.links(a).begin(), array.links(a).end(), array.links(b).begin(),
+        array.links(b).end());
+  });
 
-  // Lambda with capture for sort comparison
-  const auto cmp = [&array, &cols](int a, int b) {
-    const T* row_a = array.row(a).data();
-    const T* row_b = array.row(b).data();
-    return std::lexicographical_compare(row_a, row_a + cols, row_b,
-                                        row_b + cols);
-  };
-
-  std::sort(index.begin(), index.end(), cmp);
   return index;
 }
 //-----------------------------------------------------------------------------
@@ -85,24 +77,23 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 /// @param[in] comm MPI Communicator
 /// @param[in] cell_indexmap IndexMap for cells
 /// @param[in] vertex_indexmap IndexMap for vertices
-/// @param[in] entity_list List of entities as 2D array, each entity
-///   represented by its local vertex indices
+/// @param[in] entity_list List of entities, each entity represented by
+/// its local vertex indices
+/// @param[in] num_vertices_per_e Number of vertices per entity
 /// @param[in] entity_index Initial numbering for each row in
-///   entity_list
+/// entity_list
 /// @returns Tuple of (local_indices, index map, shared entities)
 std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>>
 get_local_indexing(
     MPI_Comm comm, const std::shared_ptr<const common::IndexMap>& cell_indexmap,
     const std::shared_ptr<const common::IndexMap>& vertex_indexmap,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        entity_list,
-    const std::vector<std::int32_t>& entity_index)
+    const graph::AdjacencyList<std::int32_t>& entity_list,
+    int num_vertices_per_e, const std::vector<std::int32_t>& entity_index)
 {
-  // Get first occurence in entity list of each entity
-  std::vector<std::int32_t> unique_row(entity_list.rows(), -1);
+  // Get first occurrence in entity list of each entity
+  std::vector<std::int32_t> unique_row(entity_list.num_nodes(), -1);
   std::int32_t entity_count = 0;
-  for (int i = 0; i < entity_list.rows(); ++i)
+  for (std::size_t i = 0; i < unique_row.size(); ++i)
   {
     const std::int32_t idx = entity_index[i];
     if (unique_row[idx] == -1)
@@ -119,17 +110,18 @@ get_local_indexing(
   // 2 = entities that are only in ghost cells (i.e. not owned)
   // 3 = entities with ownership that needs deciding (used also for unghosted
   // case)
-  std::vector<std::int8_t> ghost_status(entity_count, 0);
+  std::vector<int> ghost_status(entity_count, 0);
   {
     if (cell_indexmap->num_ghosts() == 0)
       std::fill(ghost_status.begin(), ghost_status.end(), 3);
     else
     {
-      std::int32_t cell_count
+      const std::int32_t num_cells
           = cell_indexmap->size_local() + cell_indexmap->num_ghosts();
-      assert(entity_list.rows() % cell_count == 0);
-      std::int32_t num_entities_per_cell = entity_list.rows() / cell_count;
-      std::int32_t ghost_offset
+      assert(entity_list.num_nodes() % num_cells == 0);
+      const std::int32_t num_entities_per_cell
+          = entity_list.num_nodes() / num_cells;
+      const std::int32_t ghost_offset
           = cell_indexmap->size_local() * num_entities_per_cell;
 
       // Tag all entities in local cells with 1
@@ -138,8 +130,9 @@ get_local_indexing(
         const std::int32_t idx = entity_index[i];
         ghost_status[idx] = 1;
       }
+
       // Set entities in ghost cells to 2 (purely ghost) or 3 (border)
-      for (int i = ghost_offset; i < entity_list.rows(); ++i)
+      for (int i = ghost_offset; i < entity_list.num_nodes(); ++i)
       {
         const std::int32_t idx = entity_index[i];
         ghost_status[idx] |= 2;
@@ -170,8 +163,8 @@ get_local_indexing(
   std::vector<std::vector<std::int64_t>> send_entities(neighbor_size);
   std::vector<std::vector<std::int32_t>> send_index(neighbor_size);
 
-  // Get all "possibly shared" entities, based on vertex sharing. Send to
-  // other processes, and see if we get the same back.
+  // Get all "possibly shared" entities, based on vertex sharing. Send
+  // to other processes, and see if we get the same back.
 
   // Map for entities to entity index, using global vertex indices
   std::map<std::vector<std::int64_t>, std::int32_t>
@@ -179,15 +172,21 @@ get_local_indexing(
 
   // Set of sharing procs for each entity, counting vertex hits
   std::unordered_map<int, int> procs;
-  const int num_vertices = entity_list.cols();
-  std::vector<std::int32_t> vlocal(num_vertices);
-  std::vector<std::int64_t> vglobal(num_vertices);
+  std::vector<std::int32_t> vlocal;
+  std::vector<std::int64_t> vglobal;
   for (int i : unique_row)
   {
+    auto entity_list_i = entity_list.links(i);
+    vlocal.assign(entity_list_i.begin(), entity_list_i.end());
+    vglobal.resize(vlocal.size());
+    vertex_indexmap->local_to_global(vlocal.data(), vlocal.size(),
+                                     vglobal.data());
+    std::sort(vglobal.begin(), vglobal.end());
+
     procs.clear();
-    for (int j = 0; j < num_vertices; ++j)
+    for (int j = 0; j < num_vertices_per_e; ++j)
     {
-      const int v = entity_list(i, j);
+      const int v = entity_list_i[j];
       if (auto it = shared_vertices.find(v); it != shared_vertices.end())
       {
         for (std::int32_t p : it->second)
@@ -198,28 +197,21 @@ get_local_indexing(
     for (const auto& q : procs)
     {
       // If any process shares all vertices, then add to list
-      if (q.second == num_vertices)
+      if (q.second == num_vertices_per_e)
       {
-        const int p = q.first;
-        auto it = proc_to_neighbor.find(p);
-        assert(it != proc_to_neighbor.end());
-        const int np = it->second;
-
-        vlocal.assign(entity_list.row(i).data(),
-                      entity_list.row(i).data() + num_vertices);
-        vertex_indexmap->local_to_global(vlocal.data(), vlocal.size(),
-                                         vglobal.data());
-        std::sort(vglobal.begin(), vglobal.end());
-
         global_entity_to_entity_index.insert({vglobal, entity_index[i]});
 
         // Do not send entities which are known to be ghosts
         if (ghost_status[entity_index[i]] != 2)
         {
+          const int p = q.first;
+          auto it = proc_to_neighbor.find(p);
+          assert(it != proc_to_neighbor.end());
+          const int np = it->second;
+
           // Entity entity_index[i] may be shared with process p
           send_entities[np].insert(send_entities[np].end(), vglobal.begin(),
                                    vglobal.end());
-
           send_index[np].push_back(entity_index[i]);
         }
       }
@@ -229,9 +221,6 @@ get_local_indexing(
   // Get shared entities of this dimension, and also match up an index
   // for the received entities (from other processes) with the indices
   // of the sent entities (to other processes)
-  std::unordered_map<std::int32_t, std::set<std::int32_t>> shared_entities;
-  std::unordered_map<std::int32_t, std::vector<std::int64_t>>
-      shared_entity_to_global_vertices;
 
   // Prepare data for neighbor all to all
   std::vector<std::int64_t> send_entities_data;
@@ -252,15 +241,19 @@ get_local_indexing(
   // Compare received with sent for each process
   // Any which are not found will have -1 in recv_index
   std::vector<std::int32_t> recv_index;
-  std::vector<std::int64_t> recv_vec(num_vertices);
+  std::vector<std::int64_t> recv_vec;
+  std::unordered_map<std::int32_t, std::vector<std::int64_t>>
+      shared_entity_to_global_vertices;
+  std::unordered_map<std::int32_t, std::set<std::int32_t>> shared_entities;
   for (int np = 0; np < neighbor_size; ++np)
   {
     const int p = neighbors[np];
-
-    for (int j = recv_offsets[np]; j < recv_offsets[np + 1]; j += num_vertices)
+    for (int j = recv_offsets[np]; j < recv_offsets[np + 1];
+         j += num_vertices_per_e)
     {
-      recv_vec.assign(recv_entities_data.data() + j,
-                      recv_entities_data.data() + j + num_vertices);
+      recv_vec.assign(
+          std::next(recv_entities_data.begin(), j),
+          std::next(recv_entities_data.begin(), j + num_vertices_per_e));
       if (auto it = global_entity_to_entity_index.find(recv_vec);
           it != global_entity_to_entity_index.end())
       {
@@ -287,15 +280,14 @@ get_local_indexing(
     // Index non-ghost entities
     for (int i = 0; i < entity_count; ++i)
     {
-      auto it = shared_entities.find(i);
-      std::int8_t gs = ghost_status[i];
-      assert(gs > 0);
+      assert(ghost_status[i] > 0);
       // Definitely ghost
-      if (gs == 2)
+      if (ghost_status[i] == 2)
         continue;
 
       // Definitely local
-      if (gs == 1 or it == shared_entities.end())
+      if (const auto it = shared_entities.find(i);
+          ghost_status[i] == 1 or it == shared_entities.end())
       {
         local_index[i] = c;
         ++c;
@@ -379,8 +371,9 @@ get_local_indexing(
         ghost_owners[local_index[idx] - num_local] = neighbors[owner];
       }
     }
-    for (std::int64_t idx : ghost_indices)
-      assert(idx != -1);
+
+    assert(std::find(ghost_indices.begin(), ghost_indices.end(), -1)
+           == ghost_indices.end());
   }
 
   MPI_Comm_free(&neighbor_comm);
@@ -440,47 +433,54 @@ compute_entities_by_key_matching(
   const int num_cells = cells.num_nodes();
 
   // List of vertices for each entity in each cell
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entity_list(num_cells * num_entities_per_cell, num_vertices_per_entity);
+  std::vector<std::int32_t> offsets_e(num_cells * num_entities_per_cell + 1, 0);
+  for (std::size_t i = 0; i < offsets_e.size() - 1; ++i)
+    offsets_e[i + 1] = offsets_e[i] + num_vertices_per_entity;
+  graph::AdjacencyList<std::int32_t> entity_list(
+      std::vector<std::int32_t>(num_cells * num_entities_per_cell
+                                * num_vertices_per_entity),
+      std::move(offsets_e));
+
   int k = 0;
+  std::vector<std::int32_t>& entity_array = entity_list.array();
   for (int c = 0; c < num_cells; ++c)
   {
     // Get vertices from cell
     auto vertices = cells.links(c);
 
-    // Iterate over entities of cell
     for (int i = 0; i < num_entities_per_cell; ++i)
     {
       // Get entity vertices
+      const int offset = k * num_vertices_per_entity;
       for (int j = 0; j < num_vertices_per_entity; ++j)
-        entity_list(k, j) = vertices[e_vertices(i, j)];
-
+        entity_array[offset + j] = vertices[e_vertices(i, j)];
       ++k;
     }
   }
-  assert(k == entity_list.rows());
-
-  std::vector<std::int32_t> entity_index(entity_list.rows());
-  std::int32_t entity_count = 0;
+  assert(k == entity_list.num_nodes());
 
   // Copy list and sort vertices of each entity into order
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entity_list_sorted = entity_list;
-  for (int i = 0; i < entity_list_sorted.rows(); ++i)
+  graph::AdjacencyList<std::int32_t> entity_list_sorted = entity_list;
+  for (int i = 0; i < entity_list_sorted.num_nodes(); ++i)
   {
-    std::sort(entity_list_sorted.row(i).data(),
-              entity_list_sorted.row(i).data() + num_vertices_per_entity);
+    std::sort(entity_list_sorted.links(i).begin(),
+              entity_list_sorted.links(i).end());
   }
 
   // Sort the list and label uniquely
   const std::vector sort_order = sort_by_perm<std::int32_t>(entity_list_sorted);
+  std::vector<std::int32_t> entity_index(entity_list.num_nodes(), 0);
+  std::int32_t entity_count = 0;
   std::int32_t last = sort_order[0];
-  entity_index[last] = 0;
   for (std::size_t i = 1; i < sort_order.size(); ++i)
   {
     std::int32_t j = sort_order[i];
-    if ((entity_list_sorted.row(j) != entity_list_sorted.row(last)).any())
+    if (!std::equal(entity_list_sorted.links(j).begin(),
+                    entity_list_sorted.links(j).end(),
+                    entity_list_sorted.links(last).begin()))
+    {
       ++entity_count;
+    }
     entity_index[j] = entity_count;
     last = j;
   }
@@ -489,25 +489,31 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-  const auto [local_index, index_map] = get_local_indexing(
-      comm, cell_index_map, vertex_index_map, entity_list, entity_index);
-
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      connectivity_ce(num_cells, num_entities_per_cell);
-  std::copy(local_index.begin(), local_index.end(), connectivity_ce.data());
-
-  // Cell-entity connectivity
-  auto ce
-      = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ce);
+  const auto [local_index, index_map]
+      = get_local_indexing(comm, cell_index_map, vertex_index_map, entity_list,
+                           num_vertices_per_entity, entity_index);
 
   // Entity-vertex connectivity
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      connectivity_ev(entity_count, num_vertices_per_entity);
-  for (int i = 0; i < entity_list.rows(); ++i)
-    connectivity_ev.row(local_index[i]) = entity_list.row(i);
+  std::vector<std::int32_t> offsets_ev(entity_count + 1, 0);
+  for (std::size_t i = 0; i < offsets_ev.size() - 1; ++i)
+    offsets_ev[i + 1] = offsets_ev[i] + num_vertices_per_entity;
+  auto ev = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      std::vector<std::int32_t>(offsets_ev.back()), std::move(offsets_ev));
+  for (int i = 0; i < entity_list.num_nodes(); ++i)
+  {
+    std::copy(entity_list.links(i).begin(), entity_list.links(i).end(),
+              ev->links(local_index[i]).begin());
+  }
 
-  auto ev
-      = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ev);
+  // NOTE: Cell-entity connectivity comes after ev creation because
+  // below we use std::move(local_index)
+
+  // Cell-entity connectivity
+  std::vector<std::int32_t> offsets_ce(num_cells + 1, 0);
+  for (std::size_t i = 0; i < offsets_ce.size() - 1; ++i)
+    offsets_ce[i + 1] = offsets_ce[i] + num_entities_per_cell;
+  auto ce = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      std::move(local_index), std::move(offsets_ce));
 
   return {ce, ev, index_map};
 }
@@ -584,37 +590,38 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
     entity_to_index.insert({key, e});
   }
 
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      connections(c_d0_0.num_nodes(),
-                  mesh::cell_num_entities(cell_type_d0, d1));
+  std::vector<std::int32_t> connections;
+  connections.reserve(c_d0_0.num_nodes()
+                      * mesh::cell_num_entities(cell_type_d0, d1));
+  std::vector<std::int32_t> offsets(c_d0_0.num_nodes() + 1, 0);
 
   // Search for d1 entities of d0 in map, and recover index
-  std::vector<std::int32_t> entities;
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       e_vertices_ref = mesh::get_entity_vertices(cell_type_d0, d1);
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> keys
-      = e_vertices_ref;
+  std::vector<int> keys(e_vertices_ref.data(),
+                        e_vertices_ref.data() + e_vertices_ref.size());
   for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {
-    entities.clear();
     auto e0 = c_d0_0.links(e);
     for (Eigen::Index i = 0; i < e_vertices_ref.rows(); ++i)
       for (Eigen::Index j = 0; j < e_vertices_ref.cols(); ++j)
-        keys(i, j) = e0[e_vertices_ref(i, j)];
-    for (Eigen::Index i = 0; i < keys.rows(); ++i)
+        keys[i * e_vertices_ref.cols() + j] = e0[e_vertices_ref(i, j)];
+
+    for (Eigen::Index i = 0; i < e_vertices_ref.rows(); ++i)
     {
-      std::partial_sort_copy(keys.row(i).data(),
-                             keys.row(i).data() + keys.row(i).cols(),
-                             key.begin(), key.end());
+      auto keys_begin = std::next(keys.cbegin(), i * e_vertices_ref.cols());
+      auto keys_end = std::next(keys.cbegin(), (i + 1) * e_vertices_ref.cols());
+      std::partial_sort_copy(keys_begin, keys_end, key.begin(), key.end());
       const auto it = entity_to_index.find(key);
       assert(it != entity_to_index.end());
-      entities.push_back(it->second);
+      connections.push_back(it->second);
     }
-    for (std::size_t k = 0; k < entities.size(); ++k)
-      connections(e, k) = entities[k];
+
+    offsets[e + 1] = offsets[e] + e_vertices_ref.rows();
   }
 
-  return graph::AdjacencyList<std::int32_t>(connections);
+  return graph::AdjacencyList<std::int32_t>(std::move(connections),
+                                            std::move(offsets));
 }
 //-----------------------------------------------------------------------------
 } // namespace

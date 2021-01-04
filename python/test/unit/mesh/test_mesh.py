@@ -41,7 +41,8 @@ def mesh2d():
     mesh2d = RectangleMesh(
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
-        CellType.triangle, cpp.mesh.GhostMode.none, 'left')
+        CellType.triangle, cpp.mesh.GhostMode.none,
+        cpp.mesh.partition_cells_graph, 'left')
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
@@ -275,9 +276,16 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
             pytest.xfail(reason="Missing functionality in \'{}\' with \'{}\' mode".format(mesh_factory, ghost_mode))
 
 
+@pytest.mark.parametrize("ghost_mode",
+                         [cpp.mesh.GhostMode.none, cpp.mesh.GhostMode.shared_facet, cpp.mesh.GhostMode.shared_vertex])
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
+<<<<<<< HEAD
 def test_mesh_topology_against_basix(mesh_factory, ghost_mode=cpp.mesh.GhostMode.none):
     """Test that mesh cells have topology matching to basix reference
+=======
+def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
+    """Test that mesh cells have topology matching to FIAT reference
+>>>>>>> origin/master
     cell they were created from.
     """
     func, args = mesh_factory

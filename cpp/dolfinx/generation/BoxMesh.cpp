@@ -10,9 +10,7 @@
 #include <cmath>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/io/cells.h>
 
 using namespace dolfinx;
 using namespace dolfinx::generation;
@@ -89,7 +87,8 @@ create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 3> n,
                      const fem::CoordinateElement& element,
-                     const mesh::GhostMode ghost_mode)
+                     const mesh::GhostMode ghost_mode,
+                     const mesh::CellPartitionFunction& partitioner)
 {
   common::Timer timer("Build BoxMesh");
 
@@ -138,14 +137,18 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
-                           element, geom, ghost_mode);
+  auto [data, offset] = graph::create_adjacency_data(topo);
+  return mesh::create_mesh(
+      comm,
+      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
+      element, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 3> n,
                      const fem::CoordinateElement& element,
-                     const mesh::GhostMode ghost_mode)
+                     const mesh::GhostMode ghost_mode,
+                     const mesh::CellPartitionFunction& partitioner)
 {
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom
       = create_geom(comm, p, n);
@@ -180,8 +183,11 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
-                           element, geom, ghost_mode);
+  auto [data, offset] = graph::create_adjacency_data(topo);
+  return mesh::create_mesh(
+      comm,
+      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
+      element, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 
@@ -192,12 +198,13 @@ mesh::Mesh BoxMesh::create(MPI_Comm comm,
                            const std::array<Eigen::Vector3d, 2>& p,
                            std::array<std::size_t, 3> n,
                            const fem::CoordinateElement& element,
-                           const mesh::GhostMode ghost_mode)
+                           const mesh::GhostMode ghost_mode,
+                           const mesh::CellPartitionFunction& partitioner)
 {
   if (element.cell_shape() == mesh::CellType::tetrahedron)
-    return build_tet(comm, p, n, element, ghost_mode);
+    return build_tet(comm, p, n, element, ghost_mode, partitioner);
   else if (element.cell_shape() == mesh::CellType::hexahedron)
-    return build_hex(comm, p, n, element, ghost_mode);
+    return build_hex(comm, p, n, element, ghost_mode, partitioner);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
 }

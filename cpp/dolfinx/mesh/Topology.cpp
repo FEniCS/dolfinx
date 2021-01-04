@@ -316,9 +316,8 @@ mesh::create_topology(MPI_Comm comm,
   else
   {
     // Get global indices of ghost cells
-    const std::vector cell_ghost_indices
-        = graph::partition::compute_ghost_indices(comm, original_cell_index,
-                                                  ghost_owners);
+    const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
+        comm, original_cell_index, ghost_owners);
     index_map_c = std::make_shared<common::IndexMap>(
         comm, num_local_cells,
         dolfinx::MPI::compute_graph_edges(
@@ -578,7 +577,7 @@ mesh::create_topology(MPI_Comm comm,
     for (std::size_t i = 0; i < my_local_cells_array.size(); ++i)
       my_local_cells_array[i] = global_to_local_index[cells_array[i]];
     my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-        my_local_cells_array, local_offsets);
+        std::move(my_local_cells_array), std::move(local_offsets));
   }
   else
   {
@@ -587,7 +586,7 @@ mesh::create_topology(MPI_Comm comm,
     for (std::size_t i = 0; i < my_local_cells_array.size(); ++i)
       my_local_cells_array[i] = global_to_local_index[cells_array[i]];
     my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-        my_local_cells_array, cells.offsets());
+        std::move(my_local_cells_array), cells.offsets());
   }
 
   Topology topology(comm, cell_type);

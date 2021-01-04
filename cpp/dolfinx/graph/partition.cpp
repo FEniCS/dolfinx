@@ -5,6 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "partition.h"
+#include "kahip.h"
+#include "scotch.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
@@ -17,11 +19,20 @@ using namespace dolfinx;
 using namespace dolfinx::graph;
 
 //-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t>
+graph::partition_graph(const MPI_Comm comm, int nparts,
+                       const AdjacencyList<std::int64_t>& local_graph,
+                       std::int32_t num_ghost_nodes, bool ghosting)
+{
+  return graph::scotch::partitioner()(comm, nparts, local_graph,
+                                      num_ghost_nodes, ghosting);
+}
+//-----------------------------------------------------------------------------
 std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>,
            std::vector<int>>
-partition::reorder_global_indices(
-    MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
-    const std::vector<bool>& shared_indices)
+build::reorder_global_indices(MPI_Comm comm,
+                              const std::vector<std::int64_t>& global_indices,
+                              const std::vector<bool>& shared_indices)
 {
   common::Timer timer("Re-order global indices");
 
@@ -167,7 +178,7 @@ partition::reorder_global_indices(
     }
 
     sharing_processes = std::make_unique<const graph::AdjacencyList<int>>(
-        processes, process_offsets);
+        std::move(processes), std::move(process_offsets));
   }
 
   // Build global-to-local map for non-shared indices (0)
@@ -357,7 +368,7 @@ partition::reorder_global_indices(
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
-partition::create_local_adjacency_list(
+build::create_local_adjacency_list(
     const graph::AdjacencyList<std::int64_t>& cells)
 {
   const std::vector<std::int64_t>& array = cells.array();
@@ -389,7 +400,7 @@ partition::create_local_adjacency_list(
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
-partition::create_distributed_adjacency_list(
+build::create_distributed_adjacency_list(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& list_local,
     const std::vector<std::int64_t>& local_to_global_links,
     const std::vector<bool>& shared_links)
@@ -417,9 +428,8 @@ partition::create_distributed_adjacency_list(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
-partition::distribute(MPI_Comm comm,
-                      const graph::AdjacencyList<std::int64_t>& list,
-                      const graph::AdjacencyList<std::int32_t>& destinations)
+build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
+                  const graph::AdjacencyList<std::int32_t>& destinations)
 {
   common::Timer timer("Distribute in graph creation AdjacencyList");
 
@@ -527,14 +537,16 @@ partition::distribute(MPI_Comm comm,
   list_offset.insert(list_offset.end(), ghost_list_offset.begin(),
                      ghost_list_offset.end());
 
-  return {graph::AdjacencyList<std::int64_t>(array, list_offset),
+  return {graph::AdjacencyList<std::int64_t>(std::move(array),
+                                             std::move(list_offset)),
           std::move(src), std::move(global_indices),
           std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> partition::compute_ghost_indices(
-    MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
-    const std::vector<int>& ghost_owners)
+std::vector<std::int64_t>
+build::compute_ghost_indices(MPI_Comm comm,
+                             const std::vector<std::int64_t>& global_indices,
+                             const std::vector<int>& ghost_owners)
 {
   LOG(INFO) << "Compute ghost indices";
 
@@ -648,7 +660,7 @@ std::vector<std::int64_t> partition::compute_ghost_indices(
   return ghost_global_indices;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> partition::compute_local_to_global_links(
+std::vector<std::int64_t> build::compute_local_to_global_links(
     const graph::AdjacencyList<std::int64_t>& global,
     const graph::AdjacencyList<std::int32_t>& local)
 {
@@ -684,9 +696,9 @@ std::vector<std::int64_t> partition::compute_local_to_global_links(
   return local_to_global_list;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> partition::compute_local_to_local(
-    const std::vector<std::int64_t>& local0_to_global,
-    const std::vector<std::int64_t>& local1_to_global)
+std::vector<std::int32_t>
+build::compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
+                              const std::vector<std::int64_t>& local1_to_global)
 {
   common::Timer timer("Compute local-to-local map");
   assert(local0_to_global.size() == local1_to_global.size());

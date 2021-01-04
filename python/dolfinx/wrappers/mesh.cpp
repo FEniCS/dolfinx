@@ -110,6 +110,12 @@ void mesh(py::module& m)
   m.def("midpoints", &dolfinx::mesh::midpoints);
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
+  using PythonPartitioningFunction
+      = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
+          MPICommWrapper, int, const dolfinx::mesh::CellType,
+          const dolfinx::graph::AdjacencyList<std::int64_t>&,
+          dolfinx::mesh::GhostMode)>;
+
   m.def(
       "create_mesh",
       [](const MPICommWrapper comm,
@@ -117,9 +123,18 @@ void mesh(py::module& m)
          const dolfinx::fem::CoordinateElement& element,
          const Eigen::Ref<const Eigen::Array<
              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
-         dolfinx::mesh::GhostMode ghost_mode) {
+         dolfinx::mesh::GhostMode ghost_mode,
+         PythonPartitioningFunction partitioner) {
+        auto partitioner_wrapper
+            = [partitioner](
+                  MPI_Comm comm, int n, const dolfinx::mesh::CellType cell_type,
+                  const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+                  dolfinx::mesh::GhostMode ghost_mode) {
+                return partitioner(MPICommWrapper(comm), n, cell_type, cells,
+                                   ghost_mode);
+              };
         return dolfinx::mesh::create_mesh(comm.get(), cells, element, x,
-                                          ghost_mode);
+                                          ghost_mode, partitioner_wrapper);
       },
       "Helper function for creating meshes.");
 
@@ -233,13 +248,13 @@ void mesh(py::module& m)
   declare_meshtags<std::int64_t>(m, "int64");
 
   // Partitioning interface
-  m.def("partition_cells",
+  m.def("partition_cells_graph",
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
            dolfinx::mesh::GhostMode ghost_mode) {
-          return dolfinx::mesh::partition_cells(comm.get(), nparts, cell_type,
-                                                cells, ghost_mode);
+          return dolfinx::mesh::partition_cells_graph(
+              comm.get(), nparts, cell_type, cells, ghost_mode);
         });
 
   m.def("locate_entities", &dolfinx::mesh::locate_entities);

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <cassert>
 #include <dolfinx/common/span.hpp>
 #include <numeric>
@@ -67,18 +67,6 @@ public:
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {
     assert(_offsets.back() == (std::int32_t)_array.size());
-  }
-
-  /// @todo To be removed
-  /// Construct adjacency list for a problem with a fixed number of
-  /// links (edges) for each node
-  /// @param [in] matrix Two-dimensional array of adjacency data where
-  /// matrix(i, j) is the jth neighbor of the ith node
-  explicit AdjacencyList(
-      const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
-                                          Eigen::RowMajor>>& matrix)
-  {
-    std::tie(_array, _offsets) = create_adjacency_data(matrix);
   }
 
   /// Set all connections for all entities (T is a '2D' container, e.g.
@@ -155,6 +143,9 @@ public:
 
   /// Return contiguous array of links for all nodes (const version)
   const std::vector<T>& array() const { return _array; }
+
+  /// Return contiguous array of links for all nodes
+  std::vector<T>& array() { return _array; }
 
   /// Offset for each node in array() (const version)
   const std::vector<std::int32_t>& offsets() const { return _offsets; }

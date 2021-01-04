@@ -172,7 +172,9 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
   const auto x = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
-  graph::AdjacencyList<std::int64_t> cells_adj(cells);
+  auto [data, offset] = graph::create_adjacency_data(cells);
+  graph::AdjacencyList<std::int64_t> cells_adj(std::move(data),
+                                               std::move(offset));
   mesh::Mesh mesh
       = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x, mode);
   mesh.name = name;
@@ -322,10 +324,11 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
       = xdmf_utils::extract_local_entities(*mesh, mesh::cell_dim(cell_type),
                                            entities1, values);
 
+  auto [data, offset] = graph::create_adjacency_data(entities_local);
+  graph::AdjacencyList<std::int32_t> entities_adj(std::move(data),
+                                                  std::move(offset));
   mesh::MeshTags meshtags = mesh::create_meshtags(
-      mesh, mesh::cell_dim(cell_type),
-      graph::AdjacencyList<std::int32_t>(entities_local),
-      std::move(values_local));
+      mesh, mesh::cell_dim(cell_type), entities_adj, std::move(values_local));
   meshtags.name = name;
 
   return meshtags;

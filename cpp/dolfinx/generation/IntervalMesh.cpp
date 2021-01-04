@@ -6,7 +6,7 @@
 
 #include "IntervalMesh.h"
 #include "dolfinx/common/MPI.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -19,15 +19,19 @@ namespace
 {
 mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
                  const fem::CoordinateElement& element,
-                 const mesh::GhostMode ghost_mode)
+                 const mesh::GhostMode ghost_mode,
+                 const mesh::CellPartitionFunction& partitioner)
 {
   // Receive mesh according to parallel policy
   if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 1> geom(0, 1);
     Eigen::Array<std::int64_t, 0, 2, Eigen::RowMajor> topo(0, 2);
-    return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
-                             element, geom, ghost_mode);
+    auto [data, offset] = graph::create_adjacency_data(topo);
+    return mesh::create_mesh(
+        comm,
+        graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
+        element, geom, ghost_mode, partitioner);
   }
 
   const double a = x[0];
@@ -59,8 +63,11 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   for (std::size_t ix = 0; ix < nx; ix++)
     topo.row(ix) << ix, ix + 1;
 
-  return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
-                           element, geom, ghost_mode);
+  auto [data, offset] = graph::create_adjacency_data(topo);
+  return mesh::create_mesh(
+      comm,
+      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
+      element, geom, ghost_mode, partitioner);
 }
 } // namespace
 
@@ -68,8 +75,9 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
 mesh::Mesh IntervalMesh::create(MPI_Comm comm, std::size_t n,
                                 std::array<double, 2> x,
                                 const fem::CoordinateElement& element,
-                                const mesh::GhostMode ghost_mode)
+                                const mesh::GhostMode ghost_mode,
+                                const mesh::CellPartitionFunction& partitioner)
 {
-  return build(comm, n, x, element, ghost_mode);
+  return build(comm, n, x, element, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
