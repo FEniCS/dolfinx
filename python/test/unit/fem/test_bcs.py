@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Joseph P. Dean
+# Copyright (C) 2020 Joseph P. Dean, Massimiliano Leoni
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -11,8 +11,8 @@ from mpi4py import MPI
 
 
 def test_locate_dofs_geometrical():
-    """Test that locate_dofs_geometrical when passed two function
-    spaces returns the correct degrees of freedom in each space.
+    """Test that locate_dofs_geometrical, when passed two function
+    spaces, returns the correct degrees of freedom in each space.
     """
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
@@ -43,3 +43,48 @@ def test_locate_dofs_geometrical():
         # Check correct dof returned in V
         coords_V = V.tabulate_dof_coordinates()
         assert np.isclose(coords_V[dofs[0][1]], [0, 0, 0]).all()
+
+
+def test_overlapping_bcs():
+    """Test that, when boundaries condition overlap, the last provided
+    boundary condition is applied.
+    """
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
+    V = dolfinx.fem.FunctionSpace(mesh, ("Lagrange", 1))
+    u, v = dolfinx.fem.TrialFunction(V), dolfinx.fem.TestFunction(V)
+
+    a = u * v * dx
+    L = v * dx
+
+    dofsLeft = dolfinx.fem.locate_dofs_geometrical(
+        V, lambda x: x[0] < 0.1)
+    dofsTop = dolfinx.fem.locate_dofs_geometrical(
+        V, lambda x: x[1] > 1 - 0.1)
+    dofCorner = list(set(dofsLeft).intersection(set(dofsTop)))
+
+    # Check only one dof pair is found globally
+    assert len(dofCorner) == 1
+
+    u0 = Function(V)
+    with u0.vector.localForm() as u0_loc:
+        u0_loc.set(0)
+    u1 = Function(V)
+    with u1.vector.localForm() as u1_loc:
+        u1_loc.set(1)
+    bcs = [DirichletBC(u0, dofsLeft), DirichletBC(u0, dofsTop)]
+
+    A = fem.create_matrix(a)
+    b = fem.create_vector(L)
+
+    fem.assemble_matrix(A, a, bcs=bcs)
+    fem.insert_diagonal(A, V, bcs)
+    A.assemble()
+
+    with b.localForm() as b_loc:
+        b_loc.set(0)
+    fem.assemble_vector(b, L)
+    fem.apply_lifting(b, [a], [bcs])
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    fem.set_bc(b, bcs)
+
+    assert b.localForm[dofCorner[0]] == 1
