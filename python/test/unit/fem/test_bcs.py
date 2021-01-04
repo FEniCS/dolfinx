@@ -55,8 +55,8 @@ def test_overlapping_bcs():
     V = dolfinx.fem.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    a = u * v * dx
-    L = v * dx
+    a = inner(u, v) * dx
+    L = inner(1, v) * dx
 
     dofsLeft = dolfinx.fem.locate_dofs_geometrical(
         V, lambda x: x[0] < 0.1)
