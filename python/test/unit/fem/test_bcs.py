@@ -8,6 +8,8 @@ import dolfinx
 import numpy as np
 import ufl
 from mpi4py import MPI
+from petsc4py import PETSc
+from ufl import dx
 
 
 def test_locate_dofs_geometrical():
@@ -65,26 +67,26 @@ def test_overlapping_bcs():
     # Check only one dof pair is found globally
     assert len(dofCorner) == 1
 
-    u0 = Function(V)
+    u0 = dolfinx.Function(V)
     with u0.vector.localForm() as u0_loc:
         u0_loc.set(0)
-    u1 = Function(V)
+    u1 = dolfinx.Function(V)
     with u1.vector.localForm() as u1_loc:
         u1_loc.set(1)
-    bcs = [DirichletBC(u0, dofsLeft), DirichletBC(u0, dofsTop)]
+    bcs = [dolfinx.DirichletBC(u0, dofsLeft), dolfinx.DirichletBC(u0, dofsTop)]
 
-    A = fem.create_matrix(a)
-    b = fem.create_vector(L)
+    A = dolfinx.fem.create_matrix(a)
+    b = dolfinx.fem.create_vector(L)
 
-    fem.assemble_matrix(A, a, bcs=bcs)
-    fem.insert_diagonal(A, V, bcs)
+    dolfinx.fem.assemble_matrix(A, a, bcs=bcs)
+    dolfinx.fem.insert_diagonal(A, V, bcs)
     A.assemble()
 
     with b.localForm() as b_loc:
         b_loc.set(0)
-    fem.assemble_vector(b, L)
-    fem.apply_lifting(b, [a], [bcs])
+    dolfinx.fem.assemble_vector(b, L)
+    dolfinx.fem.apply_lifting(b, [a], [bcs])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    fem.set_bc(b, bcs)
+    dolfinx.fem.set_bc(b, bcs)
 
     assert b.localForm[dofCorner[0]] == 1
