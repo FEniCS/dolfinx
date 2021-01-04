@@ -9,7 +9,7 @@ import numpy as np
 import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import dx
+from ufl import dx, inner
 
 
 def test_locate_dofs_geometrical():
