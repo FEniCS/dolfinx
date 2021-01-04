@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Joseph P. Dean, Massimiliano Leoni
+# Copyright (C) 2020-2021 Joseph P. Dean, Massimiliano Leoni
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -53,7 +53,7 @@ def test_overlapping_bcs():
     """
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
     V = dolfinx.fem.FunctionSpace(mesh, ("Lagrange", 1))
-    u, v = dolfinx.fem.TrialFunction(V), dolfinx.fem.TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     a = u * v * dx
     L = v * dx
