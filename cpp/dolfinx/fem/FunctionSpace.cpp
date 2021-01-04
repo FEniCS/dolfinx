@@ -105,8 +105,10 @@ internal_tabulate_dof_coordinates(
     for (int i = 0; i < num_dofs_g; ++i)
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
+    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[c], gdim);
+
     // Tabulate dof coordinates on cell
-    cmap.push_forward(x, X, coordinate_dofs, cell_info[c]);
+    cmap.push_forward(x, X, coordinate_dofs);
 
     // Get cell dofmap
     auto dofs = dofmap->cell_dofs(c);

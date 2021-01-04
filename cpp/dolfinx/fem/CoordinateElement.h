@@ -30,6 +30,8 @@ public:
   /// @param[in] geometric_dimension Geometric dimension
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
+  /// @param[in] needs_permutation_data Indicates whether or not the element needs permutation data (for higher order elements)
+  /// @param[in] permute_dof_coordinates Function that permutes the dof coordinates
   CoordinateElement(
       int basix_element_handle, int geometric_dimension,
       const std::string& signature, const ElementDofLayout& dof_layout,
@@ -80,8 +82,7 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
-          cell_geometry,
-      const std::uint32_t cell_permutation) const;
+          cell_geometry) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x

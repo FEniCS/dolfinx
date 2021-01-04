@@ -78,11 +78,8 @@ void CoordinateElement::push_forward(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& cell_geometry,
-    const std::uint32_t cell_permutation) const
+                                        Eigen::RowMajor>>& cell_geometry) const
 {
-  if (cell_permutation != 0)
-    assert(cell_permutation > 0);
   assert(x.rows() == X.rows());
   assert(x.cols() == this->geometric_dimension());
   assert(X.cols() == this->topological_dimension());
@@ -90,17 +87,9 @@ void CoordinateElement::push_forward(
   // Compute physical coordinates
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> outX(
       X.rows(), X.cols());
-  outX = X;
-
-  int ret
-      = _permute_dof_coordinates(outX.data(), cell_permutation, outX.cols());
-
-  if (ret == -1)
-    throw std::runtime_error(
-        "Dof reference coordinates could not be computed.");
 
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi
-      = basix::tabulate(_basix_element_handle, 0, outX)[0];
+      = basix::tabulate(_basix_element_handle, 0, X)[0];
 
   x = phi * cell_geometry.matrix();
 }
