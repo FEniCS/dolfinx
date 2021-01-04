@@ -6,9 +6,11 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/partition.h>
+#include <functional>
 
 namespace dolfinx
 {
@@ -134,26 +136,33 @@ entities_to_geometry(
 /// @return List of facet indices of exterior facets of the mesh
 std::vector<std::int32_t> exterior_facet_indices(const Mesh& mesh);
 
-/// Compute destination rank for mesh cells in this rank using a graph
-/// partitioner
+/// Compute destination rank for mesh cells in this rank by applying the
+/// default graph partitioner to the dual graph of the mesh
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] n Number of partitions
 /// @param[in] cell_type Cell type
 /// @param[in] cells Cells on this process. The ith entry in list
-///   contains the global indices for the cell vertices. Each cell can
-///   appear only once across all processes. The cell vertex indices
-///   are not necessarily contiguous globally, i.e. the maximum index
-///   across all processes can be greater than the number of vertices.
-///   High-order 'nodes', e.g. mid-side points, should not be
-///   included.
+/// contains the global indices for the cell vertices. Each cell can
+/// appear only once across all processes. The cell vertex indices are
+/// not necessarily contiguous globally, i.e. the maximum index across
+/// all processes can be greater than the number of vertices. High-order
+/// 'nodes', e.g. mid-side points, should not be included.
 /// @param[in] ghost_mode How to overlap the cell partitioning: none,
-///   shared_facet or shared_vertex
+/// shared_facet or shared_vertex
 /// @return Destination rank for each cell on this process
 graph::AdjacencyList<std::int32_t>
-partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
-                const graph::AdjacencyList<std::int64_t>& cells,
-                mesh::GhostMode ghost_mode);
+partition_cells_graph(MPI_Comm comm, int n, const mesh::CellType cell_type,
+                      const graph::AdjacencyList<std::int64_t>& cells,
+                      mesh::GhostMode ghost_mode);
+
+/// Compute destination rank for mesh cells on this rank by applying the
+/// a provided graph partitioner to the dual graph of the mesh
+graph::AdjacencyList<std::int32_t>
+partition_cells_graph(MPI_Comm comm, int n, const mesh::CellType cell_type,
+                      const graph::AdjacencyList<std::int64_t>& cells,
+                      mesh::GhostMode ghost_mode,
+                      const graph::partition_fn& partfn);
 
 } // namespace mesh
 } // namespace dolfinx

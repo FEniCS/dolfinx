@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <dolfinx/mesh/cell_types.h>
 #include <vector>
 

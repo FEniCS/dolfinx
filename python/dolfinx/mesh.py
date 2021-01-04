@@ -99,14 +99,16 @@ def refine(mesh, cell_markers=None, redistribute=True):
     return mesh_refined
 
 
-def create_mesh(comm, cells, x, domain, ghost_mode=cpp.mesh.GhostMode.shared_facet):
+def create_mesh(comm, cells, x, domain,
+                ghost_mode=cpp.mesh.GhostMode.shared_facet,
+                partitioner=cpp.mesh.partition_cells_graph):
     """Create a mesh from topology and geometry data"""
     cmap = fem.create_coordinate_map(comm, domain)
     try:
-        mesh = cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode)
+        mesh = cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
     except TypeError:
         mesh = cpp.mesh.create_mesh(comm, cpp.graph.AdjacencyList_int64(numpy.cast['int64'](cells)),
-                                    cmap, x, ghost_mode)
+                                    cmap, x, ghost_mode, partitioner)
 
     # Attach UFL data (used when passing a mesh into UFL functions)
     domain._ufl_cargo = mesh

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <array>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/Function.h>

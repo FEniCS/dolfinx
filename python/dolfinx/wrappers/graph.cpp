@@ -25,8 +25,13 @@ void declare_adjacency_list(py::module& m, std::string type)
   py::class_<dolfinx::graph::AdjacencyList<T>,
              std::shared_ptr<dolfinx::graph::AdjacencyList<T>>>(
       m, pyclass_name.c_str(), "Adjacency List")
-      .def(py::init<const Eigen::Ref<const Eigen::Array<
-               T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&>())
+      .def(py::init(
+          [](const Eigen::Ref<const Eigen::Array<
+                 T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& adj) {
+            auto [data, offsets] = dolfinx::graph::create_adjacency_data(adj);
+            return dolfinx::graph::AdjacencyList<T>(std::move(data),
+                                                    std::move(offsets));
+          }))
       .def(
           "links",
           [](const dolfinx::graph::AdjacencyList<T>& self, int i) {

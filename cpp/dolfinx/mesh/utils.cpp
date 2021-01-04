@@ -9,7 +9,7 @@
 #include "MeshTags.h"
 #include "cell_types.h"
 #include "graphbuild.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>
@@ -17,7 +17,6 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/partition.h>
-#include <dolfinx/graph/scotch.h>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -850,12 +849,19 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   return surface_facets;
 }
 //------------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-mesh::partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
-                      const graph::AdjacencyList<std::int64_t>& cells,
-                      mesh::GhostMode ghost_mode)
+graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
+    MPI_Comm comm, int n, const mesh::CellType cell_type,
+    const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode)
 {
-  common::Timer timer("Partition cells across ranks");
+  return partition_cells_graph(comm, n, cell_type, cells, ghost_mode,
+                               &graph::partition_graph);
+}
+//-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
+    MPI_Comm comm, int n, const mesh::CellType cell_type,
+    const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode,
+    const graph::partition_fn& partfn)
+{
   LOG(INFO) << "Compute partition of cells across ranks";
 
   if (cells.num_nodes() > 0)
@@ -874,16 +880,12 @@ mesh::partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
       = mesh::build_dual_graph(comm, cells, cell_type);
 
   // Extract data from graph_info
-  const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
-      = graph_info;
+  const auto [num_ghost_nodes, num_local_edges] = graph_info;
 
   // Just flag any kind of ghosting for now
   bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
-  // Call partitioner
-  graph::AdjacencyList<std::int32_t> partition = graph::scotch::partition(
-      comm, n, dual_graph, num_ghost_nodes, ghosting);
-
-  return partition;
+  // Compute partition
+  return partfn(comm, n, dual_graph, num_ghost_nodes, ghosting);
 }
 //-----------------------------------------------------------------------------
