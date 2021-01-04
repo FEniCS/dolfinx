@@ -7,7 +7,7 @@
 #include "MPICommWrapper.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Table.h>
@@ -71,7 +71,17 @@ void common(py::module& m)
                                              py::cast(self));
           },
           "Return list of ghost indices")
-      .def("global_indices", &dolfinx::common::IndexMap::global_indices);
+      .def("global_indices", &dolfinx::common::IndexMap::global_indices)
+      .def("local_to_global",
+           [](const dolfinx::common::IndexMap& self,
+              const py::array_t<std::int32_t, py::array::c_style>& local) {
+             if (local.ndim() != 1)
+               throw std::runtime_error("Array of local indices must be 1D.");
+             py::array_t<std::int64_t> global(local.size());
+             self.local_to_global(local.data(), local.size(),
+                                  global.mutable_data());
+             return global;
+           });
 
   // dolfinx::common::Timer
   py::class_<dolfinx::common::Timer, std::shared_ptr<dolfinx::common::Timer>>(

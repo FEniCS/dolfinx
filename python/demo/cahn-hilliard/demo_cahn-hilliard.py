@@ -111,14 +111,13 @@
 import os
 
 import numpy as np
-from mpi4py import MPI
-from petsc4py import PETSc
-
 from dolfinx import (Form, Function, FunctionSpace, NewtonSolver,
-                     NonlinearProblem, UnitSquareMesh, log)
+                     UnitSquareMesh, fem, log)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem.assemble import assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import (FiniteElement, TestFunctions, TrialFunction, derivative, diff,
                  dx, grad, inner, split, variable)
 
@@ -133,35 +132,29 @@ log.set_output_file("log.txt")
 # :py:class:`NonlinearProblem <dolfinx.cpp.NonlinearProblem>`.::
 
 
-class CahnHilliardEquation(NonlinearProblem):
+class CahnHilliardEquation:
     def __init__(self, a, L):
-        super().__init__()
-        self.L = Form(L)
-        self.a = Form(a)
-        self._F = None
-        self._J = None
+        self.L, self.a = Form(L), Form(a)
 
     def form(self, x):
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    def F(self, x):
-        if self._F is None:
-            self._F = assemble_vector(self.L)
-        else:
-            with self._F.localForm() as f_local:
-                f_local.set(0.0)
-            self._F = assemble_vector(self._F, self.L)
-        self._F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        return self._F
+    def F(self, x, b):
+        with b.localForm() as f_local:
+            f_local.set(0.0)
+        assemble_vector(b, self.L)
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    def J(self, x):
-        if self._J is None:
-            self._J = assemble_matrix(self.a)
-        else:
-            self._J.zeroEntries()
-            self._J = assemble_matrix(self._J, self.a)
-        self._J.assemble()
-        return self._J
+    def J(self, x, A):
+        A.zeroEntries()
+        assemble_matrix(A, self.a)
+        A.assemble()
+
+    def matrix(self):
+        return fem.create_matrix(self.a)
+
+    def vector(self):
+        return fem.create_vector(self.L)
 
 # The constructor (``__init__``) stores references to the bilinear (``a``)
 # and linear (``L``) forms. These will used to compute the Jacobian matrix
@@ -294,6 +287,9 @@ a = derivative(L, u, du)
 # Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
 solver = NewtonSolver(MPI.COMM_WORLD)
+solver.setF(problem.F, problem.vector())
+solver.setJ(problem.J, problem.matrix())
+solver.set_form(problem.form)
 solver.convergence_criterion = "incremental"
 solver.rtol = 1e-6
 
@@ -325,7 +321,7 @@ u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWA
 
 while (t < T):
     t += dt
-    r = solver.solve(problem, u.vector)
+    r = solver.solve(u.vector)
     print("Step, num iterations:", int(t / dt), r[0])
     u.vector.copy(result=u0.vector)
     file.write_function(u.sub(0), t)
