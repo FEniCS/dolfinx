@@ -12,16 +12,18 @@ using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-CoordinateElement::CoordinateElement(int basix_element_handle,
-                                     int geometric_dimension,
-                                     const std::string& signature,
-                                     const ElementDofLayout& dof_layout,
-                    bool needs_permutation_data,
-                    std::function<int(int*, const uint32_t)> get_dof_permutation)
+CoordinateElement::CoordinateElement(
+    int basix_element_handle, int geometric_dimension,
+    const std::string& signature, const ElementDofLayout& dof_layout,
+    bool needs_permutation_data,
+    std::function<int(int*, const uint32_t)> get_dof_permutation,
+    const std::function<int(double*, const std::uint32_t, const int)>
+        permute_dof_coordinates)
     : _gdim(geometric_dimension), _signature(signature),
       _dof_layout(dof_layout), _basix_element_handle(basix_element_handle),
       _needs_permutation_data(needs_permutation_data),
-      _get_dof_permutation(get_dof_permutation)
+      _get_dof_permutation(get_dof_permutation),
+      _permute_dof_coordinates(permute_dof_coordinates)
 {
   const mesh::CellType cell = cell_shape();
   int degree = basix::degree(basix_element_handle);
@@ -64,6 +66,13 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
   return _dof_layout;
 }
 //-----------------------------------------------------------------------------
+int CoordinateElement::permute_dof_coordinates(double* coords,
+                                               const uint32_t cell_permutation,
+                                               int dim) const
+{
+  return _permute_dof_coordinates(coords, cell_permutation, dim);
+}
+//-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(
     Eigen::Ref<
         Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
@@ -78,6 +87,8 @@ void CoordinateElement::push_forward(
   assert(X.cols() == this->topological_dimension());
 
   // Compute physical coordinates
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> outX(
+      X.rows(), X.cols());
 
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi
       = basix::tabulate(_basix_element_handle, 0, X)[0];

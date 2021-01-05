@@ -43,6 +43,18 @@ void eval(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
+  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+
+  // Prepate cell permutation info
+  const std::int32_t num_cells
+      = mesh->topology().connectivity(mesh->topology().dim(), 0)->num_nodes();
+
+  const bool needs_permutation_data = cmap.needs_permutation_data();
+  if (needs_permutation_data)
+    mesh->topology_mutable().create_entity_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                               : std::vector<std::uint32_t>(num_cells);
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -66,6 +78,7 @@ void eval(
       for (int k = 0; k < gdim; ++k)
         coordinate_dofs(j, k) = x_g(x_dof, k);
     }
+    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[i], gdim);
 
     auto coeff_cell = coeffs.row(c);
     std::fill(values_e.begin(), values_e.end(), 0.0);

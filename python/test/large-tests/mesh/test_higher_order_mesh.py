@@ -463,6 +463,10 @@ def test_third_order_quad(L, H, Z):
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                       [1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
     cells = cells[:, perm_vtk(CellType.quadrilateral, cells.shape[1])]
+
+    assert (cells[0] == [0, 1, 3, 2, 4, 5, 10, 11, 6, 7, 8, 9, 12, 13, 14, 15]).all()
+    assert (cells[1] == [1, 16, 2, 17, 18, 19, 6, 7, 20, 21, 22, 23, 24, 25, 26, 27]).all()
+
     cell = ufl.Cell("quadrilateral", geometric_dimension=points.shape[1])
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 3))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
@@ -583,8 +587,11 @@ def test_gmsh_input_quad(order):
 
     gmsh_quad = perm_gmsh(cpp.mesh.CellType.quadrilateral, (order + 1)**2)
     cells = cells[:, gmsh_quad]
+    print(cells[0])
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
     surface = assemble_scalar(1 * dx(mesh))
+
+    from IPython import embed; embed()
 
     assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi * R * R, rel=1e-5)
 

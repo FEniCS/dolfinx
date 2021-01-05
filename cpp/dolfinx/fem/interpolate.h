@@ -193,6 +193,14 @@ void interpolate(
   // Get the interpolation points on the reference cells
   const EigenMatrixRowXd& X = element->interpolation_points();
 
+  const bool needs_permutation_data
+      = element->needs_permutation_data() || cmap.needs_permutation_data();
+  if (needs_permutation_data)
+    mesh->topology_mutable().create_entity_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                               : std::vector<std::uint32_t>(num_cells);
+
   // Push reference coordinates (X) forward to the physical coordinates
   // (x) for each cell
   EigenMatrixRowXd x_cell(X.rows(), gdim);
@@ -204,6 +212,8 @@ void interpolate(
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
+
+    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[c], gdim);
 
     // Push forward coordinates (X -> x)
     cmap.push_forward(x_cell, X, coordinate_dofs);
@@ -235,13 +245,6 @@ void interpolate(
   // column vectors. Fix in the pybind11 layer?
   if (element->value_size() == 1 and values.rows() > 1)
     values = values.transpose().eval();
-
-  const bool needs_permutation_data = element->needs_permutation_data();
-  if (needs_permutation_data)
-    mesh->topology_mutable().create_entity_permutations();
-  const std::vector<std::uint32_t>& cell_info
-      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
-                               : std::vector<std::uint32_t>(num_cells);
 
   // Get dofmap
   const auto dofmap = u.function_space()->dofmap();

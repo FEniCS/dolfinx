@@ -155,6 +155,7 @@ T assemble_cells(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  const fem::CoordinateElement& cmap = geometry.cmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -175,6 +176,14 @@ T assemble_cells(
       std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
+
+    std::cout << "coordinate_dofs = { ";
+    for (int i = 0; i < num_dofs_g * gdim; ++i)
+      std::cout << coordinate_dofs[i] << " ";
+    std::cout << "}\n";
+
+    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[c], gdim);
+
     std::cout << "coordinate_dofs = { ";
     for(int i=0; i < num_dofs_g * gdim; ++i) std::cout << coordinate_dofs[i] << " ";
     std::cout << "}\n";
@@ -203,6 +212,7 @@ T assemble_exterior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -238,6 +248,7 @@ T assemble_exterior_facets(
       std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
+    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[cell], gdim);
 
     auto coeff_cell = coeffs.row(cell);
     fn(&value, coeff_cell.data(), constant_values.data(),
@@ -264,6 +275,7 @@ T assemble_interior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -310,6 +322,8 @@ T assemble_interior_facets(
         coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
       }
     }
+    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[cells[0]],
+                                 gdim);
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]

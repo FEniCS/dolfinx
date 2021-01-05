@@ -52,16 +52,6 @@ internal_tabulate_dof_coordinates(
       = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
         / dofmap_bs;
 
-  // Cell permutation data
-  // TODO: is this needed??
-  //  const bool needs_permutation_data = L.needs_permutation_data();
-  //  if (needs_permutation_data)
-  //    mesh->topology_mutable().create_entity_permutations();
-  //  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-  //      = needs_permutation_data
-  //            ? mesh->topology().get_cell_permutation_info()
-  //            : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
-
   // Get the dof coordinates on the reference element
   if (!element->interpolation_ident())
   {
@@ -98,6 +88,14 @@ internal_tabulate_dof_coordinates(
   assert(map);
   const int num_cells = map->size_local() + map->num_ghosts();
 
+  // Cell permutation data
+  const bool needs_permutation_data = cmap.needs_permutation_data();
+  if (needs_permutation_data)
+    mesh->topology_mutable().create_entity_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                               : std::vector<std::uint32_t>(num_cells);
+
   for (int c = 0; c < num_cells; ++c)
   {
     // X = element->dof_coordinates(cell_info[c]);
@@ -106,6 +104,8 @@ internal_tabulate_dof_coordinates(
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
+
+    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[c], gdim);
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, X, coordinate_dofs);
