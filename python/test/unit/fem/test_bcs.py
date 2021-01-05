@@ -60,9 +60,9 @@ def test_overlapping_bcs():
     L = inner(1, v) * dx
 
     dofsLeft = dolfinx.fem.locate_dofs_geometrical(
-        V, lambda x: x[0] < 1/(2 * n))
+        V, lambda x: x[0] < 1 / (2 * n))
     dofsTop = dolfinx.fem.locate_dofs_geometrical(
-        V, lambda x: x[1] > 1 - 1/(2 * n))
+        V, lambda x: x[1] > 1 - 1 / (2 * n))
     dofCorner = list(set(dofsLeft).intersection(set(dofsTop)))
 
     # Check only one dof pair is found globally
