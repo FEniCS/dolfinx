@@ -139,9 +139,6 @@ build_basic_dofmap(const mesh::Topology& topology,
     // Get dof order on this cell
     std::iota (std::begin(dof_order), std::end(dof_order), 0);
     get_dof_permutation(dof_order.data(), cell_info[c]);
-    std::cout << c << " -> [" << unsigned(cell_info[c]) << "]{ ";
-    for (int i=0; i < local_size; ++i) std::cout << dof_order[i] << " ";
-    std::cout << "}\n";
     // Get local (process) and global cell entity indices
     for (int d = 0; d < D; ++d)
     {
