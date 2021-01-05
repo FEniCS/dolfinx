@@ -129,3 +129,7 @@ dist/
 .*.swp
 *_tempdir_*
 _petsc*
+
+# Files created by demos
+core
+log.txt
