@@ -352,6 +352,7 @@ public:
       auto x_dofs = x_dofmap.links(cell_index);
       for (int i = 0; i < num_dofs_g; ++i)
         coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
+      cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[cell_index], 3);
 
       // Compute reference coordinates X, and J, detJ and K
       cmap.compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
