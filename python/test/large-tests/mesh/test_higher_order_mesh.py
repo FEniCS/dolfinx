@@ -591,8 +591,6 @@ def test_gmsh_input_quad(order):
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
     surface = assemble_scalar(1 * dx(mesh))
 
-    from IPython import embed; embed()
-
     assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi * R * R, rel=1e-5)
 
     # Bug related to VTK output writing
