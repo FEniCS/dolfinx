@@ -233,7 +233,7 @@ FiniteElement::dof_coordinates(int cell_perm) const
       _refX.rows(), _refX.cols());
   outX = _refX;
 
-  int ret = _permute_dof_coordinates(outX.data(), cell_perm);
+  int ret = _permute_dof_coordinates(outX.data(), cell_perm, _refX.cols());
 
   if (ret == -1)
     throw std::runtime_error(

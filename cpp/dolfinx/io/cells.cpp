@@ -268,7 +268,7 @@ std::vector<std::uint8_t> gmsh_quadrilateral(int num_nodes)
   case 9:
     return {0, 1, 3, 2, 4, 6, 7, 5, 8};
   case 16:
-    return {0, 4, 3, 2, 4, 5, 8, 9, 11, 10, 7, 6, 12, 13, 15, 14};
+    return {0, 1, 3, 2, 4, 5, 8, 9, 11, 10, 7, 6, 12, 13, 15, 14};
   default:
     throw std::runtime_error("Higher order GMSH quadrilateral not supported");
   }
