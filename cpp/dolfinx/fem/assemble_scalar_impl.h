@@ -175,6 +175,9 @@ T assemble_cells(
       std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
+    std::cout << "coordinate_dofs = { ";
+    for(int i=0; i < num_dofs_g * gdim; ++i) std::cout << coordinate_dofs[i] << " ";
+    std::cout << "}\n";
 
     auto coeff_cell = coeffs.row(c);
     fn(&value, coeff_cell.data(), constant_values.data(),

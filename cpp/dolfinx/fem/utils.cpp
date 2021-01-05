@@ -227,7 +227,9 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   int handle = basix::register_element(
       ufc_cmap.element_family, cell_name.c_str(), ufc_cmap.element_degree);
   return fem::CoordinateElement(handle, ufc_cmap.geometric_dimension,
-                                ufc_cmap.signature, dof_layout);
+                                ufc_cmap.signature, dof_layout,
+                                ufc_cmap.needs_permutation_data,
+                                ufc_cmap.get_dof_permutation);
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement

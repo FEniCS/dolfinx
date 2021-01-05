@@ -15,9 +15,13 @@ using namespace dolfinx::fem;
 CoordinateElement::CoordinateElement(int basix_element_handle,
                                      int geometric_dimension,
                                      const std::string& signature,
-                                     const ElementDofLayout& dof_layout)
+                                     const ElementDofLayout& dof_layout,
+                    bool needs_permutation_data,
+                    std::function<int(int*, const uint32_t)> get_dof_permutation)
     : _gdim(geometric_dimension), _signature(signature),
-      _dof_layout(dof_layout), _basix_element_handle(basix_element_handle)
+      _dof_layout(dof_layout), _basix_element_handle(basix_element_handle),
+      _needs_permutation_data(needs_permutation_data),
+      _get_dof_permutation(get_dof_permutation)
 {
   const mesh::CellType cell = cell_shape();
   int degree = basix::degree(basix_element_handle);
@@ -224,5 +228,15 @@ void CoordinateElement::compute_reference_geometry(
         detJ.row(ip) = std::sqrt((Jview.transpose() * Jview).determinant());
     }
   }
+}
+//-----------------------------------------------------------------------------
+std::function<int(int*, const uint32_t)> CoordinateElement::get_dof_permutation() const
+{
+  return _get_dof_permutation;
+}
+//-----------------------------------------------------------------------------
+bool CoordinateElement::needs_permutation_data() const
+{
+  return _needs_permutation_data;
 }
 //-----------------------------------------------------------------------------

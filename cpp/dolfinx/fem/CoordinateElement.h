@@ -32,7 +32,9 @@ public:
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   CoordinateElement(int basix_element_handle,
                     int geometric_dimension, const std::string& signature,
-                    const ElementDofLayout& dof_layout);
+                    const ElementDofLayout& dof_layout,
+                    bool needs_permutation_data,
+                    std::function<int(int*, const uint32_t)> get_dof_permutation);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -88,6 +90,12 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_geometry) const;
 
+  /// TODO
+  std::function<int(int*, const uint32_t)> get_dof_permutation() const;
+
+  /// TODO
+  bool needs_permutation_data() const;
+
 private:
   // Geometric dimensions
   int _gdim;
@@ -103,6 +111,12 @@ private:
 
   // Libtab element
   int _basix_element_handle;
+
+  // Does the element need permutation data
+  bool _needs_permutation_data;
+
+  // Dof permutation maker
+  std::function<int(int*, const uint32_t)> _get_dof_permutation;
 
 };
 } // namespace dolfinx::fem
