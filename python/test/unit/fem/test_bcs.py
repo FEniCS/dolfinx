@@ -51,7 +51,8 @@ def test_overlapping_bcs():
     """Test that, when boundaries condition overlap, the last provided
     boundary condition is applied.
     """
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
+    n = 123
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, n, n)
     V = dolfinx.fem.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -59,9 +60,9 @@ def test_overlapping_bcs():
     L = inner(1, v) * dx
 
     dofsLeft = dolfinx.fem.locate_dofs_geometrical(
-        V, lambda x: x[0] < 0.1)
+        V, lambda x: x[0] < 1/(2 * n))
     dofsTop = dolfinx.fem.locate_dofs_geometrical(
-        V, lambda x: x[1] > 1 - 0.1)
+        V, lambda x: x[1] > 1 - 1/(2 * n))
     dofCorner = list(set(dofsLeft).intersection(set(dofsTop)))
 
     # Check only one dof pair is found globally
@@ -72,8 +73,8 @@ def test_overlapping_bcs():
         u0_loc.set(0)
     u1 = dolfinx.Function(V)
     with u1.vector.localForm() as u1_loc:
-        u1_loc.set(1)
-    bcs = [dolfinx.DirichletBC(u0, dofsLeft), dolfinx.DirichletBC(u0, dofsTop)]
+        u1_loc.set(123.456)
+    bcs = [dolfinx.DirichletBC(u0, dofsLeft), dolfinx.DirichletBC(u1, dofsTop)]
 
     A = dolfinx.fem.create_matrix(a)
     b = dolfinx.fem.create_vector(L)
@@ -88,4 +89,5 @@ def test_overlapping_bcs():
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfinx.fem.set_bc(b, bcs)
 
-    assert b.localForm[dofCorner[0]] == 1
+    assert b[dofCorner[0]] == 123.456
+    assert A.getDiagonal()[dofCorner[0]] == 1
