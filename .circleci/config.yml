@@ -91,6 +91,7 @@ set-jit-defaults: &set-jit-defaults
 unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
   command: |
+    pip3 install sympy
     mkdir -p ~/junit
     cd python/test/unit
     python3 -m pytest -n=4 --durations=50 --junitxml=~/junit/test-results.xml .
@@ -104,7 +105,6 @@ unit-tests-python-mpi: &unit-tests-python-mpi
 large-tests-python: &large-tests-python
   name: Run large tests (Python, serial)
   command: |
-    pip3 install sympy
     cd python/test/large-tests
     python3 -m pytest -n=4 --durations=50 .
 
