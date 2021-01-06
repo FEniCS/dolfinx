@@ -182,6 +182,8 @@ jobs:
       - run: *set-jit-defaults
       - run: *unit-tests-python
       - run: *unit-tests-python-mpi
+      - run: *large-tests-python
+      - run: *large-tests-python-mpi
       - store_test_results:
           path: ~/junit
       - store_artifacts:
