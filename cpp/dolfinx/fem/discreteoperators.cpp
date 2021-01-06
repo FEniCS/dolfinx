@@ -35,7 +35,9 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
   // Check that V0 is a (lowest-order) edge basis
   mesh->topology_mutable().create_entities(1);
   std::int64_t num_edges_global = mesh->topology().index_map(1)->size_global();
-  if (V0.dim() != num_edges_global)
+  const std::int64_t V0dim
+      = V0.dofmap()->index_map->size_global() * V0.dofmap()->index_map_bs();
+  if (V0dim != num_edges_global)
   {
     throw std::runtime_error(
         "Cannot compute discrete gradient operator. Function "
@@ -45,7 +47,9 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
   // Check that V1 is a linear nodal basis
   const std::int64_t num_vertices_global
       = mesh->topology().index_map(0)->size_global();
-  if (V1.dim() != num_vertices_global)
+  const std::int64_t V1dim
+      = V1.dofmap()->index_map->size_global() * V1.dofmap()->index_map_bs();
+  if (V1dim != num_vertices_global)
   {
     throw std::runtime_error(
         "Cannot compute discrete gradient operator. Function "
