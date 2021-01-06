@@ -74,7 +74,7 @@
 # First, the :py:mod:`dolfinx` module is imported: ::
 
 import dolfinx
-import dolfinx.plotting
+import dolfinx.plot
 import matplotlib.pyplot as plt
 import numpy as np
 import ufl
@@ -201,5 +201,5 @@ with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
 
 # Update ghost entries and plot
 uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-dolfinx.plotting.plot(uh)
+dolfinx.plot.show(uh)
 plt.show()

@@ -340,7 +340,7 @@ def _plot_matplotlib(obj, mesh, kwargs):
         raise AttributeError('Failed to plot %s' % type(obj))
 
 
-def plot(object, *args, **kwargs):
+def show(object, *args, **kwargs):
     """
     Plot given object.
 
@@ -358,32 +358,32 @@ def plot(object, *args, **kwargs):
         .. code-block:: python
 
             mesh = UnitSquare(4, 4)
-            plot(mesh)
+            show(mesh)
 
         Use the ``title`` argument to specify title of the plot
 
         .. code-block:: python
 
-            plot(mesh, tite="Finite element mesh")
+            show(mesh, tite="Finite element mesh")
 
         It is also possible to plot an element
 
         .. code-block:: python
 
             element = FiniteElement("BDM", tetrahedron, 3)
-            plot(element)
+            show(element)
 
         Vector valued functions can be visualized with an alternative mode
 
         .. code-block:: python
 
-            plot(u, mode = "glyphs")
+            show(u, mode = "glyphs")
 
         A more advanced example
 
         .. code-block:: python
 
-            plot(u,
+            show(u,
                  wireframe = True,              # use wireframe rendering
                  interactive = False,           # do not hold plot on screen
                  scalarbar = False,             # hide the color mapping bar
