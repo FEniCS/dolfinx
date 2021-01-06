@@ -26,24 +26,17 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
 
 
 def get_mesh(cell_type, datadir):
-    if MPI.COMM_WORLD.size == 1:
-        # If running in serial, use a small mesh
-        if cell_type in [CellType.triangle, CellType.quadrilateral]:
-            return UnitSquareMesh(MPI.COMM_WORLD, 2, 1, cell_type)
-        else:
-            return UnitCubeMesh(MPI.COMM_WORLD, 2, 1, 1, cell_type)
-    else:
-        # In parallel, use larger meshes
-        if cell_type == CellType.triangle:
-            filename = "UnitSquareMesh_triangle.xdmf"
-        elif cell_type == CellType.quadrilateral:
-            filename = "UnitSquareMesh_quad.xdmf"
-        elif cell_type == CellType.tetrahedron:
-            filename = "UnitCubeMesh_tetra.xdmf"
-        elif cell_type == CellType.hexahedron:
-            filename = "UnitCubeMesh_hexahedron.xdmf"
-        with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-            return xdmf.read_mesh(name="Grid")
+    # In parallel, use larger meshes
+    if cell_type == CellType.triangle:
+        filename = "UnitSquareMesh_triangle.xdmf"
+    elif cell_type == CellType.quadrilateral:
+        filename = "UnitSquareMesh_quad.xdmf"
+    elif cell_type == CellType.tetrahedron:
+        filename = "UnitCubeMesh_tetra.xdmf"
+    elif cell_type == CellType.hexahedron:
+        filename = "UnitCubeMesh_hexahedron.xdmf"
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        return xdmf.read_mesh(name="Grid")
 
 
 parametrize_cell_types = pytest.mark.parametrize(
