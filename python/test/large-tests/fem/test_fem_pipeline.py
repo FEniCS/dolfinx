@@ -3,8 +3,6 @@
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-import basix # noqa
-
 import os
 
 import numpy as np
@@ -165,6 +163,7 @@ def run_vector_test(mesh, V, degree):
         error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
 
     common.list_timings(MPI.COMM_WORLD, [common.TimingType.wall])
+
     assert np.absolute(error) < 1.0e-14
 
 

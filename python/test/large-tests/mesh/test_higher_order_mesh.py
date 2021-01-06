@@ -382,3 +382,62 @@ def test_fourth_order_quad(L, H, Z):
     nodes = [0, 5, 10, 15, 20]
     ref = sympy_scipy(points, nodes, 2 * L, H)
     assert ref == pytest.approx(intu, rel=1e-5)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('L', [1, 2])
+@pytest.mark.parametrize('H', [1])
+@pytest.mark.parametrize('Z', [0, 0.3])
+def test_third_order_quad(L, H, Z):
+    """Test by comparing integration of z+x*y against sympy/scipy integration
+    of a quad element. Z>0 implies curved element.
+
+      *---------*   3--8--9--2-22-23-17
+      |         |   |        |       |
+      |         |   11 14 15 7 26 27 21
+      |         |   |        |       |
+      |         |   10 12 13 6 24 25 20
+      |         |   |        |       |
+      *---------*   0--4--5--1-18-19-16
+
+    """
+    points = np.array([[0, 0, 0], [L, 0, 0], [L, H, Z], [0, H, Z],        # 0  1 2 3
+                       [L / 3, 0, 0], [2 * L / 3, 0, 0],                  # 4  5
+                       [L, H / 3, 0], [L, 2 * H / 3, 0],                  # 6  7
+                       [L / 3, H, Z], [2 * L / 3, H, Z],                  # 8  9
+                       [0, H / 3, 0], [0, 2 * H / 3, 0],                  # 10 11
+                       [L / 3, H / 3, 0], [2 * L / 3, H / 3, 0],          # 12 13
+                       [L / 3, 2 * H / 3, 0], [2 * L / 3, 2 * H / 3, 0],  # 14 15
+                       [2 * L, 0, 0], [2 * L, H, Z],                      # 16 17
+                       [4 * L / 3, 0, 0], [5 * L / 3, 0, 0],              # 18 19
+                       [2 * L, H / 3, 0], [2 * L, 2 * H / 3, 0],          # 20 21
+                       [4 * L / 3, H, Z], [5 * L / 3, H, Z],              # 22 23
+                       [4 * L / 3, H / 3, 0], [5 * L / 3, H / 3, 0],           # 24 25
+                       [4 * L / 3, 2 * H / 3, 0], [5 * L / 3, 2 * H / 3, 0]])  # 26 27
+
+    # Change to multiple cells when matthews dof-maps work for quads
+    cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                      [1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
+    cells = cells[:, perm_vtk(CellType.quadrilateral, cells.shape[1])]
+
+    assert (cells[0] == [0, 1, 3, 2, 4, 5, 10, 11, 6, 7, 8, 9, 12, 13, 14, 15]).all()
+    assert (cells[1] == [1, 16, 2, 17, 18, 19, 6, 7, 20, 21, 22, 23, 24, 25, 26, 27]).all()
+
+    cell = ufl.Cell("quadrilateral", geometric_dimension=points.shape[1])
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 3))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+
+    def e2(x):
+        return x[2] + x[0] * x[1]
+
+    # Interpolate function
+    V = FunctionSpace(mesh, ("CG", 3))
+    u = Function(V)
+    u.interpolate(e2)
+
+    intu = assemble_scalar(u * dx(mesh))
+    intu = mesh.mpi_comm().allreduce(intu, op=MPI.SUM)
+
+    nodes = [0, 3, 10, 11]
+    ref = sympy_scipy(points, nodes, 2 * L, H)
+    assert ref == pytest.approx(intu, rel=1e-6)
