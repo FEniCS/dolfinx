@@ -14,7 +14,7 @@ import ufl
 from dolfinx import cpp, fem
 from dolfinx.mesh import create_mesh
 
-__all__ = ["plot"]
+__all__ = ["show"]
 
 _matplotlib_plottable_types = (cpp.fem.Function,
                                cpp.mesh.Mesh,
