@@ -378,7 +378,7 @@ compute_nonlocal_dual_graph(
     const std::size_t node = cell_list[i] - cell_offset;
     auto edges = graph.links(node);
 #ifdef DEBUG
-    if (auto it_end = std::next(edges.begin(), pos[node]);;
+    if (auto it_end = std::next(edges.begin(), pos[node]);
         std::find(edges.begin(), it_end, cell_list[i + 1]) != it_end)
     {
       LOG(ERROR) << "Received same edge twice in dual graph";
