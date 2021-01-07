@@ -549,8 +549,11 @@ mesh::create_topology(MPI_Comm comm,
                 neighbor_comm);
 
   std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
-  std::partial_sum(local_sizes.begin(), local_sizes.end(),
-                   all_ranges.begin() + 1);
+  std::inclusive_scan(local_sizes.begin(), local_sizes.end(),
+                      all_ranges.begin() + 1, std::plus<>(),
+                      static_cast<std::int64_t>(0));
+  // std::partial_sum(local_sizes.begin(), local_sizes.end(),
+  //                  all_ranges.begin() + 1);
 
   // Compute rank of ghost owners
   std::vector<int> ghost_vertices_owners(ghost_vertices.size(), -1);

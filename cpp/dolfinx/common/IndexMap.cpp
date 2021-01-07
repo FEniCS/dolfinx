@@ -27,8 +27,9 @@ std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
                 comm);
 
   std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
-  std::partial_sum(local_sizes.begin(), local_sizes.end(),
-                   all_ranges.begin() + 1);
+  std::inclusive_scan(local_sizes.begin(), local_sizes.end(),
+                      all_ranges.begin() + 1, std::plus<>(),
+                      static_cast<std::int64_t>(0));
 
   // Compute rank of ghost owners
   std::vector<int> ghost_ranks(ghosts.size(), -1);
