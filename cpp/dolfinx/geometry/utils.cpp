@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2020 Chris N. Richardson, Anders Logg, Garth N. Wells and
+// Copyright (C) 2006-2021 Chris N. Richardson, Anders Logg, Garth N. Wells and
 // Jørgen S. Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
@@ -66,12 +66,11 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
     // If box is leaf (which we know is inside radius), then shrink radius
 
     // Get entity (child_1 denotes entity index for leaves)
-    assert(tree.tdim() == mesh.topology().dim());
     const int entity_index = bbox[1];
 
     // If entity is closer than best result so far, then return it
-    const double r2 = geometry::squared_distance(mesh, mesh.topology().dim(),
-                                                 entity_index, point);
+    const double r2
+        = geometry::squared_distance(mesh, tree.tdim(), entity_index, point);
     if (r2 < R2)
     {
       closest_entity = entity_index;
@@ -220,19 +219,17 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
 } // namespace
 
 //-----------------------------------------------------------------------------
-geometry::BoundingBoxTree geometry::create_midpoint_tree(const mesh::Mesh& mesh)
+geometry::BoundingBoxTree
+geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
+                               const std::vector<std::int32_t>& entity_indices)
 {
-  LOG(INFO) << "Building point search tree to accelerate distance queries.";
+  LOG(INFO) << "Building point search tree to accelerate distance queries for "
+               "a given topological dimension and subset of entities.";
 
-  // Create list of midpoints for all cells
-  const int dim = mesh.topology().dim();
-  auto map = mesh.topology().index_map(dim);
-  assert(map);
-  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-  Eigen::Array<int, Eigen::Dynamic, 1> entities(num_cells);
-  std::iota(entities.data(), entities.data() + entities.rows(), 0);
+  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> entities(
+      entity_indices.data(), entity_indices.size());
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
-      = mesh::midpoints(mesh, dim, entities);
+      = mesh::midpoints(mesh, tdim, entities);
 
   std::vector<Eigen::Vector3d> points(entities.rows());
   for (std::size_t i = 0; i < points.size(); ++i)
@@ -283,11 +280,14 @@ std::pair<int, double> geometry::compute_closest_entity(
     const BoundingBoxTree& tree, const BoundingBoxTree& tree_midpoint,
     const Eigen::Vector3d& p, const mesh::Mesh& mesh)
 {
-  // Closest entity only implemented for cells. Consider extending this.
-  if (tree.tdim() != mesh.topology().dim())
+  // There has to be a one to one correspondence between the bounding boxes of
+  // the midpoint tree and the bounding box tree.
+  if (tree.num_bboxes() != tree_midpoint.num_bboxes())
   {
-    throw std::runtime_error("Cannot compute closest entity of point. "
-                             "Closest-entity is only implemented for cells");
+    throw std::runtime_error(
+        "Number of bounding boxes in midpoint tree "
+        "differs from the number of bounding boxes. Has the midpoint tree been "
+        "created for the same entities?");
   }
 
   // Search point cloud to get a good starting guess
@@ -315,21 +315,14 @@ geometry::compute_closest_point(const BoundingBoxTree& tree,
     throw std::runtime_error("Cannot compute closest point. "
                              "Search tree has not been built for point cloud");
   }
-
-  // Note that we don't compute a point search tree here... That would
-  // be weird.
-
   // Get initial guess by picking the distance to a "random" point
   int closest_point = 0;
-  // double R2 = tree.compute_squared_distance_point(p, closest_point);
   const double R2
       = (tree.get_bbox(closest_point).row(0).transpose().matrix() - p)
             .squaredNorm();
-
-  // Call recursive find function
-  _compute_closest_point(tree, p, tree.num_bboxes() - 1, closest_point, R2);
-
-  return {closest_point, sqrt(R2)};
+  const auto [idx, dist] = _compute_closest_point(
+      tree, p, tree.num_bboxes() - 1, closest_point, R2);
+  return {idx, std::sqrt(dist)};
 }
 //-----------------------------------------------------------------------------
 double geometry::squared_distance(const mesh::Mesh& mesh, int dim,

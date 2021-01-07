@@ -1,3 +1,5 @@
+// Copyright (C) 2013-2021 Chris N. Richardson, Anders Logg, Garth N. Wells and
+// Jørgen S. Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -238,9 +240,9 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
     : _tdim(tdim)
 {
   // Check dimension
-  if (tdim < 1 or tdim > mesh.topology().dim())
+  if (tdim > mesh.topology().dim())
   {
-    throw std::runtime_error("Dimension must be a number between 1 and "
+    throw std::runtime_error("Dimension must be a number between 0 and "
                              + std::to_string(mesh.topology().dim()));
   }
 

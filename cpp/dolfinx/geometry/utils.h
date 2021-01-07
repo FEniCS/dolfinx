@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Garth N. Wells
+// Copyright (C) 2019-2021 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -21,10 +21,15 @@ namespace geometry
 {
 class BoundingBoxTree;
 
-/// Create a boundary box tree for cell midpoints
-/// @param[in] mesh The mesh build tree of cell midpoints from
-/// @return Bounding box tree for mesh cell midpoints
-BoundingBoxTree create_midpoint_tree(const mesh::Mesh& mesh);
+/// Create a bounding box tree for a subset of entities based on the entity
+/// midpoints
+/// @param[in] mesh The mesh
+/// @param[in] tdim The topological dimension of the entity
+/// @param[in] entity_indices List of local entity indices
+/// @return Bounding box tree for midpoints of mesh entities
+BoundingBoxTree
+create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
+                     const std::vector<std::int32_t>& entity_indices);
 
 /// Compute all collisions between two BoundingBoxTrees.
 /// @param[in] tree0 First BoundingBoxTree
