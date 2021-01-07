@@ -493,9 +493,9 @@ void assemble_interior_facets(
     {
       for (std::size_t j = 0; j < dmapjoint1.size(); ++j)
       {
-        for (int k = 0; k < bs0; ++k)
+        for (int k = 0; k < bs1; ++k)
         {
-          if (bc1[bs1 * dmapjoint0[j] + k])
+          if (bc1[bs1 * dmapjoint1[j] + k])
             Ae.col(bs1 * j + k).setZero();
         }
       }
