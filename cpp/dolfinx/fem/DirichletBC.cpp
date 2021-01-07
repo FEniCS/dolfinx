@@ -61,12 +61,9 @@ get_remote_bcs1(const common::IndexMap& map,
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
-  // Note: std::inclusive_scan would be better, but requires gcc >= 9.2.1
   std::vector<int> disp(num_neighbors + 1, 0);
   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
-                   disp.begin() + 1);
-  // std::inclusive_scan(num_dofs_recv.begin(), num_dofs_recv.end(),
-  //                     disp.begin() + 1);
+                   std::next(disp.begin()));
 
   // NOTE: we could use MPI_Neighbor_alltoallv to send only to relevant
   // processes
@@ -181,12 +178,9 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
-  // Note: std::inclusive_scan would be better, but requires gcc >= 9.2.1
   std::vector<int> disp(num_neighbors + 1, 0);
   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
-                   disp.begin() + 1);
-  // std::inclusive_scan(num_dofs_recv.begin(), num_dofs_recv.end(),
-  //                     disp.begin() + 1);
+                   std::next(disp.begin()));
 
   // NOTE: we could use MPI_Neighbor_alltoallv to send only to relevant
   // processes
