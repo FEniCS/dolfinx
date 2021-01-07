@@ -320,6 +320,8 @@ geometry::compute_closest_point(const BoundingBoxTree& tree,
   const double R2
       = (tree.get_bbox(closest_point).row(0).transpose().matrix() - p)
             .squaredNorm();
+
+  // Call recursive find function
   const auto [idx, dist] = _compute_closest_point(
       tree, p, tree.num_bboxes() - 1, closest_point, R2);
   return {idx, std::sqrt(dist)};

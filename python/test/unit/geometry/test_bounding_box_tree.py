@@ -276,11 +276,6 @@ def test_compute_closest_sub_entity(dim):
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
 
-    tree = BoundingBoxTree(mesh, dim)
-    imap = mesh.topology.index_map(dim)
-    num_entities = imap.size_local + imap.num_ghosts
-    tree_mid = create_midpoint_tree(mesh, dim, range(num_entities))
-
     # Find which entity is colliding with known closest point on mesh
     p_c = numpy.array([0.5, 0.5, 0.5])
     entities = compute_collisions_point(tree, p_c)
