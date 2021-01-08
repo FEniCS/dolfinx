@@ -4,26 +4,19 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 import numpy as np
-import pytest
 from mpi4py import MPI
 from random import shuffle
 
 import ufl
-from dolfinx import FunctionSpace, VectorFunctionSpace
+from dolfinx import FunctionSpace
 from dolfinx.mesh import create_mesh
-from dolfinx.cpp.mesh import CellType
-from dolfinx_utils.test.skips import skip_if_complex
-from ufl import SpatialCoordinate, dx, inner
+from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfinx.fem import assemble_vector
-from pipeline_tests import run_scalar_test, run_vector_test, run_dg_test
-from itertools import permutations
+from pipeline_tests import run_vector_test
 
 
-def get_mesh(cell_type):
-    if cell_type != CellType.tetrahedron:
-        pytest.skip()
-
+@skip_in_parallel
+def test_N1curl_order_2_tetrahedron():
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "tetrahedron", 1))
 
     temp_points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.], [1., 1., 0.],
@@ -39,10 +32,6 @@ def get_mesh(cell_type):
         shuffle(cell)
         cells.append([order[i] for i in cell])
 
-    return create_mesh(MPI.COMM_WORLD, cells, points, domain)
-
-
-def test_N1curl_order_2_tetrahedron():
-    mesh = get_mesh(CellType.tetrahedron)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     V = FunctionSpace(mesh, ("RT", 2))
     run_vector_test(mesh, V, 1)
