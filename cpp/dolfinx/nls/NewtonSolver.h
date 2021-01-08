@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2019 Garth N. Wells
+// Copyright (C) 2005-2021 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -8,7 +8,9 @@
 
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/la/PETScKrylovSolver.h>
+#include <functional>
 #include <memory>
+#include <petscmat.h>
 #include <petscvec.h>
 #include <utility>
 
@@ -23,8 +25,6 @@ class PETScKrylovSolver;
 namespace nls
 {
 
-class NonlinearProblem;
-
 /// This class defines a Newton solver for nonlinear systems of
 /// equations of the form \f$F(x) = 0\f$.
 
@@ -38,14 +38,53 @@ public:
   /// Destructor
   virtual ~NewtonSolver();
 
-  /// Solve abstract nonlinear problem \f$`F(x) = 0\f$ for given \f$F\f$
-  /// and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
+  /// Set the function for computing the residual and the vector to the
+  /// assemble the residual into
+  /// @param[in] F Function to compute the residual vector b (x, b)
+  /// @param[in] b The vector to assemble to residual into
+  void setF(const std::function<void(const Vec, Vec)>& F, Vec b);
+
+  /// Set the function for computing the Jacobian (dF/dx) and the matrix
+  /// to assemble the residual into
+  /// @param[in] J Function to compute the Jacobian matrix b (x, A)
+  /// @param[in] Jmat The matrix to assemble the Jacobian into
+  void setJ(const std::function<void(const Vec, Mat)>& J, Mat Jmat);
+
+  /// Set the function for computing the preconditioner matrix (optional)
+  /// @param[in] P Function to compute the preconditioner matrix b (x, P)
+  /// @param[in] Pmat The matrix to assemble the preconditioner into
+  void setP(const std::function<void(const Vec, Mat)>& P, Mat Pmat);
+
+  /// Set the function that is called before the residual or Jacobian
+  /// are computed. It is commonly used to update ghost values.
+  /// @param[in] form The function to call. It takes the latest solution
+  /// vector @p x as an argument
+  void set_form(const std::function<void(Vec x)>& form);
+
+  /// Set function that is called at the end of each Newton iteration to
+  /// test for convergence.
+  /// @param[in] c The function that tests for convergence
+  void
+  set_convergence_check(const std::function<std::pair<double, bool>(
+                            const nls::NewtonSolver& solver, const Vec r)>& c);
+
+  /// Set function that is called after each Newton iteration to update
+  /// the solution
+  /// @param[in] update The function that updates the solution
+  void set_update(const std::function<void(const nls::NewtonSolver& solver,
+                                           const Vec dx, Vec x)>& update);
+
+  /// Solve the nonlinear problem \f$`F(x) = 0\f$ for given \f$F\f$ and
+  /// Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
   ///
-  /// @param[in] nonlinear_function The nonlinear problem
   /// @param[in,out] x The vector
-  /// @return Pair of number of Newton iterations, and whether iteration
-  ///         converged)
-  std::pair<int, bool> solve(NonlinearProblem& nonlinear_function, Vec x);
+  /// @return (number of Newton iterations, whether iteration converged)
+  std::pair<int, bool> solve(Vec x);
+
+  /// The number of Newton interations. It can can called by functions
+  /// that check for convergence during a solve.
+  /// @return The number of Newton iterations performed
+  int iteration() const;
 
   /// Return number of Krylov iterations elapsed since
   /// solve started
@@ -59,6 +98,9 @@ public:
   /// Return initial residual
   /// @return Initial residual
   double residual0() const;
+
+  /// Return MPI communicator
+  MPI_Comm mpi_comm() const;
 
   /// Maximum number of iterations
   int max_it = 50;
@@ -82,44 +124,55 @@ public:
   /// Relaxation parameter
   double relaxation_parameter = 1.0;
 
-protected:
-  /// Convergence test. It may be overloaded using virtual inheritance
-  /// and this base criterion may be called from derived, both in C++
-  /// and Python.
-  ///
-  /// @param r Residual for criterion evaluation
-  /// @param nonlinear_problem The nonlinear problem
-  /// @param iteration Newton iteration number
-  /// @returns  True if convergence achieved
-  virtual bool converged(const Vec r, const NonlinearProblem& nonlinear_problem,
-                         std::size_t iteration);
-
-  /// Update solution vector by computed Newton step. Default update is
-  /// given by formula::
-  ///
-  ///   x -= relaxation_parameter*dx
-  ///
-  ///  @param[in,out] x The solution vector to be updated
-  ///  @param dx The update vector computed by Newton step
-  ///  @param[in] relaxation_parameter Newton relaxation parameter
-  ///  @param nonlinear_problem The nonlinear problem
-  ///  @param[in] iteration Newton iteration number
-  virtual void update_solution(Vec x, const Vec dx, double relaxation_parameter,
-                               const NonlinearProblem& nonlinear_problem,
-                               std::size_t iteration);
-
 private:
+  // Function for computing the residual vector. The first argument is
+  // the latest solution vector x and the second argument is the
+  // residual vector.
+  std::function<void(const Vec x, Vec b)> _fnF;
+
+  // Function for computing the Jacobian matrix operator. The first
+  // argument is the latest solution vector x and the second argument is
+  // the matrix operator.
+  std::function<void(const Vec x, Mat J)> _fnJ;
+
+  // Function for computing the preconditioner matrix operator. The
+  // first argument is the latest solution vector x and the second
+  // argument is the matrix operator.
+  std::function<void(const Vec x, Mat P)> _fnP;
+
+  // Function called before the residual and Jacobian function at each
+  // iteration.
+  std::function<void(const Vec x)> _system;
+
+  // Residual vector
+  Vec _b = nullptr;
+
+  // Jacobian matrix and preconditioner matrix
+  Mat _matJ = nullptr, _matP = nullptr;
+
+  // Function to check for convergence
+  std::function<std::pair<double, bool>(const nls::NewtonSolver& solver,
+                                        const Vec r)>
+      _converged;
+
+  // Function to update the solution once convergence is reached
+  std::function<void(const nls::NewtonSolver& solver, const Vec dx, Vec x)>
+      _update_solution;
+
   // Accumulated number of Krylov iterations since solve began
   int _krylov_iterations;
+
+  // Number of iterations
+  int _iteration;
 
   // Most recent residual and initial residual
   double _residual, _residual0;
 
-  // Solver
+  // Linear solver
   la::PETScKrylovSolver _solver;
 
   // Solution vector
-  Vec _dx;
+  Vec _dx = nullptr;
 
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;

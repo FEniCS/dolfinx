@@ -73,7 +73,7 @@ def test_rank0():
                    ffi.from_buffer(geometry))
             for j in range(3):
                 for k in range(2):
-                    b[dofmap[i * 6 + 2 * j + k]] = b_local[2 * j + k]
+                    b[2 * dofmap[i * 3 + j] + k] = b_local[2 * j + k]
 
     # Prepare mesh and dofmap data
     pos = mesh.geometry.dofmap.offsets
@@ -228,7 +228,8 @@ def test_assembly_into_quadrature_function():
     # Assemble into Function
     e_Q = dolfinx.Function(Q)
     with e_Q.vector.localForm() as e_Q_local:
-        e_Q_local.setValues(Q.dofmap.list.array, e_eval, addv=PETSc.InsertMode.INSERT)
+        e_Q_local.setBlockSize(e_Q.function_space.dofmap.bs)
+        e_Q_local.setValuesBlocked(Q.dofmap.list.array, e_eval, addv=PETSc.InsertMode.INSERT)
 
     def e_exact(x):
         T = x[0] + 2.0 * x[1]

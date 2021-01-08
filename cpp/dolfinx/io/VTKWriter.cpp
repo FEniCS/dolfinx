@@ -11,8 +11,8 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
@@ -174,8 +174,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     for (int c = 0; c < x_dofmap.num_nodes(); ++c)
     {
       auto x_dofs = x_dofmap.links(c);
-      for (int i = 0; i < x_dofs.rows(); ++i)
-        file << x_dofs(map[i]) << " ";
+      for (std::size_t i = 0; i < x_dofs.size(); ++i)
+        file << x_dofs[map[i]] << " ";
       file << " ";
     }
     file << "</DataArray>" << std::endl;
@@ -199,8 +199,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     {
       auto vertices = c_to_v->links(c);
       auto x_dofs = x_dofmap.links(c);
-      for (int i = 0; i < vertices.rows(); ++i)
-        vertex_to_node[vertices[i]] = x_dofs(i);
+      for (std::size_t i = 0; i < vertices.size(); ++i)
+        vertex_to_node[vertices[i]] = x_dofs[i];
     }
 
     const mesh::CellType e_type
@@ -217,7 +217,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     {
       auto vertices = e_to_v->links(e);
       for (int i = 0; i < num_vertices; ++i)
-        file << vertex_to_node[vertices(map_vtk[i])] << " ";
+        file << vertex_to_node[vertices[map_vtk[i]]] << " ";
       file << " ";
     }
     file << "</DataArray>" << std::endl;
@@ -256,7 +256,7 @@ void VTKWriter::write_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   write_ascii_mesh(mesh, cell_dim, filename);
 }
 //----------------------------------------------------------------------------
-void VTKWriter::write_cell_data(const function::Function<PetscScalar>& u,
+void VTKWriter::write_cell_data(const fem::Function<PetscScalar>& u,
                                 std::string filename)
 {
   assert(u.function_space());
@@ -268,7 +268,7 @@ void VTKWriter::write_cell_data(const function::Function<PetscScalar>& u,
   const std::int32_t num_cells = mesh->topology().index_map(tdim)->size_local();
   std::string encode_string = "ascii";
 
-  // Get rank of function::Function
+  // Get rank of fem::Function
   const int rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {

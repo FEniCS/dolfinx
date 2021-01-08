@@ -7,13 +7,13 @@
 #include "MPICommWrapper.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/SubSystemsManager.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/defines.h>
+#include <dolfinx/common/subsystem.h>
 #include <dolfinx/common/timing.h>
 #include <memory>
 #include <pybind11/eigen.h>
@@ -45,36 +45,43 @@ void common(py::module& m)
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,
              std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
-      .def(py::init(
-          [](const MPICommWrapper comm, std::int32_t local_size,
-             const std::vector<int>& dest_ranks,
-             const Eigen::Ref<
-                 const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>& ghosts,
-             const std::vector<int>& ghost_owners, int block_size) {
-            return std::make_shared<dolfinx::common::IndexMap>(
-                comm.get(), local_size, dest_ranks, ghosts, ghost_owners,
-                block_size);
-          }))
+      .def(py::init([](const MPICommWrapper comm, std::int32_t local_size,
+                       const std::vector<int>& dest_ranks,
+                       const std::vector<std::int64_t>& ghosts,
+                       const std::vector<int>& ghost_owners) {
+        return std::make_shared<dolfinx::common::IndexMap>(
+            comm.get(), local_size, dest_ranks, ghosts, ghost_owners);
+      }))
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMap::size_local)
       .def_property_readonly("size_global",
                              &dolfinx::common::IndexMap::size_global)
       .def_property_readonly("num_ghosts",
                              &dolfinx::common::IndexMap::num_ghosts)
-      .def_property_readonly("block_size",
-                             &dolfinx::common::IndexMap::block_size,
-                             "Return block size")
       .def_property_readonly("local_range",
                              &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
       .def("ghost_owner_rank", &dolfinx::common::IndexMap::ghost_owner_rank,
            "Return owning process for each ghost index")
-      .def_property_readonly("ghosts", &dolfinx::common::IndexMap::ghosts,
-                             py::return_value_policy::reference_internal,
-                             "Return list of ghost indices")
+      .def_property_readonly(
+          "ghosts",
+          [](const dolfinx::common::IndexMap& self) {
+            const std::vector<std::int64_t>& ghosts = self.ghosts();
+            return py::array_t<std::int64_t>(ghosts.size(), ghosts.data(),
+                                             py::cast(self));
+          },
+          "Return list of ghost indices")
       .def("global_indices", &dolfinx::common::IndexMap::global_indices)
-      .def("indices", &dolfinx::common::IndexMap::indices,
-           "Return array of global indices for all indices on this process");
+      .def("local_to_global",
+           [](const dolfinx::common::IndexMap& self,
+              const py::array_t<std::int32_t, py::array::c_style>& local) {
+             if (local.ndim() != 1)
+               throw std::runtime_error("Array of local indices must be 1D.");
+             py::array_t<std::int64_t> global(local.size());
+             self.local_to_global(local.data(), local.size(),
+                                  global.mutable_data());
+             return global;
+           });
 
   // dolfinx::common::Timer
   py::class_<dolfinx::common::Timer, std::shared_ptr<dolfinx::common::Timer>>(
@@ -94,10 +101,7 @@ void common(py::module& m)
 
   // dolfin/common free functions
   m.def("timing", &dolfinx::timing);
-  m.def("timings", [](std::vector<dolfinx::TimingType> type) {
-    std::set<dolfinx::TimingType> _type(type.begin(), type.end());
-    return dolfinx::timings(_type);
-  });
+
   m.def("list_timings",
         [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type) {
           std::set<dolfinx::TimingType> _type(type.begin(), type.end());
@@ -108,7 +112,7 @@ void common(py::module& m)
     std::vector<char*> argv(args.size() + 1, nullptr);
     for (std::size_t i = 0; i < args.size(); ++i)
       argv[i] = const_cast<char*>(args[i].data());
-    dolfinx::common::SubSystemsManager::init_logging(args.size(), argv.data());
+    dolfinx::common::subsystem::init_logging(args.size(), argv.data());
   });
 }
 } // namespace dolfinx_wrappers

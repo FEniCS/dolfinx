@@ -3,6 +3,7 @@
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""General tools for timing and configuration"""
 
 import functools
 
@@ -15,10 +16,6 @@ TimingType = cpp.common.TimingType
 
 def timing(task: str):
     return cpp.common.timing(task)
-
-
-def timings(timing_types: list):
-    return cpp.common.timings(timing_types)
 
 
 def list_timings(mpi_comm, timing_types: list):

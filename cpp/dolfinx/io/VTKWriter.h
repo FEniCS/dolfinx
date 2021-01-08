@@ -13,7 +13,7 @@
 
 namespace dolfinx
 {
-namespace function
+namespace fem
 {
 template <typename T>
 class Function;
@@ -36,7 +36,7 @@ public:
                          std::string file);
 
   /// Cell data writer
-  static void write_cell_data(const function::Function<PetscScalar>& u,
+  static void write_cell_data(const fem::Function<PetscScalar>& u,
                               std::string file);
 };
 } // namespace io

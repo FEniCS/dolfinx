@@ -7,7 +7,7 @@
 
 #include "utils.h"
 #include "BoundingBoxTree.h"
-#include "GJK.h"
+#include "gjk.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -20,10 +20,10 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // Check whether bounding box is a leaf node
-inline bool is_leaf(const std::array<int, 2>& bbox, int node)
+inline bool is_leaf(const std::array<int, 2>& bbox)
 {
-  // Leaf nodes are marked by setting child_0 equal to the node itself
-  return bbox[0] == node;
+  // Leaf nodes are marked by setting child_0 equal to child_1
+  return bbox[0] == bbox[1];
 }
 //-----------------------------------------------------------------------------
 bool point_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
@@ -61,7 +61,7 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
     // If bounding box is outside radius, then don't search further
     return {closest_entity, R2};
   }
-  else if (is_leaf(bbox, node))
+  else if (is_leaf(bbox))
   {
     // If box is leaf (which we know is inside radius), then shrink radius
 
@@ -101,7 +101,7 @@ _compute_closest_point(const geometry::BoundingBoxTree& tree,
   const std::array bbox = tree.bbox(node);
 
   // If box is leaf, then compute distance and shrink radius
-  if (is_leaf(bbox, node))
+  if (is_leaf(bbox))
   {
     const double r2 = (tree.get_bbox(node).row(0).transpose().matrix() - point)
                           .squaredNorm();
@@ -144,7 +144,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
     // If point is not in bounding box, then don't search further
     return;
   }
-  else if (is_leaf(bbox, node))
+  else if (is_leaf(bbox))
   {
     // If box is a leaf (which we know contains the point), then add it
 
@@ -177,8 +177,8 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
   const std::array bbox_B = B.bbox(node_B);
 
   // Check whether we've reached a leaf in A or B
-  const bool is_leaf_A = is_leaf(bbox_A, node_A);
-  const bool is_leaf_B = is_leaf(bbox_B, node_B);
+  const bool is_leaf_A = is_leaf(bbox_A);
+  const bool is_leaf_B = is_leaf(bbox_B);
   if (is_leaf_A and is_leaf_B)
   {
     // If both boxes are leaves (which we know collide), then add them
@@ -248,8 +248,13 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
 {
   // Call recursive find function
   std::vector<std::array<int, 2>> entities;
-  _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,
-                           tree1.num_bboxes() - 1, entities);
+
+  if (tree0.num_bboxes() > 0 and tree1.num_bboxes() > 0)
+  {
+    _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,
+                             tree1.num_bboxes() - 1, entities);
+  }
+
   return entities;
 }
 //-----------------------------------------------------------------------------
@@ -257,23 +262,11 @@ std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
                                               const Eigen::Vector3d& p)
 {
   std::vector<int> entities;
-  _compute_collisions_point(tree, p, tree.num_bboxes() - 1, entities);
+
+  if (tree.num_bboxes() > 0)
+    _compute_collisions_point(tree, p, tree.num_bboxes() - 1, entities);
+
   return entities;
-}
-//-----------------------------------------------------------------------------
-std::vector<int>
-geometry::compute_process_collisions(const geometry::BoundingBoxTree& tree,
-                                     const Eigen::Vector3d& p)
-{
-  if (tree.global_tree)
-    return geometry::compute_collisions(*tree.global_tree, p);
-  else
-  {
-    std::vector<int> collision;
-    if (point_in_bbox(tree.get_bbox(tree.num_bboxes() - 1), p))
-      collision.push_back(0);
-    return collision;
-  }
 }
 //-----------------------------------------------------------------------------
 double geometry::compute_squared_distance_bbox(
@@ -351,8 +344,8 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     auto dofs = x_dofmap.links(index);
     Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(dofs.size(),
                                                                     3);
-    for (int i = 0; i < dofs.size(); i++)
-      nodes.row(i) = geometry.node(dofs(i));
+    for (std::size_t i = 0; i < dofs.size(); i++)
+      nodes.row(i) = geometry.node(dofs[i]);
 
     return geometry::compute_distance_gjk(p.transpose(), nodes).squaredNorm();
   }
@@ -370,21 +363,19 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     auto c_to_e = mesh.topology_mutable().connectivity(tdim, dim);
     assert(c_to_e);
     auto cell_entities = c_to_e->links(c);
-    const auto* it0
-        = std::find(cell_entities.data(),
-                    cell_entities.data() + cell_entities.rows(), index);
-    assert(it0 != (cell_entities.data() + cell_entities.rows()));
-    const int local_cell_entity = std::distance(cell_entities.data(), it0);
+    auto it0 = std::find(cell_entities.begin(), cell_entities.end(), index);
+    assert(it0 != cell_entities.end());
+    const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
     // Tabulate geometry dofs for the entity
     auto dofs = x_dofmap.links(c);
-    const Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs
+    const std::vector<int> entity_dofs
         = geometry.cmap().dof_layout().entity_closure_dofs(dim,
                                                            local_cell_entity);
     Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(
         entity_dofs.size(), 3);
-    for (int i = 0; i < entity_dofs.size(); i++)
-      nodes.row(i) = geometry.node(dofs(entity_dofs(i)));
+    for (std::size_t i = 0; i < entity_dofs.size(); i++)
+      nodes.row(i) = geometry.node(dofs[entity_dofs[i]]);
 
     return geometry::compute_distance_gjk(p.transpose(), nodes).squaredNorm();
   }

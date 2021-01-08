@@ -1,25 +1,71 @@
-// Copyright (C) 2005-2018 Garth N. Wells
+// Copyright (C) 2005-2021 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "NewtonSolver.h"
-#include "NonlinearProblem.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/la/PETScKrylovSolver.h>
-#include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScOptions.h>
 #include <dolfinx/la/PETScVector.h>
 #include <string>
 
 using namespace dolfinx;
 
+namespace
+{
+//-----------------------------------------------------------------------------
+/// Convergence test
+/// @param solver The Newton solver
+/// @param r The residual vector
+/// @return The pair `(residual norm, converged)`, where `converged` is
+// and true` if convergence achieved
+std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
+{
+  la::PETScVector _r(r, true);
+  double residual = _r.norm(la::Norm::l2);
+
+  // Relative residual
+  const double relative_residual = residual / solver.residual0();
+
+  // Output iteration number and residual
+  if (solver.report and dolfinx::MPI::rank(solver.mpi_comm()) == 0)
+  {
+    LOG(INFO) << "Newton iteration " << solver.iteration()
+              << ": r (abs) = " << residual << " (tol = " << solver.atol
+              << ") r (rel) = " << relative_residual << "(tol = " << solver.rtol
+              << ")";
+  }
+
+  // Return true if convergence criterion is met
+  if (relative_residual < solver.rtol or residual < solver.atol)
+    return {residual, true};
+  else
+    return {residual, false};
+}
+//-----------------------------------------------------------------------------
+/// Update solution vector by computed Newton step. Default update is
+/// given by formula::
+///
+///   x -= relaxation_parameter*dx
+///
+///  @param solver The Newton solver
+///  @param dx The update vector computed by Newton step
+///  @param[in,out] x The solution vector to be updated
+void update_solution(const nls::NewtonSolver& solver, const Vec dx, Vec x)
+{
+  VecAXPY(x, -solver.relaxation_parameter, dx);
+}
+//-----------------------------------------------------------------------------
+} // namespace
+
 //-----------------------------------------------------------------------------
 nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
-    : _krylov_iterations(0), _residual(0.0), _residual0(0.0), _solver(comm),
-      _dx(nullptr), _mpi_comm(comm)
+    : _converged(converged), _update_solution(update_solution),
+      _krylov_iterations(0), _iteration(0), _residual(0.0), _residual0(0.0),
+      _solver(comm), _dx(nullptr), _mpi_comm(comm)
 {
   // Create linear solver if not already created. Default to LU.
   _solver.set_options_prefix("nls_solve_");
@@ -33,33 +79,91 @@ nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
 //-----------------------------------------------------------------------------
 nls::NewtonSolver::~NewtonSolver()
 {
+  if (_b)
+    VecDestroy(&_b);
   if (_dx)
     VecDestroy(&_dx);
+  if (_matJ)
+    MatDestroy(&_matJ);
+  if (_matP)
+    MatDestroy(&_matP);
 }
 //-----------------------------------------------------------------------------
-std::pair<int, bool>
-dolfinx::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
+void nls::NewtonSolver::setF(const std::function<void(const Vec, Vec)>& F,
+                             Vec b)
+{
+  _fnF = F;
+  _b = b;
+  PetscObjectReference((PetscObject)_b);
+}
+//-----------------------------------------------------------------------------
+void nls::NewtonSolver::setJ(const std::function<void(const Vec, Mat)>& J,
+                             Mat Jmat)
+{
+  _fnJ = J;
+  _matJ = Jmat;
+  PetscObjectReference((PetscObject)_matJ);
+}
+//-----------------------------------------------------------------------------
+void nls::NewtonSolver::setP(const std::function<void(const Vec, Mat)>& P,
+                             Mat Pmat)
+{
+  _fnP = P;
+  _matP = Pmat;
+  PetscObjectReference((PetscObject)_matP);
+}
+//-----------------------------------------------------------------------------
+void nls::NewtonSolver::set_form(const std::function<void(Vec)>& form)
+{
+  _system = form;
+}
+//-----------------------------------------------------------------------------
+void nls::NewtonSolver::set_convergence_check(
+    const std::function<std::pair<double, bool>(const nls::NewtonSolver& solver,
+                                                const Vec r)>& c)
+{
+  _converged = c;
+}
+//-----------------------------------------------------------------------------
+void nls::NewtonSolver::set_update(
+    const std::function<void(const nls::NewtonSolver& solver, const Vec dx,
+                             Vec x)>& update)
+{
+  _update_solution = update;
+}
+//-----------------------------------------------------------------------------
+std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
 {
   // Reset iteration counts
-  int newton_iteration = 0;
+  _iteration = 0;
   _krylov_iterations = 0;
+  _residual = -1;
 
-  // Compute F(u) (assembled into _b)
-  Mat A(nullptr), P(nullptr);
-  Vec b = nullptr;
+  if (!_fnF)
+  {
+    throw std::runtime_error("Function for computing residual vector has not "
+                             "been provided to the NewtonSolver.");
+  }
 
-  nonlinear_problem.form(x);
-  b = nonlinear_problem.F(x);
-  assert(b);
+  if (!_fnJ)
+  {
+    throw std::runtime_error("Function for computing Jacobianhas not "
+                             "been provided to the NewtonSolver.");
+  }
+
+  if (_system)
+    _system(x);
+  assert(_b);
+  _fnF(x, _b);
 
   // Check convergence
   bool newton_converged = false;
   if (convergence_criterion == "residual")
-    newton_converged = converged(b, nonlinear_problem, 0);
+    std::tie(_residual, newton_converged) = this->_converged(*this, _b);
   else if (convergence_criterion == "incremental")
   {
     // We need to do at least one Newton step with the ||dx||-stopping
-    // criterion.
+    // criterion
     newton_converged = false;
   }
   else
@@ -68,49 +172,60 @@ dolfinx::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
                              + convergence_criterion);
   }
 
+  // FIXME: check that this is efficient if A and/or P are unchanged
+  // Set operators
+  if (_matP)
+    _solver.set_operators(_matJ, _matP);
+  else
+    _solver.set_operators(_matJ, _matJ);
+
+  if (!_dx)
+    MatCreateVecs(_matJ, &_dx, nullptr);
+
   // Start iterations
-  while (!newton_converged and newton_iteration < max_it)
+  while (!newton_converged and _iteration < max_it)
   {
     // Compute Jacobian
-    A = nonlinear_problem.J(x);
-    assert(A);
-    P = nonlinear_problem.P(x);
-    if (!P)
-      P = A;
+    assert(_matJ);
+    _fnJ(x, _matJ);
 
-    if (!_dx)
-      MatCreateVecs(A, &_dx, nullptr);
-
-    // FIXME: check that this is efficient if A and/or P are unchanged
-    // Set operators
-    _solver.set_operators(A, P);
+    if (_fnP)
+      _fnP(x, _matP);
 
     // Perform linear solve and update total number of Krylov iterations
-    _krylov_iterations += _solver.solve(_dx, b);
+    _krylov_iterations += _solver.solve(_dx, _b);
 
     // Update solution
-    update_solution(x, _dx, relaxation_parameter, nonlinear_problem,
-                    newton_iteration);
+    this->_update_solution(*this, _dx, x);
 
     // Increment iteration count
-    ++newton_iteration;
+    ++_iteration;
 
     // FIXME: This step is not needed if residual is based on dx and
     //        this has converged.
     // FIXME: But, this function call may update internal variables, etc.
     // Compute F
-    nonlinear_problem.form(x);
-    b = nonlinear_problem.F(x);
+    if (_system)
+      _system(x);
+    _fnF(x, _b);
 
     // Test for convergence
     if (convergence_criterion == "residual")
-      newton_converged = converged(b, nonlinear_problem, newton_iteration);
+      std::tie(_residual, newton_converged) = this->_converged(*this, _b);
     else if (convergence_criterion == "incremental")
     {
-      // Subtract 1 to make sure that the initial residual0 is
-      // properly set.
-      newton_converged
-          = converged(_dx, nonlinear_problem, newton_iteration - 1);
+      // Subtract 1 to make sure that the initial residual0 is properly
+      // set.
+      if (_iteration == 1)
+      {
+        PetscReal _r = 0.0;
+        VecNorm(_dx, NORM_2, &_r);
+        _residual0 = _r;
+        _residual = 1.0;
+        newton_converged = false;
+      }
+      else
+        std::tie(_residual, newton_converged) = this->_converged(*this, _dx);
     }
     else
       throw std::runtime_error("Unknown convergence criterion string.");
@@ -118,9 +233,9 @@ dolfinx::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
 
   if (newton_converged)
   {
-    if (MPI::rank(_mpi_comm.comm()) == 0)
+    if (dolfinx::MPI::rank(_mpi_comm.comm()) == 0)
     {
-      LOG(INFO) << "Newton solver finished in " << newton_iteration
+      LOG(INFO) << "Newton solver finished in " << _iteration
                 << " iterations and " << _krylov_iterations
                 << " linear solver iterations.";
     }
@@ -129,7 +244,7 @@ dolfinx::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
   {
     if (error_on_nonconvergence)
     {
-      if (newton_iteration == max_it)
+      if (_iteration == max_it)
       {
         throw std::runtime_error("Newton solver did not converge because "
                                  "maximum number of iterations reached");
@@ -141,47 +256,16 @@ dolfinx::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
       LOG(WARNING) << "Newton solver did not converge.";
   }
 
-  return std::pair(newton_iteration, newton_converged);
+  return {_iteration, newton_converged};
 }
 //-----------------------------------------------------------------------------
 int nls::NewtonSolver::krylov_iterations() const { return _krylov_iterations; }
+//-----------------------------------------------------------------------------
+int nls::NewtonSolver::iteration() const { return _iteration; }
 //-----------------------------------------------------------------------------
 double nls::NewtonSolver::residual() const { return _residual; }
 //-----------------------------------------------------------------------------
 double nls::NewtonSolver::residual0() const { return _residual0; }
 //-----------------------------------------------------------------------------
-bool nls::NewtonSolver::converged(const Vec r, const NonlinearProblem&,
-                                  std::size_t newton_iteration)
-{
-  la::PETScVector _r(r, true);
-  _residual = _r.norm(la::Norm::l2);
-
-  // If this is the first iteration step, set initial residual
-  if (newton_iteration == 0)
-    _residual0 = _residual;
-
-  // Relative residual
-  const double relative_residual = _residual / _residual0;
-
-  // Output iteration number and residual
-  if (report && MPI::rank(_mpi_comm.comm()) == 0)
-  {
-    LOG(INFO) << "Newton iteration " << newton_iteration
-              << ": r (abs) = " << _residual << " (tol = " << atol
-              << ") r (rel) = " << relative_residual << "(tol = " << rtol
-              << ")";
-  }
-
-  // Return true if convergence criterion is met
-  if (relative_residual < rtol or _residual < atol)
-    return true;
-  else
-    return false;
-}
-//-----------------------------------------------------------------------------
-void nls::NewtonSolver::update_solution(Vec x, const Vec dx, double relaxation,
-                                        const NonlinearProblem&, std::size_t)
-{
-  VecAXPY(x, -relaxation, dx);
-}
+MPI_Comm nls::NewtonSolver::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------

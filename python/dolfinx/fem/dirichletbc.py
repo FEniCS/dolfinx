@@ -14,10 +14,11 @@ import typing
 import collections.abc
 
 import ufl
-from dolfinx import cpp, function
+from dolfinx import cpp
+from dolfinx.fem.function import Function, FunctionSpace
 
 
-def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.function.FunctionSpace, function.FunctionSpace]],
+def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.fem.FunctionSpace, FunctionSpace]],
                             marker: types.FunctionType):
     """Locate degrees-of-freedom geometrically using a marker function.
 
@@ -54,16 +55,16 @@ def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.function.Functio
                 _V.append(space._cpp_object)
             except AttributeError:
                 _V.append(space)
+        return cpp.fem.locate_dofs_geometrical(_V, marker)
     else:
         try:
-            _V = [V._cpp_object]
+            _V = V._cpp_object
         except AttributeError:
-            _V = [V]
+            _V = V
+        return cpp.fem.locate_dofs_geometrical(_V, marker)
 
-    return cpp.fem.locate_dofs_geometrical(_V, marker)
 
-
-def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.function.FunctionSpace, function.FunctionSpace]],
+def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.fem.FunctionSpace, FunctionSpace]],
                             entity_dim: int,
                             entities: typing.List[int],
                             remote: bool = True):
@@ -101,21 +102,21 @@ def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.function.Functio
                 _V.append(space._cpp_object)
             except AttributeError:
                 _V.append(space)
+        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, remote)
     else:
         try:
-            _V = [V._cpp_object]
+            _V = V._cpp_object
         except AttributeError:
-            _V = [V]
-
-    return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, remote)
+            _V = V
+        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, remote)
 
 
 class DirichletBC(cpp.fem.DirichletBC):
     def __init__(
             self,
-            value: typing.Union[ufl.Coefficient, function.Function, cpp.function.Function],
+            value: typing.Union[ufl.Coefficient, Function, cpp.fem.Function],
             dofs: typing.List[int],
-            V: typing.Union[function.FunctionSpace] = None):
+            V: typing.Union[FunctionSpace] = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -136,9 +137,9 @@ class DirichletBC(cpp.fem.DirichletBC):
         # Construct bc value
         if isinstance(value, ufl.Coefficient):
             _value = value._cpp_object
-        elif isinstance(value, cpp.function.Function):
+        elif isinstance(value, cpp.fem.Function):
             _value = value
-        elif isinstance(value, function.Function):
+        elif isinstance(value, Function):
             _value = value._cpp_object
         else:
             raise NotImplementedError

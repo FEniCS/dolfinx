@@ -19,7 +19,7 @@ class xml_node;
 
 namespace dolfinx
 {
-namespace function
+namespace fem
 {
 template <typename T>
 class Function;
@@ -50,14 +50,14 @@ public:
   /// Output mesh
   void write(const mesh::Mesh& mesh);
 
-  /// Output function::Function
-  void write(const function::Function<PetscScalar>& u);
+  /// Output fem::Function
+  void write(const fem::Function<PetscScalar>& u);
 
   /// Output mesh::Mesh and timestep
   void write(const mesh::Mesh& mesh, double t);
 
-  /// Output function::Function and timestep
-  void write(const function::Function<PetscScalar>& u, double t);
+  /// Output fem::Function and timestep
+  void write(const fem::Function<PetscScalar>& u, double t);
 
 private:
   const std::string _filename;

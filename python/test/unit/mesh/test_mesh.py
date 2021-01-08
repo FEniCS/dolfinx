@@ -41,7 +41,8 @@ def mesh2d():
     mesh2d = RectangleMesh(
         MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
-        CellType.triangle, cpp.mesh.GhostMode.none, 'left')
+        CellType.triangle, cpp.mesh.GhostMode.none,
+        cpp.mesh.partition_cells_graph, 'left')
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
@@ -196,14 +197,6 @@ def test_UnitHexMesh():
     assert mesh.mpi_comm().allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
 
 
-def test_hash():
-    h1 = UnitSquareMesh(MPI.COMM_WORLD, 4, 4).hash()
-    h2 = UnitSquareMesh(MPI.COMM_WORLD, 4, 5).hash()
-    h3 = UnitSquareMesh(MPI.COMM_WORLD, 4, 4).hash()
-    assert h1 == h3
-    assert h1 != h2
-
-
 @skip_in_parallel
 def test_GetCoordinates():
     """Get coordinates of vertices"""
@@ -283,8 +276,10 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
             pytest.xfail(reason="Missing functionality in \'{}\' with \'{}\' mode".format(mesh_factory, ghost_mode))
 
 
+@pytest.mark.parametrize("ghost_mode",
+                         [cpp.mesh.GhostMode.none, cpp.mesh.GhostMode.shared_facet, cpp.mesh.GhostMode.shared_vertex])
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
-def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.none):
+def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to FIAT reference
     cell they were created from.
     """

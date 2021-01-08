@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -8,12 +8,15 @@
 #include "Geometry.h"
 #include "MeshTags.h"
 #include "cell_types.h"
-#include <Eigen/Dense>
+#include "graphbuild.h"
+#include <Eigen/Core>
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/graph/partition.h>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -327,23 +330,22 @@ mesh::extract_topology(const CellType& cell_type,
   std::vector<int> local_vertices(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
-    const Eigen::Array<int, Eigen::Dynamic, 1> local_index
-        = layout.entity_dofs(0, i);
-    assert(local_index.rows() == 1);
+    const std::vector<int> local_index = layout.entity_dofs(0, i);
+    assert(local_index.size() == 1);
     local_vertices[i] = local_index[0];
   }
 
   // Extract vertices
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      topology(cells.num_nodes(), num_vertices_per_cell);
-  for (int i = 0; i < cells.num_nodes(); ++i)
+  std::vector<std::int64_t> topology(cells.num_nodes() * num_vertices_per_cell);
+  for (int c = 0; c < cells.num_nodes(); ++c)
   {
-    auto p = cells.links(i);
+    auto p = cells.links(c);
     for (int j = 0; j < num_vertices_per_cell; ++j)
-      topology(i, j) = p(local_vertices[j]);
+      topology[num_vertices_per_cell * c + j] = p[local_vertices[j]];
   }
 
-  return graph::AdjacencyList<std::int64_t>(topology);
+  return graph::build_adjacency_list<std::int64_t>(std::move(topology),
+                                                   num_vertices_per_cell);
 }
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd
@@ -458,31 +460,37 @@ mesh::radius_ratio(const mesh::Mesh& mesh,
   return mesh::cell_dim(mesh.topology().cell_type()) * r / cr;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-mesh::cell_normals(const mesh::Mesh& mesh, int dim)
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::cell_normals(
+    const mesh::Mesh& mesh, int dim,
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_indices)
 {
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
+  // Find geometry nodes for topology entities
   const mesh::Geometry& geometry = mesh.geometry();
+  // Orient cells if they are tetrahedron
+  bool orient = false;
+  if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
+    orient = true;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      geometry_entities
+      = entities_to_geometry(mesh, dim, entity_indices, orient);
 
+  const std::int32_t num_entities = entity_indices.size();
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_entities, 3);
   switch (type)
   {
   case (mesh::CellType::interval):
   {
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
-    auto map = mesh.topology().index_map(1);
-    assert(map);
-    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
-    for (int i = 0; i < num_cells; ++i)
+    for (int i = 0; i < num_entities; ++i)
     {
       // Get the two vertices as points
-      auto vertices = mesh.topology().connectivity(1, 0)->links(i);
+      auto vertices = geometry_entities.row(i);
       Eigen::Vector3d p0 = geometry.node(vertices[0]);
       Eigen::Vector3d p1 = geometry.node(vertices[1]);
-
       // Define normal by rotating tangent counter-clockwise
       Eigen::Vector3d t = p1 - p0;
       n.row(i) = Eigen::Vector3d(-t[1], t[0], 0.0).normalized();
@@ -491,14 +499,10 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   }
   case (mesh::CellType::triangle):
   {
-    auto map = mesh.topology().index_map(2);
-    assert(map);
-    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
-    for (int i = 0; i < num_cells; ++i)
+    for (int i = 0; i < num_entities; ++i)
     {
       // Get the three vertices as points
-      auto vertices = mesh.topology().connectivity(2, 0)->links(i);
+      auto vertices = geometry_entities.row(i);
       const Eigen::Vector3d p0 = geometry.node(vertices[0]);
       const Eigen::Vector3d p1 = geometry.node(vertices[1]);
       const Eigen::Vector3d p2 = geometry.node(vertices[2]);
@@ -511,14 +515,10 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   case (mesh::CellType::quadrilateral):
   {
     // TODO: check
-    auto map = mesh.topology().index_map(2);
-    assert(map);
-    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
-    for (int i = 0; i < num_cells; ++i)
+    for (int i = 0; i < num_entities; ++i)
     {
       // Get three vertices as points
-      auto vertices = mesh.topology().connectivity(2, 0)->links(i);
+      auto vertices = geometry_entities.row(i);
       const Eigen::Vector3d p0 = geometry.node(vertices[0]);
       const Eigen::Vector3d p1 = geometry.node(vertices[1]);
       const Eigen::Vector3d p2 = geometry.node(vertices[2]);
@@ -539,60 +539,25 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
     const mesh::Mesh& mesh, int dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities)
 {
-  const mesh::Topology& topology = mesh.topology();
   const mesh::Geometry& geometry = mesh.geometry();
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
       = geometry.x();
 
-  const int tdim = topology.dim();
-
-  // Get geometry dofmap
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
-  // Build map from vertex -> geometry dof
-  auto c_to_v = topology.connectivity(tdim, 0);
-  assert(c_to_v);
-  auto map_v = topology.index_map(0);
-  assert(map_v);
-  const std::int32_t num_vertices = map_v->size_local() + map_v->num_ghosts();
-  std::vector<std::int32_t> vertex_to_x(num_vertices);
-  auto map_c = topology.index_map(tdim);
-  assert(map_c);
-  for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
-  {
-    auto vertices = c_to_v->links(c);
-    auto dofs = x_dofmap.links(c);
-    for (int i = 0; i < vertices.rows(); ++i)
-    {
-      // FIXME: We are making an assumption here on the
-      // ElementDofLayout. We should use an ElementDofLayout to map
-      // between local vertex index an x dof index.
-      vertex_to_x[vertices[i]] = dofs(i);
-    }
-  }
+  // Build map from entity -> geometry dof
+  // FIXME: This assumes a linear geometry.
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      entity_to_geometry = entities_to_geometry(mesh, dim, entities, false);
 
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x_mid(
       entities.rows(), 3);
 
-  // Special case: a vertex is its own midpoint
-  if (dim == 0)
+  for (Eigen::Index e = 0; e < entity_to_geometry.rows(); ++e)
   {
-    for (Eigen::Index e = 0; e < entities.rows(); ++e)
-      x_mid.row(e) = x.row(vertex_to_x[e]);
-  }
-  else
-  {
-    // FIXME: This assumes a linear geometry.
-    auto e_to_v = topology.connectivity(dim, 0);
-    assert(e_to_v);
-    for (Eigen::Index e = 0; e < entities.rows(); ++e)
-    {
-      auto vertices = e_to_v->links(entities[e]);
-      x_mid.row(e) = 0.0;
-      for (int i = 0; i < vertices.rows(); ++i)
-        x_mid.row(e) += x.row(vertex_to_x[vertices[i]]);
-      x_mid.row(e) /= vertices.rows();
-    }
+    auto entity_vertices = entity_to_geometry.row(e);
+    x_mid.row(e) = 0.0;
+    for (Eigen::Index v = 0; v < entity_vertices.size(); ++v)
+      x_mid.row(e) += x.row(entity_vertices[v]);
+    x_mid.row(e) /= entity_vertices.size();
   }
 
   return x_mid;
@@ -624,7 +589,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities(
   {
     auto x_dofs = x_dofmap.links(c);
     auto vertices = c_to_v->links(c);
-    for (int i = 0; i < vertices.size(); ++i)
+    for (std::size_t i = 0; i < vertices.size(); ++i)
       vertex_to_node[vertices[i]] = x_dofs[i];
   }
 
@@ -649,10 +614,9 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities(
   {
     // Iterate over entity vertices
     bool all_vertices_marked = true;
-    auto vertices = e_to_v->links(e);
-    for (int i = 0; i < vertices.rows(); ++i)
+    for (std::int32_t v : e_to_v->links(e))
     {
-      if (!marked[vertices[i]])
+      if (!marked[v])
       {
         all_vertices_marked = false;
         break;
@@ -704,13 +668,11 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
   {
     if (boundary_facet[f])
     {
-      auto entities = f_to_e->links(f);
-      for (int i = 0; i < entities.size(); ++i)
-        facet_entities.insert(entities[i]);
+      for (auto e : f_to_e->links(f))
+        facet_entities.insert(e);
 
-      auto vertices = f_to_v->links(f);
-      for (int i = 0; i < vertices.size(); ++i)
-        boundary_vertices.insert(vertices[i]);
+      for (auto v : f_to_v->links(f))
+        boundary_vertices.insert(v);
     }
   }
 
@@ -738,10 +700,9 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
     // Get first cell and find position
     const int c = v_to_c->links(v)[0];
     auto vertices = c_to_v->links(c);
-    const auto* it
-        = std::find(vertices.data(), vertices.data() + vertices.rows(), v);
-    assert(it != (vertices.data() + vertices.rows()));
-    const int local_pos = std::distance(vertices.data(), it);
+    auto it = std::find(vertices.begin(), vertices.end(), v);
+    assert(it != vertices.end());
+    const int local_pos = std::distance(vertices.begin(), it);
 
     auto dofs = x_dofmap.links(c);
     x_vertices.col(i) = x_nodes.row(dofs[local_pos]);
@@ -764,11 +725,9 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
     bool all_vertices_marked = true;
 
     // Iterate over entity vertices
-    auto vertices = e_to_v->links(e);
-    for (int i = 0; i < vertices.rows(); ++i)
+    for (auto v : e_to_v->links(e))
     {
-      const std::int32_t idx = vertices[i];
-      const std::int32_t pos = vertex_to_pos[idx];
+      const std::int32_t pos = vertex_to_pos[v];
       if (!marked[pos])
       {
         all_vertices_marked = false;
@@ -821,15 +780,14 @@ mesh::entities_to_geometry(
   {
     const std::int32_t idx = entity_list[i];
     const std::int32_t cell = e_to_c->links(idx)[0];
-    const auto ev = e_to_v->links(idx);
-    assert(ev.size() == num_entity_vertices);
+    auto ev = e_to_v->links(idx);
+    assert((int)ev.size() == num_entity_vertices);
     const auto cv = c_to_v->links(cell);
     const auto xc = xdofs.links(cell);
     for (int j = 0; j < num_entity_vertices; ++j)
     {
-      int k = std::distance(cv.data(),
-                            std::find(cv.data(), cv.data() + cv.size(), ev[j]));
-      assert(k < cv.size());
+      int k = std::distance(cv.begin(), std::find(cv.begin(), cv.end(), ev[j]));
+      assert(k < (int)cv.size());
       entity_geometry(i, j) = xc[k];
     }
 
@@ -837,8 +795,8 @@ mesh::entities_to_geometry(
     {
       // Compute cell midpoint
       Eigen::Vector3d midpoint(0.0, 0.0, 0.0);
-      for (int j = 0; j < xc.size(); ++j)
-        midpoint += geometry.node(xc[j]);
+      for (auto j : xc)
+        midpoint += geometry.node(j);
       midpoint /= xc.size();
       // Compute vector triple product of two edges and vector to midpoint
       Eigen::Vector3d p0 = geometry.node(entity_geometry(i, 0));
@@ -846,8 +804,8 @@ mesh::entities_to_geometry(
       a.row(0) = midpoint - p0;
       a.row(1) = geometry.node(entity_geometry(i, 1)) - p0;
       a.row(2) = geometry.node(entity_geometry(i, 2)) - p0;
-      // Midpoint direction should be opposite to normal, hence this should be
-      // negative. Switch points if not.
+      // Midpoint direction should be opposite to normal, hence this
+      // should be negative. Switch points if not.
       if (a.determinant() > 0.0)
         std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
     }
@@ -856,8 +814,7 @@ mesh::entities_to_geometry(
   return entity_geometry;
 }
 //------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-mesh::exterior_facet_indices(const Mesh& mesh)
+std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
 {
   // Note: Possible duplication of mesh::Topology::compute_boundary_facets
 
@@ -889,8 +846,46 @@ mesh::exterior_facet_indices(const Mesh& mesh)
       surface_facets.push_back(f);
   }
 
-  // Copy over to Eigen::Array
-  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-      surface_facets.data(), surface_facets.size());
+  return surface_facets;
 }
 //------------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
+    MPI_Comm comm, int n, const mesh::CellType cell_type,
+    const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode)
+{
+  return partition_cells_graph(comm, n, cell_type, cells, ghost_mode,
+                               &graph::partition_graph);
+}
+//-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
+    MPI_Comm comm, int n, const mesh::CellType cell_type,
+    const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode,
+    const graph::partition_fn& partfn)
+{
+  LOG(INFO) << "Compute partition of cells across ranks";
+
+  if (cells.num_nodes() > 0)
+  {
+    if (cells.num_links(0) != mesh::num_cell_vertices(cell_type))
+    {
+      throw std::runtime_error(
+          "Inconsistent number of cell vertices. Got "
+          + std::to_string(cells.num_links(0)) + ", expected "
+          + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
+    }
+  }
+
+  // Compute distributed dual graph (for the cells on this process)
+  const auto [dual_graph, graph_info]
+      = mesh::build_dual_graph(comm, cells, cell_type);
+
+  // Extract data from graph_info
+  const auto [num_ghost_nodes, num_local_edges] = graph_info;
+
+  // Just flag any kind of ghosting for now
+  bool ghosting = (ghost_mode != mesh::GhostMode::none);
+
+  // Compute partition
+  return partfn(comm, n, dual_graph, num_ghost_nodes, ghosting);
+}
+//-----------------------------------------------------------------------------

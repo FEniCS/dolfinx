@@ -51,11 +51,11 @@ void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
 /// @param[in] active_entities Local-to-process indices of mesh entities
 ///   whose topology will be saved. This is used to save subsets of
 ///   Mesh.
-void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                       const hid_t h5_id, const std::string path_prefix,
-                       const mesh::Topology& topology,
-                       const mesh::Geometry& geometry, const int cell_dim,
-                       const std::vector<std::int32_t>& active_entities);
+void add_topology_data(
+    MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
+    const std::string path_prefix, const mesh::Topology& topology,
+    const mesh::Geometry& geometry, const int cell_dim,
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& active_entities);
 
 /// Add Geometry xml node
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
