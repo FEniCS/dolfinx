@@ -245,8 +245,8 @@ public:
     std::vector<int> n{0};
     for (const auto& c : _coefficients)
     {
-      if (!c)
-        throw std::runtime_error("Not all form coefficients have been set.");
+      //if (!c)
+      //  throw std::runtime_error("Not all form coefficients have been set.");
       n.push_back(n.back() + c->function_space()->element()->space_dimension());
     }
     return n;
