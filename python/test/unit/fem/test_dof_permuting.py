@@ -205,7 +205,7 @@ def random_evaluation_mesh(cell_type):
 @pytest.mark.parametrize(
     "cell_type,space_type",
     [
-        (c,s) for c in ["triangle", "tetrahedron"]
+        (c, s) for c in ["triangle", "tetrahedron"]
         for s in ["P", "N1curl", "RT", "BDM", "N2curl"]
     ] + [
         ("quadrilateral", s)
@@ -254,7 +254,7 @@ def test_evaluation(cell_type, space_type, space_order):
 @pytest.mark.parametrize(
     "cell_type,space_type",
     [
-        (c,s) for c in ["triangle", "tetrahedron"]
+        (c, s) for c in ["triangle", "tetrahedron"]
         for s in ["P", "N1curl", "RT", "BDM", "N2curl"]
     ] + [
         ("quadrilateral", s)
