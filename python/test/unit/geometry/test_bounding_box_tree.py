@@ -10,7 +10,7 @@ import pytest
 from dolfinx import (BoxMesh, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      cpp)
 from dolfinx.geometry import (BoundingBoxTree, compute_collisions,
-                              compute_collisions_point, compute_closest_entity, create_midpoint_tree,
+                              compute_collisions_point, compute_closest_entity,
                               select_colliding_cells)
 from dolfinx.mesh import locate_entities_boundary, locate_entities
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -185,9 +185,7 @@ def test_compute_closest_entity_1d(dim):
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
     tree = BoundingBoxTree(mesh, dim)
     imap = mesh.topology.index_map(dim)
-    num_entities = imap.size_local + imap.num_ghosts
-    tree_mid = create_midpoint_tree(mesh, dim, range(num_entities))
-    entity, distance = compute_closest_entity(tree, tree_mid, mesh, p)
+    entity, distance = compute_closest_entity(tree, mesh, p)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
 
@@ -209,10 +207,7 @@ def test_compute_closest_entity_2d(dim):
     p = numpy.array([-1.0, -0.01, 0.0])
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 15, 15)
     tree = BoundingBoxTree(mesh, dim)
-    imap = mesh.topology.index_map(dim)
-    num_entities = imap.size_local + imap.num_ghosts
-    tree_mid = create_midpoint_tree(mesh, dim, range(num_entities))
-    entity, distance = compute_closest_entity(tree, tree_mid, mesh, p)
+    entity, distance = compute_closest_entity(tree, mesh, p)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     ref_distance = numpy.sqrt(p[0]**2 + p[1]**2)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
@@ -238,11 +233,7 @@ def test_compute_closest_entity_3d(dim):
     mesh.topology.create_entities(dim)
 
     tree = BoundingBoxTree(mesh, dim)
-    imap = mesh.topology.index_map(dim)
-    num_entities = imap.size_local + imap.num_ghosts
-    tree_mid = create_midpoint_tree(mesh, dim, range(num_entities))
-
-    entity, distance = compute_closest_entity(tree, tree_mid, mesh, p)
+    entity, distance = compute_closest_entity(tree, mesh, p)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
 
@@ -271,8 +262,7 @@ def test_compute_closest_sub_entity(dim):
 
     left_cells = locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
     tree = BoundingBoxTree(mesh, dim, left_cells)
-    tree_mid = create_midpoint_tree(mesh, dim, left_cells)
-    entity, distance = compute_closest_entity(tree, tree_mid, mesh, p)
+    entity, distance = compute_closest_entity(tree, mesh, p)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
 
