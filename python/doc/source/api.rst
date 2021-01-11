@@ -20,7 +20,6 @@ Public user interface
    dolfinx.mesh
    dolfinx.pkgconfig
    dolfinx.plotting
-   dolfinx.legacy
 
 
 pybind11 wrapped interface
