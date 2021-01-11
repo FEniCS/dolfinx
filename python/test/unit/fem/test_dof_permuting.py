@@ -244,9 +244,6 @@ def test_evaluation(cell_type, space_type, space_order):
                     assert np.isclose(i[0], j[0])
             elif space_type in ["N1curl", "N2curl", "RTCE", "NCE"]:
                 # Hcurl
-                print(values0)
-                print(values1)
-
                 for i, j in zip(values0, values1):
                     assert np.allclose(i[1:], j[1:])
             else:
