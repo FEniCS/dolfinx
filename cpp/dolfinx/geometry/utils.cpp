@@ -8,12 +8,12 @@
 #include "utils.h"
 #include "BoundingBoxTree.h"
 #include "gjk.h"
+#include <chrono>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
-
 using namespace dolfinx;
 
 namespace
@@ -45,49 +45,107 @@ bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
 }
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
-std::pair<int, double>
-_compute_closest_entity(const geometry::BoundingBoxTree& tree,
-                        const Eigen::Vector3d& point, int node,
-                        const mesh::Mesh& mesh, int closest_entity, double R2)
+std::pair<int, double> _compute_closest_entity(
+    const geometry::BoundingBoxTree& tree, const Eigen::Vector3d& point,
+    int node, const mesh::Mesh& mesh, int closest_entity, double R2, bool fast)
 {
-  // Get children of current bounding box node
+  // Get children of current bounding box node (child_1 denotes entity index for
+  // leaves)
   const std::array bbox = tree.bbox(node);
-
-  // If bounding box is outside radius, then don't search further
-  const double r2
-      = geometry::compute_squared_distance_bbox(tree.get_bbox(node), point);
-  if (r2 > R2)
+  double r2;
+  if (is_leaf(bbox))
   {
-    // If bounding box is outside radius, then don't search further
-    return {closest_entity, R2};
-  }
-  else if (is_leaf(bbox))
-  {
-    // If box is leaf (which we know is inside radius), then shrink radius
-
-    // Get entity (child_1 denotes entity index for leaves)
-    const int entity_index = bbox[1];
-
-    // If entity is closer than best result so far, then return it
-    const double r2
-        = geometry::squared_distance(mesh, tree.tdim(), entity_index, point);
+    if (fast)
+    {
+      // If we are doing a fast search, only check the distance from the
+      // midpoint of the bounding box to the point in question
+      const Eigen::Array<double, 2, 3, Eigen::RowMajor> bbox_
+          = tree.get_bbox(node);
+      Eigen::Array<double, 1, 3> midpoint;
+      midpoint = 0.5 * (bbox_.row(0) + bbox_.row(1));
+      r2 = (midpoint.transpose().matrix() - point).squaredNorm();
+    }
+    else
+    {
+      r2 = geometry::compute_squared_distance_bbox(tree.get_bbox(node), point);
+      // If bounding box closer than previous closest entity, use gjk to obtain
+      // exact distance to the convex hull of the entity
+      if (r2 < R2)
+      {
+        r2 = geometry::squared_distance(mesh, tree.tdim(), bbox[1], point);
+      }
+    }
+    // If entity is closer than best result so far, return it
     if (r2 < R2)
     {
-      closest_entity = entity_index;
+      closest_entity = bbox[1];
       R2 = r2;
     }
-
     return {closest_entity, R2};
   }
   else
   {
+    // If bounding box is outside radius, then don't search further
+    r2 = geometry::compute_squared_distance_bbox(tree.get_bbox(node), point);
+    if (r2 > R2)
+      return {closest_entity, R2};
+
     // Check both children
     std::pair<int, double> p0 = _compute_closest_entity(
-        tree, point, bbox[0], mesh, closest_entity, R2);
+        tree, point, bbox[0], mesh, closest_entity, R2, fast);
     std::pair<int, double> p1 = _compute_closest_entity(
-        tree, point, bbox[1], mesh, p0.first, p0.second);
+        tree, point, bbox[1], mesh, p0.first, p0.second, fast);
     return p1;
   }
+
+  // ------ OLD ------
+  // If bounding box is outside radius, then don't search further
+  // Eigen::Array<double, 2, 3, Eigen::RowMajor> bbox_ = tree.get_bbox(node);
+  // const double r2 = geometry::compute_squared_distance_bbox(bbox_, point);
+  // if (r2 > R2)
+  // {
+  //   // If bounding box is outside radius, then don't search further
+  //   return {closest_entity, R2};
+  // }
+  // else if (is_leaf(bbox))
+  // {
+  //   // If box is leaf (which we know is inside radius), then shrink radius
+
+  //   // Get entity (child_1 denotes entity index for leaves)
+  //   const int entity_index = bbox[1];
+
+  //   // Compute distance from leaf box to entity. Fast search computes the
+  //   // midpoint of the bounding box and computes the distance between two
+  //   // points, while the slow search uses the gjk algorithm
+  //   double r2;
+  //   if (fast)
+  //   {
+  //     Eigen::Array<double, 1, 3> midpoint;
+  //     midpoint = 0.5 * (bbox_.row(0) + bbox_.row(1));
+  //     r2 = (midpoint.transpose().matrix() - point).squaredNorm();
+  //   }
+  //   else
+  //     r2 = geometry::squared_distance(mesh, tree.tdim(), entity_index,
+  //     point);
+
+  //   // If entity is closer than best result so far, then return it
+  //   if (r2 < R2)
+  //   {
+  //     closest_entity = entity_index;
+  //     R2 = r2;
+  //   }
+
+  //   return {closest_entity, R2};
+  // }
+  // else
+  // {
+  //   // Check both children
+  //   std::pair<int, double> p0 = _compute_closest_entity(
+  //       tree, point, bbox[0], mesh, closest_entity, R2, fast);
+  //   std::pair<int, double> p1 = _compute_closest_entity(
+  //       tree, point, bbox[1], mesh, p0.first, p0.second, fast);
+  //   return p1;
+  // }
 }
 //-----------------------------------------------------------------------------
 // Compute closest point {closest_point, R2} (recursive)
@@ -291,17 +349,58 @@ std::pair<int, double> geometry::compute_closest_entity(
   }
 
   // Search point cloud to get a good starting guess
+  // This is much faster than starting with an initial guess
+  // from the `tree`, as we do not require gjk for distance
+  // computations between points
+
+  auto timer_start = std::chrono::system_clock::now();
   const auto [index0, distance0] = compute_closest_point(tree_midpoint, p);
+  std::cout << "INDEX, DISTANCE " << index0 << "  " << distance0 * distance0
+            << "\n";
+  auto timer_end = std::chrono::system_clock::now();
+  std::chrono::duration<double> dt = (timer_end - timer_start);
+  std::stringstream cc;
+  cc << "Midpointtree: " << dt.count() << "\n";
 
   // Return if we have found the point
   if (distance0 == 0.0)
     return {index0, distance0};
 
+  auto timer_start_ref = std::chrono::system_clock::now();
   // Call recursive find function
-  const auto [index1, distance1] = _compute_closest_entity(
-      tree, p, tree.num_bboxes() - 1, mesh, index0, distance0 * distance0);
+  const auto [index1, distance1]
+      = _compute_closest_entity(tree, p, tree.num_bboxes() - 1, mesh, index0,
+                                distance0 * distance0, false);
+  auto timer_end_ref = std::chrono::system_clock::now();
+  std::chrono::duration<double> dt_ref = (timer_end_ref - timer_start_ref);
+  cc << "Midpointtree p 2: " << dt_ref.count() << "\n";
+
   assert(index1 >= 0);
 
+  // -----new method----
+  auto timer_start2 = std::chrono::system_clock::now();
+  const int closest_point = 0;
+  const double R2
+      = (tree.get_bbox(closest_point).row(0).transpose().matrix() - p)
+            .squaredNorm();
+  const auto [index3, distance3] = _compute_closest_entity(
+      tree, p, tree.num_bboxes() - 1, mesh, closest_point, R2, true);
+
+  auto timer_end2 = std::chrono::system_clock::now();
+  std::chrono::duration<double> dt2 = (timer_end2 - timer_start2);
+  cc << "BBox midpoint: " << dt2.count() << "\n";
+
+  auto timer_start4 = std::chrono::system_clock::now();
+
+  const auto [index4, distance4] = _compute_closest_entity(
+      tree, p, tree.num_bboxes() - 1, mesh, index3, distance3, false);
+
+  auto timer_end4 = std::chrono::system_clock::now();
+  std::chrono::duration<double> dt4 = (timer_end4 - timer_start4);
+  cc << "BBox midpoint p 2: " << dt4.count() << "\n";
+  std::cout << cc.str() << "\n";
+  assert(index4 == index1);
+  assert(distance1 == distance4);
   return {index1, std::sqrt(distance1)};
 }
 //-----------------------------------------------------------------------------
