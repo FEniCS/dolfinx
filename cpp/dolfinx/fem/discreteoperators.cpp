@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2020 Garth N. Wells, Jørgen S. Dokken
+// Copyright (C) 2015-2021 Garth N. Wells, Jørgen S. Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -90,31 +90,44 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
                                  + mesh->topology().index_map(1)->num_ghosts();
   const std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
   assert(dofmap0);
+  // Create local lookup table for local edge to cell dofs
+  const int num_edges_per_cell
+      = mesh::cell_num_entities(mesh->topology().cell_type(), 1);
+  std::map<std::int32_t, std::vector<std::int32_t>> local_edge_dofs;
+  for (std::int32_t i = 0; i < num_edges_per_cell; ++i)
+    local_edge_dofs[i] = layout0->entity_dofs(1, i);
+  // Create local lookup table for local vertex to cell dofs
+  const int num_vertices_per_cell
+      = mesh::cell_num_entities(mesh->topology().cell_type(), 0);
+  std::map<std::int32_t, std::vector<std::int32_t>> local_vertex_dofs;
+  for (std::int32_t i = 0; i < num_vertices_per_cell; ++i)
+    local_vertex_dofs[i] = layout1->entity_dofs(0, i);
+
   for (std::int32_t e = 0; e < num_edges; ++e)
   {
     std::vector<std::int32_t> rows;
     std::vector<std::int32_t> cols;
-  
+
     // Find local index of edge in one of the cells it is part of
-    auto cells = e_to_c->links(e);
+    tcb::span<const std::int32_t> cells = e_to_c->links(e);
     assert(cells.size() > 0);
     const std::int32_t cell = cells[0];
-    auto edges = c_to_e->links(cell);
+    tcb::span<const std::int32_t> edges = c_to_e->links(cell);
     const auto* it = std::find(edges.data(), edges.data() + edges.size(), e);
     assert(it != (edges.data() + edges.size()));
     const int local_edge = std::distance(edges.data(), it);
 
     // Find the dofs located on the edge
-    auto dofs0 = dofmap0->cell_dofs(cell);
-    auto local_dofs = layout0->entity_dofs(1, local_edge);
+    tcb::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
+    std::vector<std::int32_t>& local_dofs = local_edge_dofs[local_edge];
     assert(local_dofs.size() == 1);
     rows.push_back(dofs0[local_dofs[0]]);
-    auto vertices = e_to_v->links(e);
+    tcb::span<const std::int32_t> vertices = e_to_v->links(e);
     assert(vertices.size() == 2);
     auto cell_vertices = c_to_v->links(cell);
 
     // Find local index of each of the vertices and map to local dof
-    auto dofs1 = V1.dofmap()->cell_dofs(cell);
+    tcb::span<const std::int32_t> dofs1 = V1.dofmap()->cell_dofs(cell);
     for (std::int32_t i = 0; i < 2; ++i)
     {
       const auto* it
@@ -122,15 +135,14 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
                       cell_vertices.data() + cell_vertices.size(), vertices[i]);
       assert(it != (cell_vertices.data() + cell_vertices.size()));
       const int local_vertex = std::distance(cell_vertices.data(), it);
-      auto local_v_dofs = layout1->entity_dofs(0, local_vertex);
+      std::vector<std::int32_t>& local_v_dofs = local_vertex_dofs[local_vertex];
+
       assert(local_v_dofs.size() == 1);
       cols.push_back(dofs1[local_v_dofs[0]]);
     }
-    Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> _rows(
-      rows.data(), rows.size());
-    Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> _cols(
-      cols.data(), cols.size());
-  pattern.insert(_rows, _cols);
+    tcb::span<int32_t> row_span = tcb::make_span(rows);
+    tcb::span<int32_t> col_span = tcb::make_span(cols);
+    pattern.insert(row_span, col_span);
   }
   pattern.assemble();
 
@@ -147,29 +159,27 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
   for (std::int32_t e = 0; e < num_edges; ++e)
   {
     // Find local index of edge in one of the cells it is part of
-    auto cells = e_to_c->links(e);
+    tcb::span<const std::int32_t> cells = e_to_c->links(e);
     assert(cells.size() > 0);
     const std::int32_t cell = cells[0];
-    auto edges = c_to_e->links(cell);
+    tcb::span<const std::int32_t> edges = c_to_e->links(cell);
     const auto* it = std::find(edges.data(), edges.data() + edges.size(), e);
     assert(it != (edges.data() + edges.size()));
     const int local_edge = std::distance(edges.data(), it);
 
     // Find the dofs located on the edge
-    auto dofs0 = dofmap0->cell_dofs(cell);
-
-    // FIXME: avoid this expensive call
-    const std::vector<int32_t> local_dofs = layout0->entity_dofs(1, local_edge);
+    tcb::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
+    std::vector<std::int32_t>& local_dofs = local_edge_dofs[local_edge];
     assert(local_dofs.size() == 1);
     const PetscInt row = dofs0[local_dofs[0]];
 
-    auto vertices = e_to_v->links(e);
+    tcb::span<const std::int32_t> vertices = e_to_v->links(e);
     assert(vertices.size() == 2);
-    auto cell_vertices = c_to_v->links(cell);
+    tcb::span<const std::int32_t> cell_vertices = c_to_v->links(cell);
 
     // Find local index of each of the vertices and map to local dof
     std::array<PetscInt, 2> cols;
-    auto dofs1 = dofmap1->cell_dofs(cell);
+    tcb::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cell);
     for (std::int32_t i = 0; i < 2; ++i)
     {
       const auto* it
@@ -178,9 +188,7 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
       assert(it != (cell_vertices.data() + cell_vertices.size()));
       const int local_vertex = std::distance(cell_vertices.data(), it);
 
-      // FIXME: avoid this expensive call
-      const std::vector<int32_t> local_v_dofs
-          = layout1->entity_dofs(0, local_vertex);
+      std::vector<std::int32_t>& local_v_dofs = local_vertex_dofs[local_vertex];
       assert(local_v_dofs.size() == 1);
       cols[i] = dofs1[local_v_dofs[0]];
     }
