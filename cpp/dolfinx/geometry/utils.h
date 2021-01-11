@@ -21,16 +21,6 @@ namespace geometry
 {
 class BoundingBoxTree;
 
-/// Create a bounding box tree for a subset of entities based on the entity
-/// midpoints
-/// @param[in] mesh The mesh
-/// @param[in] tdim The topological dimension of the entity
-/// @param[in] entity_indices List of local entity indices
-/// @return Bounding box tree for midpoints of mesh entities
-BoundingBoxTree
-create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
-                     const std::vector<std::int32_t>& entity_indices);
-
 /// Compute all collisions between two BoundingBoxTrees.
 /// @param[in] tree0 First BoundingBoxTree
 /// @param[in] tree1 Second BoundingBoxTree
@@ -45,20 +35,15 @@ compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 std::vector<int> compute_collisions(const BoundingBoxTree& tree,
                                     const Eigen::Vector3d& p);
 
-/// Compute closest mesh entity and distance to the point. The tree must
-/// have been initialised with topological co-dimension 0.
+/// Compute closest mesh entity for the topological distance of the 
+/// bounding box tree and distance and a point
+/// @param[in] tree The bounding box tree
+/// @param[in] p The point
+/// @param[in] mesh The mesh
+/// @return The local index of the entity and the distance from the point.
 std::pair<int, double>
 compute_closest_entity(const BoundingBoxTree& tree,
-                       const BoundingBoxTree& tree_midpoint,
                        const Eigen::Vector3d& p, const mesh::Mesh& mesh);
-
-/// Compute closest point and distance to a given point
-/// @param[in] tree The bounding box tree. It must have been initialised
-///   with topological dimension 0.
-/// @param[in] p The point to compute the distance from
-/// @return (point index, distance)
-std::pair<int, double> compute_closest_point(const BoundingBoxTree& tree,
-                                             const Eigen::Vector3d& p);
 
 /// Compute squared distance between point and bounding box wih index
 /// "node". Returns zero if point is inside box.
