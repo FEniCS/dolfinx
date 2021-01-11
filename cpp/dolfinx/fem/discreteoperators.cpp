@@ -85,16 +85,17 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
   mesh->topology_mutable().create_connectivity(tdim, 0);
   auto c_to_v = mesh->topology().connectivity(tdim, 0);
 
-  std::vector<std::int32_t> rows;
-  std::vector<std::int32_t> cols;
-
   // Build sparsity pattern
   const std::int32_t num_edges = mesh->topology().index_map(1)->size_local()
                                  + mesh->topology().index_map(1)->num_ghosts();
   const std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
+  std::cout << layout0->num_entity_dofs(1) << "\n";
   assert(dofmap0);
   for (std::int32_t e = 0; e < num_edges; ++e)
   {
+    std::vector<std::int32_t> rows;
+    std::vector<std::int32_t> cols;
+  
     // Find local index of edge in one of the cells it is part of
     auto cells = e_to_c->links(e);
     assert(cells.size() > 0);
@@ -126,13 +127,12 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
       assert(local_v_dofs.size() == 1);
       cols.push_back(dofs1[local_v_dofs[0]]);
     }
-  }
-
-  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> _rows(
+    Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> _rows(
       rows.data(), rows.size());
-  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> _cols(
+    Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> _cols(
       cols.data(), cols.size());
   pattern.insert(_rows, _cols);
+  }
   pattern.assemble();
 
   // Create matrix
