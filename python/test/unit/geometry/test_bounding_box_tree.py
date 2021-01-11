@@ -184,7 +184,6 @@ def test_compute_closest_entity_1d(dim):
     p = numpy.array([-ref_distance, 0, 0])
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
     tree = BoundingBoxTree(mesh, dim)
-    imap = mesh.topology.index_map(dim)
     entity, distance = compute_closest_entity(tree, mesh, p)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
