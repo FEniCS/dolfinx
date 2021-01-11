@@ -89,7 +89,6 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
   const std::int32_t num_edges = mesh->topology().index_map(1)->size_local()
                                  + mesh->topology().index_map(1)->num_ghosts();
   const std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
-  std::cout << layout0->num_entity_dofs(1) << "\n";
   assert(dofmap0);
   for (std::int32_t e = 0; e < num_edges; ++e)
   {
