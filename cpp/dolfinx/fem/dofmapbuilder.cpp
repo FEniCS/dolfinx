@@ -230,9 +230,9 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // owned dofs. Set to -1 for unowned dofs
   std::vector<int> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t owned_size = 0;
-  for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
+  for (std::size_t i = 0; i < dof_entity.size(); ++i)
   {
-    const auto& e = dof_entity[i];
+    const std::pair<std::int8_t, std::int32_t>& e = dof_entity[i];
     if (e.second < offset[e.first])
       original_to_contiguous[i] = owned_size++;
   }
@@ -307,30 +307,33 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
       current_offset += num_edges[i];
     }
   }
-  const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data),
-                                                 std::move(graph_offsets));
 
-  // Reorder owned nodes
-  const std::string ordering_library = "SCOTCH";
   std::vector<int> node_remap;
-  if (ordering_library == "Boost")
-    node_remap = graph::compute_cuthill_mckee(graph, true);
-  else if (ordering_library == "SCOTCH")
-    std::tie(node_remap, std::ignore) = graph::scotch::compute_gps(graph);
-  else if (ordering_library == "random")
   {
-    // NOTE: Randomised dof ordering should only be used for
-    // testing/benchmarking
-    node_remap.resize(graph.num_nodes());
-    std::iota(node_remap.begin(), node_remap.end(), 0);
-    std::random_device rd;
-    std::default_random_engine g(rd());
-    std::shuffle(node_remap.begin(), node_remap.end(), g);
-  }
-  else
-  {
-    throw std::runtime_error("Requested library '" + ordering_library
-                             + "' is unknown");
+    const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data),
+                                                   std::move(graph_offsets));
+
+    // Reorder owned nodes
+    const std::string ordering_library = "SCOTCH";
+    if (ordering_library == "Boost")
+      node_remap = graph::compute_cuthill_mckee(graph, true);
+    else if (ordering_library == "SCOTCH")
+      std::tie(node_remap, std::ignore) = graph::scotch::compute_gps(graph);
+    else if (ordering_library == "random")
+    {
+      // NOTE: Randomised dof ordering should only be used for
+      // testing/benchmarking
+      node_remap.resize(graph.num_nodes());
+      std::iota(node_remap.begin(), node_remap.end(), 0);
+      std::random_device rd;
+      std::default_random_engine g(rd());
+      std::shuffle(node_remap.begin(), node_remap.end(), g);
+    }
+    else
+    {
+      throw std::runtime_error("Requested library '" + ordering_library
+                               + "' is unknown");
+    }
   }
 
   // Reconstruct remaped nodes, and place un-owned nodes at the end
