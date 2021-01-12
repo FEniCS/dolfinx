@@ -336,7 +336,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     }
   }
 
-  // Reconstruct remaped nodes, and place un-owned nodes at the end
+  // Reconstruct remapped nodes, and place un-owned nodes at the end
   std::vector<int> old_to_new(dof_entity.size(), -1);
   std::int32_t unowned_pos = owned_size;
   assert(old_to_new.size() == original_to_contiguous.size());
