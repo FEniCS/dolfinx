@@ -226,24 +226,14 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
       offset[d] = map->size_local();
   }
 
-  // Count locally owned dofs
-  std::vector<bool> owned(dof_entity.size(), false);
-  for (auto e = dof_entity.begin(); e != dof_entity.end(); ++e)
-  {
-    if (e->second < offset[e->first])
-    {
-      const std::size_t i = std::distance(dof_entity.begin(), e);
-      owned[i] = true;
-    }
-  }
-
   // Create map from old index to new contiguous numbering for locally
   // owned dofs. Set to -1 for unowned dofs
   std::vector<int> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t owned_size = 0;
   for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
   {
-    if (owned[i])
+    const auto& e = dof_entity[i];
+    if (e.second < offset[e.first])
       original_to_contiguous[i] = owned_size++;
   }
 
