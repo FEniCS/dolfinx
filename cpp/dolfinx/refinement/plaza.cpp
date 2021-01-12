@@ -381,11 +381,15 @@ face_long_edge(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 // Convenient interface for both uniform and marker refinement
-mesh::Mesh compute_refinement(
+std::tuple<
+    graph::AdjacencyList<std::int64_t>,
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::vector<std::int32_t>>
+compute_refinement_data(
     const MPI_Comm& neighbor_comm, const std::vector<bool>& marked_edges,
     const std::map<std::int32_t, std::set<std::int32_t>> shared_edges,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& long_edge,
-    const std::vector<bool>& edge_ratio_ok, bool redistribute)
+    const std::vector<bool>& edge_ratio_ok)
 {
   const std::int32_t tdim = mesh.topology().dim();
   const std::int32_t num_cell_edges = tdim * 3 - 3;
@@ -396,7 +400,7 @@ mesh::Mesh compute_refinement(
       = refinement::create_new_vertices(neighbor_comm, shared_edges, mesh,
                                         marked_edges);
 
-  std::vector<std::int64_t> parent_cell;
+  std::vector<std::int32_t> parent_cell;
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
   std::vector<int> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
@@ -501,29 +505,8 @@ mesh::Mesh compute_refinement(
   graph::AdjacencyList<std::int64_t> cell_adj(std::move(cell_topology),
                                               std::move(offsets));
 
-  const bool serial = (dolfinx::MPI::size(mesh.mpi_comm()) == 1);
-  if (serial)
-  {
-    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             new_vertex_coordinates, mesh::GhostMode::none);
-  }
-  else
-  {
-    const int num_ghost_cells = map_c->num_ghosts();
-    // Check if mesh has ghost cells on any rank
-    // FIXME: this is not a robust test. Should be user option.
-    int max_ghost_cells = 0;
-    MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                  mesh.mpi_comm());
-
-    // Build mesh
-    const mesh::GhostMode ghost_mode = (max_ghost_cells == 0)
-                                           ? mesh::GhostMode::none
-                                           : mesh::GhostMode::shared_facet;
-
-    return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
-                                 redistribute, ghost_mode);
-  }
+  return {std::move(cell_adj), std::move(new_vertex_coordinates),
+          std::move(parent_cell)};
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -547,11 +530,33 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
                                  true);
 
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
-  mesh::Mesh new_mesh
-      = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok, redistribute);
+  auto [cell_adj, new_vertex_coordinates, parent_cell]
+      = compute_refinement_data(neighbor_comm, marked_edges, shared_edges, mesh,
+                                long_edge, edge_ratio_ok);
   MPI_Comm_free(&neighbor_comm);
-  return new_mesh;
+
+  if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
+  {
+    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+                             new_vertex_coordinates, mesh::GhostMode::none);
+  }
+
+  const std::shared_ptr<const common::IndexMap> map_c
+      = mesh.topology().index_map(mesh.topology().dim());
+  const int num_ghost_cells = map_c->num_ghosts();
+  // Check if mesh has ghost cells on any rank
+  // FIXME: this is not a robust test. Should be user option.
+  int max_ghost_cells = 0;
+  MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
+                mesh.mpi_comm());
+
+  // Build mesh
+  const mesh::GhostMode ghost_mode = (max_ghost_cells == 0)
+                                         ? mesh::GhostMode::none
+                                         : mesh::GhostMode::shared_facet;
+
+  return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
+                               redistribute, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
@@ -621,10 +626,32 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh, long_edge);
 
-  mesh::Mesh new_mesh
-      = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok, redistribute);
+  auto [cell_adj, new_vertex_coordinates, parent_cell]
+      = compute_refinement_data(neighbor_comm, marked_edges, shared_edges, mesh,
+                                long_edge, edge_ratio_ok);
   MPI_Comm_free(&neighbor_comm);
-  return new_mesh;
+
+  if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
+  {
+    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+                             new_vertex_coordinates, mesh::GhostMode::none);
+  }
+
+  const std::shared_ptr<const common::IndexMap> map_c
+      = mesh.topology().index_map(mesh.topology().dim());
+  const int num_ghost_cells = map_c->num_ghosts();
+  // Check if mesh has ghost cells on any rank
+  // FIXME: this is not a robust test. Should be user option.
+  int max_ghost_cells = 0;
+  MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
+                mesh.mpi_comm());
+
+  // Build mesh
+  const mesh::GhostMode ghost_mode = (max_ghost_cells == 0)
+                                         ? mesh::GhostMode::none
+                                         : mesh::GhostMode::shared_facet;
+
+  return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
+                               redistribute, ghost_mode);
 }
 //-----------------------------------------------------------------------------
