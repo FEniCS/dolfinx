@@ -64,10 +64,6 @@ public:
   /// @param[in] V Another function space.
   bool operator!=(const FunctionSpace& V) const;
 
-  /// Return global dimension of the function space
-  /// @return The dimension of the function space
-  std::int64_t dim() const;
-
   /// Extract subspace for component
   /// @param[in] component The subspace component
   /// @return The subspace
