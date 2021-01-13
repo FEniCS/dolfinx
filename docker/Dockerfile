@@ -133,6 +133,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 RUN pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme
 
+# Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
+# (See issue #126 and #1305)
+RUN pip3 install --no-binary="numpy" numpy --upgrade
+
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
     tar -xf v${PYBIND11_VERSION}.tar.gz && \

@@ -59,7 +59,7 @@ build-python-interface: &build-python-interface
   name: Build Python/pybind11 interface
   command: |
     cd python
-    pip3 -v install . --user
+    pip3 -v install --global-option build --global-option --debug . --user
 
 build-documentation-python: &build-documentation-python
   name: Build documentation (Python)
@@ -143,8 +143,6 @@ jobs:
       - run: *set-jit-defaults
       - run: *unit-tests-python
       - run: *unit-tests-python-mpi
-      - run: *large-tests-python
-      - run: *large-tests-python-mpi
       - persist_to_workspace:
           root: .
           paths:
@@ -182,8 +180,6 @@ jobs:
       - run: *set-jit-defaults
       - run: *unit-tests-python
       - run: *unit-tests-python-mpi
-      - run: *large-tests-python
-      - run: *large-tests-python-mpi
       - store_test_results:
           path: ~/junit
       - store_artifacts:

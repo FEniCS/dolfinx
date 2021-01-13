@@ -232,7 +232,7 @@ def test_evaluation(cell_type, space_type, space_order):
             eval_points = np.array([[0., i / N, 0.] for i in range(N + 1)])
         for d in dofs:
             v = Function(V)
-            v.vector[:] = [1 if i == d else 0 for i in range(V.dim)]
+            v.vector[:] = [1 if i == d else 0 for i in range(v.vector.local_size)]
             values0 = v.eval(eval_points, [0 for i in eval_points])
             values1 = v.eval(eval_points, [1 for i in eval_points])
             if len(eval_points) == 1:

@@ -142,20 +142,6 @@ bool FunctionSpace::operator!=(const FunctionSpace& V) const
   return !(*this == V);
 }
 //-----------------------------------------------------------------------------
-std::int64_t FunctionSpace::dim() const
-{
-  assert(_dofmap);
-  assert(_dofmap->element_dof_layout);
-  if (_dofmap->element_dof_layout->is_view())
-  {
-    throw std::runtime_error("FunctionSpace dimension not supported for "
-                             "sub-functions");
-  }
-
-  assert(_dofmap->index_map);
-  return _dofmap->index_map->size_global() * _dofmap->index_map_bs();
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
 FunctionSpace::sub(const std::vector<int>& component) const
 {
