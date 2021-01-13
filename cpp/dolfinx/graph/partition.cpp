@@ -436,8 +436,8 @@ build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
   assert(list.num_nodes() == (int)destinations.num_nodes());
   const std::int64_t offset_global
       = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
-
   const int size = dolfinx::MPI::size(comm);
+
   // Compute number of links to send to each process
   std::vector<int> num_per_dest_send(size, 0);
   for (int i = 0; i < destinations.num_nodes(); ++i)
@@ -485,6 +485,12 @@ build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
   MPI_Alltoallv(data_send.data(), num_per_dest_send.data(), disp_send.data(),
                 MPI_INT64_T, data_recv.data(), num_per_dest_recv.data(),
                 disp_recv.data(), MPI_INT64_T, comm);
+
+  // Force memory to be freed
+  std::vector<int>().swap(num_per_dest_send);
+  std::vector<int>().swap(disp_send);
+  std::vector<int>().swap(num_per_dest_recv);
+  std::vector<std::int64_t>().swap(data_send);
 
   // Unpack receive buffer
   int mpi_rank = MPI::rank(comm);
@@ -537,6 +543,11 @@ build::distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
   list_offset.insert(list_offset.end(), ghost_list_offset.begin(),
                      ghost_list_offset.end());
 
+  array.shrink_to_fit();
+  list_offset.shrink_to_fit();
+  src.shrink_to_fit();
+  global_indices.shrink_to_fit();
+  ghost_index_owner.shrink_to_fit();
   return {graph::AdjacencyList<std::int64_t>(std::move(array),
                                              std::move(list_offset)),
           std::move(src), std::move(global_indices),
