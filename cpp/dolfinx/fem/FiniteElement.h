@@ -199,7 +199,7 @@ public:
   /// @param[in] data The data to be transformed
   /// @param[in] cell_permutation Permutation data fro the cell
   /// @param[in] block_size The block_size of the input data
-  void apply_dof_reverse_transformation(double* data,
+  void apply_reverse_dof_transformation(double* data,
                                         const std::uint32_t cell_permutation,
                                         const int block_size) const;
 

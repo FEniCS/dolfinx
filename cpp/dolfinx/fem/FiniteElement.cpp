@@ -358,3 +358,5 @@ void FiniteElement::apply_reverse_dof_transformation(
 {
   _apply_reverse_dof_transformation(data, cell_permutation, block_size);
 }
+//-----------------------------------------------------------------------------
+
