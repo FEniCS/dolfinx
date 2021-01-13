@@ -103,8 +103,7 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-      const std::uint32_t permutation_info) const;
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
@@ -114,8 +113,7 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-      const std::uint32_t permutation_info) const;
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
   /// @todo Add documentation
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -187,6 +185,24 @@ public:
   /// @return True if cell permutation data is required
   bool needs_permutation_data() const noexcept;
 
+  /// Apply permutation to some data
+  ///
+  /// @param[in] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data fro the cell
+  /// @param[in] block_size The block_size of the input data
+  void apply_dof_transformation(double* data,
+                                const std::uint32_t cell_permutation,
+                                const int block_size) const;
+
+  /// Apply reverse permutation to some data
+  ///
+  /// @param[in] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data fro the cell
+  /// @param[in] block_size The block_size of the input data
+  void apply_reverse_dof_transformation(double* data,
+                                        const std::uint32_t cell_permutation,
+                                        const int block_size) const;
+
 private:
   std::string _signature, _family;
 
@@ -212,8 +228,7 @@ private:
   std::vector<int> _value_dimension;
 
   std::function<int(double*, int, int, const double*, const double*,
-                    const double*, const double*, const double*,
-                    const std::uint32_t)>
+                    const double*, const double*, const double*)>
       _transform_reference_basis_derivatives;
 
   std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*,
@@ -221,7 +236,10 @@ private:
       _transform_values;
 
   std::function<int(double*, const std::uint32_t, const int)>
-      _permute_dof_coordinates;
+      _apply_dof_transformation;
+
+  std::function<int(double*, const std::uint32_t, const int)>
+      _apply_reverse_dof_transformation;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.

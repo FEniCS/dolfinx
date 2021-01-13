@@ -18,12 +18,12 @@ CoordinateElement::CoordinateElement(
     bool needs_permutation_data,
     std::function<int(int*, const uint32_t)> get_dof_permutation,
     const std::function<int(double*, const std::uint32_t, const int)>
-        permute_dof_coordinates)
+        apply_dof_transformation)
     : _gdim(geometric_dimension), _signature(signature),
       _dof_layout(dof_layout), _basix_element_handle(basix_element_handle),
       _needs_permutation_data(needs_permutation_data),
       _get_dof_permutation(get_dof_permutation),
-      _permute_dof_coordinates(permute_dof_coordinates)
+      _apply_dof_transformation(apply_dof_transformation)
 {
   const mesh::CellType cell = cell_shape();
   int degree = basix::degree(basix_element_handle);
@@ -66,11 +66,11 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
   return _dof_layout;
 }
 //-----------------------------------------------------------------------------
-int CoordinateElement::permute_dof_coordinates(double* coords,
-                                               const uint32_t cell_permutation,
-                                               int dim) const
+int CoordinateElement::apply_dof_transformation(double* coords,
+                                                const uint32_t cell_permutation,
+                                                int dim) const
 {
-  return _permute_dof_coordinates(coords, cell_permutation, dim);
+  return _apply_dof_transformation(coords, cell_permutation, dim);
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(

@@ -33,7 +33,7 @@ public:
   /// @param[in] needs_permutation_data Indicates whether or not the element
   /// needs permutation data (for higher order elements)
   /// @param[in] get_dof_permutation TODO
-  /// @param[in] permute_dof_coordinates Function that permutes the dof
+  /// @param[in] apply_dof_transformation Function that permutes the dof
   /// coordinates
   CoordinateElement(
       int basix_element_handle, int geometric_dimension,
@@ -41,7 +41,7 @@ public:
       bool needs_permutation_data,
       std::function<int(int*, const uint32_t)> get_dof_permutation,
       const std::function<int(double*, const std::uint32_t, const int)>
-          permute_dof_coordinates);
+          apply_dof_transformation);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -58,8 +58,8 @@ public:
   int topological_dimension() const;
 
   /// TODO
-  int permute_dof_coordinates(double* coords, const uint32_t cell_permutation,
-                              int dim) const;
+  int apply_dof_transformation(double* coords, const uint32_t cell_permutation,
+                               int dim) const;
 
   /// Return the geometric dimension of the cell shape
   int geometric_dimension() const;
@@ -130,8 +130,8 @@ private:
   // Dof permutation maker
   std::function<int(int*, const uint32_t)> _get_dof_permutation;
 
-  // Permute_dof_coordinates
+  // apply_dof_transformation
   std::function<int(double*, const std::uint32_t, const int)>
-      _permute_dof_coordinates;
+      _apply_dof_transformation;
 };
 } // namespace dolfinx::fem

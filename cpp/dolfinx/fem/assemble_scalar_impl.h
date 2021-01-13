@@ -177,7 +177,7 @@ T assemble_cells(
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
-    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[c], gdim);
+    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[c], gdim);
 
     auto coeff_cell = coeffs.row(c);
     fn(&value, coeff_cell.data(), constant_values.data(),
@@ -239,7 +239,8 @@ T assemble_exterior_facets(
       std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
-    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[cell], gdim);
+    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[cell],
+                                  gdim);
 
     auto coeff_cell = coeffs.row(cell);
     fn(&value, coeff_cell.data(), constant_values.data(),
@@ -313,8 +314,8 @@ T assemble_interior_facets(
         coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
       }
     }
-    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[cells[0]],
-                                 gdim);
+    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[cells[0]],
+                                  gdim);
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
