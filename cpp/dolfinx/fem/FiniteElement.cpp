@@ -25,7 +25,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _transform_reference_basis_derivatives(
           ufc_element.transform_reference_basis_derivatives),
       _transform_values(ufc_element.transform_values),
-      _permute_dof_coordinates(ufc_element.permute_dof_coordinates),
+      _apply_dof_transformation(ufc_element.apply_dof_transformation),
+      _apply_reverse_dof_transformation(
+          ufc_element.apply_reverse_dof_transformation),
       _bs(ufc_element.block_size),
       _interpolation_is_ident(ufc_element.interpolation_is_identity),
       _interpolate_into_cell(ufc_element.interpolate_into_cell),
@@ -180,15 +182,14 @@ void FiniteElement::transform_reference_basis(
                                         Eigen::RowMajor>>& X,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-    const std::uint32_t permutation_info) const
+    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
   assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();
 
   int ret = _transform_reference_basis_derivatives(
       values.data(), 0, num_points, reference_values.data(), X.data(), J.data(),
-      detJ.data(), K.data(), permutation_info);
+      detJ.data(), K.data());
   if (ret == -1)
   {
     throw std::runtime_error("Generated code returned error "
@@ -203,14 +204,13 @@ void FiniteElement::transform_reference_basis_derivatives(
                                         Eigen::RowMajor>>& X,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-    const std::uint32_t permutation_info) const
+    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
   assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();
   int ret = _transform_reference_basis_derivatives(
       values.data(), order, num_points, reference_values.data(), X.data(),
-      J.data(), detJ.data(), K.data(), permutation_info);
+      J.data(), detJ.data(), K.data());
   if (ret == -1)
   {
     throw std::runtime_error("Generated code returned error "
@@ -233,7 +233,7 @@ FiniteElement::dof_coordinates(int cell_perm) const
       _refX.rows(), _refX.cols());
   outX = _refX;
 
-  int ret = _permute_dof_coordinates(outX.data(), cell_perm, _refX.cols());
+  int ret = _apply_dof_transformation(outX.data(), cell_perm, _refX.cols());
 
   if (ret == -1)
     throw std::runtime_error(

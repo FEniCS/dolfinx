@@ -78,7 +78,7 @@ void eval(
       for (int k = 0; k < gdim; ++k)
         coordinate_dofs(j, k) = x_g(x_dof, k);
     }
-    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[i], gdim);
+    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[i], gdim);
 
     auto coeff_cell = coeffs.row(c);
     std::fill(values_e.begin(), values_e.end(), 0.0);

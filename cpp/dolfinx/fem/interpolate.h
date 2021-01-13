@@ -213,7 +213,7 @@ void interpolate(
     for (int i = 0; i < num_dofs_g; ++i)
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
-    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[c], gdim);
+    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[c], gdim);
 
     // Push forward coordinates (X -> x)
     cmap.push_forward(x_cell, X, coordinate_dofs);

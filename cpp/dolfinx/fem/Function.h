@@ -352,8 +352,8 @@ public:
       auto x_dofs = x_dofmap.links(cell_index);
       for (int i = 0; i < num_dofs_g; ++i)
         coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
-      cmap.permute_dof_coordinates(coordinate_dofs.data(),
-                                   cell_info[cell_index], 3);
+      cmap.apply_dof_transformation(coordinate_dofs.data(),
+                                    cell_info[cell_index], 3);
 
       // Compute reference coordinates X, and J, detJ and K
       cmap.compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
@@ -362,9 +362,13 @@ public:
       // Compute basis on reference element
       element->evaluate_reference_basis(basis_reference_values, X);
 
+      element->apply_dof_transformation(basis_reference_values.data(),
+                                        cell_info[cell_index],
+                                        reference_value_size);
+
       // Push basis forward to physical element
       element->transform_reference_basis(basis_values, basis_reference_values,
-                                         X, J, detJ, K, cell_info[cell_index]);
+                                         X, J, detJ, K);
 
       // Get degrees of freedom for current cell
       tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);

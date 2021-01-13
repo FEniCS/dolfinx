@@ -187,7 +187,7 @@ void _lift_bc_cells(
       std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
-    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[c], gdim);
+    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[c], gdim);
 
     // Size data structure for assembly
     auto dmap0 = dofmap0.links(c);
@@ -305,7 +305,8 @@ void _lift_bc_exterior_facets(
       std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
-    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[cell], gdim);
+    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[cell],
+                                  gdim);
 
     // Size data structure for assembly
     auto dmap0 = dofmap0.links(cell);
@@ -420,8 +421,8 @@ void _lift_bc_interior_facets(
         coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
       }
     }
-    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[cells[0]],
-                                 gdim);
+    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[cells[0]],
+                                  gdim);
 
     // Get dof maps for cells and pack
     const tcb::span<const std::int32_t> dmap0_cell0 = dofmap0.links(cells[0]);
@@ -653,7 +654,7 @@ void assemble_cells(
       std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
-    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[c], gdim);
+    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[c], gdim);
 
     // Tabulate vector for cell
     std::fill(be.begin(), be.end(), 0);
@@ -722,7 +723,8 @@ void assemble_exterior_facets(
       std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
-    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[cell], gdim);
+    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[cell],
+                                  gdim);
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
@@ -801,8 +803,8 @@ void assemble_interior_facets(
         coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
       }
     }
-    cmap.permute_dof_coordinates(coordinate_dofs.data(), cell_info[cells[0]],
-                                 gdim);
+    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[cells[0]],
+                                  gdim);
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]

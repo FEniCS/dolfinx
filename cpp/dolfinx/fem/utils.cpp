@@ -229,7 +229,7 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   return fem::CoordinateElement(
       handle, ufc_cmap.geometric_dimension, ufc_cmap.signature, dof_layout,
       ufc_cmap.needs_permutation_data, ufc_cmap.get_dof_permutation,
-      ufc_cmap.permute_dof_coordinates);
+      ufc_cmap.apply_dof_transformation);
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement
