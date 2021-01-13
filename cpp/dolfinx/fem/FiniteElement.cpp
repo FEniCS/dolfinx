@@ -345,3 +345,16 @@ bool FiniteElement::needs_permutation_data() const noexcept
   return _needs_permutation_data;
 }
 //-----------------------------------------------------------------------------
+void FiniteElement::apply_dof_transformation(
+    double* data, const std::uint32_t cell_permutation,
+    const int block_size) const;
+{
+  _apply_dof_transformation(data, cell_permutation, block_size);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::apply_reverse_dof_transformation(
+    double* data, const std::uint32_t cell_permutation,
+    const int block_size) const;
+{
+  _apply_reverse_dof_transformation(data, cell_permutation, block_size);
+}

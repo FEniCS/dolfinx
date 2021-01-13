@@ -185,17 +185,23 @@ public:
   /// @return True if cell permutation data is required
   bool needs_permutation_data() const noexcept;
 
-  int apply_dof_transformation(double* a, const std::uint32_t b,
-                               const int c) const
-  {
-    return _apply_dof_transformation(a, b, c);
-  }
+  /// Apply permutation to some data
+  ///
+  /// @param[in] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data fro the cell
+  /// @param[in] block_size The block_size of the input data
+  void apply_dof_transformation(double* data,
+                                const std::uint32_t cell_permutation,
+                                const int block_size) const;
 
-  int apply_reverse_dof_transformation(double* a, const std::uint32_t b,
-                                       const int c) const
-  {
-    return _apply_reverse_dof_transformation(a, b, c);
-  }
+  /// Apply reverse permutation to some data
+  ///
+  /// @param[in] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data fro the cell
+  /// @param[in] block_size The block_size of the input data
+  void apply_dof_reverse_transformation(double* data,
+                                        const std::uint32_t cell_permutation,
+                                        const int block_size) const;
 
 private:
   std::string _signature, _family;
