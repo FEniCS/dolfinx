@@ -155,7 +155,7 @@ public:
   /// nodal positions. For other elements the points will typically be
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
-  const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
   interpolation_points() const noexcept;
 
   /// @todo Document shape/layout of @p values
@@ -248,16 +248,6 @@ private:
   // True if interpolation is indetity, i.e. call to
   // _interpolate_into_cell is not required
   bool _interpolation_is_ident;
-
-  // Function to compute element degrees of freedom from an expression
-  // evaluated at specfic points
-  std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const uint32_t)>
-      _interpolate_into_cell;
-
-  // Points in the reference cell where functions must be evaluated for
-  // interpolation
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      _interpolationX;
 
   bool _needs_permutation_data;
 
