@@ -8,7 +8,6 @@
 #include "utils.h"
 #include "BoundingBoxTree.h"
 #include "gjk.h"
-#include <chrono>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -45,9 +44,10 @@ bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
 }
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
-std::pair<int, double> _compute_closest_entity(
-    const geometry::BoundingBoxTree& tree, const Eigen::Vector3d& point,
-    int node, const mesh::Mesh& mesh, int closest_entity, double R2, bool fast)
+std::pair<int, double>
+_compute_closest_entity(const geometry::BoundingBoxTree& tree,
+                        const Eigen::Vector3d& point, int node,
+                        const mesh::Mesh& mesh, int closest_entity, double R2)
 {
   // Get children of current bounding box node (child_1 denotes entity index for
   // leaves)
@@ -55,28 +55,24 @@ std::pair<int, double> _compute_closest_entity(
   double r2;
   if (is_leaf(bbox))
   {
-    if (fast)
+    // If point cloud tree the exact distance is easy to compute
+    if (tree.tdim() == 0)
     {
-      // If we are doing a fast search, only check the distance from the
-      // midpoint of the bounding box to the point in question
-      const Eigen::Array<double, 2, 3, Eigen::RowMajor> bbox_
-          = tree.get_bbox(node);
-      Eigen::Array<double, 1, 3> midpoint;
-      midpoint = 0.5 * (bbox_.row(0) + bbox_.row(1));
-      r2 = (midpoint.transpose().matrix() - point).squaredNorm();
+      r2 = (tree.get_bbox(node).row(0).transpose().matrix() - point)
+               .squaredNorm();
     }
     else
     {
       r2 = geometry::compute_squared_distance_bbox(tree.get_bbox(node), point);
       // If bounding box closer than previous closest entity, use gjk to obtain
       // exact distance to the convex hull of the entity
-      if (r2 < R2)
+      if (r2 <= R2)
       {
         r2 = geometry::squared_distance(mesh, tree.tdim(), bbox[1], point);
       }
     }
     // If entity is closer than best result so far, return it
-    if (r2 < R2)
+    if (r2 <= R2)
     {
       closest_entity = bbox[1];
       R2 = r2;
@@ -91,11 +87,12 @@ std::pair<int, double> _compute_closest_entity(
       return {closest_entity, R2};
 
     // Check both children
-    // We use R2 (as oposed to r2), as a bounding box can be closer than the actual entity
+    // We use R2 (as oposed to r2), as a bounding box can be closer than the
+    // actual entity
     std::pair<int, double> p0 = _compute_closest_entity(
-        tree, point, bbox[0], mesh, closest_entity, R2, fast);
+        tree, point, bbox[0], mesh, closest_entity, R2);
     std::pair<int, double> p1 = _compute_closest_entity(
-        tree, point, bbox[1], mesh, p0.first, p0.second, fast);
+        tree, point, bbox[1], mesh, p0.first, p0.second);
     return p1;
   }
 }
@@ -189,6 +186,25 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
 } // namespace
 
 //-----------------------------------------------------------------------------
+geometry::BoundingBoxTree
+geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
+                               const std::vector<std::int32_t>& entity_indices)
+{
+  LOG(INFO) << "Building point search tree to accelerate distance queries for "
+               "a given topological dimension and subset of entities.";
+
+  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> entities(
+      entity_indices.data(), entity_indices.size());
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
+      = mesh::midpoints(mesh, tdim, entities);
+
+  std::vector<Eigen::Vector3d> points(entities.rows());
+  for (std::size_t i = 0; i < points.size(); ++i)
+    points[i] = midpoints.row(i);
+  // Build tree
+  return geometry::BoundingBoxTree(points);
+}
+//-----------------------------------------------------------------------------
 std::vector<std::array<int, 2>>
 geometry::compute_collisions(const BoundingBoxTree& tree0,
                              const BoundingBoxTree& tree1)
@@ -226,26 +242,33 @@ double geometry::compute_squared_distance_bbox(
          + (d1 < 0.0).select(0, d1).matrix().squaredNorm();
 }
 //-----------------------------------------------------------------------------
-std::pair<int, double> geometry::compute_closest_entity(
-    const BoundingBoxTree& tree,
-    const Eigen::Vector3d& p, const mesh::Mesh& mesh)
+std::pair<int, double>
+geometry::compute_closest_entity(const BoundingBoxTree& tree,
+                                 const Eigen::Vector3d& p,
+                                 const mesh::Mesh& mesh, double R)
 {
+  // If bounding box tree is empty (on this processor) end search
+  if (tree.num_bboxes() == 0)
+    return {-1, -1};
 
-  // Find the entity whose bounding box midpoint is closest to the point in question.
-  // This is done to get a good initial guess, and reduce number of calls to exact distance algorithms (GJK)
-  // Start at "random" node 0 in bounding box tree
-  const int closest_point = 0;
-  const double R2
-      = (tree.get_bbox(closest_point).row(0).transpose().matrix() - p)
-            .squaredNorm();
-  const auto [index_init, distance_init] = _compute_closest_entity(
-      tree, p, tree.num_bboxes() - 1, mesh, closest_point, R2, true);
-  assert(index_init >= 0);
+  // If initial search radius is 0 we estimate the initial distance to the point
+  // using a "random" node from the tree.
+  std::int32_t initial_guess;
+  if (R < 0)
+  {
+    initial_guess = 0;
+    R = std::sqrt((tree.get_bbox(initial_guess).row(0).transpose().matrix() - p)
+                      .squaredNorm());
+  }
+  else
+    initial_guess = -1;
 
   // Use GJK to find determine the actual closest entity
   const auto [index, distance] = _compute_closest_entity(
-      tree, p, tree.num_bboxes() - 1, mesh, index_init, distance_init, false);
-
+      tree, p, tree.num_bboxes() - 1, mesh, initial_guess, R * R);
+  if (index < 0)
+    throw std::runtime_error("No entity found within radius "
+                             + std::to_string(R) + ".");
   return {index, std::sqrt(distance)};
 }
 //-----------------------------------------------------------------------------

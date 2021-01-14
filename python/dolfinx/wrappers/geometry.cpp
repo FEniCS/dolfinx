@@ -23,24 +23,16 @@ namespace dolfinx_wrappers
 {
 void geometry(py::module& m)
 {
-
-  m.def("compute_closest_entity",
-        [](const dolfinx::geometry::BoundingBoxTree& tree,
-           const dolfinx::mesh::Mesh& mesh,
-           const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                               Eigen::RowMajor>>& p) {
-          Eigen::VectorXi entities(p.rows());
-          Eigen::VectorXd distance(p.rows());
-          for (Eigen::Index i = 0; i < p.rows(); ++i)
-          {
-            const std::pair<int, double> out
-                = dolfinx::geometry::compute_closest_entity(
-                    tree, p.row(i).transpose(), mesh);
-            entities(i) = out.first;
-            distance(i) = out.second;
-          }
-          return std::make_pair(std::move(entities), std::move(distance));
-        });
+  m.def("create_midpoint_tree", &dolfinx::geometry::create_midpoint_tree);
+  m.def(
+      "compute_closest_entity",
+      [](const dolfinx::geometry::BoundingBoxTree& tree,
+         const dolfinx::mesh::Mesh& mesh,
+         const Eigen::Array<double, Eigen::Dynamic, 1>& p, double R) {
+        return dolfinx::geometry::compute_closest_entity(tree, p.transpose(),
+                                                         mesh, R);
+      },
+      py::arg("tree"), py::arg("mesh"), py::arg("p"), py::arg("R") = -1);
 
   m.def("compute_collisions_point",
         py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,

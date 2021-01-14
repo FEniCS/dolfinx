@@ -6,12 +6,13 @@
 """Unit tests for BoundingBoxTree"""
 
 import numpy
+import time
 import pytest
 from dolfinx import (BoxMesh, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      cpp)
 from dolfinx.geometry import (BoundingBoxTree, compute_collisions,
                               compute_collisions_point, compute_closest_entity,
-                              select_colliding_cells)
+                              select_colliding_cells, create_midpoint_tree)
 from dolfinx.mesh import locate_entities_boundary, locate_entities
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
@@ -184,7 +185,7 @@ def test_compute_closest_entity_1d(dim):
     p = numpy.array([-ref_distance, 0, 0])
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
     tree = BoundingBoxTree(mesh, dim)
-    entity, distance = compute_closest_entity(tree, mesh, p)
+    entity, distance = compute_closest_entity(tree, mesh, p.T)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
 
@@ -206,7 +207,7 @@ def test_compute_closest_entity_2d(dim):
     p = numpy.array([-1.0, -0.01, 0.0])
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 15, 15)
     tree = BoundingBoxTree(mesh, dim)
-    entity, distance = compute_closest_entity(tree, mesh, p)
+    entity, distance = compute_closest_entity(tree, mesh, p.T)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     ref_distance = numpy.sqrt(p[0]**2 + p[1]**2)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
@@ -232,7 +233,7 @@ def test_compute_closest_entity_3d(dim):
     mesh.topology.create_entities(dim)
 
     tree = BoundingBoxTree(mesh, dim)
-    entity, distance = compute_closest_entity(tree, mesh, p)
+    entity, distance = compute_closest_entity(tree, mesh, p.T)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
 
@@ -259,8 +260,8 @@ def test_compute_closest_sub_entity(dim):
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     mesh.topology.create_entities(dim)
 
-    left_cells = locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
-    tree = BoundingBoxTree(mesh, dim, left_cells)
+    left_entities = locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
+    tree = BoundingBoxTree(mesh, dim, left_entities)
     entity, distance = compute_closest_entity(tree, mesh, p)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
@@ -273,6 +274,50 @@ def test_compute_closest_sub_entity(dim):
         entities = select_colliding_cells(mesh, entities, p_c, len(entities))
     if len(entities) > 0:
         assert(numpy.isin(entity, entities))
+
+
+@pytest.mark.parametrize("N", [1, 30])
+def test_midpoint_tree(N):
+    """
+    Test that midpoint tree speed up compute_closest_entity
+    """
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, N, N, N)
+    mesh.topology.create_entities(mesh.topology.dim)
+
+    left_cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[0] <= 0.4)
+    tree = BoundingBoxTree(mesh, mesh.topology.dim, left_cells)
+    midpoint_tree = create_midpoint_tree(mesh, mesh.topology.dim, left_cells)
+    p = numpy.array([1 / 3, 2 / 3, 2])
+
+    # Find entity closest to point in two steps
+    # 1. Find closest midpoint using midpoint tree
+    start_refined = time.time()
+    closest_bbox_node, distance_m = compute_closest_entity(midpoint_tree, mesh, p.T)
+    # 2. Refine search by using exact distance query
+    entity, distance = compute_closest_entity(tree, mesh, p, R=distance_m)
+    end_refined = time.time()
+    time_refined = end_refined - start_refined
+
+    # Find entity closest to point in one step
+    start_unrefined = time.time()
+    e_r, d_r = compute_closest_entity(tree, mesh, p)
+    end_unrefined = time.time()
+    time_unrefined = end_unrefined - start_unrefined
+
+    assert(entity == e_r)
+    assert(distance == d_r)
+    if len(left_cells) > 0:
+        assert(distance < distance_m)
+        if not (time_refined < 1e-4 and time_unrefined < 1e-4):
+            assert(time_refined < time_unrefined)
+    else:
+        assert(distance == -1)
+
+    p_c = numpy.array([1 / 3, 2 / 3, 1])
+    entities = compute_collisions_point(tree, p_c)
+    entities = select_colliding_cells(mesh, entities, p_c, len(entities))
+    if len(entities) > 0:
+        assert(numpy.isin(e_r, entities))
 
 
 def test_surface_bbtree():

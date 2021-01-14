@@ -21,6 +21,16 @@ namespace geometry
 {
 class BoundingBoxTree;
 
+/// Create a bounding box tree for a subset of entities based on the entity
+/// midpoints
+/// @param[in] mesh The mesh
+/// @param[in] tdim The topological dimension of the entity
+/// @param[in] entity_indices List of local entity indices
+/// @return Bounding box tree for midpoints of mesh entities
+BoundingBoxTree
+create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
+                     const std::vector<std::int32_t>& entity_indices);
+
 /// Compute all collisions between two BoundingBoxTrees.
 /// @param[in] tree0 First BoundingBoxTree
 /// @param[in] tree1 Second BoundingBoxTree
@@ -35,15 +45,18 @@ compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 std::vector<int> compute_collisions(const BoundingBoxTree& tree,
                                     const Eigen::Vector3d& p);
 
-/// Compute closest mesh entity for the topological distance of the 
+/// Compute closest mesh entity for the topological distance of the
 /// bounding box tree and distance and a point
 /// @param[in] tree The bounding box tree
 /// @param[in] p The point
 /// @param[in] mesh The mesh
+/// @param[in] R Radius for search. Supplying a negative radius causes the
+/// function to estimate an intial search radius.
 /// @return The local index of the entity and the distance from the point.
-std::pair<int, double>
-compute_closest_entity(const BoundingBoxTree& tree,
-                       const Eigen::Vector3d& p, const mesh::Mesh& mesh);
+std::pair<int, double> compute_closest_entity(const BoundingBoxTree& tree,
+                                              const Eigen::Vector3d& p,
+                                              const mesh::Mesh& mesh,
+                                              double R = -1);
 
 /// Compute squared distance between point and bounding box wih index
 /// "node". Returns zero if point is inside box.
