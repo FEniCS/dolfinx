@@ -155,7 +155,7 @@ public:
   /// nodal positions. For other elements the points will typically be
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
-  const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
   interpolation_points() const noexcept;
 
   /// @todo Document shape/layout of @p values
@@ -194,14 +194,14 @@ public:
                                 const std::uint32_t cell_permutation,
                                 const int block_size) const;
 
-  /// Apply reverse permutation to some data
+  /// Apply permutation to some data
   ///
   /// @param[in] data The data to be transformed
   /// @param[in] cell_permutation Permutation data fro the cell
   /// @param[in] block_size The block_size of the input data
-  void apply_reverse_dof_transformation(double* data,
-                                        const std::uint32_t cell_permutation,
-                                        const int block_size) const;
+  void apply_dof_transformation_to_scalar(ufc_scalar_t* data,
+                                          const std::uint32_t cell_permutation,
+                                          const int block_size) const;
 
 private:
   std::string _signature, _family;
@@ -238,8 +238,8 @@ private:
   std::function<int(double*, const std::uint32_t, const int)>
       _apply_dof_transformation;
 
-  std::function<int(double*, const std::uint32_t, const int)>
-      _apply_reverse_dof_transformation;
+  std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
+      _apply_dof_transformation_to_scalar;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.
@@ -248,16 +248,6 @@ private:
   // True if interpolation is indetity, i.e. call to
   // _interpolate_into_cell is not required
   bool _interpolation_is_ident;
-
-  // Function to compute element degrees of freedom from an expression
-  // evaluated at specfic points
-  std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const uint32_t)>
-      _interpolate_into_cell;
-
-  // Points in the reference cell where functions must be evaluated for
-  // interpolation
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      _interpolationX;
 
   bool _needs_permutation_data;
 

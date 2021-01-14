@@ -26,19 +26,12 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
           ufc_element.transform_reference_basis_derivatives),
       _transform_values(ufc_element.transform_values),
       _apply_dof_transformation(ufc_element.apply_dof_transformation),
-      _apply_reverse_dof_transformation(
-          ufc_element.apply_reverse_dof_transformation),
+      _apply_dof_transformation_to_scalar(
+          ufc_element.apply_dof_transformation_to_scalar),
       _bs(ufc_element.block_size),
       _interpolation_is_ident(ufc_element.interpolation_is_identity),
-      _interpolate_into_cell(ufc_element.interpolate_into_cell),
-      _interpolationX(ufc_element.num_interpolation_points,
-                      ufc_element.topological_dimension),
       _needs_permutation_data(ufc_element.needs_permutation_data)
 {
-  // Store interpolation points on the reference element
-  std::copy_n(ufc_element.interpolation_points, _interpolationX.size(),
-              _interpolationX.data());
-
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
   {
@@ -321,10 +314,10 @@ bool FiniteElement::interpolation_ident() const noexcept
   return _interpolation_is_ident;
 }
 //-----------------------------------------------------------------------------
-const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
 FiniteElement::interpolation_points() const noexcept
 {
-  return _interpolationX;
+  return _refX;
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::interpolate(
@@ -334,10 +327,13 @@ void FiniteElement::interpolate(
     Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1>& dofs) const
 {
   assert(dofs.size() == _space_dim / _bs);
-  int ret
-      = _interpolate_into_cell(dofs.data(), values.data(), cell_permutation);
-  if (ret == -1)
-    throw std::runtime_error("Interpolation into this space not supported.");
+
+  Eigen::MatrixXd interpolation_matrix
+      = basix::interpolation_matrix(_basix_element_handle);
+  Eigen::Map<const Eigen::Matrix<ufc_scalar_t, Eigen::Dynamic, 1>>
+      values_vector(values.data(), values.size(), 1);
+  dofs = interpolation_matrix * values_vector;
+  _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
 }
 //-----------------------------------------------------------------------------
 bool FiniteElement::needs_permutation_data() const noexcept
@@ -352,11 +348,11 @@ void FiniteElement::apply_dof_transformation(
   _apply_dof_transformation(data, cell_permutation, block_size);
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::apply_reverse_dof_transformation(
-    double* data, const std::uint32_t cell_permutation,
+void FiniteElement::apply_dof_transformation_to_scalar(
+    ufc_scalar_t* data, const std::uint32_t cell_permutation,
     const int block_size) const
 {
-  _apply_reverse_dof_transformation(data, cell_permutation, block_size);
+  _apply_dof_transformation_to_scalar(data, cell_permutation, block_size);
 }
 //-----------------------------------------------------------------------------
 

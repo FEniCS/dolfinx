@@ -191,7 +191,8 @@ void interpolate(
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
   // Get the interpolation points on the reference cells
-  const EigenMatrixRowXd& X = element->interpolation_points();
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
+      = element->interpolation_points();
 
   const bool needs_permutation_data
       = element->needs_permutation_data() || cmap.needs_permutation_data();
