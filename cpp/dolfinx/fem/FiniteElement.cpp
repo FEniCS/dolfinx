@@ -26,8 +26,8 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
           ufc_element.transform_reference_basis_derivatives),
       _transform_values(ufc_element.transform_values),
       _apply_dof_transformation(ufc_element.apply_dof_transformation),
-      _apply_reverse_dof_transformation(
-          ufc_element.apply_reverse_dof_transformation),
+      _apply_dof_transformation_to_scalar(
+          ufc_element.apply_dof_transformation_to_scalar),
       _bs(ufc_element.block_size),
       _interpolation_is_ident(ufc_element.interpolation_is_identity),
       _needs_permutation_data(ufc_element.needs_permutation_data)
@@ -333,7 +333,7 @@ void FiniteElement::interpolate(
   Eigen::Map<const Eigen::Matrix<ufc_scalar_t, Eigen::Dynamic, 1>>
       values_vector(values.data(), values.size(), 1);
   dofs = interpolation_matrix * values_vector;
-  _apply_dof_transformation(dofs.data(), cell_permutation, 1);
+  _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
 }
 //-----------------------------------------------------------------------------
 bool FiniteElement::needs_permutation_data() const noexcept
@@ -348,11 +348,11 @@ void FiniteElement::apply_dof_transformation(
   _apply_dof_transformation(data, cell_permutation, block_size);
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::apply_reverse_dof_transformation(
-    double* data, const std::uint32_t cell_permutation,
+void FiniteElement::apply_dof_transformation_to_scalar(
+    ufc_scalar_t* data, const std::uint32_t cell_permutation,
     const int block_size) const
 {
-  _apply_reverse_dof_transformation(data, cell_permutation, block_size);
+  _apply_dof_transformation_to_scalar(data, cell_permutation, block_size);
 }
 //-----------------------------------------------------------------------------
 

@@ -194,14 +194,14 @@ public:
                                 const std::uint32_t cell_permutation,
                                 const int block_size) const;
 
-  /// Apply reverse permutation to some data
+  /// Apply permutation to some data
   ///
   /// @param[in] data The data to be transformed
   /// @param[in] cell_permutation Permutation data fro the cell
   /// @param[in] block_size The block_size of the input data
-  void apply_reverse_dof_transformation(double* data,
-                                        const std::uint32_t cell_permutation,
-                                        const int block_size) const;
+  void apply_dof_transformation_to_scalar(ufc_scalar_t* data,
+                                          const std::uint32_t cell_permutation,
+                                          const int block_size) const;
 
 private:
   std::string _signature, _family;
@@ -238,8 +238,8 @@ private:
   std::function<int(double*, const std::uint32_t, const int)>
       _apply_dof_transformation;
 
-  std::function<int(double*, const std::uint32_t, const int)>
-      _apply_reverse_dof_transformation;
+  std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
+      _apply_dof_transformation_to_scalar;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.
