@@ -113,11 +113,11 @@ using namespace dolfinx;
 
 int main(int argc, char* argv[])
 {
+  common::subsystem::init_petsc(argc, argv);
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   std::string thread_name = "RANK " + std::to_string(mpi_rank);
   common::subsystem::init_logging(thread_name, argc, argv);
-  common::subsystem::init_petsc(argc, argv);
 
   {
     // Create mesh and function space
