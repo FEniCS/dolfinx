@@ -95,11 +95,6 @@ jobs:
       - name: Run Python unit tests (MPI, np=2)
         run: mpirun -np 2 python3 -m pytest python/test/unit/
 
-      - name: Run large Python tests (serial)
-        run: python3 -m pytest -n=auto --durations=50 python/test/large-tests/
-      - name: Run large Python tests (MPI, np=2)
-        run: mpirun -np 2 python3 -m pytest python/test/large-tests/
-
       - name: Upload C++ documentation artifact
         uses: actions/upload-artifact@v2
         with:

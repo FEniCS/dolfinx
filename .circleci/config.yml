@@ -102,19 +102,6 @@ unit-tests-python-mpi: &unit-tests-python-mpi
     cd python/test/unit
     mpirun -np 3 python3 -m pytest .
 
-large-tests-python: &large-tests-python
-  name: Run large tests (Python, serial)
-  command: |
-    cd python/test/large-tests
-    python3 -m pytest -n=4 --durations=50 .
-
-large-tests-python-mpi: &large-tests-python-mpi
-  name: Run large tests (Python, MPI)
-  command: |
-    pip3 install sympy
-    cd python/test/large-tests
-    mpirun -np 3 python3 -m pytest .
-
 jobs:
   build-real:
     docker:
