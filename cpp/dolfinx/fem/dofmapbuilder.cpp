@@ -232,24 +232,14 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
       offset[d] = map->size_local();
   }
 
-  // Count locally owned dofs
-  std::vector<bool> owned(dof_entity.size(), false);
-  for (auto e = dof_entity.begin(); e != dof_entity.end(); ++e)
-  {
-    if (e->second < offset[e->first])
-    {
-      const std::size_t i = std::distance(dof_entity.begin(), e);
-      owned[i] = true;
-    }
-  }
-
   // Create map from old index to new contiguous numbering for locally
   // owned dofs. Set to -1 for unowned dofs
   std::vector<int> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t owned_size = 0;
-  for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
+  for (std::size_t i = 0; i < dof_entity.size(); ++i)
   {
-    if (owned[i])
+    const std::pair<std::int8_t, std::int32_t>& e = dof_entity[i];
+    if (e.second < offset[e.first])
       original_to_contiguous[i] = owned_size++;
   }
 
@@ -284,7 +274,6 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     std::partial_sum(num_edges.begin(), num_edges.end(),
                      std::next(offsets.begin(), 1));
     std::vector<std::int32_t> edges(offsets.back());
-    std::vector<int> pos(num_edges.size(), 0);
     for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
     {
       auto nodes = dofmap.links(cell);
@@ -298,54 +287,62 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
           if (const std::int32_t node_j = original_to_contiguous[nodes[j]];
               i != j and node_j != -1)
           {
-            edges[offsets[node_i] + pos[node_i]++] = node_j;
+            edges[offsets[node_i]++] = node_j;
           }
         }
       }
     }
+    // Release memory
+    std::vector<std::int32_t>().swap(offsets);
 
     // Eliminate duplicate edges and create AdjacencyList
-    graph_offsets.resize(offsets.size(), 0);
-    for (std::size_t i = 0; i < offsets.size() - 1; ++i)
+    graph_offsets.resize(num_edges.size() + 1, 0);
+    std::int32_t current_offset = 0;
+    for (std::size_t i = 0; i < num_edges.size(); ++i)
     {
-      std::sort(std::next(edges.begin(), offsets[i]),
-                std::next(edges.begin(), offsets[i + 1]));
-      auto it = std::unique(std::next(edges.begin(), offsets[i]),
-                            std::next(edges.begin(), offsets[i + 1]));
-      graph_data.insert(graph_data.end(), std::next(edges.begin(), offsets[i]),
-                        it);
+      std::sort(std::next(edges.begin(), current_offset),
+                std::next(edges.begin(), current_offset + num_edges[i]));
+      auto it = std::unique(
+          std::next(edges.begin(), current_offset),
+          std::next(edges.begin(), current_offset + num_edges[i]));
+      graph_data.insert(graph_data.end(),
+                        std::next(edges.begin(), current_offset), it);
       graph_offsets[i + 1]
           = graph_offsets[i]
-            + std::distance(std::next(edges.begin(), offsets[i]), it);
+            + std::distance(std::next(edges.begin(), current_offset), it);
+      current_offset += num_edges[i];
     }
   }
-  const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data),
-                                                 std::move(graph_offsets));
 
-  // Reorder owned nodes
-  const std::string ordering_library = "SCOTCH";
   std::vector<int> node_remap;
-  if (ordering_library == "Boost")
-    node_remap = graph::compute_cuthill_mckee(graph, true);
-  else if (ordering_library == "SCOTCH")
-    std::tie(node_remap, std::ignore) = graph::scotch::compute_gps(graph);
-  else if (ordering_library == "random")
   {
-    // NOTE: Randomised dof ordering should only be used for
-    // testing/benchmarking
-    node_remap.resize(graph.num_nodes());
-    std::iota(node_remap.begin(), node_remap.end(), 0);
-    std::random_device rd;
-    std::default_random_engine g(rd());
-    std::shuffle(node_remap.begin(), node_remap.end(), g);
-  }
-  else
-  {
-    throw std::runtime_error("Requested library '" + ordering_library
-                             + "' is unknown");
+    const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data),
+                                                   std::move(graph_offsets));
+
+    // Reorder owned nodes
+    const std::string ordering_library = "SCOTCH";
+    if (ordering_library == "Boost")
+      node_remap = graph::compute_cuthill_mckee(graph, true);
+    else if (ordering_library == "SCOTCH")
+      std::tie(node_remap, std::ignore) = graph::scotch::compute_gps(graph);
+    else if (ordering_library == "random")
+    {
+      // NOTE: Randomised dof ordering should only be used for
+      // testing/benchmarking
+      node_remap.resize(graph.num_nodes());
+      std::iota(node_remap.begin(), node_remap.end(), 0);
+      std::random_device rd;
+      std::default_random_engine g(rd());
+      std::shuffle(node_remap.begin(), node_remap.end(), g);
+    }
+    else
+    {
+      throw std::runtime_error("Requested library '" + ordering_library
+                               + "' is unknown");
+    }
   }
 
-  // Reconstruct remaped nodes, and place un-owned nodes at the end
+  // Reconstruct remapped nodes, and place un-owned nodes at the end
   std::vector<int> old_to_new(dof_entity.size(), -1);
   std::int32_t unowned_pos = owned_size;
   assert(old_to_new.size() == original_to_contiguous.size());
