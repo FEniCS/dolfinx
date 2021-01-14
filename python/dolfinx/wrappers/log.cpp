@@ -29,6 +29,10 @@ void log(py::module& m)
                      loguru::Verbosity_INFO);
   });
 
+  m.def("set_thread_name", [](std::string thread_name) {
+    loguru::set_thread_name(thread_name.c_str());
+  });
+
   m.def("set_log_level", [](loguru::NamedVerbosity level) {
     loguru::g_stderr_verbosity = level;
   });
