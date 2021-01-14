@@ -1,6 +1,7 @@
 #include "hyperelasticity.h"
 #include <cmath>
 #include <dolfinx.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/Vector.h>
@@ -100,8 +101,14 @@ private:
 
 int main(int argc, char* argv[])
 {
+  common::subsystem::init_logging(argc, argv);
   common::subsystem::init_petsc(argc, argv);
-  common::subsystem::init_logging("main", argc, argv);
+
+  // Set the logging thread name to show the process rank
+  int mpi_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  std::string thread_name = "RANK " + std::to_string(mpi_rank);
+  loguru::set_thread_name(thread_name.c_str());
 
   {
     // Inside the ``main`` function, we begin by defining a tetrahedral mesh

@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <string>
 #pragma once
 
 namespace dolfinx::common
@@ -24,7 +23,7 @@ void init_mpi();
 void init_mpi(int argc, char* argv[]);
 
 /// Initialise loguru
-void init_logging(std::string thread_name, int argc, char* argv[]);
+void init_logging(int argc, char* argv[]);
 
 /// Initialize PETSc (and SLEPc, if configured) without command-line
 /// arguments

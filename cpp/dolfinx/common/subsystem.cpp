@@ -43,7 +43,7 @@ void subsystem::init_mpi(int argc, char* argv[])
   MPI_Init(&argc, &argv);
 }
 //-----------------------------------------------------------------------------
-void subsystem::init_logging(std::string thread_name, int argc, char* argv[])
+void subsystem::init_logging(int argc, char* argv[])
 {
   loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
 
@@ -53,7 +53,7 @@ void subsystem::init_logging(std::string thread_name, int argc, char* argv[])
   loguru::SignalOptions signals = loguru::SignalOptions::none();
 #endif
 
-  loguru::Options options = {"-dolfinx_loglevel", thread_name.c_str(), signals};
+  loguru::Options options = {"-dolfinx_loglevel", "main", signals};
 
   // Make a copy of argv, as loguru may modify it.
   std::vector<char*> argv_copy;

@@ -54,7 +54,7 @@ from .mesh import MeshTags
 # Initialise logging
 from dolfinx import cpp
 import sys
-cpp.common.init_logging("main", sys.argv)
+cpp.common.init_logging(sys.argv)
 del sys
 
 def get_include(user=False):

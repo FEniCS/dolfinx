@@ -9,9 +9,9 @@
 #include <dolfinx/common/log.h>
 
 //-----------------------------------------------------------------------------
-void dolfinx::init(std::string thread_name, int argc, char* argv[])
+void dolfinx::init(int argc, char* argv[])
 {
-  common::subsystem::init_logging(thread_name, argc, argv);
+  common::subsystem::init_logging(argc, argv);
   LOG(INFO) << "Initializing DOLFINX version" << DOLFINX_VERSION;
   common::subsystem::init_petsc(argc, argv);
 }
