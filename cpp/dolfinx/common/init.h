@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <string>
 #pragma once
 
 namespace dolfinx
@@ -12,5 +13,5 @@ namespace dolfinx
 /// Initialize DOLFINX (and PETSc) with command-line arguments. This
 /// should not be needed in most cases since the initialization is
 /// otherwise handled automatically.
-void init(int argc, char* argv[]);
+void init(std::string thread_name, int argc, char* argv[]);
 } // namespace dolfinx

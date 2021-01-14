@@ -108,11 +108,13 @@ void common(py::module& m)
           dolfinx::list_timings(comm.get(), _type);
         });
 
-  m.def("init_logging", [](std::vector<std::string> args) {
-    std::vector<char*> argv(args.size() + 1, nullptr);
-    for (std::size_t i = 0; i < args.size(); ++i)
-      argv[i] = const_cast<char*>(args[i].data());
-    dolfinx::common::subsystem::init_logging(args.size(), argv.data());
-  });
+  m.def("init_logging",
+        [](const MPICommWrapper comm, std::vector<std::string> args) {
+          std::vector<char*> argv(args.size() + 1, nullptr);
+          for (std::size_t i = 0; i < args.size(); ++i)
+            argv[i] = const_cast<char*>(args[i].data());
+          dolfinx::common::subsystem::init_logging(comm.get(), args.size(),
+                                                   argv.data());
+        });
 }
 } // namespace dolfinx_wrappers
