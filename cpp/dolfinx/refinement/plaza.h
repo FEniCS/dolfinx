@@ -51,6 +51,14 @@ mesh::Mesh refine(const mesh::Mesh& mesh,
                   const mesh::MeshTags<std::int8_t>& refinement_marker,
                   bool redistribute);
 
+/// Refine with markers returning new mesh data
+///
+/// @param[in] mesh Input mesh to be refined
+/// @param[in] refinement_marker MeshTags listing which mesh entities
+/// should be split by this refinement. The values are ignored.
+/// redistribute after refinement
+/// @return New mesh data: cell topology, vertex coordinates and parent cell
+/// index
 std::tuple<
     graph::AdjacencyList<std::int64_t>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
@@ -58,6 +66,11 @@ std::tuple<
 compute_refinement_data(const mesh::Mesh& mesh,
                         const mesh::MeshTags<std::int8_t>& refinement_marker);
 
+/// Refine mesh returning new mesh data
+///
+/// @param[in] mesh Input mesh to be refined
+/// @return New mesh data: cell topology, vertex coordinates and parent cell
+/// index
 std::tuple<
     graph::AdjacencyList<std::int64_t>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
