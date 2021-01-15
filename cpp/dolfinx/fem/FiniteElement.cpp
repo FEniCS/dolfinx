@@ -291,7 +291,6 @@ Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 FiniteElement::interpolation_points() const noexcept
 {
   return basix::points(_basix_element_handle);
-  // return _refX;
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::interpolate(
