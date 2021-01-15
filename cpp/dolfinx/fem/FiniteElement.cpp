@@ -24,7 +24,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _hash(std::hash<std::string>{}(_signature)),
       _transform_reference_basis_derivatives(
           ufc_element.transform_reference_basis_derivatives),
-      _transform_values(ufc_element.transform_values),
       _apply_dof_transformation(ufc_element.apply_dof_transformation),
       _apply_dof_transformation_to_scalar(
           ufc_element.apply_dof_transformation_to_scalar),
@@ -207,21 +206,6 @@ void FiniteElement::transform_reference_basis_derivatives(
                              "in transform_reference_basis_derivatives");
   }
 }
-//-----------------------------------------------------------------------------
-void FiniteElement::transform_values(
-    ufc_scalar_t* reference_values,
-    const Eigen::Ref<const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        physical_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& coordinate_dofs)
-    const
-{
-  assert(_transform_values);
-  _transform_values(reference_values, physical_values.data(),
-                    coordinate_dofs.data(), nullptr);
-}
-
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
 {
