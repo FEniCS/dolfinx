@@ -185,7 +185,7 @@ def test_compute_closest_entity_1d(dim):
     p = numpy.array([-ref_distance, 0, 0])
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
     tree = BoundingBoxTree(mesh, dim)
-    entity, distance = compute_closest_entity(tree, mesh, p.T)
+    entity, distance = compute_closest_entity(tree, p, mesh)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
 
@@ -207,7 +207,7 @@ def test_compute_closest_entity_2d(dim):
     p = numpy.array([-1.0, -0.01, 0.0])
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 15, 15)
     tree = BoundingBoxTree(mesh, dim)
-    entity, distance = compute_closest_entity(tree, mesh, p.T)
+    entity, distance = compute_closest_entity(tree, p, mesh)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     ref_distance = numpy.sqrt(p[0]**2 + p[1]**2)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
@@ -233,7 +233,7 @@ def test_compute_closest_entity_3d(dim):
     mesh.topology.create_entities(dim)
 
     tree = BoundingBoxTree(mesh, dim)
-    entity, distance = compute_closest_entity(tree, mesh, p.T)
+    entity, distance = compute_closest_entity(tree, p, mesh)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
 
@@ -262,7 +262,7 @@ def test_compute_closest_sub_entity(dim):
 
     left_entities = locate_entities(mesh, dim, lambda x: x[0] <= 0.5)
     tree = BoundingBoxTree(mesh, dim, left_entities)
-    entity, distance = compute_closest_entity(tree, mesh, p)
+    entity, distance = compute_closest_entity(tree, p, mesh)
     min_distance = MPI.COMM_WORLD.allreduce(distance, op=MPI.MIN)
     assert min_distance == pytest.approx(ref_distance, 1.0e-12)
 
@@ -292,15 +292,15 @@ def test_midpoint_tree(N):
     # Find entity closest to point in two steps
     # 1. Find closest midpoint using midpoint tree
     start_refined = time.time()
-    closest_bbox_node, distance_m = compute_closest_entity(midpoint_tree, mesh, p.T)
+    closest_bbox_node, distance_m = compute_closest_entity(midpoint_tree, p, mesh)
     # 2. Refine search by using exact distance query
-    entity, distance = compute_closest_entity(tree, mesh, p, R=distance_m)
+    entity, distance = compute_closest_entity(tree, p, mesh, R=distance_m)
     end_refined = time.time()
     time_refined = end_refined - start_refined
 
     # Find entity closest to point in one step
     start_unrefined = time.time()
-    e_r, d_r = compute_closest_entity(tree, mesh, p)
+    e_r, d_r = compute_closest_entity(tree, p, mesh)
     end_unrefined = time.time()
     time_unrefined = end_unrefined - start_unrefined
 

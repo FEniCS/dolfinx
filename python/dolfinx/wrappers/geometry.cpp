@@ -24,15 +24,8 @@ namespace dolfinx_wrappers
 void geometry(py::module& m)
 {
   m.def("create_midpoint_tree", &dolfinx::geometry::create_midpoint_tree);
-  m.def(
-      "compute_closest_entity",
-      [](const dolfinx::geometry::BoundingBoxTree& tree,
-         const dolfinx::mesh::Mesh& mesh,
-         const Eigen::Array<double, Eigen::Dynamic, 1>& p, double R) {
-        return dolfinx::geometry::compute_closest_entity(tree, p.transpose(),
-                                                         mesh, R);
-      },
-      py::arg("tree"), py::arg("mesh"), py::arg("p"), py::arg("R") = -1);
+  m.def("compute_closest_entity", &dolfinx::geometry::compute_closest_entity,
+        py::arg("tree"), py::arg("p"), py::arg("mesh"), py::arg("R") = -1);
 
   m.def("compute_collisions_point",
         py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
