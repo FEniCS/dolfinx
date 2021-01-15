@@ -620,6 +620,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
     offsets[e + 1] = offsets[e] + e_vertices_ref.rows();
   }
 
+  connections.shrink_to_fit();
   return graph::AdjacencyList<std::int32_t>(std::move(connections),
                                             std::move(offsets));
 }
