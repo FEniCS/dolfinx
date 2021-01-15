@@ -385,7 +385,7 @@ std::tuple<
     graph::AdjacencyList<std::int64_t>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     std::vector<std::int32_t>>
-compute_refinement_data(
+compute_refinement(
     const MPI_Comm& neighbor_comm, const std::vector<bool>& marked_edges,
     const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& long_edge,
@@ -514,26 +514,8 @@ compute_refinement_data(
 //-----------------------------------------------------------------------------
 mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 {
-  if (mesh.topology().cell_type() != mesh::CellType::triangle
-      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
-  {
-    throw std::runtime_error("Cell type not supported");
-  }
-
-  common::Timer t0("PLAZA: refine");
-
-  auto [neighbor_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
-
-  // Mark all edges
-  auto map_e = mesh.topology().index_map(1);
-  std::vector<bool> marked_edges(map_e->size_local() + map_e->num_ghosts(),
-                                 true);
-
-  const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   auto [cell_adj, new_vertex_coordinates, parent_cell]
-      = compute_refinement_data(neighbor_comm, marked_edges, shared_edges, mesh,
-                                long_edge, edge_ratio_ok);
-  MPI_Comm_free(&neighbor_comm);
+      = plaza::compute_refinement_data(mesh);
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
@@ -562,6 +544,73 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
                          const mesh::MeshTags<std::int8_t>& refinement_marker,
                          bool redistribute)
+{
+  auto [cell_adj, new_vertex_coordinates, parent_cell]
+      = plaza::compute_refinement_data(mesh, refinement_marker);
+
+  if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
+  {
+    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
+                             new_vertex_coordinates, mesh::GhostMode::none);
+  }
+
+  const std::shared_ptr<const common::IndexMap> map_c
+      = mesh.topology().index_map(mesh.topology().dim());
+  const int num_ghost_cells = map_c->num_ghosts();
+  // Check if mesh has ghost cells on any rank
+  // FIXME: this is not a robust test. Should be user option.
+  int max_ghost_cells = 0;
+  MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
+                mesh.mpi_comm());
+
+  // Build mesh
+  const mesh::GhostMode ghost_mode = (max_ghost_cells == 0)
+                                         ? mesh::GhostMode::none
+                                         : mesh::GhostMode::shared_facet;
+
+  return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
+                               redistribute, ghost_mode);
+}
+//------------------------------------------------------------------------------
+std::tuple<
+    graph::AdjacencyList<std::int64_t>,
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::vector<std::int32_t>>
+plaza::compute_refinement_data(const mesh::Mesh& mesh)
+{
+
+  if (mesh.topology().cell_type() != mesh::CellType::triangle
+      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
+  {
+    throw std::runtime_error("Cell type not supported");
+  }
+
+  common::Timer t0("PLAZA: refine");
+
+  auto [neighbor_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
+
+  // Mark all edges
+  auto map_e = mesh.topology().index_map(1);
+  std::vector<bool> marked_edges(map_e->size_local() + map_e->num_ghosts(),
+                                 true);
+
+  const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
+  auto [cell_adj, new_vertex_coordinates, parent_cell]
+      = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
+                           long_edge, edge_ratio_ok);
+  MPI_Comm_free(&neighbor_comm);
+
+  return {std::move(cell_adj), std::move(new_vertex_coordinates),
+          std::move(parent_cell)};
+}
+//------------------------------------------------------------------------------
+std::tuple<
+    graph::AdjacencyList<std::int64_t>,
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::vector<std::int32_t>>
+plaza::compute_refinement_data(
+    const mesh::Mesh& mesh,
+    const mesh::MeshTags<std::int8_t>& refinement_marker)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
@@ -627,31 +676,10 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
   enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh, long_edge);
 
   auto [cell_adj, new_vertex_coordinates, parent_cell]
-      = compute_refinement_data(neighbor_comm, marked_edges, shared_edges, mesh,
-                                long_edge, edge_ratio_ok);
+      = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
+                           long_edge, edge_ratio_ok);
   MPI_Comm_free(&neighbor_comm);
-
-  if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
-  {
-    return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             new_vertex_coordinates, mesh::GhostMode::none);
-  }
-
-  const std::shared_ptr<const common::IndexMap> map_c
-      = mesh.topology().index_map(mesh.topology().dim());
-  const int num_ghost_cells = map_c->num_ghosts();
-  // Check if mesh has ghost cells on any rank
-  // FIXME: this is not a robust test. Should be user option.
-  int max_ghost_cells = 0;
-  MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                mesh.mpi_comm());
-
-  // Build mesh
-  const mesh::GhostMode ghost_mode = (max_ghost_cells == 0)
-                                         ? mesh::GhostMode::none
-                                         : mesh::GhostMode::shared_facet;
-
-  return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
-                               redistribute, ghost_mode);
+  return {std::move(cell_adj), std::move(new_vertex_coordinates),
+          std::move(parent_cell)};
 }
 //-----------------------------------------------------------------------------

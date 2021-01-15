@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <cstdint>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <utility>
 #include <vector>
 
@@ -49,6 +50,19 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
 mesh::Mesh refine(const mesh::Mesh& mesh,
                   const mesh::MeshTags<std::int8_t>& refinement_marker,
                   bool redistribute);
+
+std::tuple<
+    graph::AdjacencyList<std::int64_t>,
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::vector<std::int32_t>>
+compute_refinement_data(const mesh::Mesh& mesh,
+                        const mesh::MeshTags<std::int8_t>& refinement_marker);
+
+std::tuple<
+    graph::AdjacencyList<std::int64_t>,
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::vector<std::int32_t>>
+compute_refinement_data(const mesh::Mesh& mesh);
 
 } // namespace plaza
 } // namespace refinement
