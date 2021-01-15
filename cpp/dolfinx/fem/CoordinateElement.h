@@ -58,7 +58,7 @@ public:
   int topological_dimension() const;
 
   /// TODO
-  int apply_dof_transformation(double* coords, const uint32_t cell_permutation,
+  int apply_dof_transformation(double* coords, std::uint32_t cell_permutation,
                                int dim) const;
 
   /// Return the geometric dimension of the cell shape
