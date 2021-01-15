@@ -228,8 +228,6 @@ void fem(py::module& m)
                              &dolfinx::fem::FiniteElement::interpolation_points)
       .def_property_readonly("interpolation_ident",
                              &dolfinx::fem::FiniteElement::interpolation_ident)
-      //   .def("dof_coordinates",
-      //   &dolfinx::fem::FiniteElement::dof_coordinates)
       .def_property_readonly("value_rank",
                              &dolfinx::fem::FiniteElement::value_rank)
       .def("space_dimension", &dolfinx::fem::FiniteElement::space_dimension)
