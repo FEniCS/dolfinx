@@ -98,9 +98,19 @@ def randomly_ordered_mesh(cell_type):
             return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 8)), np.ndarray((0, 3)), domain)
 
 
-@pytest.mark.parametrize('space_type', [("P", 1), ("P", 2), ("P", 3), ("P", 4)])
-@pytest.mark.parametrize('cell_type', ["triangle", "tetrahedron",
-                                       "quadrilateral", "hexahedron"])
+@pytest.mark.parametrize('space_type',
+                         [
+                             ("P", 1),
+                             ("P", 2),
+                             ("P", 3),
+                             ("P", 4),
+                         ])
+@pytest.mark.parametrize('cell_type', [
+    "triangle",
+    "tetrahedron",
+    "quadrilateral",
+    "hexahedron",
+])
 def test_dof_positions(cell_type, space_type):
     """Checks that dofs on shared triangle edges match up"""
     mesh = randomly_ordered_mesh(cell_type)
@@ -128,9 +138,12 @@ def test_dof_positions(cell_type, space_type):
     entities = {i: {} for i in range(1, tdim)}
     for cell in range(coord_dofs.num_nodes):
         # Push coordinates forward
-        X = V.element.dof_coordinates(perms[cell])
+        X = V.element.interpolation_points
+        V.element.apply_dof_transformation(X, perms[cell], tdim)
         x = X.copy()
-        cmap.push_forward(x, X, x_g[coord_dofs.links(cell), :tdim])
+        xg = x_g[coord_dofs.links(cell), :tdim]
+        cmap.apply_dof_transformation(xg, perms[cell], tdim)
+        cmap.push_forward(x, X, xg)
 
         dofs = V.dofmap.cell_dofs(cell)
 

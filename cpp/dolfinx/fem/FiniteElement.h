@@ -115,10 +115,6 @@ public:
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
-  /// @todo Add documentation
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  dof_coordinates(int cell_perm) const;
-
   /// Map values of field from physical to reference space which has
   /// been evaluated at points given by dof_reference_coordinates()
   void transform_values(
@@ -155,7 +151,7 @@ public:
   /// nodal positions. For other elements the points will typically be
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   interpolation_points() const noexcept;
 
   /// @todo Document shape/layout of @p values
@@ -187,21 +183,20 @@ public:
 
   /// Apply permutation to some data
   ///
-  /// @param[in] data The data to be transformed
+  /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data fro the cell
   /// @param[in] block_size The block_size of the input data
-  void apply_dof_transformation(double* data,
-                                const std::uint32_t cell_permutation,
-                                const int block_size) const;
+  void apply_dof_transformation(double* data, std::uint32_t cell_permutation,
+                                int block_size) const;
 
   /// Apply permutation to some data
   ///
-  /// @param[in] data The data to be transformed
+  /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data fro the cell
   /// @param[in] block_size The block_size of the input data
   void apply_dof_transformation_to_scalar(ufc_scalar_t* data,
-                                          const std::uint32_t cell_permutation,
-                                          const int block_size) const;
+                                          std::uint32_t cell_permutation,
+                                          int block_size) const;
 
 private:
   std::string _signature, _family;
@@ -211,7 +206,8 @@ private:
   int _tdim, _space_dim, _value_size, _reference_value_size;
 
   // Dof coordinates on the reference element
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _refX;
+  //   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  //   _refX;
 
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;

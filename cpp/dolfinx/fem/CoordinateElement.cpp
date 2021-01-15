@@ -67,7 +67,7 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
 }
 //-----------------------------------------------------------------------------
 int CoordinateElement::apply_dof_transformation(double* coords,
-                                                const uint32_t cell_permutation,
+                                                std::uint32_t cell_permutation,
                                                 int dim) const
 {
   return _apply_dof_transformation(coords, cell_permutation, dim);
@@ -241,7 +241,8 @@ void CoordinateElement::compute_reference_geometry(
   }
 }
 //-----------------------------------------------------------------------------
-std::function<int(int*, const uint32_t)> CoordinateElement::get_dof_permutation() const
+std::function<int(int*, const uint32_t)>
+CoordinateElement::get_dof_permutation() const
 {
   return _get_dof_permutation;
 }

@@ -228,11 +228,18 @@ void fem(py::module& m)
                              &dolfinx::fem::FiniteElement::interpolation_points)
       .def_property_readonly("interpolation_ident",
                              &dolfinx::fem::FiniteElement::interpolation_ident)
-      .def("dof_coordinates", &dolfinx::fem::FiniteElement::dof_coordinates)
+      //   .def("dof_coordinates",
+      //   &dolfinx::fem::FiniteElement::dof_coordinates)
       .def_property_readonly("value_rank",
                              &dolfinx::fem::FiniteElement::value_rank)
       .def("space_dimension", &dolfinx::fem::FiniteElement::space_dimension)
       .def("value_dimension", &dolfinx::fem::FiniteElement::value_dimension)
+      .def("apply_dof_transformation",
+           [](const dolfinx::fem::FiniteElement& self, py::array_t<double>& x,
+              std::uint32_t cell_permutation, int dim) {
+             self.apply_dof_transformation(x.mutable_data(), cell_permutation,
+                                           dim);
+           })
       .def("signature", &dolfinx::fem::FiniteElement::signature);
 
   // dolfinx::fem::ElementDofLayout
@@ -283,6 +290,12 @@ void fem(py::module& m)
       .def_property_readonly("dof_layout",
                              &dolfinx::fem::CoordinateElement::dof_layout)
       .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward)
+      .def("apply_dof_transformation",
+           [](const dolfinx::fem::CoordinateElement& self,
+              py::array_t<double>& x, std::uint32_t cell_permutation, int dim) {
+             self.apply_dof_transformation(x.mutable_data(), cell_permutation,
+                                           dim);
+           })
       .def_readwrite("non_affine_atol",
                      &dolfinx::fem::CoordinateElement::non_affine_atol)
       .def_readwrite("non_affine_max_its",

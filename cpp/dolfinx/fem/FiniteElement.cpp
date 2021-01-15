@@ -76,9 +76,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   {
     _basix_element_handle = basix::register_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree);
-
-    // Copy over "dof coordinates" from basix
-    _refX = basix::points(_basix_element_handle);
   }
 
   // Fill value dimension
@@ -211,30 +208,6 @@ void FiniteElement::transform_reference_basis_derivatives(
   }
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-FiniteElement::dof_coordinates(int cell_perm) const
-{
-  if (_refX.size() == 0)
-  {
-    throw std::runtime_error(
-        "Dof reference coordinates do not exist for this element.");
-  }
-  if (!_needs_permutation_data or cell_perm == 0)
-    return _refX;
-
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> outX(
-      _refX.rows(), _refX.cols());
-  outX = _refX;
-
-  int ret = _apply_dof_transformation(outX.data(), cell_perm, _refX.cols());
-
-  if (ret == -1)
-    throw std::runtime_error(
-        "Dof reference coordinates cannot be permuted for this element.");
-
-  return outX;
-}
-//-----------------------------------------------------------------------------
 void FiniteElement::transform_values(
     ufc_scalar_t* reference_values,
     const Eigen::Ref<const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
@@ -314,10 +287,11 @@ bool FiniteElement::interpolation_ident() const noexcept
   return _interpolation_is_ident;
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 FiniteElement::interpolation_points() const noexcept
 {
-  return _refX;
+  return basix::points(_basix_element_handle);
+  // return _refX;
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::interpolate(
@@ -341,18 +315,16 @@ bool FiniteElement::needs_permutation_data() const noexcept
   return _needs_permutation_data;
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::apply_dof_transformation(
-    double* data, const std::uint32_t cell_permutation,
-    const int block_size) const
+void FiniteElement::apply_dof_transformation(double* data,
+                                             std::uint32_t cell_permutation,
+                                             int block_size) const
 {
   _apply_dof_transformation(data, cell_permutation, block_size);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::apply_dof_transformation_to_scalar(
-    ufc_scalar_t* data, const std::uint32_t cell_permutation,
-    const int block_size) const
+    ufc_scalar_t* data, std::uint32_t cell_permutation, int block_size) const
 {
   _apply_dof_transformation_to_scalar(data, cell_permutation, block_size);
 }
 //-----------------------------------------------------------------------------
-
