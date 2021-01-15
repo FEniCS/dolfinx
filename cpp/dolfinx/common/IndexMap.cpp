@@ -6,6 +6,7 @@
 
 #include "IndexMap.h"
 #include <algorithm>
+#include <execution>
 #include <numeric>
 #include <unordered_map>
 
@@ -30,9 +31,12 @@ std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
   // std::int64_t to std::int32_t. The below version of
   // std::inclusive_scan takes the accumulation type from the last
   // argument (std::int64_t).
+  // NOTE: GCC versions prior to SVN r272459 or 9.3.0 do not have
+  // std::inclusive_scan without execution policy, see
+  // http://gcc.1065356.n8.nabble.com/std-inclusive-scan-td1600791.html
   std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
-  std::inclusive_scan(local_sizes.begin(), local_sizes.end(),
-                      all_ranges.begin() + 1, std::plus<>(),
+  std::inclusive_scan(std::execution::seq, local_sizes.begin(),
+                      local_sizes.end(), all_ranges.begin() + 1, std::plus<>(),
                       static_cast<std::int64_t>(0));
 
   // Compute rank of ghost owners
