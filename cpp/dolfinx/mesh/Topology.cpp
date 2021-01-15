@@ -325,6 +325,7 @@ mesh::create_topology(MPI_Comm comm,
         cell_ghost_indices, ghost_owners);
   }
 
+  common::Timer t0("TOPOLOGY: Create sets");
   std::vector<std::int64_t> local_verts(
       cells.array().begin(),
       std::next(cells.array().begin(), cells.offsets()[num_local_cells]));
@@ -334,9 +335,9 @@ mesh::create_topology(MPI_Comm comm,
   std::vector<std::int64_t> ghost_verts(
       std::next(cells.array().begin(), cells.offsets()[num_local_cells]),
       cells.array().end());
-  std::sort(local_verts.begin(), local_verts.end());
-  local_verts.erase(std::unique(local_verts.begin(), local_verts.end()),
-                    local_verts.end());
+  std::sort(ghost_verts.begin(), ghost_verts.end());
+  ghost_verts.erase(std::unique(ghost_verts.begin(), ghost_verts.end()),
+                    ghost_verts.end());
   std::vector<std::int64_t> unknown_indices;
   std::set_intersection(local_verts.begin(), local_verts.end(),
                         ghost_verts.begin(), ghost_verts.end(),
@@ -387,6 +388,8 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
   const std::int32_t nlocal = c;
+
+  t0.stop();
 
   // Get global offset for local indices
   std::int64_t global_offset = dolfinx::MPI::global_offset(comm, nlocal, true);
