@@ -4,7 +4,7 @@
 Installation
 ============
 
-Installation of DOLFIN-X requires installation of the C++ core. Most
+Installation of DOLFINX requires installation of the C++ core. Most
 users will also want the Python interface.
 
 Dependencies
@@ -16,7 +16,8 @@ C++ core
 .. rubric:: Required
 
 - C++ compiler (supporting the C++17 standard)
-- Boost (http://www.boost.org), with the following compiled Boost components
+- Boost (http://www.boost.org), with the following compiled Boost
+  components
 
   - filesystem
   - timer
@@ -25,15 +26,16 @@ C++ core
 - Eigen3 (http://eigen.tuxfamily.org)
 - pkg-config (https://www.freedesktop.org/wiki/Software/pkg-config/)
 - Python 3 [build dependency]
-- FFC-X [build dependency, for ``ufc.h`` and ``ufc_geometry.h`` headers]
+- FFCX [build dependency, for ``ufc.h`` and ``ufc_geometry.h`` headers]
 - MPI
 - HDF5 (with MPI support enabled)
 - PETSc [2]_
+- SCOTCH and PT-SCOTCH [1]_  (required for parallel mesh computation)
 
 .. rubric:: Optional
 
+- KaHIP
 - ParMETIS [1]_
-- SCOTCH and PT-SCOTCH [1]_  (required for parallel mesh computation)
 - SLEPc
 
 
@@ -44,8 +46,8 @@ Below are additional requirements for the Python interface.
 
 .. rubric:: Required
 
-- Python 3
-- FFC-X, UFL and FIAT (http://github.com/FEniCS/).
+- Python
+- FFCX, UFL and FIAT (http://github.com/FEniCS/).
 - pybind11 (https://github.com/pybind/pybind11)
 - NumPy (http://www.numpy.org)
 - mpi4py
@@ -55,6 +57,7 @@ Below are additional requirements for the Python interface.
 .. rubric:: Recommended
 
 - Matplotlib (required for plotting)
+- Numba
 - slepc4py
 
 
@@ -99,7 +102,7 @@ provides a definitive build recipe.
 .. [1] It is strongly recommended to use the PETSc build system to
        download and configure and build these libraries.
 
-.. [2] Its is recommended to configuration with ParMETIS, PT-SCOTCH,
+.. [2] Its is recommended to configure with ParMETIS, PT-SCOTCH,
        MUMPS and Hypre using the
        ``--download-parmetis --download-ptscotch --download-suitesparse
        --download-mumps --download-hypre``
