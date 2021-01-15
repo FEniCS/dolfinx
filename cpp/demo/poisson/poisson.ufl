@@ -18,7 +18,7 @@ element = FiniteElement("Lagrange", triangle, 1)
 # (:math:`u` and :math:`v`) and the coefficient functions (:math:`f` and
 # :math:`g`)::
 
-coord_element = VectorElement("Lagrange", triangle, 1)
+coord_element = VectorElement("Lagrange", triangle, 2)
 mesh = Mesh(coord_element)
 
 V = FunctionSpace(mesh, element)

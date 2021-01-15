@@ -83,7 +83,7 @@ public:
   /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(
-      Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+      Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
       const Eigen::Ref<const Eigen::Array<
           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
 
@@ -115,17 +115,6 @@ public:
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
-  /// Map values of field from physical to reference space which has
-  /// been evaluated at points given by dof_reference_coordinates()
-  void transform_values(
-      ufc_scalar_t* reference_values,
-      const Eigen::Ref<const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&
-          physical_values,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&
-          coordinate_dofs) const;
-
   /// Get the number of sub elements (for a mixed element)
   /// @return the Number of sub elements
   int num_sub_elements() const noexcept;
@@ -142,7 +131,7 @@ public:
   /// specific points, i.e. the degree-of-freedom are equal to point
   /// evaluations. The function will return `true` for Lagrange
   /// elements.
-  ///  @return True is interpolation is an identity operation
+  ///  @return True if interpolation is an identity operation
   bool interpolation_ident() const noexcept;
 
   /// Points on the reference cell at which an expression need to be
@@ -226,10 +215,6 @@ private:
   std::function<int(double*, int, int, const double*, const double*,
                     const double*, const double*, const double*)>
       _transform_reference_basis_derivatives;
-
-  std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*,
-                    const ufc_coordinate_mapping*)>
-      _transform_values;
 
   std::function<int(double*, const std::uint32_t, const int)>
       _apply_dof_transformation;

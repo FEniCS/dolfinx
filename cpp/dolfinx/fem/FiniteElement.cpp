@@ -24,7 +24,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _hash(std::hash<std::string>{}(_signature)),
       _transform_reference_basis_derivatives(
           ufc_element.transform_reference_basis_derivatives),
-      _transform_values(ufc_element.transform_values),
       _apply_dof_transformation(ufc_element.apply_dof_transformation),
       _apply_dof_transformation_to_scalar(
           ufc_element.apply_dof_transformation_to_scalar),
@@ -149,7 +148,7 @@ void FiniteElement::evaluate_reference_basis(
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis_derivatives(
-    Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values, int order,
+    Eigen::Tensor<double, 4, Eigen::RowMajor>& values, int order,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
@@ -161,7 +160,7 @@ void FiniteElement::evaluate_reference_basis_derivatives(
     for (int d = 0; d < basix_data[0].cols() / _reference_value_size; ++d)
       for (int v = 0; v < _reference_value_size; ++v)
         for (std::size_t deriv = 0; deriv < basix_data.size() - 1; ++deriv)
-          reference_values(p, d, v, deriv)
+          values(p, d, v, deriv)
               = basix_data[deriv](p, d * _reference_value_size + v);
 }
 //-----------------------------------------------------------------------------
@@ -207,21 +206,6 @@ void FiniteElement::transform_reference_basis_derivatives(
                              "in transform_reference_basis_derivatives");
   }
 }
-//-----------------------------------------------------------------------------
-void FiniteElement::transform_values(
-    ufc_scalar_t* reference_values,
-    const Eigen::Ref<const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        physical_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& coordinate_dofs)
-    const
-{
-  assert(_transform_values);
-  _transform_values(reference_values, physical_values.data(),
-                    coordinate_dofs.data(), nullptr);
-}
-
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
 {
