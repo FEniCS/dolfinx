@@ -28,7 +28,7 @@ namespace
 // face must be marked, if any edge of face is marked)
 void enforce_rules(
     const MPI_Comm& neighbor_comm,
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges,
+    const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
     std::vector<bool>& marked_edges, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& long_edge)
 {
@@ -383,7 +383,7 @@ face_long_edge(const mesh::Mesh& mesh)
 // Convenient interface for both uniform and marker refinement
 mesh::Mesh compute_refinement(
     const MPI_Comm& neighbor_comm, const std::vector<bool>& marked_edges,
-    const std::map<std::int32_t, std::set<std::int32_t>> shared_edges,
+    const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& long_edge,
     const std::vector<bool>& edge_ratio_ok, bool redistribute)
 {
