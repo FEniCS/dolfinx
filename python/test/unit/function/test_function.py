@@ -6,7 +6,6 @@
 """Unit tests for the Function class"""
 
 import importlib
-import math
 
 import cffi
 import dolfinx
