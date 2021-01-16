@@ -39,8 +39,7 @@ def create_boundary_mesh(mesh, comm, orient=False):
                           geometric_dimension=mesh.geometry.dim)
     degree = mesh.ufl_domain().ufl_coordinate_element().degree()
     ufl_domain = ufl.Mesh(ufl.VectorElement("Lagrange", facet_cell, degree))
-    bmesh = create_mesh(
-        comm, boundary_geometry, mesh.geometry.x, ufl_domain)
+    bmesh = create_mesh(comm, boundary_geometry, mesh.geometry.x, ufl_domain)
     return bmesh, boundary_geometry
 
 
@@ -59,20 +58,42 @@ def mesh2triang(mesh):
     return tri.Triangulation(xy[:, 0], xy[:, 1], cells)
 
 
+def mesh2quad(mesh):
+    x = mesh.geometry.x[:, :mesh.geometry.dim]
+    num_vertices = cpp.mesh.cell_num_vertices(mesh.topology.cell_type)
+    vtk_perm = cpp.io.perm_vtk(mesh.topology.cell_type, num_vertices)
+    perm = np.zeros(len(vtk_perm), dtype=np.int32)
+    for i in range(len(vtk_perm)):
+        perm[vtk_perm[i]] = i
+    cells = mesh.geometry.dofmap.array.reshape((-1, num_vertices))
+    return x, cells[:, perm]
+
+
 def mplot_mesh(ax, mesh, **kwargs):
     tdim = mesh.topology.dim
     gdim = mesh.geometry.dim
     if gdim == 2 and tdim == 2:
-        color = kwargs.pop("color", '#808080')
-        return ax.triplot(mesh2triang(mesh), color=color, **kwargs)
+        if mesh.topology.cell_type == cpp.mesh.CellType.triangle:
+            color = kwargs.pop("color", '#808080')
+            return ax.triplot(mesh2triang(mesh), color=color, **kwargs)
+        else:
+            from matplotlib.collections import PolyCollection  # noqa
+            x, cells = mesh2quad(mesh)
+            p = PolyCollection(x[cells], facecolor=(0, 0, 0, 0), edgecolor="k")
+            ax.add_collection(p)
+            return p
     elif gdim == 3 and tdim == 3:
         # Only plot outer surface of 3D mesh
         bmesh = create_boundary_mesh(mesh, mesh.mpi_comm(), orient=False)
         mplot_mesh(ax, bmesh[0], **kwargs)
     elif gdim == 3 and tdim == 2:
-        xy = mesh.geometry.x
-        cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
-        return ax.plot_trisurf(*[xy[:, i] for i in range(gdim)], triangles=cells, **kwargs)
+        if mesh.topology.cell_type == cpp.mesh.CellType.triangle:
+            xy = mesh.geometry.x
+            cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
+            return ax.plot_trisurf(*[xy[:, i] for i in range(gdim)], triangles=cells, **kwargs)
+        else:
+            raise NotImplementedError("Plotting quadrilateral mesh with geometric dimension 3 is not implemented.")
+
     elif tdim == 1:
         x = [mesh.geometry.x[:, i] for i in range(gdim)]
         if gdim == 1:
@@ -106,13 +127,17 @@ def mplot_function(ax, f, **kwargs):
     num_cells = map_c.size_local + map_c.num_ghosts
     if fvec.getSize() == num_cells:
         # DG0 cellwise function
-        C = fvec.get_local()
+        C = fvec.array
         if (C.dtype.type is np.complex128):
             warnings.warn("Plotting real part of complex data")
             C = np.real(C)
         # NB! Assuming here dof ordering matching cell numbering
         if gdim == 2 and tdim == 2:
-            return ax.tripcolor(mesh2triang(mesh), C, **kwargs)
+            if mesh.topology.cell_type == cpp.mesh.CellType.triangle:
+                return ax.tripcolor(mesh2triang(mesh), C, **kwargs)
+            else:
+                raise NotImplementedError("Plotting of cellwise constant functions"
+                                          + " are not implemented for quadrilaterals.")
         elif gdim == 3 and tdim == 2:  # surface in 3d
             # FIXME: Not tested, probably broken
             xy = mesh.geometry.x
@@ -133,9 +158,8 @@ def mplot_function(ax, f, **kwargs):
             return ax.plot(xp, Cp, *kwargs)
         # elif tdim == 1:  # FIXME: Plot embedded line
         else:
-            raise AttributeError(
-                'Matplotlib plotting backend only supports 2D mesh for scalar functions.'
-            )
+            raise AttributeError("Plotting of DG0 function with geometric dimension {0: d} ".format(gdim)
+                                 + "and topological dimension {0:d} not supported.".format(tdim))
 
     elif f.function_space.element.value_rank == 0:
         # Scalar function, interpolated to vertices
@@ -146,17 +170,23 @@ def mplot_function(ax, f, **kwargs):
             C = np.real(C)
 
         if gdim == 2 and tdim == 2:
+            if mesh.topology.cell_type == cpp.mesh.CellType.quadrilateral:
+                warnings.warn(
+                    "Functions on quadrilateral meshes can only be visualized as a point cloud.\n"
+                    + "Please use XDMF for more advanced visualization.")
+                x = mesh.geometry.x
+                markersize = kwargs.pop("markersize", 25)
+                return ax.scatter(x[:, 0], x[:, 1], s=markersize, c=C[:, 0], **kwargs)
             mode = kwargs.pop("mode", "contourf")
             if mode == "contourf":
                 levels = kwargs.pop("levels", 40)
-                return ax.tricontourf(
-                    mesh2triang(mesh), C[:, 0], levels, **kwargs)
+                return ax.tricontourf(mesh2triang(mesh), C[:, 0], levels, **kwargs)
             elif mode == "color":
                 shading = kwargs.pop("shading", "gouraud")
                 return ax.tripcolor(
                     mesh2triang(mesh), C[:, 0], shading=shading, **kwargs)
             elif mode == "warp":
-                from matplotlib import cm
+                from matplotlib import cm  # noqa
                 cmap = kwargs.pop("cmap", cm.viridis)
                 linewidths = kwargs.pop("linewidths", 0)
                 return ax.plot_trisurf(mesh2triang(mesh), C[:, 0], cmap=cmap,
@@ -169,9 +199,13 @@ def mplot_function(ax, f, **kwargs):
                 raise AttributeError("Invalid plotting mode {0:s} for function".format(mode))
         elif gdim == 3 and tdim == 2:  # surface in 3d
             # FIXME: Not tested
-            from matplotlib import cm
+            from matplotlib import cm  # noqa
             cmap = kwargs.pop("cmap", cm.viridis)
-            return ax.plot_trisurf(mesh2triang(mesh), C[:, 0], cmap=cmap, **kwargs)
+            if mesh.topology.cell_type == cpp.mesh.CellType.triangle:
+                return ax.plot_trisurf(mesh2triang(mesh), C[:, 0], cmap=cmap, **kwargs)
+            else:
+                x = mesh.geometry.x
+                return ax.scatter(x[:, 0], x[:, 1], x[:, 2], c=C[:, 0])
         elif gdim == 3 and tdim == 3:
             # Volume
             # TODO: Isosurfaces?
@@ -183,7 +217,6 @@ def mplot_function(ax, f, **kwargs):
         elif gdim == 1 and tdim == 1:
             x = mesh.geometry.x[:, 0]
             ax.set_aspect('auto')
-
             p = ax.plot(x, C[:, 0], **kwargs)
 
             # Setting limits for Line2D objects
@@ -192,11 +225,11 @@ def mplot_function(ax, f, **kwargs):
             vmin = kwargs.pop("vmin", None)
             vmax = kwargs.pop("vmax", None)
             ax.set_ylim([vmin, vmax])
-
             return p
         # elif tdim == 1: # FIXME: Plot embedded line
         else:
-            raise AttributeError('Matplotlib plotting backend only supports 2D mesh for scalar functions.')
+            raise AttributeError("Plotting of function with geometric dimension {0: d} ".format(gdim)
+                                 + "and topological dimension {0:d} not supported.".format(tdim))
 
     elif f.function_space.element.value_rank == 1:
         # Vector function, interpolated to vertices
@@ -235,6 +268,8 @@ def mplot_function(ax, f, **kwargs):
             import matplotlib.tri as tri
             if gdim == 2 and tdim == 2:
                 # FIXME: Not tested
+                if mesh.topology.cell_type == cpp.mesh.CellType.quadrilateral:
+                    raise NotImplementedError("Displacement plot for quadrilaterals is not implemented.")
                 cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
                 triang = tri.Triangulation(Xdef[0], Xdef[1], cells)
                 shading = kwargs.pop("shading", "flat")
@@ -248,7 +283,7 @@ def mplot_function(ax, f, **kwargs):
 
 def _plot_matplotlib(obj, mesh, kwargs):
     # Plotting is not working with all ufl cells
-    if mesh.ufl_cell().cellname() not in ['interval', 'triangle', 'tetrahedron']:
+    if mesh.ufl_cell().cellname() not in ['interval', 'triangle', "quadrilateral", 'tetrahedron']:
         raise AttributeError("Matplotlib plotting backend doesn't handle {0:s} mesh.\n"
                              "Possible options are saving the output to XDMF file.".format(
                                  mesh.ufl_cell().cellname()))
