@@ -152,11 +152,9 @@ void la(py::module& m)
              maps) {
         std::vector<std::vector<PetscScalar>> vecs
             = dolfinx::la::get_local_vectors(x, maps);
-
         std::vector<py::array_t<PetscScalar>> ret;
         for (const auto& v : vecs)
           ret.emplace_back(v.size(), v.data());
-
         return ret;
       },
       "Gather an (ordered) list of sub vectors from a block vector.");
