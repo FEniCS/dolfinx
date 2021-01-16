@@ -54,7 +54,8 @@ def _has_matplotlib():
 def mesh2triang(mesh):
     import matplotlib.tri as tri
     xy = mesh.geometry.x
-    cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
+    num_vertices = cpp.mesh.cell_num_vertices(mesh.topology.cell_type)
+    cells = mesh.geometry.dofmap.array.reshape((-1, num_vertices))
     return tri.Triangulation(xy[:, 0], xy[:, 1], cells)
 
 
@@ -72,8 +73,9 @@ def mesh2quad(mesh):
 def mplot_mesh(ax, mesh, **kwargs):
     tdim = mesh.topology.dim
     gdim = mesh.geometry.dim
+    cell_type = mesh.topology.cell_type
     if gdim == 2 and tdim == 2:
-        if mesh.topology.cell_type == cpp.mesh.CellType.triangle:
+        if cell_type == cpp.mesh.CellType.triangle:
             color = kwargs.pop("color", '#808080')
             return ax.triplot(mesh2triang(mesh), color=color, **kwargs)
         else:
@@ -87,9 +89,10 @@ def mplot_mesh(ax, mesh, **kwargs):
         bmesh = create_boundary_mesh(mesh, mesh.mpi_comm(), orient=False)
         mplot_mesh(ax, bmesh[0], **kwargs)
     elif gdim == 3 and tdim == 2:
-        if mesh.topology.cell_type == cpp.mesh.CellType.triangle:
+        if cell_type == cpp.mesh.CellType.triangle:
             xy = mesh.geometry.x
-            cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
+            num_vertices = cpp.mesh.cell_num_vertices(cell_type)
+            cells = mesh.geometry.dofmap.array.reshape((-1, num_vertices))
             return ax.plot_trisurf(*[xy[:, i] for i in range(gdim)], triangles=cells, **kwargs)
         else:
             raise NotImplementedError("Plotting quadrilateral mesh with geometric dimension 3 is not implemented.")
@@ -110,7 +113,7 @@ def mplot_function(ax, f, **kwargs):
     mesh = f.function_space.mesh
     gdim = mesh.geometry.dim
     tdim = mesh.topology.dim
-
+    cell_type = mesh.topology.cell_type
     # Extract the function vector in a way that also works for
     # subfunctions
     try:
@@ -133,7 +136,7 @@ def mplot_function(ax, f, **kwargs):
             C = np.real(C)
         # NB! Assuming here dof ordering matching cell numbering
         if gdim == 2 and tdim == 2:
-            if mesh.topology.cell_type == cpp.mesh.CellType.triangle:
+            if cell_type == cpp.mesh.CellType.triangle:
                 return ax.tripcolor(mesh2triang(mesh), C, **kwargs)
             else:
                 raise NotImplementedError("Plotting of cellwise constant functions"
@@ -170,7 +173,7 @@ def mplot_function(ax, f, **kwargs):
             C = np.real(C)
 
         if gdim == 2 and tdim == 2:
-            if mesh.topology.cell_type == cpp.mesh.CellType.quadrilateral:
+            if cell_type == cpp.mesh.CellType.quadrilateral:
                 warnings.warn(
                     "Functions on quadrilateral meshes can only be visualized as a point cloud.\n"
                     + "Please use XDMF for more advanced visualization.")
@@ -201,7 +204,7 @@ def mplot_function(ax, f, **kwargs):
             # FIXME: Not tested
             from matplotlib import cm  # noqa
             cmap = kwargs.pop("cmap", cm.viridis)
-            if mesh.topology.cell_type == cpp.mesh.CellType.triangle:
+            if cell_type == cpp.mesh.CellType.triangle:
                 return ax.plot_trisurf(mesh2triang(mesh), C[:, 0], cmap=cmap, **kwargs)
             else:
                 x = mesh.geometry.x
@@ -270,7 +273,8 @@ def mplot_function(ax, f, **kwargs):
                 # FIXME: Not tested
                 if mesh.topology.cell_type == cpp.mesh.CellType.quadrilateral:
                     raise NotImplementedError("Displacement plot for quadrilaterals is not implemented.")
-                cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
+                num_vertices = cpp.mesh.cell_num_vertices(cell_type)
+                cells = mesh.geometry.dofmap.array.reshape((-1, num_vertices))
                 triang = tri.Triangulation(Xdef[0], Xdef[1], cells)
                 shading = kwargs.pop("shading", "flat")
                 return ax.tripcolor(triang, C, shading=shading, **kwargs)
