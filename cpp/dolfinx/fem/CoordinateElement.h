@@ -15,7 +15,6 @@
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-// Forward declaration
 namespace dolfinx::fem
 {
 

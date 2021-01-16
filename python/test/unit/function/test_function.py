@@ -6,7 +6,6 @@
 """Unit tests for the Function class"""
 
 import importlib
-import math
 
 import cffi
 import dolfinx
@@ -24,11 +23,6 @@ from petsc4py import PETSc
 @pytest.fixture
 def mesh():
     return UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
-
-
-# @pytest.fixture
-# def R(mesh):
-#     return FunctionSpace(mesh, ('R', 0))
 
 
 @pytest.fixture
@@ -135,7 +129,6 @@ def test_assign(V, W):
 
 
 def test_eval(V, W, Q, mesh):
-    # u0 = Function(R)
     u1 = Function(V)
     u2 = Function(W)
     u3 = Function(Q)
@@ -163,7 +156,6 @@ def test_eval(V, W, Q, mesh):
         values[8] = -x[2]
         return values
 
-    # u0.vector.set(1.0)
     u1.interpolate(e1)
     u2.interpolate(e2)
     u3.interpolate(e3)
@@ -174,10 +166,6 @@ def test_eval(V, W, Q, mesh):
     cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
 
     assert np.allclose(u3.eval(x0, cell)[:3], u2.eval(x0, cell), rtol=1e-15, atol=1e-15)
-    # with pytest.raises(ValueError):
-    #     u0.eval([0, 0, 0, 0], 0)
-    # with pytest.raises(ValueError):
-    #     u0.eval([0, 0], 0)
 
 
 def test_eval_multiple(W):
@@ -208,31 +196,6 @@ def test_eval_manifold():
     u = Function(Q)
     u.interpolate(lambda x: x[0] + x[1])
     assert np.isclose(u.eval([0.75, 0.25, 0.5], 0)[0], 1.0)
-
-
-def xtest_scalar_conditions(R):
-    c = Function(R)
-    c.vector.set(1.5)
-
-    # Float conversion does not interfere with boolean ufl expressions
-    assert isinstance(ufl.lt(c, 3), ufl.classes.LT)
-    assert not isinstance(ufl.lt(c, 3), bool)
-
-    # Float conversion is not implicit in boolean Python expressions
-    assert isinstance(c < 3, ufl.classes.LT)
-    assert not isinstance(c < 3, bool)
-
-    # == is used in ufl to compare equivalent representations,
-    # <,> result in LT/GT expressions, bool conversion is illegal
-
-    # Note that 1.5 < 0 == False == 1.5 < 1, but that is not what we
-    # compare here:
-    assert not (c < 0) == (c < 1)
-    # This protects from "if c < 0: ..." misuse:
-    with pytest.raises(ufl.UFLException):
-        bool(c < 0)
-    with pytest.raises(ufl.UFLException):
-        not c < 0
 
 
 @pytest.mark.skip
@@ -272,34 +235,6 @@ def test_interpolation_rank0(V):
     w.interpolate(f.eval)
     with w.vector.localForm() as x:
         assert (x[:] == 2.0).all()
-
-
-@skip_in_parallel
-def xtest_near_evaluations(R, mesh):
-    # Test that we allow point evaluation that are slightly outside
-    u0 = Function(R)
-    u0.vector.set(1.0)
-
-    offset = 0.99 * np.finfo(float).eps
-    bb_tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    a = mesh.geometry.x[0]
-
-    cell_candidates = geometry.compute_collisions_point(bb_tree, a)
-    cells = geometry.select_colliding_cells(mesh, cell_candidates, a, 1)
-    a_shift_x = np.array([a[0] - offset, a[1], a[2]])
-
-    cell_candidates = geometry.compute_collisions_point(bb_tree, a_shift_x)
-    cells_shift_x = geometry.select_colliding_cells(mesh, cell_candidates, a_shift_x, 1)
-
-    assert u0.eval(a, cells)[0] == pytest.approx(u0.eval(a_shift_x, cells_shift_x)[0])
-
-    a_shift_xyz = np.array([a[0] - offset / math.sqrt(3),
-                            a[1] - offset / math.sqrt(3),
-                            a[2] - offset / math.sqrt(3)])
-    cell_candidates = geometry.compute_collisions_point(bb_tree, a)
-    cells_shift_xyz = geometry.select_colliding_cells(mesh, cell_candidates, a_shift_xyz, 1)
-
-    assert u0.eval(a, cells)[0] == pytest.approx(u0.eval(a_shift_xyz, cells_shift_xyz)[0])
 
 
 def test_interpolation_rank1(W):

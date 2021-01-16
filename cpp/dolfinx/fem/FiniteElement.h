@@ -83,7 +83,7 @@ public:
   /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(
-      Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+      Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
       const Eigen::Ref<const Eigen::Array<
           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
 
@@ -131,7 +131,7 @@ public:
   /// specific points, i.e. the degree-of-freedom are equal to point
   /// evaluations. The function will return `true` for Lagrange
   /// elements.
-  ///  @return True is interpolation is an identity operation
+  ///  @return True if interpolation is an identity operation
   bool interpolation_ident() const noexcept;
 
   /// Points on the reference cell at which an expression need to be
@@ -161,7 +161,7 @@ public:
   /// the expression. The call must allocate the space. Is has
   void interpolate(const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>& values,
-                   const std::uint32_t cell_permutation,
+                   std::uint32_t cell_permutation,
                    Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1>& dofs) const;
 
   /// @todo Expand on when permutation data might be required
@@ -194,10 +194,6 @@ private:
 
   int _tdim, _space_dim, _value_size, _reference_value_size;
 
-  // Dof coordinates on the reference element
-  //   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  //   _refX;
-
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
 
@@ -226,12 +222,13 @@ private:
   // number of DOFs colocated at each point.
   int _bs;
 
-  // True if interpolation is indetity, i.e. call to
+  // True if interpolation is indentity, i.e. call to
   // _interpolate_into_cell is not required
   bool _interpolation_is_ident;
 
   bool _needs_permutation_data;
 
+  // The basix element identifier
   int _basix_element_handle;
 };
 } // namespace dolfinx::fem

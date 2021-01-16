@@ -66,6 +66,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   const std::string family = ufc_element.family;
 
+  // FIXME: Add element 'handle' to UFC and do not use fragile strings
   if (family == "mixed element")
   {
     // This will cause an error, if actually used
@@ -148,11 +149,17 @@ void FiniteElement::evaluate_reference_basis(
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis_derivatives(
-    Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values, int order,
+    Eigen::Tensor<double, 4, Eigen::RowMajor>& values, int order,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
-  assert(order == 1); // TODO: fix this for order > 1
+  // TODO: fix this for order > 1
+  if (order != 1)
+  {
+    throw std::runtime_error(
+        "FiniteElement::evaluate_reference_basis_derivatives only supports "
+        "order 1 at the moment.");
+  }
 
   std::vector<Eigen::ArrayXXd> basix_data
       = basix::tabulate(_basix_element_handle, 1, X);
@@ -160,7 +167,7 @@ void FiniteElement::evaluate_reference_basis_derivatives(
     for (int d = 0; d < basix_data[0].cols() / _reference_value_size; ++d)
       for (int v = 0; v < _reference_value_size; ++v)
         for (std::size_t deriv = 0; deriv < basix_data.size() - 1; ++deriv)
-          reference_values(p, d, v, deriv)
+          values(p, d, v, deriv)
               = basix_data[deriv](p, d * _reference_value_size + v);
 }
 //-----------------------------------------------------------------------------
@@ -280,16 +287,21 @@ FiniteElement::interpolation_points() const noexcept
 void FiniteElement::interpolate(
     const Eigen::Array<ufc_scalar_t, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& values,
-    const std::uint32_t cell_permutation,
+    std::uint32_t cell_permutation,
     Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1>& dofs) const
 {
   assert(dofs.size() == _space_dim / _bs);
 
-  Eigen::MatrixXd interpolation_matrix
+  // FIXME: This call will be expesive when called repeatedly. Create
+  // the matrix in the constructor.
+  const Eigen::MatrixXd interpolation_matrix
       = basix::interpolation_matrix(_basix_element_handle);
+
   Eigen::Map<const Eigen::Matrix<ufc_scalar_t, Eigen::Dynamic, 1>>
       values_vector(values.data(), values.size(), 1);
+
   dofs = interpolation_matrix * values_vector;
+
   _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
 }
 //-----------------------------------------------------------------------------

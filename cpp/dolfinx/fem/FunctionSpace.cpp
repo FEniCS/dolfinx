@@ -98,8 +98,6 @@ internal_tabulate_dof_coordinates(
 
   for (int c = 0; c < num_cells; ++c)
   {
-    // X = element->dof_coordinates(cell_info[c]);
-
     // Extract cell geometry
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)

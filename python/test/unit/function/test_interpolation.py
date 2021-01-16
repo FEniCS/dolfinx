@@ -143,7 +143,7 @@ def test_vector_interpolation(cell_type, order):
 
 @skip_in_parallel
 def test_mixed_interpolation():
-    """Test that interpolation is correct in a MixedElement."""
+    """Test that interpolation raised an exception."""
     mesh = one_cell_mesh(CellType.triangle)
     A = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     B = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
@@ -165,9 +165,9 @@ def test_N1curl_interpolation(cell_type, order):
 
     # TODO: fix higher order elements
     if tdim == 2 and order > 2:
-        pytest.skip()
+        pytest.skip("N1curl order > 2 in 2D needs fixing")
     if tdim == 3 and order > 1:
-        pytest.skip()
+        pytest.skip("N1curl order > 1 in 3D needs fixing")
 
     V = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", order))
     v = Function(V)
@@ -195,7 +195,7 @@ def test_N2curl_interpolation(cell_type, order):
 
     # TODO: fix higher order elements
     if tdim == 2 and order > 1:
-        pytest.skip()
+        pytest.skip("N2curl order > 1 in 2D needs fixing")
 
     V = FunctionSpace(mesh, ("Nedelec 2nd kind H(curl)", order))
     v = Function(V)
