@@ -1,25 +1,20 @@
-# Copyright (C) 2008-2012 Joachim B. Haga and Fredrik Valdmanis
+# Copyright (C) 2008-2021 Joachim B. Haga, Fredrik Valdmanis, Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Simple matplotlib plotting functions"""
 
-import os
 import warnings
 
 import numpy as np
+import typing
 import ufl
 
 from dolfinx import cpp, fem
 from dolfinx.mesh import create_mesh
 
 __all__ = ["plot"]
-
-_matplotlib_plottable_types = (cpp.fem.Function,
-                               cpp.mesh.Mesh,
-                               cpp.fem.DirichletBC)
-_all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types)))
 
 
 def create_boundary_mesh(mesh, comm, orient=False):
@@ -71,13 +66,13 @@ def mplot_mesh(ax, mesh, **kwargs):
         color = kwargs.pop("color", '#808080')
         return ax.triplot(mesh2triang(mesh), color=color, **kwargs)
     elif gdim == 3 and tdim == 3:
+        # Only plot outer surface of 3D mesh
         bmesh = create_boundary_mesh(mesh, mesh.mpi_comm(), orient=False)
         mplot_mesh(ax, bmesh[0], **kwargs)
     elif gdim == 3 and tdim == 2:
         xy = mesh.geometry.x
         cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
-        return ax.plot_trisurf(
-            *[xy[:, i] for i in range(gdim)], triangles=cells, **kwargs)
+        return ax.plot_trisurf(*[xy[:, i] for i in range(gdim)], triangles=cells, **kwargs)
     elif tdim == 1:
         x = [mesh.geometry.x[:, i] for i in range(gdim)]
         if gdim == 1:
@@ -86,28 +81,8 @@ def mplot_mesh(ax, mesh, **kwargs):
         marker = kwargs.pop('marker', 'o')
         return ax.plot(*x, marker=marker, **kwargs)
     else:
-        assert False, "this code should not be reached"
-
-
-# TODO: This is duplicated somewhere else
-def create_cg1_function_space(mesh, sh):
-    r = len(sh)
-    if r == 0:
-        V = fem.FunctionSpace(mesh, ("CG", 1))
-    elif r == 1:
-        V = fem.VectorFunctionSpace(mesh, ("CG", 1), dim=sh[0])
-    else:
-        V = fem.TensorFunctionSpace(mesh, ("CG", 1), shape=sh)
-    return V
-
-
-def mplot_expression(ax, f, mesh, **kwargs):
-    # TODO: Can probably avoid creating the function space here by
-    # restructuring mplot_function a bit so it can handle Expression
-    # natively
-    V = create_cg1_function_space(mesh, f.value_shape)
-    g = fem.interpolate(f, V)
-    return mplot_function(ax, g, **kwargs)
+        raise RuntimeError("Mesh with topological dimension {0:d}".format(tdim)
+                           + " and geometrical dimension {0:d} cannot be plotted.".format(gdim))
 
 
 def mplot_function(ax, f, **kwargs):
@@ -142,8 +117,7 @@ def mplot_function(ax, f, **kwargs):
             # FIXME: Not tested, probably broken
             xy = mesh.geometry.x
             shade = kwargs.pop("shade", True)
-            return ax.plot_trisurf(
-                mesh2triang(mesh), xy[:, 2], C, shade=shade, **kwargs)
+            return ax.plot_trisurf(mesh2triang(mesh), xy[:, 2], C, shade=shade, **kwargs)
         elif gdim == 1 and tdim == 1:
             x = mesh.geometry.x[:, 0]
             nv = len(x)
@@ -183,30 +157,29 @@ def mplot_function(ax, f, **kwargs):
                     mesh2triang(mesh), C[:, 0], shading=shading, **kwargs)
             elif mode == "warp":
                 from matplotlib import cm
-                cmap = kwargs.pop("cmap", cm.jet)
+                cmap = kwargs.pop("cmap", cm.viridis)
                 linewidths = kwargs.pop("linewidths", 0)
-                return ax.plot_trisurf(
-                    mesh2triang(mesh),
-                    C[:, 0],
-                    cmap=cmap,
-                    linewidths=linewidths,
-                    **kwargs)
+                return ax.plot_trisurf(mesh2triang(mesh), C[:, 0], cmap=cmap,
+                                       linewidths=linewidths, **kwargs)
             elif mode == "wireframe":
                 return ax.triplot(mesh2triang(mesh), **kwargs)
             elif mode == "contour":
                 return ax.tricontour(mesh2triang(mesh), C[:, 0], **kwargs)
+            else:
+                raise AttributeError("Invalid plotting mode {0:s} for function".format(mode))
         elif gdim == 3 and tdim == 2:  # surface in 3d
             # FIXME: Not tested
             from matplotlib import cm
-            cmap = kwargs.pop("cmap", cm.jet)
-            return ax.plot_trisurf(
-                mesh2triang(mesh), C[:, 0], cmap=cmap, **kwargs)
+            cmap = kwargs.pop("cmap", cm.viridis)
+            return ax.plot_trisurf(mesh2triang(mesh), C[:, 0], cmap=cmap, **kwargs)
         elif gdim == 3 and tdim == 3:
             # Volume
             # TODO: Isosurfaces?
             # Vertex point cloud
-            X = [mesh.geometrycoordinates[:, i] for i in range(gdim)]
-            return ax.scatter(*X, c=C, **kwargs)
+            X = [mesh.geometry.x[:, i] for i in range(gdim)]
+            kwargs.pop("mode", None)
+            warnings.warn("Plotting mode ignored for 3D meshes, plotting point cloud.")
+            return ax.scatter(*X, c=C.reshape(-1), **kwargs)
         elif gdim == 1 and tdim == 1:
             x = mesh.geometry.x[:, 0]
             ax.set_aspect('auto')
@@ -223,9 +196,7 @@ def mplot_function(ax, f, **kwargs):
             return p
         # elif tdim == 1: # FIXME: Plot embedded line
         else:
-            raise AttributeError(
-                'Matplotlib plotting backend only supports 2D mesh for scalar functions.'
-            )
+            raise AttributeError('Matplotlib plotting backend only supports 2D mesh for scalar functions.')
 
     elif f.function_space.element.value_rank == 1:
         # Vector function, interpolated to vertices
@@ -236,8 +207,7 @@ def mplot_function(ax, f, **kwargs):
         map_v = mesh.topology.index_map(0)
         nv = map_v.size_local + map_v.num_ghosts
         if w0.shape[1] != gdim:
-            raise AttributeError(
-                'Vector length must match geometric dimension.')
+            raise AttributeError('Vector length must match geometric dimension.')
         X = mesh.geometry.x
         X = [X[:, i] for i in range(gdim)]
         U = [x for x in w0.T]
@@ -251,13 +221,17 @@ def mplot_function(ax, f, **kwargs):
         mode = kwargs.pop("mode", "glyphs")
         if mode == "glyphs":
             args = X + U + [C]
+            vmin = kwargs.pop("vmin", None)
+            vmax = kwargs.pop("vmax", None)
+            if not (vmin is None and vmax is None):
+                kwargs["clim"] = (vmin, vmax)
             if gdim == 3:
-                length = kwargs.pop("length", 0.1)
-                return ax.quiver(*args, length=length, **kwargs)
+                return ax.quiver(*args, **kwargs)
             else:
                 return ax.quiver(*args, **kwargs)
         elif mode == "displacement":
-            Xdef = [X[i] + U[i] for i in range(gdim)]
+            scale = kwargs.pop("scale", 0.1)
+            Xdef = [X[i] + scale * U[i] for i in range(gdim)]
             import matplotlib.tri as tri
             if gdim == 2 and tdim == 2:
                 # FIXME: Not tested
@@ -266,30 +240,18 @@ def mplot_function(ax, f, **kwargs):
                 shading = kwargs.pop("shading", "flat")
                 return ax.tripcolor(triang, C, shading=shading, **kwargs)
             else:
-                # Return gracefully to make regression test pass without vtk
-                warnings.warn(
-                    "Plotting does not support displacement for {} in {}. Continuing without plot.".format(tdim, gdim))
-                return
-
-
-def mplot_dirichletbc(ax, obj, **kwargs):
-    raise AttributeError(
-        "Matplotlib plotting backend doesn't handle DirichletBC.")
+                raise AttributeError(
+                    "Displacement plotting only supported for meshes with topological and geometrical dimension 2.")
+        else:
+            raise AttributeError("Unsupported plotting mode {0:s}.".format(mode))
 
 
 def _plot_matplotlib(obj, mesh, kwargs):
-    if not isinstance(obj, _matplotlib_plottable_types):
-        print("Don't know how to plot type %s." % type(obj))
-        return
-
     # Plotting is not working with all ufl cells
-    if mesh.ufl_cell().cellname() not in [
-            'interval', 'triangle', 'tetrahedron'
-    ]:
-        raise AttributeError(
-            ("Matplotlib plotting backend doesn't handle %s mesh.\n"
-             "Possible options are saving the output to XDMF file.") %
-            mesh.ufl_cell().cellname())
+    if mesh.ufl_cell().cellname() not in ['interval', 'triangle', 'tetrahedron']:
+        raise AttributeError("Matplotlib plotting backend doesn't handle {0:s} mesh.\n"
+                             "Possible options are saving the output to XDMF file.".format(
+                                 mesh.ufl_cell().cellname()))
 
     # Avoid importing pyplot until used
     try:
@@ -321,121 +283,83 @@ def _plot_matplotlib(obj, mesh, kwargs):
     if vmax and "vmax" not in kwargs:
         kwargs["vmax"] = vmax
 
-    # Drop unsupported kwargs and inform user
-    _unsupported_kwargs = ["rescale", "wireframe"]
-    for kw in _unsupported_kwargs:
-        if kwargs.pop(kw, None):
-            cpp.warning("Matplotlib backend does not support '%s' kwarg yet. "
-                        "Ignoring it..." % kw)
-
     if isinstance(obj, cpp.fem.Function):
         return mplot_function(ax, obj, **kwargs)
-    # elif isinstance(obj, cpp.fem.Expression):
-    #     return mplot_expression(ax, obj, mesh, **kwargs)
     elif isinstance(obj, cpp.mesh.Mesh):
         return mplot_mesh(ax, obj, **kwargs)
-    elif isinstance(obj, cpp.fem.DirichletBC):
-        return mplot_dirichletbc(ax, obj, **kwargs)
-    else:
-        raise AttributeError('Failed to plot %s' % type(obj))
 
 
-def plot(object, *args, **kwargs):
+def plot(object: typing.Union[cpp.fem.Function, cpp.mesh.Mesh], *args, **kwargs):
     """
-    Plot given object.
+    Plot a Function or mesh using matplotlib.
+    For plotting of 3D meshes and functions, it is adviced to save the output to XDMF file."
 
     *Arguments*
         object
-            a :py:class:`Mesh <dolfinx.cpp.Mesh>`, a :py:class:`Function
-            <dolfinx.functions.fem.Function>`, a :py:class:`Expression`
-            <dolfinx.Expression>, a :py:class:`DirichletBC`
-            <dolfinx.cpp.DirichletBC>, a :py:class:`FiniteElement
-            <ufl.FiniteElement>`.
+            a :py:class:`Mesh <dolfinx.cpp.mesh.Mesh>`, a :py:class:`Function
+            <dolfinx.fem.function.Function>`,
 
     *Examples of usage*
         In the simplest case, to plot only e.g. a mesh, simply use
 
         .. code-block:: python
 
-            mesh = UnitSquare(4, 4)
+            mesh = UnitSquare(MPI.COMM_WORLD, 4, 4)
             plot(mesh)
 
         Use the ``title`` argument to specify title of the plot
 
         .. code-block:: python
 
-            plot(mesh, tite="Finite element mesh")
+            u = dolfinx.Function(V)
+            plot(u, title="Finite element function")
 
-        It is also possible to plot an element
+        For a scalar valued function the function can alternatively
+        be warped by scalar to produce a 3D plot.
+
+        ... code-block:: python
+
+            plot(u, mode="warp")
+
+        For a vector valued function the default mode is to visualize
+        the values using glyphs.
+
+        Alternatively
+        visualized on the mesh displaced by the function,
+        using the displacement mode
 
         .. code-block:: python
 
-            element = FiniteElement("BDM", tetrahedron, 3)
-            plot(element)
-
-        Vector valued functions can be visualized with an alternative mode
-
-        .. code-block:: python
-
-            plot(u, mode = "glyphs")
+            plot(u, mode = "displacement")
 
         A more advanced example
 
         .. code-block:: python
 
             plot(u,
-                 wireframe = True,              # use wireframe rendering
-                 interactive = False,           # do not hold plot on screen
-                 scalarbar = False,             # hide the color mapping bar
-                 hardcopy_prefix = "myplot",    # default plotfile name
-                 scale = 2.0,                   # scale the warping/glyphs
-                 title = "Fancy plot",          # set your own title
+                 scale = 1.5,                   # Scale the warping/glyphs
+                 mode="displacement",           # Set mode to displacement
+                 title = "Fancy plot",          # Set your own title
+                 vmin=0,                        # Set minimum range for colorbar
+                 vmax=1                         # Set maximum range for colorbar
                  )
 
     """
 
-    # Return if plotting is disabled
-    if os.environ.get("DOLFIN_NOPLOT", "0") != "0":
-        return
-
     # Return if Matplotlib is not available
     if not _has_matplotlib():
-        cpp.log.info("Matplotlib is required to plot from Python.")
-        return
+        raise ImportError("Matplotlib is required to plot from Python.")
 
     # For dolfinx.fem.Function, extract cpp_object
     if hasattr(object, "_cpp_object"):
         object = object._cpp_object
 
-    # Get mesh from explicit mesh kwarg, only positional arg, or via
-    # object
-    mesh = kwargs.pop('mesh', None)
+    mesh = None
     if isinstance(object, cpp.mesh.Mesh):
-        if mesh is not None and mesh.id() != object.id():
-            raise RuntimeError(
-                "Got different mesh in plot object and keyword argument")
         mesh = object
-
-    if mesh is None:
-        if isinstance(object, cpp.fem.Function):
-            mesh = object.function_space.mesh
-        elif hasattr(object, "mesh"):
-            mesh = object.mesh
-
-    # Expressions do not carry their own mesh
-    # if isinstance(object, cpp.fem.Expression) and mesh is None:
-    #     raise RuntimeError("Expecting a mesh as keyword argument")
-
-    backend = kwargs.pop("backend", "matplotlib")
-    if backend not in ("matplotlib"):
-        raise RuntimeError("Plotting backend %s not recognised" % backend)
-
-    # Try to project if object is not a standard plottable type
-    if not isinstance(object, _all_plottable_types):
-        raise RuntimeError("Cannot plot object.")
-
-    # Plot
-    if backend == "matplotlib":
-        return _plot_matplotlib(object, mesh, kwargs)
+    elif isinstance(object, cpp.fem.Function):
+        mesh = object.function_space.mesh
     else:
-        assert False, "This code should not be reached."
+        raise ValueError("Don't know how to plot type {0:s}.".format(type(object)))
+
+    return _plot_matplotlib(object, mesh, kwargs)
