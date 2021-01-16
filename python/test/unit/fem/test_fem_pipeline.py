@@ -6,14 +6,12 @@
 import os
 
 import pytest
-from mpi4py import MPI
-
 from dolfinx import FunctionSpace, VectorFunctionSpace
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
 from dolfinx_utils.test.skips import skip_if_complex
-
-from pipeline_tests import run_scalar_test, run_vector_test, run_dg_test
+from mpi4py import MPI
+from pipeline_tests import run_dg_test, run_scalar_test, run_vector_test
 
 
 def get_mesh(cell_type, datadir):
@@ -49,8 +47,7 @@ parametrize_cell_types_hex = pytest.mark.parametrize(
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_P_simplex(family, degree, cell_type, datadir):
     if cell_type == CellType.tetrahedron and degree == 4:
-        pytest.skip()  # Skip slowest test on tetrahedron
-
+        pytest.skip("Skip expensive test on tetrahedron")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)
@@ -61,8 +58,7 @@ def test_P_simplex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_vector_P_simplex(family, degree, cell_type, datadir):
     if cell_type == CellType.tetrahedron and degree == 4:
-        pytest.skip()  # Skip slowest test on tetrahedron
-
+        pytest.skip("Skip expensive test on tetrahedron")
     mesh = get_mesh(cell_type, datadir)
     V = VectorFunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
@@ -82,8 +78,7 @@ def test_dP_simplex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [1, 2, 3, 4])
 def test_RT_N1curl_simplex(family, degree, cell_type, datadir):
     if cell_type == CellType.tetrahedron and degree == 4:
-        pytest.skip()  # Skip slowest test on tetrahedron
-
+        pytest.skip("Skip expensive test on tetrahedron")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
@@ -109,7 +104,8 @@ def test_BDM_N2curl_simplex_highest_order(family, degree, cell_type, datadir):
     run_vector_test(mesh, V, degree)
 
 
-# Run tests on all spaces in periodic table on quadrilaterals and hexahedra
+# Run tests on all spaces in periodic table on quadrilaterals and
+# hexahedra
 @parametrize_cell_types_tp
 @pytest.mark.parametrize("family", ["Q"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
@@ -133,8 +129,7 @@ def test_vector_P_tp(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_dP_quad(family, degree, cell_type, datadir):
     if family == "DPC":
-        pytest.skip()  # These space currently not implemented in basix
-
+        pytest.skip("DPC space currently not implemented in basix.")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
@@ -145,8 +140,7 @@ def test_dP_quad(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [1, 2])
 def test_dP_hex(family, degree, cell_type, datadir):
     if family == "DPC":
-        pytest.skip()  # These space currently not implemented in basix
-
+        pytest.skip("DPC space currently not implemented in basix.")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
@@ -156,8 +150,7 @@ def test_dP_hex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["RTCE", "RTCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_RTC_quad(family, degree, cell_type, datadir):
-    pytest.skip()  # These space currently not implemented in basix
-
+    pytest.skip("RTCE and RTCF spaces currently not implemented in basix")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
@@ -167,29 +160,27 @@ def test_RTC_quad(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["NCE", "NCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_NC_hex(family, degree, cell_type, datadir):
-    pytest.skip()  # These space currently not implemented in basix
-
+    pytest.skip("NCE and NCF spaces currently not implemented in basix")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
 
 
 @parametrize_cell_types_quad
-@pytest.mark.parametrize("family", ["BDMCE", "BDMCF"])
+@pytest.mark.parametrize("family", ["BDMCE", "BDMCE"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_BDM_quad(family, degree, cell_type, datadir):
-    pytest.skip()  # These space currently not implemented in basix
-
+    pytest.skip("BDMCE and BDMCE spaces currently not implemented in basix")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
 
 
 @parametrize_cell_types_hex
-@pytest.mark.parametrize("family", ["AAE", "AAF"])
+@pytest.mark.parametrize("family", ["AAE", "AAE"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_AA_hex(family, degree, cell_type, datadir):
-    pytest.skip()  # These space currently not implemented in basix
+    pytest.skip("AAE and AAEÎ spaces currently not implemented in basix")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)

@@ -5,12 +5,12 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 
+import basix
 import cffi
 import dolfinx
 import numba
 import numpy as np
 import ufl
-import basix
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -171,7 +171,8 @@ def test_simple_evaluation():
     assert(np.allclose(grad_f_evaluated, grad_f_exact))
 
 
-def xtest_assembly_into_quadrature_function():
+@pytest.mark.skip("Quadrature elements not yet supported.")
+def test_assembly_into_quadrature_function():
     """Test assembly into a Quadrature function.
 
     This test evaluates a UFL Expression into a Quadrature function space by
