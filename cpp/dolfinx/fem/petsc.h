@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <memory>
@@ -111,4 +112,4 @@ void set_bc_petsc(
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     const Vec x0, double scale = 1.0);
 
-}
+} // namespace dolfinx::fem

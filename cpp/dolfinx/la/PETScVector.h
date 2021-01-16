@@ -8,10 +8,11 @@
 #pragma once
 
 #include "utils.h"
-#include <Eigen/Core>
 #include <array>
 #include <cstdint>
+#include <dolfinx/common/span.hpp>
 #include <petscvec.h>
+#include <vector>
 
 namespace dolfinx
 {
@@ -29,9 +30,8 @@ namespace la
 /// @param[in] x The local part of the vector, including ghost entries
 /// @return A PETSc Vec object that shares the data in @p x. The caller
 /// is responsible for destroying the Vec.
-Vec create_ghosted_vector(
-    const common::IndexMap& map, int bs,
-    const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& x);
+Vec create_ghosted_vector(const common::IndexMap& map, int bs,
+                          const tcb::span<const PetscScalar>& x);
 
 /// Print error message for PETSc calls that return an error
 void petsc_error(int error_code, std::string filename,
@@ -74,16 +74,15 @@ Vec create_petsc_vector(const common::IndexMap& map, int bs);
 Vec create_petsc_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
                         const std::vector<std::int64_t>& ghosts, int bs);
 
-/// Copy blocks from Vec into Eigen vectors
-std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> get_local_vectors(
+/// Copy blocks from Vec into local vectors
+std::vector<std::vector<PetscScalar>> get_local_vectors(
     const Vec x,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
-/// Scatter local Eigen vectors to Vec
+/// Scatter local vectors to Vec
 void scatter_local_vectors(
-    Vec x,
-    const std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,
+    Vec x, const std::vector<tcb::span<const PetscScalar>>& x_b,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 

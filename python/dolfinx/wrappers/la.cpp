@@ -7,6 +7,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -129,10 +130,36 @@ void la(py::module& m)
   // TODO: check reference counting for index sets
   m.def("create_petsc_index_sets", &dolfinx::la::create_petsc_index_sets,
         py::return_value_policy::take_ownership);
-  m.def("scatter_local_vectors", &dolfinx::la::scatter_local_vectors,
-        "Scatter the (ordered) list of sub vectors into a block vector.");
-  m.def("get_local_vectors", &dolfinx::la::get_local_vectors,
-        "Gather an (ordered) list of sub vectors from a block vector.");
+  m.def(
+      "scatter_local_vectors",
+      [](Vec x,
+         const std::vector<py::array_t<PetscScalar, py::array::c_style>>& x_b,
+         const std::vector<std::pair<
+             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
+             maps) {
+        std::vector<tcb::span<const PetscScalar>> _x_b;
+        for (auto& array : x_b)
+          _x_b.emplace_back(array.data(), array.size());
+        dolfinx::la::scatter_local_vectors(x, _x_b, maps);
+      },
+      "Scatter the (ordered) list of sub vectors into a block "
+      "vector.");
+  m.def(
+      "get_local_vectors",
+      [](const Vec x,
+         const std::vector<std::pair<
+             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
+             maps) {
+        std::vector<std::vector<PetscScalar>> vecs
+            = dolfinx::la::get_local_vectors(x, maps);
+
+        std::vector<py::array_t<PetscScalar>> ret;
+        for (const auto& v : vecs)
+          ret.emplace_back(v.size(), v.data());
+
+        return ret;
+      },
+      "Gather an (ordered) list of sub vectors from a block vector.");
   // NOTE: Enabling the below requires adding a C API for MatNullSpace to
   // petsc4py
   //   m.def("create_nullspace",
