@@ -325,7 +325,7 @@ def test_assembly_solve_block():
 
         return Jmat.norm(), Fvec.norm(), x.norm()
 
-    # J0norm, F0norm, x0norm = blocked_solver()
+    J0norm, F0norm, x0norm = blocked_solver()
 
     # -- Nested (MatNest)
     def nested_solver():
@@ -383,7 +383,7 @@ def test_assembly_solve_block():
 
     # assert J1norm == pytest.approx(J0norm, 1.0e-12)
     # assert F1norm == pytest.approx(F0norm, 1.0e-12)
-    # assert x1norm == pytest.approx(x0norm, 1.0e-12)
+    assert x1norm == pytest.approx(x0norm, 1.0e-12)
 
     # -- Monolithic version
     def monolithic_solver():
@@ -532,7 +532,7 @@ def test_assembly_solve_taylor_hood(mesh):
 
         return Jmat.norm(), x.norm()
 
-    # Jmat0norm, x0norm = blocked_solver()
+    Jmat0norm, x0norm = blocked_solver()
 
     # -- Blocked and nested
 
@@ -583,7 +583,7 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # assert Jmat1norm == pytest.approx(Jmat0norm, 1.0e-12)
     # # assert Fvec1.norm() == pytest.approx(Fvec0.norm(), 1.0e-12)
-    # assert x1norm == pytest.approx(x0norm, 1.0e-12)
+    assert x1norm == pytest.approx(x0norm, 1.0e-12)
 
     # -- Monolithic
     def monolithic_solver():
