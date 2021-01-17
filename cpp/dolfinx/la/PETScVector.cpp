@@ -63,7 +63,7 @@ std::vector<IS> la::create_petsc_index_sets(
 }
 //-----------------------------------------------------------------------------
 Vec la::create_ghosted_vector(const common::IndexMap& map, int bs,
-                              const tcb::span<const PetscScalar>& x)
+                              tcb::span<PetscScalar> x)
 {
   const std::int32_t size_local = bs * map.size_local();
   const std::int64_t size_global = bs * map.size_global();

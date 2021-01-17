@@ -31,7 +31,7 @@ namespace la
 /// @return A PETSc Vec object that shares the data in @p x. The caller
 /// is responsible for destroying the Vec.
 Vec create_ghosted_vector(const common::IndexMap& map, int bs,
-                          const tcb::span<const PetscScalar>& x);
+                          tcb::span<PetscScalar> x);
 
 /// Print error message for PETSc calls that return an error
 void petsc_error(int error_code, std::string filename,
