@@ -263,7 +263,7 @@ public:
            double scale = 1.0) const
   {
     assert(_g);
-    auto& g = _g->x()->array();
+    auto g = _g->x()->array();
     for (std::size_t i = 0; i < _dofs0.size(); ++i)
     {
       if (_dofs0[i] < x.rows())
@@ -283,7 +283,7 @@ public:
            double scale = 1.0) const
   {
     assert(_g);
-    auto& g = _g->x()->array();
+    auto g = _g->x()->array();
     assert(x.rows() <= x0.rows());
     for (std::size_t i = 0; i < _dofs0.size(); ++i)
     {
@@ -306,7 +306,7 @@ public:
   void dof_values(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> values) const
   {
     assert(_g);
-    auto& g = _g->x()->array();
+    const auto g = _g->x()->array();
     for (std::size_t i = 0; i < _dofs1_g.size(); ++i)
       values[_dofs0[i]] = g[_dofs1_g[i]];
   }

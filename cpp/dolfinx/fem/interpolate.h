@@ -65,7 +65,7 @@ void interpolate_values(
     const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& values)
 {
-  Eigen::Matrix<T, Eigen::Dynamic, 1>& coefficients = u.x()->array();
+  Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> coefficients = u.x()->array();
   coefficients = Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1>>(
       values.data(), coefficients.rows());
 }
@@ -99,7 +99,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   auto map = mesh->topology().index_map(tdim);
   assert(map);
 
-  Eigen::Matrix<T, Eigen::Dynamic, 1>& coeffs = u.x()->array();
+  Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> coeffs = u.x()->array();
 
   // Iterate over mesh and interpolate on each cell
   const auto dofmap_u = u.function_space()->dofmap();

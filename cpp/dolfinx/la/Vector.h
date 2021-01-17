@@ -51,10 +51,20 @@ public:
   int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  const Eigen::Matrix<T, Eigen::Dynamic, 1>& array() const { return _x; }
+  // const Eigen::Matrix<T, Eigen::Dynamic, 1>& array() const { return _x; }
+  Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> array() const
+  {
+    return Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>>(_x.data(),
+                                                                 _x.size());
+  }
 
   /// Get local part of the vector
-  Eigen::Matrix<T, Eigen::Dynamic, 1>& array() { return _x; }
+  // Eigen::Matrix<T, Eigen::Dynamic, 1>& array() { return _x; }
+  // { return _x; }
+  Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> array()
+  {
+    return Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>>(_x.data(), _x.size());
+  }
 
 private:
   // Map describing the data layout
@@ -64,6 +74,7 @@ private:
   int _bs;
 
   // Data
-  Eigen::Matrix<T, Eigen::Dynamic, 1> _x;
+  // Eigen::Matrix<T, Eigen::Dynamic, 1> _x;
+  std::vector<T> _x;
 };
 } // namespace dolfinx::la
