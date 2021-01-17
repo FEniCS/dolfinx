@@ -89,7 +89,6 @@ public:
   /// Destructor
   virtual ~Function()
   {
-    std::cout << "Inside destructor" << std::endl;
     if (_petsc_vector)
       VecDestroy(&_petsc_vector);
   }

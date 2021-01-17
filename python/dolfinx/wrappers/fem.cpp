@@ -602,7 +602,6 @@ void fem(py::module& m)
       //       Function")
       .def_property_readonly(
           "vector", &dolfinx::fem::Function<PetscScalar>::vector,
-          py::return_value_policy::reference_internal,
           "Return the PETSc vector associated with the finite element Function")
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::fem::Function<PetscScalar>::x),
