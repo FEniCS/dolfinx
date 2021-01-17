@@ -571,7 +571,7 @@ def test_assembly_solve_taylor_hood(mesh):
             x_sub, soln_sub = x_soln_pair
             soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             soln_sub.vector.copy(result=x_sub)
-            x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         # x.set(0.0)
         snes.solve(None, x)
@@ -606,7 +606,7 @@ def test_assembly_solve_taylor_hood(mesh):
         bdofsW0_P2_1 = dolfinx.fem.locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
 
         bcs = [dolfinx.DirichletBC(u_bc_0, bdofsW0_P2_0, W.sub(0)),
-            dolfinx.DirichletBC(u_bc_1, bdofsW0_P2_1, W.sub(0))]
+               dolfinx.DirichletBC(u_bc_1, bdofsW0_P2_1, W.sub(0))]
 
         Jmat = dolfinx.fem.create_matrix(J)
         Pmat = dolfinx.fem.create_matrix(P)
@@ -634,7 +634,6 @@ def test_assembly_solve_taylor_hood(mesh):
         return Jmat.norm(), x.norm()
 
     Jmat2norm, x2norm = monolithic_solver()
-
 
     assert Jmat2norm == pytest.approx(Jmat1norm, 1.0e-12)
     # assert Fvec2.norm() == pytest.approx(Fvec1.norm(), 1.0e-12)
