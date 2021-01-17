@@ -244,11 +244,25 @@ def test_assembly_solve_block():
     """Solve a two-field nonlinear diffusion like problem with block matrix
     approaches and test that solution is the same.
     """
-    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 12, 11)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 2, 3)
     p = 1
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p)
     V0 = dolfinx.fem.FunctionSpace(mesh, P)
     V1 = V0.clone()
+
+
+    def foo():
+        u = dolfinx.fem.Function(V0)
+        u.vector.view()
+        return u.vector
+
+    v = foo()
+    v.view()
+    # del u
+    print(type(v), v.refcount)
+    # v.view()
+
+    return
 
     def bc_val_0(x):
         return x[0]**2 + x[1]**2

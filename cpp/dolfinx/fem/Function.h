@@ -54,7 +54,6 @@ public:
       throw std::runtime_error("Cannot create Function from subspace. Consider "
                                "collapsing the function space");
     }
-    _x->array().setZero();
   }
 
   /// Create function on given function space with a given vector
@@ -90,6 +89,7 @@ public:
   /// Destructor
   virtual ~Function()
   {
+    std::cout << "Inside destructor" << std::endl;
     if (_petsc_vector)
       VecDestroy(&_petsc_vector);
   }
@@ -135,8 +135,8 @@ public:
         function_space_new->dofmap()->index_map_bs());
 
     // Copy values into new vector
-    Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> x_old = _x->array();
-    Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> x_new = vector_new->array();
+    Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> x_old = _x->array();
+    std::vector<T>& x_new = vector_new->mutable_array();
     for (std::size_t i = 0; i < collapsed_map.size(); ++i)
     {
       assert((int)i < x_new.size());
@@ -175,7 +175,8 @@ public:
     {
       if (!_petsc_vector)
       {
-        tcb::span<T> data(_x->array().data(), _x->array().size());
+        tcb::span<T> data(_x->mutable_array().data(),
+                          _x->mutable_array().size());
         _petsc_vector = la::create_ghosted_vector(
             *_function_space->dofmap()->index_map,
             _function_space->dofmap()->index_map_bs(), data);
@@ -333,7 +334,7 @@ public:
 
     // Loop over points
     u.setZero();
-    const Eigen::Matrix<T, Eigen::Dynamic, 1>& _v = _x->array();
+    const std::vector<T>& _v = _x->mutable_array();
     for (Eigen::Index p = 0; p < cells.rows(); ++p)
     {
       const int cell_index = cells(p);

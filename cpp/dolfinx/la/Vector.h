@@ -61,10 +61,7 @@ public:
   /// Get local part of the vector
   // Eigen::Matrix<T, Eigen::Dynamic, 1>& array() { return _x; }
   // { return _x; }
-  Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> array()
-  {
-    return Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>>(_x.data(), _x.size());
-  }
+  std::vector<T>& mutable_array() { return _x; }
 
 private:
   // Map describing the data layout

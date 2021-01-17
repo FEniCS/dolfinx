@@ -96,8 +96,8 @@ void la(py::module& m)
   // dolfinx::la::Vector
   py::class_<dolfinx::la::Vector<PetscScalar>,
              std::shared_ptr<dolfinx::la::Vector<PetscScalar>>>(m, "Vector")
-      .def("array",
-           py::overload_cast<>(&dolfinx::la::Vector<PetscScalar>::array));
+      .def_property_readonly("array",
+                             &dolfinx::la::Vector<PetscScalar>::mutable_array);
 
   // utils
   m.def("create_vector",
