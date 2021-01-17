@@ -180,6 +180,7 @@ public:
             *_function_space->dofmap()->index_map,
             _function_space->dofmap()->index_map_bs(), data);
       }
+
       return _petsc_vector;
     }
     else

@@ -66,8 +66,7 @@ void interpolate_values(
                                         Eigen::RowMajor>>& values)
 {
   std::vector<T>& coefficients = u.x()->mutable_array();
-  coefficients.insert(coefficients.begin(), values.data(),
-                      values.data() + coefficients.size());
+  std::copy_n(values.data(), coefficients.size(), coefficients.begin());
   // coefficients = Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1>>(
   //     values.data(), coefficients.rows());
 }
@@ -225,6 +224,7 @@ void interpolate(
       }
       value_offset += element_block_size;
     }
+
     detail::interpolate_values<T>(u, mixed_values);
     return;
   }
