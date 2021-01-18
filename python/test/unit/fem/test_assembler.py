@@ -508,138 +508,146 @@ def test_assembly_solve_taylor_hood(mesh):
     L1 = ufl.inner(p_zero, q) * dx
 
     # -- Blocked (nested)
+    def nested_solve():
+        A = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1], [["baij", "aij"], ["aij", ""]])
+        A.assemble()
+        P = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1], [["aij", "aij"], ["aij", ""]])
+        P.assemble()
+        b = dolfinx.fem.assemble_vector_nest([L0, L1])
+        dolfinx.fem.apply_lifting_nest(b, [[a00, a01], [a10, a11]], [bc0, bc1])
+        for b_sub in b.getNestSubVecs():
+            b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        bcs = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form([L0, L1]), [bc0, bc1])
+        dolfinx.fem.set_bc_nest(b, bcs)
+        b.assemble()
+        bnorm = b.norm()
 
-    A0 = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1], [["baij", "aij"], ["aij", ""]])
-    A0.assemble()
-    A0norm = nest_matrix_norm(A0)
-    P0 = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1], [["aij", "aij"], ["aij", ""]])
-    P0.assemble()
-    P0norm = nest_matrix_norm(P0)
-    b0 = dolfinx.fem.assemble_vector_nest([L0, L1])
-    dolfinx.fem.apply_lifting_nest(b0, [[a00, a01], [a10, a11]], [bc0, bc1])
-    for b_sub in b0.getNestSubVecs():
-        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form([L0, L1]), [bc0, bc1])
-    dolfinx.fem.set_bc_nest(b0, bcs0)
-    b0.assemble()
-    b0norm = b0.norm()
+        ksp = PETSc.KSP()
+        ksp.create(mesh.mpi_comm())
+        ksp.setOperators(A, P)
+        nested_IS = P.getNestISs()
+        ksp.setType("minres")
+        pc = ksp.getPC()
+        pc.setType("fieldsplit")
+        pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+        ksp_u, ksp_p = pc.getFieldSplitSubKSP()
+        ksp_u.setType("preonly")
+        ksp_u.getPC().setType('lu')
+        ksp_u.getPC().setFactorSolverType('superlu_dist')
+        ksp_p.setType("preonly")
 
-    ksp = PETSc.KSP()
-    ksp.create(mesh.mpi_comm())
-    ksp.setOperators(A0, P0)
-    nested_IS = P0.getNestISs()
-    ksp.setType("minres")
-    pc = ksp.getPC()
-    pc.setType("fieldsplit")
-    pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
-    ksp_u, ksp_p = pc.getFieldSplitSubKSP()
-    ksp_u.setType("preonly")
-    ksp_u.getPC().setType('lu')
-    ksp_u.getPC().setFactorSolverType('superlu_dist')
-    ksp_p.setType("preonly")
+        def monitor(ksp, its, rnorm):
+            # print("Num it, rnorm:", its, rnorm)
+            pass
 
-    def monitor(ksp, its, rnorm):
-        # print("Num it, rnorm:", its, rnorm)
-        pass
+        ksp.setTolerances(rtol=1.0e-8, max_it=50)
+        ksp.setMonitor(monitor)
+        ksp.setFromOptions()
+        x = b.copy()
+        ksp.solve(b, x)
+        assert ksp.getConvergedReason() > 0
 
-    ksp.setTolerances(rtol=1.0e-8, max_it=50)
-    ksp.setMonitor(monitor)
-    ksp.setFromOptions()
-    x0 = b0.copy()
-    ksp.solve(b0, x0)
-    assert ksp.getConvergedReason() > 0
+        return b.norm(), x.norm(), nest_matrix_norm(A), nest_matrix_norm(P)
 
     # -- Blocked (monolithic)
 
-    A1 = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], [bc0, bc1])
-    A1.assemble()
-    assert A1.norm() == pytest.approx(A0norm, 1.0e-12)
-    P1 = dolfinx.fem.assemble_matrix_block([[p00, p01], [p10, p11]], [bc0, bc1])
-    P1.assemble()
-    assert P1.norm() == pytest.approx(P0norm, 1.0e-12)
+    def blocked_solve():
+        A = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], [bc0, bc1])
+        A.assemble()
+        P = dolfinx.fem.assemble_matrix_block([[p00, p01], [p10, p11]], [bc0, bc1])
+        P.assemble()
+        b = dolfinx.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
+                                              [bc0, bc1])
 
-    b1 = dolfinx.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
-                                           [bc0, bc1])
+        ksp = PETSc.KSP()
+        ksp.create(mesh.mpi_comm())
+        ksp.setOperators(A, P)
+        ksp.setType("minres")
+        pc = ksp.getPC()
+        pc.setType('lu')
+        pc.setFactorSolverType('superlu_dist')
+        ksp.setTolerances(rtol=1.0e-8, max_it=50)
+        ksp.setFromOptions()
+        x = A.createVecRight()
+        ksp.solve(b, x)
+        assert ksp.getConvergedReason() > 0
 
-    assert b1.norm() == pytest.approx(b0norm, 1.0e-12)
-
-    ksp = PETSc.KSP()
-    ksp.create(mesh.mpi_comm())
-    ksp.setOperators(A1, P1)
-    ksp.setType("minres")
-    pc = ksp.getPC()
-    pc.setType('lu')
-    pc.setFactorSolverType('superlu_dist')
-    ksp.setTolerances(rtol=1.0e-8, max_it=50)
-    ksp.setFromOptions()
-    x1 = A1.createVecRight()
-    ksp.solve(b1, x1)
-    assert ksp.getConvergedReason() > 0
-    assert x1.norm() == pytest.approx(x0.norm(), 1e-8)
+        return b.norm(), x.norm(), A.norm(), P.norm()
 
     # -- Monolithic
+    def monolithic_solve():
+        P2_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+        P1_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+        TH = P2_el * P1_el
+        W = dolfinx.FunctionSpace(mesh, TH)
+        (u, p) = ufl.TrialFunctions(W)
+        (v, q) = ufl.TestFunctions(W)
+        a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
+        a01 = ufl.inner(p, ufl.div(v)) * dx
+        a10 = ufl.inner(ufl.div(u), q) * dx
+        a = a00 + a01 + a10
 
-    P2_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    P1_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    TH = P2_el * P1_el
-    W = dolfinx.FunctionSpace(mesh, TH)
-    (u, p) = ufl.TrialFunctions(W)
-    (v, q) = ufl.TestFunctions(W)
-    a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
-    a01 = ufl.inner(p, ufl.div(v)) * dx
-    a10 = ufl.inner(ufl.div(u), q) * dx
-    a = a00 + a01 + a10
+        p00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
+        p11 = ufl.inner(p, q) * dx
+        p_form = p00 + p11
 
-    p00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
-    p11 = ufl.inner(p, q) * dx
-    p_form = p00 + p11
+        f = dolfinx.Function(W.sub(0).collapse())
+        p_zero = dolfinx.Function(W.sub(1).collapse())
+        L0 = inner(f, v) * dx
+        L1 = inner(p_zero, q) * dx
+        L = L0 + L1
 
-    f = dolfinx.Function(W.sub(0).collapse())
-    p_zero = dolfinx.Function(W.sub(1).collapse())
-    L0 = inner(f, v) * dx
-    L1 = inner(p_zero, q) * dx
-    L = L0 + L1
+        bdofsW0_P2_0 = dolfinx.fem.locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
+        bdofsW0_P2_1 = dolfinx.fem.locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
 
-    bdofsW0_P2_0 = dolfinx.fem.locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
-    bdofsW0_P2_1 = dolfinx.fem.locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
+        bc0 = dolfinx.DirichletBC(u0, bdofsW0_P2_0, W.sub(0))
+        bc1 = dolfinx.DirichletBC(u0, bdofsW0_P2_1, W.sub(0))
 
-    bc0 = dolfinx.DirichletBC(u0, bdofsW0_P2_0, W.sub(0))
-    bc1 = dolfinx.DirichletBC(u0, bdofsW0_P2_1, W.sub(0))
+        A = dolfinx.fem.assemble_matrix(a, [bc0, bc1])
+        A.assemble()
+        P = dolfinx.fem.assemble_matrix(p_form, [bc0, bc1])
+        P.assemble()
 
-    A2 = dolfinx.fem.assemble_matrix(a, [bc0, bc1])
-    A2.assemble()
-    assert A2.norm() == pytest.approx(A0norm, 1.0e-12)
-    P2 = dolfinx.fem.assemble_matrix(p_form, [bc0, bc1])
-    P2.assemble()
-    assert P2.norm() == pytest.approx(P0norm, 1.0e-12)
+        b = dolfinx.fem.assemble_vector(L)
+        dolfinx.fem.apply_lifting(b, [a], [[bc0, bc1]])
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        dolfinx.fem.set_bc(b, [bc0, bc1])
 
-    b2 = dolfinx.fem.assemble_vector(L)
-    dolfinx.fem.apply_lifting(b2, [a], [[bc0, bc1]])
-    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    dolfinx.fem.set_bc(b2, [bc0, bc1])
-    b2norm = b2.norm()
-    assert b2norm == pytest.approx(b0norm, 1.0e-12)
+        ksp = PETSc.KSP()
+        ksp.create(mesh.mpi_comm())
+        ksp.setOperators(A, P)
+        ksp.setType("minres")
+        pc = ksp.getPC()
+        pc.setType('lu')
+        pc.setFactorSolverType('superlu_dist')
 
-    ksp = PETSc.KSP()
-    ksp.create(mesh.mpi_comm())
-    ksp.setOperators(A2, P2)
-    ksp.setType("minres")
-    pc = ksp.getPC()
-    pc.setType('lu')
-    pc.setFactorSolverType('superlu_dist')
+        def monitor(ksp, its, rnorm):
+            # print("Num it, rnorm:", its, rnorm)
+            pass
 
-    def monitor(ksp, its, rnorm):
-        # print("Num it, rnorm:", its, rnorm)
-        pass
+        ksp.setTolerances(rtol=1.0e-8, max_it=50)
+        ksp.setMonitor(monitor)
+        ksp.setFromOptions()
+        x = A.createVecRight()
+        ksp.solve(b, x)
+        assert ksp.getConvergedReason() > 0
+        # assert x0.norm() == pytest.approx(x2.norm(), 1e-8)
 
-    ksp.setTolerances(rtol=1.0e-8, max_it=50)
-    ksp.setMonitor(monitor)
-    ksp.setFromOptions()
-    x2 = A2.createVecRight()
-    ksp.solve(b2, x2)
-    assert ksp.getConvergedReason() > 0
-    assert x0.norm() == pytest.approx(x2.norm(), 1e-8)
+        return b.norm(), x.norm(), A.norm(), P.norm()
 
+    bnorm0, xnorm0, Anorm0, Pnorm0 = nested_solve()
+    bnorm1, xnorm1, Anorm1, Pnorm1 = blocked_solve()
+    bnorm2, xnorm2, Anorm2, Pnorm2 = monolithic_solve()
+
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
+    assert xnorm1 == pytest.approx(xnorm0, 1.0e-8)
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-12)
+    assert Pnorm1 == pytest.approx(Pnorm0, 1.0e-12)
+
+    assert bnorm2 == pytest.approx(bnorm0, 1.0e-12)
+    assert xnorm2 == pytest.approx(xnorm0, 1.0e-8)
+    assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
+    assert Pnorm2 == pytest.approx(Pnorm0, 1.0e-12)
 
 def test_basic_interior_facet_assembly():
     mesh = dolfinx.RectangleMesh(MPI.COMM_WORLD,
