@@ -29,9 +29,7 @@ Mat dolfinx::fem::create_matrix(const Form<PetscScalar>& a,
 }
 //-----------------------------------------------------------------------------
 Mat fem::create_matrix_block(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
     const std::string& type)
 {
   // Extract and check row/column ranges
@@ -59,7 +57,7 @@ Mat fem::create_matrix_block(
           = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
       const std::array bs = {V[0][row]->dofmap()->index_map_bs(),
                              V[1][col]->dofmap()->index_map_bs()};
-      if (a(row, col))
+      if (const fem::Form<PetscScalar>* form = a[row][col]; form)
       {
         // Create sparsity pattern for block
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
@@ -73,7 +71,7 @@ Mat fem::create_matrix_block(
         assert(patterns[row].back());
         auto& sp = patterns[row].back();
         assert(sp);
-        const fem::Form<PetscScalar>& a_ = *a(row, col);
+        const fem::Form<PetscScalar>& a_ = *form;
         if (a_.num_integrals(IntegralType::cell) > 0)
           sparsitybuild::cells(*sp, mesh->topology(), dofmaps);
         if (a_.num_integrals(IntegralType::interior_facet) > 0)
@@ -174,36 +172,26 @@ Mat fem::create_matrix_block(
 }
 //-----------------------------------------------------------------------------
 Mat fem::create_matrix_nest(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
     const std::vector<std::vector<std::string>>& types)
 {
   // Extract and check row/column ranges
   auto V = fem::common_function_spaces(extract_function_spaces(a));
 
   std::vector<std::vector<std::string>> _types(
-      a.rows(), std::vector<std::string>(a.cols()));
+      a.size(), std::vector<std::string>(a[0].size()));
   if (!types.empty())
     _types = types;
 
   // Loop over each form and create matrix
-  // Eigen::Array<std::shared_ptr<la::PETScMatrix>, Eigen::Dynamic,
-  // Eigen::Dynamic,
-  //              Eigen::RowMajor>
-  //     mats(a.rows(), a.cols());
   Eigen::Array<Mat, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> mats(
-      a.rows(), a.cols());
-  for (int i = 0; i < a.rows(); ++i)
+      a.size(), a[0].size());
+  for (std::size_t i = 0; i < a.size(); ++i)
   {
-    for (int j = 0; j < a.cols(); ++j)
+    for (std::size_t j = 0; j < a[i].size(); ++j)
     {
-      if (a(i, j))
-      {
-        // mats(i, j) = std::make_shared<la::PETScMatrix>(
-        //     create_matrix(*a(i, j), _types[i][j]));
-        mats(i, j) = create_matrix(*a(i, j), _types[i][j]);
-      }
+      if (const fem::Form<PetscScalar>* form = a[i][j]; form)
+        mats(i, j) = create_matrix(*form, _types[i][j]);
       else
         mats(i, j) = nullptr;
     }

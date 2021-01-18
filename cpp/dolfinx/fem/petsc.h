@@ -7,11 +7,9 @@
 #pragma once
 
 #include <memory>
+#include <petscmat.h>
 #include <petscvec.h>
 #include <vector>
-#include <petscvec.h>
-#include <petscmat.h>
-#include <Eigen/Core>
 
 namespace dolfinx::common
 {
@@ -45,18 +43,14 @@ Mat create_matrix(const Form<PetscScalar>& a,
 /// bilinear forms. The caller is responsible for destroying the Mat
 /// object.
 Mat create_matrix_block(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
     const std::string& type = std::string());
 
 /// Create nested (MatNest) matrix
 ///
 /// The caller is responsible for destroying the Mat object
 Mat create_matrix_nest(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a,
+    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
     const std::vector<std::vector<std::string>>& types);
 
 /// Initialise monolithic vector. Vector is not zeroed.
