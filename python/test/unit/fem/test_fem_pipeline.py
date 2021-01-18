@@ -8,20 +8,18 @@ import os
 
 import numpy as np
 import pytest
-from mpi4py import MPI
-from petsc4py import PETSc
-
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, fem, cpp,
-                     UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,
-                     common)
+from dolfinx import (DirichletBC, Function, FunctionSpace, UnitCubeMesh,
+                     UnitSquareMesh, VectorFunctionSpace, cpp, fem)
+from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
-from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
 from dolfinx_utils.test.skips import skip_if_complex
-from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
-                 inner, ds, dS, avg, jump, FacetNormal, CellDiameter)
+from mpi4py import MPI
+from petsc4py import PETSc
+from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
+                 TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)
 
 
 def get_mesh(cell_type, datadir):
