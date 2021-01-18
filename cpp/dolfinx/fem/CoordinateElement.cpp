@@ -20,7 +20,7 @@ CoordinateElement::CoordinateElement(
     : _gdim(geometric_dimension), _signature(signature),
       _dof_layout(dof_layout), _basix_element_handle(basix_element_handle),
       _needs_permutation_data(needs_permutation_data),
-      _permute_dofs(permute_dofs)
+      _permute_dofs(permute_dofs), _unpermute_dofs(unpermute_dofs)
 {
   const mesh::CellType cell = cell_shape();
   int degree = basix::degree(basix_element_handle);
@@ -229,6 +229,12 @@ void CoordinateElement::compute_reference_geometry(
 void CoordinateElement::permute_dofs(int* dofs, const uint32_t cell_perm) const
 {
   _permute_dofs(dofs, cell_perm);
+}
+//-----------------------------------------------------------------------------
+void CoordinateElement::unpermute_dofs(int* dofs,
+                                       const uint32_t cell_perm) const
+{
+  _unpermute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
 bool CoordinateElement::needs_permutation_data() const

@@ -124,8 +124,8 @@ mesh::Geometry mesh::create_geometry(
         = topology.get_cell_permutation_info();
 
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
-      coordinate_element.permute_dofs(dofmap.links(cell).data(),
-                                      cell_info[cell]);
+      coordinate_element.unpermute_dofs(dofmap.links(cell).data(),
+                                        cell_info[cell]);
   }
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,

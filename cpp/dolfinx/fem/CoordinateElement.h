@@ -32,11 +32,13 @@ public:
   /// @param[in] needs_permutation_data Indicates whether or not the element
   /// needs permutation data (for higher order elements)
   /// @param[in] permute_dofs Function that permutes the DOF numbering
+  /// @param[in] permute_dofs Function that reverses a DOF permutation
   CoordinateElement(int basix_element_handle, int geometric_dimension,
                     const std::string& signature,
                     const ElementDofLayout& dof_layout,
                     bool needs_permutation_data,
-                    std::function<int(int*, const uint32_t)> permute_dofs);
+                    std::function<int(int*, const uint32_t)> permute_dofs,
+                    std::function<int(int*, const uint32_t)> unpermute_dofs);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -95,6 +97,9 @@ public:
   /// Permutes a list of DOF numbers on a cell
   void permute_dofs(int* dofs, const uint32_t cell_perm) const;
 
+  /// Reverses a DOF permutation
+  void unpermute_dofs(int* dofs, const uint32_t cell_perm) const;
+
   /// Indicates whether the coordinate map needs permutation data passing in
   /// (for higher order geometries)
   bool needs_permutation_data() const;
@@ -120,5 +125,8 @@ private:
 
   // Dof permutation maker
   std::function<int(int*, const uint32_t)> _permute_dofs;
+
+  // Dof permutation maker
+  std::function<int(int*, const uint32_t)> _unpermute_dofs;
 };
 } // namespace dolfinx::fem
