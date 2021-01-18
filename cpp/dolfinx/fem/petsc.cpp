@@ -71,15 +71,14 @@ Mat fem::create_matrix_block(
         assert(patterns[row].back());
         auto& sp = patterns[row].back();
         assert(sp);
-        const fem::Form<PetscScalar>& a_ = *form;
-        if (a_.num_integrals(IntegralType::cell) > 0)
+        if (form->num_integrals(IntegralType::cell) > 0)
           sparsitybuild::cells(*sp, mesh->topology(), dofmaps);
-        if (a_.num_integrals(IntegralType::interior_facet) > 0)
+        if (form->num_integrals(IntegralType::interior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
           sparsitybuild::interior_facets(*sp, mesh->topology(), dofmaps);
         }
-        if (a_.num_integrals(IntegralType::exterior_facet) > 0)
+        if (form->num_integrals(IntegralType::exterior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
           sparsitybuild::exterior_facets(*sp, mesh->topology(), dofmaps);
