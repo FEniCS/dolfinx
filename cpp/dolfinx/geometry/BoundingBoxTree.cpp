@@ -385,12 +385,20 @@ int BoundingBoxTree::tdim() const { return _tdim; }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
 {
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> bbox
+      = _bbox_coordinates.block<2, 3>(2 * i, 0);
   s << "[";
-  for (int j = 0; j < 3; ++j)
-    s << _bbox_coordinates(i, j) << " ";
+  for (int j = 0; j < 2; ++j)
+  {
+    for (int k = 0; k < 3; ++k)
+      s << bbox(j, k) << " ";
+    if (j == 0)
+      s << "]->"
+        << "[";
+  }
   s << "]\n";
 
-  if (_bboxes(i, 0) == i)
+  if (_bboxes(i, 0) == _bboxes(i, 1))
     s << "leaf containing entity (" << _bboxes(i, 1) << ")";
   else
   {
