@@ -103,7 +103,7 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_geometry) const;
 
-  /// TODO
+  /// Returns a function that gets the reordering of DOFs on a cell
   std::function<int(int*, const uint32_t)> get_dof_permutation() const;
 
   /// Indicates whether the coordinate map needs permutation data passing in

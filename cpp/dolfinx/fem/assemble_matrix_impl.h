@@ -139,8 +139,6 @@ void assemble_matrix(
   if (a.num_integrals(IntegralType::exterior_facet) > 0
       or a.num_integrals(IntegralType::interior_facet) > 0)
   {
-    // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh->topology_mutable().create_entities(tdim - 1);
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     mesh->topology_mutable().create_entity_permutations();
 
