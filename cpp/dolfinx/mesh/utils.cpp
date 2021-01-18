@@ -535,9 +535,9 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::cell_normals(
   return Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>();
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
-    const mesh::Mesh& mesh, int dim,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities)
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+mesh::midpoints(const mesh::Mesh& mesh, int dim,
+                const tcb::span<const int>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
@@ -549,7 +549,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
       entity_to_geometry = entities_to_geometry(mesh, dim, entities, false);
 
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x_mid(
-      entities.rows(), 3);
+      entities.size(), 3);
 
   for (Eigen::Index e = 0; e < entity_to_geometry.rows(); ++e)
   {
@@ -745,10 +745,9 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-mesh::entities_to_geometry(
-    const mesh::Mesh& mesh, const int dim,
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list,
-    bool orient)
+mesh::entities_to_geometry(const mesh::Mesh& mesh, const int dim,
+                           const tcb::span<const std::int32_t>& entity_list,
+                           bool orient)
 {
   dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
   const int num_entity_vertices
@@ -776,7 +775,7 @@ mesh::entities_to_geometry(
   assert(e_to_v);
   const auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
-  for (int i = 0; i < entity_list.size(); ++i)
+  for (std::size_t i = 0; i < entity_list.size(); ++i)
   {
     const std::int32_t idx = entity_list[i];
     const std::int32_t cell = e_to_c->links(idx)[0];

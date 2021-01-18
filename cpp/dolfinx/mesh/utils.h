@@ -8,6 +8,7 @@
 
 #include <Eigen/Core>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <functional>
@@ -66,9 +67,9 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> cell_normals(
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_indices);
 
 /// Compute midpoints or mesh entities of a given dimension
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
-    const mesh::Mesh& mesh, int dim,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities);
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+midpoints(const mesh::Mesh& mesh, int dim,
+          const tcb::span<const int>& entities);
 
 /// Compute indicies of all mesh entities that evaluate to true for the
 /// provided geometric marking function. An entity is considered marked
@@ -124,10 +125,9 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_boundary(
 /// indices(i, j) is the position in the geometry array of the j-th vertex of
 /// the entity entity_list[i].
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-entities_to_geometry(
-    const mesh::Mesh& mesh, const int dim,
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list,
-    bool orient);
+entities_to_geometry(const mesh::Mesh& mesh, const int dim,
+                     const tcb::span<const std::int32_t>& entity_list,
+                     bool orient);
 
 /// Compute the indices (local) of all exterior facets. An exterior facet
 /// (co-dimension 1) is one that is connected globally to only one cell of
