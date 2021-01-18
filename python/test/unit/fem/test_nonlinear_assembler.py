@@ -354,7 +354,6 @@ def test_assembly_solve_block_nl():
         u.interpolate(initial_guess_u)
         p.interpolate(initial_guess_p)
 
-
         x = dolfinx.fem.create_vector_nest(F)
         assert x.getType() == "nest"
         for x_soln_pair in zip(x.getNestSubVecs(), (u, p)):
