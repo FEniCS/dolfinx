@@ -394,7 +394,7 @@ def test_assembly_solve_block():
         bdofsW1_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
 
         bcs = [dolfinx.fem.dirichletbc.DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)),
-            dolfinx.fem.dirichletbc.DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
+               dolfinx.fem.dirichletbc.DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
 
         Jmat = dolfinx.fem.create_matrix(J)
         Fvec = dolfinx.fem.create_vector(F)

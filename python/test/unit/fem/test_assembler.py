@@ -520,7 +520,6 @@ def test_assembly_solve_taylor_hood(mesh):
         bcs = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form([L0, L1]), [bc0, bc1])
         dolfinx.fem.set_bc_nest(b, bcs)
         b.assemble()
-        bnorm = b.norm()
 
         ksp = PETSc.KSP()
         ksp.create(mesh.mpi_comm())
@@ -648,6 +647,7 @@ def test_assembly_solve_taylor_hood(mesh):
     assert xnorm2 == pytest.approx(xnorm0, 1.0e-8)
     assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
     assert Pnorm2 == pytest.approx(Pnorm0, 1.0e-12)
+
 
 def test_basic_interior_facet_assembly():
     mesh = dolfinx.RectangleMesh(MPI.COMM_WORLD,
