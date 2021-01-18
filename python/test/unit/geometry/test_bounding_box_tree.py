@@ -292,7 +292,7 @@ def test_midpoint_tree(N):
     # Find entity closest to point in two steps
     # 1. Find closest midpoint using midpoint tree
     start_refined = time.time()
-    closest_bbox_node, distance_m = compute_closest_entity(midpoint_tree, p, mesh)
+    entity_m, distance_m = compute_closest_entity(midpoint_tree, p, mesh)
     # 2. Refine search by using exact distance query
     entity, distance = compute_closest_entity(tree, p, mesh, R=distance_m)
     end_refined = time.time()
@@ -318,6 +318,18 @@ def test_midpoint_tree(N):
     entities = select_colliding_cells(mesh, entities, p_c, len(entities))
     if len(entities) > 0:
         assert(numpy.isin(e_r, entities))
+
+
+def test_midpoint_entities():
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
+    right_cells = locate_entities(mesh, mesh.topology.dim, lambda x: 0.5 <= x[0])
+    tree = BoundingBoxTree(mesh, mesh.topology.dim, right_cells)
+    midpoint_tree = create_midpoint_tree(mesh, mesh.topology.dim, right_cells)
+    p = numpy.array([0.99, 0.95, 0])
+    e, R = compute_closest_entity(tree, p, mesh)
+    e_mid, R_mid = compute_closest_entity(midpoint_tree, p, mesh)
+    assert(e_mid == e)
+    assert(R < R_mid)
 
 
 def test_surface_bbtree():

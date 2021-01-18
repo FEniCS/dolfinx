@@ -270,6 +270,21 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
             << " nodes for " << num_leaves << " entities.";
 }
 //-----------------------------------------------------------------------------
+void BoundingBoxTree::remap_entity_indices(
+    std::vector<std::int32_t> entity_indices)
+{
+  // Remap leaf indices
+  for (int i = 0; i < _bboxes.rows(); ++i)
+  {
+    if (_bboxes(i, 0) == _bboxes(i, 1))
+    {
+      int mapped_index = entity_indices[_bboxes(i, 0)];
+      _bboxes(i, 0) = mapped_index;
+      _bboxes(i, 1) = mapped_index;
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(
     const mesh::Mesh& mesh, int tdim,
     const std::vector<std::int32_t>& entity_indices, double padding)
@@ -306,15 +321,7 @@ BoundingBoxTree::BoundingBoxTree(
     std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
 
   // Remap leaf indices
-  for (int i = 0; i < _bboxes.rows(); ++i)
-  {
-    if (_bboxes(i, 0) == _bboxes(i, 1))
-    {
-      int mapped_index = entity_indices_sorted[_bboxes(i, 0)];
-      _bboxes(i, 0) = mapped_index;
-      _bboxes(i, 1) = mapped_index;
-    }
-  }
+  remap_entity_indices(entity_indices_sorted);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << entity_indices.size() << " entities.";

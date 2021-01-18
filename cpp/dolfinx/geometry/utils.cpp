@@ -192,9 +192,12 @@ geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
 {
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
                "a given topological dimension and subset of entities.";
-
+  // Copy and sort entity indices
+  std::vector<std::int32_t> entity_indices_sorted(entity_indices);
+  std::sort(entity_indices_sorted.begin(), entity_indices_sorted.end());
   Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> entities(
-      entity_indices.data(), entity_indices.size());
+      entity_indices_sorted.data(), entity_indices_sorted.size());
+
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
       = mesh::midpoints(mesh, tdim, entities);
 
@@ -202,7 +205,10 @@ geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
   for (std::size_t i = 0; i < points.size(); ++i)
     points[i] = midpoints.row(i);
   // Build tree
-  return geometry::BoundingBoxTree(points);
+  geometry::BoundingBoxTree tree(points);
+  // Remap leaf entities
+  tree.remap_entity_indices(entity_indices_sorted);
+  return tree;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::array<int, 2>>
