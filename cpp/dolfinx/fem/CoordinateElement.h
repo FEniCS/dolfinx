@@ -32,7 +32,7 @@ public:
   /// @param[in] needs_permutation_data Indicates whether or not the element
   /// needs permutation data (for higher order elements)
   /// @param[in] permute_dofs Function that permutes the DOF numbering
-  /// @param[in] permute_dofs Function that reverses a DOF permutation
+  /// @param[in] unpermute_dofs Function that reverses a DOF permutation
   CoordinateElement(int basix_element_handle, int geometric_dimension,
                     const std::string& signature,
                     const ElementDofLayout& dof_layout,
