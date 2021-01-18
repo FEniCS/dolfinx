@@ -293,8 +293,8 @@ def test_assembly_solve_block_nl():
     J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
 
-    # -- Blocked version
     def blocked_solve():
+        """Blocked version"""
         Jmat = dolfinx.fem.create_matrix_block(J)
         Fvec = dolfinx.fem.create_vector_block(F)
 
@@ -322,11 +322,10 @@ def test_assembly_solve_block_nl():
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
         assert snes.getConvergedReason() > 0
-
         return x.norm()
 
-    # -- Nested (MatNest)
     def nested_solve():
+        """Nested version"""
         Jmat = dolfinx.fem.create_matrix_nest(J)
         assert Jmat.getType() == "nest"
         Fvec = dolfinx.fem.create_vector_nest(F)
@@ -368,11 +367,10 @@ def test_assembly_solve_block_nl():
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
         assert snes.getConvergedReason() > 0
-
         return x.norm()
 
-    # -- Monolithic version
     def monolithic_solve():
+        """Monolithic version"""
         E = P * P
         W = dolfinx.fem.FunctionSpace(mesh, E)
         U = dolfinx.fem.Function(W)
@@ -417,12 +415,9 @@ def test_assembly_solve_block_nl():
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
         assert snes.getConvergedReason() > 0
-
         return x.norm()
 
     norm0 = blocked_solve()
-    # norm1 = nested_solve()
-    # norm1 = nested_solve()
     norm1 = nested_solve()
     norm2 = monolithic_solve()
     assert norm1 == pytest.approx(norm0, 1.0e-12)

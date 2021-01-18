@@ -507,8 +507,8 @@ def test_assembly_solve_taylor_hood(mesh):
     L0 = ufl.inner(f, v) * dx
     L1 = ufl.inner(p_zero, q) * dx
 
-    # -- Blocked (nested)
     def nested_solve():
+        """Nested solver"""
         A = dolfinx.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1], [["baij", "aij"], ["aij", ""]])
         A.assemble()
         P = dolfinx.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1], [["aij", "aij"], ["aij", ""]])
@@ -545,12 +545,10 @@ def test_assembly_solve_taylor_hood(mesh):
         x = b.copy()
         ksp.solve(b, x)
         assert ksp.getConvergedReason() > 0
-
         return b.norm(), x.norm(), nest_matrix_norm(A), nest_matrix_norm(P)
 
-    # -- Blocked (monolithic)
-
     def blocked_solve():
+        """Blocked (monolithic) solver"""
         A = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], [bc0, bc1])
         A.assemble()
         P = dolfinx.fem.assemble_matrix_block([[p00, p01], [p10, p11]], [bc0, bc1])
@@ -570,11 +568,10 @@ def test_assembly_solve_taylor_hood(mesh):
         x = A.createVecRight()
         ksp.solve(b, x)
         assert ksp.getConvergedReason() > 0
-
         return b.norm(), x.norm(), A.norm(), P.norm()
 
-    # -- Monolithic
     def monolithic_solve():
+        """Monolithic (interleaved) solver"""
         P2_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
         P1_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
         TH = P2_el * P1_el
@@ -618,7 +615,6 @@ def test_assembly_solve_taylor_hood(mesh):
         ksp.setType("minres")
         pc = ksp.getPC()
         pc.setType('lu')
-        # pc.setFactorSolverType('superlu_dist')
 
         def monitor(ksp, its, rnorm):
             # print("Num it, rnorm:", its, rnorm)
@@ -630,24 +626,21 @@ def test_assembly_solve_taylor_hood(mesh):
         x = A.createVecRight()
         ksp.solve(b, x)
         assert ksp.getConvergedReason() > 0
-        # assert x0.norm() == pytest.approx(x2.norm(), 1e-8)
-
         return b.norm(), x.norm(), A.norm(), P.norm()
 
+    bnorm0, xnorm0, Anorm0, Pnorm0 = nested_solve()
     bnorm1, xnorm1, Anorm1, Pnorm1 = blocked_solve()
-    bnorm0, xnorm0, Anorm0, Pnorm0 = nested_solve()
-    bnorm0, xnorm0, Anorm0, Pnorm0 = nested_solve()
-    # bnorm2, xnorm2, Anorm2, Pnorm2 = monolithic_solve()
+    bnorm2, xnorm2, Anorm2, Pnorm2 = monolithic_solve()
 
-    # assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
-    # assert xnorm1 == pytest.approx(xnorm0, 1.0e-8)
-    # assert Anorm1 == pytest.approx(Anorm0, 1.0e-12)
-    # assert Pnorm1 == pytest.approx(Pnorm0, 1.0e-12)
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
+    assert xnorm1 == pytest.approx(xnorm0, 1.0e-8)
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-12)
+    assert Pnorm1 == pytest.approx(Pnorm0, 1.0e-12)
 
-    # assert bnorm2 == pytest.approx(bnorm0, 1.0e-12)
-    # assert xnorm2 == pytest.approx(xnorm0, 1.0e-8)
-    # assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
-    # assert Pnorm2 == pytest.approx(Pnorm0, 1.0e-12)
+    assert bnorm2 == pytest.approx(bnorm0, 1.0e-12)
+    assert xnorm2 == pytest.approx(xnorm0, 1.0e-8)
+    assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
+    assert Pnorm2 == pytest.approx(Pnorm0, 1.0e-12)
 
 
 def test_basic_interior_facet_assembly():
