@@ -67,8 +67,6 @@ void interpolate_values(
 {
   std::vector<T>& coefficients = u.x()->mutable_array();
   std::copy_n(values.data(), coefficients.size(), coefficients.begin());
-  // coefficients = Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1>>(
-  //     values.data(), coefficients.rows());
 }
 
 template <typename T>

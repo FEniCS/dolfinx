@@ -242,8 +242,7 @@ public:
   /// @return Sorted array of dof indices (unrolled) and index to the
   /// first entry in the dof index array that is not owned. Entries
   /// `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
-  std::pair<const tcb::span<const std::int32_t>, std::int32_t>
-  dof_indices() const
+  std::pair<tcb::span<const std::int32_t>, std::int32_t> dof_indices() const
   {
     return {tcb::make_span(_dofs0), _owned_indices0};
   }

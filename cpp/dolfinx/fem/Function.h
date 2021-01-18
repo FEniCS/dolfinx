@@ -174,8 +174,7 @@ public:
     {
       if (!_petsc_vector)
       {
-        tcb::span<T> data(_x->mutable_array().data(),
-                          _x->mutable_array().size());
+        tcb::span data(_x->mutable_array());
         _petsc_vector = la::create_ghosted_vector(
             *_function_space->dofmap()->index_map,
             _function_space->dofmap()->index_map_bs(), data);

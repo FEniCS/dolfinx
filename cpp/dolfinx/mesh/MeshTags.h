@@ -80,10 +80,10 @@ public:
   /// Find all entities with a given tag value
   /// @param[in] value The value
   /// @return Indices of tagged entities
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> find(const T value) const
+  std::vector<std::int32_t> find(const T value) const
   {
     int n = std::count(_values.begin(), _values.end(), value);
-    Eigen::Array<std::int32_t, Eigen::Dynamic, 1> indices(n);
+    std::vector<std::int32_t> indices(n);
     int counter = 0;
     for (std::int32_t i = 0; i < _values.size(); ++i)
     {

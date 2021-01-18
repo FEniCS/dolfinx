@@ -116,7 +116,7 @@ std::vector<std::vector<PetscScalar>> la::get_local_vectors(
   VecGetSize(x_local, &n);
   const PetscScalar* array = nullptr;
   VecGetArrayRead(x_local, &array);
-  tcb::span<const PetscScalar> _x(array, n);
+  tcb::span _x(array, n);
 
   // Copy PETSc Vec data in to local vectors
   std::vector<std::vector<PetscScalar>> x_b;
@@ -161,7 +161,7 @@ void la::scatter_local_vectors(
   VecGetSize(x_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(x_local, &array);
-  tcb::span<PetscScalar> _x(array, n);
+  tcb::span _x(array, n);
 
   // Copy local vectors into PETSc Vec
   int offset = 0;

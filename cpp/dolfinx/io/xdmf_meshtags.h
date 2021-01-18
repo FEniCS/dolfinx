@@ -45,9 +45,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   const std::string path_prefix = "/MeshTags/" + name;
   xdmf_mesh::add_topology_data(
       comm, xml_node, h5_id, path_prefix, mesh->topology(), mesh->geometry(),
-      dim,
-      Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-          meshtags.indices().data(), num_active_entities, 1));
+      dim, tcb::span(meshtags.indices().data(), num_active_entities));
 
   // Add attribute node with values
   pugi::xml_node attribute_node = xml_node.append_child("Attribute");

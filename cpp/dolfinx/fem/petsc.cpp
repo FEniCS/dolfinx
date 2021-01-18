@@ -279,7 +279,7 @@ void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
+  tcb::span _b(array, n);
   fem::assemble_vector<PetscScalar>(_b, L);
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b, &b_local);
@@ -297,14 +297,13 @@ void fem::apply_lifting_petsc(
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
+  tcb::span _b(array, n);
 
   if (x0.empty())
     fem::apply_lifting<PetscScalar>(_b, a, bcs1, {}, scale);
   else
   {
-    std::vector<Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0_ref;
+    std::vector<tcb::span<const PetscScalar>> x0_ref;
     std::vector<Vec> x0_local(a.size());
     std::vector<const PetscScalar*> x0_array(a.size());
     for (std::size_t i = 0; i < a.size(); ++i)
@@ -317,8 +316,7 @@ void fem::apply_lifting_petsc(
       x0_ref.emplace_back(x0_array[i], n);
     }
 
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0_tmp(x0_ref.begin(), x0_ref.end());
+    std::vector x0_tmp(x0_ref.begin(), x0_ref.end());
     fem::apply_lifting<PetscScalar>(_b, a, bcs1, x0_tmp, scale);
 
     for (std::size_t i = 0; i < x0_local.size(); ++i)
@@ -341,8 +339,7 @@ void fem::set_bc_petsc(
   VecGetLocalSize(b, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b, &array);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
-
+  tcb::span _b(array, n);
   if (x0)
   {
     Vec x0_local;
@@ -351,8 +348,7 @@ void fem::set_bc_petsc(
     VecGetSize(x0_local, &n);
     const PetscScalar* array = nullptr;
     VecGetArrayRead(x0_local, &array);
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x0(array,
-                                                                        n);
+    tcb::span _x0(array, n);
     fem::set_bc<PetscScalar>(_b, bcs, _x0, scale);
     VecRestoreArrayRead(x0_local, &array);
     VecGhostRestoreLocalForm(x0, &x0_local);

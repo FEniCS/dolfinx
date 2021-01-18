@@ -262,9 +262,18 @@ void fem(py::module& m)
   m.def("assemble_scalar", &dolfinx::fem::assemble_scalar<PetscScalar>,
         "Assemble functional over mesh");
   // Vector
-  m.def("assemble_vector", &dolfinx::fem::assemble_vector<PetscScalar>,
-        py::arg("b"), py::arg("L"),
-        "Assemble linear form into an existing Eigen vector");
+  m.def(
+      "assemble_vector",
+      [](py::array_t<PetscScalar, py::array::c_style> b,
+         const dolfinx::fem::Form<PetscScalar>& L) {
+        dolfinx::fem::assemble_vector<PetscScalar>(
+            tcb::span(b.mutable_data(), b.size()), L);
+      },
+      py::arg("b"), py::arg("L"),
+      "Assemble linear form into an existing Eigen vector");
+  //   m.def("assemble_vector", &dolfinx::fem::assemble_vector<PetscScalar>,
+  //         py::arg("b"), py::arg("L"),
+  //         "Assemble linear form into an existing Eigen vector");
   // Matrices
   m.def("assemble_matrix_petsc",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
@@ -316,21 +325,38 @@ void fem(py::module& m)
             &dolfinx::fem::assemble_matrix<PetscScalar>));
 
   // BC modifiers
-  m.def("apply_lifting", &dolfinx::fem::apply_lifting<PetscScalar>,
-        "Modify vector for lifted boundary conditions");
+  m.def(
+      "apply_lifting",
+      [](py::array_t<PetscScalar, py::array::c_style> b,
+         const std::vector<
+             std::shared_ptr<const dolfinx::fem::Form<PetscScalar>>>& a,
+         const std::vector<std::vector<std::shared_ptr<
+             const dolfinx::fem::DirichletBC<PetscScalar>>>>& bcs1,
+         const std::vector<py::array_t<PetscScalar, py::array::c_style>>& x0,
+         double scale) {
+        std::vector<tcb::span<const PetscScalar>> _x0;
+        for (const auto& x : x0)
+          _x0.emplace_back(x.data(), x.size());
+        dolfinx::fem::apply_lifting<PetscScalar>(
+            tcb::span(b.mutable_data(), b.size()), a, bcs1, _x0, scale);
+      },
+      "Modify vector for lifted boundary conditions");
   m.def(
       "set_bc",
-      [](Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+      [](py::array_t<PetscScalar, py::array::c_style> b,
          const std::vector<std::shared_ptr<
              const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
          const py::array_t<PetscScalar, py::array::c_style>& x0, double scale) {
         if (x0.ndim() == 0)
-          dolfinx::fem::set_bc<PetscScalar>(b, bcs, scale);
+        {
+          dolfinx::fem::set_bc<PetscScalar>(
+              tcb::span(b.mutable_data(), b.size()), bcs, scale);
+        }
         else if (x0.ndim() == 1)
         {
-          Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x0(
-              x0.data(), x0.shape(0));
-          dolfinx::fem::set_bc<PetscScalar>(b, bcs, _x0, scale);
+          dolfinx::fem::set_bc<PetscScalar>(
+              tcb::span(b.mutable_data(), b.size()), bcs,
+              tcb::span(x0.data(), x0.shape(0)), scale);
         }
         else
           throw std::runtime_error("Wrong array dimension.");

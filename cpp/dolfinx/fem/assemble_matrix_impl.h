@@ -9,7 +9,7 @@
 #include "DofMap.h"
 #include "Form.h"
 #include "utils.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/utils.h>
