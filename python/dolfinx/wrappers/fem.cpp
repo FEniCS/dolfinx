@@ -592,14 +592,6 @@ void fem(py::module& m)
             dolfinx::fem::interpolate_c<PetscScalar>(self, _f);
           },
           "Interpolate using a pointer to an expression with a C signature")
-      //   .def_property_readonly(
-      //       "vector", [](dolfinx::fem::Function<PetscScalar>& self)
-      //       {
-      //           return py::array_t<PetscScalar>(self.mutable_array().size(),
-      //       }
-      //       &dolfinx::fem::Function<PetscScalar>::vector,
-      //       "Return the PETSc vector associated with the finite element
-      //       Function")
       .def_property_readonly(
           "vector", &dolfinx::fem::Function<PetscScalar>::vector,
           "Return the PETSc vector associated with the finite element Function")

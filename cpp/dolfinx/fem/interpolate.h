@@ -104,7 +104,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
 
   // Iterate over mesh and interpolate on each cell
   const auto dofmap_u = u.function_space()->dofmap();
-  const Eigen::Matrix<T, Eigen::Dynamic, 1>& v_array = v.x()->array();
+  const std::vector<T>& v_array = v.x()->array();
   const int num_cells = map->size_local() + map->num_ghosts();
   const int bs = dofmap_v->bs();
   assert(bs == dofmap_u->bs());

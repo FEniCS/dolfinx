@@ -134,7 +134,7 @@ public:
         function_space_new->dofmap()->index_map_bs());
 
     // Copy values into new vector
-    Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> x_old = _x->array();
+    const std::vector<T>& x_old = _x->array();
     std::vector<T>& x_new = vector_new->mutable_array();
     for (std::size_t i = 0; i < collapsed_map.size(); ++i)
     {
