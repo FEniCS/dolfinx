@@ -31,7 +31,7 @@ public:
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   /// @param[in] needs_permutation_data Indicates whether or not the element
   /// needs permutation data (for higher order elements)
-  /// @param[in] get_dof_permutation TODO
+  /// @param[in] get_dof_permutation Function that permutes the DOF numbering
   /// @param[in] apply_dof_transformation Function that permutes the dof
   /// coordinates
   CoordinateElement(
@@ -56,7 +56,10 @@ public:
   /// Return the topological dimension of the cell shape
   int topological_dimension() const;
 
-  /// TODO
+  /// Apply a dof transformation to some coordinate data
+  /// @param[in,out] coords The coordinates to be permuted
+  /// @param[in] cell_permutation An int encoding the orientation of the cell's subentities
+  /// @param[in] dim The dimension of the coordinates (is 2 for 2D, 3 for 3D)
   int apply_dof_transformation(double* coords, std::uint32_t cell_permutation,
                                int dim) const;
 

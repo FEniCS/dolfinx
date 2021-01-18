@@ -96,7 +96,6 @@ Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 mesh::get_entity_vertices(mesh::CellType type, int dim)
 {
   assert(dim >= 0);
-  // assert(dim < basix::topological_dimension(celltype));
 
   std::vector<std::vector<int>> topology
       = basix::topology(to_string(type).c_str())[dim];
