@@ -593,9 +593,7 @@ void fem(py::module& m)
           },
           "Interpolate using a pointer to an expression with a C signature")
       .def_property_readonly(
-          "vector",
-          [](const dolfinx::fem::Function<PetscScalar>&
-                 self) { return self.vector(); },
+          "vector", &dolfinx::fem::Function<PetscScalar>::vector,
           "Return the PETSc vector associated with the finite element Function")
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::fem::Function<PetscScalar>::x),
