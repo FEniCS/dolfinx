@@ -489,10 +489,8 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     snes = PETSc.SNES().create(MPI.COMM_WORLD)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
-
     snes.getKSP().setType("minres")
     snes.getKSP().getPC().setType("lu")
-    # snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
     snes.setFunction(problem.F_block, Fvec0)
@@ -588,10 +586,8 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     snes = PETSc.SNES().create(MPI.COMM_WORLD)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
-
     snes.getKSP().setType("minres")
     snes.getKSP().getPC().setType("lu")
-    # snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     problem = NonlinearPDE_SNESProblem(F, J, U, bcs, P=P)
     snes.setFunction(problem.F_mono, Fvec2)
