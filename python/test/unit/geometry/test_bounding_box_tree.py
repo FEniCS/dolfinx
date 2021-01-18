@@ -328,8 +328,10 @@ def test_midpoint_entities():
     p = numpy.array([0.99, 0.95, 0])
     e, R = compute_closest_entity(tree, p, mesh)
     e_mid, R_mid = compute_closest_entity(midpoint_tree, p, mesh)
-    assert(e_mid == e)
-    assert(R < R_mid)
+    # Only check processor where point is in cell (for other procs, the entities are not guaranteed to match)
+    if R == 0:
+        assert(e_mid == e)
+        assert(R < R_mid)
 
 
 def test_surface_bbtree():
