@@ -532,7 +532,6 @@ def test_assembly_solve_taylor_hood(mesh):
         ksp_u, ksp_p = pc.getFieldSplitSubKSP()
         ksp_u.setType("preonly")
         ksp_u.getPC().setType('lu')
-        # ksp_u.getPC().setFactorSolverType('superlu_dist')
         ksp_p.setType("preonly")
 
         def monitor(ksp, its, rnorm):
@@ -562,7 +561,6 @@ def test_assembly_solve_taylor_hood(mesh):
         ksp.setType("minres")
         pc = ksp.getPC()
         pc.setType('lu')
-        # pc.setFactorSolverType('superlu_dist')
         ksp.setTolerances(rtol=1.0e-8, max_it=50)
         ksp.setFromOptions()
         x = A.createVecRight()
