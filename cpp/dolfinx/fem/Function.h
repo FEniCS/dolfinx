@@ -339,6 +339,7 @@ public:
       // Compute basis on reference element
       element->evaluate_reference_basis(basis_reference_values, X);
 
+      // Permute the reference values to account for the cell's orientation
       element->apply_dof_transformation(basis_reference_values.data(),
                                         cell_info[cell_index],
                                         reference_value_size);
