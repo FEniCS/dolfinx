@@ -41,15 +41,5 @@ std::tuple<std::shared_ptr<common::IndexMap>, int,
 build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
                   const ElementDofLayout& element_dof_layout);
 
-/// Build dofmap data for an element on a mesh topology
-/// @param[in] comm MPI communicator
-/// @param[in] topology The mesh topology
-/// @param[in] coordinate_element The coordinate element of a mesh
-/// @return The index map and local to global DOF data for the DOF map.
-std::tuple<std::shared_ptr<common::IndexMap>, int,
-           graph::AdjacencyList<std::int32_t>>
-build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
-                  const CoordinateElement& coordinate_element);
-
 } // namespace fem
 } // namespace dolfinx

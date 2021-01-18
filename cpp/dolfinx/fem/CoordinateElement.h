@@ -104,7 +104,7 @@ public:
           cell_geometry) const;
 
   /// Returns a function that gets the reordering of DOFs on a cell
-  std::function<int(int*, const uint32_t)> get_dof_permutation() const;
+  void get_dof_permutation(int* dofs, const uint32_t cell_perm) const;
 
   /// Indicates whether the coordinate map needs permutation data passing in
   /// (for higher order geometries)
