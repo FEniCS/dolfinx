@@ -230,7 +230,7 @@ class NonlinearPDE_SNESProblem():
         F.assemble()
 
     def J_nest(self, snes, x, J, P):
-        assert x.getType() == "nest" and J.getType() == "nest" and P.getType() == "nest"
+        assert J.getType() == "nest" and P.getType() == "nest"
         J.zeroEntries()
         dolfinx.fem.assemble_matrix_nest(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
@@ -303,7 +303,6 @@ def test_assembly_solve_block_nl():
 
         snes.getKSP().setType("preonly")
         snes.getKSP().getPC().setType("lu")
-        snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
         problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
         snes.setFunction(problem.F_block, Fvec)
@@ -337,7 +336,7 @@ def test_assembly_solve_block_nl():
 
         nested_IS = Jmat.getNestISs()
 
-        snes.getKSP().setType("fgmres")
+        snes.getKSP().setType("gmres")
         snes.getKSP().setTolerances(rtol=1e-12)
         snes.getKSP().getPC().setType("fieldsplit")
         snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
@@ -345,10 +344,8 @@ def test_assembly_solve_block_nl():
         ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
         ksp_u.setType("preonly")
         ksp_u.getPC().setType('lu')
-        ksp_u.getPC().setFactorSolverType('superlu_dist')
         ksp_p.setType("preonly")
         ksp_p.getPC().setType('lu')
-        ksp_p.getPC().setFactorSolverType('superlu_dist')
 
         problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
         snes.setFunction(problem.F_nest, Fvec)
@@ -356,6 +353,7 @@ def test_assembly_solve_block_nl():
 
         u.interpolate(initial_guess_u)
         p.interpolate(initial_guess_p)
+
 
         x = dolfinx.fem.create_vector_nest(F)
         assert x.getType() == "nest"
@@ -404,7 +402,6 @@ def test_assembly_solve_block_nl():
 
         snes.getKSP().setType("preonly")
         snes.getKSP().getPC().setType("lu")
-        snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
         problem = NonlinearPDE_SNESProblem(F, J, U, bcs)
         snes.setFunction(problem.F_mono, Fvec)
