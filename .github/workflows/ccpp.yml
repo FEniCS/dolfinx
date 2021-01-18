@@ -53,7 +53,7 @@ jobs:
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
       - name: Build and install C++ library
         run: |
-          cmake -v --build build
+          cmake --build -v build
           cmake --install build
 
       - name: Build and run C++ unit tests (serial and MPI)
