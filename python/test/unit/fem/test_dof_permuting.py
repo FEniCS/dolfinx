@@ -142,7 +142,6 @@ def test_dof_positions(cell_type, space_type):
         V.element.apply_dof_transformation(X, perms[cell], tdim)
         x = X.copy()
         xg = x_g[coord_dofs.links(cell), :tdim]
-        cmap.apply_dof_transformation(xg, perms[cell], tdim)
         cmap.push_forward(x, X, xg)
 
         dofs = V.dofmap.cell_dofs(cell)

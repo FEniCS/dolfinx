@@ -288,12 +288,6 @@ void fem(py::module& m)
       .def_property_readonly("dof_layout",
                              &dolfinx::fem::CoordinateElement::dof_layout)
       .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward)
-      .def("apply_dof_transformation",
-           [](const dolfinx::fem::CoordinateElement& self,
-              py::array_t<double>& x, std::uint32_t cell_permutation, int dim) {
-             self.apply_dof_transformation(x.mutable_data(), cell_permutation,
-                                           dim);
-           })
       .def_readwrite("non_affine_atol",
                      &dolfinx::fem::CoordinateElement::non_affine_atol)
       .def_readwrite("non_affine_max_its",

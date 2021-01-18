@@ -194,8 +194,7 @@ void interpolate(
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = element->interpolation_points();
 
-  const bool needs_permutation_data
-      = element->needs_permutation_data() || cmap.needs_permutation_data();
+  const bool needs_permutation_data = element->needs_permutation_data();
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
@@ -213,8 +212,6 @@ void interpolate(
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
-
-    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[c], gdim);
 
     // Push forward coordinates (X -> x)
     cmap.push_forward(x_cell, X, coordinate_dofs);
