@@ -113,8 +113,6 @@ def run_scalar_test(mesh, V, degree):
     M = fem.Form(M)
 
     error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
-
-    common.list_timings(MPI.COMM_WORLD, [common.TimingType.wall])
     assert np.absolute(error) < 1.0e-14
 
 
@@ -153,8 +151,6 @@ def run_vector_test(mesh, V, degree):
     M = fem.Form(M)
 
     error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
-
-    common.list_timings(MPI.COMM_WORLD, [common.TimingType.wall])
     assert np.absolute(error) < 1.0e-14
 
 
@@ -226,8 +222,6 @@ def run_dg_test(mesh, V, degree):
     M = fem.Form(M)
 
     error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
-
-    common.list_timings(MPI.COMM_WORLD, [common.TimingType.wall])
     assert np.absolute(error) < 1.0e-14
 
 

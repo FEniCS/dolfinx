@@ -303,6 +303,7 @@ def test_assembly_solve_block_nl():
 
         snes.getKSP().setType("preonly")
         snes.getKSP().getPC().setType("lu")
+        snes.getKSP().getPC().setFactorSolverType('superlu_dist')
 
         problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
         snes.setFunction(problem.F_block, Fvec)
@@ -344,8 +345,10 @@ def test_assembly_solve_block_nl():
         ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
         ksp_u.setType("preonly")
         ksp_u.getPC().setType('lu')
+        ksp_p.getPC().setFactorSolverType('superlu_dist')
         ksp_p.setType("preonly")
         ksp_p.getPC().setType('lu')
+        ksp_p.getPC().setFactorSolverType('superlu_dist')
 
         problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
         snes.setFunction(problem.F_nest, Fvec)
@@ -418,8 +421,8 @@ def test_assembly_solve_block_nl():
         return x.norm()
 
     norm0 = blocked_solve()
-    norm1 = nested_solve()
-    norm1 = nested_solve()
+    # norm1 = nested_solve()
+    # norm1 = nested_solve()
     norm1 = nested_solve()
     norm2 = monolithic_solve()
     assert norm1 == pytest.approx(norm0, 1.0e-12)
