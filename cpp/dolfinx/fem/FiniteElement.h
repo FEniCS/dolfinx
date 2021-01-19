@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -102,7 +103,7 @@ public:
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
+      const tcb::span<const double>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
@@ -112,7 +113,7 @@ public:
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
+      const tcb::span<const double>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
   /// Get the number of sub elements (for a mixed element)
@@ -162,7 +163,7 @@ public:
   void interpolate(const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>& values,
                    std::uint32_t cell_permutation,
-                   Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1>& dofs) const;
+                   tcb::span<ufc_scalar_t> dofs) const;
 
   /// @todo Expand on when permutation data might be required
   ///

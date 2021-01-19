@@ -54,7 +54,6 @@ public:
       throw std::runtime_error("Cannot create Function from subspace. Consider "
                                "collapsing the function space");
     }
-    _x->array().setZero();
   }
 
   /// Create function on given function space with a given vector
@@ -135,8 +134,8 @@ public:
         function_space_new->dofmap()->index_map_bs());
 
     // Copy values into new vector
-    const Eigen::Matrix<T, Eigen::Dynamic, 1>& x_old = _x->array();
-    Eigen::Matrix<T, Eigen::Dynamic, 1>& x_new = vector_new->array();
+    const std::vector<T>& x_old = _x->array();
+    std::vector<T>& x_new = vector_new->mutable_array();
     for (std::size_t i = 0; i < collapsed_map.size(); ++i)
     {
       assert((int)i < x_new.size());
@@ -177,8 +176,9 @@ public:
       {
         _petsc_vector = la::create_ghosted_vector(
             *_function_space->dofmap()->index_map,
-            _function_space->dofmap()->index_map_bs(), _x->array());
+            _function_space->dofmap()->index_map_bs(), _x->mutable_array());
       }
+
       return _petsc_vector;
     }
     else
@@ -212,17 +212,17 @@ public:
   /// Evaluate the Function at points
   ///
   /// @param[in] x The coordinates of the points. It has shape
-  ///   (num_points, 3).
+  /// (num_points, 3).
   /// @param[in] cells An array of cell indices. cells[i] is the index
-  ///   of the cell that contains the point x(i). Negative cell indices
-  ///   can be passed, and the corresponding point will be ignored.
+  /// of the cell that contains the point x(i). Negative cell indices
+  /// can be passed, and the corresponding point will be ignored.
   /// @param[in,out] u The values at the points. Values are not computed
-  ///   for points with a negative cell index. This argument must be
-  ///   passed with the correct size.
+  /// for points with a negative cell index. This argument must be
+  /// passed with the correct size.
   void
   eval(const Eigen::Ref<
            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x,
-       const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& cells,
+       const tcb::span<const std::int32_t>& cells,
        Eigen::Ref<
            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
            u) const
@@ -230,7 +230,7 @@ public:
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
 
-    if (x.rows() != cells.rows())
+    if (x.rows() != (int)cells.size())
     {
       throw std::runtime_error(
           "Number of points and number of cells must be equal.");
@@ -284,7 +284,7 @@ public:
 
     // Prepare geometry data structures
     Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
-    Eigen::Array<double, Eigen::Dynamic, 1> detJ(1);
+    std::array<double, 1> detJ;
     Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(
         1, tdim);
@@ -316,10 +316,10 @@ public:
 
     // Loop over points
     u.setZero();
-    const Eigen::Matrix<T, Eigen::Dynamic, 1>& _v = _x->array();
-    for (Eigen::Index p = 0; p < cells.rows(); ++p)
+    const std::vector<T>& _v = _x->mutable_array();
+    for (std::size_t p = 0; p < cells.size(); ++p)
     {
-      const int cell_index = cells(p);
+      const int cell_index = cells[p];
 
       // Skip negative cell indices
       if (cell_index < 0)
