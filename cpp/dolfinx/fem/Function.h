@@ -279,7 +279,7 @@ public:
     if (num_sub_elements > 1 and num_sub_elements != bs_element)
     {
       throw std::runtime_error("Function::eval is not supported for mixed "
-                               "elements. Extract subsopaces.");
+                               "elements. Extract subspaces.");
     }
 
     // Prepare geometry data structures

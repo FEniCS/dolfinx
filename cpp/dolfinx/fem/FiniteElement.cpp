@@ -131,7 +131,7 @@ void FiniteElement::evaluate_reference_basis(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
-  Eigen::ArrayXXd basix_data = basix::tabulate(_basix_element_handle, 0, X)[0];
+  const Eigen::ArrayXXd basix_data = basix::tabulate(_basix_element_handle, 0, X)[0];
 
   const int scalar_reference_value_size = _reference_value_size / _bs;
 
@@ -163,7 +163,7 @@ void FiniteElement::evaluate_reference_basis_derivatives(
         "order 1 at the moment.");
   }
 
-  std::vector<Eigen::ArrayXXd> basix_data
+  const std::vector<const Eigen::ArrayXXd> basix_data
       = basix::tabulate(_basix_element_handle, 1, X);
   for (int p = 0; p < X.rows(); ++p)
     for (int d = 0; d < basix_data[0].cols() / _reference_value_size; ++d)
