@@ -249,17 +249,16 @@ public:
     assert(mesh);
     const int gdim = mesh->geometry().dim();
     const int tdim = mesh->topology().dim();
+    auto map = mesh->topology().index_map(tdim);
+    const int num_cells = map->size_local() + map->num_ghosts();
 
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
-
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
     const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
         = mesh->geometry().x();
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        coordinate_dofs(num_dofs_g, gdim);
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -280,29 +279,8 @@ public:
     const int num_sub_elements = element->num_sub_elements();
     if (num_sub_elements > 1 and num_sub_elements != bs_element)
     {
-      if (bs_element != 1)
-      {
-        throw std::runtime_error(
-            "Blocked elements of mixed spaces are not yet supported.");
-      }
-      int offset = 0;
-      for (int sub_e = 0; sub_e < num_sub_elements; ++sub_e)
-      {
-        std::shared_ptr<const fem::FiniteElement> sub_element
-            = element->extract_sub_element({sub_e});
-
-        const int sub_value_size = sub_element->value_size();
-        const Function sub_f = this->sub(sub_e);
-        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> sub_u(
-            u.rows(), sub_value_size);
-        sub_f.eval(x, cells, sub_u);
-
-        for (int i = 0; i < sub_value_size; ++i)
-          u.col(offset + i) = sub_u.col(i);
-        offset += sub_value_size;
-      }
-
-      return;
+      throw std::runtime_error("Function::eval is not supported for mixed "
+                               "elements. Extract subspaces.");
     }
 
     // Prepare geometry data structures
@@ -327,9 +305,15 @@ public:
     assert(dofmap);
     const int bs_dof = dofmap->bs();
 
-    mesh->topology_mutable().create_entity_permutations();
+    const bool needs_permutation_data = element->needs_permutation_data();
+    if (needs_permutation_data)
+      mesh->topology_mutable().create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
-        = mesh->topology().get_cell_permutation_info();
+        = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                                 : std::vector<std::uint32_t>(num_cells);
+
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        coordinate_dofs(num_dofs_g, gdim);
 
     // Loop over points
     u.setZero();
@@ -354,9 +338,14 @@ public:
       // Compute basis on reference element
       element->evaluate_reference_basis(basis_reference_values, X);
 
+      // Permute the reference values to account for the cell's orientation
+      element->apply_dof_transformation(basis_reference_values.data(),
+                                        cell_info[cell_index],
+                                        reference_value_size);
+
       // Push basis forward to physical element
       element->transform_reference_basis(basis_values, basis_reference_values,
-                                         X, J, detJ, K, cell_info[cell_index]);
+                                         X, J, detJ, K);
 
       // Get degrees of freedom for current cell
       tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
@@ -422,15 +411,13 @@ public:
       for (int i = 0; i < num_dofs_g; ++i)
         x.row(i) = x_g.row(dofs[i]);
 
-      values.resize(x.rows(), value_size_loc);
-
       // Call evaluate function
       Eigen::Array<int, Eigen::Dynamic, 1> cells(x.rows());
       cells = c;
       eval(x, cells, values);
 
       // Copy values to array of point values
-      for (int i = 0; i < x.rows(); ++i)
+      for (int i = 0; i < values.rows(); ++i)
         point_values.row(dofs[i]) = values.row(i);
     }
 

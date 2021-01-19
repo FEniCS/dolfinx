@@ -66,6 +66,7 @@ def one_cell_mesh(cell_type):
     order = list(range(num_points))
     random.shuffle(order)
     ordered_points = np.zeros(points.shape)
+    ordered_points = np.zeros(points.shape)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
@@ -105,8 +106,15 @@ def test_scalar_interpolation(cell_type, order):
 
 
 @skip_in_parallel
-@parametrize_cell_types
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
+@pytest.mark.parametrize(
+    "cell_type", [
+        CellType.interval,
+        CellType.triangle,
+        CellType.tetrahedron,
+        CellType.quadrilateral,
+        CellType.hexahedron
+    ])
 def test_vector_interpolation(cell_type, order):
     """Test that interpolation is correct in a VectorFunctionSpace."""
     mesh = one_cell_mesh(cell_type)
@@ -130,37 +138,77 @@ def test_vector_interpolation(cell_type, order):
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
     for p, v in zip(points, values):
-        assert np.allclose(v, f(p))
+        assert np.allclose(f(p), v)
 
 
 @skip_in_parallel
-@parametrize_cell_types
-@pytest.mark.parametrize('order', [1, 2])
-def test_mixed_interpolation(cell_type, order):
-    """Test that interpolation is correct in a MixedElement."""
+def test_mixed_interpolation():
+    """Test that interpolation raised an exception."""
+    mesh = one_cell_mesh(CellType.triangle)
+    A = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    B = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    v = Function(FunctionSpace(mesh, ufl.MixedElement([A, B])))
+    with pytest.raises(RuntimeError):
+        v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
+
+
+@skip_in_parallel
+@pytest.mark.parametrize("cell_type",
+                         [
+                             CellType.triangle,
+                             CellType.tetrahedron
+                         ])
+@pytest.mark.parametrize("order", [1, 2, 3])
+def test_N1curl_interpolation(cell_type, order):
     mesh = one_cell_mesh(cell_type)
     tdim = mesh.topology.dim
 
-    A = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), order)
-    B = ufl.VectorElement("Lagrange", mesh.ufl_cell(), order)
+    # TODO: fix higher order elements
+    if tdim == 2 and order > 2:
+        pytest.skip("N1curl order > 2 in 2D needs fixing")
+    if tdim == 3 and order > 1:
+        pytest.skip("N1curl order > 1 in 3D needs fixing")
 
-    V = FunctionSpace(mesh, ufl.MixedElement([A, B]))
+    V = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", order))
     v = Function(V)
 
-    if tdim == 1:
+    if tdim == 2:
         def f(x):
-            return (x[0] ** order, 2 * x[0])
-    elif tdim == 2:
-        def f(x):
-            return (x[1], 2 * x[0] ** order, 3 * x[1])
+            return (x[0] ** (order - 1), 2 * x[0] ** (order - 1) + x[1] ** (order - 1))
     else:
         def f(x):
-            return (x[1], 2 * x[0] ** order, 3 * x[2], 4 * x[0])
+            return (x[1] ** (order - 1), x[2] ** (order - 1), x[0] ** (order - 1) - 2 * x[1] ** (order - 1))
 
     v.interpolate(f)
     points = [random_point_in_cell(cell_type) for count in range(5)]
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
+    assert np.allclose(values, [f(p) for p in points])
 
-    for p, v in zip(points, values):
-        assert np.allclose(v, f(p))
+
+@skip_in_parallel
+@pytest.mark.parametrize("cell_type", [CellType.triangle])
+@pytest.mark.parametrize("order", [1, 2])
+def test_N2curl_interpolation(cell_type, order):
+    mesh = one_cell_mesh(cell_type)
+    tdim = mesh.topology.dim
+
+    # TODO: fix higher order elements
+    if tdim == 2 and order > 1:
+        pytest.skip("N2curl order > 1 in 2D needs fixing")
+
+    V = FunctionSpace(mesh, ("Nedelec 2nd kind H(curl)", order))
+    v = Function(V)
+
+    if tdim == 2:
+        def f(x):
+            return (x[1] ** order, 2 * x[0])
+    else:
+        def f(x):
+            return (x[1] ** order + 2 * x[0], x[2] ** order, - 3 * x[2])
+
+    v.interpolate(f)
+    points = [random_point_in_cell(cell_type) for count in range(5)]
+    cells = [0 for count in range(5)]
+    values = v.eval(points, cells)
+    assert np.allclose(values, [f(p) for p in points])

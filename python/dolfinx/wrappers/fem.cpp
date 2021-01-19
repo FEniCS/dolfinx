@@ -152,12 +152,20 @@ void fem(py::module& m)
         return dolfinx::fem::FiniteElement(*p);
       }))
       .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
-      .def("dof_reference_coordinates",
-           &dolfinx::fem::FiniteElement::dof_reference_coordinates)
+      .def_property_readonly("interpolation_points",
+                             &dolfinx::fem::FiniteElement::interpolation_points)
+      .def_property_readonly("interpolation_ident",
+                             &dolfinx::fem::FiniteElement::interpolation_ident)
       .def_property_readonly("value_rank",
                              &dolfinx::fem::FiniteElement::value_rank)
       .def("space_dimension", &dolfinx::fem::FiniteElement::space_dimension)
       .def("value_dimension", &dolfinx::fem::FiniteElement::value_dimension)
+      .def("apply_dof_transformation",
+           [](const dolfinx::fem::FiniteElement& self, py::array_t<double>& x,
+              std::uint32_t cell_permutation, int dim) {
+             self.apply_dof_transformation(x.mutable_data(), cell_permutation,
+                                           dim);
+           })
       .def("signature", &dolfinx::fem::FiniteElement::signature);
 
   // dolfinx::fem::ElementDofLayout
@@ -168,9 +176,7 @@ void fem(py::module& m)
                     const std::vector<int>&,
                     const std::vector<
                         std::shared_ptr<const dolfinx::fem::ElementDofLayout>>,
-                    const dolfinx::mesh::CellType,
-                    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic,
-                                       Eigen::RowMajor>&>())
+                    const dolfinx::mesh::CellType>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)
