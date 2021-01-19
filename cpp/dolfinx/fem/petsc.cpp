@@ -8,6 +8,7 @@
 #include "assembler.h"
 #include "sparsitybuild.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
