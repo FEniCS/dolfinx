@@ -404,7 +404,8 @@ def test_assembly_solve_block_nl():
         snes.setFunction(problem.F_mono, Fvec)
         snes.setJacobian(problem.J_mono, J=Jmat, P=None)
 
-        U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
+        U.sub(0).interpolate(initial_guess_u)
+        U.sub(1).interpolate(initial_guess_p)
 
         x = dolfinx.fem.create_vector(F)
         x.array = U.vector.array_r
