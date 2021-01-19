@@ -18,11 +18,11 @@
 #
 #    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
 #
-# To build from source, first checkout the DOLFINX, FFCX, FIAT and UFL
+# To build from source, first checkout the DOLFINX, FFCX, Basix and UFL
 # repositories into the working directory, e.g.:
 #
 # $ ls $(pwd)
-# dolfinx  ffcx  fiat  ufl
+# dolfinx  ffcx  basix  ufl
 #
 # Then run the commands:
 #
@@ -311,7 +311,7 @@ ONBUILD WORKDIR /src
 # This leaves the sources inside the container. This is a limitation of Docker.
 # There is some trickery in the intermediate and dolfinx containers that can be
 # used to remove this source if needed, see below.
-ONBUILD ADD fiat/ /src/fiat/
+ONBUILD ADD basix/ /src/basix/
 ONBUILD ADD ufl/ /src/ufl/
 ONBUILD ADD ffcx/ /src/ffcx/
 ONBUILD ADD dolfinx/ /src/dolfinx/
@@ -328,9 +328,9 @@ ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
 # Extra CMake C++ compiler flags for DOLFINX C++ build.
 ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
-# The dolfinx-onbuild container expects to have folders fiat/ ufl/ ffcx/ and
+# The dolfinx-onbuild container expects to have folders basix/ ufl/ ffcx/ and
 # dolfinx/ mounted/shared at /src.
-ONBUILD RUN cd fiat && pip3 install --no-cache-dir . && \
+ONBUILD RUN cd basix && pip3 install --no-cache-dir . && \
     cd ../ufl && pip3 install --no-cache-dir . && \
     cd ../ffcx && pip3 install --no-cache-dir . && \
     cd ../ && pip3 install --no-cache-dir ipython

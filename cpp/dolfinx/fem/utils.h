@@ -55,25 +55,20 @@ class FunctionSpace;
 template <typename T>
 std::vector<
     std::vector<std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>>
-extract_function_spaces(
-    const Eigen::Ref<const Eigen::Array<const fem::Form<T>*, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>& a)
+extract_function_spaces(const std::vector<std::vector<const fem::Form<T>*>>& a)
 {
   std::vector<
       std::vector<std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>>
       spaces(
-          a.rows(),
+          a.size(),
           std::vector<std::array<std::shared_ptr<const fem::FunctionSpace>, 2>>(
-              a.cols()));
-  for (int i = 0; i < a.rows(); ++i)
+              a[0].size()));
+  for (std::size_t i = 0; i < a.size(); ++i)
   {
-    for (int j = 0; j < a.cols(); ++j)
+    for (std::size_t j = 0; j < a[i].size(); ++j)
     {
-      if (a(i, j))
-      {
-        spaces[i][j]
-            = {a(i, j)->function_spaces()[0], a(i, j)->function_spaces()[1]};
-      }
+      if (const fem::Form<T>* form = a[i][j]; form)
+        spaces[i][j] = {form->function_spaces()[0], form->function_spaces()[1]};
     }
   }
   return spaces;

@@ -23,39 +23,12 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/topologycomputation.h>
+#include <basix.h>
 #include <memory>
 #include <string>
 #include <ufc.h>
 
 using namespace dolfinx;
-
-namespace
-{
-//-----------------------------------------------------------------------------
-int get_num_permutations(const mesh::CellType cell_type)
-{
-  // In general, this will return num_edges + 2*num_faces + 4*num_volumes
-  switch (cell_type)
-  {
-  case (mesh::CellType::point):
-    return 0;
-  case (mesh::CellType::interval):
-    return 0;
-  case (mesh::CellType::triangle):
-    return 3;
-  case (mesh::CellType::tetrahedron):
-    return 14;
-  case (mesh::CellType::quadrilateral):
-    return 4;
-  case (mesh::CellType::hexahedron):
-    return 24;
-  default:
-    LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
-                    "order elements may be incorrect.";
-    return 0;
-  }
-}
-} // namespace
 
 //-----------------------------------------------------------------------------
 la::SparsityPattern fem::create_sparsity_pattern(
@@ -169,13 +142,8 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 
   // Check for "block structure". This should ultimately be replaced,
   // but keep for now to mimic existing code
-  const int num_base_permutations = get_num_permutations(cell_type);
-  const Eigen::Map<
-      const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      base_permutations(dofmap.base_permutations, num_base_permutations,
-                        dof_count);
   return fem::ElementDofLayout(element_block_size, entity_dofs, parent_map,
-                               sub_dofmaps, cell_type, base_permutations);
+                               sub_dofmaps, cell_type);
 }
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
@@ -247,10 +215,21 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
   std::free(dmap);
 
-  return fem::CoordinateElement(
-      cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
-      ufc_cmap.signature, dof_layout, ufc_cmap.is_affine,
-      ufc_cmap.evaluate_basis_derivatives);
+  static const std::map<ufc_shape, std::string> ufc_to_string
+      = {{vertex, "no point"},
+         {interval, "interval"},
+         {triangle, "triangle"},
+         {tetrahedron, "tetrahedron"},
+         {quadrilateral, "quadrilateral"},
+         {hexahedron, "hexahedron"}};
+  const std::string cell_name = ufc_to_string.at(ufc_cmap.cell_shape);
+
+  int handle = basix::register_element(
+      ufc_cmap.element_family, cell_name.c_str(), ufc_cmap.element_degree);
+  return fem::CoordinateElement(handle, ufc_cmap.geometric_dimension,
+                                ufc_cmap.signature, dof_layout,
+                                ufc_cmap.needs_permutation_data,
+                                ufc_cmap.permute_dofs, ufc_cmap.unpermute_dofs);
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement

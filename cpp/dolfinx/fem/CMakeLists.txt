@@ -15,7 +15,6 @@ set(HEADERS_fem
   ${CMAKE_CURRENT_SOURCE_DIR}/assemble_scalar_impl.h
   ${CMAKE_CURRENT_SOURCE_DIR}/assemble_vector_impl.h
   ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dofs_permutation.h
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_fem.h
   ${CMAKE_CURRENT_SOURCE_DIR}/evaluate.h
   ${CMAKE_CURRENT_SOURCE_DIR}/interpolate.h
@@ -33,7 +32,6 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/dofs_permutation.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
