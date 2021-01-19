@@ -71,7 +71,7 @@ public:
   /// should already be created. If inc_ref_count is true, the reference
   /// counter of the Mat will be increased. The Mat reference count will
   /// always be decreased upon destruction of the the PETScMatrix.
-  explicit PETScMatrix(Mat A, bool inc_ref_count = true);
+  PETScMatrix(Mat A, bool inc_ref_count);
 
   // Copy constructor (deleted)
   PETScMatrix(const PETScMatrix& A) = delete;
