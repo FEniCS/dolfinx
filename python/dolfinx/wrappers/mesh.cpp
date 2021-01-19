@@ -64,14 +64,11 @@ void declare_meshtags(py::module& m, std::string type)
       });
 
   m.def("create_meshtags",
-        [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
-           const int dim,
+        [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, int dim,
            const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
            const py::array_t<T, py::array::c_style>& values) {
-          py::buffer_info buf = values.request();
-          std::vector<T> vals((T*)buf.ptr, (T*)buf.ptr + buf.size);
-          return dolfinx::mesh::create_meshtags(mesh, dim, entities,
-                                                std::move(vals));
+          return dolfinx::mesh::create_meshtags(
+              mesh, dim, entities, tcb::span(values.data(), values.size()));
         });
 }
 
