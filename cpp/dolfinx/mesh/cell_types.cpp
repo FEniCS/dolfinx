@@ -95,7 +95,7 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 mesh::get_entity_vertices(mesh::CellType type, int dim)
 {
-  const std::vector<const std::vector<int>> topology
+  const std::vector<std::vector<int>> topology
       = basix::topology(to_string(type).c_str())[dim];
 
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e(
