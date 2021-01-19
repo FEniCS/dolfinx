@@ -8,8 +8,8 @@ from distutils.version import LooseVersion
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
-if sys.version_info < (3, 5):
-    print("Python 3.5 or higher required, please upgrade.")
+if sys.version_info < (3, 6):
+    print("Python 3.6 or higher required, please upgrade.")
     sys.exit(1)
 
 VERSION = "2019.2.0.dev0"
