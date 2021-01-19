@@ -28,6 +28,7 @@ class Topology;
 namespace fem
 {
 class ElementDofLayout;
+class CoordinateElement;
 
 /// Build dofmap data for an element on a mesh topology
 /// @param[in] comm MPI communicator
