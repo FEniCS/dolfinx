@@ -271,7 +271,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::remap_entity_indices(
-    std::vector<std::int32_t> entity_indices)
+    const std::vector<std::int32_t>& entity_indices)
 {
   // Remap leaf indices
   for (int i = 0; i < _bboxes.rows(); ++i)

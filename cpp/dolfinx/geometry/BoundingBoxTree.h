@@ -108,7 +108,7 @@ public:
   /// @param[in] entity_indices The list of entities used to build the bounding
   /// box tree. They should be in the same order as the input to the bounding
   /// box tree constructor.
-  void remap_entity_indices(std::vector<std::int32_t> entity_indices);
+  void remap_entity_indices(const std::vector<std::int32_t>& entity_indices);
 
 private:
   // Constructor
