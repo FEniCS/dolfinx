@@ -30,11 +30,4 @@ inline py::array_t<typename Sequence::value_type> as_pyarray(Sequence&& seq)
   return py::array(size, data, capsule);
 }
 
-template <typename Sequence>
-inline py::array_t<typename Sequence::value_type>
-to_pyarray(const Sequence& seq)
-{
-  return py::array(seq.size(), seq.data());
-}
-
 } // namespace dolfinx_wrappers
