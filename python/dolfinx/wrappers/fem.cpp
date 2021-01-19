@@ -555,14 +555,10 @@ void fem(py::module& m)
           [](dolfinx::fem::Function<PetscScalar>& self,
              const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                                  Eigen::RowMajor>>& x,
-             const py::array_t<std::int32_t, py::array::c_style>& cells,
+             py::array_t<std::int32_t> cells,
              Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                      Eigen::Dynamic, Eigen::RowMajor>>
-                 u) {
-            self.eval(x,
-                      tcb::span(cells.data(), cells.size()),
-                      u);
-          },
+                 u) { self.eval(x, tcb::span(cells.data(), cells.size()), u); },
           py::arg("x"), py::arg("cells"), py::arg("values"),
           "Evaluate Function")
       .def("compute_point_values",
