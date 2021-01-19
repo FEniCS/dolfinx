@@ -218,7 +218,7 @@ la::PETScMatrix fem::create_matrix_nest(
                     petsc_mats.data());
   MatSetUp(_A);
 
-  return la::PETScMatrix(_A);
+  return la::PETScMatrix(_A, false);
 }
 //-----------------------------------------------------------------------------
 la::PETScVector fem::create_vector_block(
