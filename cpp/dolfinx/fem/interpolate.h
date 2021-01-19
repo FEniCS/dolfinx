@@ -303,8 +303,8 @@ void interpolate_c(
        &f](const Eigen::Ref<
            const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>& x) {
         Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
-            x.rows(), value_size);
-        f(values, x);
+            x.cols(), value_size);
+        f(values, x.transpose());
         return values;
       };
 

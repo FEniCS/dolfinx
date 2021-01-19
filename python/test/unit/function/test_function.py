@@ -274,7 +274,7 @@ def test_interpolation_old(V, W, mesh):
 
 
 @skip_if_complex
-def xtest_cffi_expression(V):
+def test_cffi_expression(V):
     code_h = """
     void eval(double* values, int num_points, int value_size, const double* x);
     """
