@@ -1,8 +1,10 @@
 # Dockerfile describing development builds of FEniCS-X
 #
-# Authors: Jack S. Hale <jack.hale@uni.lu> Lizao Li
-# <lzlarryli@gmail.com> Garth N. Wells <gnw20@cam.ac.uk> Jan Blechta
-# <blechta@karlin.mff.cuni.cz>
+# Authors:
+# Jack S. Hale <jack.hale@uni.lu>
+# Lizao Li <lzlarryli@gmail.com>
+# Garth N. Wells <gnw20@cam.ac.uk>
+# Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
 # To run a nightly build:
 #
@@ -25,15 +27,17 @@
 # Then run the commands:
 #
 #    docker pull dolfinx/dolfinx-onbuild
-#    echo "FROM dolfinx/dolfinx-onbuild" | docker build -f- . 
+#    echo "FROM dolfinx/dolfinx-onbuild" | docker build -f- .
 #
 # You can build an optimised version of the complete FEniCS environment for
-# your platform using the command:
+# your platform using the commands:
 #
+#    echo '{ "cffi_extra_compile_args" : ["-O2", "-march=native" ] }' > dolfinx/docker/dolfinx_jit_parameters.json
 #    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" .
 #
-# The pre-built images on Dockerhub are currently optimised for Intel Sandy
-# Bridge architectures and will run on all modern x86-64 chips (>~2012).
+# The dolfinx/dolfinx image on Dockerhub is currently optimised for Intel Sandy
+# Bridge architectures and will run on all modern x86-64 chips with AVX
+# instructions (>~2012).
 #
 # You can build an optimised version of the FEniCS development environment
 # (without the FEniCS components) for your platform using the command:
@@ -42,26 +46,12 @@
 #
 
 ARG GMSH_VERSION=4.6.0
-ARG PYBIND11_VERSION=2.5.0
-ARG PETSC_VERSION=3.13.3
-ARG SLEPC_VERSION=3.13.3
-ARG PETSC4PY_VERSION=3.13.0
-ARG SLEPC4PY_VERSION=3.13.0
-# Should be updated upon a new KaHIP release
-ARG KAHIP_VERSION=14be06c
-
-# Flags to pass to ninja build system.
-ARG MAKEFLAGS
-# Compiler optimisation flags for SLEPc and PETSc, all languages.
-ARG PETSC_SLEPC_OPTFLAGS="-O2 -march=sandybridge"
-# Turn on PETSc and SLEPc debugging. "yes" or "no".
-ARG PETSC_SLEPC_DEBUGGING="no"
-# CMake build type for DOLFINX C++ build. See CMake documentation.
-ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
-# Extra CMake C++ compiler flags for DOLFINX C++ build.
-ARG DOLFINX_CMAKE_CXX_FLAGS="-march=sandybridge"
-# Ubuntu MPI variant. "mpich" or "openmpi".
-ARG MPI="mpich"
+ARG PYBIND11_VERSION=2.6.1
+ARG PETSC_VERSION=3.14.3
+ARG SLEPC_VERSION=3.14.1
+ARG SLEPC4PY_VERSION=3.14.0
+# Todo: Update KaHIP version upon a release.
+ARG KAHIP_VERSION=623decb
 
 ########################################
 
@@ -72,14 +62,17 @@ LABEL description="FEniCS testing and development environment with PETSc real, c
 ARG GMSH_VERSION
 ARG PYBIND11_VERSION
 ARG PETSC_VERSION
-ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
 
-ARG MAKEFLAGS
-ARG PETSC_SLEPC_OPTFLAGS
-ARG PETSC_SLEPC_DEBUGGING
-ARG MPI
+# The following ARGS are used in the dev-env layer.
+# They are safe defaults. They can be overridden by the user.
+# Compiler optimisation flags for SLEPc and PETSc, all languages.
+ARG PETSC_SLEPC_OPTFLAGS="-O2"
+# Turn on PETSc and SLEPc debugging. "yes" or "no".
+ARG PETSC_SLEPC_DEBUGGING="no"
+# Ubuntu MPI variant. "mpich" or "openmpi".
+ARG MPI="mpich"
 
 WORKDIR /tmp
 
@@ -103,11 +96,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     gfortran \
     libboost-dev \
     libboost-filesystem-dev \
-    libboost-iostreams-dev \
-    libboost-math-dev \
-    libboost-program-options-dev \
-    libboost-system-dev \
-    libboost-thread-dev \
     libboost-timer-dev \
     libeigen3-dev \
     libhdf5-${MPI}-dev \
@@ -127,9 +115,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     doxygen \
     git \
     graphviz \
-    sudo \
     valgrind \
     wget && \
+    #
     apt-get -y install \
     libglu1 \
     libxcursor-dev \
@@ -139,13 +127,17 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 
 # Install Python packages (via pip)
-# - First set of packages are required to build and run FEniCS.
+# - First set of packages are required to build and run DOLFINX Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 # - Third set of packages are required for visualization with pyvista
 RUN pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
     pip3 install --no-cache-dir pyvista
+
+# Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
+# (See issue #126 and #1305)
+RUN pip3 install --no-binary="numpy" numpy --upgrade
 
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
@@ -158,13 +150,15 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     rm -rf /tmp/*
 
 # Install KaHIP
+ENV KAHIP_DIR=/usr/local/KaHIP/deploy
 RUN cd /usr/local && \
     git clone https://github.com/schulzchristian/KaHIP.git && \
     cd KaHIP/ && \
-    git checkout $KAHIP_VERSION && \
-    ./compile_withcmake.sh
+    git checkout ${KAHIP_VERSION} && \
+    mkdir build && cd build && \
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} -DNONATIVEOPTIMIZATIONS=On .. && \
+    ninja install
 
-ENV KAHIP_ROOT=/usr/local/KaHIP
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
@@ -172,12 +166,10 @@ RUN cd /usr/local && \
     tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
     rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
 
-ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
+ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH \
+    PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
 
-# Add gmsh python API
-ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
-
-# Install PETSc with real and complex types
+# Install PETSc and petsc4py with real and complex types
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 WORKDIR /tmp
 RUN apt-get -qq update && \
@@ -188,14 +180,13 @@ RUN apt-get -qq update && \
     # Real, 32-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-real-32 \
-    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
     --with-shared-libraries \
-    --download-blacs \
     --download-hypre \
     --download-metis \
     --download-mumps \
@@ -210,14 +201,14 @@ RUN apt-get -qq update && \
     # Complex, 32-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-complex-32 \
-    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
     --with-shared-libraries \
-    --download-blacs \
+    --download-hypre \
     --download-metis \
     --download-mumps \
     --download-ptscotch \
@@ -230,9 +221,9 @@ RUN apt-get -qq update && \
     # Real, 64-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-real-64 \
-    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -248,9 +239,9 @@ RUN apt-get -qq update && \
     # Complex, 64-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-complex-64 \
-    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -263,6 +254,10 @@ RUN apt-get -qq update && \
     --download-superlu_dist \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
+    # Install petsc4py
+    cd src/binding/petsc4py && \
+    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir . && \
+    # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
     apt-get clean && \
@@ -299,8 +294,8 @@ RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
 
-# Install petsc4py and slepc4py with real and complex types
-RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} slepc4py==${SLEPC4PY_VERSION}
+# Install slepc4py with real and complex types
+RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
 WORKDIR /root
 
@@ -313,10 +308,6 @@ ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
 ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
 RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
-ONBUILD ARG MAKEFLAGS
-ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE
-ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
-
 ONBUILD WORKDIR /src
 
 # This leaves the sources inside the container. This is a limitation of Docker.
@@ -326,6 +317,18 @@ ONBUILD ADD fiat/ /src/fiat/
 ONBUILD ADD ufl/ /src/ufl/
 ONBUILD ADD ffcx/ /src/ffcx/
 ONBUILD ADD dolfinx/ /src/dolfinx/
+
+# These files are empty by default, i.e. they do nothing.
+# The user can set them at build time if they wish.
+ONBUILD ADD dolfinx/docker/dolfinx_jit_parameters.json /root/.config/dolfinx/dolfinx_jit_parameters.json
+ONBUILD ADD dolfinx/docker/ffcx_parameters.json /root/.config/ffcx/ffcx_parameters.json
+
+# The following ARGS are used in the dolfinx layer.
+# They are safe defaults.
+# CMake build type for DOLFINX C++ build. See CMake documentation.
+ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
+# Extra CMake C++ compiler flags for DOLFINX C++ build.
+ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
 # The dolfinx-onbuild container expects to have folders fiat/ ufl/ ffcx/ and
 # dolfinx/ mounted/shared at /src.
@@ -338,18 +341,18 @@ ONBUILD RUN cd dolfinx && \
     mkdir build && \
     cd build && \
     PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
-    ninja ${MAKEFLAGS} install && \
+    ninja install && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
     cd ../ && \
     rm -r build && \
     mkdir build && \
     cd build && \
     PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFIN_CMAKE_CXX_FLAGS} ../cpp && \
-    ninja ${MAKEFLAGS} install && \
+    ninja install && \
     . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies . && \
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies . && \
     cd ../ && \
     rm -r build
 
@@ -380,10 +383,11 @@ COPY --from=intermediate /usr/local/dolfinx-real /usr/local/dolfinx-real
 COPY --from=intermediate /usr/local/dolfinx-complex /usr/local/dolfinx-complex
 COPY --from=intermediate /usr/local/lib/python3.8/dist-packages /usr/local/lib/python3.8/dist-packages
 COPY --from=intermediate /usr/local/bin /usr/local/bin
+COPY --from=intermediate /root/.config /root/.config
 
 # Real by default.
 # Note that because we inherit from dev-env we do not inherit these ENV from
-# dolfinx-onbuild.
+# dolfinx-onbuild so this must be repeated here.
 ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     PETSC_ARCH=linux-gnu-real-32 \
     PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \

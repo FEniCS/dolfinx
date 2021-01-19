@@ -26,7 +26,7 @@ void test_scatter_fwd()
 
   // Create some ghost entries on next process
   int num_ghosts = (mpi_size - 1) * 3;
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(num_ghosts);
+  std::vector<std::int64_t> ghosts(num_ghosts);
   for (int i = 0; i < num_ghosts; ++i)
     ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
 
@@ -38,7 +38,7 @@ void test_scatter_fwd()
       dolfinx::MPI::compute_graph_edges(
           MPI_COMM_WORLD,
           std::set<int>(global_ghost_owner.begin(), global_ghost_owner.end())),
-      ghosts, global_ghost_owner, 1);
+      ghosts, global_ghost_owner);
 
   // Create some data to scatter
   const std::int64_t val = 11;
@@ -64,7 +64,7 @@ void test_scatter_rev()
 
   // Create some ghost entries on next process
   const int num_ghosts = (mpi_size - 1) * 3;
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(num_ghosts);
+  std::vector<std::int64_t> ghosts(num_ghosts);
   for (int i = 0; i < num_ghosts; ++i)
     ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
 
@@ -76,7 +76,7 @@ void test_scatter_rev()
       dolfinx::MPI::compute_graph_edges(
           MPI_COMM_WORLD,
           std::set<int>(global_ghost_owner.begin(), global_ghost_owner.end())),
-      ghosts, global_ghost_owner, 1);
+      ghosts, global_ghost_owner);
 
   // Create some data, setting ghost values
   std::int64_t value = 15;

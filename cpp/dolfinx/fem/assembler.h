@@ -10,22 +10,18 @@
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
 #include <Eigen/Dense>
+#include <dolfinx/common/span.hpp>
 #include <memory>
 #include <vector>
 
-namespace dolfinx
+namespace dolfinx::fem
 {
-namespace function
-{
-class FunctionSpace;
-} // namespace function
 
-namespace fem
-{
 template <typename T>
 class DirichletBC;
 template <typename T>
 class Form;
+class FunctionSpace;
 
 // -- Scalar ----------------------------------------------------------------
 
@@ -98,27 +94,29 @@ void assemble_matrix(
     const Form<T>& a,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
-
   // Index maps for dof ranges
-  auto map0 = a.function_space(0)->dofmap()->index_map;
-  auto map1 = a.function_space(1)->dofmap()->index_map;
+  auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
+  auto map1 = a.function_spaces().at(1)->dofmap()->index_map;
+  auto bs0 = a.function_spaces().at(0)->dofmap()->index_map_bs();
+  auto bs1 = a.function_spaces().at(1)->dofmap()->index_map_bs();
 
   // Build dof markers
   std::vector<bool> dof_marker0, dof_marker1;
-  std::int32_t dim0
-      = map0->block_size() * (map0->size_local() + map0->num_ghosts());
-  std::int32_t dim1
-      = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+  assert(map0);
+  std::int32_t dim0 = bs0 * (map0->size_local() + map0->num_ghosts());
+  assert(map1);
+  std::int32_t dim1 = bs1 * (map1->size_local() + map1->num_ghosts());
   for (std::size_t k = 0; k < bcs.size(); ++k)
   {
     assert(bcs[k]);
     assert(bcs[k]->function_space());
-    if (a.function_space(0)->contains(*bcs[k]->function_space()))
+    if (a.function_spaces().at(0)->contains(*bcs[k]->function_space()))
     {
       dof_marker0.resize(dim0, false);
       bcs[k]->mark_dofs(dof_marker0);
     }
-    if (a.function_space(1)->contains(*bcs[k]->function_space()))
+
+    if (a.function_spaces().at(1)->contains(*bcs[k]->function_space()))
     {
       dof_marker1.resize(dim1, false);
       bcs[k]->mark_dofs(dof_marker1);
@@ -156,20 +154,19 @@ void assemble_matrix(
 /// normally be called only on the diagonal blocks, i.e. blocks for
 /// which the test and trial spaces are the same.
 /// @param[in] mat_add The function for adding values to a matrix
-/// @param[in] rows The rows, in local indices, for which to add a value
-///   to the diagonal
+/// @param[in] rows The row blocks, in local indices, for which to add a
+/// value to the diagonal
 /// @param[in] diagonal The value to add to the diagonal for the
 ///   specified rows
 template <typename T>
 void add_diagonal(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
-    T diagonal = 1.0)
+    const tcb::span<const std::int32_t>& rows, T diagonal = 1.0)
 {
-  for (Eigen::Index i = 0; i < rows.size(); ++i)
+  for (std::size_t i = 0; i < rows.size(); ++i)
   {
-    const std::int32_t row = rows(i);
+    const std::int32_t row = rows[i];
     mat_add(1, &row, 1, &row, &diagonal);
   }
 }
@@ -193,7 +190,7 @@ template <typename T>
 void add_diagonal(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
-    const function::FunctionSpace& V,
+    const fem::FunctionSpace& V,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
     T diagonal = 1.0)
 {
@@ -201,7 +198,10 @@ void add_diagonal(
   {
     assert(bc);
     if (V.contains(*bc->function_space()))
-      add_diagonal<T>(mat_add, bc->dofs_owned().col(0), diagonal);
+    {
+      const auto [dofs, range] = bc->dof_indices();
+      add_diagonal<T>(mat_add, dofs.first(range), diagonal);
+    }
   }
 }
 
@@ -265,7 +265,7 @@ bcs_rows(const std::vector<const Form<T>*>& L,
       L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
     for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs)
-      if (L[i]->function_space(0)->contains(*bc->function_space()))
+      if (L[i]->function_spaces()[0]->contains(*bc->function_space()))
         bcs0[i].push_back(bc);
   return bcs0;
 }
@@ -300,7 +300,7 @@ bcs_cols(const std::vector<std::vector<std::shared_ptr<const Form<T>>>>& a,
         // FIXME: handle case where a[i][j] is null
         if (a[i][j])
         {
-          if (a[i][j]->function_space(1)->contains(*bc->function_space()))
+          if (a[i][j]->function_spaces()[1]->contains(*bc->function_space()))
             bcs1[i][j].push_back(bc);
         }
       }
@@ -310,5 +310,4 @@ bcs_cols(const std::vector<std::vector<std::shared_ptr<const Form<T>>>>& a,
   return bcs1;
 }
 
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

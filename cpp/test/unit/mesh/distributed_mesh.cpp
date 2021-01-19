@@ -6,70 +6,133 @@
 //
 // Unit tests for Distributed Meshes
 
+#include "cmap.h"
 #include <catch.hpp>
-#include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/kahip.h>
+#include <dolfinx/io/XDMFFile.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/graphbuild.h>
 
 using namespace dolfinx;
+using namespace dolfinx::mesh;
 
 namespace
 {
-void test_distributed_mesh()
+
+void create_mesh_file()
 {
-  // auto mpi_comm = dolfinx::MPI::Comm(MPI_COMM_WORLD);
-  // int mpi_size = dolfinx::MPI::size(mpi_comm.comm());
+  // Create mesh using all processes and save xdmf
+  auto cmap = fem::create_coordinate_map(create_coordinate_map_cmap);
+  auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
+      MPI_COMM_WORLD,
+      {Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 0.0)},
+      {32, 32}, cmap, mesh::GhostMode::shared_facet));
 
-  // // Create sub-communicator
-  // int subset_size = (mpi_size > 1) ? ceil(mpi_size / 2) : 1;
-  // MPI_Comm subset_comm = dolfinx::MPI::SubsetComm(MPI_COMM_WORLD, subset_size);
+  // Save mesh in XDMF format
+  io::XDMFFile file(MPI_COMM_WORLD, "mesh.xdmf", "w");
+  file.write_mesh(*mesh);
+}
 
-  // // Create mesh using all processes
-  // std::array<Eigen::Vector3d, 2> pt{Eigen::Vector3d(0.0, 0.0, 0.0),
-  //                                   Eigen::Vector3d(1.0, 1.0, 0.0)};
-  // auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-  //     MPI_COMM_WORLD, pt, {{64, 64}}, mesh::CellType::triangle,
-  //     mesh::GhostMode::none));
+void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
+{
+  MPI_Comm mpi_comm{MPI_COMM_WORLD};
+  int mpi_size = dolfinx::MPI::size(mpi_comm);
 
-  // int dim = mesh->geometry().dim();
+  // Create a communicator with subset of the original group of processes
+  int subset_size = (mpi_size > 1) ? ceil(mpi_size / 2) : 1;
+  std::vector<int> ranks(subset_size);
+  std::iota(ranks.begin(), ranks.end(), 0);
 
-  // // Save mesh in XDMF format
-  // io::XDMFFile file(MPI_COMM_WORLD, "mesh.xdmf");
-  // file.write(*mesh);
+  MPI_Group comm_group;
+  MPI_Comm_group(mpi_comm, &comm_group);
 
-  // // Read in mesh in mesh data from XDMF file
-  // io::XDMFFile infile(MPI_COMM_WORLD, "mesh.xdmf");
-  // const auto [cell_type, points, cells, global_cell_indices]
-  //     = infile.read_mesh_data(subset_comm);
+  MPI_Group new_group;
+  MPI_Group_incl(comm_group, subset_size, ranks.data(), &new_group);
 
-  // // Partition mesh into nparts using local mesh data and subset of
-  // // communicators
-  // int nparts = mpi_size;
-  // mesh::GhostMode ghost_mode = mesh::GhostMode::none;
-  // mesh::PartitionData cell_partition = mesh::Partitioning::partition_cells(
-  //     subset_comm, nparts, cell_type, cells, mesh::Partitioner::scotch,
-  //     ghost_mode);
+  MPI_Comm subset_comm;
+  MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &subset_comm);
 
-  // // Build mesh from local mesh data, ghost mode, and provided cell partition
-  // auto new_mesh
-  //     = std::make_shared<mesh::Mesh>(mesh::Partitioning::build_from_partition(
-  //         mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
-  //         ghost_mode, cell_partition));
+  // Create coordinate map
+  auto cmap = fem::create_coordinate_map(create_coordinate_map_cmap);
 
-  // // Check mesh features
-  // CHECK(dolfinx::MPI::max(mpi_comm.comm(), mesh->hmax())
-  //       == dolfinx::MPI::max(mpi_comm.comm(), new_mesh->hmax()));
+  // read mesh data
+  Eigen::Array<double, -1, -1, Eigen::RowMajor> x(0, 3);
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cells(0, dolfinx::mesh::num_cell_vertices(cmap.cell_shape()));
+  graph::AdjacencyList<std::int32_t> dest(0);
 
-  // CHECK(dolfinx::MPI::min(mpi_comm.comm(), mesh->hmin())
-  //       == dolfinx::MPI::min(mpi_comm.comm(), new_mesh->hmin()));
+  if (subset_comm != MPI_COMM_NULL)
+  {
+    int nparts{mpi_size};
+    io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
+    cells = infile.read_topology_data("mesh");
+    x = infile.read_geometry_data("mesh");
+    auto [data, offsets] = graph::create_adjacency_data(cells);
+    dest = partitioner(
+        subset_comm, nparts, cmap.cell_shape(),
+        graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
+        mesh::GhostMode::shared_facet);
+  }
 
-  // CHECK(mesh->num_entities_global(0) == new_mesh->num_entities_global(0));
+  auto [data, offsets] = graph::create_adjacency_data(cells);
+  graph::AdjacencyList<std::int64_t> cells_topology(std::move(data),
+                                                    std::move(offsets));
 
-  // CHECK(mesh->num_entities_global(dim) == new_mesh->num_entities_global(dim));
+  // Distribute cells to destination ranks
+  const auto [cell_nodes, src, original_cell_index, ghost_owners]
+      = graph::build::distribute(mpi_comm, cells_topology, dest);
+
+  dolfinx::mesh::Topology topology = mesh::create_topology(
+      mpi_comm, cell_nodes, original_cell_index, ghost_owners,
+      cmap.cell_shape(), mesh::GhostMode::shared_facet);
+  int tdim = topology.dim();
+  dolfinx::mesh::Geometry geometry
+      = mesh::create_geometry(mpi_comm, topology, cmap, cell_nodes, x);
+
+  auto mesh = std::make_shared<dolfinx::mesh::Mesh>(
+      mpi_comm, std::move(topology), std::move(geometry));
+
+  CHECK(mesh->topology().index_map(tdim)->size_global() == 2048);
+  CHECK(mesh->topology().index_map(tdim)->size_local() > 0);
+
+  CHECK(mesh->topology().index_map(0)->size_global() == 1089);
+  CHECK(mesh->topology().index_map(0)->size_local() > 0);
+
+  CHECK(mesh->geometry().x().rows()
+        == mesh->topology().index_map(0)->size_local()
+               + mesh->topology().index_map(0)->num_ghosts());
 }
 } // namespace
 
 TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 {
-  // CHECK_NOTHROW(test_distributed_mesh());
+  create_mesh_file();
+
+  SECTION("SCOTCH")
+  {
+    CHECK_NOTHROW(test_distributed_mesh(
+        static_cast<graph::AdjacencyList<std::int32_t> (*)(
+            MPI_Comm, int, const mesh::CellType,
+            const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
+            &mesh::partition_cells_graph)));
+  }
+
+#ifdef HASKIP
+  SECTION("KAHIP with Lambda")
+  {
+    auto kahip
+        = [](MPI_Comm mpi_comm, int nparts, const mesh::CellType cell_type,
+             const graph::AdjacencyList<std::int64_t>& cells,
+             mesh::GhostMode ghost_mode) {
+            const auto [dual_graph, graph_info]
+                = mesh::build_dual_graph(mpi_comm, cells, cell_type);
+            bool ghosting = (ghost_mode != mesh::GhostMode::none);
+            return graph::kahip::partition(mpi_comm, nparts, dual_graph, -1,
+                                           ghosting);
+          };
+    CHECK_NOTHROW(test_distributed_mesh(kahip));
+  }
+#endif
 }

@@ -28,8 +28,20 @@ public:
   /// @param[in] ufc_element UFC finite element
   explicit FiniteElement(const ufc_finite_element& ufc_element);
 
+  /// Copy constructor
+  FiniteElement(const FiniteElement& element) = default;
+
+  /// Move constructor
+  FiniteElement(FiniteElement&& element) = default;
+
   /// Destructor
   virtual ~FiniteElement() = default;
+
+  /// Copy assignment
+  FiniteElement& operator=(const FiniteElement& element) = default;
+
+  /// Move assignment
+  FiniteElement& operator=(FiniteElement&& element) = default;
 
   /// String identifying the finite element
   /// @return Element signature

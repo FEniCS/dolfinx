@@ -14,7 +14,7 @@
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
 #include <map>
 #include <memory>
@@ -163,8 +163,7 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
     // Prepare a map from ordered local vertex indices to local entity number
     // This map is used to identify if received entity is owned or ghost
     auto vertices = e_to_v->links(e);
-    for (int v = 0; v < vertices.rows(); ++v)
-      key[v] = vertices[v];
+    std::copy(vertices.begin(), vertices.end(), key.begin());
     std::sort(key.begin(), key.end());
     entity_key_to_index.insert({key, e});
   }
@@ -174,13 +173,11 @@ create_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const int dim,
   std::vector<std::int32_t> indices_new;
   std::vector<T> values_new;
   std::vector<std::int32_t> entity(num_vertices_per_entity);
-
   for (Eigen::Index e = 0; e < entities.num_nodes(); ++e)
   {
     // This would fail for mixed cell type meshes
     assert(num_vertices_per_entity == entities.num_links(e));
-    std::copy(entities.links(e).data(),
-              entities.links(e).data() + num_vertices_per_entity,
+    std::copy(entities.links(e).begin(), entities.links(e).end(),
               entity.begin());
     std::sort(entity.begin(), entity.end());
 

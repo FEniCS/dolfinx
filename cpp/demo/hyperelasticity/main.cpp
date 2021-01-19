@@ -1,6 +1,7 @@
 #include "hyperelasticity.h"
 #include <cmath>
 #include <dolfinx.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/Vector.h>
@@ -11,32 +12,27 @@ using namespace dolfinx;
 //
 // .. code-block:: cpp
 
-class HyperElasticProblem : public nls::NonlinearProblem
+class HyperElasticProblem
 {
 public:
   HyperElasticProblem(
-      std::shared_ptr<function::Function<PetscScalar>> u,
       std::shared_ptr<fem::Form<PetscScalar>> L,
       std::shared_ptr<fem::Form<PetscScalar>> J,
       std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> bcs)
-      : _u(u), _l(L), _j(J), _bcs(bcs),
-        _b(L->function_space(0)->dofmap()->index_map),
-        _matA(fem::create_matrix(*J))
+      : _l(L), _j(J), _bcs(bcs),
+        _b(L->function_spaces()[0]->dofmap()->index_map,
+           L->function_spaces()[0]->dofmap()->index_map_bs()),
+        _matA(fem::create_matrix(*J, "baij"))
   {
-    auto map = L->function_space(0)->dofmap()->index_map;
-    const int bs = map->block_size();
+    auto map = L->function_spaces()[0]->dofmap()->index_map;
+    const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();
     std::int32_t size_local = bs * map->size_local();
-    std::int32_t num_ghosts = bs * map->num_ghosts();
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map->ghosts();
-    Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts(bs * ghosts.rows());
-    for (int i = 0; i < ghosts.rows(); ++i)
-    {
-      for (int j = 0; j < bs; ++j)
-        _ghosts[i * bs + j] = bs * ghosts[i] + j;
-    }
 
-    VecCreateGhostWithArray(map->comm(), size_local, PETSC_DECIDE, num_ghosts,
-                            _ghosts.data(), _b.array().data(), &_b_petsc);
+    std::vector<PetscInt> ghosts(map->ghosts().begin(), map->ghosts().end());
+    std::int64_t size_global = bs * map->size_global();
+    VecCreateGhostBlockWithArray(map->comm(), bs, size_local, size_global,
+                                 ghosts.size(), ghosts.data(),
+                                 _b.array().data(), &_b_petsc);
   }
 
   /// Destructor
@@ -46,52 +42,58 @@ public:
       VecDestroy(&_b_petsc);
   }
 
-  void form(Vec x) final
+  auto form()
   {
-    la::PETScVector _x(x, true);
-    _x.update_ghosts();
+    return [](Vec x) {
+      VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+      VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+    };
   }
 
   /// Compute F at current point x
-  Vec F(const Vec x) final
+  auto F()
   {
-    // Assemble b and update ghosts
-    _b.array().setZero();
-    fem::assemble_vector<PetscScalar>(_b.array(), *_l);
-    VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
-    VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
+    return [&](const Vec x, Vec) {
+      // Assemble b and update ghosts
+      _b.array().setZero();
+      fem::assemble_vector<PetscScalar>(_b.array(), *_l);
+      VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
+      VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
 
-    // Set bcs
-    Vec x_local;
-    VecGhostGetLocalForm(x, &x_local);
-    PetscInt n = 0;
-    VecGetSize(x_local, &n);
-    const PetscScalar* array = nullptr;
-    VecGetArrayRead(x_local, &array);
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x(array,
-                                                                       n);
-    fem::set_bc<PetscScalar>(_b.array(), _bcs, _x, -1.0);
-    VecRestoreArrayRead(x, &array);
-
-    return _b_petsc;
+      // Set bcs
+      Vec x_local;
+      VecGhostGetLocalForm(x, &x_local);
+      PetscInt n = 0;
+      VecGetSize(x_local, &n);
+      const PetscScalar* array = nullptr;
+      VecGetArrayRead(x_local, &array);
+      Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x(array,
+                                                                         n);
+      fem::set_bc<PetscScalar>(_b.array(), _bcs, _x, -1.0);
+      VecRestoreArrayRead(x, &array);
+    };
   }
 
   /// Compute J = F' at current point x
-  Mat J(const Vec) final
+  auto J()
   {
-    MatZeroEntries(_matA.mat());
-    fem::assemble_matrix(la::PETScMatrix::add_fn(_matA.mat()), *_j, _bcs);
-    fem::add_diagonal(la::PETScMatrix::add_fn(_matA.mat()),
-                      *_j->function_space(0), _bcs);
-    _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
-    return _matA.mat();
+    return [&](const Vec, Mat A) {
+      MatZeroEntries(A);
+      fem::assemble_matrix(la::PETScMatrix::add_block_fn(A), *_j, _bcs);
+      fem::add_diagonal(la::PETScMatrix::add_fn(A), *_j->function_spaces()[0],
+                        _bcs);
+      MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+      MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+    };
   }
 
+  Vec vector() { return _b_petsc; }
+
+  Mat matrix() { return _matA.mat(); }
+
 private:
-  std::shared_ptr<function::Function<PetscScalar>> _u;
   std::shared_ptr<fem::Form<PetscScalar>> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC<PetscScalar>>> _bcs;
-
   la::Vector<PetscScalar> _b;
   Vec _b_petsc = nullptr;
   la::PETScMatrix _matA;
@@ -99,8 +101,14 @@ private:
 
 int main(int argc, char* argv[])
 {
-  common::SubSystemsManager::init_logging(argc, argv);
-  common::SubSystemsManager::init_petsc(argc, argv);
+  common::subsystem::init_logging(argc, argv);
+  common::subsystem::init_petsc(argc, argv);
+
+  // Set the logging thread name to show the process rank
+  int mpi_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  std::string thread_name = "RANK " + std::to_string(mpi_rank);
+  loguru::set_thread_name(thread_name.c_str());
 
   {
     // Inside the ``main`` function, we begin by defining a tetrahedral mesh
@@ -123,13 +131,13 @@ int main(int argc, char* argv[])
         create_functionspace_form_hyperelasticity_F, "u", mesh);
 
     // Define solution function
-    auto u = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u = std::make_shared<fem::Function<PetscScalar>>(V);
+    auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J,
+                                           {V, V}, {{"u", u}}, {}, {});
+    auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V},
+                                           {{"u", u}}, {}, {});
 
-    auto a
-        = fem::create_form<PetscScalar>(create_form_hyperelasticity_J, {V, V});
-    auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V});
-
-    auto u_rotation = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u_rotation = std::make_shared<fem::Function<PetscScalar>>(V);
     u_rotation->interpolate([](auto& x) {
       const double scale = 0.005;
 
@@ -159,17 +167,14 @@ int main(int argc, char* argv[])
       return values;
     });
 
-    auto u_clamp = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
     u_clamp->interpolate([](auto& x) {
       return Eigen::Array<PetscScalar, 3, Eigen::Dynamic,
                           Eigen::RowMajor>::Zero(3, x.cols());
     });
 
-    L->set_coefficients({{"u", u}});
-    a->set_coefficients({{"u", u}});
-
     // Create Dirichlet boundary conditions
-    auto u0 = std::make_shared<function::Function<PetscScalar>>(V);
+    auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
     const auto bdofs_left = fem::locate_dofs_geometrical({*V}, [](auto& x) {
       static const double epsilon = std::numeric_limits<double>::epsilon();
@@ -182,20 +187,23 @@ int main(int argc, char* argv[])
 
     auto bcs
         = std::vector({std::make_shared<const fem::DirichletBC<PetscScalar>>(
-                           u_clamp, bdofs_left),
+                           u_clamp, std::move(bdofs_left)),
                        std::make_shared<const fem::DirichletBC<PetscScalar>>(
-                           u_rotation, bdofs_right)});
+                           u_rotation, std::move(bdofs_right))});
 
-    HyperElasticProblem problem(u, L, a, bcs);
+    HyperElasticProblem problem(L, a, bcs);
     nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
-    newton_solver.solve(problem, u->vector());
+    newton_solver.setF(problem.F(), problem.vector());
+    newton_solver.setJ(problem.J(), problem.matrix());
+    newton_solver.set_form(problem.form());
+    newton_solver.solve(u->vector());
 
     // Save solution in VTK format
     io::VTKFile file("u.pvd");
     file.write(*u);
   }
 
-  common::SubSystemsManager::finalize_petsc();
+  common::subsystem::finalize_petsc();
 
   return 0;
 }

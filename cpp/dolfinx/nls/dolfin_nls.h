@@ -12,4 +12,3 @@ namespace dolfinx
 // DOLFINX nonlinear solver
 
 #include <dolfinx/nls/NewtonSolver.h>
-#include <dolfinx/nls/NonlinearProblem.h>

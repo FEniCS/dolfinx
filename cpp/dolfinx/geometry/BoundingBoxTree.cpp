@@ -22,46 +22,25 @@ namespace
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
 compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
-  // Get mesh entity data
+  // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   mesh.topology_mutable().create_connectivity(dim, tdim);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> entity(1);
+  entity(0, 0) = index;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
+  auto entity_indices = vertex_indices.row(0);
 
-  // Find attached cell
-  auto e_to_c = mesh.topology().connectivity(dim, tdim);
-  assert(e_to_c);
-  assert(e_to_c->num_links(index) > 0);
-  const std::int32_t c = e_to_c->links(index)[0];
-
-  auto dofs = x_dofmap.links(c);
-  auto c_to_v = mesh.topology().connectivity(tdim, 0);
-  assert(c_to_v);
-  auto cell_vertices = c_to_v->links(c);
-
-  auto vertices = mesh.topology().connectivity(dim, 0)->links(index);
-  assert(vertices.rows() >= 2);
-  const auto* it
-      = std::find(cell_vertices.data(),
-                  cell_vertices.data() + cell_vertices.rows(), vertices[0]);
-  assert(it != (cell_vertices.data() + cell_vertices.rows()));
-  const int local_vertex = std::distance(cell_vertices.data(), it);
-
-  const Eigen::Vector3d x0 = geometry.node(dofs(local_vertex));
+  const Eigen::Vector3d x0 = geometry.node(entity_indices[0]);
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
   b.row(0) = x0;
   b.row(1) = x0;
-
   // Compute min and max over remaining vertices
-  for (int i = 1; i < vertices.rows(); ++i)
+  for (int i = 1; i < entity_indices.size(); ++i)
   {
-    const auto* it
-        = std::find(cell_vertices.data(),
-                    cell_vertices.data() + cell_vertices.rows(), vertices[i]);
-    assert(it != (cell_vertices.data() + cell_vertices.rows()));
-    const int local_vertex = std::distance(cell_vertices.data(), it);
-
-    const Eigen::Vector3d x = geometry.node(dofs(local_vertex));
+    const int local_vertex = entity_indices[i];
+    const Eigen::Vector3d x = geometry.node(local_vertex);
     b.row(0) = b.row(0).min(x.transpose().array());
     b.row(1) = b.row(1).max(x.transpose().array());
   }
@@ -126,11 +105,7 @@ int _build_from_leaf(
         = leaf_bboxes.block<2, 3>(2 * entity_index, 0);
 
     // Store bounding box data
-    // bbox[0] = num_bboxes(); // child_0 == node denotes a leaf
-    // bbox[1] = entity_index; // index of entity contained in leaf
-    // return add_bbox(bbox, b);
-    // return add_bbox({num_bboxes(), entity_index}, b);
-    bboxes.push_back({(int)bboxes.size(), entity_index});
+    bboxes.push_back({entity_index, entity_index});
     bbox_coordinates.insert(bbox_coordinates.end(), b.data(), b.data() + 3);
     bbox_coordinates.insert(bbox_coordinates.end(), b.data() + 3, b.data() + 6);
     return bboxes.size() - 1;
@@ -212,9 +187,8 @@ int _build_from_point(const std::vector<Eigen::Vector3d>& points,
   {
     // Store bounding box data
     const int point_index = *begin;
-    const int c0 = bboxes.size(); // child_0 == node denotes a leaf
-    const int c1 = point_index;   // index of entity contained in leaf
-    bboxes.push_back({c0, c1});
+    const int c1 = point_index; // index of entity contained in leaf
+    bboxes.push_back({c1, c1});
     bbox_coordinates.insert(bbox_coordinates.end(), points[point_index].data(),
                             points[point_index].data() + 3);
     bbox_coordinates.insert(bbox_coordinates.end(), points[point_index].data(),
@@ -259,7 +233,9 @@ BoundingBoxTree::BoundingBoxTree(
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
+BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
+                                 double padding)
+    : _tdim(tdim)
 {
   // Check dimension
   if (tdim < 1 or tdim > mesh.topology().dim())
@@ -277,33 +253,92 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   const std::int32_t num_leaves = map->size_local() + map->num_ghosts();
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> leaf_bboxes(
       2 * num_leaves, 3);
+
   for (int e = 0; e < num_leaves; ++e)
+  {
     leaf_bboxes.block<2, 3>(2 * e, 0) = compute_bbox_of_entity(mesh, tdim, e);
+    leaf_bboxes.row(2 * e) -= padding;
+    leaf_bboxes.row(2 * e + 1) += padding;
+  }
 
   // Recursively build the bounding box tree from the leaves
   std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " entities.";
-
-  // Build tree for each process
-  MPI_Comm comm = mesh.mpi_comm();
-  const int mpi_size = MPI::size(comm);
-  if (mpi_size > 1)
+}
+//-----------------------------------------------------------------------------
+BoundingBoxTree::BoundingBoxTree(
+    const mesh::Mesh& mesh, int tdim,
+    const std::vector<std::int32_t>& entity_indices, double padding)
+    : _tdim(tdim), _bboxes(0, 2), _bbox_coordinates(0, 3)
+{
+  // Check dimension
+  if (tdim < 1 or tdim > mesh.topology().dim())
   {
-    // Send root node coordinates to all processes
-    const auto send_bbox = _bbox_coordinates.bottomRows(2);
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> recv_bbox(
-        mpi_size * 2, 3);
-    MPI_Allgather(send_bbox.data(), 6, MPI_DOUBLE, recv_bbox.data(), 6,
-                  MPI_DOUBLE, comm);
-
-    auto [global_bboxes, global_coords] = build_from_leaf(recv_bbox);
-    global_tree.reset(new BoundingBoxTree(global_bboxes, global_coords));
-
-    LOG(INFO) << "Computed global bounding box tree with "
-              << global_tree->num_bboxes() << " boxes.";
+    throw std::runtime_error("Dimension must be a number between 1 and "
+                             + std::to_string(mesh.topology().dim()));
   }
+
+  // Initialize entities of given dimension if they don't exist
+  mesh.topology_mutable().create_entities(tdim);
+
+  // Copy and sort indices
+  std::vector<std::int32_t> entity_indices_sorted(entity_indices);
+  std::sort(entity_indices_sorted.begin(), entity_indices_sorted.end());
+
+  // Create bounding boxes for all mesh entities (leaves)
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> leaf_bboxes(
+      2 * entity_indices.size(), 3);
+  for (std::size_t i = 0; i < entity_indices_sorted.size(); ++i)
+  {
+    leaf_bboxes.block<2, 3>(2 * i, 0)
+        = compute_bbox_of_entity(mesh, tdim, entity_indices_sorted[i]);
+    leaf_bboxes.row(2 * i) -= padding;
+    leaf_bboxes.row(2 * i + 1) += padding;
+  }
+  // Recursively build the bounding box tree from the leaves
+  if (leaf_bboxes.rows() > 0)
+    std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
+
+  // Remap leaf indices
+  for (int i = 0; i < _bboxes.rows(); ++i)
+  {
+    if (_bboxes(i, 0) == _bboxes(i, 1))
+    {
+      int mapped_index = entity_indices_sorted[_bboxes(i, 0)];
+      _bboxes(i, 0) = mapped_index;
+      _bboxes(i, 1) = mapped_index;
+    }
+  }
+
+  LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
+            << " nodes for " << entity_indices.size() << " entities.";
+}
+//----------------------------------------------------------------------------------
+BoundingBoxTree BoundingBoxTree::compute_global_tree(const MPI_Comm& comm) const
+{
+  // Build tree for each process
+  const int mpi_size = MPI::size(comm);
+
+  // Send root node coordinates to all processes
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> send_bbox;
+  send_bbox.setZero();
+  if (num_bboxes() > 0)
+    send_bbox = _bbox_coordinates.bottomRows(2);
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> recv_bbox(
+      mpi_size * 2, 3);
+  MPI_Allgather(send_bbox.data(), 6, MPI_DOUBLE, recv_bbox.data(), 6,
+                MPI_DOUBLE, comm);
+
+  auto [global_bboxes, global_coords] = build_from_leaf(recv_bbox);
+  BoundingBoxTree global_tree(global_bboxes, global_coords);
+
+  LOG(INFO) << "Computed global bounding box tree with "
+            << global_tree.num_bboxes() << " boxes.";
+  return global_tree;
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)

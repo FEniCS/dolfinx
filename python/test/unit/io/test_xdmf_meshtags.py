@@ -1,10 +1,11 @@
-# Copyright (C) 2020 Michal Habera
+# Copyright (C) 2020 Michal Habera, Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
+from xml.etree import ElementTree
 
 import numpy as np
 import pytest
@@ -79,3 +80,12 @@ def test_3d(tempdir, cell_type, encoding):
         (mt_lines_in.indices < mesh_in.topology.index_map(1).size_local).sum(), op=MPI.SUM)
 
     assert lines_local == lines_local_in
+
+    # Check that only owned data is written to file
+    facets_local = comm.allreduce((mt.indices < mesh.topology.index_map(2).size_local).sum(), op=MPI.SUM)
+    parser = ElementTree.XMLParser()
+    tree = ElementTree.parse(os.path.join(tempdir, "meshtags_3d_out.xdmf"), parser)
+    num_lines = int(tree.findall(".//Grid[@Name='lines']/Topology")[0].get("NumberOfElements"))
+    num_facets = int(tree.findall(".//Grid[@Name='facets']/Topology")[0].get("NumberOfElements"))
+    assert(num_lines == lines_local)
+    assert(num_facets == facets_local)

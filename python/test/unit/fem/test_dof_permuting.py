@@ -69,7 +69,7 @@ def test_triangle_dof_positions(space_type):
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
         dofs = dofmap.cell_dofs(cell_n)
 
@@ -142,7 +142,7 @@ def test_tetrahedron_dof_positions(space_type):
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
         dofs = dofmap.cell_dofs(cell_n)
 
@@ -214,7 +214,7 @@ def test_quadrilateral_dof_positions(space_type):
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
         dofs = dofmap.cell_dofs(cell_n)
 
@@ -279,7 +279,7 @@ def test_hexahedron_dof_positions(space_type):
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
         dofs = dofmap.cell_dofs(cell_n)
 
@@ -338,7 +338,7 @@ def test_triangle_evaluation(space_type, space_order):
         eval_points = np.array([[0., i / N, 0.] for i in range(N + 1)])
         for d in dofs:
             v = Function(V)
-            v.vector[:] = [1 if i == d else 0 for i in range(V.dim)]
+            v.vector[:] = [1 if i == d else 0 for i in range(v.vector.local_size)]
             values0 = v.eval(eval_points, [0 for i in eval_points])
             values1 = v.eval(eval_points, [1 for i in eval_points])
             if len(eval_points) == 1:
@@ -391,7 +391,7 @@ def test_quadrilateral_evaluation(space_type, space_order):
         eval_points = np.array([[0., i / N, 0.] for i in range(N + 1)])
         for d in dofs:
             v = Function(V)
-            v.vector[:] = [1 if i == d else 0 for i in range(V.dim)]
+            v.vector[:] = [1 if i == d else 0 for i in range(v.vector.local_size)]
             values0 = v.eval(eval_points, [0 for i in eval_points])
             values1 = v.eval(eval_points, [1 for i in eval_points])
             if len(eval_points) == 1:
@@ -439,7 +439,7 @@ def test_tetrahedron_evaluation(space_type, space_order):
         eval_points = np.array([[0., i / N, j / N] for i in range(N + 1) for j in range(N + 1 - i)])
         for d in dofs:
             v = Function(V)
-            v.vector[:] = [1 if i == d else 0 for i in range(V.dim)]
+            v.vector[:] = [1 if i == d else 0 for i in range(v.vector.local_size)]
             values0 = v.eval(eval_points, [0 for i in eval_points])
             values1 = v.eval(eval_points, [1 for i in eval_points])
             if len(eval_points) == 1:
@@ -503,7 +503,7 @@ def test_hexahedron_evaluation(space_type, space_order):
         eval_points = np.array([[0., i / N, j / N] for i in range(N + 1) for j in range(N + 1)])
         for d in dofs:
             v = Function(V)
-            v.vector[:] = [1 if i == d else 0 for i in range(V.dim)]
+            v.vector[:] = [1 if i == d else 0 for i in range(v.vector.local_size)]
             values0 = v.eval(eval_points, [0 for i in eval_points])
             values1 = v.eval(eval_points, [1 for i in eval_points])
             if len(eval_points) == 1:
@@ -550,7 +550,7 @@ def xtest_triangle_integral(space_type, space_order):
 
         for d in dofs:
             v = Function(V)
-            v.vector[:] = [1 if i == d else 0 for i in range(V.dim)]
+            v.vector[:] = [1 if i == d else 0 for i in range(v.vector.local_size)]
             if space_type in ["RT", "BDM"]:
                 # Hdiv
                 def normal(x):
@@ -613,7 +613,7 @@ def xtest_quadrilateral_integral(space_type, space_order):
 
         for d in dofs:
             v = Function(V)
-            v.vector[:] = [1 if i == d else 0 for i in range(V.dim)]
+            v.vector[:] = [1 if i == d else 0 for i in range(v.vector.local_size)]
             if space_type in ["RTCF"]:
                 # Hdiv
                 def normal(x):
@@ -671,7 +671,7 @@ def xtest_tetrahedron_integral(space_type, space_order):
 
         for d in dofs:
             v = Function(V)
-            v.vector[:] = [1 if i == d else 0 for i in range(V.dim)]
+            v.vector[:] = [1 if i == d else 0 for i in range(v.vector.local_size)]
             if space_type in ["RT", "BDM"]:
                 # Hdiv
                 def normal(x):
@@ -745,7 +745,7 @@ def xtest_hexahedron_integral(space_type, space_order):
 
         for d in dofs:
             v = Function(V)
-            v.vector[:] = [1 if i == d else 0 for i in range(V.dim)]
+            v.vector[:] = [1 if i == d else 0 for i in range(v.vector.local_size)]
             if space_type in ["NCF"]:
                 # Hdiv
                 def normal(x):

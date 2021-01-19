@@ -3,20 +3,50 @@
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Simple matplotlib plotting functions"""
 
 import os
 import warnings
 import numba
 import numpy as np
+import ufl
 
-from dolfinx import cpp, fem, function
+from dolfinx import cpp, fem
+from dolfinx.mesh import create_mesh
 
 __all__ = ["plot"]
 
-_matplotlib_plottable_types = (cpp.function.Function,
+_matplotlib_plottable_types = (cpp.fem.Function,
                                cpp.mesh.Mesh,
                                cpp.fem.DirichletBC)
 _all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types)))
+
+
+def create_boundary_mesh(mesh, comm, orient=False):
+    """
+    Create a mesh consisting of all exterior facets of a mesh
+    Input:
+      mesh   - The mesh
+      comm   - The MPI communicator
+      orient - Boolean flag for reorientation of facets to have
+               consistent outwards-pointing normal (default: True)
+    Output:
+      bmesh - The boundary mesh
+      bmesh_to_geometry - Map from cells of the boundary mesh
+                          to the geometry of the original mesh
+    """
+    ext_facets = cpp.mesh.exterior_facet_indices(mesh)
+    boundary_geometry = cpp.mesh.entities_to_geometry(
+        mesh, mesh.topology.dim - 1, ext_facets, orient)
+    facet_type = cpp.mesh.to_string(cpp.mesh.cell_entity_type(
+        mesh.topology.cell_type, mesh.topology.dim - 1))
+    facet_cell = ufl.Cell(facet_type,
+                          geometric_dimension=mesh.geometry.dim)
+    degree = mesh.ufl_domain().ufl_coordinate_element().degree()
+    ufl_domain = ufl.Mesh(ufl.VectorElement("Lagrange", facet_cell, degree))
+    bmesh = create_mesh(
+        comm, boundary_geometry, mesh.geometry.x, ufl_domain)
+    return bmesh, boundary_geometry
 
 
 def _has_matplotlib():
@@ -41,8 +71,8 @@ def mplot_mesh(ax, mesh, **kwargs):
         color = kwargs.pop("color", '#808080')
         return ax.triplot(mesh2triang(mesh), color=color, **kwargs)
     elif gdim == 3 and tdim == 3:
-        bmesh = cpp.mesh.BoundaryMesh(mesh, "exterior", order=False)
-        mplot_mesh(ax, bmesh, **kwargs)
+        bmesh = create_boundary_mesh(mesh, mesh.mpi_comm(), orient=False)
+        mplot_mesh(ax, bmesh[0], **kwargs)
     elif gdim == 3 and tdim == 2:
         xy = mesh.geometry.x
         cells = mesh.geometry.dofmap.array.reshape((-1, mesh.topology.dim + 1))
@@ -63,11 +93,11 @@ def mplot_mesh(ax, mesh, **kwargs):
 def create_cg1_function_space(mesh, sh):
     r = len(sh)
     if r == 0:
-        V = function.FunctionSpace(mesh, ("CG", 1))
+        V = fem.FunctionSpace(mesh, ("CG", 1))
     elif r == 1:
-        V = function.VectorFunctionSpace(mesh, ("CG", 1), dim=sh[0])
+        V = fem.VectorFunctionSpace(mesh, ("CG", 1), dim=sh[0])
     else:
-        V = function.TensorFunctionSpace(mesh, ("CG", 1), shape=sh)
+        V = fem.TensorFunctionSpace(mesh, ("CG", 1), shape=sh)
     return V
 
 
@@ -272,11 +302,12 @@ def _plot_matplotlib(obj, mesh, kwargs):
     if gdim == 3 or kwargs.get("mode") in ("warp", ):
         # Importing this toolkit has side effects enabling 3d support
         from mpl_toolkits.mplot3d import axes3d  # noqa
+
         # Enabling the 3d toolbox requires some additional arguments
         ax = plt.gca(projection='3d')
     else:
         ax = plt.gca()
-    ax.set_aspect('equal')
+        ax.set_aspect('equal')
 
     title = kwargs.pop("title", None)
     if title is not None:
@@ -297,9 +328,9 @@ def _plot_matplotlib(obj, mesh, kwargs):
             cpp.warning("Matplotlib backend does not support '%s' kwarg yet. "
                         "Ignoring it..." % kw)
 
-    if isinstance(obj, cpp.function.Function):
+    if isinstance(obj, cpp.fem.Function):
         return mplot_function(ax, obj, **kwargs)
-    # elif isinstance(obj, cpp.function.Expression):
+    # elif isinstance(obj, cpp.fem.Expression):
     #     return mplot_expression(ax, obj, mesh, **kwargs)
     elif isinstance(obj, cpp.mesh.Mesh):
         return mplot_mesh(ax, obj, **kwargs)
@@ -316,7 +347,7 @@ def plot(object, *args, **kwargs):
     *Arguments*
         object
             a :py:class:`Mesh <dolfinx.cpp.Mesh>`, a :py:class:`Function
-            <dolfinx.functions.function.Function>`, a :py:class:`Expression`
+            <dolfinx.functions.fem.Function>`, a :py:class:`Expression`
             <dolfinx.Expression>, a :py:class:`DirichletBC`
             <dolfinx.cpp.DirichletBC>, a :py:class:`FiniteElement
             <ufl.FiniteElement>`.
@@ -372,7 +403,7 @@ def plot(object, *args, **kwargs):
         cpp.log.info("Matplotlib is required to plot from Python.")
         return
 
-    # For dolfinx.function.Function, extract cpp_object
+    # For dolfinx.fem.Function, extract cpp_object
     if hasattr(object, "_cpp_object"):
         object = object._cpp_object
 
@@ -386,13 +417,13 @@ def plot(object, *args, **kwargs):
         mesh = object
 
     if mesh is None:
-        if isinstance(object, cpp.function.Function):
+        if isinstance(object, cpp.fem.Function):
             mesh = object.function_space.mesh
         elif hasattr(object, "mesh"):
             mesh = object.mesh
 
     # Expressions do not carry their own mesh
-    # if isinstance(object, cpp.function.Expression) and mesh is None:
+    # if isinstance(object, cpp.fem.Expression) and mesh is None:
     #     raise RuntimeError("Expecting a mesh as keyword argument")
 
     backend = kwargs.pop("backend", "matplotlib")

@@ -1,28 +1,37 @@
-# Copyright (C) 2014 Garth N. Wells
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# .. _demo_elasticity:
 #
-# SPDX-License-Identifier:    LGPL-3.0-or-later
-
-# This demo solves the equations of static linear elasticity for a
-# pulley subjected to centripetal accelerations. The solver uses
-# smoothed aggregation algebraic multigrid.
+# Elasticity equation
+# ===================
+# Copyright (C) 2020 Garth N. Wells and Michal Habera
+#
+# This demo solves the equations of static linear elasticity. The solver uses
+# smoothed aggregation algebraic multigrid. ::
 
 from contextlib import ExitStack
 
-import numpy as np
-from mpi4py import MPI
-from petsc4py import PETSc
-
 import dolfinx
+import numpy as np
 from dolfinx import BoxMesh, DirichletBC, Function, VectorFunctionSpace, cpp
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import (Form, apply_lifting, assemble_matrix, assemble_vector,
+from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.la import VectorSpaceBasis
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
                  as_vector, dx, grad, inner, sym, tr)
+
+# Nullspace and problem setup
+# ---------------------------
+#
+# Prepare a helper which builds PETSc' NullSpace.
+# Nullspace (or near nullspace) is needed to improve the
+# performance of algebraic multigrid.
+#
+# In the case of small deformation linear elasticity the nullspace
+# contains rigid body modes. ::
 
 
 def build_nullspace(V):
@@ -30,25 +39,29 @@ def build_nullspace(V):
 
     # Create list of vectors for null space
     index_map = V.dofmap.index_map
-    nullspace_basis = [cpp.la.create_vector(index_map) for i in range(6)]
+    nullspace_basis = [cpp.la.create_vector(index_map, V.dofmap.index_map_bs) for i in range(6)]
 
     with ExitStack() as stack:
         vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
         basis = [np.asarray(x) for x in vec_local]
 
+        # Dof indices for each subspace (x, y and z dofs)
+        dofs = [V.sub(i).dofmap.list.array for i in range(3)]
+
         # Build translational null space basis
         for i in range(3):
-            basis[i][V.sub(i).dofmap.list.array] = 1.0
+            basis[i][dofs[i]] = 1.0
 
         # Build rotational null space basis
         x = V.tabulate_dof_coordinates()
-        dofs = [V.sub(i).dofmap.list.array for i in range(3)]
-        basis[3][dofs[0]] = -x[dofs[0], 1]
-        basis[3][dofs[1]] = x[dofs[1], 0]
-        basis[4][dofs[0]] = x[dofs[0], 2]
-        basis[4][dofs[2]] = -x[dofs[2], 0]
-        basis[5][dofs[2]] = x[dofs[2], 1]
-        basis[5][dofs[1]] = -x[dofs[1], 2]
+        dofs_block = V.dofmap.list.array
+        x0, x1, x2 = x[dofs_block, 0], x[dofs_block, 1], x[dofs_block, 2]
+        basis[3][dofs[0]] = -x1
+        basis[3][dofs[1]] = x0
+        basis[4][dofs[0]] = x2
+        basis[4][dofs[2]] = -x0
+        basis[5][dofs[2]] = x1
+        basis[5][dofs[1]] = -x2
 
     # Create vector space basis and orthogonalize
     basis = VectorSpaceBasis(nullspace_basis)
@@ -59,20 +72,10 @@ def build_nullspace(V):
     return nsp
 
 
-# Load mesh from file
-# mesh = Mesh(MPI.COMM_WORLD)
-# XDMFFile(MPI.COMM_WORLD, "../pulley.xdmf").read(mesh)
-
-# mesh = UnitCubeMesh(2, 2, 2)
 mesh = BoxMesh(
     MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
-    CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.none)
-
-# Function to mark inner surface of pulley
-# def inner_surface(x, on_boundary):
-#    r = 3.75 - x[2]*0.17
-#    return (x[0]*x[0] + x[1]*x[1]) < r*r and on_boundary
+    CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.shared_facet)
 
 
 def boundary(x):
@@ -93,8 +96,6 @@ E = 1.0e9
 nu = 0.0
 mu = E / (2.0 * (1.0 + nu))
 lmbda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
-
-# Stress computation
 
 
 def sigma(v):
@@ -118,11 +119,12 @@ with u0.vector.localForm() as bc_local:
 # Set up boundary condition on inner surface
 bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
 
-# Explicitly compile a UFL Form into dolfinx Form
-form = Form(a, jit_parameters={"cffi_extra_compile_args": "-Ofast -march=native", "cffi_verbose": True})
+# Assembly and solve
+# ------------------
+# ::
 
-# Assemble system, applying boundary conditions and preserving symmetry
-A = assemble_matrix(form, [bc])
+# Assemble system, applying boundary conditions
+A = assemble_matrix(a, [bc])
 A.assemble()
 
 b = assemble_vector(L)
