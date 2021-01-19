@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/IndexMap.h>
@@ -139,9 +140,9 @@ void la(py::module& m)
              maps) {
         std::vector<std::vector<PetscScalar>> vecs
             = dolfinx::la::get_local_vectors(x, maps);
-        std::vector<py::array_t<PetscScalar>> ret;
-        for (const auto& v : vecs)
-          ret.emplace_back(v.size(), v.data());
+        std::vector<py::array> ret;
+        for (std::vector<PetscScalar>& v : vecs)
+          ret.push_back(as_pyarray(std::move(v)));
         return ret;
       },
       "Gather an (ordered) list of sub vectors from a block vector.");

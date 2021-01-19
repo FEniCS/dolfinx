@@ -272,9 +272,6 @@ void fem(py::module& m)
       },
       py::arg("b"), py::arg("L"),
       "Assemble linear form into an existing Eigen vector");
-  //   m.def("assemble_vector", &dolfinx::fem::assemble_vector<PetscScalar>,
-  //         py::arg("b"), py::arg("L"),
-  //         "Assemble linear form into an existing Eigen vector");
   // Matrices
   m.def("assemble_matrix_petsc",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
@@ -455,14 +452,13 @@ void fem(py::module& m)
       [](const std::vector<
              std::reference_wrapper<const dolfinx::fem::FunctionSpace>>& V,
          const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
-         bool remote) -> std::array<py::array_t<std::int32_t>, 2> {
+         bool remote) -> std::array<py::array, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
             = dolfinx::fem::locate_dofs_topological({V[0], V[1]}, dim, entities,
                                                     remote);
-        return {py::array_t<std::int32_t>(dofs[0].size(), dofs[0].data()),
-                py::array_t<std::int32_t>(dofs[1].size(), dofs[1].data())};
+        return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
       py::arg("remote") = true);
@@ -482,13 +478,12 @@ void fem(py::module& m)
          const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
              const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                  Eigen::RowMajor>>&)>& marker)
-          -> std::array<py::array_t<std::int32_t>, 2> {
+          -> std::array<py::array, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
             = dolfinx::fem::locate_dofs_geometrical({V[0], V[1]}, marker);
-        return {py::array_t<std::int32_t>(dofs[0].size(), dofs[0].data()),
-                py::array_t<std::int32_t>(dofs[1].size(), dofs[1].data())};
+        return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
       },
       py::arg("V"), py::arg("marker"));
   m.def(
