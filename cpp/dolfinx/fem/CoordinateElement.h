@@ -31,16 +31,14 @@ public:
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   /// @param[in] needs_permutation_data Indicates whether or not the element
   /// needs permutation data (for higher order elements)
-  /// @param[in] get_dof_permutation Function that permutes the DOF numbering
-  /// @param[in] apply_dof_transformation Function that permutes the dof
-  /// coordinates
-  CoordinateElement(
-      int basix_element_handle, int geometric_dimension,
-      const std::string& signature, const ElementDofLayout& dof_layout,
-      bool needs_permutation_data,
-      std::function<int(int*, const uint32_t)> get_dof_permutation,
-      const std::function<int(double*, const std::uint32_t, const int)>
-          apply_dof_transformation);
+  /// @param[in] permute_dofs Function that permutes the DOF numbering
+  /// @param[in] unpermute_dofs Function that reverses a DOF permutation
+  CoordinateElement(int basix_element_handle, int geometric_dimension,
+                    const std::string& signature,
+                    const ElementDofLayout& dof_layout,
+                    bool needs_permutation_data,
+                    std::function<int(int*, const uint32_t)> permute_dofs,
+                    std::function<int(int*, const uint32_t)> unpermute_dofs);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -55,13 +53,6 @@ public:
 
   /// Return the topological dimension of the cell shape
   int topological_dimension() const;
-
-  /// Apply a dof transformation to some coordinate data
-  /// @param[in,out] coords The coordinates to be permuted
-  /// @param[in] cell_permutation An int encoding the orientation of the cell's subentities
-  /// @param[in] dim The dimension of the coordinates (is 2 for 2D, 3 for 3D)
-  int apply_dof_transformation(double* coords, std::uint32_t cell_permutation,
-                               int dim) const;
 
   /// Return the geometric dimension of the cell shape
   int geometric_dimension() const;
@@ -103,8 +94,11 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_geometry) const;
 
-  /// Returns a function that gets the reordering of DOFs on a cell
-  std::function<int(int*, const uint32_t)> get_dof_permutation() const;
+  /// Permutes a list of DOF numbers on a cell
+  void permute_dofs(int* dofs, const uint32_t cell_perm) const;
+
+  /// Reverses a DOF permutation
+  void unpermute_dofs(int* dofs, const uint32_t cell_perm) const;
 
   /// Indicates whether the coordinate map needs permutation data passing in
   /// (for higher order geometries)
@@ -130,10 +124,9 @@ private:
   bool _needs_permutation_data;
 
   // Dof permutation maker
-  std::function<int(int*, const uint32_t)> _get_dof_permutation;
+  std::function<int(int*, const uint32_t)> _permute_dofs;
 
-  // apply_dof_transformation
-  std::function<int(double*, const std::uint32_t, const int)>
-      _apply_dof_transformation;
+  // Dof permutation maker
+  std::function<int(int*, const uint32_t)> _unpermute_dofs;
 };
 } // namespace dolfinx::fem

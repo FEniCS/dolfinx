@@ -16,14 +16,12 @@ CoordinateElement::CoordinateElement(
     int basix_element_handle, int geometric_dimension,
     const std::string& signature, const ElementDofLayout& dof_layout,
     bool needs_permutation_data,
-    std::function<int(int*, const uint32_t)> get_dof_permutation,
-    const std::function<int(double*, const std::uint32_t, const int)>
-        apply_dof_transformation)
+    std::function<int(int*, const uint32_t)> permute_dofs,
+    std::function<int(int*, const uint32_t)> unpermute_dofs)
     : _gdim(geometric_dimension), _signature(signature),
       _dof_layout(dof_layout), _basix_element_handle(basix_element_handle),
       _needs_permutation_data(needs_permutation_data),
-      _get_dof_permutation(get_dof_permutation),
-      _apply_dof_transformation(apply_dof_transformation)
+      _permute_dofs(permute_dofs), _unpermute_dofs(unpermute_dofs)
 {
   const mesh::CellType cell = cell_shape();
   int degree = basix::degree(basix_element_handle);
@@ -64,13 +62,6 @@ int CoordinateElement::geometric_dimension() const { return _gdim; }
 const ElementDofLayout& CoordinateElement::dof_layout() const
 {
   return _dof_layout;
-}
-//-----------------------------------------------------------------------------
-int CoordinateElement::apply_dof_transformation(double* coords,
-                                                std::uint32_t cell_permutation,
-                                                int dim) const
-{
-  return _apply_dof_transformation(coords, cell_permutation, dim);
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(
@@ -236,10 +227,15 @@ void CoordinateElement::compute_reference_geometry(
   }
 }
 //-----------------------------------------------------------------------------
-std::function<int(int*, const uint32_t)>
-CoordinateElement::get_dof_permutation() const
+void CoordinateElement::permute_dofs(int* dofs, const uint32_t cell_perm) const
 {
-  return _get_dof_permutation;
+  _permute_dofs(dofs, cell_perm);
+}
+//-----------------------------------------------------------------------------
+void CoordinateElement::unpermute_dofs(int* dofs,
+                                       const uint32_t cell_perm) const
+{
+  _unpermute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
 bool CoordinateElement::needs_permutation_data() const

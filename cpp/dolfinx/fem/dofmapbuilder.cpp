@@ -41,10 +41,8 @@ namespace
 /// {dimension, mesh entity index} for each local dof i}
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::vector<std::pair<std::int8_t, std::int32_t>>>
-build_basic_dofmap(
-    const mesh::Topology& topology, const ElementDofLayout& element_dof_layout,
-    bool needs_permutation_data,
-    const std::function<int(int*, const uint32_t)>& get_dof_permutation)
+build_basic_dofmap(const mesh::Topology& topology,
+                   const ElementDofLayout& element_dof_layout)
 {
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
@@ -127,18 +125,9 @@ build_basic_dofmap(
   // Dof (dim, entity index) marker
   std::vector<std::pair<std::int8_t, std::int32_t>> dof_entity(local_size);
 
-  // Handle permutation of CoordinateElements
-  const std::vector<std::uint32_t>& cell_info
-      = needs_permutation_data ? topology.get_cell_permutation_info()
-                               : std::vector<std::uint32_t>(num_cells);
-  std::vector<int> dof_order(local_size);
-
   // Loops over cells and build dofmaps from ElementDofmap
   for (int c = 0; c < connectivity[0]->num_nodes(); ++c)
   {
-    // Get dof order on this cell
-    std::iota(std::begin(dof_order), std::end(dof_order), 0);
-    get_dof_permutation(dof_order.data(), cell_info[c]);
     // Get local (process) and global cell entity indices
     for (int d = 0; d < D; ++d)
     {
@@ -188,7 +177,7 @@ build_basic_dofmap(
           const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
           const std::int32_t dof
               = offset_local + num_entity_dofs * e_index_local + count;
-          dofs[cell_ptr[c] + dof_order[*dof_local]] = dof;
+          dofs[cell_ptr[c] + *dof_local] = dof;
           local_to_global[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
           dof_entity[dof] = {d, e_index_local};
@@ -515,12 +504,13 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   return {std::move(local_to_global_new), std::move(local_to_global_new_owner)};
 }
 //-----------------------------------------------------------------------------
+} // namespace
+
+//-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<common::IndexMap>, int,
            graph::AdjacencyList<std::int32_t>>
-internal_build_dofmap_data(
-    MPI_Comm comm, const mesh::Topology& topology,
-    const ElementDofLayout& element_dof_layout, bool needs_permutation_data,
-    const std::function<int(int*, const uint32_t)>& get_dof_permutation)
+fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
+                       const ElementDofLayout& element_dof_layout)
 {
   common::Timer t0("Build dofmap data");
 
@@ -531,8 +521,7 @@ internal_build_dofmap_data(
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
   const auto [node_graph0, local_to_global0, dof_entity0]
-      = build_basic_dofmap(topology, element_dof_layout, needs_permutation_data,
-                           get_dof_permutation);
+      = build_basic_dofmap(topology, element_dof_layout);
 
   // Compute global dofmap dimension
   std::int64_t global_dimension = 0;
@@ -574,8 +563,10 @@ internal_build_dofmap_data(
   std::vector<std::int32_t> dofmap(node_graph0.array().size());
   for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
   {
+    // Get dof order on this cell
     auto old_nodes = node_graph0.links(cell);
     const std::int32_t local_dim0 = old_nodes.size();
+
     for (std::int32_t j = 0; j < local_dim0; ++j)
     {
       const std::int32_t old_node = old_nodes[j];
@@ -588,29 +579,5 @@ internal_build_dofmap_data(
   return {std::move(index_map), element_dof_layout.block_size(),
           graph::build_adjacency_list<std::int32_t>(
               std::move(dofmap), dofmap.size() / node_graph0.num_nodes())};
-}
-//-----------------------------------------------------------------------------
-
-} // namespace
-
-//-----------------------------------------------------------------------------
-std::tuple<std::shared_ptr<common::IndexMap>, int,
-           graph::AdjacencyList<std::int32_t>>
-fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
-                       const CoordinateElement& coordinate_element)
-{
-  return internal_build_dofmap_data(comm, topology,
-                                    coordinate_element.dof_layout(),
-                                    coordinate_element.needs_permutation_data(),
-                                    coordinate_element.get_dof_permutation());
-}
-//-----------------------------------------------------------------------------
-std::tuple<std::shared_ptr<common::IndexMap>, int,
-           graph::AdjacencyList<std::int32_t>>
-fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
-                       const ElementDofLayout& element_dof_layout)
-{
-  return internal_build_dofmap_data(comm, topology, element_dof_layout, false,
-                                    [](auto, auto) { return 0; });
 }
 //-----------------------------------------------------------------------------

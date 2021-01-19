@@ -188,7 +188,6 @@ void assemble_cells(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const fem::CoordinateElement& cmap = geometry.cmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -211,7 +210,6 @@ void assemble_cells(
       std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
-    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[c], gdim);
 
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
@@ -279,7 +277,6 @@ void assemble_exterior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -317,8 +314,6 @@ void assemble_exterior_facets(
       std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
-    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[cells[0]],
-                                  gdim);
 
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
@@ -386,7 +381,6 @@ void assemble_interior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -438,8 +432,6 @@ void assemble_interior_facets(
         coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
       }
     }
-    cmap.apply_dof_transformation(coordinate_dofs.data(), cell_info[cells[0]],
-                                  gdim);
 
     // Get dof maps for cells and pack
     tcb::span<const std::int32_t> dmap0_cell0 = dofmap0.cell_dofs(cells[0]);
