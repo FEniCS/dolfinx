@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dofmapbuilder.h"
+#include "CoordinateElement.h"
 #include "ElementDofLayout.h"
 #include <algorithm>
 #include <cstdlib>
@@ -12,7 +13,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/utils.h>
-#include <dolfinx/fem/dofs_permutation.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/boostordering.h>
 #include <dolfinx/graph/scotch.h>
@@ -37,8 +37,8 @@ namespace
 /// @param [in] topology The mesh topology
 /// @param [in] element_dof_layout The layout of dofs on a cell
 /// @return Returns {dofmap (local to the process), local-to-global map
-///   to get the global index of local dof i, dof indices, vector of
-///   {dimension, mesh entity index} for each local dof i}
+/// to get the global index of local dof i, dof indices, vector of
+/// {dimension, mesh entity index} for each local dof i}
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::vector<std::pair<std::int8_t, std::int32_t>>>
 build_basic_dofmap(const mesh::Topology& topology,
@@ -119,11 +119,6 @@ build_basic_dofmap(const mesh::Topology& topology,
   const std::vector<std::vector<std::set<int>>>& entity_dofs
       = element_dof_layout.entity_dofs_all();
 
-  // Compute cell dof permutations
-  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      permutations
-      = fem::compute_dof_permutations(topology, element_dof_layout);
-
   // Storage for local-to-global map
   std::vector<std::int64_t> local_to_global(local_size);
 
@@ -182,7 +177,7 @@ build_basic_dofmap(const mesh::Topology& topology,
           const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
           const std::int32_t dof
               = offset_local + num_entity_dofs * e_index_local + count;
-          dofs[cell_ptr[c] + permutations(c, *dof_local)] = dof;
+          dofs[cell_ptr[c] + *dof_local] = dof;
           local_to_global[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
           dof_entity[dof] = {d, e_index_local};
@@ -509,7 +504,6 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   return {std::move(local_to_global_new), std::move(local_to_global_new_owner)};
 }
 //-----------------------------------------------------------------------------
-
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -565,14 +559,14 @@ fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
       local_to_global_unowned, local_to_global_owner);
   assert(index_map);
 
-  // FIXME: There is an assumption here on the dof order for an element.
-  //        It should come from the ElementDofLayout.
   // Build re-ordered dofmap
   std::vector<std::int32_t> dofmap(node_graph0.array().size());
   for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
   {
+    // Get dof order on this cell
     auto old_nodes = node_graph0.links(cell);
     const std::int32_t local_dim0 = old_nodes.size();
+
     for (std::int32_t j = 0; j < local_dim0; ++j)
     {
       const std::int32_t old_node = old_nodes[j];

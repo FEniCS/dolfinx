@@ -39,18 +39,27 @@ internal_tabulate_dof_coordinates(
   const int gdim = mesh->geometry().dim();
   const int tdim = mesh->topology().dim();
 
-  // Get local size
+  // Get dofmap local size
   assert(dofmap);
   std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
+  const int index_map_bs = dofmap->index_map_bs();
+  const int dofmap_bs = dofmap->bs();
   assert(index_map);
 
   const int element_block_size = element->block_size();
-  std::int32_t local_size = index_map->size_local() + index_map->num_ghosts();
   const int scalar_dofs = element->space_dimension() / element_block_size;
+  const std::int32_t num_dofs
+      = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
+        / dofmap_bs;
 
-  // Dof coordinate on reference element
+  // Get the dof coordinates on the reference element
+  if (!element->interpolation_ident())
+  {
+    throw std::runtime_error("Cannot evaluate dof coordinates - this element "
+                             "does not have pointwise evaluation.");
+  }
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
-      = element->dof_reference_coordinates();
+      = element->interpolation_points();
 
   // Get coordinate map
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -58,7 +67,6 @@ internal_tabulate_dof_coordinates(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
-
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
@@ -66,13 +74,13 @@ internal_tabulate_dof_coordinates(
       = mesh->geometry().x();
 
   // Array to hold coordinates to return
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
-      = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
-          local_size, 3);
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> coords
+      = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(num_dofs,
+                                                                       3);
 
   // Loop over cells and tabulate dofs
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinates(scalar_dofs, gdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x(
+      scalar_dofs, gdim);
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
@@ -82,23 +90,23 @@ internal_tabulate_dof_coordinates(
 
   for (int c = 0; c < num_cells; ++c)
   {
-    // Update cell
+    // Extract cell geometry
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
-    // Get local-to-global map
+    // Tabulate dof coordinates on cell
+    cmap.push_forward(x, X, coordinate_dofs);
+
+    // Get cell dofmap
     auto dofs = dofmap->cell_dofs(c);
 
-    // Tabulate dof coordinates on cell
-    cmap.push_forward(coordinates, X, coordinate_dofs);
-
     // Copy dof coordinates into vector
-    for (Eigen::Index i = 0; i < scalar_dofs; ++i)
-      x.row(dofs[i]).head(gdim) = coordinates.row(i);
+    for (std::size_t i = 0; i < dofs.size(); ++i)
+      coords.row(dofs[i]).head(gdim) = x.row(i);
   }
 
-  return x;
+  return coords;
 }
 } // namespace
 
