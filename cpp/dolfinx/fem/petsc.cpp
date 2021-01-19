@@ -8,6 +8,7 @@
 #include "assembler.h"
 #include "sparsitybuild.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
@@ -71,15 +72,14 @@ Mat fem::create_matrix_block(
         assert(patterns[row].back());
         auto& sp = patterns[row].back();
         assert(sp);
-        const fem::Form<PetscScalar>& a_ = *form;
-        if (a_.num_integrals(IntegralType::cell) > 0)
+        if (form->num_integrals(IntegralType::cell) > 0)
           sparsitybuild::cells(*sp, mesh->topology(), dofmaps);
-        if (a_.num_integrals(IntegralType::interior_facet) > 0)
+        if (form->num_integrals(IntegralType::interior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
           sparsitybuild::interior_facets(*sp, mesh->topology(), dofmaps);
         }
-        if (a_.num_integrals(IntegralType::exterior_facet) > 0)
+        if (form->num_integrals(IntegralType::exterior_facet) > 0)
         {
           mesh->topology_mutable().create_entities(tdim - 1);
           sparsitybuild::exterior_facets(*sp, mesh->topology(), dofmaps);
@@ -184,16 +184,15 @@ Mat fem::create_matrix_nest(
     _types = types;
 
   // Loop over each form and create matrix
-  Eigen::Array<Mat, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> mats(
-      a.size(), a[0].size());
-  for (std::size_t i = 0; i < a.size(); ++i)
+  const int rows = a.size();
+  const int cols = a[0].size();
+  std::vector<Mat> mats(rows * cols, nullptr);
+  for (int i = 0; i < rows; ++i)
   {
-    for (std::size_t j = 0; j < a[i].size(); ++j)
+    for (int j = 0; j < cols; ++j)
     {
       if (const fem::Form<PetscScalar>* form = a[i][j]; form)
-        mats(i, j) = create_matrix(*form, _types[i][j]);
-      else
-        mats(i, j) = nullptr;
+        mats[i * cols + j] = create_matrix(*form, _types[i][j]);
     }
   }
 
@@ -201,14 +200,15 @@ Mat fem::create_matrix_nest(
   Mat A;
   MatCreate(V[0][0]->mesh()->mpi_comm(), &A);
   MatSetType(A, MATNEST);
-  MatNestSetSubMats(A, mats.rows(), nullptr, mats.cols(), nullptr, mats.data());
+  MatNestSetSubMats(A, rows, nullptr, cols, nullptr, mats.data());
   MatSetUp(A);
 
   // De-reference Mat objects
-  for (int i = 0; i < mats.rows(); ++i)
-    for (int j = 0; j < mats.cols(); ++j)
-      if (mats(i, j))
-        MatDestroy(&mats(i, j));
+  for (std::size_t i = 0; i < mats.size(); ++i)
+  {
+    if (mats[i])
+      MatDestroy(&mats[i]);
+  }
 
   return A;
 }
@@ -279,7 +279,7 @@ void fem::assemble_vector_petsc(Vec b, const Form<PetscScalar>& L)
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
+  tcb::span _b(array, n);
   fem::assemble_vector<PetscScalar>(_b, L);
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b, &b_local);
@@ -297,14 +297,13 @@ void fem::apply_lifting_petsc(
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
+  tcb::span _b(array, n);
 
   if (x0.empty())
     fem::apply_lifting<PetscScalar>(_b, a, bcs1, {}, scale);
   else
   {
-    std::vector<Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0_ref;
+    std::vector<tcb::span<const PetscScalar>> x0_ref;
     std::vector<Vec> x0_local(a.size());
     std::vector<const PetscScalar*> x0_array(a.size());
     for (std::size_t i = 0; i < a.size(); ++i)
@@ -317,8 +316,7 @@ void fem::apply_lifting_petsc(
       x0_ref.emplace_back(x0_array[i], n);
     }
 
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0_tmp(x0_ref.begin(), x0_ref.end());
+    std::vector x0_tmp(x0_ref.begin(), x0_ref.end());
     fem::apply_lifting<PetscScalar>(_b, a, bcs1, x0_tmp, scale);
 
     for (std::size_t i = 0; i < x0_local.size(); ++i)
@@ -341,8 +339,7 @@ void fem::set_bc_petsc(
   VecGetLocalSize(b, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b, &array);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(array, n);
-
+  tcb::span _b(array, n);
   if (x0)
   {
     Vec x0_local;
@@ -351,8 +348,7 @@ void fem::set_bc_petsc(
     VecGetSize(x0_local, &n);
     const PetscScalar* array = nullptr;
     VecGetArrayRead(x0_local, &array);
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x0(array,
-                                                                        n);
+    tcb::span _x0(array, n);
     fem::set_bc<PetscScalar>(_b, bcs, _x0, scale);
     VecRestoreArrayRead(x0_local, &array);
     VecGhostRestoreLocalForm(x0, &x0_local);

@@ -90,11 +90,11 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   auto map = mesh->topology().index_map(tdim);
   assert(map);
 
-  Eigen::Matrix<T, Eigen::Dynamic, 1>& coeffs = u.x()->array();
+  std::vector<T>& coeffs = u.x()->mutable_array();
 
   // Iterate over mesh and interpolate on each cell
   const auto dofmap_u = u.function_space()->dofmap();
-  const Eigen::Matrix<T, Eigen::Dynamic, 1>& v_array = v.x()->array();
+  const std::vector<T>& v_array = v.x()->array();
   const int num_cells = map->size_local() + map->num_ghosts();
   const int bs = dofmap_v->bs();
   assert(bs == dofmap_u->bs());
@@ -255,8 +255,8 @@ void interpolate(
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
-  Eigen::Matrix<T, Eigen::Dynamic, 1>& coeffs = u.x()->array();
-  Eigen::Array<T, Eigen::Dynamic, 1> _coeffs(num_scalar_dofs);
+  std::vector<T>& coeffs = u.x()->mutable_array();
+  std::vector<T> _coeffs(num_scalar_dofs);
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
   for (int c = 0; c < num_cells; ++c)
   {
@@ -290,11 +290,6 @@ void interpolate_c(
         const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                             Eigen::RowMajor>>&)>& f)
 {
-  // Build list of points at which to evaluate the Expression
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
-      = u.function_space()->tabulate_dof_coordinates();
-
-  // Evaluate expression at points
   const auto element = u.function_space()->element();
   assert(element);
   std::vector<int> vshape(element->value_rank(), 1);
@@ -302,13 +297,18 @@ void interpolate_c(
     vshape[i] = element->value_dimension(i);
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
-      x.rows(), value_size);
-  f(values, x);
 
-  // FIXME: This looks strange. Check and add comments
-  u.x()->array() = Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1>>(
-      values.data(), u.x()->array().rows());
+  auto fn =
+      [value_size,
+       &f](const Eigen::Ref<
+           const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>& x) {
+        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
+            x.cols(), value_size);
+        f(values, x.transpose());
+        return values;
+      };
+
+  interpolate<T>(u, fn);
 }
 //----------------------------------------------------------------------------
 

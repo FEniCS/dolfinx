@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 PROJECT(dolfinx_pybind11)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 find_package(DOLFINX REQUIRED)
 
 # Set C++ standard before finding pybind11

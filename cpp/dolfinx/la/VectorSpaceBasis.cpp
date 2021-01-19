@@ -6,6 +6,7 @@
 
 #include "VectorSpaceBasis.h"
 #include "PETScVector.h"
+#include <cassert>
 #include <cmath>
 
 using namespace dolfinx;
