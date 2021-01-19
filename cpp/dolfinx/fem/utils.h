@@ -407,12 +407,12 @@ pack_coefficients(const U& u)
   const std::vector<int> offsets = u.coefficient_offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   std::vector<int> bs(coefficients.size());
-  std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>> v;
+  std::vector<std::reference_wrapper<const std::vector<T>>> v;
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
     dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
     bs[i] = dofmaps[i]->bs();
-    v.emplace_back(coefficients[i]->x()->array());
+    v.push_back(coefficients[i]->x()->array());
   }
 
   // Get mesh
@@ -433,8 +433,7 @@ pack_coefficients(const U& u)
       for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
       {
         tcb::span<const std::int32_t> dofs = dofmaps[coeff]->cell_dofs(cell);
-        const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& _v
-            = v[coeff];
+        const std::vector<T>& _v = v[coeff];
         for (std::size_t i = 0; i < dofs.size(); ++i)
         {
           for (int k = 0; k < bs[coeff]; ++k)
