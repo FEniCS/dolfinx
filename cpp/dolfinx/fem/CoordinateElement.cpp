@@ -16,7 +16,8 @@ CoordinateElement::CoordinateElement(
     int basix_element_handle, int geometric_dimension,
     const std::string& signature, const ElementDofLayout& dof_layout,
     bool needs_permutation_data,
-    std::function<int(int*, const uint32_t)> permute_dofs)
+    std::function<int(int*, const uint32_t)> permute_dofs,
+    std::function<int(int*, const uint32_t)> unpermute_dofs)
     : _gdim(geometric_dimension), _signature(signature),
       _dof_layout(dof_layout), _basix_element_handle(basix_element_handle),
       _needs_permutation_data(needs_permutation_data),
