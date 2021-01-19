@@ -47,64 +47,17 @@
 
 namespace py = pybind11;
 
-namespace
-{
-// Copy a vector-of-vectors into an Eigen::Array for dolfinx::fem::Form*
-Eigen::Array<const dolfinx::fem::Form<PetscScalar>*, Eigen::Dynamic,
-             Eigen::Dynamic, Eigen::RowMajor>
-forms_vector_to_array(
-    const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>& a)
-{
-  if (a.empty())
-  {
-    return Eigen::Array<const dolfinx::fem::Form<PetscScalar>*, Eigen::Dynamic,
-                        Eigen::Dynamic, Eigen::RowMajor>();
-  }
-  Eigen::Array<const dolfinx::fem::Form<PetscScalar>*, Eigen::Dynamic,
-               Eigen::Dynamic, Eigen::RowMajor>
-      _a(a.size(), a[0].size());
-  _a = nullptr;
-  for (std::size_t i = 0; i < a.size(); ++i)
-  {
-    if (a[i].size() != a[0].size())
-      throw std::runtime_error("Array of forms is not rectangular.");
-    for (std::size_t j = 0; j < a[i].size(); ++j)
-      _a(i, j) = a[i][j];
-  }
-  return _a;
-}
-
-} // namespace
-
 namespace dolfinx_wrappers
 {
 void fem(py::module& m)
 {
   // utils
-  m.def(
-      "create_vector_block",
-      [](const std::vector<std::pair<
-             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
-             maps) {
-        dolfinx::la::PETScVector x = dolfinx::fem::create_vector_block(maps);
-        Vec _x = x.vec();
-        PetscObjectReference((PetscObject)_x);
-        return _x;
-      },
-      py::return_value_policy::take_ownership,
-      "Create a monolithic vector for multiple (stacked) linear forms.");
-  m.def(
-      "create_vector_nest",
-      [](const std::vector<std::pair<
-             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
-             maps) {
-        auto x = dolfinx::fem::create_vector_nest(maps);
-        Vec _x = x.vec();
-        PetscObjectReference((PetscObject)_x);
-        return _x;
-      },
-      py::return_value_policy::take_ownership,
-      "Create nested vector for multiple (stacked) linear forms.");
+  m.def("create_vector_block", &dolfinx::fem::create_vector_block,
+        py::return_value_policy::take_ownership,
+        "Create a monolithic vector for multiple (stacked) linear forms.");
+  m.def("create_vector_nest", &dolfinx::fem::create_vector_nest,
+        py::return_value_policy::take_ownership,
+        "Create nested vector for multiple (stacked) linear forms.");
 
   m.def("create_sparsity_pattern",
         &dolfinx::fem::create_sparsity_pattern<PetscScalar>,
@@ -121,44 +74,18 @@ void fem(py::module& m)
   m.def("pack_constants",
         &dolfinx::fem::pack_constants<dolfinx::fem::Expression<PetscScalar>>,
         "Pack constants for a UFL expression.");
-  m.def(
-      "create_matrix",
-      [](const dolfinx::fem::Form<PetscScalar>& a, const std::string& type) {
-        dolfinx::la::PETScMatrix A = dolfinx::fem::create_matrix(a, type);
-        Mat _A = A.mat();
-        PetscObjectReference((PetscObject)_A);
-        return _A;
-      },
-      py::return_value_policy::take_ownership, py::arg("a"),
-      py::arg("type") = std::string(), "Create a PETSc Mat for bilinear form.");
-  m.def(
-      "create_matrix_block",
-      [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&
-             a,
-         const std::string& type) {
-        dolfinx::la::PETScMatrix A
-            = dolfinx::fem::create_matrix_block(forms_vector_to_array(a), type);
-        Mat _A = A.mat();
-        PetscObjectReference((PetscObject)_A);
-        return _A;
-      },
-      py::return_value_policy::take_ownership, py::arg("a"),
-      py::arg("type") = std::string(),
-      "Create monolithic sparse matrix for stacked bilinear forms.");
-  m.def(
-      "create_matrix_nest",
-      [](const std::vector<std::vector<const dolfinx::fem::Form<PetscScalar>*>>&
-             a,
-         const std::vector<std::vector<std::string>>& types) {
-        dolfinx::la::PETScMatrix A
-            = dolfinx::fem::create_matrix_nest(forms_vector_to_array(a), types);
-        Mat _A = A.mat();
-        PetscObjectReference((PetscObject)_A);
-        return _A;
-      },
-      py::return_value_policy::take_ownership, py::arg("a"),
-      py::arg("types") = std::vector<std::vector<std::string>>(),
-      "Create nested sparse matrix for bilinear forms.");
+  m.def("create_matrix", dolfinx::fem::create_matrix,
+        py::return_value_policy::take_ownership, py::arg("a"),
+        py::arg("type") = std::string(),
+        "Create a PETSc Mat for bilinear form.");
+  m.def("create_matrix_block", &dolfinx::fem::create_matrix_block,
+        py::return_value_policy::take_ownership, py::arg("a"),
+        py::arg("type") = std::string(),
+        "Create monolithic sparse matrix for stacked bilinear forms.");
+  m.def("create_matrix_nest", &dolfinx::fem::create_matrix_nest,
+        py::return_value_policy::take_ownership, py::arg("a"),
+        py::arg("types") = std::vector<std::vector<std::string>>(),
+        "Create nested sparse matrix for bilinear forms.");
   m.def(
       "create_element_dof_layout",
       [](const std::uintptr_t dofmap, const dolfinx::mesh::CellType cell_type,
@@ -224,12 +151,20 @@ void fem(py::module& m)
         return dolfinx::fem::FiniteElement(*p);
       }))
       .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
-      .def("dof_reference_coordinates",
-           &dolfinx::fem::FiniteElement::dof_reference_coordinates)
+      .def_property_readonly("interpolation_points",
+                             &dolfinx::fem::FiniteElement::interpolation_points)
+      .def_property_readonly("interpolation_ident",
+                             &dolfinx::fem::FiniteElement::interpolation_ident)
       .def_property_readonly("value_rank",
                              &dolfinx::fem::FiniteElement::value_rank)
       .def("space_dimension", &dolfinx::fem::FiniteElement::space_dimension)
       .def("value_dimension", &dolfinx::fem::FiniteElement::value_dimension)
+      .def("apply_dof_transformation",
+           [](const dolfinx::fem::FiniteElement& self, py::array_t<double>& x,
+              std::uint32_t cell_permutation, int dim) {
+             self.apply_dof_transformation(x.mutable_data(), cell_permutation,
+                                           dim);
+           })
       .def("signature", &dolfinx::fem::FiniteElement::signature);
 
   // dolfinx::fem::ElementDofLayout
@@ -240,9 +175,7 @@ void fem(py::module& m)
                     const std::vector<int>&,
                     const std::vector<
                         std::shared_ptr<const dolfinx::fem::ElementDofLayout>>,
-                    const dolfinx::mesh::CellType,
-                    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic,
-                                       Eigen::RowMajor>&>())
+                    const dolfinx::mesh::CellType>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)
