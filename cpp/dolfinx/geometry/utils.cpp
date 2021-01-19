@@ -259,19 +259,11 @@ geometry::compute_closest_entity(const BoundingBoxTree& tree,
 
   // If initial search radius is 0 we estimate the initial distance to the point
   // using a "random" node from the tree.
-  std::int32_t initial_guess;
-  double R2;
-  if (R < 0)
-  {
-    initial_guess = 0;
-    R2 = (tree.get_bbox(initial_guess).row(0).transpose().matrix() - p)
-             .squaredNorm();
-  }
-  else
-  {
-    initial_guess = -1;
-    R2 = R * R;
-  }
+  const std::int32_t initial_guess = (R < 0) ? 0 : -1;
+  const double R2
+      = (R < 0) ? (tree.get_bbox(initial_guess).row(0).transpose().matrix() - p)
+                      .squaredNorm()
+                : R * R;
   // Use GJK to find determine the actual closest entity
   const auto [index, distance2] = _compute_closest_entity(
       tree, p, tree.num_bboxes() - 1, mesh, initial_guess, R2);
