@@ -48,11 +48,7 @@ Mat create_matrix_block(
 
 /// Create nested (MatNest) matrix
 ///
-/// @param[in] a A rectangular array of bilinear forms
-/// @param[in] types The PETSc matrix type for each matrix block. An
-/// empty string corresponds to the PETSc default type.
-/// @return A nested PETSc matrix with the block [i, j] corresponding to
-/// the [i, j] bilinear form in @p a.
+/// The caller is responsible for destroying the Mat object
 Mat create_matrix_nest(
     const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
     const std::vector<std::vector<std::string>>& types);
