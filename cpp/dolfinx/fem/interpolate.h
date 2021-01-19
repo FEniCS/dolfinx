@@ -256,7 +256,7 @@ void interpolate(
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
   std::vector<T>& coeffs = u.x()->mutable_array();
-  Eigen::Array<T, Eigen::Dynamic, 1> _coeffs(num_scalar_dofs);
+  std::vector<T> _coeffs(num_scalar_dofs);
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
   for (int c = 0; c < num_cells; ++c)
   {

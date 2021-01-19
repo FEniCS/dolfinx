@@ -392,7 +392,7 @@ void assemble_interior_facets(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(2 * num_dofs_g, gdim);
   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
-  Eigen::Array<T, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
+  std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
   // Temporaries for joint dofmaps
@@ -458,10 +458,10 @@ void assemble_interior_facets(
     {
       // Loop over entries for coefficient i
       const int num_entries = offsets[i + 1] - offsets[i];
-      coeff_array.segment(2 * offsets[i], num_entries)
-          = coeff_cell0.segment(offsets[i], num_entries);
-      coeff_array.segment(offsets[i + 1] + offsets[i], num_entries)
-          = coeff_cell1.segment(offsets[i], num_entries);
+      std::copy_n(coeff_cell0.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), 2 * offsets[i]));
+      std::copy_n(coeff_cell1.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
     }
 
     // Tabulate tensor

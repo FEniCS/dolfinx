@@ -213,17 +213,17 @@ public:
   /// Evaluate the Function at points
   ///
   /// @param[in] x The coordinates of the points. It has shape
-  ///   (num_points, 3).
+  /// (num_points, 3).
   /// @param[in] cells An array of cell indices. cells[i] is the index
-  ///   of the cell that contains the point x(i). Negative cell indices
-  ///   can be passed, and the corresponding point will be ignored.
+  /// of the cell that contains the point x(i). Negative cell indices
+  /// can be passed, and the corresponding point will be ignored.
   /// @param[in,out] u The values at the points. Values are not computed
-  ///   for points with a negative cell index. This argument must be
-  ///   passed with the correct size.
+  /// for points with a negative cell index. This argument must be
+  /// passed with the correct size.
   void
   eval(const Eigen::Ref<
            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x,
-       const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& cells,
+       const tcb::span<const std::int32_t>& cells,
        Eigen::Ref<
            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
            u) const
@@ -231,7 +231,7 @@ public:
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
 
-    if (x.rows() != cells.rows())
+    if (x.rows() != (int)cells.size())
     {
       throw std::runtime_error(
           "Number of points and number of cells must be equal.");
@@ -318,9 +318,9 @@ public:
     // Loop over points
     u.setZero();
     const std::vector<T>& _v = _x->mutable_array();
-    for (Eigen::Index p = 0; p < cells.rows(); ++p)
+    for (std::size_t p = 0; p < cells.size(); ++p)
     {
-      const int cell_index = cells(p);
+      const int cell_index = cells[p];
 
       // Skip negative cell indices
       if (cell_index < 0)

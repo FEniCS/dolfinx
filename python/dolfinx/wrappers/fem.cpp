@@ -550,6 +550,18 @@ void fem(py::module& m)
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::fem::Function<PetscScalar>::x),
           "Return the vector associated with the finite element Function")
+
+      .def(
+          "eval",
+          [](const dolfinx::fem::Function<PetscScalar>& self,
+             const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                                Eigen::RowMajor>>& x,
+             const py::array_t<std::int32_t, py::array::c_style>& cells,
+             Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                     Eigen::Dynamic, Eigen::RowMajor>>
+                 u) { self.eval(x, tcb::span(cells.data(), cells.size()), u); },
+          py::arg("x"), py::arg("cells"), py::arg("values"),
+          "Evaluate Function")
       .def("eval", &dolfinx::fem::Function<PetscScalar>::eval, py::arg("x"),
            py::arg("cells"), py::arg("values"), "Evaluate Function")
       .def("compute_point_values",
