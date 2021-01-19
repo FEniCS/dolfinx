@@ -163,7 +163,7 @@ void FiniteElement::evaluate_reference_basis_derivatives(
         "order 1 at the moment.");
   }
 
-  const std::vector<const Eigen::ArrayXXd> basix_data
+  const std::vector<Eigen::ArrayXXd> basix_data
       = basix::tabulate(_basix_element_handle, 1, X);
   for (int p = 0; p < X.rows(); ++p)
     for (int d = 0; d < basix_data[0].cols() / _reference_value_size; ++d)
