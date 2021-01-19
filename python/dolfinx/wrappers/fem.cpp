@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <Eigen/Core>
@@ -469,9 +470,8 @@ void fem(py::module& m)
       "locate_dofs_topological",
       [](const dolfinx::fem::FunctionSpace& V, const int dim,
          const Eigen::Ref<const Eigen::ArrayXi>& entities, bool remote) {
-        std::vector<std::int32_t> dofs
-            = dolfinx::fem::locate_dofs_topological(V, dim, entities, remote);
-        return py::array_t<std::int32_t>(dofs.size(), dofs.data());
+        return as_pyarray(
+            dolfinx::fem::locate_dofs_topological(V, dim, entities, remote));
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
       py::arg("remote") = true);
@@ -497,9 +497,7 @@ void fem(py::module& m)
          const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
              const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                  Eigen::RowMajor>>&)>& marker) {
-        std::vector<std::int32_t> dofs
-            = dolfinx::fem::locate_dofs_geometrical(V, marker);
-        return py::array_t<std::int32_t>(dofs.size(), dofs.data());
+        return as_pyarray(dolfinx::fem::locate_dofs_geometrical(V, marker));
       },
       py::arg("V"), py::arg("marker"));
 
