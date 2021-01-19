@@ -108,6 +108,13 @@ void mesh(py::module& m)
   m.def("inradius", &dolfinx::mesh::inradius, "Compute inradius of cells.");
   m.def("radius_ratio", &dolfinx::mesh::radius_ratio);
   m.def("midpoints", &dolfinx::mesh::midpoints);
+
+  m.def("midpoints",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           py::array_t<std::int32_t, py::array::c_style> entity_list) {
+          return dolfinx::mesh::midpoints(
+              mesh, dim, tcb::span(entity_list.data(), entity_list.size()));
+        });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
   using PythonPartitioningFunction
@@ -260,7 +267,14 @@ void mesh(py::module& m)
   m.def("locate_entities", &dolfinx::mesh::locate_entities);
   m.def("locate_entities_boundary", &dolfinx::mesh::locate_entities_boundary);
 
-  m.def("entities_to_geometry", &dolfinx::mesh::entities_to_geometry);
+  m.def("entities_to_geometry",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           py::array_t<std::int32_t, py::array::c_style> entity_list,
+           bool orient) {
+          return dolfinx::mesh::entities_to_geometry(
+              mesh, dim, tcb::span(entity_list.data(), entity_list.size()),
+              orient);
+        });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
 
 } // namespace dolfinx_wrappers

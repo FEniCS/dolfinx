@@ -564,7 +564,7 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities(
-    const mesh::Mesh& mesh, const int dim,
+    const mesh::Mesh& mesh, int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker)
@@ -632,7 +632,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities(
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
-    const mesh::Mesh& mesh, const int dim,
+    const mesh::Mesh& mesh, int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker)
@@ -745,12 +745,12 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-mesh::entities_to_geometry(const mesh::Mesh& mesh, const int dim,
+mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
                            const tcb::span<const std::int32_t>& entity_list,
                            bool orient)
 {
   dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
-  const int num_entity_vertices
+  int num_entity_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entity_geometry(entity_list.size(), num_entity_vertices);

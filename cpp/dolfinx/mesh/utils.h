@@ -82,7 +82,7 @@ midpoints(const mesh::Mesh& mesh, int dim,
 /// @returns List of marked entity indices, including any ghost indices
 ///   (indices local to the process)
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities(
-    const mesh::Mesh& mesh, const int dim,
+    const mesh::Mesh& mesh, int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
@@ -109,7 +109,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities(
 /// @returns List of marked entity indices (indices local to the
 ///   process)
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_boundary(
-    const mesh::Mesh& mesh, const int dim,
+    const mesh::Mesh& mesh, int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
@@ -125,7 +125,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_boundary(
 /// indices(i, j) is the position in the geometry array of the j-th vertex of
 /// the entity entity_list[i].
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-entities_to_geometry(const mesh::Mesh& mesh, const int dim,
+entities_to_geometry(const mesh::Mesh& mesh, int dim,
                      const tcb::span<const std::int32_t>& entity_list,
                      bool orient);
 
