@@ -216,19 +216,14 @@ c0, mu0 = split(u0)
 # .. index::
 #    single: interpolating functions; (in Cahn-Hilliard demo)
 #
-# Initial conditions are created by using the evaluate method
-# then interpolated into a finite element space::
+# The initial conditions are interpolated into a finite element space::
 
+# Zero u
+with u.vector.localForm() as x_local:
+    x_local.set(0.0)
 
-def u_init(x):
-    """Initialise values for c and mu."""
-    values = np.zeros((2, x.shape[1]))
-    values[0] = 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[1]))
-    return values
-
-
-# Create intial conditions and interpolate
-u.interpolate(u_init)
+# Interpolate initial condition
+u.sub(0).interpolate(lambda x: 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[1])))
 
 # The first line creates an object of type ``InitialConditions``.  The
 # following two lines make ``u`` and ``u0`` interpolants of ``u_init``
