@@ -81,7 +81,7 @@ midpoints(const mesh::Mesh& mesh, int dim,
 /// @param[in] marker The marking function
 /// @returns List of marked entity indices, including any ghost indices
 ///   (indices local to the process)
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities(
+std::vector<std::int32_t> locate_entities(
     const mesh::Mesh& mesh, int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -108,7 +108,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities(
 /// @param[in] marker The marking function
 /// @returns List of marked entity indices (indices local to the
 ///   process)
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_boundary(
+std::vector<std::int32_t> locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,

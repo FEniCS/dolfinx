@@ -285,7 +285,7 @@ public:
 
     // Prepare geometry data structures
     Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
-    Eigen::Array<double, Eigen::Dynamic, 1> detJ(1);
+    std::array<double, 1> detJ;
     Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(
         1, tdim);

@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <cfloat>
@@ -256,13 +257,29 @@ void mesh(py::module& m)
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-           dolfinx::mesh::GhostMode ghost_mode) {
+           dolfinx::mesh::GhostMode ghost_mode)
+            -> dolfinx::graph::AdjacencyList<std::int32_t> {
           return dolfinx::mesh::partition_cells_graph(
               comm.get(), nparts, cell_type, cells, ghost_mode);
         });
 
-  m.def("locate_entities", &dolfinx::mesh::locate_entities);
-  m.def("locate_entities_boundary", &dolfinx::mesh::locate_entities_boundary);
+  m.def(
+      "locate_entities",
+      [](const dolfinx::mesh::Mesh& mesh, int dim,
+         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                                 Eigen::RowMajor>>&)>& marker) {
+        return as_pyarray(dolfinx::mesh::locate_entities(mesh, dim, marker));
+      });
+  m.def(
+      "locate_entities_boundary",
+      [](const dolfinx::mesh::Mesh& mesh, int dim,
+         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                                 Eigen::RowMajor>>&)>& marker) {
+        return as_pyarray(
+            dolfinx::mesh::locate_entities_boundary(mesh, dim, marker));
+      });
 
   m.def("entities_to_geometry",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
