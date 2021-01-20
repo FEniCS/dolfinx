@@ -179,7 +179,7 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
     const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
     const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
-    topo.row(cell) << v0, v4, v2, v6, v1, v5, v3, v7;
+    topo.row(cell) << v0, v1, v3, v4, v5, v6, v7;
     ++cell;
   }
 
