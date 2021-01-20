@@ -212,20 +212,6 @@ PETScMatrix::set_fn(Mat A, const InsertMode mode)
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_fn_add(Mat A)
-{
-  return set_fn(A, ADD_VALUES);
-}
-//-----------------------------------------------------------------------------
-std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                  const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_fn_insert(Mat A)
-{
-  return set_fn(A, INSERT_VALUES);
-}
-//-----------------------------------------------------------------------------
-std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                  const std::int32_t*, const PetscScalar*)>
 PETScMatrix::set_block_fn(Mat A, const InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](

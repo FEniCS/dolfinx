@@ -148,30 +148,30 @@ void assemble_matrix(
   impl::assemble_matrix(mat_add, a, dof_marker0, dof_marker1);
 }
 
-/// Adds a value to the diagonal of a matrix for specified rows. It is
+/// Sets a value to the diagonal of a matrix for specified rows. It is
 /// typically called after assembly. The assembly function zeroes
 /// Dirichlet rows and columns. For block matrices, this function should
 /// normally be called only on the diagonal blocks, i.e. blocks for
 /// which the test and trial spaces are the same.
-/// @param[in] mat_add The function for adding values to a matrix
+/// @param[in] set_fn The function for setting values to a matrix
 /// @param[in] rows The row blocks, in local indices, for which to add a
 /// value to the diagonal
 /// @param[in] diagonal The value to add to the diagonal for the
 ///   specified rows
 template <typename T>
-void add_diagonal(
+void set_diagonal(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& mat_add,
+                            const std::int32_t*, const T*)>& set_fn,
     const tcb::span<const std::int32_t>& rows, T diagonal = 1.0)
 {
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
     const std::int32_t row = rows[i];
-    mat_add(1, &row, 1, &row, &diagonal);
+    set_fn(1, &row, 1, &row, &diagonal);
   }
 }
 
-/// Adds a value to the diagonal of the matrix for rows with a Dirichlet
+/// Sets a value to the diagonal of the matrix for rows with a Dirichlet
 /// boundary conditions applied. This function is typically called after
 /// assembly. The assembly function zeroes Dirichlet rows and columns.
 /// This function adds the value only to rows that are locally owned,
@@ -179,7 +179,7 @@ void add_diagonal(
 /// block matrices, this function should normally be called only on the
 /// diagonal blocks, i.e. blocks for which the test and trial spaces are
 /// the same.
-/// @param[in] mat_add The function for adding values to a matrix
+/// @param[in] set_fn The function for setting values to a matrix
 /// @param[in] V The function space for the rows and columns of the
 ///   matrix. It is used to extract only the Dirichlet boundary conditions
 ///   that are define on V or subspaces of V.
@@ -187,9 +187,9 @@ void add_diagonal(
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 ///   boundary condition applied
 template <typename T>
-void add_diagonal(
+void set_diagonal(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const T*)>& mat_add,
+                            const std::int32_t*, const T*)>& set_fn,
     const fem::FunctionSpace& V,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
     T diagonal = 1.0)
@@ -200,7 +200,7 @@ void add_diagonal(
     if (V.contains(*bc->function_space()))
     {
       const auto [dofs, range] = bc->dof_indices();
-      add_diagonal<T>(mat_add, dofs.first(range), diagonal);
+      set_diagonal<T>(set_fn, dofs.first(range), diagonal);
     }
   }
 }

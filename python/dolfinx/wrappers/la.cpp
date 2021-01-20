@@ -17,6 +17,7 @@
 #include <petsc4py/petsc4py.h>
 #include <pybind11/complex.h>
 #include <pybind11/eigen.h>
+#include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -133,6 +134,9 @@ void la(py::module& m)
         "Scatter the (ordered) list of sub vectors into a block vector.");
   m.def("get_local_vectors", &dolfinx::la::get_local_vectors,
         "Gather an (ordered) list of sub vectors from a block vector.");
+  m.def("set_fn", [](Mat A, int insert_mode){
+    return dolfinx::la::PETScMatrix::set_fn(A, (InsertMode)insert_mode);
+  });
   // NOTE: Enabling the below requires adding a C API for MatNullSpace to
   // petsc4py
   //   m.def("create_nullspace",
