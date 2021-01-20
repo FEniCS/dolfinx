@@ -7,9 +7,9 @@
 import math
 import sys
 
-import FIAT
 import numpy as np
 import pytest
+import basix
 from dolfinx import (BoxMesh, RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
                      UnitSquareMesh, cpp)
 from dolfinx.cpp.mesh import CellType, is_simplex
@@ -279,8 +279,8 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
 @pytest.mark.parametrize("ghost_mode",
                          [cpp.mesh.GhostMode.none, cpp.mesh.GhostMode.shared_facet, cpp.mesh.GhostMode.shared_vertex])
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
-def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
-    """Test that mesh cells have topology matching to FIAT reference
+def test_mesh_topology_against_basix(mesh_factory, ghost_mode):
+    """Test that mesh cells have topology matching to Basix reference
     cell they were created from.
     """
     func, args = mesh_factory
@@ -289,9 +289,9 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     if not is_simplex(mesh.topology.cell_type):
         return
 
-    # Create FIAT cell
+    # Create basix cell
     cell_name = cpp.mesh.to_string(mesh.topology.cell_type)
-    fiat_cell = FIAT.ufc_cell(cell_name)
+    basix_celltype = getattr(basix.CellType, cell_name)
 
     # Initialize all mesh entities and connectivities
     mesh.topology.create_connectivity_all()
@@ -303,7 +303,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
         vertex_global_indices = mesh.topology.connectivity(mesh.topology.dim, 0).links(i)
 
         # Loop over all dimensions of reference cell topology
-        for d, d_topology in fiat_cell.get_topology().items():
+        for d, d_topology in enumerate(basix.topology(basix_celltype)):
 
             # Get entities of dimension d on the cell
             entities = mesh.topology.connectivity(mesh.topology.dim, d).links(i)
@@ -311,13 +311,13 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
                 entities = (i, )
 
             # Loop over all entities of fixed dimension d
-            for entity_index, entity_topology in d_topology.items():
+            for entity_index, entity_topology in enumerate(d_topology):
 
                 # Check that entity vertices map to cell vertices in correct order
                 vertices = mesh.topology.connectivity(d, 0).links(entities[entity_index])
                 vertices_dolfin = np.sort(vertices)
-                vertices_fiat = np.sort(vertex_global_indices[np.array(entity_topology)])
-                assert all(vertices_fiat == vertices_dolfin)
+                vertices2 = np.sort(vertex_global_indices[np.array(entity_topology)])
+                assert all(vertices2 == vertices_dolfin)
 
 
 def test_mesh_topology_lifetime():

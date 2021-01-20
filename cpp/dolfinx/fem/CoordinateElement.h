@@ -7,10 +7,12 @@
 #pragma once
 
 #include "ElementDofLayout.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <cstdint>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
+#include <memory>
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -24,18 +26,20 @@ class CoordinateElement
 {
 public:
   /// Create a coordinate element
-  /// @param[in] cell_type Cell type
-  /// @param[in] topological_dimension Topological dimension
+  /// @param[in] basix_element_handle Element handle from basix
   /// @param[in] geometric_dimension Geometric dimension
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  /// @param[in] is_affine Boolean flag indicating affine mapping
-  /// @param[in] evaluate_basis_derivatives
-  CoordinateElement(mesh::CellType cell_type, int topological_dimension,
-                    int geometric_dimension, const std::string& signature,
-                    const ElementDofLayout& dof_layout, bool is_affine,
-                    const std::function<int(double*, int, int, const double*)>&
-                        evaluate_basis_derivatives);
+  /// @param[in] needs_permutation_data Indicates whether or not the element
+  /// needs permutation data (for higher order elements)
+  /// @param[in] permute_dofs Function that permutes the DOF numbering
+  /// @param[in] unpermute_dofs Function that reverses a DOF permutation
+  CoordinateElement(int basix_element_handle, int geometric_dimension,
+                    const std::string& signature,
+                    const ElementDofLayout& dof_layout,
+                    bool needs_permutation_data,
+                    std::function<int(int*, const uint32_t)> permute_dofs,
+                    std::function<int(int*, const uint32_t)> unpermute_dofs);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -82,8 +86,7 @@ public:
   /// coordinates x
   void compute_reference_geometry(
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
-      Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> detJ,
+      Eigen::Tensor<double, 3, Eigen::RowMajor>& J, tcb::span<double> detJ,
       Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& x,
@@ -91,12 +94,19 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_geometry) const;
 
-private:
-  // Topological and geometric dimensions
-  int _tdim, _gdim;
+  /// Permutes a list of DOF numbers on a cell
+  void permute_dofs(int* dofs, const uint32_t cell_perm) const;
 
-  // Cell type
-  mesh::CellType _cell;
+  /// Reverses a DOF permutation
+  void unpermute_dofs(int* dofs, const uint32_t cell_perm) const;
+
+  /// Indicates whether the coordinate map needs permutation data passing in
+  /// (for higher order geometries)
+  bool needs_permutation_data() const;
+
+private:
+  // Geometric dimensions
+  int _gdim;
 
   // Signature, usually from UFC
   std::string _signature;
@@ -107,12 +117,16 @@ private:
   // Flag denoting affine map
   bool _is_affine;
 
-  // Function to evaluate the basis on the underlying element
-  // @param basis_values Returned values
-  // @param order
-  // @param num_points
-  // @param reference points
-  std::function<int(double*, int, int, const double*)>
-      _evaluate_basis_derivatives;
+  // Basix element
+  int _basix_element_handle;
+
+  // Does the element need permutation data
+  bool _needs_permutation_data;
+
+  // Dof permutation maker
+  std::function<int(int*, const uint32_t)> _permute_dofs;
+
+  // Dof permutation maker
+  std::function<int(int*, const uint32_t)> _unpermute_dofs;
 };
 } // namespace dolfinx::fem

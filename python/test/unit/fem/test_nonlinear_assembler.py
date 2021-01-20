@@ -128,7 +128,8 @@ def test_matrix_assembly_block_nl():
     u0, u1 = ufl.split(U)
     v0, v1 = ufl.TestFunctions(W)
 
-    U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
+    U.sub(0).interpolate(initial_guess_u)
+    U.sub(1).interpolate(initial_guess_p)
 
     F = inner(u0, v0) * dx + inner(u1, v0) * dx + inner(u0, v1) * dx + inner(u1, v1) * dx \
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
@@ -403,7 +404,8 @@ def test_assembly_solve_block_nl():
         snes.setFunction(problem.F_mono, Fvec)
         snes.setJacobian(problem.J_mono, J=Jmat, P=None)
 
-        U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
+        U.sub(0).interpolate(initial_guess_u)
+        U.sub(1).interpolate(initial_guess_p)
 
         x = dolfinx.fem.create_vector(F)
         x.array = U.vector.array_r
@@ -587,7 +589,8 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     snes.setFunction(problem.F_mono, Fvec2)
     snes.setJacobian(problem.J_mono, J=Jmat2, P=Pmat2)
 
-    U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
+    U.sub(0).interpolate(initial_guess_u)
+    U.sub(1).interpolate(initial_guess_p)
 
     x2 = dolfinx.fem.create_vector(F)
     x2.array = U.vector.array_r

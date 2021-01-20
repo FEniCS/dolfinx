@@ -54,7 +54,6 @@ public:
       throw std::runtime_error("Cannot create Function from subspace. Consider "
                                "collapsing the function space");
     }
-    _x->array().setZero();
   }
 
   /// Create function on given function space with a given vector
@@ -135,8 +134,8 @@ public:
         function_space_new->dofmap()->index_map_bs());
 
     // Copy values into new vector
-    const Eigen::Matrix<T, Eigen::Dynamic, 1>& x_old = _x->array();
-    Eigen::Matrix<T, Eigen::Dynamic, 1>& x_new = vector_new->array();
+    const std::vector<T>& x_old = _x->array();
+    std::vector<T>& x_new = vector_new->mutable_array();
     for (std::size_t i = 0; i < collapsed_map.size(); ++i)
     {
       assert((int)i < x_new.size());
@@ -177,8 +176,9 @@ public:
       {
         _petsc_vector = la::create_ghosted_vector(
             *_function_space->dofmap()->index_map,
-            _function_space->dofmap()->index_map_bs(), _x->array());
+            _function_space->dofmap()->index_map_bs(), _x->mutable_array());
       }
+
       return _petsc_vector;
     }
     else
@@ -212,17 +212,17 @@ public:
   /// Evaluate the Function at points
   ///
   /// @param[in] x The coordinates of the points. It has shape
-  ///   (num_points, 3).
+  /// (num_points, 3).
   /// @param[in] cells An array of cell indices. cells[i] is the index
-  ///   of the cell that contains the point x(i). Negative cell indices
-  ///   can be passed, and the corresponding point will be ignored.
+  /// of the cell that contains the point x(i). Negative cell indices
+  /// can be passed, and the corresponding point will be ignored.
   /// @param[in,out] u The values at the points. Values are not computed
-  ///   for points with a negative cell index. This argument must be
-  ///   passed with the correct size.
+  /// for points with a negative cell index. This argument must be
+  /// passed with the correct size.
   void
   eval(const Eigen::Ref<
            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x,
-       const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& cells,
+       const tcb::span<const std::int32_t>& cells,
        Eigen::Ref<
            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
            u) const
@@ -230,7 +230,7 @@ public:
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
 
-    if (x.rows() != cells.rows())
+    if (x.rows() != (int)cells.size())
     {
       throw std::runtime_error(
           "Number of points and number of cells must be equal.");
@@ -248,17 +248,16 @@ public:
     assert(mesh);
     const int gdim = mesh->geometry().dim();
     const int tdim = mesh->topology().dim();
+    auto map = mesh->topology().index_map(tdim);
+    const int num_cells = map->size_local() + map->num_ghosts();
 
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
-
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
     const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
         = mesh->geometry().x();
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        coordinate_dofs(num_dofs_g, gdim);
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -279,34 +278,13 @@ public:
     const int num_sub_elements = element->num_sub_elements();
     if (num_sub_elements > 1 and num_sub_elements != bs_element)
     {
-      if (bs_element != 1)
-      {
-        throw std::runtime_error(
-            "Blocked elements of mixed spaces are not yet supported.");
-      }
-      int offset = 0;
-      for (int sub_e = 0; sub_e < num_sub_elements; ++sub_e)
-      {
-        std::shared_ptr<const fem::FiniteElement> sub_element
-            = element->extract_sub_element({sub_e});
-
-        const int sub_value_size = sub_element->value_size();
-        const Function sub_f = this->sub(sub_e);
-        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> sub_u(
-            u.rows(), sub_value_size);
-        sub_f.eval(x, cells, sub_u);
-
-        for (int i = 0; i < sub_value_size; ++i)
-          u.col(offset + i) = sub_u.col(i);
-        offset += sub_value_size;
-      }
-
-      return;
+      throw std::runtime_error("Function::eval is not supported for mixed "
+                               "elements. Extract subspaces.");
     }
 
     // Prepare geometry data structures
     Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
-    Eigen::Array<double, Eigen::Dynamic, 1> detJ(1);
+    std::array<double, 1> detJ;
     Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(
         1, tdim);
@@ -326,16 +304,22 @@ public:
     assert(dofmap);
     const int bs_dof = dofmap->bs();
 
-    mesh->topology_mutable().create_entity_permutations();
+    const bool needs_permutation_data = element->needs_permutation_data();
+    if (needs_permutation_data)
+      mesh->topology_mutable().create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
-        = mesh->topology().get_cell_permutation_info();
+        = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                                 : std::vector<std::uint32_t>(num_cells);
+
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        coordinate_dofs(num_dofs_g, gdim);
 
     // Loop over points
     u.setZero();
-    const Eigen::Matrix<T, Eigen::Dynamic, 1>& _v = _x->array();
-    for (Eigen::Index p = 0; p < cells.rows(); ++p)
+    const std::vector<T>& _v = _x->mutable_array();
+    for (std::size_t p = 0; p < cells.size(); ++p)
     {
-      const int cell_index = cells(p);
+      const int cell_index = cells[p];
 
       // Skip negative cell indices
       if (cell_index < 0)
@@ -353,9 +337,14 @@ public:
       // Compute basis on reference element
       element->evaluate_reference_basis(basis_reference_values, X);
 
+      // Permute the reference values to account for the cell's orientation
+      element->apply_dof_transformation(basis_reference_values.data(),
+                                        cell_info[cell_index],
+                                        reference_value_size);
+
       // Push basis forward to physical element
       element->transform_reference_basis(basis_values, basis_reference_values,
-                                         X, J, detJ, K, cell_info[cell_index]);
+                                         X, J, detJ, K);
 
       // Get degrees of freedom for current cell
       tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
@@ -421,15 +410,13 @@ public:
       for (int i = 0; i < num_dofs_g; ++i)
         x.row(i) = x_g.row(dofs[i]);
 
-      values.resize(x.rows(), value_size_loc);
-
       // Call evaluate function
       Eigen::Array<int, Eigen::Dynamic, 1> cells(x.rows());
       cells = c;
       eval(x, cells, values);
 
       // Copy values to array of point values
-      for (int i = 0; i < x.rows(); ++i)
+      for (int i = 0; i < values.rows(); ++i)
         point_values.row(dofs[i]) = values.row(i);
     }
 

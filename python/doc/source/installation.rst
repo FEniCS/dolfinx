@@ -47,7 +47,7 @@ Below are additional requirements for the Python interface.
 .. rubric:: Required
 
 - Python
-- FFCX, UFL and FIAT (http://github.com/FEniCS/).
+- FFCX, UFL and Basix (http://github.com/FEniCS/).
 - pybind11 (https://github.com/pybind/pybind11)
 - NumPy (http://www.numpy.org)
 - mpi4py
