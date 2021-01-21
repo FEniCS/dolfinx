@@ -1,4 +1,4 @@
-name: C++ testing with Intel compilers
+name: Intel compilers
 
 on:
   # Uncomment the below 'push' to trigger on push
@@ -80,7 +80,6 @@ jobs:
           ctest -R demo -R mpi_2
 
       - name: Build Python interface
-        if: contains(matrix.compiler, 'LLVM')
         run: |
           . /opt/intel/oneapi/setvars.sh
           python3 -m pip -v install python/
@@ -89,23 +88,19 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
       - name: Run demos (Python, serial)
-        if: contains(matrix.compiler, 'LLVM')
         run: |
           . /opt/intel/oneapi/setvars.sh
           python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
-        if: contains(matrix.compiler, 'LLVM')
         run: |
           . /opt/intel/oneapi/setvars.sh
           python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py
       - name: Run Python unit tests (serial)
-        if: contains(matrix.compiler, 'LLVM')
         run: |
           . /opt/intel/oneapi/setvars.sh
           pip3 install sympy
           python3 -m pytest -n=auto --durations=50 python/test/unit/
       - name: Run Python unit tests (MPI, np=2)
-        if: contains(matrix.compiler, 'LLVM')
         run: |
           . /opt/intel/oneapi/setvars.sh
           mpirun -np 2 python3 -m pytest python/test/unit/
