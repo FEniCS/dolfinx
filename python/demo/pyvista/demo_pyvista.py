@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Jørgen S. Dokken
+# Copyright (C) 2021 Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -49,8 +49,7 @@ def activate_virtual_framebuffer():
         subprocess.call(command, shell=True)
 
 
-activate_virtual_framebuffer()
-
+# activate_virtual_framebuffer()
 
 # Plotting a 3D dolfinx.Function with pyvista
 # ===========================================
@@ -70,8 +69,8 @@ vertex_values = u.compute_point_values()
 pyvista.rcParams["background"] = [0.5, 0.5, 0.5]
 
 # Extract mesh data from dolfin-X and create a pyvista UnstructuredGrid
-pyvista_mesh_data = dolfinx.plotting.mesh_to_pyvista(mesh, mesh.topology.dim)
-grid = pyvista.UnstructuredGrid(*pyvista_mesh_data)
+pyvista_cells, cell_types = dolfinx.cpp.io.create_pyvista_topology(mesh, mesh.topology.dim)
+grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 
 # Create plotter for mesh and point cloud
 plotter = pyvista.Plotter(off_screen=True)
@@ -95,10 +94,9 @@ plotter.set_position([1.5, 0.5, 4])
 
 # Use this if you use docker
 plotter.screenshot("3D_wireframe_with_nodes.png", transparent_background=True, window_size=[900, 900])
-# Otherwise
 # plotter.show()
 
-plotter.clear()
+plotter = pyvista.Plotter(off_screen=True)
 # Add values from the vertices of the mesh to the grid
 sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1,
              position_y=0.05, fmt="%1.2e",
@@ -112,8 +110,7 @@ plotter.add_text("Visualization of function values\n over the surface of a mesh"
                  position="upper_edge", font_size=20, color="black")
 plotter.add_mesh(grid, show_edges=True, scalars="u", scalar_bar_args=sargs)
 plotter.screenshot("3D_function.png", transparent_background=True, window_size=[900, 900])
-plotter.clear()
-
+# plotter.show()
 # Plotting a 2D dolfinx.Function with pyvista using warp by scalar
 # ================================================================
 
@@ -123,13 +120,14 @@ def int_2D(x):
 
 
 # Create mesh and function
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 27, 17, cell_type=dolfinx.cpp.mesh.CellType.triangle)
+mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 1, 1, cell_type=dolfinx.cpp.mesh.CellType.triangle)
 V = dolfinx.FunctionSpace(mesh, ("CG", 1))
 u = dolfinx.Function(V)
 u.interpolate(int_2D)
 
 # Create pyvista mesh and warp grid by scalar u
-grid = pyvista.UnstructuredGrid(*dolfinx.plotting.mesh_to_pyvista(mesh, mesh.topology.dim))
+pyvista_cells, cell_types = dolfinx.cpp.io.create_pyvista_topology(mesh, mesh.topology.dim)
+grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 grid.point_arrays["u"] = u.compute_point_values()
 grid.set_active_scalars("u")
 warped = grid.warp_by_scalar()
@@ -145,11 +143,13 @@ plotter.set_position([-3, 2.6, 0.3])
 plotter.set_focus([3, -1, -0.15])
 plotter.set_viewup([0, 0, 1])
 plotter.screenshot("2D_function_warp.png", transparent_background=True, window_size=[900, 900])
-plotter.clear()
-
+# plotter.show()
+# plotter.clear()
+plotter = pyvista.Plotter(off_screen=True)
 
 # Plotting a 2D MeshTags and using subplots
 # =========================================
+
 
 def left(x):
     # Mark sphere with radius < sqrt(2)
@@ -158,7 +158,7 @@ def left(x):
 
 # Create a cell-tag for all cells, with either value 0 or 1
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-midpoints = dolfinx.cpp.mesh.midpoints(mesh, mesh.topology.dim, np.arange(num_cells))
+midpoints = dolfinx.cpp.mesh.midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
 cell_tags = dolfinx.MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), left(midpoints))
 
 # Create 2D plot of cell markers
@@ -215,7 +215,8 @@ subplotter.subplot(0, 1)
 subplotter.add_text("Subset of mesh", font_size=24, color="black", position="upper_edge")
 subplotter.add_mesh(sub_grid, show_edges=True, edge_color="black")
 subplotter.screenshot("2D_markers.png", transparent_background=True, window_size=[1500, 750])
-subplotter.clear()
+# subplotter.clear()
+# subplotter.show()
 
 
 def left(x):
@@ -225,7 +226,7 @@ def left(x):
 
 # Create a cell-tag for all cells, with either value 0 or 1
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-midpoints = dolfinx.cpp.mesh.midpoints(mesh, mesh.topology.dim, np.arange(num_cells))
+midpoints = dolfinx.cpp.mesh.midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
 cell_tags = dolfinx.MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), left(midpoints))
 
 
@@ -270,12 +271,16 @@ vertices = pyvista.PolyData(grid.points)
 vertices.point_arrays["DG"] = values
 vertices.set_active_scalars("DG")
 
-org_grid = pyvista.UnstructuredGrid(*dolfinx.plotting.mesh_to_pyvista(mesh, mesh.topology.dim))
-plotter = pyvista.Plotter(off_screen=True)
+mesh_data = dolfinx.plotting.mesh_to_pyvista(mesh, mesh.topology.dim)
+pyvista_cells, cell_types = dolfinx.cpp.io.create_pyvista_topology(mesh, mesh.topology.dim)
+org_grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
+plotter = pyvista.Plotter(off_screen=False)
 plotter.add_text("Visualization of second order \nDiscontinous Galerkin elements",
                  position="upper_edge", font_size=25, color="black")
 sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1, position_y=0, color="black")
-plotter.add_mesh(grid, show_edges=False, scalar_bar_args=sargs)
+#plotter.add_mesh(grid, show_edges=False, scalar_bar_args=sargs)
 plotter.add_mesh(org_grid, show_edges=True, color="black", style="wireframe")
-plotter.add_mesh(vertices, point_size=15, render_points_as_spheres=True)
-plotter.screenshot("DG.png", transparent_background=True, window_size=[1500, 1700])
+#plotter.add_mesh(vertices, point_size=15, render_points_as_spheres=True)
+plotter.view_xy()
+#plotter.screenshot("DG.png", transparent_background=True, window_size=[1500, 1700])
+plotter.show()

@@ -11,6 +11,7 @@
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/pyvistawriter.h>
 #include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -30,6 +31,7 @@ namespace dolfinx_wrappers
 
 void io(py::module& m)
 {
+  m.def("create_pyvista_topology", &dolfinx::io::create_pyvista_topology);
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk);

@@ -8,6 +8,7 @@
 
 #include <Eigen/Core>
 #include <cstdint>
+#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <vector>
 
@@ -116,5 +117,8 @@ compute_permutation(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::uint8_t>& p);
+
+/// Convert dolfin cell of dimension cell_dim to vtk cell type
+std::int8_t get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh, int cell_dim);
 
 } // namespace dolfinx::io::cells

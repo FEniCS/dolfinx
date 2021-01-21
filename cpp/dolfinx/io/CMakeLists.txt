@@ -4,6 +4,7 @@ set(HEADERS_io
   ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.h
   ${CMAKE_CURRENT_SOURCE_DIR}/pugiconfig.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pugixml.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pyvistawriter.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.h
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKWriter.h
@@ -19,6 +20,7 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/cells.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pugixml.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pyvistawriter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKWriter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp

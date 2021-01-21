@@ -366,3 +366,33 @@ io::cells::compute_permutation(
   return cells_new;
 }
 //-----------------------------------------------------------------------------
+// Get VTK cell type
+std::int8_t io::cells::get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh,
+                                         int cell_dim)
+{
+
+  // Get cell type
+  mesh::CellType cell_type
+      = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
+
+  // Determine VTK cell type (Using arbitrary Lagrange elements)
+  // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
+  switch (cell_type)
+  {
+  case mesh::CellType::point:
+    return 1;
+  case mesh::CellType::interval:
+    return 68;
+  case mesh::CellType::triangle:
+    return 69;
+  case mesh::CellType::quadrilateral:
+    return 70;
+  case mesh::CellType::tetrahedron:
+    return 71;
+  case mesh::CellType::hexahedron:
+    return 72;
+  default:
+    throw std::runtime_error("Unknown cell type");
+  }
+}
+//----------------------------------------------------------------------------
