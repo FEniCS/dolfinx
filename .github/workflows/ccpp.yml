@@ -89,6 +89,7 @@ jobs:
       - name: Run demos (Python, serial)
         run: |
           pip3 install pyvista vtk
+          apt-get install -y  libgl1-mesa-dev xvfb
           python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
         run: python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py

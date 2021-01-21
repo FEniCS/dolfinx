@@ -86,6 +86,8 @@ ENV OPENBLAS_NUM_THREADS=1 \
 #   documentation or tests.
 # - Third set of packages are optional, but required to run gmsh
 #   pre-built binaries.
+# - Fourth set of dependencies are optional, but required to run pyvista
+# headless in docker containers
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -122,6 +124,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libglu1 \
     libxcursor-dev \
     libxinerama1 && \
+    #
+    apt-get -y install libgl1-mesa-dev xvfb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -133,7 +137,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 # - Third set of packages are required for visualization with pyvista
 RUN pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
-    pip3 install --no-cache-dir pyvista
+    pip3 install --no-cache-dir pyvista vtk
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
