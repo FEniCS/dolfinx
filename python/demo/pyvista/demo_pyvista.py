@@ -228,7 +228,8 @@ problem.solve()
 
 
 topology, cell_types = dolfinx.plotting.pyvista_topology_from_function_space(uh)
-geometry = uh.function_space.tabulate_dof_coordinates()
+num_dofs_local = uh.function_space.dofmap.index_map.size_local
+geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
 values = uh.vector.array
 
 # Plot only a subset of a mesh with a given cell marker
@@ -253,6 +254,7 @@ plotter.add_mesh(org_grid, show_edges=True, color="black", style="wireframe")
 plotter.add_mesh(vertices, point_size=15, render_points_as_spheres=True)
 plotter.view_xy()
 if off_screen:
-    plotter.screenshot("DG.png", transparent_background=transparent, window_size=[1500, 1700])
+    plotter.screenshot(f"DG_{MPI.COMM_WORLD.rank}.png",
+                       transparent_background=transparent, window_size=[1500, 1700])
 else:
     plotter.show()

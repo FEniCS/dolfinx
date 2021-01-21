@@ -510,5 +510,6 @@ def pyvista_topology_from_function_space(u, entities=None):
     topology = np.zeros((num_cells, num_dofs_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_dofs_per_cell
     dofmap_ = dofmap.list.array.reshape(dofmap.list.num_nodes, num_dofs_per_cell)
-    topology[:, 1:] = dofmap_[:, perm]
+
+    topology[:, 1:] = dofmap_[:num_cells, perm]
     return topology.reshape(1, -1)[0], cell_types
