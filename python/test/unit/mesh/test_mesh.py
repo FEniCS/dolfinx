@@ -261,14 +261,20 @@ def xtest_cell_radius_ratio(c0, c1, c5):
     assert cpp.mesh.radius_ratio(c5[0], c5[2]) == pytest.approx(1.0)
 
 
+@pytest.fixture(params=['dir1_fixture', 'dir2_fixture'])
+def dirname(request):
+    return request.getfixturevalue(request.param)
+
+
 @skip_in_parallel
-@pytest.mark.parametrize("mesh,hmin,hmax",
+@pytest.mark.parametrize("_mesh,hmin,hmax",
                          [
-                             (mesh_1d(), 0.0, 0.25),
-                             (mesh_2d(), math.sqrt(2.0), math.sqrt(2.0)),
-                             (mesh_3d(), math.sqrt(2.0), math.sqrt(2.0)),
+                             (mesh_1d, 0.0, 0.25),
+                             (mesh_2d, math.sqrt(2.0), math.sqrt(2.0)),
+                             (mesh_3d, math.sqrt(2.0), math.sqrt(2.0)),
                          ])
-def test_hmin_hmax(mesh, hmin, hmax):
+def test_hmin_hmax(_mesh, hmin, hmax):
+    mesh = _mesh()
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local
     h = cpp.mesh.h(mesh, tdim, range(num_cells))
@@ -276,20 +282,20 @@ def test_hmin_hmax(mesh, hmin, hmax):
     assert h.max() == pytest.approx(hmax)
 
 
-@pytest.mark.skip("Needs to be re-implemented")
-@skip_in_parallel
-@pytest.mark.parametrize("mesh,rmin,rmax",
-                         [
-                             (mesh_1d(), 0.0, 0.125),
-                             (mesh_2d(), 1.0 / (2.0 + math.sqrt(2.0)), math.sqrt(6.0) / 6.0),
-                             (mesh_3d(), 0.0, math.sqrt(3.0) / 6.0),
-                         ])
-def test_rmin_rmax(mesh, rmin, rmax):
-    tdim = mesh.topology.dim
-    num_cells = mesh.topology.index_map(tdim).size_local
-    inradius = cpp.mesh.inradius(mesh, range(num_cells))
-    assert inradius.min() == pytest.approx(rmin)
-    assert inradius.max() == pytest.approx(rmax)
+# @skip_in_parallel
+# @pytest.mark.skip("Needs to be re-implemented")
+# @pytest.mark.parametrize("mesh,rmin,rmax",
+#                          [
+#                              (mesh_1d(), 0.0, 0.125),
+#                              (mesh_2d(), 1.0 / (2.0 + math.sqrt(2.0)), math.sqrt(6.0) / 6.0),
+#                              (mesh_3d(), 0.0, math.sqrt(3.0) / 6.0),
+#                          ])
+# def test_rmin_rmax(mesh, rmin, rmax):
+#     tdim = mesh.topology.dim
+#     num_cells = mesh.topology.index_map(tdim).size_local
+#     inradius = cpp.mesh.inradius(mesh, range(num_cells))
+#     assert inradius.min() == pytest.approx(rmin)
+#     assert inradius.max() == pytest.approx(rmax)
 
 # - Facilities to run tests on combination of meshes
 
