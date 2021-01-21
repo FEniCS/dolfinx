@@ -46,8 +46,11 @@ def activate_virtual_framebuffer():
         subprocess.call(command, shell=True)
 
 
-# activate_virtual_framebuffer()
+activate_virtual_framebuffer()
 off_screen = True
+transparent = False
+figsize = 800
+
 
 # Plotting a 3D dolfinx.Function with pyvista
 # ===========================================
@@ -95,7 +98,8 @@ plotter.set_position([1.5, 0.5, 4])
 
 # Save as png if we are using a container with no rendering
 if off_screen:
-    plotter.screenshot("3D_wireframe_with_nodes.png", transparent_background=True, window_size=[900, 900])
+    plotter.screenshot("3D_wireframe_with_nodes.png", transparent_background=transparent,
+                       window_size=[figsize, figsize])
 else:
     plotter.show()
 
@@ -114,7 +118,7 @@ plotter.add_text("Visualization of function values\n over the surface of a mesh"
 plotter.add_mesh(grid, show_edges=True, scalars="u", scalar_bar_args=sargs)
 
 if off_screen:
-    plotter.screenshot("3D_function.png", transparent_background=True, window_size=[900, 900])
+    plotter.screenshot("3D_function.png", transparent_background=transparent, window_size=[figsize, figsize])
 else:
     plotter.show()
 
@@ -153,7 +157,7 @@ plotter.set_position([-3, 2.6, 0.3])
 plotter.set_focus([3, -1, -0.15])
 plotter.set_viewup([0, 0, 1])
 if off_screen:
-    plotter.screenshot("2D_function_warp.png", transparent_background=True, window_size=[900, 900])
+    plotter.screenshot("2D_function_warp.png", transparent_background=transparent, window_size=[figsize, figsize])
 else:
     plotter.show()
 
@@ -193,7 +197,8 @@ subplotter.add_text("Subset of mesh", font_size=24, color="black", position="upp
 subplotter.add_mesh(sub_grid, show_edges=True, edge_color="black")
 
 if off_screen:
-    subplotter.screenshot("2D_markers.png", transparent_background=True, window_size=[1500, 750])
+    subplotter.screenshot("2D_markers.png", transparent_background=transparent,
+                          window_size=[2 * figsize, figsize])
 else:
     subplotter.show()
 
@@ -248,6 +253,6 @@ plotter.add_mesh(org_grid, show_edges=True, color="black", style="wireframe")
 plotter.add_mesh(vertices, point_size=15, render_points_as_spheres=True)
 plotter.view_xy()
 if off_screen:
-    plotter.screenshot("DG.png", transparent_background=True, window_size=[1500, 1700])
+    plotter.screenshot("DG.png", transparent_background=transparent, window_size=[1500, 1700])
 else:
     plotter.show()
