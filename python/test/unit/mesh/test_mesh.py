@@ -307,17 +307,19 @@ mesh_factories = [
 
 # FIXME: Fix this xfail
 def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
-    """Xfail when mesh_factory on quads/hexes uses
-    shared_vertex mode. Needs implementing.
-    """
+    """Xfail when mesh_factory on quads/hexes uses shared_vertex mode. Needs implementing."""
     if mesh_factory in [UnitSquareMesh, UnitCubeMesh]:
         if ghost_mode == cpp.mesh.GhostMode.shared_vertex:
             pytest.xfail(reason="Missing functionality in \'{}\' with \'{}\' mode".format(mesh_factory, ghost_mode))
 
 
-@ pytest.mark.parametrize("ghost_mode",
-                          [cpp.mesh.GhostMode.none, cpp.mesh.GhostMode.shared_facet, cpp.mesh.GhostMode.shared_vertex])
-@ pytest.mark.parametrize('mesh_factory', mesh_factories)
+@pytest.mark.parametrize("ghost_mode",
+                         [
+                             cpp.mesh.GhostMode.none,
+                             cpp.mesh.GhostMode.shared_facet,
+                             cpp.mesh.GhostMode.shared_vertex,
+                         ])
+@pytest.mark.parametrize('mesh_factory', mesh_factories)
 def test_mesh_topology_against_basix(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to Basix reference
     cell they were created from.
@@ -369,7 +371,7 @@ def test_mesh_topology_lifetime():
     assert sys.getrefcount(mesh) == rc
 
 
-@ skip_in_parallel
+@skip_in_parallel
 def test_small_mesh():
     mesh3d = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)
     gdim = mesh3d.geometry.dim
