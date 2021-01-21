@@ -444,9 +444,12 @@ def plot(object, *args, **kwargs):
 # Determine VTK cell type (Using arbitrary Lagrange elements)
 # NOTE: Edge visualization of higher order elments are sketchy, see:
 # https://github.com/pyvista/pyvista/issues/947
-_dolfin_to_vtk_cell = {cpp.mesh.CellType.point: 1, cpp.mesh.CellType.triangle: 68,
+_dolfin_to_vtk_cell = {cpp.mesh.CellType.point: 1, cpp.mesh.CellType.triangle: 69,
                        cpp.mesh.CellType.quadrilateral: 70, cpp.mesh.CellType.tetrahedron: 71,
                        cpp.mesh.CellType.hexahedron: 72}
+# Permutation for Dolfinx DG layout to VTK
+_perm_dg = {1: [0, 1, 2], 2: [0, 2, 5, 1, 4, 3], 3: [0, 3, 9, 1, 2, 6, 8, 7, 4, 5],
+            4: [0, 4, 14, 1, 2, 3, 8, 11, 13, 12, 9, 5, 6, 7, 10]}
 
 
 @numba.njit(cache=True)
@@ -481,10 +484,14 @@ def create_pyvista_mesh_from_function_space(u):
     num_dofs_per_cell = u.function_space.dofmap.dof_layout.num_dofs
     topology = np.zeros(num_cells * (num_dofs_per_cell + 1), dtype=np.int32)
 
-    dolfin_cell_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, mesh.topology.dim)
-    perm_to_vtk = cpp.io.transpose_map(cpp.io.perm_vtk(dolfin_cell_type, num_dofs_per_cell))
-    create_pyvista_cell_topology(topology, np.array(perm_to_vtk, dtype=np.int32),
-                                 num_cells, num_dofs_per_cell, dofmap, offsets)
+    dolfin_cell_type = mesh.topology.cell_type
+    if dolfin_cell_type == cpp.mesh.CellType.triangle and family == "Discontinuous Lagrange":
+        if V.ufl_element().degree() > 4:
+            raise NotImplementedError("Visualization of DG function spaces > 4 not implemented.")
+        perm = np.array(_perm_dg[V.ufl_element().degree()], dtype=np.int32)
+    else:
+        raise NotImplementedError("Other DG types not implemented.")
+    create_pyvista_cell_topology(topology, perm, num_cells, num_dofs_per_cell, dofmap, offsets)
 
     cell_types = np.full(num_cells, _dolfin_to_vtk_cell[dolfin_cell_type])
 

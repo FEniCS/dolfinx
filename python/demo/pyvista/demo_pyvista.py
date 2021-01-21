@@ -120,7 +120,7 @@ def int_2D(x):
 
 
 # Create mesh and function
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 1, 1, cell_type=dolfinx.cpp.mesh.CellType.triangle)
+mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 15, 15, cell_type=dolfinx.cpp.mesh.CellType.triangle)
 V = dolfinx.FunctionSpace(mesh, ("CG", 1))
 u = dolfinx.Function(V)
 u.interpolate(int_2D)
@@ -271,16 +271,15 @@ vertices = pyvista.PolyData(grid.points)
 vertices.point_arrays["DG"] = values
 vertices.set_active_scalars("DG")
 
-mesh_data = dolfinx.plotting.mesh_to_pyvista(mesh, mesh.topology.dim)
 pyvista_cells, cell_types = dolfinx.cpp.io.create_pyvista_topology(mesh, mesh.topology.dim)
 org_grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
-plotter = pyvista.Plotter(off_screen=False)
+plotter = pyvista.Plotter(off_screen=True)
 plotter.add_text("Visualization of second order \nDiscontinous Galerkin elements",
                  position="upper_edge", font_size=25, color="black")
 sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1, position_y=0, color="black")
-#plotter.add_mesh(grid, show_edges=False, scalar_bar_args=sargs)
+plotter.add_mesh(grid, show_edges=False, scalar_bar_args=sargs)
 plotter.add_mesh(org_grid, show_edges=True, color="black", style="wireframe")
-#plotter.add_mesh(vertices, point_size=15, render_points_as_spheres=True)
+plotter.add_mesh(vertices, point_size=15, render_points_as_spheres=True)
 plotter.view_xy()
-#plotter.screenshot("DG.png", transparent_background=True, window_size=[1500, 1700])
-plotter.show()
+plotter.screenshot("DG.png", transparent_background=True, window_size=[1500, 1700])
+# plotter.show()
