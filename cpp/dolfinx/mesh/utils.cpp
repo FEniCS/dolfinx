@@ -164,7 +164,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 mesh::midpoints(const mesh::Mesh& mesh, int dim,
-                const tcb::span<const int>& entities)
+                const tcb::span<const std::int32_t>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
