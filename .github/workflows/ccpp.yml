@@ -44,6 +44,7 @@ jobs:
       - name: Install pyvista requirements
         run: |
           pip3 install pyvista vtk
+          apt-get update
           apt-get install -y  libgl1-mesa-dev xvfb
 
       - name: Flake8 checks

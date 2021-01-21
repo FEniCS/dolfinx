@@ -67,10 +67,11 @@ build-documentation-python: &build-documentation-python
     cd python/demo && python3 ./generate-demo-files.py
     cd ../doc && make html
 
-build-pyvista-python:: &build-pyvista-python
+build-pyvista-python: &build-pyvista-python
   name: Install pyvista requirements
   command: |
     pip3 install pyvista vtk
+    apt-get update
     apt-get install -y  libgl1-mesa-dev xvfb
 
 
