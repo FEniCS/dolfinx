@@ -42,7 +42,6 @@ def test_distance_tetrahedron():
     assert cpp.geometry.squared_distance(mesh, mesh.topology.dim, 5, numpy.array([0.5, 0.5, 0.5])) == pytest.approx(0.0)
 
 
-
 @pytest.mark.skip("volume_entities needs fixing")
 @pytest.mark.parametrize(
     'mesh', [

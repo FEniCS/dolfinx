@@ -287,7 +287,6 @@ def test_hmin_hmax(mesh, hmin, hmax):
 def test_rmin_rmax(mesh, rmin, rmax):
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local
-    num_vert = mesh.topology.index_map(0).size_local
     inradius = cpp.mesh.inradius(mesh, range(num_cells))
     assert inradius.min() == pytest.approx(rmin)
     assert inradius.max() == pytest.approx(rmax)
