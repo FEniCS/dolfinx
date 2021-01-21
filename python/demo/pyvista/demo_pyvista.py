@@ -120,7 +120,7 @@ def int_2D(x):
 
 
 # Create mesh and function
-mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 15, 15, cell_type=dolfinx.cpp.mesh.CellType.triangle)
+mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 1, 1, cell_type=dolfinx.cpp.mesh.CellType.quadrilateral)
 V = dolfinx.FunctionSpace(mesh, ("CG", 1))
 u = dolfinx.Function(V)
 u.interpolate(int_2D)
@@ -232,31 +232,15 @@ cell_tags = dolfinx.MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), left
 
 # Project a DG function
 dx = ufl.Measure("dx", subdomain_data=cell_tags)
-V = dolfinx.FunctionSpace(mesh, ("DG", 2))
+V = dolfinx.FunctionSpace(mesh, ("CG", 3))
 uh = dolfinx.Function(V)
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(mesh)
 a = ufl.inner(u, v) * dx
-L = ufl.inner(x[0], v) * dx(1) + ufl.inner(0.01, v) * dx(0)
-u = dolfinx.Function(V)
-b = dolfinx.fem.assemble_vector(L)
-bcs = []
-dolfinx.fem.assemble.apply_lifting(b, [a], [bcs])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD,
-              mode=PETSc.ScatterMode.REVERSE)
-dolfinx.fem.assemble.set_bc(b, bcs)
-A = dolfinx.fem.assemble_matrix(a, bcs=bcs)
-A.assemble()
-solver_proj = PETSc.KSP().create(MPI.COMM_WORLD)
-solver_proj.setType("preonly")
-solver_proj.setTolerances(rtol=1.0e-14)
-solver_proj.getPC().setType("lu")
-solver_proj.getPC().setFactorSolverType("mumps")
-solver_proj.setOperators(A)
-solver_proj.solve(b, uh.vector)
-uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                      mode=PETSc.ScatterMode.FORWARD)
+L = ufl.inner(x[0]**3, v) * dx  # (1) + ufl.inner(0.01, v) * dx(0)
+problem = dolfinx.fem.LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem.solve()
 
 
 geometry, topology, cell_types = dolfinx.plotting.create_pyvista_mesh_from_function_space(uh)
@@ -273,7 +257,7 @@ vertices.set_active_scalars("DG")
 
 pyvista_cells, cell_types = dolfinx.cpp.io.create_pyvista_topology(mesh, mesh.topology.dim)
 org_grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
-plotter = pyvista.Plotter(off_screen=True)
+plotter = pyvista.Plotter(off_screen=False)
 plotter.add_text("Visualization of second order \nDiscontinous Galerkin elements",
                  position="upper_edge", font_size=25, color="black")
 sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1, position_y=0, color="black")
@@ -281,5 +265,5 @@ plotter.add_mesh(grid, show_edges=False, scalar_bar_args=sargs)
 plotter.add_mesh(org_grid, show_edges=True, color="black", style="wireframe")
 plotter.add_mesh(vertices, point_size=15, render_points_as_spheres=True)
 plotter.view_xy()
-plotter.screenshot("DG.png", transparent_background=True, window_size=[1500, 1700])
-# plotter.show()
+# plotter.screenshot("DG.png", transparent_background=True, window_size=[1500, 1700])
+plotter.show()

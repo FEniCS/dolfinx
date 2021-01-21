@@ -447,12 +447,13 @@ def plot(object, *args, **kwargs):
 _dolfin_to_vtk_cell = {cpp.mesh.CellType.point: 1, cpp.mesh.CellType.triangle: 69,
                        cpp.mesh.CellType.quadrilateral: 70, cpp.mesh.CellType.tetrahedron: 71,
                        cpp.mesh.CellType.hexahedron: 72}
-# Permutation for Dolfinx DG layout to VTK
+# Permutation for Dolfinx DG layout to VTK (triangles)
 _perm_dg = {1: [0, 1, 2], 2: [0, 2, 5, 1, 4, 3], 3: [0, 3, 9, 1, 2, 6, 8, 7, 4, 5],
             4: [0, 4, 14, 1, 2, 3, 8, 11, 13, 12, 9, 5, 6, 7, 10]}
+_perm_dq = {1: [0, 1, 3, 2], 2: [0, 2, 8, 6, 1, 5, 7, 3, 4], 3: [0, 3, 15, 12, 1, 2, 7, 11, 13, 14, 4, 8, 5, 6, 9, 10]}
 
 
-@numba.njit(cache=True)
+# @numba.njit(cache=True)
 def create_pyvista_cell_topology(topology, perm_to_vtk, num_cells, num_dofs_per_cell, dofmap, offsets):
     """
     Creating a mesh topology given a dofmap (dolfin-X ordering).
@@ -472,8 +473,7 @@ def create_pyvista_mesh_from_function_space(u):
     """
     V = u.function_space
     family = V.ufl_element().family()
-
-    if not (family in ['Discontinuous Lagrange', "Lagrange", "DQ"]):
+    if not (family in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q"]):
         raise RuntimeError("Can only create meshes from CG or DG function-spaces")
 
     geometry = V.tabulate_dof_coordinates()
@@ -484,15 +484,21 @@ def create_pyvista_mesh_from_function_space(u):
     num_dofs_per_cell = u.function_space.dofmap.dof_layout.num_dofs
     topology = np.zeros(num_cells * (num_dofs_per_cell + 1), dtype=np.int32)
 
-    dolfin_cell_type = mesh.topology.cell_type
-    if dolfin_cell_type == cpp.mesh.CellType.triangle and family == "Discontinuous Lagrange":
+    cell_type = mesh.topology.cell_type
+    if cell_type == cpp.mesh.CellType.triangle and family == "Discontinuous Lagrange":
         if V.ufl_element().degree() > 4:
             raise NotImplementedError("Visualization of DG function spaces > 4 not implemented.")
         perm = np.array(_perm_dg[V.ufl_element().degree()], dtype=np.int32)
+    elif cell_type == cpp.mesh.CellType.quadrilateral and family == "DQ":
+        perm = np.array(_perm_dq[V.ufl_element().degree()], dtype=np.int32)
+    elif cell_type == cpp.mesh.CellType.triangle and family == "Lagrange":
+        perm = cpp.io.transpose_map(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
+    elif cell_type == cpp.mesh.CellType.quadrilateral and family == "Q":
+        perm = cpp.io.transpose_map(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
     else:
-        raise NotImplementedError("Other DG types not implemented.")
+        raise NotImplementedError("CG and other DG types not implemented.")
     create_pyvista_cell_topology(topology, perm, num_cells, num_dofs_per_cell, dofmap, offsets)
 
-    cell_types = np.full(num_cells, _dolfin_to_vtk_cell[dolfin_cell_type])
+    cell_types = np.full(num_cells, _dolfin_to_vtk_cell[cell_type])
 
     return geometry, topology, cell_types
