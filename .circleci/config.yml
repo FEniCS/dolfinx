@@ -67,6 +67,13 @@ build-documentation-python: &build-documentation-python
     cd python/demo && python3 ./generate-demo-files.py
     cd ../doc && make html
 
+build-pyvista-python:: &build-pyvista-python
+  name: Install pyvista requirements
+  command: |
+    pip3 install pyvista vtk
+    apt-get install -y  libgl1-mesa-dev xvfb
+
+
 demos-python: &demos-python
   name: Run demos (Python, serial)
   command: |
@@ -125,6 +132,7 @@ jobs:
       - run: *build-python-interface
       - run: *build-documentation-python
 
+      - run: *build-pyvista-python
       - run: *demos-python
       - run: *demos-python-mpi
       - run: *set-jit-defaults
@@ -162,6 +170,7 @@ jobs:
       - run: *build-python-interface
       - run: *build-documentation-python
 
+      - run: *build-pyvista-python
       - run: *demos-python
       - run: *demos-python-mpi
       - run: *set-jit-defaults
