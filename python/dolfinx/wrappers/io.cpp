@@ -31,7 +31,9 @@ namespace dolfinx_wrappers
 
 void io(py::module& m)
 {
-  m.def("create_pyvista_topology", &dolfinx::io::create_pyvista_topology);
+
+  // dolfinx::io::cell vtk cell type converter
+  m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type);
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk);

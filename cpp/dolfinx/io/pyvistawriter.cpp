@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Garth N. Wells
+// Copyright (C) 2021 Jørgen S. Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -13,8 +13,8 @@ using namespace dolfinx;
 
 std::pair<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>,
           Eigen::Array<std::int8_t, Eigen::Dynamic, 1>>
-io::create_pyvista_topology(const mesh::Mesh& mesh, int dim,
-                            std::vector<std::int32_t>& entities)
+io::pyvista_topology_from_mesh(const mesh::Mesh& mesh, int dim,
+                               std::vector<std::int32_t>& entities)
 {
   const std::int32_t num_cells = entities.size();
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

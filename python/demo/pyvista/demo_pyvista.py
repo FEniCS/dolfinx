@@ -69,11 +69,11 @@ pyvista.rcParams["background"] = [0.5, 0.5, 0.5]
 # Extract mesh data from dolfin-X and create a pyvista UnstructuredGrid
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cell_entities = np.arange(num_cells, dtype=np.int32)
-pyvista_cells, cell_types = dolfinx.cpp.io.create_pyvista_topology(mesh, mesh.topology.dim, cell_entities)
+pyvista_cells, cell_types = dolfinx.plotting.pyvista_topology_from_mesh(mesh, mesh.topology.dim, cell_entities)
 grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 
 # Create plotter for mesh and point cloud
-plotter = pyvista.Plotter(off_screen=True)
+plotter = pyvista.Plotter(off_screen=False)
 
 # Create point cloud of vertices, and add the vertex values to the cloud
 vertices = pyvista.PolyData(grid.points)
@@ -93,10 +93,10 @@ plotter.add_mesh(vertices, point_size=10.0, render_points_as_spheres=True, scala
 plotter.set_position([1.5, 0.5, 4])
 
 # Use this if you use docker
-plotter.screenshot("3D_wireframe_with_nodes.png", transparent_background=True, window_size=[900, 900])
-# plotter.show()
+#plotter.screenshot("3D_wireframe_with_nodes.png", transparent_background=True, window_size=[900, 900])
+plotter.show()
 
-plotter = pyvista.Plotter(off_screen=True)
+plotter = pyvista.Plotter(off_screen=False)
 # Add values from the vertices of the mesh to the grid
 sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1,
              position_y=0.05, fmt="%1.2e",
@@ -109,8 +109,8 @@ plotter.set_viewup([0, 0, 1])
 plotter.add_text("Visualization of function values\n over the surface of a mesh",
                  position="upper_edge", font_size=20, color="black")
 plotter.add_mesh(grid, show_edges=True, scalars="u", scalar_bar_args=sargs)
-plotter.screenshot("3D_function.png", transparent_background=True, window_size=[900, 900])
-# plotter.show()
+#plotter.screenshot("3D_function.png", transparent_background=True, window_size=[900, 900])
+plotter.show()
 # Plotting a 2D dolfinx.Function with pyvista using warp by scalar
 # ================================================================
 
@@ -128,7 +128,7 @@ u.interpolate(int_2D)
 # Create pyvista mesh and warp grid by scalar u
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cells = np.arange(num_cells, dtype=np.int32)
-pyvista_cells, cell_types = dolfinx.cpp.io.create_pyvista_topology(mesh, mesh.topology.dim, cells)
+pyvista_cells, cell_types = dolfinx.plotting.pyvista_topology_from_mesh(mesh, mesh.topology.dim, cells)
 grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 grid.point_arrays["u"] = u.compute_point_values()
 grid.set_active_scalars("u")
@@ -138,15 +138,15 @@ warped = grid.warp_by_scalar()
 sargs = dict(height=0.8, width=0.1, vertical=True, position_x=0.05,
              position_y=0.05, fmt="%1.2e",
              title_font_size=40, color="black", label_font_size=25)
-plotter = pyvista.Plotter(off_screen=True)
+plotter = pyvista.Plotter(off_screen=False)
 plotter.add_text("Visualization of warped function",
                  position="upper_edge", font_size=20, color="black")
 plotter.add_mesh(warped, show_edges=True, scalar_bar_args=sargs)
 plotter.set_position([-3, 2.6, 0.3])
 plotter.set_focus([3, -1, -0.15])
 plotter.set_viewup([0, 0, 1])
-plotter.screenshot("2D_function_warp.png", transparent_background=True, window_size=[900, 900])
-#  plotter.show()
+#plotter.screenshot("2D_function_warp.png", transparent_background=True, window_size=[900, 900])
+plotter.show()
 # plotter.clear()
 plotter = pyvista.Plotter(off_screen=False)
 
@@ -173,7 +173,7 @@ subplotter.add_text("Mesh with markers", font_size=24, color="black", position="
 subplotter.add_mesh(grid, show_edges=True, show_scalar_bar=False)
 subplotter.view_xy()
 
-pyvista_cells, cell_types = dolfinx.cpp.io.create_pyvista_topology(
+pyvista_cells, cell_types = dolfinx.plotting.pyvista_topology_from_mesh(
     mesh, mesh.topology.dim, cell_tags.indices[cell_tags.values == 1])
 
 # Plot only a subset of a mesh with a given cell marker
@@ -210,7 +210,8 @@ problem = dolfinx.fem.LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preo
 problem.solve()
 
 
-geometry, topology, cell_types = dolfinx.plotting.create_pyvista_mesh_from_function_space(uh)
+topology, cell_types = dolfinx.plotting.pyvista_topology_from_function_space(uh)
+geometry = uh.function_space.tabulate_dof_coordinates()
 values = uh.vector.array
 
 # Plot only a subset of a mesh with a given cell marker
@@ -224,7 +225,7 @@ vertices.set_active_scalars("DG")
 
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cell_entities = np.arange(num_cells, dtype=np.int32)
-pyvista_cells, cell_types = dolfinx.cpp.io.create_pyvista_topology(mesh, mesh.topology.dim, cell_entities)
+pyvista_cells, cell_types = dolfinx.plotting.pyvista_topology_from_mesh(mesh, mesh.topology.dim, cell_entities)
 org_grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 plotter = pyvista.Plotter(off_screen=False)
 plotter.add_text("Visualization of second order \nDiscontinous Galerkin elements",

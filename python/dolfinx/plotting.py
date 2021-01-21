@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2012 Joachim B. Haga and Fredrik Valdmanis
+# Copyright (C) 2008-2021 Joachim B. Haga, Fredrik Valdmanis Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -7,7 +7,6 @@
 
 import os
 import warnings
-import numba
 import numpy as np
 import ufl
 
@@ -441,12 +440,6 @@ def plot(object, *args, **kwargs):
         assert False, "This code should not be reached."
 
 
-# Determine VTK cell type (Using arbitrary Lagrange elements)
-# NOTE: Edge visualization of higher order elments are sketchy, see:
-# https://github.com/pyvista/pyvista/issues/947
-_dolfin_to_vtk_cell = {cpp.mesh.CellType.point: 1, cpp.mesh.CellType.triangle: 69,
-                       cpp.mesh.CellType.quadrilateral: 70, cpp.mesh.CellType.tetrahedron: 71,
-                       cpp.mesh.CellType.hexahedron: 72}
 # Permutation for Dolfinx DG layout to VTK
 # Note that third order tetrahedrons has a special ordering: https://gitlab.kitware.com/vtk/vtk/-/issues/17746
 _perm_dg = {cpp.mesh.CellType.triangle: {1: [0, 1, 2], 2: [0, 2, 5, 1, 4, 3], 3: [0, 3, 9, 1, 2, 6, 8, 7, 4, 5],
@@ -459,21 +452,31 @@ _perm_dq = {cpp.mesh.CellType.quadrilateral: {1: [0, 1, 3, 2], 2: [0, 2, 8, 6, 1
                                            2: [0, 2, 8, 6, 18, 20, 26, 24, 1, 5, 7, 3, 19,
                                                23, 25, 21, 9, 11, 17, 15, 12, 14, 10, 16, 4, 22, 14]}}
 
+# NOTE: Edge visualization of higher order elements are sketchy, see:
+# https://github.com/pyvista/pyvista/issues/947
 
-# @numba.njit(cache=True)
-def create_pyvista_cell_topology(topology, perm_to_vtk, num_cells, num_dofs_per_cell, dofmap, offsets, entities):
+
+def pyvista_topology_from_mesh(mesh, dim, entities=None):
     """
-    Creating a mesh topology given a dofmap (dolfin-X ordering).
-    Return a pyvista mesh topology (vtk ordering)
+    Create a pyvista mesh based on a set of entities of a given dimension in a mesh
     """
-    for i in range(num_cells):
-        j = entities[i]
-        topology[i * (num_dofs_per_cell + 1)] = num_dofs_per_cell
-        topology[i * (num_dofs_per_cell + 1) + 1: i * (num_dofs_per_cell + 1)
-                 + num_dofs_per_cell + 1] = dofmap[offsets[j]: offsets[j + 1]][perm_to_vtk]
+    if entities is None:
+        num_cells = mesh.topology.index_map(dim).size_local
+        entities = np.arange(num_cells, dtype=np.int32)
+    else:
+        num_cells = len(entities)
+    geometry_entities = cpp.mesh.entities_to_geometry(mesh, dim, entities, False)
+    cell_types = np.full(num_cells, cpp.io.get_vtk_cell_type(mesh, dim))
+    num_nodes = geometry_entities.shape[1]
+    e_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim)
+    map_vtk = cpp.io.transpose_map(cpp.io.perm_vtk(e_type, num_nodes))
+    topology = np.zeros((num_cells, num_nodes + 1), dtype=np.int32)
+    topology[:, 0] = num_nodes
+    topology[:, 1:] = geometry_entities[:, map_vtk]
+    return topology.reshape(1, -1)[0], cell_types
 
 
-def create_pyvista_mesh_from_function_space(u, entities=None):
+def pyvista_topology_from_function_space(u, entities=None):
     """
     Given a dolfinx.Function, return the mesh geometry, topology and celltypes
     for usage with pyvista visualization.
@@ -484,36 +487,28 @@ def create_pyvista_mesh_from_function_space(u, entities=None):
     if not (family in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q"]):
         raise RuntimeError("Can only create meshes from CG or DG function-spaces")
 
-    geometry = V.tabulate_dof_coordinates()
     mesh = u.function_space.mesh
     if entities is None:
         num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
         entities = np.arange(num_cells, dtype=np.int32)
     else:
         num_cells = entities.size
-    dofmap = u.function_space.dofmap.list.array
-    offsets = u.function_space.dofmap.list.offsets
+    dofmap = u.function_space.dofmap
     num_dofs_per_cell = u.function_space.dofmap.dof_layout.num_dofs
-    topology = np.zeros(num_cells * (num_dofs_per_cell + 1), dtype=np.int32)
 
     cell_type = mesh.topology.cell_type
     if family == "Discontinuous Lagrange":
-        if cell_type == cpp.mesh.CellType.triangle:
-            if V.ufl_element().degree() > 4:
-                raise NotImplementedError("Visualization of DG function spaces > 4 not implemented.")
-            perm = np.array(_perm_dg[cell_type][V.ufl_element().degree()], dtype=np.int32)
-        elif cell_type == cpp.mesh.CellType.tetrahedron:
-            print(geometry[0:10], u.function_space.dofmap.cell_dofs(0))
-            perm = np.array(_perm_dg[cell_type][V.ufl_element().degree()], dtype=np.int32)
-
+        perm = np.array(_perm_dg[cell_type][V.ufl_element().degree()], dtype=np.int32)
     elif family == "DQ":
         perm = np.array(_perm_dq[cell_type][V.ufl_element().degree()], dtype=np.int32)
     elif family in ["Lagrange", "Q"]:
         perm = cpp.io.transpose_map(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
     else:
-        raise NotImplementedError("CG and other DG types not implemented.")
-    create_pyvista_cell_topology(topology, perm, num_cells, num_dofs_per_cell, dofmap, offsets, entities)
+        raise NotImplementedError("Can only create pyvista mesh topology from a Lagrange/Q space or DG/DG space.")
 
-    cell_types = np.full(num_cells, _dolfin_to_vtk_cell[cell_type])
-
-    return geometry, topology, cell_types
+    cell_types = np.full(num_cells, cpp.io.get_vtk_cell_type(mesh, mesh.topology.dim))
+    topology = np.zeros((num_cells, num_dofs_per_cell + 1), dtype=np.int32)
+    topology[:, 0] = num_dofs_per_cell
+    dofmap_ = dofmap.list.array.reshape(dofmap.list.num_nodes, num_dofs_per_cell)
+    topology[:, 1:] = dofmap_[:, perm]
+    return topology.reshape(1, -1)[0], cell_types

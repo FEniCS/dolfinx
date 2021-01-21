@@ -21,7 +21,8 @@ namespace io
 {
 std::pair<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>,
           Eigen::Array<std::int8_t, Eigen::Dynamic, 1>>
-create_pyvista_topology(const mesh::Mesh& mesh, int dim,
-                        std::vector<std::int32_t>& entities);
+pyvista_topology_from_mesh(const mesh::Mesh& mesh, int dim,
+                           std::vector<std::int32_t>& entities);
+
 } // namespace io
 } // namespace dolfinx
