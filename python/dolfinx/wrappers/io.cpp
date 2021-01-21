@@ -11,7 +11,6 @@
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
-#include <dolfinx/io/pyvistawriter.h>
 #include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
