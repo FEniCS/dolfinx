@@ -408,7 +408,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
   const int num_entity_closure_dofs
       = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
   std::vector<std::int32_t> dofs;
-  for (size_t i = 0; i < entities.size(); ++i)
+  for (std::size_t i = 0; i < entities.size(); ++i)
   {
     // Get first attached cell
     assert(e_to_c->num_links(entities[i]) > 0);
