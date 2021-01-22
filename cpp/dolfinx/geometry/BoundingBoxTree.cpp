@@ -26,7 +26,8 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  const mesh::Geometry& geometry = mesh.geometry();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
+      = mesh.geometry().x();
   mesh.topology_mutable().create_connectivity(dim, tdim);
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> entity(1);
   entity(0, 0) = index;
@@ -34,7 +35,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
       vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
   auto entity_indices = vertex_indices.row(0);
 
-  const Eigen::Vector3d x0 = geometry.node(entity_indices[0]);
+  const Eigen::Vector3d x0 = geom_dofs.row(entity_indices[0]);
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
   b.row(0) = x0;
   b.row(1) = x0;
@@ -42,9 +43,9 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   for (int i = 1; i < entity_indices.size(); ++i)
   {
     const int local_vertex = entity_indices[i];
-    const Eigen::Vector3d x = geometry.node(local_vertex);
-    b.row(0) = b.row(0).min(x.transpose().array());
-    b.row(1) = b.row(1).max(x.transpose().array());
+    auto x = geom_dofs.row(local_vertex);
+    b.row(0) = b.row(0).min(x);
+    b.row(1) = b.row(1).max(x);
   }
 
   return b;
