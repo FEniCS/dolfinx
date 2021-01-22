@@ -22,11 +22,26 @@ from mpi4py import MPI
 from ufl import dx
 
 
+def check_cell_volume(points, cell, domain, volume):
+    random.seed(13)
+
+    point_order = [i for i, _ in enumerate(points)]
+    for repeat in range(5):
+        random.shuffle(point_order)
+        ordered_points = np.zeros((len(points), len(points[0])))
+        for i, j in enumerate(point_order):
+            ordered_points[j] = points[i]
+        ordered_cell = [point_order[i] for i in cell]
+
+        mesh = create_mesh(MPI.COMM_WORLD, [ordered_cell], ordered_points, domain)
+        area = assemble_scalar(1 * dx(mesh))
+
+        assert np.isclose(area, volume)
+
+
 @skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
 def test_triangle_mesh(order):
-    random.seed(13)
-
     points = []
     points += [[i / order, 0] for i in range(order + 1)]
     for j in range(1, order):
@@ -52,25 +67,12 @@ def test_triangle_mesh(order):
     domain = ufl.Mesh(ufl.VectorElement(
         "Lagrange", ufl.Cell("triangle", geometric_dimension=2), order))
 
-    point_order = [i for i, _ in enumerate(points)]
-    for repeat in range(5):
-        random.shuffle(point_order)
-        ordered_points = np.zeros((len(points), 2))
-        for i, j in enumerate(point_order):
-            ordered_points[j] = points[i]
-        ordered_cell = [point_order[i] for i in cell]
-
-        mesh = create_mesh(MPI.COMM_WORLD, [ordered_cell], ordered_points, domain)
-        area = assemble_scalar(1 * dx(mesh))
-
-        assert np.isclose(area, 0.5)
+    check_cell_volume(points, cell, domain, 0.5)
 
 
 @skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
 def test_tetrahedron_mesh(order):
-    random.seed(13)
-
     points = []
     points += [[i / order, j / order, 0] for j in range(order + 1)
                for i in range(order + 1 - j)]
@@ -123,18 +125,7 @@ def test_tetrahedron_mesh(order):
     domain = ufl.Mesh(ufl.VectorElement(
         "Lagrange", ufl.Cell("tetrahedron", geometric_dimension=3), order))
 
-    point_order = [i for i, _ in enumerate(points)]
-    for repeat in range(5):
-        random.shuffle(point_order)
-        ordered_points = np.zeros((len(points), 3))
-        for i, j in enumerate(point_order):
-            ordered_points[j] = points[i]
-        ordered_cell = [point_order[i] for i in cell]
-
-        mesh = create_mesh(MPI.COMM_WORLD, [ordered_cell], ordered_points, domain)
-        volume = assemble_scalar(1 * dx(mesh))
-
-        assert np.isclose(volume, 1 / 6)
+    check_cell_volume(points, cell, domain, 1 / 6)
 
 
 @skip_in_parallel
@@ -170,18 +161,7 @@ def test_quadrilateral_mesh(order):
     domain = ufl.Mesh(ufl.VectorElement(
         "Q", ufl.Cell("quadrilateral", geometric_dimension=2), order))
 
-    point_order = [i for i, _ in enumerate(points)]
-    for repeat in range(5):
-        random.shuffle(point_order)
-        ordered_points = np.zeros((len(points), 2))
-        for i, j in enumerate(point_order):
-            ordered_points[j] = points[i]
-        ordered_cell = [point_order[i] for i in cell]
-
-        mesh = create_mesh(MPI.COMM_WORLD, [ordered_cell], ordered_points, domain)
-        area = assemble_scalar(1 * dx(mesh))
-
-        assert np.isclose(area, 1)
+    check_cell_volume(points, cell, domain, 1)
 
 
 @skip_in_parallel
@@ -255,21 +235,269 @@ def test_hexahedron_mesh(order):
                 for i in range(1, order):
                     cell.append(coord_to_vertex(i, j, k))
 
+    print(cell)
     domain = ufl.Mesh(ufl.VectorElement(
         "Q", ufl.Cell("hexahedron", geometric_dimension=3), order))
 
-    point_order = [i for i, _ in enumerate(points)]
-    for repeat in range(5):
-        random.shuffle(point_order)
-        ordered_points = np.zeros((len(points), 3))
-        for i, j in enumerate(point_order):
-            ordered_points[j] = points[i]
-        ordered_cell = [point_order[i] for i in cell]
+    check_cell_volume(points, cell, domain, 1)
 
-        mesh = create_mesh(MPI.COMM_WORLD, [ordered_cell], ordered_points, domain)
-        volume = assemble_scalar(1 * dx(mesh))
 
-        assert np.isclose(volume, 1)
+@skip_in_parallel
+@pytest.mark.parametrize('order', range(1, 5))
+def test_triangle_mesh_vtk(order):
+    points = []
+    points += [[i / order, 0] for i in range(order + 1)]
+    for j in range(1, order):
+        points += [[i / order + 0.1, j / order] for i in range(order + 1 - j)]
+    points += [[0, 1]]
+
+    def coord_to_vertex(x, y):
+        return y * (2 * order + 3 - y) // 2 + x
+
+    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
+    cell = [coord_to_vertex(i, j) for i, j in [(0, 0), (order, 0), (0, order)]]
+    if order > 1:
+        for i in range(1, order):
+            cell.append(coord_to_vertex(i, 0))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(order - i, i))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(0, order - i))
+
+    if order == 3:
+        cell.append(coord_to_vertex(1, 1))
+    elif order > 3:
+        cell.append(coord_to_vertex(1, 1))
+        cell.append(coord_to_vertex(order - 2, 1))
+        cell.append(coord_to_vertex(1, order - 2))
+        if order > 4:
+            raise NotImplementedError
+
+    cell = np.array(cell)[perm_vtk(CellType.triangle, len(cell))]
+
+    domain = ufl.Mesh(ufl.VectorElement(
+        "Lagrange", ufl.Cell("triangle", geometric_dimension=2), order))
+
+    check_cell_volume(points, cell, domain, 0.5)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('order', range(1, 5))
+def test_tetrahedron_mesh_vtk(order):
+    if order > 3:
+        pytest.xfail("VTK permutation for order > 3 tetrahedra not implemented in DOLFINX.")
+    points = []
+    points += [[i / order, j / order, 0] for j in range(order + 1)
+               for i in range(order + 1 - j)]
+    for k in range(1, order):
+        points += [[i / order, j / order + 0.1, k / order] for j in range(order + 1 - k)
+                   for i in range(order + 1 - k - j)]
+
+    points += [[0, 0, 1]]
+
+    def coord_to_vertex(x, y, z):
+        return z * (
+            3 * order ** 2 - 3 * order * z + 12 * order + z ** 2 - 6 * z + 11
+        ) // 6 + y * (2 * (order - z) + 3 - y) // 2 + x
+
+    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
+    cell = [coord_to_vertex(x, y, z) for x, y, z in [
+        (0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order)]]
+
+    if order > 1:
+        for i in range(1, order):
+            cell.append(coord_to_vertex(i, 0, 0))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(order - i, i, 0))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(0, order - i, 0))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(0, 0, i))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(order - i, 0, i))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(0, order - i, i))
+
+        if order == 3:
+            # The ordering of faces does not match documentation. See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
+            cell.append(coord_to_vertex(1, 0, 1))
+            cell.append(coord_to_vertex(1, 1, 1))
+            cell.append(coord_to_vertex(0, 1, 1))
+            cell.append(coord_to_vertex(1, 1, 0))
+        elif order == 4:
+            # The ordering of faces does not match documentation. See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
+            cell.append(coord_to_vertex(1, 0, 1))
+            cell.append(coord_to_vertex(2, 0, 1))
+            cell.append(coord_to_vertex(1, 0, 2))
+
+            cell.append(coord_to_vertex(1, 2, 1))
+            cell.append(coord_to_vertex(1, 1, 2))
+            cell.append(coord_to_vertex(2, 1, 1))
+
+            cell.append(coord_to_vertex(0, 1, 1))
+            cell.append(coord_to_vertex(0, 1, 2))
+            cell.append(coord_to_vertex(0, 2, 1))
+
+            cell.append(coord_to_vertex(1, 1, 0))
+            cell.append(coord_to_vertex(1, 2, 0))
+            cell.append(coord_to_vertex(2, 1, 0))
+
+            cell.append(coord_to_vertex(1, 1, 1))
+
+        elif order > 4:
+            raise NotImplementedError
+        if False:
+            for j in range(1, order):
+                for i in range(1, order - j):
+                    cell.append(coord_to_vertex(i, 0, j))
+            for j in range(1, order):
+                for i in range(1, order - j):
+                    cell.append(coord_to_vertex(0, i, j))
+            for j in range(1, order):
+                for i in range(1, order - j):
+                    cell.append(coord_to_vertex(i, j, 0))
+            for j in range(1, order):
+                for i in range(1, order - j):
+                    cell.append(coord_to_vertex(order - i - j, i, j))
+
+            for k in range(1, order):
+                for j in range(1, order - k):
+                    for i in range(1, order - j - k):
+                        cell.append(coord_to_vertex(i, j, k))
+
+    cell = np.array(cell)[perm_vtk(CellType.tetrahedron, len(cell))]
+
+    domain = ufl.Mesh(ufl.VectorElement(
+        "Lagrange", ufl.Cell("tetrahedron", geometric_dimension=3), order))
+
+    check_cell_volume(points, cell, domain, 1 / 6)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('order', [1, 2, 3, 4])
+def test_quadrilateral_mesh_vtk(order):
+    random.seed(13)
+
+    points = []
+    points += [[i / order, 0] for i in range(order + 1)]
+    for j in range(1, order):
+        points += [[i / order + 0.1, j / order] for i in range(order + 1)]
+    points += [[j / order, 1] for j in range(order + 1)]
+
+    def coord_to_vertex(x, y):
+        return (order + 1) * y + x
+
+    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
+    cell = [coord_to_vertex(i, j)
+            for i, j in [(0, 0), (order, 0), (order, order), (0, order)]]
+    if order > 1:
+        for i in range(1, order):
+            cell.append(coord_to_vertex(i, 0))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(order, i))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(i, order))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(0, i))
+
+        for j in range(1, order):
+            for i in range(1, order):
+                cell.append(coord_to_vertex(i, j))
+
+    cell = np.array(cell)[perm_vtk(CellType.quadrilateral, len(cell))]
+
+    domain = ufl.Mesh(ufl.VectorElement(
+        "Q", ufl.Cell("quadrilateral", geometric_dimension=2), order))
+
+    check_cell_volume(points, cell, domain, 1)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('order', [1, 2, 3, 4])
+def test_hexahedron_mesh_vtk(order):
+    if order > 2:
+        pytest.xfail("VTK permutation for order > 2 hexahedra not implemented in DOLFINX.")
+    random.seed(13)
+
+    points = []
+    points += [[i / order, j / order, 0] for j in range(order + 1)
+               for i in range(order + 1)]
+    for k in range(1, order):
+        points += [[i / order, j / order + 0.1, k / order] for j in range(order + 1)
+                   for i in range(order + 1)]
+
+    points += [[i / order, j / order, 1] for j in range(order + 1) for i in range(order + 1)]
+
+    def coord_to_vertex(x, y, z):
+        return (order + 1) ** 2 * z + (order + 1) * y + x
+
+    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
+    cell = [coord_to_vertex(x, y, z) for x, y, z in [
+        (0, 0, 0), (order, 0, 0), (order, order, 0), (0, order, 0),
+        (0, 0, order), (order, 0, order), (order, order, order), (0, order, order)]]
+
+    if order > 1:
+        for i in range(1, order):
+            cell.append(coord_to_vertex(i, 0, 0))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(order, i, 0))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(i, order, 0))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(0, i, 0))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(i, 0, order))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(order, i, order))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(i, order, order))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(0, i, order))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(0, 0, i))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(order, 0, i))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(order, order, i))
+        for i in range(1, order):
+            cell.append(coord_to_vertex(0, order, i))
+
+        # The ordering of faces does not match documentation. See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
+        # The edge flip in this like however has been fixed in VTK so we follow the main documentation link for edges
+        for j in range(1, order):
+            for i in range(1, order):
+                cell.append(coord_to_vertex(0, i, j))
+        for j in range(1, order):
+            for i in range(1, order):
+                cell.append(coord_to_vertex(order, i, j))
+        for j in range(1, order):
+            for i in range(1, order):
+                cell.append(coord_to_vertex(i, 0, j))
+        for j in range(1, order):
+            for i in range(1, order):
+                cell.append(coord_to_vertex(i, order, j))
+        for j in range(1, order):
+            for i in range(1, order):
+                cell.append(coord_to_vertex(i, j, 0))
+        for j in range(1, order):
+            for i in range(1, order):
+                cell.append(coord_to_vertex(i, j, order))
+
+        for k in range(1, order):
+            for j in range(1, order):
+                for i in range(1, order):
+                    cell.append(coord_to_vertex(i, j, k))
+
+    cell = np.array(cell)[perm_vtk(CellType.hexahedron, len(cell))]
+
+    print(cell)
+
+    domain = ufl.Mesh(ufl.VectorElement(
+        "Q", ufl.Cell("hexahedron", geometric_dimension=3), order))
+
+    print(cell)
+
+    check_cell_volume(points, cell, domain, 1)
 
 
 @skip_in_parallel
