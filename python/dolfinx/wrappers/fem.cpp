@@ -457,13 +457,14 @@ void fem(py::module& m)
       "locate_dofs_topological",
       [](const std::vector<
              std::reference_wrapper<const dolfinx::fem::FunctionSpace>>& V,
-         const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
+         const int dim, const py::array_t<std::int32_t>& entities,
          bool remote) -> std::array<py::array, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
-            = dolfinx::fem::locate_dofs_topological({V[0], V[1]}, dim, entities,
-                                                    remote);
+            = dolfinx::fem::locate_dofs_topological(
+                {V[0], V[1]}, dim, tcb::span(entities.data(), entities.size()),
+                remote);
         return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
@@ -471,9 +472,9 @@ void fem(py::module& m)
   m.def(
       "locate_dofs_topological",
       [](const dolfinx::fem::FunctionSpace& V, const int dim,
-         const Eigen::Ref<const Eigen::ArrayXi>& entities, bool remote) {
-        return as_pyarray(
-            dolfinx::fem::locate_dofs_topological(V, dim, entities, remote));
+         const py::array_t<std::int32_t>& entities, bool remote) {
+        return as_pyarray(dolfinx::fem::locate_dofs_topological(
+            V, dim, tcb::span(entities.data(), entities.size()), remote));
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
       py::arg("remote") = true);
@@ -577,13 +578,7 @@ void fem(py::module& m)
       .def_property_readonly("id", &dolfinx::fem::FunctionSpace::id)
       .def("__hash__", &dolfinx::fem::FunctionSpace::id)
       .def("__eq__", &dolfinx::fem::FunctionSpace::operator==)
-      .def("collapse",
-           [](dolfinx::fem::FunctionSpace& self) {
-             std::pair<std::shared_ptr<dolfinx::fem::FunctionSpace>,
-                       std::vector<std::int32_t>>
-                 c = self.collapse();
-             return std::make_pair(c.first, as_pyarray(std::move(c.second)));
-           })
+      .def("collapse", &dolfinx::fem::FunctionSpace::collapse)
       .def("component", &dolfinx::fem::FunctionSpace::component)
       .def("contains", &dolfinx::fem::FunctionSpace::contains)
       .def_property_readonly("element", &dolfinx::fem::FunctionSpace::element)
