@@ -26,14 +26,13 @@ std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
   MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
                 comm);
 
-  // NOTE: We do not use std::partial_sum here as it narrows
-  // std::int64_t to std::int32_t. The below version of
-  // std::inclusive_scan takes the accumulation type from the last
-  // argument (std::int64_t).
+  // NOTE: We do not use std::partial_sum here as it narrows std::int64_t to
+  // std::int32_t.
+  // NOTE: Using std::inclusive_scan is possible, but GCC prior to 9.3.0 only
+  // includes the parallel version of this algorithm, requiring e.g. Intel TBB.
   std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
-  std::inclusive_scan(local_sizes.begin(), local_sizes.end(),
-                      all_ranges.begin() + 1, std::plus<>(),
-                      static_cast<std::int64_t>(0));
+  for (int i = 0; i < mpi_size; ++i)
+    all_ranges[i + 1] = all_ranges[i] + local_sizes[i];
 
   // Compute rank of ghost owners
   std::vector<int> ghost_ranks(ghosts.size(), -1);
