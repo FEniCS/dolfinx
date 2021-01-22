@@ -60,7 +60,7 @@ void assemble_exterior_facets(
         coeffs,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
+    const std::vector<std::uint8_t>& perms);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
 template <typename T>
@@ -73,7 +73,7 @@ void assemble_interior_facets(
         coeffs,
     const std::vector<int>& offsets, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
+    const std::vector<std::uint8_t>& perms);
 
 /// Modify b such that:
 ///
@@ -226,7 +226,7 @@ void _lift_bc_exterior_facets(
         coeffs,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms,
+    const std::vector<std::uint8_t>& perms,
     const tcb::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
     const tcb::span<const T>& x0, double scale)
 {
@@ -304,8 +304,8 @@ void _lift_bc_exterior_facets(
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
-           coordinate_dofs.data(), &local_facet, &perms(local_facet, cell),
-           cell_info[cell]);
+           coordinate_dofs.data(), &local_facet,
+           &perms[cell * facets.size() + local_facet], cell_info[cell]);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -345,7 +345,7 @@ void _lift_bc_interior_facets(
         coeffs,
     const std::vector<int>& offsets, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms,
+    const std::vector<std::uint8_t>& perms,
     const tcb::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
     const tcb::span<const T>& x0, double scale)
 {
@@ -479,8 +479,9 @@ void _lift_bc_interior_facets(
     // Tabulate tensor
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
-    const std::array perm{perms(local_facet[0], cells[0]),
-                          perms(local_facet[1], cells[1])};
+    const int facets_per_cell = facets0.size();
+    const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
+                          perms[cells[1] * facets_per_cell + local_facet[1]]};
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data(),
            cell_info[cells[0]]);
@@ -584,7 +585,7 @@ void assemble_vector(tcb::span<T> b, const Form<T>& L)
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     mesh->topology_mutable().create_entity_permutations();
 
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
+    const std::vector<std::uint8_t>& perms
         = mesh->topology().get_facet_permutations();
     for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
@@ -672,7 +673,7 @@ void assemble_exterior_facets(
         coeffs,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
+    const std::vector<std::uint8_t>& perms)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -718,8 +719,8 @@ void assemble_exterior_facets(
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
     fn(be.data(), coeffs.row(cell).data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perms(local_facet, cell),
-       cell_info[cell]);
+       coordinate_dofs.data(), &local_facet,
+       &perms[cell * facets.size() + local_facet], cell_info[cell]);
 
     // Add element vector to global vector
     auto dofs = dofmap.links(cell);
@@ -739,7 +740,7 @@ void assemble_interior_facets(
         coeffs,
     const std::vector<int>& offsets, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
+    const std::vector<std::uint8_t>& perms)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -769,6 +770,8 @@ void assemble_interior_facets(
     // Get attached cell indices
     auto cells = f_to_c->links(f);
     assert(cells.size() == 2);
+
+    const int facets_per_cell = c_to_f->num_links(cells[0]);
 
     // Create attached cells
     std::array<int, 2> local_facet;
@@ -817,8 +820,8 @@ void assemble_interior_facets(
     // Tabulate element vector
     be.resize(bs * (dmap0.size() + dmap1.size()));
     std::fill(be.begin(), be.end(), 0.0);
-    const std::array perm{perms(local_facet[0], cells[0]),
-                          perms(local_facet[1], cells[1])};
+    const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
+                          perms[cells[1] * facets_per_cell + local_facet[1]]};
     fn(be.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
        cell_info[cells[0]]);
@@ -937,7 +940,7 @@ void lift_bc(tcb::span<T> b, const Form<T>& a,
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     mesh->topology_mutable().create_entity_permutations();
 
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
+    const std::vector<std::uint8_t>& perms
         = mesh->topology().get_facet_permutations();
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
