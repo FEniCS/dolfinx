@@ -248,8 +248,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
-    bool remote)
+    const int dim, const std::vector<std::int32_t>& entities, bool remote)
 {
   const fem::FunctionSpace& V0 = V.at(0).get();
   const fem::FunctionSpace& V1 = V.at(1).get();
@@ -305,7 +304,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 
   // Iterate over marked facets
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
-  for (Eigen::Index e = 0; e < entities.rows(); ++e)
+  for (std::size_t e = 0; e < entities.size(); ++e)
   {
     // Get first attached cell
     assert(e_to_c->num_links(entities[e]) > 0);
@@ -375,7 +374,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
-                             const Eigen::Ref<const Eigen::ArrayXi>& entities,
+                             const std::vector<std::int32_t>& entities,
                              bool remote)
 {
   assert(V.dofmap());
@@ -409,7 +408,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
   const int num_entity_closure_dofs
       = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
   std::vector<std::int32_t> dofs;
-  for (Eigen::Index i = 0; i < entities.rows(); ++i)
+  for (size_t i = 0; i < entities.size(); ++i)
   {
     // Get first attached cell
     assert(e_to_c->num_links(entities[i]) > 0);
