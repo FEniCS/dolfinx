@@ -31,7 +31,7 @@ std::vector<int> get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
   // NOTE: Using std::inclusive_scan is possible, but GCC prior to 9.3.0 only
   // includes the parallel version of this algorithm, requiring e.g. Intel TBB.
   std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
-  for (std::size_t i = 0; i < mpi_size; ++i)
+  for (int i = 0; i < mpi_size; ++i)
   {
     all_ranges[i + 1] = all_ranges[i] + local_sizes[i];
   }
