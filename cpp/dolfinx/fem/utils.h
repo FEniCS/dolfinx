@@ -390,7 +390,7 @@ fem::CoordinateElement create_coordinate_map(ufc_coordinate_mapping* (*fptr)());
 std::shared_ptr<fem::FunctionSpace>
 create_functionspace(ufc_function_space* (*fptr)(const char*),
                      const std::string function_name,
-                     std::shared_ptr<mesh::Mesh> mesh);
+                     std::shared_ptr<dolfinx::mesh::Mesh> mesh);
 
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
