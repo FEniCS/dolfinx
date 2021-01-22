@@ -239,8 +239,7 @@ void _lift_bc_exterior_facets(
 
   // Data structures used in bc application
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
-  Eigen::Matrix<T, Eigen::Dynamic, 1> be;
+  std::vector<T> Ae, be;
 
   // Iterate over owned facets
   const mesh::Topology& topology = mesh.topology();
@@ -294,14 +293,19 @@ void _lift_bc_exterior_facets(
     // Size data structure for assembly
     auto dmap0 = dofmap0.links(cell);
 
+    const int num_rows = bs0 * dmap0.size();
+    const int num_cols = bs1 * dmap1.size();
+
     auto coeff_array = coeffs.row(cell);
-    Ae.setZero(bs0 * dmap0.size(), bs1 * dmap1.size());
+    Ae.resize(num_rows * num_cols);
+    std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), &local_facet, &perms(local_facet, cell),
            cell_info[cell]);
 
     // Size data structure for assembly
-    be.setZero(bs0 * dmap0.size());
+    be.resize(num_rows);
+    std::fill(be.begin(), be.end(), 0);
     for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
@@ -309,11 +313,12 @@ void _lift_bc_exterior_facets(
         const std::int32_t jj = bs1 * dmap1[j] + k;
         if (bc_markers1[jj])
         {
+
           const T bc = bc_values1[jj];
-          if (!x0.empty())
-            be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
-          else
-            be -= Ae.col(bs1 * j + k) * scale * bc;
+          const T _x0 = x0.empty() ? 0.0 : x0[jj];
+          // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
+          for (int m = 0; m < num_rows; ++m)
+            be[m] -= Ae[m * num_rows + bs1 * j + k] * scale * (bc - _x0);
         }
       }
     }
@@ -354,10 +359,9 @@ void _lift_bc_interior_facets(
   // Data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(2 * num_dofs_g, gdim);
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
-  Eigen::Matrix<T, Eigen::Dynamic, 1> be;
+  std::vector<T> Ae, be;
 
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
@@ -463,15 +467,20 @@ void _lift_bc_interior_facets(
                   std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
     }
 
+    const int num_rows = bs0 * dmapjoint0.size();
+    const int num_cols = bs1 * dmapjoint1.size();
+
     // Tabulate tensor
-    Ae.setZero(bs0 * dmapjoint0.size(), bs1 * dmapjoint1.size());
+    Ae.resize(num_rows * num_cols);
+    std::fill(Ae.begin(), Ae.end(), 0);
     const std::array perm{perms(local_facet[0], cells[0]),
                           perms(local_facet[1], cells[1])};
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data(),
            cell_info[cells[0]]);
 
-    be.setZero(bs0 * (dmap0_cell0.size() + dmap0_cell1.size()));
+    be.resize(num_rows);
+    std::fill(be.begin(), be.end(), 0);
 
     // Compute b = b - A*b for cell0
     for (std::size_t j = 0; j < dmap1_cell0.size(); ++j)
@@ -482,10 +491,10 @@ void _lift_bc_interior_facets(
         if (bc_markers1[jj])
         {
           const T bc = bc_values1[jj];
-          if (!x0.empty())
-            be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
-          else
-            be -= Ae.col(bs1 * j + k) * scale * bc;
+          const T _x0 = x0.empty() ? 0.0 : x0[jj];
+          // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
+          for (int m = 0; m < num_rows; ++m)
+            be[m] -= Ae[m * num_rows + bs1 * j + k] * scale * (bc - _x0);
         }
       }
     }
@@ -500,10 +509,13 @@ void _lift_bc_interior_facets(
         if (bc_markers1[jj])
         {
           const T bc = bc_values1[jj];
-          if (!x0.empty())
-            be -= Ae.col(offset + bs1 * j + k) * scale * (bc - x0[jj]);
-          else
-            be -= Ae.col(offset + bs1 * j + k) * scale * bc;
+          const T _x0 = x0.empty() ? 0.0 : x0[jj];
+          // be -= Ae.col(offset + bs1 * j + k) * scale * (bc - x0[jj]);
+          for (int m = 0; m < num_rows; ++m)
+          {
+            be[m]
+                -= Ae[m * num_rows + offset + bs1 * j + k] * scale * (bc - _x0);
+          }
         }
       }
     }

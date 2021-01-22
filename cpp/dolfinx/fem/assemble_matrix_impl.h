@@ -389,8 +389,6 @@ void assemble_interior_facets(
       = mesh.geometry().x();
 
   // Data structures used in assembly
-  // Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  //     coordinate_dofs(2 * num_dofs_g, gdim);
   std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
   std::vector<T> Ae, be;
   std::vector<T> coeff_array(2 * offsets.back());
@@ -492,7 +490,6 @@ void assemble_interior_facets(
             std::fill_n(std::next(Ae.begin(), num_cols * (bs0 * i + k)),
                         num_cols, 0.0);
           }
-          // Ae.row(bs0 * i + k).setZero();
         }
       }
     }
@@ -508,7 +505,6 @@ void assemble_interior_facets(
             for (int m = 0; m < num_rows; ++m)
               Ae[m * num_cols + bs1 * j + k] = 0.0;
           }
-          // Ae.col(bs1 * j + k).setZero();
         }
       }
     }
