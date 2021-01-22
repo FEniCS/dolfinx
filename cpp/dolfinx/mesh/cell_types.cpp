@@ -130,8 +130,8 @@ mesh::get_sub_entities(CellType type, int dim0, int dim1)
          5, 2, 4, 5)
             .finished();
   const static Eigen::Array<int, 6, 4, Eigen::RowMajor> hexahedron
-      = (Eigen::Array<int, 6, 4, Eigen::RowMajor>() << 0, 3, 5, 1, 0, 4, 8, 2,
-         1, 6, 9, 2, 3, 7, 10, 4, 5, 7, 11, 6, 8, 10, 11, 9)
+      = (Eigen::Array<int, 6, 4, Eigen::RowMajor>() << 0, 1, 3, 5, 0, 2, 4, 8,
+         1, 2, 6, 9, 3, 4, 7, 10, 5, 6, 7, 11, 8, 9, 10, 11)
             .finished();
 
   switch (type)
