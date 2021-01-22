@@ -2,9 +2,9 @@ name: Intel compilers
 
 on:
   # Uncomment the below 'push' to trigger on push
-  push:
-   branches:
-     - "**"
+  # push:
+  #  branches:
+  #    - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 2 * * TUE"
@@ -32,8 +32,8 @@ jobs:
           - compiler: "LLVM-based"
             c_compiler: icx
             cxx_compiler: icpx
-      
-    steps:  
+
+    steps:
       - uses: actions/checkout@v2
 
       - name: Install Intel compilers
@@ -43,7 +43,7 @@ jobs:
           echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
           apt update
           # apt install -y intel-hpckit
-          apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic 
+          apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
 
       - name: Install FEniCS Python components
         run: |
