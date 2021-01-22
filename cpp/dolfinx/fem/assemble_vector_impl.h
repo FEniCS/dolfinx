@@ -203,7 +203,7 @@ void _lift_bc_cells(
           const T _x0 = x0.empty() ? 0.0 : x0[jj];
           // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
           for (int m = 0; m < num_rows; ++m)
-            be[m] -= Ae[m * num_rows + bs1 * j + k] * scale * (bc - _x0);
+            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
         }
       }
     }
@@ -322,7 +322,7 @@ void _lift_bc_exterior_facets(
           const T _x0 = x0.empty() ? 0.0 : x0[jj];
           // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
           for (int m = 0; m < num_rows; ++m)
-            be[m] -= Ae[m * num_rows + bs1 * j + k] * scale * (bc - _x0);
+            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
         }
       }
     }
@@ -500,7 +500,7 @@ void _lift_bc_interior_facets(
           const T _x0 = x0.empty() ? 0.0 : x0[jj];
           // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
           for (int m = 0; m < num_rows; ++m)
-            be[m] -= Ae[m * num_rows + bs1 * j + k] * scale * (bc - _x0);
+            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
         }
       }
     }
@@ -520,7 +520,7 @@ void _lift_bc_interior_facets(
           for (int m = 0; m < num_rows; ++m)
           {
             be[m]
-                -= Ae[m * num_rows + offset + bs1 * j + k] * scale * (bc - _x0);
+                -= Ae[m * num_cols + offset + bs1 * j + k] * scale * (bc - _x0);
           }
         }
       }
