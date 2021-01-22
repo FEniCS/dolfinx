@@ -66,8 +66,11 @@ mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 7, cell_type=dolfinx.cpp.mesh.
 V = dolfinx.FunctionSpace(mesh, ("CG", 1))
 u = dolfinx.Function(V)
 u.interpolate(int_u)
-vertex_values = u.compute_point_values()
 
+# Discard complex value if running dolfin-X with complex PETSc as backend
+vertex_values = u.compute_point_values()
+if np.iscomplexobj(vertex_values):
+    vertex_values = vertex_values.real
 pyvista.rcParams["background"] = [0.5, 0.5, 0.5]
 
 # Extract mesh data from dolfin-X and create a pyvista UnstructuredGrid
@@ -141,7 +144,10 @@ num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cells = np.arange(num_cells, dtype=np.int32)
 pyvista_cells, cell_types = dolfinx.plotting.pyvista_topology_from_mesh(mesh, mesh.topology.dim, cells)
 grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
-grid.point_arrays["u"] = u.compute_point_values()
+point_values = u.compute_point_values()
+if np.iscomplexobj(point_values):
+    point_values = point_values.real
+grid.point_arrays["u"] = point_values
 grid.set_active_scalars("u")
 warped = grid.warp_by_scalar()
 
@@ -231,6 +237,8 @@ topology, cell_types = dolfinx.plotting.pyvista_topology_from_function_space(uh)
 num_dofs_local = uh.function_space.dofmap.index_map.size_local
 geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
 values = uh.vector.array
+if np.iscomplexobj(values):
+    values = values.real
 
 # Plot only a subset of a mesh with a given cell marker
 grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
