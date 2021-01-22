@@ -816,7 +816,7 @@ void assemble_interior_facets(
 
     // Tabulate element vector
     be.resize(bs * (dmap0.size() + dmap1.size()));
-    std::fill(be.begin(), be.end(), 0.0);
+    std::fill(be.begin(), be.end(), 0);
     const std::array perm{perms(local_facet[0], cells[0]),
                           perms(local_facet[1], cells[1])};
     fn(be.data(), coeff_array.data(), constant_values.data(),
