@@ -528,8 +528,9 @@ def test_xdmf_input_tri(datadir):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('order', [2, 3])
-def test_gmsh_input_quad(order):
+@pytest.mark.parametrize('order', range(1, 4))
+@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.quadrilateral])
+def test_gmsh_input_2d(order, cell_type):
     gmsh = pytest.importorskip("gmsh")
     R = 1
     res = 0.2
@@ -543,7 +544,8 @@ def test_gmsh_input_quad(order):
     gmsh.model.occ.synchronize()
 
     gmsh.model.mesh.generate(2)
-    gmsh.model.mesh.recombine()
+    if cell_type == CellType.quadrilateral:
+        gmsh.model.mesh.recombine()
     gmsh.model.mesh.setOrder(order)
     idx, points, _ = gmsh.model.mesh.getNodes()
     points = points.reshape(-1, 3)
@@ -557,15 +559,17 @@ def test_gmsh_input_quad(order):
         element_types[0])
 
     cells = node_tags[0].reshape(-1, num_nodes) - 1
-    gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
+    if cell_type == CellType.triangle:
+        gmsh_cell_id = gmsh.model.mesh.getElementType("triangle", order)
+    elif cell_type == CellType.quadrilateral:
+        gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
     gmsh.finalize()
 
-    gmsh_quad = perm_gmsh(cpp.mesh.CellType.quadrilateral, (order + 1)**2)
-    cells = cells[:, gmsh_quad]
+    cells = cells[:, perm_gmsh(cell_type, cells.shape[1])]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
     surface = assemble_scalar(1 * dx(mesh))
 
-    assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi * R * R, rel=1e-5)
+    assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi * R * R, rel=10 ** (-1 - order))
 
     # Bug related to VTK output writing
     # def e2(x):
