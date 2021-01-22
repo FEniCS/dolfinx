@@ -272,7 +272,7 @@ else:
 
 
 # Plotting a dolfinx.Function with vector values
-# =========================================
+# ===============================================
 
 
 def vel(x):
