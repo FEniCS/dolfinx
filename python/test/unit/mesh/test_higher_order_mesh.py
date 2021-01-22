@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Jørgen Schartum Dokken and Matthew Scroggs
+# Copyright (C) 2019-2021 Jørgen Schartum Dokken and Matthew Scroggs
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -530,7 +530,10 @@ def test_xdmf_input_tri(datadir):
 @pytest.mark.parametrize('order', range(1, 4))
 @pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.quadrilateral])
 def test_gmsh_input_2d(order, cell_type):
-    gmsh = pytest.importorskip("gmsh")
+    try:
+        import gmsh
+    except ImportError:
+        pytest.skip()
     res = 0.2
     gmsh.initialize()
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
@@ -590,9 +593,12 @@ def test_gmsh_input_2d(order, cell_type):
 @pytest.mark.parametrize('order', range(1, 4))
 @pytest.mark.parametrize('cell_type', [CellType.tetrahedron, CellType.hexahedron])
 def test_gmsh_input_3d(order, cell_type):
+    try:
+        import gmsh
+    except ImportError:
+        pytest.skip()
     if cell_type == CellType.hexahedron and order > 2:
         pytest.xfail("GMSH permutation for order > 2 hexahedra not implemented in DOLFINX.")
-    gmsh = pytest.importorskip("gmsh")
 
     res = 0.2
 
