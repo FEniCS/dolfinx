@@ -147,9 +147,17 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
   return _boundary_facet;
 }
 //-----------------------------------------------------------------------------
-
+Topology::Topology(MPI_Comm comm, mesh::CellType type)
+    : _mpi_comm(comm), _cell_type(type),
+      _connectivity(
+          mesh::cell_dim(type) + 1,
+          std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
+              mesh::cell_dim(type) + 1))
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
-int Topology::dim() const { return _connectivity.rows() - 1; }
+int Topology::dim() const { return _connectivity.size() - 1; }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              const std::shared_ptr<const common::IndexMap>& map)
@@ -252,17 +260,17 @@ void Topology::create_connectivity_all()
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
-  assert(d0 < _connectivity.rows());
-  assert(d1 < _connectivity.cols());
-  return _connectivity(d0, d1);
+  assert(d0 < (int)_connectivity.size());
+  assert(d1 < (int)_connectivity[d0].size());
+  return _connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
 void Topology::set_connectivity(
     std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
 {
-  assert(d0 < _connectivity.rows());
-  assert(d1 < _connectivity.cols());
-  _connectivity(d0, d1) = c;
+  assert(d0 < (int)_connectivity.size());
+  assert(d1 < (int)_connectivity[d0].size());
+  _connectivity[d0][d1] = c;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
