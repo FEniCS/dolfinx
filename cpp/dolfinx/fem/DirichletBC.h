@@ -52,8 +52,7 @@ namespace fem
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const int dim, const std::vector<std::int32_t>& entities,
-    bool remote = true);
+    const int dim, tcb::span<const std::int32_t>& entities, bool remote = true);
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
 /// (topological). Note that degrees-of-freedom for discontinuous
@@ -78,7 +77,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
 /// with V.
 std::vector<std::int32_t>
 locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
-                        const std::vector<std::int32_t>& entities,
+                        tcb::span<const int32_t> &entities,
                         bool remote = true);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the

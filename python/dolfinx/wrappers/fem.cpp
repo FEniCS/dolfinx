@@ -457,12 +457,14 @@ void fem(py::module& m)
       "locate_dofs_topological",
       [](const std::vector<
              std::reference_wrapper<const dolfinx::fem::FunctionSpace>>& V,
-         const int dim, const std::vector<std::int32_t>& entities,
+         const int dim, const py::array_t<std::int32_t>& entities,
          bool remote) -> std::array<py::array, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
+        auto sp
+            = tcb::span<const std::int32_t>(entities.data(), entities.size());
         std::array<std::vector<std::int32_t>, 2> dofs
-            = dolfinx::fem::locate_dofs_topological({V[0], V[1]}, dim, entities,
+            = dolfinx::fem::locate_dofs_topological({V[0], V[1]}, dim, sp,
                                                     remote);
         return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
       },
@@ -471,9 +473,11 @@ void fem(py::module& m)
   m.def(
       "locate_dofs_topological",
       [](const dolfinx::fem::FunctionSpace& V, const int dim,
-         const std::vector<std::int32_t>& entities, bool remote) {
+         const py::array_t<std::int32_t>& entities, bool remote) {
+        auto sp
+            = tcb::span<const std::int32_t>(entities.data(), entities.size());
         return as_pyarray(
-            dolfinx::fem::locate_dofs_topological(V, dim, entities, remote));
+            dolfinx::fem::locate_dofs_topological(V, dim, sp, remote));
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
       py::arg("remote") = true);

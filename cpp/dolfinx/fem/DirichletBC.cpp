@@ -248,7 +248,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const int dim, const std::vector<std::int32_t>& entities, bool remote)
+    const int dim, tcb::span<const std::int32_t>& entities, bool remote)
 {
   const fem::FunctionSpace& V0 = V.at(0).get();
   const fem::FunctionSpace& V1 = V.at(1).get();
@@ -374,7 +374,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
-                             const std::vector<std::int32_t>& entities,
+                             tcb::span<const std::int32_t>& entities,
                              bool remote)
 {
   assert(V.dofmap());
