@@ -239,7 +239,6 @@ def test_hexahedron_mesh(order):
                 for i in range(1, order):
                     cell.append(coord_to_vertex(i, j, k))
 
-    print(cell)
     domain = ufl.Mesh(ufl.VectorElement(
         "Q", ufl.Cell("hexahedron", geometric_dimension=3), order))
 
@@ -497,12 +496,8 @@ def test_hexahedron_mesh_vtk(order):
 
     cell = np.array(cell)[perm_vtk(CellType.hexahedron, len(cell))]
 
-    print(cell)
-
     domain = ufl.Mesh(ufl.VectorElement(
         "Q", ufl.Cell("hexahedron", geometric_dimension=3), order))
-
-    print(cell)
 
     check_cell_volume(points, cell, domain, 1)
 
@@ -536,13 +531,13 @@ def test_xdmf_input_tri(datadir):
 @pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.quadrilateral])
 def test_gmsh_input_2d(order, cell_type):
     gmsh = pytest.importorskip("gmsh")
-    R = 1
     res = 0.2
-    algorithm = 2 if order == 2 else 5
     gmsh.initialize()
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
-    gmsh.option.setNumber("Mesh.Algorithm", algorithm)
+
+    if cell_type == CellType.quadrilateral:
+        gmsh.option.setNumber("Mesh.Algorithm", 2 if order == 2 else 5)
 
     gmsh.model.occ.addSphere(0, 0, 0, 1, tag=1)
     gmsh.model.occ.synchronize()
@@ -573,7 +568,7 @@ def test_gmsh_input_2d(order, cell_type):
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
     surface = assemble_scalar(1 * dx(mesh))
 
-    assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi * R * R, rel=10 ** (-1 - order))
+    assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=10 ** (-1 - order))
 
     # Bug related to VTK output writing
     # def e2(x):
@@ -589,3 +584,60 @@ def test_gmsh_input_2d(order, cell_type):
     # VTKFile("u{0:d}.pvd".format(order)).write(u)
     # print(min(u.vector.array),max(u.vector.array))
     # print(assemble_scalar(u*dx(mesh)))
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('order', range(1, 4))
+@pytest.mark.parametrize('cell_type', [CellType.tetrahedron, CellType.hexahedron])
+def test_gmsh_input_3d(order, cell_type):
+    if cell_type == CellType.hexahedron and order > 2:
+        pytest.xfail("GMSH permutation for order > 2 hexahedra not implemented in DOLFINX.")
+    gmsh = pytest.importorskip("gmsh")
+
+    res = 0.2
+
+    gmsh.initialize()
+    if cell_type == CellType.hexahedron:
+        gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 2)
+        gmsh.option.setNumber("Mesh.RecombineAll", 2)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
+
+    circle = gmsh.model.occ.addDisk(0, 0, 0, 1, 1)
+
+    if cell_type == CellType.hexahedron:
+        gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5], recombine=True)
+    else:
+        gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5])
+    gmsh.model.occ.synchronize()
+
+    gmsh.model.mesh.generate(3)
+    gmsh.model.mesh.setOrder(order)
+
+    idx, points, _ = gmsh.model.mesh.getNodes()
+    points = points.reshape(-1, 3)
+    idx -= 1
+    srt = np.argsort(idx)
+    assert np.all(idx[srt] == np.arange(len(idx)))
+    x = points[srt]
+
+    element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=3)
+    name, dim, order, num_nodes, local_coords, num_first_order_nodes = gmsh.model.mesh.getElementProperties(
+        element_types[0])
+
+    cells = node_tags[0].reshape(-1, num_nodes) - 1
+    if cell_type == CellType.tetrahedron:
+        gmsh_cell_id = MPI.COMM_WORLD.bcast(gmsh.model.mesh.getElementType("tetrahedron", order), root=0)
+    elif cell_type == CellType.hexahedron:
+        gmsh_cell_id = MPI.COMM_WORLD.bcast(gmsh.model.mesh.getElementType("hexahedron", order), root=0)
+    gmsh.finalize()
+
+    # Permute the mesh topology from GMSH ordering to DOLFIN-X ordering
+    domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
+    cells = cells[:, perm_gmsh(cell_type, cells.shape[1])]
+
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+
+    volume = assemble_scalar(1 * dx(mesh))
+
+    assert mesh.mpi_comm().allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
