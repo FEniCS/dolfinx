@@ -78,7 +78,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
 /// with V.
 std::vector<std::int32_t>
 locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
-                        const std::vector<int32_t>& entities,
+                        const std::vector<std::int32_t>& entities,
                         bool remote = true);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
