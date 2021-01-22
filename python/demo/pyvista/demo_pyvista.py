@@ -291,6 +291,7 @@ num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cell_entities = np.arange(num_cells, dtype=np.int32)
 
 topology, cell_types = dolfinx.plotting.pyvista_topology_from_function_space(uh, cell_entities)
+num_dofs_local = uh.function_space.dofmap.index_map.size_local
 geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
 values = np.zeros((V.dofmap.index_map.size_local, 3), dtype=np.float64)
 values[:, :mesh.geometry.dim] = uh.vector.array.real.reshape(V.dofmap.index_map.size_local, V.dofmap.index_map_bs)
