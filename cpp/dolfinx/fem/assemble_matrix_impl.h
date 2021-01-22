@@ -389,9 +389,10 @@ void assemble_interior_facets(
       = mesh.geometry().x();
 
   // Data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(2 * num_dofs_g, gdim);
-  std::vector<double> Ae, be;
+  // Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  //     coordinate_dofs(2 * num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
+  std::vector<T> Ae, be;
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
@@ -424,12 +425,15 @@ void assemble_interior_facets(
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
     auto x_dofs1 = x_dofmap.links(cells[1]);
+    const int offset_g = gdim * num_dofs_g;
     for (int i = 0; i < num_dofs_g; ++i)
     {
       for (int j = 0; j < gdim; ++j)
       {
-        coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
-        coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+        // coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
+        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
+        // coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
       }
     }
 
@@ -469,7 +473,7 @@ void assemble_interior_facets(
 
     // Tabulate tensor
     Ae.resize(num_rows * num_cols);
-    std::fill(Ae.begin(), Ae.end(), 0.0);
+    std::fill(Ae.begin(), Ae.end(), 0);
     const std::array perm{perms(local_facet[0], cells[0]),
                           perms(local_facet[1], cells[1])};
     fn(Ae.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
