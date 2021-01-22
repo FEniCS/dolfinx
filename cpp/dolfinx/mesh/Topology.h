@@ -122,8 +122,7 @@ public:
   /// Each column of the returned array represents a cell, and each row
   /// a facet of that cell.
   /// @return The permutation number
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-  get_facet_permutations() const;
+  const std::vector<std::uint8_t>& get_facet_permutations() const;
 
   /// Cell type
   /// @return Cell type that the topology is for
@@ -171,8 +170,11 @@ private:
       _connectivity;
 
   // The facet permutations (local facet, cell))
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
-      _facet_permutations;
+  // Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
+  //     _facet_permutations;
+  // [cell0_0, cell0_1, ,cell0_2, cell1_0, cell1_1, ,cell1_2, ...,
+  // celln_0, celln_1, ,celln_2,]
+  std::vector<std::uint8_t> _facet_permutations;
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.

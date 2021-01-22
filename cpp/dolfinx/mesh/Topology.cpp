@@ -275,10 +275,9 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
   return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-Topology::get_facet_permutations() const
+const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 {
-  if (_cell_permutations.empty())
+  if (_facet_permutations.empty())
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");

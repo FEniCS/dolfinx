@@ -68,7 +68,7 @@ void assemble_exterior_facets(
         coeffs,
     const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
+    const std::vector<std::uint8_t>& perms);
 
 /// Execute kernel over interior facets and  accumulate result in Mat
 template <typename T>
@@ -84,7 +84,7 @@ void assemble_interior_facets(
         coeffs,
     const std::vector<int>& offsets, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
+    const std::vector<std::uint8_t>& perms);
 
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -142,7 +142,7 @@ void assemble_matrix(
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     mesh->topology_mutable().create_entity_permutations();
 
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
+    const std::vector<std::uint8_t>& perms
         = mesh->topology().get_facet_permutations();
 
     for (int i : a.integral_ids(IntegralType::exterior_facet))
@@ -270,7 +270,7 @@ void assemble_exterior_facets(
         coeffs,
     const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
+    const std::vector<std::uint8_t>& perms)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -318,8 +318,8 @@ void assemble_exterior_facets(
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
-           coordinate_dofs.data(), &local_facet, &perms(local_facet, cells[0]),
-           cell_info[cells[0]]);
+           coordinate_dofs.data(), &local_facet,
+           &perms[cells[0] * facets.size() + local_facet], cell_info[cells[0]]);
 
     // Zero rows/columns for essential bcs
     auto dofs0 = dofmap0.links(cells[0]);
@@ -374,7 +374,7 @@ void assemble_interior_facets(
         coeffs,
     const std::vector<int>& offsets, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
+    const std::vector<std::uint8_t>& perms)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -472,8 +472,10 @@ void assemble_interior_facets(
     // Tabulate tensor
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
-    const std::array perm{perms(local_facet[0], cells[0]),
-                          perms(local_facet[1], cells[1])};
+
+    const int facets_per_cell = facets0.size();
+    const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
+                          perms[cells[1] * facets_per_cell + local_facet[1]]};
     fn(Ae.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
        local_facet.data(), perm.data(), cell_info[cells[0]]);
 
