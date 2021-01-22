@@ -47,6 +47,7 @@ def activate_virtual_framebuffer():
 
 
 activate_virtual_framebuffer()
+
 off_screen = True
 transparent = False
 figsize = 800
@@ -219,6 +220,8 @@ num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 midpoints = dolfinx.cpp.mesh.midpoints(mesh, mesh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
 cell_tags = dolfinx.MeshTags(mesh, mesh.topology.dim, np.arange(num_cells), left(midpoints))
 
+# Plotting a dolfinx.Function
+# =========================================
 
 # Project a DG function
 dx = ufl.Measure("dx", subdomain_data=cell_tags)
@@ -263,6 +266,54 @@ plotter.add_mesh(vertices, point_size=15, render_points_as_spheres=True)
 plotter.view_xy()
 if off_screen:
     plotter.screenshot(f"DG_{MPI.COMM_WORLD.rank}.png",
-                       transparent_background=transparent, window_size=[1500, 1700])
+                       transparent_background=transparent, window_size=[figsize, figsize])
+else:
+    plotter.show()
+
+
+# Plotting a dolfinx.Function with vector values
+# =========================================
+
+
+def vel(x):
+    vals = np.zeros((2, x.shape[1]))
+    vals[0] = np.sin(x[1])
+    vals[1] = 0.1 * x[0]
+    return vals
+
+
+mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 6, 6, dolfinx.cpp.mesh.CellType.triangle)
+V = dolfinx.VectorFunctionSpace(mesh, ("CG", 2))
+uh = dolfinx.Function(V)
+uh.interpolate(vel)
+
+num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+cell_entities = np.arange(num_cells, dtype=np.int32)
+
+topology, cell_types = dolfinx.plotting.pyvista_topology_from_function_space(uh, cell_entities)
+geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
+values = np.zeros((V.dofmap.index_map.size_local, 3), dtype=np.float64)
+values[:, :mesh.geometry.dim] = uh.vector.array.real.reshape(V.dofmap.index_map.size_local, V.dofmap.index_map_bs)
+
+# Create a point cloud of glyphs
+grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
+grid["vectors"] = values
+glyphs = grid.glyph(orient="vectors", factor=0.1)
+
+
+# Create pyvista mesh
+pyvista_cells, cell_types = dolfinx.plotting.pyvista_topology_from_mesh(mesh, mesh.topology.dim, cell_entities)
+org_grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
+
+plotter = pyvista.Plotter(off_screen=off_screen)
+plotter.add_text("Visualization of a second order\n CG vector function.",
+                 position="upper_edge", font_size=20, color="black")
+sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1, position_y=0, color="black")
+plotter.add_mesh(org_grid, show_edges=True, color="black", style="wireframe")
+plotter.add_mesh(glyphs)
+plotter.view_xy()
+if off_screen:
+    plotter.screenshot(f"vectors_{MPI.COMM_WORLD.rank}.png",
+                       transparent_background=transparent, window_size=[figsize, figsize])
 else:
     plotter.show()
