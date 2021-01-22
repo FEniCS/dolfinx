@@ -18,11 +18,11 @@
 #
 #    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
 #
-# To build from source, first checkout the DOLFINX, FFCX, FIAT and UFL
+# To build from source, first checkout the DOLFINX, FFCX, Basix and UFL
 # repositories into the working directory, e.g.:
 #
 # $ ls $(pwd)
-# dolfinx  ffcx  fiat  ufl
+# dolfinx  ffcx  basix  ufl
 #
 # Then run the commands:
 #
@@ -47,7 +47,7 @@
 
 ARG GMSH_VERSION=4.6.0
 ARG PYBIND11_VERSION=2.6.1
-ARG PETSC_VERSION=3.14.2
+ARG PETSC_VERSION=3.14.3
 ARG SLEPC_VERSION=3.14.1
 ARG SLEPC4PY_VERSION=3.14.0
 # Todo: Update KaHIP version upon a release.
@@ -132,6 +132,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 #   documentation or run tests.
 RUN pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme
+
+# Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
+# (See issue #126 and #1305)
+RUN pip3 install --no-binary="numpy" numpy --upgrade
 
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
@@ -307,7 +311,7 @@ ONBUILD WORKDIR /src
 # This leaves the sources inside the container. This is a limitation of Docker.
 # There is some trickery in the intermediate and dolfinx containers that can be
 # used to remove this source if needed, see below.
-ONBUILD ADD fiat/ /src/fiat/
+ONBUILD ADD basix/ /src/basix/
 ONBUILD ADD ufl/ /src/ufl/
 ONBUILD ADD ffcx/ /src/ffcx/
 ONBUILD ADD dolfinx/ /src/dolfinx/
@@ -324,9 +328,9 @@ ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
 # Extra CMake C++ compiler flags for DOLFINX C++ build.
 ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
-# The dolfinx-onbuild container expects to have folders fiat/ ufl/ ffcx/ and
+# The dolfinx-onbuild container expects to have folders basix/ ufl/ ffcx/ and
 # dolfinx/ mounted/shared at /src.
-ONBUILD RUN cd fiat && pip3 install --no-cache-dir . && \
+ONBUILD RUN cd basix && pip3 install --no-cache-dir . && \
     cd ../ufl && pip3 install --no-cache-dir . && \
     cd ../ffcx && pip3 install --no-cache-dir . && \
     cd ../ && pip3 install --no-cache-dir ipython

@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <cfloat>
@@ -64,14 +65,11 @@ void declare_meshtags(py::module& m, std::string type)
       });
 
   m.def("create_meshtags",
-        [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
-           const int dim,
+        [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, int dim,
            const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
            const py::array_t<T, py::array::c_style>& values) {
-          py::buffer_info buf = values.request();
-          std::vector<T> vals((T*)buf.ptr, (T*)buf.ptr + buf.size);
-          return dolfinx::mesh::create_meshtags(mesh, dim, entities,
-                                                std::move(vals));
+          return dolfinx::mesh::create_meshtags(
+              mesh, dim, entities, tcb::span(values.data(), values.size()));
         });
 }
 
@@ -94,20 +92,32 @@ void mesh(py::module& m)
   m.def("cell_dim", &dolfinx::mesh::cell_dim);
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
-  m.def("cell_normals", &dolfinx::mesh::cell_normals);
+  m.def("cell_normals", [](const dolfinx::mesh::Mesh& mesh, int dim,
+                           const py::array_t<std::int32_t>& entities) {
+    return dolfinx::mesh::cell_normals(
+        mesh, dim, tcb::span(entities.data(), entities.size()));
+  });
+  // m.def("cell_normals", &dolfinx::mesh::cell_normals);
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
-  m.def("volume_entities", &dolfinx::mesh::volume_entities,
-        "Generalised volume of entities of given dimension.");
-
-  m.def("circumradius", &dolfinx::mesh::circumradius);
-  m.def("h", &dolfinx::mesh::h,
-        "Compute maximum distance between any two vertices.");
-  m.def("inradius", &dolfinx::mesh::inradius, "Compute inradius of cells.");
-  m.def("radius_ratio", &dolfinx::mesh::radius_ratio);
+  m.def(
+      "h",
+      [](const dolfinx::mesh::Mesh& mesh, int dim,
+         const py::array_t<std::int32_t>& entities) {
+        return as_pyarray(dolfinx::mesh::h(
+            mesh, tcb::span(entities.data(), entities.size()), dim));
+      },
+      "Compute maximum distance between any two vertices.");
   m.def("midpoints", &dolfinx::mesh::midpoints);
+
+  m.def("midpoints",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           py::array_t<std::int32_t, py::array::c_style> entity_list) {
+          return dolfinx::mesh::midpoints(
+              mesh, dim, tcb::span(entity_list.data(), entity_list.size()));
+        });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
   using PythonPartitioningFunction
@@ -225,14 +235,10 @@ void mesh(py::module& m)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
-      .def("hmax", &dolfinx::mesh::Mesh::hmax)
-      .def("hmin", &dolfinx::mesh::Mesh::hmin)
       .def("mpi_comm",
            [](dolfinx::mesh::Mesh& self) {
              return MPICommWrapper(self.mpi_comm());
            })
-      .def("rmax", &dolfinx::mesh::Mesh::rmax)
-      .def("rmin", &dolfinx::mesh::Mesh::rmin)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
@@ -252,15 +258,38 @@ void mesh(py::module& m)
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-           dolfinx::mesh::GhostMode ghost_mode) {
+           dolfinx::mesh::GhostMode ghost_mode)
+            -> dolfinx::graph::AdjacencyList<std::int32_t> {
           return dolfinx::mesh::partition_cells_graph(
               comm.get(), nparts, cell_type, cells, ghost_mode);
         });
 
-  m.def("locate_entities", &dolfinx::mesh::locate_entities);
-  m.def("locate_entities_boundary", &dolfinx::mesh::locate_entities_boundary);
+  m.def(
+      "locate_entities",
+      [](const dolfinx::mesh::Mesh& mesh, int dim,
+         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                                 Eigen::RowMajor>>&)>& marker) {
+        return as_pyarray(dolfinx::mesh::locate_entities(mesh, dim, marker));
+      });
+  m.def(
+      "locate_entities_boundary",
+      [](const dolfinx::mesh::Mesh& mesh, int dim,
+         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                                 Eigen::RowMajor>>&)>& marker) {
+        return as_pyarray(
+            dolfinx::mesh::locate_entities_boundary(mesh, dim, marker));
+      });
 
-  m.def("entities_to_geometry", &dolfinx::mesh::entities_to_geometry);
+  m.def("entities_to_geometry",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           py::array_t<std::int32_t, py::array::c_style> entity_list,
+           bool orient) {
+          return dolfinx::mesh::entities_to_geometry(
+              mesh, dim, tcb::span(entity_list.data(), entity_list.size()),
+              orient);
+        });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
 
 } // namespace dolfinx_wrappers

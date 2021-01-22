@@ -9,7 +9,7 @@
 #include "DofMap.h"
 #include "Form.h"
 #include "utils.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/utils.h>
@@ -139,17 +139,11 @@ void assemble_matrix(
   if (a.num_integrals(IntegralType::exterior_facet) > 0
       or a.num_integrals(IntegralType::interior_facet) > 0)
   {
-    // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh->topology_mutable().create_entities(tdim - 1);
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    mesh->topology_mutable().create_entity_permutations();
 
-    const int facets_per_cell
-        = mesh::cell_num_entities(mesh->topology().cell_type(), tdim - 1);
     const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
-        = needs_permutation_data
-              ? mesh->topology().get_facet_permutations()
-              : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
-                  facets_per_cell, num_cells);
+        = mesh->topology().get_facet_permutations();
 
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
@@ -398,7 +392,7 @@ void assemble_interior_facets(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(2 * num_dofs_g, gdim);
   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
-  Eigen::Array<T, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
+  std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
   // Temporaries for joint dofmaps
@@ -464,10 +458,10 @@ void assemble_interior_facets(
     {
       // Loop over entries for coefficient i
       const int num_entries = offsets[i + 1] - offsets[i];
-      coeff_array.segment(2 * offsets[i], num_entries)
-          = coeff_cell0.segment(offsets[i], num_entries);
-      coeff_array.segment(offsets[i + 1] + offsets[i], num_entries)
-          = coeff_cell1.segment(offsets[i], num_entries);
+      std::copy_n(coeff_cell0.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), 2 * offsets[i]));
+      std::copy_n(coeff_cell1.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
     }
 
     // Tabulate tensor
@@ -493,9 +487,9 @@ void assemble_interior_facets(
     {
       for (std::size_t j = 0; j < dmapjoint1.size(); ++j)
       {
-        for (int k = 0; k < bs0; ++k)
+        for (int k = 0; k < bs1; ++k)
         {
-          if (bc1[bs1 * dmapjoint0[j] + k])
+          if (bc1[bs1 * dmapjoint1[j] + k])
             Ae.col(bs1 * j + k).setZero();
         }
       }

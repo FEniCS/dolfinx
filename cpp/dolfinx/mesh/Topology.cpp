@@ -325,57 +325,54 @@ mesh::create_topology(MPI_Comm comm,
         cell_ghost_indices, ghost_owners);
   }
 
+  common::Timer t0("TOPOLOGY: Create sets");
+  std::vector<std::int64_t> local_verts(
+      cells.array().begin(),
+      std::next(cells.array().begin(), cells.offsets()[num_local_cells]));
+  std::sort(local_verts.begin(), local_verts.end());
+  local_verts.erase(std::unique(local_verts.begin(), local_verts.end()),
+                    local_verts.end());
+  std::vector<std::int64_t> ghost_verts(
+      std::next(cells.array().begin(), cells.offsets()[num_local_cells]),
+      cells.array().end());
+  std::sort(ghost_verts.begin(), ghost_verts.end());
+  ghost_verts.erase(std::unique(ghost_verts.begin(), ghost_verts.end()),
+                    ghost_verts.end());
+  std::vector<std::int64_t> unknown_indices;
+  std::set_intersection(local_verts.begin(), local_verts.end(),
+                        ghost_verts.begin(), ghost_verts.end(),
+                        std::back_inserter(unknown_indices));
+
   // Create map from existing global vertex index to local index,
   // putting ghost indices last
   std::unordered_map<std::int64_t, std::int32_t> global_to_local_index;
 
   // Any vertices which are in ghost cells set to -1 since we need to
   // determine ownership
-  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
-  {
-    auto v = cells.links(num_local_cells + i);
-    for (std::size_t j = 0; j < v.size(); ++j)
-      global_to_local_index.insert({v[j], -1});
-  }
-
-  // Get all vertices which appear in both ghost and non-ghost cells
-  // and vertices which are local
-  // FIXME: optimize
-  std::set<std::int64_t> ghost_boundary_vertices;
-  std::set<std::int64_t> local_vertex_set;
-  for (int i = 0; i < num_local_cells; ++i)
-  {
-    for (auto v : cells.links(i))
-    {
-      if (auto it = global_to_local_index.find(v);
-          it != global_to_local_index.end())
-      {
-        ghost_boundary_vertices.insert(v);
-      }
-      else
-        local_vertex_set.insert(v);
-    }
-  }
+  for (std::int64_t idx : ghost_verts)
+    global_to_local_index.insert({idx, -1});
 
   int mpi_rank = MPI::rank(comm);
 
   // Make a list of all vertex indices whose ownership needs determining
-  std::vector<std::int64_t> unknown_indices(ghost_boundary_vertices.begin(),
-                                            ghost_boundary_vertices.end());
   std::unordered_map<std::int64_t, std::vector<int>> global_to_procs
       = compute_index_sharing(comm, unknown_indices);
 
   // Number all indices which this process now owns
   std::int32_t c = 0;
-  for (std::int64_t global_index : local_vertex_set)
+  for (std::int64_t global_index : local_verts)
   {
     // Locally owned
-    auto [it_ignore, insert]
-        = global_to_local_index.insert({global_index, c++});
-    assert(insert);
+    const auto it = global_to_procs.find(global_index);
+    if (it == global_to_procs.end())
+    {
+      auto [it_ignore, insert]
+          = global_to_local_index.insert({global_index, c++});
+      assert(insert);
+    }
   }
 
-  for (std::int64_t global_index : ghost_boundary_vertices)
+  for (std::int64_t global_index : unknown_indices)
   {
     const auto it = global_to_procs.find(global_index);
     assert(it != global_to_procs.end());
@@ -391,6 +388,8 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
   const std::int32_t nlocal = c;
+
+  t0.stop();
 
   // Get global offset for local indices
   std::int64_t global_offset = dolfinx::MPI::global_offset(comm, nlocal, true);
@@ -548,9 +547,14 @@ mesh::create_topology(MPI_Comm comm,
   MPI_Allgather(&nlocal, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
                 neighbor_comm);
 
+  // NOTE: We do not use std::partial_sum here as it narrows
+  // std::int64_t to std::int32_t. The below version of
+  // std::inclusive_scan takes the accumulation type from the last
+  // argument (std::int64_t).
   std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
-  std::partial_sum(local_sizes.begin(), local_sizes.end(),
-                   all_ranges.begin() + 1);
+  std::inclusive_scan(local_sizes.begin(), local_sizes.end(),
+                      std::next(all_ranges.begin()), std::plus<>(),
+                      static_cast<std::int64_t>(0));
 
   // Compute rank of ghost owners
   std::vector<int> ghost_vertices_owners(ghost_vertices.size(), -1);

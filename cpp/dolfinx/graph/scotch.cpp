@@ -308,6 +308,8 @@ graph::scotch::partitioner(graph::scotch::strategy strategy, double imbalance,
     SCOTCH_dgraphExit(&dgrafdat);
     SCOTCH_stratExit(&strat);
 
+    dests.shrink_to_fit();
+    offsets.shrink_to_fit();
     return graph::AdjacencyList<std::int32_t>(std::move(dests),
                                               std::move(offsets));
   };

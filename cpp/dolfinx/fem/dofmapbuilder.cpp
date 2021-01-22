@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dofmapbuilder.h"
+#include "CoordinateElement.h"
 #include "ElementDofLayout.h"
 #include <algorithm>
 #include <cstdlib>
@@ -12,7 +13,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/utils.h>
-#include <dolfinx/fem/dofs_permutation.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/boostordering.h>
 #include <dolfinx/graph/scotch.h>
@@ -37,8 +37,8 @@ namespace
 /// @param [in] topology The mesh topology
 /// @param [in] element_dof_layout The layout of dofs on a cell
 /// @return Returns {dofmap (local to the process), local-to-global map
-///   to get the global index of local dof i, dof indices, vector of
-///   {dimension, mesh entity index} for each local dof i}
+/// to get the global index of local dof i, dof indices, vector of
+/// {dimension, mesh entity index} for each local dof i}
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::vector<std::pair<std::int8_t, std::int32_t>>>
 build_basic_dofmap(const mesh::Topology& topology,
@@ -119,11 +119,6 @@ build_basic_dofmap(const mesh::Topology& topology,
   const std::vector<std::vector<std::set<int>>>& entity_dofs
       = element_dof_layout.entity_dofs_all();
 
-  // Compute cell dof permutations
-  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      permutations
-      = fem::compute_dof_permutations(topology, element_dof_layout);
-
   // Storage for local-to-global map
   std::vector<std::int64_t> local_to_global(local_size);
 
@@ -182,7 +177,7 @@ build_basic_dofmap(const mesh::Topology& topology,
           const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
           const std::int32_t dof
               = offset_local + num_entity_dofs * e_index_local + count;
-          dofs[cell_ptr[c] + permutations(c, *dof_local)] = dof;
+          dofs[cell_ptr[c] + *dof_local] = dof;
           local_to_global[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
           dof_entity[dof] = {d, e_index_local};
@@ -226,24 +221,14 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
       offset[d] = map->size_local();
   }
 
-  // Count locally owned dofs
-  std::vector<bool> owned(dof_entity.size(), false);
-  for (auto e = dof_entity.begin(); e != dof_entity.end(); ++e)
-  {
-    if (e->second < offset[e->first])
-    {
-      const std::size_t i = std::distance(dof_entity.begin(), e);
-      owned[i] = true;
-    }
-  }
-
   // Create map from old index to new contiguous numbering for locally
   // owned dofs. Set to -1 for unowned dofs
   std::vector<int> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t owned_size = 0;
-  for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
+  for (std::size_t i = 0; i < dof_entity.size(); ++i)
   {
-    if (owned[i])
+    const std::pair<std::int8_t, std::int32_t>& e = dof_entity[i];
+    if (e.second < offset[e.first])
       original_to_contiguous[i] = owned_size++;
   }
 
@@ -278,7 +263,6 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     std::partial_sum(num_edges.begin(), num_edges.end(),
                      std::next(offsets.begin(), 1));
     std::vector<std::int32_t> edges(offsets.back());
-    std::vector<int> pos(num_edges.size(), 0);
     for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
     {
       auto nodes = dofmap.links(cell);
@@ -292,54 +276,62 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
           if (const std::int32_t node_j = original_to_contiguous[nodes[j]];
               i != j and node_j != -1)
           {
-            edges[offsets[node_i] + pos[node_i]++] = node_j;
+            edges[offsets[node_i]++] = node_j;
           }
         }
       }
     }
+    // Release memory
+    std::vector<std::int32_t>().swap(offsets);
 
     // Eliminate duplicate edges and create AdjacencyList
-    graph_offsets.resize(offsets.size(), 0);
-    for (std::size_t i = 0; i < offsets.size() - 1; ++i)
+    graph_offsets.resize(num_edges.size() + 1, 0);
+    std::int32_t current_offset = 0;
+    for (std::size_t i = 0; i < num_edges.size(); ++i)
     {
-      std::sort(std::next(edges.begin(), offsets[i]),
-                std::next(edges.begin(), offsets[i + 1]));
-      auto it = std::unique(std::next(edges.begin(), offsets[i]),
-                            std::next(edges.begin(), offsets[i + 1]));
-      graph_data.insert(graph_data.end(), std::next(edges.begin(), offsets[i]),
-                        it);
+      std::sort(std::next(edges.begin(), current_offset),
+                std::next(edges.begin(), current_offset + num_edges[i]));
+      auto it = std::unique(
+          std::next(edges.begin(), current_offset),
+          std::next(edges.begin(), current_offset + num_edges[i]));
+      graph_data.insert(graph_data.end(),
+                        std::next(edges.begin(), current_offset), it);
       graph_offsets[i + 1]
           = graph_offsets[i]
-            + std::distance(std::next(edges.begin(), offsets[i]), it);
+            + std::distance(std::next(edges.begin(), current_offset), it);
+      current_offset += num_edges[i];
     }
   }
-  const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data),
-                                                 std::move(graph_offsets));
 
-  // Reorder owned nodes
-  const std::string ordering_library = "SCOTCH";
   std::vector<int> node_remap;
-  if (ordering_library == "Boost")
-    node_remap = graph::compute_cuthill_mckee(graph, true);
-  else if (ordering_library == "SCOTCH")
-    std::tie(node_remap, std::ignore) = graph::scotch::compute_gps(graph);
-  else if (ordering_library == "random")
   {
-    // NOTE: Randomised dof ordering should only be used for
-    // testing/benchmarking
-    node_remap.resize(graph.num_nodes());
-    std::iota(node_remap.begin(), node_remap.end(), 0);
-    std::random_device rd;
-    std::default_random_engine g(rd());
-    std::shuffle(node_remap.begin(), node_remap.end(), g);
-  }
-  else
-  {
-    throw std::runtime_error("Requested library '" + ordering_library
-                             + "' is unknown");
+    const graph::AdjacencyList<std::int32_t> graph(std::move(graph_data),
+                                                   std::move(graph_offsets));
+
+    // Reorder owned nodes
+    const std::string ordering_library = "SCOTCH";
+    if (ordering_library == "Boost")
+      node_remap = graph::compute_cuthill_mckee(graph, true);
+    else if (ordering_library == "SCOTCH")
+      std::tie(node_remap, std::ignore) = graph::scotch::compute_gps(graph);
+    else if (ordering_library == "random")
+    {
+      // NOTE: Randomised dof ordering should only be used for
+      // testing/benchmarking
+      node_remap.resize(graph.num_nodes());
+      std::iota(node_remap.begin(), node_remap.end(), 0);
+      std::random_device rd;
+      std::default_random_engine g(rd());
+      std::shuffle(node_remap.begin(), node_remap.end(), g);
+    }
+    else
+    {
+      throw std::runtime_error("Requested library '" + ordering_library
+                               + "' is unknown");
+    }
   }
 
-  // Reconstruct remaped nodes, and place un-owned nodes at the end
+  // Reconstruct remapped nodes, and place un-owned nodes at the end
   std::vector<int> old_to_new(dof_entity.size(), -1);
   std::int32_t unowned_pos = owned_size;
   assert(old_to_new.size() == original_to_contiguous.size());
@@ -512,7 +504,6 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   return {std::move(local_to_global_new), std::move(local_to_global_new_owner)};
 }
 //-----------------------------------------------------------------------------
-
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -568,14 +559,14 @@ fem::build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
       local_to_global_unowned, local_to_global_owner);
   assert(index_map);
 
-  // FIXME: There is an assumption here on the dof order for an element.
-  //        It should come from the ElementDofLayout.
   // Build re-ordered dofmap
   std::vector<std::int32_t> dofmap(node_graph0.array().size());
   for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
   {
+    // Get dof order on this cell
     auto old_nodes = node_graph0.links(cell);
     const std::int32_t local_dim0 = old_nodes.size();
+
     for (std::int32_t j = 0; j < local_dim0; ++j)
     {
       const std::int32_t old_node = old_nodes[j];
