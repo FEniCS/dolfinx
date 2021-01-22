@@ -374,7 +374,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
-                             const tcb::span<const int32_t>& entities,
+                             const tcb::span<const std::int32_t>& entities,
                              bool remote)
 {
   assert(V.dofmap());
