@@ -27,39 +27,6 @@
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
-namespace
-{
-//-----------------------------------------------------------------------------
-Eigen::ArrayXd cell_h(const mesh::Mesh& mesh)
-{
-  const int dim = mesh.topology().dim();
-  auto map = mesh.topology().index_map(dim);
-  assert(map);
-  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-  if (num_cells == 0)
-    throw std::runtime_error("Cannot compute h min/max. No cells.");
-
-  Eigen::ArrayXi cells(num_cells);
-  std::iota(cells.data(), cells.data() + cells.size(), 0);
-  return mesh::h(mesh, cells, dim);
-}
-//-----------------------------------------------------------------------------
-Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
-{
-  const int dim = mesh.topology().dim();
-  auto map = mesh.topology().index_map(dim);
-  assert(map);
-  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-  if (num_cells == 0)
-    throw std::runtime_error("Cannnot compute inradius min/max. No cells.");
-
-  Eigen::ArrayXi cells(num_cells);
-  std::iota(cells.data(), cells.data() + cells.size(), 0);
-  return mesh::inradius(mesh, cells);
-}
-//-----------------------------------------------------------------------------
-} // namespace
-
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
@@ -167,14 +134,6 @@ Topology& Mesh::topology_mutable() const { return _topology; }
 Geometry& Mesh::geometry() { return _geometry; }
 //-----------------------------------------------------------------------------
 const Geometry& Mesh::geometry() const { return _geometry; }
-//-----------------------------------------------------------------------------
-double Mesh::hmin() const { return cell_h(*this).minCoeff(); }
-//-----------------------------------------------------------------------------
-double Mesh::hmax() const { return cell_h(*this).maxCoeff(); }
-//-----------------------------------------------------------------------------
-double Mesh::rmin() const { return cell_r(*this).minCoeff(); }
-//-----------------------------------------------------------------------------
-double Mesh::rmax() const { return cell_r(*this).maxCoeff(); }
 //-----------------------------------------------------------------------------
 MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
