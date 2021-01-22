@@ -109,26 +109,6 @@ public:
   /// @return The geometry object associated with the mesh
   const Geometry& geometry() const;
 
-  /// Compute minimum cell size in mesh, measured greatest distance
-  /// between any two vertices of a cell.
-  /// @return The minimum cell size. The size is computed using
-  ///         Cell::h()
-  double hmin() const;
-
-  /// Compute maximum cell size in mesh, measured greatest distance
-  /// between any two vertices of a cell
-  /// @return The maximum cell size. The size is computed using
-  ///         Cell::h()
-  double hmax() const;
-
-  /// Compute minimum cell inradius
-  /// @return double The minimum of cells' inscribed sphere radii
-  double rmin() const;
-
-  /// Compute maximum cell inradius
-  /// @return The maximum of cells' inscribed sphere radii
-  double rmax() const;
-
   /// Get unique identifier for the mesh
   /// @returns The unique identifier associated with the object
   std::size_t id() const { return _unique_id; }

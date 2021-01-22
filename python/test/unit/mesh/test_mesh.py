@@ -26,11 +26,17 @@ assert (tempdir)
 def mesh1d():
     """Create 1D mesh with degenerate cell"""
     mesh1d = UnitIntervalMesh(MPI.COMM_WORLD, 4)
-    i1 = np.where((mesh1d.geometry.x
-                   == (0.75, 0, 0)).all(axis=1))[0][0]
-    i2 = np.where((mesh1d.geometry.x
-                   == (1, 0, 0)).all(axis=1))[0][0]
+    i1 = np.where((mesh1d.geometry.x == (0.75, 0, 0)).all(axis=1))[0][0]
+    i2 = np.where((mesh1d.geometry.x == (1, 0, 0)).all(axis=1))[0][0]
+    mesh1d.geometry.x[i2] = mesh1d.geometry.x[i1]
+    return mesh1d
 
+
+def mesh_1d():
+    """Create 1D mesh with degenerate cell"""
+    mesh1d = UnitIntervalMesh(MPI.COMM_WORLD, 4)
+    i1 = np.where((mesh1d.geometry.x == (0.75, 0, 0)).all(axis=1))[0][0]
+    i2 = np.where((mesh1d.geometry.x == (1, 0, 0)).all(axis=1))[0][0]
     mesh1d.geometry.x[i2] = mesh1d.geometry.x[i1]
     return mesh1d
 
@@ -49,15 +55,35 @@ def mesh2d():
     return mesh2d
 
 
+def mesh_2d():
+    """Create 2D mesh with one equilateral triangle"""
+    mesh2d = RectangleMesh(
+        MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
+                         np.array([1., 1., 0.0])], [1, 1],
+        CellType.triangle, cpp.mesh.GhostMode.none,
+        cpp.mesh.partition_cells_graph, 'left')
+    i1 = np.where((mesh2d.geometry.x
+                   == (1, 1, 0)).all(axis=1))[0][0]
+    mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
+    return mesh2d
+
+
 @pytest.fixture
 def mesh3d():
     """Create 3D mesh with regular tetrahedron and degenerate cells"""
     mesh3d = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)
-    i1 = np.where((mesh3d.geometry.x
-                   == (0, 1, 0)).all(axis=1))[0][0]
-    i2 = np.where((mesh3d.geometry.x
-                   == (1, 1, 1)).all(axis=1))[0][0]
+    i1 = np.where((mesh3d.geometry.x == (0, 1, 0)).all(axis=1))[0][0]
+    i2 = np.where((mesh3d.geometry.x == (1, 1, 1)).all(axis=1))[0][0]
+    mesh3d.geometry.x[i1][0] = 1.0
+    mesh3d.geometry.x[i2][1] = 0.0
+    return mesh3d
 
+
+def mesh_3d():
+    """Create 3D mesh with regular tetrahedron and degenerate cells"""
+    mesh3d = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)
+    i1 = np.where((mesh3d.geometry.x == (0, 1, 0)).all(axis=1))[0][0]
+    i2 = np.where((mesh3d.geometry.x == (1, 1, 1)).all(axis=1))[0][0]
     mesh3d.geometry.x[i1][0] = 1.0
     mesh3d.geometry.x[i2][1] = 0.0
     return mesh3d
@@ -211,6 +237,7 @@ def xtest_cell_inradius(c0, c1, c5):
     assert cpp.mesh.inradius(c5[0], [c5[2]]) == pytest.approx(math.sqrt(3.0) / 6.0)
 
 
+@pytest.mark.skip("Needs to be re-implemented")
 @skip_in_parallel
 def test_cell_circumradius(c0, c1, c5):
     assert cpp.mesh.circumradius(c0[0], [c0[2]], c0[1]) == pytest.approx(math.sqrt(3.0) / 2.0)
@@ -224,7 +251,7 @@ def test_cell_circumradius(c0, c1, c5):
 @skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
-        assert cpp.mesh.h(c[0], [c[2]], c[1]) == pytest.approx(math.sqrt(2.0))
+        assert cpp.mesh.h(c[0], c[1], [c[2]]) == pytest.approx(math.sqrt(2.0))
 
 
 @skip_in_parallel
@@ -234,24 +261,41 @@ def xtest_cell_radius_ratio(c0, c1, c5):
     assert cpp.mesh.radius_ratio(c5[0], c5[2]) == pytest.approx(1.0)
 
 
-@skip_in_parallel
-def test_hmin_hmax(mesh1d, mesh2d, mesh3d):
-    assert mesh1d.hmin() == pytest.approx(0.0)
-    assert mesh1d.hmax() == pytest.approx(0.25)
-    assert mesh2d.hmin() == pytest.approx(math.sqrt(2.0))
-    assert mesh2d.hmax() == pytest.approx(math.sqrt(2.0))
-    assert mesh3d.hmin() == pytest.approx(math.sqrt(2.0))
-    assert mesh3d.hmax() == pytest.approx(math.sqrt(2.0))
+@pytest.fixture(params=['dir1_fixture', 'dir2_fixture'])
+def dirname(request):
+    return request.getfixturevalue(request.param)
 
 
 @skip_in_parallel
-def test_rmin_rmax(mesh1d, mesh2d, mesh3d):
-    assert round(mesh1d.rmin() - 0.0, 7) == 0
-    # assert round(mesh1d.rmax() - 0.125, 7) == 0
-    # assert round(mesh2d.rmin() - 1.0 / (2.0 + math.sqrt(2.0)), 7) == 0
-    # assert round(mesh2d.rmax() - math.sqrt(6.0) / 6.0, 7) == 0
-    # assert round(mesh3d.rmin() - 0.0, 7) == 0
-    # assert round(mesh3d.rmax() - math.sqrt(3.0) / 6.0, 7) == 0
+@pytest.mark.parametrize("_mesh,hmin,hmax",
+                         [
+                             (mesh_1d, 0.0, 0.25),
+                             (mesh_2d, math.sqrt(2.0), math.sqrt(2.0)),
+                             (mesh_3d, math.sqrt(2.0), math.sqrt(2.0)),
+                         ])
+def test_hmin_hmax(_mesh, hmin, hmax):
+    mesh = _mesh()
+    tdim = mesh.topology.dim
+    num_cells = mesh.topology.index_map(tdim).size_local
+    h = cpp.mesh.h(mesh, tdim, range(num_cells))
+    assert h.min() == pytest.approx(hmin)
+    assert h.max() == pytest.approx(hmax)
+
+
+# @skip_in_parallel
+# @pytest.mark.skip("Needs to be re-implemented")
+# @pytest.mark.parametrize("mesh,rmin,rmax",
+#                          [
+#                              (mesh_1d(), 0.0, 0.125),
+#                              (mesh_2d(), 1.0 / (2.0 + math.sqrt(2.0)), math.sqrt(6.0) / 6.0),
+#                              (mesh_3d(), 0.0, math.sqrt(3.0) / 6.0),
+#                          ])
+# def test_rmin_rmax(mesh, rmin, rmax):
+#     tdim = mesh.topology.dim
+#     num_cells = mesh.topology.index_map(tdim).size_local
+#     inradius = cpp.mesh.inradius(mesh, range(num_cells))
+#     assert inradius.min() == pytest.approx(rmin)
+#     assert inradius.max() == pytest.approx(rmax)
 
 # - Facilities to run tests on combination of meshes
 
@@ -268,16 +312,18 @@ mesh_factories = [
 
 # FIXME: Fix this xfail
 def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
-    """Xfail when mesh_factory on quads/hexes uses
-    shared_vertex mode. Needs implementing.
-    """
+    """Xfail when mesh_factory on quads/hexes uses shared_vertex mode. Needs implementing."""
     if mesh_factory in [UnitSquareMesh, UnitCubeMesh]:
         if ghost_mode == cpp.mesh.GhostMode.shared_vertex:
             pytest.xfail(reason="Missing functionality in \'{}\' with \'{}\' mode".format(mesh_factory, ghost_mode))
 
 
 @pytest.mark.parametrize("ghost_mode",
-                         [cpp.mesh.GhostMode.none, cpp.mesh.GhostMode.shared_facet, cpp.mesh.GhostMode.shared_vertex])
+                         [
+                             cpp.mesh.GhostMode.none,
+                             cpp.mesh.GhostMode.shared_facet,
+                             cpp.mesh.GhostMode.shared_vertex,
+                         ])
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
 def test_mesh_topology_against_basix(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to Basix reference
