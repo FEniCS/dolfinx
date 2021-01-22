@@ -753,7 +753,7 @@ void assemble_interior_facets(
       = mesh.geometry().x();
 
   // Create data structures used in assembly
-  std::vector<T> coordinate_dofs(2 * num_dofs_g * gdim);
+  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
   std::vector<T> be;
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
