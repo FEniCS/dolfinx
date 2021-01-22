@@ -90,7 +90,7 @@ create_new_geometry(
   for (int v = 0; v < num_vertices; ++v)
     new_vertex_coordinates.row(v) = x_g.row(vertex_to_x[v]);
 
-  Eigen::Array<int, Eigen::Dynamic, 1> edges(num_new_vertices);
+  std::vector<int> edges(num_new_vertices);
   int i = 0;
   for (auto& e : local_edge_to_new_vertex)
     edges[i++] = e.first;

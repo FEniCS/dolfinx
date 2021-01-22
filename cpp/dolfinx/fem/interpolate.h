@@ -20,14 +20,15 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
-/// Interpolate a Function (on possibly non-matching meshes)
-/// @param[in,out] u The function to interpolate into
+/// Interpolate a finite element Function (on possibly non-matching
+/// meshes) in another finite element space
+/// @param[out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
 template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v);
 
-/// Interpolate an expression
-/// @param[in,out] u The function to interpolate into
+/// Interpolate an expression in a finite element space
+/// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
 template <typename T>
 void interpolate(
@@ -37,13 +38,16 @@ void interpolate(
             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                 Eigen::RowMajor>>&)>& f);
 
-/// Interpolate an expression f(x). This interface uses an expression
-/// function f that has an in/out argument for the expression values. It
-/// is primarily to support C code implementations of the expression,
-/// e.g. using Numba. Generally the interface where the expression
-/// function is a pure function, i.e. the expression values
-/// are the return argument, should be preferred.
-/// @param[in,out] u The function to interpolate into
+/// Interpolate an expression f(x)
+///
+/// @note  This interface uses an expression function f that has an
+/// in/out argument for the expression values. It is primarily to
+/// support C code implementations of the expression, e.g. using Numba.
+/// Generally the interface where the expression function is a pure
+/// function, i.e. the expression values are the return argument, should
+/// be preferred.
+///
+/// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
 template <typename T>
 void interpolate_c(
@@ -56,19 +60,6 @@ void interpolate_c(
 
 namespace detail
 {
-
-// Interpolate data. Fills coefficients using 'values', which are the
-// values of an expression at each dof.
-template <typename T>
-void interpolate_values(
-    Function<T>& u,
-    const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& values)
-{
-  Eigen::Matrix<T, Eigen::Dynamic, 1>& coefficients = u.x()->array();
-  coefficients = Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1>>(
-      values.data(), coefficients.rows());
-}
 
 template <typename T>
 void interpolate_from_any(Function<T>& u, const Function<T>& v)
@@ -99,11 +90,11 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   auto map = mesh->topology().index_map(tdim);
   assert(map);
 
-  Eigen::Matrix<T, Eigen::Dynamic, 1>& coeffs = u.x()->array();
+  std::vector<T>& coeffs = u.x()->mutable_array();
 
   // Iterate over mesh and interpolate on each cell
   const auto dofmap_u = u.function_space()->dofmap();
-  const Eigen::Matrix<T, Eigen::Dynamic, 1>& v_array = v.x()->array();
+  const std::vector<T>& v_array = v.x()->array();
   const int num_cells = map->size_local() + map->num_ghosts();
   const int bs = dofmap_v->bs();
   assert(bs == dofmap_u->bs());
@@ -168,88 +159,125 @@ void interpolate(
             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                 Eigen::RowMajor>>&)>& f)
 {
-  // u.function_space()->interpolate(u.x()->array(), f);
-  assert(u.function_space());
-
-  // Evaluate expression at dof points
-  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
-      = u.function_space()
-            ->tabulate_scalar_subspace_dof_coordinates()
-            .transpose();
-  const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values
-      = f(x);
+  using EigenMatrixRowXd
+      = Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
   const auto element = u.function_space()->element();
   assert(element);
-  std::vector<int> vshape(element->value_rank(), 1);
-  for (std::size_t i = 0; i < vshape.size(); ++i)
-    vshape[i] = element->value_dimension(i);
-  const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
-                                         1, std::multiplies<>());
+  const int element_bs = element->block_size();
 
+  if (int num_sub = element->num_sub_elements();
+      num_sub > 0 and num_sub != element_bs)
+  {
+    throw std::runtime_error("Cannot directly interpolate a mixed space. "
+                             "Interpolate into subspaces.");
+  }
+
+  // Get mesh
+  assert(u.function_space());
   auto mesh = u.function_space()->mesh();
   assert(mesh);
   const int tdim = mesh->topology().dim();
-  if (element->family() == "Mixed")
-  {
-    // Extract the correct components of the result for each subelement of the
-    // MixedElement
-    std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
-    auto map = mesh->topology().index_map(tdim);
-    assert(map);
-    const int num_cells = map->size_local() + map->num_ghosts();
+  const int gdim = mesh->geometry().dim();
+  auto cell_map = mesh->topology().index_map(tdim);
+  assert(cell_map);
+  const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
 
-    Eigen::Array<T, 1, Eigen::Dynamic> mixed_values(values.cols());
-    int value_offset = 0;
-    for (int i = 0; i < element->num_sub_elements(); ++i)
+  // Get mesh geometry data and the element coordinate map
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
+  const int num_dofs_g = x_dofmap.num_links(0);
+  const EigenMatrixRowXd& x_g = mesh->geometry().x();
+  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+
+  // Get the interpolation points on the reference cells
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
+      = element->interpolation_points();
+
+  const bool needs_permutation_data = element->needs_permutation_data();
+  if (needs_permutation_data)
+    mesh->topology_mutable().create_entity_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                               : std::vector<std::uint32_t>(num_cells);
+
+  // Push reference coordinates (X) forward to the physical coordinates
+  // (x) for each cell
+  EigenMatrixRowXd x_cell(X.rows(), gdim);
+  std::vector<double> x;
+  EigenMatrixRowXd coordinate_dofs(num_dofs_g, gdim);
+  for (int c = 0; c < num_cells; ++c)
+  {
+    // Get geometry data for current cell
+    auto x_dofs = x_dofmap.links(c);
+    for (int i = 0; i < num_dofs_g; ++i)
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
+
+    // Push forward coordinates (X -> x)
+    cmap.push_forward(x_cell, X, coordinate_dofs);
+    x.insert(x.end(), x_cell.data(), x_cell.data() + x_cell.size());
+  }
+
+  // Re-pack points (each row for a given coordinate component) and pad
+  // up to gdim with zero
+  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> _x
+      = Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>::Zero(
+          3, x.size() / gdim);
+  for (int i = 0; i < gdim; ++i)
+  {
+    _x.row(i)
+        = Eigen::Map<Eigen::ArrayXd, 0, Eigen::InnerStride<Eigen::Dynamic>>(
+            x.data() + i, x.size() / gdim,
+            Eigen::InnerStride<Eigen::Dynamic>(gdim));
+  }
+
+  // Evaluate function at physical points. The returned array has a
+  // number of rows equal to the number of components of the function,
+  // and the number of columns is equal to the number of evaluation
+  // points. Scalar case needs special handling as pybind11 will return
+  // a column array when we need a row array.
+  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values;
+  values = f(_x);
+
+  // FIXME: This is hack for NumPy/pybind11/Eigen that returns 1D arrays a
+  // column vectors. Fix in the pybind11 layer?
+  if (element->value_size() == 1 and values.rows() > 1)
+    values = values.transpose().eval();
+
+  // Get dofmap
+  const auto dofmap = u.function_space()->dofmap();
+  assert(dofmap);
+  const int dofmap_bs = dofmap->bs();
+
+  // NOTE: The below loop over cells could be skipped for some elements,
+  // e.g. Lagrange, where the interpolation is just the identity.
+
+  // Loop over cells and compute interpolation dofs
+  const int num_scalar_dofs = element->space_dimension() / element_bs;
+  const int value_size = element->value_size() / element_bs;
+  std::vector<T>& coeffs = u.x()->mutable_array();
+  std::vector<T> _coeffs(num_scalar_dofs);
+  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
+  for (int c = 0; c < num_cells; ++c)
+  {
+    auto dofs = dofmap->cell_dofs(c);
+    for (int k = 0; k < element_bs; ++k)
     {
-      const std::vector<int> component = {i};
-      const fem::DofMap sub_dofmap = dofmap->extract_sub_dofmap(component);
-      std::shared_ptr<const fem::FiniteElement> sub_element
-          = element->extract_sub_element(component);
-      const int element_block_size = sub_element->block_size();
-      for (std::size_t cell = 0; cell < num_cells; ++cell)
+      // Extract computed expression values for element block k
+      _vals = values.block(k, c * X.rows(), value_size, X.rows());
+
+      // Get element degrees of freedom for block
+      element->interpolate(_vals, cell_info[c], _coeffs);
+      assert(_coeffs.size() == num_scalar_dofs);
+
+      // Copy interpolation dofs into coefficient vector
+      for (int i = 0; i < num_scalar_dofs; ++i)
       {
-        tcb::span<const std::int32_t> cell_dofs = sub_dofmap.cell_dofs(cell);
-        const std::size_t scalar_dofs = cell_dofs.size() / element_block_size;
-        for (std::size_t dof = 0; dof < scalar_dofs; ++dof)
-        {
-          for (int b = 0; b < element_block_size; ++b)
-          {
-            mixed_values(cell_dofs[element_block_size * dof + b])
-                = values(value_offset + b, cell_dofs[element_block_size * dof]);
-          }
-        }
+        const int dof = i * element_bs + k;
+        std::div_t pos = std::div(dof, dofmap_bs);
+        coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
       }
-      value_offset += element_block_size;
     }
-    detail::interpolate_values<T>(u, mixed_values);
-    return;
-  }
-
-  // Note: pybind11 maps 1D NumPy arrays to column vectors for
-  // Eigen::Array<T, Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>
-  // types, therefore we need to handle vectors as a special case.
-  if (values.cols() == 1 and values.rows() != 1)
-  {
-    if (values.rows() != x.cols())
-    {
-      throw std::runtime_error("Number of computed values is not equal to the "
-                               "number of evaluation points. (1)");
-    }
-    detail::interpolate_values<T>(u, values);
-  }
-  else
-  {
-    if (values.rows() != value_size)
-      throw std::runtime_error("Values shape is incorrect. (2)");
-    if (values.cols() != x.cols())
-    {
-      throw std::runtime_error("Number of computed values is not equal to the "
-                               "number of evaluation points. (2)");
-    }
-
-    detail::interpolate_values<T>(u, values.transpose());
   }
 }
 //----------------------------------------------------------------------------
@@ -262,11 +290,6 @@ void interpolate_c(
         const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                             Eigen::RowMajor>>&)>& f)
 {
-  // Build list of points at which to evaluate the Expression
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
-      = u.function_space()->tabulate_dof_coordinates();
-
-  // Evaluate expression at points
   const auto element = u.function_space()->element();
   assert(element);
   std::vector<int> vshape(element->value_rank(), 1);
@@ -274,11 +297,18 @@ void interpolate_c(
     vshape[i] = element->value_dimension(i);
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
-      x.rows(), value_size);
-  f(values, x);
 
-  detail::interpolate_values<T>(u, values);
+  auto fn =
+      [value_size,
+       &f](const Eigen::Ref<
+           const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>& x) {
+        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
+            x.cols(), value_size);
+        f(values, x.transpose());
+        return values;
+      };
+
+  interpolate<T>(u, fn);
 }
 //----------------------------------------------------------------------------
 
