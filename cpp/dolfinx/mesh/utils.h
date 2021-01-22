@@ -48,7 +48,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 cell_normals(const Mesh& mesh, int dim,
              const tcb::span<const std::int32_t>& entities);
 
-/// Compute midpoints or mesh entities of a given dimension
+/// Compute midpoints of mesh entities of a given dimension
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 midpoints(const mesh::Mesh& mesh, int dim,
           const tcb::span<const std::int32_t>& entities);
@@ -137,7 +137,7 @@ partition_cells_graph(MPI_Comm comm, int n, const mesh::CellType cell_type,
                       const graph::AdjacencyList<std::int64_t>& cells,
                       mesh::GhostMode ghost_mode);
 
-/// Compute destination rank for mesh cells on this rank by applying the
+/// Compute destination rank for mesh cells on this rank by applying
 /// a provided graph partitioner to the dual graph of the mesh
 graph::AdjacencyList<std::int32_t>
 partition_cells_graph(MPI_Comm comm, int n, const mesh::CellType cell_type,

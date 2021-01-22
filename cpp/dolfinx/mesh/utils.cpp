@@ -56,7 +56,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
                             int dim)
 {
   if (dim != mesh.topology().dim())
-    throw std::runtime_error("Cell size when dim ne tdim  requires updating.");
+    throw std::runtime_error("Cell size when dim ne tdim requires updating.");
 
   // Get number of cell vertices
   const mesh::CellType type
