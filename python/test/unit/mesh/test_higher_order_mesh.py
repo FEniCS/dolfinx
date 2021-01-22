@@ -11,7 +11,6 @@ import random
 import numpy as np
 import pytest
 import ufl
-from dolfinx import cpp
 from dolfinx.cpp.io import perm_gmsh, perm_vtk
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import assemble_scalar
