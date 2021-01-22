@@ -254,7 +254,7 @@ def test_triangle_mesh_vtk(order):
     def coord_to_vertex(x, y):
         return y * (2 * order + 3 - y) // 2 + x
 
-    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
+    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/  # noqa: E501
     cell = [coord_to_vertex(i, j) for i, j in [(0, 0), (order, 0), (0, order)]]
     if order > 1:
         for i in range(1, order):
@@ -300,7 +300,7 @@ def test_tetrahedron_mesh_vtk(order):
             3 * order ** 2 - 3 * order * z + 12 * order + z ** 2 - 6 * z + 11
         ) // 6 + y * (2 * (order - z) + 3 - y) // 2 + x
 
-    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
+    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/  # noqa: E501
     cell = [coord_to_vertex(x, y, z) for x, y, z in [
         (0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order)]]
 
@@ -319,13 +319,15 @@ def test_tetrahedron_mesh_vtk(order):
             cell.append(coord_to_vertex(0, order - i, i))
 
         if order == 3:
-            # The ordering of faces does not match documentation. See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
+            # The ordering of faces does not match documentation.
+            # See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
             cell.append(coord_to_vertex(1, 0, 1))
             cell.append(coord_to_vertex(1, 1, 1))
             cell.append(coord_to_vertex(0, 1, 1))
             cell.append(coord_to_vertex(1, 1, 0))
         elif order == 4:
-            # The ordering of faces does not match documentation. See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
+            # The ordering of faces does not match documentation.
+            # See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
             cell.append(coord_to_vertex(1, 0, 1))
             cell.append(coord_to_vertex(2, 0, 1))
             cell.append(coord_to_vertex(1, 0, 2))
@@ -387,7 +389,7 @@ def test_quadrilateral_mesh_vtk(order):
     def coord_to_vertex(x, y):
         return (order + 1) * y + x
 
-    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
+    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/  # noqa: E501
     cell = [coord_to_vertex(i, j)
             for i, j in [(0, 0), (order, 0), (order, order), (0, order)]]
     if order > 1:
@@ -431,7 +433,7 @@ def test_hexahedron_mesh_vtk(order):
     def coord_to_vertex(x, y, z):
         return (order + 1) ** 2 * z + (order + 1) * y + x
 
-    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
+    # Make the cell, following https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/  # noqa: E501
     cell = [coord_to_vertex(x, y, z) for x, y, z in [
         (0, 0, 0), (order, 0, 0), (order, order, 0), (0, order, 0),
         (0, 0, order), (order, 0, order), (order, order, order), (0, order, order)]]
@@ -462,7 +464,8 @@ def test_hexahedron_mesh_vtk(order):
         for i in range(1, order):
             cell.append(coord_to_vertex(0, order, i))
 
-        # The ordering of faces does not match documentation. See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
+        # The ordering of faces does not match documentation.
+        # See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
         # The edge flip in this like however has been fixed in VTK so we follow the main documentation link for edges
         for j in range(1, order):
             for i in range(1, order):
