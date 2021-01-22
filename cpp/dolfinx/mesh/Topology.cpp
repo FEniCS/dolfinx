@@ -554,9 +554,7 @@ mesh::create_topology(MPI_Comm comm,
   // requiring e.g. Intel TBB.
   std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
   for (int i = 0; i < mpi_size; ++i)
-  {
     all_ranges[i + 1] = all_ranges[i] + local_sizes[i];
-  }
 
   // Compute rank of ghost owners
   std::vector<int> ghost_vertices_owners(ghost_vertices.size(), -1);
