@@ -26,6 +26,7 @@ def check_cell_volume(points, cell, domain, volume):
 
     point_order = [i for i, _ in enumerate(points)]
     for repeat in range(5):
+        # Shuffle the cell to check that permutations of CoordinateElement are correct
         random.shuffle(point_order)
         ordered_points = np.zeros((len(points), len(points[0])))
         for i, j in enumerate(point_order):
@@ -50,6 +51,7 @@ def test_triangle_mesh(order):
     def coord_to_vertex(x, y):
         return y * (2 * order + 3 - y) // 2 + x
 
+    # Define a cell using dolfin ordering
     cell = [coord_to_vertex(i, j) for i, j in [(0, 0), (order, 0), (0, order)]]
     if order > 1:
         for i in range(1, order):
@@ -86,6 +88,7 @@ def test_tetrahedron_mesh(order):
             3 * order ** 2 - 3 * order * z + 12 * order + z ** 2 - 6 * z + 11
         ) // 6 + y * (2 * (order - z) + 3 - y) // 2 + x
 
+    # Define a cell using dolfin ordering
     cell = [coord_to_vertex(x, y, z) for x, y, z in [
         (0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order)]]
 
@@ -141,6 +144,7 @@ def test_quadrilateral_mesh(order):
     def coord_to_vertex(x, y):
         return (order + 1) * y + x
 
+    # Define a cell using dolfin ordering
     cell = [coord_to_vertex(i, j)
             for i, j in [(0, 0), (order, 0), (0, order), (order, order)]]
     if order > 1:
@@ -180,6 +184,7 @@ def test_hexahedron_mesh(order):
     def coord_to_vertex(x, y, z):
         return (order + 1) ** 2 * z + (order + 1) * y + x
 
+    # Define a cell using dolfin ordering
     cell = [coord_to_vertex(x, y, z) for x, y, z in [
         (0, 0, 0), (order, 0, 0), (0, order, 0), (order, order, 0),
         (0, 0, order), (order, 0, order), (0, order, order), (order, order, order)]]
