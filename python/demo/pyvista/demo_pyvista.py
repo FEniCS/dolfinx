@@ -325,8 +325,10 @@ function_grid.set_active_vectors("vectors")
 glyphs = function_grid.glyph(orient="vectors", factor=0.1)
 
 # To add streamlines in 2D, you need to supply the two points creating a sampling line
-streamlines = function_grid.streamlines(vectors="vectors", return_source=False,
-                                        pointa=(0.5, 0.0, 0), pointb=(0.5, 1, 0))
+# NOTE: This crashes if ran in parallel, seems to be a pyvista issue with pointa, pointb
+if MPI.COMM_WORLD.size == 0:
+    streamlines = function_grid.streamlines(vectors="vectors", return_source=False,
+                                            pointa=(0.5, 0.0, 0), pointb=(0.5, 1, 0))
 
 # Create pyvista mesh from the mesh
 pyvista_cells, cell_types = dolfinx.plotting.pyvista_topology_from_mesh(mesh, mesh.topology.dim, cell_entities)
@@ -340,7 +342,8 @@ sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1, position_y=0
 
 plotter.add_mesh(grid, show_edges=True, color="black", style="wireframe")
 plotter.add_mesh(glyphs)
-plotter.add_mesh(streamlines.tube(radius=0.001), show_scalar_bar=False)
+if MPI.COMM_WORLD.size == 0:
+    plotter.add_mesh(streamlines.tube(radius=0.001), show_scalar_bar=False)
 plotter.view_xy()
 if off_screen:
     plotter.screenshot(f"vectors_{MPI.COMM_WORLD.rank}.png",
