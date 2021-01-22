@@ -143,8 +143,7 @@ void _lift_bc_cells(
 
   // Data structures used in bc application
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
-  Eigen::Matrix<T, Eigen::Dynamic, 1> be;
+  std::vector<T> Ae, be;
 
   for (std::int32_t c : active_cells)
   {
@@ -180,13 +179,18 @@ void _lift_bc_cells(
     // Size data structure for assembly
     auto dmap0 = dofmap0.links(c);
 
+    const int num_rows = bs0 * dmap0.size();
+    const int num_cols = bs1 * dmap1.size();
+
     auto coeff_array = coeffs.row(c);
-    Ae.setZero(bs0 * dmap0.size(), bs1 * dmap1.size());
+    Ae.resize(num_rows * num_cols);
+    std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Size data structure for assembly
-    be.setZero(bs0 * dmap0.size());
+    be.resize(num_rows);
+    std::fill(be.begin(), be.end(), 0);
     for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
@@ -196,10 +200,10 @@ void _lift_bc_cells(
         if (bc_markers1[jj])
         {
           const T bc = bc_values1[jj];
-          if (!x0.empty())
-            be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
-          else
-            be -= Ae.col(bs1 * j + k) * scale * bc;
+          const T _x0 = x0.empty() ? 0.0 : x0[jj];
+          // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
+          for (int m = 0; m < num_rows; ++m)
+            be[m] -= Ae[m * num_rows + bs1 * j + k] * scale * (bc - _x0);
         }
       }
     }
@@ -357,8 +361,7 @@ void _lift_bc_interior_facets(
       = mesh.geometry().x();
 
   // Data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(2 * num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
   std::vector<T> Ae, be;
@@ -376,6 +379,7 @@ void _lift_bc_interior_facets(
   auto map = topology.index_map(tdim - 1);
   assert(map);
 
+  const int offset_g = gdim * num_dofs_g;
   for (std::int32_t f : active_facets)
   {
     // Create attached cells
@@ -401,8 +405,10 @@ void _lift_bc_interior_facets(
     {
       for (int j = 0; j < gdim; ++j)
       {
-        coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
-        coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+        // coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
+        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
+        // coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
       }
     }
 
@@ -747,8 +753,7 @@ void assemble_interior_facets(
       = mesh.geometry().x();
 
   // Create data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(2 * num_dofs_g, gdim);
+  std::vector<T> coordinate_dofs(2 * num_dofs_g * gdim);
   std::vector<T> be;
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
@@ -758,6 +763,7 @@ void assemble_interior_facets(
   assert(f_to_c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
+  const int offset_g = gdim * num_dofs_g;
   for (const auto& f : active_facets)
   {
     // Get attached cell indices
@@ -781,8 +787,10 @@ void assemble_interior_facets(
     {
       for (int j = 0; j < gdim; ++j)
       {
-        coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
-        coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+        // coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
+        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
+        // coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
       }
     }
 

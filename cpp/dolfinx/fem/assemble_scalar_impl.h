@@ -268,8 +268,7 @@ T assemble_interior_facets(
       = mesh.geometry().x();
 
   // Creat data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(2 * num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
@@ -279,7 +278,8 @@ T assemble_interior_facets(
   assert(c_to_f);
 
   // Iterate over all facets
-  T value(0);
+  T value = 0;
+  const int offset_g = gdim * num_dofs_g;
   for (std::int32_t f : active_facets)
   {
     // Create attached cell
@@ -303,8 +303,10 @@ T assemble_interior_facets(
     {
       for (int j = 0; j < gdim; ++j)
       {
-        coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
-        coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+        // coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
+        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
+        // coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
       }
     }
 

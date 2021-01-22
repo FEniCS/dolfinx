@@ -402,6 +402,7 @@ void assemble_interior_facets(
   assert(c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
+  const int offset_g = gdim * num_dofs_g;
   for (std::int32_t facet_index : active_facets)
   {
     // Create attached cells
@@ -423,7 +424,6 @@ void assemble_interior_facets(
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
     auto x_dofs1 = x_dofmap.links(cells[1]);
-    const int offset_g = gdim * num_dofs_g;
     for (int i = 0; i < num_dofs_g; ++i)
     {
       for (int j = 0; j < gdim; ++j)
