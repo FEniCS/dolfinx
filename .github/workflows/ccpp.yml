@@ -91,8 +91,6 @@ jobs:
       - name: Run demos (Python, MPI (np=2))
         run: python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py
 
-      - name: Install sympy
-        run: python3 -m pip install sympy
       - name: Run Python unit tests (serial)
         run: python3 -m pytest -v -n=auto --durations=50 python/test/unit/
       - name: Run Python unit tests (MPI, np=2)
