@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
+#include <dolfinx/common/span.hpp>
 #include <utility>
 #include <vector>
 
@@ -75,7 +76,7 @@ double compute_squared_distance_bbox(
 /// @param[in] dim The topological dimension of the mesh entity
 /// @param[in] index The index of the mesh entity (local to process)
 /// @param[in] p The point from which to compouted the shortest distance
-///    to the mesh to compute the Point
+/// to the mesh to compute the Point
 /// @return shortest squared distance from p to entity
 double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
                         const Eigen::Vector3d& p);
@@ -90,7 +91,7 @@ double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
 /// @return List of cells which collide with point
 std::vector<std::int32_t>
 select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
-                       const std::vector<std::int32_t>& candidate_cells,
+                       const tcb::span<const std::int32_t>& candidate_cells,
                        const Eigen::Vector3d& point, int n);
 } // namespace geometry
 } // namespace dolfinx
