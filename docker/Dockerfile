@@ -107,7 +107,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     ninja-build \
     pkg-config \
     python3-dev \
-    python3-matplotlib \
     python3-numpy \
     python3-pip \
     python3-scipy \

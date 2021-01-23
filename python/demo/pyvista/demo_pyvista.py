@@ -11,7 +11,7 @@
 
 import dolfinx
 import dolfinx.io
-import dolfinx.plotting
+import dolfinx.plot
 import numpy as np
 import ufl
 from mpi4py import MPI
@@ -78,7 +78,7 @@ u.interpolate(int_u)
 # processor) and create a pyvista UnstructuredGrid
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cell_entities = np.arange(num_cells, dtype=np.int32)
-pyvista_cells, cell_types = dolfinx.plotting.create_pyvista_topology(mesh, mesh.topology.dim, cell_entities)
+pyvista_cells, cell_types = dolfinx.plot.create_pyvista_topology(mesh, mesh.topology.dim, cell_entities)
 grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 
 # Compute the function values at the vertices, this is equivalent to a
@@ -161,7 +161,7 @@ u.interpolate(int_2D)
 # the mesh, and attach values to the vertices
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cells = np.arange(num_cells, dtype=np.int32)
-pyvista_cells, cell_types = dolfinx.plotting.create_pyvista_topology(mesh, mesh.topology.dim, cells)
+pyvista_cells, cell_types = dolfinx.plot.create_pyvista_topology(mesh, mesh.topology.dim, cells)
 grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 point_values = u.compute_point_values()
 if np.iscomplexobj(point_values):
@@ -222,7 +222,7 @@ subplotter.view_xy()
 # We can also visualize subsets of data, by creating a smaller topology,
 # only consisting of thos entities that has value one in the
 # dolfinx.MeshTag
-pyvista_cells, cell_types = dolfinx.plotting.create_pyvista_topology(
+pyvista_cells, cell_types = dolfinx.plot.create_pyvista_topology(
     mesh, mesh.topology.dim, cell_tags.indices[cell_tags.values == 1])
 
 # We add this grid to the second plotter
@@ -261,9 +261,9 @@ problem.solve()
 
 # To get a topology that has a 1-1 correspondence with the degrees of
 # freedom in the function space, we call
-# `dolfinx.plotting.create_pyvista_topology`. We obtain the geometry for
+# `dolfinx.plot.create_pyvista_topology`. We obtain the geometry for
 # the dofs owned on this process by tabulation of the dof coordinates.
-topology, cell_types = dolfinx.plotting.create_pyvista_topology(uh)
+topology, cell_types = dolfinx.plot.create_pyvista_topology(V)
 num_dofs_local = uh.function_space.dofmap.index_map.size_local
 geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
 
@@ -280,7 +280,7 @@ grid.set_active_scalars("DG")
 # we have done previously
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cell_entities = np.arange(num_cells, dtype=np.int32)
-pyvista_cells, cell_types = dolfinx.plotting.create_pyvista_topology(mesh, mesh.topology.dim, cell_entities)
+pyvista_cells, cell_types = dolfinx.plot.create_pyvista_topology(mesh, mesh.topology.dim, cell_entities)
 org_grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 
 
@@ -319,12 +319,12 @@ V = dolfinx.VectorFunctionSpace(mesh, ("CG", 2))
 uh = dolfinx.Function(V)
 uh.interpolate(vel)
 
-# We use the `dolfinx.plotting.create_pyvista_topology`
+# We use the `dolfinx.plot.create_pyvista_topology`
 # function, as in the previous section. However, we input a set of cell
 # entities, which can restrict the plotting to subsets of our mesh
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cell_entities = np.arange(num_cells, dtype=np.int32)
-topology, cell_types = dolfinx.plotting.create_pyvista_topology(uh, cell_entities)
+topology, cell_types = dolfinx.plot.create_pyvista_topology(V, cell_entities)
 
 # As we deal with a vector function space, we need to adjust the values
 # in the underlying one dimensional array in dolfinx.Function, by
@@ -349,7 +349,7 @@ if MPI.COMM_WORLD.size == 0:
                                             pointa=(0.5, 0.0, 0), pointb=(0.5, 1, 0))
 
 # Create pyvista mesh from the mesh
-pyvista_cells, cell_types = dolfinx.plotting.create_pyvista_topology(mesh, mesh.topology.dim, cell_entities)
+pyvista_cells, cell_types = dolfinx.plot.create_pyvista_topology(mesh, mesh.topology.dim, cell_entities)
 grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 
 # Add mesh, glyphs and streamlines to plotter
@@ -391,7 +391,7 @@ uh.interpolate(vel)
 num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
 cell_entities = np.arange(num_cells, dtype=np.int32)
 
-topology, cell_types = dolfinx.plotting.create_pyvista_topology(uh, cell_entities)
+topology, cell_types = dolfinx.plot.create_pyvista_topology(V, cell_entities)
 num_dofs_local = uh.function_space.dofmap.index_map.size_local
 geometry = uh.function_space.tabulate_dof_coordinates()[:num_dofs_local]
 values = np.zeros((V.dofmap.index_map.size_local, 3), dtype=np.float64)
