@@ -56,7 +56,7 @@ def int_u(x):
     return x[0] + 3 * x[1] + 5 * x[2]
 
 
-mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 3, 5, 7, cell_type=dolfinx.cpp.mesh.CellType.hexahedron)
+mesh = dolfinx.UnitCubeMesh(MPI.COMM_WORLD, 4, 3, 5, cell_type=dolfinx.cpp.mesh.CellType.tetrahedron)
 V = dolfinx.FunctionSpace(mesh, ("CG", 1))
 u = dolfinx.Function(V)
 u.interpolate(int_u)
