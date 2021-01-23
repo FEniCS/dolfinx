@@ -161,7 +161,8 @@ void fem(py::module& m)
       .def("space_dimension", &dolfinx::fem::FiniteElement::space_dimension)
       .def("value_dimension", &dolfinx::fem::FiniteElement::value_dimension)
       .def("apply_dof_transformation",
-           [](const dolfinx::fem::FiniteElement& self, py::array_t<double>& x,
+           [](const dolfinx::fem::FiniteElement& self,
+              py::array_t<double, py::array::c_style>& x,
               std::uint32_t cell_permutation, int dim) {
              self.apply_dof_transformation(x.mutable_data(), cell_permutation,
                                            dim);
@@ -556,7 +557,7 @@ void fem(py::module& m)
           [](dolfinx::fem::Function<PetscScalar>& self,
              const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                                  Eigen::RowMajor>>& x,
-             py::array_t<std::int32_t> cells,
+             const py::array_t<std::int32_t, py::array::c_style>& cells,
              Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                      Eigen::Dynamic, Eigen::RowMajor>>
                  u) { self.eval(x, tcb::span(cells.data(), cells.size()), u); },

@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
+#include <dolfinx/common/span.hpp>
 #include <utility>
 #include <vector>
 
@@ -49,7 +50,7 @@ compute_closest_entity(const BoundingBoxTree& tree,
 
 /// Compute closest point and distance to a given point
 /// @param[in] tree The bounding box tree. It must have been initialised
-///   with topological dimension 0.
+/// with topological dimension 0.
 /// @param[in] p The point to compute the distance from
 /// @return (point index, distance)
 std::pair<int, double> compute_closest_point(const BoundingBoxTree& tree,
@@ -72,21 +73,22 @@ double compute_squared_distance_bbox(
 /// @param[in] dim The topological dimension of the mesh entity
 /// @param[in] index The index of the mesh entity
 /// @param[in] p The point from which to compouted the shortest distance
-///    to the mesh to compute the Point
+/// to the mesh to compute the Point
 /// @return shortest squared distance from p to entity
 double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
                         const Eigen::Vector3d& p);
 
-/// From the given Mesh, select up to n cells from the list which actually
-/// collide with point p. n may be zero (selects all valid cells). Less than n
-/// cells may be returned.
+/// From the given Mesh, select up to n cells from the list which
+/// actually collide with point p. n may be zero (selects all valid
+/// cells). Less than n cells may be returned.
 /// @param[in] mesh Mesh
 /// @param[in] candidate_cells List of cell indices to test
 /// @param[in] point Point to check for collision
 /// @param[in] n Maximum number of positive results to return
 /// @return List of cells which collide with point
-std::vector<int> select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
-                                        const std::vector<int>& candidate_cells,
-                                        const Eigen::Vector3d& point, int n);
+std::vector<std::int32_t>
+select_colliding_cells(const mesh::Mesh& mesh,
+                       const tcb::span<const std::int32_t>& candidate_cells,
+                       const Eigen::Vector3d& point, int n);
 } // namespace geometry
 } // namespace dolfinx
