@@ -30,32 +30,32 @@ _perm_dq = {cpp.mesh.CellType.quadrilateral: {1: [0, 1, 3, 2], 2: [0, 2, 8, 6, 1
 # NOTE: These dictionaries and following function should be replaced by
 # cpp.io.get_vtk_cell_type when plotting module has better support for
 # arbitrary lagrangian elements
-_first_order_vtk = {cpp.mesh.CellType.interval: 3,
-                    cpp.mesh.CellType.triangle: 5,
-                    cpp.mesh.CellType.quadrilateral: 9,
-                    cpp.mesh.CellType.tetrahedron: 10,
-                    cpp.mesh.CellType.hexahedron: 12}
-_cell_degree_triangle = {3: 1, 6: 2, 10: 3, 15: 4, 21: 5, 28: 6, 36: 7, 45: 8, 55: 9}
-_cell_degree_tetrahedron = {4: 1, 10: 2, 20: 3}
-_cell_degree_hexahedron = {8: 1, 27: 2}
+# _first_order_vtk = {cpp.mesh.CellType.interval: 3,
+#                     cpp.mesh.CellType.triangle: 5,
+#                     cpp.mesh.CellType.quadrilateral: 9,
+#                     cpp.mesh.CellType.tetrahedron: 10,
+#                     cpp.mesh.CellType.hexahedron: 12}
+# _cell_degree_triangle = {3: 1, 6: 2, 10: 3, 15: 4, 21: 5, 28: 6, 36: 7, 45: 8, 55: 9}
+# _cell_degree_tetrahedron = {4: 1, 10: 2, 20: 3}
+# _cell_degree_hexahedron = {8: 1, 27: 2}
 
 
-def _element_degree(cell_type: cpp.mesh.CellType, num_nodes: int):
-    """
-    Determine the degree of a cell by the number of nodes
-    """
-    if cell_type == cpp.mesh.CellType.triangle:
-        return _cell_degree_triangle[num_nodes]
-    elif cell_type == cpp.mesh.CellType.point:
-        return 1
-    elif cell_type == cpp.mesh.CellType.interval:
-        return num_nodes - 1
-    elif cell_type == cpp.mesh.CellType.tetrahedron:
-        return _cell_degree_tetrahedron[num_nodes]
-    elif cell_type == cpp.mesh.CellType.quadrilateral:
-        return int(np.sqrt(num_nodes) - 1)
-    elif cell_type == cpp.mesh.CellType.hexahedron:
-        return _cell_degree_hexahedron[num_nodes]
+# def _element_degree(cell_type: cpp.mesh.CellType, num_nodes: int):
+#     """
+#     Determine the degree of a cell by the number of nodes
+#     """
+#     if cell_type == cpp.mesh.CellType.triangle:
+#         return _cell_degree_triangle[num_nodes]
+#     elif cell_type == cpp.mesh.CellType.point:
+#         return 1
+#     elif cell_type == cpp.mesh.CellType.interval:
+#         return num_nodes - 1
+#     elif cell_type == cpp.mesh.CellType.tetrahedron:
+#         return _cell_degree_tetrahedron[num_nodes]
+#     elif cell_type == cpp.mesh.CellType.quadrilateral:
+#         return int(np.sqrt(num_nodes) - 1)
+#     elif cell_type == cpp.mesh.CellType.hexahedron:
+#         return _cell_degree_hexahedron[num_nodes]
 
 
 @functools.singledispatch
@@ -77,12 +77,12 @@ def create_vtk_topology(mesh: cpp.mesh.Mesh, dim: int, entities=None):
 
     # Array holding the cell type (shape) for each cell
     e_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim)
-    degree = _element_degree(e_type, geometry_entities.shape[1])
-    if degree == 1:
-        cell_types = np.full(num_cells, _first_order_vtk[e_type])
-    else:
-        warnings.warn("Plotting of higher order mesh topologies is experimental.")
-        cell_types = np.full(num_cells, cpp.io.get_vtk_cell_type(mesh, dim))
+    # degree = _element_degree(e_type, geometry_entities.shape[1])
+    # if degree == 1:
+    #     cell_types = np.full(num_cells, _first_order_vtk[e_type])
+    # else:
+    warnings.warn("Plotting of higher order mesh topologies is experimental.")
+    cell_types = np.full(num_cells, cpp.io.get_vtk_cell_type(mesh, dim))
 
     # Get cell data and the DOLFINX -> VTK permutation array
     num_vertices_per_cell = geometry_entities.shape[1]
@@ -126,11 +126,11 @@ def _(V: fem.FunctionSpace, entities=None):
     else:
         perm = np.argsort(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
 
-    if degree == 1:
-        cell_types = np.full(num_cells, _first_order_vtk[mesh.topology.cell_type])
-    else:
-        warnings.warn("Plotting of higher order functions is experimental.")
-        cell_types = np.full(num_cells, cpp.io.get_vtk_cell_type(mesh, mesh.topology.dim))
+    # if degree == 1:
+    #     cell_types = np.full(num_cells, _first_order_vtk[mesh.topology.cell_type])
+    # else:
+    warnings.warn("Plotting of higher order functions is experimental.")
+    cell_types = np.full(num_cells, cpp.io.get_vtk_cell_type(mesh, mesh.topology.dim))
 
     topology = np.zeros((num_cells, num_dofs_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_dofs_per_cell
