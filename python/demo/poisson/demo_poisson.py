@@ -74,11 +74,10 @@
 # First, the :py:mod:`dolfinx` module is imported: ::
 
 import dolfinx
-import dolfinx.plotting
-import matplotlib.pyplot as plt
 import numpy as np
 import ufl
-from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh, fem, plotting
+from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh, fem,
+                     plot)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
@@ -205,7 +204,7 @@ uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWA
 try:
     import pyvista
 
-    topology, cell_types = plotting.create_pyvista_topology(mesh, mesh.topology.dim)
+    topology, cell_types = plot.create_pyvista_topology(mesh, mesh.topology.dim)
     grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
     grid.point_arrays["u"] = uh.compute_point_values()
     grid.set_active_scalars("u")
