@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "array.h"
 #include "caster_mpi.h"
 #include <Eigen/Core>
 #include <dolfinx/geometry/BoundingBoxTree.h>
@@ -55,7 +56,14 @@ void geometry(py::module& m)
 
   m.def("compute_distance_gjk", &dolfinx::geometry::compute_distance_gjk);
   m.def("squared_distance", &dolfinx::geometry::squared_distance);
-  m.def("select_colliding_cells", &dolfinx::geometry::select_colliding_cells);
+  m.def("select_colliding_cells",
+        [](const dolfinx::mesh::Mesh& mesh,
+           const py::array_t<std::int32_t, py::array::c_style>& candidate_cells,
+           const Eigen::Vector3d& point, int n) {
+          return as_pyarray(dolfinx::geometry::select_colliding_cells(
+              mesh, tcb::span(candidate_cells.data(), candidate_cells.size()),
+              point, n));
+        });
 
   // dolfinx::geometry::BoundingBoxTree
   py::class_<dolfinx::geometry::BoundingBoxTree,
