@@ -70,9 +70,9 @@ build-documentation-python: &build-documentation-python
 build-pyvista-python: &build-pyvista-python
   name: Install pyvista requirements
   command: |
-    pip3 install pyvista vtk
+    pip3 install pyvista
     apt-get update
-    apt-get install -y  libgl1-mesa-dev xvfb
+    apt-get install -y libgl1-mesa-dev xvfb
 
 
 demos-python: &demos-python
