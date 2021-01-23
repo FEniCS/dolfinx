@@ -203,7 +203,7 @@ with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
 uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 try:
     import pyvista
-s
+
     topology, cell_types = plot.create_pyvista_topology(mesh, mesh.topology.dim)
     grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
     grid.point_arrays["u"] = uh.compute_point_values().real
