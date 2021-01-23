@@ -73,6 +73,7 @@ build-pyvista-python: &build-pyvista-python
     pip3 install pyvista
     apt-get update
     apt-get install -y libgl1-mesa-dev xvfb
+    Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
 demos-python: &demos-python
   name: Run demos (Python, serial)
@@ -116,6 +117,11 @@ jobs:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-real-32"
+      # For pyvista
+      DISPLAY: ':99.0'
+      PYVISTA_OFF_SCREEN: 'True'
+      ALLOW_PLOTTING: true
+      SHELLOPTS: 'errexit:pipefail'
     steps:
       - checkout
       - run: *install-python-components
@@ -154,6 +160,11 @@ jobs:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-complex-32"
+      # For pyvista
+      DISPLAY: ':99.0'
+      PYVISTA_OFF_SCREEN: 'True'
+      ALLOW_PLOTTING: true
+      SHELLOPTS: 'errexit:pipefail'
     steps:
       - checkout
       - run: *install-python-components
