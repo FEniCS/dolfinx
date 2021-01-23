@@ -456,6 +456,17 @@ _perm_dq = {cpp.mesh.CellType.quadrilateral: {1: [0, 1, 3, 2], 2: [0, 2, 8, 6, 1
 # https://github.com/pyvista/pyvista/issues/947
 
 
+def _transpose(map):
+    """
+    Transpose of the map. E.g., is `map = [1, 2, 3, 0]`, the
+    transpose will be `[3 , 0, 1, 2 ]`.
+    """
+    transpose = np.zeros(len(map), dtype=np.int32)
+    for i in range(len(map)):
+        transpose[map[i]] = i
+    return transpose
+
+
 def pyvista_topology_from_mesh(mesh, dim, entities=None):
     """
     Create a pyvista mesh based on a set of entities of a given dimension in a mesh
@@ -469,7 +480,7 @@ def pyvista_topology_from_mesh(mesh, dim, entities=None):
     cell_types = np.full(num_cells, cpp.io.get_vtk_cell_type(mesh, dim))
     num_nodes = geometry_entities.shape[1]
     e_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim)
-    map_vtk = cpp.io.transpose_map(cpp.io.perm_vtk(e_type, num_nodes))
+    map_vtk = _transpose(cpp.io.perm_vtk(e_type, num_nodes))
     topology = np.zeros((num_cells, num_nodes + 1), dtype=np.int32)
     topology[:, 0] = num_nodes
     topology[:, 1:] = geometry_entities[:, map_vtk]
@@ -502,7 +513,7 @@ def pyvista_topology_from_function_space(u, entities=None):
     elif family == "DQ":
         perm = np.array(_perm_dq[cell_type][V.ufl_element().degree()], dtype=np.int32)
     elif family in ["Lagrange", "Q"]:
-        perm = cpp.io.transpose_map(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
+        perm = _transpose(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
     else:
         raise NotImplementedError("Can only create pyvista mesh topology from a Lagrange/Q space or DG/DG space.")
 
