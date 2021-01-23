@@ -49,9 +49,6 @@ jobs:
 
       - name: Install pyvista requirements
         run: |
-          pip3 install pyvista
-          apt-get update
-          apt-get install -y libgl1-mesa-dev xvfb
 
       - name: Flake8 checks
         run: |
@@ -98,10 +95,11 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
 
-      - name: Setup headless display for pyvista
+      - name: Install pyvista and setup headless display
         run: |
-          # sudo apt-get install python-qt4 libgl1-mesa-glx
-          # sudo apt-get install -y xvfb
+          pip3 install pyvista
+          apt-get update
+          apt-get install -y libgl1-mesa-dev xvfb
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
       - name: Run demos (Python, serial)

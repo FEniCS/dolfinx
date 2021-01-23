@@ -74,7 +74,6 @@ build-pyvista-python: &build-pyvista-python
     apt-get update
     apt-get install -y libgl1-mesa-dev xvfb
 
-
 demos-python: &demos-python
   name: Run demos (Python, serial)
   command: |
