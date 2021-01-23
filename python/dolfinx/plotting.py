@@ -467,9 +467,10 @@ def _transpose(map):
     return transpose
 
 
-def pyvista_topology_from_mesh(mesh, dim, entities=None):
+def pyvista_topology_from_mesh(mesh: cpp.mesh.Mesh, dim: int, entities=None):
     """
-    Create a pyvista mesh based on a set of entities of a given dimension in a mesh
+    Create a pyvista mesh topology (topology array and array of cell types)
+    based on a set of entities of a given dimension in a mesh.
     """
     if entities is None:
         num_cells = mesh.topology.index_map(dim).size_local
@@ -487,16 +488,18 @@ def pyvista_topology_from_mesh(mesh, dim, entities=None):
     return topology.reshape(1, -1)[0], cell_types
 
 
-def pyvista_topology_from_function_space(u, entities=None):
+def pyvista_topology_from_function_space(u: fem.Function, entities=None):
     """
-    Given a dolfinx.Function, return the mesh geometry, topology and celltypes
-    for usage with pyvista visualization.
-    NOTE: Only works for CG and DG spaces
+    Creates a pyvista mesh topology (topology array and array of cell types)
+    that is based on degree of freedom coordinate.
+    Note that this function supports Lagrange elements (continuous and discontinuous) only.
     """
     V = u.function_space
     family = V.ufl_element().family()
     if not (family in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q"]):
-        raise RuntimeError("Can only create meshes from CG or DG function-spaces")
+        raise RuntimeError("Can only create meshes from Continuous or Discontinuous function-spaces")
+    if V.ufl_element().degree() == 0:
+        raise RuntimeError("Cannot create topology from cellwise constants.")
 
     mesh = u.function_space.mesh
     if entities is None:
@@ -512,10 +515,8 @@ def pyvista_topology_from_function_space(u, entities=None):
         perm = np.array(_perm_dg[cell_type][V.ufl_element().degree()], dtype=np.int32)
     elif family == "DQ":
         perm = np.array(_perm_dq[cell_type][V.ufl_element().degree()], dtype=np.int32)
-    elif family in ["Lagrange", "Q"]:
-        perm = _transpose(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
     else:
-        raise NotImplementedError("Can only create pyvista mesh topology from a Lagrange/Q space or DG/DG space.")
+        perm = _transpose(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
 
     cell_types = np.full(num_cells, cpp.io.get_vtk_cell_type(mesh, mesh.topology.dim))
     topology = np.zeros((num_cells, num_dofs_per_cell + 1), dtype=np.int32)
