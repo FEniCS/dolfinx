@@ -458,7 +458,8 @@ void fem(py::module& m)
       "locate_dofs_topological",
       [](const std::vector<
              std::reference_wrapper<const dolfinx::fem::FunctionSpace>>& V,
-         const int dim, const py::array_t<std::int32_t>& entities,
+         const int dim,
+         const py::array_t<std::int32_t, py::array::c_style>& entities,
          bool remote) -> std::array<py::array, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
@@ -473,7 +474,8 @@ void fem(py::module& m)
   m.def(
       "locate_dofs_topological",
       [](const dolfinx::fem::FunctionSpace& V, const int dim,
-         const py::array_t<std::int32_t>& entities, bool remote) {
+         const py::array_t<std::int32_t, py::array::c_style>& entities,
+         bool remote) {
         return as_pyarray(dolfinx::fem::locate_dofs_topological(
             V, dim, tcb::span(entities.data(), entities.size()), remote));
       },
