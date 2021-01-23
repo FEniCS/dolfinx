@@ -27,20 +27,9 @@ _perm_dq = {cpp.mesh.CellType.quadrilateral: {1: [0, 1, 3, 2], 2: [0, 2, 8, 6, 1
 # https://github.com/pyvista/pyvista/issues/947
 
 
-def _transpose(map):
-    """Transpose of the map. E.g., is `map = [1, 2, 3, 0]`, the
-    transpose will be `[3 , 0, 1, 2 ]`.
-
-    """
-    transpose = np.zeros(len(map), dtype=np.int32)
-    for i in range(len(map)):
-        transpose[map[i]] = i
-    return transpose
-
-
 @functools.singledispatch
-def create_pyvista_topology(mesh: cpp.mesh.Mesh, dim: int, entities=None):
-    """Create pyvista mesh topology data for mesh entities of a given
+def create_vtk_topology(mesh: cpp.mesh.Mesh, dim: int, entities=None):
+    """Create vtk mesh topology data for mesh entities of a given
     dimension. The vertex indices in the returned topology array are the
     indices for the associated entry in the mesh geometry.
 
@@ -61,7 +50,7 @@ def create_pyvista_topology(mesh: cpp.mesh.Mesh, dim: int, entities=None):
     # Get cell data and the DOLFINX -> VTK permutation array
     num_vertices_per_cell = geometry_entities.shape[1]
     e_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim)
-    map_vtk = _transpose(cpp.io.perm_vtk(e_type, num_vertices_per_cell))
+    map_vtk = np.argsort(cpp.io.perm_vtk(e_type, num_vertices_per_cell))
 
     # Create mesh topology
     topology = np.zeros((num_cells, num_vertices_per_cell + 1), dtype=np.int32)
@@ -70,9 +59,9 @@ def create_pyvista_topology(mesh: cpp.mesh.Mesh, dim: int, entities=None):
     return topology.reshape(1, -1)[0], cell_types
 
 
-@create_pyvista_topology.register(fem.FunctionSpace)
+@create_vtk_topology.register(fem.FunctionSpace)
 def _(V: fem.FunctionSpace, entities=None):
-    """Creates a pyvista mesh topology (topology array and array of cell
+    """Creates a vtk mesh topology (topology array and array of cell
     types) that is based on degree of freedom coordinate. Note that this
     function supports Lagrange elements (continuous and discontinuous)
     only.
@@ -99,7 +88,7 @@ def _(V: fem.FunctionSpace, entities=None):
     elif family == "DQ":
         perm = np.array(_perm_dq[cell_type][V.ufl_element().degree()], dtype=np.int32)
     else:
-        perm = _transpose(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
+        perm = np.argsort(cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
 
     cell_types = np.full(num_cells, cpp.io.get_vtk_cell_type(mesh, mesh.topology.dim))
     topology = np.zeros((num_cells, num_dofs_per_cell + 1), dtype=np.int32)

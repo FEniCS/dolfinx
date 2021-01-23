@@ -204,7 +204,7 @@ uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWA
 try:
     import pyvista
 
-    topology, cell_types = plot.create_pyvista_topology(mesh, mesh.topology.dim)
+    topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
     grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
     grid.point_arrays["u"] = uh.compute_point_values().real
     grid.set_active_scalars("u")
