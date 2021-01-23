@@ -35,8 +35,8 @@ public:
   /// @param[in] mesh The mesh for building the bounding box tree
   /// @param[in] tdim The topological dimension of the mesh entities to
   ///                 build the bounding box tree for
-  /// @param[in] entity_indices List of entity indices to compute the bounding
-  /// box for (may be empty, if none).
+  /// @param[in] entity_indices List of entity indices (local to process) to
+  /// compute the bounding box for (may be empty, if none).
   /// @param[in] padding A float perscribing how much the bounding box of
   /// each entity should be padded
   BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
@@ -105,7 +105,7 @@ public:
   /// Remap entity indices for bounding box trees that does not span a whole
   /// mesh. Each leaf node should contain the actual entity index, not a
   /// reference to the index of the entity_indices list.
-  /// @param[in] entity_indices The list of entities used to build the bounding
+  /// @param[in] entity_indices The list of entities (local to process) used to build the bounding
   /// box tree. They should be in the same order as the input to the bounding
   /// box tree constructor.
   void remap_entity_indices(const std::vector<std::int32_t>& entity_indices);

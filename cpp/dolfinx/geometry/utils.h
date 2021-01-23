@@ -21,8 +21,8 @@ namespace geometry
 {
 class BoundingBoxTree;
 
-/// Create a bounding box tree for a subset of entities based on the entity
-/// midpoints
+/// Create a bounding box tree for a subset of entities (local to process) based
+/// on the entity midpoints
 /// @param[in] mesh The mesh
 /// @param[in] tdim The topological dimension of the entity
 /// @param[in] entity_indices List of local entity indices
@@ -31,22 +31,23 @@ BoundingBoxTree
 create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
                      const std::vector<std::int32_t>& entity_indices);
 
-/// Compute all collisions between two BoundingBoxTrees.
+/// Compute all collisions between two BoundingBoxTrees (local to process).
 /// @param[in] tree0 First BoundingBoxTree
 /// @param[in] tree1 Second BoundingBoxTree
-/// @return List of pairs of intersecting box indices from each tree
+/// @return List of pairs of intersecting box indices (local to process) from
+/// each tree
 std::vector<std::array<int, 2>>
 compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 
 /// Compute all collisions between bounding boxes and point
 /// @param[in] tree The bounding box tree
 /// @param[in] p The point
-/// @return Bounding box leaves that contain the point
+/// @return Bounding box leaves (local to process) that contain the point
 std::vector<int> compute_collisions(const BoundingBoxTree& tree,
                                     const Eigen::Vector3d& p);
 
-/// Compute closest mesh entity for the topological distance of the
-/// bounding box tree and distance and a point
+/// Compute closest mesh entity (local to process) for the topological distance
+/// of the bounding box tree and distance and a point
 /// @param[in] tree The bounding box tree
 /// @param[in] p The point
 /// @param[in] mesh The mesh
@@ -73,14 +74,14 @@ double compute_squared_distance_bbox(
 ///
 /// @param[in] mesh Mesh containing the mesh entity
 /// @param[in] dim The topological dimension of the mesh entity
-/// @param[in] index The index of the mesh entity
+/// @param[in] index The index of the mesh entity (local to process)
 /// @param[in] p The point from which to compouted the shortest distance
 ///    to the mesh to compute the Point
 /// @return shortest squared distance from p to entity
 double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
                         const Eigen::Vector3d& p);
 
-/// From the given Mesh, select up to n cells from the list which actually
+/// From the given Mesh, select up to n cells (local to process) from the list which actually
 /// collide with point p. n may be zero (selects all valid cells). Less than n
 /// cells may be returned.
 /// @param[in] mesh Mesh
