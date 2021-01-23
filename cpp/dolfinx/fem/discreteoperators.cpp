@@ -12,13 +12,14 @@
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <petscmat.h>
 #include <vector>
 
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
-                                             const fem::FunctionSpace& V1)
+Mat fem::create_discrete_gradient(const fem::FunctionSpace& V0,
+                                  const fem::FunctionSpace& V1)
 {
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = V0.mesh();
@@ -147,8 +148,7 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
   pattern.assemble();
 
   // Create matrix
-  la::PETScMatrix A(mesh->mpi_comm(), pattern);
-  Mat _A = A.mat();
+  Mat A = la::create_petsc_matrix(mesh->mpi_comm(), pattern);
 
   // Build discrete gradient operator/matrix
   const std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
@@ -204,11 +204,12 @@ la::PETScMatrix fem::build_discrete_gradient(const fem::FunctionSpace& V0,
       Ae[1] = 1;
     }
 
-    MatSetValuesLocal(_A, 1, &row, 2, cols.data(), Ae.data(), INSERT_VALUES);
+    MatSetValuesLocal(A, 1, &row, 2, cols.data(), Ae.data(), INSERT_VALUES);
   }
 
   // Finalise matrix
-  A.apply(la::PETScMatrix::AssemblyType::FINAL);
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
   return A;
 }

@@ -371,17 +371,8 @@ void fem(py::module& m)
   m.def("bcs_rows", &dolfinx::fem::bcs_rows<PetscScalar>);
   m.def("bcs_cols", &dolfinx::fem::bcs_cols<PetscScalar>);
 
-  m.def(
-      "build_discrete_gradient",
-      [](const dolfinx::fem::FunctionSpace& V0,
-         const dolfinx::fem::FunctionSpace& V1) {
-        dolfinx::la::PETScMatrix A
-            = dolfinx::fem::build_discrete_gradient(V0, V1);
-        Mat _A = A.mat();
-        PetscObjectReference((PetscObject)_A);
-        return _A;
-      },
-      py::return_value_policy::take_ownership);
+  m.def("create_discrete_gradient", &dolfinx::fem::create_discrete_gradient,
+        py::return_value_policy::take_ownership);
 
   py::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell)

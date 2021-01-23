@@ -6,17 +6,9 @@
 
 #pragma once
 
-#include <memory>
+#include <petscmat.h>
 
-namespace dolfinx
-{
-
-namespace la
-{
-class PETScMatrix;
-}
-
-namespace fem
+namespace dolfinx::fem
 {
 class FunctionSpace;
 
@@ -27,9 +19,8 @@ class FunctionSpace;
 /// required is the creation of algebraic multigrid solvers for H(curl)
 /// and H(div) problems.
 ///
-/// @warning This function is highly experimental and likely to change.
-/// It will eventually be expanded to provide the discrete curl and
-/// divergence.
+/// @warning This function is highly experimental and likely to change
+/// or be replaced or be removed
 ///
 /// Build the discrete gradient operator A that takes a
 /// \f$w \in H^1\f$ (P1, nodal Lagrange) to \f$v \in H(curl)\f$
@@ -38,8 +29,8 @@ class FunctionSpace;
 ///
 /// @param[in] V0 A H(curl) space
 /// @param[in] V1 A P1 Lagrange space
-/// @return The discrete operator matrix
-la::PETScMatrix build_discrete_gradient(const fem::FunctionSpace& V0,
-                                        const fem::FunctionSpace& V1);
-} // namespace fem
-} // namespace dolfinx
+/// @return The discrete operator matrix. The caller is responsible for
+/// destroying the  Mat.
+Mat create_discrete_gradient(const fem::FunctionSpace& V0,
+                             const fem::FunctionSpace& V1);
+} // namespace dolfinx::fem
