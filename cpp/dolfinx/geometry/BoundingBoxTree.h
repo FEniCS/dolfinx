@@ -105,9 +105,9 @@ public:
   /// Remap entity indices for bounding box trees that does not span a whole
   /// mesh. Each leaf node should contain the actual entity index, not a
   /// reference to the index of the entity_indices list.
-  /// @param[in] entity_indices The list of entities (local to process) used to build the bounding
-  /// box tree. They should be in the same order as the input to the bounding
-  /// box tree constructor.
+  /// @param[in] entity_indices The list of entities (local to process) used to
+  /// build the bounding box tree. They should be in the same order as the input
+  /// to the bounding box tree constructor.
   void remap_entity_indices(const std::vector<std::int32_t>& entity_indices);
 
 private:

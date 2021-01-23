@@ -54,10 +54,9 @@ std::vector<int> compute_collisions(const BoundingBoxTree& tree,
 /// @param[in] R Radius for search. Supplying a negative radius causes the
 /// function to estimate an intial search radius.
 /// @return The local index of the entity and the distance from the point.
-std::pair<int, double> compute_closest_entity(const BoundingBoxTree& tree,
-                                              const Eigen::Vector3d& p,
-                                              const mesh::Mesh& mesh,
-                                              double R = -1);
+std::pair<std::int32_t, double>
+compute_closest_entity(const BoundingBoxTree& tree, const Eigen::Vector3d& p,
+                       const mesh::Mesh& mesh, double R = -1);
 
 /// Compute squared distance between point and bounding box wih index
 /// "node". Returns zero if point is inside box.
@@ -81,16 +80,17 @@ double compute_squared_distance_bbox(
 double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
                         const Eigen::Vector3d& p);
 
-/// From the given Mesh, select up to n cells (local to process) from the list which actually
-/// collide with point p. n may be zero (selects all valid cells). Less than n
-/// cells may be returned.
+/// From the given Mesh, select up to n cells (local to process) from the list
+/// which actually collide with point p. n may be zero (selects all valid
+/// cells). Less than n cells may be returned.
 /// @param[in] mesh Mesh
 /// @param[in] candidate_cells List of cell indices to test
 /// @param[in] point Point to check for collision
 /// @param[in] n Maximum number of positive results to return
 /// @return List of cells which collide with point
-std::vector<int> select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
-                                        const std::vector<int>& candidate_cells,
-                                        const Eigen::Vector3d& point, int n);
+std::vector<std::int32_t>
+select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
+                       const std::vector<std::int32_t>& candidate_cells,
+                       const Eigen::Vector3d& point, int n);
 } // namespace geometry
 } // namespace dolfinx
