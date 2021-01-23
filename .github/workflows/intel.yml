@@ -54,7 +54,7 @@ jobs:
         run: |
           pip3 install pyvista vtk
           apt-get update
-          apt-get install -y  libgl1-mesa-dev xvfb
+          apt-get install -y libgl1-mesa-dev xvfb
 
       - name: Configure C++
         run: |

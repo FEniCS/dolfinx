@@ -118,7 +118,10 @@ compute_permutation(
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::uint8_t>& p);
 
-/// Convert dolfin cell of dimension cell_dim to vtk cell type
-std::int8_t get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh, int cell_dim);
+/// Get VTK cell identifier
+/// @param[in] mesh The Mesh
+/// @param[in] dim The topological dimension of the cell
+/// @return The VTK cell identifier
+std::int8_t get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh, int dim);
 
 } // namespace dolfinx::io::cells

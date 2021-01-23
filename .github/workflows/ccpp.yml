@@ -18,6 +18,7 @@ jobs:
       CC: clang-10
       CXX: clang++-10
       MPLBACKEND: agg
+      PYVISTA_OFF_SCREEN: True
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1

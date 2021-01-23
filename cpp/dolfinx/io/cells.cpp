@@ -366,14 +366,12 @@ io::cells::compute_permutation(
   return cells_new;
 }
 //-----------------------------------------------------------------------------
-// Get VTK cell type
 std::int8_t io::cells::get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh,
-                                         int cell_dim)
+                                         int dim)
 {
-
   // Get cell type
   mesh::CellType cell_type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
+      = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
 
   // Determine VTK cell type (Using arbitrary Lagrange elements)
   // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
