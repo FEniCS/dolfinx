@@ -15,6 +15,9 @@ namespace py = pybind11;
 namespace dolfinx_wrappers
 {
 
+/// Create a py::array_t that shares data with a std::vector. The
+/// std::vector owns the data, and the py::array_t object keeps the std::vector
+/// alive.
 // From https://github.com/pybind/pybind11/issues/1042
 template <typename Sequence>
 inline py::array_t<typename Sequence::value_type> as_pyarray(Sequence&& seq)
