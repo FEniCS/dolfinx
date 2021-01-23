@@ -68,11 +68,12 @@ build-documentation-python: &build-documentation-python
     cd ../doc && make html
 
 build-pyvista-python: &build-pyvista-python
-  name: Install pyvista requirements
+  name: Install pyvista and setup headless display
   command: |
     pip3 install pyvista
     apt-get update
     apt-get install -y libgl1-mesa-dev xvfb
+    Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
 demos-python: &demos-python
   name: Run demos (Python, serial)
