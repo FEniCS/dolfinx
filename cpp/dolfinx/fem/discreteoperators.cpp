@@ -104,10 +104,9 @@ Mat fem::create_discrete_gradient(const fem::FunctionSpace& V0,
   for (std::int32_t i = 0; i < num_vertices_per_cell; ++i)
     local_vertex_dofs[i] = layout1->entity_dofs(0, i);
 
+  std::array<std::int32_t, 2> cols;
   for (std::int32_t e = 0; e < num_edges; ++e)
   {
-    std::vector<std::int32_t> rows;
-    std::vector<std::int32_t> cols;
 
     // Find local index of edge in one of the cells it is part of
     tcb::span<const std::int32_t> cells = e_to_c->links(e);
@@ -122,7 +121,7 @@ Mat fem::create_discrete_gradient(const fem::FunctionSpace& V0,
     tcb::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
     std::vector<std::int32_t>& local_dofs = local_edge_dofs[local_edge];
     assert(local_dofs.size() == 1);
-    rows.push_back(dofs0[local_dofs[0]]);
+    const std::int32_t row = dofs0[local_dofs[0]];
     tcb::span<const std::int32_t> vertices = e_to_v->links(e);
     assert(vertices.size() == 2);
     auto cell_vertices = c_to_v->links(cell);
@@ -139,11 +138,10 @@ Mat fem::create_discrete_gradient(const fem::FunctionSpace& V0,
       std::vector<std::int32_t>& local_v_dofs = local_vertex_dofs[local_vertex];
 
       assert(local_v_dofs.size() == 1);
-      cols.push_back(dofs1[local_v_dofs[0]]);
+      cols[i] = dofs1[local_v_dofs[0]];
     }
-    tcb::span<int32_t> row_span = tcb::make_span(rows);
-    tcb::span<int32_t> col_span = tcb::make_span(cols);
-    pattern.insert(row_span, col_span);
+
+    pattern.insert(tcb::span(&row, 1), tcb::make_span(cols));
   }
   pattern.assemble();
 
