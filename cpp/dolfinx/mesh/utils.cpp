@@ -422,12 +422,15 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
       for (auto j : xc)
         midpoint += geometry.node(j);
       midpoint /= xc.size();
-      // Compute vector triple product of two edges and vector to midpoint
+
+      // Compute vector triple product of two edges and vector to
+      // midpoint
       Eigen::Vector3d p0 = geometry.node(entity_geometry(i, 0));
       Eigen::Matrix3d a;
       a.row(0) = midpoint - p0;
       a.row(1) = geometry.node(entity_geometry(i, 1)) - p0;
       a.row(2) = geometry.node(entity_geometry(i, 2)) - p0;
+
       // Midpoint direction should be opposite to normal, hence this
       // should be negative. Switch points if not.
       if (a.determinant() > 0.0)

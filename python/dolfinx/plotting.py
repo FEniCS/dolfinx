@@ -5,8 +5,10 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Simple matplotlib plotting functions"""
 
+import functools
 import os
 import warnings
+
 import numpy as np
 import ufl
 
@@ -457,9 +459,9 @@ _perm_dq = {cpp.mesh.CellType.quadrilateral: {1: [0, 1, 3, 2], 2: [0, 2, 8, 6, 1
 
 
 def _transpose(map):
-    """
-    Transpose of the map. E.g., is `map = [1, 2, 3, 0]`, the
+    """Transpose of the map. E.g., is `map = [1, 2, 3, 0]`, the
     transpose will be `[3 , 0, 1, 2 ]`.
+
     """
     transpose = np.zeros(len(map), dtype=np.int32)
     for i in range(len(map)):
@@ -467,28 +469,40 @@ def _transpose(map):
     return transpose
 
 
-def pyvista_topology_from_mesh(mesh: cpp.mesh.Mesh, dim: int, entities=None):
-    """
-    Create a pyvista mesh topology (topology array and array of cell types)
-    based on a set of entities of a given dimension in a mesh.
+@functools.singledispatch
+def create_pyvista_topology(mesh: cpp.mesh.Mesh, dim: int, entities=None):
+    """Create pyvista mesh topology data for mesh entities of a given
+    dimension. The vertex indices in the returned topology array are the
+    indices for the associated entry in the mesh geometry.
+
     """
     if entities is None:
         num_cells = mesh.topology.index_map(dim).size_local
         entities = np.arange(num_cells, dtype=np.int32)
     else:
         num_cells = len(entities)
+
+    # Get the indices in the geometry array that correspong to the
+    # topology vertices
     geometry_entities = cpp.mesh.entities_to_geometry(mesh, dim, entities, False)
+
+    # Array holding the cell type (shape) for each cell
     cell_types = np.full(num_cells, cpp.io.get_vtk_cell_type(mesh, dim))
-    num_nodes = geometry_entities.shape[1]
+
+    # Get cell data and the DOLFINX -> VTK permutation array
+    num_vertices_per_cell = geometry_entities.shape[1]
     e_type = cpp.mesh.cell_entity_type(mesh.topology.cell_type, dim)
-    map_vtk = _transpose(cpp.io.perm_vtk(e_type, num_nodes))
-    topology = np.zeros((num_cells, num_nodes + 1), dtype=np.int32)
-    topology[:, 0] = num_nodes
+    map_vtk = _transpose(cpp.io.perm_vtk(e_type, num_vertices_per_cell))
+
+    # Create mesh topology
+    topology = np.zeros((num_cells, num_vertices_per_cell + 1), dtype=np.int32)
+    topology[:, 0] = num_vertices_per_cell
     topology[:, 1:] = geometry_entities[:, map_vtk]
     return topology.reshape(1, -1)[0], cell_types
 
 
-def pyvista_topology_from_function_space(u: fem.Function, entities=None):
+@create_pyvista_topology.register(fem.Function)
+def _(u: fem.Function, entities=None):
     """
     Creates a pyvista mesh topology (topology array and array of cell types)
     that is based on degree of freedom coordinate.
