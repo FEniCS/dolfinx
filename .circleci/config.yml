@@ -67,6 +67,11 @@ build-documentation-python: &build-documentation-python
     cd python/demo && python3 ./generate-demo-files.py
     cd ../doc && make html
 
+activate-framebufffer: &activate-framebuffer
+  name: Running X virtual framebuffer
+  command: Xvfb :99 -screen 0 1280x1024x24
+  background: true
+
 build-pyvista-python: &build-pyvista-python
   name: Install pyvista and setup headless display
   command: |
@@ -138,6 +143,7 @@ jobs:
       - run: *build-documentation-python
 
       - run: *build-pyvista-python
+      - run: *activate-framebuffer
       - run: *demos-python
       - run: *demos-python-mpi
       - run: *set-jit-defaults
@@ -181,6 +187,7 @@ jobs:
       - run: *build-documentation-python
 
       - run: *build-pyvista-python
+      - run: *activate-framebuffer
       - run: *demos-python
       - run: *demos-python-mpi
       - run: *set-jit-defaults
