@@ -29,9 +29,10 @@ void geometry(py::module& m)
         py::arg("tree"), py::arg("p"), py::arg("mesh"), py::arg("R") = -1);
 
   m.def("compute_collisions_point",
-        py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
-                          const Eigen::Vector3d&>(
-            &dolfinx::geometry::compute_collisions));
+        [](const dolfinx::geometry::BoundingBoxTree& tree,
+           const Eigen::Vector3d& point) {
+          return as_pyarray(dolfinx::geometry::compute_collisions(tree, point));
+        });
   m.def("compute_collisions",
         py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
                           const dolfinx::geometry::BoundingBoxTree&>(
