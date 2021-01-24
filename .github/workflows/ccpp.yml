@@ -24,6 +24,9 @@ jobs:
       ALLOW_PLOTTING: true
       SHELLOPTS: 'errexit:pipefail'
 
+      # For pyvistaqt
+      QT_QPA_PLATFORM: 'offscreen'
+
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
