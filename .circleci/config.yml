@@ -75,10 +75,10 @@ activate-framebufffer: &activate-framebuffer
 build-pyvista-python: &build-pyvista-python
   name: Install pyvista and setup headless display
   command: |
-    pip3 install pyvista
+    pip3 install pyvista pyvistaqt
     apt-get update
     apt-get install -y libgl1-mesa-dev xvfb
-    Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+    apt-get install -y libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0 libdbus-1-3
 
 demos-python: &demos-python
   name: Run demos (Python, serial)
@@ -86,7 +86,7 @@ demos-python: &demos-python
     mkdir -p ~/junit
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 -m pytest -n=4 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
+    QT_DEBUG_PLUGINS=1 python3 -m pytest -n=4 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
 
 demos-python-mpi: &demos-python-mpi
   name: Run demos (Python, MPI)
