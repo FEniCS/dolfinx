@@ -8,9 +8,13 @@
 
 #include <Eigen/Core>
 #include <cstdint>
-#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <vector>
+
+namespace dolfinx::mesh
+{
+class Mesh;
+}
 
 /// Functions for the re-ordering of input mesh topology to the DOLFINX
 /// ordering, and transpose orderings for file output.

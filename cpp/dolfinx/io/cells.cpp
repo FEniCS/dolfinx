@@ -6,6 +6,7 @@
 
 #include "cells.h"
 #include <dolfinx/common/log.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <numeric>
 #include <stdexcept>
