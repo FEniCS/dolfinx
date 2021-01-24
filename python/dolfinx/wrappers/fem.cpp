@@ -15,7 +15,6 @@
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DirichletBC.h>
-#include <dolfinx/fem/DiscreteOperators.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Expression.h>
@@ -24,6 +23,7 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
+#include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/interpolate.h>
 #include <dolfinx/fem/petsc.h>
@@ -372,19 +372,8 @@ void fem(py::module& m)
   m.def("bcs_rows", &dolfinx::fem::bcs_rows<PetscScalar>);
   m.def("bcs_cols", &dolfinx::fem::bcs_cols<PetscScalar>);
 
-  //   // dolfinx::fem::DiscreteOperators
-  //   py::class_<dolfinx::fem::DiscreteOperators>(m, "DiscreteOperators")
-  //       .def_static(
-  //           "build_gradient",
-  //           [](const dolfinx::fem::FunctionSpace& V0,
-  //              const dolfinx::fem::FunctionSpace& V1) {
-  //             dolfinx::la::PETScMatrix A
-  //                 = dolfinx::fem::DiscreteOperators::build_gradient(V0, V1);
-  //             Mat _A = A.mat();
-  //             PetscObjectReference((PetscObject)_A);
-  //             return _A;
-  //           },
-  //           py::return_value_policy::take_ownership);
+  m.def("create_discrete_gradient", &dolfinx::fem::create_discrete_gradient,
+        py::return_value_policy::take_ownership);
 
   py::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell)
@@ -458,13 +447,15 @@ void fem(py::module& m)
       "locate_dofs_topological",
       [](const std::vector<
              std::reference_wrapper<const dolfinx::fem::FunctionSpace>>& V,
-         const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
+         const int dim,
+         const py::array_t<std::int32_t, py::array::c_style>& entities,
          bool remote) -> std::array<py::array, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
-            = dolfinx::fem::locate_dofs_topological({V[0], V[1]}, dim, entities,
-                                                    remote);
+            = dolfinx::fem::locate_dofs_topological(
+                {V[0], V[1]}, dim, tcb::span(entities.data(), entities.size()),
+                remote);
         return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
@@ -472,9 +463,10 @@ void fem(py::module& m)
   m.def(
       "locate_dofs_topological",
       [](const dolfinx::fem::FunctionSpace& V, const int dim,
-         const Eigen::Ref<const Eigen::ArrayXi>& entities, bool remote) {
-        return as_pyarray(
-            dolfinx::fem::locate_dofs_topological(V, dim, entities, remote));
+         const py::array_t<std::int32_t, py::array::c_style>& entities,
+         bool remote) {
+        return as_pyarray(dolfinx::fem::locate_dofs_topological(
+            V, dim, tcb::span(entities.data(), entities.size()), remote));
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
       py::arg("remote") = true);
