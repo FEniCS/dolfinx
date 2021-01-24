@@ -166,7 +166,7 @@ write_basic_package_version_file(${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersio
 
 configure_package_config_file(${DOLFINX_SOURCE_DIR}/cmake/templates/DOLFINXConfig.cmake.in
 ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
-INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/dolfinx/cmake)
+INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
 
 # Install CMake helper files
 install(
@@ -175,7 +175,7 @@ install(
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/dolfinx/cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
   COMPONENT Development)
 
 #------------------------------------------------------------------------------
