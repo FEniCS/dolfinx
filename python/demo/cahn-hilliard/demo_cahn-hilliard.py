@@ -335,7 +335,7 @@ while (t < T):
     file.write_function(u.sub(0), t)
 
     # Update the plot window
-    p.add_text(f"time: {t:.2e}",  font_size=12, name="timelabel")
+    p.add_text(f"time: {t:.2e}", font_size=12, name="timelabel")
     grid.point_arrays["u"] = u.sub(0).compute_point_values().real
     p.app.processEvents()
 
@@ -352,4 +352,3 @@ file.close()
 u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 grid.point_arrays["u"] = u.sub(0).compute_point_values().real
 pv.plot(grid, show_edges=True)
-
