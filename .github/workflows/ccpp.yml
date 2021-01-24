@@ -100,7 +100,7 @@ jobs:
           pip3 install pyvista pyvistaqt
           apt-get update
           apt-get install -y libgl1-mesa-dev xvfb
-          apt-get install python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
+          apt-get install -y python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
       - name: Run demos (Python, serial)
