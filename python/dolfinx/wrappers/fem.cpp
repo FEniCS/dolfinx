@@ -161,7 +161,8 @@ void fem(py::module& m)
       .def("space_dimension", &dolfinx::fem::FiniteElement::space_dimension)
       .def("value_dimension", &dolfinx::fem::FiniteElement::value_dimension)
       .def("apply_dof_transformation",
-           [](const dolfinx::fem::FiniteElement& self, py::array_t<double>& x,
+           [](const dolfinx::fem::FiniteElement& self,
+              py::array_t<double, py::array::c_style>& x,
               std::uint32_t cell_permutation, int dim) {
              self.apply_dof_transformation(x.mutable_data(), cell_permutation,
                                            dim);
@@ -465,13 +466,15 @@ void fem(py::module& m)
       "locate_dofs_topological",
       [](const std::vector<
              std::reference_wrapper<const dolfinx::fem::FunctionSpace>>& V,
-         const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
+         const int dim,
+         const py::array_t<std::int32_t, py::array::c_style>& entities,
          bool remote) -> std::array<py::array, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
-            = dolfinx::fem::locate_dofs_topological({V[0], V[1]}, dim, entities,
-                                                    remote);
+            = dolfinx::fem::locate_dofs_topological(
+                {V[0], V[1]}, dim, tcb::span(entities.data(), entities.size()),
+                remote);
         return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
@@ -479,9 +482,10 @@ void fem(py::module& m)
   m.def(
       "locate_dofs_topological",
       [](const dolfinx::fem::FunctionSpace& V, const int dim,
-         const Eigen::Ref<const Eigen::ArrayXi>& entities, bool remote) {
-        return as_pyarray(
-            dolfinx::fem::locate_dofs_topological(V, dim, entities, remote));
+         const py::array_t<std::int32_t, py::array::c_style>& entities,
+         bool remote) {
+        return as_pyarray(dolfinx::fem::locate_dofs_topological(
+            V, dim, tcb::span(entities.data(), entities.size()), remote));
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
       py::arg("remote") = true);
@@ -563,7 +567,7 @@ void fem(py::module& m)
           [](dolfinx::fem::Function<PetscScalar>& self,
              const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                                  Eigen::RowMajor>>& x,
-             py::array_t<std::int32_t> cells,
+             const py::array_t<std::int32_t, py::array::c_style>& cells,
              Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                      Eigen::Dynamic, Eigen::RowMajor>>
                  u) { self.eval(x, tcb::span(cells.data(), cells.size()), u); },

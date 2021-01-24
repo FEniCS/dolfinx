@@ -381,15 +381,15 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
   }
 }
 //-------------------------------------------------------------------------------
-std::vector<int>
-geometry::select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
-                                 const std::vector<int>& candidate_cells,
-                                 const Eigen::Vector3d& point, int n)
+std::vector<std::int32_t> geometry::select_colliding_cells(
+    const mesh::Mesh& mesh,
+    const tcb::span<const std::int32_t>& candidate_cells,
+    const Eigen::Vector3d& point, int n)
 {
   const double eps2 = 1e-20;
   const int tdim = mesh.topology().dim();
-  std::vector<int> result;
-  for (int c : candidate_cells)
+  std::vector<std::int32_t> result;
+  for (std::int32_t c : candidate_cells)
   {
     const double d2 = squared_distance(mesh, tdim, c, point);
     if (d2 < eps2)
