@@ -94,7 +94,7 @@ jobs:
 
       - name: Install pyvista and setup headless display
         run: |
-          pip3 install pyvista
+          pip3 install pyvista pyvistaqt
           apt-get update
           apt-get install -y libgl1-mesa-dev xvfb
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &

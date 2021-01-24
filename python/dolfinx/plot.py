@@ -3,7 +3,7 @@
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Support function for plotting"""
+"""Support functions for plotting"""
 
 import functools
 import warnings
@@ -12,7 +12,8 @@ import numpy as np
 from dolfinx import cpp, fem
 
 # Permutation for Dolfinx DG layout to VTK
-# Note that third order tetrahedrons has a special ordering: https://gitlab.kitware.com/vtk/vtk/-/issues/17746
+# Note that third order tetrahedrons has a special ordering:
+# https://gitlab.kitware.com/vtk/vtk/-/issues/17746
 _perm_dg = {cpp.mesh.CellType.triangle: {1: [0, 1, 2], 2: [0, 2, 5, 1, 4, 3], 3: [0, 3, 9, 1, 2, 6, 8, 7, 4, 5],
                                          4: [0, 4, 14, 1, 2, 3, 8, 11, 13, 12, 9, 5, 6, 7, 10]},
             cpp.mesh.CellType.tetrahedron: {1: [0, 1, 2, 3], 2: [0, 2, 5, 9, 1, 4, 5, 6, 7, 8],
@@ -41,9 +42,7 @@ _cell_degree_hexahedron = {8: 1, 27: 2}
 
 
 def _element_degree(cell_type: cpp.mesh.CellType, num_nodes: int):
-    """
-    Determine the degree of a cell by the number of nodes
-    """
+    """Determine the degree of a cell by the number of nodes"""
     if cell_type == cpp.mesh.CellType.triangle:
         return _cell_degree_triangle[num_nodes]
     elif cell_type == cpp.mesh.CellType.point:
@@ -115,6 +114,7 @@ def _(V: fem.FunctionSpace, entities=None):
         entities = np.arange(num_cells, dtype=np.int32)
     else:
         num_cells = entities.size
+
     dofmap = V.dofmap
     num_dofs_per_cell = V.dofmap.dof_layout.num_dofs
     degree = V.ufl_element().degree()

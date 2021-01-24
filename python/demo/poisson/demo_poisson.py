@@ -215,4 +215,4 @@ try:
     plotter.add_mesh(warped)
     plotter.show()
 except ModuleNotFoundError:
-    print("pyvista is require to visualise the solution")
+    print("pyvista is required to visualise the solution")
