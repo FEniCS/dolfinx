@@ -92,11 +92,12 @@ void mesh(py::module& m)
   m.def("cell_dim", &dolfinx::mesh::cell_dim);
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
-  m.def("cell_normals", [](const dolfinx::mesh::Mesh& mesh, int dim,
-                           const py::array_t<std::int32_t>& entities) {
-    return dolfinx::mesh::cell_normals(
-        mesh, dim, tcb::span(entities.data(), entities.size()));
-  });
+  m.def("cell_normals",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           const py::array_t<std::int32_t, py::array::c_style>& entities) {
+          return dolfinx::mesh::cell_normals(
+              mesh, dim, tcb::span(entities.data(), entities.size()));
+        });
   // m.def("cell_normals", &dolfinx::mesh::cell_normals);
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
 
@@ -105,7 +106,7 @@ void mesh(py::module& m)
   m.def(
       "h",
       [](const dolfinx::mesh::Mesh& mesh, int dim,
-         const py::array_t<std::int32_t>& entities) {
+         const py::array_t<std::int32_t, py::array::c_style>& entities) {
         return as_pyarray(dolfinx::mesh::h(
             mesh, tcb::span(entities.data(), entities.size()), dim));
       },
