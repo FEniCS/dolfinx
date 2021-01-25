@@ -227,9 +227,13 @@ private:
   // _interpolate_into_cell is not required
   bool _interpolation_is_ident;
 
+  // True if element needs dof permutation
   bool _needs_permutation_data;
 
   // The basix element identifier
   int _basix_element_handle;
+
+  // The interpolation matrix
+  Eigen::MatrixXd _interpolation_matrix;
 };
 } // namespace dolfinx::fem
