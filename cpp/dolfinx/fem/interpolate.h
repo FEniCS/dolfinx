@@ -252,6 +252,12 @@ void interpolate(
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
+
+  // Check that return type from f is the correct shape
+  if ((values.rows() != value_size * element_bs)
+      || (values.cols() != num_cells * X.rows()))
+    throw std::runtime_error("Interpolation data has the wrong shape.");
+
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
@@ -261,7 +267,7 @@ void interpolate(
     for (int k = 0; k < element_bs; ++k)
     {
       // Extract computed expression values for element block k
-      _vals = values.block(k, c * X.rows(), value_size, X.rows());
+      _vals = values.block(k * value_size, c * X.rows(), value_size, X.rows());
 
       // Get element degrees of freedom for block
       element->interpolate(_vals, cell_info[c], _coeffs);

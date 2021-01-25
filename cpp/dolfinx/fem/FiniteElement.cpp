@@ -78,6 +78,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   {
     _basix_element_handle = basix::register_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree);
+    _interpolation_matrix = basix::interpolation_matrix(_basix_element_handle);
   }
 
   // Fill value dimension
@@ -91,7 +92,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
     std::free(ufc_sub_element);
   }
-  _interpolation_matrix = basix::interpolation_matrix(_basix_element_handle);
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const noexcept { return _signature; }

@@ -65,7 +65,7 @@ def test_compute_point_values(V, W, mesh):
     assert all(u_values == u_values2)
 
 
-@pytest.mark.skip
+@pytest.mark.skip("Assign function not implemented")
 def test_assign(V, W):
     for V0, V1, vector_space in [(V, W, False), (W, V, True)]:
         u = Function(V0)
@@ -73,12 +73,16 @@ def test_assign(V, W):
         u1 = Function(V0)
         u2 = Function(V0)
         u3 = Function(V1)
-
-        u.vector[:] = 1.0
-        u0.vector[:] = 2.0
-        u1.vector[:] = 3.0
-        u2.vector[:] = 4.0
-        u3.vector[:] = 5.0
+        with u.vector.localForm() as loc:
+            loc.set(1)
+        with u0.vector.localForm() as loc:
+            loc.set(2)
+        with u1.vector.localForm() as loc:
+            loc.set(3)
+        with u2.vector.localForm() as loc:
+            loc.set(4)
+        with u3.vector.localForm() as loc:
+            loc.set(5)
 
         uu = Function(V0)
         uu.assign(2 * u)
@@ -198,7 +202,6 @@ def test_eval_manifold():
     assert np.isclose(u.eval([0.75, 0.25, 0.5], 0)[0], 1.0)
 
 
-@pytest.mark.skip
 def test_interpolation_mismatch_rank0(W):
     def f(x):
         return np.ones(x.shape[1])
@@ -207,12 +210,22 @@ def test_interpolation_mismatch_rank0(W):
         u.interpolate(f)
 
 
-@pytest.mark.skip
 def test_interpolation_mismatch_rank1(W):
-    def f(values, x):
+    def f(x):
         return np.ones((2, x.shape[1]))
 
     u = Function(W)
+    with pytest.raises(RuntimeError):
+        u.interpolate(f)
+
+
+def test_mixed_element_interpolation():
+    def f(x):
+        return np.ones(2, x.shape[1])
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
+    el = ufl.FiniteElement("CG", mesh.ufl_cell(), 1)
+    V = dolfinx.FunctionSpace(mesh, ufl.MixedElement([el, el]))
+    u = dolfinx.Function(V)
     with pytest.raises(RuntimeError):
         u.interpolate(f)
 
