@@ -194,12 +194,9 @@ void interpolate(
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = element->interpolation_points();
 
-  const bool needs_permutation_data = element->needs_permutation_data();
-  if (needs_permutation_data)
-    mesh->topology_mutable().create_entity_permutations();
+  mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
-      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
-                               : std::vector<std::uint32_t>(num_cells);
+      = mesh->topology().get_cell_permutation_info();
 
   // Push reference coordinates (X) forward to the physical coordinates
   // (x) for each cell
