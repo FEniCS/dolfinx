@@ -6,8 +6,6 @@
 
 #pragma once
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-
 #include "span.hpp"
 #include <iostream>
 #include <vector>
@@ -98,5 +96,3 @@ protected:
   std::vector<T, Allocator> storage_;
 };
 } // namespace dolfinx::common
-
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
