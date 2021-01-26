@@ -1,12 +1,9 @@
 name: Run pyvista demos
 
 on:
-  push:
-    branches:
-      - "**"
-  pull_request:
-    branches:
-      - master
+  # push:
+  #   branches:
+  #     - "**"
 
 jobs:
   build:
@@ -78,5 +75,6 @@ jobs:
 
       - name: Run pyvista demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test_pyvista.py
+      
       - name: Run pyivsta demos (Python, MPI (np=2))
         run: python3 -m pytest -v -m mpi --num-proc=2 python/demo/test_pyvista.py
