@@ -7,7 +7,6 @@
 #pragma once
 
 #include "cell_types.h"
-#include <Eigen/Core>
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
@@ -58,12 +57,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(MPI_Comm comm, mesh::CellType type)
-      : _mpi_comm(comm), _cell_type(type),
-        _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
-  {
-    // Do nothing
-  }
+  Topology(MPI_Comm comm, mesh::CellType type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -122,8 +116,7 @@ public:
   /// Each column of the returned array represents a cell, and each row
   /// a facet of that cell.
   /// @return The permutation number
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-  get_facet_permutations() const;
+  const std::vector<std::uint8_t>& get_facet_permutations() const;
 
   /// Cell type
   /// @return Cell type that the topology is for
@@ -166,13 +159,13 @@ private:
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
   // AdjacencyList for pairs of topological dimensions
-  Eigen::Array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-               Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  std::vector<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>>
       _connectivity;
 
   // The facet permutations (local facet, cell))
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
-      _facet_permutations;
+  // [cell0_0, cell0_1, ,cell0_2, cell1_0, cell1_1, ,cell1_2, ...,
+  // celln_0, celln_1, ,celln_2,]
+  std::vector<std::uint8_t> _facet_permutations;
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
