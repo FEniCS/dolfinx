@@ -249,7 +249,6 @@ public:
     const int gdim = mesh->geometry().dim();
     const int tdim = mesh->topology().dim();
     auto map = mesh->topology().index_map(tdim);
-    const int num_cells = map->size_local() + map->num_ghosts();
 
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -304,13 +303,9 @@ public:
     assert(dofmap);
     const int bs_dof = dofmap->bs();
 
-    const bool needs_permutation_data = element->needs_permutation_data();
-    if (needs_permutation_data)
-      mesh->topology_mutable().create_entity_permutations();
+    mesh->topology_mutable().create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
-        = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
-                                 : std::vector<std::uint32_t>(num_cells);
-
+        = mesh->topology().get_cell_permutation_info();
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         coordinate_dofs(num_dofs_g, gdim);
 
@@ -397,28 +392,20 @@ public:
 
     // Interpolate point values on each cell (using last computed value if
     // not continuous, e.g. discontinuous Galerkin methods)
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(num_dofs_g, 3);
-    Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
-        num_dofs_g, value_size_loc);
     auto map = mesh->topology().index_map(tdim);
     assert(map);
     const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+
+    std::vector<std::int32_t> cells(x_g.rows());
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       // Get coordinates for all points in cell
-      auto dofs = x_dofmap.links(c);
+      tcb::span<const std::int32_t> dofs = x_dofmap.links(c);
       for (int i = 0; i < num_dofs_g; ++i)
-        x.row(i) = x_g.row(dofs[i]);
-
-      // Call evaluate function
-      Eigen::Array<int, Eigen::Dynamic, 1> cells(x.rows());
-      cells = c;
-      eval(x, cells, values);
-
-      // Copy values to array of point values
-      for (int i = 0; i < values.rows(); ++i)
-        point_values.row(dofs[i]) = values.row(i);
+        cells[dofs[i]] = c;
     }
+
+    eval(x_g, cells, point_values);
 
     return point_values;
   }

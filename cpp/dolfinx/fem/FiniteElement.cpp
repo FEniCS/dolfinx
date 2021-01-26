@@ -78,6 +78,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   {
     _basix_element_handle = basix::register_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree);
+    _interpolation_matrix = basix::interpolation_matrix(_basix_element_handle);
   }
 
   // Fill value dimension
@@ -294,17 +295,12 @@ void FiniteElement::interpolate(
 {
   assert((int)dofs.size() == _space_dim / _bs);
 
-  // FIXME: This call will be expensive when called repeatedly. Create
-  // the matrix in the constructor.
-  const Eigen::MatrixXd interpolation_matrix
-      = basix::interpolation_matrix(_basix_element_handle);
-
   Eigen::Map<const Eigen::Matrix<ufc_scalar_t, Eigen::Dynamic, 1>>
       values_vector(values.data(), values.size());
   Eigen::Map<Eigen::Matrix<ufc_scalar_t, Eigen::Dynamic, 1>> _dofs(dofs.data(),
                                                                    dofs.size());
 
-  _dofs = interpolation_matrix * values_vector;
+  _dofs = _interpolation_matrix * values_vector;
 
   _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
 }
