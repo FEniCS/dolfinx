@@ -25,7 +25,6 @@ pyvista_demos = ["demo_poisson.py",
 demos = []
 demo_files = list(path.glob('**/*.py'))
 for f in demo_files:
-    print(f.name)
     if f.name in pyvista_demos:
         demos.append((f.parent, f.name))
 
