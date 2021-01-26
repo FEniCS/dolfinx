@@ -71,7 +71,6 @@ def test_assign(V, W):
         u0 = Function(V_)
         u1 = Function(V_)
         u2 = Function(V_)
-
         with u.vector.localForm() as loc:
             loc.set(1)
         with u0.vector.localForm() as loc:
@@ -182,7 +181,6 @@ def test_eval_manifold():
     assert np.isclose(u.eval([0.75, 0.25, 0.5], 0)[0], 1.0)
 
 
-@pytest.mark.skip
 def test_interpolation_mismatch_rank0(W):
     def f(x):
         return np.ones(x.shape[1])
@@ -191,12 +189,22 @@ def test_interpolation_mismatch_rank0(W):
         u.interpolate(f)
 
 
-@pytest.mark.skip
 def test_interpolation_mismatch_rank1(W):
-    def f(values, x):
+    def f(x):
         return np.ones((2, x.shape[1]))
 
     u = Function(W)
+    with pytest.raises(RuntimeError):
+        u.interpolate(f)
+
+
+def test_mixed_element_interpolation():
+    def f(x):
+        return np.ones(2, x.shape[1])
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
+    el = ufl.FiniteElement("CG", mesh.ufl_cell(), 1)
+    V = dolfinx.FunctionSpace(mesh, ufl.MixedElement([el, el]))
+    u = dolfinx.Function(V)
     with pytest.raises(RuntimeError):
         u.interpolate(f)
 
