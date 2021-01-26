@@ -148,6 +148,8 @@ public:
   /// @todo Make the interpolating dofs in/out argument for efficiency
   /// as this function is often called from within tight loops
   /// @todo Consider handling block size > 1
+  /// @todo Re-work for fields that require a pull-back, e.g. Piols
+  /// mapped elements
   ///
   /// Interpolate a function in the finite element space on a cell.
   /// Given the evaluation of the function to be interpolated at points
