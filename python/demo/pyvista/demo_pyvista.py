@@ -16,7 +16,11 @@ import numpy as np
 import ufl
 from mpi4py import MPI
 
-import pyvista
+try:
+    import pyvista
+except ModuleNotFoundError:
+    print("pyvista is required for this demo")
+
 
 # If you are running dolfin-x in a docker container or on a server which does not
 # have X forwarding, we need to make a virtual (headless) framebuffer that can capture
