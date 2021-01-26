@@ -1,9 +1,9 @@
 name: Run demos that use pyvista
 
 on:
-  # push:
-  #   branches:
-  #     - "**"
+  push:
+    branches:
+      - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * MON"
