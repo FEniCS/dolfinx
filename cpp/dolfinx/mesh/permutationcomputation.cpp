@@ -308,8 +308,7 @@ compute_face_permutations(const mesh::Topology& topology)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
-          std::vector<std::uint32_t>>
+std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
 mesh::compute_entity_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
@@ -319,8 +318,10 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
   std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> facet_permutations(
-      facets_per_cell, num_cells);
+  // Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
+  // facet_permutations(
+  //     facets_per_cell, num_cells);
+  std::vector<std::uint8_t> facet_permutations(num_cells * facets_per_cell);
 
   std::int32_t used_bits = 0;
   if (tdim > 2)
@@ -338,7 +339,11 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
     for (int c = 0; c < num_cells; ++c)
     {
       for (int i = 0; i < facets_per_cell; ++i)
-        facet_permutations(i, c) = (cell_permutation_info[c] >> (3 * i)) & 7;
+      {
+        facet_permutations[c * facets_per_cell + i]
+            = (cell_permutation_info[c] >> (3 * i)) & 7;
+        // facet_permutations(i, c) = (cell_permutation_info[c] >> (3 * i)) & 7;
+      }
     }
   }
 
@@ -354,8 +359,13 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
     if (tdim == 2)
     {
       for (int c = 0; c < num_cells; ++c)
+      {
         for (int i = 0; i < facets_per_cell; ++i)
-          facet_permutations(i, c) = edge_perm[c][i];
+        {
+          facet_permutations[c * facets_per_cell + i] = edge_perm[c][i];
+          // facet_permutations(i, c) = edge_perm[c][i];
+        }
+      }
     }
   }
   assert(used_bits < BITSETSIZE);

@@ -570,13 +570,7 @@ void fem(py::module& m)
       .def_property_readonly("id", &dolfinx::fem::FunctionSpace::id)
       .def("__hash__", &dolfinx::fem::FunctionSpace::id)
       .def("__eq__", &dolfinx::fem::FunctionSpace::operator==)
-      .def("collapse",
-           [](dolfinx::fem::FunctionSpace& self) {
-             std::pair<std::shared_ptr<dolfinx::fem::FunctionSpace>,
-                       std::vector<std::int32_t>>
-                 c = self.collapse();
-             return std::make_pair(c.first, as_pyarray(std::move(c.second)));
-           })
+      .def("collapse", &dolfinx::fem::FunctionSpace::collapse)
       .def("component", &dolfinx::fem::FunctionSpace::component)
       .def("contains", &dolfinx::fem::FunctionSpace::contains)
       .def_property_readonly("element", &dolfinx::fem::FunctionSpace::element)
