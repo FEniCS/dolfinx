@@ -7,7 +7,6 @@
 #include "topologycomputation.h"
 #include "Topology.h"
 #include "cell_types.h"
-#include <Eigen/Core>
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 #include <cstdint>

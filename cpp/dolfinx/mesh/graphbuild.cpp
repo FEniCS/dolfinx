@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "graphbuild.h"
-#include <Eigen/Core>
 #include <algorithm>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>

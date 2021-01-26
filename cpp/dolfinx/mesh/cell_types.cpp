@@ -6,7 +6,6 @@
 
 #include "cell_types.h"
 #include "Geometry.h"
-#include <Eigen/Core>
 #include <algorithm>
 #include <basix.h>
 #include <cfloat>
@@ -121,7 +120,7 @@ dolfinx::common::ndVector<int> mesh::get_sub_entities(CellType type, int dim0,
   }
   // TODO: get this data from basix
   dolfinx::common::ndVector<int> triangle(1, 3, {0, 1, 2});
-  dolfinx::common::ndVector<int> quadrilateral(1, 3, {0, 1, 2, 3});
+  dolfinx::common::ndVector<int> quadrilateral(1, 4, {0, 1, 2, 3});
   dolfinx::common::ndVector<int> tetrahedron(
       4, 3, {0, 1, 2, 0, 3, 4, 1, 3, 5, 2, 4, 5});
   dolfinx::common::ndVector<int> hexahedron(6, 4, {0, 1, 3, 5,  0, 2, 4,  8,
