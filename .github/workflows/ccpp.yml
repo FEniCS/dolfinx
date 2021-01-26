@@ -18,12 +18,6 @@ jobs:
       CC: clang-10
       CXX: clang++-10
 
-      # For pyvista
-      DISPLAY: ':99.0'
-      PYVISTA_OFF_SCREEN: 'True'
-      ALLOW_PLOTTING: true
-      SHELLOPTS: 'errexit:pipefail'
-
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
@@ -91,14 +85,6 @@ jobs:
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
-
-      - name: Install pyvista and setup headless display
-        run: |
-          apt-get update
-          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb
-          apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
-          pip3 install pyvista pyvistaqt
-          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py

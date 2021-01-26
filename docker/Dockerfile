@@ -130,9 +130,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 # - First set of packages are required to build and run DOLFINX Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
-# - Third set of packages are required for visualization with pyvista
 RUN pip3 install --no-cache-dir mpi4py numba && \
-    pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
+    pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
@@ -357,9 +356,9 @@ ONBUILD RUN cd dolfinx && \
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
-            PETSC_ARCH=linux-gnu-real-32 \
-            PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
-            LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
+    PETSC_ARCH=linux-gnu-real-32 \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
+    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ONBUILD WORKDIR /root
 
