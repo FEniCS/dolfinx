@@ -6,7 +6,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
-import pathlib
 import subprocess
 import sys
 
