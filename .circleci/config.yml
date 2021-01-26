@@ -6,8 +6,6 @@ install-python-components: &install-python-components
     pip3 install git+https://github.com/FEniCS/basix.git --upgrade
     pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
     pip3 install git+https://github.com/FEniCS/ffcx.git --upgrade
-    rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
-
 
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
@@ -67,26 +65,13 @@ build-documentation-python: &build-documentation-python
     cd python/demo && python3 ./generate-demo-files.py
     cd ../doc && make html
 
-activate-framebufffer: &activate-framebuffer
-  name: Running X virtual framebuffer
-  command: Xvfb :99 -screen 0 1280x1024x24
-  background: true
-
-build-pyvista-python: &build-pyvista-python
-  name: Install pyvista and setup headless display
-  command: |
-    pip3 install pyvista pyvistaqt
-    apt-get update
-    apt-get install -y libgl1-mesa-dev xvfb
-    apt-get install -y libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0 libdbus-1-3
-
 demos-python: &demos-python
   name: Run demos (Python, serial)
   command: |
     mkdir -p ~/junit
     cd python/demo
     python3 ./generate-demo-files.py
-    QT_DEBUG_PLUGINS=1 python3 -m pytest -n=4 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
+    python3 -m pytest -n=4 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
 
 demos-python-mpi: &demos-python-mpi
   name: Run demos (Python, MPI)
@@ -98,8 +83,8 @@ demos-python-mpi: &demos-python-mpi
 set-jit-defaults: &set-jit-defaults
   name: Set default DOLFINX JIT parameters
   command: |
-     mkdir -p ~/.config/dolfinx
-     echo '{ "cffi_extra_compile_args" : ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
+    mkdir -p ~/.config/dolfinx
+    echo '{ "cffi_extra_compile_args" : ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
 
 unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
@@ -119,14 +104,8 @@ jobs:
     docker:
       - image: fenicsproject/test-env:mpich
     environment:
-      MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-real-32"
-      # For pyvista
-      DISPLAY: ':99.0'
-      PYVISTA_OFF_SCREEN: 'True'
-      ALLOW_PLOTTING: true
-      SHELLOPTS: 'errexit:pipefail'
     steps:
       - checkout
       - run: *install-python-components
@@ -142,8 +121,6 @@ jobs:
       - run: *build-python-interface
       - run: *build-documentation-python
 
-      - run: *build-pyvista-python
-      - run: *activate-framebuffer
       - run: *demos-python
       - run: *demos-python-mpi
       - run: *set-jit-defaults
@@ -161,16 +138,10 @@ jobs:
 
   build-complex:
     docker:
-        - image: fenicsproject/test-env:mpich
+      - image: fenicsproject/test-env:mpich
     environment:
-      MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-complex-32"
-      # For pyvista
-      DISPLAY: ':99.0'
-      PYVISTA_OFF_SCREEN: 'True'
-      ALLOW_PLOTTING: true
-      SHELLOPTS: 'errexit:pipefail'
     steps:
       - checkout
       - run: *install-python-components
@@ -186,8 +157,6 @@ jobs:
       - run: *build-python-interface
       - run: *build-documentation-python
 
-      - run: *build-pyvista-python
-      - run: *activate-framebuffer
       - run: *demos-python
       - run: *demos-python-mpi
       - run: *set-jit-defaults

@@ -318,14 +318,15 @@ u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWA
 
 
 # Prepare viewer for plotting solution during the computation
-topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
-grid = pv.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
-grid.point_arrays["u"] = u.sub(0).compute_point_values().real
-grid.set_active_scalars("u")
-p = pvqt.BackgroundPlotter(title="concentration", auto_update=True)
-p.add_mesh(grid, clim=[0, 1])
-p.view_xy(True)
-p.add_text(f"time: {t}", font_size=12, name="timelabel")
+if "CI" not in os.environ.keys():
+    topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
+    grid = pv.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
+    grid.point_arrays["u"] = u.sub(0).compute_point_values().real
+    grid.set_active_scalars("u")
+    p = pvqt.BackgroundPlotter(title="concentration", auto_update=True)
+    p.add_mesh(grid, clim=[0, 1])
+    p.view_xy(True)
+    p.add_text(f"time: {t}", font_size=12, name="timelabel")
 
 while (t < T):
     t += dt
@@ -335,9 +336,10 @@ while (t < T):
     file.write_function(u.sub(0), t)
 
     # Update the plot window
-    p.add_text(f"time: {t:.2e}", font_size=12, name="timelabel")
-    grid.point_arrays["u"] = u.sub(0).compute_point_values().real
-    p.app.processEvents()
+    if "CI" not in os.environ.keys():
+        p.add_text(f"time: {t:.2e}", font_size=12, name="timelabel")
+        grid.point_arrays["u"] = u.sub(0).compute_point_values().real
+        p.app.processEvents()
 
 file.close()
 
@@ -349,6 +351,7 @@ file.close()
 # (the first component of ``u``) is then written to file.
 
 # Update ghost entries and plot
-u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-grid.point_arrays["u"] = u.sub(0).compute_point_values().real
-pv.plot(grid, show_edges=True)
+if "CI" not in os.environ.keys():
+    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    grid.point_arrays["u"] = u.sub(0).compute_point_values().real
+    pv.plot(grid, show_edges=True)
