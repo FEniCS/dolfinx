@@ -405,7 +405,7 @@ public:
         cells[dofs[i]] = c;
     }
 
-    eval(x_g, tcb::span(cells.data(), cells.size()), point_values);
+    eval(x_g, cells, point_values);
 
     return point_values;
   }
