@@ -92,14 +92,13 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
   }
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-mesh::get_entity_vertices(mesh::CellType type, int dim)
+dolfinx::common::ndVector<int> mesh::get_entity_vertices(mesh::CellType type,
+                                                         int dim)
 {
   const std::vector<std::vector<int>> topology
       = basix::topology(to_string(type).c_str())[dim];
 
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e(
-      topology.size(), topology[0].size());
+  dolfinx::common::ndVector<int> e(topology.size(), topology[0].size());
   for (std::size_t i = 0; i < topology.size(); ++i)
     for (std::size_t j = 0; j < topology[0].size(); ++j)
       e(i, j) = topology[i][j];
@@ -107,8 +106,8 @@ mesh::get_entity_vertices(mesh::CellType type, int dim)
   return e;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-mesh::get_sub_entities(CellType type, int dim0, int dim1)
+dolfinx::common::ndVector<int> mesh::get_sub_entities(CellType type, int dim0,
+                                                      int dim1)
 {
   if (dim0 != 2)
   {
@@ -121,25 +120,19 @@ mesh::get_sub_entities(CellType type, int dim0, int dim1)
         "mesh::get_sub_entities supports getting edges (d=1) at present.");
   }
   // TODO: get this data from basix
-  const static Eigen::Array<int, 1, 3, Eigen::RowMajor> triangle
-      = (Eigen::Array<int, 1, 3, Eigen::RowMajor>() << 0, 1, 2).finished();
-  const static Eigen::Array<int, 1, 4, Eigen::RowMajor> quadrilateral
-      = (Eigen::Array<int, 1, 4, Eigen::RowMajor>() << 0, 1, 2, 3).finished();
-  const static Eigen::Array<int, 4, 3, Eigen::RowMajor> tetrahedron
-      = (Eigen::Array<int, 4, 3, Eigen::RowMajor>() << 0, 1, 2, 0, 3, 4, 1, 3,
-         5, 2, 4, 5)
-            .finished();
-  const static Eigen::Array<int, 6, 4, Eigen::RowMajor> hexahedron
-      = (Eigen::Array<int, 6, 4, Eigen::RowMajor>() << 0, 1, 3, 5, 0, 2, 4, 8,
-         1, 2, 6, 9, 3, 4, 7, 10, 5, 6, 7, 11, 8, 9, 10, 11)
-            .finished();
-
+  dolfinx::common::ndVector<int> triangle(1, 3, {0, 1, 2});
+  dolfinx::common::ndVector<int> quadrilateral(1, 3, {0, 1, 2, 3});
+  dolfinx::common::ndVector<int> tetrahedron(
+      4, 3, {0, 1, 2, 0, 3, 4, 1, 3, 5, 2, 4, 5});
+  dolfinx::common::ndVector<int> hexahedron(6, 4, {0, 1, 3, 5,  0, 2, 4,  8,
+                                                   1, 2, 6, 9,  3, 4, 7,  10,
+                                                   5, 6, 7, 11, 8, 9, 10, 11});
   switch (type)
   {
   case mesh::CellType::interval:
-    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
+    return dolfinx::common::ndVector<int>();
   case mesh::CellType::point:
-    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
+    return dolfinx::common::ndVector<int>();
   case mesh::CellType::triangle:
     return triangle;
   case mesh::CellType::tetrahedron:
@@ -150,7 +143,7 @@ mesh::get_sub_entities(CellType type, int dim0, int dim1)
     return hexahedron;
   default:
     throw std::runtime_error("Unsupported cell type.");
-    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
+    return dolfinx::common::ndVector<int>();
   }
 
   // static const int triangle[][4] = {
@@ -233,10 +226,8 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
   for (int i = 0; i <= cell_dim; ++i)
     num_entities[i] = mesh::cell_num_entities(cell_type, i);
 
-  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      edge_v = mesh::get_entity_vertices(cell_type, 1);
-  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      face_e = mesh::get_sub_entities(cell_type, 2, 1);
+  const auto edge_v = mesh::get_entity_vertices(cell_type, 1);
+  const auto face_e = mesh::get_sub_entities(cell_type, 2, 1);
 
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure;
   for (int dim = 0; dim <= cell_dim; ++dim)

@@ -6,6 +6,8 @@
 
 #pragma once
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
 #include "span.hpp"
 #include <iostream>
 #include <vector>
@@ -20,51 +22,81 @@ public:
   using allocator_type = Allocator;
   using size_type = typename std::vector<T, Allocator>::size_type;
   using reference = typename std::vector<T, Allocator>::reference;
+  using const_reference = typename std::vector<T, Allocator>::const_reference;
   using pointer = typename std::vector<T, Allocator>::pointer;
   using iterator = typename std::vector<T, Allocator>::iterator;
   using const_iterator = typename std::vector<T, Allocator>::const_iterator;
 
+  ndVector() : rows_(0), cols_(0) { storage_ = std::vector<T, Allocator>(); }
+
   ndVector(size_type rows, size_type columns, value_type value = T(),
            const Allocator& alloc = Allocator())
-      : rows(rows), columns(columns)
+      : rows_(rows), cols_(columns)
   {
-    storage = std::vector<T, Allocator>(rows * columns, value, alloc);
+    storage_ = std::vector<T, Allocator>(rows_ * cols_, value, alloc);
   }
 
-  reference operator()(int x, int y) { return storage[x * columns + y]; }
+  ndVector(size_type rows, size_type columns, std::initializer_list<T> list,
+           const Allocator& alloc = Allocator())
+      : rows_(rows), cols_(columns)
+  {
+    if (rows_ * cols_ != list.size())
+      throw std::runtime_error("Dimension mismatch");
+    storage_ = std::vector<T, Allocator>(list, alloc);
+  }
+
+  reference operator()(size_type x, size_type y)
+  {
+    return storage_[x * cols_ + y];
+  }
+
+  const_reference operator()(size_type x, size_type y) const
+  {
+    return storage_[x * cols_ + y];
+  }
 
   tcb::span<value_type> row(int i)
   {
-    size_type offset = i * columns;
-    return tcb::span<value_type>(pointer(&storage[0] + offset), columns);
+    size_type offset = i * cols_;
+    return tcb::span<value_type>(pointer(&storage_[0] + offset), cols_);
   }
 
-  iterator begin() noexcept { return storage.begin(); }
+  iterator begin() noexcept { return storage_.begin(); }
 
-  const_iterator cbegin() noexcept { return storage.cbegin(); }
+  const_iterator begin() const noexcept { return storage_.begin(); }
 
-  iterator end() noexcept { return storage.end(); }
+  iterator end() noexcept { return storage_.end(); }
 
-  const_iterator cend() noexcept { return storage.cend(); }
+  const_iterator end() const noexcept { return storage_.end(); }
 
-  size_type size() const noexcept { return storage.size(); }
+  const_iterator cbegin() noexcept { return storage_.cbegin(); }
+
+  const_iterator cend() noexcept { return storage_.cend(); }
+
+  size_type size() const noexcept { return storage_.size(); }
+
+  size_type cols() const noexcept { return cols_; }
+
+  size_type rows() const noexcept { return rows_; }
 
   std::pair<size_type, size_type> shape() const noexcept
   {
-    return {rows, columns};
+    return {rows_, cols_};
   }
 
-  bool empty() const noexcept { return storage.empty(); }
+  bool empty() const noexcept { return storage_.empty(); }
 
   /// Returns a reference to the first element in the container.
   /// Calling front on an empty container is undefined.
-  reference front() { return storage.front(); }
+  reference front() { return storage_.front(); }
 
-  reference back() { return storage.back(); }
+  reference back() { return storage_.back(); }
 
 protected:
-  size_type rows;
-  size_type columns;
-  std::vector<T, Allocator> storage;
+  size_type rows_;
+  size_type cols_;
+  std::vector<T, Allocator> storage_;
 };
 } // namespace dolfinx::common
+
+#endif /* DOXYGEN_SHOULD_SKIP_THIS */
