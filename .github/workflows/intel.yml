@@ -19,16 +19,16 @@ jobs:
         shell: bash
 
     env:
-      CC:  ${{ matrix.c_compiler }}
+      CC: ${{ matrix.c_compiler }}
       CXX: ${{ matrix.cxx_compiler }}
       PETSC_ARCH: linux-gnu-real-32
 
     strategy:
       matrix:
         include:
-#           - compiler: "Classic"
-#             c_compiler: icc
-#             cxx_compiler: icpc
+          # - compiler: "Classic"
+          #   c_compiler: icc
+          #   cxx_compiler: icpc
           - compiler: "LLVM-based"
             c_compiler: icx
             cxx_compiler: icpx
@@ -49,12 +49,6 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           python3 -m pip install git+https://github.com/FEniCS/basix.git git+https://github.com/FEniCS/ufl.git git+https://github.com/FEniCS/ffcx.git
-
-      - name: Install pyvista requirements
-        run: |
-          pip3 install pyvista vtk
-          apt-get update
-          apt-get install -y libgl1-mesa-dev xvfb
 
       - name: Configure C++
         run: |
