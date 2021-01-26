@@ -1,12 +1,12 @@
-name: Run pyvista demos
+name: Run demos that use pyvista
 
 on:
   # push:
   #   branches:
   #     - "**"
   schedule:
-      # '*' is a special character in YAML, so string must be quoted
-      - cron: "0 1 * * MON"
+    # '*' is a special character in YAML, so string must be quoted
+    - cron: "0 1 * * MON"
 jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
@@ -18,12 +18,12 @@ jobs:
       CXX: clang++-10
 
       # For pyvista
-      DISPLAY: ':99.0'
-      PYVISTA_OFF_SCREEN: 'True'
+      DISPLAY: ":99.0"
+      PYVISTA_OFF_SCREEN: "True"
       ALLOW_PLOTTING: true
-      SHELLOPTS: 'errexit:pipefail'
+      SHELLOPTS: "errexit:pipefail"
 
-      PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
+      PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-32
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       OMPI_MCA_rmaps_base_oversubscribe: 1
@@ -35,17 +35,19 @@ jobs:
     strategy:
       matrix:
         petsc_arch: [real, complex]
-        petsc_int_type: [32, 64]
 
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install FEniCS Python components
+      - name: Install FEniCS Python components and other dependencies
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
-
+          pip3 install git+https://github.com/FEniCS/basix.git
+          pip3 install git+https://github.com/FEniCS/ufl.git
+          pip3 install git+https://github.com/FEniCS/ffcx.git
+          apt-get update
+          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb
+          apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
+          pip3 install pyvista pyvistaqt
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
@@ -54,25 +56,15 @@ jobs:
           cmake --build build
           cmake --install build
 
-
       - name: Build Python interface
         run: python3 -m pip -v install --global-option build --global-option --debug python/
 
-      - name: Set default DOLFINX JIT parameters
+      - name: Setup headless display
         run: |
-          mkdir -p ~/.config/dolfinx
-          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
-
-      - name: Install pyvista and setup headless display
-        run: |
-          apt-get update
-          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb
-          apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
-          pip3 install pyvista pyvistaqt
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
       - name: Run pyvista demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test_pyvista_demos.py
-      
+
       - name: Run pyivsta demos (Python, MPI (np=2))
         run: python3 -m pytest -v -m mpi --num-proc=2 python/demo/test_pyvista_demos.py

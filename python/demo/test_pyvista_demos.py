@@ -12,7 +12,6 @@ import sys
 
 import pytest
 
-
 # Get directory of this file
 path = pathlib.Path(__file__).resolve().parent
 

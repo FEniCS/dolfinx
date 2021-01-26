@@ -121,6 +121,14 @@ from petsc4py import PETSc
 from ufl import (FiniteElement, TestFunctions, TrialFunction, derivative, diff,
                  dx, grad, inner, split, variable)
 
+try:
+    import pyvista as pv
+    import pyvistaqt as pvqt
+    have_pyvista = True
+except ModuleNotFoundError:
+    print("pyvista is required to visualise the solution")
+    have_pyvista = False
+
 # Save all logging to file
 log.set_output_file("log.txt")
 
@@ -316,9 +324,7 @@ u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWA
 
 
 # Prepare viewer for plotting solution during the computation
-if "CI" not in os.environ.keys():
-    import pyvista as pv
-    import pyvistaqt as pvqt
+if have_pyvista:
     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
     grid = pv.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
     grid.point_arrays["u"] = u.sub(0).compute_point_values().real
@@ -336,7 +342,7 @@ while (t < T):
     file.write_function(u.sub(0), t)
 
     # Update the plot window
-    if "CI" not in os.environ.keys():
+    if have_pyvista:
         p.add_text(f"time: {t:.2e}", font_size=12, name="timelabel")
         grid.point_arrays["u"] = u.sub(0).compute_point_values().real
         p.app.processEvents()
@@ -351,7 +357,7 @@ file.close()
 # (the first component of ``u``) is then written to file.
 
 # Update ghost entries and plot
-if "CI" not in os.environ.keys():
+if have_pyvista:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     grid.point_arrays["u"] = u.sub(0).compute_point_values().real
     pv.plot(grid, show_edges=True)
