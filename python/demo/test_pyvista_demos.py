@@ -6,21 +6,33 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
+import pathlib
 import subprocess
 import sys
 
 import pytest
 
 
+# Get directory of this file
+path = pathlib.Path(__file__).resolve().parent
+
 # List of demo programs using pyvista
-demos = ["poisson/demo_poisson.py",
-         "cahn-hilliard/demo_cahn-hilliard.py",
-         "pyvista/demo_pyvista.py"]
+pyvista_demos = ["demo_poisson.py",
+                 "demo_cahn-hilliard.py",
+                 "demo_pyvista.py"]
+
+# Build list of demo programs
+demos = []
+demo_files = list(path.glob('**/*.py'))
+for f in demo_files:
+    print(f.name)
+    if f.name in pyvista_demos:
+        demos.append((f.parent, f.name))
 
 
 @pytest.mark.serial
 @pytest.mark.parametrize("path,name", demos)
-def test_demos(path, name):
+def test_pyvista_demos(path, name):
     ret = subprocess.run([sys.executable, name],
                          cwd=str(path),
                          env={**os.environ, 'MPLBACKEND': 'agg'},
@@ -30,7 +42,7 @@ def test_demos(path, name):
 
 @pytest.mark.mpi
 @pytest.mark.parametrize("path,name", demos)
-def test_demos_mpi(num_proc, mpiexec, path, name):
+def test_pyvista_demos_mpi(num_proc, mpiexec, path, name):
     cmd = [mpiexec, "-np", str(num_proc), sys.executable, name]
     print(cmd)
     ret = subprocess.run(cmd,

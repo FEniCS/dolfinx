@@ -1,10 +1,12 @@
 name: Run pyvista demos
 
 on:
-  # push:
-  #   branches:
-  #     - "**"
-
+  push:
+    branches:
+      - "**"
+  # schedule:
+  #     # '*' is a special character in YAML, so string must be quoted
+  #     - cron: "0 1 * * MON"
 jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
@@ -55,10 +57,6 @@ jobs:
 
       - name: Build Python interface
         run: python3 -m pip -v install --global-option build --global-option --debug python/
-      - name: Build Python interface documentation
-        run: |
-          cd python/demo && python3 ./generate-demo-files.py
-          cd ../doc && make html
 
       - name: Set default DOLFINX JIT parameters
         run: |
@@ -74,7 +72,7 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
       - name: Run pyvista demos (Python, serial)
-        run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test_pyvista.py
+        run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test_pyvista_demos.py
       
       - name: Run pyivsta demos (Python, MPI (np=2))
-        run: python3 -m pytest -v -m mpi --num-proc=2 python/demo/test_pyvista.py
+        run: python3 -m pytest -v -m mpi --num-proc=2 python/demo/test_pyvista_demos.py
