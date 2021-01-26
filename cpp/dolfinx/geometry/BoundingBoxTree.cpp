@@ -1,3 +1,5 @@
+// Copyright (C) 2013-2021 Chris N. Richardson, Anders Logg, Garth N. Wells and
+// Jørgen S. Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -24,7 +26,8 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  const mesh::Geometry& geometry = mesh.geometry();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
+      = mesh.geometry().x();
   mesh.topology_mutable().create_connectivity(dim, tdim);
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> entity(1);
   entity(0, 0) = index;
@@ -32,7 +35,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
       vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
   auto entity_indices = vertex_indices.row(0);
 
-  const Eigen::Vector3d x0 = geometry.node(entity_indices[0]);
+  const Eigen::Vector3d x0 = geom_dofs.row(entity_indices[0]);
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
   b.row(0) = x0;
   b.row(1) = x0;
@@ -40,9 +43,9 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   for (int i = 1; i < entity_indices.size(); ++i)
   {
     const int local_vertex = entity_indices[i];
-    const Eigen::Vector3d x = geometry.node(local_vertex);
-    b.row(0) = b.row(0).min(x.transpose().array());
-    b.row(1) = b.row(1).max(x.transpose().array());
+    auto x = geom_dofs.row(local_vertex);
+    b.row(0) = b.row(0).min(x);
+    b.row(1) = b.row(1).max(x);
   }
 
   return b;
@@ -238,9 +241,9 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
     : _tdim(tdim)
 {
   // Check dimension
-  if (tdim < 1 or tdim > mesh.topology().dim())
+  if (tdim > mesh.topology().dim())
   {
-    throw std::runtime_error("Dimension must be a number between 1 and "
+    throw std::runtime_error("Dimension must be a number between 0 and "
                              + std::to_string(mesh.topology().dim()));
   }
 
@@ -266,6 +269,21 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " entities.";
+}
+//-----------------------------------------------------------------------------
+void BoundingBoxTree::remap_entity_indices(
+    const std::vector<std::int32_t>& entity_indices)
+{
+  // Remap leaf indices
+  for (int i = 0; i < _bboxes.rows(); ++i)
+  {
+    if (_bboxes(i, 0) == _bboxes(i, 1))
+    {
+      int mapped_index = entity_indices[_bboxes(i, 0)];
+      _bboxes(i, 0) = mapped_index;
+      _bboxes(i, 1) = mapped_index;
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(
@@ -304,15 +322,7 @@ BoundingBoxTree::BoundingBoxTree(
     std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
 
   // Remap leaf indices
-  for (int i = 0; i < _bboxes.rows(); ++i)
-  {
-    if (_bboxes(i, 0) == _bboxes(i, 1))
-    {
-      int mapped_index = entity_indices_sorted[_bboxes(i, 0)];
-      _bboxes(i, 0) = mapped_index;
-      _bboxes(i, 1) = mapped_index;
-    }
-  }
+  remap_entity_indices(entity_indices_sorted);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << entity_indices.size() << " entities.";
@@ -342,7 +352,7 @@ BoundingBoxTree BoundingBoxTree::compute_global_tree(const MPI_Comm& comm) const
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
-    : _tdim(0)
+    : _tdim(0), _bboxes(0, 2), _bbox_coordinates(0, 3)
 {
   // Create leaf partition (to be sorted)
   const int num_leaves = points.size();
@@ -352,19 +362,20 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
   // Recursively build the bounding box tree from the leaves
   std::vector<std::array<int, 2>> bboxes;
   std::vector<double> bbox_coordinates;
-  _build_from_point(points, leaf_partition.begin(), leaf_partition.end(),
-                    bboxes, bbox_coordinates);
-
-  _bboxes.resize(bboxes.size(), 2);
-  for (std::size_t i = 0; i < bboxes.size(); ++i)
+  if (num_leaves > 0)
   {
-    _bboxes(i, 0) = bboxes[i][0];
-    _bboxes(i, 1) = bboxes[i][1];
+    _build_from_point(points, leaf_partition.begin(), leaf_partition.end(),
+                      bboxes, bbox_coordinates);
+    _bboxes.resize(bboxes.size(), 2);
+    for (std::size_t i = 0; i < bboxes.size(); ++i)
+    {
+      _bboxes(i, 0) = bboxes[i][0];
+      _bboxes(i, 1) = bboxes[i][1];
+    }
+    _bbox_coordinates
+        = Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
+            bbox_coordinates.data(), bbox_coordinates.size() / 3, 3);
   }
-  _bbox_coordinates
-      = Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
-          bbox_coordinates.data(), bbox_coordinates.size() / 3, 3);
-
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " points.";
 }
@@ -382,12 +393,20 @@ int BoundingBoxTree::tdim() const { return _tdim; }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
 {
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> bbox
+      = _bbox_coordinates.block<2, 3>(2 * i, 0);
   s << "[";
-  for (int j = 0; j < 3; ++j)
-    s << _bbox_coordinates(i, j) << " ";
+  for (int j = 0; j < 2; ++j)
+  {
+    for (int k = 0; k < 3; ++k)
+      s << bbox(j, k) << " ";
+    if (j == 0)
+      s << "]->"
+        << "[";
+  }
   s << "]\n";
 
-  if (_bboxes(i, 0) == i)
+  if (_bboxes(i, 0) == _bboxes(i, 1))
     s << "leaf containing entity (" << _bboxes(i, 1) << ")";
   else
   {
