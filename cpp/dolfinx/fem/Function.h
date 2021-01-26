@@ -396,17 +396,16 @@ public:
     assert(map);
     const std::int32_t num_cells = map->size_local() + map->num_ghosts();
 
-    Eigen::Array<int, Eigen::Dynamic, 1> cells(x_g.rows());
-
+    std::vector<std::int32_t> cells(x_g.rows());
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       // Get coordinates for all points in cell
-      auto dofs = x_dofmap.links(c);
+      tcb::span<const std::int32_t> dofs = x_dofmap.links(c);
       for (int i = 0; i < num_dofs_g; ++i)
         cells[dofs[i]] = c;
     }
 
-    eval(x_g, cells, point_values);
+    eval(x_g, tcb::span(cells.data(), cells.size()), point_values);
 
     return point_values;
   }
