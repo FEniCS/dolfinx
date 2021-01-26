@@ -405,9 +405,7 @@ void _lift_bc_interior_facets(
     {
       for (int j = 0; j < gdim; ++j)
       {
-        // coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
         coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
-        // coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
         coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
       }
     }
@@ -790,9 +788,7 @@ void assemble_interior_facets(
     {
       for (int j = 0; j < gdim; ++j)
       {
-        // coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
         coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
-        // coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
         coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
       }
     }
