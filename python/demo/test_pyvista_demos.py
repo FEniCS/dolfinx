@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2021 Garth N. Wells and Jø¶gen S. Dokken
+# Copyright (C) 2021 Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
