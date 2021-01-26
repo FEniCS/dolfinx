@@ -49,8 +49,9 @@ nearest_simplex(
     B[3] = -s.row(1) * W2;
 
     bool signDetM = std::signbit(B.sum());
-    Eigen::Array<bool, 4, 1> f_inside = B.unaryExpr(
-        [&signDetM](double b) { return (std::signbit(b) == signDetM); });
+    Eigen::Array<bool, 4, 1> f_inside = B.unaryExpr([&signDetM](double b) {
+                                           return (std::signbit(b) == signDetM);
+                                         }).cast<bool>();
 
     if (f_inside[1] and f_inside[2] and f_inside[3])
     {
