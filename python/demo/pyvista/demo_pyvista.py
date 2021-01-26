@@ -20,7 +20,7 @@ try:
     import pyvista
 except ModuleNotFoundError:
     print("pyvista is required for this demo")
-
+    return
 
 # If you are running dolfin-x in a docker container or on a server which does not
 # have X forwarding, we need to make a virtual (headless) framebuffer that can capture

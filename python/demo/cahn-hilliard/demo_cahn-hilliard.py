@@ -111,8 +111,6 @@
 import os
 
 import numpy as np
-import pyvista as pv
-import pyvistaqt as pvqt
 from dolfinx import (Form, Function, FunctionSpace, NewtonSolver,
                      UnitSquareMesh, fem, log, plot)
 from dolfinx.cpp.mesh import CellType
@@ -319,6 +317,8 @@ u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWA
 
 # Prepare viewer for plotting solution during the computation
 if "CI" not in os.environ.keys():
+    import pyvista as pv
+    import pyvistaqt as pvqt
     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
     grid = pv.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
     grid.point_arrays["u"] = u.sub(0).compute_point_values().real
