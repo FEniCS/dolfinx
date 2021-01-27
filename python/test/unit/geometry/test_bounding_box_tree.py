@@ -6,7 +6,6 @@
 """Unit tests for BoundingBoxTree"""
 
 import numpy
-import time
 import pytest
 from dolfinx import (BoxMesh, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      cpp)
@@ -291,25 +290,17 @@ def test_midpoint_tree(N):
 
     # Find entity closest to point in two steps
     # 1. Find closest midpoint using midpoint tree
-    start_refined = time.time()
     entity_m, distance_m = compute_closest_entity(midpoint_tree, p, mesh)
     # 2. Refine search by using exact distance query
     entity, distance = compute_closest_entity(tree, p, mesh, R=distance_m)
-    end_refined = time.time()
-    time_refined = end_refined - start_refined
 
     # Find entity closest to point in one step
-    start_unrefined = time.time()
     e_r, d_r = compute_closest_entity(tree, p, mesh)
-    end_unrefined = time.time()
-    time_unrefined = end_unrefined - start_unrefined
 
     assert(entity == e_r)
     assert(distance == d_r)
     if len(left_cells) > 0:
         assert(distance < distance_m)
-        if not (time_refined < 1e-4 and time_unrefined < 1e-4):
-            assert(time_refined < time_unrefined)
     else:
         assert(distance == -1)
 
