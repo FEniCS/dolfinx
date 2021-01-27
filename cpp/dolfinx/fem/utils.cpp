@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include <Eigen/Core>
 #include <array>
+#include <basix.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -23,7 +23,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/topologycomputation.h>
-#include <basix.h>
 #include <memory>
 #include <string>
 #include <ufc.h>

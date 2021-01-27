@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <vector>
@@ -32,8 +31,7 @@ void eval(
   assert(mesh);
 
   // Prepare coefficients
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = dolfinx::fem::pack_coefficients(e);
+  const auto coeffs = dolfinx::fem::pack_coefficients(e);
 
   // Prepare constants
   const std::vector<T> constant_values = dolfinx::fem::pack_constants(e);

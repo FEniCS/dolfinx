@@ -48,9 +48,7 @@ void assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        coeffs,
-    const std::vector<T>& constants,
+    const common::ndVector<T>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
@@ -64,9 +62,7 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        coeffs,
-    const std::vector<T>& constants,
+    const common::ndVector<T>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
 
@@ -80,9 +76,8 @@ void assemble_interior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        coeffs,
-    const std::vector<int>& offsets, const std::vector<T>& constants,
+    const common::ndVector<T>& coeffs, const std::vector<int>& offsets,
+    const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
 
@@ -116,8 +111,7 @@ void assemble_matrix(
   const std::vector<T> constants = pack_constants(a);
 
   // Prepare coefficients
-  const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = pack_coefficients(a);
+  const auto coeffs = pack_coefficients(a);
 
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
@@ -179,9 +173,7 @@ void assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        coeffs,
-    const std::vector<T>& constants,
+    const common::ndVector<T>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info)
 {
   const int gdim = geometry.dim();
@@ -266,9 +258,7 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        coeffs,
-    const std::vector<T>& constants,
+    const common::ndVector<T>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
@@ -370,9 +360,8 @@ void assemble_interior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        coeffs,
-    const std::vector<int>& offsets, const std::vector<T>& constants,
+    const common::ndVector<T>& coeffs, const std::vector<int>& offsets,
+    const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {

@@ -53,7 +53,7 @@ public:
     return storage_[x * cols_ + y];
   }
 
-  tcb::span<value_type> row(int i)
+  tcb::span<value_type> row(int i) const
   {
     size_type offset = i * cols_;
     return tcb::span<value_type>(pointer(&storage_[0] + offset), cols_);

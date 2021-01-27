@@ -395,9 +395,7 @@ create_functionspace(ufc_function_space* (*fptr)(const char*),
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
 template <typename U>
-Eigen::Array<typename U::scalar_type, Eigen::Dynamic, Eigen::Dynamic,
-             Eigen::RowMajor>
-pack_coefficients(const U& u)
+common::ndVector<typename U::scalar_type> pack_coefficients(const U& u)
 {
   using T = typename U::scalar_type;
 
@@ -424,8 +422,7 @@ pack_coefficients(const U& u)
         + mesh->topology().index_map(tdim)->num_ghosts();
 
   // Copy data into coefficient array
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> c(
-      num_cells, offsets.back());
+  common::ndVector<T> c(num_cells, offsets.back());
   if (coefficients.size() > 0)
   {
     for (int cell = 0; cell < num_cells; ++cell)
