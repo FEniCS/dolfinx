@@ -336,6 +336,12 @@ void SparsityPattern::assemble()
                           ghost_data_received.data(), num_rows_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
 
+  // Create a global-to-local map for columns
+  std::map<std::int64_t, std::int32_t> global_to_local_column;
+  std::int32_t local_i = local_size1;
+  for (std::int64_t global_i : ghosts1)
+    global_to_local_column.insert({global_i, local_i++});
+
   // Add data received from the neighborhood
   for (std::size_t i = 0; i < ghost_data_received.size(); i += 2)
   {
@@ -353,10 +359,17 @@ void SparsityPattern::assemble()
       else
       {
         assert(row_local < (std::int32_t)_off_diagonal_cache.size());
+        // column index may not exist in column indexmap
+        if (global_to_local_column.insert({col, local_i}).second)
+          ++local_i;
         _off_diagonal_cache[row_local].push_back(col);
       }
     }
   }
+
+  std::cout << "Column ghost size increased from " << ghosts1.size() << " to "
+            << global_to_local_column.size() << "\n";
+  // FIXME - create new indexmap1
 
   _diagonal_cache.resize(local_size0);
   for (std::vector<std::int32_t>& row : _diagonal_cache)
