@@ -9,7 +9,7 @@ configure_file(${DOLFINX_SOURCE_DIR}/dolfinx/common/version.h.in
   ${DOLFINX_SOURCE_DIR}/dolfinx/common/version.h @ONLY)
 
 #------------------------------------------------------------------------------
-# Delcare the library (target)
+# Declare the library (target)
 
 add_library(dolfinx "")  # The "" is needed for older CMake. Remove later.
 
