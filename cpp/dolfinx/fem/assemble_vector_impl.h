@@ -353,7 +353,7 @@ void _lift_bc_interior_facets(
   // Data structures used in assembly
   std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
   std::vector<T> coeff_array(2 * offsets.back());
-  assert(offsets.back() == coeffs.cols());
+  assert(offsets.back() == int(coeffs.cols()));
   std::vector<T> Ae, be;
 
   // Temporaries for joint dofmaps
@@ -739,7 +739,7 @@ void assemble_interior_facets(
   std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
   std::vector<T> be;
   std::vector<T> coeff_array(2 * offsets.back());
-  assert(offsets.back() == coeffs.cols());
+  assert(offsets.back() == int(coeffs.cols()));
 
   const int bs = dofmap.bs();
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
