@@ -105,7 +105,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     ninja-build \
     pkg-config \
     python3-dev \
-    python3-matplotlib \
     python3-numpy \
     python3-pip \
     python3-scipy \
@@ -122,6 +121,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libglu1 \
     libxcursor-dev \
     libxinerama1 && \
+    #
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -356,9 +356,9 @@ ONBUILD RUN cd dolfinx && \
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
-            PETSC_ARCH=linux-gnu-real-32 \
-            PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
-            LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
+    PETSC_ARCH=linux-gnu-real-32 \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
+    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ONBUILD WORKDIR /root
 
