@@ -1,12 +1,13 @@
 name: Test visualisation demos
 
 on:
-  push:
-    branches:
-      - "**"
+  # Uncomment the below to trigger tests on push
+  # push:
+  #   branches:
+  #     - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
-    - cron: "0 1 * * MON"
+    - cron: "0 1 * * *"
 jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
