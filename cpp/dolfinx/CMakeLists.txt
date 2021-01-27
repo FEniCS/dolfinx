@@ -63,34 +63,22 @@ target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 target_include_directories(dolfinx SYSTEM PUBLIC ${BASIX_INCLUDE_DIRS})
 target_link_libraries(dolfinx PUBLIC ${BASIX_LIBRARY})
 
-# Have left these well written comments about Eigen alignment
-# here with the intention that this should be moved to build documentation.
-
+# Eigen3
 # DOLFIN uses Eigen data structures for dense linear algebra operations. Eigen
 # performs 'ideal' memory alignment based around the -march flag passed to the
 # compiler.  However, because Python DOLFIN JIT compiles code at runtime, it is
 # possible for the user to build shared objects with incompatible alignment
 # (ABI) if they use a different -march flag than that used to originally build
-# DOLFIN. DOLFINX_EIGEN_MAX_ALIGN_BYTES can be used to force alignment.
+# DOLFIN.
 # See: https://eigen.tuxfamily.org/dox/TopicPreprocessorDirectives.html
 # See: https://github.com/FEniCS/dolfinx/pull/143
 
-# Note: The name EIGEN_MAX_ALIGN_BYTES is confusing. In practice, Eigen
-# computes the ideal alignment based around -march.  If the ideal alignment is
-# greater than EIGEN_MAX_ALIGN_BYTES, the ideal alignment is used. If the ideal
-# alignment is less, then EIGEN_MAX_ALIGN_BYTES is used for alignment.
-set(DOLFINX_EIGEN_MAX_ALIGN_BYTES "32" CACHE STRING "\
-Minimum alignment in bytes used for Eigen data structures. Set to 32 for \
-compatibility with AVX user-compiled code and 64 for AVX-512 user-compiled \
-code. Set to 0 for ideal alignment according to -march. Note that if an architecture \
-flag (e.g. \"-march=skylake-avx512\") is set for DOLFIN, Eigen will use the \
-appropriate ideal alignment instead if it is stricter. Otherwise, the value \
-of this variable will be used by Eigen for the alignment of all data structures.\\
-")
-
-# Eigen3
+# Temporary safety measure until we work out the hornet's nest of Eigen's
+# alignment and ABI compatibility.  Use and assume 16-byte aligment on most
+# systems, disable vectorisation.
 target_include_directories(dolfinx SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
-target_compile_definitions(dolfinx PUBLIC "EIGEN_MAX_ALIGN_BYTES=${DOLFINX_EIGEN_MAX_ALIGN_BYTES}")
+target_compile_definitions(dolfinx PUBLIC "EIGEN_MAX_ALIGN_BYTES=0")
+target_compile_definitions(dolfinx PUBLIC "EIGEN_DONT_VECTORIZE")
 
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
