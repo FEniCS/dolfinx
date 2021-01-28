@@ -97,9 +97,6 @@ public:
   /// @return The coordinate/geometry element
   const fem::CoordinateElement& cmap() const;
 
-  /// Return coordinate array for node n (index is local to the process)
-  Eigen::Vector3d node(int n) const;
-
   /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const;
 

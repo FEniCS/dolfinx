@@ -15,7 +15,6 @@
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DirichletBC.h>
-#include <dolfinx/fem/DiscreteOperators.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Expression.h>
@@ -24,6 +23,7 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
+#include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/interpolate.h>
 #include <dolfinx/fem/petsc.h>
@@ -372,19 +372,8 @@ void fem(py::module& m)
   m.def("bcs_rows", &dolfinx::fem::bcs_rows<PetscScalar>);
   m.def("bcs_cols", &dolfinx::fem::bcs_cols<PetscScalar>);
 
-  //   // dolfinx::fem::DiscreteOperators
-  //   py::class_<dolfinx::fem::DiscreteOperators>(m, "DiscreteOperators")
-  //       .def_static(
-  //           "build_gradient",
-  //           [](const dolfinx::fem::FunctionSpace& V0,
-  //              const dolfinx::fem::FunctionSpace& V1) {
-  //             dolfinx::la::PETScMatrix A
-  //                 = dolfinx::fem::DiscreteOperators::build_gradient(V0, V1);
-  //             Mat _A = A.mat();
-  //             PetscObjectReference((PetscObject)_A);
-  //             return _A;
-  //           },
-  //           py::return_value_policy::take_ownership);
+  m.def("create_discrete_gradient", &dolfinx::fem::create_discrete_gradient,
+        py::return_value_policy::take_ownership);
 
   py::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell)
@@ -581,13 +570,7 @@ void fem(py::module& m)
       .def_property_readonly("id", &dolfinx::fem::FunctionSpace::id)
       .def("__hash__", &dolfinx::fem::FunctionSpace::id)
       .def("__eq__", &dolfinx::fem::FunctionSpace::operator==)
-      .def("collapse",
-           [](dolfinx::fem::FunctionSpace& self) {
-             std::pair<std::shared_ptr<dolfinx::fem::FunctionSpace>,
-                       std::vector<std::int32_t>>
-                 c = self.collapse();
-             return std::make_pair(c.first, as_pyarray(std::move(c.second)));
-           })
+      .def("collapse", &dolfinx::fem::FunctionSpace::collapse)
       .def("component", &dolfinx::fem::FunctionSpace::component)
       .def("contains", &dolfinx::fem::FunctionSpace::contains)
       .def_property_readonly("element", &dolfinx::fem::FunctionSpace::element)

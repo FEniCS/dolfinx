@@ -67,8 +67,7 @@ class Topology;
 ///    on permuted facets.
 ///
 /// @return Facet permutation and cells permutations
-std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
-          std::vector<std::uint32_t>>
+std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
 compute_entity_permutations(const Topology& topology);
 
 } // namespace dolfinx::mesh
