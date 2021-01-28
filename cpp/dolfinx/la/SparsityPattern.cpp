@@ -281,6 +281,7 @@ void SparsityPattern::assemble()
   const std::int32_t local_size1 = _index_maps[1]->size_local();
   const std::array local_range1 = _index_maps[1]->local_range();
   const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
+  // const std::vector<int> ghost_owner1 = _index_maps[1]->ghost_owner_rank();
 
   // For each ghost row, pack and send (global row, global col) pairs to
   // send to neighborhood
@@ -297,7 +298,7 @@ void SparsityPattern::assemble()
       if (cols[c] < local_size1)
         ghost_data.push_back(cols[c] + local_range1[0]);
       else
-        ghost_data.push_back(ghosts1[cols[c] - local_size1]);
+        throw std::runtime_error("cols[c] out of diagonal block");
     }
 
     const std::vector<std::int64_t>& cols_off = _off_diagonal_cache[row_local];
