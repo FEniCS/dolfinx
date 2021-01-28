@@ -225,6 +225,8 @@ void SparsityPattern::insert(const tcb::span<const std::int32_t>& rows,
     {
       for (std::size_t j = 0; j < cols.size(); ++j)
       {
+        _new_cache.push_back({rows[i], cols[j]});
+
         if (cols[j] < local_size1)
           _diagonal_cache[rows[i]].push_back(cols[j]);
         else
@@ -260,6 +262,7 @@ void SparsityPattern::insert_diagonal(const std::vector<int32_t>& rows)
 
   for (std::int32_t row : rows)
   {
+    _new_cache.push_back({row, row});
     if (row < local_size1)
       _diagonal_cache[row].push_back(row);
     else if (row < size0)
@@ -277,6 +280,11 @@ void SparsityPattern::assemble()
   if (_diagonal)
     throw std::runtime_error("Sparsity pattern has already been finalised.");
   assert(!_off_diagonal);
+
+  // Sort and remove duplicates
+  std::sort(_new_cache.begin(), _new_cache.end());
+  _new_cache.erase(std::unique(_new_cache.begin(), _new_cache.end()),
+                   _new_cache.end());
 
   assert(_index_maps[0]);
   const std::int32_t local_size0 = _index_maps[0]->size_local();

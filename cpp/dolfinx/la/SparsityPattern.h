@@ -117,6 +117,8 @@ private:
   std::vector<std::vector<std::int32_t>> _diagonal_cache;
   std::vector<std::vector<std::int64_t>> _off_diagonal_cache;
 
+  std::vector<std::array<std::int32_t, 2>> _new_cache;
+
   // Sparsity pattern data (computed once pattern is finalised)
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal;
   std::shared_ptr<graph::AdjacencyList<std::int64_t>> _off_diagonal;
