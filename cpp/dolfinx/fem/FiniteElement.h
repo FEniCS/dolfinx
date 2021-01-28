@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -102,7 +103,7 @@ public:
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
+      const tcb::span<const double>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
@@ -112,7 +113,7 @@ public:
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
+      const tcb::span<const double>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
   /// Get the number of sub elements (for a mixed element)
@@ -147,6 +148,8 @@ public:
   /// @todo Make the interpolating dofs in/out argument for efficiency
   /// as this function is often called from within tight loops
   /// @todo Consider handling block size > 1
+  /// @todo Re-work for fields that require a pull-back, e.g. Piols
+  /// mapped elements
   ///
   /// Interpolate a function in the finite element space on a cell.
   /// Given the evaluation of the function to be interpolated at points
@@ -162,7 +165,7 @@ public:
   void interpolate(const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>& values,
                    std::uint32_t cell_permutation,
-                   Eigen::Array<ufc_scalar_t, Eigen::Dynamic, 1>& dofs) const;
+                   tcb::span<ufc_scalar_t> dofs) const;
 
   /// @todo Expand on when permutation data might be required
   ///
@@ -226,9 +229,13 @@ private:
   // _interpolate_into_cell is not required
   bool _interpolation_is_ident;
 
+  // True if element needs dof permutation
   bool _needs_permutation_data;
 
   // The basix element identifier
   int _basix_element_handle;
+
+  // The interpolation matrix
+  Eigen::MatrixXd _interpolation_matrix;
 };
 } // namespace dolfinx::fem

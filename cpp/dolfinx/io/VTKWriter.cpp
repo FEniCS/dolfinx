@@ -30,35 +30,6 @@ using namespace dolfinx::io;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Get VTK cell type
-std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, int cell_dim)
-{
-
-  // Get cell type
-  mesh::CellType cell_type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
-
-  // Determine VTK cell type (Using arbitrary Lagrange elements)
-  // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
-  switch (cell_type)
-  {
-  case mesh::CellType::point:
-    return 1;
-  case mesh::CellType::interval:
-    return 68;
-  case mesh::CellType::triangle:
-    return 69;
-  case mesh::CellType::quadrilateral:
-    return 70;
-  case mesh::CellType::tetrahedron:
-    return 71;
-  case mesh::CellType::hexahedron:
-    return 72;
-  default:
-    throw std::runtime_error("Unknown cell type");
-  }
-}
-//----------------------------------------------------------------------------
 // Write cell data (ascii)
 std::string ascii_cell_data(const mesh::Mesh& mesh,
                             const std::vector<std::size_t>& offset,
@@ -112,7 +83,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   const int num_cells = mesh.topology().index_map(cell_dim)->size_local();
 
   // Get VTK cell type
-  const std::int8_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim);
+  const std::int8_t vtk_cell_type
+      = io::cells::get_vtk_cell_type(mesh, cell_dim);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -346,7 +318,7 @@ void VTKWriter::write_cell_data(const fem::Function<PetscScalar>& u,
 
   // Get  values
   std::vector<PetscScalar> values(dof_set.size());
-  const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& _x = u.x()->array();
+  const std::vector<PetscScalar>& _x = u.x()->array();
   for (std::size_t i = 0; i < dof_set.size(); ++i)
     values[i] = _x[dof_set[i]];
 

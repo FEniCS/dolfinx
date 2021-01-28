@@ -74,11 +74,10 @@
 # First, the :py:mod:`dolfinx` module is imported: ::
 
 import dolfinx
-import dolfinx.plotting
-import matplotlib.pyplot as plt
 import numpy as np
 import ufl
-from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh, fem
+from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh, fem,
+                     plot)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
@@ -199,7 +198,21 @@ with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
     file.write_mesh(mesh)
     file.write_function(uh)
 
+
 # Update ghost entries and plot
 uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-dolfinx.plotting.plot(uh)
-plt.show()
+try:
+    import pyvista
+
+    topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
+    grid = pyvista.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
+    grid.point_arrays["u"] = uh.compute_point_values().real
+    grid.set_active_scalars("u")
+
+    plotter = pyvista.Plotter()
+    plotter.add_mesh(grid, show_edges=True)
+    warped = grid.warp_by_scalar()
+    plotter.add_mesh(warped)
+    plotter.show()
+except ModuleNotFoundError:
+    print("pyvista is required to visualise the solution")

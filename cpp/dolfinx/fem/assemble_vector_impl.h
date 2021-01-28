@@ -28,19 +28,17 @@ namespace dolfinx::fem::impl
 
 /// Implementation of assembly
 
-/// Assemble linear form into an Eigen vector
-/// @param[in,out] b The vector to be assembled. It will not be zeroed before
-///   assembly.
+/// Assemble linear form into a vector
+/// @param[in,out] b The vector to be assembled. It will not be zeroed
+/// before assembly.
 /// @param[in] L The linear forms to assemble into b
 template <typename T>
-void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-                     const Form<T>& L);
+void assemble_vector(tcb::span<T> b, const Form<T>& L);
 
 /// Execute kernel over cells and accumulate result in vector
 template <typename T>
 void assemble_cells(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-    const mesh::Geometry& geometry,
+    tcb::span<T> b, const mesh::Geometry& geometry,
     const std::vector<std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -53,7 +51,7 @@ void assemble_cells(
 /// Execute kernel over cells and accumulate result in vector
 template <typename T>
 void assemble_exterior_facets(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const mesh::Mesh& mesh,
+    tcb::span<T> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -62,12 +60,12 @@ void assemble_exterior_facets(
         coeffs,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
+    const std::vector<std::uint8_t>& perms);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
 template <typename T>
 void assemble_interior_facets(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const mesh::Mesh& mesh,
+    tcb::span<T> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets, const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
@@ -75,7 +73,7 @@ void assemble_interior_facets(
         coeffs,
     const std::vector<int>& offsets, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
+    const std::vector<std::uint8_t>& perms);
 
 /// Modify b such that:
 ///
@@ -88,20 +86,17 @@ void assemble_interior_facets(
 /// treated as zero.
 /// @param[in,out] b The vector to be modified
 /// @param[in] a The bilinear forms, where a[j] is the form that
-///              generates A_j
+/// generates A_j
 /// @param[in] bcs1 List of boundary conditions for each block, i.e.
-///                 bcs1[2] are the boundary conditions applied to the
-///                 columns of a[2] / x0[2] block
+/// bcs1[2] are the boundary conditions applied to the columns of a[2] /
+/// x0[2] block
 /// @param[in] x0 The vectors used in the lifting
 /// @param[in] scale Scaling to apply
 template <typename T>
 void apply_lifting(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form<T>>> a,
+    tcb::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>>&
-        x0,
-    double scale);
+    const tcb::span<const T>& x0, double scale);
 
 /// Modify RHS vector to account for boundary condition such that: b <-
 ////
@@ -111,23 +106,20 @@ void apply_lifting(
 /// @param[in] a The bilinear form that generates A
 /// @param[in] bc_values1 The boundary condition 'values'
 /// @param[in] bc_markers1 The indices (columns of A, rows of x) to
-///                        which bcs belong
+/// which bcs belong
 /// @param[in] x0 The array used in the lifting, typically a 'current
-///               solution' in a Newton method
+/// solution' in a Newton method
 /// @param[in] scale Scaling to apply
 template <typename T>
-void lift_bc(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
-    const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
-    const std::vector<bool>& bc_markers1,
-    const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
-    double scale);
+void lift_bc(tcb::span<T> b, const Form<T>& a,
+             const tcb::span<const T>& bc_values1,
+             const std::vector<bool>& bc_markers1, const tcb::span<const T>& x0,
+             double scale);
 
 // Implementation of bc application
 template <typename T>
 void _lift_bc_cells(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-    const mesh::Geometry& geometry,
+    tcb::span<T> b, const mesh::Geometry& geometry,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const std::vector<std::int32_t>& active_cells,
@@ -137,10 +129,8 @@ void _lift_bc_cells(
         coeffs,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
-    const std::vector<bool>& bc_markers1,
-    const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
-    double scale)
+    const tcb::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
+    const tcb::span<const T>& x0, double scale)
 {
   // Prepare cell geometry
   const int gdim = geometry.dim();
@@ -153,8 +143,7 @@ void _lift_bc_cells(
 
   // Data structures used in bc application
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
-  Eigen::Matrix<T, Eigen::Dynamic, 1> be;
+  std::vector<T> Ae, be;
 
   for (std::int32_t c : active_cells)
   {
@@ -190,13 +179,18 @@ void _lift_bc_cells(
     // Size data structure for assembly
     auto dmap0 = dofmap0.links(c);
 
+    const int num_rows = bs0 * dmap0.size();
+    const int num_cols = bs1 * dmap1.size();
+
     auto coeff_array = coeffs.row(c);
-    Ae.setZero(bs0 * dmap0.size(), bs1 * dmap1.size());
+    Ae.resize(num_rows * num_cols);
+    std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Size data structure for assembly
-    be.setZero(bs0 * dmap0.size());
+    be.resize(num_rows);
+    std::fill(be.begin(), be.end(), 0);
     for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
@@ -206,10 +200,10 @@ void _lift_bc_cells(
         if (bc_markers1[jj])
         {
           const T bc = bc_values1[jj];
-          if (x0.rows() > 0)
-            be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
-          else
-            be -= Ae.col(bs1 * j + k) * scale * bc;
+          const T _x0 = x0.empty() ? 0.0 : x0[jj];
+          // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
+          for (int m = 0; m < num_rows; ++m)
+            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
         }
       }
     }
@@ -222,7 +216,7 @@ void _lift_bc_cells(
 //----------------------------------------------------------------------------
 template <typename T>
 void _lift_bc_exterior_facets(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const mesh::Mesh& mesh,
+    tcb::span<T> b, const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const std::vector<std::int32_t>& active_facets,
@@ -232,11 +226,9 @@ void _lift_bc_exterior_facets(
         coeffs,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms,
-    const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
-    const std::vector<bool>& bc_markers1,
-    const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
-    double scale)
+    const std::vector<std::uint8_t>& perms,
+    const tcb::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
+    const tcb::span<const T>& x0, double scale)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -251,8 +243,7 @@ void _lift_bc_exterior_facets(
 
   // Data structures used in bc application
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
-  Eigen::Matrix<T, Eigen::Dynamic, 1> be;
+  std::vector<T> Ae, be;
 
   // Iterate over owned facets
   const mesh::Topology& topology = mesh.topology();
@@ -306,14 +297,19 @@ void _lift_bc_exterior_facets(
     // Size data structure for assembly
     auto dmap0 = dofmap0.links(cell);
 
+    const int num_rows = bs0 * dmap0.size();
+    const int num_cols = bs1 * dmap1.size();
+
     auto coeff_array = coeffs.row(cell);
-    Ae.setZero(bs0 * dmap0.size(), bs1 * dmap1.size());
+    Ae.resize(num_rows * num_cols);
+    std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
-           coordinate_dofs.data(), &local_facet, &perms(local_facet, cell),
-           cell_info[cell]);
+           coordinate_dofs.data(), &local_facet,
+           &perms[cell * facets.size() + local_facet], cell_info[cell]);
 
     // Size data structure for assembly
-    be.setZero(bs0 * dmap0.size());
+    be.resize(num_rows);
+    std::fill(be.begin(), be.end(), 0);
     for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
@@ -321,11 +317,12 @@ void _lift_bc_exterior_facets(
         const std::int32_t jj = bs1 * dmap1[j] + k;
         if (bc_markers1[jj])
         {
+
           const T bc = bc_values1[jj];
-          if (x0.rows() > 0)
-            be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
-          else
-            be -= Ae.col(bs1 * j + k) * scale * bc;
+          const T _x0 = x0.empty() ? 0.0 : x0[jj];
+          // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
+          for (int m = 0; m < num_rows; ++m)
+            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
         }
       }
     }
@@ -338,7 +335,7 @@ void _lift_bc_exterior_facets(
 //----------------------------------------------------------------------------
 template <typename T>
 void _lift_bc_interior_facets(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const mesh::Mesh& mesh,
+    tcb::span<T> b, const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const std::vector<std::int32_t>& active_facets,
@@ -348,11 +345,9 @@ void _lift_bc_interior_facets(
         coeffs,
     const std::vector<int>& offsets, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms,
-    const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
-    const std::vector<bool>& bc_markers1,
-    const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
-    double scale)
+    const std::vector<std::uint8_t>& perms,
+    const tcb::span<const T>& bc_values1, const std::vector<bool>& bc_markers1,
+    const tcb::span<const T>& x0, double scale)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -366,12 +361,10 @@ void _lift_bc_interior_facets(
       = mesh.geometry().x();
 
   // Data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(2 * num_dofs_g, gdim);
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
-  Eigen::Array<T, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
+  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
+  std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
-  Eigen::Matrix<T, Eigen::Dynamic, 1> be;
+  std::vector<T> Ae, be;
 
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
@@ -386,6 +379,7 @@ void _lift_bc_interior_facets(
   auto map = topology.index_map(tdim - 1);
   assert(map);
 
+  const int offset_g = gdim * num_dofs_g;
   for (std::int32_t f : active_facets)
   {
     // Create attached cells
@@ -411,8 +405,8 @@ void _lift_bc_interior_facets(
     {
       for (int j = 0; j < gdim; ++j)
       {
-        coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
-        coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
+        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
       }
     }
 
@@ -471,21 +465,27 @@ void _lift_bc_interior_facets(
     {
       // Loop over entries for coefficient i
       const int num_entries = offsets[i + 1] - offsets[i];
-      coeff_array.segment(2 * offsets[i], num_entries)
-          = coeff_cell0.segment(offsets[i], num_entries);
-      coeff_array.segment(offsets[i + 1] + offsets[i], num_entries)
-          = coeff_cell1.segment(offsets[i], num_entries);
+      std::copy_n(coeff_cell0.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), 2 * offsets[i]));
+      std::copy_n(coeff_cell1.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
     }
 
+    const int num_rows = bs0 * dmapjoint0.size();
+    const int num_cols = bs1 * dmapjoint1.size();
+
     // Tabulate tensor
-    Ae.setZero(bs0 * dmapjoint0.size(), bs1 * dmapjoint1.size());
-    const std::array perm{perms(local_facet[0], cells[0]),
-                          perms(local_facet[1], cells[1])};
+    Ae.resize(num_rows * num_cols);
+    std::fill(Ae.begin(), Ae.end(), 0);
+    const int facets_per_cell = facets0.size();
+    const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
+                          perms[cells[1] * facets_per_cell + local_facet[1]]};
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data(),
            cell_info[cells[0]]);
 
-    be.setZero(bs0 * (dmap0_cell0.size() + dmap0_cell1.size()));
+    be.resize(num_rows);
+    std::fill(be.begin(), be.end(), 0);
 
     // Compute b = b - A*b for cell0
     for (std::size_t j = 0; j < dmap1_cell0.size(); ++j)
@@ -496,10 +496,10 @@ void _lift_bc_interior_facets(
         if (bc_markers1[jj])
         {
           const T bc = bc_values1[jj];
-          if (x0.rows() > 0)
-            be -= Ae.col(bs1 * j + k) * scale * (bc - x0[jj]);
-          else
-            be -= Ae.col(bs1 * j + k) * scale * bc;
+          const T _x0 = x0.empty() ? 0.0 : x0[jj];
+          // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
+          for (int m = 0; m < num_rows; ++m)
+            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
         }
       }
     }
@@ -514,10 +514,13 @@ void _lift_bc_interior_facets(
         if (bc_markers1[jj])
         {
           const T bc = bc_values1[jj];
-          if (x0.rows() > 0)
-            be -= Ae.col(offset + bs1 * j + k) * scale * (bc - x0[jj]);
-          else
-            be -= Ae.col(offset + bs1 * j + k) * scale * bc;
+          const T _x0 = x0.empty() ? 0.0 : x0[jj];
+          // be -= Ae.col(offset + bs1 * j + k) * scale * (bc - x0[jj]);
+          for (int m = 0; m < num_rows; ++m)
+          {
+            be[m]
+                -= Ae[m * num_cols + offset + bs1 * j + k] * scale * (bc - _x0);
+          }
         }
       }
     }
@@ -533,8 +536,7 @@ void _lift_bc_interior_facets(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-                     const Form<T>& L)
+void assemble_vector(tcb::span<T> b, const Form<T>& L)
 {
   std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
   assert(mesh);
@@ -581,7 +583,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     mesh->topology_mutable().create_entity_permutations();
 
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
+    const std::vector<std::uint8_t>& perms
         = mesh->topology().get_facet_permutations();
     for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
@@ -608,8 +610,7 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_cells(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-    const mesh::Geometry& geometry,
+    tcb::span<T> b, const mesh::Geometry& geometry,
     const std::vector<std::int32_t>& active_cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -661,7 +662,7 @@ void assemble_cells(
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_exterior_facets(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const mesh::Mesh& mesh,
+    tcb::span<T> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, const int bs,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
@@ -670,7 +671,7 @@ void assemble_exterior_facets(
         coeffs,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
+    const std::vector<std::uint8_t>& perms)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -716,8 +717,8 @@ void assemble_exterior_facets(
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
     fn(be.data(), coeffs.row(cell).data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perms(local_facet, cell),
-       cell_info[cell]);
+       coordinate_dofs.data(), &local_facet,
+       &perms[cell * facets.size() + local_facet], cell_info[cell]);
 
     // Add element vector to global vector
     auto dofs = dofmap.links(cell);
@@ -729,7 +730,7 @@ void assemble_exterior_facets(
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_interior_facets(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const mesh::Mesh& mesh,
+    tcb::span<T> b, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets, const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
@@ -737,7 +738,7 @@ void assemble_interior_facets(
         coeffs,
     const std::vector<int>& offsets, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
+    const std::vector<std::uint8_t>& perms)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -751,10 +752,9 @@ void assemble_interior_facets(
       = mesh.geometry().x();
 
   // Create data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(2 * num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
   std::vector<T> be;
-  Eigen::Array<T, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
+  std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
   const int bs = dofmap.bs();
@@ -762,11 +762,14 @@ void assemble_interior_facets(
   assert(f_to_c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
+  const int offset_g = gdim * num_dofs_g;
   for (const auto& f : active_facets)
   {
     // Get attached cell indices
     auto cells = f_to_c->links(f);
     assert(cells.size() == 2);
+
+    const int facets_per_cell = c_to_f->num_links(cells[0]);
 
     // Create attached cells
     std::array<int, 2> local_facet;
@@ -785,8 +788,8 @@ void assemble_interior_facets(
     {
       for (int j = 0; j < gdim; ++j)
       {
-        coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
-        coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
+        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
       }
     }
 
@@ -800,10 +803,10 @@ void assemble_interior_facets(
     {
       // Loop over entries for coefficient i
       const int num_entries = offsets[i + 1] - offsets[i];
-      coeff_array.segment(2 * offsets[i], num_entries)
-          = coeff_cell0.segment(offsets[i], num_entries);
-      coeff_array.segment(offsets[i + 1] + offsets[i], num_entries)
-          = coeff_cell1.segment(offsets[i], num_entries);
+      std::copy_n(coeff_cell0.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), 2 * offsets[i]));
+      std::copy_n(coeff_cell1.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
     }
 
     // Get dofmaps for cells
@@ -812,9 +815,9 @@ void assemble_interior_facets(
 
     // Tabulate element vector
     be.resize(bs * (dmap0.size() + dmap1.size()));
-    std::fill(be.begin(), be.end(), 0.0);
-    const std::array perm{perms(local_facet[0], cells[0]),
-                          perms(local_facet[1], cells[1])};
+    std::fill(be.begin(), be.end(), 0);
+    const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
+                          perms[cells[1] * facets_per_cell + local_facet[1]]};
     fn(be.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
        cell_info[cells[0]]);
@@ -831,12 +834,9 @@ void assemble_interior_facets(
 //-----------------------------------------------------------------------------
 template <typename T>
 void apply_lifting(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form<T>>> a,
+    tcb::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>>&
-        x0,
-    double scale)
+    const std::vector<tcb::span<const T>>& x0, double scale)
 {
   // FIXME: make changes to reactivate this check
   if (!x0.empty() and x0.size() != a.size())
@@ -854,7 +854,7 @@ void apply_lifting(
   for (std::size_t j = 0; j < a.size(); ++j)
   {
     std::vector<bool> bc_markers1;
-    Eigen::Matrix<T, Eigen::Dynamic, 1> bc_values1;
+    std::vector<T> bc_values1;
     if (a[j] and !bcs1[j].empty())
     {
       auto V1 = a[j]->function_spaces()[1];
@@ -864,7 +864,7 @@ void apply_lifting(
       assert(map1);
       const int crange = bs1 * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
-      bc_values1 = Eigen::Matrix<T, Eigen::Dynamic, 1>::Zero(crange);
+      bc_values1.assign(crange, 0.0);
       for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
@@ -875,20 +875,18 @@ void apply_lifting(
         lift_bc<T>(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
       else
       {
-        const Eigen::Matrix<T, Eigen::Dynamic, 1> x0(0);
-        lift_bc<T>(b, *a[j], bc_values1, bc_markers1, x0, scale);
+        lift_bc<T>(b, *a[j], bc_values1, bc_markers1, tcb::span<const T>(),
+                   scale);
       }
     }
   }
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void lift_bc(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b, const Form<T>& a,
-    const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& bc_values1,
-    const std::vector<bool>& bc_markers1,
-    const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
-    double scale)
+void lift_bc(tcb::span<T> b, const Form<T>& a,
+             const tcb::span<const T>& bc_values1,
+             const std::vector<bool>& bc_markers1, const tcb::span<const T>& x0,
+             double scale)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);
@@ -938,7 +936,7 @@ void lift_bc(
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     mesh->topology_mutable().create_entity_permutations();
 
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
+    const std::vector<std::uint8_t>& perms
         = mesh->topology().get_facet_permutations();
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {

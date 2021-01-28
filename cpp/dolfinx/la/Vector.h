@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <dolfinx/common/IndexMap.h>
 #include <memory>
 
@@ -51,10 +50,10 @@ public:
   int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  const Eigen::Matrix<T, Eigen::Dynamic, 1>& array() const { return _x; }
+  const std::vector<T>& array() const { return _x; }
 
   /// Get local part of the vector
-  Eigen::Matrix<T, Eigen::Dynamic, 1>& array() { return _x; }
+  std::vector<T>& mutable_array() { return _x; }
 
 private:
   // Map describing the data layout
@@ -64,6 +63,6 @@ private:
   int _bs;
 
   // Data
-  Eigen::Matrix<T, Eigen::Dynamic, 1> _x;
+  std::vector<T> _x;
 };
 } // namespace dolfinx::la

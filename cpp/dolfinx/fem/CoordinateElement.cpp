@@ -84,8 +84,7 @@ void CoordinateElement::push_forward(
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
-    Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> detJ,
+    Eigen::Tensor<double, 3, Eigen::RowMajor>& J, tcb::span<double> detJ,
     Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x,
@@ -109,7 +108,7 @@ void CoordinateElement::compute_reference_geometry(
   assert(J.dimension(0) == num_points);
   assert(J.dimension(1) == gdim);
   assert(J.dimension(2) == tdim);
-  assert(detJ.rows() == num_points);
+  assert((int)detJ.size() == num_points);
   assert(K.dimension(0) == num_points);
   assert(K.dimension(1) == tdim);
   assert(K.dimension(2) == gdim);
@@ -148,13 +147,15 @@ void CoordinateElement::compute_reference_geometry(
     if (gdim == tdim)
     {
       K0 = J0.inverse();
-      detJ.fill(J0.determinant());
+      std::fill(detJ.begin(), detJ.end(), J0.determinant());
     }
     else
     {
       // Penrose-Moore pseudo-inverse
       K0 = (J0.transpose() * J0).inverse() * J0.transpose();
-      detJ.fill(std::sqrt((J0.transpose() * J0).determinant()));
+      // detJ.fill(std::sqrt((J0.transpose() * J0).determinant()));
+      std::fill(detJ.begin(), detJ.end(),
+                std::sqrt((J0.transpose() * J0).determinant()));
     }
 
     Eigen::Map<
@@ -220,9 +221,9 @@ void CoordinateElement::compute_reference_geometry(
       }
       X.row(ip) = Xk;
       if (gdim == tdim)
-        detJ.row(ip) = Jview.determinant();
+        detJ[ip] = Jview.determinant();
       else
-        detJ.row(ip) = std::sqrt((Jview.transpose() * Jview).determinant());
+        detJ[ip] = std::sqrt((Jview.transpose() * Jview).determinant());
     }
   }
 }

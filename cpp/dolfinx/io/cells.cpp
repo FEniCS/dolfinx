@@ -6,6 +6,7 @@
 
 #include "cells.h"
 #include <dolfinx/common/log.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <numeric>
 #include <stdexcept>
@@ -207,7 +208,7 @@ std::vector<std::uint8_t> vtk_hexahedron(int num_nodes)
     return {0, 1, 3, 2, 4, 5, 7, 6};
   case 27:
     // This is the documented VTK ordering
-    return {0,  1,  3,  2,  4,  5,  7,  6,  8,  11, 13, 9,  10, 18,
+    return {0,  1,  3,  2,  4,  5,  7,  6,  8,  11, 13, 9,  16, 18,
             19, 17, 10, 12, 15, 14, 22, 23, 21, 24, 20, 25, 26};
   default:
     throw std::runtime_error("Higher order hexahedron not supported.");
@@ -366,3 +367,31 @@ io::cells::compute_permutation(
   return cells_new;
 }
 //-----------------------------------------------------------------------------
+std::int8_t io::cells::get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh,
+                                         int dim)
+{
+  // Get cell type
+  mesh::CellType cell_type
+      = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
+
+  // Determine VTK cell type (Using arbitrary Lagrange elements)
+  // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
+  switch (cell_type)
+  {
+  case mesh::CellType::point:
+    return 1;
+  case mesh::CellType::interval:
+    return 68;
+  case mesh::CellType::triangle:
+    return 69;
+  case mesh::CellType::quadrilateral:
+    return 70;
+  case mesh::CellType::tetrahedron:
+    return 71;
+  case mesh::CellType::hexahedron:
+    return 72;
+  default:
+    throw std::runtime_error("Unknown cell type");
+  }
+}
+//----------------------------------------------------------------------------

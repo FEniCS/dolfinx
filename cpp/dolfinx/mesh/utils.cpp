@@ -22,303 +22,6 @@
 
 using namespace dolfinx;
 
-namespace
-{
-//-----------------------------------------------------------------------------
-template <typename T>
-T volume_interval(const mesh::Mesh& mesh,
-                  const Eigen::Ref<const Eigen::ArrayXi>& entities)
-{
-  const mesh::Geometry& geometry = mesh.geometry();
-  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-
-  T v(entities.rows());
-  for (Eigen::Index i = 0; i < entities.rows(); ++i)
-  {
-    // Get the coordinates of the two vertices
-    auto dofs = x_dofs.links(entities[i]);
-    const Eigen::Vector3d x0 = geometry.node(dofs[0]);
-    const Eigen::Vector3d x1 = geometry.node(dofs[1]);
-    v[i] = (x1 - x0).norm();
-  }
-
-  return v;
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-T volume_triangle(const mesh::Mesh& mesh,
-                  const Eigen::Ref<const Eigen::ArrayXi>& entities)
-{
-  const mesh::Geometry& geometry = mesh.geometry();
-  const int gdim = geometry.dim();
-  assert(gdim == 2 or gdim == 3);
-  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-
-  T v(entities.rows());
-  if (gdim == 2)
-  {
-    for (Eigen::Index i = 0; i < entities.rows(); ++i)
-    {
-      auto dofs = x_dofs.links(entities[i]);
-      const Eigen::Vector3d x0 = geometry.node(dofs[0]);
-      const Eigen::Vector3d x1 = geometry.node(dofs[1]);
-      const Eigen::Vector3d x2 = geometry.node(dofs[2]);
-
-      // Compute area of triangle embedded in R^2
-      double v2 = (x0[0] * x1[1] + x0[1] * x2[0] + x1[0] * x2[1])
-                  - (x2[0] * x1[1] + x2[1] * x0[0] + x1[0] * x0[1]);
-
-      // Formula for volume from http://mathworld.wolfram.com
-      v[i] = 0.5 * std::abs(v2);
-    }
-  }
-  else if (gdim == 3)
-  {
-    for (Eigen::Index i = 0; i < entities.rows(); ++i)
-    {
-      auto dofs = x_dofs.links(entities[i]);
-      const Eigen::Vector3d x0 = geometry.node(dofs[0]);
-      const Eigen::Vector3d x1 = geometry.node(dofs[1]);
-      const Eigen::Vector3d x2 = geometry.node(dofs[2]);
-
-      // Compute area of triangle embedded in R^3
-      const double v0 = (x0[1] * x1[2] + x0[2] * x2[1] + x1[1] * x2[2])
-                        - (x2[1] * x1[2] + x2[2] * x0[1] + x1[1] * x0[2]);
-      const double v1 = (x0[2] * x1[0] + x0[0] * x2[2] + x1[2] * x2[0])
-                        - (x2[2] * x1[0] + x2[0] * x0[2] + x1[2] * x0[0]);
-      const double v2 = (x0[0] * x1[1] + x0[1] * x2[0] + x1[0] * x2[1])
-                        - (x2[0] * x1[1] + x2[1] * x0[0] + x1[0] * x0[1]);
-
-      // Formula for volume from http://mathworld.wolfram.com
-      v[i] = 0.5 * sqrt(v0 * v0 + v1 * v1 + v2 * v2);
-    }
-  }
-  else
-    throw std::runtime_error("Unexpected geometric dimension.");
-
-  return v;
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-T volume_tetrahedron(const mesh::Mesh& mesh,
-                     const Eigen::Ref<const Eigen::ArrayXi>& entities)
-{
-  const mesh::Geometry& geometry = mesh.geometry();
-  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-
-  Eigen::ArrayXd v(entities.rows());
-  for (Eigen::Index i = 0; i < entities.rows(); ++i)
-  {
-    auto dofs = x_dofs.links(entities[i]);
-    const Eigen::Vector3d x0 = geometry.node(dofs[0]);
-    const Eigen::Vector3d x1 = geometry.node(dofs[1]);
-    const Eigen::Vector3d x2 = geometry.node(dofs[2]);
-    const Eigen::Vector3d x3 = geometry.node(dofs[3]);
-
-    // Formula for volume from http://mathworld.wolfram.com
-    const double v_tmp
-        = (x0[0]
-               * (x1[1] * x2[2] + x3[1] * x1[2] + x2[1] * x3[2] - x2[1] * x1[2]
-                  - x1[1] * x3[2] - x3[1] * x2[2])
-           - x1[0]
-                 * (x0[1] * x2[2] + x3[1] * x0[2] + x2[1] * x3[2]
-                    - x2[1] * x0[2] - x0[1] * x3[2] - x3[1] * x2[2])
-           + x2[0]
-                 * (x0[1] * x1[2] + x3[1] * x0[2] + x1[1] * x3[2]
-                    - x1[1] * x0[2] - x0[1] * x3[2] - x3[1] * x1[2])
-           - x3[0]
-                 * (x0[1] * x1[2] + x1[1] * x2[2] + x2[1] * x0[2]
-                    - x1[1] * x0[2] - x2[1] * x1[2] - x0[1] * x2[2]));
-
-    v[i] = std::abs(v_tmp) / 6.0;
-  }
-
-  return v;
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-T volume_quadrilateral(const mesh::Mesh& mesh,
-                       const Eigen::Ref<const Eigen::ArrayXi>& entities)
-{
-  const mesh::Geometry& geometry = mesh.geometry();
-  const int gdim = geometry.dim();
-  T v(entities.rows());
-  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-
-  for (Eigen::Index e = 0; e < entities.rows(); ++e)
-  {
-    // Get the coordinates of the four vertices
-    auto dofs = x_dofs.links(entities[e]);
-    const Eigen::Vector3d p0 = geometry.node(dofs[0]);
-    const Eigen::Vector3d p1 = geometry.node(dofs[1]);
-    const Eigen::Vector3d p2 = geometry.node(dofs[2]);
-    const Eigen::Vector3d p3 = geometry.node(dofs[3]);
-
-    const Eigen::Vector3d c = (p0 - p3).cross(p1 - p2);
-    const double volume = 0.5 * c.norm();
-
-    if (gdim == 3)
-    {
-      // Vertices are coplanar if det(p1-p0 | p3-p0 | p2-p0) is zero
-      Eigen::Matrix<double, 3, 3, Eigen::RowMajor> m;
-      m.row(0) = (p1 - p0).transpose();
-      m.row(1) = (p3 - p0).transpose();
-      m.row(2) = (p2 - p0).transpose();
-
-      // Check for coplanarity
-      const double copl = m.determinant();
-      const double h = std::min(1.0, std::pow(volume, 1.5));
-      if (std::abs(copl) > h * DBL_EPSILON)
-        throw std::runtime_error("Not coplanar");
-    }
-
-    v[e] = volume;
-  }
-  return v;
-}
-//-----------------------------------------------------------------------------
-
-/// Compute (generalized) volume of mesh entities of given dimension.
-/// This templated versions allows for fixed size (statically allocated)
-/// return arrays, which can be important for performance when computing
-/// for a small number of entities.
-template <typename T>
-T volume_entities_tmpl(const mesh::Mesh& mesh,
-                       const Eigen::Ref<const Eigen::ArrayXi>& entities,
-                       int dim)
-{
-  const mesh::CellType type
-      = cell_entity_type(mesh.topology().cell_type(), dim);
-  switch (type)
-  {
-  case mesh::CellType::point:
-  {
-    T v(entities.rows());
-    v.setOnes();
-    return v;
-  }
-  case mesh::CellType::interval:
-    return volume_interval<T>(mesh, entities);
-  case mesh::CellType::triangle:
-    assert(mesh.topology().dim() == dim);
-    return volume_triangle<T>(mesh, entities);
-  case mesh::CellType::tetrahedron:
-    return volume_tetrahedron<T>(mesh, entities);
-  case mesh::CellType::quadrilateral:
-    assert(mesh.topology().dim() == dim);
-    return volume_quadrilateral<T>(mesh, entities);
-  case mesh::CellType::hexahedron:
-    throw std::runtime_error(
-        "Volume computation for hexahedral cell not supported.");
-  default:
-    throw std::runtime_error("Unknown cell type.");
-    return T();
-  }
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-T circumradius_triangle(const mesh::Mesh& mesh,
-                        const Eigen::Ref<const Eigen::ArrayXi>& entities)
-{
-  // Get mesh geometry
-  const mesh::Geometry& geometry = mesh.geometry();
-  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-
-  T volumes = volume_entities_tmpl<T>(mesh, entities, 2);
-  T cr(entities.rows());
-  for (Eigen::Index e = 0; e < entities.rows(); ++e)
-  {
-    auto dofs = x_dofs.links(entities[e]);
-    const Eigen::Vector3d p0 = geometry.node(dofs[0]);
-    const Eigen::Vector3d p1 = geometry.node(dofs[1]);
-    const Eigen::Vector3d p2 = geometry.node(dofs[2]);
-
-    // Compute side lengths
-    const double a = (p1 - p2).norm();
-    const double b = (p0 - p2).norm();
-    const double c = (p0 - p1).norm();
-
-    // Formula for circumradius from
-    // http://mathworld.wolfram.com/Triangle.html
-    cr[e] = a * b * c / (4.0 * volumes[e]);
-  }
-  return cr;
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-T circumradius_tetrahedron(const mesh::Mesh& mesh,
-                           const Eigen::Ref<const Eigen::ArrayXi>& entities)
-{
-  // Get mesh geometry
-  const mesh::Geometry& geometry = mesh.geometry();
-  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-  T volumes = volume_entities_tmpl<T>(mesh, entities, 3);
-
-  T cr(entities.rows());
-  for (Eigen::Index e = 0; e < entities.rows(); ++e)
-  {
-    auto dofs = x_dofs.links(entities[e]);
-    const Eigen::Vector3d p0 = geometry.node(dofs[0]);
-    const Eigen::Vector3d p1 = geometry.node(dofs[1]);
-    const Eigen::Vector3d p2 = geometry.node(dofs[2]);
-    const Eigen::Vector3d p3 = geometry.node(dofs[3]);
-
-    // Compute side lengths
-    const double a = (p1 - p2).norm();
-    const double b = (p0 - p2).norm();
-    const double c = (p0 - p1).norm();
-    const double aa = (p0 - p3).norm();
-    const double bb = (p1 - p3).norm();
-    const double cc = (p2 - p3).norm();
-
-    // Compute "area" of triangle with strange side lengths
-    const double la = a * aa;
-    const double lb = b * bb;
-    const double lc = c * cc;
-    const double s = 0.5 * (la + lb + lc);
-    const double area = sqrt(s * (s - la) * (s - lb) * (s - lc));
-
-    // Formula for circumradius from
-    // http://mathworld.wolfram.com/Tetrahedron.html
-    cr[e] = area / (6.0 * volumes[e]);
-  }
-  return cr;
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-T circumradius_tmpl(const mesh::Mesh& mesh,
-                    const Eigen::Ref<const Eigen::ArrayXi>& entities, int dim)
-{
-  const mesh::CellType type
-      = cell_entity_type(mesh.topology().cell_type(), dim);
-  switch (type)
-  {
-  case mesh::CellType::point:
-  {
-    T cr(entities.rows());
-    cr.setZero();
-    return cr;
-  }
-  case mesh::CellType::interval:
-    return volume_interval<T>(mesh, entities) / 2;
-  case mesh::CellType::triangle:
-    return circumradius_triangle<T>(mesh, entities);
-  case mesh::CellType::tetrahedron:
-    return circumradius_tetrahedron<T>(mesh, entities);
-  // case mesh::CellType::quadrilateral:
-  //   // continue;
-  // case mesh::CellType::hexahedron:
-  //   // continue;
-  default:
-    throw std::runtime_error(
-        "Unsupported cell type for circumradius computation.");
-    return T();
-  }
-}
-//-----------------------------------------------------------------------------
-
-} // namespace
-
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
 mesh::extract_topology(const CellType& cell_type,
@@ -348,16 +51,9 @@ mesh::extract_topology(const CellType& cell_type,
                                                    num_vertices_per_cell);
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXd
-mesh::volume_entities(const mesh::Mesh& mesh,
-                      const Eigen::Ref<const Eigen::ArrayXi>& entities, int dim)
-{
-  return volume_entities_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
-}
-//-----------------------------------------------------------------------------
-Eigen::ArrayXd mesh::h(const Mesh& mesh,
-                       const Eigen::Ref<const Eigen::ArrayXi>& entities,
-                       int dim)
+std::vector<double> mesh::h(const Mesh& mesh,
+                            const tcb::span<const std::int32_t>& entities,
+                            int dim)
 {
   if (dim != mesh.topology().dim())
     throw std::runtime_error("Cell size when dim ne tdim  requires updating.");
@@ -367,18 +63,21 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
       = cell_entity_type(mesh.topology().cell_type(), dim);
   const int num_vertices = num_cell_vertices(type);
 
+  // Get geometry dofmap and dofs
   const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
+      = mesh.geometry().x();
 
-  Eigen::ArrayXd h_cells = Eigen::ArrayXd::Zero(entities.rows());
+  std::vector<double> h_cells(entities.size(), 0);
   assert(num_vertices <= 8);
   std::array<Eigen::Vector3d, 8> points;
-  for (Eigen::Index e = 0; e < entities.rows(); ++e)
+  for (std::size_t e = 0; e < entities.size(); ++e)
   {
     // Get the coordinates  of the vertices
     auto dofs = x_dofs.links(entities[e]);
     for (int i = 0; i < num_vertices; ++i)
-      points[i] = geometry.node(dofs[i]);
+      points[i] = geom_dofs.row(dofs[i]);
 
     // Get maximum edge length
     for (int i = 0; i < num_vertices; ++i)
@@ -391,93 +90,25 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
   return h_cells;
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXd
-mesh::circumradius(const mesh::Mesh& mesh,
-                   const Eigen::Ref<const Eigen::ArrayXi>& entities, int dim)
-{
-  return circumradius_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
-}
-//-----------------------------------------------------------------------------
-Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
-                              const Eigen::Ref<const Eigen::ArrayXi>& entities)
-{
-  // Cell type
-  const mesh::CellType type = mesh.topology().cell_type();
-
-  // Check cell type
-  if (!mesh::is_simplex(type))
-  {
-    throw std::runtime_error(
-        "inradius function not implemented for non-simplicial cells");
-  }
-
-  // Get cell dimension
-  const int d = mesh::cell_dim(type);
-  const mesh::Topology& topology = mesh.topology();
-  // FIXME: cleanup these calls as part of topology storage management rework.
-  mesh.topology_mutable().create_entities(d - 1);
-  auto connectivity = topology.connectivity(d, d - 1);
-  assert(connectivity);
-
-  const Eigen::ArrayXd volumes = mesh::volume_entities(mesh, entities, d);
-
-  Eigen::ArrayXd r(entities.rows());
-  Eigen::ArrayXi facet_list(d + 1);
-  for (Eigen::Index c = 0; c < entities.rows(); ++c)
-  {
-    if (volumes[c] == 0.0)
-    {
-      r[c] = 0.0;
-      continue;
-    }
-
-    auto facets = connectivity->links(entities[c]);
-    for (int i = 0; i <= d; i++)
-      facet_list[i] = facets[i];
-    const double A = volume_entities_tmpl<Eigen::Array<double, 4, 1>>(
-                         mesh, facet_list, d - 1)
-                         .head(d + 1)
-                         .sum();
-
-    // See Jonathan Richard Shewchuk: What Is a Good Linear Finite
-    // Element?, online:
-    // http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
-    // return d * V / A;
-    r[c] = d * volumes[c] / A;
-  }
-
-  return r;
-}
-//-----------------------------------------------------------------------------
-Eigen::ArrayXd
-mesh::radius_ratio(const mesh::Mesh& mesh,
-                   const Eigen::Ref<const Eigen::ArrayXi>& entities)
-{
-  const mesh::CellType type = mesh.topology().cell_type();
-  const int dim = mesh::cell_dim(type);
-  Eigen::ArrayXd r = mesh::inradius(mesh, entities);
-  Eigen::ArrayXd cr = mesh::circumradius(mesh, entities, dim);
-  return mesh::cell_dim(mesh.topology().cell_type()) * r / cr;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::cell_normals(
-    const mesh::Mesh& mesh, int dim,
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_indices)
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+mesh::cell_normals(const mesh::Mesh& mesh, int dim,
+                   const tcb::span<const std::int32_t>& entities)
 {
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
   // Find geometry nodes for topology entities
-  const mesh::Geometry& geometry = mesh.geometry();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
+      = mesh.geometry().x();
+
   // Orient cells if they are tetrahedron
   bool orient = false;
   if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
     orient = true;
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      geometry_entities
-      = entities_to_geometry(mesh, dim, entity_indices, orient);
+      geometry_entities = entities_to_geometry(mesh, dim, entities, orient);
 
-  const std::int32_t num_entities = entity_indices.size();
+  const std::int32_t num_entities = entities.size();
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_entities, 3);
   switch (type)
   {
@@ -489,8 +120,8 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::cell_normals(
     {
       // Get the two vertices as points
       auto vertices = geometry_entities.row(i);
-      Eigen::Vector3d p0 = geometry.node(vertices[0]);
-      Eigen::Vector3d p1 = geometry.node(vertices[1]);
+      Eigen::Vector3d p0 = geom_dofs.row(vertices[0]);
+      Eigen::Vector3d p1 = geom_dofs.row(vertices[1]);
       // Define normal by rotating tangent counter-clockwise
       Eigen::Vector3d t = p1 - p0;
       n.row(i) = Eigen::Vector3d(-t[1], t[0], 0.0).normalized();
@@ -503,9 +134,9 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::cell_normals(
     {
       // Get the three vertices as points
       auto vertices = geometry_entities.row(i);
-      const Eigen::Vector3d p0 = geometry.node(vertices[0]);
-      const Eigen::Vector3d p1 = geometry.node(vertices[1]);
-      const Eigen::Vector3d p2 = geometry.node(vertices[2]);
+      const Eigen::Vector3d p0 = geom_dofs.row(vertices[0]);
+      const Eigen::Vector3d p1 = geom_dofs.row(vertices[1]);
+      const Eigen::Vector3d p2 = geom_dofs.row(vertices[2]);
 
       // Define cell normal via cross product of first two edges
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
@@ -519,9 +150,9 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::cell_normals(
     {
       // Get three vertices as points
       auto vertices = geometry_entities.row(i);
-      const Eigen::Vector3d p0 = geometry.node(vertices[0]);
-      const Eigen::Vector3d p1 = geometry.node(vertices[1]);
-      const Eigen::Vector3d p2 = geometry.node(vertices[2]);
+      const Eigen::Vector3d p0 = geom_dofs.row(vertices[0]);
+      const Eigen::Vector3d p1 = geom_dofs.row(vertices[1]);
+      const Eigen::Vector3d p2 = geom_dofs.row(vertices[2]);
 
       // Defined cell normal via cross product of first two edges:
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
@@ -532,12 +163,13 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::cell_normals(
     throw std::invalid_argument(
         "cell_normal not supported for this cell type.");
   }
+
   return Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>();
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
-    const mesh::Mesh& mesh, int dim,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities)
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+mesh::midpoints(const mesh::Mesh& mesh, int dim,
+                const tcb::span<const std::int32_t>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
@@ -549,7 +181,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
       entity_to_geometry = entities_to_geometry(mesh, dim, entities, false);
 
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x_mid(
-      entities.rows(), 3);
+      entities.size(), 3);
 
   for (Eigen::Index e = 0; e < entity_to_geometry.rows(); ++e)
   {
@@ -563,8 +195,8 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
   return x_mid;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities(
-    const mesh::Mesh& mesh, const int dim,
+std::vector<std::int32_t> mesh::locate_entities(
+    const mesh::Mesh& mesh, int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker)
@@ -627,12 +259,11 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities(
       entities.push_back(e);
   }
 
-  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-      entities.data(), entities.size());
+  return entities;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
-    const mesh::Mesh& mesh, const int dim,
+std::vector<std::int32_t> mesh::locate_entities_boundary(
+    const mesh::Mesh& mesh, int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker)
@@ -740,18 +371,16 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_boundary(
       entities.push_back(e);
   }
 
-  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-      entities.data(), entities.size());
+  return entities;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-mesh::entities_to_geometry(
-    const mesh::Mesh& mesh, const int dim,
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_list,
-    bool orient)
+mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
+                           const tcb::span<const std::int32_t>& entity_list,
+                           bool orient)
 {
   dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
-  const int num_entity_vertices
+  int num_entity_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entity_geometry(entity_list.size(), num_entity_vertices);
@@ -761,6 +390,8 @@ mesh::entities_to_geometry(
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const mesh::Geometry& geometry = mesh.geometry();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
+      = mesh.geometry().x();
   const mesh::Topology& topology = mesh.topology();
 
   const int tdim = topology.dim();
@@ -776,7 +407,7 @@ mesh::entities_to_geometry(
   assert(e_to_v);
   const auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
-  for (int i = 0; i < entity_list.size(); ++i)
+  for (std::size_t i = 0; i < entity_list.size(); ++i)
   {
     const std::int32_t idx = entity_list[i];
     const std::int32_t cell = e_to_c->links(idx)[0];
@@ -796,14 +427,16 @@ mesh::entities_to_geometry(
       // Compute cell midpoint
       Eigen::Vector3d midpoint(0.0, 0.0, 0.0);
       for (auto j : xc)
-        midpoint += geometry.node(j);
+        midpoint += geom_dofs.row(j).matrix().transpose();
       midpoint /= xc.size();
+
       // Compute vector triple product of two edges and vector to midpoint
-      Eigen::Vector3d p0 = geometry.node(entity_geometry(i, 0));
+      Eigen::Vector3d p0 = geom_dofs.row(entity_geometry(i, 0));
       Eigen::Matrix3d a;
       a.row(0) = midpoint - p0;
-      a.row(1) = geometry.node(entity_geometry(i, 1)) - p0;
-      a.row(2) = geometry.node(entity_geometry(i, 2)) - p0;
+      a.row(1) = geom_dofs.row(entity_geometry(i, 1)).matrix().transpose() - p0;
+      a.row(2) = geom_dofs.row(entity_geometry(i, 2)).matrix().transpose() - p0;
+
       // Midpoint direction should be opposite to normal, hence this
       // should be negative. Switch points if not.
       if (a.determinant() > 0.0)
