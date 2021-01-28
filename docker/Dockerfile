@@ -120,6 +120,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
     libglu1 \
     libxcursor-dev \
+    libxft2 \
     libxinerama1 && \
     #
     apt-get clean && \
