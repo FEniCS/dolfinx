@@ -251,12 +251,19 @@ void SparsityPattern::insert_diagonal(const std::vector<int32_t>& rows)
   }
 
   assert(_index_maps[0]);
-  const std::int32_t local_size0
+  const std::int32_t size0
       = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts();
-  for (auto row : rows)
+
+  assert(_index_maps[1]);
+  const std::int32_t local_size1 = _index_maps[1]->size_local();
+  const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
+
+  for (std::int32_t row : rows)
   {
-    if (row < local_size0)
+    if (row < local_size1)
       _diagonal_cache[row].push_back(row);
+    else if (row < size0)
+      _off_diagonal_cache[row].push_back(ghosts1[row - local_size1]);
     else
     {
       throw std::runtime_error(
