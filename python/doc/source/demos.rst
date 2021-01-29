@@ -39,3 +39,4 @@ All documented demos
    demos/gmsh/demo_gmsh.py.rst
    demos/helmholtz2D/demo_helmholtz_2d.py.rst
    demos/mixed-elasticity-sc/static-condensation-elasticity.py.rst
+   demos/pyvista/demo_pyvista.py.rst
