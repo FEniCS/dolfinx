@@ -103,51 +103,45 @@ SparsityPattern::SparsityPattern(
       Eigen::Map<Eigen::Array<std::int64_t, 1, Eigen::Dynamic>> g0(
           ghosts0.data(), ghosts0.size());
 
-      std::stringstream s;
-      s << mpi_rank << "] ROW GHOSTS = [" << g0 << "]\n";
-      s << "BLOCK = (" << row << ", " << col << ")\n";
+      // Compute new column in owned and ghost ranges
+      auto newcol = [&](std::int32_t c_old) {
+        if (c_old < num_cols_local)
+          return bs_dof1 * c_old + local_offset1[col];
+        else
+          return bs_dof1 * (c_old - num_cols_local) + local_offset1.back()
+                 + ghost_offsets1[col];
+      };
+
+      // Iterate over owned rows cache
       for (const std::array<std::int32_t, 2>& rc : p->_new_cache)
       {
         const std::int32_t& r_old = rc[0];
         const std::int32_t& c_old = rc[1];
 
-        std::int32_t c_new;
-        if (c_old < num_cols_local)
-          c_new = bs_dof1 * c_old + local_offset1[col];
-        else
-          c_new = bs_dof1 * (c_old - num_cols_local) + local_offset1.back()
-                  + ghost_offsets1[col];
+        const std::int32_t r_new = bs_dof0 * r_old + local_offset0[row];
+        const std::int32_t c_new = newcol(c_old);
 
-        if (r_old < num_rows_local)
+        for (int k0 = 0; k0 < bs_dof0; ++k0)
         {
-          const std::int32_t r_new = bs_dof0 * r_old + local_offset0[row];
-
-          for (int k0 = 0; k0 < bs_dof0; ++k0)
-          {
-            for (int k1 = 0; k1 < bs_dof1; ++k1)
-            {
-              _new_cache.push_back({r_new + k0, c_new + k1});
-              if (r_old == 0)
-                s << mpi_rank << "] old = (" << r_old << ", " << c_old << ")->("
-                  << r_new + k0 << ", " << c_new + k1 << ")\n";
-            }
-          }
-        }
-        else
-        {
-          const std::int32_t r_new = bs_dof0 * (r_old - num_rows_local)
-                                     + local_offset0.back()
-                                     + ghost_offsets0[row];
-          if (r_new < _index_maps[0]->size_local())
-            throw std::runtime_error("Bad row");
-          for (int k0 = 0; k0 < bs_dof0; ++k0)
-          {
-            for (int k1 = 0; k1 < bs_dof1; ++k1)
-              _new_cache_r.push_back({r_new + k0, c_new + k1});
-          }
+          for (int k1 = 0; k1 < bs_dof1; ++k1)
+            _new_cache.push_back({r_new + k0, c_new + k1});
         }
       }
-      std::cout << s.str() << "\n";
+      // Iterate over unowned rows cache
+      for (const std::array<std::int32_t, 2>& rc : p->_new_cache_r)
+      {
+        const std::int32_t& r_old = rc[0];
+        const std::int32_t& c_old = rc[1];
+
+        const std::int32_t r_new = bs_dof0 * (r_old - num_rows_local)
+                                   + local_offset0.back() + ghost_offsets0[row];
+        const std::int32_t c_new = newcol(c_old);
+        for (int k0 = 0; k0 < bs_dof0; ++k0)
+        {
+          for (int k1 = 0; k1 < bs_dof1; ++k1)
+            _new_cache_r.push_back({r_new + k0, c_new + k1});
+        }
+      }
     }
   }
 }
