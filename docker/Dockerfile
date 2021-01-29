@@ -86,7 +86,6 @@ ENV OPENBLAS_NUM_THREADS=1 \
 #   documentation or tests.
 # - Third set of packages are optional, but required to run gmsh
 #   pre-built binaries.
-# - Fourth set of packages are optional, but is required to run pyvista visualization
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -404,7 +403,14 @@ WORKDIR /root
 
 RUN pip3 install --upgrade --no-cache-dir jupyter jupyterlab
 
-# Install optional dependencies of pyvista 
+# Pyvista dependecies from apt
+RUN apt-get -qq update && \
+    apt-get -y install libgl1-mesa-dev \ 
+    xvfb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Pyvista dependencies from pip 
 RUN pip3 install --upgrade pyvista ipyvtk_simple
 
 # Add virtual framebuffer for pyvista and vtk visualization
