@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -112,7 +113,7 @@ SparsityPattern::SparsityPattern(
       };
 
       // Iterate over owned rows cache
-      for (const std::array<std::int32_t, 2>& rc : p->_new_cache)
+      for (const std::array<std::int32_t, 2>& rc : p->_cache_owned)
       {
         const std::int32_t& r_old = rc[0];
         const std::int32_t& c_old = rc[1];
@@ -123,11 +124,11 @@ SparsityPattern::SparsityPattern(
         for (int k0 = 0; k0 < bs_dof0; ++k0)
         {
           for (int k1 = 0; k1 < bs_dof1; ++k1)
-            _new_cache.push_back({r_new + k0, c_new + k1});
+            _cache_owned.push_back({r_new + k0, c_new + k1});
         }
       }
       // Iterate over unowned rows cache
-      for (const std::array<std::int32_t, 2>& rc : p->_new_cache_r)
+      for (const std::array<std::int32_t, 2>& rc : p->_cache_unowned)
       {
         const std::int32_t& r_old = rc[0];
         const std::int32_t& c_old = rc[1];
@@ -138,7 +139,7 @@ SparsityPattern::SparsityPattern(
         for (int k0 = 0; k0 < bs_dof0; ++k0)
         {
           for (int k1 = 0; k1 < bs_dof1; ++k1)
-            _new_cache_r.push_back({r_new + k0, c_new + k1});
+            _cache_unowned.push_back({r_new + k0, c_new + k1});
         }
       }
     }
@@ -171,12 +172,12 @@ void SparsityPattern::insert(const tcb::span<const std::int32_t>& rows,
     if (row < local_size0)
     {
       for (std::int32_t col : cols)
-        _new_cache.push_back({row, col});
+        _cache_owned.push_back({row, col});
     }
     else if (row < size0)
     {
       for (std::int32_t col : cols)
-        _new_cache_r.push_back({row, col});
+        _cache_unowned.push_back({row, col});
     }
     else
     {
@@ -201,9 +202,9 @@ void SparsityPattern::insert_diagonal(const std::vector<int32_t>& rows)
   for (std::int32_t row : rows)
   {
     if (row < local_size0)
-      _new_cache.push_back({row, row});
+      _cache_owned.push_back({row, row});
     else if (row < size0)
-      _new_cache_r.push_back({row, row});
+      _cache_unowned.push_back({row, row});
     else
     {
       throw std::runtime_error(
@@ -217,6 +218,8 @@ void SparsityPattern::assemble()
   if (_diagonal)
     throw std::runtime_error("Sparsity pattern has already been finalised.");
   assert(!_off_diagonal);
+
+  common::Timer t0("SparsityPattern::assemble");
 
   assert(_index_maps[0]);
   const std::int32_t local_size0 = _index_maps[0]->size_local();
@@ -233,7 +236,7 @@ void SparsityPattern::assemble()
   // For each ghost row, pack and send (global row, global col) pair
   // _index_maps[1]->ghosts()s to send to neighborhood
   std::vector<std::int64_t> ghost_data;
-  for (const std::array<std::int32_t, 2>& p : _new_cache_r)
+  for (const std::array<std::int32_t, 2>& p : _cache_unowned)
   {
     const std::int64_t row_global = ghosts0[p[0] - local_size0];
     ghost_data.push_back(row_global);
@@ -290,7 +293,7 @@ void SparsityPattern::assemble()
       {
         // Convert to local column index
         const std::int32_t J = col - local_range1[0];
-        _new_cache.push_back({row_local, J});
+        _cache_owned.push_back({row_local, J});
       }
       else
       {
@@ -307,21 +310,21 @@ void SparsityPattern::assemble()
           ghosts1.push_back(col);
           ghost_owners1.push_back(ghost_data_received[i + 2]);
         }
-        _new_cache.push_back({row_local, col_local});
+        _cache_owned.push_back({row_local, col_local});
       }
     }
   }
 
   // Sort and remove duplicates
-  std::sort(_new_cache.begin(), _new_cache.end());
-  _new_cache.erase(std::unique(_new_cache.begin(), _new_cache.end()),
-                   _new_cache.end());
+  std::sort(_cache_owned.begin(), _cache_owned.end());
+  _cache_owned.erase(std::unique(_cache_owned.begin(), _cache_owned.end()),
+                     _cache_owned.end());
   std::vector<std::int32_t> adj_counts(local_size0, 0);
   std::vector<std::int32_t> adj_data;
   std::vector<std::int32_t> adj_counts_off(local_size0, 0);
   std::vector<std::int64_t> adj_data_off;
-  adj_data.reserve(_new_cache.size() / 2);
-  for (const std::array<std::int32_t, 2>& p : _new_cache)
+  adj_data.reserve(_cache_owned.size() / 2);
+  for (const std::array<std::int32_t, 2>& p : _cache_owned)
   {
     if (p[1] < local_size1)
     {
@@ -334,7 +337,7 @@ void SparsityPattern::assemble()
       adj_data_off.push_back(p[1]);
     }
   }
-  std::vector<std::array<std::int32_t, 2>>().swap(_new_cache);
+  std::vector<std::array<std::int32_t, 2>>().swap(_cache_owned);
 
   std::vector<std::int32_t> adj_offsets(local_size0 + 1);
   for (int i = 0; i < local_size0; ++i)

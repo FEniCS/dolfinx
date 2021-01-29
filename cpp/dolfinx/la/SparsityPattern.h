@@ -113,9 +113,9 @@ private:
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
   std::array<int, 2> _bs;
 
-  // Cache for unassembled entries (i,j)
-  std::vector<std::array<std::int32_t, 2>> _new_cache;
-  std::vector<std::array<std::int32_t, 2>> _new_cache_r;
+  // Cache for unassembled entries (i,j) on owned and unowned rows
+  std::vector<std::array<std::int32_t, 2>> _cache_owned;
+  std::vector<std::array<std::int32_t, 2>> _cache_unowned;
 
   // Sparsity pattern data (computed once pattern is finalised)
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal;
