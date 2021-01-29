@@ -86,6 +86,7 @@ ENV OPENBLAS_NUM_THREADS=1 \
 #   documentation or tests.
 # - Third set of packages are optional, but required to run gmsh
 #   pre-built binaries.
+# - Fourth set of packages are optional, but is required to run pyvista visualization
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -123,6 +124,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libxft2 \
     libxinerama1 && \
     #
+    apt-get -y install libgl1-mesa-dev \ 
+    xvfb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -400,7 +403,15 @@ LABEL description="DOLFIN-X Jupyter Lab"
 WORKDIR /root
 
 RUN pip3 install --upgrade --no-cache-dir jupyter jupyterlab
+
+# Install optional dependencies of pyvista 
+RUN pip3 install --upgrade pyvista ipytvtk_simple
+
+# Add virtual framebuffer for pyvista and vtk visualization
+ADD dolfinx/docker/dolfinx_virtual_framebuffer /srv/bin/dolfinx_virtual_framebuffer
+RUN chmod +x /srv/bin/dolfinx_virtual_framebuffer
+
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash
 
-ENTRYPOINT ["jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+ENTRYPOINT ["/srv/bin/dolfinx_virtual_framebuffer", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
