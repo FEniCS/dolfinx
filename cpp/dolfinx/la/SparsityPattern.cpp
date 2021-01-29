@@ -100,9 +100,6 @@ SparsityPattern::SparsityPattern(
       const int bs_dof0 = bs[0][row];
       const int bs_dof1 = bs[1][col];
 
-      Eigen::Map<Eigen::Array<std::int64_t, 1, Eigen::Dynamic>> g0(
-          ghosts0.data(), ghosts0.size());
-
       // Compute new column in owned and ghost ranges
       auto newcol = [&](std::int32_t c_old) {
         if (c_old < num_cols_local)
