@@ -193,7 +193,8 @@ void FiniteElement::transform_reference_basis(
 
   Eigen::Map<const Eigen::ArrayXd> J_unwrapped(J.data(), J.size());
   Eigen::Map<const Eigen::ArrayXd> K_unwrapped(K.data(), K.size());
-  Eigen::Map<const Eigen::ArrayXd> reference_values_unwrapped(reference_values.data(), reference_values.size());
+  Eigen::Map<const Eigen::ArrayXd> reference_values_unwrapped(
+      reference_values.data(), reference_values.size());
 
   Eigen::Map<Eigen::ArrayXd> values_unwrapped(values.data(), values.size());
 
