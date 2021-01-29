@@ -74,6 +74,7 @@ SparsityPattern::SparsityPattern(
           comm, std::set<int>(ghost_owners1.begin(), ghost_owners1.end())),
       ghosts1, ghost_owners1);
 
+  int mpi_rank = dolfinx::MPI::rank(_mpi_comm.comm());
   // Iterate over block rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
@@ -99,6 +100,12 @@ SparsityPattern::SparsityPattern(
       const int bs_dof0 = bs[0][row];
       const int bs_dof1 = bs[1][col];
 
+      Eigen::Map<Eigen::Array<std::int64_t, 1, Eigen::Dynamic>> g0(
+          ghosts0.data(), ghosts0.size());
+
+      std::stringstream s;
+      s << mpi_rank << "] ROW GHOSTS = [" << g0 << "]\n";
+      s << "BLOCK = (" << row << ", " << col << ")\n";
       for (const std::array<std::int32_t, 2>& rc : p->_new_cache)
       {
         const std::int32_t& r_old = rc[0];
@@ -114,10 +121,16 @@ SparsityPattern::SparsityPattern(
         if (r_old < num_rows_local)
         {
           const std::int32_t r_new = bs_dof0 * r_old + local_offset0[row];
+
           for (int k0 = 0; k0 < bs_dof0; ++k0)
           {
             for (int k1 = 0; k1 < bs_dof1; ++k1)
+            {
               _new_cache.push_back({r_new + k0, c_new + k1});
+              if (r_old == 0)
+                s << mpi_rank << "] old = (" << r_old << ", " << c_old << ")->("
+                  << r_new + k0 << ", " << c_new + k1 << ")\n";
+            }
           }
         }
         else
@@ -125,6 +138,8 @@ SparsityPattern::SparsityPattern(
           const std::int32_t r_new = bs_dof0 * (r_old - num_rows_local)
                                      + local_offset0.back()
                                      + ghost_offsets0[row];
+          if (r_new < _index_maps[0]->size_local())
+            throw std::runtime_error("Bad row");
           for (int k0 = 0; k0 < bs_dof0; ++k0)
           {
             for (int k1 = 0; k1 < bs_dof1; ++k1)
@@ -132,6 +147,7 @@ SparsityPattern::SparsityPattern(
           }
         }
       }
+      std::cout << s.str() << "\n";
     }
   }
 }
