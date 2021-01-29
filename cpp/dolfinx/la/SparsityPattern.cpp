@@ -221,6 +221,7 @@ void SparsityPattern::assemble()
 
   common::Timer t0("SparsityPattern::assemble");
 
+  common::Timer t3("Sparsity: first bit");
   assert(_index_maps[0]);
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::array local_range0 = _index_maps[0]->local_range();
@@ -232,6 +233,10 @@ void SparsityPattern::assemble()
   std::vector<std::int64_t> ghosts1 = _index_maps[1]->ghosts();
   std::vector<int> ghost_owners1 = _index_maps[1]->ghost_owner_rank();
   const int mpi_rank = dolfinx::MPI::rank(_mpi_comm.comm());
+  std::map<std::int64_t, std::int32_t> global_to_local;
+  std::int32_t local_i = local_size1;
+  for (std::int64_t global_i : ghosts1)
+    global_to_local.insert({global_i, local_i++});
 
   // For each ghost row, pack and send (global row, global col) pair
   // _index_maps[1]->ghosts()s to send to neighborhood
@@ -298,27 +303,27 @@ void SparsityPattern::assemble()
       else
       {
         // column index may not exist in column indexmap
-        const std::vector<std::int64_t>::iterator it
-            = std::find(ghosts1.begin(), ghosts1.end(), col);
-
-        std::int32_t col_local;
-        if (it != ghosts1.end())
-          col_local = local_size1 + (it - ghosts1.begin());
-        else
+        auto it = global_to_local.insert({col, local_i});
+        if (it.second)
         {
-          col_local = local_size1 + ghosts1.size();
+          ++local_i;
           ghosts1.push_back(col);
           ghost_owners1.push_back(ghost_data_received[i + 2]);
         }
+        const std::int32_t col_local = it.first->second;
         _cache_owned.push_back({row_local, col_local});
       }
     }
   }
+  t3.stop();
 
   // Sort and remove duplicates
+  common::Timer t1("Sparsity: sort and unique");
   std::sort(_cache_owned.begin(), _cache_owned.end());
   _cache_owned.erase(std::unique(_cache_owned.begin(), _cache_owned.end()),
                      _cache_owned.end());
+  t1.stop();
+  common::Timer t2("Sparsity: rest");
   std::vector<std::int32_t> adj_counts(local_size0, 0);
   std::vector<std::int32_t> adj_data;
   std::vector<std::int32_t> adj_counts_off(local_size0, 0);
