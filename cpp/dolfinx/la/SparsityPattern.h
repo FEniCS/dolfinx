@@ -115,6 +115,7 @@ private:
 
   // Cache for unassembled entries (i,j)
   std::vector<std::array<std::int32_t, 2>> _new_cache;
+  std::vector<std::array<std::int32_t, 2>> _new_cache_r;
 
   // Sparsity pattern data (computed once pattern is finalised)
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal;

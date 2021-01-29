@@ -23,8 +23,6 @@ SparsityPattern::SparsityPattern(
     : _mpi_comm(comm), _index_maps(maps), _bs(bs)
 {
   assert(maps[0]);
-  const std::int32_t local_size0
-      = maps[0]->size_local() + maps[0]->num_ghosts();
 }
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
@@ -81,14 +79,12 @@ SparsityPattern::SparsityPattern(
   {
     const common::IndexMap& map_row = maps[0][row].first;
     const std::int32_t num_rows_local = map_row.size_local();
-    const std::int32_t num_rows_ghost = map_row.num_ghosts();
 
     // Iterate over block columns of current row (block)
     for (std::size_t col = 0; col < patterns[row].size(); ++col)
     {
       const common::IndexMap& map_col = maps[1][col].first;
       const std::int32_t num_cols_local = map_col.size_local();
-      const std::int32_t num_cols_ghost = map_col.num_ghosts();
       // Get pattern for this block
       const SparsityPattern* p = patterns[row][col];
       if (!p)
@@ -107,12 +103,6 @@ SparsityPattern::SparsityPattern(
       {
         const std::int32_t& r_old = rc[0];
         const std::int32_t& c_old = rc[1];
-        std::int32_t r_new;
-        if (r_old < num_rows_local)
-          r_new = bs_dof0 * r_old + local_offset0[row];
-        else
-          r_new = bs_dof0 * (r_old - num_rows_local) + local_offset0.back()
-                  + ghost_offsets0[row];
 
         std::int32_t c_new;
         if (c_old < num_cols_local)
@@ -121,10 +111,25 @@ SparsityPattern::SparsityPattern(
           c_new = bs_dof1 * (c_old - num_cols_local) + local_offset1.back()
                   + ghost_offsets1[col];
 
-        for (int k0 = 0; k0 < bs_dof0; ++k0)
+        if (r_old < num_rows_local)
         {
-          for (int k1 = 0; k1 < bs_dof1; ++k1)
-            _new_cache.push_back({r_new + k0, c_new + k1});
+          const std::int32_t r_new = bs_dof0 * r_old + local_offset0[row];
+          for (int k0 = 0; k0 < bs_dof0; ++k0)
+          {
+            for (int k1 = 0; k1 < bs_dof1; ++k1)
+              _new_cache.push_back({r_new + k0, c_new + k1});
+          }
+        }
+        else
+        {
+          const std::int32_t r_new = bs_dof0 * (r_old - num_rows_local)
+                                     + local_offset0.back()
+                                     + ghost_offsets0[row];
+          for (int k0 = 0; k0 < bs_dof0; ++k0)
+          {
+            for (int k1 = 0; k1 < bs_dof1; ++k1)
+              _new_cache_r.push_back({r_new + k0, c_new + k1});
+          }
         }
       }
     }
@@ -149,15 +154,20 @@ void SparsityPattern::insert(const tcb::span<const std::int32_t>& rows,
   }
 
   assert(_index_maps[0]);
-  const std::int32_t size0
-      = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts();
+  const std::int32_t local_size0 = _index_maps[0]->size_local();
+  const std::int32_t size0 = local_size0 + _index_maps[0]->num_ghosts();
 
   for (std::int32_t row : rows)
   {
-    if (row < size0)
+    if (row < local_size0)
     {
       for (std::int32_t col : cols)
         _new_cache.push_back({row, col});
+    }
+    else if (row < size0)
+    {
+      for (std::int32_t col : cols)
+        _new_cache_r.push_back({row, col});
     }
     else
     {
@@ -181,12 +191,15 @@ void SparsityPattern::insert_diagonal(const std::vector<int32_t>& rows)
 
   for (std::int32_t row : rows)
   {
-    if (row >= size0)
+    if (row < local_size0)
+      _new_cache.push_back({row, row});
+    else if (row < size0)
+      _new_cache_r.push_back({row, row});
+    else
     {
       throw std::runtime_error(
           "Cannot insert rows that do not exist in the IndexMap.");
     }
-    _new_cache.push_back({row, row});
   }
 }
 //-----------------------------------------------------------------------------
@@ -198,7 +211,6 @@ void SparsityPattern::assemble()
 
   assert(_index_maps[0]);
   const std::int32_t local_size0 = _index_maps[0]->size_local();
-  const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
   const std::array local_range0 = _index_maps[0]->local_range();
   const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
 
@@ -210,18 +222,15 @@ void SparsityPattern::assemble()
   // For each ghost row, pack and send (global row, global col) pair
   // _index_maps[1]->ghosts()s to send to neighborhood
   std::vector<std::int64_t> ghost_data;
-  for (const std::array<std::int32_t, 2>& p : _new_cache)
+  for (const std::array<std::int32_t, 2>& p : _new_cache_r)
   {
-    if (p[0] >= local_size0)
-    {
-      const std::int64_t row_global = ghosts0[p[0] - local_size0];
-      ghost_data.push_back(row_global);
-      const std::int32_t col_local = p[1];
-      if (col_local < local_size1)
-        ghost_data.push_back(col_local + local_range1[0]);
-      else
-        ghost_data.push_back(ghosts1[col_local - local_size1]);
-    }
+    const std::int64_t row_global = ghosts0[p[0] - local_size0];
+    ghost_data.push_back(row_global);
+    const std::int32_t col_local = p[1];
+    if (col_local < local_size1)
+      ghost_data.push_back(col_local + local_range1[0]);
+    else
+      ghost_data.push_back(ghosts1[col_local - local_size1]);
   }
 
   MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::symmetric);
@@ -296,21 +305,16 @@ void SparsityPattern::assemble()
   adj_data.reserve(_new_cache.size() / 2);
   for (const std::array<std::int32_t, 2>& p : _new_cache)
   {
-    if (p[0] < local_size0)
+    if (p[1] < local_size1)
     {
-      if (p[1] < local_size1)
-      {
-        ++adj_counts[p[0]];
-        adj_data.push_back(p[1]);
-      }
-      else
-      {
-        ++adj_counts_off[p[0]];
-        adj_data_off.push_back(p[1]);
-      }
+      ++adj_counts[p[0]];
+      adj_data.push_back(p[1]);
     }
     else
-      break;
+    {
+      ++adj_counts_off[p[0]];
+      adj_data_off.push_back(p[1]);
+    }
   }
   std::vector<std::array<std::int32_t, 2>>().swap(_new_cache);
 
