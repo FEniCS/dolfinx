@@ -318,28 +318,38 @@ void SparsityPattern::assemble()
   t3.stop();
 
   // Sort and remove duplicates
-  common::Timer t1("Sparsity: sort and unique");
-  std::sort(_cache_owned.begin(), _cache_owned.end());
-  _cache_owned.erase(std::unique(_cache_owned.begin(), _cache_owned.end()),
-                     _cache_owned.end());
+  common::Timer t1("Sparsity: create local_rows");
+  std::vector<std::vector<std::int32_t>> local_rows(local_size0);
+  for (const std::array<std::int32_t, 2>& rc : _cache_owned)
+    local_rows[rc[0]].push_back(rc[1]);
   t1.stop();
+  common::Timer t1a("Sparsity: sort and unique");
+  for (std::vector<std::int32_t>& row : local_rows)
+  {
+    std::sort(row.begin(), row.end());
+    row.erase(std::unique(row.begin(), row.end()), row.end());
+  }
+  t1a.stop();
   common::Timer t2("Sparsity: rest");
   std::vector<std::int32_t> adj_counts(local_size0, 0);
   std::vector<std::int32_t> adj_data;
   std::vector<std::int32_t> adj_counts_off(local_size0, 0);
   std::vector<std::int64_t> adj_data_off;
   adj_data.reserve(_cache_owned.size() / 2);
-  for (const std::array<std::int32_t, 2>& p : _cache_owned)
+  for (std::int32_t row = 0; row < local_size0; ++row)
   {
-    if (p[1] < local_size1)
+    for (std::int32_t col : local_rows[row])
     {
-      ++adj_counts[p[0]];
-      adj_data.push_back(p[1]);
-    }
-    else
-    {
-      ++adj_counts_off[p[0]];
-      adj_data_off.push_back(p[1]);
+      if (col < local_size1)
+      {
+        ++adj_counts[row];
+        adj_data.push_back(col);
+      }
+      else
+      {
+        ++adj_counts_off[row];
+        adj_data_off.push_back(col);
+      }
     }
   }
   std::vector<std::array<std::int32_t, 2>>().swap(_cache_owned);
