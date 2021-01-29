@@ -405,7 +405,7 @@ WORKDIR /root
 RUN pip3 install --upgrade --no-cache-dir jupyter jupyterlab
 
 # Install optional dependencies of pyvista 
-RUN pip3 install --upgrade pyvista ipytvtk_simple
+RUN pip3 install --upgrade pyvista ipyvtk_simple
 
 # Add virtual framebuffer for pyvista and vtk visualization
 ADD dolfinx/docker/dolfinx_virtual_framebuffer /srv/bin/dolfinx_virtual_framebuffer
