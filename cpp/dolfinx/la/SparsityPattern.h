@@ -113,7 +113,7 @@ private:
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
   std::array<int, 2> _bs;
 
-  // Cache for unassembled entries (i,j) on owned and unowned rows
+  // Caches for unassembled entries on owned and unowned (ghost) rows
   std::vector<std::vector<std::int32_t>> _cache_owned;
   std::vector<std::vector<std::int32_t>> _cache_unowned;
 
