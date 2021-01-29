@@ -113,10 +113,7 @@ private:
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
   std::array<int, 2> _bs;
 
-  // Caches for diagonal and off-diagonal blocks
-  std::vector<std::vector<std::int32_t>> _diagonal_cache;
-  std::vector<std::vector<std::int64_t>> _off_diagonal_cache;
-
+  // Cache for unassembled entries (i,j)
   std::vector<std::array<std::int32_t, 2>> _new_cache;
 
   // Sparsity pattern data (computed once pattern is finalised)
