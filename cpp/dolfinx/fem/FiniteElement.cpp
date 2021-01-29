@@ -205,19 +205,14 @@ void FiniteElement::transform_reference_basis(
       values_unwrapped.block(pt * size_per_point + d * value_size, 0,
                              value_size, 1)
           = basix::apply_mapping(
-
               _basix_element_handle,
-
               reference_values_unwrapped.block(
                   pt * size_per_point + d * value_size, 0, value_size, 1),
-
               Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
                                              Eigen::Dynamic, Eigen::RowMajor>>(
                   J_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(),
                   J.dimension(1), J.dimension(2)),
-
               detJ[pt],
-
               Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
                                              Eigen::Dynamic, Eigen::RowMajor>>(
                   K_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(),
