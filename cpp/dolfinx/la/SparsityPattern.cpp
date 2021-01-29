@@ -74,7 +74,9 @@ SparsityPattern::SparsityPattern(
           comm, std::set<int>(ghost_owners1.begin(), ghost_owners1.end())),
       ghosts1, ghost_owners1);
 
-  int mpi_rank = dolfinx::MPI::rank(_mpi_comm.comm());
+  // Need to copy for lambda capture below
+  std::vector<std::int32_t> local_offset1_copy(local_offset1.begin(),
+                                               local_offset1.end());
   // Iterate over block rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
@@ -103,9 +105,9 @@ SparsityPattern::SparsityPattern(
       // Compute new column in owned and ghost ranges
       auto newcol = [&](std::int32_t c_old) {
         if (c_old < num_cols_local)
-          return bs_dof1 * c_old + local_offset1[col];
+          return bs_dof1 * c_old + local_offset1_copy[col];
         else
-          return bs_dof1 * (c_old - num_cols_local) + local_offset1.back()
+          return bs_dof1 * (c_old - num_cols_local) + local_offset1_copy.back()
                  + ghost_offsets1[col];
       };
 
