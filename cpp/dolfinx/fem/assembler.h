@@ -207,9 +207,9 @@ void add_diagonal(
 // FIXME: clarify x0
 // FIXME: clarify what happens with ghosts
 
-/// Set bc values in owned (local) part of the PETScVector, multiplied
-/// by 'scale'. The vectors b and x0 must have the same local size. The
-/// bcs should be on (sub-)spaces of the form L that b represents.
+/// Set bc values in owned (local) part of the vector, multiplied by
+/// 'scale'. The vectors b and x0 must have the same local size. The bcs
+/// should be on (sub-)spaces of the form L that b represents.
 template <typename T>
 void set_bc(tcb::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
@@ -224,8 +224,8 @@ void set_bc(tcb::span<T> b,
   }
 }
 
-/// Set bc values in owned (local) part of the PETScVector, multiplied
-/// by 'scale'. The bcs should be on (sub-)spaces of the form L that b
+/// Set bc values in owned (local) part of the vector, multiplied by
+/// 'scale'. The bcs should be on (sub-)spaces of the form L that b
 /// represents.
 template <typename T>
 void set_bc(tcb::span<T> b,

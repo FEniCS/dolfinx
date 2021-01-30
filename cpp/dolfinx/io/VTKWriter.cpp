@@ -14,7 +14,6 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -31,9 +30,10 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // Write cell data (ascii)
+template <typename Scalar>
 std::string ascii_cell_data(const mesh::Mesh& mesh,
                             const std::vector<std::size_t>& offset,
-                            const std::vector<PetscScalar>& values,
+                            const std::vector<Scalar>& values,
                             std::size_t data_dim, std::size_t rank)
 {
   std::ostringstream ss;
@@ -218,18 +218,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   file.close();
 }
 //-----------------------------------------------------------------------------
-
-} // namespace
-
-//----------------------------------------------------------------------------
-void VTKWriter::write_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
-                           std::string filename)
-{
-  write_ascii_mesh(mesh, cell_dim, filename);
-}
-//----------------------------------------------------------------------------
-void VTKWriter::write_cell_data(const fem::Function<PetscScalar>& u,
-                                std::string filename)
+template <typename Scalar>
+void _write_cell_data(const fem::Function<Scalar>& u, std::string filename)
 {
   assert(u.function_space());
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
@@ -317,8 +307,8 @@ void VTKWriter::write_cell_data(const fem::Function<PetscScalar>& u,
   }
 
   // Get  values
-  std::vector<PetscScalar> values(dof_set.size());
-  const std::vector<PetscScalar>& _x = u.x()->array();
+  std::vector<Scalar> values(dof_set.size());
+  const std::vector<Scalar>& _x = u.x()->array();
   for (std::size_t i = 0; i < dof_set.size(); ++i)
     values[i] = _x[dof_set[i]];
 
@@ -326,5 +316,27 @@ void VTKWriter::write_cell_data(const fem::Function<PetscScalar>& u,
   fp << ascii_cell_data(*mesh, offset, values, data_dim, rank);
   fp << "</DataArray> " << std::endl;
   fp << "</CellData> " << std::endl;
+}
+//----------------------------------------------------------------------------
+
+} // namespace
+
+//----------------------------------------------------------------------------
+void VTKWriter::write_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
+                           std::string filename)
+{
+  write_ascii_mesh(mesh, cell_dim, filename);
+}
+//----------------------------------------------------------------------------
+void VTKWriter::write_cell_data(const fem::Function<double>& u,
+                                std::string filename)
+{
+  _write_cell_data(u, filename);
+}
+//----------------------------------------------------------------------------
+void VTKWriter::write_cell_data(const fem::Function<std::complex<double>>& u,
+                                std::string filename)
+{
+  _write_cell_data(u, filename);
 }
 //----------------------------------------------------------------------------

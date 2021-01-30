@@ -28,19 +28,129 @@ using namespace dolfinx::io;
 
 namespace
 {
+//-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-std::int64_t get_padded_width(const fem::Function<PetscScalar>& u)
+std::int64_t get_padded_width(const fem::FiniteElement& e)
 {
-  const int width = u.function_space()->element()->value_size();
-  const int rank = u.function_space()->element()->value_rank();
-
+  const int width = e.value_size();
+  const int rank = e.value_rank();
   if (rank == 1 and width == 2)
     return 3;
   else if (rank == 2 and width == 4)
     return 9;
   else
     return width;
+}
+//-----------------------------------------------------------------------------
+template <typename Scalar>
+std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
+{
+  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
+  assert(mesh);
+  Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      data_values = u.compute_point_values();
+
+  const int width = get_padded_width(*u.function_space()->element());
+  assert(mesh->geometry().index_map());
+  const int num_local_points = mesh->geometry().index_map()->size_local();
+  assert(data_values.rows() >= num_local_points);
+  data_values.conservativeResize(num_local_points, Eigen::NoChange);
+
+  // FIXME: Unpick the below code for the new layout of data from
+  //        GenericFunction::compute_vertex_values
+  std::vector<Scalar> _data_values(width * num_local_points, 0.0);
+  const int value_rank = u.function_space()->element()->value_rank();
+  if (value_rank > 0)
+  {
+    // Transpose vector/tensor data arrays
+    const int value_size = u.function_space()->element()->value_size();
+    for (int i = 0; i < num_local_points; i++)
+    {
+      for (int j = 0; j < value_size; j++)
+      {
+        int tensor_2d_offset
+            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
+        _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
+      }
+    }
+  }
+  else
+  {
+    _data_values = std::vector<Scalar>(
+        data_values.data(),
+        data_values.data() + data_values.rows() * data_values.cols());
+  }
+
+  return _data_values;
+}
+//-----------------------------------------------------------------------------
+template <typename Scalar>
+std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
+{
+  assert(u.function_space()->dofmap());
+  const auto mesh = u.function_space()->mesh();
+  const int value_size = u.function_space()->element()->value_size();
+  const int value_rank = u.function_space()->element()->value_rank();
+
+  // Allocate memory for function values at cell centres
+  const int tdim = mesh->topology().dim();
+  const std::int32_t num_local_cells
+      = mesh->topology().index_map(tdim)->size_local();
+  const std::int32_t local_size = num_local_cells * value_size;
+
+  // Build lists of dofs and create map
+  std::vector<std::int32_t> dof_set;
+  dof_set.reserve(local_size);
+  const auto dofmap = u.function_space()->dofmap();
+  assert(dofmap->element_dof_layout);
+  const int ndofs = dofmap->element_dof_layout->num_dofs();
+
+  for (int cell = 0; cell < num_local_cells; ++cell)
+  {
+    // Tabulate dofs
+    auto dofs = dofmap->cell_dofs(cell);
+    assert(ndofs == value_size);
+    for (int i = 0; i < ndofs; ++i)
+      dof_set.push_back(dofs[i]);
+  }
+
+  // Get values
+  std::vector<Scalar> data_values(dof_set.size());
+  {
+    const std::vector<Scalar>& x = u.x()->array();
+    for (std::size_t i = 0; i < dof_set.size(); ++i)
+      data_values[i] = x[dof_set[i]];
+  }
+
+  if (value_rank == 1 && value_size == 2)
+  {
+    // Pad out data for 2D vector to 3D
+    data_values.resize(3 * num_local_cells);
+    for (int j = (num_local_cells - 1); j >= 0; --j)
+    {
+      Scalar nd[3] = {data_values[j * 2], data_values[j * 2 + 1], 0};
+      std::copy_n(nd, 3, &data_values[j * 3]);
+    }
+  }
+  else if (value_rank == 2 && value_size == 4)
+  {
+    data_values.resize(9 * num_local_cells);
+    for (int j = (num_local_cells - 1); j >= 0; --j)
+    {
+      Scalar nd[9] = {data_values[j * 4],
+                      data_values[j * 4 + 1],
+                      0,
+                      data_values[j * 4 + 2],
+                      data_values[j * 4 + 3],
+                      0,
+                      0,
+                      0,
+                      0};
+      std::copy_n(nd, 9, &data_values[j * 9]);
+    }
+  }
+  return data_values;
 }
 //-----------------------------------------------------------------------------
 
@@ -187,114 +297,28 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
   return std::max(num_cells_topology, tdims[0]);
 }
 //----------------------------------------------------------------------------
-std::vector<PetscScalar>
-xdmf_utils::get_point_data_values(const fem::Function<PetscScalar>& u)
+std::vector<double>
+xdmf_utils::get_point_data_values(const fem::Function<double>& u)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
-  assert(mesh);
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      data_values = u.compute_point_values();
-
-  const int width = get_padded_width(u);
-  assert(mesh->geometry().index_map());
-  const int num_local_points = mesh->geometry().index_map()->size_local();
-  assert(data_values.rows() >= num_local_points);
-  data_values.conservativeResize(num_local_points, Eigen::NoChange);
-
-  // FIXME: Unpick the below code for the new layout of data from
-  //        GenericFunction::compute_vertex_values
-  std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
-  const int value_rank = u.function_space()->element()->value_rank();
-  if (value_rank > 0)
-  {
-    // Transpose vector/tensor data arrays
-    const int value_size = u.function_space()->element()->value_size();
-    for (int i = 0; i < num_local_points; i++)
-    {
-      for (int j = 0; j < value_size; j++)
-      {
-        int tensor_2d_offset
-            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
-        _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
-      }
-    }
-  }
-  else
-  {
-    _data_values = std::vector<PetscScalar>(
-        data_values.data(),
-        data_values.data() + data_values.rows() * data_values.cols());
-  }
-
-  return _data_values;
+  return _get_point_data_values(u);
 }
 //-----------------------------------------------------------------------------
-std::vector<PetscScalar>
-xdmf_utils::get_cell_data_values(const fem::Function<PetscScalar>& u)
+std::vector<std::complex<double>>
+xdmf_utils::get_point_data_values(const fem::Function<std::complex<double>>& u)
 {
-  assert(u.function_space()->dofmap());
-  const auto mesh = u.function_space()->mesh();
-  const int value_size = u.function_space()->element()->value_size();
-  const int value_rank = u.function_space()->element()->value_rank();
-
-  // Allocate memory for function values at cell centres
-  const int tdim = mesh->topology().dim();
-  const std::int32_t num_local_cells
-      = mesh->topology().index_map(tdim)->size_local();
-  const std::int32_t local_size = num_local_cells * value_size;
-
-  // Build lists of dofs and create map
-  std::vector<std::int32_t> dof_set;
-  dof_set.reserve(local_size);
-  const auto dofmap = u.function_space()->dofmap();
-  assert(dofmap->element_dof_layout);
-  const int ndofs = dofmap->element_dof_layout->num_dofs();
-
-  for (int cell = 0; cell < num_local_cells; ++cell)
-  {
-    // Tabulate dofs
-    auto dofs = dofmap->cell_dofs(cell);
-    assert(ndofs == value_size);
-    for (int i = 0; i < ndofs; ++i)
-      dof_set.push_back(dofs[i]);
-  }
-
-  // Get values
-  std::vector<PetscScalar> data_values(dof_set.size());
-  {
-    const std::vector<PetscScalar>& x = u.x()->array();
-    for (std::size_t i = 0; i < dof_set.size(); ++i)
-      data_values[i] = x[dof_set[i]];
-  }
-
-  if (value_rank == 1 && value_size == 2)
-  {
-    // Pad out data for 2D vector to 3D
-    data_values.resize(3 * num_local_cells);
-    for (int j = (num_local_cells - 1); j >= 0; --j)
-    {
-      PetscScalar nd[3] = {data_values[j * 2], data_values[j * 2 + 1], 0};
-      std::copy_n(nd, 3, &data_values[j * 3]);
-    }
-  }
-  else if (value_rank == 2 && value_size == 4)
-  {
-    data_values.resize(9 * num_local_cells);
-    for (int j = (num_local_cells - 1); j >= 0; --j)
-    {
-      PetscScalar nd[9] = {data_values[j * 4],
-                           data_values[j * 4 + 1],
-                           0,
-                           data_values[j * 4 + 2],
-                           data_values[j * 4 + 3],
-                           0,
-                           0,
-                           0,
-                           0};
-      std::copy_n(nd, 9, &data_values[j * 9]);
-    }
-  }
-  return data_values;
+  return _get_point_data_values(u);
+}
+//-----------------------------------------------------------------------------
+std::vector<double>
+xdmf_utils::get_cell_data_values(const fem::Function<double>& u)
+{
+  return _get_cell_data_values(u);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::complex<double>>
+xdmf_utils::get_cell_data_values(const fem::Function<std::complex<double>>& u)
+{
+  return _get_cell_data_values(u);
 }
 //-----------------------------------------------------------------------------
 std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
