@@ -410,15 +410,11 @@ RUN apt-get -qq update && \
 # Pyvista dependencies from pip 
 RUN pip3 install --upgrade pyvista ipyvtk_simple
 
-# Add virtual framebuffer for pyvista and vtk visualization
-ADD dolfinx/docker/dolfinx_virtual_framebuffer /srv/bin/dolfinx_virtual_framebuffer
-RUN chmod +x /srv/bin/dolfinx_virtual_framebuffer
+# Launch jupyter lab with virtual framebuffer
+ADD dolfinx/docker/launch_lab.sh /srv/bin/launch_lab.sh
+RUN chmod +x /srv/bin/launch_lab.sh
 
 EXPOSE 8888/tcp
-ENV SHELL /bin/bash  \
-    DISPLAY=:99.0 \
-    VISTA_OFF_SCREEN=True \
-    VISTA_PLOT_THEME=document
+ENV SHELL /bin/bash
 
-
-ENTRYPOINT ["/srv/bin/dolfinx_virtual_framebuffer", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+ENTRYPOINT ["/srv/bin/launch_lab.sh"]
