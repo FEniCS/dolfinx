@@ -116,41 +116,39 @@ std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
   }
 
   // Get values
-  std::vector<Scalar> data_values(dof_set.size());
-  {
-    const std::vector<Scalar>& x = u.x()->array();
-    for (std::size_t i = 0; i < dof_set.size(); ++i)
-      data_values[i] = x[dof_set[i]];
-  }
+  std::vector<Scalar> values(dof_set.size());
+  const std::vector<Scalar>& _u = u.x()->array();
+  for (std::size_t i = 0; i < dof_set.size(); ++i)
+    values[i] = _u[dof_set[i]];
 
-  if (value_rank == 1 && value_size == 2)
+  // Pad out data for 2D vectors/tensors
+  if (value_rank == 1 and value_size == 2)
   {
-    // Pad out data for 2D vector to 3D
-    data_values.resize(3 * num_local_cells);
+    values.resize(3 * num_local_cells);
     for (int j = (num_local_cells - 1); j >= 0; --j)
     {
-      Scalar nd[3] = {data_values[j * 2], data_values[j * 2 + 1], 0};
-      std::copy_n(nd, 3, &data_values[j * 3]);
+      std::array<Scalar, 3> nd = {values[j * 2], values[j * 2 + 1], 0.0};
+      std::copy(nd.begin(), nd.end(), std::next(values.begin(), 3 * j));
     }
   }
-  else if (value_rank == 2 && value_size == 4)
+  else if (value_rank == 2 and value_size == 4)
   {
-    data_values.resize(9 * num_local_cells);
+    values.resize(9 * num_local_cells);
     for (int j = (num_local_cells - 1); j >= 0; --j)
     {
-      Scalar nd[9] = {data_values[j * 4],
-                      data_values[j * 4 + 1],
-                      0,
-                      data_values[j * 4 + 2],
-                      data_values[j * 4 + 3],
-                      0,
-                      0,
-                      0,
-                      0};
-      std::copy_n(nd, 9, &data_values[j * 9]);
+      std::array<Scalar, 9> nd = {values[j * 4],
+                                  values[j * 4 + 1],
+                                  0.0,
+                                  values[j * 4 + 2],
+                                  values[j * 4 + 3],
+                                  0.0,
+                                  0.0,
+                                  0.0,
+                                  0.0};
+      std::copy(nd.begin(), nd.end(), std::next(values.begin(), 9 * j));
     }
   }
-  return data_values;
+  return values;
 }
 //-----------------------------------------------------------------------------
 
