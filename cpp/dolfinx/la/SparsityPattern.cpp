@@ -176,7 +176,7 @@ void SparsityPattern::insert(const tcb::span<const std::int32_t>& rows,
     else if (row < size0)
     {
       _cache_unowned[row - local_size0].insert(
-          _cache_owned[row - local_size0].end(), cols.begin(), cols.end());
+          _cache_unowned[row - local_size0].end(), cols.begin(), cols.end());
     }
     else
     {
