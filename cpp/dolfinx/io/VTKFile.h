@@ -6,8 +6,7 @@
 
 #pragma once
 
-#include <fstream>
-#include <petscsys.h>
+#include <complex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -51,13 +50,19 @@ public:
   void write(const mesh::Mesh& mesh);
 
   /// Output fem::Function
-  void write(const fem::Function<PetscScalar>& u);
+  void write(const fem::Function<double>& u);
+
+  /// Output fem::Function
+  void write(const fem::Function<std::complex<double>>& u);
 
   /// Output mesh::Mesh and timestep
   void write(const mesh::Mesh& mesh, double t);
 
   /// Output fem::Function and timestep
-  void write(const fem::Function<PetscScalar>& u, double t);
+  void write(const fem::Function<double>& u, double t);
+
+  /// Output fem::Function and timestep
+  void write(const fem::Function<std::complex<double>>& u, double t);
 
 private:
   const std::string _filename;
