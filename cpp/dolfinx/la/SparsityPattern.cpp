@@ -80,9 +80,6 @@ SparsityPattern::SparsityPattern(
   _cache_owned.resize(_index_maps[0]->size_local());
   _cache_unowned.resize(_index_maps[0]->num_ghosts());
 
-  // Need to copy for lambda capture below
-  std::vector<std::int32_t> local_offset1_copy(local_offset1.begin(),
-                                               local_offset1.end());
   // Iterate over block rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
@@ -109,22 +106,17 @@ SparsityPattern::SparsityPattern(
       const int bs_dof0 = bs[0][row];
       const int bs_dof1 = bs[1][col];
 
-      // Compute new column in owned and ghost ranges
-      auto newcol = [&](std::int32_t c_old) {
-        if (c_old < num_cols_local)
-          return bs_dof1 * c_old + local_offset1_copy[col];
-        else
-          return bs_dof1 * (c_old - num_cols_local) + local_offset1_copy.back()
-                 + ghost_offsets1[col];
-      };
-
       // Iterate over owned rows cache
       for (std::int32_t i = 0; i < num_rows_local; ++i)
       {
         for (std::int32_t c_old : p->_cache_owned[i])
         {
           const std::int32_t r_new = bs_dof0 * i + local_offset0[row];
-          const std::int32_t c_new = newcol(c_old);
+          const std::int32_t c_new = (c_old < num_cols_local)
+                                         ? bs_dof1 * c_old + local_offset1[col]
+                                         : bs_dof1 * (c_old - num_cols_local)
+                                               + local_offset1.back()
+                                               + ghost_offsets1[col];
 
           for (int k0 = 0; k0 < bs_dof0; ++k0)
           {
@@ -139,7 +131,11 @@ SparsityPattern::SparsityPattern(
         for (std::int32_t c_old : p->_cache_unowned[i])
         {
           const std::int32_t r_new = bs_dof0 * i + ghost_offsets0[row];
-          const std::int32_t c_new = newcol(c_old);
+          const std::int32_t c_new = (c_old < num_cols_local)
+                                         ? bs_dof1 * c_old + local_offset1[col]
+                                         : bs_dof1 * (c_old - num_cols_local)
+                                               + local_offset1.back()
+                                               + ghost_offsets1[col];
           for (int k0 = 0; k0 < bs_dof0; ++k0)
           {
             for (int k1 = 0; k1 < bs_dof1; ++k1)
@@ -311,7 +307,7 @@ void SparsityPattern::assemble()
       }
       else
       {
-        // column index may not exist in column indexmap
+        // Column index may not exist in column indexmap
         auto it = global_to_local.insert({col, local_i});
         if (it.second)
         {
@@ -345,15 +341,16 @@ void SparsityPattern::assemble()
     adj_counts[i] += (it_diag - row.begin());
     adj_data_off.insert(adj_data_off.end(), it_diag, it_end);
     adj_counts_off[i] += (it_end - it_diag);
+    std::vector<std::int32_t>().swap(row);
   }
   std::vector<std::vector<std::int32_t>>().swap(_cache_owned);
 
   std::vector<std::int32_t> adj_offsets(local_size0 + 1);
-  for (int i = 0; i < local_size0; ++i)
-    adj_offsets[i + 1] = adj_offsets[i] + adj_counts[i];
+  std::partial_sum(adj_counts.begin(), adj_counts.end(),
+                   adj_offsets.begin() + 1);
   std::vector<std::int32_t> adj_offsets_off(local_size0 + 1);
-  for (int i = 0; i < local_size0; ++i)
-    adj_offsets_off[i + 1] = adj_offsets_off[i] + adj_counts_off[i];
+  std::partial_sum(adj_counts_off.begin(), adj_counts_off.end(),
+                   adj_offsets_off.begin() + 1);
 
   // FIXME: after transferring rows, the "correct" row map has no ghosts,
   // but PETSc Mat needs to know original L2G map.
