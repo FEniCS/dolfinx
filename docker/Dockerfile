@@ -409,7 +409,7 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Pyvista dependencies from pip 
-RUN pip3 install --upgrade pyvista ipyvtk_simple
+RUN pip3 install --upgrade pyvista ipyvtk_simple matplotlib
 
 # Launch jupyter lab with virtual framebuffer
 ADD dolfinx/docker/launch_lab.sh /srv/bin/launch_lab.sh
