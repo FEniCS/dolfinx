@@ -171,14 +171,12 @@ void SparsityPattern::insert(const tcb::span<const std::int32_t>& rows,
   for (std::int32_t row : rows)
   {
     if (row < local_size0)
-    {
-      for (std::int32_t col : cols)
-        _cache_owned[row].push_back(col);
-    }
+      _cache_owned[row].insert(_cache_owned[row].end(), cols.begin(),
+                               cols.end());
     else if (row < size0)
     {
-      for (std::int32_t col : cols)
-        _cache_unowned[row - local_size0].push_back(col);
+      _cache_unowned[row - local_size0].insert(
+          _cache_owned[row - local_size0].end(), cols.begin(), cols.end());
     }
     else
     {
@@ -311,9 +309,9 @@ void SparsityPattern::assemble()
         auto it = global_to_local.insert({col, local_i});
         if (it.second)
         {
-          ++local_i;
           ghosts1.push_back(col);
           ghost_owners1.push_back(ghost_data_received[i + 2]);
+          ++local_i;
         }
         const std::int32_t col_local = it.first->second;
         _cache_owned[row_local].push_back(col_local);
@@ -352,12 +350,16 @@ void SparsityPattern::assemble()
   std::partial_sum(adj_counts_off.begin(), adj_counts_off.end(),
                    adj_offsets_off.begin() + 1);
 
-  // FIXME: after transferring rows, the "correct" row map has no ghosts,
-  // but PETSc Mat needs to know original L2G map.
+  // FIXME: after assembly, there are no ghost rows, i.e. the IndexMap for rows
+  // should be non-overlapping. However, we are retaining the row overlap
+  // information and associated mapping, as this will be needed for matrix
+  // assembly.
+  //
   // _index_maps[0] = std::make_shared<common::IndexMap>(comm, local_size0);
   _diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(adj_data), std::move(adj_offsets));
 
+  // Column map increased due to received rows from other processes (see above)
   LOG(INFO) << "Column ghost size increased from "
             << _index_maps[1]->ghosts().size() << " to " << ghosts1.size()
             << "\n";
