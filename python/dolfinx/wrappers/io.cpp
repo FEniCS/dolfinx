@@ -126,15 +126,15 @@ void io(py::module& m)
                const dolfinx::fem::Function<std::complex<double>>&>(
                &dolfinx::io::VTKFile::write),
            py::arg("u"))
-     //  .def("write",
-     //       py::overload_cast<const dolfinx::fem::Function<double>&, double>(
-     //           &dolfinx::io::VTKFile::write),
-     //       py::arg("u"), py::arg("t"))
-     //  .def(
-     //      "write",
-     //      py::overload_cast<const dolfinx::fem::Function<std::complex<double>>&,
-     //                        double>(&dolfinx::io::VTKFile::write),
-     //      py::arg("u"), py::arg("t"))
+      .def("write",
+           py::overload_cast<const dolfinx::fem::Function<double>&, double>(
+               &dolfinx::io::VTKFile::write),
+           py::arg("u"), py::arg("t"))
+      .def(
+          "write",
+          py::overload_cast<const dolfinx::fem::Function<std::complex<double>>&,
+                            double>(&dolfinx::io::VTKFile::write),
+          py::arg("u"), py::arg("t"))
 
       .def("write",
            py::overload_cast<const dolfinx::mesh::Mesh&>(
