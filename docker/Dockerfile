@@ -415,6 +415,10 @@ ADD dolfinx/docker/dolfinx_virtual_framebuffer /srv/bin/dolfinx_virtual_framebuf
 RUN chmod +x /srv/bin/dolfinx_virtual_framebuffer
 
 EXPOSE 8888/tcp
-ENV SHELL /bin/bash
+ENV SHELL /bin/bash  \
+    DISPLAY=:99.0 \
+    VISTA_OFF_SCREEN=True \
+    VISTA_PLOT_THEME=document
+
 
 ENTRYPOINT ["/srv/bin/dolfinx_virtual_framebuffer", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
