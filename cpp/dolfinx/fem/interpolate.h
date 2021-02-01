@@ -266,11 +266,15 @@ void interpolate(
     auto dofs = dofmap->cell_dofs(c);
     for (int k = 0; k < element_bs; ++k)
     {
+      // FIXME: expensive - avoid assignment
       // Extract computed expression values for element block k
-      _vals = values.block(k * value_size, c * X.rows(), value_size, X.rows());
+      // _vals = values.block(k * value_size, c * X.rows(), value_size,
+      // X.rows());
+      Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals
+          = values.block(k * value_size, c * X.rows(), value_size, X.rows());
 
       // Get element degrees of freedom for block
-      element->interpolate(_vals, cell_info[c], _coeffs);
+      element->interpolate(_vals, cell_info[c], tcb::make_span(_coeffs));
       assert(_coeffs.size() == num_scalar_dofs);
 
       // Copy interpolation dofs into coefficient vector
