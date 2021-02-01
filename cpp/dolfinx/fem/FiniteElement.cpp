@@ -204,7 +204,7 @@ void FiniteElement::transform_reference_basis(
     {
       values_unwrapped.block(pt * size_per_point + d * value_size, 0,
                              value_size, 1)
-          = basix::apply_mapping(
+          = basix::map_push_forward(
               _basix_element_handle,
               reference_values_unwrapped.block(
                   pt * size_per_point + d * value_size, 0, value_size, 1),
