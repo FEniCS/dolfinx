@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Garth N. Wells
+// Copyright (C) 2020-2021 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -6,9 +6,8 @@
 
 #pragma once
 
-#include "Function.h"
 #include "FunctionSpace.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -19,6 +18,17 @@ namespace dolfinx::fem
 
 template <typename T>
 class Function;
+
+/// Compute the evaluation points in the physical space at which an
+/// expression should be computed to interpolate it in a finite elemenet
+/// space.
+///
+/// @param[in] element The element to be interpolated into
+/// @param[in] mesh The domain
+/// @return The coordinates in the physical space at which to evaluate
+/// an expression
+Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>
+interpolate_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh);
 
 /// Interpolate a finite element Function (on possibly non-matching
 /// meshes) in another finite element space
@@ -159,13 +169,9 @@ void interpolate(
             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                 Eigen::RowMajor>>&)>& f)
 {
-  using EigenMatrixRowXd
-      = Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-
   const auto element = u.function_space()->element();
   assert(element);
   const int element_bs = element->block_size();
-
   if (int num_sub = element->num_sub_elements();
       num_sub > 0 and num_sub != element_bs)
   {
@@ -178,18 +184,11 @@ void interpolate(
   auto mesh = u.function_space()->mesh();
   assert(mesh);
   const int tdim = mesh->topology().dim();
-  const int gdim = mesh->geometry().dim();
   auto cell_map = mesh->topology().index_map(tdim);
   assert(cell_map);
   const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
 
-  // Get mesh geometry data and the element coordinate map
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const EigenMatrixRowXd& x_g = mesh->geometry().x();
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
-
+  // TODO: remove this call
   // Get the interpolation points on the reference cells
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = element->interpolation_points();
@@ -198,35 +197,9 @@ void interpolate(
   const std::vector<std::uint32_t>& cell_info
       = mesh->topology().get_cell_permutation_info();
 
-  // Push reference coordinates (X) forward to the physical coordinates
-  // (x) for each cell
-  EigenMatrixRowXd x_cell(X.rows(), gdim);
-  std::vector<double> x;
-  EigenMatrixRowXd coordinate_dofs(num_dofs_g, gdim);
-  for (int c = 0; c < num_cells; ++c)
-  {
-    // Get geometry data for current cell
-    auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
-
-    // Push forward coordinates (X -> x)
-    cmap.push_forward(x_cell, X, coordinate_dofs);
-    x.insert(x.end(), x_cell.data(), x_cell.data() + x_cell.size());
-  }
-
-  // Re-pack points (each row for a given coordinate component) and pad
-  // up to gdim with zero
+  // Compute physical coordinates of interpolation points
   Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> _x
-      = Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>::Zero(
-          3, x.size() / gdim);
-  for (int i = 0; i < gdim; ++i)
-  {
-    _x.row(i)
-        = Eigen::Map<Eigen::ArrayXd, 0, Eigen::InnerStride<Eigen::Dynamic>>(
-            x.data() + i, x.size() / gdim,
-            Eigen::InnerStride<Eigen::Dynamic>(gdim));
-  }
+      = interpolate_coords(*element, *mesh);
 
   // Evaluate function at physical points. The returned array has a
   // number of rows equal to the number of components of the function,
@@ -255,8 +228,10 @@ void interpolate(
 
   // Check that return type from f is the correct shape
   if ((values.rows() != value_size * element_bs)
-      || (values.cols() != num_cells * X.rows()))
+      or (values.cols() != num_cells * X.rows()))
+  {
     throw std::runtime_error("Interpolation data has the wrong shape.");
+  }
 
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
@@ -268,10 +243,7 @@ void interpolate(
     {
       // FIXME: expensive - avoid assignment
       // Extract computed expression values for element block k
-      // _vals = values.block(k * value_size, c * X.rows(), value_size,
-      // X.rows());
-      Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals
-          = values.block(k * value_size, c * X.rows(), value_size, X.rows());
+      _vals = values.block(k * value_size, c * X.rows(), value_size, X.rows());
 
       // Get element degrees of freedom for block
       element->interpolate(_vals, cell_info[c], tcb::make_span(_coeffs));
