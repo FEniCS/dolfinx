@@ -171,7 +171,9 @@ void refinement::update_logical_edgefunction(
   // Send all shared edges marked for update and receive from other
   // processes
   const std::vector<std::int64_t> data_to_recv
-      = MPI::neighbor_all_to_all(neighbor_comm, send_offsets, data_to_send)
+      = MPI::neighbor_all_to_all(
+            neighbor_comm,
+            graph::AdjacencyList<std::int64_t>(data_to_send, send_offsets))
             .array();
 
   // Flatten received values and set marked_edges at each index received
@@ -248,18 +250,9 @@ refinement::create_new_vertices(
     }
   }
 
-  // Send new vertex indices to edge neighbors and receive
-  std::vector<std::int64_t> send_values;
-  std::vector<int> send_offsets(1, 0);
-  for (int i = 0; i < num_neighbors; ++i)
-  {
-    send_values.insert(send_values.end(), values_to_send[i].begin(),
-                       values_to_send[i].end());
-    send_offsets.push_back(send_values.size());
-  }
-
   const std::vector<std::int64_t> received_values
-      = MPI::neighbor_all_to_all(neighbor_comm, send_offsets, send_values)
+      = MPI::neighbor_all_to_all(
+            neighbor_comm, graph::AdjacencyList<std::int64_t>(values_to_send))
             .array();
 
   // Add received remote global vertex indices to map
