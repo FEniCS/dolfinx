@@ -9,7 +9,7 @@ configure_file(${DOLFINX_SOURCE_DIR}/dolfinx/common/version.h.in
   ${DOLFINX_SOURCE_DIR}/dolfinx/common/version.h @ONLY)
 
 #------------------------------------------------------------------------------
-# Delcare the library (target)
+# Declare the library (target)
 
 add_library(dolfinx "")  # The "" is needed for older CMake. Remove later.
 
@@ -147,7 +147,7 @@ install(TARGETS dolfinx
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
   )
 
-# Generate DOLFINTargets.cmake
+# Generate DOLFINXTargets.cmake
 install(EXPORT DOLFINXTargets DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx/cmake)
 
 # Install the header files
