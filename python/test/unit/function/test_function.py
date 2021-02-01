@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2014 Garth N. Wells
+# Copyright (C) 2011-2021 Garth N. Wells
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -65,14 +65,12 @@ def test_compute_point_values(V, W, mesh):
     assert all(u_values == u_values2)
 
 
-@pytest.mark.skip("Assign function not implemented")
 def test_assign(V, W):
-    for V0, V1, vector_space in [(V, W, False), (W, V, True)]:
-        u = Function(V0)
-        u0 = Function(V0)
-        u1 = Function(V0)
-        u2 = Function(V0)
-        u3 = Function(V1)
+    for V_ in [V, W]:
+        u = Function(V_)
+        u0 = Function(V_)
+        u1 = Function(V_)
+        u2 = Function(V_)
         with u.vector.localForm() as loc:
             loc.set(1)
         with u0.vector.localForm() as loc:
@@ -81,55 +79,36 @@ def test_assign(V, W):
             loc.set(3)
         with u2.vector.localForm() as loc:
             loc.set(4)
-        with u3.vector.localForm() as loc:
-            loc.set(5)
 
-        uu = Function(V0)
-        uu.assign(2 * u)
-        assert uu.vector.get_local().sum() == u0.vector.get_local().sum()
-
-        uu = Function(V1)
-        uu.assign(3 * u)
-        assert uu.vector.get_local().sum() == u1.vector.get_local().sum()
+        # Test assign + scale
+        uu = Function(V_)
+        u.vector.copy(result=uu.vector)
+        uu.vector.scale(2)
+        assert uu.vector.array.sum() == u0.vector.array.sum()
 
         # Test complex assignment
-        expr = 3 * u - 4 * u1 - 0.1 * 4 * u * 4 + u2 + 3 * u0 / 3. / 0.5
+        expr = 3 * u.vector - 4 * u1.vector - 0.1 * 4 * u.vector * 4 + u2.vector + 3 * u0.vector / 3. / 0.5
+        expr.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         expr_scalar = 3 - 4 * 3 - 0.1 * 4 * 4 + 4. + 3 * 2. / 3. / 0.5
-        uu.assign(expr)
-        assert (round(
-            uu.vector.get_local().sum() - float(
-                expr_scalar * uu.vector.size()), 7) == 0)
+
+        expr.copy(result=uu.vector)
+        uu.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        assert np.isclose(uu.vector.array.sum() - expr_scalar * uu.vector.local_size, 0)
 
         # Test self assignment
-        expr = 3 * u - 5.0 * u2 + u1 - 5 * u
+        expr = 3 * u.vector - 5.0 * u2.vector + u1.vector - 5 * u.vector
+        expr.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         expr_scalar = 3 - 5 * 4. + 3. - 5
-        u.assign(expr)
-        assert (round(
-            u.vector.get_local().sum() - float(
-                expr_scalar * u.vector.size()), 7) == 0)
+        expr.copy(result=u.vector)
+        u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        assert np.isclose(u.vector.array.sum() - expr_scalar * u.vector.local_size, 0)
 
         # Test zero assignment
-        u.assign(-u2 / 2 + 2 * u1 - u1 / 0.5 + u2 * 0.5)
-        assert round(u.vector.get_local().sum() - 0.0, 7) == 0
-
-        # Test erroneous assignments
-        uu = Function(V1)
-
-        def f(values, x):
-            values[:, 0] = 1.0
-
-        with pytest.raises(RuntimeError):
-            uu.assign(1.0)
-        with pytest.raises(RuntimeError):
-            uu.assign(4 * f)
-
-        if not vector_space:
-            with pytest.raises(RuntimeError):
-                uu.assign(u * u0)
-            with pytest.raises(RuntimeError):
-                uu.assign(4 / u0)
-            with pytest.raises(RuntimeError):
-                uu.assign(4 * u * u1)
+        expr = -u2.vector / 2 + 2 * u1.vector - u1.vector / 0.5 + u2.vector * 0.5
+        expr.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        expr.copy(result=u.vector)
+        u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        assert round(u.vector.array.sum() - 0.0, 7) == 0
 
 
 def test_eval(V, W, Q, mesh):
@@ -244,6 +223,10 @@ def test_interpolation_rank0(V):
     w.interpolate(f.eval)
     with w.vector.localForm() as x:
         assert (x[:] == 1.0).all()
+
+    num_vertices = V.mesh.topology.index_map(0).size_global
+    assert np.isclose(w.vector.norm(PETSc.NormType.N1) - num_vertices, 0)
+
     f.t = 2.0
     w.interpolate(f.eval)
     with w.vector.localForm() as x:
@@ -264,26 +247,8 @@ def test_interpolation_rank1(W):
     assert x.max()[1] == 1.0
     assert x.min()[1] == 1.0
 
-
-@skip_in_parallel
-def test_interpolation_old(V, W, mesh):
-    def f0(x):
-        return np.ones(x.shape[1])
-
-    def f1(x):
-        return np.ones((mesh.geometry.dim, x.shape[1]))
-
-    num_vertices = mesh.topology.index_map(0).size_local
-
-    # Scalar interpolation
-    f = Function(V)
-    f.interpolate(f0)
-    assert round(f.vector.norm(PETSc.NormType.N1) - num_vertices, 7) == 0
-
-    # Vector interpolation
-    f = Function(W)
-    f.interpolate(f1)
-    assert round(f.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
+    num_vertices = W.mesh.topology.index_map(0).size_global
+    assert round(w.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
 
 
 @skip_if_complex

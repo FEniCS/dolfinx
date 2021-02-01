@@ -54,9 +54,9 @@ Below are additional requirements for the Python interface.
 - petsc4py
 
 
-.. rubric:: Recommended
+.. rubric:: Suggested
 
-- Matplotlib (required for plotting)
+- pyvista (required for plotting)
 - Numba
 - slepc4py
 

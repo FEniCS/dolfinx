@@ -63,8 +63,11 @@ std::vector<double> mesh::h(const Mesh& mesh,
       = cell_entity_type(mesh.topology().cell_type(), dim);
   const int num_vertices = num_cell_vertices(type);
 
+  // Get geometry dofmap and dofs
   const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
+      = mesh.geometry().x();
 
   std::vector<double> h_cells(entities.size(), 0);
   assert(num_vertices <= 8);
@@ -74,7 +77,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
     // Get the coordinates  of the vertices
     auto dofs = x_dofs.links(entities[e]);
     for (int i = 0; i < num_vertices; ++i)
-      points[i] = geometry.node(dofs[i]);
+      points[i] = geom_dofs.row(dofs[i]);
 
     // Get maximum edge length
     for (int i = 0; i < num_vertices; ++i)
@@ -95,7 +98,9 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   const mesh::CellType type
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
   // Find geometry nodes for topology entities
-  const mesh::Geometry& geometry = mesh.geometry();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
+      = mesh.geometry().x();
+
   // Orient cells if they are tetrahedron
   bool orient = false;
   if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
@@ -115,8 +120,8 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     {
       // Get the two vertices as points
       auto vertices = geometry_entities.row(i);
-      Eigen::Vector3d p0 = geometry.node(vertices[0]);
-      Eigen::Vector3d p1 = geometry.node(vertices[1]);
+      Eigen::Vector3d p0 = geom_dofs.row(vertices[0]);
+      Eigen::Vector3d p1 = geom_dofs.row(vertices[1]);
       // Define normal by rotating tangent counter-clockwise
       Eigen::Vector3d t = p1 - p0;
       n.row(i) = Eigen::Vector3d(-t[1], t[0], 0.0).normalized();
@@ -129,9 +134,9 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     {
       // Get the three vertices as points
       auto vertices = geometry_entities.row(i);
-      const Eigen::Vector3d p0 = geometry.node(vertices[0]);
-      const Eigen::Vector3d p1 = geometry.node(vertices[1]);
-      const Eigen::Vector3d p2 = geometry.node(vertices[2]);
+      const Eigen::Vector3d p0 = geom_dofs.row(vertices[0]);
+      const Eigen::Vector3d p1 = geom_dofs.row(vertices[1]);
+      const Eigen::Vector3d p2 = geom_dofs.row(vertices[2]);
 
       // Define cell normal via cross product of first two edges
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
@@ -145,9 +150,9 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     {
       // Get three vertices as points
       auto vertices = geometry_entities.row(i);
-      const Eigen::Vector3d p0 = geometry.node(vertices[0]);
-      const Eigen::Vector3d p1 = geometry.node(vertices[1]);
-      const Eigen::Vector3d p2 = geometry.node(vertices[2]);
+      const Eigen::Vector3d p0 = geom_dofs.row(vertices[0]);
+      const Eigen::Vector3d p1 = geom_dofs.row(vertices[1]);
+      const Eigen::Vector3d p2 = geom_dofs.row(vertices[2]);
 
       // Define cell normal via cross product of first two edges
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
@@ -385,6 +390,8 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const mesh::Geometry& geometry = mesh.geometry();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
+      = mesh.geometry().x();
   const mesh::Topology& topology = mesh.topology();
 
   const int tdim = topology.dim();
@@ -420,14 +427,16 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
       // Compute cell midpoint
       Eigen::Vector3d midpoint(0.0, 0.0, 0.0);
       for (auto j : xc)
-        midpoint += geometry.node(j);
+        midpoint += geom_dofs.row(j).matrix().transpose();
       midpoint /= xc.size();
+
       // Compute vector triple product of two edges and vector to midpoint
-      Eigen::Vector3d p0 = geometry.node(entity_geometry(i, 0));
+      Eigen::Vector3d p0 = geom_dofs.row(entity_geometry(i, 0));
       Eigen::Matrix3d a;
       a.row(0) = midpoint - p0;
-      a.row(1) = geometry.node(entity_geometry(i, 1)) - p0;
-      a.row(2) = geometry.node(entity_geometry(i, 2)) - p0;
+      a.row(1) = geom_dofs.row(entity_geometry(i, 1)).matrix().transpose() - p0;
+      a.row(2) = geom_dofs.row(entity_geometry(i, 2)).matrix().transpose() - p0;
+
       // Midpoint direction should be opposite to normal, hence this
       // should be negative. Switch points if not.
       if (a.determinant() > 0.0)
