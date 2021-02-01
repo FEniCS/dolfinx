@@ -222,19 +222,10 @@ get_local_indexing(
   // for the received entities (from other processes) with the indices
   // of the sent entities (to other processes)
 
-  // Prepare data for neighbor all to all
-  std::vector<std::int64_t> send_entities_data;
-  std::vector<int> send_offsets = {0};
-  for (std::size_t i = 0; i < send_entities.size(); ++i)
-  {
-    send_entities_data.insert(send_entities_data.end(),
-                              send_entities[i].begin(), send_entities[i].end());
-    send_offsets.push_back(send_entities_data.size());
-  }
-
   const graph::AdjacencyList<std::int64_t> recv_data
-      = dolfinx::MPI::neighbor_all_to_all(neighbor_comm, send_offsets,
-                                          send_entities_data);
+      = dolfinx::MPI::neighbor_all_to_all(
+          neighbor_comm, graph::AdjacencyList<std::int64_t>(send_entities));
+
   const std::vector<std::int64_t>& recv_entities_data = recv_data.array();
   const std::vector<std::int32_t>& recv_offsets = recv_data.offsets();
 
@@ -350,7 +341,9 @@ get_local_indexing(
     }
     const graph::AdjacencyList<std::int64_t> recv_data
         = dolfinx::MPI::neighbor_all_to_all(
-            neighbor_comm, send_global_index_offsets, send_global_index_data);
+            neighbor_comm,
+            graph::AdjacencyList<std::int64_t>(send_global_index_data,
+                                               send_global_index_offsets));
 
     const std::vector<std::int64_t>& recv_global_index_data = recv_data.array();
     const std::vector<std::int32_t>& recv_offsets = recv_data.offsets();
