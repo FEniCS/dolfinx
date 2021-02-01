@@ -337,23 +337,20 @@ ONBUILD RUN cd basix && pip3 install --no-cache-dir . && \
     cd ../ && pip3 install --no-cache-dir ipython
 
 ONBUILD RUN cd dolfinx && \
-    mkdir build && \
-    cd build && \
+    mkdir -p build-real && \
+    cd build-real && \
     PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     cd ../python && \
     CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
     cd ../ && \
-    rm -r build && \
-    mkdir build && \
-    cd build && \
+    mkdir -p build-complex && \
+    cd build-complex && \
     PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFIN_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies . && \
-    cd ../ && \
-    rm -r build
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies .
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
