@@ -244,7 +244,7 @@ fem::create_coordinate_map(ufc_coordinate_mapping* (*fptr)())
 std::shared_ptr<fem::FunctionSpace>
 fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
                           const std::string function_name,
-                          std::shared_ptr<dolfinx::mesh::Mesh> mesh)
+                          std::shared_ptr<mesh::Mesh> mesh)
 {
   ufc_function_space* space = fptr(function_name.c_str());
   ufc_dofmap* ufc_map = space->create_dofmap();
