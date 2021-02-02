@@ -40,7 +40,7 @@ void interpolate(Function<T>& u, const Function<T>& v);
 /// Interpolate an expression in a finite element space
 /// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
-/// @param[in] x The points at which @param f should be evaluated, as
+/// @param[in] x The points at which f should be evaluated, as
 /// computed by fem::interpolation_coords
 template <typename T>
 void interpolate(
@@ -62,7 +62,7 @@ void interpolate(
 ///
 /// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
-/// @param[in] x The points at which @param f should be evaluated, as
+/// @param[in] x The points at which should be evaluated, as
 /// computed by fem::interpolation_coords
 template <typename T>
 void interpolate_c(
