@@ -409,13 +409,8 @@ RUN apt-get -qq update && \
 # ipyvtk_simple is used by pyvista to render in notebooks
 # matplotlib improves plotting quality with better color maps
 # and properly rendering colorbars.
-RUN pip3 install --no-cache-dir pyvista ipyvtk_simple matplotlib
-
-# Launch jupyter lab with virtual framebuffer
-ADD dolfinx/docker/launch_lab.sh /srv/bin/launch_lab.sh
-RUN chmod +x /srv/bin/launch_lab.sh
+RUN pip3 install --no-cache-dir pyvista matplotlib
 
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash
-
-ENTRYPOINT ["/srv/bin/launch_lab.sh"]
+ENTRYPOINT ["jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]

@@ -2,9 +2,9 @@ name: Test visualisation demos
 
 on:
   # Uncomment the below to trigger tests on push
-  # push:
-  #   branches:
-  #     - "**"
+  push:
+    branches:
+      - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * *"
@@ -45,7 +45,7 @@ jobs:
           pip3 install git+https://github.com/FEniCS/ufl.git
           pip3 install git+https://github.com/FEniCS/ffcx.git
           apt-get update
-          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb
+          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb # pyvista
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
           pip3 install pyvista pyvistaqt
 
@@ -58,9 +58,6 @@ jobs:
 
       - name: Build Python interface
         run: python3 -m pip -v install --global-option build --global-option --debug python/
-
-      - name: Setup headless display
-        run: Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
       - name: Run pyvista demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py

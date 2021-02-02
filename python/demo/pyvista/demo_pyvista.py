@@ -27,24 +27,18 @@ except ModuleNotFoundError:
 # the plotting.
 # It requires the following packages:
 # libgl1-mesa-dev xvfb  (Can be install with "apt-get install")
-# The following should be uncommented:
-"""
-import os
-import subprocess
-os.environ['DISPLAY'] = ':99.0'
+# To set x-forwarding for a container:
+# xhost +
+# docker run -ti -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix dolfinx/dolfinx
+# Remember to call the following after ended session
+# xhost -
 
-commands = ['Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &',
-            'sleep 3',
-            'exec "$@"']
-
-for command in commands:
-    subprocess.call(command, shell=True)
-"""
-
-# Should be set to True if there is no x-forwarding. If X-forwarding
-# this can be set to False, and the command above should be commented
-# out.
+# Should be set to True if there is no x-forwarding.
+# Set this to False if x-forwarding is activated
 off_screen = True
+if off_screen:
+    from pyvista.utilities.xvfb import start_xvfb
+    start_xvfb(wait=0)
 
 # Set some global options for all plots
 transparent = False

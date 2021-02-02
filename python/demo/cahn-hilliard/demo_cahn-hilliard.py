@@ -122,9 +122,20 @@ from ufl import (FiniteElement, TestFunctions, TrialFunction, derivative, diff,
                  dx, grad, inner, split, variable)
 
 try:
+    # pyvista requires the following apt-packages
+    # libgl1-mesa-dev xvfb
     import pyvista as pv
+    # pyvistaqt requires the following apt-packages
+    # python3-pyqt5 libgl1-mesa-glx
     import pyvistaqt as pvqt
     have_pyvista = True
+    # If ran in a headless buffer (off_screen=True) take a screenshot of the solution, otherwise
+    # (off_screen=False show interactive plot)
+    off_screen = True
+    if off_screen:
+        from pyvista.utilities.xvfb import start_xvfb
+        start_xvfb(wait=0)
+
 except ModuleNotFoundError:
     print("pyvista is required to visualise the solution")
     have_pyvista = False
@@ -360,4 +371,7 @@ file.close()
 if have_pyvista:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     grid.point_arrays["u"] = u.sub(0).compute_point_values().real
-    pv.plot(grid, show_edges=True)
+    screenshot = None
+    if off_screen:
+        screenshot = "u.png"
+    pv.plot(grid, show_edges=True, off_screen=off_screen, screenshot=screenshot)
