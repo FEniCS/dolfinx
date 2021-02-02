@@ -17,7 +17,7 @@ jobs:
     env:
       CC: clang-10
       CXX: clang++-10
-      MPLBACKEND: agg
+
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
@@ -91,8 +91,6 @@ jobs:
       - name: Run demos (Python, MPI (np=2))
         run: python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py
 
-      - name: Install sympy
-        run: python3 -m pip install sympy
       - name: Run Python unit tests (serial)
         run: python3 -m pytest -v -n=auto --durations=50 python/test/unit/
       - name: Run Python unit tests (MPI, np=2)

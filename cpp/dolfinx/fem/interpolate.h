@@ -194,12 +194,9 @@ void interpolate(
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = element->interpolation_points();
 
-  const bool needs_permutation_data = element->needs_permutation_data();
-  if (needs_permutation_data)
-    mesh->topology_mutable().create_entity_permutations();
+  mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
-      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
-                               : std::vector<std::uint32_t>(num_cells);
+      = mesh->topology().get_cell_permutation_info();
 
   // Push reference coordinates (X) forward to the physical coordinates
   // (x) for each cell
@@ -255,6 +252,12 @@ void interpolate(
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
+
+  // Check that return type from f is the correct shape
+  if ((values.rows() != value_size * element_bs)
+      || (values.cols() != num_cells * X.rows()))
+    throw std::runtime_error("Interpolation data has the wrong shape.");
+
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
@@ -263,11 +266,15 @@ void interpolate(
     auto dofs = dofmap->cell_dofs(c);
     for (int k = 0; k < element_bs; ++k)
     {
+      // FIXME: expensive - avoid assignment
       // Extract computed expression values for element block k
-      _vals = values.block(k, c * X.rows(), value_size, X.rows());
+      // _vals = values.block(k * value_size, c * X.rows(), value_size,
+      // X.rows());
+      Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals
+          = values.block(k * value_size, c * X.rows(), value_size, X.rows());
 
       // Get element degrees of freedom for block
-      element->interpolate(_vals, cell_info[c], _coeffs);
+      element->interpolate(_vals, cell_info[c], tcb::make_span(_coeffs));
       assert(_coeffs.size() == num_scalar_dofs);
 
       // Copy interpolation dofs into coefficient vector

@@ -92,19 +92,25 @@ void mesh(py::module& m)
   m.def("cell_dim", &dolfinx::mesh::cell_dim);
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
-  m.def("cell_normals", &dolfinx::mesh::cell_normals);
+  m.def("cell_normals",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           const py::array_t<std::int32_t, py::array::c_style>& entities) {
+          return dolfinx::mesh::cell_normals(
+              mesh, dim, tcb::span(entities.data(), entities.size()));
+        });
+  // m.def("cell_normals", &dolfinx::mesh::cell_normals);
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
-  m.def("volume_entities", &dolfinx::mesh::volume_entities,
-        "Generalised volume of entities of given dimension.");
-
-  m.def("circumradius", &dolfinx::mesh::circumradius);
-  m.def("h", &dolfinx::mesh::h,
-        "Compute maximum distance between any two vertices.");
-  m.def("inradius", &dolfinx::mesh::inradius, "Compute inradius of cells.");
-  m.def("radius_ratio", &dolfinx::mesh::radius_ratio);
+  m.def(
+      "h",
+      [](const dolfinx::mesh::Mesh& mesh, int dim,
+         const py::array_t<std::int32_t, py::array::c_style>& entities) {
+        return as_pyarray(dolfinx::mesh::h(
+            mesh, tcb::span(entities.data(), entities.size()), dim));
+      },
+      "Compute maximum distance between any two vertices.");
   m.def("midpoints", &dolfinx::mesh::midpoints);
 
   m.def("midpoints",
@@ -230,14 +236,10 @@ void mesh(py::module& m)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
-      .def("hmax", &dolfinx::mesh::Mesh::hmax)
-      .def("hmin", &dolfinx::mesh::Mesh::hmin)
       .def("mpi_comm",
            [](dolfinx::mesh::Mesh& self) {
              return MPICommWrapper(self.mpi_comm());
            })
-      .def("rmax", &dolfinx::mesh::Mesh::rmax)
-      .def("rmin", &dolfinx::mesh::Mesh::rmin)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)

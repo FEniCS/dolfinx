@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx import (DirichletBC, Function, FunctionSpace,
-                     VectorFunctionSpace, cpp, fem)
+                     VectorFunctionSpace, cpp, fem, UnitCubeMesh, UnitSquareMesh)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
@@ -230,6 +230,18 @@ def test_P_simplex(family, degree, cell_type, datadir):
 @parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["Lagrange"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
+def test_P_simplex_built_in(family, degree, cell_type, datadir):
+    if cell_type == CellType.tetrahedron:
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 5, 5)
+    elif cell_type == CellType.triangle:
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    V = FunctionSpace(mesh, (family, degree))
+    run_scalar_test(mesh, V, degree)
+
+
+@parametrize_cell_types_simplex
+@pytest.mark.parametrize("family", ["Lagrange"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
 def test_vector_P_simplex(family, degree, cell_type, datadir):
     if cell_type == CellType.tetrahedron and degree == 4:
         pytest.skip("Skip expensive test on tetrahedron")
@@ -284,6 +296,19 @@ def test_BDM_N2curl_simplex_highest_order(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["Q"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_P_tp(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_scalar_test(mesh, V, degree)
+
+
+@parametrize_cell_types_tp
+@pytest.mark.parametrize("family", ["Q"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_P_tp_built_in_mesh(family, degree, cell_type, datadir):
+    if cell_type == CellType.hexahedron:
+        mesh = UnitCubeMesh(MPI.COMM_WORLD, 5, 5, 5, cell_type)
+    elif cell_type == CellType.quadrilateral:
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5, cell_type)
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)

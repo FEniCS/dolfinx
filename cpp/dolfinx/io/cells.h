@@ -11,6 +11,11 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <vector>
 
+namespace dolfinx::mesh
+{
+class Mesh;
+}
+
 /// Functions for the re-ordering of input mesh topology to the DOLFINX
 /// ordering, and transpose orderings for file output.
 namespace dolfinx::io::cells
@@ -116,5 +121,11 @@ compute_permutation(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::uint8_t>& p);
+
+/// Get VTK cell identifier
+/// @param[in] mesh The Mesh
+/// @param[in] dim The topological dimension of the cell
+/// @return The VTK cell identifier
+std::int8_t get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh, int dim);
 
 } // namespace dolfinx::io::cells

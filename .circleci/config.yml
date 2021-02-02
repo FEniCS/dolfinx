@@ -6,8 +6,6 @@ install-python-components: &install-python-components
     pip3 install git+https://github.com/FEniCS/basix.git --upgrade
     pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
     pip3 install git+https://github.com/FEniCS/ffcx.git --upgrade
-    rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
-
 
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
@@ -85,13 +83,12 @@ demos-python-mpi: &demos-python-mpi
 set-jit-defaults: &set-jit-defaults
   name: Set default DOLFINX JIT parameters
   command: |
-     mkdir -p ~/.config/dolfinx
-     echo '{ "cffi_extra_compile_args" : ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
+    mkdir -p ~/.config/dolfinx
+    echo '{ "cffi_extra_compile_args" : ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
 
 unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
   command: |
-    pip3 install sympy
     mkdir -p ~/junit
     cd python/test/unit
     python3 -m pytest -n=4 --durations=50 --junitxml=~/junit/test-results.xml .
@@ -107,7 +104,6 @@ jobs:
     docker:
       - image: fenicsproject/test-env:mpich
     environment:
-      MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-real-32"
     steps:
@@ -142,9 +138,8 @@ jobs:
 
   build-complex:
     docker:
-        - image: fenicsproject/test-env:mpich
+      - image: fenicsproject/test-env:mpich
     environment:
-      MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-complex-32"
     steps:

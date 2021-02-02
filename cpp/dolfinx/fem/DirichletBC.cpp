@@ -248,8 +248,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
-    bool remote)
+    const int dim, const tcb::span<const std::int32_t>& entities, bool remote)
 {
   const fem::FunctionSpace& V0 = V.at(0).get();
   const fem::FunctionSpace& V1 = V.at(1).get();
@@ -305,15 +304,15 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 
   // Iterate over marked facets
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
-  for (Eigen::Index e = 0; e < entities.rows(); ++e)
+  for (std::int32_t e : entities)
   {
     // Get first attached cell
-    assert(e_to_c->num_links(entities[e]) > 0);
-    const int cell = e_to_c->links(entities[e])[0];
+    assert(e_to_c->num_links(e) > 0);
+    const int cell = e_to_c->links(e)[0];
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
-    auto it = std::find(entities_d.begin(), entities_d.end(), entities[e]);
+    auto it = std::find(entities_d.begin(), entities_d.end(), e);
     assert(it != entities_d.end());
     const int entity_local_index = std::distance(entities_d.begin(), it);
 
@@ -375,7 +374,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
-                             const Eigen::Ref<const Eigen::ArrayXi>& entities,
+                             const tcb::span<const std::int32_t>& entities,
                              bool remote)
 {
   assert(V.dofmap());
@@ -409,15 +408,15 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
   const int num_entity_closure_dofs
       = dofmap->element_dof_layout->num_entity_closure_dofs(dim);
   std::vector<std::int32_t> dofs;
-  for (Eigen::Index i = 0; i < entities.rows(); ++i)
+  for (std::int32_t e : entities)
   {
     // Get first attached cell
-    assert(e_to_c->num_links(entities[i]) > 0);
-    const int cell = e_to_c->links(entities[i])[0];
+    assert(e_to_c->num_links(e) > 0);
+    const int cell = e_to_c->links(e)[0];
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
-    auto it = std::find(entities_d.begin(), entities_d.end(), entities[i]);
+    auto it = std::find(entities_d.begin(), entities_d.end(), e);
     assert(it != entities_d.end());
     const int entity_local_index = std::distance(entities_d.data(), it);
 

@@ -29,47 +29,29 @@ class Mesh;
 /// Extract topology from cell data, i.e. extract cell vertices
 /// @param[in] cell_type The cell shape
 /// @param[in] layout The layout of geometry 'degrees-of-freedom' on the
-///   reference cell
+/// reference cell
 /// @param[in] cells List of 'nodes' for each cell using global indices.
-///   The layout must be consistent with \p layout.
+/// The layout must be consistent with \p layout.
 /// @return Cell topology. The global indices will, in general, have
-///   'gaps' due to mid-side and other higher-order nodes being removed
-///   from the input @p cell.
+/// 'gaps' due to mid-side and other higher-order nodes being removed
+/// from the input @p cell.
 graph::AdjacencyList<std::int64_t>
 extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
                  const graph::AdjacencyList<std::int64_t>& cells);
 
-/// Compute (generalized) volume of mesh entities of given dimension
-Eigen::ArrayXd volume_entities(const Mesh& mesh,
-                               const Eigen::Ref<const Eigen::ArrayXi>& entities,
-                               int dim);
-
-/// Compute circumradius of mesh entities
-Eigen::ArrayXd circumradius(const Mesh& mesh,
-                            const Eigen::Ref<const Eigen::ArrayXi>& entities,
-                            int dim);
-
 /// Compute greatest distance between any two vertices
-Eigen::ArrayXd h(const Mesh& mesh,
-                 const Eigen::Ref<const Eigen::ArrayXi>& entities, int dim);
-
-/// Compute inradius of cells
-Eigen::ArrayXd inradius(const Mesh& mesh,
-                        const Eigen::Ref<const Eigen::ArrayXi>& entities);
-
-/// Compute dim*inradius/circumradius for given cells
-Eigen::ArrayXd radius_ratio(const Mesh& mesh,
-                            const Eigen::Ref<const Eigen::ArrayXi>& entities);
+std::vector<double> h(const Mesh& mesh,
+                      const tcb::span<const std::int32_t>& entities, int dim);
 
 /// Compute normal to given cell (viewed as embedded in 3D)
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> cell_normals(
-    const Mesh& mesh, int dim,
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_indices);
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+cell_normals(const Mesh& mesh, int dim,
+             const tcb::span<const std::int32_t>& entities);
 
 /// Compute midpoints or mesh entities of a given dimension
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 midpoints(const mesh::Mesh& mesh, int dim,
-          const tcb::span<const int>& entities);
+          const tcb::span<const std::int32_t>& entities);
 
 /// Compute indicies of all mesh entities that evaluate to true for the
 /// provided geometric marking function. An entity is considered marked
@@ -103,19 +85,19 @@ std::vector<std::int32_t> locate_entities(
 ///
 /// @param[in] mesh The mesh
 /// @param[in] dim The topological dimension of the entities to be
-///   considered. Must be less than the topological dimension of the
-///   mesh.
+/// considered. Must be less than the topological dimension of the mesh.
 /// @param[in] marker The marking function
 /// @returns List of marked entity indices (indices local to the
-///   process)
+/// process)
 std::vector<std::int32_t> locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
 
-/// Compute the geometry indices of vertices of the given entities from the mesh
-/// geometry
+/// Compute the indices the geometry data for the vertices of the given
+/// mesh entities
+///
 /// @param[in] mesh Mesh
 /// @param[in] dim Topological dimension of the entities of interest
 /// @param[in] entity_list List of entity indices (local)

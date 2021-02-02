@@ -147,9 +147,17 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
   return _boundary_facet;
 }
 //-----------------------------------------------------------------------------
-
+Topology::Topology(MPI_Comm comm, mesh::CellType type)
+    : _mpi_comm(comm), _cell_type(type),
+      _connectivity(
+          mesh::cell_dim(type) + 1,
+          std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
+              mesh::cell_dim(type) + 1))
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
-int Topology::dim() const { return _connectivity.rows() - 1; }
+int Topology::dim() const { return _connectivity.size() - 1; }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              const std::shared_ptr<const common::IndexMap>& map)
@@ -252,17 +260,17 @@ void Topology::create_connectivity_all()
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
-  assert(d0 < _connectivity.rows());
-  assert(d1 < _connectivity.cols());
-  return _connectivity(d0, d1);
+  assert(d0 < (int)_connectivity.size());
+  assert(d1 < (int)_connectivity[d0].size());
+  return _connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
 void Topology::set_connectivity(
     std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
 {
-  assert(d0 < _connectivity.rows());
-  assert(d1 < _connectivity.cols());
-  _connectivity(d0, d1) = c;
+  assert(d0 < (int)_connectivity.size());
+  assert(d1 < (int)_connectivity[d0].size());
+  _connectivity[d0][d1] = c;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
@@ -275,10 +283,9 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
   return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-Topology::get_facet_permutations() const
+const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 {
-  if (_cell_permutations.empty())
+  if (_facet_permutations.empty())
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
@@ -441,8 +448,8 @@ mesh::create_topology(MPI_Comm comm,
   }
 
   std::vector<std::int64_t> recv_pairs
-      = dolfinx::MPI::neighbor_all_to_all(neighbor_comm, qsend_offsets,
-                                          qsend_data)
+      = dolfinx::MPI::neighbor_all_to_all(
+            neighbor_comm, graph::AdjacencyList<std::int64_t>(send_pairs))
             .array();
 
   std::vector<std::int64_t> ghost_vertices;
@@ -520,8 +527,9 @@ mesh::create_topology(MPI_Comm comm,
     }
 
     std::vector<std::int64_t> recv_pairs
-        = dolfinx::MPI::neighbor_all_to_all(neighbor_comm, send_offsets,
-                                            send_pair_data)
+        = dolfinx::MPI::neighbor_all_to_all(
+              neighbor_comm,
+              graph::AdjacencyList<std::int64_t>(send_pair_data, send_offsets))
               .array();
 
     // Unpack received data and add to ghosts
@@ -548,13 +556,13 @@ mesh::create_topology(MPI_Comm comm,
                 neighbor_comm);
 
   // NOTE: We do not use std::partial_sum here as it narrows
-  // std::int64_t to std::int32_t. The below version of
-  // std::inclusive_scan takes the accumulation type from the last
-  // argument (std::int64_t).
+  // std::int64_t to std::int32_t.
+  // NOTE: Using std::inclusive scan is possible, but GCC prior
+  // to 9.3.0 only includes the parallel version of this algorithm,
+  // requiring e.g. Intel TBB.
   std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
-  std::inclusive_scan(local_sizes.begin(), local_sizes.end(),
-                      std::next(all_ranges.begin()), std::plus<>(),
-                      static_cast<std::int64_t>(0));
+  for (int i = 0; i < mpi_size; ++i)
+    all_ranges[i + 1] = all_ranges[i] + local_sizes[i];
 
   // Compute rank of ghost owners
   std::vector<int> ghost_vertices_owners(ghost_vertices.size(), -1);
