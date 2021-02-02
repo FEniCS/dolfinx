@@ -122,7 +122,6 @@ from ufl import (FiniteElement, TestFunctions, TrialFunction, derivative, diff,
                  dx, grad, inner, split, variable)
 
 try:
-
     import pyvista as pv
     import pyvistaqt as pvqt
     have_pyvista = True
