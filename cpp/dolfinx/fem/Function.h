@@ -206,7 +206,13 @@ public:
                   const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                       Eigen::RowMajor>>&)>& f)
   {
-    fem::interpolate(*this, f);
+    assert(_function_space);
+    assert(_function_space->element());
+    assert(_function_space->mesh());
+    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
+        = fem::interpolation_coords(*_function_space->element(),
+                                    *_function_space->mesh());
+    fem::interpolate(*this, f, x);
   }
 
   /// Evaluate the Function at points

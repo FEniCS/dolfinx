@@ -12,8 +12,8 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>
-fem::interpolate_coords(const fem::FiniteElement& element,
-                        const mesh::Mesh& mesh)
+fem::interpolation_coords(const fem::FiniteElement& element,
+                          const mesh::Mesh& mesh)
 {
   using EigenMatrixRowXd
       = Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
