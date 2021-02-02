@@ -62,6 +62,8 @@ void interpolate(
 ///
 /// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
+/// @param[in] x The points at which @param f should be evaluated, as
+/// computed by fem::interpolation_coords
 template <typename T>
 void interpolate_c(
     Function<T>& u,
