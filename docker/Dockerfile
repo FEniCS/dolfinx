@@ -406,9 +406,7 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Pyvista dependencies from pip 
-# ipyvtk_simple is used by pyvista to render in notebooks
-# matplotlib improves plotting quality with better color maps
-# and properly rendering colorbars.
+# matplotlib improves plotting quality with better color maps and properly rendering colorbars.
 RUN pip3 install --no-cache-dir pyvista matplotlib
 
 EXPOSE 8888/tcp

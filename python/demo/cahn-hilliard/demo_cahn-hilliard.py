@@ -125,9 +125,7 @@ try:
     import pyvista as pv
     import pyvistaqt as pvqt
     have_pyvista = True
-    # If off_screen=True take a screenshot of the solution, otherwise show interactive plot
-    off_screen = True
-    if off_screen:
+    if pv.OFF_SCREEN:
         from pyvista.utilities.xvfb import start_xvfb
         start_xvfb(wait=0)
 
@@ -367,6 +365,6 @@ if have_pyvista:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     grid.point_arrays["u"] = u.sub(0).compute_point_values().real
     screenshot = None
-    if off_screen:
+    if pv.OFF_SCREEN:
         screenshot = "u.png"
-    pv.plot(grid, show_edges=True, off_screen=off_screen, screenshot=screenshot)
+    pv.plot(grid, show_edges=True, screenshot=screenshot)

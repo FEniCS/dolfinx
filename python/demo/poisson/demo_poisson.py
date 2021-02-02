@@ -209,19 +209,17 @@ try:
     grid.point_arrays["u"] = uh.compute_point_values().real
     grid.set_active_scalars("u")
 
-    off_screen = True
-    plotter = pyvista.Plotter(off_screen=off_screen)
+    plotter = pyvista.Plotter()
     plotter.add_mesh(grid, show_edges=True)
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
 
-    if off_screen:
-        # Start a virtual framebuffer to visualize within docker container without X-forwarding of the container
+    # If pyvista environment variable is set to off-screen (static) plotting save png
+    if pyvista.OFF_SCREEN:
         from pyvista.utilities.xvfb import start_xvfb
         start_xvfb(wait=0)
         plotter.screenshot("uh.png")
     else:
-        # If x-forwarding in docker container or source installation, show interactive plot
         plotter.show()
 except ModuleNotFoundError:
     print("pyvista is required to visualise the solution")

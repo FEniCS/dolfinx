@@ -2,9 +2,9 @@ name: Test visualisation demos
 
 on:
   # Uncomment the below to trigger tests on push
-  # push:
-  #   branches:
-  #     - "**"
+  push:
+    branches:
+      - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * *"
@@ -20,7 +20,7 @@ jobs:
 
       # For pyvista
       DISPLAY: ":99.0"
-      PYVISTA_OFF_SCREEN: "True"
+      PYVISTA_OFF_SCREEN: true
       ALLOW_PLOTTING: true
 
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-32
