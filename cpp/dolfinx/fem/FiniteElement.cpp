@@ -230,7 +230,7 @@ void FiniteElement::transform_reference_basis_derivatives(
     const tcb::span<const double>& detJ,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
-  throw std::runtime_error("Not implemented yet.");
+  throw std::runtime_error("Transforming basis derivatives is not implemented yet.");
   std::cout << values(0,0,0,0) + order + reference_values(0,0,0,0) + X(0,0) + J(0,0,0) + detJ[0] + K(0,0,0);
 }
 //-----------------------------------------------------------------------------
