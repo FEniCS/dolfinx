@@ -122,15 +122,11 @@ from ufl import (FiniteElement, TestFunctions, TrialFunction, derivative, diff,
                  dx, grad, inner, split, variable)
 
 try:
-    # pyvista requires the following apt-packages
-    # libgl1-mesa-dev xvfb
+
     import pyvista as pv
-    # pyvistaqt requires the following apt-packages
-    # python3-pyqt5 libgl1-mesa-glx
     import pyvistaqt as pvqt
     have_pyvista = True
-    # If ran in a headless buffer (off_screen=True) take a screenshot of the solution, otherwise
-    # (off_screen=False) show interactive plot
+    # If off_screen=True take a screenshot of the solution, otherwise show interactive plot
     off_screen = True
     if off_screen:
         from pyvista.utilities.xvfb import start_xvfb

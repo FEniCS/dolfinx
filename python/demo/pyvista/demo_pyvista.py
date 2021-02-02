@@ -22,19 +22,8 @@ except ModuleNotFoundError:
     print("pyvista is required for this demo")
     exit(0)
 
-# If you are running dolfin-x in a docker container or on a server which does not
-# have X forwarding, we need to make a virtual (headless) framebuffer that can capture
-# the plotting.
-# It requires the following packages:
-# libgl1-mesa-dev xvfb  (Can be install with "apt-get install")
-# To set x-forwarding for a container:
-# xhost +
-# docker run -ti -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix dolfinx/dolfinx
-# Remember to call the following after ended session
-# xhost -
-
 # Should be set to True if there is no x-forwarding.
-# Set this to False if x-forwarding is activated
+# Set this to False if x-forwarding is activated to get an interactive plot.
 off_screen = True
 if off_screen:
     from pyvista.utilities.xvfb import start_xvfb

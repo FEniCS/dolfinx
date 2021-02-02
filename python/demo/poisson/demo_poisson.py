@@ -202,9 +202,6 @@ with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
 # Update ghost entries and plot
 uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 try:
-    # To run pyvista, the following two packages from apt is required:
-    # - libgl1-mesa-dev
-    # - xvfb
     import pyvista
 
     topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
@@ -222,11 +219,6 @@ try:
         # Start a virtual framebuffer to visualize within docker container without X-forwarding of the container
         from pyvista.utilities.xvfb import start_xvfb
         start_xvfb(wait=0)
-        # To set x-forwarding for a docker container add the following arguments to the container initialization
-        # xhost +
-        # docker run -ti -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix dolfinx/dolfinx
-        # Remember to call the following after ended session
-        # xhost -
         plotter.screenshot("uh.png")
     else:
         # If x-forwarding in docker container or source installation, show interactive plot
