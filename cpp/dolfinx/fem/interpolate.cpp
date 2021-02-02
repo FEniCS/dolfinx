@@ -32,12 +32,6 @@ fem::interpolation_coords(const fem::FiniteElement& element,
 
   // Get the interpolation points on the reference cells
   const EigenMatrixRowXd X = element.interpolation_points();
-  if (X.size() == 0)
-  {
-    throw std::runtime_error(
-        "Cannot compute interpolation points for element. May be using a mixed "
-        "element - interpolate into subspaces.");
-  }
 
   // Push reference coordinates (X) forward to the physical coordinates
   // (x) for each cell

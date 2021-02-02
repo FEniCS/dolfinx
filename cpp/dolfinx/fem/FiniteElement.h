@@ -142,7 +142,7 @@ public:
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  interpolation_points() const noexcept;
+  interpolation_points() const;
 
   /// @todo Document shape/layout of @p values
   /// @todo Make the interpolating dofs in/out argument for efficiency

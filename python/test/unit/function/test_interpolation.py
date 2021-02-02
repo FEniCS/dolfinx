@@ -148,8 +148,8 @@ def test_mixed_interpolation():
     A = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     B = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
     v = Function(FunctionSpace(mesh, ufl.MixedElement([A, B])))
-    # with pytest.raises(RuntimeError):
-    #     v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
+    with pytest.raises(RuntimeError):
+        v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
 
 
 @skip_in_parallel
