@@ -3,8 +3,8 @@ name: Test visualisation demos
 on:
   # Uncomment the below to trigger tests on push
   push:
-    branches:
-      - "**"
+    # branches:
+    #   - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * *"

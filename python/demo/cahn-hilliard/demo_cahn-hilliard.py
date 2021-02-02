@@ -130,7 +130,7 @@ try:
     import pyvistaqt as pvqt
     have_pyvista = True
     # If ran in a headless buffer (off_screen=True) take a screenshot of the solution, otherwise
-    # (off_screen=False show interactive plot)
+    # (off_screen=False) show interactive plot
     off_screen = True
     if off_screen:
         from pyvista.utilities.xvfb import start_xvfb
