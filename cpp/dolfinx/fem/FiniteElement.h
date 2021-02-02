@@ -162,10 +162,19 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[out] dofs The element degrees of freedom (interpolants) of
   /// the expression. The call must allocate the space. Is has
-  void interpolate(const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>& values,
-                   std::uint32_t cell_permutation,
-                   tcb::span<ufc_scalar_t> dofs) const;
+  template <typename T>
+  void interpolate(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                      Eigen::RowMajor>& values,
+                   std::uint32_t cell_permutation, tcb::span<T> dofs) const
+  {
+    assert((int)dofs.size() == _space_dim / _bs);
+    Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> values_vector(
+        values.data(), values.size());
+    Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> _dofs(dofs.data(),
+                                                          dofs.size());
+    _dofs = _interpolation_matrix * values_vector;
+    _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
+  }
 
   /// @todo Expand on when permutation data might be required
   ///
@@ -178,17 +187,15 @@ public:
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data fro the cell
   /// @param[in] block_size The block_size of the input data
-  void apply_dof_transformation(double* data, std::uint32_t cell_permutation,
-                                int block_size) const;
-
-  /// Apply permutation to some data
-  ///
-  /// @param[in,out] data The data to be transformed
-  /// @param[in] cell_permutation Permutation data fro the cell
-  /// @param[in] block_size The block_size of the input data
-  void apply_dof_transformation_to_scalar(ufc_scalar_t* data,
-                                          std::uint32_t cell_permutation,
-                                          int block_size) const;
+  template <typename T>
+  void apply_dof_transformation(T* data, std::uint32_t cell_permutation,
+                                int block_size) const
+  {
+    if constexpr (std::is_same<T, double>::value)
+      _apply_dof_transformation(data, cell_permutation, block_size);
+    else
+      _apply_dof_transformation_to_scalar(data, cell_permutation, block_size);
+  }
 
 private:
   std::string _signature, _family;
