@@ -105,7 +105,7 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
 
   const int value_rank = u.function_space()->element()->value_rank();
 
-  std::vector<std::string> components;
+  std::vector<std::string> components = {""};
   if constexpr (!std::is_scalar<Scalar>::value)
     components = {"real", "imag"};
 
