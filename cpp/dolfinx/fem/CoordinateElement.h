@@ -14,7 +14,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <unsupported/Eigen/CXX11/Tensor>
 
 namespace dolfinx::fem
 {
@@ -86,8 +85,7 @@ public:
   /// coordinates x
   void compute_reference_geometry(
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
-      Eigen::Tensor<double, 3, Eigen::RowMajor>& J, tcb::span<double> detJ,
-      Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
+      std::vector<double>& J, tcb::span<double> detJ, std::vector<double>& K,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& x,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
