@@ -9,6 +9,7 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <algorithm>
+#include <bits/stdc++.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
