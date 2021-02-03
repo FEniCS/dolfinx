@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -18,7 +19,6 @@ struct ufc_finite_element;
 
 namespace dolfinx::fem
 {
-
 /// Finite Element, containing the dof layout on a reference element, and
 /// various methods for evaluating and transforming the basis.
 class FiniteElement
@@ -45,46 +45,46 @@ public:
 
   /// String identifying the finite element
   /// @return Element signature
-  std::string signature() const;
+  std::string signature() const noexcept;
 
   /// Cell shape
   /// @return Element cell shape
-  mesh::CellType cell_shape() const;
+  mesh::CellType cell_shape() const noexcept;
 
   /// Dimension of the finite element function space
   /// @return Dimension of the finite element space
-  int space_dimension() const;
+  int space_dimension() const noexcept;
 
   /// Block size of the finite element function space. For VectorElements and
   /// TensorElements, this is the number of DOFs colocated at each DOF point.
   /// For other elements, this is always 1.
   /// @return Block size of the finite element space
-  int block_size() const;
+  int block_size() const noexcept;
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
   /// @return The value size
-  int value_size() const;
+  int value_size() const noexcept;
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
   /// for the reference element
   /// @return The value size for the reference element
-  int reference_value_size() const;
+  int reference_value_size() const noexcept;
 
   /// Rank of the value space
   /// @return The value rank
-  int value_rank() const;
+  int value_rank() const noexcept;
 
   /// Return the dimension of the value space for axis i
   int value_dimension(int i) const;
 
   /// The finite element family
   /// @return The string of the finite element family
-  std::string family() const;
+  std::string family() const noexcept;
 
   /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(
-      Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+      Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
       const Eigen::Ref<const Eigen::Array<
           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
 
@@ -103,9 +103,8 @@ public:
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-      const std::uint32_t permutation_info) const;
+      const tcb::span<const double>& detJ,
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
@@ -114,37 +113,89 @@ public:
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-      const std::uint32_t permutation_info) const;
+      const tcb::span<const double>& detJ,
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
-  /// Tabulate the reference coordinates of all dofs on an element
-  /// @return The coordinates of all dofs on the reference cell
-  ///
-  /// @note Throws an exception if dofs cannot be associated with points
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-  dof_reference_coordinates() const;
-
-  /// Map values of field from physical to reference space which has
-  /// been evaluated at points given by dof_reference_coordinates()
-  void transform_values(
-      ufc_scalar_t* reference_values,
-      const Eigen::Ref<const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&
-          physical_values,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&
-          coordinate_dofs) const;
-
-  /// Return the number of sub elements (for a mixed element)
-  int num_sub_elements() const;
+  /// Get the number of sub elements (for a mixed element)
+  /// @return the Number of sub elements
+  int num_sub_elements() const noexcept;
 
   /// Return simple hash of the signature string
-  std::size_t hash() const;
+  std::size_t hash() const noexcept;
 
   /// Extract sub finite element for component
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
+
+  /// Check if interpolation into the finite element space is an
+  /// identity operation given the evaluation on an expression at
+  /// specific points, i.e. the degree-of-freedom are equal to point
+  /// evaluations. The function will return `true` for Lagrange
+  /// elements.
+  ///  @return True if interpolation is an identity operation
+  bool interpolation_ident() const noexcept;
+
+  /// Points on the reference cell at which an expression need to be
+  /// evaluated in order to interpolate the expression in the finite
+  /// element space. For Lagrange elements the points will just be the
+  /// nodal positions. For other elements the points will typically be
+  /// the quadrature points used to evaluate moment degrees of freedom.
+  /// @return Points on the reference cell. Shape is (num_points, tdim).
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  interpolation_points() const noexcept;
+
+  /// @todo Document shape/layout of @p values
+  /// @todo Make the interpolating dofs in/out argument for efficiency
+  /// as this function is often called from within tight loops
+  /// @todo Consider handling block size > 1
+  /// @todo Re-work for fields that require a pull-back, e.g. Piols
+  /// mapped elements
+  ///
+  /// Interpolate a function in the finite element space on a cell.
+  /// Given the evaluation of the function to be interpolated at points
+  /// provided by @p FiniteElement::interpolation_points, it evaluates
+  /// the degrees of freedom for the interpolant.
+  ///
+  /// @param[in] values The values of the function. It has shape
+  /// (value_size, num_points), where `num_points` is the number of
+  /// points given by FiniteElement::interpolation_points.
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[out] dofs The element degrees of freedom (interpolants) of
+  /// the expression. The call must allocate the space. Is has
+  template <typename T>
+  void interpolate(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                      Eigen::RowMajor>& values,
+                   std::uint32_t cell_permutation, tcb::span<T> dofs) const
+  {
+    assert((int)dofs.size() == _space_dim / _bs);
+    Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> values_vector(
+        values.data(), values.size());
+    Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> _dofs(dofs.data(),
+                                                          dofs.size());
+    _dofs = _interpolation_matrix * values_vector;
+    _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
+  }
+
+  /// @todo Expand on when permutation data might be required
+  ///
+  /// Check if cell permutation data is required for this element
+  /// @return True if cell permutation data is required
+  bool needs_permutation_data() const noexcept;
+
+  /// Apply permutation to some data
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data fro the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_dof_transformation(T* data, std::uint32_t cell_permutation,
+                                int block_size) const
+  {
+    if constexpr (std::is_same<T, double>::value)
+      _apply_dof_transformation(data, cell_permutation, block_size);
+    else
+      _apply_dof_transformation_to_scalar(data, cell_permutation, block_size);
+  }
 
 private:
   std::string _signature, _family;
@@ -152,9 +203,6 @@ private:
   mesh::CellType _cell_shape;
 
   int _tdim, _space_dim, _value_size, _reference_value_size;
-
-  // Dof coordinates on the reference element
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _refX;
 
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
@@ -170,23 +218,31 @@ private:
   // Dimension of each value space
   std::vector<int> _value_dimension;
 
-  // Functions for basis and derivatives evaluation
-  std::function<int(double*, int, const double*)> _evaluate_reference_basis;
-
-  std::function<int(double*, int, int, const double*)>
-      _evaluate_reference_basis_derivatives;
-
   std::function<int(double*, int, int, const double*, const double*,
-                    const double*, const double*, const double*,
-                    const std::uint32_t)>
+                    const double*, const double*, const double*)>
       _transform_reference_basis_derivatives;
 
-  std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*,
-                    const ufc_coordinate_mapping*)>
-      _transform_values;
+  std::function<int(double*, const std::uint32_t, const int)>
+      _apply_dof_transformation;
 
-  // Block size for VectorElements and TensorElements
-  // This gives the number of DOFs colocated at each point
-  int _block_size;
+  std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
+      _apply_dof_transformation_to_scalar;
+
+  // Block size for VectorElements and TensorElements. This gives the
+  // number of DOFs colocated at each point.
+  int _bs;
+
+  // True if interpolation is indentity, i.e. call to
+  // _interpolate_into_cell is not required
+  bool _interpolation_is_ident;
+
+  // True if element needs dof permutation
+  bool _needs_permutation_data;
+
+  // The basix element identifier
+  int _basix_element_handle;
+
+  // The interpolation matrix
+  Eigen::MatrixXd _interpolation_matrix;
 };
 } // namespace dolfinx::fem

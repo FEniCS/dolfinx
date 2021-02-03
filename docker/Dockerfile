@@ -18,11 +18,11 @@
 #
 #    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
 #
-# To build from source, first checkout the DOLFINX, FFCX, FIAT and UFL
+# To build from source, first checkout the DOLFINX, FFCX, Basix and UFL
 # repositories into the working directory, e.g.:
 #
 # $ ls $(pwd)
-# dolfinx  ffcx  fiat  ufl
+# dolfinx  ffcx  basix  ufl
 #
 # Then run the commands:
 #
@@ -47,7 +47,7 @@
 
 ARG GMSH_VERSION=4.6.0
 ARG PYBIND11_VERSION=2.6.1
-ARG PETSC_VERSION=3.14.2
+ARG PETSC_VERSION=3.14.3
 ARG SLEPC_VERSION=3.14.1
 ARG SLEPC4PY_VERSION=3.14.0
 # Todo: Update KaHIP version upon a release.
@@ -105,7 +105,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     ninja-build \
     pkg-config \
     python3-dev \
-    python3-matplotlib \
     python3-numpy \
     python3-pip \
     python3-scipy \
@@ -121,7 +120,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
     libglu1 \
     libxcursor-dev \
+    libxft2 \
     libxinerama1 && \
+    #
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -311,7 +312,7 @@ ONBUILD WORKDIR /src
 # This leaves the sources inside the container. This is a limitation of Docker.
 # There is some trickery in the intermediate and dolfinx containers that can be
 # used to remove this source if needed, see below.
-ONBUILD ADD fiat/ /src/fiat/
+ONBUILD ADD basix/ /src/basix/
 ONBUILD ADD ufl/ /src/ufl/
 ONBUILD ADD ffcx/ /src/ffcx/
 ONBUILD ADD dolfinx/ /src/dolfinx/
@@ -328,37 +329,34 @@ ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
 # Extra CMake C++ compiler flags for DOLFINX C++ build.
 ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
-# The dolfinx-onbuild container expects to have folders fiat/ ufl/ ffcx/ and
+# The dolfinx-onbuild container expects to have folders basix/ ufl/ ffcx/ and
 # dolfinx/ mounted/shared at /src.
-ONBUILD RUN cd fiat && pip3 install --no-cache-dir . && \
+ONBUILD RUN cd basix && pip3 install --no-cache-dir . && \
     cd ../ufl && pip3 install --no-cache-dir . && \
     cd ../ffcx && pip3 install --no-cache-dir . && \
     cd ../ && pip3 install --no-cache-dir ipython
 
 ONBUILD RUN cd dolfinx && \
-    mkdir build && \
-    cd build && \
+    mkdir -p build-real && \
+    cd build-real && \
     PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     cd ../python && \
     CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
     cd ../ && \
-    rm -r build && \
-    mkdir build && \
-    cd build && \
+    mkdir -p build-complex && \
+    cd build-complex && \
     PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFIN_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies . && \
-    cd ../ && \
-    rm -r build
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies .
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
-            PETSC_ARCH=linux-gnu-real-32 \
-            PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
-            LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
+    PETSC_ARCH=linux-gnu-real-32 \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
+    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ONBUILD WORKDIR /root
 

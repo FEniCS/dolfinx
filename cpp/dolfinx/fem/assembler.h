@@ -9,7 +9,6 @@
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
-#include <Eigen/Dense>
 #include <dolfinx/common/span.hpp>
 #include <memory>
 #include <vector>
@@ -38,13 +37,12 @@ T assemble_scalar(const Form<T>& M)
 
 // -- Vectors ----------------------------------------------------------------
 
-/// Assemble linear form into an Eigen vector
-/// @param[in,out] b The Eigen vector to be assembled. It will not be
-///   zeroed before assembly.
+/// Assemble linear form into a vector
+/// @param[in,out] b The vector to be assembled. It will not be zeroed
+/// before assembly.
 /// @param[in] L The linear forms to assemble into b
 template <typename T>
-void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-                     const Form<T>& L)
+void assemble_vector(tcb::span<T> b, const Form<T>& L)
 {
   fem::impl::assemble_vector(b, L);
 }
@@ -69,12 +67,9 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
 /// is responsible for calling VecGhostUpdateBegin/End.
 template <typename T>
 void apply_lifting(
-    Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form<T>>>& a,
+    tcb::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const std::vector<Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>>&
-        x0,
-    double scale)
+    const std::vector<tcb::span<const T>>& x0, double scale)
 {
   fem::impl::apply_lifting(b, a, bcs1, x0, scale);
 }
@@ -212,16 +207,15 @@ void set_diagonal(
 // FIXME: clarify x0
 // FIXME: clarify what happens with ghosts
 
-/// Set bc values in owned (local) part of the PETScVector, multiplied
-/// by 'scale'. The vectors b and x0 must have the same local size. The
-/// bcs should be on (sub-)spaces of the form L that b represents.
+/// Set bc values in owned (local) part of the vector, multiplied by
+/// 'scale'. The vectors b and x0 must have the same local size. The bcs
+/// should be on (sub-)spaces of the form L that b represents.
 template <typename T>
-void set_bc(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
+void set_bc(tcb::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-            const Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, 1>>& x0,
-            double scale = 1.0)
+            const tcb::span<const T>& x0, double scale = 1.0)
 {
-  if (b.rows() > x0.rows())
+  if (b.size() > x0.size())
     throw std::runtime_error("Size mismatch between b and x0 vectors.");
   for (const auto& bc : bcs)
   {
@@ -230,11 +224,11 @@ void set_bc(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
   }
 }
 
-/// Set bc values in owned (local) part of the PETScVector, multiplied
-/// by 'scale'. The bcs should be on (sub-)spaces of the form L that b
+/// Set bc values in owned (local) part of the vector, multiplied by
+/// 'scale'. The bcs should be on (sub-)spaces of the form L that b
 /// represents.
 template <typename T>
-void set_bc(Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, 1>> b,
+void set_bc(tcb::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
             double scale = 1.0)
 {

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Geometry.h"
+#include "Topology.h"
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -41,11 +42,6 @@ Geometry::x() const
 //-----------------------------------------------------------------------------
 const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d Geometry::node(int n) const
-{
-  return _x.row(n).matrix().transpose();
-}
-//-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Geometry::input_global_indices() const
 {
   return _input_global_indices;
@@ -66,6 +62,19 @@ mesh::Geometry mesh::create_geometry(
   //  Build 'geometry' dofmap on the topology
   auto [dof_index_map, bs, dofmap]
       = fem::build_dofmap_data(comm, topology, coordinate_element.dof_layout());
+
+  // If the mesh has higher order geometry, permute the dofmap
+  if (coordinate_element.needs_permutation_data())
+  {
+    const int D = topology.dim();
+    const int num_cells = topology.connectivity(D, 0)->num_nodes();
+    const std::vector<std::uint32_t>& cell_info
+        = topology.get_cell_permutation_info();
+
+    for (std::int32_t cell = 0; cell < num_cells; ++cell)
+      coordinate_element.unpermute_dofs(dofmap.links(cell).data(),
+                                        cell_info[cell]);
+  }
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
@@ -99,6 +108,19 @@ mesh::Geometry mesh::create_geometry(
   {
     xg.row(i) = coords.row(l2l[i]);
     igi[i] = indices[l2l[i]];
+  }
+
+  // If the mesh has higher order geometry, permute the dofmap
+  if (coordinate_element.needs_permutation_data())
+  {
+    const int D = topology.dim();
+    const int num_cells = topology.connectivity(D, 0)->num_nodes();
+    const std::vector<std::uint32_t>& cell_info
+        = topology.get_cell_permutation_info();
+
+    for (std::int32_t cell = 0; cell < num_cells; ++cell)
+      coordinate_element.permute_dofs(dofmap.links(cell).data(),
+                                      cell_info[cell]);
   }
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,

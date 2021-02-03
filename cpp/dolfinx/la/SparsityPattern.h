@@ -98,9 +98,9 @@ public:
   /// indices for the columns.
   const graph::AdjacencyList<std::int32_t>& diagonal_pattern() const;
 
-  /// Sparsity pattern for the un-owned (off-diagonal) columns. Uses global
-  /// indices for the columns.
-  const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern() const;
+  /// Sparsity pattern for the un-owned (off-diagonal) columns. Uses local
+  /// indices for the columns. Translate to global with column IndexMap.
+  const graph::AdjacencyList<std::int32_t>& off_diagonal_pattern() const;
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
@@ -113,13 +113,13 @@ private:
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
   std::array<int, 2> _bs;
 
-  // Caches for diagonal and off-diagonal blocks
-  std::vector<std::vector<std::int32_t>> _diagonal_cache;
-  std::vector<std::vector<std::int64_t>> _off_diagonal_cache;
+  // Caches for unassembled entries on owned and unowned (ghost) rows
+  std::vector<std::vector<std::int32_t>> _cache_owned;
+  std::vector<std::vector<std::int32_t>> _cache_unowned;
 
   // Sparsity pattern data (computed once pattern is finalised)
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal;
-  std::shared_ptr<graph::AdjacencyList<std::int64_t>> _off_diagonal;
+  std::shared_ptr<graph::AdjacencyList<std::int32_t>> _off_diagonal;
 };
 } // namespace la
 } // namespace dolfinx

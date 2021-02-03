@@ -4,12 +4,12 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-
+import basix
 import cffi
 import dolfinx
-import FIAT
 import numba
 import numpy as np
+import pytest
 import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -171,6 +171,7 @@ def test_simple_evaluation():
     assert(np.allclose(grad_f_evaluated, grad_f_exact))
 
 
+@pytest.mark.skip("Quadrature elements not yet supported.")
 def test_assembly_into_quadrature_function():
     """Test assembly into a Quadrature function.
 
@@ -200,8 +201,7 @@ def test_assembly_into_quadrature_function():
     mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 3, 6)
 
     quadrature_degree = 2
-    quadrature_points = FIAT.create_quadrature(FIAT.ufc_simplex(
-        mesh.topology.dim), quadrature_degree, scheme="default").get_points()
+    quadrature_points = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
     Q_element = ufl.VectorElement("Quadrature", ufl.triangle, quadrature_degree, quad_scheme="default")
     Q = dolfinx.FunctionSpace(mesh, Q_element)
 
