@@ -8,7 +8,6 @@
 #include "caster_petsc.h"
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/VTKFileNew.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
@@ -102,38 +101,6 @@ void io(py::module& m)
       .def("comm", [](dolfinx::io::XDMFFile& self) {
         return MPICommWrapper(self.comm());
       });
-
-  // dolfinx::io::VTKFile
-  py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>
-      vtk_file(m, "VTKFile");
-
-  vtk_file
-      .def(py::init([](std::string filename) {
-             return std::make_unique<dolfinx::io::VTKFile>(filename);
-           }),
-           py::arg("filename"))
-      .def("write",
-           py::overload_cast<const dolfinx::fem::Function<double>&>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("u"))
-      .def("write",
-           py::overload_cast<
-               const dolfinx::fem::Function<std::complex<double>>&>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("u"))
-      .def("write",
-           py::overload_cast<const dolfinx::fem::Function<double>&, double>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("u"), py::arg("t"))
-      .def(
-          "write",
-          py::overload_cast<const dolfinx::fem::Function<std::complex<double>>&,
-                            double>(&dolfinx::io::VTKFile::write),
-          py::arg("u"), py::arg("t"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::Mesh&>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("mesh"));
 
   // dolfinx::io::VTKFileNew
   py::class_<dolfinx::io::VTKFileNew, std::shared_ptr<dolfinx::io::VTKFileNew>>(

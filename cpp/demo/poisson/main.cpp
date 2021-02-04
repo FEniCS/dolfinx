@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Compute solution
-    fem::Function<PetscScalar> u(V);
+    auto u  = std::make_shared<fem::Function<PetscScalar>>(V);
     la::PETScMatrix A = la::PETScMatrix(fem::create_matrix(*a), false);
     la::PETScVector b(*L->function_spaces()[0]->dofmap()->index_map,
                       L->function_spaces()[0]->dofmap()->index_map_bs());
@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
     lu.set_from_options();
 
     lu.set_operator(A.mat());
-    lu.solve(u.vector(), b.vec());
+    lu.solve(u->vector(), b.vec());
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
@@ -224,8 +224,8 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Save solution in VTK format
-    io::VTKFile file("u.pvd");
-    file.write(u);
+    io::VTKFileNew file(MPI_COMM_WORLD, "u.pvd", "w");
+    file.write({*u}, 0.0);
   }
 
   common::subsystem::finalize_petsc();

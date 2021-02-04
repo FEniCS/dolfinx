@@ -12,7 +12,7 @@ import ufl
 from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
                      UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      VectorFunctionSpace, cpp)
-from dolfinx.cpp.io import VTKFileNew
+from dolfinx.io import VTKFile
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.fixtures import tempdir
@@ -29,27 +29,27 @@ cell_types_3D = [CellType.tetrahedron, CellType.hexahedron]
 def test_save_1d_mesh(tempdir):
     filename = os.path.join(tempdir, "mesh.pvd")
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
-    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
-        vtk.write(mesh, 0)
-        vtk.write(mesh, 1)
+    with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write_mesh(mesh)
+        vtk.write_mesh(mesh, 1)
 
 
 @pytest.mark.parametrize("cell_type", cell_types_2D)
 def test_save_2d_mesh(tempdir, cell_type):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 32, cell_type=cell_type)
     filename = os.path.join(tempdir, f"mesh_{cpp.mesh.to_string(cell_type)}.pvd")
-    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
-        vtk.write(mesh, 0.)
-        vtk.write(mesh, 2.)
+    with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write_mesh(mesh, 0.)
+        vtk.write_mesh(mesh, 2.)
 
 
 @pytest.mark.parametrize("cell_type", cell_types_3D)
 def test_save_3d_mesh(tempdir, cell_type):
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8, cell_type=cell_type)
     filename = os.path.join(tempdir, f"mesh_{cpp.mesh.to_string(cell_type)}.pvd")
-    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
-        vtk.write(mesh, 0.)
-        vtk.write(mesh, 2.)
+    with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write_mesh(mesh, 0.)
+        vtk.write_mesh(mesh, 2.)
 
 
 def test_save_1d_scalar(tempdir):
@@ -63,9 +63,9 @@ def test_save_1d_scalar(tempdir):
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
-        vtk.write([u._cpp_object], 0.)
-        vtk.write([u._cpp_object], 1.)
+    with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write_function(u, 0.)
+        vtk.write_function(u, 1.)
 
 
 @pytest.mark.parametrize("cell_type", cell_types_2D)
@@ -76,9 +76,9 @@ def test_save_2d_scalar(tempdir, cell_type):
         loc.set(1.0)
 
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
-        vtk.write([u._cpp_object], 0.)
-        vtk.write([u._cpp_object], 1.)
+    with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write_function(u, 0.)
+        vtk.write_function(u, 1.)
 
 
 @pytest.mark.parametrize("cell_type", cell_types_3D)
@@ -89,9 +89,9 @@ def test_save_3d_scalar(tempdir, cell_type):
         loc.set(1.0)
 
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
-        vtk.write([u._cpp_object], 0.)
-        vtk.write([u._cpp_object], 1.)
+    with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write_function(u, 0.)
+        vtk.write_function(u, 1.)
 
 
 def test_save_1d_vector(tempdir):
@@ -109,8 +109,8 @@ def test_save_1d_vector(tempdir):
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
-        vtk.write([u._cpp_object], 0.)
+    with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write_function(u, 0.)
 
 
 @pytest.mark.parametrize("cell_type", cell_types_2D)
@@ -127,8 +127,8 @@ def test_save_2d_vector(tempdir, cell_type):
     u.interpolate(f)
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
-        vtk.write([u._cpp_object], 0.)
+    with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write_function(u, 0.)
 
 
 @skip_in_parallel
@@ -152,8 +152,8 @@ def test_save_2d_vector_CG2(tempdir):
         return vals
     u.interpolate(func)
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFileNew(mesh.mpi_comm(), filename, "w") as vtk:
-        vtk.write([u._cpp_object], 0.)
+    with VTKFile(mesh.mpi_comm(), filename, "w") as vtk:
+        vtk.write_function(u, 0.)
 
 
 def test_save_2d_mixed(tempdir):
@@ -179,8 +179,8 @@ def test_save_2d_mixed(tempdir):
     U.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFileNew(mesh.mpi_comm(), filename, "w") as vtk:
-        vtk.write([U.sub(i)._cpp_object for i in range(W.num_sub_spaces())], 0.)
+    with VTKFile(mesh.mpi_comm(), filename, "w") as vtk:
+        vtk.write_function([U.sub(i) for i in range(W.num_sub_spaces())], 0.)
 
 
 def test_save_1d_tensor(tempdir):
@@ -190,8 +190,8 @@ def test_save_1d_tensor(tempdir):
     with u.vector.localForm() as loc:
         loc.set(1.0)
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFileNew(mesh.mpi_comm(), filename, "w") as vtk:
-        vtk.write([u._cpp_object], 0.)
+    with VTKFile(mesh.mpi_comm(), filename, "w") as vtk:
+        vtk.write_function(u, 0.)
 
 
 def test_save_2d_tensor(tempdir):
@@ -201,12 +201,12 @@ def test_save_2d_tensor(tempdir):
         loc.set(1.0)
 
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFileNew(mesh.mpi_comm(), filename, "w") as vtk:
+    with VTKFile(mesh.mpi_comm(), filename, "w") as vtk:
 
-        vtk.write([u._cpp_object], 0.)
+        vtk.write_function(u, 0.)
         with u.vector.localForm() as loc:
             loc.set(2.0)
-        vtk.write([u._cpp_object], 1.)
+        vtk.write_function(u, 1.)
 
 
 def test_save_3d_tensor(tempdir):
@@ -216,6 +216,5 @@ def test_save_3d_tensor(tempdir):
         loc.set(1.0)
 
     filename = os.path.join(tempdir, "u.pvd")
-    with VTKFileNew(mesh.mpi_comm(), filename, "w") as vtk:
-
-        vtk.write([u._cpp_object], 0.)
+    with VTKFile(mesh.mpi_comm(), filename, "w") as vtk:
+        vtk.write_function(u, 0.)
