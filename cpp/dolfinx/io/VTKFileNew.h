@@ -67,14 +67,14 @@ public:
 
   /// Output fem::Function and timestep
   /// @param[in] u List of functions to write to file
-  /// @param[in] time Time parameter to associate with the @p mesh
+  /// @param[in] t Time parameter to associate with the @p mesh
   void write(
       const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
       double t);
 
   /// Output fem::Function and timestep
   /// @param[in] u List of functions to write to file
-  /// @param[in] time Time parameter to associate with the @p mesh
+  /// @param[in] t Time parameter to associate with the @p mesh
   void write(
       const std::vector<
           std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,

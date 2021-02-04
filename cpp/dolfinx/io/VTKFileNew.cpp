@@ -503,10 +503,11 @@ void write_function(
     else
     {
       // Check if the function space is Lagrangian
-      // NOTE: This should be changed if we add option to solve DG
+      // NOTE: This should be changed if we add option to visualize DG
       std::shared_ptr<const dolfinx::fem::FiniteElement> element
           = _u.get().function_space()->element();
-      if (element->family().compare("Lagrange") == 0)
+      if ((element->family().compare("Lagrange") == 0)
+          or (element->family().compare("Q") == 0))
       {
         // Extract mesh data
         int tdim = mesh->topology().dim();
@@ -563,20 +564,21 @@ void write_function(
             }
           }
         }
-        // Loop through each vector component
+
+        // Loop through each vector/tensor component
+        bool element_matching_mesh = true;
         for (std::int32_t k = 0; k < element->num_sub_elements(); k++)
         {
           auto dofmap = _u.get().function_space()->sub({k})->dofmap();
           auto element_layout = dofmap->element_dof_layout;
 
-          bool is_matching = true;
           for (std::int32_t i = 0; i <= tdim; i++)
           {
             // Check that subelement layout matches geometry layout
             if (geometry_layout.num_entity_dofs(i)
                 != element_layout->num_entity_dofs(i))
             {
-              is_matching = false;
+              element_matching_mesh = false;
               break;
               // throw std::runtime_error("Can only save Lagrange finite
               // element
@@ -585,7 +587,7 @@ void write_function(
               //                          "as the mesh geometry");
             }
           }
-          if (is_matching)
+          if (element_matching_mesh)
           {
             // Loop through cells
             for (std::int32_t c = 0; c < num_cells; ++c)
@@ -603,9 +605,11 @@ void write_function(
           {
             LOG(WARNING) << "Output data is interpolated into a first order "
                             "Lagrange space.";
-            point_values = _u.get().compute_point_values();
+            break;
           }
         }
+        if (!element_matching_mesh)
+          point_values = _u.get().compute_point_values();
         pugi::xml_node data_node = piece_node.child("PointData");
         assert(!data_node.empty());
         add_data(_u, point_values, data_node);
