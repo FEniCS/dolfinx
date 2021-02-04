@@ -75,6 +75,9 @@ void interpolate(
 /// @param[in] f The expression to be interpolated
 /// @param[in] x The points at which should be evaluated, as
 /// computed by fem::interpolation_coords
+/// @param[in] cells Indices of the cells in the mesh on which to
+/// interpolate. Should be the same as the list used when calling
+/// fem::interpolation_coords.
 template <typename T>
 void interpolate_c(
     Function<T>& u,
@@ -83,7 +86,8 @@ void interpolate_c(
             Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
         const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                             Eigen::RowMajor>>&)>& f,
-    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x);
+    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x,
+    const tcb::span<std::int32_t>& cells);
 
 namespace detail
 {
