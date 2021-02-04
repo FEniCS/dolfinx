@@ -14,7 +14,6 @@ from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
                      VectorFunctionSpace, cpp)
 from dolfinx.cpp.io import VTKFileNew
 from dolfinx.cpp.mesh import CellType
-from dolfinx.io import VTKFile
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
