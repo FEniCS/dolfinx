@@ -542,9 +542,13 @@ void write_function(
             if (geometry_layout.num_entity_dofs(i)
                 != element_layout->num_entity_dofs(i))
             {
-              throw std::runtime_error("Can only save Lagrange finite element "
-                                       "functions of same order "
-                                       "as the mesh geometry");
+              // throw std::runtime_error("Can only save Lagrange finite element
+              // "
+              //                          "functions of same order "
+              //                          "as the mesh geometry");
+              LOG(WARNING) << "Output data is interpolated into a first order "
+                              "Lagrange space.";
+              point_values = _u.get().compute_point_values();
             }
           }
           // Loop through cells
@@ -565,27 +569,41 @@ void write_function(
           auto dofmap = _u.get().function_space()->sub({k})->dofmap();
           auto element_layout = dofmap->element_dof_layout;
 
+          bool is_matching = true;
           for (std::int32_t i = 0; i <= tdim; i++)
           {
             // Check that subelement layout matches geometry layout
             if (geometry_layout.num_entity_dofs(i)
                 != element_layout->num_entity_dofs(i))
             {
-              throw std::runtime_error("Can only save Lagrange finite element "
-                                       "functions of same order "
-                                       "as the mesh geometry");
+              is_matching = false;
+              break;
+              // throw std::runtime_error("Can only save Lagrange finite
+              // element
+              // "
+              //                          "functions of same order "
+              //                          "as the mesh geometry");
             }
           }
-          // Loop through cells
-          for (std::int32_t c = 0; c < num_cells; ++c)
+          if (is_matching)
           {
-            // Get local to global dof ordering for geometry and function
-            auto dofs = x_dofmap.links(c);
-            auto cell_dofs = dofmap->cell_dofs(c);
-            for (std::int32_t i = 0; i < num_dofs_g; i++)
+            // Loop through cells
+            for (std::int32_t c = 0; c < num_cells; ++c)
             {
-              point_values(dofs[i], k) = func_values[cell_dofs[i]];
+              // Get local to global dof ordering for geometry and function
+              auto dofs = x_dofmap.links(c);
+              auto cell_dofs = dofmap->cell_dofs(c);
+              for (std::int32_t i = 0; i < num_dofs_g; i++)
+              {
+                point_values(dofs[i], k) = func_values[cell_dofs[i]];
+              }
             }
+          }
+          else
+          {
+            LOG(WARNING) << "Output data is interpolated into a first order "
+                            "Lagrange space.";
+            point_values = _u.get().compute_point_values();
           }
         }
         pugi::xml_node data_node = piece_node.child("PointData");
@@ -594,7 +612,15 @@ void write_function(
       }
       else
       {
-        throw std::runtime_error("Can only visualize Lagrange finite elements");
+        LOG(WARNING) << "Output data is interpolated into a first order "
+                        "Lagrange space.";
+        Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+            point_values = _u.get().compute_point_values();
+        pugi::xml_node data_node = piece_node.child("PointData");
+        assert(!data_node.empty());
+        add_data(_u, point_values, data_node);
+        // throw std::runtime_error("Can only visualize Lagrange finite
+        // elements");
       }
     }
   }

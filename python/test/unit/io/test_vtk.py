@@ -8,35 +8,20 @@ import os
 
 import numpy as np
 import pytest
-from dolfinx_utils.test.fixtures import tempdir
-from dolfinx_utils.test.skips import skip_in_parallel
-from mpi4py import MPI
-
 import ufl
 from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
                      UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                      VectorFunctionSpace)
-from dolfinx.mesh import create_mesh
 from dolfinx.cpp.io import VTKFileNew
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import VTKFile
+from dolfinx.mesh import create_mesh
+from dolfinx_utils.test.fixtures import tempdir
+from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
+from petsc4py import PETSc
 
 assert (tempdir)
-
-
-@pytest.fixture
-def cell_types_2D():
-    return [CellType.triangle, CellType.quadrilateral]
-
-
-@pytest.fixture
-def cell_types_3D():
-    return [CellType.tetrahedron, CellType.hexahedron]
-
-
-@pytest.fixture
-def type_conv():
-    return dict(size_t=int, int=int, double=float)
 
 
 def test_save_1d_mesh(tempdir):
@@ -47,43 +32,38 @@ def test_save_1d_mesh(tempdir):
         vtk.write(mesh, 1)
 
 
-@pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_2d_mesh(tempdir, file_options):
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+def test_save_2d_mesh(tempdir, cell_type):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 32)
-    filename = os.path.join(tempdir, "mesh.pvd")
-
-    VTKFile(filename).write(mesh)
-    f = VTKFile(filename)
-    f.write(mesh, 0.)
-    f.write(mesh, 1.)
-    for file_option in file_options:
-        VTKFile(filename, file_option).write(mesh)
+    filename = os.path.join(tempdir, f"mesh_{cpp.mesh.to_string(cell_type)}.pvd")
+    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write(mesh, 0.)
+        vtk.write(mesh, 2.)
 
 
-@pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_3d_mesh(tempdir, file_options):
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
-    filename = os.path.join(tempdir, "mesh.pvd")
-    VTKFile(filename).write(mesh)
-    f = VTKFile(filename)
-    f.write(mesh, 0.)
-    f.write(mesh, 1.)
-    for file_option in file_options:
-        VTKFile(filename, file_option).write(mesh)
+@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+def test_save_3d_mesh(tempdir, cell_type):
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8, cell_type=cell_type)
+    filename = os.path.join(tempdir, f"mesh_{cpp.mesh.to_string(cell_type)}.pvd")
+    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write(mesh, 0.)
+        vtk.write(mesh, 2.)
 
 
-@pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_1d_scalar(tempdir, file_options):
+def test_save_1d_scalar(tempdir):
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
-    u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
-    u.vector.set(1.0)
+
+    def f(x):
+        return x[0]
+
+    u = Function(FunctionSpace(mesh, ("CG", 2)))
+    u.interpolate(f)
+    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
     filename = os.path.join(tempdir, "u.pvd")
-    VTKFile(filename).write(u)
-    f = VTKFile(filename)
-    f.write(u, 0.)
-    f.write(u, 1.)
-    for file_option in file_options:
-        VTKFile(filename, file_option).write(u)
+    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write([u._cpp_object], 0.)
+        vtk.write([u._cpp_object], 1.)
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
