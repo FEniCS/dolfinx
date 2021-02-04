@@ -95,8 +95,9 @@ std::vector<std::int32_t> locate_entities_boundary(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
 
-/// Compute the geometry indices of vertices of the given entities from the mesh
-/// geometry
+/// Compute the indices the geometry data for the vertices of the given
+/// mesh entities
+///
 /// @param[in] mesh Mesh
 /// @param[in] dim Topological dimension of the entities of interest
 /// @param[in] entity_list List of entity indices (local)

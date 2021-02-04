@@ -37,7 +37,7 @@ namespace refinement
 /// index to the set of neighbors (within the comm) that share that edge.
 /// @param[in] mesh Mesh
 /// @return pair of comm and map
-std::pair<MPI_Comm, std::map<std::int32_t, std::set<int>>>
+std::pair<MPI_Comm, std::map<std::int32_t, std::vector<int>>>
 compute_edge_sharing(const mesh::Mesh& mesh);
 
 /// Transfer marked edges between processes.
@@ -63,7 +63,7 @@ std::pair<std::map<std::int32_t, std::int64_t>,
           Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 create_new_vertices(
     const MPI_Comm& neighbor_comm,
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges,
+    const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
     const mesh::Mesh& mesh, const std::vector<bool>& marked_edges);
 
 /// Use vertex and topology data to partition new mesh across

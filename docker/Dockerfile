@@ -105,7 +105,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     ninja-build \
     pkg-config \
     python3-dev \
-    python3-matplotlib \
     python3-numpy \
     python3-pip \
     python3-scipy \
@@ -121,7 +120,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
     libglu1 \
     libxcursor-dev \
+    libxft2 \
     libxinerama1 && \
+    #
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -336,29 +337,26 @@ ONBUILD RUN cd basix && pip3 install --no-cache-dir . && \
     cd ../ && pip3 install --no-cache-dir ipython
 
 ONBUILD RUN cd dolfinx && \
-    mkdir build && \
-    cd build && \
+    mkdir -p build-real && \
+    cd build-real && \
     PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     cd ../python && \
     CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
     cd ../ && \
-    rm -r build && \
-    mkdir build && \
-    cd build && \
+    mkdir -p build-complex && \
+    cd build-complex && \
     PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFIN_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies . && \
-    cd ../ && \
-    rm -r build
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies .
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
-            PETSC_ARCH=linux-gnu-real-32 \
-            PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
-            LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
+    PETSC_ARCH=linux-gnu-real-32 \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
+    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ONBUILD WORKDIR /root
 
@@ -399,7 +397,18 @@ LABEL description="DOLFIN-X Jupyter Lab"
 WORKDIR /root
 
 RUN pip3 install --upgrade --no-cache-dir jupyter jupyterlab
+
+# Pyvista dependecies from apt
+RUN apt-get -qq update && \
+    apt-get -y install libgl1-mesa-dev \ 
+    xvfb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Pyvista dependencies from pip 
+# matplotlib improves plotting quality with better color maps and properly rendering colorbars.
+RUN pip3 install --no-cache-dir pyvista matplotlib
+
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash
-
 ENTRYPOINT ["jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]

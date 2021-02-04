@@ -188,9 +188,9 @@ Form<T> create_form(
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
-  using kern = std::function<void(PetscScalar*, const PetscScalar*,
-                                  const PetscScalar*, const double*, const int*,
-                                  const std::uint8_t*, const std::uint32_t)>;
+  using kern
+      = std::function<void(T*, const T*, const T*, const double*, const int*,
+                           const std::uint8_t*, const std::uint32_t)>;
   std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
                                    const mesh::MeshTags<int>*>>
       integral_data;
@@ -360,7 +360,7 @@ std::shared_ptr<Form<T>> create_form(
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   ufc_form* form = fptr();
-  auto L = std::make_shared<fem::Form<T>>(dolfinx::fem::create_form<T>(
+  auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
       *form, spaces, coefficients, constants, subdomains, mesh));
   std::free(form);
   return L;

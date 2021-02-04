@@ -105,7 +105,7 @@ create_new_geometry(
 } // namespace
 
 //---------------------------------------------------------------------------------
-std::pair<MPI_Comm, std::map<std::int32_t, std::set<int>>>
+std::pair<MPI_Comm, std::map<std::int32_t, std::vector<int>>>
 refinement::compute_edge_sharing(const mesh::Mesh& mesh)
 {
   if (!mesh.topology().connectivity(1, 0))
@@ -137,12 +137,15 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
   for (std::size_t i = 0; i < neighbors.size(); ++i)
     proc_to_neighbor.insert({neighbors[i], i});
 
-  std::map<std::int32_t, std::set<int>> shared_edges;
+  std::map<std::int32_t, std::vector<int>> shared_edges;
   for (auto& q : shared_edges_by_proc)
   {
-    std::set<int> neighbor_set;
+    std::vector<int> neighbor_set;
     for (int r : q.second)
-      neighbor_set.insert(proc_to_neighbor[r]);
+      neighbor_set.push_back(proc_to_neighbor[r]);
+    std::sort(neighbor_set.begin(), neighbor_set.end());
+    neighbor_set.erase(std::unique(neighbor_set.begin(), neighbor_set.end()),
+                       neighbor_set.end());
     shared_edges.insert({q.first, neighbor_set});
   }
 
@@ -168,7 +171,9 @@ void refinement::update_logical_edgefunction(
   // Send all shared edges marked for update and receive from other
   // processes
   const std::vector<std::int64_t> data_to_recv
-      = MPI::neighbor_all_to_all(neighbor_comm, send_offsets, data_to_send)
+      = MPI::neighbor_all_to_all(
+            neighbor_comm,
+            graph::AdjacencyList<std::int64_t>(data_to_send, send_offsets))
             .array();
 
   // Flatten received values and set marked_edges at each index received
@@ -184,7 +189,7 @@ std::pair<std::map<std::int32_t, std::int64_t>,
           Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 refinement::create_new_vertices(
     const MPI_Comm& neighbor_comm,
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges,
+    const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
     const mesh::Mesh& mesh, const std::vector<bool>& marked_edges)
 {
   // Take marked_edges and use to create new vertices
@@ -245,18 +250,9 @@ refinement::create_new_vertices(
     }
   }
 
-  // Send new vertex indices to edge neighbors and receive
-  std::vector<std::int64_t> send_values;
-  std::vector<int> send_offsets(1, 0);
-  for (int i = 0; i < num_neighbors; ++i)
-  {
-    send_values.insert(send_values.end(), values_to_send[i].begin(),
-                       values_to_send[i].end());
-    send_offsets.push_back(send_values.size());
-  }
-
   const std::vector<std::int64_t> received_values
-      = MPI::neighbor_all_to_all(neighbor_comm, send_offsets, send_values)
+      = MPI::neighbor_all_to_all(
+            neighbor_comm, graph::AdjacencyList<std::int64_t>(values_to_send))
             .array();
 
   // Add received remote global vertex indices to map

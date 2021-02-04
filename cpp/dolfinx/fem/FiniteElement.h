@@ -11,7 +11,6 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
-#include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 
 struct ufc_coordinate_mapping;
@@ -84,7 +83,7 @@ public:
   /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(
-      Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
+      std::vector<double>& values,
       const Eigen::Ref<const Eigen::Array<
           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
 
@@ -92,29 +91,26 @@ public:
   /// reference cell
   // reference_value_derivatives[num_points][num_dofs][reference_value_size][num_derivatives]
   void evaluate_reference_basis_derivatives(
-      Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values, int order,
+      std::vector<double>& reference_values, int order,
       const Eigen::Ref<const Eigen::Array<
           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
 
   /// Push basis functions forward to physical element
   void transform_reference_basis(
-      Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+      std::vector<double>& values, const std::vector<double>& reference_values,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      const tcb::span<const double>& detJ,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
+      const std::vector<double>& J, const tcb::span<const double>& detJ,
+      const std::vector<double>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
-      Eigen::Tensor<double, 4, Eigen::RowMajor>& values, std::size_t order,
-      const Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values,
+      std::vector<double>& values, std::size_t order,
+      const std::vector<double>& reference_values,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      const tcb::span<const double>& detJ,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
+      const std::vector<double>& J, const tcb::span<const double>& detJ,
+      const std::vector<double>& K) const;
 
   /// Get the number of sub elements (for a mixed element)
   /// @return the Number of sub elements
@@ -162,10 +158,19 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[out] dofs The element degrees of freedom (interpolants) of
   /// the expression. The call must allocate the space. Is has
-  void interpolate(const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>& values,
-                   std::uint32_t cell_permutation,
-                   tcb::span<ufc_scalar_t> dofs) const;
+  template <typename T>
+  void interpolate(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                      Eigen::RowMajor>& values,
+                   std::uint32_t cell_permutation, tcb::span<T> dofs) const
+  {
+    assert((int)dofs.size() == _space_dim / _bs);
+    Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> values_vector(
+        values.data(), values.size());
+    Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> _dofs(dofs.data(),
+                                                          dofs.size());
+    _dofs = _interpolation_matrix * values_vector;
+    _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
+  }
 
   /// @todo Expand on when permutation data might be required
   ///
@@ -178,17 +183,15 @@ public:
   /// @param[in,out] data The data to be transformed
   /// @param[in] cell_permutation Permutation data fro the cell
   /// @param[in] block_size The block_size of the input data
-  void apply_dof_transformation(double* data, std::uint32_t cell_permutation,
-                                int block_size) const;
-
-  /// Apply permutation to some data
-  ///
-  /// @param[in,out] data The data to be transformed
-  /// @param[in] cell_permutation Permutation data fro the cell
-  /// @param[in] block_size The block_size of the input data
-  void apply_dof_transformation_to_scalar(ufc_scalar_t* data,
-                                          std::uint32_t cell_permutation,
-                                          int block_size) const;
+  template <typename T>
+  void apply_dof_transformation(T* data, std::uint32_t cell_permutation,
+                                int block_size) const
+  {
+    if constexpr (std::is_same<T, double>::value)
+      _apply_dof_transformation(data, cell_permutation, block_size);
+    else
+      _apply_dof_transformation_to_scalar(data, cell_permutation, block_size);
+  }
 
 private:
   std::string _signature, _family;

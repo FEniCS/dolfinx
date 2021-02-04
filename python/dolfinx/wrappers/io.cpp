@@ -31,6 +31,9 @@ namespace dolfinx_wrappers
 void io(py::module& m)
 {
 
+  // dolfinx::io::cell vtk cell type converter
+  m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type);
+
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk);
   m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh);
@@ -74,8 +77,17 @@ void io(py::module& m)
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
-      .def("write_function", &dolfinx::io::XDMFFile::write_function,
+      .def("write_function",
+           py::overload_cast<const dolfinx::fem::Function<double>&, double,
+                             const std::string&>(
+               &dolfinx::io::XDMFFile::write_function),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
+      .def(
+          "write_function",
+          py::overload_cast<const dolfinx::fem::Function<std::complex<double>>&,
+                            double, const std::string&>(
+              &dolfinx::io::XDMFFile::write_function),
+          py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
            py::arg("meshtags"),
            py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
@@ -100,15 +112,23 @@ void io(py::module& m)
            }),
            py::arg("filename"))
       .def("write",
-           py::overload_cast<const dolfinx::fem::Function<PetscScalar>&>(
+           py::overload_cast<const dolfinx::fem::Function<double>&>(
                &dolfinx::io::VTKFile::write),
            py::arg("u"))
+      .def("write",
+           py::overload_cast<
+               const dolfinx::fem::Function<std::complex<double>>&>(
+               &dolfinx::io::VTKFile::write),
+           py::arg("u"))
+      .def("write",
+           py::overload_cast<const dolfinx::fem::Function<double>&, double>(
+               &dolfinx::io::VTKFile::write),
+           py::arg("u"), py::arg("t"))
       .def(
           "write",
-          py::overload_cast<const dolfinx::fem::Function<PetscScalar>&, double>(
-              &dolfinx::io::VTKFile::write),
+          py::overload_cast<const dolfinx::fem::Function<std::complex<double>>&,
+                            double>(&dolfinx::io::VTKFile::write),
           py::arg("u"), py::arg("t"))
-
       .def("write",
            py::overload_cast<const dolfinx::mesh::Mesh&>(
                &dolfinx::io::VTKFile::write),
