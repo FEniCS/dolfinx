@@ -8,8 +8,8 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
 #include <utility>

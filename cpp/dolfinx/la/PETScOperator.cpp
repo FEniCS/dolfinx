@@ -6,7 +6,6 @@
 
 #include "PETScOperator.h"
 #include "PETScVector.h"
-#include "utils.h"
 #include <cassert>
 #include <dolfinx/common/log.h>
 #include <petscvec.h>
