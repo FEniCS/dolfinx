@@ -27,6 +27,10 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _apply_dof_transformation(ufc_element.apply_dof_transformation),
       _apply_dof_transformation_to_scalar(
           ufc_element.apply_dof_transformation_to_scalar),
+      _apply_inverse_transpose_dof_transformation(
+          ufc_element.apply_inverse_transpose_dof_transformation),
+      _apply_inverse_transpose_dof_transformation_to_scalar(
+          ufc_element.apply_inverse_transpose_dof_transformation_to_scalar),
       _bs(ufc_element.block_size),
       _interpolation_is_ident(ufc_element.interpolation_is_identity),
       _needs_permutation_data(ufc_element.needs_permutation_data)
@@ -291,5 +295,23 @@ FiniteElement::interpolation_points() const noexcept
 bool FiniteElement::needs_permutation_data() const noexcept
 {
   return _needs_permutation_data;
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::map_push_forward(Eigen::ArrayXd& physical_data,
+                                     const Eigen::ArrayXd& reference_data,
+                                     const Eigen::MatrixXd& J, double detJ,
+                                     const Eigen::MatrixXd& K) const
+{
+  physical_data = basix::map_push_forward(_basix_element_handle, reference_data,
+                                          J, detJ, K);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::map_pull_back(Eigen::ArrayXd& reference_data,
+                                  const Eigen::ArrayXd& physical_data,
+                                  const Eigen::MatrixXd& J, double detJ,
+                                  const Eigen::MatrixXd& K) const
+{
+  reference_data
+      = basix::map_pull_back(_basix_element_handle, physical_data, J, detJ, K);
 }
 //-----------------------------------------------------------------------------

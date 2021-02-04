@@ -159,13 +159,12 @@ public:
   /// @param[in] values The values of the function. It has shape
   /// (value_size, num_points), where `num_points` is the number of
   /// points given by FiniteElement::interpolation_points.
-  /// @param[in] cell_permutation Permutation data for the cell
   /// @param[out] dofs The element degrees of freedom (interpolants) of
   /// the expression. The call must allocate the space. Is has
   template <typename T>
   void interpolate(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& values,
-                   std::uint32_t cell_permutation, tcb::span<T> dofs) const
+                   tcb::span<T> dofs) const
   {
     assert((int)dofs.size() == _space_dim / _bs);
     Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> values_vector(
@@ -173,7 +172,6 @@ public:
     Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> _dofs(dofs.data(),
                                                           dofs.size());
     _dofs = _interpolation_matrix * values_vector;
-    _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
   }
 
   /// @todo Expand on when permutation data might be required
@@ -196,6 +194,50 @@ public:
     else
       _apply_dof_transformation_to_scalar(data, cell_permutation, block_size);
   }
+
+  /// Apply inverse transpose permutation to some data
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data fro the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_inverse_transpose_dof_transformation(
+      T* data, std::uint32_t cell_permutation, int block_size) const
+  {
+    if constexpr (std::is_same<T, double>::value)
+      _apply_inverse_transpose_dof_transformation(data, cell_permutation,
+                                                  block_size);
+    else
+      _apply_inverse_transpose_dof_transformation_to_scalar(
+          data, cell_permutation, block_size);
+  }
+
+  /// Map a function value from the reference to a physical cell
+  /// @param[in/out]  The data on the physical cell at the corresponding point
+  /// @param[in] reference_data The reference data at a single point
+  /// @param[in] J The Jacobian of the map to the cell (evaluated at the point)
+  /// @param[in] detJ The determinant of the Jacobian of the map to the cell
+  /// (evaluated at the point)
+  /// @param[in] K The inverse of the Jacobian of the map to the cell (evaluated
+  /// at the point)
+  void map_push_forward(Eigen::ArrayXd& physical_data,
+                        const Eigen::ArrayXd& reference_data,
+                        const Eigen::MatrixXd& J, double detJ,
+                        const Eigen::MatrixXd& K) const;
+
+  /// Map a function value from a physical cell to the reference
+  /// @param[in/out] reference_data The data on the reference element at the
+  /// corresponding point
+  /// @param[in] physical_data The physical data at a single point
+  /// @param[in] J The Jacobian of the map to the cell (evaluated at the point)
+  /// @param[in] detJ The determinant of the Jacobian of the map to the cell
+  /// (evaluated at the point)
+  /// @param[in] K The inverse of the Jacobian of the map to the cell (evaluated
+  /// at the point)
+  void map_pull_back(Eigen::ArrayXd& reference_data,
+                     const Eigen::ArrayXd& physical_data,
+                     const Eigen::MatrixXd& J, double detJ,
+                     const Eigen::MatrixXd& K) const;
 
 private:
   std::string _signature, _family;
@@ -227,6 +269,12 @@ private:
 
   std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
       _apply_dof_transformation_to_scalar;
+
+  std::function<int(double*, const std::uint32_t, const int)>
+      _apply_inverse_transpose_dof_transformation;
+
+  std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
+      _apply_inverse_transpose_dof_transformation_to_scalar;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.

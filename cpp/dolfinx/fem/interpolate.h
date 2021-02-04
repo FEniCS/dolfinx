@@ -260,9 +260,25 @@ void interpolate(
 
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
+  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals(
+      value_size, X.rows());
+
+  // Prepare geometry data structures
+  Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
+  std::array<double, 1> detJ;
+  Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      X_physical(1, tdim);
+
   for (int c = 0; c < num_cells; ++c)
   {
+    // Get geometry data for current cell
+    auto x_dofs = x_dofmap.links(c);
+    for (int i = 0; i < num_dofs_g; ++i)
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
+
+    cmap.push_forward(x_cell, X, coordinate_dofs);
+
     auto dofs = dofmap->cell_dofs(c);
     for (int k = 0; k < element_bs; ++k)
     {
@@ -270,11 +286,40 @@ void interpolate(
       // Extract computed expression values for element block k
       // _vals = values.block(k * value_size, c * X.rows(), value_size,
       // X.rows());
-      Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals
-          = values.block(k * value_size, c * X.rows(), value_size, X.rows());
+      _vals = values.block(k * value_size, c * X.rows(), value_size, X.rows());
+
+      for (int p = 0; p < X.rows(); ++p)
+      {
+        // FIXME: this can be moved outside this point loop and done for all of
+        // x_cell at once
+        cmap.compute_reference_geometry(X_physical, J, detJ, K, x_cell.row(p),
+                                        coordinate_dofs);
+        // FIXME: Expensive assignments and copies. These will be easier to get
+        // rid of once basix moves to a C-style in/out interface
+        const Eigen::ArrayXd physical_data = _vals.col(p);
+        Eigen::ArrayXd reference_data(value_size);
+        const Eigen::MatrixXd& J_temp
+            = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                       Eigen::RowMajor>>(
+                J.data(), J.dimension(1), J.dimension(2));
+        const Eigen::MatrixXd& K_temp
+            = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                       Eigen::RowMajor>>(
+                K.data(), K.dimension(1), K.dimension(2));
+
+        element->map_pull_back(reference_data, physical_data, J_temp, detJ[0],
+                               K_temp);
+
+        _vals.col(p) = reference_data;
+      }
 
       // Get element degrees of freedom for block
-      element->interpolate(_vals, cell_info[c], tcb::make_span(_coeffs));
+      element->interpolate(_vals, tcb::make_span(_coeffs));
+
+      // Permute the coefficients to point each item to the correct DOF number
+      element->apply_inverse_transpose_dof_transformation(_coeffs.data(),
+                                                          cell_info[c], 1);
+
       assert(_coeffs.size() == num_scalar_dofs);
 
       // Copy interpolation dofs into coefficient vector
