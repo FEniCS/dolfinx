@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "partition.h"
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -18,10 +19,7 @@ namespace dolfinx::graph::parmetis
 ///
 /// param[in] options The ParMETIS option. See ParMETIS manual for
 /// details.
-std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm, int, const graph::AdjacencyList<std::int64_t>&, std::int32_t,
-    bool)>
-partitioner(std::array<int, 3> options = {0, 0, 0});
+graph::partition_fn partitioner(std::array<int, 3> options = {0, 0, 0});
 
 #endif
 } // namespace dolfinx::graph::parmetis

@@ -125,10 +125,7 @@ std::vector<int> refine(MPI_Comm mpi_comm,
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm, int, const graph::AdjacencyList<std::int64_t>&, std::int32_t,
-    bool)>
-graph::parmetis::partitioner(std::array<int, 3> options)
+graph::partition_fn graph::parmetis::partitioner(std::array<int, 3> options)
 {
   return [options](MPI_Comm mpi_comm, idx_t nparts,
                    const graph::AdjacencyList<std::int64_t>& graph,
