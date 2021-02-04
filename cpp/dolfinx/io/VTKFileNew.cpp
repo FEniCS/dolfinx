@@ -366,7 +366,8 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
   for (int c = 0; c < x_dofmap.num_nodes(); ++c)
   {
     tcb::span<const std::int32_t> cell = x_dofmap.links(c);
-    for (int i = 0; i < cell.size(); ++i)
+    const int num_cell_dofs = cell.size();
+    for (int i = 0; i < num_cell_dofs; ++i)
       ss << cell[map[i]] << " ";
   }
   connectivity_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
