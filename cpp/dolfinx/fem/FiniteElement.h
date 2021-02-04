@@ -213,7 +213,7 @@ public:
   }
 
   /// Map a function value from the reference to a physical cell
-  /// @param[in,out]  The data on the physical cell at the corresponding point
+  /// @param[in,out] physical_data The data on the physical cell at the corresponding point
   /// @param[in] reference_data The reference data at a single point
   /// @param[in] J The Jacobian of the map to the cell (evaluated at the point)
   /// @param[in] detJ The determinant of the Jacobian of the map to the cell
