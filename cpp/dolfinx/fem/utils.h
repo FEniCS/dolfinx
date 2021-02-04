@@ -360,7 +360,7 @@ std::shared_ptr<Form<T>> create_form(
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   ufc_form* form = fptr();
-  auto L = std::make_shared<fem::Form<T>>(dolfinx::fem::create_form<T>(
+  auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
       *form, spaces, coefficients, constants, subdomains, mesh));
   std::free(form);
   return L;

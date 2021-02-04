@@ -20,8 +20,7 @@ jobs:
 
       # For pyvista
       DISPLAY: ":99.0"
-      PYVISTA_OFF_SCREEN: "True"
-      ALLOW_PLOTTING: true
+      PYVISTA_OFF_SCREEN: true
 
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-32
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -45,7 +44,7 @@ jobs:
           pip3 install git+https://github.com/FEniCS/ufl.git
           pip3 install git+https://github.com/FEniCS/ffcx.git
           apt-get update
-          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb
+          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb # pyvista
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
           pip3 install pyvista pyvistaqt
 
@@ -58,9 +57,6 @@ jobs:
 
       - name: Build Python interface
         run: python3 -m pip -v install --global-option build --global-option --debug python/
-
-      - name: Setup headless display
-        run: Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
       - name: Run pyvista demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
