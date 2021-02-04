@@ -213,12 +213,12 @@ public:
   }
 
   /// Map a function value from the reference to a physical cell
-  /// @param[in/out]  The data on the physical cell at the corresponding point
-  /// @param reference_data The reference data at a single point
-  /// @param J The Jacobian of the map to the cell (evaluated at the point)
-  /// @param detJ The determinant of the Jacobian of the map to the cell
+  /// @param[in,out]  The data on the physical cell at the corresponding point
+  /// @param[in] reference_data The reference data at a single point
+  /// @param[in] J The Jacobian of the map to the cell (evaluated at the point)
+  /// @param[in] detJ The determinant of the Jacobian of the map to the cell
   /// (evaluated at the point)
-  /// @param K The inverse of the Jacobian of the map to the cell (evaluated
+  /// @param[in] K The inverse of the Jacobian of the map to the cell (evaluated
   /// at the point)
   void map_push_forward(Eigen::ArrayXd& physical_data,
                         const Eigen::ArrayXd& reference_data,
@@ -226,13 +226,13 @@ public:
                         const Eigen::MatrixXd& K) const;
 
   /// Map a function value from a physical cell to the reference
-  /// @param[in/out] reference_data The data on the reference element at the
+  /// @param[in,out] reference_data The data on the reference element at the
   /// corresponding point
-  /// @param physical_data The physical data at a single point
-  /// @param J The Jacobian of the map to the cell (evaluated at the point)
-  /// @param detJ The determinant of the Jacobian of the map to the cell
+  /// @param[in] physical_data The physical data at a single point
+  /// @param[in] J The Jacobian of the map to the cell (evaluated at the point)
+  /// @param[in] detJ The determinant of the Jacobian of the map to the cell
   /// (evaluated at the point)
-  /// @param K The inverse of the Jacobian of the map to the cell (evaluated
+  /// @param[in] K The inverse of the Jacobian of the map to the cell (evaluated
   /// at the point)
   void map_pull_back(Eigen::ArrayXd& reference_data,
                      const Eigen::ArrayXd& physical_data,
