@@ -9,6 +9,7 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <algorithm>
+#include <bits/stdc++.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
@@ -448,8 +449,8 @@ mesh::create_topology(MPI_Comm comm,
   }
 
   std::vector<std::int64_t> recv_pairs
-      = dolfinx::MPI::neighbor_all_to_all(neighbor_comm, qsend_offsets,
-                                          qsend_data)
+      = dolfinx::MPI::neighbor_all_to_all(
+            neighbor_comm, graph::AdjacencyList<std::int64_t>(send_pairs))
             .array();
 
   std::vector<std::int64_t> ghost_vertices;
@@ -527,8 +528,9 @@ mesh::create_topology(MPI_Comm comm,
     }
 
     std::vector<std::int64_t> recv_pairs
-        = dolfinx::MPI::neighbor_all_to_all(neighbor_comm, send_offsets,
-                                            send_pair_data)
+        = dolfinx::MPI::neighbor_all_to_all(
+              neighbor_comm,
+              graph::AdjacencyList<std::int64_t>(send_pair_data, send_offsets))
               .array();
 
     // Unpack received data and add to ghosts

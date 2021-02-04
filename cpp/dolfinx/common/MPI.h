@@ -89,14 +89,13 @@ public:
   static std::vector<int> compute_graph_edges(MPI_Comm comm,
                                               const std::set<int>& edges);
 
-  /// neighborhood all-to-all. Send data to neighbors using offsets
-  /// into contiguous data array. Offset array should contain
-  /// (num_neighbors + 1) entries, starting from zero.
+  /// Neighborhood all-to-all. Send data to neighbors.
+  /// Send in_values[n0] to neighbor process n0 and receive values from neighbor
+  /// process n1 in out_values[n1]
   template <typename T>
   static graph::AdjacencyList<T>
   neighbor_all_to_all(MPI_Comm neighbor_comm,
-                      const std::vector<int>& send_offsets,
-                      const std::vector<T>& send_data);
+                      const graph::AdjacencyList<T>& send_data);
 
   /// @todo Clarify directions
   ///
@@ -238,22 +237,18 @@ dolfinx::MPI::all_to_all(MPI_Comm comm,
 template <typename T>
 graph::AdjacencyList<T>
 dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
-                                  const std::vector<int>& send_offsets,
-                                  const std::vector<T>& send_data)
+                                  const graph::AdjacencyList<T>& send_data)
 {
   // Get neighbor processes
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
                                  &weighted);
 
-  assert((int)send_data.size() == send_offsets.back());
-  assert(send_offsets[0] == 0);
-
   // Get receive sizes
   std::vector<int> send_sizes(outdegree, 0);
   std::vector<int> recv_sizes(indegree);
-  std::adjacent_difference(std::next(send_offsets.begin()), send_offsets.end(),
-                           send_sizes.begin());
+  std::adjacent_difference(std::next(send_data.offsets().begin()),
+                           send_data.offsets().end(), send_sizes.begin());
   MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI::mpi_type<int>(),
                         recv_sizes.data(), 1, MPI::mpi_type<int>(),
                         neighbor_comm);
@@ -266,7 +261,7 @@ dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
 
   std::vector<T> recv_data(recv_offsets[recv_offsets.size() - 1]);
   MPI_Neighbor_alltoallv(
-      send_data.data(), send_sizes.data(), send_offsets.data(),
+      send_data.array().data(), send_sizes.data(), send_data.offsets().data(),
       MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
       recv_offsets.data(), MPI::mpi_type<T>(), neighbor_comm);
 
