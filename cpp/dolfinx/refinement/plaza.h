@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <Eigen/Core>
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <utility>

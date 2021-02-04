@@ -6,10 +6,11 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <algorithm>
 #include <cstdint>
-#include <dolfinx/common/Timer.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
 #include <utility>
