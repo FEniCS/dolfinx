@@ -13,18 +13,14 @@ using namespace dolfinx;
 //-----------------------------------------------------------------------------
 Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>
 fem::interpolation_coords(const fem::FiniteElement& element,
-                          const mesh::Mesh& mesh)
+                          const mesh::Mesh& mesh,
+                          const tcb::span<std::int32_t>& cells)
 {
   using EigenMatrixRowXd
       = Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-  const int tdim = mesh.topology().dim();
-  const int gdim = mesh.geometry().dim();
-  auto cell_map = mesh.topology().index_map(tdim);
-  assert(cell_map);
-  const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
-
   // Get mesh geometry data and the element coordinate map
+  const int gdim = mesh.geometry().dim();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const int num_dofs_g = x_dofmap.num_links(0);
   const EigenMatrixRowXd& x_g = mesh.geometry().x();
@@ -38,7 +34,7 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   EigenMatrixRowXd x_cell(X.rows(), gdim);
   std::vector<double> x;
   EigenMatrixRowXd coordinate_dofs(num_dofs_g, gdim);
-  for (int c = 0; c < num_cells; ++c)
+  for (std::int32_t c : cells)
   {
     // Get geometry data for current cell
     auto x_dofs = x_dofmap.links(c);

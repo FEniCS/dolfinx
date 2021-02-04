@@ -8,6 +8,7 @@
 
 #include "FunctionSpace.h"
 #include <Eigen/Core>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -25,10 +26,13 @@ class Function;
 ///
 /// @param[in] element The element to be interpolated into
 /// @param[in] mesh The domain
+/// @param[in] cells Indices of the cells in the mesh to compute
+/// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression
 Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>
-interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh);
+interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
+                     const tcb::span<std::int32_t>& cells);
 
 /// Interpolate a finite element Function (on possibly non-matching
 /// meshes) in another finite element space
@@ -38,10 +42,16 @@ template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v);
 
 /// Interpolate an expression in a finite element space
+///
 /// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
-/// @param[in] x The points at which f should be evaluated, as
-/// computed by fem::interpolation_coords
+/// @param[in] x The points at which f should be evaluated, as computed
+/// by fem::interpolation_coords. The element used in
+/// fem::interpolation_coords should be the same element as associated
+/// with u.
+/// @param[in] cells Indices of the cells in the mesh on which to
+/// interpolate. Should be the same as the list used when calling
+/// fem::interpolation_coords.
 template <typename T>
 void interpolate(
     Function<T>& u,
@@ -49,7 +59,8 @@ void interpolate(
         Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                 Eigen::RowMajor>>&)>& f,
-    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x);
+    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x,
+    const tcb::span<std::int32_t>& cells);
 
 /// Interpolate an expression f(x)
 ///
@@ -174,7 +185,8 @@ void interpolate(
         Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                 Eigen::RowMajor>>&)>& f,
-    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x)
+    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x,
+    const tcb::span<std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
@@ -190,10 +202,6 @@ void interpolate(
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
-  auto cell_map = mesh->topology().index_map(tdim);
-  assert(cell_map);
-  const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
 
   // TODO: remove this call
   // Get the interpolation points on the reference cells
@@ -231,7 +239,7 @@ void interpolate(
 
   // Check that return type from f is the correct shape
   if ((values.rows() != value_size * element_bs)
-      or (values.cols() != num_cells * X.rows()))
+      or (values.cols() != cells.size() * X.rows()))
   {
     throw std::runtime_error("Interpolation data has the wrong shape.");
   }
@@ -239,7 +247,7 @@ void interpolate(
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
-  for (int c = 0; c < num_cells; ++c)
+  for (std::int32_t c : cells)
   {
     auto dofs = dofmap->cell_dofs(c);
     for (int k = 0; k < element_bs; ++k)
@@ -271,7 +279,8 @@ void interpolate_c(
             Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
         const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                             Eigen::RowMajor>>&)>& f,
-    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x)
+    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x,
+    const tcb::span<std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
@@ -291,7 +300,7 @@ void interpolate_c(
         return values;
       };
 
-  interpolate<T>(u, fn, x);
+  interpolate<T>(u, fn, x, cells);
 }
 //----------------------------------------------------------------------------
 
