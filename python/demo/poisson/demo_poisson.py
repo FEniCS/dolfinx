@@ -213,6 +213,13 @@ try:
     plotter.add_mesh(grid, show_edges=True)
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
-    plotter.show()
+
+    # If pyvista environment variable is set to off-screen (static) plotting save png
+    if pyvista.OFF_SCREEN:
+        from pyvista.utilities.xvfb import start_xvfb
+        start_xvfb(wait=0)
+        plotter.screenshot("uh.png")
+    else:
+        plotter.show()
 except ModuleNotFoundError:
     print("pyvista is required to visualise the solution")
