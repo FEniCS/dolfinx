@@ -11,7 +11,7 @@ import pytest
 import ufl
 from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
                      UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                     VectorFunctionSpace)
+                     VectorFunctionSpace, cpp)
 from dolfinx.cpp.io import VTKFileNew
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import VTKFile
@@ -23,6 +23,9 @@ from petsc4py import PETSc
 
 assert (tempdir)
 
+cell_types_2D = [CellType.triangle, CellType.quadrilateral]
+cell_types_3D = [CellType.tetrahedron, CellType.hexahedron]
+
 
 def test_save_1d_mesh(tempdir):
     filename = os.path.join(tempdir, "mesh.pvd")
@@ -32,16 +35,16 @@ def test_save_1d_mesh(tempdir):
         vtk.write(mesh, 1)
 
 
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+@pytest.mark.parametrize("cell_type", cell_types_2D)
 def test_save_2d_mesh(tempdir, cell_type):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 32)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 32, cell_type=cell_type)
     filename = os.path.join(tempdir, f"mesh_{cpp.mesh.to_string(cell_type)}.pvd")
     with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write(mesh, 0.)
         vtk.write(mesh, 2.)
 
 
-@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+@pytest.mark.parametrize("cell_type", cell_types_3D)
 def test_save_3d_mesh(tempdir, cell_type):
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8, cell_type=cell_type)
     filename = os.path.join(tempdir, f"mesh_{cpp.mesh.to_string(cell_type)}.pvd")
@@ -66,46 +69,30 @@ def test_save_1d_scalar(tempdir):
         vtk.write([u._cpp_object], 1.)
 
 
-@pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_2d_scalar_old(tempdir, file_options):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
+@pytest.mark.parametrize("cell_type", cell_types_2D)
+def test_save_2d_scalar(tempdir, cell_type):
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16, cell_type=cell_type)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
-    u.vector.set(1.0)
+    with u.vector.localForm() as loc:
+        loc.set(1.0)
+
     filename = os.path.join(tempdir, "u.pvd")
-    VTKFile(filename).write(u)
-    f = VTKFile(filename)
-    f.write(u, 0.)
-    f.write(u, 1.)
-    for file_option in file_options:
-        VTKFile(filename, file_option).write(u)
+    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write([u._cpp_object], 0.)
+        vtk.write([u._cpp_object], 1.)
 
 
-@pytest.mark.xfail(reason="P2->P1 interpolation not implemented")
-def test_save_2d_scalar(tempdir):
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
+@pytest.mark.parametrize("cell_type", cell_types_3D)
+def test_save_3d_scalar(tempdir, cell_type):
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8, cell_type=cell_type)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
-    u.vector.set(1.0)
-    # VTKFileNeww(filename).write(u)
-    # f = VTKFileNew(mesh.mpi_comm(), filename, "w")
-    f = VTKFileNew(mesh.mpi_comm(), "u.pvd", "w")
-    f.write([u._cpp_object], 0.)
-    # f.write(u, 1.)
-    # for file_option in file_options:
-    #     VTKFile(filename, file_option).write(u)
+    with u.vector.localForm() as loc:
+        loc.set(1.0)
 
-
-@pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_3d_scalar(tempdir, file_options):
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
-    u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
-    u.vector.set(1.0)
     filename = os.path.join(tempdir, "u.pvd")
-    VTKFile(filename).write(u)
-    f = VTKFile(filename)
-    f.write(u, 0.)
-    f.write(u, 1.)
-    for file_option in file_options:
-        VTKFile(filename, file_option).write(u)
+    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write([u._cpp_object], 0.)
+        vtk.write([u._cpp_object], 1.)
 
 
 @pytest.mark.xfail(reason="FFCX fails for tensor spaces in 1D")
