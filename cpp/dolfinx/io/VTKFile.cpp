@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "VTKFileNew.h"
+#include "VTKFile.h"
 #include "cells.h"
 #include "pugixml.hpp"
 #include "xdmf_utils.h"
@@ -723,7 +723,7 @@ void write_function(
 } // namespace
 
 //----------------------------------------------------------------------------
-io::VTKFileNew::VTKFileNew(MPI_Comm comm, const std::string filename,
+io::VTKFile::VTKFile(MPI_Comm comm, const std::string filename,
                            const std::string)
     : _filename(filename), _comm(comm)
 {
@@ -735,13 +735,13 @@ io::VTKFileNew::VTKFileNew(MPI_Comm comm, const std::string filename,
   vtk_node.append_child("Collection");
 }
 //----------------------------------------------------------------------------
-io::VTKFileNew::~VTKFileNew()
+io::VTKFile::~VTKFile()
 {
   if (_pvd_xml and MPI::rank(_comm.comm()) == 0)
     _pvd_xml->save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void io::VTKFileNew::close()
+void io::VTKFile::close()
 {
   if (_pvd_xml and MPI::rank(_comm.comm()) == 0)
   {
@@ -755,7 +755,7 @@ void io::VTKFileNew::close()
   }
 }
 //----------------------------------------------------------------------------
-void io::VTKFileNew::flush()
+void io::VTKFile::flush()
 {
   if (!_pvd_xml and MPI::rank(_comm.comm()) == 0)
     throw std::runtime_error("VTKFile has already been closed");
@@ -764,14 +764,14 @@ void io::VTKFileNew::flush()
     _pvd_xml->save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void io::VTKFileNew::write(
+void io::VTKFile::write(
     const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
     double time)
 {
   write_function(u, time, _pvd_xml, _filename);
 }
 //----------------------------------------------------------------------------
-void io::VTKFileNew::write(
+void io::VTKFile::write(
     const std::vector<
         std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
     double time)
@@ -779,7 +779,7 @@ void io::VTKFileNew::write(
   write_function(u, time, _pvd_xml, _filename);
 }
 //----------------------------------------------------------------------------
-void io::VTKFileNew::write(const mesh::Mesh& mesh, double time)
+void io::VTKFile::write(const mesh::Mesh& mesh, double time)
 {
   if (!_pvd_xml)
     throw std::runtime_error("VTKFile has already been closed");

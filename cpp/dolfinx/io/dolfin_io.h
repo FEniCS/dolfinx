@@ -11,4 +11,4 @@ namespace dolfinx
 
 // DOLFINX io interface
 
-#include <dolfinx/io/VTKFileNew.h>
+#include <dolfinx/io/VTKFile.h>

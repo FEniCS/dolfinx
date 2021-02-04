@@ -14,7 +14,7 @@ from dolfinx import cpp, fem
 import typing
 
 
-class VTKFile(cpp.io.VTKFileNew):
+class VTKFile(cpp.io.VTKFile):
     """Interface to VTK files
     VTK supports arbitrary order Lagrangian finite elements for the
     geometry description. XDMF is the preferred format for geometry

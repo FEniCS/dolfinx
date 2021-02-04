@@ -43,15 +43,15 @@ namespace io
 /// This format if It is not suitable to checkpointing as it may
 /// decimate some data.
 
-class VTKFileNew
+class VTKFile
 {
 public:
   /// Create VTK file
-  VTKFileNew(MPI_Comm comm, const std::string filename,
+  VTKFile(MPI_Comm comm, const std::string filename,
              const std::string file_mode);
 
   /// Destructor
-  ~VTKFileNew();
+  ~VTKFile();
 
   /// Close file
   void close();

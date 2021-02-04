@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Save solution in VTK format
-    io::VTKFileNew file(MPI_COMM_WORLD, "u.pvd", "w");
+    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write({*u}, 0.0);
   }
 
