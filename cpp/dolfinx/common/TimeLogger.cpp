@@ -9,7 +9,6 @@
 #include <dolfinx/common/log.h>
 #include <variant>
 
-
 using namespace dolfinx;
 using namespace dolfinx::common;
 
