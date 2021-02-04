@@ -9,7 +9,8 @@
 #include "Geometry.h"
 #include "Topology.h"
 #include "cell_types.h"
-#include <Eigen/Dense>
+#include "utils.h"
+#include <Eigen/Core>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <string>
@@ -32,6 +33,16 @@ class AdjacencyList;
 namespace mesh
 {
 
+/// @todo Document fully
+///
+/// Signature for the cell partitioning function. The function should
+/// compute the destination rank for cells currently on this rank.
+using CellPartitionFunction
+    = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
+        MPI_Comm comm, int nparts, const dolfinx::mesh::CellType cell_type,
+        const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+        dolfinx::mesh::GhostMode ghost_mode)>;
+
 /// Enum for different partitioning ghost modes
 enum class GhostMode : int
 {
@@ -42,7 +53,6 @@ enum class GhostMode : int
 
 /// A Mesh consists of a set of connected and numbered mesh topological
 /// entities, and geometry data
-
 class Mesh
 {
 public:
@@ -99,32 +109,6 @@ public:
   /// @return The geometry object associated with the mesh
   const Geometry& geometry() const;
 
-  /// Compute minimum cell size in mesh, measured greatest distance
-  /// between any two vertices of a cell.
-  /// @return The minimum cell size. The size is computed using
-  ///         Cell::h()
-  double hmin() const;
-
-  /// Compute maximum cell size in mesh, measured greatest distance
-  /// between any two vertices of a cell
-  /// @return The maximum cell size. The size is computed using
-  ///         Cell::h()
-  double hmax() const;
-
-  /// Compute minimum cell inradius
-  /// @return double The minimum of cells' inscribed sphere radii
-  double rmin() const;
-
-  /// Compute maximum cell inradius
-  /// @return The maximum of cells' inscribed sphere radii
-  double rmax() const;
-
-  /// Compute hash of mesh, currently based on the has of the mesh
-  /// geometry and mesh topology
-  /// @return A tree-hashed value of the coordinates over all MPI
-  ///         processes
-  std::size_t hash() const;
-
   /// Get unique identifier for the mesh
   /// @returns The unique identifier associated with the object
   std::size_t id() const { return _unique_id; }
@@ -154,12 +138,35 @@ private:
   std::size_t _unique_id = common::UniqueIdGenerator::id();
 };
 
-/// Create a mesh
+/// Create a mesh using the default partitioner. This function takes
+/// mesh input data that is distributed across processes and creates a
+/// @p Mesh, with the cell distribution determined by the default cell
+/// partitioner. The default partitioner is based a graph partitioning.
+///
+/// @param[in] comm The MPI communicator to build the mesh on
+/// @param[in] cells The cells on the this MPI rank. Each cell (node in
+/// the `AdjacencyList`) is defined by its 'nodes' (using global
+/// indices). For lowest order cells this will be just the cell
+/// vertices. For higher-order cells, other cells 'nodes' will be
+/// included.
+/// @param[in] element The coordinate element that describes the
+/// geometrica mapping for cells
+/// @param[in] x The coordinates of mesh nodes
+/// @param[in] ghost_mode The requested type of cell ghosting/overlap
+/// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
                  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>& x,
                  GhostMode ghost_mode);
+
+/// Create a mesh using a provided mesh partitioning function
+Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+                 const fem::CoordinateElement& element,
+                 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>& x,
+                 GhostMode ghost_mode,
+                 const CellPartitionFunction& cell_partitioner);
 
 } // namespace mesh
 } // namespace dolfinx

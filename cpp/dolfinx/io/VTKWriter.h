@@ -6,14 +6,12 @@
 
 #pragma once
 
-#include <cstdint>
-#include <petscsys.h>
+#include <complex>
 #include <string>
-#include <vector>
 
 namespace dolfinx
 {
-namespace function
+namespace fem
 {
 template <typename T>
 class Function;
@@ -36,7 +34,10 @@ public:
                          std::string file);
 
   /// Cell data writer
-  static void write_cell_data(const function::Function<PetscScalar>& u,
+  static void write_cell_data(const fem::Function<double>& u, std::string file);
+
+  /// Cell data writer
+  static void write_cell_data(const fem::Function<std::complex<double>>& u,
                               std::string file);
 };
 } // namespace io

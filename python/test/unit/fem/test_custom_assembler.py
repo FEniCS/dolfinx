@@ -127,7 +127,7 @@ def get_matsetvalues_api():
                                 const PetscScalar* y, InsertMode addv);
         """)
         ffibuilder.set_source(module_name, """
-            # include "petscmat.h"
+            #include "petscmat.h"
         """,
                               libraries=['petsc'],
                               include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
@@ -341,7 +341,7 @@ def test_custom_mesh_loop_rank1():
 
     # Assemble using generated tabulate_tensor kernel and Numba assembler
     b3 = dolfinx.Function(V)
-    ufc_form = dolfinx.jit.ffcx_jit(L)
+    ufc_form = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), L)
     kernel = ufc_form.create_cell_integral(-1).tabulate_tensor
     for i in range(2):
         with b3.vector.localForm() as b:

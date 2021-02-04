@@ -15,7 +15,6 @@ void common(py::module& m);
 void mpi(py::module& m);
 
 void log(py::module& m);
-void function(py::module& m);
 void fem(py::module& m);
 void generation(py::module& m);
 void geometry(py::module& m);
@@ -40,10 +39,6 @@ PYBIND11_MODULE(cpp, m)
   // Create common submodule [log]
   py::module log = m.def_submodule("log", "Logging module");
   dolfinx_wrappers::log(log);
-
-  // Create function submodule [function]
-  py::module function = m.def_submodule("function", "Function module");
-  dolfinx_wrappers::function(function);
 
   // Create mesh submodule [mesh]
   py::module mesh = m.def_submodule("mesh", "Mesh library module");

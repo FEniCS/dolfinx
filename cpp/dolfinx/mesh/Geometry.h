@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -97,16 +97,8 @@ public:
   /// @return The coordinate/geometry element
   const fem::CoordinateElement& cmap() const;
 
-  /// Return coordinate array for node n (index is local to the process)
-  Eigen::Vector3d node(int n) const;
-
   /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const;
-
-  /// Hash of coordinate values
-  /// @return A tree-hashed value of the coordinates over all MPI
-  ///   processes
-  std::size_t hash() const;
 
 private:
   // Geometric dimension

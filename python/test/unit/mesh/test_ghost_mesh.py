@@ -9,27 +9,23 @@ from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 from mpi4py import MPI
 
 
-@pytest.mark.xfail(condition=MPI.COMM_WORLD.size == 1,
-                   reason="Shared ghost modes fail in serial")
-def xtest_ghost_vertex_1d():
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 20,
-                            ghost_mode=cpp.mesh.GhostMode.shared_vertex)
+@pytest.mark.xfail(reason="Shared vertex currently disabled")
+def test_ghost_vertex_1d():
+    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 20, ghost_mode=cpp.mesh.GhostMode.shared_vertex)
     assert mesh.topology.index_map(0).size_global == 21
     assert mesh.topology.index_map(1).size_global == 20
 
 
-@pytest.mark.xfail(condition=MPI.COMM_WORLD.size == 1,
-                   reason="Shared ghost modes fail in serial")
 def test_ghost_facet_1d():
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 20,
-                            ghost_mode=cpp.mesh.GhostMode.shared_facet)
+    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 20, ghost_mode=cpp.mesh.GhostMode.shared_facet)
     assert mesh.topology.index_map(0).size_global == 21
     assert mesh.topology.index_map(1).size_global == 20
 
 
-@pytest.mark.parametrize("mode", [pytest.param(cpp.mesh.GhostMode.shared_facet,
-                                               marks=pytest.mark.xfail(condition=MPI.COMM_WORLD.size == 1,
-                                                                       reason="Shared ghost modes fail in serial"))])
+@pytest.mark.parametrize("mode",
+                         [cpp.mesh.GhostMode.shared_facet,
+                          pytest.param(cpp.mesh.GhostMode.shared_vertex,
+                                       marks=pytest.mark.xfail(reason="Shared vertex currently disabled"))])
 def test_ghost_2d(mode):
     N = 8
     num_cells = N * N * 2
@@ -42,9 +38,7 @@ def test_ghost_2d(mode):
     assert mesh.topology.index_map(2).size_global == num_cells
 
 
-@pytest.mark.parametrize("mode", [pytest.param(cpp.mesh.GhostMode.shared_facet,
-                                               marks=pytest.mark.xfail(condition=MPI.COMM_WORLD.size == 1,
-                                                                       reason="Shared ghost modes fail in serial"))])
+@pytest.mark.parametrize("mode", [cpp.mesh.GhostMode.shared_facet])
 def test_ghost_3d(mode):
     N = 2
     num_cells = N * N * N * 6
@@ -57,10 +51,10 @@ def test_ghost_3d(mode):
     assert mesh.topology.index_map(3).size_global == num_cells
 
 
-@pytest.mark.parametrize("mode", [cpp.mesh.GhostMode.none,
-                                  pytest.param(cpp.mesh.GhostMode.shared_facet,
-                                               marks=pytest.mark.xfail(condition=MPI.COMM_WORLD.size == 1,
-                                                                       reason="Shared ghost modes fail in serial"))])
+@pytest.mark.parametrize("mode",
+                         [cpp.mesh.GhostMode.none, cpp.mesh.GhostMode.shared_facet,
+                          pytest.param(cpp.mesh.GhostMode.shared_vertex,
+                                       marks=pytest.mark.xfail(reason="Shared vertex currently disabled"))])
 def test_ghost_connectivities(mode):
     # Ghosted mesh
     meshG = UnitSquareMesh(MPI.COMM_WORLD, 4, 4, ghost_mode=mode)

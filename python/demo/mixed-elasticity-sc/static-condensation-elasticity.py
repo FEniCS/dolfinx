@@ -1,25 +1,26 @@
-# Copyright (C) 2019 Michal Habera and Andreas Zilian
 #
-# This file is part of DOLFINX (https://www.fenicsproject.org)
+# .. _demo_static_condensation:
 #
-# SPDX-License-Identifier:    LGPL-3.0-or-later
-
+# Static condensation of linear elasticity
+# ========================================
+# Copyright (C) 2020  Michal Habera and Andreas Zilian
+#
 # This demo solves a Cook's plane stress elasticity test in a mixed space
 # formulation. The test is a sloped cantilever under upward traction force
 # at free end. Static condensation of internal (stress) degrees-of-freedom
-# is demonstrated.
+# is demonstrated. ::
 
 import os
-
-import numba
-import numba.core.typing.cffi_utils as cffi_support
-import numpy
 
 import cffi
 import dolfinx
 import dolfinx.cpp
+import dolfinx.geometry
 import dolfinx.io
 import dolfinx.la
+import numba
+import numba.core.typing.cffi_utils as cffi_support
+import numpy
 import ufl
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.mesh import locate_entities_boundary
@@ -94,13 +95,13 @@ f = ufl.as_vector([0.0, 1.0 / 16])
 b1 = - ufl.inner(f, v) * ds(1)
 
 # JIT compile individual blocks tabulation kernels
-ufc_form00 = dolfinx.jit.ffcx_jit(a00)
+ufc_form00 = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a00)
 kernel00 = ufc_form00.create_cell_integral(-1).tabulate_tensor
 
-ufc_form01 = dolfinx.jit.ffcx_jit(a01)
+ufc_form01 = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a01)
 kernel01 = ufc_form01.create_cell_integral(-1).tabulate_tensor
 
-ufc_form10 = dolfinx.jit.ffcx_jit(a10)
+ufc_form10 = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), a10)
 kernel10 = ufc_form10.create_cell_integral(-1).tabulate_tensor
 
 ffi = cffi.FFI()
@@ -140,9 +141,9 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
     A[:, :] = - A10 @ numpy.linalg.solve(A00, A01)
 
 
-# Prepare an empty Form and set the condensed tabulation kernel
-a_cond = dolfinx.cpp.fem.Form([U._cpp_object, U._cpp_object], False)
-a_cond.set_tabulate_tensor(dolfinx.fem.IntegralType.cell, -1, tabulate_condensed_tensor_A.address)
+# Prepare a Form with a condensed tabulation kernel
+integrals = {dolfinx.fem.IntegralType.cell: ([(-1, tabulate_condensed_tensor_A.address)], None)}
+a_cond = dolfinx.cpp.fem.Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None)
 
 A_cond = dolfinx.fem.assemble_matrix(a_cond, [bc])
 A_cond.assemble()
@@ -161,13 +162,14 @@ A = dolfinx.fem.assemble_matrix(a, [bc])
 A.assemble()
 
 # Create bounding box for function evaluation
-bb_tree = dolfinx.cpp.geometry.BoundingBoxTree(mesh, 2)
+bb_tree = dolfinx.geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
 p = numpy.array([48.0, 52.0, 0.0], dtype=numpy.float64)
-cell_candidates = dolfinx.cpp.geometry.compute_collisions_point(bb_tree, p)
+cell_candidates = dolfinx.geometry.compute_collisions_point(bb_tree, p)
 cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, p, 1)
 
+uc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 if len(cell) > 0:
     value = uc.eval(p, cell)
     print(value[1])

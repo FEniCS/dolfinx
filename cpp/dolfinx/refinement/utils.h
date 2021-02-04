@@ -6,10 +6,11 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -19,7 +20,8 @@ namespace dolfinx
 namespace mesh
 {
 class Mesh;
-}
+enum class GhostMode;
+} // namespace mesh
 
 namespace common
 {
@@ -35,7 +37,7 @@ namespace refinement
 /// index to the set of neighbors (within the comm) that share that edge.
 /// @param[in] mesh Mesh
 /// @return pair of comm and map
-std::pair<MPI_Comm, std::map<std::int32_t, std::set<int>>>
+std::pair<MPI_Comm, std::map<std::int32_t, std::vector<int>>>
 compute_edge_sharing(const mesh::Mesh& mesh);
 
 /// Transfer marked edges between processes.
@@ -61,40 +63,29 @@ std::pair<std::map<std::int32_t, std::int64_t>,
           Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 create_new_vertices(
     const MPI_Comm& neighbor_comm,
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges,
+    const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
     const mesh::Mesh& mesh, const std::vector<bool>& marked_edges);
 
 /// Use vertex and topology data to partition new mesh across
 /// processes
 /// @param[in] old_mesh
 /// @param[in] cell_topology Topology of cells, (vertex indices)
-/// @param[in] num_ghost_cells Number of cells which are ghost (at end
-///   of list)
 /// @param[in] new_vertex_coordinates
 /// @param[in] redistribute Call graph partitioner if true
+/// @param[in] ghost_mode None or shared_facet
 /// @return New mesh
 mesh::Mesh
 partition(const mesh::Mesh& old_mesh,
-          const std::vector<std::int64_t>& cell_topology, int num_ghost_cells,
+          const graph::AdjacencyList<std::int64_t>& cell_topology,
           const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                              Eigen::RowMajor>& new_vertex_coordinates,
-          bool redistribute);
-
-/// Build local mesh from internal data when not running in parallel
-/// @param[in] old_mesh
-/// @param[in] cell_topology
-/// @param[in] new_vertex_coordinates
-/// @return A Mesh
-mesh::Mesh build_local(
-    const mesh::Mesh& old_mesh, const std::vector<std::int64_t>& cell_topology,
-    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        new_vertex_coordinates);
+          bool redistribute, mesh::GhostMode ghost_mode);
 
 /// Adjust indices to account for extra n values on each process This
 /// is a utility to help add new topological vertices on each process
 /// into the space of the index map.
 ///
-/// @param index_map IndexMap of current mesh vertices
+/// @param index_map Index map for the current mesh vertices
 /// @param n Number of new entries to be accommodated on this process
 /// @return Global indices as if "n" extra values are appended on each
 ///   process

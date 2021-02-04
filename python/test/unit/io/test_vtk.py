@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2020 Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2011-2021 Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -34,132 +34,128 @@ def cell_types_3D():
     return [CellType.tetrahedron, CellType.hexahedron]
 
 
-# @pytest.fixture
-# def file_options():
-#     return ["ascii", "base64", "compressed"]
-
-
 @pytest.fixture
 def type_conv():
     return dict(size_t=int, int=int, double=float)
 
 
-@pytest.fixture(scope="function")
-def tempfile(tempdir, request):
-    return os.path.join(tempdir, request.function.__name__)
-
-
-@pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_1d_mesh(tempfile, file_options):
+def test_save_1d_mesh(tempdir):
+    filename = os.path.join(tempdir, "mesh.pvd")
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
-    VTKFile(tempfile + "mesh.pvd").write(mesh)
-    f = VTKFile(tempfile + "mesh.pvd")
-    f.write(mesh, 0.)
-    f.write(mesh, 1.)
-    for file_option in file_options:
-        VTKFile(tempfile + "mesh.pvd", file_option).write(mesh)
+    with VTKFileNew(MPI.COMM_WORLD, filename, "w") as vtk:
+        vtk.write(mesh, 0)
+        vtk.write(mesh, 1)
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_2d_mesh(tempfile, file_options):
+def test_save_2d_mesh(tempdir, file_options):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 32)
-    VTKFile(tempfile + "mesh.pvd").write(mesh)
-    f = VTKFile(tempfile + "mesh.pvd")
+    filename = os.path.join(tempdir, "mesh.pvd")
+
+    VTKFile(filename).write(mesh)
+    f = VTKFile(filename)
     f.write(mesh, 0.)
     f.write(mesh, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "mesh.pvd", file_option).write(mesh)
+        VTKFile(filename, file_option).write(mesh)
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_3d_mesh(tempfile, file_options):
+def test_save_3d_mesh(tempdir, file_options):
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
-    VTKFile(tempfile + "mesh.pvd").write(mesh)
-    f = VTKFile(tempfile + "mesh.pvd")
+    filename = os.path.join(tempdir, "mesh.pvd")
+    VTKFile(filename).write(mesh)
+    f = VTKFile(filename)
     f.write(mesh, 0.)
     f.write(mesh, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "mesh.pvd", file_option).write(mesh)
+        VTKFile(filename, file_option).write(mesh)
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_1d_scalar(tempfile, file_options):
+def test_save_1d_scalar(tempdir, file_options):
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0)
-    VTKFile(tempfile + "u.pvd").write(u)
-    f = VTKFile(tempfile + "u.pvd")
+    filename = os.path.join(tempdir, "u.pvd")
+    VTKFile(filename).write(u)
+    f = VTKFile(filename)
     f.write(u, 0.)
     f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option).write(u)
+        VTKFile(filename, file_option).write(u)
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_2d_scalar_old(tempfile, file_options):
+def test_save_2d_scalar_old(tempdir, file_options):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0)
-    VTKFile(tempfile + "u.pvd").write(u)
-    f = VTKFile(tempfile + "u.pvd")
+    filename = os.path.join(tempdir, "u.pvd")
+    VTKFile(filename).write(u)
+    f = VTKFile(filename)
     f.write(u, 0.)
     f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option).write(u)
+        VTKFile(filename, file_option).write(u)
 
 
 @pytest.mark.xfail(reason="P2->P1 interpolation not implemented")
-def test_save_2d_scalar(tempfile):
+def test_save_2d_scalar(tempdir):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0)
-    # VTKFileNeww(tempfile + "u.pvd").write(u)
-    # f = VTKFileNew(mesh.mpi_comm(), tempfile + "u.pvd", "w")
+    # VTKFileNeww(filename).write(u)
+    # f = VTKFileNew(mesh.mpi_comm(), filename, "w")
     f = VTKFileNew(mesh.mpi_comm(), "u.pvd", "w")
     f.write([u._cpp_object], 0.)
     # f.write(u, 1.)
     # for file_option in file_options:
-    #     VTKFile(tempfile + "u.pvd", file_option).write(u)
+    #     VTKFile(filename, file_option).write(u)
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_3d_scalar(tempfile, file_options):
+def test_save_3d_scalar(tempdir, file_options):
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0)
-    VTKFile(tempfile + "u.pvd").write(u)
-    f = VTKFile(tempfile + "u.pvd")
+    filename = os.path.join(tempdir, "u.pvd")
+    VTKFile(filename).write(u)
+    f = VTKFile(filename)
     f.write(u, 0.)
     f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option).write(u)
+        VTKFile(filename, file_option).write(u)
 
 
 @pytest.mark.xfail(reason="FFCX fails for tensor spaces in 1D")
 @skip_in_parallel
-def test_save_1d_vector(tempfile, file_options):
+def test_save_1d_vector(tempdir, file_options):
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0)
-    VTKFile(tempfile + "u.pvd").write(u)
+    filename = os.path.join(tempdir, "u.pvd")
+    VTKFile(filename).write(u)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option).write(u)
+        VTKFile(filename, file_option).write(u)
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_2d_vector_old(tempfile, file_options):
+def test_save_2d_vector_old(tempdir, file_options):
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     u.vector.set(1)
-    VTKFile(tempfile + "u.pvd").write(u)
-    f = VTKFile(tempfile + "u.pvd")
+    filename = os.path.join(tempdir, "u.pvd")
+    VTKFile(filename).write(u)
+    f = VTKFile(filename)
     f.write(u, 0.)
     f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option).write(u)
+        VTKFile(filename, file_option).write(u)
 
 
-def test_save_2d_vector(tempfile):
+@skip_in_parallel
+def test_save_2d_vector(tempdir):
     points = np.array([[0, 0], [1, 0], [1, 2], [0, 2],
                        [1 / 2, 0], [1, 2 / 2], [1 / 2, 2],
                        [0, 2 / 2], [1 / 2, 2 / 2]])
@@ -171,19 +167,25 @@ def test_save_2d_vector(tempfile):
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
-    u.vector.set(1)
-    f = VTKFileNew(mesh.mpi_comm(), tempfile + "u2-new.pvd", "w")
+
+    def func(x):
+        vals = np.zeros((2, x.shape[1]))
+        vals[0] = x[0]
+        vals[1] = x[1]
+        return vals
+    u.interpolate(func)
+    filename = os.path.join(tempdir, "u2-new.pvd")
+    f = VTKFileNew(mesh.mpi_comm(), filename, "w")
     f.write([u._cpp_object], 0.)
-
-    fold = VTKFile(tempfile + "u2-old.pvd")
-    fold.write(u)
-
-    # f.write(u, 1.)
+    # filename = os.path.join(tempdir, "u2-old.pvd")
+    # fold = VTKFile(filename)
+    # fold.write(u)
+    # # f.write(u, 1.)
     # for file_option in file_options:
-    #     VTKFile(tempfile + "u.pvd", file_option).write(u)
+    #     VTKFile(filename, file_option).write(u)
 
 
-def xtest_save_2d_mixed(tempfile):
+def xtest_save_2d_mixed(tempdir):
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 1, 1, 1)
 
     P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -200,36 +202,39 @@ def xtest_save_2d_mixed(tempfile):
     fold.write(U)
 
 
-@ pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_3d_vector(tempfile, file_options):
+@pytest.mark.xfail(reason="file_option not added to VTK initializer")
+def test_save_3d_vector(tempdir, file_options):
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     u.vector.set(1)
-    VTKFile(tempfile + "u.pvd").write(u)
-    f = VTKFile(tempfile + "u.pvd")
+    filename = os.path.join(tempdir, "u.pvd")
+    VTKFile(filename).write(u)
+    f = VTKFile(filename)
     f.write(u, 0.)
     f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option).write(u)
+        VTKFile(filename, file_option).write(u)
 
 
-@ pytest.mark.xfail(reason="FFCX fails for tensor spaces in 1D")
-@ skip_in_parallel
-def test_save_1d_tensor(tempfile, file_options):
+@pytest.mark.xfail(reason="FFCX fails for tensor spaces in 1D")
+@skip_in_parallel
+def test_save_1d_tensor(tempdir, file_options):
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1)
-    VTKFile(tempfile + "u.pvd").write(u)
+    filename = os.path.join(tempdir, "u.pvd")
+    VTKFile(filename).write(u)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option).write(u)
+        VTKFile(filename, file_option).write(u)
 
 
-def test_save_2d_tensor(tempfile):
+def test_save_2d_tensor(tempdir):
     import time
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 1)))
     u.vector.set(1)
-    f = VTKFileNew(MPI.COMM_WORLD, tempfile + "u.pvd", "w")
+    filename = os.path.join(tempdir, "u.pvd")
+    f = VTKFileNew(MPI.COMM_WORLD, filename, "w")
     start = time.time()
     f.write([u._cpp_object], 0.)
     u.vector.set(2)
@@ -237,7 +242,7 @@ def test_save_2d_tensor(tempfile):
     end = time.time()
     print("NEW: {0:.2e}".format(end - start))
 
-    f = VTKFile(tempfile + "u_old.pvd")
+    f = VTKFile(tempdir + "u_old.pvd")
     start = time.time()
     f.write(u)
     u.vector.set(2)
@@ -246,14 +251,15 @@ def test_save_2d_tensor(tempfile):
     print("OLD: {0:.2e}".format(end - start))
 
 
-@ pytest.mark.xfail(reason="file_option not added to VTK initializer")
-def test_save_3d_tensor(tempfile, file_options):
+@pytest.mark.xfail(reason="file_option not added to VTK initializer")
+def test_save_3d_tensor(tempdir, file_options):
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1)
-    VTKFile(tempfile + "u.pvd").write(u)
-    f = VTKFile(tempfile + "u.pvd")
+    filename = os.path.join(tempdir, "u.pvd")
+    VTKFile(filename).write(u)
+    f = VTKFile(filename)
     f.write(u, 0.)
     f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option).write(u)
+        VTKFile(filename, file_option).write(u)

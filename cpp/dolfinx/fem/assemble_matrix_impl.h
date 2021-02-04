@@ -9,14 +9,15 @@
 #include "DofMap.h"
 #include "Form.h"
 #include "utils.h"
-#include <Eigen/Dense>
-#include <dolfinx/function/FunctionSpace.h>
+#include <Eigen/Core>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
+#include <iterator>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -42,15 +43,15 @@ void assemble_cells(
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Geometry& geometry,
     const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap0,
-    const graph::AdjacencyList<std::int32_t>& dofmap1,
+    const graph::AdjacencyList<std::int32_t>& dofmap0, const int bs0,
+    const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
-    const Eigen::Array<T, Eigen::Dynamic, 1>& constants,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info);
+    const std::vector<T>& constants,
+    const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
 template <typename T>
@@ -58,16 +59,16 @@ void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
-    const graph::AdjacencyList<std::int32_t>& dofmap0,
-    const graph::AdjacencyList<std::int32_t>& dofmap1,
+    const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
+    const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
-    const Eigen::Array<T, Eigen::Dynamic, 1> constants,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
+    const std::vector<T>& constants,
+    const std::vector<std::uint32_t>& cell_info,
+    const std::vector<std::uint8_t>& perms);
 
 /// Execute kernel over interior facets and  accumulate result in Mat
 template <typename T>
@@ -75,16 +76,15 @@ void assemble_interior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
-    const DofMap& dofmap0, const DofMap& dofmap1, const std::vector<bool>& bc0,
-    const std::vector<bool>& bc1,
+    const DofMap& dofmap0, int bs0, const DofMap& dofmap1, int bs1,
+    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
-    const std::vector<int>& offsets,
-    const Eigen::Array<T, Eigen::Dynamic, 1>& constants,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
+    const std::vector<int>& offsets, const std::vector<T>& constants,
+    const std::vector<std::uint32_t>& cell_info,
+    const std::vector<std::uint8_t>& perms);
 
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -101,79 +101,69 @@ void assemble_matrix(
       = mesh->topology().connectivity(tdim, 0)->num_nodes();
 
   // Get dofmap data
-  std::shared_ptr<const fem::DofMap> dofmap0 = a.function_space(0)->dofmap();
-  std::shared_ptr<const fem::DofMap> dofmap1 = a.function_space(1)->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap0
+      = a.function_spaces().at(0)->dofmap();
+  std::shared_ptr<const fem::DofMap> dofmap1
+      = a.function_spaces().at(1)->dofmap();
   assert(dofmap0);
   assert(dofmap1);
   const graph::AdjacencyList<std::int32_t>& dofs0 = dofmap0->list();
+  const int bs0 = dofmap0->bs();
   const graph::AdjacencyList<std::int32_t>& dofs1 = dofmap1->list();
+  const int bs1 = dofmap1->bs();
 
   // Prepare constants
-  if (!a.all_constants_set())
-    throw std::runtime_error("Unset constant in Form");
-  const Eigen::Array<T, Eigen::Dynamic, 1> constants = pack_constants(a);
+  const std::vector<T> constants = pack_constants(a);
 
   // Prepare coefficients
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
       = pack_coefficients(a);
 
-  const FormIntegrals<T>& integrals = a.integrals();
-  const bool needs_permutation_data = integrals.needs_permutation_data();
+  const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-      = needs_permutation_data
-            ? mesh->topology().get_cell_permutation_info()
-            : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
+  const std::vector<std::uint32_t>& cell_info
+      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                               : std::vector<std::uint32_t>(num_cells);
 
-  for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
+  for (int i : a.integral_ids(IntegralType::cell))
   {
-    const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
+    const auto& fn = a.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = integrals.integral_domains(IntegralType::cell, i);
+        = a.domains(IntegralType::cell, i);
     impl::assemble_cells<T>(mat_set_values, mesh->geometry(), active_cells,
-                            dofs0, dofs1, bc0, bc1, fn, coeffs, constants,
-                            cell_info);
+                            dofs0, bs0, dofs1, bs1, bc0, bc1, fn, coeffs,
+                            constants, cell_info);
   }
 
-  if (integrals.num_integrals(IntegralType::exterior_facet) > 0
-      or integrals.num_integrals(IntegralType::interior_facet) > 0)
+  if (a.num_integrals(IntegralType::exterior_facet) > 0
+      or a.num_integrals(IntegralType::interior_facet) > 0)
   {
-    // FIXME: cleanup these calls? Some of the happen internally again.
-    mesh->topology_mutable().create_entities(tdim - 1);
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    mesh->topology_mutable().create_entity_permutations();
 
-    const int facets_per_cell
-        = mesh::cell_num_entities(mesh->topology().cell_type(), tdim - 1);
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
-        = needs_permutation_data
-              ? mesh->topology().get_facet_permutations()
-              : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
-                  facets_per_cell, num_cells);
+    const std::vector<std::uint8_t>& perms
+        = mesh->topology().get_facet_permutations();
 
-    for (int i = 0; i < integrals.num_integrals(IntegralType::exterior_facet);
-         ++i)
+    for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
-      const auto& fn
-          = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
+      const auto& fn = a.kernel(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = integrals.integral_domains(IntegralType::exterior_facet, i);
+          = a.domains(IntegralType::exterior_facet, i);
       impl::assemble_exterior_facets<T>(mat_set_values, *mesh, active_facets,
-                                        dofs0, dofs1, bc0, bc1, fn, coeffs,
-                                        constants, cell_info, perms);
+                                        dofs0, bs0, dofs1, bs1, bc0, bc1, fn,
+                                        coeffs, constants, cell_info, perms);
     }
 
-    const std::vector<int> c_offsets = a.coefficients().offsets();
-    for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
-         ++i)
+    const std::vector<int> c_offsets = a.coefficient_offsets();
+    for (int i : a.integral_ids(IntegralType::interior_facet))
     {
-      const auto& fn
-          = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
+      const auto& fn = a.kernel(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = integrals.integral_domains(IntegralType::interior_facet, i);
+          = a.domains(IntegralType::interior_facet, i);
       impl::assemble_interior_facets<T>(
-          mat_set_values, *mesh, active_facets, *dofmap0, *dofmap1, bc0, bc1,
-          fn, coeffs, c_offsets, constants, cell_info, perms);
+          mat_set_values, *mesh, active_facets, *dofmap0, bs0, *dofmap1, bs1,
+          bc0, bc1, fn, coeffs, c_offsets, constants, cell_info, perms);
     }
   }
 }
@@ -184,15 +174,15 @@ void assemble_cells(
                             const std::int32_t*, const T*)>& mat_set,
     const mesh::Geometry& geometry,
     const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap0,
-    const graph::AdjacencyList<std::int32_t>& dofmap1,
+    const graph::AdjacencyList<std::int32_t>& dofmap0, const int bs0,
+    const graph::AdjacencyList<std::int32_t>& dofmap1, const int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
-    const Eigen::Array<T, Eigen::Dynamic, 1>& constants,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info)
+    const std::vector<T>& constants,
+    const std::vector<std::uint32_t>& cell_info)
 {
   const int gdim = geometry.dim();
 
@@ -204,25 +194,25 @@ void assemble_cells(
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = geometry.x();
 
-  // Data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  // Iterate over active cells
   const int num_dofs0 = dofmap0.links(0).size();
   const int num_dofs1 = dofmap1.links(0).size();
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae(
-      num_dofs0, num_dofs1);
-
-  // Iterate over active cells
+  const int ndim0 = bs0 * num_dofs0;
+  const int ndim1 = bs1 * num_dofs1;
+  std::vector<T> Ae(ndim0 * ndim1);
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < x_dofs.rows(); ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Tabulate tensor
-    std::fill(Ae.data(), Ae.data() + num_dofs0 * num_dofs1, 0);
+    std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
@@ -231,40 +221,56 @@ void assemble_cells(
     auto dofs1 = dofmap1.links(c);
     if (!bc0.empty())
     {
-      for (Eigen::Index i = 0; i < Ae.rows(); ++i)
+      for (int i = 0; i < num_dofs0; ++i)
       {
-        if (bc0[dofs0[i]])
-          Ae.row(i).setZero();
+        for (int k = 0; k < bs0; ++k)
+        {
+          if (bc0[bs0 * dofs0[i] + k])
+          {
+            // Zero row bs0 * i + k
+            const int row = bs0 * i + k;
+            std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0.0);
+          }
+        }
       }
     }
+
     if (!bc1.empty())
     {
-      for (Eigen::Index j = 0; j < Ae.cols(); ++j)
+      for (int j = 0; j < num_dofs1; ++j)
       {
-        if (bc1[dofs1[j]])
-          Ae.col(j).setZero();
+        for (int k = 0; k < bs1; ++k)
+        {
+          if (bc1[bs1 * dofs1[j] + k])
+          {
+            // Zero column bs1 * j + k
+            const int col = bs1 * j + k;
+            for (int row = 0; row < ndim0; ++row)
+              Ae[row * ndim1 + col] = 0.0;
+          }
+        }
       }
     }
 
     mat_set(dofs0.size(), dofs0.data(), dofs1.size(), dofs1.data(), Ae.data());
   }
-}
+} // namespace dolfinx::fem::impl
 //-----------------------------------------------------------------------------
 template <typename T>
 void assemble_exterior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
-    const graph::AdjacencyList<std::int32_t>& dofmap0,
-    const graph::AdjacencyList<std::int32_t>& dofmap1,
+    const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
+    const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
-    const Eigen::Array<T, Eigen::Dynamic, 1> constants,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
+    const std::vector<T>& constants,
+    const std::vector<std::uint32_t>& cell_info,
+    const std::vector<std::uint8_t>& perms)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -278,12 +284,12 @@ void assemble_exterior_facets(
       = mesh.geometry().x();
 
   // Data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   const int num_dofs0 = dofmap0.links(0).size();
   const int num_dofs1 = dofmap1.links(0).size();
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae(
-      num_dofs0, num_dofs1);
+  const int ndim0 = bs0 * num_dofs0;
+  const int ndim1 = bs1 * num_dofs1;
+  std::vector<T> Ae(ndim0 * ndim1);
 
   // Iterate over all facets
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -293,47 +299,64 @@ void assemble_exterior_facets(
   for (std::int32_t f : active_facets)
   {
     auto cells = f_to_c->links(f);
-    assert(cells.rows() == 1);
+    assert(cells.size() == 1);
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cells[0]);
-    const auto* it = std::find(facets.data(), facets.data() + facets.rows(), f);
-    assert(it != (facets.data() + facets.rows()));
-    const int local_facet = std::distance(facets.data(), it);
+    auto it = std::find(facets.begin(), facets.end(), f);
+    assert(it != facets.end());
+    const int local_facet = std::distance(facets.begin(), it);
 
-    // Get cell vertex coordinates
+    // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cells[0]);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     // Tabulate tensor
-    std::fill(Ae.data(), Ae.data() + num_dofs0 * num_dofs1, 0);
+    std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
-           coordinate_dofs.data(), &local_facet, &perms(local_facet, cells[0]),
-           cell_info[cells[0]]);
+           coordinate_dofs.data(), &local_facet,
+           &perms[cells[0] * facets.size() + local_facet], cell_info[cells[0]]);
 
     // Zero rows/columns for essential bcs
-    auto dmap0 = dofmap0.links(cells[0]);
-    auto dmap1 = dofmap1.links(cells[0]);
+    auto dofs0 = dofmap0.links(cells[0]);
+    auto dofs1 = dofmap1.links(cells[0]);
     if (!bc0.empty())
     {
-      for (Eigen::Index i = 0; i < Ae.rows(); ++i)
+      for (int i = 0; i < num_dofs0; ++i)
       {
-        if (bc0[dmap0[i]])
-          Ae.row(i).setZero();
+        for (int k = 0; k < bs0; ++k)
+        {
+          if (bc0[bs0 * dofs0[i] + k])
+          {
+            // Zero row bs0 * i + k
+            const int row = bs0 * i + k;
+            std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0.0);
+          }
+        }
       }
     }
     if (!bc1.empty())
     {
-      for (Eigen::Index j = 0; j < Ae.cols(); ++j)
+      for (int j = 0; j < num_dofs1; ++j)
       {
-        if (bc1[dmap1[j]])
-          Ae.col(j).setZero();
+        for (int k = 0; k < bs1; ++k)
+        {
+          if (bc1[bs1 * dofs1[j] + k])
+          {
+            // Zero column bs1 * j + k
+            const int col = bs1 * j + k;
+            for (int row = 0; row < ndim0; ++row)
+              Ae[row * ndim1 + col] = 0.0;
+          }
+        }
       }
     }
 
-    mat_set_values(dmap0.size(), dmap0.data(), dmap1.size(), dmap1.data(),
+    mat_set_values(dofs0.size(), dofs0.data(), dofs1.size(), dofs1.data(),
                    Ae.data());
   }
 }
@@ -343,16 +366,15 @@ void assemble_interior_facets(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_set_values,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
-    const DofMap& dofmap0, const DofMap& dofmap1, const std::vector<bool>& bc0,
-    const std::vector<bool>& bc1,
+    const DofMap& dofmap0, int bs0, const DofMap& dofmap1, int bs1,
+    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
-    const std::vector<int>& offsets,
-    const Eigen::Array<T, Eigen::Dynamic, 1>& constants,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
+    const std::vector<int>& offsets, const std::vector<T>& constants,
+    const std::vector<std::uint32_t>& cell_info,
+    const std::vector<std::uint8_t>& perms)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -367,37 +389,35 @@ void assemble_interior_facets(
       = mesh.geometry().x();
 
   // Data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(2 * num_dofs_g, gdim);
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
-  Eigen::Array<T, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
+  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
+  std::vector<T> Ae, be;
+  std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
   // Temporaries for joint dofmaps
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dmapjoint0, dmapjoint1;
+  std::vector<std::int32_t> dmapjoint0, dmapjoint1;
 
   // Iterate over all facets
   auto c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
+  const int offset_g = gdim * num_dofs_g;
   for (std::int32_t facet_index : active_facets)
   {
     // Create attached cells
     auto cells = c->links(facet_index);
-    assert(cells.rows() == 2);
+    assert(cells.size() == 2);
 
     // Get local index of facet with respect to the cell
     auto facets0 = c_to_f->links(cells[0]);
-    const auto* it0 = std::find(facets0.data(), facets0.data() + facets0.rows(),
-                                facet_index);
-    assert(it0 != (facets0.data() + facets0.rows()));
-    const int local_facet0 = std::distance(facets0.data(), it0);
+    const auto* it0 = std::find(facets0.begin(), facets0.end(), facet_index);
+    assert(it0 != facets0.end());
+    const int local_facet0 = std::distance(facets0.begin(), it0);
     auto facets1 = c_to_f->links(cells[1]);
-    const auto* it1 = std::find(facets1.data(), facets1.data() + facets1.rows(),
-                                facet_index);
-    assert(it1 != (facets1.data() + facets1.rows()));
-    const int local_facet1 = std::distance(facets1.data(), it1);
+    const auto* it1 = std::find(facets1.begin(), facets1.end(), facet_index);
+    assert(it1 != facets1.end());
+    const int local_facet1 = std::distance(facets1.begin(), it1);
 
     const std::array local_facet{local_facet0, local_facet1};
 
@@ -408,23 +428,25 @@ void assemble_interior_facets(
     {
       for (int j = 0; j < gdim; ++j)
       {
-        coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
-        coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
+        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
       }
     }
 
     // Get dof maps for cells and pack
-    auto dmap0_cell0 = dofmap0.cell_dofs(cells[0]);
-    auto dmap0_cell1 = dofmap0.cell_dofs(cells[1]);
+    tcb::span<const std::int32_t> dmap0_cell0 = dofmap0.cell_dofs(cells[0]);
+    tcb::span<const std::int32_t> dmap0_cell1 = dofmap0.cell_dofs(cells[1]);
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
-    dmapjoint0.head(dmap0_cell0.size()) = dmap0_cell0;
-    dmapjoint0.tail(dmap0_cell1.size()) = dmap0_cell1;
+    std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
+    std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
+              std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    auto dmap1_cell0 = dofmap1.cell_dofs(cells[0]);
-    auto dmap1_cell1 = dofmap1.cell_dofs(cells[1]);
+    tcb::span<const std::int32_t> dmap1_cell0 = dofmap1.cell_dofs(cells[0]);
+    tcb::span<const std::int32_t> dmap1_cell1 = dofmap1.cell_dofs(cells[1]);
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
-    dmapjoint1.head(dmap1_cell0.size()) = dmap1_cell0;
-    dmapjoint1.tail(dmap1_cell1.size()) = dmap1_cell1;
+    std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
+    std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
+              std::next(dmapjoint1.begin(), dmap1_cell0.size()));
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
@@ -436,34 +458,54 @@ void assemble_interior_facets(
     {
       // Loop over entries for coefficient i
       const int num_entries = offsets[i + 1] - offsets[i];
-      coeff_array.segment(2 * offsets[i], num_entries)
-          = coeff_cell0.segment(offsets[i], num_entries);
-      coeff_array.segment(offsets[i + 1] + offsets[i], num_entries)
-          = coeff_cell1.segment(offsets[i], num_entries);
+      std::copy_n(coeff_cell0.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), 2 * offsets[i]));
+      std::copy_n(coeff_cell1.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
     }
 
+    const int num_rows = bs0 * dmapjoint0.size();
+    const int num_cols = bs1 * dmapjoint1.size();
+
     // Tabulate tensor
-    Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
-    const std::array perm{perms(local_facet[0], cells[0]),
-                          perms(local_facet[1], cells[1])};
+    Ae.resize(num_rows * num_cols);
+    std::fill(Ae.begin(), Ae.end(), 0);
+
+    const int facets_per_cell = facets0.size();
+    const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
+                          perms[cells[1] * facets_per_cell + local_facet[1]]};
     fn(Ae.data(), coeff_array.data(), constants.data(), coordinate_dofs.data(),
        local_facet.data(), perm.data(), cell_info[cells[0]]);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
     {
-      for (Eigen::Index i = 0; i < dmapjoint0.size(); ++i)
+      for (std::size_t i = 0; i < dmapjoint0.size(); ++i)
       {
-        if (bc0[dmapjoint0[i]])
-          Ae.row(i).setZero();
+        for (int k = 0; k < bs0; ++k)
+        {
+          if (bc0[bs0 * dmapjoint0[i] + k])
+          {
+            // Zero row bs0 * i + k
+            std::fill_n(std::next(Ae.begin(), num_cols * (bs0 * i + k)),
+                        num_cols, 0.0);
+          }
+        }
       }
     }
     if (!bc1.empty())
     {
-      for (Eigen::Index j = 0; j < dmapjoint1.size(); ++j)
+      for (std::size_t j = 0; j < dmapjoint1.size(); ++j)
       {
-        if (bc1[dmapjoint1[j]])
-          Ae.col(j).setZero();
+        for (int k = 0; k < bs1; ++k)
+        {
+          if (bc1[bs1 * dmapjoint1[j] + k])
+          {
+            // Zero column bs1 * j + k
+            for (int m = 0; m < num_rows; ++m)
+              Ae[m * num_cols + bs1 * j + k] = 0.0;
+          }
+        }
       }
     }
 

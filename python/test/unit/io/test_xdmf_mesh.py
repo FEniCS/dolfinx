@@ -96,8 +96,11 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_read_write_p2_mesh(tempdir, encoding):
+    try:
+        import gmsh
+    except ImportError:
+        pytest.skip()
     if MPI.COMM_WORLD.rank == 0:
-        gmsh = pytest.importorskip("gmsh")
         gmsh.initialize()
         gmsh.model.occ.addSphere(0, 0, 0, 1, tag=1)
         gmsh.option.setNumber("Mesh.CharacteristicLengthMin", 0.3)

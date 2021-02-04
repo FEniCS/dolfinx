@@ -111,16 +111,23 @@
 import os
 
 import numpy as np
-from mpi4py import MPI
-from petsc4py import PETSc
-
 from dolfinx import (Form, Function, FunctionSpace, NewtonSolver,
-                     NonlinearProblem, UnitSquareMesh, log)
+                     UnitSquareMesh, fem, log, plot)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem.assemble import assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import (FiniteElement, TestFunctions, TrialFunction, derivative, diff,
                  dx, grad, inner, split, variable)
+
+try:
+    import pyvista as pv
+    import pyvistaqt as pvqt
+    have_pyvista = True
+except ModuleNotFoundError:
+    print("pyvista is required to visualise the solution")
+    have_pyvista = False
 
 # Save all logging to file
 log.set_output_file("log.txt")
@@ -130,40 +137,32 @@ log.set_output_file("log.txt")
 #
 # A class which will represent the Cahn-Hilliard in an abstract from for
 # use in the Newton solver is now defined. It is a subclass of
-# :py:class:`NonlinearProblem <dolfinx.cpp.NonlinearProblem>`. ::
-
-# Class for interfacing with the Newton solver
+# :py:class:`NonlinearProblem <dolfinx.cpp.NonlinearProblem>`.::
 
 
-class CahnHilliardEquation(NonlinearProblem):
+class CahnHilliardEquation:
     def __init__(self, a, L):
-        super().__init__()
-        self.L = Form(L)
-        self.a = Form(a)
-        self._F = None
-        self._J = None
+        self.L, self.a = Form(L), Form(a)
 
     def form(self, x):
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    def F(self, x):
-        if self._F is None:
-            self._F = assemble_vector(self.L)
-        else:
-            with self._F.localForm() as f_local:
-                f_local.set(0.0)
-            self._F = assemble_vector(self._F, self.L)
-        self._F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        return self._F
+    def F(self, x, b):
+        with b.localForm() as f_local:
+            f_local.set(0.0)
+        assemble_vector(b, self.L)
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    def J(self, x):
-        if self._J is None:
-            self._J = assemble_matrix(self.a)
-        else:
-            self._J.zeroEntries()
-            self._J = assemble_matrix(self._J, self.a)
-        self._J.assemble()
-        return self._J
+    def J(self, x, A):
+        A.zeroEntries()
+        assemble_matrix(A, self.a)
+        A.assemble()
+
+    def matrix(self):
+        return fem.create_matrix(self.a)
+
+    def vector(self):
+        return fem.create_vector(self.L)
 
 # The constructor (``__init__``) stores references to the bilinear (``a``)
 # and linear (``L``) forms. These will used to compute the Jacobian matrix
@@ -183,7 +182,7 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 
 # A unit square mesh with 97 (= 96 + 1) vertices in each direction is
 # created, and on this mesh a
-# :py:class:`FunctionSpace<dolfinx.function.FunctionSpace>`
+# :py:class:`FunctionSpace<dolfinx.fem.FunctionSpace>`
 # ``ME`` is built using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space
@@ -200,12 +199,12 @@ q, v = TestFunctions(ME)
 # .. index:: split functions
 #
 # For the test functions,
-# :py:func:`TestFunctions<dolfinx.functions.function.TestFunctions>` (note
+# :py:func:`TestFunctions<dolfinx.functions.fem.TestFunctions>` (note
 # the 's' at the end) is used to define the scalar test functions ``q``
 # and ``v``. The
-# :py:class:`TrialFunction<dolfinx.functions.function.TrialFunction>`
+# :py:class:`TrialFunction<dolfinx.functions.fem.TrialFunction>`
 # ``du`` has dimension two. Some mixed objects of the
-# :py:class:`Function<dolfinx.functions.function.Function>` class on ``ME``
+# :py:class:`Function<dolfinx.functions.fem.Function>` class on ``ME``
 # are defined to represent :math:`u = (c_{n+1}, \mu_{n+1})` and :math:`u0
 # = (c_{n}, \mu_{n})`, and these are then split into sub-functions::
 
@@ -225,19 +224,14 @@ c0, mu0 = split(u0)
 # .. index::
 #    single: interpolating functions; (in Cahn-Hilliard demo)
 #
-# Initial conditions are created by using the evaluate method
-# then interpolated into a finite element space::
+# The initial conditions are interpolated into a finite element space::
 
+# Zero u
+with u.vector.localForm() as x_local:
+    x_local.set(0.0)
 
-def u_init(x):
-    """Initialise values for c and mu."""
-    values = np.zeros((2, x.shape[1]))
-    values[0] = 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[1]))
-    return values
-
-
-# Create intial conditions and interpolate
-u.interpolate(u_init)
+# Interpolate initial condition
+u.sub(0).interpolate(lambda x: 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[1])))
 
 # The first line creates an object of type ``InitialConditions``.  The
 # following two lines make ``u`` and ``u0`` interpolants of ``u_init``
@@ -296,6 +290,9 @@ a = derivative(L, u, du)
 # Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
 solver = NewtonSolver(MPI.COMM_WORLD)
+solver.setF(problem.F, problem.vector())
+solver.setJ(problem.J, problem.matrix())
+solver.set_form(problem.form)
 solver.convergence_criterion = "incremental"
 solver.rtol = 1e-6
 
@@ -325,12 +322,30 @@ else:
 u.vector.copy(result=u0.vector)
 u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
+
+# Prepare viewer for plotting solution during the computation
+if have_pyvista:
+    topology, cell_types = plot.create_vtk_topology(mesh, mesh.topology.dim)
+    grid = pv.UnstructuredGrid(topology, cell_types, mesh.geometry.x)
+    grid.point_arrays["u"] = u.sub(0).compute_point_values().real
+    grid.set_active_scalars("u")
+    p = pvqt.BackgroundPlotter(title="concentration", auto_update=True)
+    p.add_mesh(grid, clim=[0, 1])
+    p.view_xy(True)
+    p.add_text(f"time: {t}", font_size=12, name="timelabel")
+
 while (t < T):
     t += dt
-    r = solver.solve(problem, u.vector)
+    r = solver.solve(u.vector)
     print("Step, num iterations:", int(t / dt), r[0])
     u.vector.copy(result=u0.vector)
     file.write_function(u.sub(0), t)
+
+    # Update the plot window
+    if have_pyvista:
+        p.add_text(f"time: {t:.2e}", font_size=12, name="timelabel")
+        grid.point_arrays["u"] = u.sub(0).compute_point_values().real
+        p.app.processEvents()
 
 file.close()
 
@@ -340,3 +355,9 @@ file.close()
 # The solution vector associated with ``u`` is copied to ``u0`` at the
 # end of each time step, and the ``c`` component of the solution
 # (the first component of ``u``) is then written to file.
+
+# Update ghost entries and plot
+if have_pyvista:
+    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    grid.point_arrays["u"] = u.sub(0).compute_point_values().real
+    pv.plot(grid, show_edges=True)

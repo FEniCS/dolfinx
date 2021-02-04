@@ -16,8 +16,7 @@ add_library(dolfinx "")  # The "" is needed for older CMake. Remove later.
 #------------------------------------------------------------------------------
 # Add source files to the target
 
-set(DOLFINX_DIRS common fem function generation geometry graph io la mesh nls
-                refinement)
+set(DOLFINX_DIRS common fem generation geometry graph io la mesh nls refinement)
 
 install(FILES dolfinx.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development)
 
@@ -59,6 +58,13 @@ target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 
 # UFC
 target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
+
+# basix
+target_include_directories(dolfinx SYSTEM PUBLIC ${BASIX_INCLUDE_DIRS})
+target_link_libraries(dolfinx PUBLIC ${BASIX_LIBRARY})
+
+# Have left these well written comments about Eigen alignment
+# here with the intention that this should be moved to build documentation.
 
 # DOLFIN uses Eigen data structures for dense linear algebra operations. Eigen
 # performs 'ideal' memory alignment based around the -march flag passed to the

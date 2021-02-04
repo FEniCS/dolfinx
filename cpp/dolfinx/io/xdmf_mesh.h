@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/mesh/cell_types.h>
 #include <hdf5.h>
 #include <mpi.h>
@@ -55,7 +56,7 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const hid_t h5_id, const std::string path_prefix,
                        const mesh::Topology& topology,
                        const mesh::Geometry& geometry, const int cell_dim,
-                       const std::vector<std::int32_t>& active_entities);
+                       const tcb::span<const std::int32_t>& active_entities);
 
 /// Add Geometry xml node
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,

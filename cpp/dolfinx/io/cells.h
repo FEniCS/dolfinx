@@ -6,17 +6,22 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
 #include <vector>
+
+namespace dolfinx::mesh
+{
+class Mesh;
+}
 
 /// Functions for the re-ordering of input mesh topology to the DOLFINX
 /// ordering, and transpose orderings for file output.
 namespace dolfinx::io::cells
 {
 /*
-  The FIAT ordering is used for the geometry nodes, and is shown below
+  The basix ordering is used for the geometry nodes, and is shown below
   for a range of cell types.
 
     Triangle:               Triangle6:          Triangle10:
@@ -35,13 +40,13 @@ namespace dolfinx::io::cells
     v
     ^
     |
-    1-----------3          1-----7-----4           1---9--13---5
+    2-----------3          2-----7-----3           2--10--11---3
     |           |          |           |           |           |
-    |           |          |           |           3  11  15   7
-    |           |          2     8     5           |           |
-    |           |          |           |           2  10  14   6
+    |           |          |           |           7  14  15   9
+    |           |          5     8     6           |           |
+    |           |          |           |           6  12  13   8
     |           |          |           |           |           |
-    0-----------2 --> u    0-----6-----3           0---8--12---4
+    0-----------1 --> u    0-----4-----1           0---4---5---1
 
     Tetrahedron:                    Tetrahedron10:               Tetrahedron20
                 v
@@ -62,18 +67,19 @@ namespace dolfinx::io::cells
                        w
 
     Hexahedron:          Hexahedron27:
-           v
-    2----------6           3----21----12
-    |\     ^   |\          |\         |\
-    | \    |   | \         | 5    23  | 14
-    |  \   |   |  \        6  \ 24    15 \
-    |   3------+---7       |   4----22+---13
-    |   |  +-- |-- | -> u  | 8 |  26  | 17|
-    0---+---\--4   |       0---+18----9   |
-     \  |    \  \  |        \  7     25\ 16
-      \ |     \  \ |         2 |   20   11|
-       \|      w  \|          \|         \|
-       1----------5           1----19----10
+            w
+        6----------7               6----19----7
+       /|   ^   v /|              /|         /|
+      / |   |  / / |            17 |  25    18|
+     /  |   | / /  |            / 14    24 /  15
+    4----------5   |           4----16----5   |
+    |   |   +--|---|--> u      |22 |  26  | 23|
+    |   2------+---3           |   2----13+---3
+    |  /       |  /           10  / 21   12  /
+    | /        | /             | 9    20  | 11
+    |/         |/              |/         |/
+    0----------1               0-----8----1
+
 */
 
 /// Permutation array to map from VTK to DOLFINX node ordering
@@ -115,5 +121,11 @@ compute_permutation(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::uint8_t>& p);
+
+/// Get VTK cell identifier
+/// @param[in] mesh The Mesh
+/// @param[in] dim The topological dimension of the cell
+/// @return The VTK cell identifier
+std::int8_t get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh, int dim);
 
 } // namespace dolfinx::io::cells

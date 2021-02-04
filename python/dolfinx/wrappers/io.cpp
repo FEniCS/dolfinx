@@ -6,8 +6,8 @@
 
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/VTKFileNew.h>
 #include <dolfinx/io/XDMFFile.h>
@@ -32,22 +32,16 @@ namespace dolfinx_wrappers
 void io(py::module& m)
 {
 
+  // dolfinx::io::cell vtk cell type converter
+  m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type);
+
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk);
   m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh);
 
   // TODO: Template for different values dtypes
   m.def("extract_local_entities",
-        [](const dolfinx::mesh::Mesh& mesh, const int entity_dim,
-           const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                              Eigen::RowMajor>& entities,
-           const py::array_t<std::int32_t>& values) {
-          py::buffer_info buf = values.request();
-          std::vector<std::int32_t> vals((std::int32_t*)buf.ptr,
-                                         (std::int32_t*)buf.ptr + buf.size);
-          return dolfinx::io::xdmf_utils::extract_local_entities(
-              mesh, entity_dim, entities, vals);
-        });
+        &dolfinx::io::xdmf_utils::extract_local_entities);
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
@@ -84,8 +78,17 @@ void io(py::module& m)
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
-      .def("write_function", &dolfinx::io::XDMFFile::write_function,
+      .def("write_function",
+           py::overload_cast<const dolfinx::fem::Function<double>&, double,
+                             const std::string&>(
+               &dolfinx::io::XDMFFile::write_function),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
+      .def(
+          "write_function",
+          py::overload_cast<const dolfinx::fem::Function<std::complex<double>>&,
+                            double, const std::string&>(
+              &dolfinx::io::XDMFFile::write_function),
+          py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
            py::arg("meshtags"),
            py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
@@ -110,9 +113,23 @@ void io(py::module& m)
            }),
            py::arg("filename"))
       .def("write",
-           py::overload_cast<const dolfinx::function::Function<PetscScalar>&>(
+           py::overload_cast<const dolfinx::fem::Function<double>&>(
                &dolfinx::io::VTKFile::write),
            py::arg("u"))
+      .def("write",
+           py::overload_cast<
+               const dolfinx::fem::Function<std::complex<double>>&>(
+               &dolfinx::io::VTKFile::write),
+           py::arg("u"))
+      .def("write",
+           py::overload_cast<const dolfinx::fem::Function<double>&, double>(
+               &dolfinx::io::VTKFile::write),
+           py::arg("u"), py::arg("t"))
+      .def(
+          "write",
+          py::overload_cast<const dolfinx::fem::Function<std::complex<double>>&,
+                            double>(&dolfinx::io::VTKFile::write),
+          py::arg("u"), py::arg("t"))
       .def("write",
            py::overload_cast<const dolfinx::mesh::Mesh&>(
                &dolfinx::io::VTKFile::write),
@@ -134,11 +151,17 @@ void io(py::module& m)
               py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::VTKFileNew::close)
       .def("write",
+           py::overload_cast<const std::vector<std::reference_wrapper<
+                                 const dolfinx::fem::Function<double>>>&,
+                             double>(&dolfinx::io::VTKFileNew::write),
+           py::arg("u"), py::arg("t") = 0.0)
+      .def("write",
            py::overload_cast<
                const std::vector<std::reference_wrapper<
-                   const dolfinx::function::Function<PetscScalar>>>&,
+                   const dolfinx::fem::Function<std::complex<double>>>>&,
                double>(&dolfinx::io::VTKFileNew::write),
            py::arg("u"), py::arg("t") = 0.0)
+
       .def("write",
            py::overload_cast<const dolfinx::mesh::Mesh&, double>(
                &dolfinx::io::VTKFileNew::write),

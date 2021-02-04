@@ -7,7 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/function/Function.h>
+#include <dolfinx/fem/Function.h>
 #include <functional>
 #include <memory>
 #include <string>
@@ -65,13 +65,20 @@ public:
   /// @param[in] time Time parameter to associate with the @p mesh
   void write(const mesh::Mesh& mesh, double time = 0.0);
 
-  /// Write a Function to a VTK file for visualisation
-  /// @param[in] u The Function to write to file
+  /// Output fem::Function and timestep
+  /// @param[in] u List of functions to write to file
   /// @param[in] time Time parameter to associate with the @p mesh
-  void
-  write(const std::vector<
-            std::reference_wrapper<const function::Function<PetscScalar>>>& u,
-        double time = 0.0);
+  void write(
+      const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
+      double t);
+
+  /// Output fem::Function and timestep
+  /// @param[in] u List of functions to write to file
+  /// @param[in] time Time parameter to associate with the @p mesh
+  void write(
+      const std::vector<
+          std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
+      double t);
 
 private:
   std::unique_ptr<pugi::xml_document> _pvd_xml;

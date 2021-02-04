@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <array>
 #include <map>
 #include <set>
@@ -52,7 +52,7 @@ CellType cell_facet_type(CellType type);
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 get_entity_vertices(CellType type, int dim);
 
-/// Get entities of dimsion dim1 and that make up entities of dimension
+/// Get entities of dimension dim1 and that make up entities of dimension
 /// dim0
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 get_sub_entities(CellType type, int dim0, int dim1);

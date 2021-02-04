@@ -9,6 +9,7 @@
 #include "pugixml.hpp"
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/ElementDofLayout.h>
 
 using namespace dolfinx;
@@ -19,7 +20,7 @@ void xdmf_mesh::add_topology_data(
     MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
     const std::string path_prefix, const mesh::Topology& topology,
     const mesh::Geometry& geometry, const int dim,
-    const std::vector<std::int32_t>& active_entities)
+    const tcb::span<const std::int32_t>& active_entities)
 {
   LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
 
@@ -50,8 +51,7 @@ void xdmf_mesh::add_topology_data(
   assert(map_g);
   const std::int64_t offset_g = map_g->local_range()[0];
 
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map_g->ghosts();
-
+  const std::vector<std::int64_t>& ghosts = map_g->ghosts();
   const std::vector vtk_map = io::cells::transpose(
       io::cells::perm_vtk(entity_cell_type, num_nodes_per_entity));
   auto map_e = topology.index_map(dim);
@@ -62,7 +62,7 @@ void xdmf_mesh::add_topology_data(
     {
       assert(c < cells_g.num_nodes());
       auto nodes = cells_g.links(c);
-      for (int i = 0; i < nodes.rows(); ++i)
+      for (std::size_t i = 0; i < nodes.size(); ++i)
       {
         std::int64_t global_index = nodes[vtk_map[i]];
         if (global_index < map_g->size_local())
@@ -89,18 +89,18 @@ void xdmf_mesh::add_topology_data(
 
       // Find local number of entity wrt. cell
       auto cell_entities = c_to_e->links(c);
-      const auto* it0 = std::find(
-          cell_entities.data(), cell_entities.data() + cell_entities.rows(), e);
-      assert(it0 != (cell_entities.data() + cell_entities.rows()));
-      const int local_cell_entity = std::distance(cell_entities.data(), it0);
+      auto it0 = std::find(cell_entities.begin(), cell_entities.end(), e);
+      assert(it0 != cell_entities.end());
+      const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
+      // FIXME: Move dynamic  allocation outside of loop
       // Tabulate geometry dofs for the entity
-      const Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs
+      const std::vector<int> entity_dofs
           = geometry.cmap().dof_layout().entity_closure_dofs(dim,
                                                              local_cell_entity);
 
       auto nodes = cells_g.links(c);
-      for (Eigen::Index i = 0; i < entity_dofs.rows(); ++i)
+      for (std::size_t i = 0; i < entity_dofs.size(); ++i)
       {
         std::int64_t global_index = nodes[entity_dofs[vtk_map[i]]];
         if (global_index < map_g->size_local())
@@ -169,7 +169,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);
   if (width == 3)
-    std::copy(_x.data(), _x.data() + num_values, x.begin());
+    std::copy_n(_x.data(), num_values, x.begin());
   else
   {
     for (int i = 0; i < num_points_local; ++i)
@@ -215,7 +215,8 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   std::iota(active_cells.begin(), active_cells.end(), 0);
 
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
-                    mesh.geometry(), tdim, active_cells);
+                    mesh.geometry(), tdim,
+                    tcb::span(active_cells.data(), num_cells));
 
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());

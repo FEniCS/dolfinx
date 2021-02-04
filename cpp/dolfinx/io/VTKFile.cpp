@@ -8,15 +8,15 @@
 #include "VTKWriter.h"
 #include "pugixml.hpp"
 #include <boost/cstdint.hpp>
+#include <boost/filesystem.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
-#include <dolfinx/la/PETScVector.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <iomanip>
@@ -29,16 +29,18 @@ using namespace dolfinx::io;
 
 namespace
 {
-void write_function(const function::Function<PetscScalar>& u,
-                    const std::string filename, const std::size_t counter,
-                    double time);
+template <typename Scalar>
+void write_function(const fem::Function<Scalar>& u, const std::string filename,
+                    const std::size_t counter, double time);
 void write_mesh(const mesh::Mesh& mesh, const std::string filename,
                 const std::size_t counter, double time);
 std::string init(const mesh::Mesh& mesh, const std::string filename,
                  const std::size_t counter, std::size_t dim);
-void results_write(const function::Function<PetscScalar>& u, std::string file);
-void write_point_data(const function::Function<PetscScalar>& u,
-                      const mesh::Mesh& mesh, std::string file);
+template <typename Scalar>
+void results_write(const fem::Function<Scalar>& u, std::string file);
+template <typename Scalar>
+void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
+                      std::string file);
 void pvd_file_write(std::size_t step, double time, const std::string filename,
                     std::string file);
 void pvtu_write_function(std::size_t dim, std::size_t rank,
@@ -49,9 +51,9 @@ void pvtu_write_function(std::size_t dim, std::size_t rank,
 void pvtu_write_mesh(const std::string filename,
                      const std::string pvtu_filename, const std::size_t counter,
                      const std::size_t num_processes);
-void pvtu_write(const function::Function<PetscScalar>& u,
-                const std::string filename, const std::string pvtu_filename,
-                const std::size_t counter);
+template <typename Scalar>
+void pvtu_write(const fem::Function<Scalar>& u, const std::string filename,
+                const std::string pvtu_filename, const std::size_t counter);
 void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
                      const std::string vtu_filename);
 void vtk_header_close(std::string file);
@@ -171,9 +173,9 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
   return vtu_filename;
 }
 //----------------------------------------------------------------------------
-void write_function(const function::Function<PetscScalar>& u,
-                    const std::string filename, const std::size_t counter,
-                    double time)
+template <typename Scalar>
+void write_function(const fem::Function<Scalar>& u, const std::string filename,
+                    const std::size_t counter, double time)
 {
   assert(u.function_space());
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
@@ -243,10 +245,10 @@ void write_mesh(const mesh::Mesh& mesh, const std::string filename,
   DLOG(INFO) << "Saved mesh in VTK format to file:" << filename;
 }
 //----------------------------------------------------------------------------
-void results_write(const function::Function<PetscScalar>& u,
-                   std::string vtu_filename)
+template <typename Scalar>
+void results_write(const fem::Function<Scalar>& u, std::string vtu_filename)
 {
-  // Get rank of function::Function
+  // Get rank of fem::Function
   const int rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
@@ -296,8 +298,9 @@ void results_write(const function::Function<PetscScalar>& u,
     write_point_data(u, *mesh, vtu_filename);
 }
 //----------------------------------------------------------------------------
-void write_point_data(const function::Function<PetscScalar>& u,
-                      const mesh::Mesh& mesh, std::string vtu_filename)
+template <typename Scalar>
+void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
+                      std::string vtu_filename)
 {
   const int rank = u.function_space()->element()->value_rank();
 
@@ -309,8 +312,8 @@ void write_point_data(const function::Function<PetscScalar>& u,
   fp.precision(16);
 
   // Get function values at vertices
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values = u.compute_point_values();
+  Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values
+      = u.compute_point_values();
 
   if (rank == 0)
   {
@@ -520,11 +523,14 @@ void pvtu_write_function(std::size_t dim, std::size_t rank,
   data_array_node.append_attribute("NumberOfComponents")
       = (unsigned int)num_components;
 
+  boost::filesystem::path p(filename);
+  std::string local_filename = p.filename().string();
+
   // Write vtu file list
   for (std::size_t i = 0; i < num_processes; i++)
   {
     const std::string tmp_string
-        = vtu_name(i, num_processes, counter, filename, ".vtu");
+        = vtu_name(i, num_processes, counter, local_filename, ".vtu");
     pugi::xml_node piece_node = grid_node.append_child("Piece");
     piece_node.append_attribute("Source") = tmp_string.c_str();
   }
@@ -558,9 +564,9 @@ void pvtu_write_mesh(const std::string filename, const std::string fname,
   xml_doc.save_file(fname.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void pvtu_write(const function::Function<PetscScalar>& u,
-                const std::string filename, const std::string fname,
-                const std::size_t counter)
+template <typename Scalar>
+void pvtu_write(const fem::Function<Scalar>& u, const std::string filename,
+                const std::string fname, const std::size_t counter)
 {
   assert(u.function_space()->element());
   const int rank = u.function_space()->element()->value_rank();
@@ -611,7 +617,13 @@ void VTKFile::write(const mesh::Mesh& mesh)
   ++_counter;
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const function::Function<PetscScalar>& u)
+void VTKFile::write(const fem::Function<double>& u)
+{
+  write_function(u, _filename, _counter, _counter);
+  ++_counter;
+}
+//----------------------------------------------------------------------------
+void VTKFile::write(const fem::Function<std::complex<double>>& u)
 {
   write_function(u, _filename, _counter, _counter);
   ++_counter;
@@ -623,7 +635,13 @@ void VTKFile::write(const mesh::Mesh& mesh, double time)
   ++_counter;
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const function::Function<PetscScalar>& u, double time)
+void VTKFile::write(const fem::Function<double>& u, double time)
+{
+  write_function(u, _filename, _counter, time);
+  ++_counter;
+}
+//----------------------------------------------------------------------------
+void VTKFile::write(const fem::Function<std::complex<double>>& u, double time)
 {
   write_function(u, _filename, _counter, time);
   ++_counter;

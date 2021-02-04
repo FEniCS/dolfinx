@@ -12,8 +12,8 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <string>
@@ -43,8 +43,9 @@ std::string rank_to_string(int value_rank)
 }
 //-----------------------------------------------------------------------------
 
-/// Returns true for DG0 function::Functions
-bool has_cell_centred_data(const function::Function<PetscScalar>& u)
+/// Returns true for DG0 fem::Functions
+template <typename Scalar>
+bool has_cell_centred_data(const fem::Function<Scalar>& u)
 {
   int cell_based_dim = 1;
   const int rank = u.function_space()->element()->value_rank();
@@ -61,10 +62,10 @@ bool has_cell_centred_data(const function::Function<PetscScalar>& u)
 
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-int get_padded_width(const function::Function<PetscScalar>& u)
+int get_padded_width(const fem::FiniteElement& e)
 {
-  const int width = u.function_space()->element()->value_size();
-  const int rank = u.function_space()->element()->value_rank();
+  const int width = e.value_size();
+  const int rank = e.value_rank();
   if (rank == 1 and width == 2)
     return 3;
   else if (rank == 2 and width == 4)
@@ -72,14 +73,9 @@ int get_padded_width(const function::Function<PetscScalar>& u)
   return width;
 }
 //-----------------------------------------------------------------------------
-
-} // namespace
-
-//-----------------------------------------------------------------------------
-void xdmf_function::add_function(MPI_Comm comm,
-                                 const function::Function<PetscScalar>& u,
-                                 const double t, pugi::xml_node& xml_node,
-                                 const hid_t h5_id)
+template <typename Scalar>
+void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
+                   const double t, pugi::xml_node& xml_node, const hid_t h5_id)
 {
   LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
 
@@ -87,8 +83,8 @@ void xdmf_function::add_function(MPI_Comm comm,
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
 
-  // Get function::Function data values and shape
-  std::vector<PetscScalar> data_values;
+  // Get fem::Function data values and shape
+  std::vector<Scalar> data_values;
   const bool cell_centred = has_cell_centred_data(u);
   if (cell_centred)
     data_values = xdmf_utils::get_cell_data_values(u);
@@ -102,18 +98,16 @@ void xdmf_function::add_function(MPI_Comm comm,
   assert(map_v);
 
   // Add attribute DataItem node and write data
-  const int width = get_padded_width(u);
+  const int width = get_padded_width(*u.function_space()->element());
   assert(data_values.size() % width == 0);
   const int num_values
       = cell_centred ? map_c->size_global() : map_v->size_global();
 
   const int value_rank = u.function_space()->element()->value_rank();
 
-#ifdef PETSC_USE_COMPLEX
-  const std::vector<std::string> components = {"real", "imag"};
-#else
-  const std::vector<std::string> components = {""};
-#endif
+  std::vector<std::string> components = {""};
+  if constexpr (!std::is_scalar<Scalar>::value)
+    components = {"real", "imag"};
 
   std::string t_str = boost::lexical_cast<std::string>(t);
   std::replace(t_str.begin(), t_str.end(), '.', '_');
@@ -141,33 +135,59 @@ void xdmf_function::add_function(MPI_Comm comm,
     attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
     const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
-#ifdef PETSC_USE_COMPLEX
-    // FIXME: Avoid copies by writing directly a compound data
-    std::vector<double> component_data_values(data_values.size());
-    if (component == "real")
+    if constexpr (!std::is_scalar<Scalar>::value)
     {
-      for (std::size_t i = 0; i < data_values.size(); i++)
-        component_data_values[i] = data_values[i].real();
-    }
-    else if (component == "imag")
-    {
-      for (std::size_t i = 0; i < data_values.size(); i++)
-        component_data_values[i] = data_values[i].imag();
-    }
+      // Complex case
 
-    // Add data item of component
-    const std::int64_t offset = dolfinx::MPI::global_offset(
-        comm, component_data_values.size() / width, true);
-    xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
-                              component_data_values, offset,
-                              {num_values, width}, "", use_mpi_io);
-#else
-    // Add data item
-    const std::int64_t offset
-        = dolfinx::MPI::global_offset(comm, data_values.size() / width, true);
-    xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name, data_values,
-                              offset, {num_values, width}, "", use_mpi_io);
-#endif
+      // FIXME: Avoid copies by writing directly a compound data
+      std::vector<double> component_data_values(data_values.size());
+      if (component == "real")
+      {
+        for (std::size_t i = 0; i < data_values.size(); i++)
+          component_data_values[i] = data_values[i].real();
+      }
+      else if (component == "imag")
+      {
+        for (std::size_t i = 0; i < data_values.size(); i++)
+          component_data_values[i] = data_values[i].imag();
+      }
+
+      // Add data item of component
+      const std::int64_t offset = dolfinx::MPI::global_offset(
+          comm, component_data_values.size() / width, true);
+      xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
+                                component_data_values, offset,
+                                {num_values, width}, "", use_mpi_io);
+    }
+    else
+    {
+      // Real case
+
+      // Add data item
+      const std::int64_t offset
+          = dolfinx::MPI::global_offset(comm, data_values.size() / width, true);
+      xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
+                                data_values, offset, {num_values, width}, "",
+                                use_mpi_io);
+    }
   }
+}
+//-----------------------------------------------------------------------------
+} // namespace
+
+//-----------------------------------------------------------------------------
+void xdmf_function::add_function(MPI_Comm comm, const fem::Function<double>& u,
+                                 const double t, pugi::xml_node& xml_node,
+                                 const hid_t h5_id)
+{
+  _add_function(comm, u, t, xml_node, h5_id);
+}
+//-----------------------------------------------------------------------------
+void xdmf_function::add_function(MPI_Comm comm,
+                                 const fem::Function<std::complex<double>>& u,
+                                 const double t, pugi::xml_node& xml_node,
+                                 const hid_t h5_id)
+{
+  _add_function(comm, u, t, xml_node, h5_id);
 }
 //-----------------------------------------------------------------------------

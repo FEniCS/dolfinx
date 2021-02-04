@@ -60,7 +60,7 @@ find_package(PkgConfig REQUIRED)
 
 # Find PETSc pkg-config file. Note: craypetsc_real is on Cray systems
 set(ENV{PKG_CONFIG_PATH} "$ENV{CRAY_PETSC_PREFIX_DIR}/lib/pkgconfig:$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-pkg_search_module(PETSC craypetsc_real PETSc)
+pkg_search_module(PETSC craypetsc_real petsc PETSc)
 
 # Extract major, minor, etc from version string
 if (PETSC_VERSION)

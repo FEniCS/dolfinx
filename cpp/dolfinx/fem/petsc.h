@@ -6,51 +6,64 @@
 
 #pragma once
 
-#include <dolfinx/la/PETScMatrix.h>
-#include <dolfinx/la/PETScVector.h>
 #include <memory>
+#include <petscmat.h>
 #include <petscvec.h>
 #include <vector>
 
-namespace dolfinx
+namespace dolfinx::common
 {
-namespace function
-{
-class FunctionSpace;
-} // namespace function
+class IndexMap;
+}
 
-namespace fem
+namespace dolfinx::fem
 {
+
 template <typename T>
 class DirichletBC;
 template <typename T>
 class Form;
+class FunctionSpace;
 
 /// Create a matrix
-/// @param[in] a  A bilinear form
-/// @return A matrix. The matrix is not zeroed.
-la::PETScMatrix create_matrix(const Form<PetscScalar>& a);
+/// @param[in] a A bilinear form
+/// @param[in] type The PETSc matrix type to create
+/// @return A sparse matrix with a layout and sparsity that matches the
+/// bilinear form. The caller is responsible for destroying the Mat
+/// object.
+Mat create_matrix(const Form<PetscScalar>& a,
+                  const std::string& type = std::string());
 
-/// Initialise monolithic matrix for an array for bilinear forms. Matrix
-/// is not zeroed.
-la::PETScMatrix create_matrix_block(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a);
+/// Initialise a monolithic matrix for an array of bilinear forms
+/// @param[in] a Rectangular array of bilinear forms. The `a(i, j)` form
+/// will correspond to the `(i, j)` block in the returned matrix
+/// @param[in] type The type of PETSc Mat. If empty the PETSc default is
+/// used.
+/// @return A sparse matrix  with a layout and sparsity that matches the
+/// bilinear forms. The caller is responsible for destroying the Mat
+/// object.
+Mat create_matrix_block(
+    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
+    const std::string& type = std::string());
 
-/// Create nested (MatNest) matrix. Matrix is not zeroed.
-la::PETScMatrix create_matrix_nest(
-    const Eigen::Ref<
-        const Eigen::Array<const fem::Form<PetscScalar>*, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>& a);
+/// Create nested (MatNest) matrix
+///
+/// The caller is responsible for destroying the Mat object
+Mat create_matrix_nest(
+    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<std::string>>& types);
 
 /// Initialise monolithic vector. Vector is not zeroed.
-la::PETScVector create_vector_block(
-    const std::vector<std::reference_wrapper<const common::IndexMap>>& maps);
+///
+/// The caller is responsible for destroying the Mat object
+Vec create_vector_block(
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
 /// Create nested (VecNest) vector. Vector is not zeroed.
-la::PETScVector
-create_vector_nest(const std::vector<const common::IndexMap*>& maps);
+Vec create_vector_nest(
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
 // -- Vectors ----------------------------------------------------------------
 
@@ -104,5 +117,4 @@ void set_bc_petsc(
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     const Vec x0, double scale = 1.0);
 
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

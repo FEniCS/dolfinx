@@ -11,10 +11,9 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -30,39 +29,11 @@ using namespace dolfinx::io;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Get VTK cell type
-std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, int cell_dim)
-{
-
-  // Get cell type
-  mesh::CellType cell_type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
-
-  // Determine VTK cell type (Using arbitrary Lagrange elements)
-  // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
-  switch (cell_type)
-  {
-  case mesh::CellType::point:
-    return 1;
-  case mesh::CellType::interval:
-    return 68;
-  case mesh::CellType::triangle:
-    return 69;
-  case mesh::CellType::quadrilateral:
-    return 70;
-  case mesh::CellType::tetrahedron:
-    return 71;
-  case mesh::CellType::hexahedron:
-    return 72;
-  default:
-    throw std::runtime_error("Unknown cell type");
-  }
-}
-//----------------------------------------------------------------------------
 // Write cell data (ascii)
+template <typename Scalar>
 std::string ascii_cell_data(const mesh::Mesh& mesh,
                             const std::vector<std::size_t>& offset,
-                            const std::vector<PetscScalar>& values,
+                            const std::vector<Scalar>& values,
                             std::size_t data_dim, std::size_t rank)
 {
   std::ostringstream ss;
@@ -112,7 +83,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   const int num_cells = mesh.topology().index_map(cell_dim)->size_local();
 
   // Get VTK cell type
-  const std::int8_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim);
+  const std::int8_t vtk_cell_type
+      = io::cells::get_vtk_cell_type(mesh, cell_dim);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -174,8 +146,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     for (int c = 0; c < x_dofmap.num_nodes(); ++c)
     {
       auto x_dofs = x_dofmap.links(c);
-      for (int i = 0; i < x_dofs.rows(); ++i)
-        file << x_dofs(map[i]) << " ";
+      for (std::size_t i = 0; i < x_dofs.size(); ++i)
+        file << x_dofs[map[i]] << " ";
       file << " ";
     }
     file << "</DataArray>" << std::endl;
@@ -199,8 +171,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     {
       auto vertices = c_to_v->links(c);
       auto x_dofs = x_dofmap.links(c);
-      for (int i = 0; i < vertices.rows(); ++i)
-        vertex_to_node[vertices[i]] = x_dofs(i);
+      for (std::size_t i = 0; i < vertices.size(); ++i)
+        vertex_to_node[vertices[i]] = x_dofs[i];
     }
 
     const mesh::CellType e_type
@@ -217,7 +189,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     {
       auto vertices = e_to_v->links(e);
       for (int i = 0; i < num_vertices; ++i)
-        file << vertex_to_node[vertices(map_vtk[i])] << " ";
+        file << vertex_to_node[vertices[map_vtk[i]]] << " ";
       file << " ";
     }
     file << "</DataArray>" << std::endl;
@@ -246,18 +218,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   file.close();
 }
 //-----------------------------------------------------------------------------
-
-} // namespace
-
-//----------------------------------------------------------------------------
-void VTKWriter::write_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
-                           std::string filename)
-{
-  write_ascii_mesh(mesh, cell_dim, filename);
-}
-//----------------------------------------------------------------------------
-void VTKWriter::write_cell_data(const function::Function<PetscScalar>& u,
-                                std::string filename)
+template <typename Scalar>
+void _write_cell_data(const fem::Function<Scalar>& u, std::string filename)
 {
   assert(u.function_space());
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
@@ -268,7 +230,7 @@ void VTKWriter::write_cell_data(const function::Function<PetscScalar>& u,
   const std::int32_t num_cells = mesh->topology().index_map(tdim)->size_local();
   std::string encode_string = "ascii";
 
-  // Get rank of function::Function
+  // Get rank of fem::Function
   const int rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
@@ -345,8 +307,8 @@ void VTKWriter::write_cell_data(const function::Function<PetscScalar>& u,
   }
 
   // Get  values
-  std::vector<PetscScalar> values(dof_set.size());
-  const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& _x = u.x()->array();
+  std::vector<Scalar> values(dof_set.size());
+  const std::vector<Scalar>& _x = u.x()->array();
   for (std::size_t i = 0; i < dof_set.size(); ++i)
     values[i] = _x[dof_set[i]];
 
@@ -354,5 +316,27 @@ void VTKWriter::write_cell_data(const function::Function<PetscScalar>& u,
   fp << ascii_cell_data(*mesh, offset, values, data_dim, rank);
   fp << "</DataArray> " << std::endl;
   fp << "</CellData> " << std::endl;
+}
+//----------------------------------------------------------------------------
+
+} // namespace
+
+//----------------------------------------------------------------------------
+void VTKWriter::write_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
+                           std::string filename)
+{
+  write_ascii_mesh(mesh, cell_dim, filename);
+}
+//----------------------------------------------------------------------------
+void VTKWriter::write_cell_data(const fem::Function<double>& u,
+                                std::string filename)
+{
+  _write_cell_data(u, filename);
+}
+//----------------------------------------------------------------------------
+void VTKWriter::write_cell_data(const fem::Function<std::complex<double>>& u,
+                                std::string filename)
+{
+  _write_cell_data(u, filename);
 }
 //----------------------------------------------------------------------------

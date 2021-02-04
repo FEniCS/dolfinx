@@ -8,11 +8,11 @@
 
 #include "Form.h"
 #include "utils.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/function/Constant.h>
-#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/fem/Constant.h>
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -36,7 +36,7 @@ T assemble_cells(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<T>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info);
+    const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and accumulate result
 template <typename T>
@@ -47,8 +47,8 @@ T assemble_exterior_facets(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<T>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
+    const std::vector<std::uint32_t>& cell_info,
+    const std::vector<std::uint8_t>& perms);
 
 /// Assemble functional over interior facets
 template <typename T>
@@ -59,8 +59,8 @@ T assemble_interior_facets(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<int>& offsets, const std::vector<T>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms);
+    const std::vector<std::uint32_t>& cell_info,
+    const std::vector<std::uint8_t>& perms);
 
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -73,76 +73,64 @@ T assemble_scalar(const fem::Form<T>& M)
       = mesh->topology().connectivity(tdim, 0)->num_nodes();
 
   // Prepare constants
-  if (!M.all_constants_set())
-    throw std::runtime_error("Unset constant in Form");
-  auto constants = M.constants();
+  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants
+      = M.constants();
 
   std::vector<T> constant_values;
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    const std::vector<T>& array = constant.second->value;
-    constant_values.insert(constant_values.end(), array.data(),
-                           array.data() + array.size());
+    const std::vector<T>& array = constant->value;
+    constant_values.insert(constant_values.end(), array.begin(), array.end());
   }
 
   // Prepare coefficients
   const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
       = pack_coefficients(M);
 
-  const FormIntegrals<T>& integrals = M.integrals();
-  const bool needs_permutation_data = integrals.needs_permutation_data();
+  const bool needs_permutation_data = M.needs_permutation_data();
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
-      = needs_permutation_data
-            ? mesh->topology().get_cell_permutation_info()
-            : Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_cells);
+  const std::vector<std::uint32_t>& cell_info
+      = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
+                               : std::vector<std::uint32_t>(num_cells);
 
   T value(0);
-  for (int i = 0; i < integrals.num_integrals(IntegralType::cell); ++i)
+  for (int i : M.integral_ids(IntegralType::cell))
   {
-    const auto& fn = integrals.get_tabulate_tensor(IntegralType::cell, i);
+    const auto& fn = M.kernel(IntegralType::cell, i);
     const std::vector<std::int32_t>& active_cells
-        = integrals.integral_domains(IntegralType::cell, i);
+        = M.domains(IntegralType::cell, i);
     value += fem::impl::assemble_cells(mesh->geometry(), active_cells, fn,
                                        coeffs, constant_values, cell_info);
   }
 
-  if (integrals.num_integrals(IntegralType::exterior_facet) > 0
-      or integrals.num_integrals(IntegralType::interior_facet) > 0)
+  if (M.num_integrals(IntegralType::exterior_facet) > 0
+      or M.num_integrals(IntegralType::interior_facet) > 0)
   {
     // FIXME: cleanup these calls? Some of these happen internally again.
     mesh->topology_mutable().create_entities(tdim - 1);
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    mesh->topology_mutable().create_entity_permutations();
 
-    const int facets_per_cell
-        = mesh::cell_num_entities(mesh->topology().cell_type(), tdim - 1);
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
-        = needs_permutation_data
-              ? mesh->topology().get_facet_permutations()
-              : Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>(
-                  facets_per_cell, num_cells);
+    const std::vector<std::uint8_t>& perms
+        = mesh->topology().get_facet_permutations();
 
-    for (int i = 0; i < integrals.num_integrals(IntegralType::exterior_facet);
-         ++i)
+    for (int i : M.integral_ids(IntegralType::exterior_facet))
     {
-      const auto& fn
-          = integrals.get_tabulate_tensor(IntegralType::exterior_facet, i);
+      const auto& fn = M.kernel(IntegralType::exterior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = integrals.integral_domains(IntegralType::exterior_facet, i);
+          = M.domains(IntegralType::exterior_facet, i);
       value += fem::impl::assemble_exterior_facets(
           *mesh, active_facets, fn, coeffs, constant_values, cell_info, perms);
     }
 
-    const std::vector<int> c_offsets = M.coefficients().offsets();
-    for (int i = 0; i < integrals.num_integrals(IntegralType::interior_facet);
-         ++i)
+    const std::vector<int> c_offsets = M.coefficient_offsets();
+    for (int i : M.integral_ids(IntegralType::interior_facet))
     {
-      const auto& fn
-          = integrals.get_tabulate_tensor(IntegralType::interior_facet, i);
+      const auto& fn = M.kernel(IntegralType::interior_facet, i);
       const std::vector<std::int32_t>& active_facets
-          = integrals.integral_domains(IntegralType::interior_facet, i);
+          = M.domains(IntegralType::interior_facet, i);
       value += fem::impl::assemble_interior_facets(
           *mesh, active_facets, fn, coeffs, c_offsets, constant_values,
           cell_info, perms);
@@ -161,7 +149,7 @@ T assemble_cells(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<T>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info)
+    const std::vector<std::uint32_t>& cell_info)
 {
   const int gdim = geometry.dim();
 
@@ -174,8 +162,7 @@ T assemble_cells(
       = geometry.x();
 
   // Create data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
 
   // Iterate over all cells
   T value(0);
@@ -183,9 +170,11 @@ T assemble_cells(
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     auto coeff_cell = coeffs.row(c);
     fn(&value, coeff_cell.data(), constant_values.data(),
@@ -203,8 +192,8 @@ T assemble_exterior_facets(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<T>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
+    const std::vector<std::uint32_t>& cell_info,
+    const std::vector<std::uint8_t>& perms)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -218,8 +207,7 @@ T assemble_exterior_facets(
       = mesh.geometry().x();
 
   // Creat data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -236,20 +224,22 @@ T assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cell);
-    const auto* it
-        = std::find(facets.data(), facets.data() + facets.rows(), facet);
-    assert(it != (facets.data() + facets.rows()));
+    auto it = std::find(facets.begin(), facets.end(), facet);
+    assert(it != facets.end());
     const int local_facet = std::distance(facets.data(), it);
 
+    // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
 
     auto coeff_cell = coeffs.row(cell);
     fn(&value, coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perms(local_facet, cell),
-       cell_info[cell]);
+       coordinate_dofs.data(), &local_facet,
+       &perms[cell * facets.size() + local_facet], cell_info[cell]);
   }
 
   return value;
@@ -263,8 +253,8 @@ T assemble_interior_facets(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<int>& offsets, const std::vector<T>& constant_values,
-    const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info,
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms)
+    const std::vector<std::uint32_t>& cell_info,
+    const std::vector<std::uint8_t>& perms)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -278,9 +268,8 @@ T assemble_interior_facets(
       = mesh.geometry().x();
 
   // Creat data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(2 * num_dofs_g, gdim);
-  Eigen::Array<T, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
+  std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
+  std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -289,22 +278,24 @@ T assemble_interior_facets(
   assert(c_to_f);
 
   // Iterate over all facets
-  T value(0);
+  T value = 0;
+  const int offset_g = gdim * num_dofs_g;
   for (std::int32_t f : active_facets)
   {
     // Create attached cell
     auto cells = f_to_c->links(f);
-    assert(cells.rows() == 2);
+    assert(cells.size() == 2);
+
+    const int facets_per_cell = c_to_f->num_links(cells[0]);
 
     // Get local index of facet with respect to the cell
     std::array<int, 2> local_facet;
     for (int i = 0; i < 2; ++i)
     {
       auto facets = c_to_f->links(cells[i]);
-      const auto* it
-          = std::find(facets.data(), facets.data() + facets.rows(), f);
-      assert(it != (facets.data() + facets.rows()));
-      local_facet[i] = std::distance(facets.data(), it);
+      auto it = std::find(facets.begin(), facets.end(), f);
+      assert(it != facets.end());
+      local_facet[i] = std::distance(facets.begin(), it);
     }
 
     // Get cell geometry
@@ -314,8 +305,8 @@ T assemble_interior_facets(
     {
       for (int j = 0; j < gdim; ++j)
       {
-        coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
-        coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
+        coordinate_dofs[i * gdim + j] = x_g(x_dofs0[i], j);
+        coordinate_dofs[offset_g + i * gdim + j] = x_g(x_dofs1[i], j);
       }
     }
 
@@ -329,14 +320,14 @@ T assemble_interior_facets(
     {
       // Loop over entries for coefficient i
       const int num_entries = offsets[i + 1] - offsets[i];
-      coeff_array.segment(2 * offsets[i], num_entries)
-          = coeff_cell0.segment(offsets[i], num_entries);
-      coeff_array.segment(offsets[i + 1] + offsets[i], num_entries)
-          = coeff_cell1.segment(offsets[i], num_entries);
+      std::copy_n(coeff_cell0.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), 2 * offsets[i]));
+      std::copy_n(coeff_cell1.data() + offsets[i], num_entries,
+                  std::next(coeff_array.begin(), offsets[i + 1] + offsets[i]));
     }
 
-    const std::array perm{perms(local_facet[0], cells[0]),
-                          perms(local_facet[1], cells[1])};
+    const std::array perm{perms[cells[0] * facets_per_cell + local_facet[0]],
+                          perms[cells[1] * facets_per_cell + local_facet[1]]};
     fn(&value, coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
        cell_info[cells[0]]);

@@ -43,27 +43,12 @@ public:
   /// @param[in] parent_map TODO
   /// @param[in] sub_dofmaps TODO
   /// @param[in] cell_type The cell type of the mesh.
-  /// @param[in] base_permutations The base permutations for the dofs on
-  ///   the cell. These will be used to permute the dofs on the cell.
-  ///   Each row of this array is one base permutation, and the number
-  ///   of columns should be the number of (local) dofs on each cell.
-  ///   Points (dim 0 entities) have no permutations. Lines (dim 1
-  ///   entities) have one permutation each to represent the line being
-  ///   reversed. Faces (dim 2 entities) have two permutations each to
-  ///   represent the face being rotated (one vertex anticlockwise) and
-  ///   reflected. Volumes (dim 3 entities) have four permutations each
-  ///   to represent the volume being rotated (by one vertex) in three
-  ///   directions and reflected. It would be possible to represent a
-  ///   volume with 3 base permutations (2 rotations and 1 reflection),
-  ///   but the implementation with 3 is simpler.
   ElementDofLayout(
       int block_size,
       const std::vector<std::vector<std::set<int>>>& entity_dofs,
       const std::vector<int>& parent_map,
       const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps,
-      const mesh::CellType cell_type,
-      const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-          base_permutations);
+      const mesh::CellType cell_type);
 
   /// Copy the DOF layout, discarding any parent information
   ElementDofLayout copy() const;
@@ -103,15 +88,14 @@ public:
   /// @param[in] entity_dim The entity dimension
   /// @param[in] cell_entity_index The local entity index on the cell
   /// @return Degrees of freedom on a single element.
-  Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs(int entity_dim,
-                                                   int cell_entity_index) const;
+  std::vector<int> entity_dofs(int entity_dim, int cell_entity_index) const;
 
   /// Local-local closure dofs on entity of cell
   /// @param[in] entity_dim The entity dimension
   /// @param[in] cell_entity_index The local entity index on the cell
   /// @return Degrees of freedom on a single element
-  Eigen::Array<int, Eigen::Dynamic, 1>
-  entity_closure_dofs(int entity_dim, int cell_entity_index) const;
+  std::vector<int> entity_closure_dofs(int entity_dim,
+                                       int cell_entity_index) const;
 
   /// Direct access to all entity dofs (dof = _entity_dofs[dim][entity][i])
   const std::vector<std::vector<std::set<int>>>& entity_dofs_all() const;
@@ -142,13 +126,6 @@ public:
   ///   another map).
   bool is_view() const;
 
-  /// Returns the base permutations of the DoFs, as computed by FFCx
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  base_permutations() const
-  {
-    return _base_permutations;
-  }
-
 private:
   // Block size
   int _block_size;
@@ -176,9 +153,6 @@ private:
   // List of sub dofmaps
   std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
 
-  // The base permutations of the DoFs
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      _base_permutations;
 };
 
 } // namespace fem

@@ -5,12 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Geometry.h"
-#include "Partitioning.h"
+#include "Topology.h"
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/DofMapBuilder.h>
 #include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/fem/dofmapbuilder.h>
+#include <dolfinx/graph/partition.h>
 #include <sstream>
 
 using namespace dolfinx;
@@ -42,24 +42,9 @@ Geometry::x() const
 //-----------------------------------------------------------------------------
 const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d Geometry::node(int n) const
-{
-  return _x.row(n).matrix().transpose();
-}
-//-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Geometry::input_global_indices() const
 {
   return _input_global_indices;
-}
-//-----------------------------------------------------------------------------
-std::size_t Geometry::hash() const
-{
-  // Compute local hash
-  boost::hash<std::vector<double>> dhash;
-
-  std::vector<double> data(_x.data(), _x.data() + _x.size());
-  const std::size_t local_hash = dhash(data);
-  return local_hash;
 }
 //-----------------------------------------------------------------------------
 
@@ -72,34 +57,45 @@ mesh::Geometry mesh::create_geometry(
                                         Eigen::RowMajor>>& x)
 {
   // TODO: make sure required entities are initialised, or extend
-  // fem::DofMapBuilder::build to take connectivities
+  // fem::build_dofmap_data
 
   //  Build 'geometry' dofmap on the topology
-  auto [dof_index_map, dofmap] = fem::DofMapBuilder::build(
-      comm, topology, coordinate_element.dof_layout());
+  auto [dof_index_map, bs, dofmap]
+      = fem::build_dofmap_data(comm, topology, coordinate_element.dof_layout());
+
+  // If the mesh has higher order geometry, permute the dofmap
+  if (coordinate_element.needs_permutation_data())
+  {
+    const int D = topology.dim();
+    const int num_cells = topology.connectivity(D, 0)->num_nodes();
+    const std::vector<std::uint32_t>& cell_info
+        = topology.get_cell_permutation_info();
+
+    for (std::int32_t cell = 0; cell < num_cells; ++cell)
+      coordinate_element.unpermute_dofs(dofmap.links(cell).data(),
+                                        cell_info[cell]);
+  }
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
-  std::vector<std::int64_t> indices(cell_nodes.array().data(),
-                                    cell_nodes.array().data()
-                                        + cell_nodes.array().rows());
+  std::vector<std::int64_t> indices = cell_nodes.array();
   std::sort(indices.begin(), indices.end());
   indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
-      = graph::Partitioning::distribute_data<double>(comm, indices, x);
+      = graph::build::distribute_data<double>(comm, indices, x);
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
   std::vector l2g
-      = graph::Partitioning::compute_local_to_global_links(cell_nodes, dofmap);
+      = graph::build::compute_local_to_global_links(cell_nodes, dofmap);
 
   // Compute local (dof) to local (position in coords) map from (i)
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
-  std::vector l2l = graph::Partitioning::compute_local_to_local(l2g, indices);
+  std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
 
   // Build coordinate dof array
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(
@@ -112,6 +108,19 @@ mesh::Geometry mesh::create_geometry(
   {
     xg.row(i) = coords.row(l2l[i]);
     igi[i] = indices[l2l[i]];
+  }
+
+  // If the mesh has higher order geometry, permute the dofmap
+  if (coordinate_element.needs_permutation_data())
+  {
+    const int D = topology.dim();
+    const int num_cells = topology.connectivity(D, 0)->num_nodes();
+    const std::vector<std::uint32_t>& cell_info
+        = topology.get_cell_permutation_info();
+
+    for (std::int32_t cell = 0; cell < num_cells; ++cell)
+      coordinate_element.permute_dofs(dofmap.links(cell).data(),
+                                      cell_info[cell]);
   }
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,

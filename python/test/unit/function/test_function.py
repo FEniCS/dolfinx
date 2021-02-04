@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2014 Garth N. Wells
+# Copyright (C) 2011-2021 Garth N. Wells
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -6,7 +6,6 @@
 """Unit tests for the Function class"""
 
 import importlib
-import math
 
 import cffi
 import dolfinx
@@ -14,7 +13,7 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
-                     UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
+                     UnitCubeMesh, VectorFunctionSpace, geometry)
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from mpi4py import MPI
@@ -24,11 +23,6 @@ from petsc4py import PETSc
 @pytest.fixture
 def mesh():
     return UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
-
-
-@pytest.fixture
-def R(mesh):
-    return FunctionSpace(mesh, ('R', 0))
 
 
 @pytest.fixture
@@ -71,71 +65,53 @@ def test_compute_point_values(V, W, mesh):
     assert all(u_values == u_values2)
 
 
-@pytest.mark.skip
 def test_assign(V, W):
-    for V0, V1, vector_space in [(V, W, False), (W, V, True)]:
-        u = Function(V0)
-        u0 = Function(V0)
-        u1 = Function(V0)
-        u2 = Function(V0)
-        u3 = Function(V1)
+    for V_ in [V, W]:
+        u = Function(V_)
+        u0 = Function(V_)
+        u1 = Function(V_)
+        u2 = Function(V_)
+        with u.vector.localForm() as loc:
+            loc.set(1)
+        with u0.vector.localForm() as loc:
+            loc.set(2)
+        with u1.vector.localForm() as loc:
+            loc.set(3)
+        with u2.vector.localForm() as loc:
+            loc.set(4)
 
-        u.vector[:] = 1.0
-        u0.vector[:] = 2.0
-        u1.vector[:] = 3.0
-        u2.vector[:] = 4.0
-        u3.vector[:] = 5.0
-
-        uu = Function(V0)
-        uu.assign(2 * u)
-        assert uu.vector.get_local().sum() == u0.vector.get_local().sum()
-
-        uu = Function(V1)
-        uu.assign(3 * u)
-        assert uu.vector.get_local().sum() == u1.vector.get_local().sum()
+        # Test assign + scale
+        uu = Function(V_)
+        u.vector.copy(result=uu.vector)
+        uu.vector.scale(2)
+        assert uu.vector.array.sum() == u0.vector.array.sum()
 
         # Test complex assignment
-        expr = 3 * u - 4 * u1 - 0.1 * 4 * u * 4 + u2 + 3 * u0 / 3. / 0.5
+        expr = 3 * u.vector - 4 * u1.vector - 0.1 * 4 * u.vector * 4 + u2.vector + 3 * u0.vector / 3. / 0.5
+        expr.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         expr_scalar = 3 - 4 * 3 - 0.1 * 4 * 4 + 4. + 3 * 2. / 3. / 0.5
-        uu.assign(expr)
-        assert (round(
-            uu.vector.get_local().sum() - float(
-                expr_scalar * uu.vector.size()), 7) == 0)
+
+        expr.copy(result=uu.vector)
+        uu.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        assert np.isclose(uu.vector.array.sum() - expr_scalar * uu.vector.local_size, 0)
 
         # Test self assignment
-        expr = 3 * u - 5.0 * u2 + u1 - 5 * u
+        expr = 3 * u.vector - 5.0 * u2.vector + u1.vector - 5 * u.vector
+        expr.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         expr_scalar = 3 - 5 * 4. + 3. - 5
-        u.assign(expr)
-        assert (round(
-            u.vector.get_local().sum() - float(
-                expr_scalar * u.vector.size()), 7) == 0)
+        expr.copy(result=u.vector)
+        u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        assert np.isclose(u.vector.array.sum() - expr_scalar * u.vector.local_size, 0)
 
         # Test zero assignment
-        u.assign(-u2 / 2 + 2 * u1 - u1 / 0.5 + u2 * 0.5)
-        assert round(u.vector.get_local().sum() - 0.0, 7) == 0
-
-        # Test erroneous assignments
-        uu = Function(V1)
-
-        def f(values, x):
-            values[:, 0] = 1.0
-
-        with pytest.raises(RuntimeError):
-            uu.assign(1.0)
-        with pytest.raises(RuntimeError):
-            uu.assign(4 * f)
-
-        if not vector_space:
-            with pytest.raises(RuntimeError):
-                uu.assign(u * u0)
-            with pytest.raises(RuntimeError):
-                uu.assign(4 / u0)
-            with pytest.raises(RuntimeError):
-                uu.assign(4 * u * u1)
+        expr = -u2.vector / 2 + 2 * u1.vector - u1.vector / 0.5 + u2.vector * 0.5
+        expr.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        expr.copy(result=u.vector)
+        u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        assert round(u.vector.array.sum() - 0.0, 7) == 0
 
 
-def test_eval(R, V, W, Q, mesh):
-    u0 = Function(R)
+def test_eval(V, W, Q, mesh):
     u1 = Function(V)
     u2 = Function(W)
     u3 = Function(Q)
@@ -163,7 +139,6 @@ def test_eval(R, V, W, Q, mesh):
         values[8] = -x[2]
         return values
 
-    u0.vector.set(1.0)
     u1.interpolate(e1)
     u2.interpolate(e2)
     u3.interpolate(e3)
@@ -174,10 +149,6 @@ def test_eval(R, V, W, Q, mesh):
     cell = dolfinx.cpp.geometry.select_colliding_cells(mesh, cell_candidates, x0, 1)
 
     assert np.allclose(u3.eval(x0, cell)[:3], u2.eval(x0, cell), rtol=1e-15, atol=1e-15)
-    with pytest.raises(ValueError):
-        u0.eval([0, 0, 0, 0], 0)
-    with pytest.raises(ValueError):
-        u0.eval([0, 0], 0)
 
 
 def test_eval_multiple(W):
@@ -210,32 +181,6 @@ def test_eval_manifold():
     assert np.isclose(u.eval([0.75, 0.25, 0.5], 0)[0], 1.0)
 
 
-def test_scalar_conditions(R):
-    c = Function(R)
-    c.vector.set(1.5)
-
-    # Float conversion does not interfere with boolean ufl expressions
-    assert isinstance(ufl.lt(c, 3), ufl.classes.LT)
-    assert not isinstance(ufl.lt(c, 3), bool)
-
-    # Float conversion is not implicit in boolean Python expressions
-    assert isinstance(c < 3, ufl.classes.LT)
-    assert not isinstance(c < 3, bool)
-
-    # == is used in ufl to compare equivalent representations,
-    # <,> result in LT/GT expressions, bool conversion is illegal
-
-    # Note that 1.5 < 0 == False == 1.5 < 1, but that is not what we
-    # compare here:
-    assert not (c < 0) == (c < 1)
-    # This protects from "if c < 0: ..." misuse:
-    with pytest.raises(ufl.UFLException):
-        bool(c < 0)
-    with pytest.raises(ufl.UFLException):
-        not c < 0
-
-
-@pytest.mark.skip
 def test_interpolation_mismatch_rank0(W):
     def f(x):
         return np.ones(x.shape[1])
@@ -244,12 +189,22 @@ def test_interpolation_mismatch_rank0(W):
         u.interpolate(f)
 
 
-@pytest.mark.skip
 def test_interpolation_mismatch_rank1(W):
-    def f(values, x):
+    def f(x):
         return np.ones((2, x.shape[1]))
 
     u = Function(W)
+    with pytest.raises(RuntimeError):
+        u.interpolate(f)
+
+
+def test_mixed_element_interpolation():
+    def f(x):
+        return np.ones(2, x.shape[1])
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
+    el = ufl.FiniteElement("CG", mesh.ufl_cell(), 1)
+    V = dolfinx.FunctionSpace(mesh, ufl.MixedElement([el, el]))
+    u = dolfinx.Function(V)
     with pytest.raises(RuntimeError):
         u.interpolate(f)
 
@@ -268,28 +223,14 @@ def test_interpolation_rank0(V):
     w.interpolate(f.eval)
     with w.vector.localForm() as x:
         assert (x[:] == 1.0).all()
+
+    num_vertices = V.mesh.topology.index_map(0).size_global
+    assert np.isclose(w.vector.norm(PETSc.NormType.N1) - num_vertices, 0)
+
     f.t = 2.0
     w.interpolate(f.eval)
     with w.vector.localForm() as x:
         assert (x[:] == 2.0).all()
-
-
-@skip_in_parallel
-def xtest_near_evaluations(R, mesh):
-    # Test that we allow point evaluation that are slightly outside
-    bb_tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    u0 = Function(R)
-    u0.vector.set(1.0)
-    a = mesh.geometry.x(0)
-    offset = 0.99 * np.finfo(float).eps
-
-    a_shift_x = np.array([a[0] - offset, a[1], a[2]])
-    assert u0.eval(a, bb_tree)[0] == pytest.approx(u0.eval(a_shift_x, bb_tree)[0])
-
-    a_shift_xyz = np.array([a[0] - offset / math.sqrt(3),
-                            a[1] - offset / math.sqrt(3),
-                            a[2] - offset / math.sqrt(3)])
-    assert u0.eval(a, bb_tree)[0] == pytest.approx(u0.eval(a_shift_xyz, bb_tree)[0])
 
 
 def test_interpolation_rank1(W):
@@ -306,26 +247,8 @@ def test_interpolation_rank1(W):
     assert x.max()[1] == 1.0
     assert x.min()[1] == 1.0
 
-
-@skip_in_parallel
-def test_interpolation_old(V, W, mesh):
-    def f0(x):
-        return np.ones(x.shape[1])
-
-    def f1(x):
-        return np.ones((mesh.geometry.dim, x.shape[1]))
-
-    num_vertices = mesh.topology.index_map(0).size_local
-
-    # Scalar interpolation
-    f = Function(V)
-    f.interpolate(f0)
-    assert round(f.vector.norm(PETSc.NormType.N1) - num_vertices, 7) == 0
-
-    # Vector interpolation
-    f = Function(W)
-    f.interpolate(f1)
-    assert round(f.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
+    num_vertices = W.mesh.topology.index_map(0).size_global
+    assert round(w.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
 
 
 @skip_if_complex
