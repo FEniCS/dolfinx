@@ -210,6 +210,29 @@ def test_N2curl_interpolation(cell_type, order, unit):
 
 
 @skip_in_parallel
+@pytest.mark.parametrize(
+    "cell_type", [CellType.quadrilateral])
+@pytest.mark.parametrize("unit", [True, False])
+@pytest.mark.parametrize("order", range(1, 5))
+def test_RTCE_interpolation(cell_type, order, unit):
+    random.seed(8)
+    mesh = one_cell_mesh(cell_type, unit)
+    V = FunctionSpace(mesh, ("RTCE", order))
+    run_vector_test(V, order - 1)
+
+@skip_in_parallel
+@pytest.mark.parametrize(
+    "cell_type", [CellType.hexahedron])
+@pytest.mark.parametrize("unit", [True, False])
+@pytest.mark.parametrize("order", range(1, 5))
+def test_NCE_interpolation(cell_type, order, unit):
+    random.seed(8)
+    mesh = one_cell_mesh(cell_type, unit)
+    V = FunctionSpace(mesh, ("NCE", order))
+    run_vector_test(V, order - 1)
+
+
+@skip_in_parallel
 def test_mixed_interpolation():
     """Test that interpolation raised an exception."""
     mesh = one_cell_mesh(CellType.triangle)
