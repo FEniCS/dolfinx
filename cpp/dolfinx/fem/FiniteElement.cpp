@@ -187,7 +187,7 @@ void FiniteElement::transform_reference_basis(
   const int value_size = _value_size / _bs;
   const int size_per_point = scalar_dim * value_size;
   const int Jsize = J.size() / num_points;
-  const int Jcols = X.rows();
+  const int Jcols = X.cols();
   const int Jrows = Jsize / Jcols;
 
   Eigen::Map<const Eigen::ArrayXd> J_unwrapped(J.data(), J.size());
