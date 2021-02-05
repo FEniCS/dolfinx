@@ -264,9 +264,9 @@ void interpolate(
       value_size, X.rows());
 
   // Prepare geometry data structures
-  Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
+  std::vector<double> J(gdim * tdim);
   std::array<double, 1> detJ;
-  Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
+  std::vector<double> K(gdim * tdim);
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       X_physical(1, tdim);
 
@@ -301,11 +301,11 @@ void interpolate(
         const Eigen::MatrixXd& J_temp
             = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                        Eigen::RowMajor>>(
-                J.data(), J.dimension(1), J.dimension(2));
+                J.data(), gdim, tdim);
         const Eigen::MatrixXd& K_temp
             = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                        Eigen::RowMajor>>(
-                K.data(), K.dimension(1), K.dimension(2));
+                K.data(), gdim, tdim);
 
         element->map_pull_back(reference_data, physical_data, J_temp, detJ[0],
                                K_temp);
