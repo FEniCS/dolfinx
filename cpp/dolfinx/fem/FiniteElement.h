@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>

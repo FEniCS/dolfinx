@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <array>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/Mesh.h>

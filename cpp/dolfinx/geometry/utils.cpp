@@ -8,7 +8,6 @@
 #include "utils.h"
 #include "BoundingBoxTree.h"
 #include "gjk.h"
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>

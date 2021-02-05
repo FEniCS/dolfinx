@@ -8,10 +8,8 @@
 #include "PETScOperator.h"
 #include "VectorSpaceBasis.h"
 #include "utils.h"
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
-#include <petsclog.h>
 
 using namespace dolfinx;
 using namespace dolfinx::la;
