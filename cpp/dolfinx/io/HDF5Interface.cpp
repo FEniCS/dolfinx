@@ -6,7 +6,6 @@
 
 #include "HDF5Interface.h"
 #include <boost/filesystem.hpp>
-#include <dolfinx/common/MPI.h>
 
 #define HDF5_MAXSTRLEN 80
 

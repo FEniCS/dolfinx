@@ -6,11 +6,8 @@
 
 #include "Table.h"
 #include <array>
-#include <cfloat>
-#include <cmath>
 #include <dolfinx/common/MPI.h>
 #include <functional>
-#include <iomanip>
 #include <iostream>
 #include <map>
 #include <sstream>
