@@ -10,7 +10,6 @@
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
-#include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <petscmat.h>
 #include <vector>
@@ -18,8 +17,9 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-Mat fem::create_discrete_gradient(const fem::FunctionSpace& V0,
-                                  const fem::FunctionSpace& V1)
+la::SparsityPattern
+fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
+                                       const fem::FunctionSpace& V1)
 {
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = V0.mesh();
@@ -142,70 +142,5 @@ Mat fem::create_discrete_gradient(const fem::FunctionSpace& V0,
     pattern.insert(tcb::span(&row, 1), tcb::make_span(cols));
   }
   pattern.assemble();
-
-  // Create matrix
-  Mat A = la::create_petsc_matrix(mesh->mpi_comm(), pattern);
-
-  // Build discrete gradient operator/matrix
-  const std::shared_ptr<const fem::DofMap> dofmap1 = V1.dofmap();
-  assert(dofmap1);
-  const std::vector<std::int64_t>& global_indices
-      = mesh->topology().index_map(0)->global_indices();
-  std::array<PetscScalar, 2> Ae;
-  for (std::int32_t e = 0; e < num_edges; ++e)
-  {
-    // Find local index of edge in one of the cells it is part of
-    tcb::span<const std::int32_t> cells = e_to_c->links(e);
-    assert(cells.size() > 0);
-    const std::int32_t cell = cells[0];
-    tcb::span<const std::int32_t> edges = c_to_e->links(cell);
-    const auto it = std::find(edges.begin(), edges.end(), e);
-    assert(it != edges.end());
-    const int local_edge = std::distance(edges.begin(), it);
-
-    // Find the dofs located on the edge
-    tcb::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
-    std::vector<std::int32_t>& local_dofs = local_edge_dofs[local_edge];
-    assert(local_dofs.size() == 1);
-    const PetscInt row = dofs0[local_dofs[0]];
-
-    tcb::span<const std::int32_t> vertices = e_to_v->links(e);
-    assert(vertices.size() == 2);
-    tcb::span<const std::int32_t> cell_vertices = c_to_v->links(cell);
-
-    // Find local index of each of the vertices and map to local dof
-    std::array<PetscInt, 2> cols;
-    tcb::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cell);
-    for (std::int32_t i = 0; i < 2; ++i)
-    {
-      const auto* it
-          = std::find(cell_vertices.begin(), cell_vertices.end(), vertices[i]);
-      assert(it != cell_vertices.end());
-      const int local_vertex = std::distance(cell_vertices.begin(), it);
-
-      std::vector<std::int32_t>& local_v_dofs = local_vertex_dofs[local_vertex];
-      assert(local_v_dofs.size() == 1);
-      cols[i] = dofs1[local_v_dofs[0]];
-    }
-
-    if (global_indices[vertices[1]] < global_indices[vertices[0]])
-    {
-      Ae[0] = 1;
-      Ae[1] = -1;
-    }
-    else
-    {
-      Ae[0] = -1;
-      Ae[1] = 1;
-    }
-
-    MatSetValuesLocal(A, 1, &row, 2, cols.data(), Ae.data(), INSERT_VALUES);
-  }
-
-  // Finalise matrix
-  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-
-  return A;
+  return pattern;
 }
-//-----------------------------------------------------------------------------
