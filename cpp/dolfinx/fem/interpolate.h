@@ -95,10 +95,10 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   // Iterate over mesh and interpolate on each cell
   const auto dofmap_u = u.function_space()->dofmap();
   const std::vector<T>& v_array = v.x()->array();
-  const int num_cells = map->size_local() + map->num_ghosts();
+  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
   const int bs = dofmap_v->bs();
   assert(bs == dofmap_u->bs());
-  for (int c = 0; c < num_cells; ++c)
+  for (std:int32_t c = 0; c < num_cells; ++c)
   {
     tcb::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
     tcb::span<const std::int32_t> cell_dofs = dofmap_u->cell_dofs(c);
@@ -181,7 +181,7 @@ void interpolate(
   const int gdim = mesh->geometry().dim();
   auto cell_map = mesh->topology().index_map(tdim);
   assert(cell_map);
-  const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
+  const std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
 
   // Get mesh geometry data and the element coordinate map
   const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -206,7 +206,7 @@ void interpolate(
   EigenMatrixRowXd x_cell(X.rows(), gdim);
   std::vector<double> x;
   EigenMatrixRowXd coordinate_dofs(num_dofs_g, gdim);
-  for (int c = 0; c < num_cells; ++c)
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get geometry data for current cell
     auto x_dofs = x_dofmap.links(c);
@@ -273,7 +273,7 @@ void interpolate(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       X_physical(1, tdim);
 
-  for (int c = 0; c < num_cells; ++c)
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get geometry data for current cell
     auto x_dofs = x_dofmap.links(c);
