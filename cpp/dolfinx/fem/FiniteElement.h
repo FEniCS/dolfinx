@@ -221,6 +221,16 @@ public:
       Eigen::Array<double, Eigen::Dynamic, 1>& physical_data,
       const Eigen::Array<double, Eigen::Dynamic, 1>& reference_data,
       const Eigen::MatrixXd& J, double detJ, const Eigen::MatrixXd& K) const;
+
+  /// Map a function value from the reference to a physical cell
+  /// @param[in,out] physical_data The data on the physical cell at the
+  /// corresponding point
+  /// @param[in] reference_data The reference data at a single point
+  /// @param[in] J The Jacobian of the map to the cell (evaluated at the point)
+  /// @param[in] detJ The determinant of the Jacobian of the map to the cell
+  /// (evaluated at the point)
+  /// @param[in] K The inverse of the Jacobian of the map to the cell (evaluated
+  /// at the point)
   void map_push_forward(
       Eigen::Array<std::complex<double>, Eigen::Dynamic, 1>& physical_data,
       const Eigen::Array<std::complex<double>, Eigen::Dynamic, 1>&
@@ -241,6 +251,16 @@ public:
                 const Eigen::Array<double, Eigen::Dynamic, 1>& physical_data,
                 const Eigen::MatrixXd& J, double detJ,
                 const Eigen::MatrixXd& K) const;
+
+  /// Map a function value from a physical cell to the reference
+  /// @param[in,out] reference_data The data on the reference element at the
+  /// corresponding point
+  /// @param[in] physical_data The physical data at a single point
+  /// @param[in] J The Jacobian of the map to the cell (evaluated at the point)
+  /// @param[in] detJ The determinant of the Jacobian of the map to the cell
+  /// (evaluated at the point)
+  /// @param[in] K The inverse of the Jacobian of the map to the cell (evaluated
+  /// at the point)
   void map_pull_back(
       Eigen::Array<std::complex<double>, Eigen::Dynamic, 1>& reference_data,
       const Eigen::Array<std::complex<double>, Eigen::Dynamic, 1>&
