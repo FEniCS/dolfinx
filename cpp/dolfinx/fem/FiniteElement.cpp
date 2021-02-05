@@ -186,7 +186,7 @@ void FiniteElement::transform_reference_basis(
   const int scalar_dim = _space_dim / _bs;
   const int value_size = _value_size / _bs;
   const int size_per_point = scalar_dim * value_size;
-  const int Jsize = J.size();
+  const int Jsize = J.size() / num_points;
   const int Jcols = X.rows();
   const int Jrows = Jsize / Jcols;
 
