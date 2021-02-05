@@ -180,7 +180,7 @@ public:
   /// Apply permutation to some data
   ///
   /// @param[in,out] data The data to be transformed
-  /// @param[in] cell_permutation Permutation data fro the cell
+  /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
   void apply_dof_transformation(T* data, std::uint32_t cell_permutation,
@@ -195,7 +195,7 @@ public:
   /// Apply inverse transpose permutation to some data
   ///
   /// @param[in,out] data The data to be transformed
-  /// @param[in] cell_permutation Permutation data fro the cell
+  /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
   void apply_inverse_transpose_dof_transformation(
