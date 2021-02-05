@@ -231,7 +231,7 @@ endif()
 configure_file(${DOLFINX_SOURCE_DIR}/cmake/templates/dolfinx.conf.in
                ${CMAKE_BINARY_DIR}/dolfinx.conf @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfinx.conf
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/dolfinx
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
