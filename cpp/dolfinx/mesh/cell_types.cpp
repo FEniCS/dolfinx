@@ -6,7 +6,6 @@
 
 #include "cell_types.h"
 #include "Geometry.h"
-#include <Eigen/Core>
 #include <algorithm>
 #include <basix.h>
 #include <cfloat>

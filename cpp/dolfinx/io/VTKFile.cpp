@@ -724,7 +724,7 @@ void write_function(
 
 //----------------------------------------------------------------------------
 io::VTKFile::VTKFile(MPI_Comm comm, const std::string filename,
-                           const std::string)
+                     const std::string)
     : _filename(filename), _comm(comm)
 {
   _pvd_xml = std::make_unique<pugi::xml_document>();

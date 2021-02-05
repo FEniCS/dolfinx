@@ -9,7 +9,6 @@
 
 #include "PETScOperator.h"
 #include "utils.h"
-#include <array>
 #include <functional>
 #include <petscmat.h>
 #include <string>

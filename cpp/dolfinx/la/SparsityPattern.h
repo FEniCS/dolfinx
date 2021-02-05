@@ -9,7 +9,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/span.hpp>
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 

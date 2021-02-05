@@ -7,7 +7,7 @@
 #pragma once
 
 #include "ElementDofLayout.h"
-#include <Eigen/Core>
+#include <Eigen/Dense>
 #include <cstdint>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/mesh/cell_types.h>
