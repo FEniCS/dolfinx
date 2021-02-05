@@ -186,10 +186,9 @@ void FiniteElement::transform_reference_basis(
   const int scalar_dim = _space_dim / _bs;
   const int value_size = _value_size / _bs;
   const int size_per_point = scalar_dim * value_size;
-  const int Jsize = J.dimension(1) * J.dimension(2);
-  assert(X.cols() == J.dimension(2));
-  assert(values.dimension(0) == num_points);
-  assert(values.dimension(1) * values.dimension(2) == size_per_point);
+  const int Jsize = J.size();
+  const int Jcols = X.rows();
+  const int Jrows = Jsize / Jcols;
 
   Eigen::Map<const Eigen::ArrayXd> J_unwrapped(J.data(), J.size());
   Eigen::Map<const Eigen::ArrayXd> K_unwrapped(K.data(), K.size());
@@ -211,26 +210,14 @@ void FiniteElement::transform_reference_basis(
               Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
                                              Eigen::Dynamic, Eigen::RowMajor>>(
                   J_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(),
-                  J.dimension(1), J.dimension(2)),
+                  Jrows, Jcols),
               detJ[pt],
               Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
                                              Eigen::Dynamic, Eigen::RowMajor>>(
                   K_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(),
-                  J.dimension(1), J.dimension(2)));
+                  Jrows, Jcols));
     }
   }
-}
-//-----------------------------------------------------------------------------
-void FiniteElement::transform_reference_basis_derivatives(
-    std::vector<double>& values, std::size_t order,
-    const std::vector<double>& reference_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X,
-    const std::vector<double>& J, const tcb::span<const double>& detJ,
-    const std::vector<double>& K) const
-{
-  throw std::runtime_error("Transforming basis derivatives is not implemented yet.");
-  std::cout << values(0,0,0,0) + order + reference_values(0,0,0,0) + X(0,0) + J(0,0,0) + detJ[0] + K(0,0,0);
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
