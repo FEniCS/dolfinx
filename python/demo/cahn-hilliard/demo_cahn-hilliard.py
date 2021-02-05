@@ -125,6 +125,10 @@ try:
     import pyvista as pv
     import pyvistaqt as pvqt
     have_pyvista = True
+    if pv.OFF_SCREEN:
+        from pyvista.utilities.xvfb import start_xvfb
+        start_xvfb(wait=0)
+
 except ModuleNotFoundError:
     print("pyvista is required to visualise the solution")
     have_pyvista = False
@@ -360,4 +364,7 @@ file.close()
 if have_pyvista:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     grid.point_arrays["u"] = u.sub(0).compute_point_values().real
-    pv.plot(grid, show_edges=True)
+    screenshot = None
+    if pv.OFF_SCREEN:
+        screenshot = "u.png"
+    pv.plot(grid, show_edges=True, screenshot=screenshot)

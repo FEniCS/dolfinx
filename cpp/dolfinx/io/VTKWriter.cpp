@@ -6,6 +6,7 @@
 
 #include "VTKWriter.h"
 #include "cells.h"
+#include <Eigen/Core>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>

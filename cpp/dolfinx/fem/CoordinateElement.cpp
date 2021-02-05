@@ -6,7 +6,6 @@
 
 #include "CoordinateElement.h"
 #include <basix.h>
-#include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -84,8 +83,7 @@ void CoordinateElement::push_forward(
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
-    Eigen::Tensor<double, 3, Eigen::RowMajor>& J, tcb::span<double> detJ,
-    Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
+    std::vector<double>& J, tcb::span<double> detJ, std::vector<double>& K,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
@@ -105,13 +103,9 @@ void CoordinateElement::compute_reference_geometry(
   // In/out size checks
   assert(X.rows() == num_points);
   assert(X.cols() == tdim);
-  assert(J.dimension(0) == num_points);
-  assert(J.dimension(1) == gdim);
-  assert(J.dimension(2) == tdim);
+  assert((int)J.size() == num_points * gdim * tdim);
   assert((int)detJ.size() == num_points);
-  assert(K.dimension(0) == num_points);
-  assert(K.dimension(1) == tdim);
-  assert(K.dimension(2) == gdim);
+  assert((int)K.size() == num_points * gdim * tdim);
 
   // FIXME: Array and matrix rows/cols transpose etc all very tortuous
   // FIXME: tidy up and sort out

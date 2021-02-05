@@ -8,7 +8,7 @@
 
 #include "Function.h"
 #include "FunctionSpace.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/mesh/Mesh.h>

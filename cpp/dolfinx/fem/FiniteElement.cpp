@@ -7,7 +7,6 @@
 #include "FiniteElement.h"
 #include <basix.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/mesh/utils.h>
 #include <functional>
 #include <ufc.h>
 
@@ -132,7 +131,7 @@ int FiniteElement::value_dimension(int i) const
 std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis(
-    Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+    std::vector<double>& reference_values,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
@@ -144,20 +143,21 @@ void FiniteElement::evaluate_reference_basis(
   assert(basix_data.cols() % scalar_reference_value_size == 0);
   const int scalar_dofs = basix_data.cols() / scalar_reference_value_size;
 
-  assert(reference_values.dimension(0) == X.rows());
-  assert(reference_values.dimension(1) == scalar_dofs);
-  assert(reference_values.dimension(2) == scalar_reference_value_size);
+  assert((int)reference_values.size()
+         == X.rows() * scalar_dofs * scalar_reference_value_size);
 
   assert(basix_data.rows() == X.rows());
 
   for (int p = 0; p < X.rows(); ++p)
     for (int d = 0; d < scalar_dofs; ++d)
       for (int v = 0; v < scalar_reference_value_size; ++v)
-        reference_values(p, d, v) = basix_data(p, d + scalar_dofs * v);
+        reference_values[(p * scalar_dofs + d) * scalar_reference_value_size
+                         + v]
+            = basix_data(p, d + scalar_dofs * v);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis_derivatives(
-    Eigen::Tensor<double, 4, Eigen::RowMajor>& values, int order,
+    std::vector<double>& values, int order,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
@@ -175,18 +175,18 @@ void FiniteElement::evaluate_reference_basis_derivatives(
     for (int d = 0; d < basix_data[0].cols() / _reference_value_size; ++d)
       for (int v = 0; v < _reference_value_size; ++v)
         for (std::size_t deriv = 0; deriv < basix_data.size() - 1; ++deriv)
-          values(p, d, v, deriv)
+          values[(p * basix_data[0].cols() + d * _reference_value_size + v)
+                     * (basix_data.size() - 1)
+                 + deriv]
               = basix_data[deriv](p, d * _reference_value_size + v);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
-    Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+    std::vector<double>& values, const std::vector<double>& reference_values,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    const tcb::span<const double>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
+    const std::vector<double>& J, const tcb::span<const double>& detJ,
+    const std::vector<double>& K) const
 {
   assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();
@@ -202,13 +202,12 @@ void FiniteElement::transform_reference_basis(
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis_derivatives(
-    Eigen::Tensor<double, 4, Eigen::RowMajor>& values, std::size_t order,
-    const Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values,
+    std::vector<double>& values, std::size_t order,
+    const std::vector<double>& reference_values,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    const tcb::span<const double>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
+    const std::vector<double>& J, const tcb::span<const double>& detJ,
+    const std::vector<double>& K) const
 {
   assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();

@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <cstdint>
 #include <dolfinx/common/Table.h>
 #include <mpi.h>
 #include <set>

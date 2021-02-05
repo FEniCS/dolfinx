@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "RectangleMesh.h"
-#include <Eigen/Dense>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
