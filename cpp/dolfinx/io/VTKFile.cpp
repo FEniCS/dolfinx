@@ -7,6 +7,7 @@
 #include "VTKFile.h"
 #include "VTKWriter.h"
 #include "pugixml.hpp"
+#include <Eigen/Core>
 #include <boost/cstdint.hpp>
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/IndexMap.h>

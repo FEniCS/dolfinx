@@ -7,7 +7,6 @@
 #include "FiniteElement.h"
 #include <basix.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/mesh/utils.h>
 #include <functional>
 #include <ufc.h>
 
