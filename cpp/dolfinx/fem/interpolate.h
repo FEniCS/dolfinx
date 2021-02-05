@@ -98,7 +98,7 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
   const int bs = dofmap_v->bs();
   assert(bs == dofmap_u->bs());
-  for (std:int32_t c = 0; c < num_cells; ++c)
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
     tcb::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
     tcb::span<const std::int32_t> cell_dofs = dofmap_u->cell_dofs(c);

@@ -48,21 +48,22 @@ def random_point_in_reference(cell_type):
 
 
 def random_point_in_cell(mesh):
-    point = random_point_in_reference(mesh.topology.cell_type)
+    cell_type = mesh.topology.cell_type
+    point = random_point_in_reference(cell_type)
 
-    if mesh.topology.cell_type == CellType.interval:
+    if cell_type == CellType.interval:
         origin = mesh.geometry.x[0]
         axes = (mesh.geometry.x[1], )
-    elif mesh.topology.cell_type == CellType.triangle:
+    elif cell_type == CellType.triangle:
         origin = mesh.geometry.x[0]
         axes = (mesh.geometry.x[1], mesh.geometry.x[2])
-    elif mesh.topology.cell_type == CellType.tetrahedron:
+    elif cell_type == CellType.tetrahedron:
         origin = mesh.geometry.x[0]
         axes = (mesh.geometry.x[1], mesh.geometry.x[2], mesh.geometry.x[3])
-    elif mesh.topology.cell_type == CellType.quadrilateral:
+    elif cell_type == CellType.quadrilateral:
         origin = mesh.geometry.x[0]
         axes = (mesh.geometry.x[1], mesh.geometry.x[2])
-    elif mesh.topology.cell_type == CellType.hexahedron:
+    elif cell_type == CellType.hexahedron:
         origin = mesh.geometry.x[0]
         axes = (mesh.geometry.x[1], mesh.geometry.x[2], mesh.geometry.x[4])
 
@@ -71,33 +72,19 @@ def random_point_in_cell(mesh):
     )
 
 
-def one_cell_mesh(cell_type, unit=True):
-    if unit:
-        if cell_type == CellType.interval:
-            points = np.array([[0.], [1.]])
-        if cell_type == CellType.triangle:
-            points = np.array([[0., 0.], [1., 0.], [0., 1.]])
-        elif cell_type == CellType.tetrahedron:
-            points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.], [0., 0., 1.]])
-        elif cell_type == CellType.quadrilateral:
-            points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]])
-        elif cell_type == CellType.hexahedron:
-            points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
-                               [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
-                               [0., 1., 1.], [1., 1., 1.]])
-    else:
-        if cell_type == CellType.interval:
-            points = np.array([[-1.], [2.]])
-        if cell_type == CellType.triangle:
-            points = np.array([[-1., -1.], [2., 0.], [0., 0.5]])
-        elif cell_type == CellType.tetrahedron:
-            points = np.array([[-1., -1., -1.], [2., 0., 0.], [0., 0.5, 0.], [0., 0., 1.]])
-        elif cell_type == CellType.quadrilateral:
-            points = np.array([[-1., 0.], [1., 0.], [-1., 1.5], [1., 1.5]])
-        elif cell_type == CellType.hexahedron:
-            points = np.array([[-1., -0.5, 0.], [1., -0.5, 0.], [-1., 1.5, 0.],
-                               [1., 1.5, 0.], [0., -0.5, 1.], [1., -0.5, 1.],
-                               [-1., 1.5, 1.], [1., 1.5, 1.]])
+def one_cell_mesh(cell_type):
+    if cell_type == CellType.interval:
+        points = np.array([[-1.], [2.]])
+    if cell_type == CellType.triangle:
+        points = np.array([[-1., -1.], [2., 0.], [0., 0.5]])
+    elif cell_type == CellType.tetrahedron:
+        points = np.array([[-1., -1., -1.], [2., 0., 0.], [0., 0.5, 0.], [0., 0., 1.]])
+    elif cell_type == CellType.quadrilateral:
+        points = np.array([[-1., 0.], [1., 0.], [-1., 1.5], [1., 1.5]])
+    elif cell_type == CellType.hexahedron:
+        points = np.array([[-1., -0.5, 0.], [1., -0.5, 0.], [-1., 1.5, 0.],
+                           [1., 1.5, 0.], [0., -0.5, 1.], [1., -0.5, 1.],
+                           [-1., 1.5, 1.], [1., 1.5, 1.]])
     num_points = len(points)
 
     # Randomly number the points and create the mesh
@@ -107,8 +94,6 @@ def one_cell_mesh(cell_type, unit=True):
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
-
-    print(ordered_points, cells)
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
@@ -156,8 +141,6 @@ def run_vector_test(V, poly_order):
 
     v = Function(V)
     v.interpolate(f)
-    for d in V.dofmap.cell_dofs(0):
-        print(v.vector[d])
     points = [random_point_in_cell(V.mesh) for count in range(5)]
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
@@ -170,7 +153,7 @@ def run_vector_test(V, poly_order):
 @pytest.mark.parametrize("order", range(1, 5))
 def test_Lagrange_interpolation(cell_type, order):
     """Test that interpolation is correct in a FunctionSpace"""
-    mesh = one_cell_mesh(cell_type, False)
+    mesh = one_cell_mesh(cell_type)
     V = FunctionSpace(mesh, ("Lagrange", order))
     run_scalar_test(V, order)
 
@@ -180,7 +163,7 @@ def test_Lagrange_interpolation(cell_type, order):
 @pytest.mark.parametrize('order', range(1, 5))
 def test_vector_interpolation(cell_type, order):
     """Test that interpolation is correct in a VectorFunctionSpace."""
-    mesh = one_cell_mesh(cell_type, False)
+    mesh = one_cell_mesh(cell_type)
     V = VectorFunctionSpace(mesh, ("Lagrange", order))
     run_vector_test(V, order)
 
@@ -191,7 +174,7 @@ def test_vector_interpolation(cell_type, order):
 @pytest.mark.parametrize("order", range(1, 5))
 def test_N1curl_interpolation(cell_type, order):
     random.seed(8)
-    mesh = one_cell_mesh(cell_type, False)
+    mesh = one_cell_mesh(cell_type)
     V = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", order))
     run_vector_test(V, order - 1)
 
@@ -200,7 +183,7 @@ def test_N1curl_interpolation(cell_type, order):
 @pytest.mark.parametrize("cell_type", [CellType.triangle])
 @pytest.mark.parametrize("order", [1, 2])
 def test_N2curl_interpolation(cell_type, order):
-    mesh = one_cell_mesh(cell_type, False)
+    mesh = one_cell_mesh(cell_type)
     V = FunctionSpace(mesh, ("Nedelec 2nd kind H(curl)", order))
     run_vector_test(V, order)
 
@@ -211,7 +194,7 @@ def test_N2curl_interpolation(cell_type, order):
 @pytest.mark.parametrize("order", range(1, 5))
 def test_RTCE_interpolation(cell_type, order):
     random.seed(8)
-    mesh = one_cell_mesh(cell_type, False)
+    mesh = one_cell_mesh(cell_type)
     V = FunctionSpace(mesh, ("RTCE", order))
     run_vector_test(V, order - 1)
 
@@ -222,7 +205,7 @@ def test_RTCE_interpolation(cell_type, order):
 @pytest.mark.parametrize("order", range(1, 5))
 def test_NCE_interpolation(cell_type, order):
     random.seed(8)
-    mesh = one_cell_mesh(cell_type, False)
+    mesh = one_cell_mesh(cell_type)
     V = FunctionSpace(mesh, ("NCE", order))
     run_vector_test(V, order - 1)
 
