@@ -107,15 +107,14 @@ Mat fem::create_discrete_gradient(const fem::FunctionSpace& V0,
   std::array<std::int32_t, 2> cols;
   for (std::int32_t e = 0; e < num_edges; ++e)
   {
-
     // Find local index of edge in one of the cells it is part of
     tcb::span<const std::int32_t> cells = e_to_c->links(e);
     assert(cells.size() > 0);
     const std::int32_t cell = cells[0];
     tcb::span<const std::int32_t> edges = c_to_e->links(cell);
-    const auto* it = std::find(edges.data(), edges.data() + edges.size(), e);
-    assert(it != (edges.data() + edges.size()));
-    const int local_edge = std::distance(edges.data(), it);
+    const auto it = std::find(edges.begin(), edges.end(), e);
+    assert(it != edges.end());
+    const int local_edge = std::distance(edges.begin(), it);
 
     // Find the dofs located on the edge
     tcb::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
@@ -130,11 +129,10 @@ Mat fem::create_discrete_gradient(const fem::FunctionSpace& V0,
     tcb::span<const std::int32_t> dofs1 = V1.dofmap()->cell_dofs(cell);
     for (std::int32_t i = 0; i < 2; ++i)
     {
-      const auto* it
-          = std::find(cell_vertices.data(),
-                      cell_vertices.data() + cell_vertices.size(), vertices[i]);
-      assert(it != (cell_vertices.data() + cell_vertices.size()));
-      const int local_vertex = std::distance(cell_vertices.data(), it);
+      const auto it
+          = std::find(cell_vertices.begin(), cell_vertices.end(), vertices[i]);
+      assert(it != cell_vertices.end());
+      const int local_vertex = std::distance(cell_vertices.begin(), it);
       std::vector<std::int32_t>& local_v_dofs = local_vertex_dofs[local_vertex];
 
       assert(local_v_dofs.size() == 1);
@@ -161,9 +159,9 @@ Mat fem::create_discrete_gradient(const fem::FunctionSpace& V0,
     assert(cells.size() > 0);
     const std::int32_t cell = cells[0];
     tcb::span<const std::int32_t> edges = c_to_e->links(cell);
-    const auto* it = std::find(edges.data(), edges.data() + edges.size(), e);
-    assert(it != (edges.data() + edges.size()));
-    const int local_edge = std::distance(edges.data(), it);
+    const auto it = std::find(edges.begin(), edges.end(), e);
+    assert(it != edges.end());
+    const int local_edge = std::distance(edges.begin(), it);
 
     // Find the dofs located on the edge
     tcb::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
@@ -181,10 +179,9 @@ Mat fem::create_discrete_gradient(const fem::FunctionSpace& V0,
     for (std::int32_t i = 0; i < 2; ++i)
     {
       const auto* it
-          = std::find(cell_vertices.data(),
-                      cell_vertices.data() + cell_vertices.size(), vertices[i]);
-      assert(it != (cell_vertices.data() + cell_vertices.size()));
-      const int local_vertex = std::distance(cell_vertices.data(), it);
+          = std::find(cell_vertices.begin(), cell_vertices.end(), vertices[i]);
+      assert(it != cell_vertices.end());
+      const int local_vertex = std::distance(cell_vertices.begin(), it);
 
       std::vector<std::int32_t>& local_v_dofs = local_vertex_dofs[local_vertex];
       assert(local_v_dofs.size() == 1);
