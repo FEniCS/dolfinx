@@ -296,8 +296,8 @@ void interpolate(
                                         coordinate_dofs);
         // FIXME: Expensive assignments and copies. These will be easier to get
         // rid of once basix moves to a C-style in/out interface
-        const Eigen::ArrayXd physical_data = _vals.col(p);
-        Eigen::ArrayXd reference_data(value_size);
+        const Eigen::Array<T, Eigen::Dynamic, 1> physical_data = _vals.col(p);
+        Eigen::Array<T, Eigen::Dynamic, 1> reference_data(value_size);
         const Eigen::MatrixXd& J_temp
             = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                        Eigen::RowMajor>>(
