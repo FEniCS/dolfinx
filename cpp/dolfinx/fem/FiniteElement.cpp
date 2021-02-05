@@ -201,6 +201,8 @@ void FiniteElement::transform_reference_basis(
   {
     for (int d = 0; d < scalar_dim; ++d)
     {
+      // FIXME: This can be tidied up massively once basix uses a std::vector
+      // interface instead of Eigen
       values_unwrapped.block(pt * size_per_point + d * value_size, 0,
                              value_size, 1)
           = basix::map_push_forward(
