@@ -167,11 +167,10 @@ def run_vector_test(V, poly_order):
 
 @skip_in_parallel
 @parametrize_cell_types
-@pytest.mark.parametrize("unit", [True, False])
 @pytest.mark.parametrize("order", range(1, 5))
-def test_Lagrange_interpolation(cell_type, order, unit):
+def test_Lagrange_interpolation(cell_type, order):
     """Test that interpolation is correct in a FunctionSpace"""
-    mesh = one_cell_mesh(cell_type, unit)
+    mesh = one_cell_mesh(cell_type, False)
     V = FunctionSpace(mesh, ("Lagrange", order))
     run_scalar_test(V, order)
 
@@ -179,10 +178,9 @@ def test_Lagrange_interpolation(cell_type, order, unit):
 @skip_in_parallel
 @parametrize_cell_types
 @pytest.mark.parametrize('order', range(1, 5))
-@pytest.mark.parametrize("unit", [True, False])
-def test_vector_interpolation(cell_type, order, unit):
+def test_vector_interpolation(cell_type, order):
     """Test that interpolation is correct in a VectorFunctionSpace."""
-    mesh = one_cell_mesh(cell_type, unit)
+    mesh = one_cell_mesh(cell_type, False)
     V = VectorFunctionSpace(mesh, ("Lagrange", order))
     run_vector_test(V, order)
 
@@ -190,21 +188,19 @@ def test_vector_interpolation(cell_type, order, unit):
 @skip_in_parallel
 @pytest.mark.parametrize(
     "cell_type", [CellType.triangle, CellType.tetrahedron])
-@pytest.mark.parametrize("unit", [True, False])
 @pytest.mark.parametrize("order", range(1, 5))
-def test_N1curl_interpolation(cell_type, order, unit):
+def test_N1curl_interpolation(cell_type, order):
     random.seed(8)
-    mesh = one_cell_mesh(cell_type, unit)
+    mesh = one_cell_mesh(cell_type, False)
     V = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", order))
     run_vector_test(V, order - 1)
 
 
 @skip_in_parallel
 @pytest.mark.parametrize("cell_type", [CellType.triangle])
-@pytest.mark.parametrize("unit", [True, False])
 @pytest.mark.parametrize("order", [1, 2])
-def test_N2curl_interpolation(cell_type, order, unit):
-    mesh = one_cell_mesh(cell_type, unit)
+def test_N2curl_interpolation(cell_type, order):
+    mesh = one_cell_mesh(cell_type, False)
     V = FunctionSpace(mesh, ("Nedelec 2nd kind H(curl)", order))
     run_vector_test(V, order)
 
@@ -212,11 +208,10 @@ def test_N2curl_interpolation(cell_type, order, unit):
 @skip_in_parallel
 @pytest.mark.parametrize(
     "cell_type", [CellType.quadrilateral])
-@pytest.mark.parametrize("unit", [True, False])
 @pytest.mark.parametrize("order", range(1, 5))
-def test_RTCE_interpolation(cell_type, order, unit):
+def test_RTCE_interpolation(cell_type, order):
     random.seed(8)
-    mesh = one_cell_mesh(cell_type, unit)
+    mesh = one_cell_mesh(cell_type, False)
     V = FunctionSpace(mesh, ("RTCE", order))
     run_vector_test(V, order - 1)
 
@@ -224,11 +219,10 @@ def test_RTCE_interpolation(cell_type, order, unit):
 @skip_in_parallel
 @pytest.mark.parametrize(
     "cell_type", [CellType.hexahedron])
-@pytest.mark.parametrize("unit", [True, False])
 @pytest.mark.parametrize("order", range(1, 5))
-def test_NCE_interpolation(cell_type, order, unit):
+def test_NCE_interpolation(cell_type, order):
     random.seed(8)
-    mesh = one_cell_mesh(cell_type, unit)
+    mesh = one_cell_mesh(cell_type, False)
     V = FunctionSpace(mesh, ("NCE", order))
     run_vector_test(V, order - 1)
 
