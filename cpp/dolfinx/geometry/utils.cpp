@@ -25,12 +25,14 @@ inline bool is_leaf(const std::array<int, 2>& bbox)
 }
 //-----------------------------------------------------------------------------
 bool point_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
-                   const Eigen::Vector3d& x)
+                   const std::array<double, 3>& x)
 {
   const double rtol = 1e-14;
   auto eps0 = rtol * (b.row(1) - b.row(0));
-  return (x.transpose().array() >= (b.row(0) - eps0).array()).all()
-         and (x.transpose().array() <= (b.row(1) + eps0).array()).all();
+  Eigen::Vector3d _x;
+  _x << x[0], x[1], x[2];
+  return (_x.transpose().array() >= (b.row(0) - eps0).array()).all()
+         and (_x.transpose().array() <= (b.row(1) + eps0).array()).all();
 }
 //-----------------------------------------------------------------------------
 bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
@@ -44,7 +46,7 @@ bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
 std::pair<std::int32_t, double> _compute_closest_entity(
-    const geometry::BoundingBoxTree& tree, const Eigen::Vector3d& point,
+    const geometry::BoundingBoxTree& tree, const std::array<double, 3>& point,
     int node, const mesh::Mesh& mesh, std::int32_t closest_entity, double R2)
 {
   // Get children of current bounding box node (child_1 denotes entity index for
@@ -56,8 +58,11 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     // If point cloud tree the exact distance is easy to compute
     if (tree.tdim() == 0)
     {
-      r2 = (tree.get_bbox(node).row(0).transpose().matrix() - point)
-               .squaredNorm();
+      Eigen::Vector3d _p;
+      _p[0] = point[0];
+      _p[1] = point[1];
+      _p[2] = point[2];
+      r2 = (tree.get_bbox(node).row(0).transpose().matrix() - _p).squaredNorm();
     }
     else
     {
@@ -97,7 +102,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
 //-----------------------------------------------------------------------------
 // Compute collisions with point (recursive)
 void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
-                               const Eigen::Vector3d& p, int node,
+                               const std::array<double, 3>& p, int node,
                                std::vector<int>& entities)
 {
   // Get children of current bounding box node
@@ -199,13 +204,17 @@ geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
       = mesh::midpoints(mesh, tdim, entities);
 
-  std::vector<Eigen::Vector3d> points(entities.rows());
+  std::vector<std::array<double, 3>> points(entities.rows());
   for (std::size_t i = 0; i < points.size(); ++i)
-    points[i] = midpoints.row(i);
+    for (std::size_t j = 0; j < 3; ++j)
+      points[i][j] = midpoints(i, j);
+
   // Build tree
   geometry::BoundingBoxTree tree(points);
+
   // Remap leaf entities
   tree.remap_entity_indices(entity_indices_sorted);
+
   return tree;
 }
 //-----------------------------------------------------------------------------
@@ -226,7 +235,7 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
 }
 //-----------------------------------------------------------------------------
 std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
-                                              const Eigen::Vector3d& p)
+                                              const std::array<double, 3>& p)
 {
   std::vector<int> entities;
 
@@ -238,17 +247,19 @@ std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
 //-----------------------------------------------------------------------------
 double geometry::compute_squared_distance_bbox(
     const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
-    const Eigen::Vector3d& x)
+    const std::array<double, 3>& x)
 {
-  auto d0 = x.array() - b.row(0).transpose();
-  auto d1 = x.array() - b.row(1).transpose();
+  Eigen::Vector3d _x;
+  _x << x[0], x[1], x[2];
+  auto d0 = _x.array() - b.row(0).transpose();
+  auto d1 = _x.array() - b.row(1).transpose();
   return (d0 > 0.0).select(0, d0).matrix().squaredNorm()
          + (d1 < 0.0).select(0, d1).matrix().squaredNorm();
 }
 //-----------------------------------------------------------------------------
 std::pair<int, double>
 geometry::compute_closest_entity(const BoundingBoxTree& tree,
-                                 const Eigen::Vector3d& p,
+                                 const std::array<double, 3>& p,
                                  const mesh::Mesh& mesh, double R)
 {
   // If bounding box tree is empty (on this processor) end search
@@ -257,28 +268,40 @@ geometry::compute_closest_entity(const BoundingBoxTree& tree,
 
   // If initial search radius is 0 we estimate the initial distance to the point
   // using a "random" node from the tree.
+  Eigen::Vector3d _p;
+  _p << p[0], p[1], p[2];
   const std::int32_t initial_guess = (R < 0) ? 0 : -1;
   const double R2
-      = (R < 0) ? (tree.get_bbox(initial_guess).row(0).transpose().matrix() - p)
-                      .squaredNorm()
-                : R * R;
+      = (R < 0)
+            ? (tree.get_bbox(initial_guess).row(0).transpose().matrix() - _p)
+                  .squaredNorm()
+            : R * R;
+
   // Use GJK to find determine the actual closest entity
   const auto [index, distance2] = _compute_closest_entity(
       tree, p, tree.num_bboxes() - 1, mesh, initial_guess, R2);
+
   if (index < 0)
+  {
     throw std::runtime_error("No entity found within radius "
                              + std::to_string(std::sqrt(R2)) + ".");
+  }
+
   return {index, std::sqrt(distance2)};
 }
 //-----------------------------------------------------------------------------
 double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
-                                  std::int32_t index, const Eigen::Vector3d& p)
+                                  std::int32_t index,
+                                  const std::array<double, 3>& p)
 {
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
       = mesh.geometry().x();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+
+  Eigen::Vector3d _p;
+  _p << p[0], p[1], p[2];
 
   if (dim == tdim)
   {
@@ -288,7 +311,9 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     for (std::size_t i = 0; i < dofs.size(); i++)
       nodes.row(i) = geom_dofs.row(dofs[i]);
 
-    return geometry::compute_distance_gjk(p.transpose(), nodes).squaredNorm();
+    std::array<double, 3> x
+        = geometry::compute_distance_gjk(_p.transpose(), nodes);
+    return x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
   }
   else
   {
@@ -318,21 +343,23 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     for (std::size_t i = 0; i < entity_dofs.size(); i++)
       nodes.row(i) = geom_dofs.row(dofs[entity_dofs[i]]);
 
-    return geometry::compute_distance_gjk(p.transpose(), nodes).squaredNorm();
+    std::array<double, 3> x
+        = geometry::compute_distance_gjk(_p.transpose(), nodes);
+    return x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
   }
 }
 //-------------------------------------------------------------------------------
 std::vector<std::int32_t> geometry::select_colliding_cells(
     const mesh::Mesh& mesh,
     const tcb::span<const std::int32_t>& candidate_cells,
-    const Eigen::Vector3d& point, int n)
+    const std::array<double, 3>& p, int n)
 {
   const double eps2 = 1e-20;
   const int tdim = mesh.topology().dim();
   std::vector<std::int32_t> result;
   for (std::int32_t c : candidate_cells)
   {
-    const double d2 = squared_distance(mesh, tdim, c, point);
+    const double d2 = squared_distance(mesh, tdim, c, p);
     if (d2 < eps2)
     {
       result.push_back(c);

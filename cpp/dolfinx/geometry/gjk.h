@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <array>
 
 namespace dolfinx::geometry
 {
@@ -16,7 +17,7 @@ namespace dolfinx::geometry
 /// @param[in] p Body 1 list of points
 /// @param[in] q Body 2 list of points
 /// @return shortest vector between bodies
-Eigen::Vector3d compute_distance_gjk(
+std::array<double, 3> compute_distance_gjk(
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& q);
-}
+} // namespace dolfinx::geometry

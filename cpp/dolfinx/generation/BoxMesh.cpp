@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "BoxMesh.h"
+#include <Eigen/Core>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
@@ -18,12 +19,12 @@ namespace
 {
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
             std::array<std::size_t, 3> n)
 {
   // Extract data
-  const Eigen::Vector3d& p0 = p[0];
-  const Eigen::Vector3d& p1 = p[1];
+  const std::array<double, 3>& p0 = p[0];
+  const std::array<double, 3>& p1 = p[1];
   std::int64_t nx = n[0];
   std::int64_t ny = n[1];
   std::int64_t nz = n[2];
@@ -51,8 +52,8 @@ create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const double ef = (f - e) / static_cast<double>(nz);
 
   if (std::abs(x0 - x1) < 2.0 * DBL_EPSILON
-      || std::abs(y0 - y1) < 2.0 * DBL_EPSILON
-      || std::abs(z0 - z1) < 2.0 * DBL_EPSILON)
+      or std::abs(y0 - y1) < 2.0 * DBL_EPSILON
+      or std::abs(z0 - z1) < 2.0 * DBL_EPSILON)
   {
     throw std::runtime_error(
         "Box seems to have zero width, height or depth. Check dimensions");
@@ -83,7 +84,8 @@ create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   return geom;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+mesh::Mesh build_tet(MPI_Comm comm,
+                     const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 3> n,
                      const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode,
@@ -143,7 +145,8 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
       element, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+mesh::Mesh build_hex(MPI_Comm comm,
+                     const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 3> n,
                      const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode,
@@ -194,7 +197,7 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 
 //-----------------------------------------------------------------------------
 mesh::Mesh BoxMesh::create(MPI_Comm comm,
-                           const std::array<Eigen::Vector3d, 2>& p,
+                           std::array<std::array<double, 3>, 2> p,
                            std::array<std::size_t, 3> n,
                            const fem::CoordinateElement& element,
                            const mesh::GhostMode ghost_mode,

@@ -52,22 +52,37 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 }
 //-----------------------------------------------------------------------------
 // Compute bounding box of points
-Eigen::Array<double, 2, 3, Eigen::RowMajor>
-compute_bbox_of_points(const std::vector<Eigen::Vector3d>& points,
+std::array<std::array<double, 3>, 2>
+compute_bbox_of_points(const std::vector<std::array<double, 3>>& points,
                        const std::vector<int>::iterator& begin,
                        const std::vector<int>::iterator& end)
 {
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
-  b.row(0) = points[*begin];
-  b.row(1) = points[*begin];
+  std::array<std::array<double, 3>, 2> b;
+  b[0] = points[*begin];
+  b[1] = points[*begin];
   for (auto it = begin; it != end; ++it)
   {
-    const Eigen::Vector3d& p = points[*it];
-    b.row(0) = b.row(0).min(p.transpose().array());
-    b.row(1) = b.row(1).max(p.transpose().array());
+    const std::array<double, 3>& p = points[*it];
+    b[0] = std::min(b[0], p);
+    b[1] = std::max(b[1], p);
+
+    // b[0] = b[0].min(p.transpose().array());
+    // b[1] = b[1].max(p.transpose().array());
   }
 
   return b;
+
+  // Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
+  // b.row(0) = points[*begin];
+  // b.row(1) = points[*begin];
+  // for (auto it = begin; it != end; ++it)
+  // {
+  //   const Eigen::Vector3d& p = points[*it];
+  //   b.row(0) = b.row(0).min(p.transpose().array());
+  //   b.row(1) = b.row(1).max(p.transpose().array());
+  // }
+
+  // return b;
 }
 //-----------------------------------------------------------------------------
 // Compute bounding box of bounding boxes
@@ -177,7 +192,7 @@ build_from_leaf(
   return {bbox_array, bbox_coord_array};
 }
 //-----------------------------------------------------------------------------
-int _build_from_point(const std::vector<Eigen::Vector3d>& points,
+int _build_from_point(const std::vector<std::array<double, 3>>& points,
                       const std::vector<int>::iterator begin,
                       const std::vector<int>::iterator end,
                       std::vector<std::array<int, 2>>& bboxes,
@@ -200,13 +215,16 @@ int _build_from_point(const std::vector<Eigen::Vector3d>& points,
   }
 
   // Compute bounding box of all points
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> b
+  std::array<std::array<double, 3>, 2> b
       = compute_bbox_of_points(points, begin, end);
+  Eigen::Vector3d b0, b1;
+  b0 << b[0][0], b[0][1], b[0][2];
+  b1 << b[1][0], b[1][1], b[1][2];
 
   // Sort bounding boxes along longest axis
   auto middle = begin + (end - begin) / 2;
   Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
-  (b.row(1) - b.row(0)).maxCoeff(&axis);
+  (b1 - b0).maxCoeff(&axis);
   std::nth_element(begin, middle, end, [&points, &axis](int i, int j) -> bool {
     const double* pi = points[i].data();
     const double* pj = points[j].data();
@@ -220,8 +238,8 @@ int _build_from_point(const std::vector<Eigen::Vector3d>& points,
 
   // Store bounding box data. Note that root box will be added last
   bboxes.push_back(bbox);
-  bbox_coordinates.insert(bbox_coordinates.end(), b.data(), b.data() + 3);
-  bbox_coordinates.insert(bbox_coordinates.end(), b.data() + 3, b.data() + 6);
+  bbox_coordinates.insert(bbox_coordinates.end(), b[0].begin(), b[0].end());
+  bbox_coordinates.insert(bbox_coordinates.end(), b[1].begin(), b[1].end());
   return bboxes.size() - 1;
 }
 //-----------------------------------------------------------------------------
@@ -328,30 +346,8 @@ BoundingBoxTree::BoundingBoxTree(
             << " nodes for " << entity_indices.size() << " entities.";
 }
 //----------------------------------------------------------------------------------
-BoundingBoxTree BoundingBoxTree::compute_global_tree(const MPI_Comm& comm) const
-{
-  // Build tree for each process
-  const int mpi_size = MPI::size(comm);
-
-  // Send root node coordinates to all processes
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> send_bbox;
-  send_bbox.setZero();
-  if (num_bboxes() > 0)
-    send_bbox = _bbox_coordinates.bottomRows(2);
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> recv_bbox(
-      mpi_size * 2, 3);
-  MPI_Allgather(send_bbox.data(), 6, MPI_DOUBLE, recv_bbox.data(), 6,
-                MPI_DOUBLE, comm);
-
-  auto [global_bboxes, global_coords] = build_from_leaf(recv_bbox);
-  BoundingBoxTree global_tree(global_bboxes, global_coords);
-
-  LOG(INFO) << "Computed global bounding box tree with "
-            << global_tree.num_bboxes() << " boxes.";
-  return global_tree;
-}
-//-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
+BoundingBoxTree::BoundingBoxTree(
+    const std::vector<std::array<double, 3>>& points)
     : _tdim(0), _bboxes(0, 2), _bbox_coordinates(0, 3)
 {
   // Create leaf partition (to be sorted)
@@ -378,6 +374,29 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
   }
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " points.";
+}
+//-----------------------------------------------------------------------------
+BoundingBoxTree BoundingBoxTree::compute_global_tree(const MPI_Comm& comm) const
+{
+  // Build tree for each process
+  const int mpi_size = MPI::size(comm);
+
+  // Send root node coordinates to all processes
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> send_bbox;
+  send_bbox.setZero();
+  if (num_bboxes() > 0)
+    send_bbox = _bbox_coordinates.bottomRows(2);
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> recv_bbox(
+      mpi_size * 2, 3);
+  MPI_Allgather(send_bbox.data(), 6, MPI_DOUBLE, recv_bbox.data(), 6,
+                MPI_DOUBLE, comm);
+
+  auto [global_bboxes, global_coords] = build_from_leaf(recv_bbox);
+  BoundingBoxTree global_tree(global_bboxes, global_coords);
+
+  LOG(INFO) << "Computed global bounding box tree with "
+            << global_tree.num_bboxes() << " boxes.";
+  return global_tree;
 }
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::num_bboxes() const { return _bboxes.rows(); }

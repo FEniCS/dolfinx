@@ -53,8 +53,8 @@ public:
 
   /// Constructor
   /// @param[in] points Cloud of points to build the bounding box tree
-  ///                   around
-  BoundingBoxTree(const std::vector<Eigen::Vector3d>& points);
+  /// around
+  BoundingBoxTree(const std::vector<std::array<double, 3>>& points);
 
   /// Move constructor
   BoundingBoxTree(BoundingBoxTree&& tree) = default;

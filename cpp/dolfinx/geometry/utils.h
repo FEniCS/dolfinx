@@ -45,7 +45,7 @@ compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
 /// @param[in] p The point
 /// @return Bounding box leaves (local to process) that contain the point
 std::vector<int> compute_collisions(const BoundingBoxTree& tree,
-                                    const Eigen::Vector3d& p);
+                                    const std::array<double, 3>& p);
 
 /// Compute closest mesh entity (local to process) for the topological distance
 /// of the bounding box tree and distance and a point
@@ -56,14 +56,15 @@ std::vector<int> compute_collisions(const BoundingBoxTree& tree,
 /// function to estimate an intial search radius.
 /// @return The local index of the entity and the distance from the point.
 std::pair<std::int32_t, double>
-compute_closest_entity(const BoundingBoxTree& tree, const Eigen::Vector3d& p,
-                       const mesh::Mesh& mesh, double R = -1);
+compute_closest_entity(const BoundingBoxTree& tree,
+                       const std::array<double, 3>& p, const mesh::Mesh& mesh,
+                       double R = -1);
 
 /// Compute squared distance between point and bounding box wih index
 /// "node". Returns zero if point is inside box.
 double compute_squared_distance_bbox(
     const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
-    const Eigen::Vector3d& x);
+    const std::array<double, 3>& x);
 
 /// Compute squared distance from a given point to the nearest point on
 /// a cell (only first order convex cells are supported at this stage)
@@ -79,19 +80,19 @@ double compute_squared_distance_bbox(
 /// to the mesh to compute the Point
 /// @return shortest squared distance from p to entity
 double squared_distance(const mesh::Mesh& mesh, int dim, std::int32_t index,
-                        const Eigen::Vector3d& p);
+                        const std::array<double, 3>& p);
 
 /// From the given Mesh, select up to n cells (local to process) from the list
 /// which actually collide with point p. n may be zero (selects all valid
 /// cells). Less than n cells may be returned.
 /// @param[in] mesh Mesh
 /// @param[in] candidate_cells List of cell indices to test
-/// @param[in] point Point to check for collision
+/// @param[in] p Point to check for collision
 /// @param[in] n Maximum number of positive results to return
 /// @return List of cells which collide with point
 std::vector<std::int32_t>
 select_colliding_cells(const dolfinx::mesh::Mesh& mesh,
                        const tcb::span<const std::int32_t>& candidate_cells,
-                       const Eigen::Vector3d& point, int n);
+                       const std::array<double, 3>& p, int n);
 } // namespace geometry
 } // namespace dolfinx
