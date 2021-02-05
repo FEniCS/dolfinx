@@ -65,24 +65,9 @@ compute_bbox_of_points(const std::vector<std::array<double, 3>>& points,
     const std::array<double, 3>& p = points[*it];
     b[0] = std::min(b[0], p);
     b[1] = std::max(b[1], p);
-
-    // b[0] = b[0].min(p.transpose().array());
-    // b[1] = b[1].max(p.transpose().array());
   }
 
   return b;
-
-  // Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
-  // b.row(0) = points[*begin];
-  // b.row(1) = points[*begin];
-  // for (auto it = begin; it != end; ++it)
-  // {
-  //   const Eigen::Vector3d& p = points[*it];
-  //   b.row(0) = b.row(0).min(p.transpose().array());
-  //   b.row(1) = b.row(1).max(p.transpose().array());
-  // }
-
-  // return b;
 }
 //-----------------------------------------------------------------------------
 // Compute bounding box of bounding boxes
@@ -225,10 +210,8 @@ int _build_from_point(const std::vector<std::array<double, 3>>& points,
   auto middle = begin + (end - begin) / 2;
   Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
   (b1 - b0).maxCoeff(&axis);
-  std::nth_element(begin, middle, end, [&points, &axis](int i, int j) -> bool {
-    const double* pi = points[i].data();
-    const double* pj = points[j].data();
-    return pi[axis] < pj[axis];
+  std::nth_element(begin, middle, end, [&points, axis](int i, int j) -> bool {
+    return points[i][axis] < points[j][axis];
   });
 
   // Split bounding boxes into two groups and call recursively
