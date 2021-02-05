@@ -217,10 +217,15 @@ public:
   /// (evaluated at the point)
   /// @param[in] K The inverse of the Jacobian of the map to the cell (evaluated
   /// at the point)
-  void map_push_forward(Eigen::ArrayXd& physical_data,
-                        const Eigen::ArrayXd& reference_data,
-                        const Eigen::MatrixXd& J, double detJ,
-                        const Eigen::MatrixXd& K) const;
+  void map_push_forward(
+      Eigen::Array<double, Eigen::Dynamic, 1>& physical_data,
+      const Eigen::Array<double, Eigen::Dynamic, 1>& reference_data,
+      const Eigen::MatrixXd& J, double detJ, const Eigen::MatrixXd& K) const;
+  void map_push_forward(
+      Eigen::Array<std::complex<double>, Eigen::Dynamic, 1>& physical_data,
+      const Eigen::Array<std::complex<double>, Eigen::Dynamic, 1>&
+          reference_data,
+      const Eigen::MatrixXd& J, double detJ, const Eigen::MatrixXd& K) const;
 
   /// Map a function value from a physical cell to the reference
   /// @param[in,out] reference_data The data on the reference element at the
@@ -231,10 +236,16 @@ public:
   /// (evaluated at the point)
   /// @param[in] K The inverse of the Jacobian of the map to the cell (evaluated
   /// at the point)
-  void map_pull_back(Eigen::ArrayXd& reference_data,
-                     const Eigen::ArrayXd& physical_data,
-                     const Eigen::MatrixXd& J, double detJ,
-                     const Eigen::MatrixXd& K) const;
+  void
+  map_pull_back(Eigen::Array<double, Eigen::Dynamic, 1>& reference_data,
+                const Eigen::Array<double, Eigen::Dynamic, 1>& physical_data,
+                const Eigen::MatrixXd& J, double detJ,
+                const Eigen::MatrixXd& K) const;
+  void map_pull_back(
+      Eigen::Array<std::complex<double>, Eigen::Dynamic, 1>& reference_data,
+      const Eigen::Array<std::complex<double>, Eigen::Dynamic, 1>&
+          physical_data,
+      const Eigen::MatrixXd& J, double detJ, const Eigen::MatrixXd& K) const;
 
 private:
   std::string _signature, _family;

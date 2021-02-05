@@ -296,21 +296,39 @@ bool FiniteElement::needs_permutation_data() const noexcept
   return _needs_permutation_data;
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::map_push_forward(Eigen::ArrayXd& physical_data,
-                                     const Eigen::ArrayXd& reference_data,
-                                     const Eigen::MatrixXd& J, double detJ,
-                                     const Eigen::MatrixXd& K) const
+void FiniteElement::map_push_forward(
+    Eigen::Array<double, Eigen::Dynamic, 1>& physical_data,
+    const Eigen::Array<double, Eigen::Dynamic, 1>& reference_data,
+    const Eigen::MatrixXd& J, double detJ, const Eigen::MatrixXd& K) const
 {
-  physical_data = basix::map_push_forward(_basix_element_handle, reference_data,
-                                          J, detJ, K);
+  physical_data = basix::map_push_forward_real(_basix_element_handle,
+                                               reference_data, J, detJ, K);
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::map_pull_back(Eigen::ArrayXd& reference_data,
-                                  const Eigen::ArrayXd& physical_data,
-                                  const Eigen::MatrixXd& J, double detJ,
-                                  const Eigen::MatrixXd& K) const
+void FiniteElement::map_pull_back(
+    Eigen::Array<double, Eigen::Dynamic, 1>& reference_data,
+    const Eigen::Array<double, Eigen::Dynamic, 1>& physical_data,
+    const Eigen::MatrixXd& J, double detJ, const Eigen::MatrixXd& K) const
 {
-  reference_data
-      = basix::map_pull_back(_basix_element_handle, physical_data, J, detJ, K);
+  reference_data = basix::map_pull_back_real(_basix_element_handle,
+                                             physical_data, J, detJ, K);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::map_push_forward(
+    Eigen::Array<std::complex<double>, Eigen::Dynamic, 1>& physical_data,
+    const Eigen::Array<std::complex<double>, Eigen::Dynamic, 1>& reference_data,
+    const Eigen::MatrixXd& J, double detJ, const Eigen::MatrixXd& K) const
+{
+  physical_data = basix::map_push_forward_complex(_basix_element_handle,
+                                                  reference_data, J, detJ, K);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::map_pull_back(
+    Eigen::Array<std::complex<double>, Eigen::Dynamic, 1>& reference_data,
+    const Eigen::Array<std::complex<double>, Eigen::Dynamic, 1>& physical_data,
+    const Eigen::MatrixXd& J, double detJ, const Eigen::MatrixXd& K) const
+{
+  reference_data = basix::map_pull_back_complex(_basix_element_handle,
+                                                physical_data, J, detJ, K);
 }
 //-----------------------------------------------------------------------------
