@@ -194,6 +194,9 @@ void interpolate(
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = element->interpolation_points();
 
+  if (X.rows() == 0)
+    throw std::runtime_error("Interpolation into this space is not yet supported.");
+
   mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
       = mesh->topology().get_cell_permutation_info();
