@@ -220,6 +220,7 @@ def test_RTCE_interpolation(cell_type, order, unit):
     V = FunctionSpace(mesh, ("RTCE", order))
     run_vector_test(V, order - 1)
 
+
 @skip_in_parallel
 @pytest.mark.parametrize(
     "cell_type", [CellType.hexahedron])
