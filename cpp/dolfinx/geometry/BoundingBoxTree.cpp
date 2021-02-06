@@ -21,7 +21,7 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // Compute bounding box of mesh entity
-Eigen::Array<double, 2, 3, Eigen::RowMajor>
+std::array<std::array<double, 3>, 2>
 compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
@@ -29,102 +29,124 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
       = mesh.geometry().x();
   mesh.topology_mutable().create_connectivity(dim, tdim);
+
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> entity(1);
   entity(0, 0) = index;
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
-  auto entity_indices = vertex_indices.row(0);
+  auto entity_vertex_indices = vertex_indices.row(0);
 
-  const Eigen::Vector3d x0 = geom_dofs.row(entity_indices[0]);
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
-  b.row(0) = x0;
-  b.row(1) = x0;
+  const Eigen::Vector3d x0 = geom_dofs.row(entity_vertex_indices[0]);
+  std::array<std::array<double, 3>, 2> b;
+  b[0] = {x0[0], x0[1], x0[2]};
+  b[1] = b[0];
   // Compute min and max over remaining vertices
-  for (int i = 1; i < entity_indices.size(); ++i)
+  std::array<double, 3> x;
+  for (int i = 1; i < entity_vertex_indices.size(); ++i)
   {
-    const int local_vertex = entity_indices[i];
-    auto x = geom_dofs.row(local_vertex);
-    b.row(0) = b.row(0).min(x);
-    b.row(1) = b.row(1).max(x);
+    const int local_vertex = entity_vertex_indices[i];
+    x = {geom_dofs(local_vertex, 0), geom_dofs(local_vertex, 1),
+         geom_dofs(local_vertex, 2)};
+    b[0] = std::min(b[0], x);
+    b[1] = std::max(b[1], x);
   }
 
   return b;
 }
 //-----------------------------------------------------------------------------
 // Compute bounding box of bounding boxes
-Eigen::Array<double, 2, 3, Eigen::RowMajor> compute_bbox_of_bboxes(
-    const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& leaf_bboxes,
-    const std::vector<int>::iterator& begin,
-    const std::vector<int>::iterator& end)
+std::array<std::array<double, 3>, 2> compute_bbox_of_bboxes(
+    const tcb::span<const std::pair<std::array<std::array<double, 3>, 2>, int>>&
+        leaf_bboxes)
 {
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> b
-      = leaf_bboxes.block<2, 3>(2 * (*begin), 0);
+  // Eigen::Array<double, 2, 3, Eigen::RowMajor> b
+  //     = leaf_bboxes.block<2, 3>(2 * (*begin), 0);
+  std::array<std::array<double, 3>, 2> b;
+  b[0] = leaf_bboxes[0].first[0];
+  b[1] = leaf_bboxes[0].first[1];
 
   // Compute min and max over remaining boxes
-  for (auto it = begin; it != end; ++it)
+  for (auto& box : leaf_bboxes)
   {
-    b.row(0) = b.row(0).min(leaf_bboxes.row(2 * (*it)));
-    b.row(1) = b.row(1).max(leaf_bboxes.row(2 * (*it) + 1));
+    b[0] = std::min(b[0], box.first[0]);
+    b[1] = std::max(b[1], box.first[1]);
+    // b.row(0).min(leaf_bboxes.row(2 * (*it)));
+    // b[1] = b.row(1).max(leaf_bboxes.row(2 * (*it) + 1));
   }
 
   return b;
 }
 //------------------------------------------------------------------------------
 int _build_from_leaf(
-    const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& leaf_bboxes,
-    const std::vector<int>::iterator partition_begin,
-    const std::vector<int>::iterator partition_end,
+    tcb::span<std::pair<std::array<std::array<double, 3>, 2>, int>> leaf_bboxes,
     std::vector<std::array<int, 2>>& bboxes,
     std::vector<double>& bbox_coordinates)
 {
-  assert(partition_begin < partition_end);
+  // assert(partition_begin < partition_end);
+  // std::cout << "Recursive: " << leaf_bboxes.size() << std::endl;
 
-  if (partition_end - partition_begin == 1)
+  // if (partition_end - partition_begin == 1)
+  if (leaf_bboxes.size() == 1)
   {
     // Reached leaf
 
     // Get bounding box coordinates for leaf
-    const int entity_index = *partition_begin;
-    Eigen::Array<double, 2, 3, Eigen::RowMajor> b
-        = leaf_bboxes.block<2, 3>(2 * entity_index, 0);
+    // const int entity_index = *partition_begin;
+    const int entity_index = leaf_bboxes[0].second;
+    // Eigen::Array<double, 2, 3, Eigen::RowMajor> b
+    //     = leaf_bboxes.block<2, 3>(2 * entity_index, 0);
+    std::array<double, 3> b0 = leaf_bboxes[0].first[0];
+    std::array<double, 3> b1 = leaf_bboxes[0].first[1];
+    // = leaf_bboxes.block<2, 3>(2 * entity_index, 0);
 
     // Store bounding box data
     bboxes.push_back({entity_index, entity_index});
-    bbox_coordinates.insert(bbox_coordinates.end(), b.data(), b.data() + 3);
-    bbox_coordinates.insert(bbox_coordinates.end(), b.data() + 3, b.data() + 6);
+    bbox_coordinates.insert(bbox_coordinates.end(), b0.begin(), b0.end());
+    bbox_coordinates.insert(bbox_coordinates.end(), b1.begin(), b1.end());
     return bboxes.size() - 1;
   }
   else
   {
     // Compute bounding box of all bounding boxes
-    Eigen::Array<double, 2, 3, Eigen::RowMajor> b
-        = compute_bbox_of_bboxes(leaf_bboxes, partition_begin, partition_end);
+    std::array<std::array<double, 3>, 2> b
+        = compute_bbox_of_bboxes(leaf_bboxes);
+    // std::array<std::array<double, 3>, 2> b
+    //     = compute_bbox_of_bboxes(leaf_bboxes);
+    // auto minmax = std::minmax_element(leaf_bboxes.begin(),
+    // leaf_bboxes.end()); std::array<double, 3> b0 = minmax.first->first[0];
+    // std::array<double, 3> b1 = minmax.second->first[1];
+    std::array<double, 3> b0 = b[0];
+    std::array<double, 3> b1 = b[1];
 
     // Sort bounding boxes along longest axis
-    Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
-    (b.row(1) - b.row(0)).maxCoeff(&axis);
-    auto partition_middle
-        = partition_begin + (partition_end - partition_begin) / 2;
-    std::nth_element(partition_begin, partition_middle, partition_end,
-                     [&leaf_bboxes, axis](int i, int j) -> bool {
-                       const double bi = leaf_bboxes(i * 2, axis)
-                                         + leaf_bboxes(i * 2 + 1, axis);
-                       const double bj = leaf_bboxes(j * 2, axis)
-                                         + leaf_bboxes(j * 2 + 1, axis);
-                       return (bi < bj);
-                     });
+    std::array<double, 3> b_diff;
+    std::transform(b1.begin(), b1.end(), b0.begin(), b_diff.begin(),
+                   std::minus<double>());
+    const std::size_t axis = std::distance(
+        b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
+
+    auto middle = std::next(leaf_bboxes.begin(), leaf_bboxes.size() / 2);
+
+    std::nth_element(
+        leaf_bboxes.begin(), middle, leaf_bboxes.end(),
+        [axis](const std::pair<std::array<std::array<double, 3>, 2>, int>& p0,
+               const std::pair<std::array<std::array<double, 3>, 2>, int>& p1)
+            -> bool {
+          const double x0 = p0.first[0][axis] + p0.first[1][axis];
+          const double x1 = p1.first[0][axis] + p1.first[1][axis];
+          return x0 < x1;
+        });
 
     // Split bounding boxes into two groups and call recursively
-    std::array bbox{_build_from_leaf(leaf_bboxes, partition_begin,
-                                     partition_middle, bboxes,
-                                     bbox_coordinates),
-                    _build_from_leaf(leaf_bboxes, partition_middle,
-                                     partition_end, bboxes, bbox_coordinates)};
+    std::array bbox{_build_from_leaf(tcb::span(leaf_bboxes.begin(), middle),
+                                     bboxes, bbox_coordinates),
+                    _build_from_leaf(tcb::span(middle, leaf_bboxes.end()),
+                                     bboxes, bbox_coordinates)};
 
     // Store bounding box data. Note that root box will be added last.
     bboxes.push_back(bbox);
-    bbox_coordinates.insert(bbox_coordinates.end(), b.data(), b.data() + 3);
-    bbox_coordinates.insert(bbox_coordinates.end(), b.data() + 3, b.data() + 6);
+    bbox_coordinates.insert(bbox_coordinates.end(), b0.begin(), b0.end());
+    bbox_coordinates.insert(bbox_coordinates.end(), b1.begin(), b1.end());
     return bboxes.size() - 1;
   }
 }
@@ -132,16 +154,18 @@ int _build_from_leaf(
 std::tuple<Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor>,
            Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
 build_from_leaf(
-    const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& leaf_bboxes)
+    std::vector<std::pair<std::array<std::array<double, 3>, 2>, int>>
+        leaf_bboxes)
 {
-  assert(leaf_bboxes.size() % 2 == 0);
-  std::vector<int> partition(leaf_bboxes.rows() / 2);
-  std::iota(partition.begin(), partition.end(), 0);
+  // assert(leaf_bboxes.size() % 2 == 0);
+  // std::vector<int> partition(leaf_bboxes.rows() / 2);
+  // std::iota(partition.begin(), partition.end(), 0);
 
   std::vector<std::array<int, 2>> bboxes;
   std::vector<double> bbox_coordinates;
-  _build_from_leaf(leaf_bboxes, partition.begin(), partition.end(), bboxes,
-                   bbox_coordinates);
+  // std::cout << "Start build from leaf" << std::endl;
+  _build_from_leaf(leaf_bboxes, bboxes, bbox_coordinates);
+  // std::cout << "End build from leaf" << std::endl;
 
   Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor> bbox_array(
       bboxes.size(), 2);
@@ -150,6 +174,7 @@ build_from_leaf(
     bbox_array(i, 0) = bboxes[i][0];
     bbox_array(i, 1) = bboxes[i][1];
   }
+
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> bbox_coord_array(
       bbox_coordinates.size() / 3, 3);
   std::copy(bbox_coordinates.begin(), bbox_coordinates.end(),
@@ -236,14 +261,18 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
   auto map = mesh.topology().index_map(tdim);
   assert(map);
   const std::int32_t num_leaves = map->size_local() + map->num_ghosts();
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> leaf_bboxes(
-      2 * num_leaves, 3);
-
+  std::vector<std::pair<std::array<std::array<double, 3>, 2>, int>> leaf_bboxes(
+      num_leaves);
   for (int e = 0; e < num_leaves; ++e)
   {
-    leaf_bboxes.block<2, 3>(2 * e, 0) = compute_bbox_of_entity(mesh, tdim, e);
-    leaf_bboxes.row(2 * e) -= padding;
-    leaf_bboxes.row(2 * e + 1) += padding;
+    std::array<std::array<double, 3>, 2> b
+        = compute_bbox_of_entity(mesh, tdim, e);
+    std::for_each(b[0].begin(), b[0].end(),
+                  [padding](double& x) { x -= padding; });
+    std::for_each(b[1].begin(), b[1].end(),
+                  [padding](double& x) { x += padding; });
+    leaf_bboxes[e].first = b;
+    leaf_bboxes[e].second = e;
   }
 
   // Recursively build the bounding box tree from the leaves
@@ -284,23 +313,28 @@ BoundingBoxTree::BoundingBoxTree(
   mesh.topology_mutable().create_entities(tdim);
 
   // Copy and sort indices
-  std::vector<std::int32_t> entity_indices_sorted(entity_indices);
+  std::vector<std::int32_t> entity_indices_sorted = entity_indices;
   std::sort(entity_indices_sorted.begin(), entity_indices_sorted.end());
 
   // Create bounding boxes for all mesh entities (leaves)
-  auto map = mesh.topology().index_map(tdim);
-  assert(map);
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> leaf_bboxes(
-      2 * entity_indices.size(), 3);
-  for (std::size_t i = 0; i < entity_indices_sorted.size(); ++i)
+  std::vector<std::pair<std::array<std::array<double, 3>, 2>, int>> leaf_bboxes(
+      entity_indices.size());
+  for (std::size_t e = 0; e < entity_indices_sorted.size(); ++e)
   {
-    leaf_bboxes.block<2, 3>(2 * i, 0)
-        = compute_bbox_of_entity(mesh, tdim, entity_indices_sorted[i]);
-    leaf_bboxes.row(2 * i) -= padding;
-    leaf_bboxes.row(2 * i + 1) += padding;
+    std::array<std::array<double, 3>, 2> b
+        = compute_bbox_of_entity(mesh, tdim, entity_indices_sorted[e]);
+    std::for_each(b[0].begin(), b[0].end(),
+                  [padding](double& x) { x -= padding; });
+    std::for_each(b[1].begin(), b[1].end(),
+                  [padding](double& x) { x += padding; });
+
+    leaf_bboxes[e].first[0] = b[0];
+    leaf_bboxes[e].first[1] = b[1];
+    leaf_bboxes[e].second = e;
   }
+
   // Recursively build the bounding box tree from the leaves
-  if (leaf_bboxes.rows() > 0)
+  if (!leaf_bboxes.empty())
     std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
 
   // Remap leaf indices
@@ -314,10 +348,7 @@ BoundingBoxTree::BoundingBoxTree(
     const std::vector<std::array<double, 3>>& points)
     : _tdim(0), _bboxes(0, 2), _bbox_coordinates(0, 3)
 {
-  // Create leaf partition (to be sorted)
   const int num_leaves = points.size();
-  std::vector<int> leaf_partition(num_leaves);
-  std::iota(leaf_partition.begin(), leaf_partition.end(), 0);
 
   // Recursively build the bounding box tree from the leaves
   std::vector<std::array<int, 2>> bboxes;
@@ -325,10 +356,10 @@ BoundingBoxTree::BoundingBoxTree(
   if (num_leaves > 0)
   {
     std::vector<std::pair<std::array<double, 3>, int>> _points(points.size());
-    for (std::size_t i = 0; i < _points.size(); ++i)
+    for (std::size_t p = 0; p < _points.size(); ++p)
     {
-      std::copy(points[i].begin(), points[i].end(), _points[i].first.begin());
-      _points[i].second = i;
+      std::copy(points[p].begin(), points[p].end(), _points[p].first.begin());
+      _points[p].second = p;
     }
 
     _build_from_point(tcb::make_span(_points), bboxes, bbox_coordinates);
@@ -342,30 +373,41 @@ BoundingBoxTree::BoundingBoxTree(
         = Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
             bbox_coordinates.data(), bbox_coordinates.size() / 3, 3);
   }
+
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " points.";
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree BoundingBoxTree::compute_global_tree(const MPI_Comm& comm) const
 {
-  // Build tree for each process
-  const int mpi_size = MPI::size(comm);
+  // Build tree for each rank
+  const int mpi_size = dolfinx::MPI::size(comm);
 
   // Send root node coordinates to all processes
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> send_bbox;
-  send_bbox.setZero();
+  std::vector<double> send_bbox(6, 0.0);
   if (num_bboxes() > 0)
-    send_bbox = _bbox_coordinates.bottomRows(2);
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> recv_bbox(
-      mpi_size * 2, 3);
+    std::copy_n(_bbox_coordinates.bottomRows(2).data(), 6, send_bbox.begin());
+  std::vector<double> recv_bbox(mpi_size * 6);
   MPI_Allgather(send_bbox.data(), 6, MPI_DOUBLE, recv_bbox.data(), 6,
                 MPI_DOUBLE, comm);
 
-  auto [global_bboxes, global_coords] = build_from_leaf(recv_bbox);
+  std::vector<std::pair<std::array<std::array<double, 3>, 2>, int>> _recv_bbox(
+      mpi_size);
+  for (std::size_t i = 0; i < _recv_bbox.size(); ++i)
+  {
+    std::copy_n(std::next(recv_bbox.begin(), 6 * i), 3,
+                _recv_bbox[i].first[0].begin());
+    std::copy_n(std::next(recv_bbox.begin(), 6 * i + 3), 3,
+                _recv_bbox[i].first[1].begin());
+    _recv_bbox[i].second = i;
+  }
+
+  auto [global_bboxes, global_coords] = build_from_leaf(_recv_bbox);
   BoundingBoxTree global_tree(global_bboxes, global_coords);
 
   LOG(INFO) << "Computed global bounding box tree with "
             << global_tree.num_bboxes() << " boxes.";
+
   return global_tree;
 }
 //-----------------------------------------------------------------------------

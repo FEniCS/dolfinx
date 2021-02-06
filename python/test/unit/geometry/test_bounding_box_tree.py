@@ -345,9 +345,7 @@ def test_surface_bbtree():
 
 
 def test_sub_bbtree():
-    """
-    Testing point collision with a BoundingBoxTree of sub entitites
-    """
+    """Testing point collision with a BoundingBoxTree of sub entitites"""
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, cell_type=cpp.mesh.CellType.hexahedron)
     tdim = mesh.topology.dim
     fdim = tdim - 1
@@ -362,6 +360,7 @@ def test_sub_bbtree():
 
     # Compute a BBtree for all processes
     process_bbtree = bbtree.compute_global_tree(mesh.mpi_comm())
+
     # Find possible ranks for this point
     point = numpy.array([0.2, 0.2, 1.0])
     ranks = compute_collisions_point(process_bbtree, point)
