@@ -51,25 +51,6 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   return b;
 }
 //-----------------------------------------------------------------------------
-// Compute bounding box of points
-std::array<std::array<double, 3>, 2>
-compute_bbox_of_points(const std::vector<std::array<double, 3>>& points,
-                       const std::vector<int>::iterator& begin,
-                       const std::vector<int>::iterator& end)
-{
-  std::array<std::array<double, 3>, 2> b;
-  b[0] = points[*begin];
-  b[1] = points[*begin];
-  for (auto it = begin; it != end; ++it)
-  {
-    const std::array<double, 3>& p = points[*it];
-    b[0] = std::min(b[0], p);
-    b[1] = std::max(b[1], p);
-  }
-
-  return b;
-}
-//-----------------------------------------------------------------------------
 // Compute bounding box of bounding boxes
 Eigen::Array<double, 2, 3, Eigen::RowMajor> compute_bbox_of_bboxes(
     const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& leaf_bboxes,
@@ -177,52 +158,52 @@ build_from_leaf(
   return {bbox_array, bbox_coord_array};
 }
 //-----------------------------------------------------------------------------
-int _build_from_point(const std::vector<std::array<double, 3>>& points,
-                      const std::vector<int>::iterator begin,
-                      const std::vector<int>::iterator end,
+int _build_from_point(tcb::span<std::pair<std::array<double, 3>, int>> points,
                       std::vector<std::array<int, 2>>& bboxes,
                       std::vector<double>& bbox_coordinates)
 {
-  assert(begin < end);
-
   // Reached leaf
-  if (end - begin == 1)
+  if (points.size() == 1)
   {
     // Store bounding box data
-    const int point_index = *begin;
-    const int c1 = point_index; // index of entity contained in leaf
+    const int c1 = points[0].second; // index of entity contained in leaf
     bboxes.push_back({c1, c1});
-    bbox_coordinates.insert(bbox_coordinates.end(), points[point_index].data(),
-                            points[point_index].data() + 3);
-    bbox_coordinates.insert(bbox_coordinates.end(), points[point_index].data(),
-                            points[point_index].data() + 3);
+    bbox_coordinates.insert(bbox_coordinates.end(), points[0].first.begin(),
+                            points[0].first.end());
+    bbox_coordinates.insert(bbox_coordinates.end(), points[0].first.begin(),
+                            points[0].first.end());
     return bboxes.size() - 1;
   }
 
   // Compute bounding box of all points
-  std::array<std::array<double, 3>, 2> b
-      = compute_bbox_of_points(points, begin, end);
+  auto minmax = std::minmax_element(points.begin(), points.end());
+  std::array<double, 3> b0 = minmax.first->first;
+  std::array<double, 3> b1 = minmax.second->first;
 
   // Sort bounding boxes along longest axis
   std::array<double, 3> b_diff;
-  std::transform(b[1].begin(), b[1].end(), b[0].begin(), b_diff.begin(),
+  std::transform(b1.begin(), b1.end(), b0.begin(), b_diff.begin(),
                  std::minus<double>());
   const std::size_t axis = std::distance(
       b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
-  auto middle = std::next(begin, (end - begin) / 2);
-  std::nth_element(begin, middle, end, [&points, axis](int i, int j) -> bool {
-    return points[i][axis] < points[j][axis];
-  });
+  auto middle = std::next(points.begin(), points.size() / 2);
+  std::nth_element(
+      points.begin(), middle, points.end(),
+      [axis](const std::pair<std::array<double, 3>, int>& p0,
+             const std::pair<std::array<double, 3>, int>& p1) -> bool {
+        return p0.first[axis] < p1.first[axis];
+      });
 
   // Split bounding boxes into two groups and call recursively
-  std::array bbox{
-      _build_from_point(points, begin, middle, bboxes, bbox_coordinates),
-      _build_from_point(points, middle, end, bboxes, bbox_coordinates)};
+  std::array bbox{_build_from_point(tcb::span(points.begin(), middle), bboxes,
+                                    bbox_coordinates),
+                  _build_from_point(tcb::span(middle, points.end()), bboxes,
+                                    bbox_coordinates)};
 
-  // Store bounding box data. Note that root box will be added last
+  // Store bounding box data. Note that root box will be added last.
   bboxes.push_back(bbox);
-  bbox_coordinates.insert(bbox_coordinates.end(), b[0].begin(), b[0].end());
-  bbox_coordinates.insert(bbox_coordinates.end(), b[1].begin(), b[1].end());
+  bbox_coordinates.insert(bbox_coordinates.end(), b0.begin(), b0.end());
+  bbox_coordinates.insert(bbox_coordinates.end(), b1.begin(), b1.end());
   return bboxes.size() - 1;
 }
 //-----------------------------------------------------------------------------
@@ -343,8 +324,14 @@ BoundingBoxTree::BoundingBoxTree(
   std::vector<double> bbox_coordinates;
   if (num_leaves > 0)
   {
-    _build_from_point(points, leaf_partition.begin(), leaf_partition.end(),
-                      bboxes, bbox_coordinates);
+    std::vector<std::pair<std::array<double, 3>, int>> _points(points.size());
+    for (std::size_t i = 0; i < _points.size(); ++i)
+    {
+      std::copy(points[i].begin(), points[i].end(), _points[i].first.begin());
+      _points[i].second = i;
+    }
+
+    _build_from_point(tcb::make_span(_points), bboxes, bbox_coordinates);
     _bboxes.resize(bboxes.size(), 2);
     for (std::size_t i = 0; i < bboxes.size(); ++i)
     {
