@@ -348,7 +348,7 @@ ONBUILD RUN cd dolfinx && \
     cd build-complex && \
     PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFIN_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
-    . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
+    . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf
     cd ../python && \
     CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies .
 
