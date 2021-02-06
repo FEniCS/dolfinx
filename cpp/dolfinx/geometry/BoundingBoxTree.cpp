@@ -40,15 +40,16 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   std::array<std::array<double, 3>, 2> b;
   b[0] = {x0[0], x0[1], x0[2]};
   b[1] = b[0];
+
   // Compute min and max over remaining vertices
-  std::array<double, 3> x;
   for (int i = 1; i < entity_vertex_indices.size(); ++i)
   {
     const int local_vertex = entity_vertex_indices[i];
-    x = {geom_dofs(local_vertex, 0), geom_dofs(local_vertex, 1),
-         geom_dofs(local_vertex, 2)};
-    b[0] = std::min(b[0], x);
-    b[1] = std::max(b[1], x);
+    for (int j = 0; j < 3; ++j)
+    {
+      b[0][j] = std::min(b[0][j], geom_dofs(local_vertex, j));
+      b[1][j] = std::max(b[1][j], geom_dofs(local_vertex, j));
+    }
   }
 
   return b;
@@ -59,8 +60,6 @@ std::array<std::array<double, 3>, 2> compute_bbox_of_bboxes(
     const tcb::span<const std::pair<std::array<std::array<double, 3>, 2>, int>>&
         leaf_bboxes)
 {
-  // Eigen::Array<double, 2, 3, Eigen::RowMajor> b
-  //     = leaf_bboxes.block<2, 3>(2 * (*begin), 0);
   std::array<std::array<double, 3>, 2> b;
   b[0] = leaf_bboxes[0].first[0];
   b[1] = leaf_bboxes[0].first[1];
@@ -68,10 +67,11 @@ std::array<std::array<double, 3>, 2> compute_bbox_of_bboxes(
   // Compute min and max over remaining boxes
   for (auto& box : leaf_bboxes)
   {
-    b[0] = std::min(b[0], box.first[0]);
-    b[1] = std::max(b[1], box.first[1]);
-    // b.row(0).min(leaf_bboxes.row(2 * (*it)));
-    // b[1] = b.row(1).max(leaf_bboxes.row(2 * (*it) + 1));
+    for (int j = 0; j < 3; ++j)
+    {
+      b[0][j] = std::min(b[0][j], box.first[0][j]);
+      b[1][j] = std::max(b[1][j], box.first[1][j]);
+    }
   }
 
   return b;
@@ -82,22 +82,14 @@ int _build_from_leaf(
     std::vector<std::array<int, 2>>& bboxes,
     std::vector<double>& bbox_coordinates)
 {
-  // assert(partition_begin < partition_end);
-  // std::cout << "Recursive: " << leaf_bboxes.size() << std::endl;
-
-  // if (partition_end - partition_begin == 1)
   if (leaf_bboxes.size() == 1)
   {
     // Reached leaf
 
     // Get bounding box coordinates for leaf
-    // const int entity_index = *partition_begin;
     const int entity_index = leaf_bboxes[0].second;
-    // Eigen::Array<double, 2, 3, Eigen::RowMajor> b
-    //     = leaf_bboxes.block<2, 3>(2 * entity_index, 0);
     std::array<double, 3> b0 = leaf_bboxes[0].first[0];
     std::array<double, 3> b1 = leaf_bboxes[0].first[1];
-    // = leaf_bboxes.block<2, 3>(2 * entity_index, 0);
 
     // Store bounding box data
     bboxes.push_back({entity_index, entity_index});
@@ -110,11 +102,6 @@ int _build_from_leaf(
     // Compute bounding box of all bounding boxes
     std::array<std::array<double, 3>, 2> b
         = compute_bbox_of_bboxes(leaf_bboxes);
-    // std::array<std::array<double, 3>, 2> b
-    //     = compute_bbox_of_bboxes(leaf_bboxes);
-    // auto minmax = std::minmax_element(leaf_bboxes.begin(),
-    // leaf_bboxes.end()); std::array<double, 3> b0 = minmax.first->first[0];
-    // std::array<double, 3> b1 = minmax.second->first[1];
     std::array<double, 3> b0 = b[0];
     std::array<double, 3> b1 = b[1];
 
@@ -157,15 +144,10 @@ build_from_leaf(
     std::vector<std::pair<std::array<std::array<double, 3>, 2>, int>>
         leaf_bboxes)
 {
-  // assert(leaf_bboxes.size() % 2 == 0);
-  // std::vector<int> partition(leaf_bboxes.rows() / 2);
-  // std::iota(partition.begin(), partition.end(), 0);
 
   std::vector<std::array<int, 2>> bboxes;
   std::vector<double> bbox_coordinates;
-  // std::cout << "Start build from leaf" << std::endl;
   _build_from_leaf(leaf_bboxes, bboxes, bbox_coordinates);
-  // std::cout << "End build from leaf" << std::endl;
 
   Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor> bbox_array(
       bboxes.size(), 2);

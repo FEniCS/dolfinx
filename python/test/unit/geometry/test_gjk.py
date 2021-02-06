@@ -159,7 +159,7 @@ def test_cube_distance(delta, scale):
 
 @skip_in_parallel
 def test_collision_2nd_order_triangle():
-    points = np.array([[0, 0], [1, 0], [0, 1], [0.65, 0.65], [0, 0.5], [0.5, 0]])
+    points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.65, 0.65], [0.0, 0.5], [0.5, 0.0]])
     cells = np.array([[0, 1, 2, 3, 4, 5]])
     cell = ufl.Cell("triangle", geometric_dimension=2)
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
@@ -167,14 +167,14 @@ def test_collision_2nd_order_triangle():
 
     # Sample points along an interior line of the domain. The last point
     # is outside the simplex made by the vertices.
-    sample_points = np.array([[0.1, 0.3, 0], [0.2, 0.5, 0], [0.6, 0.6, 0]])
+    sample_points = np.array([[0.1, 0.3, 0.0], [0.2, 0.5, 0.0], [0.6, 0.6, 0.0]])
 
     # Create boundingboxtree
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     for point in sample_points:
         cell_candidates = geometry.compute_collisions_point(tree, point)
         colliding_cell = geometry.select_colliding_cells(mesh, cell_candidates, point, 1)
-        assert(len(colliding_cell) == 1)
+        assert len(colliding_cell) == 1
 
     # Check if there is a point on the linear approximation of the
     # curved facet
