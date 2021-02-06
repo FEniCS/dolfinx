@@ -46,7 +46,7 @@ public:
         _index_map(index_map), _cmap(element),
         _input_global_indices(std::forward<Vector64>(input_global_indices))
   {
-    if (x.rows() != (int)_input_global_indices.size())
+    if (x.rows() != _input_global_indices.size())
       throw std::runtime_error("Size mis-match");
 
     // Make all geometry 3D

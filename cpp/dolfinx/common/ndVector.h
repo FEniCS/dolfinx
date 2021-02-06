@@ -89,7 +89,7 @@ public:
   void resize(size_type rows, size_type cols, value_type val = value_type())
   {
     // TODO: check rows and cols
-    storage_.resize(rows * cols);
+    storage_.resize(rows * cols, val);
     rows_ = rows;
     cols_ = cols;
   }
