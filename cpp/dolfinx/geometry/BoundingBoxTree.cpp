@@ -31,7 +31,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   mesh.topology_mutable().create_connectivity(dim, tdim);
 
   // FIXME: return of small dynamic array is expensive
-  std::array<std::int32_t, 1> entity = {index};
+  const std::array<std::int32_t, 1> entity = {index};
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
   auto entity_vertex_indices = vertex_indices.row(0);
@@ -63,6 +63,8 @@ std::array<std::array<double, 3>, 2> compute_bbox_of_bboxes(
   std::array<std::array<double, 3>, 2> b;
   b[0] = leaf_bboxes[0].first[0];
   b[1] = leaf_bboxes[0].first[1];
+
+
 
   // Compute min and max over remaining boxes
   for (auto& box : leaf_bboxes)
@@ -138,7 +140,7 @@ int _build_from_leaf(
   }
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::vector<int>, std::vector<double>> build_from_leaf(
+std::pair<std::vector<int>, std::vector<double>> build_from_leaf(
     std::vector<std::pair<std::array<std::array<double, 3>, 2>, int>>
         leaf_bboxes)
 {
@@ -426,14 +428,6 @@ std::array<std::array<double, 3>, 2> BoundingBoxTree::get_bbox(int node) const
   std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node), 3, x[0].begin());
   std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node + 3), 3,
               x[1].begin());
-
-  // x[0][0] = _bbox_coordinates(2 * node, 0);
-  // x[0][1] = _bbox_coordinates(2 * node, 1);
-  // x[0][2] = _bbox_coordinates(2 * node, 2);
-  // x[1][0] = _bbox_coordinates(2 * node + 1, 0);
-  // x[1][1] = _bbox_coordinates(2 * node + 1, 1);
-  // x[1][2] = _bbox_coordinates(2 * node + 1, 2);
-
   return x;
 }
 //-----------------------------------------------------------------------------
