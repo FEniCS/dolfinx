@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <Eigen/Core>
+#include <array>
 #include <dolfinx/common/span.hpp>
 #include <utility>
 #include <vector>
@@ -52,8 +52,8 @@ std::vector<int> compute_collisions(const BoundingBoxTree& tree,
 /// @param[in] tree The bounding box tree
 /// @param[in] p The point
 /// @param[in] mesh The mesh
-/// @param[in] R Radius for search. Supplying a negative radius causes the
-/// function to estimate an intial search radius.
+/// @param[in] R Radius for search. Supplying a negative radius causes
+/// the function to estimate an initial search radius.
 /// @return The local index of the entity and the distance from the point.
 std::pair<std::int32_t, double>
 compute_closest_entity(const BoundingBoxTree& tree,
@@ -62,9 +62,9 @@ compute_closest_entity(const BoundingBoxTree& tree,
 
 /// Compute squared distance between point and bounding box wih index
 /// "node". Returns zero if point is inside box.
-double compute_squared_distance_bbox(
-    const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
-    const std::array<double, 3>& x);
+double
+compute_squared_distance_bbox(const std::array<std::array<double, 3>, 2>& b,
+                              const std::array<double, 3>& x);
 
 /// Compute squared distance from a given point to the nearest point on
 /// a cell (only first order convex cells are supported at this stage)

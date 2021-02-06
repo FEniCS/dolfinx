@@ -70,9 +70,9 @@ public:
 
   /// Return bounding box coordinates for a given node in the tree
   /// @param[in] node The bounding box node index
-  /// @return The bounding box where row(0) is the lower corner and
-  /// row(1) is the upper corner
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> get_bbox(int node) const;
+  /// @return The bounding box where [0] is the lower corner and [1] is
+  /// the upper corner
+  std::array<std::array<double, 3>, 2> get_bbox(int node) const;
 
   /// Compute a global bounding tree (collective on comm)
   /// This can be used to find which process a point might have a collision

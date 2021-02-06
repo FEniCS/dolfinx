@@ -18,30 +18,43 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // Check whether bounding box is a leaf node
-inline bool is_leaf(const std::array<int, 2>& bbox)
+constexpr bool is_leaf(const std::array<int, 2>& bbox)
 {
   // Leaf nodes are marked by setting child_0 equal to child_1
   return bbox[0] == bbox[1];
 }
 //-----------------------------------------------------------------------------
-bool point_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
+bool point_in_bbox(const std::array<std::array<double, 3>, 2>& b,
                    const std::array<double, 3>& x)
 {
+  Eigen::Array3d _x, b0, b1;
+  for (int i = 0; i < 3; ++i)
+  {
+    _x[i] = x[i];
+    b0[i] = b[0][i];
+    b1[i] = b[1][i];
+  }
+
   const double rtol = 1e-14;
-  auto eps0 = rtol * (b.row(1) - b.row(0));
-  Eigen::Vector3d _x;
-  _x << x[0], x[1], x[2];
-  return (_x.transpose().array() >= (b.row(0) - eps0).array()).all()
-         and (_x.transpose().array() <= (b.row(1) + eps0).array()).all();
+  const Eigen::Array3d eps0 = rtol * (b1 - b0);
+  return (_x >= (b0 - eps0)).all() and (_x <= (b1 + eps0)).all();
 }
 //-----------------------------------------------------------------------------
-bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
-                  const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b)
+bool bbox_in_bbox(const std::array<std::array<double, 3>, 2>& a,
+                  const std::array<std::array<double, 3>, 2>& b)
 {
-  const double rtol = 1e-14;
-  auto eps0 = rtol * (b.row(1) - b.row(0));
-  return (b.row(0) - eps0 <= a.row(1)).all()
-         and (b.row(1) + eps0 >= a.row(0)).all();
+  Eigen::Array3d a0, a1, b0, b1;
+  for (int i = 0; i < 3; ++i)
+  {
+    a0[i] = a[0][i];
+    a1[i] = a[1][i];
+    b0[i] = b[0][i];
+    b1[i] = b[1][i];
+  }
+
+  constexpr double rtol = 1e-14;
+  auto eps0 = rtol * (b1 - b0);
+  return (b0 - eps0 <= a1).all() and (b1 + eps0 >= a0).all();
 }
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
@@ -49,8 +62,8 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     const geometry::BoundingBoxTree& tree, const std::array<double, 3>& point,
     int node, const mesh::Mesh& mesh, std::int32_t closest_entity, double R2)
 {
-  // Get children of current bounding box node (child_1 denotes entity index for
-  // leaves)
+  // Get children of current bounding box node (child_1 denotes entity
+  // index for leaves)
   const std::array bbox = tree.bbox(node);
   double r2;
   if (is_leaf(bbox))
@@ -58,17 +71,16 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     // If point cloud tree the exact distance is easy to compute
     if (tree.tdim() == 0)
     {
-      Eigen::Vector3d _p;
-      _p[0] = point[0];
-      _p[1] = point[1];
-      _p[2] = point[2];
-      r2 = (tree.get_bbox(node).row(0).transpose().matrix() - _p).squaredNorm();
+      const std::array<double, 3> x = tree.get_bbox(node)[0];
+      r2 = (x[0] - point[0]) * (x[0] - point[0])
+           + (x[1] - point[1]) * (x[1] - point[1])
+           + (x[2] - point[2]) * (x[2] - point[2]);
     }
     else
     {
       r2 = geometry::compute_squared_distance_bbox(tree.get_bbox(node), point);
-      // If bounding box closer than previous closest entity, use gjk to obtain
-      // exact distance to the convex hull of the entity
+      // If bounding box closer than previous closest entity, use gjk to
+      // obtain exact distance to the convex hull of the entity
       if (r2 <= R2)
       {
         r2 = geometry::squared_distance(mesh, tree.tdim(), bbox[1], point);
@@ -80,6 +92,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
       closest_entity = bbox[1];
       R2 = r2;
     }
+
     return {closest_entity, R2};
   }
   else
@@ -90,8 +103,8 @@ std::pair<std::int32_t, double> _compute_closest_entity(
       return {closest_entity, R2};
 
     // Check both children
-    // We use R2 (as oposed to r2), as a bounding box can be closer than the
-    // actual entity
+    // We use R2 (as opposed to r2), as a bounding box can be closer
+    // than the actual entity
     std::pair<int, double> p0 = _compute_closest_entity(
         tree, point, bbox[0], mesh, closest_entity, R2);
     std::pair<int, double> p1 = _compute_closest_entity(
@@ -246,13 +259,16 @@ std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
 }
 //-----------------------------------------------------------------------------
 double geometry::compute_squared_distance_bbox(
-    const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
+    const std::array<std::array<double, 3>, 2>& b,
     const std::array<double, 3>& x)
 {
-  Eigen::Vector3d _x;
-  _x << x[0], x[1], x[2];
-  auto d0 = _x.array() - b.row(0).transpose();
-  auto d1 = _x.array() - b.row(1).transpose();
+  Eigen::Array3d d0, d1;
+  for (int i = 0; i < 3; ++i)
+  {
+    d0[i] = x[i] - b[0][i];
+    d1[i] = x[i] - b[1][i];
+  }
+
   return (d0 > 0.0).select(0, d0).matrix().squaredNorm()
          + (d1 < 0.0).select(0, d1).matrix().squaredNorm();
 }
@@ -266,21 +282,26 @@ geometry::compute_closest_entity(const BoundingBoxTree& tree,
   if (tree.num_bboxes() == 0)
     return {-1, -1};
 
-  // If initial search radius is 0 we estimate the initial distance to the point
-  // using a "random" node from the tree.
-  Eigen::Vector3d _p;
-  _p << p[0], p[1], p[2];
-  const std::int32_t initial_guess = (R < 0) ? 0 : -1;
-  const double R2
-      = (R < 0)
-            ? (tree.get_bbox(initial_guess).row(0).transpose().matrix() - _p)
-                  .squaredNorm()
-            : R * R;
+  // If initial search radius is 0 we estimate the initial distance to
+  // the point using the first node in the tree
+  double R2 = 0.0;
+  std::int32_t initial_guess;
+  if (R < 0.0)
+  {
+    const std::array<double, 3> x = tree.get_bbox(0)[0];
+    R2 = (x[0] - p[0]) * (x[0] - p[0]) + (x[1] - p[1]) * (x[1] - p[1])
+         + (x[2] - p[2]) * (x[2] - p[2]);
+    initial_guess = 0;
+  }
+  else
+  {
+    R2 = R * R;
+    initial_guess = -1;
+  }
 
   // Use GJK to find determine the actual closest entity
   const auto [index, distance2] = _compute_closest_entity(
       tree, p, tree.num_bboxes() - 1, mesh, initial_guess, R2);
-
   if (index < 0)
   {
     throw std::runtime_error("No entity found within radius "

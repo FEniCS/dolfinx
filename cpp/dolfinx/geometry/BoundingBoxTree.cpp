@@ -407,9 +407,17 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
   }
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, 2, 3, Eigen::RowMajor>
-BoundingBoxTree::get_bbox(int node) const
+std::array<std::array<double, 3>, 2> BoundingBoxTree::get_bbox(int node) const
 {
-  return _bbox_coordinates.block<2, 3>(2 * node, 0);
+  std::array<std::array<double, 3>, 2> x;
+  // assert(2 * node + 1 < _bbox_coordinates.rows());
+  x[0][0] = _bbox_coordinates(2 * node, 0);
+  x[0][1] = _bbox_coordinates(2 * node, 1);
+  x[0][2] = _bbox_coordinates(2 * node, 2);
+  x[1][0] = _bbox_coordinates(2 * node + 1, 0);
+  x[1][1] = _bbox_coordinates(2 * node + 1, 1);
+  x[1][2] = _bbox_coordinates(2 * node + 1, 2);
+
+  return x;
 }
 //-----------------------------------------------------------------------------
