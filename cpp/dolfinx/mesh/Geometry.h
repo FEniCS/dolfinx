@@ -11,7 +11,6 @@
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
-#include <string>
 #include <vector>
 
 namespace dolfinx

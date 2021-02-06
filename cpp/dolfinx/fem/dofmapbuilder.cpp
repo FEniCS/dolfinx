@@ -22,6 +22,7 @@
 #include <random>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
