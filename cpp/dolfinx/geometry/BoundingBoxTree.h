@@ -75,8 +75,8 @@ public:
   std::array<std::array<double, 3>, 2> get_bbox(int node) const;
 
   /// Compute a global bounding tree (collective on comm)
-  /// This can be used to find which process a point might have a collision
-  /// with.
+  /// This can be used to find which process a point might have a
+  /// collision with.
   /// @param[in] comm MPI Communicator for collective communication
   /// @return BoundingBoxTree where each node represents a process
   BoundingBoxTree compute_global_tree(const MPI_Comm& comm) const;
@@ -98,8 +98,8 @@ public:
   /// that it bounds,
   std::array<int, 2> bbox(int node) const
   {
-    assert(node < (int)_bboxes.rows());
-    return {_bboxes(node, 0), _bboxes(node, 1)};
+    assert(2 * node + 1 < (int)_bboxes.size());
+    return {_bboxes[2 * node], _bboxes[2 * node + 1]};
   }
 
   /// Remap entity indices for bounding box trees that does not span a
@@ -112,10 +112,7 @@ public:
 
 private:
   // Constructor
-  BoundingBoxTree(
-      const Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor>& bboxes,
-      const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-          bbox_coords);
+  BoundingBoxTree(std::vector<int>&& bboxes, std::vector<double>&& bbox_coords);
 
   // Topological dimension of leaf entities
   int _tdim;
@@ -124,10 +121,10 @@ private:
   void tree_print(std::stringstream& s, int i) const;
 
   // List of bounding boxes (parent-child-entity relations)
-  Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor> _bboxes;
+  std::vector<int> _bboxes;
 
   // List of bounding box coordinates
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _bbox_coordinates;
+  std::vector<double> _bbox_coordinates;
 };
 } // namespace geometry
 } // namespace dolfinx
