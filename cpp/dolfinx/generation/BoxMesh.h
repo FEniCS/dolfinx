@@ -40,7 +40,7 @@ namespace generation::BoxMesh
 /// determining the parallel distribution of cells across MPI ranks
 /// @return Mesh
 mesh::Mesh
-create(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
+create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
        std::array<std::size_t, 3> n, const fem::CoordinateElement& element,
        const mesh::GhostMode ghost_mode,
        const mesh::CellPartitionFunction& partitioner

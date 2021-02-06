@@ -197,7 +197,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
 
 //-----------------------------------------------------------------------------
 mesh::Mesh BoxMesh::create(MPI_Comm comm,
-                           std::array<std::array<double, 3>, 2> p,
+                           const std::array<std::array<double, 3>, 2>& p,
                            std::array<std::size_t, 3> n,
                            const fem::CoordinateElement& element,
                            const mesh::GhostMode ghost_mode,
