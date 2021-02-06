@@ -202,14 +202,14 @@ int _build_from_point(const std::vector<std::array<double, 3>>& points,
   // Compute bounding box of all points
   std::array<std::array<double, 3>, 2> b
       = compute_bbox_of_points(points, begin, end);
-  Eigen::Vector3d b0, b1;
-  b0 << b[0][0], b[0][1], b[0][2];
-  b1 << b[1][0], b[1][1], b[1][2];
 
   // Sort bounding boxes along longest axis
-  auto middle = begin + (end - begin) / 2;
-  Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
-  (b1 - b0).maxCoeff(&axis);
+  std::array<double, 3> b_diff;
+  std::transform(b[1].begin(), b[1].end(), b[0].begin(), b_diff.begin(),
+                 std::minus<double>());
+  const std::size_t axis = std::distance(
+      b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
+  auto middle = std::next(begin, (end - begin) / 2);
   std::nth_element(begin, middle, end, [&points, axis](int i, int j) -> bool {
     return points[i][axis] < points[j][axis];
   });
