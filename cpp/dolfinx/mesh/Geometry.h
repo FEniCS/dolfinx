@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/ndVector.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
@@ -41,9 +41,7 @@ public:
   template <typename AdjacencyList32, typename Vector64>
   Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
            AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
-           const Eigen::Ref<const Eigen::Array<
-               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
-           Vector64&& input_global_indices)
+           const common::ndVector<double>& x, Vector64&& input_global_indices)
       : _dim(x.cols()), _dofmap(std::forward<AdjacencyList32>(dofmap)),
         _index_map(index_map), _cmap(element),
         _input_global_indices(std::forward<Vector64>(input_global_indices))
@@ -56,9 +54,8 @@ public:
       _x = x;
     else if (_dim != 3)
     {
-      _x.resize(x.rows(), 3);
-      _x.setZero();
-      _x.block(0, 0, x.rows(), x.cols()) = x;
+      _x.resize(x.rows(), 3, 0);
+      _x.copy(x);
     }
   }
 
@@ -87,10 +84,10 @@ public:
   std::shared_ptr<const common::IndexMap> index_map() const;
 
   /// Geometry degrees-of-freedom
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x();
+  common::ndVector<double>& x();
 
   /// Geometry degrees-of-freedom
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x() const;
+  const common::ndVector<double>& x() const;
 
   /// The element that describes the geometry map
   /// @return The coordinate/geometry element
@@ -113,7 +110,7 @@ private:
   fem::CoordinateElement _cmap;
 
   // Coordinates for all points stored as a contiguous array
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
+  common::ndVector<double> _x;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
@@ -121,12 +118,10 @@ private:
 
 /// Build Geometry
 /// FIXME: document
-mesh::Geometry create_geometry(
-    MPI_Comm comm, const Topology& topology,
-    const fem::CoordinateElement& coordinate_element,
-    const graph::AdjacencyList<std::int64_t>& cells,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x);
+mesh::Geometry create_geometry(MPI_Comm comm, const Topology& topology,
+                               const fem::CoordinateElement& coordinate_element,
+                               const graph::AdjacencyList<std::int64_t>& cells,
+                               const common::ndVector<double>& x);
 
 } // namespace mesh
 } // namespace dolfinx

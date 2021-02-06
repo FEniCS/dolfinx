@@ -183,8 +183,11 @@ void assemble_cells(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = geometry.x();
+  // Use eigen map for now.
+  const common::ndVector<double>& x_g_ = geometry.x();
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x_g(x_g_.data(), x_g_.rows(), x_g_.cols());
 
   // Iterate over active cells
   const int num_dofs0 = dofmap0.links(0).size();
@@ -270,8 +273,12 @@ void assemble_exterior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+  const common::ndVector<double>& x_g_ = mesh.geometry().x();
+
+  // Use eigen map for now.
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x_g(x_g_.data(), x_g_.rows(), x_g_.cols());
 
   // Data structures used in assembly
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
@@ -374,8 +381,11 @@ void assemble_interior_facets(
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
 
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+  // Use eigen map for now.
+  const common::ndVector<double>& x_g_ = mesh.geometry().x();
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x_g(x_g_.data(), x_g_.rows(), x_g_.cols());
 
   // Data structures used in assembly
   std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);

@@ -100,8 +100,13 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   file << R"(<DataArray  type="Float64"  NumberOfComponents="3"  format=")"
        << "ascii"
        << "\">";
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points
-      = mesh.geometry().x();
+
+  // Use eigen map for now.
+  const common::ndVector<double>& x_g_ = mesh.geometry().x();
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      points(x_g_.data(), x_g_.rows(), x_g_.cols());
+
   for (int i = 0; i < points.rows(); ++i)
     file << points(i, 0) << " " << points(i, 1) << " " << points(i, 2) << "  ";
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;

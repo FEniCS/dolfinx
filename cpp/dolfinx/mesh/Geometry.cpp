@@ -28,16 +28,9 @@ std::shared_ptr<const common::IndexMap> Geometry::index_map() const
   return _index_map;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& Geometry::x()
-{
-  return _x;
-}
+common::ndVector<double>& Geometry::x() { return _x; }
 //-----------------------------------------------------------------------------
-const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-Geometry::x() const
-{
-  return _x;
-}
+const common::ndVector<double>& Geometry::x() const { return _x; }
 //-----------------------------------------------------------------------------
 const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
 //-----------------------------------------------------------------------------
@@ -48,12 +41,11 @@ const std::vector<std::int64_t>& Geometry::input_global_indices() const
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-mesh::Geometry mesh::create_geometry(
-    MPI_Comm comm, const Topology& topology,
-    const fem::CoordinateElement& coordinate_element,
-    const graph::AdjacencyList<std::int64_t>& cell_nodes,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x)
+mesh::Geometry
+mesh::create_geometry(MPI_Comm comm, const Topology& topology,
+                      const fem::CoordinateElement& coordinate_element,
+                      const graph::AdjacencyList<std::int64_t>& cell_nodes,
+                      const common::ndVector<double>& x)
 {
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
@@ -83,8 +75,10 @@ mesh::Geometry mesh::create_geometry(
 
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
-      = graph::build::distribute_data<double>(comm, indices, x);
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x_eigen(x.data(), x.rows(), x.cols());
+  auto coords = graph::build::distribute_data<double>(comm, indices, x_eigen);
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
@@ -97,15 +91,16 @@ mesh::Geometry mesh::create_geometry(
   std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
 
   // Build coordinate dof array
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(
-      coords.rows(), coords.cols());
+  common::ndVector<double> xg(coords.rows(), coords.cols());
 
   // Allocate space for input global indices
   std::vector<std::int64_t> igi(indices.size());
 
   for (int i = 0; i < coords.rows(); ++i)
   {
-    xg.row(i) = coords.row(l2l[i]);
+    auto cood_row = coords.row(l2l[i]);
+    for (int j = 0; j < coords.rows(); ++j)
+      xg(i, j) = cood_row[j];
     igi[i] = indices[l2l[i]];
   }
 

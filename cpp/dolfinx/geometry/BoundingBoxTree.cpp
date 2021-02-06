@@ -26,8 +26,12 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
-      = mesh.geometry().x();
+  // Use eigen map for now.
+  const common::ndVector<double>& x_g_ = mesh.geometry().x();
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      geom_dofs(x_g_.data(), x_g_.rows(), x_g_.cols());
+
   mesh.topology_mutable().create_connectivity(dim, tdim);
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> entity(1);
   entity(0, 0) = index;
@@ -35,7 +39,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
       vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
   auto entity_indices = vertex_indices.row(0);
 
-  const Eigen::Vector3d x0 = geom_dofs.row(entity_indices[0]);
+  const auto x0 = geom_dofs.row(entity_indices[0]);
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
   b.row(0) = x0;
   b.row(1) = x0;

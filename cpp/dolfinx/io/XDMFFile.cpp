@@ -235,8 +235,12 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
   auto [data, offset] = graph::create_adjacency_data(cells);
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(data),
                                                std::move(offset));
+
+  common::ndVector<double> x_vec(x.rows(), x.cols());
+  std::copy(x.data(), x.data() + x.size(), x_vec.begin());
+
   mesh::Mesh mesh
-      = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x, mode);
+      = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x_vec, mode);
   mesh.name = name;
   return mesh;
 }

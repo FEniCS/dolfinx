@@ -65,8 +65,11 @@ std::vector<double> mesh::h(const Mesh& mesh,
   // Get geometry dofmap and dofs
   const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
-      = mesh.geometry().x();
+  // Use eigen map for now.
+  const common::ndVector<double>& x_g_ = geometry.x();
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      geom_dofs(x_g_.data(), x_g_.rows(), x_g_.cols());
 
   std::vector<double> h_cells(entities.size(), 0);
   assert(num_vertices <= 8);
@@ -97,8 +100,12 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   const mesh::CellType type
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
   // Find geometry nodes for topology entities
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
-      = mesh.geometry().x();
+  common::ndVector<double> x_g_ = mesh.geometry().x();
+
+  // Use eigen map for now.
+  Eigen::Map<
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      geom_dofs(x_g_.data(), x_g_.rows(), x_g_.cols());
 
   // Orient cells if they are tetrahedron
   bool orient = false;
@@ -171,8 +178,12 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
                 const tcb::span<const std::int32_t>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
-      = geometry.x();
+  common::ndVector<double> x_g_ = geometry.x();
+
+  // Use eigen map for now.
+  Eigen::Map<
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      x(x_g_.data(), x_g_.rows(), x_g_.cols());
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
@@ -225,8 +236,13 @@ std::vector<std::int32_t> mesh::locate_entities(
   }
 
   // Pack coordinates of vertices
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_nodes
-      = mesh.geometry().x();
+  common::ndVector<double> x_g_ = mesh.geometry().x();
+
+  // Use eigen map for now.
+  Eigen::Map<
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      x_nodes(x_g_.data(), x_g_.rows(), x_g_.cols());
+
   Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_vertices(
       3, vertex_to_node.size());
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
@@ -308,8 +324,12 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_nodes
-      = mesh.geometry().x();
+  common::ndVector<double> x_g_ = mesh.geometry().x();
+
+  // Use eigen map for now.
+  Eigen::Map<
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      x_nodes(x_g_.data(), x_g_.rows(), x_g_.cols());
 
   // Build vector of boundary vertices
   const std::vector<std::int32_t> vertices(boundary_vertices.begin(),
@@ -389,8 +409,13 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const mesh::Geometry& geometry = mesh.geometry();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
-      = mesh.geometry().x();
+  common::ndVector<double> x_g_ = geometry.x();
+
+  // Use eigen map for now.
+  Eigen::Map<
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      geom_dofs(x_g_.data(), x_g_.rows(), x_g_.cols());
+
   const mesh::Topology& topology = mesh.topology();
 
   const int tdim = topology.dim();

@@ -276,8 +276,12 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 {
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
-      = mesh.geometry().x();
+  // Use eigen map for now.
+  const common::ndVector<double>& x_g_ = geometry.x();
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      geom_dofs(x_g_.data(), x_g_.rows(), x_g_.cols());
+
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
   if (dim == tdim)

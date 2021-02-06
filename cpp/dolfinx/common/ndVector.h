@@ -59,6 +59,10 @@ public:
     return tcb::span<value_type>(pointer(&storage_[0] + offset), cols_);
   }
 
+  value_type* data() noexcept { return storage_.data(); }
+
+  const value_type* data() const noexcept { return storage_.data(); };
+
   iterator begin() noexcept { return storage_.begin(); }
 
   const_iterator begin() const noexcept { return storage_.begin(); }
@@ -80,6 +84,27 @@ public:
   std::pair<size_type, size_type> shape() const noexcept
   {
     return {rows_, cols_};
+  }
+
+  void resize(size_type rows, size_type cols, value_type val = value_type())
+  {
+    // TODO: check rows and cols
+    storage_.resize(rows * cols);
+    rows_ = rows;
+    cols_ = cols;
+  }
+
+  /// Could be improved with ndrange
+  template <typename Container>
+  void copy(const Container& other)
+  {
+    std::int32_t rows = std::min<std::int32_t>(rows_, other.rows());
+    std::int32_t cols = std::min<std::int32_t>(cols_, other.cols());
+    for (std::int32_t i = 0; i < rows; i++)
+    {
+      for (std::int32_t j = 0; j < cols; j++)
+        storage_[i * cols_ + j] = other(i, j);
+    }
   }
 
   bool empty() const noexcept { return storage_.empty(); }

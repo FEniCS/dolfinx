@@ -79,8 +79,11 @@ create_new_geometry(
   }
 
   // Copy over existing mesh vertices
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+  // Use eigen map for now.
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x_g(mesh.geometry().x().data(), mesh.geometry().x().rows(),
+          mesh.geometry().x().cols());
 
   const std::int32_t num_vertices = map_v->size_local();
   const std::int32_t num_new_vertices = local_edge_to_new_vertex.size();
@@ -312,9 +315,11 @@ mesh::Mesh refinement::partition(
 
   if (redistribute)
   {
+    common::ndVector<double> new_coords(new_vertex_coordinates.rows(),
+                                        new_vertex_coordinates.cols());
+    new_coords.copy(new_vertex_coordinates);
     return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
-                             old_mesh.geometry().cmap(), new_vertex_coordinates,
-                             gm);
+                             old_mesh.geometry().cmap(), new_coords, gm);
   }
 
   auto partitioner = [](MPI_Comm mpi_comm, int, const mesh::CellType cell_type,
@@ -373,8 +378,12 @@ mesh::Mesh refinement::partition(
                                               std::move(dest_offsets));
   };
 
+  common::ndVector<double> new_coords(new_vertex_coordinates.rows(),
+                                      new_vertex_coordinates.cols());
+  new_coords.copy(new_vertex_coordinates);
+
   return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
-                           old_mesh.geometry().cmap(), new_vertex_coordinates,
-                           gm, partitioner);
+                           old_mesh.geometry().cmap(), new_coords, gm,
+                           partitioner);
 }
 //-----------------------------------------------------------------------------

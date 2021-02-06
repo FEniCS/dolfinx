@@ -353,8 +353,13 @@ void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
   std::ostringstream ss;
   ss << std::scientific;
   ss << std::setprecision(16);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
-      = mesh.geometry().x();
+
+  // Use eigen map for now.
+  const common::ndVector<double>& x_g_ = mesh.geometry().x();
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      points(x_g_.data(), x_g_.rows(), x_g_.cols());
+
   for (int i = 0; i < points.rows(); ++i)
   {
     if (rank == 1 and dim == 2)
