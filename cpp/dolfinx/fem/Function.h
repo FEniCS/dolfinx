@@ -256,10 +256,9 @@ public:
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
     // Use eigen map for now.
-    const common::array_2d<double>& x_g_ = mesh->geometry().x();
-    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        x_g(x_g_.data(), x_g_.rows(), x_g_.cols());
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+        x_g(mesh->geometry().x().data(), mesh->geometry().x().rows(),
+            mesh->geometry().x().cols());
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -390,10 +389,9 @@ public:
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
     // Use eigen map for now.
-    const common::array_2d<double>& x_g_ = mesh->geometry().x();
-    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        x_g(x_g_.data(), x_g_.rows(), x_g_.cols());
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+        x_g(mesh->geometry().x().data(), mesh->geometry().x().rows(),
+            mesh->geometry().x().cols());
 
     // Interpolate point values on each cell (using last computed value if
     // not continuous, e.g. discontinuous Galerkin methods)
