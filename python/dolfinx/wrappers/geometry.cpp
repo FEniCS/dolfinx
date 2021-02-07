@@ -66,13 +66,14 @@ void geometry(py::module& m)
                }),
            py::arg("mesh"), py::arg("tdim"), py::arg("entity_indices"),
            py::arg("padding") = 0.0)
-      .def("num_bboxes", &dolfinx::geometry::BoundingBoxTree::num_bboxes)
+      .def_property_readonly("num_bboxes",
+                             &dolfinx::geometry::BoundingBoxTree::num_bboxes)
       .def("get_bbox", &dolfinx::geometry::BoundingBoxTree::get_bbox)
-      .def("str", &dolfinx::geometry::BoundingBoxTree::str)
-      .def("compute_global_tree",
+      .def("__repr__", &dolfinx::geometry::BoundingBoxTree::str)
+      .def("create_global_tree",
            [](const dolfinx::geometry::BoundingBoxTree& self,
               const MPICommWrapper comm) {
-             return self.compute_global_tree(comm.get());
+             return self.create_global_tree(comm.get());
            });
 }
 } // namespace dolfinx_wrappers

@@ -289,14 +289,14 @@ BoundingBoxTree::BoundingBoxTree(
             << " nodes for " << num_leaves << " points.";
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(std::vector<int>&& bboxes,
+BoundingBoxTree::BoundingBoxTree(std::vector<std::int32_t>&& bboxes,
                                  std::vector<double>&& bbox_coords)
     : _tdim(0), _bboxes(bboxes), _bbox_coordinates(bbox_coords)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree BoundingBoxTree::compute_global_tree(const MPI_Comm& comm) const
+BoundingBoxTree BoundingBoxTree::create_global_tree(const MPI_Comm& comm) const
 {
   // Build tree for each rank
   const int mpi_size = dolfinx::MPI::size(comm);
