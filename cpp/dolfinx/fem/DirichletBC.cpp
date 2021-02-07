@@ -10,9 +10,6 @@
 #include <algorithm>
 #include <array>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/Function.h>
-#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>

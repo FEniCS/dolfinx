@@ -11,16 +11,10 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
-#include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 

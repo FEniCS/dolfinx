@@ -9,6 +9,7 @@
 #include "HDF5Interface.h"
 #include "pugixml.hpp"
 #include "utils.h"
+#include <Eigen/Core>
 #include <array>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/cell_types.h>

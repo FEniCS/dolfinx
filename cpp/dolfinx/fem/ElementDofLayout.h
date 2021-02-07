@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <array>
 #include <dolfinx/common/types.h>
 #include <memory>
@@ -152,7 +151,6 @@ private:
 
   // List of sub dofmaps
   std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
-
 };
 
 } // namespace fem
