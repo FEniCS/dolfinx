@@ -179,7 +179,7 @@ void fem::assemble_discrete_gradient(
     tcb::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cell);
     for (std::int32_t i = 0; i < 2; ++i)
     {
-      const auto* it
+      const auto it
           = std::find(cell_vertices.begin(), cell_vertices.end(), vertices[i]);
       assert(it != cell_vertices.end());
       const int local_vertex = std::distance(cell_vertices.begin(), it);
