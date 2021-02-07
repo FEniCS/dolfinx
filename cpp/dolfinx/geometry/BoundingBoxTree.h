@@ -96,11 +96,12 @@ public:
   std::string str() const;
 
   /// Get bounding box child nodes
+  ///
   /// @param[in] node The bounding box node index
-  /// @return The indices of the two child nodes. For leaf nodes, index
-  /// 0 is equal to the node index and index 1 is equal to the index of
-  /// the entity that the leaf box bounds, e.g. the index of the cell
-  /// that it bounds.
+  /// @return The indices of the two child nodes. If @p node is a leaf
+  /// nodes, then the values in the returned array are equal and
+  /// correspond to the index of the entity that the leaf node bounds,
+  /// e.g. the index of the cell that it bounds.
   std::array<int, 2> bbox(std::size_t node) const
   {
     assert(2 * node + 1 < _bboxes.size());
