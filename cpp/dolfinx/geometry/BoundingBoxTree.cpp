@@ -20,12 +20,18 @@ using namespace dolfinx::geometry;
 namespace
 {
 //-----------------------------------------------------------------------------
-// std::vector<std::int32_t> range(std::int32_t n)
-// {
-//   std::vector<std::int32_t> r(n);
-//   std::iota(r.begin(), r.end(), 0);
-//   return r;
-// }
+std::vector<std::int32_t> range(const mesh::Mesh& mesh, int tdim)
+{
+  // Initialize entities of given dimension if they don't exist
+  mesh.topology_mutable().create_entities(tdim);
+
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const std::int32_t num_entities = map->size_local() + map->num_ghosts();
+  std::vector<std::int32_t> r(num_entities);
+  std::iota(r.begin(), r.end(), 0);
+  return r;
+}
 //-----------------------------------------------------------------------------
 // Compute bounding box of mesh entity
 std::array<std::array<double, 3>, 2>
@@ -71,7 +77,6 @@ std::array<std::array<double, 3>, 2> compute_bbox_of_bboxes(
   std::array<std::array<double, 3>, 2> b;
   b[0] = leaf_bboxes[0].first[0];
   b[1] = leaf_bboxes[0].first[1];
-
   for (auto& box : leaf_bboxes)
   {
     std::transform(box.first[0].begin(), box.first[0].end(), b[0].begin(),
@@ -213,58 +218,19 @@ int _build_from_point(tcb::span<std::pair<std::array<double, 3>, int>> points,
 } // namespace
 
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(std::vector<int>&& bboxes,
-                                 std::vector<double>&& bbox_coords)
-    : _tdim(0), _bboxes(bboxes), _bbox_coordinates(bbox_coords)
+BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
+                                 double padding)
+    : BoundingBoxTree::BoundingBoxTree(mesh, tdim, range(mesh, tdim), padding)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
+                                 const std::vector<std::int32_t>& entities,
                                  double padding)
     : _tdim(tdim)
 {
-  // Check dimension
-  if (tdim > mesh.topology().dim())
-  {
-    throw std::runtime_error("Dimension must be a number between 0 and "
-                             + std::to_string(mesh.topology().dim()));
-  }
-
-  // Initialize entities of given dimension if they don't exist
-  mesh.topology_mutable().create_entities(tdim);
-
-  // Create bounding boxes for all mesh entities (leaves)
-  auto map = mesh.topology().index_map(tdim);
-  assert(map);
-  const std::int32_t num_leaves = map->size_local() + map->num_ghosts();
-  std::vector<std::pair<std::array<std::array<double, 3>, 2>, int>> leaf_bboxes(
-      num_leaves);
-  for (int e = 0; e < num_leaves; ++e)
-  {
-    std::array<std::array<double, 3>, 2> b
-        = compute_bbox_of_entity(mesh, tdim, e);
-    std::for_each(b[0].begin(), b[0].end(),
-                  [padding](double& x) { x -= padding; });
-    std::for_each(b[1].begin(), b[1].end(),
-                  [padding](double& x) { x += padding; });
-    leaf_bboxes[e].first = b;
-    leaf_bboxes[e].second = e;
-  }
-
-  // Recursively build the bounding box tree from the leaves
-  std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
-
-  LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
-            << " nodes for " << num_leaves << " entities.";
-}
-//-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(
-    const mesh::Mesh& mesh, int tdim,
-    const std::vector<std::int32_t>& entity_indices, double padding)
-    : _tdim(tdim)
-{
-  if (tdim < 1 or tdim > mesh.topology().dim())
+  if (tdim < 0 or tdim > mesh.topology().dim())
   {
     throw std::runtime_error("Dimension must be a number between 1 and "
                              + std::to_string(mesh.topology().dim()));
@@ -274,20 +240,17 @@ BoundingBoxTree::BoundingBoxTree(
   mesh.topology_mutable().create_entities(tdim);
 
   // Create bounding boxes for all mesh entities (leaves)
-  std::vector<std::pair<std::array<std::array<double, 3>, 2>, int>> leaf_bboxes(
-      entity_indices.size());
-  for (std::size_t e = 0; e < entity_indices.size(); ++e)
+  std::vector<std::pair<std::array<std::array<double, 3>, 2>, int>> leaf_bboxes;
+  leaf_bboxes.reserve(entities.size());
+  for (std::int32_t e : entities)
   {
     std::array<std::array<double, 3>, 2> b
-        = compute_bbox_of_entity(mesh, tdim, entity_indices[e]);
+        = compute_bbox_of_entity(mesh, tdim, e);
     std::for_each(b[0].begin(), b[0].end(),
                   [padding](double& x) { x -= padding; });
     std::for_each(b[1].begin(), b[1].end(),
                   [padding](double& x) { x += padding; });
-
-    leaf_bboxes[e].first[0] = b[0];
-    leaf_bboxes[e].first[1] = b[1];
-    leaf_bboxes[e].second = entity_indices[e];
+    leaf_bboxes.emplace_back(b, e);
   }
 
   // Recursively build the bounding box tree from the leaves
@@ -295,7 +258,7 @@ BoundingBoxTree::BoundingBoxTree(
     std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
-            << " nodes for " << entity_indices.size() << " entities.";
+            << " nodes for " << entities.size() << " entities.";
 }
 //----------------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(
@@ -326,6 +289,13 @@ BoundingBoxTree::BoundingBoxTree(
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " points.";
+}
+//-----------------------------------------------------------------------------
+BoundingBoxTree::BoundingBoxTree(std::vector<int>&& bboxes,
+                                 std::vector<double>&& bbox_coords)
+    : _tdim(0), _bboxes(bboxes), _bbox_coordinates(bbox_coords)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree BoundingBoxTree::compute_global_tree(const MPI_Comm& comm) const
