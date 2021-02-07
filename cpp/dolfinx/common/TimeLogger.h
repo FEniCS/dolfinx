@@ -9,12 +9,9 @@
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/timing.h>
 #include <map>
-#include <memory>
 #include <mpi.h>
-#include <ostream>
 #include <set>
 #include <string>
-#include <thread>
 #include <tuple>
 
 namespace dolfinx::common

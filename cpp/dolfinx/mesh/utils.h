@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <Eigen/Core>
+#include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/graph/AdjacencyList.h>

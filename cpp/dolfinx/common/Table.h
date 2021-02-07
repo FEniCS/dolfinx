@@ -8,7 +8,6 @@
 
 #include <map>
 #include <mpi.h>
-#include <set>
 #include <string>
 #include <variant>
 #include <vector>

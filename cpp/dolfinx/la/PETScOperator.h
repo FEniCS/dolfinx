@@ -7,10 +7,8 @@
 #pragma once
 
 #include <array>
-#include <cinttypes>
-#include <cstddef>
 #include <petscmat.h>
-#include <string>
+#include <stdint.h>
 
 namespace dolfinx::la
 {

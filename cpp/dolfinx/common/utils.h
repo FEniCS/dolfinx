@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <boost/functional/hash.hpp>
 #include <cstring>
 #include <dolfinx/common/MPI.h>
