@@ -34,6 +34,19 @@ public:
     storage_ = std::vector<T, Allocator>(rows_ * cols_, value, alloc);
   }
 
+
+  // TODO: remvoe this construtctor.
+  // Only used for 
+  template <typename Container>
+  ndVector(Container& array)
+  {
+    rows_ = array.rows();
+    cols_ = array.cols();
+
+    std::copy(array.data(), array.data() + array.size(),
+              std::back_inserter(storage_));
+  }
+
   ndVector(size_type rows, size_type columns, std::initializer_list<T> list,
            const Allocator& alloc = Allocator())
       : rows_(rows), cols_(columns)

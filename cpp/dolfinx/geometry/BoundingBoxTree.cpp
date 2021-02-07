@@ -35,8 +35,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   mesh.topology_mutable().create_connectivity(dim, tdim);
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> entity(1);
   entity(0, 0) = index;
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
+  auto vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
   auto entity_indices = vertex_indices.row(0);
 
   const auto x0 = geom_dofs.row(entity_indices[0]);
@@ -44,7 +43,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   b.row(0) = x0;
   b.row(1) = x0;
   // Compute min and max over remaining vertices
-  for (int i = 1; i < entity_indices.size(); ++i)
+  for (std::size_t i = 1; i < entity_indices.size(); ++i)
   {
     const int local_vertex = entity_indices[i];
     auto x = geom_dofs.row(local_vertex);

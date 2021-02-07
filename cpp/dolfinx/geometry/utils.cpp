@@ -196,12 +196,13 @@ geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
   Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> entities(
       entity_indices_sorted.data(), entity_indices_sorted.size());
 
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
-      = mesh::midpoints(mesh, tdim, entities);
+  const auto midpoints = mesh::midpoints(mesh, tdim, entities);
+  Eigen::Map<const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>
+      midpoints_eigen(midpoints.data(), midpoints.rows(), midpoints.cols());
 
   std::vector<Eigen::Vector3d> points(entities.rows());
   for (std::size_t i = 0; i < points.size(); ++i)
-    points[i] = midpoints.row(i);
+    points[i] = midpoints_eigen.row(i);
   // Build tree
   geometry::BoundingBoxTree tree(points);
   // Remap leaf entities
