@@ -20,6 +20,13 @@ using namespace dolfinx::geometry;
 namespace
 {
 //-----------------------------------------------------------------------------
+// std::vector<std::int32_t> range(std::int32_t n)
+// {
+//   std::vector<std::int32_t> r(n);
+//   std::iota(r.begin(), r.end(), 0);
+//   return r;
+// }
+//-----------------------------------------------------------------------------
 // Compute bounding box of mesh entity
 std::array<std::array<double, 3>, 2>
 compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
@@ -140,7 +147,6 @@ std::pair<std::vector<int>, std::vector<double>> build_from_leaf(
     std::vector<std::pair<std::array<std::array<double, 3>, 2>, int>>
         leaf_bboxes)
 {
-
   std::vector<std::array<int, 2>> bboxes;
   std::vector<double> bbox_coordinates;
   _build_from_leaf(leaf_bboxes, bboxes, bbox_coordinates);
@@ -267,17 +273,13 @@ BoundingBoxTree::BoundingBoxTree(
   // Initialize entities of given dimension if they don't exist
   mesh.topology_mutable().create_entities(tdim);
 
-  // Copy and sort indices
-  std::vector<std::int32_t> entity_indices_sorted = entity_indices;
-  std::sort(entity_indices_sorted.begin(), entity_indices_sorted.end());
-
   // Create bounding boxes for all mesh entities (leaves)
   std::vector<std::pair<std::array<std::array<double, 3>, 2>, int>> leaf_bboxes(
       entity_indices.size());
-  for (std::size_t e = 0; e < entity_indices_sorted.size(); ++e)
+  for (std::size_t e = 0; e < entity_indices.size(); ++e)
   {
     std::array<std::array<double, 3>, 2> b
-        = compute_bbox_of_entity(mesh, tdim, entity_indices_sorted[e]);
+        = compute_bbox_of_entity(mesh, tdim, entity_indices[e]);
     std::for_each(b[0].begin(), b[0].end(),
                   [padding](double& x) { x -= padding; });
     std::for_each(b[1].begin(), b[1].end(),
@@ -285,7 +287,7 @@ BoundingBoxTree::BoundingBoxTree(
 
     leaf_bboxes[e].first[0] = b[0];
     leaf_bboxes[e].first[1] = b[1];
-    leaf_bboxes[e].second = entity_indices_sorted[e];
+    leaf_bboxes[e].second = entity_indices[e];
   }
 
   // Recursively build the bounding box tree from the leaves
