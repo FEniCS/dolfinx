@@ -523,7 +523,7 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
-    common::ndVector<double> coords(new_vertex_coordinates.rows(),
+    common::array_2d<double> coords(new_vertex_coordinates.rows(),
                                     new_vertex_coordinates.cols());
     coords.copy(new_vertex_coordinates);
     return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
@@ -557,7 +557,7 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
-    common::ndVector<double> coords(new_vertex_coordinates.rows(),
+    common::array_2d<double> coords(new_vertex_coordinates.rows(),
                                     new_vertex_coordinates.cols());
     coords.copy(new_vertex_coordinates);
     return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),

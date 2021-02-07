@@ -256,7 +256,7 @@ public:
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
     // Use eigen map for now.
-    const common::ndVector<double>& x_g_ = mesh->geometry().x();
+    const common::array_2d<double>& x_g_ = mesh->geometry().x();
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
         x_g(x_g_.data(), x_g_.rows(), x_g_.cols());
@@ -390,7 +390,7 @@ public:
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
     // Use eigen map for now.
-    const common::ndVector<double>& x_g_ = mesh->geometry().x();
+    const common::array_2d<double>& x_g_ = mesh->geometry().x();
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
         x_g(x_g_.data(), x_g_.rows(), x_g_.cols());

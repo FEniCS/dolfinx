@@ -919,7 +919,7 @@ EXCLUDE                = ../dolfinx/io/pugixml.hpp \
                          ../dolfinx/common/loguru.hpp \
                          ../dolfinx/common/loguru.cpp \
                          ../dolfinx/common/span.hpp \
-                         ../dolfinx/common/ndVector.h
+                         ../dolfinx/common/array_2d.h
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

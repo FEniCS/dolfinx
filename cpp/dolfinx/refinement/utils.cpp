@@ -316,7 +316,7 @@ mesh::Mesh refinement::partition(
 
   if (redistribute)
   {
-    common::ndVector<double> new_coords(new_vertex_coordinates.rows(),
+    common::array_2d<double> new_coords(new_vertex_coordinates.rows(),
                                         new_vertex_coordinates.cols());
     new_coords.copy(new_vertex_coordinates);
     return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
@@ -379,7 +379,7 @@ mesh::Mesh refinement::partition(
                                               std::move(dest_offsets));
   };
 
-  common::ndVector<double> new_coords(new_vertex_coordinates.rows(),
+  common::array_2d<double> new_coords(new_vertex_coordinates.rows(),
                                       new_vertex_coordinates.cols());
   new_coords.copy(new_vertex_coordinates);
 

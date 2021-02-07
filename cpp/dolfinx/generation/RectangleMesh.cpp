@@ -27,7 +27,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    common::ndVector<double> geom(0, 2);
+    common::array_2d<double> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
     auto [data, offset] = graph::create_adjacency_data(topo);
     return mesh::create_mesh(
@@ -196,7 +196,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     }
   }
 
-  common::ndVector<double> geom_vec(geom.rows(), geom.cols());
+  common::array_2d<double> geom_vec(geom.rows(), geom.cols());
   std::copy(geom.data(), geom.data() + geom.size(), geom_vec.begin());
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
@@ -216,7 +216,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    common::ndVector<double> geom(0, 2);
+    common::array_2d<double> geom(0, 2);
     Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(0, 4);
     auto [data, offset] = graph::create_adjacency_data(topo);
     return mesh::create_mesh(
@@ -266,7 +266,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
       ++cell;
     }
 
-  common::ndVector<double> geom_vec(geom.rows(), geom.cols());
+  common::array_2d<double> geom_vec(geom.rows(), geom.cols());
   std::copy(geom.data(), geom.data() + geom.size(), geom_vec.begin());
 
   auto [data, offset] = graph::create_adjacency_data(topo);

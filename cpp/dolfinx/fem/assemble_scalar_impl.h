@@ -33,7 +33,7 @@ T assemble_cells(
     const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::ndVector<T>& coeffs, const std::vector<T>& constant_values,
+    const common::array_2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and accumulate result
@@ -42,7 +42,7 @@ T assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::ndVector<T>& coeffs, const std::vector<T>& constant_values,
+    const common::array_2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
 
@@ -52,7 +52,7 @@ T assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::ndVector<T>& coeffs, const std::vector<int>& offsets,
+    const common::array_2d<T>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
@@ -140,7 +140,7 @@ T assemble_cells(
     const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::ndVector<T>& coeffs, const std::vector<T>& constant_values,
+    const common::array_2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info)
 {
   const int gdim = geometry.dim();
@@ -151,7 +151,7 @@ T assemble_cells(
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   // Use eigen map for now.
-  const common::ndVector<double>& x_g_ = geometry.x();
+  const common::array_2d<double>& x_g_ = geometry.x();
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       x_g(x_g_.data(), x_g_.rows(), x_g_.cols());
@@ -184,7 +184,7 @@ T assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::ndVector<T>& coeffs, const std::vector<T>& constant_values,
+    const common::array_2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
@@ -198,7 +198,7 @@ T assemble_exterior_facets(
   const int num_dofs_g = x_dofmap.num_links(0);
 
   // Use eigen map for now.
-  const common::ndVector<double>& x_g_ = mesh.geometry().x();
+  const common::array_2d<double>& x_g_ = mesh.geometry().x();
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       x_g(x_g_.data(), x_g_.rows(), x_g_.cols());
@@ -247,7 +247,7 @@ T assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::ndVector<T>& coeffs, const std::vector<int>& offsets,
+    const common::array_2d<T>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
@@ -262,7 +262,7 @@ T assemble_interior_facets(
   const int num_dofs_g = x_dofmap.num_links(0);
 
   // Use eigen map for now.
-  const common::ndVector<double>& x_g_ = mesh.geometry().x();
+  const common::array_2d<double>& x_g_ = mesh.geometry().x();
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       x_g(x_g_.data(), x_g_.rows(), x_g_.cols());

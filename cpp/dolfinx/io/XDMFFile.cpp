@@ -236,7 +236,7 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(data),
                                                std::move(offset));
 
-  common::ndVector<double> x_vec(x.rows(), x.cols());
+  common::array_2d<double> x_vec(x.rows(), x.cols());
   std::copy(x.data(), x.data() + x.size(), x_vec.begin());
 
   mesh::Mesh mesh

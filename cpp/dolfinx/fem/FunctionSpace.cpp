@@ -66,7 +66,7 @@ internal_tabulate_dof_coordinates(
       = mesh->geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  common::ndVector<double> x_g_ = mesh->geometry().x();
+  common::array_2d<double> x_g_ = mesh->geometry().x();
 
   // Use eigen map for now.
   Eigen::Map<

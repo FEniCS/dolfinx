@@ -67,7 +67,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
   // Use eigen map for now.
-  const common::ndVector<double>& x_g_ = geometry.x();
+  const common::array_2d<double>& x_g_ = geometry.x();
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       geom_dofs(x_g_.data(), x_g_.rows(), x_g_.cols());
@@ -93,7 +93,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   return h_cells;
 }
 //-----------------------------------------------------------------------------
-common::ndVector<double>
+common::array_2d<double>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                    const tcb::span<const std::int32_t>& entities)
 {
@@ -101,7 +101,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   const mesh::CellType type
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
   // Find geometry nodes for topology entities
-  common::ndVector<double> x_g_ = mesh.geometry().x();
+  common::array_2d<double> x_g_ = mesh.geometry().x();
 
   // Use eigen map for now.
   Eigen::Map<
@@ -112,7 +112,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   bool orient = false;
   if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
     orient = true;
-  common::ndVector<std::int32_t> geometry_entities
+  common::array_2d<std::int32_t> geometry_entities
       = entities_to_geometry(mesh, dim, entities, orient);
 
   const std::int32_t num_entities = entities.size();
@@ -133,7 +133,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       Eigen::Vector3d t = p1 - p0;
       n.row(i) = Eigen::Vector3d(-t[1], t[0], 0.0).normalized();
     }
-    common::ndVector<double> _n(n.rows(), n.cols());
+    common::array_2d<double> _n(n.rows(), n.cols());
     _n.copy(n);
     return _n;
   }
@@ -150,7 +150,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       // Define cell normal via cross product of first two edges
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
     }
-    common::ndVector<double> _n(n.rows(), n.cols());
+    common::array_2d<double> _n(n.rows(), n.cols());
     _n.copy(n);
     return _n;
   }
@@ -168,7 +168,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       // Defined cell normal via cross product of first two edges:
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
     }
-    common::ndVector<double> _n(n.rows(), n.cols());
+    common::array_2d<double> _n(n.rows(), n.cols());
     _n.copy(n);
     return _n;
   }
@@ -177,15 +177,15 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
         "cell_normal not supported for this cell type.");
   }
 
-  return common::ndVector<double>(0, 3);
+  return common::array_2d<double>(0, 3);
 }
 //-----------------------------------------------------------------------------
-common::ndVector<double>
+common::array_2d<double>
 mesh::midpoints(const mesh::Mesh& mesh, int dim,
                 const tcb::span<const std::int32_t>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  common::ndVector<double> x_g_ = geometry.x();
+  common::array_2d<double> x_g_ = geometry.x();
 
   // Use eigen map for now.
   Eigen::Map<
@@ -194,7 +194,7 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
-  common::ndVector<std::int32_t> entity_to_geometry
+  common::array_2d<std::int32_t> entity_to_geometry
       = entities_to_geometry(mesh, dim, entities, false);
 
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x_mid(
@@ -209,7 +209,7 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
     x_mid.row(e) /= entity_vertices.size();
   }
 
-  common::ndVector<double> midpoins(x_mid.rows(), x_mid.cols());
+  common::array_2d<double> midpoins(x_mid.rows(), x_mid.cols());
   midpoins.copy(x_mid);
 
   return midpoins;
@@ -217,7 +217,7 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const common::ndVector<double>&)>&
+    const std::function<std::vector<bool>(const common::array_2d<double>&)>&
         marker)
 {
   const mesh::Topology& topology = mesh.topology();
@@ -245,7 +245,7 @@ std::vector<std::int32_t> mesh::locate_entities(
   }
 
   // Pack coordinates of vertices
-  common::ndVector<double> x_g_ = mesh.geometry().x();
+  common::array_2d<double> x_g_ = mesh.geometry().x();
 
   // Use eigen map for now.
   Eigen::Map<
@@ -257,7 +257,7 @@ std::vector<std::int32_t> mesh::locate_entities(
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
     x_vertices.col(i) = x_nodes.row(vertex_to_node[i]);
 
-  common::ndVector<double> verts(x_vertices);
+  common::array_2d<double> verts(x_vertices);
 
   // Run marker function on vertex coordinates
   const std::vector<bool> marked = marker(verts);
@@ -290,7 +290,7 @@ std::vector<std::int32_t> mesh::locate_entities(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const common::ndVector<double>&)>&
+    const std::function<std::vector<bool>(const common::array_2d<double>&)>&
         marker)
 {
   const mesh::Topology& topology = mesh.topology();
@@ -334,7 +334,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  common::ndVector<double> x_g_ = mesh.geometry().x();
+  common::array_2d<double> x_g_ = mesh.geometry().x();
 
   // Use eigen map for now.
   Eigen::Map<
@@ -370,7 +370,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
     vertex_to_pos[v] = i;
   }
 
-  common::ndVector<double> verts(x_vertices);
+  common::array_2d<double> verts(x_vertices);
 
   // Run marker function on the vertex coordinates
   const std::vector<bool> marked = marker(verts);
@@ -405,7 +405,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   return entities;
 }
 //-----------------------------------------------------------------------------
-common::ndVector<std::int32_t>
+common::array_2d<std::int32_t>
 mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
                            const tcb::span<const std::int32_t>& entity_list,
                            bool orient)
@@ -421,7 +421,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const mesh::Geometry& geometry = mesh.geometry();
-  common::ndVector<double> x_g_ = geometry.x();
+  common::array_2d<double> x_g_ = geometry.x();
 
   // Use eigen map for now.
   Eigen::Map<
@@ -479,7 +479,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
         std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
     }
   }
-  common::ndVector<std::int32_t> ent_geom(entity_geometry.rows(),
+  common::array_2d<std::int32_t> ent_geom(entity_geometry.rows(),
                                           entity_geometry.cols());
   ent_geom.copy(entity_geometry);
   return ent_geom;

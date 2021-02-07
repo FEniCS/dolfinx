@@ -28,9 +28,9 @@ std::shared_ptr<const common::IndexMap> Geometry::index_map() const
   return _index_map;
 }
 //-----------------------------------------------------------------------------
-common::ndVector<double>& Geometry::x() { return _x; }
+common::array_2d<double>& Geometry::x() { return _x; }
 //-----------------------------------------------------------------------------
-const common::ndVector<double>& Geometry::x() const { return _x; }
+const common::array_2d<double>& Geometry::x() const { return _x; }
 //-----------------------------------------------------------------------------
 const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
 //-----------------------------------------------------------------------------
@@ -45,7 +45,7 @@ mesh::Geometry
 mesh::create_geometry(MPI_Comm comm, const Topology& topology,
                       const fem::CoordinateElement& coordinate_element,
                       const graph::AdjacencyList<std::int64_t>& cell_nodes,
-                      const common::ndVector<double>& x)
+                      const common::array_2d<double>& x)
 {
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
@@ -116,7 +116,7 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
                                       cell_info[cell]);
   }
 
-  common::ndVector<double> _xg(xg.rows(), xg.cols());
+  common::array_2d<double> _xg(xg.rows(), xg.cols());
   std::copy(xg.data(), xg.data() + xg.size(), _xg.begin());
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
                   std::move(_xg), std::move(igi));

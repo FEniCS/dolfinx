@@ -278,7 +278,7 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
   // Use eigen map for now.
-  const common::ndVector<double>& x_g_ = geometry.x();
+  const common::array_2d<double>& x_g_ = geometry.x();
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       geom_dofs(x_g_.data(), x_g_.rows(), x_g_.cols());
