@@ -196,13 +196,12 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     }
   }
 
-  common::array_2d<double> geom_vec(geom.rows(), geom.cols());
-  std::copy(geom.data(), geom.data() + geom.size(), geom_vec.begin());
+  common::array_2d<double> geom_array(geom);
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom_vec, ghost_mode, partitioner);
+      element, geom_array, ghost_mode, partitioner);
 }
 
 } // namespace
@@ -266,14 +265,12 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
       ++cell;
     }
 
-  common::array_2d<double> geom_vec(geom.rows(), geom.cols());
-  std::copy(geom.data(), geom.data() + geom.size(), geom_vec.begin());
-
+  common::array_2d<double> geom_array(geom);
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom_vec, ghost_mode, partitioner);
+      element, geom_array, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,

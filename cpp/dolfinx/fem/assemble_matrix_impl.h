@@ -184,8 +184,7 @@ void assemble_cells(
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   // Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       x_g(geometry.x().data(), geometry.x().rows(), geometry.x().cols());
 
   // Iterate over active cells
@@ -272,12 +271,11 @@ void assemble_exterior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const common::array_2d<double>& x_g_ = mesh.geometry().x();
 
   // Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      x_g(x_g_.data(), x_g_.rows(), x_g_.cols());
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      x_g(mesh.geometry().x().data(), mesh.geometry().x().rows(),
+          mesh.geometry().x().cols());
 
   // Data structures used in assembly
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
@@ -381,10 +379,9 @@ void assemble_interior_facets(
   const int num_dofs_g = x_dofmap.num_links(0);
 
   // Use eigen map for now.
-  const common::array_2d<double>& x_g_ = mesh.geometry().x();
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      x_g(x_g_.data(), x_g_.rows(), x_g_.cols());
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      x_g(mesh.geometry().x().data(), mesh.geometry().x().rows(),
+          mesh.geometry().x().cols());
 
   // Data structures used in assembly
   std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);

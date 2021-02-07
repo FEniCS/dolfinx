@@ -31,7 +31,7 @@ void eval(
   assert(mesh);
 
   // Prepare coefficients
-  const auto coeffs = dolfinx::fem::pack_coefficients(e);
+  const common::array_2d<double> coeffs = dolfinx::fem::pack_coefficients(e);
 
   // Prepare constants
   const std::vector<T> constant_values = dolfinx::fem::pack_constants(e);
@@ -50,8 +50,7 @@ void eval(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       x_g(mesh->geometry().x().data(), mesh->geometry().x().rows(),
           mesh->geometry().x().cols());
 

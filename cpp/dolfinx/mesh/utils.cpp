@@ -67,10 +67,8 @@ std::vector<double> mesh::h(const Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
   // Use eigen map for now.
-  const common::array_2d<double>& x_g_ = geometry.x();
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      geom_dofs(x_g_.data(), x_g_.rows(), x_g_.cols());
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      geom_dofs(geometry.x().data(), geometry.x().rows(), geometry.x().cols());
 
   std::vector<double> h_cells(entities.size(), 0);
   assert(num_vertices <= 8);
@@ -100,13 +98,12 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
-  // Find geometry nodes for topology entities
-  common::array_2d<double> x_g_ = mesh.geometry().x();
 
+  // Find geometry nodes for topology entities
   // Use eigen map for now.
-  Eigen::Map<
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      geom_dofs(x_g_.data(), x_g_.rows(), x_g_.cols());
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      geom_dofs(mesh.geometry().x().data(), mesh.geometry().x().rows(),
+                mesh.geometry().x().cols());
 
   // Orient cells if they are tetrahedron
   bool orient = false;
@@ -185,12 +182,11 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
                 const tcb::span<const std::int32_t>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  common::array_2d<double> x_g_ = geometry.x();
 
   // Use eigen map for now.
-  Eigen::Map<
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      x(x_g_.data(), x_g_.rows(), x_g_.cols());
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x(geometry.x().data(), geometry.x().rows(), geometry.x().cols());
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
@@ -248,9 +244,9 @@ std::vector<std::int32_t> mesh::locate_entities(
   common::array_2d<double> x_g_ = mesh.geometry().x();
 
   // Use eigen map for now.
-  Eigen::Map<
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      x_nodes(x_g_.data(), x_g_.rows(), x_g_.cols());
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      x_nodes(mesh.geometry().x().data(), mesh.geometry().x().rows(),
+              mesh.geometry().x().cols());
 
   Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_vertices(
       3, vertex_to_node.size());
@@ -334,12 +330,11 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  common::array_2d<double> x_g_ = mesh.geometry().x();
 
   // Use eigen map for now.
-  Eigen::Map<
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      x_nodes(x_g_.data(), x_g_.rows(), x_g_.cols());
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      x_nodes(mesh.geometry().x().data(), mesh.geometry().x().rows(),
+              mesh.geometry().x().cols());
 
   // Build vector of boundary vertices
   const std::vector<std::int32_t> vertices(boundary_vertices.begin(),
@@ -421,12 +416,10 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const mesh::Geometry& geometry = mesh.geometry();
-  common::array_2d<double> x_g_ = geometry.x();
 
   // Use eigen map for now.
-  Eigen::Map<
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      geom_dofs(x_g_.data(), x_g_.rows(), x_g_.cols());
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      geom_dofs(geometry.x().data(), geometry.x().rows(), geometry.x().cols());
 
   const mesh::Topology& topology = mesh.topology();
 
@@ -479,9 +472,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
         std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
     }
   }
-  common::array_2d<std::int32_t> ent_geom(entity_geometry.rows(),
-                                          entity_geometry.cols());
-  ent_geom.copy(entity_geometry);
+  common::array_2d<std::int32_t> ent_geom(entity_geometry);
   return ent_geom;
 }
 //------------------------------------------------------------------------

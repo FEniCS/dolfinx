@@ -116,8 +116,7 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
                                       cell_info[cell]);
   }
 
-  common::array_2d<double> _xg(xg.rows(), xg.cols());
-  std::copy(xg.data(), xg.data() + xg.size(), _xg.begin());
+  common::array_2d<double> _xg(xg);
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
                   std::move(_xg), std::move(igi));
 }

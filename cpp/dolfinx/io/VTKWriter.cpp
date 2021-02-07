@@ -102,10 +102,9 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
        << "\">";
 
   // Use eigen map for now.
-  const common::array_2d<double>& x_g_ = mesh.geometry().x();
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      points(x_g_.data(), x_g_.rows(), x_g_.cols());
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      points(mesh.geometry().x().data(), mesh.geometry().x().rows(),
+             mesh.geometry().x().cols());
 
   for (int i = 0; i < points.rows(); ++i)
     file << points(i, 0) << " " << points(i, 1) << " " << points(i, 2) << "  ";

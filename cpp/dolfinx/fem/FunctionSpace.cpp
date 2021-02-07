@@ -66,12 +66,12 @@ internal_tabulate_dof_coordinates(
       = mesh->geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  common::array_2d<double> x_g_ = mesh->geometry().x();
 
   // Use eigen map for now.
-  Eigen::Map<
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      x_g(x_g_.data(), x_g_.rows(), x_g_.cols());
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x_g(mesh->geometry().x().data(), mesh->geometry().x().rows(),
+          mesh->geometry().x().cols());
 
   // Array to hold coordinates to return
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> coords

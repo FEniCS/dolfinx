@@ -197,7 +197,7 @@ geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
       entity_indices_sorted.data(), entity_indices_sorted.size());
 
   const auto midpoints = mesh::midpoints(mesh, tdim, entities);
-  Eigen::Map<const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       midpoints_eigen(midpoints.data(), midpoints.rows(), midpoints.cols());
 
   std::vector<Eigen::Vector3d> points(entities.rows());
@@ -278,10 +278,8 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
   // Use eigen map for now.
-  const common::array_2d<double>& x_g_ = geometry.x();
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      geom_dofs(x_g_.data(), x_g_.rows(), x_g_.cols());
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      geom_dofs(geometry.x().data(), geometry.x().rows(), geometry.x().cols());
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 

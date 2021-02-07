@@ -166,12 +166,6 @@ public:
   /// Checks whether the container is empty.
   bool empty() const noexcept { return _storage.empty(); }
 
-  // /// Returns a reference to the first element in the container.
-  // /// Calling front on an empty container is undefined.
-  // reference front() { return _storage.front(); }
-
-  // reference back() { return _storage.back(); }
-
 private:
   size_type _rows;
   size_type _cols;

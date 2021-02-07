@@ -27,10 +27,10 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
   // Use eigen map for now.
-  const common::array_2d<double>& x_g_ = mesh.geometry().x();
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      geom_dofs(x_g_.data(), x_g_.rows(), x_g_.cols());
+      geom_dofs(mesh.geometry().x().data(), mesh.geometry().x().rows(),
+                mesh.geometry().x().cols());
 
   mesh.topology_mutable().create_connectivity(dim, tdim);
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> entity(1);
