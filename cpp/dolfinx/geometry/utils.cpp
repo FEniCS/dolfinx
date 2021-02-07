@@ -208,6 +208,7 @@ geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
 {
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
                "a given topological dimension and subset of entities.";
+
   // Copy and sort entity indices
   std::vector<std::int32_t> entity_indices_sorted(entity_indices);
   std::sort(entity_indices_sorted.begin(), entity_indices_sorted.end());
