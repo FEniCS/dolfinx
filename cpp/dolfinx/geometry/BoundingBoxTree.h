@@ -95,7 +95,7 @@ public:
   /// @return The indices of the two child nodes. For leaf nodes, index
   /// 0 is equal to the node index and index 1 is equal to the index of
   /// the entity that the leaf box bounds, e.g. the index of the cell
-  /// that it bounds,
+  /// that it bounds.
   std::array<int, 2> bbox(int node) const
   {
     assert(2 * node + 1 < (int)_bboxes.size());

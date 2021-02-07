@@ -60,20 +60,19 @@ std::array<std::array<double, 3>, 2> compute_bbox_of_bboxes(
     const tcb::span<const std::pair<std::array<std::array<double, 3>, 2>, int>>&
         leaf_bboxes)
 {
+  // Compute min and max over remaining boxes
   std::array<std::array<double, 3>, 2> b;
   b[0] = leaf_bboxes[0].first[0];
   b[1] = leaf_bboxes[0].first[1];
 
-
-
-  // Compute min and max over remaining boxes
   for (auto& box : leaf_bboxes)
   {
-    for (int j = 0; j < 3; ++j)
-    {
-      b[0][j] = std::min(b[0][j], box.first[0][j]);
-      b[1][j] = std::max(b[1][j], box.first[1][j]);
-    }
+    std::transform(box.first[0].begin(), box.first[0].end(), b[0].begin(),
+                   b[0].begin(),
+                   [](double a, double b) { return std::min(a, b); });
+    std::transform(box.first[1].begin(), box.first[1].end(), b[1].begin(),
+                   b[1].begin(),
+                   [](double a, double b) { return std::max(a, b); });
   }
 
   return b;
@@ -90,8 +89,8 @@ int _build_from_leaf(
 
     // Get bounding box coordinates for leaf
     const int entity_index = leaf_bboxes[0].second;
-    std::array<double, 3> b0 = leaf_bboxes[0].first[0];
-    std::array<double, 3> b1 = leaf_bboxes[0].first[1];
+    const std::array<double, 3> b0 = leaf_bboxes[0].first[0];
+    const std::array<double, 3> b1 = leaf_bboxes[0].first[1];
 
     // Store bounding box data
     bboxes.push_back({entity_index, entity_index});
@@ -116,15 +115,12 @@ int _build_from_leaf(
 
     auto middle = std::next(leaf_bboxes.begin(), leaf_bboxes.size() / 2);
 
-    std::nth_element(
-        leaf_bboxes.begin(), middle, leaf_bboxes.end(),
-        [axis](const std::pair<std::array<std::array<double, 3>, 2>, int>& p0,
-               const std::pair<std::array<std::array<double, 3>, 2>, int>& p1)
-            -> bool {
-          const double x0 = p0.first[0][axis] + p0.first[1][axis];
-          const double x1 = p1.first[0][axis] + p1.first[1][axis];
-          return x0 < x1;
-        });
+    std::nth_element(leaf_bboxes.begin(), middle, leaf_bboxes.end(),
+                     [axis](const auto& p0, const auto& p1) -> bool {
+                       const double x0 = p0.first[0][axis] + p0.first[1][axis];
+                       const double x1 = p1.first[0][axis] + p1.first[1][axis];
+                       return x0 < x1;
+                     });
 
     // Split bounding boxes into two groups and call recursively
     std::array bbox{_build_from_leaf(tcb::span(leaf_bboxes.begin(), middle),
@@ -156,7 +152,7 @@ std::pair<std::vector<int>, std::vector<double>> build_from_leaf(
     bbox_array[2 * i + 1] = bboxes[i][1];
   }
 
-  return {bbox_array, std::move(bbox_coordinates)};
+  return {std::move(bbox_array), std::move(bbox_coordinates)};
 }
 //-----------------------------------------------------------------------------
 int _build_from_point(tcb::span<std::pair<std::array<double, 3>, int>> points,
@@ -262,7 +258,6 @@ BoundingBoxTree::BoundingBoxTree(
     const std::vector<std::int32_t>& entity_indices, double padding)
     : _tdim(tdim)
 {
-  // Check dimension
   if (tdim < 1 or tdim > mesh.topology().dim())
   {
     throw std::runtime_error("Dimension must be a number between 1 and "
@@ -290,15 +285,12 @@ BoundingBoxTree::BoundingBoxTree(
 
     leaf_bboxes[e].first[0] = b[0];
     leaf_bboxes[e].first[1] = b[1];
-    leaf_bboxes[e].second = e;
+    leaf_bboxes[e].second = entity_indices_sorted[e];
   }
 
   // Recursively build the bounding box tree from the leaves
   if (!leaf_bboxes.empty())
     std::tie(_bboxes, _bbox_coordinates) = build_from_leaf(leaf_bboxes);
-
-  // Remap leaf indices
-  remap_entity_indices(entity_indices_sorted);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << entity_indices.size() << " entities.";
@@ -424,7 +416,6 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
 std::array<std::array<double, 3>, 2> BoundingBoxTree::get_bbox(int node) const
 {
   std::array<std::array<double, 3>, 2> x;
-  // assert(2 * node + 1 < _bbox_coordinates.rows());
   std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node), 3, x[0].begin());
   std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node + 3), 3,
               x[1].begin());
