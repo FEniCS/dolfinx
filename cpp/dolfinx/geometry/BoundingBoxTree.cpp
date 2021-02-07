@@ -262,7 +262,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
 }
 //----------------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(
-    const std::vector<std::array<double, 3>>& points)
+    std::vector<std::pair<std::array<double, 3>, std::int32_t>> points)
     : _tdim(0)
 {
   const int num_leaves = points.size();
@@ -271,14 +271,7 @@ BoundingBoxTree::BoundingBoxTree(
   std::vector<std::array<int, 2>> bboxes;
   if (num_leaves > 0)
   {
-    std::vector<std::pair<std::array<double, 3>, int>> _points(points.size());
-    for (std::size_t p = 0; p < _points.size(); ++p)
-    {
-      std::copy(points[p].begin(), points[p].end(), _points[p].first.begin());
-      _points[p].second = p;
-    }
-
-    _build_from_point(tcb::make_span(_points), bboxes, _bbox_coordinates);
+    _build_from_point(tcb::make_span(points), bboxes, _bbox_coordinates);
     _bboxes.resize(2 * bboxes.size());
     for (std::size_t i = 0; i < bboxes.size(); ++i)
     {
@@ -330,21 +323,6 @@ BoundingBoxTree BoundingBoxTree::compute_global_tree(const MPI_Comm& comm) const
             << global_tree.num_bboxes() << " boxes.";
 
   return global_tree;
-}
-//-----------------------------------------------------------------------------
-void BoundingBoxTree::remap_entity_indices(
-    const std::vector<std::int32_t>& entity_indices)
-{
-  // Remap leaf indices
-  for (std::size_t i = 0; i < _bboxes.size() / 2; ++i)
-  {
-    if (_bboxes[2 * i] == _bboxes[2 * i + 1])
-    {
-      int mapped_index = entity_indices[_bboxes[2 * i]];
-      _bboxes[2 * i] = mapped_index;
-      _bboxes[2 * i + 1] = mapped_index;
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::num_bboxes() const { return _bboxes.size() / 2; }

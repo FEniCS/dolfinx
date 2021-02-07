@@ -204,32 +204,25 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
 //-----------------------------------------------------------------------------
 geometry::BoundingBoxTree
 geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
-                               const std::vector<std::int32_t>& entity_indices)
+                               const std::vector<std::int32_t>& entities)
 {
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
                "a given topological dimension and subset of entities.";
 
-  // Copy and sort entity indices
-  std::vector<std::int32_t> entity_indices_sorted(entity_indices);
-  std::sort(entity_indices_sorted.begin(), entity_indices_sorted.end());
-  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> entities(
-      entity_indices_sorted.data(), entity_indices_sorted.size());
-
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
       = mesh::midpoints(mesh, tdim, entities);
 
-  std::vector<std::array<double, 3>> points(entities.rows());
+  std::vector<std::pair<std::array<double, 3>, std::int32_t>> points(
+      entities.size());
   for (std::size_t i = 0; i < points.size(); ++i)
+  {
     for (std::size_t j = 0; j < 3; ++j)
-      points[i][j] = midpoints(i, j);
+      points[i].first[j] = midpoints(i, j);
+    points[i].second = entities[i];
+  }
 
   // Build tree
-  geometry::BoundingBoxTree tree(points);
-
-  // Remap leaf entities
-  tree.remap_entity_indices(entity_indices_sorted);
-
-  return tree;
+  return geometry::BoundingBoxTree(points);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::array<int, 2>>
@@ -238,7 +231,6 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
 {
   // Call recursive find function
   std::vector<std::array<int, 2>> entities;
-
   if (tree0.num_bboxes() > 0 and tree1.num_bboxes() > 0)
   {
     _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,
@@ -252,7 +244,6 @@ std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
                                               const std::array<double, 3>& p)
 {
   std::vector<int> entities;
-
   if (tree.num_bboxes() > 0)
     _compute_collisions_point(tree, p, tree.num_bboxes() - 1, entities);
 
@@ -333,7 +324,7 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     for (std::size_t i = 0; i < dofs.size(); i++)
       nodes.row(i) = geom_dofs.row(dofs[i]);
 
-    std::array<double, 3> x
+    const std::array<double, 3> x
         = geometry::compute_distance_gjk(_p.transpose(), nodes);
     return x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
   }

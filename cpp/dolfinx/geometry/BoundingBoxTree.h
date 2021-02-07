@@ -54,7 +54,8 @@ public:
   /// Constructor
   /// @param[in] points Cloud of points to build the bounding box tree
   /// around
-  BoundingBoxTree(const std::vector<std::array<double, 3>>& points);
+  BoundingBoxTree(
+      std::vector<std::pair<std::array<double, 3>, std::int32_t>> points);
 
   /// Move constructor
   BoundingBoxTree(BoundingBoxTree&& tree) = default;
@@ -101,14 +102,6 @@ public:
     assert(2 * node + 1 < (int)_bboxes.size());
     return {_bboxes[2 * node], _bboxes[2 * node + 1]};
   }
-
-  /// Remap entity indices for bounding box trees that does not span a
-  /// whole mesh. Each leaf node should contain the actual entity index,
-  /// not a reference to the index of the entity_indices list.
-  /// @param[in] entity_indices The list of entities (local to process)
-  /// used to build the bounding box tree. They should be in the same
-  /// order as the input to the bounding box tree constructor.
-  void remap_entity_indices(const std::vector<std::int32_t>& entity_indices);
 
 private:
   // Constructor

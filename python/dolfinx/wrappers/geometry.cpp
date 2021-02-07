@@ -59,7 +59,8 @@ void geometry(py::module& m)
                     const std::vector<std::int32_t>&, double>(),
            py::arg("mesh"), py::arg("tdim"), py::arg("entity_indices"),
            py::arg("padding") = 0)
-      .def(py::init<const std::vector<std::array<double, 3>>&>())
+      // .def(py::init<
+      //      std::vector<std::pair<std::array<double, 3>, std::int32_t>>>())
       .def("num_bboxes", &dolfinx::geometry::BoundingBoxTree::num_bboxes)
       .def("get_bbox", &dolfinx::geometry::BoundingBoxTree::get_bbox)
       .def("str", &dolfinx::geometry::BoundingBoxTree::str)
