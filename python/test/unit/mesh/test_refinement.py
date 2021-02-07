@@ -36,7 +36,7 @@ def test_RefineUnitCubeMesh_repartition():
     assert mesh.topology.index_map(3).size_global == 15120
 
     Q = FunctionSpace(mesh, ("CG", 1))
-    assert(Q)
+    assert Q
 
 
 def test_RefineUnitCubeMesh_keep_partition():
@@ -47,7 +47,7 @@ def test_RefineUnitCubeMesh_keep_partition():
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
     Q = FunctionSpace(mesh, ("CG", 1))
-    assert(Q)
+    assert Q
 
 
 def test_refine_create_form():

@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <array>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/span.hpp>
 #include <memory>
 #include <vector>
 
@@ -35,12 +36,12 @@ public:
   /// @param[in] mesh The mesh for building the bounding box tree
   /// @param[in] tdim The topological dimension of the mesh entities to
   /// build the bounding box tree for
-  /// @param[in] entity_indices List of entity indices (local to
-  /// process) to compute the bounding box for (may be empty, if none).
+  /// @param[in] entities List of entity indices (local to process) to
+  /// compute the bounding box for (may be empty, if none).
   /// @param[in] padding A float perscribing how much the bounding box
   /// of each entity should be padded
   BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
-                  const std::vector<std::int32_t>& entity_indices,
+                  const tcb::span<const std::int32_t>& entities,
                   double padding = 0);
 
   /// Constructor
@@ -66,6 +67,9 @@ public:
   /// Move assignment
   BoundingBoxTree& operator=(BoundingBoxTree&& other) = default;
 
+  /// Copy assignment
+  BoundingBoxTree& operator=(const BoundingBoxTree& other) = default;
+
   /// Destructor
   ~BoundingBoxTree() = default;
 
@@ -73,7 +77,7 @@ public:
   /// @param[in] node The bounding box node index
   /// @return The bounding box where [0] is the lower corner and [1] is
   /// the upper corner
-  std::array<std::array<double, 3>, 2> get_bbox(int node) const;
+  std::array<std::array<double, 3>, 2> get_bbox(std::size_t node) const;
 
   /// Compute a global bounding tree (collective on comm)
   /// This can be used to find which process a point might have a
@@ -83,7 +87,7 @@ public:
   BoundingBoxTree compute_global_tree(const MPI_Comm& comm) const;
 
   /// Return number of bounding boxes
-  int num_bboxes() const;
+  std::int32_t num_bboxes() const;
 
   /// Topological dimension of leaf entities
   int tdim() const;
@@ -97,15 +101,16 @@ public:
   /// 0 is equal to the node index and index 1 is equal to the index of
   /// the entity that the leaf box bounds, e.g. the index of the cell
   /// that it bounds.
-  std::array<int, 2> bbox(int node) const
+  std::array<int, 2> bbox(std::size_t node) const
   {
-    assert(2 * node + 1 < (int)_bboxes.size());
+    assert(2 * node + 1 < _bboxes.size());
     return {_bboxes[2 * node], _bboxes[2 * node + 1]};
   }
 
 private:
   // Constructor
-  BoundingBoxTree(std::vector<int>&& bboxes, std::vector<double>&& bbox_coords);
+  BoundingBoxTree(std::vector<std::int32_t>&& bboxes,
+                  std::vector<double>&& bbox_coords);
 
   // Topological dimension of leaf entities
   int _tdim;
@@ -114,7 +119,7 @@ private:
   void tree_print(std::stringstream& s, int i) const;
 
   // List of bounding boxes (parent-child-entity relations)
-  std::vector<int> _bboxes;
+  std::vector<std::int32_t> _bboxes;
 
   // List of bounding box coordinates
   std::vector<double> _bbox_coordinates;

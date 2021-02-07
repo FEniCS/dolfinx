@@ -7,6 +7,7 @@
 #include "array.h"
 #include "caster_mpi.h"
 #include <Eigen/Core>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/gjk.h>
 #include <dolfinx/geometry/utils.h>
@@ -54,13 +55,17 @@ void geometry(py::module& m)
              std::shared_ptr<dolfinx::geometry::BoundingBoxTree>>(
       m, "BoundingBoxTree")
       .def(py::init<const dolfinx::mesh::Mesh&, int, double>(), py::arg("mesh"),
-           py::arg("tdim"), py::arg("padding") = 0)
-      .def(py::init<const dolfinx::mesh::Mesh&, int,
-                    const std::vector<std::int32_t>&, double>(),
+           py::arg("tdim"), py::arg("padding") = 0.0)
+      .def(py::init(
+               [](const dolfinx::mesh::Mesh& mesh, int tdim,
+                  const py::array_t<std::int32_t, py::array::c_style>& entities,
+                  double padding) {
+                 return dolfinx::geometry::BoundingBoxTree(
+                     mesh, tdim, tcb::span(entities.data(), entities.size()),
+                     padding);
+               }),
            py::arg("mesh"), py::arg("tdim"), py::arg("entity_indices"),
-           py::arg("padding") = 0)
-      // .def(py::init<
-      //      std::vector<std::pair<std::array<double, 3>, std::int32_t>>>())
+           py::arg("padding") = 0.0)
       .def("num_bboxes", &dolfinx::geometry::BoundingBoxTree::num_bboxes)
       .def("get_bbox", &dolfinx::geometry::BoundingBoxTree::get_bbox)
       .def("str", &dolfinx::geometry::BoundingBoxTree::str)
