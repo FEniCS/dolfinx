@@ -187,7 +187,11 @@ void interpolate(
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const int num_dofs_g = x_dofmap.num_links(0);
-  const EigenMatrixRowXd& x_g = mesh->geometry().x();
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x_g(mesh->geometry().x().data(), mesh->geometry().x().rows(),
+          mesh->geometry().x().cols());
+
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
   // Get the interpolation points on the reference cells

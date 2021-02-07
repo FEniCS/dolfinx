@@ -50,8 +50,10 @@ void eval(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh->geometry().x();
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x_g(mesh->geometry().x().data(), mesh->geometry().x().rows(),
+          mesh->geometry().x().cols());
 
   // Create data structures used in evaluation
   const int gdim = mesh->geometry().dim();

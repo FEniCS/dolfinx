@@ -91,16 +91,15 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
 
   // Build coordinate dof array
-  common::ndVector<double> xg(coords.rows(), coords.cols());
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(
+      coords.rows(), coords.cols());
 
   // Allocate space for input global indices
   std::vector<std::int64_t> igi(indices.size());
 
   for (int i = 0; i < coords.rows(); ++i)
   {
-    auto cood_row = coords.row(l2l[i]);
-    for (int j = 0; j < coords.rows(); ++j)
-      xg(i, j) = cood_row[j];
+    xg.row(i) = coords.row(l2l[i]);
     igi[i] = indices[l2l[i]];
   }
 
@@ -117,7 +116,9 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
                                       cell_info[cell]);
   }
 
+  common::ndVector<double> _xg(xg.rows(), xg.cols());
+  std::copy(xg.data(), xg.data() + xg.size(), _xg.begin());
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
-                  std::move(xg), std::move(igi));
+                  std::move(_xg), std::move(igi));
 }
 //-----------------------------------------------------------------------------
