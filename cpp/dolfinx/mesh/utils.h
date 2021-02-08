@@ -65,7 +65,7 @@ midpoints(const mesh::Mesh& mesh, int dim,
 ///   (indices local to the process)
 std::vector<std::int32_t> locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+    const std::function<std::vector<bool>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
 
@@ -91,7 +91,7 @@ std::vector<std::int32_t> locate_entities(
 /// process)
 std::vector<std::int32_t> locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+    const std::function<std::vector<bool>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker);
 

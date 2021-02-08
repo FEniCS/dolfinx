@@ -196,7 +196,7 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+    const std::function<std::vector<bool>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker)
 {
@@ -233,8 +233,8 @@ std::vector<std::int32_t> mesh::locate_entities(
     x_vertices.col(i) = x_nodes.row(vertex_to_node[i]);
 
   // Run marker function on vertex coordinates
-  const Eigen::Array<bool, Eigen::Dynamic, 1> marked = marker(x_vertices);
-  if (marked.rows() != x_vertices.cols())
+  const std::vector<bool> marked = marker(x_vertices);
+  if ((int)marked.size() != x_vertices.cols())
     throw std::runtime_error("Length of array of markers is wrong.");
 
   // Iterate over entities to build vector of marked entities
@@ -263,7 +263,7 @@ std::vector<std::int32_t> mesh::locate_entities(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+    const std::function<std::vector<bool>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker)
 {
@@ -341,8 +341,8 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   }
 
   // Run marker function on the vertex coordinates
-  const Eigen::Array<bool, Eigen::Dynamic, 1> marked = marker(x_vertices);
-  if (marked.size() != x_vertices.cols())
+  const std::vector<bool> marked = marker(x_vertices);
+  if ((int)marked.size() != x_vertices.cols())
     throw std::runtime_error("Length of array of markers is wrong.");
 
   // Loop over entities and check vertex markers

@@ -268,7 +268,7 @@ void mesh(py::module& m)
   m.def(
       "locate_entities",
       [](const dolfinx::mesh::Mesh& mesh, int dim,
-         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+         const std::function<std::vector<bool>(
              const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                  Eigen::RowMajor>>&)>& marker) {
         return as_pyarray(dolfinx::mesh::locate_entities(mesh, dim, marker));
@@ -276,7 +276,7 @@ void mesh(py::module& m)
   m.def(
       "locate_entities_boundary",
       [](const dolfinx::mesh::Mesh& mesh, int dim,
-         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+         const std::function<std::vector<bool>(
              const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                  Eigen::RowMajor>>&)>& marker) {
         return as_pyarray(
