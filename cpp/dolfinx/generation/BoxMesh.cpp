@@ -186,13 +186,11 @@ mesh::Mesh build_hex(MPI_Comm comm,
     ++cell;
   }
 
-  common::array2d<double> geom_array(geom);
-
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom_array, ghost_mode, partitioner);
+      element, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 
