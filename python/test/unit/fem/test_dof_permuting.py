@@ -159,6 +159,8 @@ def test_dof_positions(cell_type, space_type):
 
 
 def random_evaluation_mesh(cell_type):
+    random.seed(6)
+
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type, 1))
     if cell_type == "triangle":
         temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.], [0., 1.]])
