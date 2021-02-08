@@ -75,7 +75,8 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   {
     _basix_element_handle = basix::register_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree);
-    _interpolation_matrix = basix::interpolation_matrix(_basix_element_handle);
+    basix::interpolation_matrix(_basix_element_handle,
+                                _interpolation_matrix.data());
   }
 
   // Fill value dimension
@@ -295,7 +296,12 @@ FiniteElement::interpolation_points() const
     throw std::runtime_error("Cannot get interpolation points - no basix "
                              "element handle. Maybe this is a mixed element?");
   }
-  return basix::interpolation_points(_basix_element_handle);
+  const int gdim
+      = basix::cell_geometry_dimension(basix::cell_type(_basix_element_handle));
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points(
+      basix::interpolation_num_points(_basix_element_handle), gdim);
+  basix::interpolation_points(_basix_element_handle, points.data());
+  return points;
 }
 //-----------------------------------------------------------------------------
 bool FiniteElement::needs_permutation_data() const noexcept
