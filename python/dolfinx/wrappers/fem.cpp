@@ -381,6 +381,8 @@ void fem(py::module& m)
         Mat A = dolfinx::la::create_petsc_matrix(MPI_COMM_WORLD, sp);
         dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
             dolfinx::la::PETScMatrix::add_fn(A), V0, V1);
+        MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+        MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
         return A;
       },
       py::return_value_policy::take_ownership);
