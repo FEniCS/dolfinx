@@ -7,7 +7,6 @@
 #include "FiniteElement.h"
 #include <basix.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/mesh/utils.h>
 #include <functional>
 #include <ufc.h>
 
@@ -22,8 +21,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
       _hash(std::hash<std::string>{}(_signature)),
-      _transform_reference_basis_derivatives(
-          ufc_element.transform_reference_basis_derivatives),
       _apply_dof_transformation(ufc_element.apply_dof_transformation),
       _apply_dof_transformation_to_scalar(
           ufc_element.apply_dof_transformation_to_scalar),
@@ -185,36 +182,43 @@ void FiniteElement::transform_reference_basis(
     const std::vector<double>& J, const tcb::span<const double>& detJ,
     const std::vector<double>& K) const
 {
-  assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();
+  const int scalar_dim = _space_dim / _bs;
+  const int value_size = _value_size / _bs;
+  const int size_per_point = scalar_dim * value_size;
+  const int Jsize = J.size() / num_points;
+  const int Jcols = X.cols();
+  const int Jrows = Jsize / Jcols;
 
-  int ret = _transform_reference_basis_derivatives(
-      values.data(), 0, num_points, reference_values.data(), X.data(), J.data(),
-      detJ.data(), K.data());
-  if (ret == -1)
+  Eigen::Map<const Eigen::ArrayXd> J_unwrapped(J.data(), J.size());
+  Eigen::Map<const Eigen::ArrayXd> K_unwrapped(K.data(), K.size());
+  Eigen::Map<const Eigen::ArrayXd> reference_values_unwrapped(
+      reference_values.data(), reference_values.size());
+
+  Eigen::Map<Eigen::ArrayXd> values_unwrapped(values.data(), values.size());
+
+  for (int pt = 0; pt < num_points; ++pt)
   {
-    throw std::runtime_error("Generated code returned error "
-                             "in transform_reference_basis_derivatives");
-  }
-}
-//-----------------------------------------------------------------------------
-void FiniteElement::transform_reference_basis_derivatives(
-    std::vector<double>& values, std::size_t order,
-    const std::vector<double>& reference_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X,
-    const std::vector<double>& J, const tcb::span<const double>& detJ,
-    const std::vector<double>& K) const
-{
-  assert(_transform_reference_basis_derivatives);
-  const int num_points = X.rows();
-  int ret = _transform_reference_basis_derivatives(
-      values.data(), order, num_points, reference_values.data(), X.data(),
-      J.data(), detJ.data(), K.data());
-  if (ret == -1)
-  {
-    throw std::runtime_error("Generated code returned error "
-                             "in transform_reference_basis_derivatives");
+    for (int d = 0; d < scalar_dim; ++d)
+    {
+      // FIXME: This can be tidied up massively once basix uses a std::vector
+      // interface instead of Eigen
+      values_unwrapped.block(pt * size_per_point + d * value_size, 0,
+                             value_size, 1)
+          = basix::map_push_forward(
+              _basix_element_handle,
+              reference_values_unwrapped.block(
+                  pt * size_per_point + d * value_size, 0, value_size, 1),
+              Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>(
+                  J_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(),
+                  Jrows, Jcols),
+              detJ[pt],
+              Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>(
+                  K_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(),
+                  Jrows, Jcols));
+    }
   }
 }
 //-----------------------------------------------------------------------------

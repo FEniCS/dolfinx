@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <cstdint>
 #include <utility>
+#include <vector>
 
 namespace dolfinx::mesh
 {

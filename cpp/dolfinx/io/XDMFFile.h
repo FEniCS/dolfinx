@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include "HDF5Interface.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/cell_types.h>

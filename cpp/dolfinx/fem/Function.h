@@ -8,7 +8,7 @@
 
 #include "FunctionSpace.h"
 #include "interpolate.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/types.h>
