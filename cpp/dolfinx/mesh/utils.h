@@ -101,8 +101,8 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// @param[in] mesh Mesh
 /// @param[in] dim Topological dimension of the entities of interest
 /// @param[in] entity_list List of entity indices (local)
-/// @param[in] orient If true, in 3D, reorients facets to have consistent normal
-/// direction
+/// @param[in] orient If true, in 3D, reorients facets to have
+/// consistent normal direction
 /// @return Indices in the geometry array for the mesh entity vertices, i.e.
 /// indices(i, j) is the position in the geometry array of the j-th vertex of
 /// the entity entity_list[i].

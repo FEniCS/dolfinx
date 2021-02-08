@@ -287,8 +287,13 @@ bool FiniteElement::interpolation_ident() const noexcept
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-FiniteElement::interpolation_points() const noexcept
+FiniteElement::interpolation_points() const
 {
+  if (_basix_element_handle == -1)
+  {
+    throw std::runtime_error("Cannot get interpolation points - no basix "
+                             "element handle. Maybe this is a mixed element?");
+  }
   return basix::points(_basix_element_handle);
 }
 //-----------------------------------------------------------------------------
