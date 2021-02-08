@@ -78,7 +78,6 @@ def test_overlapping_bcs():
 
     # Check the diagonal (only on the rank that owns the row)
     d = A.getDiagonal()
-    size = d.getLocalSize()
     if len(dof_corner) > 0 and dof_corner[0] < V.dofmap.index_map.size_local:
         d.array_r[dof_corner[0]] == 1.0
 
