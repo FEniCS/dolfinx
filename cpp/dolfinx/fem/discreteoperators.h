@@ -175,7 +175,7 @@ void fem::assemble_discrete_gradient(
     tcb::span<const std::int32_t> cell_vertices = c_to_v->links(cell);
 
     // Find local index of each of the vertices and map to local dof
-    std::array<PetscInt, 2> cols;
+    std::array<std::int32_t, 2> cols;
     tcb::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cell);
     for (std::int32_t i = 0; i < 2; ++i)
     {
