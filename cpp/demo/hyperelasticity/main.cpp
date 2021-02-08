@@ -128,17 +128,13 @@ int main(int argc, char* argv[])
 
     auto V = fem::create_functionspace(
         create_functionspace_form_hyperelasticity_F, "u", mesh);
-    auto E = std::make_shared<fem::Constant<double>>(10);
-    auto nu = std::make_shared<fem::Constant<double>>(0.3);
 
     // Define solution function
     auto u = std::make_shared<fem::Function<PetscScalar>>(V);
-    auto a
-        = fem::create_form<PetscScalar>(create_form_hyperelasticity_J, {V, V},
-                                        {{"u", u}}, {{"E", E}, {"nu", nu}}, {});
-    auto L
-        = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V},
-                                        {{"u", u}}, {{"E", E}, {"nu", nu}}, {});
+    auto a = fem::create_form<PetscScalar>(create_form_hyperelasticity_J,
+                                           {V, V}, {{"u", u}}, {}, {});
+    auto L = fem::create_form<PetscScalar>(create_form_hyperelasticity_F, {V},
+                                           {{"u", u}}, {}, {});
 
     auto u_rotation = std::make_shared<fem::Function<PetscScalar>>(V);
     u_rotation->interpolate([](auto& x) {

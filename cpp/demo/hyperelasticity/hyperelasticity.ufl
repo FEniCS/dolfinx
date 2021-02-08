@@ -46,8 +46,8 @@ J  = det(F)
 # parameters::
 
 # Elasticity parameters
-E = Constant(tetrahedron)
-nu = Constant(tetrahedron)
+E = 10
+nu = 0.3
 mu = E/(2*(1 + nu))
 lmbda = E*nu/((1 + nu)*(1 - 2*nu))
 
