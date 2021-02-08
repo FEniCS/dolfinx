@@ -25,7 +25,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   // Receive mesh according to parallel policy
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    common::array_2d<double> geom(0, 1);
+    common::array2d<double> geom(0, 1);
     Eigen::Array<std::int64_t, 0, 2, Eigen::RowMajor> topo(0, 2);
     auto [data, offset] = graph::create_adjacency_data(topo);
     return mesh::create_mesh(
@@ -63,7 +63,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   for (std::size_t ix = 0; ix < nx; ix++)
     topo.row(ix) << ix, ix + 1;
 
-  common::array_2d<double> geom_array(geom);
+  common::array2d<double> geom_array(geom);
 
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(

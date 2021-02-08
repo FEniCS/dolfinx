@@ -30,7 +30,7 @@ namespace dolfinx::common
 /// data structure. The representation is strictly local, i.e.
 /// it is not parallel aware.
 template <typename T, class Allocator = std::allocator<T>>
-class array_2d
+class array2d
 {
 public:
   /// \cond DO_NOT_DOCUMENT
@@ -44,13 +44,12 @@ public:
   using const_iterator = typename std::vector<T, Allocator>::const_iterator;
   /// \endcond
 
-  /// Constructs an empty two dimensional array.
-  array_2d() : _rows(0), _cols(0) { _storage = std::vector<T, Allocator>(); }
+  array2d() = default;
 
   /// Constructs a two dimensional array with size = rows * cols, and initialize
   /// elements with value value.
-  array_2d(size_type rows, size_type cols, value_type value = T(),
-           const Allocator& alloc = Allocator())
+  array2d(size_type rows, size_type cols, value_type value = T(),
+          const Allocator& alloc = Allocator())
       : _rows(rows), _cols(cols)
   {
     _storage = std::vector<T, Allocator>(_rows * _cols, value, alloc);
@@ -59,7 +58,7 @@ public:
   /// Constructs a two dimensional array with size = rows * cols, and initialize
   /// elements with value value.
   template <class Iterator>
-  array_2d(const std::vector<size_t>& shape, Iterator first, Iterator last)
+  array2d(const std::vector<size_t>& shape, Iterator first, Iterator last)
   {
     assert(shape.size() == 2);
     _rows = shape[0];
@@ -73,7 +72,7 @@ public:
   template <class Container,
             typename
             = typename std::enable_if<is_2d_container<Container>::value>::type>
-  array_2d(Container& array)
+  array2d(Container& array)
   {
     _rows = array.rows();
     _cols = array.cols();
@@ -83,8 +82,8 @@ public:
 
   /// Constructs a two dimensional array with the contents of the initializer
   /// list init.
-  array_2d(size_type rows, size_type columns, std::initializer_list<T> list,
-           const Allocator& alloc = Allocator())
+  array2d(size_type rows, size_type columns, std::initializer_list<T> list,
+          const Allocator& alloc = Allocator())
       : _rows(rows), _cols(columns)
   {
     if (_rows * _cols != list.size())
@@ -107,10 +106,11 @@ public:
   }
 
   /// Returns a reference to the row at specified location (i).
-  tcb::span<value_type> row(int i) const
+  tcb::span<const value_type> row(int i) const
   {
     size_type offset = i * _cols;
-    return tcb::span<value_type>(pointer(&_storage[0] + offset), _cols);
+    return tcb::span<const value_type>(std::next(_storage.data(), offset),
+                                       _cols);
   }
 
   /// Returns a pointer to the first element of the array.
@@ -165,7 +165,7 @@ public:
   template <class Container,
             typename
             = typename std::enable_if<is_2d_container<Container>::value>::type>
-  void copy(const Container& other)
+  void assign(const Container& other)
   {
     size_type rows = std::min<size_type>(_rows, other.rows());
     size_type cols = std::min<size_type>(_cols, other.cols());

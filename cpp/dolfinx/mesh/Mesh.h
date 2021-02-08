@@ -12,7 +12,7 @@
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/array_2d.h>
+#include <dolfinx/common/array2d.h>
 #include <string>
 #include <utility>
 
@@ -156,12 +156,12 @@ private:
 /// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const common::array_2d<double>& x, GhostMode ghost_mode);
+                 const common::array2d<double>& x, GhostMode ghost_mode);
 
 /// Create a mesh using a provided mesh partitioning function
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const common::array_2d<double>& x, GhostMode ghost_mode,
+                 const common::array2d<double>& x, GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
 
 } // namespace mesh

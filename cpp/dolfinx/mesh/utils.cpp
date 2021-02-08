@@ -91,7 +91,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   return h_cells;
 }
 //-----------------------------------------------------------------------------
-common::array_2d<double>
+common::array2d<double>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                    const tcb::span<const std::int32_t>& entities)
 {
@@ -109,11 +109,14 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   bool orient = false;
   if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
     orient = true;
-  common::array_2d<std::int32_t> geometry_entities
+  common::array2d<std::int32_t> geometry_entities
       = entities_to_geometry(mesh, dim, entities, orient);
 
   const std::int32_t num_entities = entities.size();
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_entities, 3);
+  common::array2d<double> _n(num_entities, 3);
+
+  Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> n(
+      _n.data(), num_entities, 3);
   switch (type)
   {
   case (mesh::CellType::interval):
@@ -130,8 +133,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       Eigen::Vector3d t = p1 - p0;
       n.row(i) = Eigen::Vector3d(-t[1], t[0], 0.0).normalized();
     }
-    common::array_2d<double> _n(n.rows(), n.cols());
-    _n.copy(n);
+    common::array2d<double> _n(n.rows(), n.cols());
     return _n;
   }
   case (mesh::CellType::triangle):
@@ -147,8 +149,6 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       // Define cell normal via cross product of first two edges
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
     }
-    common::array_2d<double> _n(n.rows(), n.cols());
-    _n.copy(n);
     return _n;
   }
   case (mesh::CellType::quadrilateral):
@@ -165,8 +165,6 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       // Defined cell normal via cross product of first two edges:
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
     }
-    common::array_2d<double> _n(n.rows(), n.cols());
-    _n.copy(n);
     return _n;
   }
   default:
@@ -174,10 +172,10 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
         "cell_normal not supported for this cell type.");
   }
 
-  return common::array_2d<double>(0, 3);
+  return common::array2d<double>(0, 3);
 }
 //-----------------------------------------------------------------------------
-common::array_2d<double>
+common::array2d<double>
 mesh::midpoints(const mesh::Mesh& mesh, int dim,
                 const tcb::span<const std::int32_t>& entities)
 {
@@ -190,11 +188,12 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
-  common::array_2d<std::int32_t> entity_to_geometry
+  common::array2d<std::int32_t> entity_to_geometry
       = entities_to_geometry(mesh, dim, entities, false);
 
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x_mid(
-      entities.size(), 3);
+  common::array2d<double> midpoints(entities.size(), 3);
+  Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> x_mid(
+      midpoints.data(), entities.size(), 3);
 
   for (std::size_t e = 0; e < entity_to_geometry.rows(); ++e)
   {
@@ -205,15 +204,12 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
     x_mid.row(e) /= entity_vertices.size();
   }
 
-  common::array_2d<double> midpoins(x_mid.rows(), x_mid.cols());
-  midpoins.copy(x_mid);
-
-  return midpoins;
+  return midpoints;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const common::array_2d<double>&)>&
+    const std::function<std::vector<bool>(const common::array2d<double>&)>&
         marker)
 {
   const mesh::Topology& topology = mesh.topology();
@@ -241,7 +237,7 @@ std::vector<std::int32_t> mesh::locate_entities(
   }
 
   // Pack coordinates of vertices
-  common::array_2d<double> x_g_ = mesh.geometry().x();
+  common::array2d<double> x_g_ = mesh.geometry().x();
 
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
@@ -253,7 +249,7 @@ std::vector<std::int32_t> mesh::locate_entities(
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
     x_vertices.col(i) = x_nodes.row(vertex_to_node[i]);
 
-  common::array_2d<double> verts(x_vertices);
+  common::array2d<double> verts(x_vertices);
 
   // Run marker function on vertex coordinates
   const std::vector<bool> marked = marker(verts);
@@ -286,7 +282,7 @@ std::vector<std::int32_t> mesh::locate_entities(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const common::array_2d<double>&)>&
+    const std::function<std::vector<bool>(const common::array2d<double>&)>&
         marker)
 {
   const mesh::Topology& topology = mesh.topology();
@@ -365,7 +361,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
     vertex_to_pos[v] = i;
   }
 
-  common::array_2d<double> verts(x_vertices);
+  common::array2d<double> verts(x_vertices);
 
   // Run marker function on the vertex coordinates
   const std::vector<bool> marked = marker(verts);
@@ -400,7 +396,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   return entities;
 }
 //-----------------------------------------------------------------------------
-common::array_2d<std::int32_t>
+common::array2d<std::int32_t>
 mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
                            const tcb::span<const std::int32_t>& entity_list,
                            bool orient)
@@ -472,7 +468,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
         std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
     }
   }
-  common::array_2d<std::int32_t> ent_geom(entity_geometry);
+  common::array2d<std::int32_t> ent_geom(entity_geometry);
   return ent_geom;
 }
 //------------------------------------------------------------------------

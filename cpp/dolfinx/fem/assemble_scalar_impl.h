@@ -33,7 +33,7 @@ T assemble_cells(
     const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::array_2d<T>& coeffs, const std::vector<T>& constant_values,
+    const common::array2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and accumulate result
@@ -42,7 +42,7 @@ T assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::array_2d<T>& coeffs, const std::vector<T>& constant_values,
+    const common::array2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
 
@@ -52,7 +52,7 @@ T assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::array_2d<T>& coeffs, const std::vector<int>& offsets,
+    const common::array2d<T>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
@@ -140,7 +140,7 @@ T assemble_cells(
     const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::array_2d<T>& coeffs, const std::vector<T>& constant_values,
+    const common::array2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info)
 {
   const int gdim = geometry.dim();
@@ -182,7 +182,7 @@ T assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::array_2d<T>& coeffs, const std::vector<T>& constant_values,
+    const common::array2d<T>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
@@ -245,7 +245,7 @@ T assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::array_2d<T>& coeffs, const std::vector<int>& offsets,
+    const common::array2d<T>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)

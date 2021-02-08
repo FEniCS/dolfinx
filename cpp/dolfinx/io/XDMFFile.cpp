@@ -236,7 +236,7 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(data),
                                                std::move(offset));
 
-  common::array_2d<double> x_vec(x);
+  common::array2d<double> x_vec(x);
 
   mesh::Mesh mesh
       = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x_vec, mode);

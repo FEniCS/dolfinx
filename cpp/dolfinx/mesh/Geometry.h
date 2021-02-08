@@ -7,7 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/array_2d.h>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
@@ -41,7 +41,7 @@ public:
   template <typename AdjacencyList32, typename Vector64>
   Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
            AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
-           const common::array_2d<double>& x, Vector64&& input_global_indices)
+           const common::array2d<double>& x, Vector64&& input_global_indices)
       : _dim(x.cols()), _dofmap(std::forward<AdjacencyList32>(dofmap)),
         _index_map(index_map), _cmap(element),
         _input_global_indices(std::forward<Vector64>(input_global_indices))
@@ -54,9 +54,9 @@ public:
       _x = x;
     else if (_dim != 3)
     {
-      _x.resize(x.rows(), 3, 0);
-      _x.copy(x);
-    }
+      _x = common::array2d<double>(x.rows(), 3);
+      _x.assign(x);
+    } 
   }
 
   /// Copy constructor
@@ -84,10 +84,10 @@ public:
   std::shared_ptr<const common::IndexMap> index_map() const;
 
   /// Geometry degrees-of-freedom
-  common::array_2d<double>& x();
+  common::array2d<double>& x();
 
   /// Geometry degrees-of-freedom
-  const common::array_2d<double>& x() const;
+  const common::array2d<double>& x() const;
 
   /// The element that describes the geometry map
   /// @return The coordinate/geometry element
@@ -110,7 +110,7 @@ private:
   fem::CoordinateElement _cmap;
 
   // Coordinates for all points stored as a contiguous array
-  common::array_2d<double> _x;
+  common::array2d<double> _x;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
@@ -121,7 +121,7 @@ private:
 mesh::Geometry create_geometry(MPI_Comm comm, const Topology& topology,
                                const fem::CoordinateElement& coordinate_element,
                                const graph::AdjacencyList<std::int64_t>& cells,
-                               const common::array_2d<double>& x);
+                               const common::array2d<double>& x);
 
 } // namespace mesh
 } // namespace dolfinx

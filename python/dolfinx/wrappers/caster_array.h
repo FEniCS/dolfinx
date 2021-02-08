@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfinx/common/array_2d.h>
+#include <dolfinx/common/array2d.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -16,11 +16,11 @@ namespace py = pybind11;
 namespace pybind11::detail
 {
 template <typename T>
-struct type_caster<dolfinx::common::array_2d<T>>
+struct type_caster<dolfinx::common::array2d<T>>
 {
 public:
-  PYBIND11_TYPE_CASTER(dolfinx::common::array_2d<T>,
-                       _("dolfinx::common::array_2d<T>"));
+  PYBIND11_TYPE_CASTER(dolfinx::common::array2d<T>,
+                       _("dolfinx::common::array2d<T>"));
 
   // Conversion part 1 (Python -> C++)
   bool load(py::handle src, bool convert)
@@ -43,14 +43,14 @@ public:
     for (int i = 0; i < 2; ++i)
       shape[i] = buf.shape()[i];
 
-    value = dolfinx::common::array_2d<T>(shape, buf.data(),
+    value = dolfinx::common::array2d<T>(shape, buf.data(),
                                          buf.data() + buf.size());
 
     return true;
   }
 
   // Conversion part 2 (C++ -> Python)
-  static py::handle cast(const dolfinx::common::array_2d<T>& src,
+  static py::handle cast(const dolfinx::common::array2d<T>& src,
                          py::return_value_policy policy, py::handle parent)
   {
 

@@ -396,7 +396,7 @@ create_functionspace(ufc_function_space* (*fptr)(const char*),
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
 template <typename U>
-common::array_2d<typename U::scalar_type> pack_coefficients(const U& u)
+common::array2d<typename U::scalar_type> pack_coefficients(const U& u)
 {
   using T = typename U::scalar_type;
 
@@ -423,7 +423,7 @@ common::array_2d<typename U::scalar_type> pack_coefficients(const U& u)
         + mesh->topology().index_map(tdim)->num_ghosts();
 
   // Copy data into coefficient array
-  common::array_2d<T> c(num_cells, offsets.back());
+  common::array2d<T> c(num_cells, offsets.back());
   if (coefficients.size() > 0)
   {
     for (int cell = 0; cell < num_cells; ++cell)

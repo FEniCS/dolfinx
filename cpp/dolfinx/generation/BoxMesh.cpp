@@ -136,7 +136,7 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  common::array_2d<double> geom_array(geom);
+  common::array2d<double> geom_array(geom);
 
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
@@ -184,7 +184,7 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  common::array_2d<double> geom_array(geom);
+  common::array2d<double> geom_array(geom);
 
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(

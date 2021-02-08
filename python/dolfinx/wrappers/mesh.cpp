@@ -9,7 +9,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <cfloat>
-#include <dolfinx/common/array_2d.h>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -270,14 +270,14 @@ void mesh(py::module& m)
   m.def("locate_entities",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const std::function<std::vector<bool>(
-               const dolfinx::common::array_2d<double>&)>& marker) {
+               const dolfinx::common::array2d<double>&)>& marker) {
           return as_pyarray(dolfinx::mesh::locate_entities(mesh, dim, marker));
         });
 
   m.def("locate_entities_boundary",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const std::function<std::vector<bool>(
-               const dolfinx::common::array_2d<double>&)>& marker) {
+               const dolfinx::common::array2d<double>&)>& marker) {
           return as_pyarray(
               dolfinx::mesh::locate_entities_boundary(mesh, dim, marker));
         });
