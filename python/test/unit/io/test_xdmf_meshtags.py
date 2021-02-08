@@ -87,5 +87,5 @@ def test_3d(tempdir, cell_type, encoding):
     tree = ElementTree.parse(os.path.join(tempdir, "meshtags_3d_out.xdmf"), parser)
     num_lines = int(tree.findall(".//Grid[@Name='lines']/Topology")[0].get("NumberOfElements"))
     num_facets = int(tree.findall(".//Grid[@Name='facets']/Topology")[0].get("NumberOfElements"))
-    assert(num_lines == lines_local)
-    assert(num_facets == facets_local)
+    assert num_lines == lines_local
+    assert num_facets == facets_local
