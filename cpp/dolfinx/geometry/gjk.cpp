@@ -167,7 +167,7 @@ support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
 }
 } // namespace
 //----------------------------------------------------------------------------
-Eigen::Vector3d geometry::compute_distance_gjk(
+std::array<double, 3> geometry::compute_distance_gjk(
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
     const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& q)
 {
@@ -215,9 +215,10 @@ Eigen::Vector3d geometry::compute_distance_gjk(
     if (v.squaredNorm() < eps * eps)
       break;
   }
+
   if (k == maxk)
     throw std::runtime_error("GJK error: max iteration limit reached");
 
-  return v;
+  return {v[0], v[1], v[2]};
 }
 //----------------------------------------------------------------------------

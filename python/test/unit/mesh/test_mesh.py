@@ -395,4 +395,4 @@ def test_UnitHexMesh_assemble():
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
     vol = assemble_scalar(1 * dx(mesh))
     vol = mesh.mpi_comm().allreduce(vol, MPI.SUM)
-    assert(vol == pytest.approx(1, rel=1e-9))
+    assert vol == pytest.approx(1, rel=1e-9)
