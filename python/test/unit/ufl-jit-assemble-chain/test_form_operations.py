@@ -33,7 +33,7 @@ def test_lhs_rhs_simple():
 
     Fl = lhs(F)
     Fr = rhs(F)
-    assert(Fr)
+    assert Fr
 
     a0 = inner(grad(v), grad(u)) * dx
 

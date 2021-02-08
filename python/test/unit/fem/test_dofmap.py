@@ -311,11 +311,11 @@ def test_higher_order_coordinate_map(points, celltype, order):
     x = np.zeros(X.shape)
     cmap.push_forward(x, X, x_coord_new)
 
-    assert(np.allclose(x[:, 0], X[:, 0]))
-    assert(np.allclose(x[:, 1], 2 * X[:, 1]))
+    assert np.allclose(x[:, 0], X[:, 0])
+    assert np.allclose(x[:, 1], 2 * X[:, 1])
 
     if mesh.geometry.dim == 3:
-        assert(np.allclose(x[:, 2], 3 * X[:, 2]))
+        assert np.allclose(x[:, 2], 3 * X[:, 2])
 
 
 @skip_in_parallel
@@ -360,9 +360,9 @@ def test_higher_order_tetra_coordinate_map(order):
 
     x = np.zeros(X.shape)
     cmap.push_forward(x, X, x_coord_new)
-    assert(np.allclose(x[:, 0], X[:, 0]))
-    assert(np.allclose(x[:, 1], 2 * X[:, 1]))
-    assert(np.allclose(x[:, 2], 3 * X[:, 2]))
+    assert np.allclose(x[:, 0], X[:, 0])
+    assert np.allclose(x[:, 1], 2 * X[:, 1])
+    assert np.allclose(x[:, 2], 3 * X[:, 2])
 
 
 @skip_in_parallel
