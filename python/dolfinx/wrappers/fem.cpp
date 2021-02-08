@@ -534,7 +534,23 @@ void fem(py::module& m)
                            double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x) {
                     f(values.data(), values.rows(), values.cols(), x.data());
                   };
-            dolfinx::fem::interpolate_c<PetscScalar>(self, _f);
+
+            assert(self.function_space());
+            assert(self.function_space()->element());
+            assert(self.function_space()->mesh());
+            const int tdim = self.function_space()->mesh()->topology().dim();
+            auto cell_map
+                = self.function_space()->mesh()->topology().index_map(tdim);
+            assert(cell_map);
+            const int num_cells
+                = cell_map->size_local() + cell_map->num_ghosts();
+            std::vector<std::int32_t> cells(num_cells, 0);
+            std::iota(cells.begin(), cells.end(), 0);
+            const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
+                = dolfinx::fem::interpolation_coords(
+                    *self.function_space()->element(),
+                    *self.function_space()->mesh(), cells);
+            dolfinx::fem::interpolate_c<PetscScalar>(self, _f, x, cells);
           },
           "Interpolate using a pointer to an expression with a C signature")
       .def_property_readonly(
