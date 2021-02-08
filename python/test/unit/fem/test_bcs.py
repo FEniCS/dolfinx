@@ -76,9 +76,10 @@ def test_overlapping_bcs():
     dolfinx.fem.assemble_matrix(A, a, bcs=bcs)
     A.assemble()
 
+    # Check the diagonal (only on the rank that owns the row)
     d = A.getDiagonal()
     size = d.getLocalSize()
-    if len(dof_corner) > 0:
+    if len(dof_corner) > 0 and dof_corner[0] < V.dofmap.index_map.size_local:
         d.array_r[dof_corner[0]] == 1.0
 
     with b.localForm() as b_loc:
@@ -87,6 +88,7 @@ def test_overlapping_bcs():
     dolfinx.fem.apply_lifting(b, [a], [bcs])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfinx.fem.set_bc(b, bcs)
+    b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     if len(dof_corner) > 0:
         with b.localForm() as b_loc:
