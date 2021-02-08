@@ -274,24 +274,24 @@ void Topology::set_connectivity(
   _connectivity[d0][d1] = c;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
+const tcb::span<const std::uint32_t> Topology::get_cell_permutation_info() const
 {
   if (_cell_permutations.empty())
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
   }
-  return _cell_permutations;
+  return tcb::make_span(_cell_permutations);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
+const tcb::span<const std::uint8_t> Topology::get_facet_permutations() const
 {
   if (_facet_permutations.empty())
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
   }
-  return _facet_permutations;
+  return tcb::make_span(_facet_permutations);
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }

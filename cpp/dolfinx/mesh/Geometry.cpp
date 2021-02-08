@@ -8,6 +8,7 @@
 #include "Topology.h"
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/partition.h>
@@ -67,7 +68,7 @@ mesh::Geometry mesh::create_geometry(
   {
     const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
-    const std::vector<std::uint32_t>& cell_info
+    const tcb::span<const std::uint32_t> cell_info
         = topology.get_cell_permutation_info();
 
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
@@ -114,7 +115,7 @@ mesh::Geometry mesh::create_geometry(
   {
     const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
-    const std::vector<std::uint32_t>& cell_info
+    const tcb::span<const std::uint32_t> cell_info
         = topology.get_cell_permutation_info();
 
     for (std::int32_t cell = 0; cell < num_cells; ++cell)

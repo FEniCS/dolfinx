@@ -47,7 +47,7 @@ void eval(
 
   // Prepate cell permutation info
   mesh->topology_mutable().create_entity_permutations();
-  const std::vector<std::uint32_t>& cell_info
+  const tcb::span<const std::uint32_t> cell_info
       = mesh->topology().get_cell_permutation_info();
 
   // FIXME: Add proper interface for num coordinate dofs

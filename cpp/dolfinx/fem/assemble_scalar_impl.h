@@ -36,7 +36,7 @@ T assemble_cells(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info);
+    const tcb::span<const std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and accumulate result
 template <typename T>
@@ -47,8 +47,8 @@ T assemble_exterior_facets(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms);
+    const tcb::span<const std::uint32_t>& cell_info,
+    const tcb::span<const std::uint8_t>& perms);
 
 /// Assemble functional over interior facets
 template <typename T>
@@ -59,8 +59,8 @@ T assemble_interior_facets(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<int>& offsets, const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms);
+    const tcb::span<const std::uint32_t>& cell_info,
+    const tcb::span<const std::uint8_t>& perms);
 
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -91,7 +91,7 @@ T assemble_scalar(const fem::Form<T>& M)
   const bool needs_permutation_data = M.needs_permutation_data();
   if (needs_permutation_data)
     mesh->topology_mutable().create_entity_permutations();
-  const std::vector<std::uint32_t>& cell_info
+  const tcb::span<const std::uint32_t> cell_info
       = needs_permutation_data ? mesh->topology().get_cell_permutation_info()
                                : std::vector<std::uint32_t>(num_cells);
 
@@ -113,7 +113,7 @@ T assemble_scalar(const fem::Form<T>& M)
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     mesh->topology_mutable().create_entity_permutations();
 
-    const std::vector<std::uint8_t>& perms
+    const tcb::span<const std::uint8_t> perms
         = mesh->topology().get_facet_permutations();
 
     for (int i : M.integral_ids(IntegralType::exterior_facet))
@@ -149,7 +149,7 @@ T assemble_cells(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info)
+    const tcb::span<const std::uint32_t>& cell_info)
 {
   const int gdim = geometry.dim();
 
@@ -192,8 +192,8 @@ T assemble_exterior_facets(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms)
+    const tcb::span<const std::uint32_t>& cell_info,
+    const tcb::span<const std::uint8_t>& perms)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -253,8 +253,8 @@ T assemble_interior_facets(
     const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         coeffs,
     const std::vector<int>& offsets, const std::vector<T>& constant_values,
-    const std::vector<std::uint32_t>& cell_info,
-    const std::vector<std::uint8_t>& perms)
+    const tcb::span<const std::uint32_t>& cell_info,
+    const tcb::span<const std::uint8_t>& perms)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();

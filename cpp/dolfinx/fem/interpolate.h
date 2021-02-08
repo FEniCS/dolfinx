@@ -213,7 +213,7 @@ void interpolate(
       = element->interpolation_points();
 
   mesh->topology_mutable().create_entity_permutations();
-  const std::vector<std::uint32_t>& cell_info
+  const tcb::span<const std::uint32_t> cell_info
       = mesh->topology().get_cell_permutation_info();
 
   // Evaluate function at physical points. The returned array has a

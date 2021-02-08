@@ -316,7 +316,7 @@ public:
     const int bs_dof = dofmap->bs();
 
     mesh->topology_mutable().create_entity_permutations();
-    const std::vector<std::uint32_t>& cell_info
+    const tcb::span<const std::uint32_t> cell_info
         = mesh->topology().get_cell_permutation_info();
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         coordinate_dofs(num_dofs_g, gdim);

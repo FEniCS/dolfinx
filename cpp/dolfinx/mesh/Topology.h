@@ -105,7 +105,7 @@ public:
                         int d0, int d1);
 
   /// Returns the permutation information
-  const std::vector<std::uint32_t>& get_cell_permutation_info() const;
+  const tcb::span<const std::uint32_t> get_cell_permutation_info() const;
 
   /// Get the permutation number to apply to a facet. The permutations
   /// are numbered so that:
@@ -116,7 +116,7 @@ public:
   /// Each column of the returned array represents a cell, and each row
   /// a facet of that cell.
   /// @return The permutation number
-  const std::vector<std::uint8_t>& get_facet_permutations() const;
+  const tcb::span<const std::uint8_t> get_facet_permutations() const;
 
   /// Cell type
   /// @return Cell type that the topology is for
