@@ -75,6 +75,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   {
     _basix_element_handle = basix::register_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree);
+    _interpolation_matrix.resize(
+        basix::interpolation_num_points(_basix_element_handle),
+        basix::dim(_basix_element_handle));
     basix::interpolation_matrix(_basix_element_handle,
                                 _interpolation_matrix.data());
   }
