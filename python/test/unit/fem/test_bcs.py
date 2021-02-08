@@ -47,38 +47,39 @@ def test_locate_dofs_geometrical():
         assert np.isclose(coords_V[dofs[0][1]], [0, 0, 0]).all()
 
 
-def xtest_overlapping_bcs():
+def test_overlapping_bcs():
     """Test that, when boundaries condition overlap, the last provided
     boundary condition is applied.
     """
-    n = 123
+    n = 23
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, n, n)
     V = dolfinx.fem.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-
     a = inner(u, v) * dx
     L = inner(1, v) * dx
 
-    dofsLeft = dolfinx.fem.locate_dofs_geometrical(V, lambda x: x[0] < 1.0 / (2.0 * n))
-    dofsTop = dolfinx.fem.locate_dofs_geometrical(V, lambda x: x[1] > 1.0 - 1.0 / (2.0 * n))
-    dofCorner = list(set(dofsLeft).intersection(set(dofsTop)))
+    dofs_left = dolfinx.fem.locate_dofs_geometrical(V, lambda x: x[0] < 1.0 / (2.0 * n))
+    dofs_top = dolfinx.fem.locate_dofs_geometrical(V, lambda x: x[1] > 1.0 - 1.0 / (2.0 * n))
+    dof_corner = np.array(list(set(dofs_left).intersection(set(dofs_top))), dtype=np.int64)
 
     # Check only one dof pair is found globally
-    # assert len(dofCorner) == 1
-    print("******: ", len(dofCorner))
+    assert len(set(np.concatenate(MPI.COMM_WORLD.allgather(dof_corner)))) == 1
 
-    u0 = dolfinx.Function(V)
+    u0, u1 = dolfinx.Function(V), dolfinx.Function(V)
     with u0.vector.localForm() as u0_loc:
         u0_loc.set(0)
-    u1 = dolfinx.Function(V)
     with u1.vector.localForm() as u1_loc:
         u1_loc.set(123.456)
-    bcs = [dolfinx.DirichletBC(u0, dofsLeft), dolfinx.DirichletBC(u1, dofsTop)]
+    bcs = [dolfinx.DirichletBC(u0, dofs_left), dolfinx.DirichletBC(u1, dofs_top)]
 
-    A = dolfinx.fem.create_matrix(a)
-    b = dolfinx.fem.create_vector(L)
+    A, b = dolfinx.fem.create_matrix(a), dolfinx.fem.create_vector(L)
     dolfinx.fem.assemble_matrix(A, a, bcs=bcs)
     A.assemble()
+
+    d = A.getDiagonal()
+    size = d.getLocalSize()
+    if len(dof_corner) > 0:
+        d.array_r[dof_corner[0]] == 1.0
 
     with b.localForm() as b_loc:
         b_loc.set(0)
@@ -87,9 +88,7 @@ def xtest_overlapping_bcs():
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfinx.fem.set_bc(b, bcs)
 
-    if len(dofCorner) > 0:
+    if len(dof_corner) > 0:
         with b.localForm() as b_loc:
-            assert b[dofCorner[0]] == 123.456
-            # b_loc.set(0)
-    # assert b[dofCorner[0]] == 123.456
-    # assert A.getDiagonal()[dofCorner[0]] == 1
+            print(b_loc[dof_corner[0]])
+            assert b_loc[dof_corner[0]] == 123.456
