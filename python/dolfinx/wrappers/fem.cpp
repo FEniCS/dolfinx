@@ -69,12 +69,22 @@ void fem(py::module& m)
   m.def("pack_coefficients",
         &dolfinx::fem::pack_coefficients<dolfinx::fem::Form<PetscScalar>>,
         "Pack coefficients for a UFL expression.");
-  m.def("pack_constants",
-        &dolfinx::fem::pack_constants<dolfinx::fem::Form<PetscScalar>>,
-        "Pack constants for a UFL form.");
-  m.def("pack_constants",
-        &dolfinx::fem::pack_constants<dolfinx::fem::Expression<PetscScalar>>,
-        "Pack constants for a UFL expression.");
+  m.def(
+      "pack_constants",
+      [](const dolfinx::fem::Form<PetscScalar>& form) {
+        return as_pyarray(
+            dolfinx::fem::pack_constants<dolfinx::fem::Form<PetscScalar>>(
+                form));
+      },
+      "Pack constants for a UFL form.");
+  m.def(
+      "pack_constants",
+      [](const dolfinx::fem::Expression<PetscScalar>& expression) {
+        return as_pyarray(
+            dolfinx::fem::pack_constants<dolfinx::fem::Expression<PetscScalar>>(
+                expression));
+      },
+      "Pack constants for a UFL expression.");
   m.def("create_matrix", dolfinx::fem::create_matrix,
         py::return_value_policy::take_ownership, py::arg("a"),
         py::arg("type") = std::string(),
@@ -441,8 +451,12 @@ void fem(py::module& m)
       .def_property_readonly("function_spaces",
                              &dolfinx::fem::Form<PetscScalar>::function_spaces)
       .def("integral_ids", &dolfinx::fem::Form<PetscScalar>::integral_ids)
-      .def("domains", &dolfinx::fem::Form<PetscScalar>::domains);
-
+      .def("domains", [](const dolfinx::fem::Form<PetscScalar>& self,
+                         dolfinx::fem::IntegralType type, int i) {
+        const std::vector<std::int32_t>& domains = self.domains(type, i);
+        return py::array_t<std::int32_t>(domains.size(), domains.data(),
+                                         py::cast(self));
+      });
   m.def(
       "locate_dofs_topological",
       [](const std::vector<
