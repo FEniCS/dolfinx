@@ -6,11 +6,9 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <array>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/span.hpp>
-#include <memory>
 #include <vector>
 
 namespace dolfinx
@@ -52,9 +50,8 @@ public:
   /// of each entity should be padded
   BoundingBoxTree(const mesh::Mesh& mesh, int tdim, double padding = 0);
 
-  /// Constructor
-  /// @param[in] points Cloud of points to build the bounding box tree
-  /// around
+  /// Constructor @param[in] points Cloud of points, with associated
+  /// point identifier index, to build the bounding box tree around
   BoundingBoxTree(
       std::vector<std::pair<std::array<double, 3>, std::int32_t>> points);
 
