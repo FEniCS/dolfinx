@@ -86,7 +86,7 @@ def rotation_matrix(axis, angle):
 def test_empty_tree():
     mesh = UnitIntervalMesh(MPI.COMM_WORLD, 16)
     bbtree = BoundingBoxTree(mesh, mesh.topology.dim, [])
-    assert bbtree.num_bboxes() == 0
+    assert bbtree.num_bboxes == 0
 
 
 @skip_in_parallel
@@ -345,9 +345,7 @@ def test_surface_bbtree():
 
 
 def test_sub_bbtree():
-    """
-    Testing point collision with a BoundingBoxTree of sub entitites
-    """
+    """Testing point collision with a BoundingBoxTree of sub entitites"""
     mesh = UnitCubeMesh(MPI.COMM_WORLD, 4, 4, 4, cell_type=cpp.mesh.CellType.hexahedron)
     tdim = mesh.topology.dim
     fdim = tdim - 1
@@ -361,7 +359,8 @@ def test_sub_bbtree():
     bbtree = BoundingBoxTree(mesh, tdim, cells)
 
     # Compute a BBtree for all processes
-    process_bbtree = bbtree.compute_global_tree(mesh.mpi_comm())
+    process_bbtree = bbtree.create_global_tree(mesh.mpi_comm())
+
     # Find possible ranks for this point
     point = numpy.array([0.2, 0.2, 1.0])
     ranks = compute_collisions_point(process_bbtree, point)
@@ -391,13 +390,13 @@ def test_sub_bbtree_box(ct, N):
     f_to_c = mesh.topology.connectivity(fdim, tdim)
     cells = numpy.unique([f_to_c.links(f)[0] for f in facets])
     bbtree = BoundingBoxTree(mesh, tdim, cells)
-    num_boxes = bbtree.num_bboxes()
+    num_boxes = bbtree.num_bboxes
     if num_boxes > 0:
         bbox = bbtree.get_bbox(num_boxes - 1)
         assert numpy.isclose(bbox[0][1], (N - 1) / N)
 
     tree = BoundingBoxTree(mesh, tdim)
-    assert num_boxes < tree.num_bboxes()
+    assert num_boxes < tree.num_bboxes
 
 
 @skip_in_parallel
