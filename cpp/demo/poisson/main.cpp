@@ -193,8 +193,11 @@ int main(int argc, char* argv[])
                       L->function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
-    fem::assemble_matrix(la::PETScMatrix::set_block_fn_add(A.mat()), *a, bc);
-    fem::add_diagonal(la::PETScMatrix::set_fn_add(A.mat()), *V, bc);
+    fem::assemble_matrix(la::PETScMatrix::set_block_fn(A.mat(), ADD_VALUES), *a,
+                         bc);
+    MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
+    MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
+    fem::set_diagonal(la::PETScMatrix::set_fn(A.mat(), INSERT_VALUES), *V, bc);
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
