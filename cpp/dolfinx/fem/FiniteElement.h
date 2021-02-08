@@ -215,10 +215,6 @@ private:
   // Dimension of each value space
   std::vector<int> _value_dimension;
 
-  std::function<int(double*, int, int, const double*, const double*,
-                    const double*, const double*, const double*)>
-      _transform_reference_basis_derivatives;
-
   std::function<int(double*, const std::uint32_t, const int)>
       _apply_dof_transformation;
 
