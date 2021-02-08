@@ -7,6 +7,7 @@
 #pragma once
 
 #include "span.hpp"
+#include <cassert>
 #include <vector>
 
 template <typename T, typename = void>
@@ -53,6 +54,18 @@ public:
       : _rows(rows), _cols(cols)
   {
     _storage = std::vector<T, Allocator>(_rows * _cols, value, alloc);
+  }
+
+  /// Constructs a two dimensional array with size = rows * cols, and initialize
+  /// elements with value value.
+  template <class Iterator>
+  array_2d(const std::vector<size_t>& shape, Iterator first, Iterator last)
+  {
+    assert(shape.size() == 2);
+    _rows = shape[0];
+    _cols = shape[1];
+    _storage.resize(_rows * _cols);
+    std::copy(first, last, _storage.begin());
   }
 
   /// Constructs a two dimensional array with the copy of the contents of other

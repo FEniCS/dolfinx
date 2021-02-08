@@ -5,9 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "array.h"
+#include "caster_array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <cfloat>
+#include <dolfinx/common/array_2d.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -265,23 +267,20 @@ void mesh(py::module& m)
               comm.get(), nparts, cell_type, cells, ghost_mode);
         });
 
-  m.def(
-      "locate_entities",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
-         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                 Eigen::RowMajor>>&)>& marker) {
-        return as_pyarray(dolfinx::mesh::locate_entities(mesh, dim, marker));
-      });
-  m.def(
-      "locate_entities_boundary",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
-         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                 Eigen::RowMajor>>&)>& marker) {
-        return as_pyarray(
-            dolfinx::mesh::locate_entities_boundary(mesh, dim, marker));
-      });
+  m.def("locate_entities",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           const std::function<std::vector<bool>(
+               const dolfinx::common::array_2d<double>&)>& marker) {
+          return as_pyarray(dolfinx::mesh::locate_entities(mesh, dim, marker));
+        });
+
+  m.def("locate_entities_boundary",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           const std::function<std::vector<bool>(
+               const dolfinx::common::array_2d<double>&)>& marker) {
+          return as_pyarray(
+              dolfinx::mesh::locate_entities_boundary(mesh, dim, marker));
+        });
 
   m.def("entities_to_geometry",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
