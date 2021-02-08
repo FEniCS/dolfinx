@@ -37,7 +37,7 @@ namespace generation::RectangleMesh
 /// @param[in] diagonal Direction of diagonals: "left", "right",
 /// "left/right", "crossed"
 /// @return Mesh
-mesh::Mesh create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 2> n,
                   const fem::CoordinateElement& element,
                   const mesh::GhostMode ghost_mode,
@@ -60,7 +60,7 @@ mesh::Mesh create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 /// @param[in] diagonal Direction of diagonals: "left", "right",
 /// "left/right", "crossed"
 /// @return Mesh
-mesh::Mesh create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+mesh::Mesh create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 2> n,
                   const fem::CoordinateElement& element,
                   const mesh::GhostMode ghost_mode,

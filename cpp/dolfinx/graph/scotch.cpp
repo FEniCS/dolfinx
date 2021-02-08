@@ -116,11 +116,8 @@ graph::scotch::compute_reordering(const AdjacencyList<std::int32_t>& graph,
   return std::pair(std::move(permutation), std::move(inverse_permutation));
 }
 //-----------------------------------------------------------------------------
-std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm x, int, const graph::AdjacencyList<std::int64_t>&, std::int32_t,
-    bool)>
-graph::scotch::partitioner(graph::scotch::strategy strategy, double imbalance,
-                           int seed)
+graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
+                                               double imbalance, int seed)
 {
   return [imbalance, strategy, seed](const MPI_Comm mpi_comm, int nparts,
                                      const AdjacencyList<std::int64_t>& graph,

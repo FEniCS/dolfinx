@@ -7,7 +7,6 @@
 #include "FiniteElement.h"
 #include <basix.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/mesh/utils.h>
 #include <functional>
 #include <ufc.h>
 
@@ -22,8 +21,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
       _hash(std::hash<std::string>{}(_signature)),
-      _transform_reference_basis_derivatives(
-          ufc_element.transform_reference_basis_derivatives),
       _apply_dof_transformation(ufc_element.apply_dof_transformation),
       _apply_dof_transformation_to_scalar(
           ufc_element.apply_dof_transformation_to_scalar),
@@ -128,7 +125,7 @@ int FiniteElement::value_dimension(int i) const
 std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis(
-    Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+    std::vector<double>& reference_values,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
@@ -140,20 +137,21 @@ void FiniteElement::evaluate_reference_basis(
   assert(basix_data.cols() % scalar_reference_value_size == 0);
   const int scalar_dofs = basix_data.cols() / scalar_reference_value_size;
 
-  assert(reference_values.dimension(0) == X.rows());
-  assert(reference_values.dimension(1) == scalar_dofs);
-  assert(reference_values.dimension(2) == scalar_reference_value_size);
+  assert((int)reference_values.size()
+         == X.rows() * scalar_dofs * scalar_reference_value_size);
 
   assert(basix_data.rows() == X.rows());
 
   for (int p = 0; p < X.rows(); ++p)
     for (int d = 0; d < scalar_dofs; ++d)
       for (int v = 0; v < scalar_reference_value_size; ++v)
-        reference_values(p, d, v) = basix_data(p, d + scalar_dofs * v);
+        reference_values[(p * scalar_dofs + d) * scalar_reference_value_size
+                         + v]
+            = basix_data(p, d + scalar_dofs * v);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis_derivatives(
-    Eigen::Tensor<double, 4, Eigen::RowMajor>& values, int order,
+    std::vector<double>& values, int order,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
@@ -171,50 +169,56 @@ void FiniteElement::evaluate_reference_basis_derivatives(
     for (int d = 0; d < basix_data[0].cols() / _reference_value_size; ++d)
       for (int v = 0; v < _reference_value_size; ++v)
         for (std::size_t deriv = 0; deriv < basix_data.size() - 1; ++deriv)
-          values(p, d, v, deriv)
+          values[(p * basix_data[0].cols() + d * _reference_value_size + v)
+                     * (basix_data.size() - 1)
+                 + deriv]
               = basix_data[deriv](p, d * _reference_value_size + v);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
-    Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+    std::vector<double>& values, const std::vector<double>& reference_values,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    const tcb::span<const double>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
+    const std::vector<double>& J, const tcb::span<const double>& detJ,
+    const std::vector<double>& K) const
 {
-  assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();
+  const int scalar_dim = _space_dim / _bs;
+  const int value_size = _value_size / _bs;
+  const int size_per_point = scalar_dim * value_size;
+  const int Jsize = J.size() / num_points;
+  const int Jcols = X.cols();
+  const int Jrows = Jsize / Jcols;
 
-  int ret = _transform_reference_basis_derivatives(
-      values.data(), 0, num_points, reference_values.data(), X.data(), J.data(),
-      detJ.data(), K.data());
-  if (ret == -1)
+  Eigen::Map<const Eigen::ArrayXd> J_unwrapped(J.data(), J.size());
+  Eigen::Map<const Eigen::ArrayXd> K_unwrapped(K.data(), K.size());
+  Eigen::Map<const Eigen::ArrayXd> reference_values_unwrapped(
+      reference_values.data(), reference_values.size());
+
+  Eigen::Map<Eigen::ArrayXd> values_unwrapped(values.data(), values.size());
+
+  for (int pt = 0; pt < num_points; ++pt)
   {
-    throw std::runtime_error("Generated code returned error "
-                             "in transform_reference_basis_derivatives");
-  }
-}
-//-----------------------------------------------------------------------------
-void FiniteElement::transform_reference_basis_derivatives(
-    Eigen::Tensor<double, 4, Eigen::RowMajor>& values, std::size_t order,
-    const Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    const tcb::span<const double>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
-{
-  assert(_transform_reference_basis_derivatives);
-  const int num_points = X.rows();
-  int ret = _transform_reference_basis_derivatives(
-      values.data(), order, num_points, reference_values.data(), X.data(),
-      J.data(), detJ.data(), K.data());
-  if (ret == -1)
-  {
-    throw std::runtime_error("Generated code returned error "
-                             "in transform_reference_basis_derivatives");
+    for (int d = 0; d < scalar_dim; ++d)
+    {
+      // FIXME: This can be tidied up massively once basix uses a std::vector
+      // interface instead of Eigen
+      values_unwrapped.block(pt * size_per_point + d * value_size, 0,
+                             value_size, 1)
+          = basix::map_push_forward(
+              _basix_element_handle,
+              reference_values_unwrapped.block(
+                  pt * size_per_point + d * value_size, 0, value_size, 1),
+              Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>(
+                  J_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(),
+                  Jrows, Jcols),
+              detJ[pt],
+              Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>(
+                  K_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(),
+                  Jrows, Jcols));
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -283,8 +287,13 @@ bool FiniteElement::interpolation_ident() const noexcept
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-FiniteElement::interpolation_points() const noexcept
+FiniteElement::interpolation_points() const
 {
+  if (_basix_element_handle == -1)
+  {
+    throw std::runtime_error("Cannot get interpolation points - no basix "
+                             "element handle. Maybe this is a mixed element?");
+  }
   return basix::points(_basix_element_handle);
 }
 //-----------------------------------------------------------------------------

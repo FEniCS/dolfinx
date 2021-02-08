@@ -8,7 +8,7 @@
 
 #include "FunctionSpace.h"
 #include "interpolate.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/types.h>
@@ -21,6 +21,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <petscvec.h>
 #include <string>
 #include <utility>
@@ -206,7 +207,19 @@ public:
                   const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                       Eigen::RowMajor>>&)>& f)
   {
-    fem::interpolate(*this, f);
+    assert(_function_space);
+    assert(_function_space->element());
+    assert(_function_space->mesh());
+    const int tdim = _function_space->mesh()->topology().dim();
+    auto cell_map = _function_space->mesh()->topology().index_map(tdim);
+    assert(cell_map);
+    const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    std::vector<std::int32_t> cells(num_cells, 0);
+    std::iota(cells.begin(), cells.end(), 0);
+    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
+        = fem::interpolation_coords(*_function_space->element(),
+                                    *_function_space->mesh(), cells);
+    fem::interpolate(*this, f, x, cells);
   }
 
   /// Evaluate the Function at points
@@ -282,17 +295,16 @@ public:
     }
 
     // Prepare geometry data structures
-    Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
+    std::vector<double> J(gdim * tdim);
     std::array<double, 1> detJ;
-    Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
+    std::vector<double> K(tdim * gdim);
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(
         1, tdim);
 
     // Prepare basis function data structures
-    Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
-        1, space_dimension, reference_value_size);
-    Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(1, space_dimension,
-                                                           value_size);
+    std::vector<double> basis_reference_values(space_dimension
+                                               * reference_value_size);
+    std::vector<double> basis_values(space_dimension * value_size);
 
     // Create work vector for expansion coefficients
     Eigen::Matrix<T, 1, Eigen::Dynamic> coefficients(space_dimension
@@ -356,8 +368,8 @@ public:
           for (int j = 0; j < value_size; ++j)
           {
             // TODO: Find an Eigen shortcut for this operation?
-            u_row[j * bs_element + k]
-                += coefficients[bs_element * i + k] * basis_values(0, i, j);
+            u_row[j * bs_element + k] += coefficients[bs_element * i + k]
+                                         * basis_values[i * value_size + j];
           }
         }
       }

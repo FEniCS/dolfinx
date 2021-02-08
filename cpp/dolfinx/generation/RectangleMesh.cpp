@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "RectangleMesh.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
@@ -18,7 +18,8 @@ using namespace dolfinx::generation;
 namespace
 {
 //-----------------------------------------------------------------------------
-mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+mesh::Mesh build_tri(MPI_Comm comm,
+                     const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 2> n,
                      const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode,
@@ -44,8 +45,8 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     throw std::runtime_error("Unknown mesh diagonal definition.");
   }
 
-  const Eigen::Vector3d& p0 = p[0];
-  const Eigen::Vector3d& p1 = p[1];
+  const std::array<double, 3>& p0 = p[0];
+  const std::array<double, 3>& p1 = p[1];
 
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
@@ -206,7 +207,8 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 
 } // namespace
 //-----------------------------------------------------------------------------
-mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+mesh::Mesh build_quad(MPI_Comm comm,
+                      const std::array<std::array<double, 3>, 2> p,
                       std::array<std::size_t, 2> n,
                       const fem::CoordinateElement& element,
                       const mesh::GhostMode ghost_mode,
@@ -273,7 +275,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,
-                                 const std::array<Eigen::Vector3d, 2>& p,
+                                 const std::array<std::array<double, 3>, 2>& p,
                                  std::array<std::size_t, 2> n,
                                  const fem::CoordinateElement& element,
                                  const mesh::GhostMode ghost_mode,
@@ -289,7 +291,7 @@ mesh::Mesh RectangleMesh::create(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,
-                                 const std::array<Eigen::Vector3d, 2>& p,
+                                 const std::array<std::array<double, 3>, 2>& p,
                                  std::array<std::size_t, 2> n,
                                  const fem::CoordinateElement& element,
                                  const mesh::GhostMode ghost_mode,

@@ -6,12 +6,12 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
-#include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 
 struct ufc_coordinate_mapping;
@@ -84,7 +84,7 @@ public:
   /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(
-      Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
+      std::vector<double>& values,
       const Eigen::Ref<const Eigen::Array<
           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
 
@@ -92,29 +92,26 @@ public:
   /// reference cell
   // reference_value_derivatives[num_points][num_dofs][reference_value_size][num_derivatives]
   void evaluate_reference_basis_derivatives(
-      Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values, int order,
+      std::vector<double>& reference_values, int order,
       const Eigen::Ref<const Eigen::Array<
           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
 
   /// Push basis functions forward to physical element
   void transform_reference_basis(
-      Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+      std::vector<double>& values, const std::vector<double>& reference_values,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      const tcb::span<const double>& detJ,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
+      const std::vector<double>& J, const tcb::span<const double>& detJ,
+      const std::vector<double>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
-      Eigen::Tensor<double, 4, Eigen::RowMajor>& values, std::size_t order,
-      const Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values,
+      std::vector<double>& values, std::size_t order,
+      const std::vector<double>& reference_values,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      const tcb::span<const double>& detJ,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
+      const std::vector<double>& J, const tcb::span<const double>& detJ,
+      const std::vector<double>& K) const;
 
   /// Get the number of sub elements (for a mixed element)
   /// @return the Number of sub elements
@@ -142,7 +139,7 @@ public:
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  interpolation_points() const noexcept;
+  interpolation_points() const;
 
   /// @todo Document shape/layout of @p values
   /// @todo Make the interpolating dofs in/out argument for efficiency
@@ -217,10 +214,6 @@ private:
 
   // Dimension of each value space
   std::vector<int> _value_dimension;
-
-  std::function<int(double*, int, int, const double*, const double*,
-                    const double*, const double*, const double*)>
-      _transform_reference_basis_derivatives;
 
   std::function<int(double*, const std::uint32_t, const int)>
       _apply_dof_transformation;

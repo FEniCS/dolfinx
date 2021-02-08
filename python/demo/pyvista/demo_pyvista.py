@@ -22,29 +22,11 @@ except ModuleNotFoundError:
     print("pyvista is required for this demo")
     exit(0)
 
-# If you are running dolfin-x in a docker container or on a server which does not
-# have X forwarding, we need to make a virtual (headless) framebuffer that can capture
-# the plotting.
-# It requires the following packages:
-# libgl1-mesa-dev xvfb  (Can be install with "apt-get install")
-# The following should be uncommented:
-"""
-import os
-import subprocess
-os.environ['DISPLAY'] = ':99.0'
-
-commands = ['Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &',
-            'sleep 3',
-            'exec "$@"']
-
-for command in commands:
-    subprocess.call(command, shell=True)
-"""
-
-# Should be set to True if there is no x-forwarding. If X-forwarding
-# this can be set to False, and the command above should be commented
-# out.
-off_screen = True
+# If environment variable PYVISTA_OFF_SCREEN is set to true save a png
+# otherwise create interactive plot
+if pyvista.OFF_SCREEN:
+    from pyvista.utilities.xvfb import start_xvfb
+    start_xvfb(wait=0.1)
 
 # Set some global options for all plots
 transparent = False
@@ -85,7 +67,7 @@ grid.point_arrays["u"] = vertex_values
 grid.set_active_scalars("u")
 
 # Create a pyvista plotter which is used to visualize the output
-plotter = pyvista.Plotter(off_screen=off_screen)
+plotter = pyvista.Plotter()
 plotter.add_text("Mesh and corresponding dof values",
                  position="upper_edge", font_size=14, color="black")
 
@@ -104,14 +86,14 @@ plotter.add_mesh(grid.copy(), style="points", render_points_as_spheres=True,
 plotter.set_position([1.5, 0.5, 4])
 
 # Save as png if we are using a container with no rendering
-if off_screen:
+if pyvista.OFF_SCREEN:
     plotter.screenshot("3D_wireframe_with_nodes.png", transparent_background=transparent,
                        window_size=[figsize, figsize])
 else:
     plotter.show()
 
 # Create a new plotter, and plot the values as a surface over the mesh
-plotter = pyvista.Plotter(off_screen=off_screen)
+plotter = pyvista.Plotter()
 plotter.add_text("Function values over the surface of a mesh",
                  position="upper_edge", font_size=14, color="black")
 
@@ -127,7 +109,7 @@ plotter.set_viewup([0, 0, 1])
 
 # Add mesh with edges
 plotter.add_mesh(grid, show_edges=True, scalars="u", scalar_bar_args=sargs)
-if off_screen:
+if pyvista.OFF_SCREEN:
     plotter.screenshot("3D_function.png", transparent_background=transparent, window_size=[figsize, figsize])
 else:
     plotter.show()
@@ -165,7 +147,7 @@ grid.set_active_scalars("u")
 warped = grid.warp_by_scalar()
 
 # Plot mesh with scalar bar
-plotter = pyvista.Plotter(off_screen=off_screen)
+plotter = pyvista.Plotter()
 plotter.add_text("Warped function", position="upper_edge", font_size=14, color="black")
 sargs = dict(height=0.8, width=0.1, vertical=True, position_x=0.05,
              position_y=0.05, fmt="%1.2e",
@@ -174,7 +156,7 @@ plotter.set_position([-3, 2.6, 0.3])
 plotter.set_focus([3, -1, -0.15])
 plotter.set_viewup([0, 0, 1])
 plotter.add_mesh(warped, show_edges=True, scalar_bar_args=sargs)
-if off_screen:
+if pyvista.OFF_SCREEN:
     plotter.screenshot("2D_function_warp.png", transparent_background=transparent, window_size=[figsize, figsize])
 else:
     plotter.show()
@@ -204,7 +186,7 @@ grid.set_active_scalars("Marker")
 
 # We create a plotter consisting of two windows, and add a plot of the
 # Meshtags to the first window.
-subplotter = pyvista.Plotter(off_screen=off_screen, shape=(1, 2))
+subplotter = pyvista.Plotter(shape=(1, 2))
 subplotter.subplot(0, 0)
 subplotter.add_text("Mesh with markers", font_size=14, color="black", position="upper_edge")
 subplotter.add_mesh(grid, show_edges=True, show_scalar_bar=False)
@@ -222,7 +204,7 @@ subplotter.subplot(0, 1)
 subplotter.add_text("Subset of mesh", font_size=14, color="black", position="upper_edge")
 subplotter.add_mesh(sub_grid, show_edges=True, edge_color="black")
 
-if off_screen:
+if pyvista.OFF_SCREEN:
     subplotter.screenshot("2D_markers.png", transparent_background=transparent,
                           window_size=[2 * figsize, figsize])
 else:
@@ -276,7 +258,7 @@ org_grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 
 
 # We visualize the data
-plotter = pyvista.Plotter(off_screen=off_screen)
+plotter = pyvista.Plotter()
 plotter.add_text("Second order discontinuous elements",
                  position="upper_edge", font_size=14, color="black")
 sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1, position_y=0, color="black")
@@ -284,7 +266,7 @@ plotter.add_mesh(grid, show_edges=False, scalar_bar_args=sargs, line_width=0)
 plotter.add_mesh(org_grid, color="white", style="wireframe", line_width=5)
 plotter.add_mesh(grid.copy(), style="points", point_size=15, render_points_as_spheres=True, line_width=0)
 plotter.view_xy()
-if off_screen:
+if pyvista.OFF_SCREEN:
     plotter.screenshot(f"DG_{MPI.COMM_WORLD.rank}.png",
                        transparent_background=transparent, window_size=[figsize, figsize])
 else:
@@ -344,7 +326,7 @@ pyvista_cells, cell_types = dolfinx.plot.create_vtk_topology(mesh, mesh.topology
 grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, mesh.geometry.x)
 
 # Add mesh, glyphs and streamlines to plotter
-plotter = pyvista.Plotter(off_screen=off_screen)
+plotter = pyvista.Plotter()
 plotter.add_text("Second order vector function.",
                  position="upper_edge", font_size=14, color="black")
 sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1, position_y=0, color="black")
@@ -354,7 +336,7 @@ plotter.add_mesh(glyphs)
 if MPI.COMM_WORLD.size == 0:
     plotter.add_mesh(streamlines.tube(radius=0.001), show_scalar_bar=False)
 plotter.view_xy()
-if off_screen:
+if pyvista.OFF_SCREEN:
     plotter.screenshot(f"vectors_{MPI.COMM_WORLD.rank}.png",
                        transparent_background=transparent, window_size=[figsize, figsize])
 else:
@@ -396,7 +378,7 @@ glyphs = grid.glyph(orient="vectors", factor=0.1)
 streamlines = grid.streamlines(vectors="vectors", return_source=False, source_radius=1, n_points=150)
 
 # Create Create plotter
-plotter = pyvista.Plotter(off_screen=off_screen)
+plotter = pyvista.Plotter()
 plotter.add_text("Vector function as streamlines.",
                  position="upper_edge", font_size=20, color="black")
 sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1, position_y=0, color="black")
@@ -404,7 +386,7 @@ plotter.add_mesh(grid, style="wireframe")
 plotter.add_mesh(glyphs)
 plotter.add_mesh(streamlines.tube(radius=0.001))
 plotter.view_xy()
-if off_screen:
+if pyvista.OFF_SCREEN:
     plotter.screenshot(f"streamlines_{MPI.COMM_WORLD.rank}.png",
                        transparent_background=transparent, window_size=[figsize, figsize])
 else:
