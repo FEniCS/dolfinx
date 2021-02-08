@@ -91,7 +91,7 @@ def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
             # NOTE: Assumes that each entity only have one cell-type
             element_data = gmsh_model.mesh.getElements(dim, tag=entity)
             element_types, element_tags, node_tags = element_data
-            assert(len(element_types) == 1)
+            assert len(element_types) == 1
             # The MSH type of the cells on the element
             element_type = element_types[0]
             num_el = len(element_tags[0])

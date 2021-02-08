@@ -168,7 +168,7 @@ def test_simple_evaluation():
     # Evaluate exact gradient using global points
     grad_f_exact = exact_grad_f(x_evaluated)
 
-    assert(np.allclose(grad_f_evaluated, grad_f_exact))
+    assert np.allclose(grad_f_evaluated, grad_f_exact)
 
 
 @pytest.mark.skip("Quadrature elements not yet supported.")
@@ -245,4 +245,4 @@ def test_assembly_into_quadrature_function():
     e_exact_Q = dolfinx.Function(Q)
     e_exact_Q.interpolate(e_exact)
 
-    assert(np.isclose((e_exact_Q.vector - e_Q.vector).norm(), 0.0))
+    assert np.isclose((e_exact_Q.vector - e_Q.vector).norm(), 0.0)

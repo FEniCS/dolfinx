@@ -305,7 +305,7 @@ def test_custom_mesh_loop_rank1():
             end = time.time()
             print("Time (numba, pass {}): {}".format(i, end - start))
     b0.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert(b0.vector.sum() == pytest.approx(1.0))
+    assert b0.vector.sum() == pytest.approx(1.0)
 
     # Assemble with pure Numba function using parallel loop (two passes,
     # first will include JIT overhead)
@@ -320,7 +320,7 @@ def test_custom_mesh_loop_rank1():
             end = time.time()
             print("Time (numba parallel, pass {}): {}".format(i, end - start))
     btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert((btmp.vector - b0.vector).norm() == pytest.approx(0.0))
+    assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
@@ -337,7 +337,7 @@ def test_custom_mesh_loop_rank1():
     end = time.time()
     print("Time (C++, pass 1):", end - start)
     b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert((b1 - b0.vector).norm() == pytest.approx(0.0))
+    assert (b1 - b0.vector).norm() == pytest.approx(0.0)
 
     # Assemble using generated tabulate_tensor kernel and Numba assembler
     b3 = dolfinx.Function(V)
@@ -351,7 +351,7 @@ def test_custom_mesh_loop_rank1():
             end = time.time()
             print("Time (numba/cffi, pass {}): {}".format(i, end - start))
     b3.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert((b3.vector - b0.vector).norm() == pytest.approx(0.0))
+    assert (b3.vector - b0.vector).norm() == pytest.approx(0.0)
 
 
 def test_custom_mesh_loop_ctypes_rank2():
