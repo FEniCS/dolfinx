@@ -212,7 +212,7 @@ PETScMatrix::set_fn(Mat A, const InsertMode mode)
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_block_fn(Mat A, const InsertMode mode)
+PETScMatrix::set_block_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
@@ -238,21 +238,7 @@ PETScMatrix::set_block_fn(Mat A, const InsertMode mode)
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_block_fn_add(Mat A)
-{
-  return set_block_fn(A, ADD_VALUES);
-}
-//-----------------------------------------------------------------------------
-std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                  const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_block_fn_insert(Mat A)
-{
-  return set_block_fn(A, INSERT_VALUES);
-}
-//-----------------------------------------------------------------------------
-std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                  const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, const InsertMode mode)
+PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
 {
   if (bs0 == 1 and bs1 == 1)
     return set_fn(A, mode);
@@ -280,20 +266,6 @@ PETScMatrix::set_block_expand_fn(Mat A, int bs0, int bs1, const InsertMode mode)
 #endif
     return 0;
   };
-}
-//-----------------------------------------------------------------------------
-std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                  const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_block_expand_fn_add(Mat A, int bs0, int bs1)
-{
-  return set_block_expand_fn(A, bs0, bs1, ADD_VALUES);
-}
-//-----------------------------------------------------------------------------
-std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                  const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_block_expand_fn_insert(Mat A, int bs0, int bs1)
-{
-  return set_block_expand_fn(A, bs0, bs1, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern,

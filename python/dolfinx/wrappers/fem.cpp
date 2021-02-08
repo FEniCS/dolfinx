@@ -295,42 +295,54 @@ void fem(py::module& m)
            const std::vector<std::shared_ptr<
                const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs) {
           dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::set_block_fn_add(A), a, bcs);
+              dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, bcs);
         });
   m.def("assemble_matrix_petsc",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<bool>& rows0, const std::vector<bool>& rows1) {
           dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::set_block_fn_add(A), a, rows0, rows1);
+              dolfinx::la::PETScMatrix::set_block_fn(A, ADD_VALUES), a, rows0,
+              rows1);
         });
   m.def("assemble_matrix_petsc_unrolled",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<std::shared_ptr<
                const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs) {
           dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::set_block_expand_fn_add(
+              dolfinx::la::PETScMatrix::set_block_expand_fn(
                   A, a.function_spaces()[0]->dofmap()->bs(),
-                  a.function_spaces()[1]->dofmap()->bs()),
+                  a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
               a, bcs);
         });
   m.def("assemble_matrix_petsc_unrolled",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
            const std::vector<bool>& rows0, const std::vector<bool>& rows1) {
           dolfinx::fem::assemble_matrix(
-              dolfinx::la::PETScMatrix::set_block_expand_fn_add(
+              dolfinx::la::PETScMatrix::set_block_expand_fn(
                   A, a.function_spaces()[0]->dofmap()->bs(),
-                  a.function_spaces()[1]->dofmap()->bs()),
+                  a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES),
               a, rows0, rows1);
         });
-  m.def(
-      "set_diagonal",
-      py::overload_cast<const std::function<int(
-                            std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const PetscScalar*)>&,
-                        const dolfinx::fem::FunctionSpace&,
-                        const std::vector<std::shared_ptr<
-                            const dolfinx::fem::DirichletBC<PetscScalar>>>&,
-                        PetscScalar>(&dolfinx::fem::set_diagonal<PetscScalar>));
+  m.def("set_diagonal",
+        [](Mat A, const dolfinx::fem::FunctionSpace& V,
+           const std::vector<std::shared_ptr<
+               const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
+           PetscScalar diagonal) {
+          dolfinx::fem::set_diagonal(
+              dolfinx::la::PETScMatrix::set_fn(A, INSERT_VALUES), V, bcs,
+              diagonal);
+        });
+  //   m.def(
+  //       "set_diagonal",
+  //       py::overload_cast<const std::function<int(
+  //                             std::int32_t, const std::int32_t*,
+  //                             std::int32_t, const std::int32_t*, const
+  //                             PetscScalar*)>&,
+  //                         const dolfinx::fem::FunctionSpace&,
+  //                         const std::vector<std::shared_ptr<
+  //                             const
+  //                             dolfinx::fem::DirichletBC<PetscScalar>>>&,
+  //                         PetscScalar>(&dolfinx::fem::set_diagonal<PetscScalar>));
   m.def("assemble_matrix",
         py::overload_cast<const std::function<int(
                               std::int32_t, const std::int32_t*, std::int32_t,

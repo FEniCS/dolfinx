@@ -227,7 +227,7 @@ def _(A: PETSc.Mat,
     if _a.function_spaces[0].id == _a.function_spaces[1].id:
         A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
         A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-        cpp.fem.set_diagonal(cpp.la.set_fn(A, PETSc.InsertMode.INSERT), _a.function_spaces[0], bcs, diagonal)
+        cpp.fem.set_diagonal(A, _a.function_spaces[0], bcs, diagonal)
     return A
 
 
@@ -312,11 +312,14 @@ def _(A: PETSc.Mat,
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 cpp.fem.assemble_matrix_petsc_unrolled(Asub, a_sub, bcs)
-
+                A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
+    A.assemble(PETSc.Mat.AssemblyType.FLUSH)
+    for i, a_row in enumerate(_a):
+        for j, a_sub in enumerate(a_row):
+            if a_sub is not None:
+                Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
-                    Asub.assemble(PETSc.Mat.AssemblyType.FLUSH)
-                    cpp.fem.set_diagonal(cpp.la.set_fn(Asub, PETSc.InsertMode.INSERT),
-                                         a_sub.function_spaces[0], bcs, diagonal)
+                    cpp.fem.set_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 
     return A

@@ -148,8 +148,8 @@ void la(py::module& m)
       },
       "Gather an (ordered) list of sub vectors from a block vector.");
 
-  m.def("set_fn", [](Mat A, int insert_mode){
-    return dolfinx::la::PETScMatrix::set_fn(A, (InsertMode)insert_mode);
+  // m.def("set_fn", [](Mat A, int insert_mode){
+  //   return dolfinx::la::PETScMatrix::set_fn(A, (InsertMode)insert_mode);
 
   // NOTE: Enabling the below requires adding a C API for MatNullSpace to
   // petsc4py
