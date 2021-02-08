@@ -139,7 +139,7 @@ public:
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  interpolation_points() const noexcept;
+  interpolation_points() const;
 
   /// @todo Document shape/layout of @p values
   /// @todo Make the interpolating dofs in/out argument for efficiency
@@ -214,10 +214,6 @@ private:
 
   // Dimension of each value space
   std::vector<int> _value_dimension;
-
-  std::function<int(double*, int, int, const double*, const double*,
-                    const double*, const double*, const double*)>
-      _transform_reference_basis_derivatives;
 
   std::function<int(double*, const std::uint32_t, const int)>
       _apply_dof_transformation;
