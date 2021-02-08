@@ -81,14 +81,14 @@ public:
 
   /// Returns a reference to the element at specified location (i, j).
   /// No bounds checking is performed.
-  reference operator()(size_type i, size_type j)
+  constexpr reference operator()(size_type i, size_type j)
   {
     return _storage[i * _cols + j];
   }
 
   /// Returns a const reference to the element at specified location (i, j).
   /// No bounds checking is performed.
-  const_reference operator()(size_type i, size_type j) const
+  constexpr const_reference operator()(size_type i, size_type j) const
   {
     return _storage[i * _cols + j];
   }
