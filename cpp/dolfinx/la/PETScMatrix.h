@@ -43,7 +43,7 @@ public:
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                            const std::int32_t*, const PetscScalar*)>
-  set_fn(Mat A, const InsertMode mode);
+  set_fn(Mat A, InsertMode mode);
 
   /// Return a function with an interface for adding or inserting values
   /// into the matrix A using blocked indices

@@ -186,7 +186,7 @@ MatNullSpace la::create_petsc_nullspace(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                   const std::int32_t*, const PetscScalar*)>
-PETScMatrix::set_fn(Mat A, const InsertMode mode)
+PETScMatrix::set_fn(Mat A, InsertMode mode)
 {
   return [A, mode, cache = std::vector<PetscInt>()](
              std::int32_t m, const std::int32_t* rows, std::int32_t n,
@@ -195,7 +195,7 @@ PETScMatrix::set_fn(Mat A, const InsertMode mode)
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
     std::copy_n(rows, m, cache.begin());
-    std::copy_n(cols, n, cache.begin() + m);
+    std::copy_n(cols, n, std::next(cache.begin(), m);
     const PetscInt *_rows = cache.data(), *_cols = _rows + m;
     ierr = MatSetValuesLocal(A, m, _rows, n, _cols, vals, mode);
 #else
@@ -221,7 +221,7 @@ PETScMatrix::set_block_fn(Mat A, InsertMode mode)
 #ifdef PETSC_USE_64BIT_INDICES
     cache.resize(m + n);
     std::copy_n(rows, m, cache.begin());
-    std::copy_n(cols, n, cache.begin() + m);
+    std::copy_n(cols, n, std::next(cache.begin(), m));
     const PetscInt *_rows = cache.data(), *_cols = _rows + m;
     ierr = MatSetValuesBlockedLocal(A, m, _rows, n, _cols, vals, mode);
 #else
