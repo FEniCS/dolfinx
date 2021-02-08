@@ -236,8 +236,8 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
 {
   if (tdim < 0 or tdim > mesh.topology().dim())
   {
-    throw std::runtime_error("Dimension must be a number between 1 and "
-                             + std::to_string(mesh.topology().dim()));
+    throw std::runtime_error("Dimension must be non-negative and less than or "
+                             "equal to the topological dimension of the mesh");
   }
 
   // Initialize entities of given dimension if they don't exist
