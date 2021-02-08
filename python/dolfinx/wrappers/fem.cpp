@@ -65,10 +65,10 @@ void fem(py::module& m)
         "Create a sparsity pattern for bilinear form.");
   m.def("pack_coefficients",
         &dolfinx::fem::pack_coefficients<dolfinx::fem::Form<PetscScalar>>,
-        "Pack coefficients for a UFL form.");
+        "Pack coefficients for a Form.");
   m.def("pack_coefficients",
-        &dolfinx::fem::pack_coefficients<dolfinx::fem::Form<PetscScalar>>,
-        "Pack coefficients for a UFL expression.");
+        &dolfinx::fem::pack_coefficients<dolfinx::fem::Expression<PetscScalar>>,
+        "Pack coefficients for an Expression.");
   m.def(
       "pack_constants",
       [](const dolfinx::fem::Form<PetscScalar>& form) {
@@ -76,7 +76,7 @@ void fem(py::module& m)
             dolfinx::fem::pack_constants<dolfinx::fem::Form<PetscScalar>>(
                 form));
       },
-      "Pack constants for a UFL form.");
+      "Pack constants for a Form.");
   m.def(
       "pack_constants",
       [](const dolfinx::fem::Expression<PetscScalar>& expression) {
@@ -84,7 +84,7 @@ void fem(py::module& m)
             dolfinx::fem::pack_constants<dolfinx::fem::Expression<PetscScalar>>(
                 expression));
       },
-      "Pack constants for a UFL expression.");
+      "Pack constants for an Expression.");
   m.def("create_matrix", dolfinx::fem::create_matrix,
         py::return_value_policy::take_ownership, py::arg("a"),
         py::arg("type") = std::string(),
