@@ -5,10 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "IntervalMesh.h"
-#include "dolfinx/common/MPI.h"
 #include <Eigen/Core>
 #include <cfloat>
 #include <cmath>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 
@@ -54,7 +55,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
     throw std::runtime_error("Number of points on interval must be at least 1");
 
   // Create vertices
-  Eigen::Array<double, Eigen::Dynamic, 1> geom((nx + 1), 1);
+  common::array2d<double> geom((nx + 1), 1);
   for (std::size_t ix = 0; ix <= nx; ix++)
     geom(ix, 0) = a + ab * static_cast<double>(ix);
 
@@ -63,13 +64,11 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   for (std::size_t ix = 0; ix < nx; ix++)
     topo.row(ix) << ix, ix + 1;
 
-  common::array2d<double> geom_array(geom);
-
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom_array, ghost_mode, partitioner);
+      element, geom, ghost_mode, partitioner);
 }
 } // namespace
 

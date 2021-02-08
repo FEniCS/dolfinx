@@ -90,7 +90,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
     nc = 2 * nx * ny;
   }
 
-  Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> geom(nv, 2);
+  common::array2d<double> geom(nv, 2);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 3, Eigen::RowMajor> topo(nc, 3);
 
   // Create main vertices
@@ -198,12 +198,11 @@ mesh::Mesh build_tri(MPI_Comm comm,
     }
   }
 
-  common::array2d<double> geom_array(geom);
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom_array, ghost_mode, partitioner);
+      element, geom, ghost_mode, partitioner);
 }
 
 } // namespace
@@ -239,8 +238,7 @@ mesh::Mesh build_quad(MPI_Comm comm,
   const double cd = (d - c) / static_cast<double>(ny);
 
   // Create vertices
-  Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> geom(
-      (nx + 1) * (ny + 1), 2);
+  common::array2d<double> geom((nx + 1) * (ny + 1), 2);
   std::size_t vertex = 0;
   for (std::size_t ix = 0; ix <= nx; ix++)
   {
@@ -268,12 +266,11 @@ mesh::Mesh build_quad(MPI_Comm comm,
       ++cell;
     }
 
-  common::array2d<double> geom_array(geom);
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom_array, ghost_mode, partitioner);
+      element, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,

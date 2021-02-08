@@ -237,8 +237,6 @@ std::vector<std::int32_t> mesh::locate_entities(
   }
 
   // Pack coordinates of vertices
-  common::array2d<double> x_g_ = mesh.geometry().x();
-
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       x_nodes(mesh.geometry().x().data(), mesh.geometry().x().rows(),
