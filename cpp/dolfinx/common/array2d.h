@@ -128,9 +128,11 @@ public:
   /// Returns the number of elements in the array (rows * cols).
   size_type size() const noexcept { return _storage.size(); }
 
+  /// TODO: Remove this function.
   /// Returns the number of cols in the two-dimensional array.
   size_type cols() const noexcept { return _cols; }
 
+  /// TODO: Remove this function.
   /// Returns the number of rows in the two-dimensional array.
   size_type rows() const noexcept { return _rows; }
 
