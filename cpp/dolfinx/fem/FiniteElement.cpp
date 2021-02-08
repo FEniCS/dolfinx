@@ -129,18 +129,16 @@ void FiniteElement::evaluate_reference_basis(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
-  const Eigen::ArrayXXd basix_data
-      = basix::tabulate(_basix_element_handle, 0, X)[0];
-
   const int scalar_reference_value_size = _reference_value_size / _bs;
+  Eigen::ArrayXXd basix_data(X.rows(), scalar_reference_value_size);
+  basix::tabulate(_basix_element_handle, basix_data.data(), 0, X.data(),
+                  X.rows());
 
-  assert(basix_data.cols() % scalar_reference_value_size == 0);
+  // assert(basix_data.cols() % scalar_reference_value_size == 0);
   const int scalar_dofs = basix_data.cols() / scalar_reference_value_size;
 
   assert((int)reference_values.size()
          == X.rows() * scalar_dofs * scalar_reference_value_size);
-
-  assert(basix_data.rows() == X.rows());
 
   for (int p = 0; p < X.rows(); ++p)
     for (int d = 0; d < scalar_dofs; ++d)
@@ -163,16 +161,19 @@ void FiniteElement::evaluate_reference_basis_derivatives(
         "order 1 at the moment.");
   }
 
-  const std::vector<Eigen::ArrayXXd> basix_data
-      = basix::tabulate(_basix_element_handle, 1, X);
+  // nd = tdim + 1;
+  const int nd = 4;
+  Eigen::ArrayXXd basix_data(nd * X.rows(), _reference_value_size);
+  basix::tabulate(_basix_element_handle, basix_data.data(), 1, X.data(),
+                  X.rows());
   for (int p = 0; p < X.rows(); ++p)
-    for (int d = 0; d < basix_data[0].cols() / _reference_value_size; ++d)
+    for (int d = 0; d < basix_data.cols() / _reference_value_size; ++d)
       for (int v = 0; v < _reference_value_size; ++v)
-        for (std::size_t deriv = 0; deriv < basix_data.size() - 1; ++deriv)
-          values[(p * basix_data[0].cols() + d * _reference_value_size + v)
+        for (std::size_t deriv = 0; deriv < nd; ++deriv)
+          values[(p * basix_data.cols() + d * _reference_value_size + v)
                      * (basix_data.size() - 1)
                  + deriv]
-              = basix_data[deriv](p, d * _reference_value_size + v);
+              = basix_data(p, d * _reference_value_size + v);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
@@ -211,13 +212,13 @@ void FiniteElement::transform_reference_basis(
                   pt * size_per_point + d * value_size, 0, value_size, 1),
               Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
                                              Eigen::Dynamic, Eigen::RowMajor>>(
-                  J_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(),
-                  Jrows, Jcols),
+                  J_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(), Jrows,
+                  Jcols),
               detJ[pt],
               Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
                                              Eigen::Dynamic, Eigen::RowMajor>>(
-                  K_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(),
-                  Jrows, Jcols));
+                  K_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(), Jrows,
+                  Jcols));
     }
   }
 }
@@ -294,7 +295,7 @@ FiniteElement::interpolation_points() const
     throw std::runtime_error("Cannot get interpolation points - no basix "
                              "element handle. Maybe this is a mixed element?");
   }
-  return basix::points(_basix_element_handle);
+  return basix::interpolation_points(_basix_element_handle);
 }
 //-----------------------------------------------------------------------------
 bool FiniteElement::needs_permutation_data() const noexcept
