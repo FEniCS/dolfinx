@@ -152,7 +152,7 @@ void fem::assemble_discrete_gradient(
   assert(dofmap1);
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().index_map(0)->global_indices();
-  std::array<PetscScalar, 2> Ae;
+  std::array<T, 2> Ae;
   for (std::int32_t e = 0; e < num_edges; ++e)
   {
     // Find local index of edge in one of the cells it is part of
@@ -168,7 +168,7 @@ void fem::assemble_discrete_gradient(
     tcb::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cell);
     std::vector<std::int32_t>& local_dofs = local_edge_dofs[local_edge];
     assert(local_dofs.size() == 1);
-    const PetscInt row = dofs0[local_dofs[0]];
+    const std::int32_t row = dofs0[local_dofs[0]];
 
     tcb::span<const std::int32_t> vertices = e_to_v->links(e);
     assert(vertices.size() == 2);
