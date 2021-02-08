@@ -5,14 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "discreteoperators.h"
-#include <array>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/la/PETScMatrix.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <petscmat.h>
-#include <vector>
 
 using namespace dolfinx;
 
