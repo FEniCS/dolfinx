@@ -500,7 +500,7 @@ void fem(py::module& m)
       "locate_dofs_geometrical",
       [](const std::vector<
              std::reference_wrapper<const dolfinx::fem::FunctionSpace>>& V,
-         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+         const std::function<std::vector<bool>(
              const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                  Eigen::RowMajor>>&)>& marker)
           -> std::array<py::array, 2> {
@@ -514,7 +514,7 @@ void fem(py::module& m)
   m.def(
       "locate_dofs_geometrical",
       [](const dolfinx::fem::FunctionSpace& V,
-         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+         const std::function<std::vector<bool>(
              const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                  Eigen::RowMajor>>&)>& marker) {
         return as_pyarray(dolfinx::fem::locate_dofs_geometrical(V, marker));
