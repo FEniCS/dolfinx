@@ -9,7 +9,6 @@
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "ElementDofLayout.h"
-#include <Eigen/Core>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/Function.h>
