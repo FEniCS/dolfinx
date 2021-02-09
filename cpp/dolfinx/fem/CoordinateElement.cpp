@@ -116,7 +116,8 @@ void CoordinateElement::compute_reference_geometry(
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
       d, tdim);
 
-  Eigen::ArrayXXd tabulated_data(tdim + 1, cell_geometry.rows());
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      tabulated_data(tdim + 1, cell_geometry.rows());
 
   if (_is_affine)
   {
@@ -131,8 +132,7 @@ void CoordinateElement::compute_reference_geometry(
     x0 = cell_geometry.matrix().transpose() * phi;
 
     // Compute Jacobian and inverse
-    for (int dim = 0; dim < tdim; ++dim)
-      dphi.col(dim) = tabulated_data.row(dim + 1);
+    dphi = tabulated_data.block(1, 0, tdim, d).transpose();
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
         J0(gdim, tdim);
     J0 = cell_geometry.matrix().transpose() * dphi;
@@ -196,8 +196,7 @@ void CoordinateElement::compute_reference_geometry(
         xk = cell_geometry.matrix().transpose() * phi;
 
         // Compute Jacobian and inverse
-        for (int dim = 0; dim < tdim; ++dim)
-          dphi.col(dim) = tabulated_data.row(dim + 1);
+        dphi = tabulated_data.block(1, 0, tdim, d).transpose();
         Jview = cell_geometry.matrix().transpose() * dphi;
         if (gdim == tdim)
           Kview = Jview.inverse();
