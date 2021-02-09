@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dolfinx/common/array2d.h>
 #include <vector>
 
 namespace dolfinx::fem
