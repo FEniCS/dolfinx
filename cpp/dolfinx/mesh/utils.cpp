@@ -116,7 +116,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   common::array2d<double> _n(num_entities, 3);
 
   Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> n(
-      _n.data(), num_entities, 3);
+      _n.data(), _n.rows(), _n.cols());
   switch (type)
   {
   case (mesh::CellType::interval):
@@ -133,7 +133,6 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       Eigen::Vector3d t = p1 - p0;
       n.row(i) = Eigen::Vector3d(-t[1], t[0], 0.0).normalized();
     }
-    common::array2d<double> _n(n.rows(), n.cols());
     return _n;
   }
   case (mesh::CellType::triangle):
