@@ -112,7 +112,6 @@ void CoordinateElement::compute_reference_geometry(
   // FIXME: tidy up and sort out
 
   const int d = cell_geometry.rows();
-  Eigen::VectorXd phi(d);
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
       d, tdim);
 
@@ -128,8 +127,7 @@ void CoordinateElement::compute_reference_geometry(
                     1);
 
     // Compute physical coordinates at X=0.
-    phi = tabulated_data.row(0).transpose();
-    x0 = cell_geometry.matrix().transpose() * phi;
+    x0 = tabulated_data.row(0).matrix() * cell_geometry.matrix();
 
     // Compute Jacobian and inverse
     dphi = tabulated_data.block(1, 0, tdim, d).transpose();
@@ -192,8 +190,7 @@ void CoordinateElement::compute_reference_geometry(
                         Xk.data(), 1);
 
         // Compute physical coordinates
-        phi = tabulated_data.row(0).transpose();
-        xk = cell_geometry.matrix().transpose() * phi;
+        xk = tabulated_data.row(0).matrix() * cell_geometry.matrix();
 
         // Compute Jacobian and inverse
         dphi = tabulated_data.block(1, 0, tdim, d).transpose();
