@@ -134,11 +134,12 @@ void FiniteElement::evaluate_reference_basis(
                                         Eigen::RowMajor>>& X) const
 {
   const int scalar_reference_value_size = _reference_value_size / _bs;
-  Eigen::ArrayXXd basix_data(X.rows(), basix::dim(_basix_element_handle));
+  Eigen::ArrayXXd basix_data(X.rows(), basix::dim(_basix_element_handle)
+                                           * _reference_value_size);
   basix::tabulate(_basix_element_handle, basix_data.data(), 0, X.data(),
                   X.rows());
 
-  // assert(basix_data.cols() % scalar_reference_value_size == 0);
+  assert(basix_data.cols() % scalar_reference_value_size == 0);
   const int scalar_dofs = basix_data.cols() / scalar_reference_value_size;
 
   assert((int)reference_values.size()
@@ -166,6 +167,7 @@ void FiniteElement::evaluate_reference_basis_derivatives(
   }
 
   // nd = tdim + 1;
+  // FIXME
   const int nd = 4;
   Eigen::ArrayXXd basix_data(nd * X.rows(), basix::dim(_basix_element_handle));
   basix::tabulate(_basix_element_handle, basix_data.data(), 1, X.data(),
