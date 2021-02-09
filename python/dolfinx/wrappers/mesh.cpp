@@ -99,9 +99,8 @@ void mesh(py::module& m)
       "cell_normals",
       [](const dolfinx::mesh::Mesh& mesh, int dim,
          const py::array_t<std::int32_t, py::array::c_style>& entities) {
-        auto n = dolfinx::mesh::cell_normals(
+        return dolfinx::mesh::cell_normals(
             mesh, dim, tcb::span(entities.data(), entities.size()));
-        return py::array_t<double>(n.shape(), n.strides(), n.data());
       },
       py::return_value_policy::move);
   // m.def("cell_normals", &dolfinx::mesh::cell_normals);

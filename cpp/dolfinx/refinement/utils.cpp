@@ -99,7 +99,7 @@ create_new_geometry(
     edges[i++] = e.first;
 
   const auto midpoints = mesh::midpoints(mesh, 1, edges);
-  Eigen::Map<const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       midpoints_eigen(midpoints.data(), midpoints.rows(), midpoints.cols());
   new_vertex_coordinates.bottomRows(num_new_vertices) = midpoints_eigen;
 
