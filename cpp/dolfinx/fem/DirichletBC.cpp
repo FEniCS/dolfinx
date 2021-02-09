@@ -451,7 +451,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const std::function<std::vector<bool>(
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker_fn)
 {
@@ -481,7 +481,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
       = V1.tabulate_dof_coordinates().transpose();
 
   // Evaluate marker for each dof coordinate
-  const std::vector<bool> marked_dofs = marker_fn(dof_coordinates);
+  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
+      = marker_fn(dof_coordinates);
 
   // Get dofmaps
   std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
@@ -543,7 +544,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> fem::locate_dofs_geometrical(
     const fem::FunctionSpace& V,
-    const std::function<std::vector<bool>(
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker_fn)
 {
@@ -556,12 +557,12 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
       = V.tabulate_dof_coordinates().transpose();
 
   // Compute marker for each dof coordinate
-  const std::vector<bool> marked_dofs = marker_fn(dof_coordinates);
+  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
+      = marker_fn(dof_coordinates);
 
   std::vector<std::int32_t> dofs;
-  std::int32_t count = std::count(marked_dofs.begin(), marked_dofs.end(), true);
-  dofs.reserve(count);
-  for (std::size_t i = 0; i < marked_dofs.size(); ++i)
+  dofs.reserve(marked_dofs.count());
+  for (Eigen::Index i = 0; i < marked_dofs.rows(); ++i)
   {
     if (marked_dofs[i])
       dofs.push_back(i);

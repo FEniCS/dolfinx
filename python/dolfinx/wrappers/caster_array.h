@@ -22,7 +22,7 @@ public:
   PYBIND11_TYPE_CASTER(dolfinx::common::array2d<T>,
                        _("dolfinx::common::array2d<T>"));
 
-  // Conversion part 1 (Python -> C++)
+  // Conversion Python -> C++
   bool load(py::handle src, bool convert)
   {
     if (!convert and !py::array_t<T>::check_(src))
@@ -43,25 +43,17 @@ public:
     for (int i = 0; i < 2; ++i)
       shape[i] = buf.shape()[i];
 
-    value = dolfinx::common::array2d<T>(shape, buf.data(),
-                                         buf.data() + buf.size());
+    value = dolfinx::common::array2d<T>(buf.shape(0), buf.shape(1));
+    std::copy(buf.data(), buf.data() + buf.size(), value.data());
 
     return true;
   }
 
-  // Conversion part 2 (C++ -> Python)
+  /// Conversion C++ -> Python
   static py::handle cast(const dolfinx::common::array2d<T>& src,
                          py::return_value_policy policy, py::handle parent)
   {
-
-    std::vector<std::size_t> shape(2);
-    std::vector<std::size_t> strides(2, 0);
-
-    shape[0] = src.rows();
-    shape[1] = src.cols();
-    strides[0] = src.cols();
-
-    py::array a(std::move(shape), std::move(strides), src.data());
+    py::array a(src.shape(), src.strides(), src.data());
 
     return a.release();
   }

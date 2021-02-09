@@ -20,6 +20,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
+#include <iostream>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/eval.h>
@@ -97,8 +98,10 @@ void mesh(py::module& m)
   m.def("cell_normals",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const py::array_t<std::int32_t, py::array::c_style>& entities) {
-          return dolfinx::mesh::cell_normals(
-              mesh, dim, tcb::span(entities.data(), entities.size()));
+          dolfinx::common::array2d<double> normals
+              = dolfinx::mesh::cell_normals(
+                  mesh, dim, tcb::span(entities.data(), entities.size()));
+          return normals;
         });
   // m.def("cell_normals", &dolfinx::mesh::cell_normals);
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
@@ -173,8 +176,7 @@ void mesh(py::module& m)
       .def_property(
           "x", py::overload_cast<>(&dolfinx::mesh::Geometry::x),
           [](dolfinx::mesh::Geometry& self,
-             const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>& values) {
+             const dolfinx::common::array2d<double>& values) {
             self.x() = values;
           },
           py::return_value_policy::reference_internal,

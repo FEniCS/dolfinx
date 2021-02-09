@@ -70,13 +70,13 @@ public:
 
   /// Constructs a two dimensional array with the contents of the initializer
   /// list init.
-  array2d(size_type rows, size_type columns, std::initializer_list<T> list,
-          const Allocator& alloc = Allocator())
-      : _rows(rows), _cols(columns)
+  array2d(std::initializer_list<std::initializer_list<T>> list)
+      : _rows(list.size()), _cols((*list.begin()).size())
   {
-    if (_rows * _cols != list.size())
-      throw std::runtime_error("Dimension mismatch");
-    _storage = std::vector<T, Allocator>(list, alloc);
+    _storage.reserve(_rows * _cols);
+    for (std::initializer_list<T> l : list)
+      for (const T val : l)
+        _storage.push_back(val);
   }
 
   /// Returns a reference to the element at specified location (i, j).
@@ -137,18 +137,12 @@ public:
   size_type rows() const noexcept { return _rows; }
 
   /// Returns the array dimensions {cols, rows}.
-  std::pair<size_type, size_type> shape() const noexcept
-  {
-    return {_rows, _cols};
-  }
+  std::array<size_type, 2> shape() const noexcept { return {_rows, _cols}; }
 
-  /// Changes the number of elements stored.
-  void resize(size_type rows, size_type cols, value_type val = value_type())
+  /// Returns the strides of the array
+  std::array<size_type, 2> strides() const noexcept
   {
-    // TODO: check rows and cols
-    _rows = rows;
-    _cols = cols;
-    _storage.resize(rows * cols, val);
+    return {_cols * sizeof(T), sizeof(T)};
   }
 
   /// Copies a block of data from other container.

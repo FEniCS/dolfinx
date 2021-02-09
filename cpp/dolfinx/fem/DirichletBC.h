@@ -96,7 +96,7 @@ locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const std::function<std::vector<bool>(
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker_fn);
 
@@ -113,7 +113,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
 /// with V.
 std::vector<std::int32_t> locate_dofs_geometrical(
     const fem::FunctionSpace& V,
-    const std::function<std::vector<bool>(
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker_fn);
 

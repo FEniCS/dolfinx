@@ -163,11 +163,8 @@ int main(int argc, char* argv[])
 
     const auto bdofs = fem::locate_dofs_geometrical({*V}, [](auto& x) {
       static const double epsilon = std::numeric_limits<double>::epsilon();
-      std::vector<bool> out(x.cols());
-      for (int j = 0; j < x.cols(); j++)
-        out[j] = std::abs(x(0, j)) < 10.0 * epsilon
-                 or std::abs(x(0, j) - 1.0) < 10.0 * epsilon;
-      return out;
+      return (x.row(0).abs() < 10.0 * epsilon
+              or (x.row(0) - 1.0).abs() < 10.0 * epsilon);
     });
 
     std::vector bc{std::make_shared<const fem::DirichletBC<PetscScalar>>(

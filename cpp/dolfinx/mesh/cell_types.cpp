@@ -119,13 +119,16 @@ dolfinx::common::array2d<int> mesh::get_sub_entities(CellType type, int dim0,
         "mesh::get_sub_entities supports getting edges (d=1) at present.");
   }
   // TODO: get this data from basix
-  dolfinx::common::array2d<int> triangle(1, 3, {0, 1, 2});
-  dolfinx::common::array2d<int> quadrilateral(1, 4, {0, 1, 2, 3});
+  dolfinx::common::array2d<int> triangle({{0, 1, 2}});
+  dolfinx::common::array2d<int> quadrilateral({{0, 1, 2, 3}});
   dolfinx::common::array2d<int> tetrahedron(
-      4, 3, {0, 1, 2, 0, 3, 4, 1, 3, 5, 2, 4, 5});
-  dolfinx::common::array2d<int> hexahedron(6, 4, {0, 1, 3, 5,  0, 2, 4,  8,
-                                                  1, 2, 6, 9,  3, 4, 7,  10,
-                                                  5, 6, 7, 11, 8, 9, 10, 11});
+      {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}});
+  dolfinx::common::array2d<int> hexahedron({{0, 1, 3, 5},
+                                            {0, 2, 4, 8},
+                                            {1, 2, 6, 9},
+                                            {3, 4, 7, 10},
+                                            {5, 6, 7, 11},
+                                            {8, 9, 10, 11}});
   switch (type)
   {
   case mesh::CellType::interval:
