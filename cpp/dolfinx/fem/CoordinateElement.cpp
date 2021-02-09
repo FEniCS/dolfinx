@@ -77,7 +77,8 @@ void CoordinateElement::push_forward(
   assert(X.cols() == this->topological_dimension());
 
   // Compute physical coordinates
-  Eigen::MatrixXd phi(X.rows(), cell_geometry.rows());
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> phi(
+      X.rows(), cell_geometry.rows());
   basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.rows());
   x = phi * cell_geometry.matrix();
 }
