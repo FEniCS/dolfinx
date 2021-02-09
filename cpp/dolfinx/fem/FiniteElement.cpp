@@ -134,8 +134,9 @@ void FiniteElement::evaluate_reference_basis(
                                         Eigen::RowMajor>>& X) const
 {
   const int scalar_reference_value_size = _reference_value_size / _bs;
+
   Eigen::ArrayXXd basix_data(X.rows(), basix::dim(_basix_element_handle)
-                                           * _reference_value_size);
+                                           * scalar_reference_value_size);
   basix::tabulate(_basix_element_handle, basix_data.data(), 0, X.data(),
                   X.rows());
 
