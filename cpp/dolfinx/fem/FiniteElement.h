@@ -236,6 +236,7 @@ private:
   int _basix_element_handle;
 
   // The interpolation matrix
-  Eigen::MatrixXd _interpolation_matrix;
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      _interpolation_matrix;
 };
 } // namespace dolfinx::fem

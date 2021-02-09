@@ -75,9 +75,14 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   {
     _basix_element_handle = basix::register_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree);
+    std::vector<int> value_shape(basix::value_rank(_basix_element_handle));
+    basix::value_shape(_basix_element_handle, value_shape.data());
+    int basix_value_size = 1;
+    for (int w : value_shape)
+      basix_value_size *= w;
     _interpolation_matrix.resize(
         basix::interpolation_num_points(_basix_element_handle),
-        basix::dim(_basix_element_handle));
+        basix::dim(_basix_element_handle) * basix_value_size);
     basix::interpolation_matrix(_basix_element_handle,
                                 _interpolation_matrix.data());
   }
