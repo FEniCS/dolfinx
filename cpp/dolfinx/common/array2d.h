@@ -50,20 +50,20 @@ public:
   /// elements with value value.
   array2d(size_type rows, size_type cols, value_type value = T(),
           const Allocator& alloc = Allocator())
-      : _rows(rows), _cols(cols)
+      : _shape({rows, cols})
   {
-    _storage = std::vector<T, Allocator>(_rows * _cols, value, alloc);
+    _storage = std::vector<T, Allocator>(_shape[0] * _shape[1], value, alloc);
   }
 
+  /// TODO: Remove constructor, used for copying in eigen array.
   /// Constructs a two dimensional array with the copy of the contents of other
   /// two dimensional container.
   template <class Container,
             typename
             = typename std::enable_if<is_2d_container<Container>::value>::type>
   array2d(Container& array)
+      : _shape({size_type(array.rows()), size_type(array.cols())})
   {
-    _rows = array.rows();
-    _cols = array.cols();
     _storage.resize(array.size());
     std::copy(array.data(), array.data() + array.size(), _storage.begin());
   }
@@ -71,9 +71,9 @@ public:
   /// Constructs a two dimensional array with the contents of the initializer
   /// list init.
   array2d(std::initializer_list<std::initializer_list<T>> list)
-      : _rows(list.size()), _cols((*list.begin()).size())
+      : _shape({list.size(), (*list.begin()).size()})
   {
-    _storage.reserve(_rows * _cols);
+    _storage.reserve(_shape[0] * _shape[1]);
     for (std::initializer_list<T> l : list)
       for (const T val : l)
         _storage.push_back(val);
@@ -83,22 +83,22 @@ public:
   /// No bounds checking is performed.
   constexpr reference operator()(size_type i, size_type j)
   {
-    return _storage[i * _cols + j];
+    return _storage[i * _shape[1] + j];
   }
 
   /// Returns a const reference to the element at specified location (i, j).
   /// No bounds checking is performed.
   constexpr const_reference operator()(size_type i, size_type j) const
   {
-    return _storage[i * _cols + j];
+    return _storage[i * _shape[1] + j];
   }
 
   /// Returns a reference to the row at specified location (i).
   tcb::span<const value_type> row(int i) const
   {
-    size_type offset = i * _cols;
+    size_type offset = i * _shape[1];
     return tcb::span<const value_type>(std::next(_storage.data(), offset),
-                                       _cols);
+                                       _shape[1]);
   }
 
   /// Returns a pointer to the first element of the array.
@@ -107,42 +107,42 @@ public:
   /// Returns a const pointer to the first element of the array.
   const value_type* data() const noexcept { return _storage.data(); };
 
-  /// Returns an iterator to the first element of the array.
-  iterator begin() noexcept { return _storage.begin(); }
+  // /// Returns an iterator to the first element of the array.
+  // iterator begin() noexcept { return _storage.begin(); }
 
-  /// Returns an iterator to the first element of the array.
-  const_iterator begin() const noexcept { return _storage.begin(); }
+  // /// Returns an iterator to the first element of the array.
+  // const_iterator begin() const noexcept { return _storage.begin(); }
 
-  /// Returns an iterator to the element following the last element.
-  iterator end() noexcept { return _storage.end(); }
+  // /// Returns an iterator to the element following the last element.
+  // iterator end() noexcept { return _storage.end(); }
 
-  /// Returns an iterator to the element following the last element.
-  const_iterator end() const noexcept { return _storage.end(); }
+  // /// Returns an iterator to the element following the last element.
+  // const_iterator end() const noexcept { return _storage.end(); }
 
-  /// Returns a const iterator to the first element of the array.
-  const_iterator cbegin() noexcept { return _storage.cbegin(); }
+  // /// Returns a const iterator to the first element of the array.
+  // const_iterator cbegin() noexcept { return _storage.cbegin(); }
 
-  /// Returns a const iterator to the element following the last element.
-  const_iterator cend() noexcept { return _storage.cend(); }
+  // /// Returns a const iterator to the element following the last element.
+  // const_iterator cend() noexcept { return _storage.cend(); }
 
   /// Returns the number of elements in the array (rows * cols).
   size_type size() const noexcept { return _storage.size(); }
 
   /// TODO: Remove this function.
   /// Returns the number of cols in the two-dimensional array.
-  size_type cols() const noexcept { return _cols; }
+  size_type cols() const noexcept { return _shape[1]; }
 
   /// TODO: Remove this function.
   /// Returns the number of rows in the two-dimensional array.
-  size_type rows() const noexcept { return _rows; }
+  size_type rows() const noexcept { return _shape[0]; }
 
   /// Returns the array dimensions {cols, rows}.
-  std::array<size_type, 2> shape() const noexcept { return {_rows, _cols}; }
+  const std::array<size_type, 2>& shape() const noexcept { return _shape; }
 
   /// Returns the strides of the array
   std::array<size_type, 2> strides() const noexcept
   {
-    return {_cols * sizeof(T), sizeof(T)};
+    return {_shape[1] * sizeof(T), sizeof(T)};
   }
 
   /// Copies a block of data from other container.
@@ -151,12 +151,12 @@ public:
             = typename std::enable_if<is_2d_container<Container>::value>::type>
   void assign(const Container& other)
   {
-    size_type rows = std::min<size_type>(_rows, other.rows());
-    size_type cols = std::min<size_type>(_cols, other.cols());
+    size_type rows = std::min<size_type>(_shape[0], other.rows());
+    size_type cols = std::min<size_type>(_shape[1], other.cols());
     for (size_type i = 0; i < rows; i++)
     {
       for (size_type j = 0; j < cols; j++)
-        _storage[i * _cols + j] = other(i, j);
+        _storage[i * _shape[1] + j] = other(i, j);
     }
   }
 
@@ -164,8 +164,7 @@ public:
   bool empty() const noexcept { return _storage.empty(); }
 
 private:
-  size_type _rows;
-  size_type _cols;
+  std::array<size_type, 2> _shape;
   std::vector<T, Allocator> _storage;
 };
 } // namespace dolfinx::common

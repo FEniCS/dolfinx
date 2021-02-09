@@ -588,7 +588,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 
   // Search for d1 entities of d0 in map, and recover index
   const auto e_vertices_ref = mesh::get_entity_vertices(cell_type_d0, d1);
-  std::vector<int> keys(e_vertices_ref.begin(), e_vertices_ref.end());
+  std::vector<int> keys(e_vertices_ref.size());
   for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {
     auto e0 = c_d0_0.links(e);
