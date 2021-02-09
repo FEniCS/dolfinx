@@ -107,24 +107,6 @@ public:
   /// Returns a const pointer to the first element of the array.
   const value_type* data() const noexcept { return _storage.data(); };
 
-  // /// Returns an iterator to the first element of the array.
-  // iterator begin() noexcept { return _storage.begin(); }
-
-  // /// Returns an iterator to the first element of the array.
-  // const_iterator begin() const noexcept { return _storage.begin(); }
-
-  // /// Returns an iterator to the element following the last element.
-  // iterator end() noexcept { return _storage.end(); }
-
-  // /// Returns an iterator to the element following the last element.
-  // const_iterator end() const noexcept { return _storage.end(); }
-
-  // /// Returns a const iterator to the first element of the array.
-  // const_iterator cbegin() noexcept { return _storage.cbegin(); }
-
-  // /// Returns a const iterator to the element following the last element.
-  // const_iterator cend() noexcept { return _storage.cend(); }
-
   /// Returns the number of elements in the array (rows * cols).
   size_type size() const noexcept { return _storage.size(); }
 
