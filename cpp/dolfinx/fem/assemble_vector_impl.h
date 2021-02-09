@@ -57,7 +57,7 @@ void assemble_exterior_facets(
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
 
-/// Assemble linear form interior facet integrals into an Eigen vector
+/// Assemble linear form interior facet integrals into an vector
 template <typename T>
 void assemble_interior_facets(
     tcb::span<T> b, const mesh::Mesh& mesh,
