@@ -128,6 +128,8 @@ int FiniteElement::value_dimension(int i) const
 //-----------------------------------------------------------------------------
 std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
+#include <iostream>
+
 void FiniteElement::evaluate_reference_basis(
     std::vector<double>& reference_values,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
@@ -135,13 +137,22 @@ void FiniteElement::evaluate_reference_basis(
 {
   const int scalar_reference_value_size = _reference_value_size / _bs;
 
-  Eigen::ArrayXXd basix_data(X.rows(), basix::dim(_basix_element_handle)
-                                           * scalar_reference_value_size);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      basix_data(X.rows(), basix::dim(_basix_element_handle)
+                               * scalar_reference_value_size);
+
+  std::cout << "shape = " << basix_data.rows() << "x" << basix_data.cols()
+            << "\n";
+  std::cout << "X=[" << X << "]\n";
+
   basix::tabulate(_basix_element_handle, basix_data.data(), 0, X.data(),
                   X.rows());
+  std::cout << "data = [" << basix_data << "]\n";
 
   assert(basix_data.cols() % scalar_reference_value_size == 0);
   const int scalar_dofs = basix_data.cols() / scalar_reference_value_size;
+
+  std::cout << "scalar_dofs = " << scalar_dofs << "\n";
 
   assert((int)reference_values.size()
          == X.rows() * scalar_dofs * scalar_reference_value_size);
@@ -152,6 +163,11 @@ void FiniteElement::evaluate_reference_basis(
         reference_values[(p * scalar_dofs + d) * scalar_reference_value_size
                          + v]
             = basix_data(p, d + scalar_dofs * v);
+
+  std::cout << "ref_vals = ["
+            << Eigen::Map<Eigen::Array<double, 1, Eigen::Dynamic>>(
+                   reference_values.data(), reference_values.size())
+            << "]\n";
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis_derivatives(
