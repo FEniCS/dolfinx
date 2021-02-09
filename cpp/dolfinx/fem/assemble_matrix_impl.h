@@ -110,7 +110,7 @@ void assemble_matrix(
   const std::vector<T> constants = pack_constants(a);
 
   // Prepare coefficients
-  const auto coeffs = pack_coefficients(a);
+  const common::array2d<T> coeffs = pack_coefficients(a);
 
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)

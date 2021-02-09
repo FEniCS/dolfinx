@@ -79,7 +79,7 @@ T assemble_scalar(const fem::Form<T>& M)
   }
 
   // Prepare coefficients
-  const auto coeffs = pack_coefficients(M);
+  const common::array2d<T> coeffs = pack_coefficients(M);
 
   const bool needs_permutation_data = M.needs_permutation_data();
   if (needs_permutation_data)

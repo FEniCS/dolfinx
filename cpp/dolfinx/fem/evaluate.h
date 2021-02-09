@@ -31,7 +31,7 @@ void eval(
   assert(mesh);
 
   // Prepare coefficients
-  const common::array2d<double> coeffs = dolfinx::fem::pack_coefficients(e);
+  const common::array2d<T> coeffs = dolfinx::fem::pack_coefficients(e);
 
   // Prepare constants
   const std::vector<T> constant_values = dolfinx::fem::pack_constants(e);

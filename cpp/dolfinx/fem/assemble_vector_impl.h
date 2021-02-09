@@ -542,7 +542,7 @@ void assemble_vector(tcb::span<T> b, const Form<T>& L)
   const std::vector<T> constant_values = pack_constants(L);
 
   // Prepare coefficients
-  const auto coeffs = pack_coefficients(L);
+  const common::array2d<T> coeffs = pack_coefficients(L);
 
   const bool needs_permutation_data = L.needs_permutation_data();
   if (needs_permutation_data)
@@ -885,7 +885,7 @@ void lift_bc(tcb::span<T> b, const Form<T>& a,
   const std::vector<T> constant_values = pack_constants(a);
 
   // Prepare coefficients
-  const auto coeffs = pack_coefficients(a);
+  const common::array2d<T> coeffs = pack_coefficients(a);
 
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
