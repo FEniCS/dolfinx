@@ -46,6 +46,17 @@ public:
   /// \endcond
 
   /// Construct a two dimensional array
+  /// @param[in] shape The shape the array {rows, cols}
+  /// @param[in] value Initial value for all entries
+  /// @param[in] alloc The memory allocator for the data storage
+  array2d(std::array<size_type, 2> shape, value_type value = T(),
+          const Allocator& alloc = Allocator())
+      : shape(shape)
+  {
+    _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
+  }
+
+  /// Construct a two dimensional array
   /// @param[in] rows The number of rows
   /// @param[in] cols The number of columns
   /// @param[in] value Initial value for all entries

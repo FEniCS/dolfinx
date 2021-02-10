@@ -43,6 +43,7 @@ public:
         _index_map(index_map), _cmap(element), _x(std::forward<Array>(x)),
         _input_global_indices(std::forward<Vector64>(input_global_indices))
   {
+    assert(_x.shape[1] > 0 and _x.shape[1] <= 3);
     if (_x.shape[0] != _input_global_indices.size())
       throw std::runtime_error("Size mis-match");
 
