@@ -7,6 +7,7 @@
 #pragma once
 
 #include "span.hpp"
+#include <array>
 #include <cassert>
 #include <vector>
 
@@ -29,7 +30,7 @@ namespace dolfinx::common
 {
 
 /// This class provides a dynamic 2-dimensional row-wise array
-/// data structure.
+/// data structure
 template <typename T, class Allocator = std::allocator<T>>
 class array2d
 {
@@ -68,9 +69,9 @@ public:
     _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
   }
 
-  /// @todo Remove, used for copying in eigen array.
+  /// @todo Remove, used for copying in eigen array
   /// Constructs a two dimensional array with the copy of the contents
-  /// of other two dimensional container.
+  /// of other two dimensional container
   template <class Container,
             typename
             = typename std::enable_if<is_2d_container<Container>::value>::type>
@@ -107,7 +108,7 @@ public:
   /// Move assignment
   array2d& operator=(array2d&& x) = default;
 
-  /// Return a reference to the element at specified location (i, j).
+  /// Return a reference to the element at specified location (i, j)
   /// param[in] i Row index
   /// param[in] j Column index
   /// @return Reference to the (i, j) item
@@ -118,11 +119,11 @@ public:
   }
 
   /// Return a reference to the element at specified location (i, j)
-  /// (const version).
+  /// (const version)
   /// param[in] i Row index
   /// param[in] j Column index
   /// @return Reference to the (i, j) item
-  /// @note No bounds checking is performed.
+  /// @note No bounds checking is performed
   constexpr const_reference operator()(size_type i, size_type j) const
   {
     return _storage[i * shape[1] + j];
@@ -139,12 +140,12 @@ public:
   }
 
   /// Get pointer to the first element of the underlying storage
-  /// @warning Use this caution - the data storage may be strided
+  /// @warning Use this with caution - the data storage may be strided
   constexpr value_type* data() noexcept { return _storage.data(); }
 
   /// Get pointer to the first element of the underlying storage (const
   /// version)
-  /// @warning Use this caution - the data storage may be strided
+  /// @warning Use this with caution - the data storage may be strided
   constexpr const value_type* data() const noexcept { return _storage.data(); };
 
   /// Returns the number of elements in the array
