@@ -68,7 +68,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      geom_dofs(geometry.x().data(), geometry.x().shape()[0], geometry.x().cols());
+      geom_dofs(geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
 
   std::vector<double> h_cells(entities.size(), 0);
   assert(num_vertices <= 8);
@@ -102,8 +102,8 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   // Find geometry nodes for topology entities
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      geom_dofs(mesh.geometry().x().data(), mesh.geometry().x().shape()[0],
-                mesh.geometry().x().cols());
+      geom_dofs(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
+                mesh.geometry().x().shape[1]);
 
   // Orient cells if they are tetrahedron
   bool orient = false;
@@ -116,7 +116,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   common::array2d<double> _n(num_entities, 3);
 
   Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> n(
-      _n.data(), _n.shape()[0], _n.cols());
+      _n.data(), _n.shape[0], _n.shape[1]);
   switch (type)
   {
   case (mesh::CellType::interval):
@@ -183,7 +183,7 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      x(geometry.x().data(), geometry.x().shape()[0], geometry.x().cols());
+      x(geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
@@ -194,7 +194,7 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
   Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> x_mid(
       midpoints.data(), entities.size(), 3);
 
-  for (std::size_t e = 0; e < entity_to_geometry.shape()[0]; ++e)
+  for (std::size_t e = 0; e < entity_to_geometry.shape[0]; ++e)
   {
     auto entity_vertices = entity_to_geometry.row(e);
     x_mid.row(e) = 0.0;
@@ -238,8 +238,8 @@ std::vector<std::int32_t> mesh::locate_entities(
   // Pack coordinates of vertices
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      x_nodes(mesh.geometry().x().data(), mesh.geometry().x().shape()[0],
-              mesh.geometry().x().cols());
+      x_nodes(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
+              mesh.geometry().x().shape[1]);
 
   Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_vertices(
       3, vertex_to_node.size());
@@ -326,8 +326,8 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      x_nodes(mesh.geometry().x().data(), mesh.geometry().x().shape()[0],
-              mesh.geometry().x().cols());
+      x_nodes(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
+              mesh.geometry().x().shape[1]);
 
   // Build vector of boundary vertices
   const std::vector<std::int32_t> vertices(boundary_vertices.begin(),
@@ -412,7 +412,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
 
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      geom_dofs(geometry.x().data(), geometry.x().shape()[0], geometry.x().cols());
+      geom_dofs(geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
 
   const mesh::Topology& topology = mesh.topology();
 

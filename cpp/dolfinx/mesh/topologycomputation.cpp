@@ -592,21 +592,21 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {
     auto e0 = c_d0_0.links(e);
-    for (std::size_t i = 0; i < e_vertices_ref.shape()[0]; ++i)
-      for (std::size_t j = 0; j < e_vertices_ref.shape()[1]; ++j)
-        keys[i * e_vertices_ref.cols() + j] = e0[e_vertices_ref(i, j)];
+    for (std::size_t i = 0; i < e_vertices_ref.shape[0]; ++i)
+      for (std::size_t j = 0; j < e_vertices_ref.shape[1]; ++j)
+        keys[i * e_vertices_ref.shape[1] + j] = e0[e_vertices_ref(i, j)];
 
-    for (std::size_t i = 0; i < e_vertices_ref.shape()[0]; ++i)
+    for (std::size_t i = 0; i < e_vertices_ref.shape[0]; ++i)
     {
-      auto keys_begin = std::next(keys.cbegin(), i * e_vertices_ref.cols());
-      auto keys_end = std::next(keys.cbegin(), (i + 1) * e_vertices_ref.cols());
+      auto keys_begin = std::next(keys.cbegin(), i * e_vertices_ref.shape[1]);
+      auto keys_end = std::next(keys.cbegin(), (i + 1) * e_vertices_ref.shape[1]);
       std::partial_sort_copy(keys_begin, keys_end, key.begin(), key.end());
       const auto it = entity_to_index.find(key);
       assert(it != entity_to_index.end());
       connections.push_back(it->second);
     }
 
-    offsets[e + 1] = offsets[e] + e_vertices_ref.shape()[0];
+    offsets[e + 1] = offsets[e] + e_vertices_ref.shape[0];
   }
 
   connections.shrink_to_fit();

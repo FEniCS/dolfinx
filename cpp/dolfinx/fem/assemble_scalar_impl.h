@@ -255,7 +255,7 @@ T assemble_interior_facets(
   // Creat data structures used in assembly
   std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);
   std::vector<T> coeff_array(2 * offsets.back());
-  assert(offsets.back() == coeffs.cols());
+  assert(offsets.back() == coeffs.shape[1]);
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);

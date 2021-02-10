@@ -52,9 +52,9 @@ public:
   /// @param[in] alloc The memory allocator for the data storage
   array2d(size_type rows, size_type cols, value_type value = T(),
           const Allocator& alloc = Allocator())
-      : _shape({rows, cols})
+      : shape({rows, cols})
   {
-    _storage = std::vector<T, Allocator>(_shape[0] * _shape[1], value, alloc);
+    _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
   }
 
   /// @todo Remove, used for copying in eigen array.
@@ -64,7 +64,7 @@ public:
             typename
             = typename std::enable_if<is_2d_container<Container>::value>::type>
   array2d(Container& array)
-      : _shape({size_type(array.rows()), size_type(array.cols())})
+      : shape({size_type(array.rows()), size_type(array.cols())})
   {
     _storage.resize(array.size());
     std::copy(array.data(), array.data() + array.size(), _storage.begin());
@@ -73,9 +73,9 @@ public:
   /// Construct a two dimensional array using nested initializer lists
   /// @param[in] list The nested initializer list
   constexpr array2d(std::initializer_list<std::initializer_list<T>> list)
-      : _shape({list.size(), (*list.begin()).size()})
+      : shape({list.size(), (*list.begin()).size()})
   {
-    _storage.reserve(_shape[0] * _shape[1]);
+    _storage.reserve(shape[0] * shape[1]);
     for (std::initializer_list<T> l : list)
       for (const T val : l)
         _storage.push_back(val);
@@ -103,7 +103,7 @@ public:
   /// @note No bounds checking is performed
   constexpr reference operator()(size_type i, size_type j)
   {
-    return _storage[i * _shape[1] + j];
+    return _storage[i * shape[1] + j];
   }
 
   /// Return a reference to the element at specified location (i, j)
@@ -114,7 +114,7 @@ public:
   /// @note No bounds checking is performed.
   constexpr const_reference operator()(size_type i, size_type j) const
   {
-    return _storage[i * _shape[1] + j];
+    return _storage[i * shape[1] + j];
   }
 
   /// Access a row in the array
@@ -122,9 +122,9 @@ public:
   /// @return Span of the row data
   constexpr tcb::span<const value_type> row(int i) const
   {
-    size_type offset = i * _shape[1];
+    size_type offset = i * shape[1];
     return tcb::span<const value_type>(std::next(_storage.data(), offset),
-                                       _shape[1]);
+                                       shape[1]);
   }
 
   /// Get pointer to the first element of the underlying storage
@@ -142,29 +142,20 @@ public:
   /// sizeof(T)*(rows * cols)
   constexpr size_type size() const noexcept { return _storage.size(); }
 
-  /// @todo Remove this function.
-  /// Returns the number of cols in the two-dimensional array
-  size_type cols() const noexcept { return _shape[1]; }
-
-  /// @todo Remove this function.
-  /// Returns the number of rows in the two-dimensional array
-  // size_type rows() const noexcept { return _shape[0]; }
-
-  /// Returns the array dimensions {cols, rows}.
-  constexpr std::array<size_type, 2> shape() const noexcept { return _shape; }
-
   /// Returns the strides of the array
   constexpr std::array<size_type, 2> strides() const noexcept
   {
-    return {_shape[1] * sizeof(T), sizeof(T)};
+    return {shape[1] * sizeof(T), sizeof(T)};
   }
 
   /// Checks whether the container is empty
   /// @return Returns true if underlying storage is empty
   constexpr bool empty() const noexcept { return _storage.empty(); }
 
+  /// The shape of the array
+  std::array<size_type, 2> shape;
+
 private:
-  std::array<size_type, 2> _shape;
   std::vector<T, Allocator> _storage;
 };
 } // namespace dolfinx::common

@@ -39,20 +39,19 @@ public:
   Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
            AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
            Array&& x, Vector64&& input_global_indices)
-      : _dim(x.cols()), _dofmap(std::forward<AdjacencyList32>(dofmap)),
+      : _dim(x.shape[1]), _dofmap(std::forward<AdjacencyList32>(dofmap)),
         _index_map(index_map), _cmap(element), _x(std::forward<Array>(x)),
         _input_global_indices(std::forward<Vector64>(input_global_indices))
   {
-    if (_x.shape()[0] != _input_global_indices.size())
+    if (_x.shape[0] != _input_global_indices.size())
       throw std::runtime_error("Size mis-match");
 
     // Make all geometry 3D
     if (_dim != 3)
     {
-      common::array2d<double> coords(_x.shape()[0], 3, 0.0);
-      auto shape = _x.shape();
-      for (std::size_t i = 0; i < shape[0]; ++i)
-        for (std::size_t j = 0; j < shape[1]; ++j)
+      common::array2d<double> coords(_x.shape[0], 3, 0.0);
+      for (std::size_t i = 0; i < _x.shape[0]; ++i)
+        for (std::size_t j = 0; j < _x.shape[1]; ++j)
           coords(i, j) = _x(i, j);
       std::swap(coords, _x);
     }

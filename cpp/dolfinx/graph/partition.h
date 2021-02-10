@@ -135,7 +135,7 @@ build::distribute_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
 {
   common::Timer timer("Fetch float data from remote processes");
 
-  const std::int64_t num_points_local = x.shape()[0];
+  const std::int64_t num_points_local = x.shape[0];
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
   std::vector<std::int64_t> global_sizes(size);
@@ -194,27 +194,26 @@ build::distribute_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
                 number_index_recv.data(), disp_index_recv.data(), MPI_INT64_T,
                 comm);
 
-  const int item_size = x.cols();
-  assert(item_size != 0);
+  assert(x.shape[1] != 0);
   // Pack point data to send back (transpose)
-  common::array2d<T> x_return(indices_recv.size(), item_size);
+  common::array2d<T> x_return(indices_recv.size(), x.shape[1]);
   for (int p = 0; p < size; ++p)
   {
     for (int i = disp_index_recv[p]; i < disp_index_recv[p + 1]; ++i)
     {
       const std::int32_t index_local = indices_recv[i] - global_offsets[rank];
       assert(index_local >= 0);
-      for (std::size_t j = 0; j < x.cols(); j++)
+      for (std::size_t j = 0; j < x.shape[1]; ++j)
         x_return(i, j) = x(index_local, j);
     }
   }
 
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(item_size, dolfinx::MPI::mpi_type<T>(), &compound_type);
+  MPI_Type_contiguous(x.shape[1], dolfinx::MPI::mpi_type<T>(), &compound_type);
   MPI_Type_commit(&compound_type);
 
   // Send back point data
-  common::array2d<T> my_x(disp_index_send.back(), item_size);
+  common::array2d<T> my_x(disp_index_send.back(), x.shape[1]);
   MPI_Alltoallv(x_return.data(), number_index_recv.data(),
                 disp_index_recv.data(), compound_type, my_x.data(),
                 number_index_send.data(), disp_index_send.data(), compound_type,

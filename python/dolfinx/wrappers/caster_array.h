@@ -41,7 +41,7 @@ public:
     std::vector<size_t> shape(2);
 
     for (int i = 0; i < 2; ++i)
-      shape[i] = buf.shape()[i];
+      shape[i] = buf.shape[i];
 
     value = dolfinx::common::array2d<T>(buf.shape(0), buf.shape(1));
     std::copy(buf.data(), buf.data() + buf.size(), value.data());
@@ -53,8 +53,7 @@ public:
   static py::handle cast(const dolfinx::common::array2d<T>& src,
                          py::return_value_policy policy, py::handle parent)
   {
-    py::array a(src.shape(), src.strides(), src.data());
-
+    py::array a(src.shape, src.strides(), src.data());
     return a.release();
   }
 };
