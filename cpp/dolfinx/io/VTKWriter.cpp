@@ -103,7 +103,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
 
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      points(mesh.geometry().x().data(), mesh.geometry().x().rows(),
+      points(mesh.geometry().x().data(), mesh.geometry().x().shape()[0],
              mesh.geometry().x().cols());
 
   for (int i = 0; i < points.rows(); ++i)

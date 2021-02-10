@@ -43,7 +43,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      geom_dofs(mesh.geometry().x().data(), mesh.geometry().x().rows(),
+      geom_dofs(mesh.geometry().x().data(), mesh.geometry().x().shape()[0],
                 mesh.geometry().x().cols());
 
   mesh.topology_mutable().create_connectivity(dim, tdim);

@@ -135,7 +135,7 @@ build::distribute_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
 {
   common::Timer timer("Fetch float data from remote processes");
 
-  const std::int64_t num_points_local = x.rows();
+  const std::int64_t num_points_local = x.shape()[0];
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
   std::vector<std::int64_t> global_sizes(size);
