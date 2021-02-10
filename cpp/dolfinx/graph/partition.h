@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <algorithm>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
 #include <utility>
@@ -93,10 +93,9 @@ compute_ghost_indices(MPI_Comm comm,
 ///   to be the local index plus the offset for this rank
 /// @return The data for each index in @p indices
 template <typename T>
-Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-distribute_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
-                const Eigen::Ref<const Eigen::Array<
-                    T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
+common::array2d<T> distribute_data(MPI_Comm comm,
+                                   const std::vector<std::int64_t>& indices,
+                                   const common::array2d<T>& x);
 
 /// Given an adjacency list with global, possibly non-contiguous, link
 /// indices and a local adjacency list with contiguous link indices
@@ -130,11 +129,9 @@ compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
 // Implementation
 //---------------------------------------------------------------------------
 template <typename T>
-Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-build::distribute_data(
-    MPI_Comm comm, const std::vector<std::int64_t>& indices,
-    const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x)
+common::array2d<T>
+build::distribute_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
+                       const common::array2d<T>& x)
 {
   common::Timer timer("Fetch float data from remote processes");
 
@@ -200,8 +197,7 @@ build::distribute_data(
   const int item_size = x.cols();
   assert(item_size != 0);
   // Pack point data to send back (transpose)
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_return(
-      indices_recv.size(), item_size);
+  common::array2d<T> x_return(indices_recv.size(), item_size);
   for (int p = 0; p < size; ++p)
   {
     for (int i = disp_index_recv[p]; i < disp_index_recv[p + 1]; ++i)
@@ -217,8 +213,7 @@ build::distribute_data(
   MPI_Type_commit(&compound_type);
 
   // Send back point data
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> my_x(
-      disp_index_send.back(), item_size);
+  common::array2d<T> my_x(disp_index_send.back(), item_size);
   MPI_Alltoallv(x_return.data(), number_index_recv.data(),
                 disp_index_recv.data(), compound_type, my_x.data(),
                 number_index_send.data(), disp_index_send.data(), compound_type,

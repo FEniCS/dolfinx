@@ -75,10 +75,8 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
 
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      x_eigen(x.data(), x.rows(), x.cols());
-  auto coords = graph::build::distribute_data<double>(comm, indices, x_eigen);
+  common::array2d<double> coords
+      = graph::build::distribute_data<double>(comm, indices, x);
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
@@ -91,13 +89,12 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
 
   // Build coordinate dof array
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(
-      coords.rows(), coords.cols());
+  common::array2d<double> xg(coords.rows(), coords.cols());
 
   // Allocate space for input global indices
   std::vector<std::int64_t> igi(indices.size());
 
-  for (int i = 0; i < coords.rows(); ++i)
+  for (std::size_t i = 0; i < coords.rows(); ++i)
   {
     xg.row(i) = coords.row(l2l[i]);
     igi[i] = indices[l2l[i]];
@@ -116,8 +113,7 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
                                       cell_info[cell]);
   }
 
-  common::array2d<double> _xg(xg);
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
-                  std::move(_xg), std::move(igi));
+                  std::move(xg), std::move(igi));
 }
 //-----------------------------------------------------------------------------
