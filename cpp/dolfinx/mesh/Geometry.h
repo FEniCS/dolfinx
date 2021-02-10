@@ -53,7 +53,7 @@ public:
       auto shape = _x.shape();
       for (std::size_t i = 0; i < shape[0]; ++i)
         for (std::size_t j = 0; j < shape[1]; ++j)
-          coords(i, j) = x(i, j);
+          coords(i, j) = _x(i, j);
       std::swap(coords, _x);
     }
   }
