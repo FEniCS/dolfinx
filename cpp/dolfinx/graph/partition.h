@@ -204,7 +204,8 @@ build::distribute_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
     {
       const std::int32_t index_local = indices_recv[i] - global_offsets[rank];
       assert(index_local >= 0);
-      x_return.row(i) = x.row(index_local);
+      for (std::size_t j = 0; j < x.cols(); j++)
+        x_return(i, j) = x(index_local, j);
     }
   }
 

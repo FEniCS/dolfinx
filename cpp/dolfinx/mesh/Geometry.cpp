@@ -96,7 +96,8 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
 
   for (std::size_t i = 0; i < coords.rows(); ++i)
   {
-    xg.row(i) = coords.row(l2l[i]);
+    for (std::size_t j = 0; j < coords.cols(); ++j)
+      xg(i, j) = coords(l2l[i], j);
     igi[i] = indices[l2l[i]];
   }
 
