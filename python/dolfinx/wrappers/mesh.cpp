@@ -97,10 +97,8 @@ void mesh(py::module& m)
   m.def("cell_normals",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const py::array_t<std::int32_t, py::array::c_style>& entities) {
-          dolfinx::common::array2d<double> normals
-              = dolfinx::mesh::cell_normals(
-                  mesh, dim, tcb::span(entities.data(), entities.size()));
-          return as_pyarray2d(std::move(normals));
+          return as_pyarray2d(dolfinx::mesh::cell_normals(
+              mesh, dim, tcb::span(entities.data(), entities.size())));
         });
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
 
@@ -119,10 +117,8 @@ void mesh(py::module& m)
   m.def("midpoints",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list) {
-          auto midpoints = dolfinx::mesh::midpoints(
-              mesh, dim, tcb::span(entity_list.data(), entity_list.size()));
-          return py::array_t<double>(midpoints.shape, midpoints.strides(),
-                                     midpoints.data());
+          return as_pyarray2d(dolfinx::mesh::midpoints(
+              mesh, dim, tcb::span(entity_list.data(), entity_list.size())));
         });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
@@ -306,12 +302,14 @@ void mesh(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const std::function<py::array_t<bool>(
                const py::array_t<double, py::array::c_style>&)>& marker) {
-          auto cpp_marker = [&](const dolfinx::common::array2d<double>& x) {
-            py::array_t<double> x_view(x.shape, x.strides(), x.data());
-            py::array_t<bool> marked = marker(x_view);
-            return std::vector<bool>(marked.data(),
-                                     marked.data() + marked.size());
-          };
+          auto cpp_marker
+              = [&marker](const dolfinx::common::array2d<double>& x) {
+                  py::array_t<double> x_view(x.shape, x.strides(), x.data(),
+                                             py::none());
+                  py::array_t<bool> marked = marker(x_view);
+                  return std::vector<bool>(marked.data(),
+                                           marked.data() + marked.size());
+                };
           return as_pyarray(
               dolfinx::mesh::locate_entities(mesh, dim, cpp_marker));
         });
@@ -320,12 +318,14 @@ void mesh(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const std::function<py::array_t<bool>(
                const py::array_t<double, py::array::c_style>&)>& marker) {
-          auto cpp_marker = [&](const dolfinx::common::array2d<double>& x) {
-            py::array_t<double> x_view(x.shape, x.strides(), x.data());
-            py::array_t<bool> marked = marker(x_view);
-            return std::vector<bool>(marked.data(),
-                                     marked.data() + marked.size());
-          };
+          auto cpp_marker
+              = [&marker](const dolfinx::common::array2d<double>& x) {
+                  py::array_t<double> x_view(x.shape, x.strides(), x.data(),
+                                             py::none());
+                  py::array_t<bool> marked = marker(x_view);
+                  return std::vector<bool>(marked.data(),
+                                           marked.data() + marked.size());
+                };
           return as_pyarray(
               dolfinx::mesh::locate_entities_boundary(mesh, dim, cpp_marker));
         });
@@ -334,13 +334,10 @@ void mesh(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list,
            bool orient) {
-          auto entities = dolfinx::mesh::entities_to_geometry(
+          return as_pyarray2d(dolfinx::mesh::entities_to_geometry(
               mesh, dim, tcb::span(entity_list.data(), entity_list.size()),
-              orient);
-          return py::array_t<std::int32_t>(entities.shape, entities.strides(),
-                                           entities.data());
+              orient));
         });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
-
-} // namespace dolfinx_wrappers
+}
 } // namespace dolfinx_wrappers
