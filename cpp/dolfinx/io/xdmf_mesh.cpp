@@ -166,7 +166,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> _x(
-      geometry.x().data(), geometry.x().rows(), geometry.x().cols());
+      geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
 
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);

@@ -162,12 +162,32 @@ void mesh(py::module& m)
   // dolfinx::mesh::Geometry class
   py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(
       m, "Geometry", "Geometry object")
-      .def(py::init<std::shared_ptr<const dolfinx::common::IndexMap>,
-                    const dolfinx::graph::AdjacencyList<std::int32_t>&,
-                    const dolfinx::fem::CoordinateElement&,
-                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                       Eigen::RowMajor>&,
-                    const std::vector<std::int64_t>&>())
+      .def(py::init(
+          [](const std::shared_ptr<const dolfinx::common::IndexMap>& map,
+             const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap,
+             const dolfinx::fem::CoordinateElement& element,
+             const py::array_t<double, py::array::c_style>& x,
+             const py::array_t<std::int64_t, py::array::c_style>&
+                 global_indices) {
+            std::vector<std::int64_t> indices(global_indices.data(),
+                                              global_indices.data()
+                                                  + global_indices.size());
+            assert(x.ndim() <= 2);
+            if (x.ndim() == 1)
+            {
+              dolfinx::common::array2d<double> _x(x.shape()[0], 1);
+              std::copy(x.data(), x.data() + x.size(), _x.data());
+              return dolfinx::mesh::Geometry(map, dofmap, element,
+                                             std::move(_x), std::move(indices));
+            }
+            else
+            {
+              dolfinx::common::array2d<double> _x(x.shape()[0], x.shape()[1]);
+              std::copy(x.data(), x.data() + x.size(), _x.data());
+              return dolfinx::mesh::Geometry(map, dofmap, element,
+                                             std::move(_x), std::move(indices));
+            }
+          }))
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
       .def_property_readonly("dofmap", &dolfinx::mesh::Geometry::dofmap)
@@ -176,14 +196,13 @@ void mesh(py::module& m)
           "x",
           [](const dolfinx::mesh::Geometry& self) {
             const dolfinx::common::array2d<double>& x = self.x();
-            return py::array_t<double>(x.shape(), x.strides(), x.data(),
+            return py::array_t<double>(x.shape, x.strides(), x.data(),
                                        py::cast(self));
           },
           [](dolfinx::mesh::Geometry& self, py::array_t<double> x) {
             dolfinx::common::array2d<double>& y = self.x();
             std::copy(x.data(), x.data() + x.size(), y.data());
           },
-          py::return_value_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
       .def_property_readonly("cmap", &dolfinx::mesh::Geometry::cmap,

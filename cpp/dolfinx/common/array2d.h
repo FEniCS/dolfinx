@@ -7,14 +7,17 @@
 #pragma once
 
 #include "span.hpp"
+#include <array>
 #include <cassert>
 #include <vector>
 
+/// @todo Remove
 template <typename T, typename = void>
 struct is_2d_container : std::false_type
 {
 };
 
+/// @todo Remove
 template <typename T>
 struct is_2d_container<T, std::void_t<decltype(std::declval<T>().data()),
                                       decltype(std::declval<T>().rows()),
@@ -27,8 +30,7 @@ namespace dolfinx::common
 {
 
 /// This class provides a dynamic 2-dimensional row-wise array
-/// data structure. The representation is strictly local, i.e.
-/// it is not parallel aware.
+/// data structure
 template <typename T, class Allocator = std::allocator<T>>
 class array2d
 {
@@ -44,109 +46,128 @@ public:
   using const_iterator = typename std::vector<T, Allocator>::const_iterator;
   /// \endcond
 
-  array2d() = default;
-
-  /// Constructs a two dimensional array with size = rows * cols, and initialize
-  /// elements with value value.
-  array2d(size_type rows, size_type cols, value_type value = T(),
+  /// Construct a two dimensional array
+  /// @param[in] shape The shape the array {rows, cols}
+  /// @param[in] value Initial value for all entries
+  /// @param[in] alloc The memory allocator for the data storage
+  array2d(std::array<size_type, 2> shape, value_type value = T(),
           const Allocator& alloc = Allocator())
-      : _shape({rows, cols})
+      : shape(shape)
   {
-    _storage = std::vector<T, Allocator>(_shape[0] * _shape[1], value, alloc);
+    _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
   }
 
-  /// TODO: Remove constructor, used for copying in eigen array.
-  /// Constructs a two dimensional array with the copy of the contents of other
-  /// two dimensional container.
+  /// Construct a two dimensional array
+  /// @param[in] rows The number of rows
+  /// @param[in] cols The number of columns
+  /// @param[in] value Initial value for all entries
+  /// @param[in] alloc The memory allocator for the data storage
+  array2d(size_type rows, size_type cols, value_type value = T(),
+          const Allocator& alloc = Allocator())
+      : shape({rows, cols})
+  {
+    _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
+  }
+
+  /// @todo Remove, used for copying in eigen array
+  /// Constructs a two dimensional array with the copy of the contents
+  /// of other two dimensional container
   template <class Container,
             typename
             = typename std::enable_if<is_2d_container<Container>::value>::type>
   array2d(Container& array)
-      : _shape({size_type(array.rows()), size_type(array.cols())})
+      : shape({size_type(array.rows()), size_type(array.cols())})
   {
     _storage.resize(array.size());
     std::copy(array.data(), array.data() + array.size(), _storage.begin());
   }
 
-  /// Constructs a two dimensional array with the contents of the initializer
-  /// list init.
-  array2d(std::initializer_list<std::initializer_list<T>> list)
-      : _shape({list.size(), (*list.begin()).size()})
+  /// Construct a two dimensional array using nested initializer lists
+  /// @param[in] list The nested initializer list
+  constexpr array2d(std::initializer_list<std::initializer_list<T>> list)
+      : shape({list.size(), (*list.begin()).size()})
   {
-    _storage.reserve(_shape[0] * _shape[1]);
+    _storage.reserve(shape[0] * shape[1]);
     for (std::initializer_list<T> l : list)
       for (const T val : l)
         _storage.push_back(val);
   }
 
-  /// Returns a reference to the element at specified location (i, j).
-  /// No bounds checking is performed.
+  /// Copy constructor
+  array2d(const array2d& x) = default;
+
+  /// Move constructor
+  array2d(array2d&& x) = default;
+
+  /// Destructor
+  ~array2d() = default;
+
+  /// Copy assignment
+  array2d& operator=(const array2d& x) = default;
+
+  /// Move assignment
+  array2d& operator=(array2d&& x) = default;
+
+  /// Return a reference to the element at specified location (i, j)
+  /// param[in] i Row index
+  /// param[in] j Column index
+  /// @return Reference to the (i, j) item
+  /// @note No bounds checking is performed
   constexpr reference operator()(size_type i, size_type j)
   {
-    return _storage[i * _shape[1] + j];
+    return _storage[i * shape[1] + j];
   }
 
-  /// Returns a const reference to the element at specified location (i, j).
-  /// No bounds checking is performed.
+  /// Return a reference to the element at specified location (i, j)
+  /// (const version)
+  /// param[in] i Row index
+  /// param[in] j Column index
+  /// @return Reference to the (i, j) item
+  /// @note No bounds checking is performed
   constexpr const_reference operator()(size_type i, size_type j) const
   {
-    return _storage[i * _shape[1] + j];
+    return _storage[i * shape[1] + j];
   }
 
-  /// Returns a reference to the row at specified location (i).
-  tcb::span<const value_type> row(int i) const
+  /// Access a row in the array
+  /// param[in] i Row index
+  /// @return Span of the row data
+  constexpr tcb::span<const value_type> row(int i) const
   {
-    size_type offset = i * _shape[1];
+    size_type offset = i * shape[1];
     return tcb::span<const value_type>(std::next(_storage.data(), offset),
-                                       _shape[1]);
+                                       shape[1]);
   }
 
-  /// Returns a pointer to the first element of the array.
-  value_type* data() noexcept { return _storage.data(); }
+  /// Get pointer to the first element of the underlying storage
+  /// @warning Use this with caution - the data storage may be strided
+  constexpr value_type* data() noexcept { return _storage.data(); }
 
-  /// Returns a const pointer to the first element of the array.
-  const value_type* data() const noexcept { return _storage.data(); };
+  /// Get pointer to the first element of the underlying storage (const
+  /// version)
+  /// @warning Use this with caution - the data storage may be strided
+  constexpr const value_type* data() const noexcept { return _storage.data(); };
 
-  /// Returns the number of elements in the array (rows * cols).
-  size_type size() const noexcept { return _storage.size(); }
-
-  /// TODO: Remove this function.
-  /// Returns the number of cols in the two-dimensional array.
-  size_type cols() const noexcept { return _shape[1]; }
-
-  /// TODO: Remove this function.
-  /// Returns the number of rows in the two-dimensional array.
-  size_type rows() const noexcept { return _shape[0]; }
-
-  /// Returns the array dimensions {cols, rows}.
-  const std::array<size_type, 2>& shape() const noexcept { return _shape; }
+  /// Returns the number of elements in the array
+  /// @warning Use this caution - the data storage may be strided, i.e.
+  /// the size of the underlying storage may be greater than
+  /// sizeof(T)*(rows * cols)
+  constexpr size_type size() const noexcept { return _storage.size(); }
 
   /// Returns the strides of the array
-  std::array<size_type, 2> strides() const noexcept
+  constexpr std::array<size_type, 2> strides() const noexcept
   {
-    return {_shape[1] * sizeof(T), sizeof(T)};
+    return {shape[1] * sizeof(T), sizeof(T)};
   }
 
-  /// Copies a block of data from other container.
-  template <class Container,
-            typename
-            = typename std::enable_if<is_2d_container<Container>::value>::type>
-  void assign(const Container& other)
-  {
-    size_type rows = std::min<size_type>(_shape[0], other.rows());
-    size_type cols = std::min<size_type>(_shape[1], other.cols());
-    for (size_type i = 0; i < rows; i++)
-    {
-      for (size_type j = 0; j < cols; j++)
-        _storage[i * _shape[1] + j] = other(i, j);
-    }
-  }
+  /// Checks whether the container is empty
+  /// @return Returns true if underlying storage is empty
+  constexpr bool empty() const noexcept { return _storage.empty(); }
 
-  /// Checks whether the container is empty.
-  bool empty() const noexcept { return _storage.empty(); }
+  /// The shape of the array
+  std::array<size_type, 2> shape;
 
 private:
-  std::array<size_type, 2> _shape;
   std::vector<T, Allocator> _storage;
 };
 } // namespace dolfinx::common

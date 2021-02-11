@@ -82,8 +82,8 @@ create_new_geometry(
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      x_g(mesh.geometry().x().data(), mesh.geometry().x().rows(),
-          mesh.geometry().x().cols());
+      x_g(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
+          mesh.geometry().x().shape[1]);
 
   const std::int32_t num_vertices = map_v->size_local();
   const std::int32_t num_new_vertices = local_edge_to_new_vertex.size();
@@ -100,7 +100,7 @@ create_new_geometry(
 
   const auto midpoints = mesh::midpoints(mesh, 1, edges);
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      midpoints_eigen(midpoints.data(), midpoints.rows(), midpoints.cols());
+      midpoints_eigen(midpoints.data(), midpoints.shape[0], midpoints.shape[1]);
   new_vertex_coordinates.bottomRows(num_new_vertices) = midpoints_eigen;
 
   const int gdim = mesh.geometry().dim();

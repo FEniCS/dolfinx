@@ -70,8 +70,8 @@ internal_tabulate_dof_coordinates(
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      x_g(mesh->geometry().x().data(), mesh->geometry().x().rows(),
-          mesh->geometry().x().cols());
+      x_g(mesh->geometry().x().data(), mesh->geometry().x().shape[0],
+          mesh->geometry().x().shape[1]);
 
   // Array to hold coordinates to return
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> coords

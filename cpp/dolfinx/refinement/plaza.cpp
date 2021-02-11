@@ -298,8 +298,8 @@ face_long_edge(const mesh::Mesh& mesh)
   // Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      x(mesh.geometry().x().data(), mesh.geometry().x().rows(),
-        mesh.geometry().x().cols());
+      x(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
+        mesh.geometry().x().shape[1]);
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 

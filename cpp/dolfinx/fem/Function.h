@@ -270,8 +270,8 @@ public:
     const int num_dofs_g = x_dofmap.num_links(0);
     // Use eigen map for now.
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        x_g(mesh->geometry().x().data(), mesh->geometry().x().rows(),
-            mesh->geometry().x().cols());
+        x_g(mesh->geometry().x().data(), mesh->geometry().x().shape[0],
+            mesh->geometry().x().shape[1]);
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -393,7 +393,7 @@ public:
 
     // Resize Array for holding point values
     Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        point_values(mesh->geometry().x().rows(), value_size_loc);
+        point_values(mesh->geometry().x().shape[0], value_size_loc);
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -403,8 +403,8 @@ public:
     const int num_dofs_g = x_dofmap.num_links(0);
     // Use eigen map for now.
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        x_g(mesh->geometry().x().data(), mesh->geometry().x().rows(),
-            mesh->geometry().x().cols());
+        x_g(mesh->geometry().x().data(), mesh->geometry().x().shape[0],
+            mesh->geometry().x().shape[1]);
 
     // Interpolate point values on each cell (using last computed value if
     // not continuous, e.g. discontinuous Galerkin methods)

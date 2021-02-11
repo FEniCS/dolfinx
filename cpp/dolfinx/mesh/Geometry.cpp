@@ -89,14 +89,14 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
 
   // Build coordinate dof array
-  common::array2d<double> xg(coords.rows(), coords.cols());
+  common::array2d<double> xg(coords.shape[0], coords.shape[1]);
 
   // Allocate space for input global indices
   std::vector<std::int64_t> igi(indices.size());
 
-  for (std::size_t i = 0; i < coords.rows(); ++i)
+  for (std::size_t i = 0; i < coords.shape[0]; ++i)
   {
-    for (std::size_t j = 0; j < coords.cols(); ++j)
+    for (std::size_t j = 0; j < coords.shape[1]; ++j)
       xg(i, j) = coords(l2l[i], j);
     igi[i] = indices[l2l[i]];
   }
