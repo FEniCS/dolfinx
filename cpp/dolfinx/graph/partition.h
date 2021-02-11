@@ -12,6 +12,7 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/array2d.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
 #include <mpi.h>
 #include <utility>
 #include <vector>

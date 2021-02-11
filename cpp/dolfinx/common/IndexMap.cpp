@@ -6,6 +6,7 @@
 
 #include "IndexMap.h"
 #include <algorithm>
+#include <functional>
 #include <numeric>
 #include <unordered_map>
 
