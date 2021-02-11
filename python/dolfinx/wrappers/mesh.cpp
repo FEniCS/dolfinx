@@ -9,7 +9,6 @@
 #include "caster_petsc.h"
 #include <cfloat>
 #include <dolfinx/common/array2d.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -198,19 +197,6 @@ void mesh(py::module& m)
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      //   .def_property(
-      //       "x",
-      //       [](const dolfinx::mesh::Geometry& self) {
-      //         const dolfinx::common::array2d<double>& x = self.x();
-      //         return py::array_t<double>(x.shape, x.strides(), x.data(),
-      //                                    py::cast(self));
-      //       },
-      //       [](dolfinx::mesh::Geometry& self, py::array_t<double> x) {
-      //         dolfinx::common::array2d<double>& y = self.x();
-      //         std::copy(x.data(), x.data() + x.size(), y.data());
-      //       },
-      //       "Return coordinates of all geometry points. Each row is the "
-      //       "coordinate of a point.")
       .def_property_readonly("cmap", &dolfinx::mesh::Geometry::cmap,
                              "The coordinate map")
       .def_property_readonly("input_global_indices",
