@@ -6,7 +6,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import cffi
-
 import ufl
 from dolfinx import cpp, jit
 
