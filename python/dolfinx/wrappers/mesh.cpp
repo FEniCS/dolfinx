@@ -94,17 +94,14 @@ void mesh(py::module& m)
   m.def("cell_dim", &dolfinx::mesh::cell_dim);
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
-  m.def(
-      "cell_normals",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
-         const py::array_t<std::int32_t, py::array::c_style>& entities) {
-        auto normals = dolfinx::mesh::cell_normals(
-            mesh, dim, tcb::span(entities.data(), entities.size()));
-        return py::array_t<double>(normals.shape, normals.strides(),
-                                   normals.data());
-      },
-      py::return_value_policy::move);
-  // m.def("cell_normals", &dolfinx::mesh::cell_normals);
+  m.def("cell_normals",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           const py::array_t<std::int32_t, py::array::c_style>& entities) {
+          dolfinx::common::array2d<double> normals
+              = dolfinx::mesh::cell_normals(
+                  mesh, dim, tcb::span(entities.data(), entities.size()));
+          return as_pyarray2d(std::move(normals));
+        });
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
