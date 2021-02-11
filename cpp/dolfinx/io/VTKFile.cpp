@@ -166,7 +166,7 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
       = mesh.topology().index_map(cell_dim)->size_local();
 
   // Number of points in mesh (can be more than the number of vertices)
-  const int num_nodes = mesh.geometry().x().rows();
+  const int num_nodes = mesh.geometry().x().shape[0];
 
   // Write headers
   vtk_header_open(num_nodes, num_cells, vtu_filename);
@@ -353,8 +353,12 @@ void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
   std::ostringstream ss;
   ss << std::scientific;
   ss << std::setprecision(16);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
-      = mesh.geometry().x();
+
+  // FIXME: Use eigen map for now.
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      points(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
+             mesh.geometry().x().shape[1]);
+
   for (int i = 0; i < points.rows(); ++i)
   {
     if (rank == 1 and dim == 2)

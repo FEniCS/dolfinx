@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "graphbuild.h"
-#include <Eigen/Core>
 #include <algorithm>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -42,8 +41,7 @@ compute_local_dual_graph_keyed(
   // Compute edges (cell-cell connections) using local numbering
 
   // Create map from cell vertices to entity vertices
-  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      facet_vertices = mesh::get_entity_vertices(cell_type, tdim - 1);
+  auto facet_vertices = mesh::get_entity_vertices(cell_type, tdim - 1);
 
   // Vector-of-arrays data structure, which is considerably faster than
   // vector-of-vectors

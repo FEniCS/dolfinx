@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <cassert>
 #include <dolfinx/common/span.hpp>
 #include <numeric>
@@ -22,14 +21,17 @@ namespace dolfinx::graph
 /// @param [in] matrix Two-dimensional array of adjacency data where
 /// matrix(i, j) is the jth neighbor of the ith node
 /// @return Adjacency list data and offset array
-template <typename T>
-auto create_adjacency_data(const Eigen::DenseBase<T>& matrix)
+template <typename Container>
+auto create_adjacency_data(const Container& matrix)
 {
-  std::vector<typename T::Scalar> data(matrix.rows() * matrix.cols());
+  using T = typename Container::value_type;
+
+  std::vector<T> data(matrix.size());
   std::vector<std::int32_t> offset(matrix.rows() + 1, 0);
-  for (Eigen::Index i = 0; i < matrix.rows(); ++i)
+
+  for (std::size_t i = 0; i < std::size_t(matrix.rows()); ++i)
   {
-    for (Eigen::Index j = 0; j < matrix.cols(); ++j)
+    for (std::size_t j = 0; j < std::size_t(matrix.cols()); ++j)
       data[i * matrix.cols() + j] = matrix(i, j);
     offset[i + 1] = offset[i] + matrix.cols();
   }

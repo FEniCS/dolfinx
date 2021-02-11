@@ -295,8 +295,12 @@ face_long_edge(const mesh::Mesh& mesh)
   if (tdim == 2)
     edge_ratio_ok.resize(num_faces);
 
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
-      = mesh.geometry().x();
+  // FIXME: Use eigen map for now.
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
+        mesh.geometry().x().shape[1]);
+
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   auto c_to_v = mesh.topology().connectivity(tdim, 0);
@@ -519,8 +523,9 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
+    common::array2d<double> coords(new_vertex_coordinates);
     return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             new_vertex_coordinates, mesh::GhostMode::none);
+                             coords, mesh::GhostMode::none);
   }
 
   const std::shared_ptr<const common::IndexMap> map_c
@@ -550,8 +555,9 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
+    common::array2d<double> coords(new_vertex_coordinates);
     return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
-                             new_vertex_coordinates, mesh::GhostMode::none);
+                             coords, mesh::GhostMode::none);
   }
 
   const std::shared_ptr<const common::IndexMap> map_c

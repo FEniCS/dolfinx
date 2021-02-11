@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <vector>
@@ -32,8 +31,7 @@ void eval(
   assert(mesh);
 
   // Prepare coefficients
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coeffs
-      = dolfinx::fem::pack_coefficients(e);
+  const common::array2d<T> coeffs = dolfinx::fem::pack_coefficients(e);
 
   // Prepare constants
   const std::vector<T> constant_values = dolfinx::fem::pack_constants(e);
@@ -52,8 +50,9 @@ void eval(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh->geometry().x();
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      x_g(mesh->geometry().x().data(), mesh->geometry().x().shape[0],
+          mesh->geometry().x().shape[1]);
 
   // Create data structures used in evaluation
   const int gdim = mesh->geometry().dim();

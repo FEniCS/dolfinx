@@ -29,7 +29,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
+    common::array2d<double> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
     auto [data, offset] = graph::create_adjacency_data(topo);
     return mesh::create_mesh(
@@ -90,7 +90,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
     nc = 2 * nx * ny;
   }
 
-  Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> geom(nv, 2);
+  common::array2d<double> geom(nv, 2);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 3, Eigen::RowMajor> topo(nc, 3);
 
   // Create main vertices
@@ -217,7 +217,7 @@ mesh::Mesh build_quad(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
+    common::array2d<double> geom(0, 2);
     Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(0, 4);
     auto [data, offset] = graph::create_adjacency_data(topo);
     return mesh::create_mesh(
@@ -238,8 +238,7 @@ mesh::Mesh build_quad(MPI_Comm comm,
   const double cd = (d - c) / static_cast<double>(ny);
 
   // Create vertices
-  Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> geom(
-      (nx + 1) * (ny + 1), 2);
+  common::array2d<double> geom((nx + 1) * (ny + 1), 2);
   std::size_t vertex = 0;
   for (std::size_t ix = 0; ix <= nx; ix++)
   {

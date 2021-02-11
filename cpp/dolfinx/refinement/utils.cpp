@@ -79,8 +79,11 @@ create_new_geometry(
   }
 
   // Copy over existing mesh vertices
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().x();
+  // FIXME: Use eigen map for now.
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x_g(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
+          mesh.geometry().x().shape[1]);
 
   const std::int32_t num_vertices = map_v->size_local();
   const std::int32_t num_new_vertices = local_edge_to_new_vertex.size();
@@ -95,9 +98,10 @@ create_new_geometry(
   for (auto& e : local_edge_to_new_vertex)
     edges[i++] = e.first;
 
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
-      = mesh::midpoints(mesh, 1, edges);
-  new_vertex_coordinates.bottomRows(num_new_vertices) = midpoints;
+  const auto midpoints = mesh::midpoints(mesh, 1, edges);
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      midpoints_eigen(midpoints.data(), midpoints.shape[0], midpoints.shape[1]);
+  new_vertex_coordinates.bottomRows(num_new_vertices) = midpoints_eigen;
 
   const int gdim = mesh.geometry().dim();
   return new_vertex_coordinates.leftCols(gdim);
@@ -312,9 +316,9 @@ mesh::Mesh refinement::partition(
 
   if (redistribute)
   {
+    common::array2d<double> new_coords(new_vertex_coordinates);
     return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
-                             old_mesh.geometry().cmap(), new_vertex_coordinates,
-                             gm);
+                             old_mesh.geometry().cmap(), new_coords, gm);
   }
 
   auto partitioner = [](MPI_Comm mpi_comm, int, const mesh::CellType cell_type,
@@ -373,8 +377,10 @@ mesh::Mesh refinement::partition(
                                               std::move(dest_offsets));
   };
 
+  common::array2d<double> new_coords(new_vertex_coordinates);
+
   return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
-                           old_mesh.geometry().cmap(), new_vertex_coordinates,
-                           gm, partitioner);
+                           old_mesh.geometry().cmap(), new_coords, gm,
+                           partitioner);
 }
 //-----------------------------------------------------------------------------
