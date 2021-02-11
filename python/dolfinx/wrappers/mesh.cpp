@@ -98,8 +98,10 @@ void mesh(py::module& m)
       "cell_normals",
       [](const dolfinx::mesh::Mesh& mesh, int dim,
          const py::array_t<std::int32_t, py::array::c_style>& entities) {
-        return dolfinx::mesh::cell_normals(
+        auto normals = dolfinx::mesh::cell_normals(
             mesh, dim, tcb::span(entities.data(), entities.size()));
+        return py::array_t<double>(normals.shape, normals.strides(),
+                                   normals.data());
       },
       py::return_value_policy::move);
   // m.def("cell_normals", &dolfinx::mesh::cell_normals);
@@ -120,8 +122,10 @@ void mesh(py::module& m)
   m.def("midpoints",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list) {
-          return dolfinx::mesh::midpoints(
+          auto midpoints = dolfinx::mesh::midpoints(
               mesh, dim, tcb::span(entity_list.data(), entity_list.size()));
+          return py::array_t<double>(midpoints.shape, midpoints.strides(),
+                                     midpoints.data());
         });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
@@ -304,9 +308,9 @@ void mesh(py::module& m)
   m.def("locate_entities",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const std::function<py::array_t<bool>(
-               py::array_t<double, py::array::c_style>&)>& marker) {
+               const py::array_t<double, py::array::c_style>&)>& marker) {
           auto cpp_marker = [&](const dolfinx::common::array2d<double>& x) {
-            py::array_t<double> x_view(x.shape(), x.strides(), x.data());
+            py::array_t<double> x_view(x.shape, x.strides(), x.data());
             py::array_t<bool> marked = marker(x_view);
             return std::vector<bool>(marked.data(),
                                      marked.data() + marked.size());
@@ -318,9 +322,9 @@ void mesh(py::module& m)
   m.def("locate_entities_boundary",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const std::function<py::array_t<bool>(
-               py::array_t<double, py::array::c_style>&)>& marker) {
+               const py::array_t<double, py::array::c_style>&)>& marker) {
           auto cpp_marker = [&](const dolfinx::common::array2d<double>& x) {
-            py::array_t<double> x_view(x.shape(), x.strides(), x.data());
+            py::array_t<double> x_view(x.shape, x.strides(), x.data());
             py::array_t<bool> marked = marker(x_view);
             return std::vector<bool>(marked.data(),
                                      marked.data() + marked.size());
@@ -333,9 +337,11 @@ void mesh(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list,
            bool orient) {
-          return dolfinx::mesh::entities_to_geometry(
+          auto entities = dolfinx::mesh::entities_to_geometry(
               mesh, dim, tcb::span(entity_list.data(), entity_list.size()),
               orient);
+          return py::array_t<std::int32_t>(entities.shape, entities.strides(),
+                                           entities.data());
         });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
 
