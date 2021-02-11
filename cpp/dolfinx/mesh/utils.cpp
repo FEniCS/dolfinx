@@ -66,7 +66,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   // Get geometry dofmap and dofs
   const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-  // Use eigen map for now.
+  // FIXME: Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       geom_dofs(geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
 
@@ -100,7 +100,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
 
   // Find geometry nodes for topology entities
-  // Use eigen map for now.
+  // FIXME: Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       geom_dofs(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
                 mesh.geometry().x().shape[1]);
@@ -180,7 +180,7 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
 {
   const mesh::Geometry& geometry = mesh.geometry();
 
-  // Use eigen map for now.
+  // FIXME: Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       x(geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
@@ -236,7 +236,7 @@ std::vector<std::int32_t> mesh::locate_entities(
   }
 
   // Pack coordinates of vertices
-  // Use eigen map for now.
+  // FIXME: Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       x_nodes(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
               mesh.geometry().x().shape[1]);
@@ -324,7 +324,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
-  // Use eigen map for now.
+  // FIXME: Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       x_nodes(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
               mesh.geometry().x().shape[1]);
@@ -410,7 +410,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
 
   const mesh::Geometry& geometry = mesh.geometry();
 
-  // Use eigen map for now.
+  // FIXME: Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       geom_dofs(geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
 

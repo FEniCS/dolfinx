@@ -67,7 +67,7 @@ internal_tabulate_dof_coordinates(
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
 
-  // Use eigen map for now.
+  // FIXME: Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       x_g(mesh->geometry().x().data(), mesh->geometry().x().shape[0],

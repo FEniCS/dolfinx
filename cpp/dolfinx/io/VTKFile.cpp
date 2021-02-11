@@ -354,7 +354,7 @@ void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
   ss << std::scientific;
   ss << std::setprecision(16);
 
-  // Use eigen map for now.
+  // FIXME: Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       points(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
              mesh.geometry().x().shape[1]);

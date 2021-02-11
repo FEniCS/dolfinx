@@ -101,7 +101,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
        << "ascii"
        << "\">";
 
-  // Use eigen map for now.
+  // FIXME: Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       points(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
              mesh.geometry().x().shape[1]);

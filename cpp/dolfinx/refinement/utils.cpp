@@ -79,7 +79,7 @@ create_new_geometry(
   }
 
   // Copy over existing mesh vertices
-  // Use eigen map for now.
+  // FIXME: Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       x_g(mesh.geometry().x().data(), mesh.geometry().x().shape[0],

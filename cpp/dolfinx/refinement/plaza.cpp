@@ -295,7 +295,7 @@ face_long_edge(const mesh::Mesh& mesh)
   if (tdim == 2)
     edge_ratio_ok.resize(num_faces);
 
-  // Use eigen map for now.
+  // FIXME: Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       x(mesh.geometry().x().data(), mesh.geometry().x().shape[0],

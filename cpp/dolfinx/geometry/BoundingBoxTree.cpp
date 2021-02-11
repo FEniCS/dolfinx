@@ -40,7 +40,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  // Use eigen map for now.
+  // FIXME: Use eigen map for now.
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       geom_dofs(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
