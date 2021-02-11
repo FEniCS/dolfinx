@@ -8,6 +8,7 @@
 #include <basix.h>
 #include <dolfinx/common/log.h>
 #include <functional>
+#include <iostream>
 #include <ufc.h>
 
 using namespace dolfinx;
@@ -147,6 +148,8 @@ void FiniteElement::evaluate_reference_basis(
 
   basix::tabulate(_basix_element_handle, basix_data.data(), 0, X.data(),
                   X.rows());
+  std::cout << "X is " << X.rows() << " by " << X.cols() << "\n";
+  std::cout << "dolfin --> {\n" << basix_data << "\n}\n";
 
   assert(basix_data.cols() % scalar_reference_value_size == 0);
   const int scalar_dofs = basix_data.cols() / scalar_reference_value_size;
@@ -198,6 +201,7 @@ void FiniteElement::transform_reference_basis(
     const std::vector<double>& J, const tcb::span<const double>& detJ,
     const std::vector<double>& K) const
 {
+  std::cout << "trb\n";
   const int num_points = X.rows();
   const int scalar_dim = _space_dim / _bs;
   const int value_size = _value_size / _bs;
@@ -206,36 +210,31 @@ void FiniteElement::transform_reference_basis(
   const int Jcols = X.cols();
   const int Jrows = Jsize / Jcols;
 
-  Eigen::Map<const Eigen::ArrayXd> J_unwrapped(J.data(), J.size());
-  Eigen::Map<const Eigen::ArrayXd> K_unwrapped(K.data(), K.size());
-  Eigen::Map<const Eigen::ArrayXd> reference_values_unwrapped(
-      reference_values.data(), reference_values.size());
-
-  Eigen::Map<Eigen::ArrayXd> values_unwrapped(values.data(), values.size());
+  if ((int)(values.size()) != size_per_point * num_points)
+    throw std::runtime_error("OH NO!");
 
   for (int pt = 0; pt < num_points; ++pt)
   {
     for (int d = 0; d < scalar_dim; ++d)
     {
-      // FIXME: This can be tidied up massively once basix uses a std::vector
-      // interface instead of Eigen
-      values_unwrapped.block(pt * size_per_point + d * value_size, 0,
-                             value_size, 1)
-          = basix::map_push_forward(
-              _basix_element_handle,
-              reference_values_unwrapped.block(
-                  pt * size_per_point + d * value_size, 0, value_size, 1),
-              Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
-                                             Eigen::Dynamic, Eigen::RowMajor>>(
-                  J_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(), Jrows,
-                  Jcols),
-              detJ[pt],
-              Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
-                                             Eigen::Dynamic, Eigen::RowMajor>>(
-                  K_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(), Jrows,
-                  Jcols));
+      std::cout << pt << " " << d << "\n";
+      basix::map_push_forward(
+          _basix_element_handle,
+          values.data() + pt * size_per_point + d * value_size,
+          reference_values.data() + pt * size_per_point + d * value_size,
+          J.data() + Jsize * pt, detJ[pt], K.data() + Jsize * pt, Jrows,
+          value_size);
     }
   }
+  std::cout << "reference_values = { ";
+  for (std::size_t i = 0; i < reference_values.size(); ++i)
+    std::cout << reference_values[i] << " ";
+  std::cout << "}\n";
+  std::cout << "values = { ";
+  for (std::size_t i = 0; i < values.size(); ++i)
+    std::cout << values[i] << " ";
+  std::cout << "}\n";
+  std::cout << "/trb\n";
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
