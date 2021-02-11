@@ -6,10 +6,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import ufl
-
-from dolfinx import jit
-from dolfinx import cpp
 from cffi import FFI
+from dolfinx import cpp, jit
 
 
 def create_coordinate_map(comm, o):
