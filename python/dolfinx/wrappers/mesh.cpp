@@ -189,19 +189,28 @@ void mesh(py::module& m)
                              "Geometric dimension")
       .def_property_readonly("dofmap", &dolfinx::mesh::Geometry::dofmap)
       .def("index_map", &dolfinx::mesh::Geometry::index_map)
-      .def_property(
+      .def_property_readonly(
           "x",
           [](const dolfinx::mesh::Geometry& self) {
             const dolfinx::common::array2d<double>& x = self.x();
             return py::array_t<double>(x.shape, x.strides(), x.data(),
                                        py::cast(self));
           },
-          [](dolfinx::mesh::Geometry& self, py::array_t<double> x) {
-            dolfinx::common::array2d<double>& y = self.x();
-            std::copy(x.data(), x.data() + x.size(), y.data());
-          },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
+      //   .def_property(
+      //       "x",
+      //       [](const dolfinx::mesh::Geometry& self) {
+      //         const dolfinx::common::array2d<double>& x = self.x();
+      //         return py::array_t<double>(x.shape, x.strides(), x.data(),
+      //                                    py::cast(self));
+      //       },
+      //       [](dolfinx::mesh::Geometry& self, py::array_t<double> x) {
+      //         dolfinx::common::array2d<double>& y = self.x();
+      //         std::copy(x.data(), x.data() + x.size(), y.data());
+      //       },
+      //       "Return coordinates of all geometry points. Each row is the "
+      //       "coordinate of a point.")
       .def_property_readonly("cmap", &dolfinx::mesh::Geometry::cmap,
                              "The coordinate map")
       .def_property_readonly("input_global_indices",
