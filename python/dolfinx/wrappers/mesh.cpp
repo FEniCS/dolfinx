@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "array.h"
-#include "caster_array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <cfloat>
@@ -187,15 +186,6 @@ void mesh(py::module& m)
           py::return_value_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      // .def_property(
-      //     "x", py::overload_cast<>(&dolfinx::mesh::Geometry::x),
-      //     [](dolfinx::mesh::Geometry& self,
-      //        const dolfinx::common::array2d<double>& values) {
-      //       self.x() = values;
-      //     },
-      //     py::return_value_policy::reference_internal,
-      //     "Return coordinates of all geometry points. Each row is the "
-      //     "coordinate of a point.")
       .def_property_readonly("cmap", &dolfinx::mesh::Geometry::cmap,
                              "The coordinate map")
       .def_property_readonly("input_global_indices",
@@ -294,17 +284,30 @@ void mesh(py::module& m)
 
   m.def("locate_entities",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
-           const std::function<std::vector<bool>(
-               const dolfinx::common::array2d<double>&)>& marker) {
-          return as_pyarray(dolfinx::mesh::locate_entities(mesh, dim, marker));
+           const std::function<py::array_t<bool>(
+               py::array_t<double, py::array::c_style>&)>& marker) {
+          auto cpp_marker = [&](const dolfinx::common::array2d<double>& x) {
+            py::array_t<double> x_view(x.shape(), x.strides(), x.data());
+            py::array_t<bool> marked = marker(x_view);
+            return std::vector<bool>(marked.data(),
+                                     marked.data() + marked.size());
+          };
+          return as_pyarray(
+              dolfinx::mesh::locate_entities(mesh, dim, cpp_marker));
         });
 
   m.def("locate_entities_boundary",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
-           const std::function<std::vector<bool>(
-               const dolfinx::common::array2d<double>&)>& marker) {
+           const std::function<py::array_t<bool>(
+               py::array_t<double, py::array::c_style>&)>& marker) {
+          auto cpp_marker = [&](const dolfinx::common::array2d<double>& x) {
+            py::array_t<double> x_view(x.shape(), x.strides(), x.data());
+            py::array_t<bool> marked = marker(x_view);
+            return std::vector<bool>(marked.data(),
+                                     marked.data() + marked.size());
+          };
           return as_pyarray(
-              dolfinx::mesh::locate_entities_boundary(mesh, dim, marker));
+              dolfinx::mesh::locate_entities_boundary(mesh, dim, cpp_marker));
         });
 
   m.def("entities_to_geometry",
