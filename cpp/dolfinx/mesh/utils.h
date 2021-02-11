@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
@@ -44,12 +44,12 @@ std::vector<double> h(const Mesh& mesh,
                       const tcb::span<const std::int32_t>& entities, int dim);
 
 /// Compute normal to given cell (viewed as embedded in 3D)
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+common::array2d<double>
 cell_normals(const Mesh& mesh, int dim,
              const tcb::span<const std::int32_t>& entities);
 
 /// Compute midpoints or mesh entities of a given dimension
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+common::array2d<double>
 midpoints(const mesh::Mesh& mesh, int dim,
           const tcb::span<const std::int32_t>& entities);
 
@@ -65,9 +65,8 @@ midpoints(const mesh::Mesh& mesh, int dim,
 ///   (indices local to the process)
 std::vector<std::int32_t> locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker);
+    const std::function<std::vector<bool>(const common::array2d<double>&)>&
+        marker);
 
 /// Compute indicies of all mesh entities that are attached to an owned
 /// boundary facet and evaluate to true for the provided geometric
@@ -91,9 +90,8 @@ std::vector<std::int32_t> locate_entities(
 /// process)
 std::vector<std::int32_t> locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker);
+    const std::function<std::vector<bool>(const common::array2d<double>&)>&
+        marker);
 
 /// Compute the indices the geometry data for the vertices of the given
 /// mesh entities
@@ -106,7 +104,7 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// @return Indices in the geometry array for the mesh entity vertices, i.e.
 /// indices(i, j) is the position in the geometry array of the j-th vertex of
 /// the entity entity_list[i].
-Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+common::array2d<std::int32_t>
 entities_to_geometry(const mesh::Mesh& mesh, int dim,
                      const tcb::span<const std::int32_t>& entity_list,
                      bool orient);

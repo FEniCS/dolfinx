@@ -164,8 +164,10 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   int width = (gdim == 1) ? 2 : gdim;
 
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& _x
-      = geometry.x();
+  // FIXME: Use eigen map for now.
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> _x(
+      geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
+
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);
   if (width == 3)

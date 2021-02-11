@@ -8,7 +8,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <cfloat>
-#include <dolfinx/common/types.h>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -18,6 +18,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
+#include <iostream>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/eval.h>
@@ -95,10 +96,9 @@ void mesh(py::module& m)
   m.def("cell_normals",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const py::array_t<std::int32_t, py::array::c_style>& entities) {
-          return dolfinx::mesh::cell_normals(
-              mesh, dim, tcb::span(entities.data(), entities.size()));
+          return as_pyarray2d(dolfinx::mesh::cell_normals(
+              mesh, dim, tcb::span(entities.data(), entities.size())));
         });
-  // m.def("cell_normals", &dolfinx::mesh::cell_normals);
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
@@ -116,8 +116,8 @@ void mesh(py::module& m)
   m.def("midpoints",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list) {
-          return dolfinx::mesh::midpoints(
-              mesh, dim, tcb::span(entity_list.data(), entity_list.size()));
+          return as_pyarray2d(dolfinx::mesh::midpoints(
+              mesh, dim, tcb::span(entity_list.data(), entity_list.size())));
         });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
@@ -158,24 +158,43 @@ void mesh(py::module& m)
   // dolfinx::mesh::Geometry class
   py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(
       m, "Geometry", "Geometry object")
-      .def(py::init<std::shared_ptr<const dolfinx::common::IndexMap>,
-                    const dolfinx::graph::AdjacencyList<std::int32_t>&,
-                    const dolfinx::fem::CoordinateElement&,
-                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                       Eigen::RowMajor>&,
-                    const std::vector<std::int64_t>&>())
+      .def(py::init(
+          [](const std::shared_ptr<const dolfinx::common::IndexMap>& map,
+             const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap,
+             const dolfinx::fem::CoordinateElement& element,
+             const py::array_t<double, py::array::c_style>& x,
+             const py::array_t<std::int64_t, py::array::c_style>&
+                 global_indices) {
+            std::vector<std::int64_t> indices(global_indices.data(),
+                                              global_indices.data()
+                                                  + global_indices.size());
+            assert(x.ndim() <= 2);
+            if (x.ndim() == 1)
+            {
+              dolfinx::common::array2d<double> _x(x.shape()[0], 1);
+              std::copy(x.data(), x.data() + x.size(), _x.data());
+              return dolfinx::mesh::Geometry(map, dofmap, element,
+                                             std::move(_x), std::move(indices));
+            }
+            else
+            {
+              dolfinx::common::array2d<double> _x(x.shape()[0], x.shape()[1]);
+              std::copy(x.data(), x.data() + x.size(), _x.data());
+              return dolfinx::mesh::Geometry(map, dofmap, element,
+                                             std::move(_x), std::move(indices));
+            }
+          }))
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
       .def_property_readonly("dofmap", &dolfinx::mesh::Geometry::dofmap)
       .def("index_map", &dolfinx::mesh::Geometry::index_map)
-      .def_property(
-          "x", py::overload_cast<>(&dolfinx::mesh::Geometry::x),
-          [](dolfinx::mesh::Geometry& self,
-             const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>& values) {
-            self.x() = values;
+      .def_property_readonly(
+          "x",
+          [](const dolfinx::mesh::Geometry& self) {
+            const dolfinx::common::array2d<double>& x = self.x();
+            return py::array_t<double>(x.shape, x.strides(), x.data(),
+                                       py::cast(self));
           },
-          py::return_value_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
       .def_property_readonly("cmap", &dolfinx::mesh::Geometry::cmap,
@@ -274,33 +293,46 @@ void mesh(py::module& m)
               comm.get(), nparts, cell_type, cells, ghost_mode);
         });
 
-  m.def(
-      "locate_entities",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
-         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                 Eigen::RowMajor>>&)>& marker) {
-        return as_pyarray(dolfinx::mesh::locate_entities(mesh, dim, marker));
-      });
-  m.def(
-      "locate_entities_boundary",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
-         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                 Eigen::RowMajor>>&)>& marker) {
-        return as_pyarray(
-            dolfinx::mesh::locate_entities_boundary(mesh, dim, marker));
-      });
+  m.def("locate_entities",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           const std::function<py::array_t<bool>(
+               const py::array_t<double, py::array::c_style>&)>& marker) {
+          auto cpp_marker
+              = [&marker](const dolfinx::common::array2d<double>& x) {
+                  py::array_t<double> x_view(x.shape, x.strides(), x.data(),
+                                             py::none());
+                  py::array_t<bool> marked = marker(x_view);
+                  return std::vector<bool>(marked.data(),
+                                           marked.data() + marked.size());
+                };
+          return as_pyarray(
+              dolfinx::mesh::locate_entities(mesh, dim, cpp_marker));
+        });
+
+  m.def("locate_entities_boundary",
+        [](const dolfinx::mesh::Mesh& mesh, int dim,
+           const std::function<py::array_t<bool>(
+               const py::array_t<double, py::array::c_style>&)>& marker) {
+          auto cpp_marker
+              = [&marker](const dolfinx::common::array2d<double>& x) {
+                  py::array_t<double> x_view(x.shape, x.strides(), x.data(),
+                                             py::none());
+                  py::array_t<bool> marked = marker(x_view);
+                  return std::vector<bool>(marked.data(),
+                                           marked.data() + marked.size());
+                };
+          return as_pyarray(
+              dolfinx::mesh::locate_entities_boundary(mesh, dim, cpp_marker));
+        });
 
   m.def("entities_to_geometry",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list,
            bool orient) {
-          return dolfinx::mesh::entities_to_geometry(
+          return as_pyarray2d(dolfinx::mesh::entities_to_geometry(
               mesh, dim, tcb::span(entity_list.data(), entity_list.size()),
-              orient);
+              orient));
         });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
-
-} // namespace dolfinx_wrappers
+}
 } // namespace dolfinx_wrappers

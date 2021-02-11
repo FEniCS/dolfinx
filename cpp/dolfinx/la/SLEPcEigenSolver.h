@@ -9,7 +9,6 @@
 #ifdef HAS_SLEPC
 
 #include "dolfinx/common/MPI.h"
-#include "dolfinx/common/types.h"
 #include <memory>
 #include <petscmat.h>
 #include <petscvec.h>

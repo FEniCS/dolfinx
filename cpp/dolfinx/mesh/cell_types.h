@@ -6,12 +6,13 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <array>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
+
+#include "dolfinx/common/array2d.h"
 
 namespace dolfinx::mesh
 {
@@ -49,13 +50,12 @@ CellType cell_facet_type(CellType type);
 /// Return array entities(num entities, num vertices per entity), where
 /// entities(e, k) is the local vertex index for the kth vertex of
 /// entity e of dimension dim
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_entity_vertices(CellType type, int dim);
+dolfinx::common::array2d<int> get_entity_vertices(CellType type, int dim);
 
 /// Get entities of dimension dim1 and that make up entities of dimension
 /// dim0
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_sub_entities(CellType type, int dim0, int dim1);
+dolfinx::common::array2d<int> get_sub_entities(CellType type, int dim0,
+                                                int dim1);
 
 /// Return topological dimension of cell type
 int cell_dim(CellType type);

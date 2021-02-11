@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <Eigen/Core>
+#include <dolfinx/common/array2d.h>
 #include <vector>
 
 namespace dolfinx::fem
@@ -26,9 +26,7 @@ public:
   explicit Constant(const std::vector<T>& c) : shape(1, c.size()), value({c}) {}
 
   /// Create a rank-2 constant
-  explicit Constant(
-      const Eigen::Ref<
-          Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& c)
+  explicit Constant(const common::array2d<T>& c)
       : shape({(int)c.rows(), (int)c.cols()}), value(c.rows() * c.cols())
   {
     for (int i = 0; i < c.rows(); ++i)

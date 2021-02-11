@@ -23,7 +23,10 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   const int gdim = mesh.geometry().dim();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const int num_dofs_g = x_dofmap.num_links(0);
-  const EigenMatrixRowXd& x_g = mesh.geometry().x();
+  Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      x_g(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
+          mesh.geometry().x().shape[1]);
+
   const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 
   // Get the interpolation points on the reference cells

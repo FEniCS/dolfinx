@@ -10,6 +10,7 @@
 #include <cmath>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/graph/AdjacencyList.h>
 
 using namespace dolfinx;
@@ -18,7 +19,7 @@ using namespace dolfinx::generation;
 namespace
 {
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+common::array2d<double>
 create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
             std::array<std::size_t, 3> n)
 {
@@ -65,10 +66,10 @@ create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
         "BoxMesh has non-positive number of vertices in some dimension");
   }
 
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom(
-      range_p[1] - range_p[0], 3);
+  common::array2d<double> geom(range_p[1] - range_p[0], 3);
 
   const std::int64_t sqxy = (nx + 1) * (ny + 1);
+  std::array<double, 3> point;
   for (std::int64_t v = range_p[0]; v < range_p[1]; ++v)
   {
     const std::int64_t iz = v / sqxy;
@@ -78,7 +79,9 @@ create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
     const double z = e + ef * static_cast<double>(iz);
     const double y = c + cd * static_cast<double>(iy);
     const double x = a + ab * static_cast<double>(ix);
-    geom.row(v - range_p[0]) << x, y, z;
+    point = {x, y, z};
+    for (std::size_t i = 0; i < 3; i++)
+      geom(v - range_p[0], i) = point[i];
   }
 
   return geom;
@@ -93,8 +96,7 @@ mesh::Mesh build_tet(MPI_Comm comm,
 {
   common::Timer timer("Build BoxMesh");
 
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom
-      = create_geom(comm, p, n);
+  common::array2d<double> geom = create_geom(comm, p, n);
 
   std::int64_t nx = n[0];
   std::int64_t ny = n[1];
@@ -152,8 +154,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
                      const mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner)
 {
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom
-      = create_geom(comm, p, n);
+  common::array2d<double> geom = create_geom(comm, p, n);
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
