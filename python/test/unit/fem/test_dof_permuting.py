@@ -244,6 +244,7 @@ def test_evaluation(cell_type, space_type, space_order):
             eval_points = np.array([[0., i / N, j / N] for i in range(N + 1) for j in range(N + 1)])
         else:
             eval_points = np.array([[0., i / N, 0.] for i in range(N + 1)])
+
         for d in dofs:
             v = Function(V)
             v.vector[:] = [1 if i == d else 0 for i in range(v.vector.local_size)]

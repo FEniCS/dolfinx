@@ -75,7 +75,17 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   {
     _basix_element_handle = basix::register_element(
         family.c_str(), cell_shape.c_str(), ufc_element.degree);
-    _interpolation_matrix = basix::interpolation_matrix(_basix_element_handle);
+    std::vector<int> value_shape(basix::value_rank(_basix_element_handle));
+    basix::value_shape(_basix_element_handle, value_shape.data());
+    int basix_value_size = 1;
+    for (int w : value_shape)
+      basix_value_size *= w;
+    _interpolation_matrix.resize(
+        basix::dim(_basix_element_handle),
+        basix::interpolation_num_points(_basix_element_handle)
+            * basix_value_size);
+    basix::interpolation_matrix(_basix_element_handle,
+                                _interpolation_matrix.data());
   }
 
   // Fill value dimension
@@ -129,18 +139,20 @@ void FiniteElement::evaluate_reference_basis(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X) const
 {
-  const Eigen::ArrayXXd basix_data
-      = basix::tabulate(_basix_element_handle, 0, X)[0];
-
   const int scalar_reference_value_size = _reference_value_size / _bs;
+
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      basix_data(X.rows(), basix::dim(_basix_element_handle)
+                               * scalar_reference_value_size);
+
+  basix::tabulate(_basix_element_handle, basix_data.data(), 0, X.data(),
+                  X.rows());
 
   assert(basix_data.cols() % scalar_reference_value_size == 0);
   const int scalar_dofs = basix_data.cols() / scalar_reference_value_size;
 
   assert((int)reference_values.size()
          == X.rows() * scalar_dofs * scalar_reference_value_size);
-
-  assert(basix_data.rows() == X.rows());
 
   for (int p = 0; p < X.rows(); ++p)
     for (int d = 0; d < scalar_dofs; ++d)
@@ -163,16 +175,20 @@ void FiniteElement::evaluate_reference_basis_derivatives(
         "order 1 at the moment.");
   }
 
-  const std::vector<Eigen::ArrayXXd> basix_data
-      = basix::tabulate(_basix_element_handle, 1, X);
+  // nd = tdim + 1;
+  // FIXME
+  const int nd = 4;
+  Eigen::ArrayXXd basix_data(nd * X.rows(), basix::dim(_basix_element_handle));
+  basix::tabulate(_basix_element_handle, basix_data.data(), 1, X.data(),
+                  X.rows());
   for (int p = 0; p < X.rows(); ++p)
-    for (int d = 0; d < basix_data[0].cols() / _reference_value_size; ++d)
+    for (int d = 0; d < basix_data.cols() / _reference_value_size; ++d)
       for (int v = 0; v < _reference_value_size; ++v)
-        for (std::size_t deriv = 0; deriv < basix_data.size() - 1; ++deriv)
-          values[(p * basix_data[0].cols() + d * _reference_value_size + v)
+        for (std::size_t deriv = 0; deriv < nd; ++deriv)
+          values[(p * basix_data.cols() + d * _reference_value_size + v)
                      * (basix_data.size() - 1)
                  + deriv]
-              = basix_data[deriv](p, d * _reference_value_size + v);
+              = basix_data(p, d * _reference_value_size + v);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
@@ -190,35 +206,15 @@ void FiniteElement::transform_reference_basis(
   const int Jcols = X.cols();
   const int Jrows = Jsize / Jcols;
 
-  Eigen::Map<const Eigen::ArrayXd> J_unwrapped(J.data(), J.size());
-  Eigen::Map<const Eigen::ArrayXd> K_unwrapped(K.data(), K.size());
-  Eigen::Map<const Eigen::ArrayXd> reference_values_unwrapped(
-      reference_values.data(), reference_values.size());
-
-  Eigen::Map<Eigen::ArrayXd> values_unwrapped(values.data(), values.size());
+  if ((int)(values.size()) != size_per_point * num_points)
+    throw std::runtime_error("OH NO!");
 
   for (int pt = 0; pt < num_points; ++pt)
   {
-    for (int d = 0; d < scalar_dim; ++d)
-    {
-      // FIXME: This can be tidied up massively once basix uses a std::vector
-      // interface instead of Eigen
-      values_unwrapped.block(pt * size_per_point + d * value_size, 0,
-                             value_size, 1)
-          = basix::map_push_forward(
-              _basix_element_handle,
-              reference_values_unwrapped.block(
-                  pt * size_per_point + d * value_size, 0, value_size, 1),
-              Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
-                                             Eigen::Dynamic, Eigen::RowMajor>>(
-                  J_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(),
-                  Jrows, Jcols),
-              detJ[pt],
-              Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
-                                             Eigen::Dynamic, Eigen::RowMajor>>(
-                  K_unwrapped.block(Jsize * pt, 0, Jsize, 1).data(),
-                  Jrows, Jcols));
-    }
+    basix::map_push_forward(
+        _basix_element_handle, values.data() + pt * size_per_point,
+        reference_values.data() + pt * size_per_point, J.data() + Jsize * pt,
+        detJ[pt], K.data() + Jsize * pt, Jrows, value_size, scalar_dim);
   }
 }
 //-----------------------------------------------------------------------------
@@ -294,7 +290,12 @@ FiniteElement::interpolation_points() const
     throw std::runtime_error("Cannot get interpolation points - no basix "
                              "element handle. Maybe this is a mixed element?");
   }
-  return basix::points(_basix_element_handle);
+  const int gdim
+      = basix::cell_geometry_dimension(basix::cell_type(_basix_element_handle));
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points(
+      basix::interpolation_num_points(_basix_element_handle), gdim);
+  basix::interpolation_points(_basix_element_handle, points.data());
+  return points;
 }
 //-----------------------------------------------------------------------------
 bool FiniteElement::needs_permutation_data() const noexcept
