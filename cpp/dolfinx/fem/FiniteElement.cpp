@@ -8,7 +8,6 @@
 #include <basix.h>
 #include <dolfinx/common/log.h>
 #include <functional>
-#include <iostream>
 #include <ufc.h>
 
 using namespace dolfinx;
@@ -148,8 +147,6 @@ void FiniteElement::evaluate_reference_basis(
 
   basix::tabulate(_basix_element_handle, basix_data.data(), 0, X.data(),
                   X.rows());
-  std::cout << "X is " << X.rows() << " by " << X.cols() << "\n";
-  std::cout << "dolfin --> {\n" << basix_data << "\n}\n";
 
   assert(basix_data.cols() % scalar_reference_value_size == 0);
   const int scalar_dofs = basix_data.cols() / scalar_reference_value_size;
@@ -201,7 +198,6 @@ void FiniteElement::transform_reference_basis(
     const std::vector<double>& J, const tcb::span<const double>& detJ,
     const std::vector<double>& K) const
 {
-  std::cout << "trb\n";
   const int num_points = X.rows();
   const int scalar_dim = _space_dim / _bs;
   const int value_size = _value_size / _bs;
@@ -215,26 +211,11 @@ void FiniteElement::transform_reference_basis(
 
   for (int pt = 0; pt < num_points; ++pt)
   {
-    for (int d = 0; d < scalar_dim; ++d)
-    {
-      std::cout << pt << " " << d << "\n";
-      basix::map_push_forward(
-          _basix_element_handle,
-          values.data() + pt * size_per_point + d * value_size,
-          reference_values.data() + pt * size_per_point + d * value_size,
-          J.data() + Jsize * pt, detJ[pt], K.data() + Jsize * pt, Jrows,
-          value_size);
-    }
+    basix::map_push_forward(
+        _basix_element_handle, values.data() + pt * size_per_point,
+        reference_values.data() + pt * size_per_point, J.data() + Jsize * pt,
+        detJ[pt], K.data() + Jsize * pt, Jrows, value_size, scalar_dim);
   }
-  std::cout << "reference_values = { ";
-  for (std::size_t i = 0; i < reference_values.size(); ++i)
-    std::cout << reference_values[i] << " ";
-  std::cout << "}\n";
-  std::cout << "values = { ";
-  for (std::size_t i = 0; i < values.size(); ++i)
-    std::cout << values[i] << " ";
-  std::cout << "}\n";
-  std::cout << "/trb\n";
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept

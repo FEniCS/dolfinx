@@ -233,13 +233,9 @@ def random_evaluation_mesh(cell_type):
 def test_evaluation(cell_type, space_type, space_order):
     random.seed(4)
     for repeat in range(10):
-        print("!")
         mesh = random_evaluation_mesh(cell_type)
-        print("!.!")
         V = FunctionSpace(mesh, (space_type, space_order))
-        print("!.!!")
         dofs = [i for i in V.dofmap.cell_dofs(0) if i in V.dofmap.cell_dofs(1)]
-        print("!!")
 
         N = 5
         if cell_type == "tetrahedron":
@@ -248,15 +244,12 @@ def test_evaluation(cell_type, space_type, space_order):
             eval_points = np.array([[0., i / N, j / N] for i in range(N + 1) for j in range(N + 1)])
         else:
             eval_points = np.array([[0., i / N, 0.] for i in range(N + 1)])
-        print("!!!")
 
         for d in dofs:
-            print("!!!!")
             v = Function(V)
             v.vector[:] = [1 if i == d else 0 for i in range(v.vector.local_size)]
             values0 = v.eval(eval_points, [0 for i in eval_points])
             values1 = v.eval(eval_points, [1 for i in eval_points])
-            print("!!!!!")
             if len(eval_points) == 1:
                 values0 = [values0]
                 values1 = [values1]

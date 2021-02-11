@@ -240,7 +240,6 @@ public:
            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
            u) const
   {
-    std::cout << "START\n";
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
 
@@ -375,7 +374,6 @@ public:
         }
       }
     }
-    std::cout << "END\n";
   }
 
   /// Compute values at all mesh 'nodes'
