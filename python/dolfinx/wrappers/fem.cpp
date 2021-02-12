@@ -238,7 +238,7 @@ void fem(py::module& m)
                   double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
                   cell_geometry) {
              dolfinx::common::array2d<double> _X(X.shape()[0], X.shape()[1]);
-             std::copy(X.data(), X.data() + X.size(), _X.data());
+             std::copy_n(X.data(), X.size(), _X.data());
              self.push_forward(x, _X, cell_geometry);
            })
       .def_readwrite("non_affine_atol",

@@ -352,7 +352,7 @@ std::pair<common::array2d<std::int32_t>, std::vector<std::int32_t>>
 xdmf_utils::extract_local_entities(
     const mesh::Mesh& mesh, const int entity_dim,
     const common::array2d<std::int64_t>& entities,
-    const std::vector<std::int32_t>& values)
+    const tcb::span<const std::int32_t>& values)
 {
   if (entities.shape[0] != values.size())
     throw std::runtime_error("Number of entities and values must match");

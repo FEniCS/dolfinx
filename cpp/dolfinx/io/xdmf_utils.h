@@ -12,6 +12,7 @@
 #include <Eigen/Core>
 #include <array>
 #include <dolfinx/common/array2d.h>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <string>
@@ -95,9 +96,9 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// triangle which is owned by rank1. It will be distributed and rank1
 /// will receive (local) cell-vertex connectivity for this triangle.
 std::pair<common::array2d<std::int32_t>, std::vector<std::int32_t>>
-extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
+extract_local_entities(const mesh::Mesh& mesh, int entity_dim,
                        const common::array2d<std::int64_t>& entities,
-                       const std::vector<std::int32_t>& values);
+                       const tcb::span<const std::int32_t>& values);
 
 /// TODO: Document
 template <typename T>
