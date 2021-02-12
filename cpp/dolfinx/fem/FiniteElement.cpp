@@ -201,21 +201,13 @@ void FiniteElement::transform_reference_basis(
   const int num_points = X.rows();
   const int scalar_dim = _space_dim / _bs;
   const int value_size = _value_size / _bs;
-  const int size_per_point = scalar_dim * value_size;
   const int Jsize = J.size() / num_points;
   const int Jcols = X.cols();
   const int Jrows = Jsize / Jcols;
 
-  if ((int)(values.size()) != size_per_point * num_points)
-    throw std::runtime_error("OH NO!");
-
-  for (int pt = 0; pt < num_points; ++pt)
-  {
-    basix::map_push_forward(
-        _basix_element_handle, values.data() + pt * size_per_point,
-        reference_values.data() + pt * size_per_point, J.data() + Jsize * pt,
-        detJ[pt], K.data() + Jsize * pt, Jrows, value_size, scalar_dim);
-  }
+  basix::map_push_forward(_basix_element_handle, values.data(),
+                          reference_values.data(), J.data(), detJ.data(),
+                          K.data(), Jrows, value_size, scalar_dim, num_points);
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
