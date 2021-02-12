@@ -80,7 +80,8 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
     int basix_value_size = 1;
     for (int w : value_shape)
       basix_value_size *= w;
-    _interpolation_matrix.resize(
+
+    _interpolation_matrix = std::vector<double>(
         basix::dim(_basix_element_handle)
         * basix::interpolation_num_points(_basix_element_handle)
         * basix_value_size);

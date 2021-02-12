@@ -260,11 +260,9 @@ void interpolate(
       // Extract computed expression values for element block k
       for (int m = 0; m < value_size; ++m)
       {
-        std::copy_n(&values(k * value_size, c * X.rows()), X.rows(),
+        std::copy_n(&values(k * value_size + m, c * X.rows()), X.rows(),
                     _vals.row(m).begin());
       }
-      // _vals = values.block(k * value_size, c * X.rows(), value_size,
-      // X.rows());
 
       // Get element degrees of freedom for block
       element->interpolate(_vals, cell_info[c], tcb::make_span(_coeffs));

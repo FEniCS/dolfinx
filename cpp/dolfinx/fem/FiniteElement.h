@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -15,6 +14,8 @@
 #include <memory>
 #include <numeric>
 #include <vector>
+
+#include <iostream>
 
 struct ufc_coordinate_mapping;
 struct ufc_finite_element;
@@ -162,21 +163,17 @@ public:
   /// @param[out] dofs The element degrees of freedom (interpolants) of
   /// the expression. The call must allocate the space. Is has
   template <typename T>
-  void interpolate(const common::array2d<T>& values,
-                   std::uint32_t cell_permutation, tcb::span<T> dofs) const
-  // void interpolate(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
-  //                                     Eigen::RowMajor>& values,
-  //                  std::uint32_t cell_permutation, tcb::span<T> dofs) const
+  constexpr void interpolate(const common::array2d<T>& values,
+                             std::uint32_t cell_permutation,
+                             tcb::span<T> dofs) const
   {
-    assert((int)dofs.size() == _space_dim / _bs);
-    // Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> values_vector(
-    //     values.data(), values.size());
-    // Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> _dofs(dofs.data(),
-    // dofs.size());
+    const std::size_t rows = _space_dim / _bs;
+    assert(_space_dim % _bs == 0);
+    assert(dofs.size() == rows);
 
-    std::size_t rows = _space_dim;
-    assert(_interpolation_matrix.size() % _space_dim == 0);
-    std::size_t cols = _interpolation_matrix.size() / _space_dim;
+    // Compute dofs = Pi * x (matrix-vector multiply)
+    assert(_interpolation_matrix.size() % rows == 0);
+    const std::size_t cols = _interpolation_matrix.size() / rows;
     for (std::size_t r = 0; r < rows; ++r)
     {
       dofs[r] = std::transform_reduce(
@@ -184,7 +181,7 @@ public:
           std::next(_interpolation_matrix.begin(), r * cols + cols),
           values.data(), 0.0);
     }
-    // _dofs = _interpolation_matrix * values_vector;
+
     _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
   }
 
@@ -250,12 +247,9 @@ private:
   // The basix element identifier
   int _basix_element_handle;
 
-  // The interpolation matrix. It has shape (space_dim,
-  // num_interpolation_points *  value_size). Layout is row-major.
-
-  // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  //     _interpolation_matrix;
-  // std::vector<double> _interpolation_matrix;
+  // The interpolation matrix. It has shape (dim,
+  // num_interpolation_points*basix_value_size). Note that _space_dim =
+  // _bs * dim. Storage is row-major
   std::vector<double> _interpolation_matrix;
 };
 } // namespace dolfinx::fem
