@@ -109,8 +109,8 @@ public:
   array2d& operator=(array2d&& x) = default;
 
   /// Return a reference to the element at specified location (i, j)
-  /// param[in] i Row index
-  /// param[in] j Column index
+  /// @param[in] i Row index
+  /// @param[in] j Column index
   /// @return Reference to the (i, j) item
   /// @note No bounds checking is performed
   constexpr reference operator()(size_type i, size_type j)
@@ -120,8 +120,8 @@ public:
 
   /// Return a reference to the element at specified location (i, j)
   /// (const version)
-  /// param[in] i Row index
-  /// param[in] j Column index
+  /// @param[in] i Row index
+  /// @param[in] j Column index
   /// @return Reference to the (i, j) item
   /// @note No bounds checking is performed
   constexpr const_reference operator()(size_type i, size_type j) const
@@ -130,7 +130,16 @@ public:
   }
 
   /// Access a row in the array
-  /// param[in] i Row index
+  /// @param[in] i Row index
+  /// @return Span of the row data
+  constexpr tcb::span<value_type> row(int i)
+  {
+    size_type offset = i * shape[1];
+    return tcb::span<value_type>(std::next(_storage.data(), offset), shape[1]);
+  }
+
+  /// Access a row in the array (const version)
+  /// @param[in] i Row index
   /// @return Span of the row data
   constexpr tcb::span<const value_type> row(int i) const
   {

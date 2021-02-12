@@ -250,15 +250,21 @@ void interpolate(
 
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
+  // Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
+  common::array2d<T> _vals(value_size, X.rows());
   for (std::int32_t c : cells)
   {
     auto dofs = dofmap->cell_dofs(c);
     for (int k = 0; k < element_bs; ++k)
     {
-      // FIXME: expensive - avoid assignment
       // Extract computed expression values for element block k
-      _vals = values.block(k * value_size, c * X.rows(), value_size, X.rows());
+      for (int m = 0; m < value_size; ++m)
+      {
+        std::copy_n(&values(k * value_size, c * X.rows()), X.rows(),
+                    _vals.row(m).begin());
+      }
+      // _vals = values.block(k * value_size, c * X.rows(), value_size,
+      // X.rows());
 
       // Get element degrees of freedom for block
       element->interpolate(_vals, cell_info[c], tcb::make_span(_coeffs));
