@@ -131,14 +131,14 @@ if MPI.COMM_WORLD.rank == 0:
 
     num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
     gmsh_facet_id = model.mesh.getElementType("triangle", 2)
-    marked_facets = topologies[gmsh_facet_id]["topology"]
-    facet_values = topologies[gmsh_facet_id]["cell_data"]
+    marked_facets = topologies[gmsh_facet_id]["topology"].astype(np.int64)
+    facet_values = topologies[gmsh_facet_id]["cell_data"].astype(np.int32)
 
 else:
     gmsh_cell_id = MPI.COMM_WORLD.bcast(None, root=0)
     num_nodes = MPI.COMM_WORLD.bcast(None, root=0)
     cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
-    marked_facets, facet_values = np.empty((0, 6)), np.empty((0,))
+    marked_facets, facet_values = np.empty((0, 6)).astype(np.int64), np.empty((0,)).astype(np.int32)
 
 # Permute the topology from GMSH to DOLFIN-X ordering
 domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
@@ -209,14 +209,14 @@ if MPI.COMM_WORLD.rank == 0:
 
     num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
     gmsh_facet_id = model.mesh.getElementType("quadrangle", 2)
-    marked_facets = topologies[gmsh_facet_id]["topology"]
-    facet_values = topologies[gmsh_facet_id]["cell_data"]
+    marked_facets = topologies[gmsh_facet_id]["topology"].astype(np.int64)
+    facet_values = topologies[gmsh_facet_id]["cell_data"].astype(np.int32)
     gmsh.finalize()
 else:
     gmsh_cell_id = MPI.COMM_WORLD.bcast(None, root=0)
     num_nodes = MPI.COMM_WORLD.bcast(None, root=0)
     cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
-    marked_facets, facet_values = np.empty((0, 6)), np.empty((0,))
+    marked_facets, facet_values = np.empty((0, 6)).astype(np.int64), np.empty((0,)).astype(np.int32)
 
 
 # Permute the mesh topology from GMSH ordering to DOLFIN-X ordering
