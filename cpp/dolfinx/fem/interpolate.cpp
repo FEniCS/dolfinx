@@ -30,11 +30,11 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 
   // Get the interpolation points on the reference cells
-  const EigenMatrixRowXd X = element.interpolation_points();
+  const common::array2d<double> X = element.interpolation_points();
 
   // Push reference coordinates (X) forward to the physical coordinates
   // (x) for each cell
-  EigenMatrixRowXd x_cell(X.rows(), gdim);
+  EigenMatrixRowXd x_cell(X.shape[0], gdim);
   std::vector<double> x;
   EigenMatrixRowXd coordinate_dofs(num_dofs_g, gdim);
   for (std::int32_t c : cells)

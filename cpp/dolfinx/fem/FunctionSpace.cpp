@@ -55,8 +55,7 @@ internal_tabulate_dof_coordinates(
     throw std::runtime_error("Cannot evaluate dof coordinates - this element "
                              "does not have pointwise evaluation.");
   }
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
-      = element->interpolation_points();
+  const common::array2d<double> X = element->interpolation_points();
 
   // Get coordinate map
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
