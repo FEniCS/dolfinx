@@ -4,8 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/VTKFile.h>
@@ -71,8 +73,20 @@ void io(py::module& m)
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
-      .def("read_topology_data", &dolfinx::io::XDMFFile::read_topology_data,
-           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+      .def(
+          "read_topology_data",
+          [](dolfinx::io::XDMFFile& self, const std::string& name,
+             const std::string& xpath) {
+            return as_pyarray2d(self.read_topology_data(name, xpath));
+          },
+          py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+      .def(
+          "read_geometry_data",
+          [](dolfinx::io::XDMFFile& self, const std::string& name,
+             const std::string& xpath) {
+            return as_pyarray2d(self.read_geometry_data(name, xpath));
+          },
+          py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
