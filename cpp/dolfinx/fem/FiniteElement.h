@@ -179,7 +179,7 @@ public:
       //     std::next(_interpolation_matrix.begin(), r * cols + cols),
       //     values.data(), 0.0);
 
-      dofs[r] = std::transform_reduce(
+      dofs[i] = std::transform_reduce(
           std::next(_interpolation_matrix.begin(), i * cols),
           std::next(_interpolation_matrix.begin(), i * cols + cols),
           values.data(), T(0.0));
