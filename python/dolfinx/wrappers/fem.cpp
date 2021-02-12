@@ -66,29 +66,25 @@ void fem(py::module& m)
   m.def(
       "pack_coefficients",
       [](dolfinx::fem::Form<PetscScalar>& form) {
-        return as_pyarray2d<PetscScalar>(dolfinx::fem::pack_coefficients(form));
+        return as_pyarray2d(dolfinx::fem::pack_coefficients(form));
       },
       "Pack coefficients for a Form.");
   m.def(
       "pack_coefficients",
       [](dolfinx::fem::Expression<PetscScalar>& expr) {
-        return as_pyarray2d<PetscScalar>(dolfinx::fem::pack_coefficients(expr));
+        return as_pyarray2d(dolfinx::fem::pack_coefficients(expr));
       },
       "Pack coefficients for an Expression.");
   m.def(
       "pack_constants",
       [](const dolfinx::fem::Form<PetscScalar>& form) {
-        return as_pyarray(
-            dolfinx::fem::pack_constants<dolfinx::fem::Form<PetscScalar>>(
-                form));
+        return as_pyarray(dolfinx::fem::pack_constants(form));
       },
       "Pack constants for a Form.");
   m.def(
       "pack_constants",
       [](const dolfinx::fem::Expression<PetscScalar>& expression) {
-        return as_pyarray(
-            dolfinx::fem::pack_constants<dolfinx::fem::Expression<PetscScalar>>(
-                expression));
+        return as_pyarray(dolfinx::fem::pack_constants(expression));
       },
       "Pack constants for an Expression.");
   m.def("create_matrix", dolfinx::fem::create_matrix,
