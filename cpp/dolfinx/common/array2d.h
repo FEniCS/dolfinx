@@ -82,6 +82,15 @@ public:
     std::copy(array.data(), array.data() + array.size(), _storage.begin());
   }
 
+  /// @todo Use suitable std::enable_if to make this more general
+  /// Constructs a two dimensional array from a vector
+  template <typename Vector>
+  array2d(std::array<size_type, 2> shape, Vector&& x)
+      : shape(shape), _storage(std::forward<Vector>(x))
+  {
+    // Do nothing
+  }
+
   /// Construct a two dimensional array using nested initializer lists
   /// @param[in] list The nested initializer list
   constexpr array2d(std::initializer_list<std::initializer_list<T>> list)

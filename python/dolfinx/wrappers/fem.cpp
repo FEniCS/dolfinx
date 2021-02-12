@@ -162,8 +162,14 @@ void fem(py::module& m)
         return dolfinx::fem::FiniteElement(*p);
       }))
       .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
-      .def_property_readonly("interpolation_points",
-                             &dolfinx::fem::FiniteElement::interpolation_points)
+      //   .def_property_readonly("interpolation_points",
+      //                          &dolfinx::fem::FiniteElement::interpolation_points)
+      .def_property_readonly(
+          "interpolation_points",
+          [](const dolfinx::fem::FiniteElement& self) {
+            dolfinx::common::array2d p = self.interpolation_points();
+            return py::array_t<double>(p.shape, p.strides(), p.data());
+          })
       .def_property_readonly("interpolation_ident",
                              &dolfinx::fem::FiniteElement::interpolation_ident)
       .def_property_readonly("value_rank",
