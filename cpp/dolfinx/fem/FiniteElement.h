@@ -164,21 +164,11 @@ public:
     assert(dofs.size() == rows);
 
     // Compute dofs = Pi * x (matrix-vector multiply)
-    tcb::span vals(values.data(), values.shape[0] * values.shape[1]);
     assert(_interpolation_matrix.size() % rows == 0);
     const std::size_t cols = _interpolation_matrix.size() / rows;
     for (std::size_t i = 0; i < rows; ++i)
     {
-      // dofs[i] = 0;
-      // for (std::size_t j = 0; j < cols; ++j)
-      //   dofs[i] += _interpolation_matrix[i * cols + j] * vals[j];
-
-      // The doesn't work for complex values
-      // dofs[r] = std::transform_reduce(
-      //     std::next(_interpolation_matrix.begin(), r * cols),
-      //     std::next(_interpolation_matrix.begin(), r * cols + cols),
-      //     values.data(), 0.0);
-
+      // Dot product between row i of the matrix and 'values'
       dofs[i] = std::transform_reduce(
           std::next(_interpolation_matrix.begin(), i * cols),
           std::next(_interpolation_matrix.begin(), i * cols + cols),
