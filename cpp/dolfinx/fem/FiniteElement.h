@@ -166,12 +166,16 @@ public:
     // Compute dofs = Pi * x (matrix-vector multiply)
     assert(_interpolation_matrix.size() % rows == 0);
     const std::size_t cols = _interpolation_matrix.size() / rows;
-    for (std::size_t r = 0; r < rows; ++r)
+    for (std::size_t i = 0; i < rows; ++i)
     {
-      dofs[r] = std::transform_reduce(
-          std::next(_interpolation_matrix.begin(), r * cols),
-          std::next(_interpolation_matrix.begin(), r * cols + cols),
-          values.data(), 0.0);
+      dofs[i] = 0;
+      for (std::size_t j = 0; j < cols; ++j)
+        dofs[i] += _interpolation_matrix[i * cols + j] * values[j];
+      // The doesn't work for complex values
+      // dofs[r] = std::transform_reduce(
+      //     std::next(_interpolation_matrix.begin(), r * cols),
+      //     std::next(_interpolation_matrix.begin(), r * cols + cols),
+      //     values.data(), 0.0);
     }
 
     _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
