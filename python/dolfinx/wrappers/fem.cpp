@@ -162,8 +162,10 @@ void fem(py::module& m)
         return dolfinx::fem::FiniteElement(*p);
       }))
       .def("num_sub_elements", &dolfinx::fem::FiniteElement::num_sub_elements)
-      .def_property_readonly("interpolation_points",
-                             &dolfinx::fem::FiniteElement::interpolation_points)
+      .def("interpolation_points",
+           [](const dolfinx::fem::FiniteElement& self) {
+             return as_pyarray2d(self.interpolation_points());
+           })
       .def_property_readonly("interpolation_ident",
                              &dolfinx::fem::FiniteElement::interpolation_ident)
       .def_property_readonly("value_rank",
@@ -226,7 +228,19 @@ void fem(py::module& m)
       m, "CoordinateElement", "Coordinate map element")
       .def_property_readonly("dof_layout",
                              &dolfinx::fem::CoordinateElement::dof_layout)
-      .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward)
+      .def("push_forward",
+           [](const dolfinx::fem::CoordinateElement& self,
+              Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                      Eigen::RowMajor>>
+                  x,
+              const py::array_t<double, py::array::c_style>& X,
+              const Eigen::Ref<const Eigen::Array<
+                  double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
+                  cell_geometry) {
+             dolfinx::common::array2d<double> _X(X.shape()[0], X.shape()[1]);
+             std::copy(X.data(), X.data() + X.size(), _X.data());
+             self.push_forward(x, _X, cell_geometry);
+           })
       .def_readwrite("non_affine_atol",
                      &dolfinx::fem::CoordinateElement::non_affine_atol)
       .def_readwrite("non_affine_max_its",
