@@ -228,16 +228,6 @@ void fem(py::module& m)
       m, "CoordinateElement", "Coordinate map element")
       .def_property_readonly("dof_layout",
                              &dolfinx::fem::CoordinateElement::dof_layout)
-      //   .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward)
-      //   void push_forward(
-      //       Eigen::Ref<
-      //           Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-      //           Eigen::RowMajor>> x,
-      //       const common::array2d<double>& X,
-      //       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-      //                                           Eigen::Dynamic,
-      //                                           Eigen::RowMajor>>&
-      //           cell_geometry) const;
       .def("push_forward",
            [](const dolfinx::fem::CoordinateElement& self,
               Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
