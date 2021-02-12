@@ -19,14 +19,14 @@ namespace dolfinx::graph
 
 /// Construct adjacency list data for a problem with a fixed number of
 /// links (edges) for each node
-/// @param [in] matrix Two-dimensional array of adjacency data where
+/// @param [in] array Two-dimensional array of adjacency data where
 /// matrix(i, j) is the jth neighbor of the ith node
 /// @return Adjacency list data and offset array
 template <typename T>
 auto create_adjacency_data(const common::array2d<T>& array)
 {
   std::vector<T> data(array.size());
-  std::vector<std::int32_t> offset(array.shape[1] + 1, 0);
+  std::vector<std::int32_t> offset(array.shape[0] + 1, 0);
   for (std::size_t i = 0; i < array.shape[0]; ++i)
   {
     for (std::size_t j = 0; j < array.shape[1]; ++j)
