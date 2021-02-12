@@ -319,11 +319,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
   std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
-  // Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
-  // facet_permutations(
-  //     facets_per_cell, num_cells);
   std::vector<std::uint8_t> facet_permutations(num_cells * facets_per_cell);
-
   std::int32_t used_bits = 0;
   if (tdim > 2)
   {
