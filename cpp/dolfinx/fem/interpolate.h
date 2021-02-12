@@ -207,10 +207,8 @@ void interpolate(
   auto mesh = u.function_space()->mesh();
   assert(mesh);
 
-  // TODO: remove this call
   // Get the interpolation points on the reference cells
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
-      = element->interpolation_points();
+  const common::array2d<double> X = element->interpolation_points();
 
   mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
@@ -243,15 +241,14 @@ void interpolate(
 
   // Check that return type from f is the correct shape
   if ((values.rows() != value_size * element_bs)
-      or (values.cols() != cells.size() * X.rows()))
+      or (values.cols() != cells.size() * X.shape[0]))
   {
     throw std::runtime_error("Interpolation data has the wrong shape.");
   }
 
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
-  // Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
-  common::array2d<T> _vals(value_size, X.rows());
+  common::array2d<T> _vals(value_size, X.shape[0]);
   for (std::int32_t c : cells)
   {
     auto dofs = dofmap->cell_dofs(c);
@@ -260,7 +257,7 @@ void interpolate(
       // Extract computed expression values for element block k
       for (int m = 0; m < value_size; ++m)
       {
-        std::copy_n(&values(k * value_size + m, c * X.rows()), X.rows(),
+        std::copy_n(&values(k * value_size + m, c * X.shape[0]), X.shape[0],
                     _vals.row(m).begin());
       }
 

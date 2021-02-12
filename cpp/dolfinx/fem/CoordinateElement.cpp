@@ -67,19 +67,17 @@ void CoordinateElement::push_forward(
     Eigen::Ref<
         Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         x,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X,
+    const common::array2d<double>& X,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& cell_geometry) const
 {
-  assert(x.rows() == X.rows());
+  assert(x.rows() == (int)X.shape[0]);
   assert(x.cols() == this->geometric_dimension());
-  assert(X.cols() == this->topological_dimension());
+  assert((int)X.shape[1] == this->topological_dimension());
 
   // Compute physical coordinates
-  Eigen::MatrixXd phi(
-      X.rows(), cell_geometry.rows());
-  basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.rows());
+  Eigen::MatrixXd phi(X.shape[0], cell_geometry.rows());
+  basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[1]);
   x = phi * cell_geometry.matrix();
 }
 //-----------------------------------------------------------------------------

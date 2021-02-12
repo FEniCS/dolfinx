@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -14,8 +13,6 @@
 #include <memory>
 #include <numeric>
 #include <vector>
-
-#include <iostream>
 
 struct ufc_coordinate_mapping;
 struct ufc_finite_element;
@@ -86,35 +83,31 @@ public:
 
   /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
-  void evaluate_reference_basis(
-      std::vector<double>& values,
-      const Eigen::Ref<const Eigen::Array<
-          double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
+  void evaluate_reference_basis(std::vector<double>& values,
+                                const common::array2d<double>& X) const;
 
   /// Evaluate all basis function derivatives of given order at given points in
   /// reference cell
   // reference_value_derivatives[num_points][num_dofs][reference_value_size][num_derivatives]
-  void evaluate_reference_basis_derivatives(
-      std::vector<double>& reference_values, int order,
-      const Eigen::Ref<const Eigen::Array<
-          double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
+  void
+  evaluate_reference_basis_derivatives(std::vector<double>& reference_values,
+                                       int order,
+                                       const common::array2d<double>& X) const;
 
   /// Push basis functions forward to physical element
-  void transform_reference_basis(
-      std::vector<double>& values, const std::vector<double>& reference_values,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& X,
-      const std::vector<double>& J, const tcb::span<const double>& detJ,
-      const std::vector<double>& K) const;
+  void transform_reference_basis(std::vector<double>& values,
+                                 const std::vector<double>& reference_values,
+                                 const common::array2d<double>& X,
+                                 const std::vector<double>& J,
+                                 const tcb::span<const double>& detJ,
+                                 const std::vector<double>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
       std::vector<double>& values, std::size_t order,
       const std::vector<double>& reference_values,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& X,
-      const std::vector<double>& J, const tcb::span<const double>& detJ,
-      const std::vector<double>& K) const;
+      const common::array2d<double>& X, const std::vector<double>& J,
+      const tcb::span<const double>& detJ, const std::vector<double>& K) const;
 
   /// Get the number of sub elements (for a mixed element)
   /// @return the Number of sub elements
@@ -141,8 +134,7 @@ public:
   /// nodal positions. For other elements the points will typically be
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  interpolation_points() const;
+  common::array2d<double> interpolation_points() const;
 
   /// @todo Document shape/layout of @p values
   /// @todo Make the interpolating dofs in/out argument for efficiency
