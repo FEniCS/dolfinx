@@ -224,7 +224,7 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
 }
 //----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+common::array2d<double>
 xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
                               const pugi::xml_node& node)
 {
@@ -236,7 +236,7 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
   pugi::xml_attribute geometry_type_attr
       = geometry_node.attribute("GeometryType");
   assert(geometry_type_attr);
-  int gdim = -1;
+  std::size_t gdim = 0;
   const std::string geometry_type = geometry_type_attr.value();
   if (geometry_type == "XY")
     gdim = 2;
@@ -254,18 +254,17 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
   assert(geometry_data_node);
   const std::vector gdims = xdmf_utils::get_dataset_shape(geometry_data_node);
   assert(gdims.size() == 2);
-  assert(gdims[1] == gdim);
+  assert(gdims[1] == (int)gdim);
 
   // Read geometry data
-  const std::vector geometry_data
+  std::vector geometry_data
       = xdmf_read::get_dataset<double>(comm, geometry_data_node, h5_id);
   const std::size_t num_local_nodes = geometry_data.size() / gdim;
-  return Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                       Eigen::RowMajor>>(geometry_data.data(),
-                                                         num_local_nodes, gdim);
+  return common::array2d<double>({num_local_nodes, gdim},
+                                 std::move(geometry_data));
 }
 //----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+common::array2d<std::int64_t>
 xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
                               const pugi::xml_node& node)
 {
