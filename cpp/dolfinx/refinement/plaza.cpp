@@ -321,19 +321,18 @@ face_long_edge(const mesh::Mesh& mesh)
     auto it0 = std::find(cell_vertices.begin(), cell_vertices.end(),
                          edge_vertices[0]);
     assert(it0 != cell_vertices.end());
-    const int local0 = std::distance(cell_vertices.begin(), it0);
+    const std::size_t local0 = std::distance(cell_vertices.begin(), it0);
     auto it1 = std::find(cell_vertices.begin(), cell_vertices.end(),
                          edge_vertices[1]);
     assert(it1 != cell_vertices.end());
-    const int local1 = std::distance(cell_vertices.begin(), it1);
+    const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
     auto x_dofs = x_dofmap.links(c);
     auto x0 = x.row(x_dofs[local0]);
     auto x1 = x.row(x_dofs[local1]);
-    double length = 0.0;
-    for (std::size_t i = 0; i < x.shape[1]; ++i)
-      length += (x0[i] - x1[i]) * (x0[i] - x1[i]);
-    edge_length[e] = std::sqrt(length);
+    edge_length[e] = std::sqrt(std::transform_reduce(
+        x0.begin(), x0.end(), x1.begin(), 0.0, std::plus<>(),
+        [](double x, double y) { return (x - y) * (x - y); }));
   }
 
   // Get longest edge of each face
