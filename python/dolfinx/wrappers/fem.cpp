@@ -66,19 +66,13 @@ void fem(py::module& m)
   m.def(
       "pack_coefficients",
       [](dolfinx::fem::Form<PetscScalar>& form) {
-        dolfinx::common::array2d<PetscScalar> coeffs
-            = dolfinx::fem::pack_coefficients(form);
-        return py::array_t<PetscScalar>(coeffs.shape, coeffs.strides(),
-                                        coeffs.data());
+        return as_pyarray2d<PetscScalar>(dolfinx::fem::pack_coefficients(form));
       },
       "Pack coefficients for a Form.");
   m.def(
       "pack_coefficients",
       [](dolfinx::fem::Expression<PetscScalar>& expr) {
-        dolfinx::common::array2d<PetscScalar> coeffs
-            = dolfinx::fem::pack_coefficients(expr);
-        return py::array_t<PetscScalar>(coeffs.shape, coeffs.strides(),
-                                        coeffs.data());
+        return as_pyarray2d<PetscScalar>(dolfinx::fem::pack_coefficients(expr));
       },
       "Pack coefficients for an Expression.");
   m.def(
@@ -247,9 +241,9 @@ void fem(py::module& m)
   // dolfinx::fem::DirichletBC
   py::class_<dolfinx::fem::DirichletBC<PetscScalar>,
              std::shared_ptr<dolfinx::fem::DirichletBC<PetscScalar>>>
-      dirichletbc(
-          m, "DirichletBC",
-          "Object for representing Dirichlet (essential) boundary conditions");
+      dirichletbc(m, "DirichletBC",
+                  "Object for representing Dirichlet (essential) boundary "
+                  "conditions");
 
   dirichletbc
       .def(py::init(
@@ -590,10 +584,12 @@ void fem(py::module& m)
                     *self.function_space()->mesh(), cells);
             dolfinx::fem::interpolate_c<PetscScalar>(self, _f, x, cells);
           },
-          "Interpolate using a pointer to an expression with a C signature")
-      .def_property_readonly(
-          "vector", &dolfinx::fem::Function<PetscScalar>::vector,
-          "Return the PETSc vector associated with the finite element Function")
+          "Interpolate using a pointer to an expression with a C "
+          "signature")
+      .def_property_readonly("vector",
+                             &dolfinx::fem::Function<PetscScalar>::vector,
+                             "Return the PETSc vector associated with "
+                             "the finite element Function")
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::fem::Function<PetscScalar>::x),
           "Return the vector associated with the finite element Function")
