@@ -77,7 +77,7 @@ void CoordinateElement::push_forward(
 
   // Compute physical coordinates
   Eigen::MatrixXd phi(X.shape[0], cell_geometry.rows());
-  basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[1]);
+  basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[0]);
   x = phi * cell_geometry.matrix();
 }
 //-----------------------------------------------------------------------------
