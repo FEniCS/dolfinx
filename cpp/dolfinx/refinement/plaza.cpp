@@ -295,12 +295,6 @@ face_long_edge(const mesh::Mesh& mesh)
   if (tdim == 2)
     edge_ratio_ok.resize(num_faces);
 
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      x(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
-        mesh.geometry().x().shape[1]);
-
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   auto c_to_v = mesh.topology().connectivity(tdim, 0);
@@ -314,6 +308,7 @@ face_long_edge(const mesh::Mesh& mesh)
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
   std::vector<double> edge_length(map_e->size_local() + map_e->num_ghosts());
+  const common::array2d<double>& x = mesh.geometry().x();
   for (std::size_t e = 0; e < edge_length.size(); ++e)
   {
     // Get first attached cell
@@ -333,8 +328,12 @@ face_long_edge(const mesh::Mesh& mesh)
     const int local1 = std::distance(cell_vertices.begin(), it1);
 
     auto x_dofs = x_dofmap.links(c);
-    edge_length[e]
-        = (x.row(x_dofs[local0]) - x.row(x_dofs[local1])).matrix().norm();
+    auto x0 = x.row(x_dofs[local0]);
+    auto x1 = x.row(x_dofs[local1]);
+    double length = 0.0;
+    for (std::size_t i = 0; i < x.shape[1]; ++i)
+      length += (x0[i] - x1[i]) * (x0[i] - x1[i]);
+    edge_length[e] = std::sqrt(length);
   }
 
   // Get longest edge of each face
@@ -385,10 +384,8 @@ face_long_edge(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 // Convenient interface for both uniform and marker refinement
-std::tuple<
-    graph::AdjacencyList<std::int64_t>,
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    std::vector<std::int32_t>>
+std::tuple<graph::AdjacencyList<std::int64_t>, common::array2d<double>,
+           std::vector<std::int32_t>>
 compute_refinement(
     const MPI_Comm& neighbor_comm, const std::vector<bool>& marked_edges,
     const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
@@ -578,10 +575,8 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
                                redistribute, ghost_mode);
 }
 //------------------------------------------------------------------------------
-std::tuple<
-    graph::AdjacencyList<std::int64_t>,
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    std::vector<std::int32_t>>
+std::tuple<graph::AdjacencyList<std::int64_t>, common::array2d<double>,
+           std::vector<std::int32_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh)
 {
 
@@ -610,10 +605,8 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh)
           std::move(parent_cell)};
 }
 //------------------------------------------------------------------------------
-std::tuple<
-    graph::AdjacencyList<std::int64_t>,
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    std::vector<std::int32_t>>
+std::tuple<graph::AdjacencyList<std::int64_t>, common::array2d<double>,
+           std::vector<std::int32_t>>
 plaza::compute_refinement_data(
     const mesh::Mesh& mesh,
     const mesh::MeshTags<std::int8_t>& refinement_marker)
