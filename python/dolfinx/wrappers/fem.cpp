@@ -63,12 +63,24 @@ void fem(py::module& m)
   m.def("create_sparsity_pattern",
         &dolfinx::fem::create_sparsity_pattern<PetscScalar>,
         "Create a sparsity pattern for bilinear form.");
-  m.def("pack_coefficients",
-        &dolfinx::fem::pack_coefficients<dolfinx::fem::Form<PetscScalar>>,
-        "Pack coefficients for a Form.");
-  m.def("pack_coefficients",
-        &dolfinx::fem::pack_coefficients<dolfinx::fem::Expression<PetscScalar>>,
-        "Pack coefficients for an Expression.");
+  m.def(
+      "pack_coefficients",
+      [](dolfinx::fem::Form<PetscScalar>& form) {
+        dolfinx::common::array2d<PetscScalar> coeffs
+            = dolfinx::fem::pack_coefficients(form);
+        return py::array_t<PetscScalar>(coeffs.shape, coeffs.strides(),
+                                        coeffs.data());
+      },
+      "Pack coefficients for a Form.");
+  m.def(
+      "pack_coefficients",
+      [](dolfinx::fem::Expression<PetscScalar>& expr) {
+        dolfinx::common::array2d<PetscScalar> coeffs
+            = dolfinx::fem::pack_coefficients(expr);
+        return py::array_t<PetscScalar>(coeffs.shape, coeffs.strides(),
+                                        coeffs.data());
+      },
+      "Pack coefficients for an Expression.");
   m.def(
       "pack_constants",
       [](const dolfinx::fem::Form<PetscScalar>& form) {

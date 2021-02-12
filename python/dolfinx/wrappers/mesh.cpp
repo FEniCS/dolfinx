@@ -188,10 +188,10 @@ void mesh(py::module& m)
                              "Geometric dimension")
       .def_property_readonly("dofmap", &dolfinx::mesh::Geometry::dofmap)
       .def("index_map", &dolfinx::mesh::Geometry::index_map)
-      .def_property_readonly(
+      .def(
           "x",
-          [](const dolfinx::mesh::Geometry& self) {
-            const dolfinx::common::array2d<double>& x = self.x();
+          [](dolfinx::mesh::Geometry& self) {
+            dolfinx::common::array2d<double>& x = self.x();
             return py::array_t<double>(x.shape, x.strides(), x.data(),
                                        py::cast(self));
           },
