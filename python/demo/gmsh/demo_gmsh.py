@@ -83,13 +83,13 @@ if MPI.COMM_WORLD.rank == 0:
     cell_data = topologies[gmsh_cell_id]["cell_data"]
     num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
     gmsh_facet_id = model.mesh.getElementType("triangle", 1)
-    marked_facets = topologies[gmsh_facet_id]["topology"]
-    facet_values = topologies[gmsh_facet_id]["cell_data"]
+    marked_facets = topologies[gmsh_facet_id]["topology"].astype(np.int64)
+    facet_values = topologies[gmsh_facet_id]["cell_data"].astype(np.int32)
 else:
     gmsh_cell_id = MPI.COMM_WORLD.bcast(None, root=0)
     num_nodes = MPI.COMM_WORLD.bcast(None, root=0)
     cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
-    marked_facets, facet_values = np.empty((0, 3)), np.empty((0,))
+    marked_facets, facet_values = np.empty((0, 3), dtype=np.int64), np.empty((0,), dtype=np.int32)
 
 
 mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, 3))
