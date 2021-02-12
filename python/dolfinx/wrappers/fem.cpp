@@ -63,26 +63,28 @@ void fem(py::module& m)
   m.def("create_sparsity_pattern",
         &dolfinx::fem::create_sparsity_pattern<PetscScalar>,
         "Create a sparsity pattern for bilinear form.");
-  m.def("pack_coefficients",
-        &dolfinx::fem::pack_coefficients<dolfinx::fem::Form<PetscScalar>>,
-        "Pack coefficients for a Form.");
-  m.def("pack_coefficients",
-        &dolfinx::fem::pack_coefficients<dolfinx::fem::Expression<PetscScalar>>,
-        "Pack coefficients for an Expression.");
+  m.def(
+      "pack_coefficients",
+      [](dolfinx::fem::Form<PetscScalar>& form) {
+        return as_pyarray2d(dolfinx::fem::pack_coefficients(form));
+      },
+      "Pack coefficients for a Form.");
+  m.def(
+      "pack_coefficients",
+      [](dolfinx::fem::Expression<PetscScalar>& expr) {
+        return as_pyarray2d(dolfinx::fem::pack_coefficients(expr));
+      },
+      "Pack coefficients for an Expression.");
   m.def(
       "pack_constants",
       [](const dolfinx::fem::Form<PetscScalar>& form) {
-        return as_pyarray(
-            dolfinx::fem::pack_constants<dolfinx::fem::Form<PetscScalar>>(
-                form));
+        return as_pyarray(dolfinx::fem::pack_constants(form));
       },
       "Pack constants for a Form.");
   m.def(
       "pack_constants",
       [](const dolfinx::fem::Expression<PetscScalar>& expression) {
-        return as_pyarray(
-            dolfinx::fem::pack_constants<dolfinx::fem::Expression<PetscScalar>>(
-                expression));
+        return as_pyarray(dolfinx::fem::pack_constants(expression));
       },
       "Pack constants for an Expression.");
   m.def("create_matrix", dolfinx::fem::create_matrix,
@@ -249,9 +251,9 @@ void fem(py::module& m)
   // dolfinx::fem::DirichletBC
   py::class_<dolfinx::fem::DirichletBC<PetscScalar>,
              std::shared_ptr<dolfinx::fem::DirichletBC<PetscScalar>>>
-      dirichletbc(
-          m, "DirichletBC",
-          "Object for representing Dirichlet (essential) boundary conditions");
+      dirichletbc(m, "DirichletBC",
+                  "Object for representing Dirichlet (essential) boundary "
+                  "conditions");
 
   dirichletbc
       .def(py::init(
@@ -592,10 +594,12 @@ void fem(py::module& m)
                     *self.function_space()->mesh(), cells);
             dolfinx::fem::interpolate_c<PetscScalar>(self, _f, x, cells);
           },
-          "Interpolate using a pointer to an expression with a C signature")
-      .def_property_readonly(
-          "vector", &dolfinx::fem::Function<PetscScalar>::vector,
-          "Return the PETSc vector associated with the finite element Function")
+          "Interpolate using a pointer to an expression with a C "
+          "signature")
+      .def_property_readonly("vector",
+                             &dolfinx::fem::Function<PetscScalar>::vector,
+                             "Return the PETSc vector associated with "
+                             "the finite element Function")
       .def_property_readonly(
           "x", py::overload_cast<>(&dolfinx::fem::Function<PetscScalar>::x),
           "Return the vector associated with the finite element Function")
