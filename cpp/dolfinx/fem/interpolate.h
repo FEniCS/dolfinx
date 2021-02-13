@@ -55,10 +55,7 @@ void interpolate(Function<T>& u, const Function<T>& v);
 template <typename T>
 void interpolate(
     Function<T>& u,
-    const std::function<
-        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
-            const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                Eigen::RowMajor>>&)>& f,
+    const std::function<common::array2d<T>(const common::array2d<double>&)>& f,
     const common::array2d<double>& x,
     const tcb::span<const std::int32_t>& cells);
 
@@ -79,13 +76,11 @@ void interpolate(
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
 template <typename T>
-void interpolate_c(
-    Function<T>& u,
-    const std::function<void(
-        Eigen::Ref<
-            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
-        const common::array2d<double>&)>& f,
-    const common::array2d<double>& x, const tcb::span<std::int32_t>& cells);
+void interpolate_c(Function<T>& u,
+                   const std::function<void(common::array2d<T>&,
+                                            const common::array2d<double>&)>& f,
+                   const common::array2d<double>& x,
+                   const tcb::span<const std::int32_t>& cells);
 
 namespace detail
 {
@@ -183,10 +178,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
 template <typename T>
 void interpolate(
     Function<T>& u,
-    const std::function<
-        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
-            const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                Eigen::RowMajor>>&)>& f,
+    const std::function<common::array2d<T>(const common::array2d<double>&)>& f,
     const common::array2d<double>& x,
     const tcb::span<const std::int32_t>& cells)
 {
@@ -217,15 +209,17 @@ void interpolate(
   // and the number of columns is equal to the number of evaluation
   // points. Scalar case needs special handling as pybind11 will return
   // a column array when we need a row array.
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values;
-  Eigen::Map<const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>> _x(
-      x.data(), x.shape[0], x.shape[1]);
-  values = f(_x);
+  // Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values;
+  // Eigen::Map<const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>
+  // _x(
+  //     x.data(), x.shape[0], x.shape[1]);
+  common::array2d<T> values = f(x);
 
   // FIXME: This is hack for NumPy/pybind11/Eigen that returns 1D arrays a
   // column vectors. Fix in the pybind11 layer?
-  if (element->value_size() == 1 and values.rows() > 1)
-    values = values.transpose().eval();
+  // if (element->value_size() == 1 and values.shape[0] > 1)
+  //   throw std::runtime_error("**** problem");
+  //   values = values.transpose().eval();
 
   // Get dofmap
   const auto dofmap = u.function_space()->dofmap();
@@ -240,8 +234,8 @@ void interpolate(
   const int value_size = element->value_size() / element_bs;
 
   // Check that return type from f is the correct shape
-  if ((values.rows() != value_size * element_bs)
-      or (values.cols() != cells.size() * X.shape[0]))
+  if ((values.shape[0] != value_size * element_bs)
+      or (values.shape[1] != cells.size() * X.shape[0]))
   {
     throw std::runtime_error("Interpolation data has the wrong shape.");
   }
@@ -277,13 +271,11 @@ void interpolate(
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void interpolate_c(
-    Function<T>& u,
-    const std::function<void(
-        Eigen::Ref<
-            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
-        const common::array2d<double>&)>& f,
-    const common::array2d<double>& x, const tcb::span<std::int32_t>& cells)
+void interpolate_c(Function<T>& u,
+                   const std::function<void(common::array2d<T>&,
+                                            const common::array2d<double>&)>& f,
+                   const common::array2d<double>& x,
+                   const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
@@ -294,8 +286,7 @@ void interpolate_c(
                                          1, std::multiplies<>());
 
   auto fn = [value_size, &f](const common::array2d<double>& x) {
-    Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
-        value_size, x.shape[1]);
+    common::array2d<T> values(value_size, x.shape[1]);
     f(values, x);
     return values;
   };

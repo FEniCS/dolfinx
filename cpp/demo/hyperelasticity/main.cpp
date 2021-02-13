@@ -147,15 +147,14 @@ int main(int argc, char* argv[])
       // Large angle of rotation (60 degrees)
       const double theta = 1.04719755;
 
-      Eigen::Array<PetscScalar, 3, Eigen::Dynamic, Eigen::RowMajor> values(
-          3, x.cols());
-      for (int i = 0; i < x.cols(); ++i)
+      common::array2d<PetscScalar> values(3, x.shape[1]);
+      for (std::size_t i = 0; i < x.shape[1]; ++i)
       {
         // New coordinates
-        double y
-            = y0 + (x(1, i) - y0) * cos(theta) - (x(2, i) - z0) * sin(theta);
-        double z
-            = z0 + (x(1, i) - y0) * sin(theta) + (x(2, i) - z0) * cos(theta);
+        double y = y0 + (x(1, i) - y0) * std::cos(theta)
+                   - (x(2, i) - z0) * std::sin(theta);
+        double z = z0 + (x(1, i) - y0) * std::sin(theta)
+                   + (x(2, i) - z0) * std::cos(theta);
 
         // Rotate at right end
         values(0, i) = 0.0;
@@ -167,10 +166,8 @@ int main(int argc, char* argv[])
     });
 
     auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
-    u_clamp->interpolate([](auto& x) {
-      return Eigen::Array<PetscScalar, 3, Eigen::Dynamic,
-                          Eigen::RowMajor>::Zero(3, x.cols());
-    });
+    u_clamp->interpolate(
+        [](auto& x) { return common::array2d<PetscScalar>(3, x.shape[1]); });
 
     // Create Dirichlet boundary conditions
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);

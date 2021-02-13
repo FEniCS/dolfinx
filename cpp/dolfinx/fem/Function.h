@@ -200,11 +200,9 @@ public:
 
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
-  void
-  interpolate(const std::function<
-              Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
-                  const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                      Eigen::RowMajor>>&)>& f)
+  void interpolate(
+      const std::function<common::array2d<T>(const common::array2d<double>&)>&
+          f)
   {
     assert(_function_space);
     assert(_function_space->element());

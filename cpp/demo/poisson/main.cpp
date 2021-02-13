@@ -175,11 +175,22 @@ int main(int argc, char* argv[])
         u0, std::move(bdofs))};
 
     f->interpolate([](auto& x) {
-      auto dx = Eigen::square(x - 0.5);
-      return 10.0 * Eigen::exp(-(dx.row(0) + dx.row(1)) / 0.02);
+      common::array2d<PetscScalar> f(1, x.shape[1]);
+      for (std::size_t i = 0; i < x.shape[1]; ++i)
+      {
+        double dx = (x(0, i) - 0.5) * (x(0, i) - 0.5)
+                    + (x(1, i) - 0.5) * (x(1, i) - 0.5);
+        f(0, i) = 10.0 * std::exp(-(dx)) / 0.02;
+      }
+      return f;
     });
 
-    g->interpolate([](auto& x) { return Eigen::sin(5 * x.row(0)); });
+    g->interpolate([](auto& x) {
+      common::array2d<PetscScalar> f(1, x.shape[1]);
+      for (std::size_t i = 0; i < x.shape[1]; ++i)
+        f(0, i) = std::sin(5 * x(0, i));
+      return f;
+    });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a

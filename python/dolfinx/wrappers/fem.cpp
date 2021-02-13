@@ -561,13 +561,32 @@ void fem(py::module& m)
            "Return sub-function (view into parent Function")
       .def("collapse", &dolfinx::fem::Function<PetscScalar>::collapse,
            "Collapse sub-function view")
-      .def("interpolate",
-           py::overload_cast<const std::function<Eigen::Array<
-               PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
-               const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                   Eigen::RowMajor>>&)>&>(
-               &dolfinx::fem::Function<PetscScalar>::interpolate),
-           py::arg("f"), "Interpolate an expression")
+      .def(
+          "interpolate",
+          [](dolfinx::fem::Function<PetscScalar>& self,
+             const std::function<py::array_t<PetscScalar>(
+                 const py::array_t<double>&)>& f) {
+            auto _f = [&f](const dolfinx::common::array2d<double>& x) {
+              py::array_t _x(x.shape, x.strides(), x.data(), py::none());
+              py::array_t values = f(_x);
+              if (values.ndim() > 1)
+              {
+                dolfinx::common::array2d<PetscScalar> v(values.shape()[0],
+                                                        values.shape()[1]);
+                std::copy_n(values.data(), values.size(), v.data());
+                return v;
+              }
+              else
+              {
+                dolfinx::common::array2d<PetscScalar> v(1, values.shape()[0]);
+                std::copy_n(values.data(), values.size(), v.data());
+                return v;
+              }
+            };
+
+            self.interpolate(_f);
+          },
+          py::arg("f"), "Interpolate an expression")
       .def("interpolate",
            py::overload_cast<const dolfinx::fem::Function<PetscScalar>&>(
                &dolfinx::fem::Function<PetscScalar>::interpolate),
@@ -578,14 +597,11 @@ void fem(py::module& m)
             const std::function<void(PetscScalar*, int, int, const double*)> f
                 = reinterpret_cast<void (*)(PetscScalar*, int, int,
                                             const double*)>(addr);
-            auto _f
-                = [&f](Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                               Eigen::Dynamic, Eigen::RowMajor>>
-                           values,
-                       const dolfinx::common::array2d<double>& x) {
-                    f(values.data(), values.cols(), values.rows(), x.data());
-                    // f(values.data(), values.rows(), values.cols(), x.data());
-                  };
+
+            auto _f = [&f](dolfinx::common::array2d<PetscScalar>& values,
+                           const dolfinx::common::array2d<double>& x) -> void {
+              f(values.data(), values.shape[1], values.shape[0], x.data());
+            };
 
             assert(self.function_space());
             assert(self.function_space()->element());
