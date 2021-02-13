@@ -9,7 +9,6 @@
 #include "HDF5Interface.h"
 #include "pugixml.hpp"
 #include "utils.h"
-#include <Eigen/Core>
 #include <array>
 #include <dolfinx/common/array2d.h>
 #include <dolfinx/common/span.hpp>

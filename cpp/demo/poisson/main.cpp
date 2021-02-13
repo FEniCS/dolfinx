@@ -161,11 +161,15 @@ int main(int argc, char* argv[])
     // Define boundary condition
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
-    const auto bdofs = fem::locate_dofs_geometrical({*V}, [](auto& x) {
-      static const double epsilon = std::numeric_limits<double>::epsilon();
-      return (x.row(0).abs() < 10.0 * epsilon
-              or (x.row(0) - 1.0).abs() < 10.0 * epsilon);
-    });
+    const auto bdofs = fem::locate_dofs_geometrical(
+        {*V}, [](const common::array2d<double>& x) {
+          constexpr double eps = 10.0 * std::numeric_limits<double>::epsilon();
+          std::vector<bool> marked(x.shape[1]);
+          std::transform(
+              x.row(0).begin(), x.row(0).end(), marked.begin(),
+              [](double x0) { return x0 < eps or std::abs(x0 - 1) < eps; });
+          return marked;
+        });
 
     std::vector bc{std::make_shared<const fem::DirichletBC<PetscScalar>>(
         u0, std::move(bdofs))};

@@ -516,24 +516,32 @@ void fem(py::module& m)
       "locate_dofs_geometrical",
       [](const std::vector<
              std::reference_wrapper<const dolfinx::fem::FunctionSpace>>& V,
-         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                 Eigen::RowMajor>>&)>& marker)
-          -> std::array<py::array, 2> {
+         const std::function<py::array_t<bool>(const py::array_t<double>&)>&
+             marker) -> std::array<py::array, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
+        auto _marker = [&marker](const dolfinx::common::array2d<double>& x) {
+          py::array_t _x(x.shape, x.strides(), x.data(), py::none());
+          py::array_t m = marker(_x);
+          return std::vector<bool>(m.data(), m.data() + m.size());
+        };
+
         std::array<std::vector<std::int32_t>, 2> dofs
-            = dolfinx::fem::locate_dofs_geometrical({V[0], V[1]}, marker);
+            = dolfinx::fem::locate_dofs_geometrical({V[0], V[1]}, _marker);
         return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
       },
       py::arg("V"), py::arg("marker"));
   m.def(
       "locate_dofs_geometrical",
       [](const dolfinx::fem::FunctionSpace& V,
-         const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                 Eigen::RowMajor>>&)>& marker) {
-        return as_pyarray(dolfinx::fem::locate_dofs_geometrical(V, marker));
+         const std::function<py::array_t<bool>(const py::array_t<double>&)>&
+             marker) {
+        auto _marker = [&marker](const dolfinx::common::array2d<double>& x) {
+          py::array_t _x(x.shape, x.strides(), x.data(), py::none());
+          py::array_t m = marker(_x);
+          return std::vector<bool>(m.data(), m.data() + m.size());
+        };
+        return as_pyarray(dolfinx::fem::locate_dofs_geometrical(V, _marker));
       },
       py::arg("V"), py::arg("marker"));
 
