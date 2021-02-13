@@ -260,8 +260,9 @@ def test_cffi_expression(V):
     code_c = """
     void eval(double* values, int num_points, int value_size, const double* x)
     {
+      /* x0 + x1 */
       for (int i = 0; i < num_points; ++i)
-        values[i*value_size + 0] = x[i*3 + 0] + x[i*3 + 1];
+        values[i  + 0] = x[i] + x[i + num_points];
     }
     """
     module = "_expr_eval" + str(MPI.COMM_WORLD.rank)
@@ -282,6 +283,7 @@ def test_cffi_expression(V):
     # Handle C func address by hand
     f1 = Function(V)
     f1.interpolate(int(eval_ptr))
+    f1.vector.view()
 
     def expr_eval2(x):
         return x[0] + x[1]

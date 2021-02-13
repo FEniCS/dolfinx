@@ -215,9 +215,8 @@ public:
     const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
-        = fem::interpolation_coords(*_function_space->element(),
-                                    *_function_space->mesh(), cells);
+    const common::array2d<double> x = fem::interpolation_coords(
+        *_function_space->element(), *_function_space->mesh(), cells);
     fem::interpolate(*this, f, x, cells);
   }
 

@@ -30,9 +30,9 @@ class Function;
 /// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression
-Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>
+common::array2d<double>
 interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
-                     const tcb::span<std::int32_t>& cells);
+                     const tcb::span<const std::int32_t>& cells);
 
 /// Interpolate a finite element Function (on possibly non-matching
 /// meshes) in another finite element space
@@ -59,8 +59,8 @@ void interpolate(
         Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                 Eigen::RowMajor>>&)>& f,
-    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x,
-    const tcb::span<std::int32_t>& cells);
+    const common::array2d<double>& x,
+    const tcb::span<const std::int32_t>& cells);
 
 /// Interpolate an expression f(x)
 ///
@@ -84,10 +84,8 @@ void interpolate_c(
     const std::function<void(
         Eigen::Ref<
             Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
-        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                            Eigen::RowMajor>>&)>& f,
-    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x,
-    const tcb::span<std::int32_t>& cells);
+        const common::array2d<double>&)>& f,
+    const common::array2d<double>& x, const tcb::span<std::int32_t>& cells);
 
 namespace detail
 {
@@ -189,8 +187,8 @@ void interpolate(
         Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
             const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                 Eigen::RowMajor>>&)>& f,
-    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x,
-    const tcb::span<std::int32_t>& cells)
+    const common::array2d<double>& x,
+    const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
@@ -220,7 +218,9 @@ void interpolate(
   // points. Scalar case needs special handling as pybind11 will return
   // a column array when we need a row array.
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values;
-  values = f(x);
+  Eigen::Map<const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>> _x(
+      x.data(), x.shape[0], x.shape[1]);
+  values = f(_x);
 
   // FIXME: This is hack for NumPy/pybind11/Eigen that returns 1D arrays a
   // column vectors. Fix in the pybind11 layer?
@@ -282,10 +282,8 @@ void interpolate_c(
     const std::function<void(
         Eigen::Ref<
             Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
-        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                            Eigen::RowMajor>>&)>& f,
-    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x,
-    const tcb::span<std::int32_t>& cells)
+        const common::array2d<double>&)>& f,
+    const common::array2d<double>& x, const tcb::span<std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
@@ -295,15 +293,12 @@ void interpolate_c(
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
 
-  auto fn =
-      [value_size,
-       &f](const Eigen::Ref<
-           const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>& x) {
-        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
-            x.cols(), value_size);
-        f(values, x.transpose());
-        return values;
-      };
+  auto fn = [value_size, &f](const common::array2d<double>& x) {
+    Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
+        value_size, x.shape[1]);
+    f(values, x);
+    return values;
+  };
 
   interpolate<T>(u, fn, x, cells);
 }
