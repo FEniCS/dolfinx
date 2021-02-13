@@ -29,8 +29,8 @@ public:
   /// @param[in] geometric_dimension Geometric dimension
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  /// @param[in] needs_permutation_data Indicates whether or not the element
-  /// needs permutation data (for higher order elements)
+  /// @param[in] needs_permutation_data Indicates whether or not the
+  /// element needs permutation data (for higher order elements)
   /// @param[in] permute_dofs Function that permutes the DOF numbering
   /// @param[in] unpermute_dofs Function that reverses a DOF permutation
   CoordinateElement(int basix_element_handle, int geometric_dimension,
@@ -92,8 +92,8 @@ public:
   /// Reverses a DOF permutation
   void unpermute_dofs(int* dofs, const uint32_t cell_perm) const;
 
-  /// Indicates whether the coordinate map needs permutation data passing in
-  /// (for higher order geometries)
+  /// Indicates whether the coordinate map needs permutation data
+  /// passing in (for higher order geometries)
   bool needs_permutation_data() const;
 
 private:

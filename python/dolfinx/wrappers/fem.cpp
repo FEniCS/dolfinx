@@ -306,7 +306,7 @@ void fem(py::module& m)
             tcb::span(b.mutable_data(), b.size()), L);
       },
       py::arg("b"), py::arg("L"),
-      "Assemble linear form into an existing Eigen vector");
+      "Assemble linear form into an existing vector");
   // Matrices
   m.def("assemble_matrix_petsc",
         [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
@@ -675,20 +675,37 @@ void fem(py::module& m)
                   const std::vector<std::shared_ptr<
                       const dolfinx::fem::Constant<PetscScalar>>>& constants,
                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
-                  const Eigen::Ref<const Eigen::Array<
-                      double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
-                      x,
+                  const py::array_t<double, py::array::c_style>& X,
                   py::object addr, const std::size_t value_size) {
                  auto tabulate_expression_ptr = (void (*)(
                      PetscScalar*, const PetscScalar*, const PetscScalar*,
                      const double*))addr.cast<std::uintptr_t>();
+                 dolfinx::common::array2d<double> _X(X.shape()[0],
+                                                     X.shape()[1]);
+                 std::copy_n(X.data(), X.size(), _X.data());
                  return dolfinx::fem::Expression<PetscScalar>(
-                     coefficients, constants, mesh, x, tabulate_expression_ptr,
+                     coefficients, constants, mesh, _X, tabulate_expression_ptr,
                      value_size);
                }),
            py::arg("coefficients"), py::arg("constants"), py::arg("mesh"),
            py::arg("x"), py::arg("fn"), py::arg("value_size"))
-      .def("eval", &dolfinx::fem::Expression<PetscScalar>::eval)
+      .def("eval",
+           [](const dolfinx::fem::Expression<PetscScalar>& self,
+              const py::array_t<std::int32_t, py::array::c_style>& active_cells,
+              py::array_t<PetscScalar> values) {
+             dolfinx::common::array2d<PetscScalar> _values(
+                 active_cells.shape()[0],
+                 self.num_points() * self.value_size());
+             self.eval(tcb::span(active_cells.data(), active_cells.size()),
+                       _values);
+             assert(values.ndim() == 2);
+             assert(values.shape()[0] == _values.shape[0]);
+             assert(values.shape()[1] == _values.shape[1]);
+             auto v = values.mutable_unchecked();
+             for (py::ssize_t i = 0; i < v.shape(0); i++)
+               for (py::ssize_t j = 0; j < v.shape(1); j++)
+                 v(i, j) = _values(i, j);
+           })
       .def_property_readonly("mesh",
                              &dolfinx::fem::Expression<PetscScalar>::mesh,
                              py::return_value_policy::reference_internal)
@@ -700,5 +717,5 @@ void fem(py::module& m)
                              py::return_value_policy::reference_internal)
       .def_property_readonly("x", &dolfinx::fem::Expression<PetscScalar>::x,
                              py::return_value_policy::reference_internal);
-} // namespace dolfinx_wrappers
+}
 } // namespace dolfinx_wrappers
