@@ -140,9 +140,8 @@ def test_dof_positions(cell_type, space_type):
         # Push coordinates forward
         X = V.element.interpolation_points()
         V.element.apply_dof_transformation(X, perms[cell], tdim)
-        x = X.copy()
         xg = x_g[coord_dofs.links(cell), :tdim]
-        cmap.push_forward(x, X, xg)
+        x = cmap.push_forward(X, xg)
 
         dofs = V.dofmap.cell_dofs(cell)
 

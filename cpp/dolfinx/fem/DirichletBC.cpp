@@ -475,8 +475,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     throw std::runtime_error("Function spaces must have the same element.");
 
   // Compute dof coordinates
-  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
-      = V1.tabulate_dof_coordinates().transpose();
+  const common::array2d dof_coordinates = V1.tabulate_dof_coordinates(true);
+  assert(dof_coordinates.shape[0] == 3);
 
   // Evaluate marker for each dof coordinate
   const std::vector<bool> marked_dofs = marker_fn(dof_coordinates);
@@ -549,8 +549,8 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   // interface that computes dofs coordinates only for specified cell.
 
   // Compute dof coordinates
-  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
-      = V.tabulate_dof_coordinates().transpose();
+  const common::array2d dof_coordinates = V.tabulate_dof_coordinates(true);
+  assert(dof_coordinates.shape[0] == 3);
 
   // Compute marker for each dof coordinate
   const std::vector<bool> marked_dofs = marker_fn(dof_coordinates);

@@ -232,16 +232,18 @@ void fem(py::module& m)
                              &dolfinx::fem::CoordinateElement::dof_layout)
       .def("push_forward",
            [](const dolfinx::fem::CoordinateElement& self,
-              Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>>
-                  x,
               const py::array_t<double, py::array::c_style>& X,
-              const Eigen::Ref<const Eigen::Array<
-                  double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
-                  cell_geometry) {
-             dolfinx::common::array2d<double> _X(X.shape()[0], X.shape()[1]);
+              const py::array_t<double, py::array::c_style>& cell_geometry) {
+             dolfinx::common::array2d<double> _X(X.shape()[0], X.shape()[1]),
+                 _cell_geometry(cell_geometry.shape()[0],
+                                cell_geometry.shape()[1]);
              std::copy_n(X.data(), X.size(), _X.data());
-             self.push_forward(x, _X, cell_geometry);
+             std::copy_n(cell_geometry.data(), cell_geometry.size(),
+                         _cell_geometry.data());
+             dolfinx::common::array2d<double> x(_X.shape[0],
+                                                self.geometric_dimension());
+             self.push_forward(x, _X, _cell_geometry);
+             return as_pyarray2d(std::move(x));
            })
       .def_readwrite("non_affine_atol",
                      &dolfinx::fem::CoordinateElement::non_affine_atol)
@@ -646,7 +648,9 @@ void fem(py::module& m)
       .def_property_readonly("dofmap", &dolfinx::fem::FunctionSpace::dofmap)
       .def("sub", &dolfinx::fem::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",
-           &dolfinx::fem::FunctionSpace::tabulate_dof_coordinates);
+           [](const dolfinx::fem::FunctionSpace& self) {
+             return as_pyarray2d(self.tabulate_dof_coordinates(false));
+           });
 
   // dolfinx::fem::Constant
   py::class_<dolfinx::fem::Constant<PetscScalar>,

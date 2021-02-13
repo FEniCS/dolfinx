@@ -71,14 +71,9 @@ public:
   /// @param[in,out] x The physical coordinates of the reference points X
   /// @param[in] X The coordinates on the reference cells
   /// @param[in] cell_geometry The cell node coordinates (physical)
-  void push_forward(
-      Eigen::Ref<
-          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-          x,
-      const common::array2d<double>& X,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&
-          cell_geometry) const;
+  void push_forward(common::array2d<double>& x,
+                    const common::array2d<double>& X,
+                    const common::array2d<double>& cell_geometry) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
