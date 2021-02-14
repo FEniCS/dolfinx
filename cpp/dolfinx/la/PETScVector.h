@@ -11,6 +11,7 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/span.hpp>
+#include <functional>
 #include <petscvec.h>
 #include <vector>
 

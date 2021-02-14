@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <vector>
 
 struct ufc_coordinate_mapping;
@@ -83,35 +83,31 @@ public:
 
   /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
-  void evaluate_reference_basis(
-      std::vector<double>& values,
-      const Eigen::Ref<const Eigen::Array<
-          double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
+  void evaluate_reference_basis(std::vector<double>& values,
+                                const common::array2d<double>& X) const;
 
   /// Evaluate all basis function derivatives of given order at given points in
   /// reference cell
   // reference_value_derivatives[num_points][num_dofs][reference_value_size][num_derivatives]
-  void evaluate_reference_basis_derivatives(
-      std::vector<double>& reference_values, int order,
-      const Eigen::Ref<const Eigen::Array<
-          double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X) const;
+  void
+  evaluate_reference_basis_derivatives(std::vector<double>& reference_values,
+                                       int order,
+                                       const common::array2d<double>& X) const;
 
   /// Push basis functions forward to physical element
-  void transform_reference_basis(
-      std::vector<double>& values, const std::vector<double>& reference_values,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& X,
-      const std::vector<double>& J, const tcb::span<const double>& detJ,
-      const std::vector<double>& K) const;
+  void transform_reference_basis(std::vector<double>& values,
+                                 const std::vector<double>& reference_values,
+                                 const common::array2d<double>& X,
+                                 const std::vector<double>& J,
+                                 const tcb::span<const double>& detJ,
+                                 const std::vector<double>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
       std::vector<double>& values, std::size_t order,
       const std::vector<double>& reference_values,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& X,
-      const std::vector<double>& J, const tcb::span<const double>& detJ,
-      const std::vector<double>& K) const;
+      const common::array2d<double>& X, const std::vector<double>& J,
+      const tcb::span<const double>& detJ, const std::vector<double>& K) const;
 
   /// Get the number of sub elements (for a mixed element)
   /// @return the Number of sub elements
@@ -138,8 +134,7 @@ public:
   /// nodal positions. For other elements the points will typically be
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  interpolation_points() const;
+  common::array2d<double> interpolation_points() const;
 
   /// @todo Document shape/layout of @p values
   /// @todo Make the interpolating dofs in/out argument for efficiency
@@ -160,16 +155,26 @@ public:
   /// @param[out] dofs The element degrees of freedom (interpolants) of
   /// the expression. The call must allocate the space. Is has
   template <typename T>
-  void interpolate(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>& values,
-                   std::uint32_t cell_permutation, tcb::span<T> dofs) const
+  constexpr void interpolate(const common::array2d<T>& values,
+                             std::uint32_t cell_permutation,
+                             tcb::span<T> dofs) const
   {
-    assert((int)dofs.size() == _space_dim / _bs);
-    Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> values_vector(
-        values.data(), values.size());
-    Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> _dofs(dofs.data(),
-                                                          dofs.size());
-    _dofs = _interpolation_matrix * values_vector;
+    const std::size_t rows = _space_dim / _bs;
+    assert(_space_dim % _bs == 0);
+    assert(dofs.size() == rows);
+
+    // Compute dofs = Pi * x (matrix-vector multiply)
+    assert(_interpolation_matrix.size() % rows == 0);
+    const std::size_t cols = _interpolation_matrix.size() / rows;
+    for (std::size_t i = 0; i < rows; ++i)
+    {
+      // Dot product between row i of the matrix and 'values'
+      dofs[i] = std::transform_reduce(
+          std::next(_interpolation_matrix.begin(), i * cols),
+          std::next(_interpolation_matrix.begin(), i * cols + cols),
+          values.data(), T(0.0));
+    }
+
     _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
   }
 
@@ -235,7 +240,9 @@ private:
   // The basix element identifier
   int _basix_element_handle;
 
-  // The interpolation matrix
-  Eigen::MatrixXd _interpolation_matrix;
+  // The interpolation matrix. It has shape (dim,
+  // num_interpolation_points*basix_value_size). Note that _space_dim =
+  // _bs * dim. Storage is row-major
+  std::vector<double> _interpolation_matrix;
 };
 } // namespace dolfinx::fem

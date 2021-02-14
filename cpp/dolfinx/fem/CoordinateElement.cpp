@@ -64,21 +64,25 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(
-    Eigen::Ref<
-        Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        x,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& cell_geometry) const
+    common::array2d<double>& x, const common::array2d<double>& X,
+    const common::array2d<double>& cell_geometry) const
 {
-  assert(x.rows() == X.rows());
-  assert(x.cols() == this->geometric_dimension());
-  assert(X.cols() == this->topological_dimension());
+  assert(x.shape[0] == X.shape[0]);
+  assert((int)x.shape[1] == this->geometric_dimension());
+  assert((int)X.shape[1] == this->topological_dimension());
+
+  // FIXME: remove dynamic memory allocation
 
   // Compute physical coordinates
-  const Eigen::ArrayXXd phi = basix::tabulate(_basix_element_handle, 0, X)[0];
-  x = phi.matrix() * cell_geometry.matrix();
+  Eigen::MatrixXd phi(X.shape[0], cell_geometry.shape[0]);
+  basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[0]);
+
+  // x = phi * cell_geometry;
+  std::fill(x.data(), x.data() + x.size(), 0.0);
+  for (std::size_t i = 0; i < x.shape[0]; ++i)
+    for (std::size_t j = 0; j < x.shape[1]; ++j)
+      for (std::size_t k = 0; k < cell_geometry.shape[0]; ++k)
+        x(i, j) += phi(i, k) * cell_geometry(k, j);
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
@@ -111,26 +115,25 @@ void CoordinateElement::compute_reference_geometry(
   // FIXME: tidy up and sort out
 
   const int d = cell_geometry.rows();
-  Eigen::VectorXd phi(d);
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
       d, tdim);
 
-  std::vector<Eigen::ArrayXXd> tabulated_data;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      tabulated_data(tdim + 1, cell_geometry.rows());
 
   if (_is_affine)
   {
     Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> x0(_gdim);
     Eigen::ArrayXXd X0 = Eigen::ArrayXXd::Zero(1, tdim);
 
-    tabulated_data = basix::tabulate(_basix_element_handle, 1, X0);
+    basix::tabulate(_basix_element_handle, tabulated_data.data(), 1, X0.data(),
+                    1);
 
     // Compute physical coordinates at X=0.
-    phi = tabulated_data[0].transpose();
-    x0 = cell_geometry.matrix().transpose() * phi;
+    x0 = tabulated_data.row(0).matrix() * cell_geometry.matrix();
 
     // Compute Jacobian and inverse
-    for (std::size_t dim = 0; dim + 1 < tabulated_data.size(); ++dim)
-      dphi.col(dim) = tabulated_data[dim + 1].row(0);
+    dphi = tabulated_data.block(1, 0, tdim, d).transpose();
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
         J0(gdim, tdim);
     J0 = cell_geometry.matrix().transpose() * dphi;
@@ -186,15 +189,14 @@ void CoordinateElement::compute_reference_geometry(
       int k;
       for (k = 0; k < non_affine_max_its; ++k)
       {
-        tabulated_data = basix::tabulate(_basix_element_handle, 1, Xk);
+        basix::tabulate(_basix_element_handle, tabulated_data.data(), 1,
+                        Xk.data(), 1);
 
         // Compute physical coordinates
-        phi = tabulated_data[0].transpose();
-        xk = cell_geometry.matrix().transpose() * phi;
+        xk = tabulated_data.row(0).matrix() * cell_geometry.matrix();
 
         // Compute Jacobian and inverse
-        for (std::size_t dim = 0; dim + 1 < tabulated_data.size(); ++dim)
-          dphi.col(dim) = tabulated_data[dim + 1].row(0);
+        dphi = tabulated_data.block(1, 0, tdim, d).transpose();
         Jview = cell_geometry.matrix().transpose() * dphi;
         if (gdim == tdim)
           Kview = Jview.inverse();

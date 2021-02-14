@@ -349,20 +349,17 @@ io::cells::transpose(const std::vector<std::uint8_t>& map)
   return transpose;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-io::cells::compute_permutation(
-    const Eigen::Ref<const Eigen::Array<
-        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::uint8_t>& p)
+common::array2d<std::int64_t>
+io::cells::compute_permutation(const common::array2d<std::int64_t>& cells,
+                               const std::vector<std::uint8_t>& p)
 {
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells_new(cells.rows(), cells.cols());
-  for (Eigen::Index c = 0; c < cells_new.rows(); ++c)
+  common::array2d<std::int64_t> cells_new(cells.shape);
+  for (std::size_t c = 0; c < cells_new.shape[0]; ++c)
   {
     auto cell = cells.row(c);
     auto cell_new = cells_new.row(c);
-    for (Eigen::Index i = 0; i < cell_new.size(); ++i)
-      cell_new(i) = cell(p[i]);
+    for (std::size_t i = 0; i < cell_new.size(); ++i)
+      cell_new[i] = cell[p[i]];
   }
   return cells_new;
 }

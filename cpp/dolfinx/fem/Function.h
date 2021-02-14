@@ -11,7 +11,6 @@
 #include <Eigen/Core>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>
@@ -25,6 +24,7 @@
 #include <petscvec.h>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace dolfinx::fem
@@ -201,11 +201,9 @@ public:
 
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
-  void
-  interpolate(const std::function<
-              Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
-                  const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                      Eigen::RowMajor>>&)>& f)
+  void interpolate(
+      const std::function<std::variant<std::vector<T>, common::array2d<T>>(
+          const common::array2d<double>&)>& f)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -216,9 +214,8 @@ public:
     const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
-        = fem::interpolation_coords(*_function_space->element(),
-                                    *_function_space->mesh(), cells);
+    const common::array2d<double> x = fem::interpolation_coords(
+        *_function_space->element(), *_function_space->mesh(), cells);
     fem::interpolate(*this, f, x, cells);
   }
 
@@ -268,8 +265,10 @@ public:
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-        = mesh->geometry().x();
+    // FIXME: Use eigen map for now.
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+        x_g(mesh->geometry().x().data(), mesh->geometry().x().shape[0],
+            mesh->geometry().x().shape[1]);
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -391,7 +390,7 @@ public:
 
     // Resize Array for holding point values
     Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        point_values(mesh->geometry().x().rows(), value_size_loc);
+        point_values(mesh->geometry().x().shape[0], value_size_loc);
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -399,8 +398,10 @@ public:
 
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-        = mesh->geometry().x();
+    // FIXME: Use eigen map for now.
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+        x_g(mesh->geometry().x().data(), mesh->geometry().x().shape[0],
+            mesh->geometry().x().shape[1]);
 
     // Interpolate point values on each cell (using last computed value if
     // not continuous, e.g. discontinuous Galerkin methods)

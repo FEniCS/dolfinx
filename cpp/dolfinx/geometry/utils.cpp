@@ -209,9 +209,7 @@ geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
                "a given topological dimension and subset of entities.";
 
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
-      = mesh::midpoints(mesh, tdim, entities);
-
+  const auto midpoints = mesh::midpoints(mesh, tdim, entities);
   std::vector<std::pair<std::array<double, 3>, std::int32_t>> points(
       entities.size());
   for (std::size_t i = 0; i < points.size(); ++i)
@@ -309,8 +307,10 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 {
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
-      = mesh.geometry().x();
+  // FIXME: Use eigen map for now.
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      geom_dofs(geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
+
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
   Eigen::Vector3d _p;
