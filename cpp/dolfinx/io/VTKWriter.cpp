@@ -6,7 +6,6 @@
 
 #include "VTKWriter.h"
 #include "cells.h"
-#include <Eigen/Core>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
@@ -101,12 +100,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
        << "ascii"
        << "\">";
 
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      points(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
-             mesh.geometry().x().shape[1]);
-
-  for (int i = 0; i < points.rows(); ++i)
+  const common::array2d<double>& points = mesh.geometry().x();
+  for (std::size_t i = 0; i < points.shape[0]; ++i)
     file << points(i, 0) << " " << points(i, 1) << " " << points(i, 2) << "  ";
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;
 
@@ -121,7 +116,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   if (cell_dim == 0)
   {
     // Special case when only points should be visualized
-    for (int i = 0; i < points.rows(); ++i)
+    for (std::size_t i = 0; i < points.shape[0]; ++i)
       file << i << " ";
     file << "</DataArray>" << std::endl;
     num_nodes = 1;

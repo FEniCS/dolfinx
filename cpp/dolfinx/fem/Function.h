@@ -8,7 +8,6 @@
 
 #include "FunctionSpace.h"
 #include "interpolate.h"
-#include <Eigen/Core>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/array2d.h>
@@ -230,23 +229,19 @@ public:
   /// @param[in,out] u The values at the points. Values are not computed
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size.
-  void
-  eval(const Eigen::Ref<
-           const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x,
-       const tcb::span<const std::int32_t>& cells,
-       Eigen::Ref<
-           Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-           u) const
+  void eval(const common::array2d<double>& x,
+            const tcb::span<const std::int32_t>& cells,
+            common::array2d<T>& u) const
   {
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
 
-    if (x.rows() != (int)cells.size())
+    if (x.shape[0] != cells.size())
     {
       throw std::runtime_error(
           "Number of points and number of cells must be equal.");
     }
-    if (x.rows() != u.rows())
+    if (x.shape[0] != u.shape[0])
     {
       throw std::runtime_error(
           "Length of array for Function values must be the "
@@ -266,10 +261,7 @@ public:
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    // FIXME: Use eigen map for now.
-    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        x_g(mesh->geometry().x().data(), mesh->geometry().x().shape[0],
-            mesh->geometry().x().shape[1]);
+    const common::array2d<double> x_g = mesh->geometry().x();
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -306,8 +298,7 @@ public:
     std::vector<double> basis_values(space_dimension * value_size);
 
     // Create work vector for expansion coefficients
-    std::vector<T> coefficients(space_dimension
-                                                     * bs_element);
+    std::vector<T> coefficients(space_dimension * bs_element);
 
     // Get dofmap
     std::shared_ptr<const fem::DofMap> dofmap = _function_space->dofmap();
@@ -317,13 +308,12 @@ public:
     mesh->topology_mutable().create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
         = mesh->topology().get_cell_permutation_info();
-    common::array2d<double>
-        coordinate_dofs(num_dofs_g, gdim);
+    common::array2d<double> coordinate_dofs(num_dofs_g, gdim);
 
-    common::array2d<double> xp(1,  gdim);
+    common::array2d<double> xp(1, gdim);
 
     // Loop over points
-    u.setZero();
+    std::fill(u.data(), u.data() + u.size(), 0.0);
     const std::vector<T>& _v = _x->mutable_array();
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
@@ -336,15 +326,14 @@ public:
       // Get cell geometry (coordinate dofs)
       auto x_dofs = x_dofmap.links(cell_index);
       for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+        for (int j = 0; j < gdim; ++j)
+          coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
       for (int j = 0; j < gdim; ++j)
         xp(0, j) = x(p, j);
 
       // Compute reference coordinates X, and J, detJ and K
-      cmap.compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
-                                      coordinate_dofs);
+      cmap.compute_reference_geometry(X, J, detJ, K, xp, coordinate_dofs);
 
       // Compute basis on reference element
       element->evaluate_reference_basis(basis_reference_values, X);
@@ -372,7 +361,6 @@ public:
         {
           for (int j = 0; j < value_size; ++j)
           {
-            // TODO: Find an Eigen shortcut for this operation?
             u_row[j * bs_element + k] += coefficients[bs_element * i + k]
                                          * basis_values[i * value_size + j];
           }
@@ -383,8 +371,7 @@ public:
 
   /// Compute values at all mesh 'nodes'
   /// @return The values at all geometric points
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  compute_point_values() const
+  common::array2d<T> compute_point_values() const
   {
     assert(_function_space);
     std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
@@ -395,8 +382,8 @@ public:
     const int value_size_loc = _function_space->element()->value_size();
 
     // Resize Array for holding point values
-    Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        point_values(mesh->geometry().x().shape[0], value_size_loc);
+    common::array2d<T> point_values(mesh->geometry().x().shape[0],
+                                    value_size_loc);
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -404,10 +391,7 @@ public:
 
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    // FIXME: Use eigen map for now.
-    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        x_g(mesh->geometry().x().data(), mesh->geometry().x().shape[0],
-            mesh->geometry().x().shape[1]);
+    const common::array2d<double>& x_g = mesh->geometry().x();
 
     // Interpolate point values on each cell (using last computed value if
     // not continuous, e.g. discontinuous Galerkin methods)
@@ -415,7 +399,7 @@ public:
     assert(map);
     const std::int32_t num_cells = map->size_local() + map->num_ghosts();
 
-    std::vector<std::int32_t> cells(x_g.rows());
+    std::vector<std::int32_t> cells(x_g.shape[0]);
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       // Get coordinates for all points in cell
