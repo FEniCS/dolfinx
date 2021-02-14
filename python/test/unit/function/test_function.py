@@ -283,7 +283,6 @@ def test_cffi_expression(V):
     # Handle C func address by hand
     f1 = Function(V)
     f1.interpolate(int(eval_ptr))
-    f1.vector.view()
 
     def expr_eval2(x):
         return x[0] + x[1]

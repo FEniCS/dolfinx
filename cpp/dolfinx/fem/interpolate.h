@@ -207,19 +207,8 @@ void interpolate(
   // Evaluate function at physical points. The returned array has a
   // number of rows equal to the number of components of the function,
   // and the number of columns is equal to the number of evaluation
-  // points. Scalar case needs special handling as pybind11 will return
-  // a column array when we need a row array.
-  // Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values;
-  // Eigen::Map<const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>
-  // _x(
-  //     x.data(), x.shape[0], x.shape[1]);
+  // points.
   common::array2d<T> values = f(x);
-
-  // FIXME: This is hack for NumPy/pybind11/Eigen that returns 1D arrays a
-  // column vectors. Fix in the pybind11 layer?
-  // if (element->value_size() == 1 and values.shape[0] > 1)
-  //   throw std::runtime_error("**** problem");
-  //   values = values.transpose().eval();
 
   // Get dofmap
   const auto dofmap = u.function_space()->dofmap();
@@ -234,8 +223,8 @@ void interpolate(
   const int value_size = element->value_size() / element_bs;
 
   // Check that return type from f is the correct shape
-  if ((values.shape[0] != value_size * element_bs)
-      or (values.shape[1] != cells.size() * X.shape[0]))
+  if (values.shape[0] != value_size * element_bs
+      or values.shape[1] != cells.size() * X.shape[0])
   {
     throw std::runtime_error("Interpolation data has the wrong shape.");
   }

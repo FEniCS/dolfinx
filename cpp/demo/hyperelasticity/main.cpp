@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
       // Large angle of rotation (60 degrees)
       const double theta = 1.04719755;
 
-      common::array2d<PetscScalar> values(3, x.shape[1]);
+      common::array2d<PetscScalar> values(3, x.shape[1], 0.0);
       for (std::size_t i = 0; i < x.shape[1]; ++i)
       {
         // New coordinates
@@ -157,7 +157,6 @@ int main(int argc, char* argv[])
                    + (x(2, i) - z0) * std::cos(theta);
 
         // Rotate at right end
-        values(0, i) = 0.0;
         values(1, i) = scale * (y - x(1, i));
         values(2, i) = scale * (z - x(2, i));
       }
