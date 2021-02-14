@@ -182,20 +182,15 @@ def test_eval_manifold():
 
 
 def test_interpolation_mismatch_rank0(W):
-    def f(x):
-        return np.ones(x.shape[1])
     u = Function(W)
     with pytest.raises(RuntimeError):
-        u.interpolate(f)
+        u.interpolate(lambda x: np.ones(x.shape[1]))
 
 
 def test_interpolation_mismatch_rank1(W):
-    def f(x):
-        return np.ones((2, x.shape[1]))
-
     u = Function(W)
     with pytest.raises(RuntimeError):
-        u.interpolate(f)
+        u.interpolate(lambda x: np.ones((2, x.shape[1])))
 
 
 def test_mixed_element_interpolation():

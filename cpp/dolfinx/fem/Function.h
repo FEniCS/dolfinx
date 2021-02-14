@@ -24,6 +24,7 @@
 #include <petscvec.h>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace dolfinx::fem
@@ -201,8 +202,8 @@ public:
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
   void interpolate(
-      const std::function<common::array2d<T>(const common::array2d<double>&)>&
-          f)
+      const std::function<std::variant<std::vector<T>, common::array2d<T>>(
+          const common::array2d<double>&)>& f)
   {
     assert(_function_space);
     assert(_function_space->element());

@@ -13,6 +13,7 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
+#include <variant>
 
 namespace dolfinx::fem
 {
@@ -55,7 +56,8 @@ void interpolate(Function<T>& u, const Function<T>& v);
 template <typename T>
 void interpolate(
     Function<T>& u,
-    const std::function<common::array2d<T>(const common::array2d<double>&)>& f,
+    const std::function<std::variant<std::vector<T>, common::array2d<T>>(
+        const common::array2d<double>&)>& f,
     const common::array2d<double>& x,
     const tcb::span<const std::int32_t>& cells);
 
@@ -178,7 +180,8 @@ void interpolate(Function<T>& u, const Function<T>& v)
 template <typename T>
 void interpolate(
     Function<T>& u,
-    const std::function<common::array2d<T>(const common::array2d<double>&)>& f,
+    const std::function<std::variant<std::vector<T>, common::array2d<T>>(
+        const common::array2d<double>&)>& f,
     const common::array2d<double>& x,
     const tcb::span<const std::int32_t>& cells)
 {
@@ -208,7 +211,27 @@ void interpolate(
   // number of rows equal to the number of components of the function,
   // and the number of columns is equal to the number of evaluation
   // points.
-  common::array2d<T> values = f(x);
+
+  // TODO: Copies and memory allocation could be avoided with a 'span2d'
+  // class, or by just pointing to the data
+  common::array2d<T> values(element->value_size(), x.shape[1]);
+  std::variant<std::vector<T>, common::array2d<T>> values_v = f(x);
+  if (std::holds_alternative<common::array2d<T>>(values_v))
+  {
+    values = std::get<1>(values_v);
+    if (values.shape[0] != element->value_size())
+      throw std::runtime_error("Interpolation data has the wrong shape.");
+  }
+  else
+  {
+    if (element->value_size() != 1)
+      throw std::runtime_error("Interpolation data has the wrong shape.");
+    std::copy(std::get<0>(values_v).begin(), std::get<0>(values_v).end(),
+              values.data());
+  }
+
+  if (values.shape[1] != cells.size() * X.shape[0])
+    throw std::runtime_error("Interpolation data has the wrong shape.");
 
   // Get dofmap
   const auto dofmap = u.function_space()->dofmap();
@@ -216,18 +239,11 @@ void interpolate(
   const int dofmap_bs = dofmap->bs();
 
   // NOTE: The below loop over cells could be skipped for some elements,
-  // e.g. Lagrange, where the interpolation is just the identity.
+  // e.g. Lagrange, where the interpolation is just the identity
 
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
-
-  // Check that return type from f is the correct shape
-  if (values.shape[0] != value_size * element_bs
-      or values.shape[1] != cells.size() * X.shape[0])
-  {
-    throw std::runtime_error("Interpolation data has the wrong shape.");
-  }
 
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);

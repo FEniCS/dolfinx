@@ -566,22 +566,20 @@ void fem(py::module& m)
           [](dolfinx::fem::Function<PetscScalar>& self,
              const std::function<py::array_t<PetscScalar>(
                  const py::array_t<double>&)>& f) {
-            auto _f = [&f](const dolfinx::common::array2d<double>& x) {
+            auto _f = [&f](const dolfinx::common::array2d<double>& x)
+                -> std::variant<std::vector<PetscScalar>,
+                                dolfinx::common::array2d<PetscScalar>> {
               py::array_t _x(x.shape, x.strides(), x.data(), py::none());
-              py::array_t values = f(_x);
-              if (values.ndim() > 1)
+              py::array_t v = f(_x);
+              if (v.ndim() > 1)
               {
-                dolfinx::common::array2d<PetscScalar> v(values.shape()[0],
-                                                        values.shape()[1]);
-                std::copy_n(values.data(), values.size(), v.data());
-                return v;
+                dolfinx::common::array2d<PetscScalar> vals(v.shape()[0],
+                                                           v.shape()[1]);
+                std::copy_n(v.data(), v.size(), vals.data());
+                return vals;
               }
               else
-              {
-                dolfinx::common::array2d<PetscScalar> v(1, values.shape()[0]);
-                std::copy_n(values.data(), values.size(), v.data());
-                return v;
-              }
+                return std::vector<PetscScalar>(v.data(), v.data() + v.size());
             };
 
             self.interpolate(_f);

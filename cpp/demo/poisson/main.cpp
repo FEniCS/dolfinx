@@ -175,9 +175,9 @@ int main(int argc, char* argv[])
         u0, std::move(bdofs))};
 
     f->interpolate([](auto& x) {
-      common::array2d<PetscScalar> f(1, x.shape[1]);
+      std::vector<PetscScalar> f(x.shape[1]);
       std::transform(x.row(0).begin(), x.row(0).end(), x.row(1).begin(),
-                     f.row(0).begin(), [](double x0, double x1) {
+                     f.begin(), [](double x0, double x1) {
                        double dx
                            = (x0 - 0.5) * (x0 - 0.5) + (x1 - 0.5) * (x1 - 0.5);
                        return 10.0 * std::exp(-(dx)) / 0.02;
@@ -186,8 +186,8 @@ int main(int argc, char* argv[])
     });
 
     g->interpolate([](auto& x) {
-      common::array2d<PetscScalar> f(1, x.shape[1]);
-      std::transform(x.row(0).begin(), x.row(0).end(), f.row(0).begin(),
+      std::vector<PetscScalar> f(x.shape[1]);
+      std::transform(x.row(0).begin(), x.row(0).end(), f.begin(),
                      [](double x0) { return std::sin(5 * x0); });
       return f;
     });
