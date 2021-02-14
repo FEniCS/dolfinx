@@ -79,11 +79,7 @@ common::array2d<double> create_new_geometry(
   }
 
   // Copy over existing mesh vertices
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      x_g(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
-          mesh.geometry().x().shape[1]);
+  const common::array2d<double>& x_g = mesh.geometry().x();
 
   const std::int32_t num_vertices = map_v->size_local();
   const std::int32_t num_new_vertices = local_edge_to_new_vertex.size();
@@ -91,7 +87,8 @@ common::array2d<double> create_new_geometry(
       new_vertex_coordinates(num_vertices + num_new_vertices, 3);
 
   for (int v = 0; v < num_vertices; ++v)
-    new_vertex_coordinates.row(v) = x_g.row(vertex_to_x[v]);
+    for (std::size_t j = 0; j < x_g.shape[1]; ++j)
+      new_vertex_coordinates(v, j) = x_g(vertex_to_x[v], j);
 
   std::vector<int> edges(num_new_vertices);
   int i = 0;

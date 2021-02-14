@@ -307,9 +307,8 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 {
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      geom_dofs(geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
+  const common::array2d<double>& geom_dofs = geometry.x();
+  assert(geom_dofs.shape[1] == 3);
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
@@ -321,8 +320,9 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     auto dofs = x_dofmap.links(index);
     Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(dofs.size(),
                                                                     3);
-    for (std::size_t i = 0; i < dofs.size(); i++)
-      nodes.row(i) = geom_dofs.row(dofs[i]);
+    for (std::size_t i = 0; i < dofs.size(); ++i)
+      for (std::size_t j = 0; j < 3; ++j)
+        nodes(i, j) = geom_dofs(dofs[i], j);
 
     const std::array<double, 3> x
         = geometry::compute_distance_gjk(_p.transpose(), nodes);
@@ -354,7 +354,8 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(
         entity_dofs.size(), 3);
     for (std::size_t i = 0; i < entity_dofs.size(); i++)
-      nodes.row(i) = geom_dofs.row(dofs[entity_dofs[i]]);
+      for (std::size_t j = 0; j < 3; ++j)
+        nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);
 
     std::array<double, 3> x
         = geometry::compute_distance_gjk(_p.transpose(), nodes);

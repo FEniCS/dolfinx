@@ -41,11 +41,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      geom_dofs(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
-                mesh.geometry().x().shape[1]);
+  const common::array2d<double>& geom_dofs = mesh.geometry().x();
 
   mesh.topology_mutable().create_connectivity(dim, tdim);
 
@@ -55,9 +51,9 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
       = mesh::entities_to_geometry(mesh, dim, entity, false);
   tcb::span<const int> entity_vertex_indices = vertex_indices.row(0);
 
-  const Eigen::Vector3d x0 = geom_dofs.row(entity_vertex_indices[0]);
+  // const Eigen::Vector3d x0 = geom_dofs.row(entity_vertex_indices[0]);
   std::array<std::array<double, 3>, 2> b;
-  b[0] = {x0[0], x0[1], x0[2]};
+  std::copy_n(geom_dofs.row(entity_vertex_indices[0]).begin(), 3, b[0].begin());
   b[1] = b[0];
 
   // Compute min and max over remaining vertices

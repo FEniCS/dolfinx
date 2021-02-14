@@ -66,10 +66,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   // Get geometry dofmap and dofs
   const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      geom_dofs(geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
-
+  const common::array2d<double>& geom_dofs = geometry.x();
   std::vector<double> h_cells(entities.size(), 0);
   assert(num_vertices <= 8);
   std::array<Eigen::Vector3d, 8> points;
@@ -78,7 +75,8 @@ std::vector<double> mesh::h(const Mesh& mesh,
     // Get the coordinates  of the vertices
     auto dofs = x_dofs.links(entities[e]);
     for (int i = 0; i < num_vertices; ++i)
-      points[i] = geom_dofs.row(dofs[i]);
+      for (int j = 0; j < 3; ++j)
+        points[i][j] = geom_dofs(dofs[i], j);
 
     // Get maximum edge length
     for (int i = 0; i < num_vertices; ++i)
@@ -236,21 +234,15 @@ std::vector<std::int32_t> mesh::locate_entities(
   }
 
   // Pack coordinates of vertices
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      x_nodes(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
-              mesh.geometry().x().shape[1]);
-
-  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_vertices(
-      3, vertex_to_node.size());
+  const common::array2d<double>& x_nodes = mesh.geometry().x();
+  common::array2d<double> x_vertices(3, vertex_to_node.size());
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
-    x_vertices.col(i) = x_nodes.row(vertex_to_node[i]);
-
-  common::array2d<double> verts(x_vertices);
+    for (std::size_t j = 0; j < 3; ++j)
+      x_vertices(j, i) = x_nodes(vertex_to_node[i], j);
 
   // Run marker function on vertex coordinates
-  const std::vector<bool> marked = marker(verts);
-  if ((int)marked.size() != x_vertices.cols())
+  const std::vector<bool> marked = marker(x_vertices);
+  if (marked.size() != x_vertices.shape[1])
     throw std::runtime_error("Length of array of markers is wrong.");
 
   // Iterate over entities to build vector of marked entities
@@ -409,11 +401,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const mesh::Geometry& geometry = mesh.geometry();
-
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      geom_dofs(geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
-
+  const common::array2d<double>& geom_dofs = geometry.x();
   const mesh::Topology& topology = mesh.topology();
 
   const int tdim = topology.dim();
@@ -448,16 +436,22 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
     {
       // Compute cell midpoint
       Eigen::Vector3d midpoint(0.0, 0.0, 0.0);
-      for (auto j : xc)
-        midpoint += geom_dofs.row(j).matrix().transpose();
+      for (std::int32_t j : xc)
+        for (int k = 0; k < 3; ++k)
+          midpoint[k] += geom_dofs(j, k);
       midpoint /= xc.size();
 
       // Compute vector triple product of two edges and vector to midpoint
-      Eigen::Vector3d p0 = geom_dofs.row(entity_geometry(i, 0));
+      // Eigen::Vector3d p0 = geom_dofs.row(entity_geometry(i, 0));
+      Eigen::Vector3d p0, p1, p2;
+      std::copy_n(geom_dofs.row(entity_geometry(i, 0)).begin(), 3, p0.data());
+      std::copy_n(geom_dofs.row(entity_geometry(i, 1)).begin(), 3, p1.data());
+      std::copy_n(geom_dofs.row(entity_geometry(i, 2)).begin(), 3, p2.data());
+
       Eigen::Matrix3d a;
       a.row(0) = midpoint - p0;
-      a.row(1) = geom_dofs.row(entity_geometry(i, 1)).matrix().transpose() - p0;
-      a.row(2) = geom_dofs.row(entity_geometry(i, 2)).matrix().transpose() - p0;
+      a.row(1) = p1 - p0;
+      a.row(2) = p2 - p0;
 
       // Midpoint direction should be opposite to normal, hence this
       // should be negative. Switch points if not.
