@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <vector>
@@ -16,15 +18,15 @@ namespace dolfinx::fem
 
 template <typename T>
 class Expression;
+
 /// Evaluate a UFC expression.
-/// @param[in,out] values An array to evaluate the expression into
+/// @param[out] values An array to evaluate the expression into
 /// @param[in] e The expression to evaluate
-/// @param[in] active_cells The cells on which to evaluate the expression
+/// @param[in] active_cells The cells on which to evaluate the
+/// expression
 template <typename T>
-void eval(
-    Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        values,
-    const fem::Expression<T>& e, const std::vector<std::int32_t>& active_cells)
+void eval(common::array2d<T>& values, const fem::Expression<T>& e,
+          const tcb::span<const std::int32_t>& active_cells)
 {
   // Extract data from Expression
   auto mesh = e.mesh();
@@ -50,14 +52,11 @@ void eval(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      x_g(mesh->geometry().x().data(), mesh->geometry().x().shape[0],
-          mesh->geometry().x().shape[1]);
+  const common::array2d<double>& x_g = mesh->geometry().x();
 
   // Create data structures used in evaluation
   const int gdim = mesh->geometry().dim();
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
+  common::array2d<double> coordinate_dofs(num_dofs_g, gdim);
 
   // Iterate over cells and 'assemble' into values
   std::vector<T> values_e(e.num_points() * e.value_size(), 0);

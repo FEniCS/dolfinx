@@ -24,6 +24,7 @@
 #include <petscvec.h>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace dolfinx::fem
@@ -200,11 +201,9 @@ public:
 
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
-  void
-  interpolate(const std::function<
-              Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
-                  const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                      Eigen::RowMajor>>&)>& f)
+  void interpolate(
+      const std::function<std::variant<std::vector<T>, common::array2d<T>>(
+          const common::array2d<double>&)>& f)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -215,9 +214,8 @@ public:
     const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
-        = fem::interpolation_coords(*_function_space->element(),
-                                    *_function_space->mesh(), cells);
+    const common::array2d<double> x = fem::interpolation_coords(
+        *_function_space->element(), *_function_space->mesh(), cells);
     fem::interpolate(*this, f, x, cells);
   }
 

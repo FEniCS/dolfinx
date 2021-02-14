@@ -64,21 +64,25 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(
-    Eigen::Ref<
-        Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        x,
-    const common::array2d<double>& X,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& cell_geometry) const
+    common::array2d<double>& x, const common::array2d<double>& X,
+    const common::array2d<double>& cell_geometry) const
 {
-  assert(x.rows() == (int)X.shape[0]);
-  assert(x.cols() == this->geometric_dimension());
+  assert(x.shape[0] == X.shape[0]);
+  assert((int)x.shape[1] == this->geometric_dimension());
   assert((int)X.shape[1] == this->topological_dimension());
 
+  // FIXME: remove dynamic memory allocation
+
   // Compute physical coordinates
-  Eigen::MatrixXd phi(X.shape[0], cell_geometry.rows());
+  Eigen::MatrixXd phi(X.shape[0], cell_geometry.shape[0]);
   basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[0]);
-  x = phi * cell_geometry.matrix();
+
+  // x = phi * cell_geometry;
+  std::fill(x.data(), x.data() + x.size(), 0.0);
+  for (std::size_t i = 0; i < x.shape[0]; ++i)
+    for (std::size_t j = 0; j < x.shape[1]; ++j)
+      for (std::size_t k = 0; k < cell_geometry.shape[0]; ++k)
+        x(i, j) += phi(i, k) * cell_geometry(k, j);
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
