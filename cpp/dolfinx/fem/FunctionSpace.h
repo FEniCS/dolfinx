@@ -85,11 +85,13 @@ public:
   ///         W.sub(1).sub(0) == [1, 0]
   std::vector<int> component() const;
 
+  /// @todo Remove - see function in interpolate.h
   /// Tabulate the physical coordinates of all dofs on this process.
   /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...)
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
   tabulate_dof_coordinates() const;
 
+  /// @todo Remove - see function in interpolate.h
   /// Tabulate the physical coordinates of all dofs of scalar subspace on this
   /// process. For a VectorFunctionSpace or TensorFunctionSpace, the scalar
   /// subspace is the space used for each componenet. Otherwise the scalar
