@@ -7,8 +7,8 @@
 #pragma once
 
 #include "ElementDofLayout.h"
-#include <Eigen/Dense>
 #include <cstdint>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -78,13 +78,10 @@ public:
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
   void compute_reference_geometry(
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
-      std::vector<double>& J, tcb::span<double> detJ, std::vector<double>& K,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&
-          cell_geometry) const;
+      common::array2d<double>& X, std::vector<double>& J,
+      tcb::span<double> detJ, std::vector<double>& K,
+      const common::array2d<double>& x,
+      const common::array2d<double>& cell_geometry) const;
 
   /// Permutes a list of DOF numbers on a cell
   void permute_dofs(int* dofs, const uint32_t cell_perm) const;

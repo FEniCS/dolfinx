@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CoordinateElement.h"
+#include <Eigen/Dense>
 #include <basix.h>
 
 using namespace dolfinx;
@@ -86,27 +87,35 @@ void CoordinateElement::push_forward(
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
-    std::vector<double>& J, tcb::span<double> detJ, std::vector<double>& K,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& cell_geometry) const
+    common::array2d<double>& X, std::vector<double>& J, tcb::span<double> detJ,
+    std::vector<double>& K, const common::array2d<double>& x,
+    const common::array2d<double>& cell_geometry) const
 {
   // Number of points
-  int num_points = x.rows();
+  int num_points = x.shape[0];
   if (num_points == 0)
     return;
+
+  Eigen::Map<
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      _X(X.data(), X.shape[0], X.shape[1]);
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      _x(x.data(), x.shape[0], x.shape[1]);
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      _cell_geometry(cell_geometry.data(), cell_geometry.shape[0],
+                     cell_geometry.shape[1]);
 
   // in-argument checks
   const int tdim = this->topological_dimension();
   const int gdim = this->geometric_dimension();
-  assert(x.cols() == gdim);
-  assert(cell_geometry.cols() == gdim);
+  assert(_x.cols() == gdim);
+  assert(_cell_geometry.cols() == gdim);
 
   // In/out size checks
-  assert(X.rows() == num_points);
-  assert(X.cols() == tdim);
+  assert(_X.rows() == num_points);
+  assert(_X.cols() == tdim);
   assert((int)J.size() == num_points * gdim * tdim);
   assert((int)detJ.size() == num_points);
   assert((int)K.size() == num_points * gdim * tdim);
@@ -114,12 +123,12 @@ void CoordinateElement::compute_reference_geometry(
   // FIXME: Array and matrix rows/cols transpose etc all very tortuous
   // FIXME: tidy up and sort out
 
-  const int d = cell_geometry.rows();
+  const int d = _cell_geometry.rows();
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
       d, tdim);
 
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      tabulated_data(tdim + 1, cell_geometry.rows());
+      tabulated_data(tdim + 1, _cell_geometry.rows());
 
   if (_is_affine)
   {
@@ -130,13 +139,13 @@ void CoordinateElement::compute_reference_geometry(
                     1);
 
     // Compute physical coordinates at X=0.
-    x0 = tabulated_data.row(0).matrix() * cell_geometry.matrix();
+    x0 = tabulated_data.row(0).matrix() * _cell_geometry.matrix();
 
     // Compute Jacobian and inverse
     dphi = tabulated_data.block(1, 0, tdim, d).transpose();
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
         J0(gdim, tdim);
-    J0 = cell_geometry.matrix().transpose() * dphi;
+    J0 = _cell_geometry.matrix().transpose() * dphi;
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
         K0(tdim, gdim);
 
@@ -166,13 +175,13 @@ void CoordinateElement::compute_reference_geometry(
 
     // Calculate X for each point
     for (int ip = 0; ip < num_points; ++ip)
-      X.row(ip) = K0 * (x.row(ip).matrix().transpose() - x0);
+      _X.row(ip) = K0 * (_x.row(ip).matrix().transpose() - x0);
   }
   else
   {
     // Newton's method for non-affine geometry
     Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> xk(
-        x.cols());
+        _x.cols());
     Eigen::RowVectorXd Xk(tdim);
     Eigen::RowVectorXd dX(tdim);
 
@@ -193,11 +202,11 @@ void CoordinateElement::compute_reference_geometry(
                         Xk.data(), 1);
 
         // Compute physical coordinates
-        xk = tabulated_data.row(0).matrix() * cell_geometry.matrix();
+        xk = tabulated_data.row(0).matrix() * _cell_geometry.matrix();
 
         // Compute Jacobian and inverse
         dphi = tabulated_data.block(1, 0, tdim, d).transpose();
-        Jview = cell_geometry.matrix().transpose() * dphi;
+        Jview = _cell_geometry.matrix().transpose() * dphi;
         if (gdim == tdim)
           Kview = Jview.inverse();
         else
@@ -205,7 +214,7 @@ void CoordinateElement::compute_reference_geometry(
           Kview = (Jview.transpose() * Jview).inverse() * Jview.transpose();
 
         // Increment to new point in reference
-        dX = Kview * (x.row(ip).matrix().transpose() - xk);
+        dX = Kview * (_x.row(ip).matrix().transpose() - xk);
         if (dX.norm() < non_affine_atol)
           break;
         Xk += dX;
@@ -215,7 +224,7 @@ void CoordinateElement::compute_reference_geometry(
         throw std::runtime_error(
             "Newton method failed to converge for non-affine geometry");
       }
-      X.row(ip) = Xk;
+      _X.row(ip) = Xk;
       if (gdim == tdim)
         detJ[ip] = Jview.determinant();
       else

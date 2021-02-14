@@ -9,6 +9,7 @@
 #include "pugixml.hpp"
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
+#include <Eigen/Core>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/ElementDofLayout.h>
 

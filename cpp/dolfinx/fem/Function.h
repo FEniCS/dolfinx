@@ -11,6 +11,7 @@
 #include <Eigen/Core>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>
@@ -297,8 +298,7 @@ public:
     std::vector<double> J(gdim * tdim);
     std::array<double, 1> detJ;
     std::vector<double> K(tdim * gdim);
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(
-        1, tdim);
+    common::array2d<double> X(1, tdim);
 
     // Prepare basis function data structures
     std::vector<double> basis_reference_values(space_dimension
@@ -306,7 +306,7 @@ public:
     std::vector<double> basis_values(space_dimension * value_size);
 
     // Create work vector for expansion coefficients
-    Eigen::Matrix<T, 1, Eigen::Dynamic> coefficients(space_dimension
+    std::vector<T> coefficients(space_dimension
                                                      * bs_element);
 
     // Get dofmap
@@ -317,8 +317,10 @@ public:
     mesh->topology_mutable().create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
         = mesh->topology().get_cell_permutation_info();
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    common::array2d<double>
         coordinate_dofs(num_dofs_g, gdim);
+
+    common::array2d<double> xp(1,  gdim);
 
     // Loop over points
     u.setZero();
@@ -334,7 +336,11 @@ public:
       // Get cell geometry (coordinate dofs)
       auto x_dofs = x_dofmap.links(cell_index);
       for (int i = 0; i < num_dofs_g; ++i)
-        coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+
+      for (int j = 0; j < gdim; ++j)
+        xp(0, j) = x(p, j);
 
       // Compute reference coordinates X, and J, detJ and K
       cmap.compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
