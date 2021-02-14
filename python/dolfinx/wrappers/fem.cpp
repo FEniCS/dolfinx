@@ -716,8 +716,8 @@ void fem(py::module& m)
              self.eval(tcb::span(active_cells.data(), active_cells.size()),
                        _values);
              assert(values.ndim() == 2);
-             assert(values.shape()[0] == _values.shape[0]);
-             assert(values.shape()[1] == _values.shape[1]);
+             assert(values.shape()[0] == (py::ssize_t)_values.shape[0]);
+             assert(values.shape()[1] == (py::ssize_t)_values.shape[1]);
              auto v = values.mutable_unchecked();
              for (py::ssize_t i = 0; i < v.shape(0); i++)
                for (py::ssize_t j = 0; j < v.shape(1); j++)
