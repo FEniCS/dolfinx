@@ -76,7 +76,6 @@ void geometry(py::module& m)
           return dolfinx::geometry::compute_distance_gjk(_p, _q);
         });
 
-  //   m.def("compute_distance_gjk", &dolfinx::geometry::compute_distance_gjk);
   m.def("squared_distance", &dolfinx::geometry::squared_distance);
   m.def("select_colliding_cells",
         [](const dolfinx::mesh::Mesh& mesh,

@@ -440,7 +440,6 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
       midpoint /= xc.size();
 
       // Compute vector triple product of two edges and vector to midpoint
-      // Eigen::Vector3d p0 = geom_dofs.row(entity_geometry(i, 0));
       Eigen::Vector3d p0, p1, p2;
       std::copy_n(geom_dofs.row(entity_geometry(i, 0)).begin(), 3, p0.data());
       std::copy_n(geom_dofs.row(entity_geometry(i, 1)).begin(), 3, p1.data());
