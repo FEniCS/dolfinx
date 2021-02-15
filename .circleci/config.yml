@@ -6,6 +6,7 @@ install-python-components: &install-python-components
     pip3 install git+https://github.com/FEniCS/basix.git
     pip3 install git+https://github.com/FEniCS/ufl.git
     pip3 install git+https://github.com/FEniCS/ffcx.git
+    pip3 install sphinx==3.4.3
 
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
