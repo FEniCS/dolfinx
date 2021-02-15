@@ -11,26 +11,11 @@
 #include <cassert>
 #include <vector>
 
-/// @todo Remove
-template <typename T, typename = void>
-struct is_2d_container : std::false_type
-{
-};
-
-/// @todo Remove
-template <typename T>
-struct is_2d_container<T, std::void_t<decltype(std::declval<T>().data()),
-                                      decltype(std::declval<T>().rows()),
-                                      decltype(std::declval<T>().cols())>>
-    : std::true_type
-{
-};
-
 namespace dolfinx::common
 {
 
-/// This class provides a dynamic 2-dimensional row-wise array
-/// data structure
+/// This class provides a dynamic 2-dimensional row-wise array data
+/// structure
 template <typename T, class Allocator = std::allocator<T>>
 class array2d
 {
@@ -69,20 +54,7 @@ public:
     _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
   }
 
-  /// @todo Remove, used for copying in eigen array
-  /// Constructs a two dimensional array with the copy of the contents
-  /// of other two dimensional container
-  template <class Container,
-            typename
-            = typename std::enable_if<is_2d_container<Container>::value>::type>
-  array2d(Container& array)
-      : shape({size_type(array.rows()), size_type(array.cols())})
-  {
-    _storage.resize(array.size());
-    std::copy(array.data(), array.data() + array.size(), _storage.begin());
-  }
-
-  /// @todo Use suitable std::enable_if to make this more general
+  /// @todo Use suitable std::enable_if to make this more general (and correct)
   /// Constructs a two dimensional array from a vector
   template <typename Vector>
   array2d(std::array<size_type, 2> shape, Vector&& x)
@@ -141,19 +113,18 @@ public:
   /// Access a row in the array
   /// @param[in] i Row index
   /// @return Span of the row data
-  constexpr tcb::span<value_type> row(int i)
+  constexpr tcb::span<value_type> row(size_type i)
   {
-    size_type offset = i * shape[1];
-    return tcb::span<value_type>(std::next(_storage.data(), offset), shape[1]);
+    return tcb::span<value_type>(std::next(_storage.data(), i * shape[1]),
+                                 shape[1]);
   }
 
   /// Access a row in the array (const version)
   /// @param[in] i Row index
   /// @return Span of the row data
-  constexpr tcb::span<const value_type> row(int i) const
+  constexpr tcb::span<const value_type> row(size_type i) const
   {
-    size_type offset = i * shape[1];
-    return tcb::span<const value_type>(std::next(_storage.data(), offset),
+    return tcb::span<const value_type>(std::next(_storage.data(), i * shape[1]),
                                        shape[1]);
   }
 

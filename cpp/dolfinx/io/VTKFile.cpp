@@ -106,7 +106,7 @@ std::string eigen_to_string(const T& x, int precision)
 {
   std::stringstream s;
   s.precision(precision);
-  for (Eigen::Index i = 0; i < x.size(); ++i)
+  for (size_t i = 0; i < x.size(); ++i)
     s << x.data()[i] << " ";
   return s.str();
 }
@@ -121,11 +121,8 @@ void add_pvtu_mesh(pugi::xml_node& node)
 //----------------------------------------------------------------------------
 /// At data to a pugixml node
 template <typename Scalar>
-void _add_data(
-    const fem::Function<Scalar>& u,
-    const Eigen::Ref<const Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& values,
-    pugi::xml_node& data_node)
+void _add_data(const fem::Function<Scalar>& u,
+               const common::array2d<Scalar>& values, pugi::xml_node& data_node)
 {
   const int rank = u.function_space()->element()->value_rank();
   const int dim = u.function_space()->element()->value_size();
@@ -167,11 +164,13 @@ void _add_data(
       field_node.append_attribute("Name") = (component + "_" + u.name).c_str();
       field_node.append_attribute("format") = "ascii";
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic> values_comp;
+      Eigen::Map<const Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>>
+          val_eigen(values.data(), values.shape[0], values.shape[1]);
 
       if (component == "real")
-        values_comp = values.real();
+        values_comp = val_eigen.real();
       else if (component == "imag")
-        values_comp = values.imag();
+        values_comp = val_eigen.imag();
       if (rank == 0)
       {
         field_node.append_child(pugi::node_pcdata)
@@ -247,9 +246,9 @@ void _add_data(
         field_node.append_attribute("NumberOfComponents") = 3;
         if (dim == 2)
         {
-          assert(values.cols() == 2);
+          assert(values.shape[1] == 2);
           std::stringstream ss;
-          for (int i = 0; i < values.rows(); ++i)
+          for (int i = 0; i < values.shape[0]; ++i)
           {
             for (int j = 0; j < 2; ++j)
               ss << values(i, j) << " ";
@@ -260,7 +259,7 @@ void _add_data(
         }
         else
         {
-          assert(values.cols() == 3);
+          assert(values.shape[1] == 3);
           field_node.append_child(pugi::node_pcdata)
               .set_value(eigen_to_string(values, 16).c_str());
         }
@@ -272,7 +271,7 @@ void _add_data(
         {
           // Pad 2D tensors with 0.0 to make them 3D
           std::stringstream ss;
-          for (int i = 0; i < values.rows(); ++i)
+          for (int i = 0; i < values.shape[0]; ++i)
           {
             for (int j = 0; j < 2; ++j)
             {
@@ -297,21 +296,15 @@ void _add_data(
   }
 }
 //----------------------------------------------------------------------------
-void add_data(
-    const fem::Function<double>& u,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& values,
-    pugi::xml_node& data_node)
+void add_data(const fem::Function<double>& u,
+              const common::array2d<double>& values, pugi::xml_node& data_node)
 {
   _add_data(u, values, data_node);
 }
 //----------------------------------------------------------------------------
-void add_data(
-    const fem::Function<std::complex<double>>& u,
-    const Eigen::Ref<const Eigen::Array<std::complex<double>, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        values,
-    pugi::xml_node& data_node)
+void add_data(const fem::Function<std::complex<double>>& u,
+              const common::array2d<std::complex<double>>& values,
+              pugi::xml_node& data_node)
 {
   _add_data(u, values, data_node);
 }
@@ -492,9 +485,15 @@ void write_function(
           = io::xdmf_utils::get_cell_data_values(_u);
       const int value_size = _u.get().function_space()->element()->value_size();
       assert(values.size() % value_size == 0);
-      Eigen::Map<const Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>>
-          _values(values.data(), values.size() / value_size, value_size);
+      common::array2d<Scalar> _values(values.size() / value_size, value_size);
+      // FIXME: Avoid copies by writing directly a compound data
+      for (size_t i = 0; i < _values.shape[0]; ++i)
+      {
+        for (size_t j = 0; j < value_size; ++j)
+        {
+          _values(i, j) = values[i * value_size + j];
+        }
+      }
       pugi::xml_node data_node = piece_node.child("CellData");
       assert(!data_node.empty());
       add_data(_u, _values, data_node);
@@ -528,8 +527,8 @@ void write_function(
         const std::int32_t num_cells = map->size_local();
 
         // Resize array for holding point values
-        Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-            point_values(mesh->geometry().x().shape[0], value_size_loc);
+        common::array2d<Scalar> point_values(mesh->geometry().x().shape[0],
+                                             value_size_loc);
 
         // If scalar function space
         if (element->num_sub_elements() == 0)
@@ -617,8 +616,7 @@ void write_function(
       {
         LOG(WARNING) << "Output data is interpolated into a first order "
                         "Lagrange space.";
-        Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-            point_values = _u.get().compute_point_values();
+        common::array2d<Scalar> point_values = _u.get().compute_point_values();
         pugi::xml_node data_node = piece_node.child("PointData");
         assert(!data_node.empty());
         add_data(_u, point_values, data_node);

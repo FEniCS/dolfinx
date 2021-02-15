@@ -20,8 +20,8 @@ class TableEntry;
 /// Example usage:
 ///
 ///   Table table("Timings");
-///   table.set("Eigen", "Assemble", 0.010);
-///   table.set("Eigen", "Solve", 0.020);
+///   table.set("Foo", "Assemble", 0.010);
+///   table.set("Foo", "Solve", 0.020);
 ///   table.set("PETSc", "Assemble", 0.011);
 ///   table.set("PETSc", "Solve", 0.019);
 

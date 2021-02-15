@@ -7,7 +7,6 @@
 #include "MPICommWrapper.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <Eigen/Core>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Table.h>
@@ -16,7 +15,7 @@
 #include <dolfinx/common/subsystem.h>
 #include <dolfinx/common/timing.h>
 #include <memory>
-#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <string>
