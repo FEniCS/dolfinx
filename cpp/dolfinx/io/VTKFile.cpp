@@ -106,7 +106,7 @@ std::string eigen_to_string(const T& x, int precision)
 {
   std::stringstream s;
   s.precision(precision);
-  for (size_t i = 0; i < x.size(); ++i)
+  for (std::uint32_t i = 0; i < x.size(); ++i)
     s << x.data()[i] << " ";
   return s.str();
 }
@@ -248,7 +248,7 @@ void _add_data(const fem::Function<Scalar>& u,
         {
           assert(values.shape[1] == 2);
           std::stringstream ss;
-          for (int i = 0; i < values.shape[0]; ++i)
+          for (size_t i = 0; i < values.shape[0]; ++i)
           {
             for (int j = 0; j < 2; ++j)
               ss << values(i, j) << " ";
@@ -271,7 +271,7 @@ void _add_data(const fem::Function<Scalar>& u,
         {
           // Pad 2D tensors with 0.0 to make them 3D
           std::stringstream ss;
-          for (int i = 0; i < values.shape[0]; ++i)
+          for (size_t i = 0; i < values.shape[0]; ++i)
           {
             for (int j = 0; j < 2; ++j)
             {
@@ -489,7 +489,7 @@ void write_function(
       // FIXME: Avoid copies by writing directly a compound data
       for (size_t i = 0; i < _values.shape[0]; ++i)
       {
-        for (size_t j = 0; j < value_size; ++j)
+        for (int j = 0; j < value_size; ++j)
         {
           _values(i, j) = values[i * value_size + j];
         }
