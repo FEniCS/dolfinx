@@ -673,7 +673,7 @@ void assemble_exterior_facets(
   assert(f_to_c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
-  for (const auto& f : active_facets)
+  for (std::int32_t f : active_facets)
   {
     // Get index of first attached cell
     assert(f_to_c->num_links(f) > 0);
@@ -689,7 +689,7 @@ void assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+      std::copy_n(x_g.row(x_dofs[i]).begin(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
@@ -740,7 +740,7 @@ void assemble_interior_facets(
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
   const int offset_g = gdim * num_dofs_g;
-  for (const auto& f : active_facets)
+  for (std::int32_t f : active_facets)
   {
     // Get attached cell indices
     auto cells = f_to_c->links(f);

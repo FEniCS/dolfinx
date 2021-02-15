@@ -423,7 +423,7 @@ common::array2d<typename U::scalar_type> pack_coefficients(const U& u)
 
   // Copy data into coefficient array
   common::array2d<T> c(num_cells, offsets.back());
-  if (coefficients.size() > 0)
+  if (!coefficients.empty())
   {
     for (int cell = 0; cell < num_cells; ++cell)
     {
