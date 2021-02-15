@@ -6,6 +6,7 @@
 
 #include "xdmf_utils.h"
 #include "pugixml.hpp"
+#include <Eigen/Core>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -48,7 +49,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
-  const common::array2d <Scalar > data_values = u.compute_point_values();
+  const common::array2d<Scalar> data_values = u.compute_point_values();
 
   const int width = get_padded_width(*u.function_space()->element());
   assert(mesh->geometry().index_map());
