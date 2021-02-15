@@ -11,21 +11,6 @@
 #include <cassert>
 #include <vector>
 
-/// @todo Remove
-template <typename T, typename = void>
-struct is_2d_container : std::false_type
-{
-};
-
-/// @todo Remove
-template <typename T>
-struct is_2d_container<T, std::void_t<decltype(std::declval<T>().data()),
-                                      decltype(std::declval<T>().rows()),
-                                      decltype(std::declval<T>().cols())>>
-    : std::true_type
-{
-};
-
 namespace dolfinx::common
 {
 
@@ -69,20 +54,7 @@ public:
     _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
   }
 
-  /// @todo Remove, used for copying in eigen array
-  /// Constructs a two dimensional array with the copy of the contents
-  /// of other two dimensional container
-  template <class Container,
-            typename
-            = typename std::enable_if<is_2d_container<Container>::value>::type>
-  array2d(Container& array)
-      : shape({size_type(array.rows()), size_type(array.cols())})
-  {
-    _storage.resize(array.size());
-    std::copy(array.data(), array.data() + array.size(), _storage.begin());
-  }
-
-  /// @todo Use suitable std::enable_if to make this more general
+  /// @todo Use suitable std::enable_if to make this more general (and correct)
   /// Constructs a two dimensional array from a vector
   template <typename Vector>
   array2d(std::array<size_type, 2> shape, Vector&& x)

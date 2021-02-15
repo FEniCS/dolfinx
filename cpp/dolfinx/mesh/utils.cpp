@@ -330,8 +330,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   assert(v_to_c);
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
-  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_vertices(
-      3, vertices.size());
+  common::array2d<double> x_vertices(3, vertices.size());
   std::vector<std::int32_t> vertex_to_pos(v_to_c->num_nodes(), -1);
   for (std::size_t i = 0; i < vertices.size(); ++i)
   {
@@ -345,16 +344,15 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
     const int local_pos = std::distance(vertices.begin(), it);
 
     auto dofs = x_dofmap.links(c);
-    x_vertices.col(i) = x_nodes.row(dofs[local_pos]);
+    for (int j = 0; j < 3; ++j)
+      x_vertices(j, i) = x_nodes(dofs[local_pos], j);
 
     vertex_to_pos[v] = i;
   }
 
-  common::array2d<double> verts(x_vertices);
-
   // Run marker function on the vertex coordinates
-  const std::vector<bool> marked = marker(verts);
-  if ((int)marked.size() != x_vertices.cols())
+  const std::vector<bool> marked = marker(x_vertices);
+  if (marked.size() != x_vertices.shape[1])
     throw std::runtime_error("Length of array of markers is wrong.");
 
   // Loop over entities and check vertex markers
@@ -393,8 +391,8 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
   dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
   int num_entity_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entity_geometry(entity_list.size(), num_entity_vertices);
+  common::array2d<std::int32_t> entity_geometry(entity_list.size(),
+                                                num_entity_vertices);
 
   if (orient
       and (cell_type != dolfinx::mesh::CellType::tetrahedron or dim != 2))
@@ -459,8 +457,8 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
         std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
     }
   }
-  common::array2d<std::int32_t> ent_geom(entity_geometry);
-  return ent_geom;
+
+  return entity_geometry;
 }
 //------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)

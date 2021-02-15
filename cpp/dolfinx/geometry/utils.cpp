@@ -8,10 +8,12 @@
 #include "utils.h"
 #include "BoundingBoxTree.h"
 #include "gjk.h"
+#include <Eigen/Core>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
+
 using namespace dolfinx;
 
 namespace
@@ -312,20 +314,18 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
-  Eigen::Vector3d _p;
-  _p << p[0], p[1], p[2];
+  common::array2d<double> _p(1, 3);
+  std::copy(p.begin(), p.end(), _p.data());
 
   if (dim == tdim)
   {
     auto dofs = x_dofmap.links(index);
-    Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(dofs.size(),
-                                                                    3);
+    common::array2d<double> nodes(dofs.size(), 3);
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (std::size_t j = 0; j < 3; ++j)
         nodes(i, j) = geom_dofs(dofs[i], j);
 
-    const std::array<double, 3> x
-        = geometry::compute_distance_gjk(_p.transpose(), nodes);
+    const std::array<double, 3> x = geometry::compute_distance_gjk(_p, nodes);
     return x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
   }
   else
@@ -351,14 +351,12 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     const std::vector<int> entity_dofs
         = geometry.cmap().dof_layout().entity_closure_dofs(dim,
                                                            local_cell_entity);
-    Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> nodes(
-        entity_dofs.size(), 3);
+    common::array2d<double> nodes(entity_dofs.size(), 3);
     for (std::size_t i = 0; i < entity_dofs.size(); i++)
       for (std::size_t j = 0; j < 3; ++j)
         nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);
 
-    std::array<double, 3> x
-        = geometry::compute_distance_gjk(_p.transpose(), nodes);
+    std::array<double, 3> x = geometry::compute_distance_gjk(_p, nodes);
     return x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
   }
 }

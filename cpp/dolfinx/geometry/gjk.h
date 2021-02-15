@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <array>
+#include <dolfinx/common/array2d.h>
 
 namespace dolfinx::geometry
 {
@@ -16,11 +16,10 @@ namespace dolfinx::geometry
 /// defined by a set of points, using the Gilbert–Johnson–Keerthi (GJK)
 /// distance algorithm.
 ///
-/// @param[in] p Body 1 list of points
-/// @param[in] q Body 2 list of points
+/// @param[in] p Body 1 list of points, shape (num_points, 3)
+/// @param[in] q Body 2 list of points, shape (num_points, 3)
 /// @return shortest vector between bodies
-std::array<double, 3> compute_distance_gjk(
-    const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
-    const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& q);
+std::array<double, 3> compute_distance_gjk(const common::array2d<double>& p,
+                                           const common::array2d<double>& q);
 
 } // namespace dolfinx::geometry

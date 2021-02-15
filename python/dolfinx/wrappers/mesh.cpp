@@ -20,7 +20,6 @@
 #include <dolfinx/mesh/utils.h>
 #include <iostream>
 #include <memory>
-#include <pybind11/eigen.h>
 #include <pybind11/eval.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
@@ -132,8 +131,7 @@ void mesh(py::module& m)
       [](const MPICommWrapper comm,
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
          const dolfinx::fem::CoordinateElement& element,
-         const Eigen::Ref<const Eigen::Array<
-             double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
+         const py::array_t<double, py::array::c_style>& x,
          dolfinx::mesh::GhostMode ghost_mode,
          PythonPartitioningFunction partitioner) {
         auto partitioner_wrapper
@@ -144,7 +142,11 @@ void mesh(py::module& m)
                 return partitioner(MPICommWrapper(comm), n, cell_type, cells,
                                    ghost_mode);
               };
-        return dolfinx::mesh::create_mesh(comm.get(), cells, element, x,
+
+        const std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
+        dolfinx::common::array2d<double> _x(x.shape()[0], shape1);
+        std::copy_n(x.data(), x.size(), _x.data());
+        return dolfinx::mesh::create_mesh(comm.get(), cells, element, _x,
                                           ghost_mode, partitioner_wrapper);
       },
       "Helper function for creating meshes.");
