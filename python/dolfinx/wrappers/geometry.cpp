@@ -6,14 +6,12 @@
 
 #include "array.h"
 #include "caster_mpi.h"
-#include <Eigen/Core>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/gjk.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
-#include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -39,7 +37,45 @@ void geometry(py::module& m)
                           const dolfinx::geometry::BoundingBoxTree&>(
             &dolfinx::geometry::compute_collisions));
 
-  m.def("compute_distance_gjk", &dolfinx::geometry::compute_distance_gjk);
+  m.def("compute_distance_gjk",
+        [](const py::array_t<double>& p, const py::array_t<double>& q) {
+          const std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
+          const std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
+          dolfinx::common::array2d<double> _p(p_s0, 3, 0.0), _q(q_s0, 3, 0.0);
+
+          auto px = p.unchecked();
+          if (px.ndim() == 1)
+          {
+            for (py::ssize_t i = 0; i < px.shape(0); i++)
+              _p(0, i) = px(i);
+          }
+          else if (px.ndim() == 2)
+          {
+            for (py::ssize_t i = 0; i < px.shape(0); i++)
+              for (py::ssize_t j = 0; j < px.shape(1); j++)
+                _p(i, j) = px(i, j);
+          }
+          else
+            throw std::runtime_error("Array has wrong ndim.");
+
+          auto qx = q.unchecked();
+          if (qx.ndim() == 1)
+          {
+            for (py::ssize_t i = 0; i < qx.shape(0); i++)
+              _q(0, i) = qx(i);
+          }
+          else if (qx.ndim() == 2)
+          {
+            for (py::ssize_t i = 0; i < qx.shape(0); i++)
+              for (py::ssize_t j = 0; j < qx.shape(1); j++)
+                _q(i, j) = qx(i, j);
+          }
+          else
+            throw std::runtime_error("Array has wrong ndim.");
+
+          return dolfinx::geometry::compute_distance_gjk(_p, _q);
+        });
+
   m.def("squared_distance", &dolfinx::geometry::squared_distance);
   m.def("select_colliding_cells",
         [](const dolfinx::mesh::Mesh& mesh,

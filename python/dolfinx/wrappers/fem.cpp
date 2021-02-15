@@ -7,7 +7,6 @@
 #include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <Eigen/Core>
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -36,7 +35,6 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
-#include <pybind11/eigen.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
@@ -643,18 +641,26 @@ void fem(py::module& m)
           "Return the vector associated with the finite element Function")
       .def(
           "eval",
-          [](dolfinx::fem::Function<PetscScalar>& self,
-             const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                                 Eigen::RowMajor>>& x,
+          [](const dolfinx::fem::Function<PetscScalar>& self,
+             const py::array_t<double, py::array::c_style>& x,
              const py::array_t<std::int32_t, py::array::c_style>& cells,
-             Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                     Eigen::Dynamic, Eigen::RowMajor>>
-                 u) { self.eval(x, tcb::span(cells.data(), cells.size()), u); },
+             py::array_t<PetscScalar, py::array::c_style>& u) {
+            // TODO: handle 1d case
+            dolfinx::common::array2d<double> _x(x.shape()[0], x.shape()[1]);
+            std::copy_n(x.data(), x.size(), _x.data());
+            dolfinx::common::array2d<PetscScalar> _u(u.shape()[0],
+                                                     u.shape()[1]);
+            self.eval(_x, tcb::span(cells.data(), cells.size()), _u);
+            std::copy_n(_u.data(), _u.size(), u.mutable_data());
+          },
           py::arg("x"), py::arg("cells"), py::arg("values"),
           "Evaluate Function")
-      .def("compute_point_values",
-           &dolfinx::fem::Function<PetscScalar>::compute_point_values,
-           "Compute values at all mesh points")
+      .def(
+          "compute_point_values",
+          [](const dolfinx::fem::Function<PetscScalar>& self) {
+            return as_pyarray2d(self.compute_point_values());
+          },
+          "Compute values at all mesh points")
       .def_property_readonly(
           "function_space",
           &dolfinx::fem::Function<PetscScalar>::function_space);
