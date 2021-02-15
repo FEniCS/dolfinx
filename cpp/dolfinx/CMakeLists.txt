@@ -89,7 +89,7 @@ of this variable will be used by Eigen for the alignment of all data structures.
 ")
 
 # Eigen3
-target_include_directories(dolfinx SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
+target_include_directories(dolfinx SYSTEM PRIVATE ${EIGEN3_INCLUDE_DIR})
 target_compile_definitions(dolfinx PUBLIC "EIGEN_MAX_ALIGN_BYTES=${DOLFINX_EIGEN_MAX_ALIGN_BYTES}")
 
 # Boost
