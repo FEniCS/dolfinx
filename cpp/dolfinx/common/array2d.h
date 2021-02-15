@@ -14,8 +14,8 @@
 namespace dolfinx::common
 {
 
-/// This class provides a dynamic 2-dimensional row-wise array
-/// data structure
+/// This class provides a dynamic 2-dimensional row-wise array data
+/// structure
 template <typename T, class Allocator = std::allocator<T>>
 class array2d
 {
@@ -113,19 +113,18 @@ public:
   /// Access a row in the array
   /// @param[in] i Row index
   /// @return Span of the row data
-  constexpr tcb::span<value_type> row(int i)
+  constexpr tcb::span<value_type> row(size_type i)
   {
-    size_type offset = i * shape[1];
-    return tcb::span<value_type>(std::next(_storage.data(), offset), shape[1]);
+    return tcb::span<value_type>(std::next(_storage.data(), i * shape[1]),
+                                 shape[1]);
   }
 
   /// Access a row in the array (const version)
   /// @param[in] i Row index
   /// @return Span of the row data
-  constexpr tcb::span<const value_type> row(int i) const
+  constexpr tcb::span<const value_type> row(size_type i) const
   {
-    size_type offset = i * shape[1];
-    return tcb::span<const value_type>(std::next(_storage.data(), offset),
+    return tcb::span<const value_type>(std::next(_storage.data(), i * shape[1]),
                                        shape[1]);
   }
 
