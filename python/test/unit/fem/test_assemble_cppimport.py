@@ -25,10 +25,11 @@ from mpi4py import MPI
 def test_eigen_assembly(tempdir):  # noqa: F811
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
     def compile_eigen_csr_assembler_module():
+        eigen_dir = "/usr/include/eigen3"
         cpp_code_header = f"""
 <%
 setup_pybind11(cfg)
-cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [petsc4py.get_include()] + [str(pybind_inc())] + ["/usr/include/eigen3"]}
+cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [petsc4py.get_include()] + [str(pybind_inc())] + [eigen_dir]}
 cfg['compiler_args'] = {["-D" + dm for dm in dolfinx_pc["define_macros"]]}
 cfg['compiler_args'] = ['-std=c++17']
 cfg['libraries'] = {dolfinx_pc["libraries"]}
