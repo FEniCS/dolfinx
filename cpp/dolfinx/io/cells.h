@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <cstdint>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <vector>
 
@@ -116,11 +116,9 @@ std::vector<std::uint8_t> transpose(const std::vector<std::uint8_t>& map);
 ///   where `a_p` is the permuted array
 /// @return Permuted cell topology, where for a cell `v_new[i] =
 ///   v_old[map[i]]`
-Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_permutation(
-    const Eigen::Ref<const Eigen::Array<
-        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::uint8_t>& p);
+common::array2d<std::int64_t>
+compute_permutation(const common::array2d<std::int64_t>& cells,
+                    const std::vector<std::uint8_t>& p);
 
 /// Get VTK cell identifier
 /// @param[in] mesh The Mesh

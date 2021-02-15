@@ -4,8 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/VTKFile.h>
@@ -40,7 +42,20 @@ void io(py::module& m)
 
   // TODO: Template for different values dtypes
   m.def("extract_local_entities",
-        &dolfinx::io::xdmf_utils::extract_local_entities);
+        [](const dolfinx::mesh::Mesh& mesh, int entity_dim,
+           const py::array_t<std::int64_t, py::array::c_style>& entities,
+           const py::array_t<std::int32_t, py::array::c_style>& values) {
+          dolfinx::common::array2d<std::int64_t> _entities(entities.shape()[0],
+                                                           entities.shape()[1]);
+          std::copy_n(entities.data(), entities.size(), _entities.data());
+          std::pair<dolfinx::common::array2d<std::int32_t>,
+                    std::vector<std::int32_t>>
+              e = dolfinx::io::xdmf_utils::extract_local_entities(
+                  mesh, entity_dim, _entities,
+                  tcb::span(values.data(), values.size()));
+          return std::pair(as_pyarray2d(std::move(e.first)),
+                           as_pyarray(std::move(e.second)));
+        });
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
@@ -71,8 +86,20 @@ void io(py::module& m)
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
-      .def("read_topology_data", &dolfinx::io::XDMFFile::read_topology_data,
-           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+      .def(
+          "read_topology_data",
+          [](dolfinx::io::XDMFFile& self, const std::string& name,
+             const std::string& xpath) {
+            return as_pyarray2d(self.read_topology_data(name, xpath));
+          },
+          py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+      .def(
+          "read_geometry_data",
+          [](dolfinx::io::XDMFFile& self, const std::string& name,
+             const std::string& xpath) {
+            return as_pyarray2d(self.read_geometry_data(name, xpath));
+          },
+          py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,

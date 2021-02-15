@@ -297,7 +297,7 @@ def test_higher_order_coordinate_map(points, celltype, order):
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     V = FunctionSpace(mesh, ("Lagrange", 2))
-    X = V.element.interpolation_points
+    X = V.element.interpolation_points()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
 
@@ -308,14 +308,13 @@ def test_higher_order_coordinate_map(points, celltype, order):
     for node in range(len(points)):
         x_coord_new[i] = x_g[coord_dofs.links(0)[node], :mesh.geometry.dim]
         i += 1
-    x = np.zeros(X.shape)
-    cmap.push_forward(x, X, x_coord_new)
+    x = cmap.push_forward(X, x_coord_new)
 
-    assert(np.allclose(x[:, 0], X[:, 0]))
-    assert(np.allclose(x[:, 1], 2 * X[:, 1]))
+    assert np.allclose(x[:, 0], X[:, 0])
+    assert np.allclose(x[:, 1], 2 * X[:, 1])
 
     if mesh.geometry.dim == 3:
-        assert(np.allclose(x[:, 2], 3 * X[:, 2]))
+        assert np.allclose(x[:, 2], 3 * X[:, 2])
 
 
 @skip_in_parallel
@@ -346,7 +345,7 @@ def test_higher_order_tetra_coordinate_map(order):
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(celltype), order))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     V = FunctionSpace(mesh, ("Lagrange", order))
-    X = V.element.interpolation_points
+    X = V.element.interpolation_points()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
 
@@ -358,11 +357,10 @@ def test_higher_order_tetra_coordinate_map(order):
         x_coord_new[i] = x_g[coord_dofs.links(0)[node], :mesh.geometry.dim]
         i += 1
 
-    x = np.zeros(X.shape)
-    cmap.push_forward(x, X, x_coord_new)
-    assert(np.allclose(x[:, 0], X[:, 0]))
-    assert(np.allclose(x[:, 1], 2 * X[:, 1]))
-    assert(np.allclose(x[:, 2], 3 * X[:, 2]))
+    x = cmap.push_forward(X, x_coord_new)
+    assert np.allclose(x[:, 0], X[:, 0])
+    assert np.allclose(x[:, 1], 2 * X[:, 1])
+    assert np.allclose(x[:, 2], 3 * X[:, 2])
 
 
 @skip_in_parallel

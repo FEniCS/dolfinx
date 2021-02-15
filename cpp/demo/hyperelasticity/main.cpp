@@ -123,8 +123,8 @@ int main(int argc, char* argv[])
     auto cmap
         = fem::create_coordinate_map(create_coordinate_map_hyperelasticity);
     auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
-        MPI_COMM_WORLD, {Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(1, 1, 1)},
-        {10, 10, 10}, cmap, mesh::GhostMode::none));
+        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
+        cmap, mesh::GhostMode::none));
 
     auto V = fem::create_functionspace(
         create_functionspace_form_hyperelasticity_F, "u", mesh);
@@ -147,18 +147,16 @@ int main(int argc, char* argv[])
       // Large angle of rotation (60 degrees)
       const double theta = 1.04719755;
 
-      Eigen::Array<PetscScalar, 3, Eigen::Dynamic, Eigen::RowMajor> values(
-          3, x.cols());
-      for (int i = 0; i < x.cols(); ++i)
+      common::array2d<PetscScalar> values(3, x.shape[1], 0.0);
+      for (std::size_t i = 0; i < x.shape[1]; ++i)
       {
         // New coordinates
-        double y
-            = y0 + (x(1, i) - y0) * cos(theta) - (x(2, i) - z0) * sin(theta);
-        double z
-            = z0 + (x(1, i) - y0) * sin(theta) + (x(2, i) - z0) * cos(theta);
+        double y = y0 + (x(1, i) - y0) * std::cos(theta)
+                   - (x(2, i) - z0) * std::sin(theta);
+        double z = z0 + (x(1, i) - y0) * std::sin(theta)
+                   + (x(2, i) - z0) * std::cos(theta);
 
         // Rotate at right end
-        values(0, i) = 0.0;
         values(1, i) = scale * (y - x(1, i));
         values(2, i) = scale * (z - x(2, i));
       }
@@ -168,20 +166,25 @@ int main(int argc, char* argv[])
 
     auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
     u_clamp->interpolate([](auto& x) {
-      return Eigen::Array<PetscScalar, 3, Eigen::Dynamic,
-                          Eigen::RowMajor>::Zero(3, x.cols());
+      return common::array2d<PetscScalar>(3, x.shape[1], 0.0);
     });
 
     // Create Dirichlet boundary conditions
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
     const auto bdofs_left = fem::locate_dofs_geometrical({*V}, [](auto& x) {
-      static const double epsilon = std::numeric_limits<double>::epsilon();
-      return x.row(0).abs() < 10.0 * epsilon;
+      constexpr double eps = 10 * std::numeric_limits<double>::epsilon();
+      std::vector<bool> marked(x.shape[1]);
+      std::transform(x.row(0).begin(), x.row(0).end(), marked.begin(),
+                     [](double x0) { return x0 < eps; });
+      return marked;
     });
     const auto bdofs_right = fem::locate_dofs_geometrical({*V}, [](auto& x) {
-      static const double epsilon = std::numeric_limits<double>::epsilon();
-      return (x.row(0) - 1.0).abs() < 10.0 * epsilon;
+      constexpr double eps = 10 * std::numeric_limits<double>::epsilon();
+      std::vector<bool> marked(x.shape[1]);
+      std::transform(x.row(0).begin(), x.row(0).end(), marked.begin(),
+                     [](double x0) { return std::abs(x0 - 1) < eps; });
+      return marked;
     });
 
     auto bcs

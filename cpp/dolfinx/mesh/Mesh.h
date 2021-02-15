@@ -10,9 +10,9 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include "utils.h"
-#include <Eigen/Core>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
+#include <dolfinx/common/array2d.h>
 #include <string>
 #include <utility>
 
@@ -150,22 +150,18 @@ private:
 /// vertices. For higher-order cells, other cells 'nodes' will be
 /// included.
 /// @param[in] element The coordinate element that describes the
-/// geometrica mapping for cells
+/// geometric mapping for cells
 /// @param[in] x The coordinates of mesh nodes
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>& x,
-                 GhostMode ghost_mode);
+                 const common::array2d<double>& x, GhostMode ghost_mode);
 
 /// Create a mesh using a provided mesh partitioning function
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>& x,
-                 GhostMode ghost_mode,
+                 const common::array2d<double>& x, GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
 
 } // namespace mesh

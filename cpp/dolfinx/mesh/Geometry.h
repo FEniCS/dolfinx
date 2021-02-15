@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
@@ -30,35 +30,31 @@ namespace mesh
 class Topology;
 
 /// Geometry stores the geometry imposed on a mesh.
-///
-/// Currently, the geometry is represented by the set of coordinates for
-/// the vertices of a mesh, but other representations are possible.
 
 class Geometry
 {
 public:
   /// Constructor
-  template <typename AdjacencyList32, typename Vector64>
+  template <typename AdjacencyList32, typename Array, typename Vector64>
   Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
            AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
-           const Eigen::Ref<const Eigen::Array<
-               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
-           Vector64&& input_global_indices)
-      : _dim(x.cols()), _dofmap(std::forward<AdjacencyList32>(dofmap)),
-        _index_map(index_map), _cmap(element),
+           Array&& x, Vector64&& input_global_indices)
+      : _dim(x.shape[1]), _dofmap(std::forward<AdjacencyList32>(dofmap)),
+        _index_map(index_map), _cmap(element), _x(std::forward<Array>(x)),
         _input_global_indices(std::forward<Vector64>(input_global_indices))
   {
-    if (x.rows() != (int)_input_global_indices.size())
+    assert(_x.shape[1] > 0 and _x.shape[1] <= 3);
+    if (_x.shape[0] != _input_global_indices.size())
       throw std::runtime_error("Size mis-match");
 
     // Make all geometry 3D
-    if (_dim == 3)
-      _x = x;
-    else if (_dim != 3)
+    if (_dim != 3)
     {
-      _x.resize(x.rows(), 3);
-      _x.setZero();
-      _x.block(0, 0, x.rows(), x.cols()) = x;
+      common::array2d<double> coords(_x.shape[0], 3, 0.0);
+      for (std::size_t i = 0; i < _x.shape[0]; ++i)
+        for (std::size_t j = 0; j < _x.shape[1]; ++j)
+          coords(i, j) = _x(i, j);
+      std::swap(coords, _x);
     }
   }
 
@@ -87,10 +83,10 @@ public:
   std::shared_ptr<const common::IndexMap> index_map() const;
 
   /// Geometry degrees-of-freedom
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x();
+  common::array2d<double>& x();
 
   /// Geometry degrees-of-freedom
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x() const;
+  const common::array2d<double>& x() const;
 
   /// The element that describes the geometry map
   /// @return The coordinate/geometry element
@@ -113,7 +109,7 @@ private:
   fem::CoordinateElement _cmap;
 
   // Coordinates for all points stored as a contiguous array
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
+  common::array2d<double> _x;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
@@ -121,12 +117,10 @@ private:
 
 /// Build Geometry
 /// FIXME: document
-mesh::Geometry create_geometry(
-    MPI_Comm comm, const Topology& topology,
-    const fem::CoordinateElement& coordinate_element,
-    const graph::AdjacencyList<std::int64_t>& cells,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x);
+mesh::Geometry create_geometry(MPI_Comm comm, const Topology& topology,
+                               const fem::CoordinateElement& coordinate_element,
+                               const graph::AdjacencyList<std::int64_t>& cells,
+                               const common::array2d<double>& x);
 
 } // namespace mesh
 } // namespace dolfinx

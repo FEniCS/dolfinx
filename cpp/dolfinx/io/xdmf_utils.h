@@ -9,8 +9,9 @@
 #include "HDF5Interface.h"
 #include "pugixml.hpp"
 #include "utils.h"
-#include <Eigen/Core>
 #include <array>
+#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <string>
@@ -93,14 +94,10 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// provides global input indices [gi0, gi1, gi2], but this identifies a
 /// triangle which is owned by rank1. It will be distributed and rank1
 /// will receive (local) cell-vertex connectivity for this triangle.
-std::pair<
-    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    std::vector<std::int32_t>>
-extract_local_entities(
-    const mesh::Mesh& mesh, const int entity_dim,
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                       Eigen::RowMajor>& entities,
-    const std::vector<std::int32_t>& values);
+std::pair<common::array2d<std::int32_t>, std::vector<std::int32_t>>
+extract_local_entities(const mesh::Mesh& mesh, int entity_dim,
+                       const common::array2d<std::int64_t>& entities,
+                       const tcb::span<const std::int32_t>& values);
 
 /// TODO: Document
 template <typename T>

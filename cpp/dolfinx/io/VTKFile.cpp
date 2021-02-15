@@ -60,7 +60,6 @@ bool is_cellwise(const fem::Function<std::complex<double>>& u)
   return _is_cellwise(u);
 }
 //----------------------------------------------------------------------------
-
 /// Get counter string to include in filename
 std::string get_counter(const pugi::xml_node& node, const std::string& name)
 {
@@ -334,8 +333,7 @@ void add_mesh(const mesh::Mesh& mesh, pugi::xml_node& piece_node)
   x_node.append_attribute("type") = "Float64";
   x_node.append_attribute("NumberOfComponents") = "3";
   x_node.append_attribute("format") = "ascii";
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
-      = geometry.x();
+  const common::array2d<double>& x = geometry.x();
   x_node.append_child(pugi::node_pcdata)
       .set_value(eigen_to_string(x, 16).c_str());
 
@@ -531,7 +529,7 @@ void write_function(
 
         // Resize array for holding point values
         Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-            point_values(mesh->geometry().x().rows(), value_size_loc);
+            point_values(mesh->geometry().x().shape[0], value_size_loc);
 
         // If scalar function space
         if (element->num_sub_elements() == 0)

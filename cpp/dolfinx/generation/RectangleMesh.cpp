@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "RectangleMesh.h"
+#include <Eigen/Core>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
@@ -17,7 +18,8 @@ using namespace dolfinx::generation;
 namespace
 {
 //-----------------------------------------------------------------------------
-mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+mesh::Mesh build_tri(MPI_Comm comm,
+                     const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 2> n,
                      const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode,
@@ -27,7 +29,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
+    common::array2d<double> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
     auto [data, offset] = graph::create_adjacency_data(topo);
     return mesh::create_mesh(
@@ -43,8 +45,8 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     throw std::runtime_error("Unknown mesh diagonal definition.");
   }
 
-  const Eigen::Vector3d& p0 = p[0];
-  const Eigen::Vector3d& p1 = p[1];
+  const std::array<double, 3>& p0 = p[0];
+  const std::array<double, 3>& p1 = p[1];
 
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
@@ -88,7 +90,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     nc = 2 * nx * ny;
   }
 
-  Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> geom(nv, 2);
+  common::array2d<double> geom(nv, 2);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 3, Eigen::RowMajor> topo(nc, 3);
 
   // Create main vertices
@@ -205,7 +207,8 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 
 } // namespace
 //-----------------------------------------------------------------------------
-mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+mesh::Mesh build_quad(MPI_Comm comm,
+                      const std::array<std::array<double, 3>, 2> p,
                       std::array<std::size_t, 2> n,
                       const fem::CoordinateElement& element,
                       const mesh::GhostMode ghost_mode,
@@ -214,7 +217,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
+    common::array2d<double> geom(0, 2);
     Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(0, 4);
     auto [data, offset] = graph::create_adjacency_data(topo);
     return mesh::create_mesh(
@@ -235,8 +238,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const double cd = (d - c) / static_cast<double>(ny);
 
   // Create vertices
-  Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> geom(
-      (nx + 1) * (ny + 1), 2);
+  common::array2d<double> geom((nx + 1) * (ny + 1), 2);
   std::size_t vertex = 0;
   for (std::size_t ix = 0; ix <= nx; ix++)
   {
@@ -272,7 +274,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,
-                                 const std::array<Eigen::Vector3d, 2>& p,
+                                 const std::array<std::array<double, 3>, 2>& p,
                                  std::array<std::size_t, 2> n,
                                  const fem::CoordinateElement& element,
                                  const mesh::GhostMode ghost_mode,
@@ -288,7 +290,7 @@ mesh::Mesh RectangleMesh::create(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,
-                                 const std::array<Eigen::Vector3d, 2>& p,
+                                 const std::array<std::array<double, 3>, 2>& p,
                                  std::array<std::size_t, 2> n,
                                  const fem::CoordinateElement& element,
                                  const mesh::GhostMode ghost_mode,
