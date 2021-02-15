@@ -183,8 +183,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // Send/receive global index of dofs with bcs to all neighbors
   assert(disp.back() % 2 == 0);
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> dofs_received(
-      disp.back() / 2, 2);
+  common::array2d<std::int64_t> dofs_received(disp.back() / 2, 2);
   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm0);
@@ -210,7 +209,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
         global_local_ghosts.begin(), global_local_ghosts.end());
 
     std::vector<std::int32_t>& dofs = dofs_array[b];
-    for (Eigen::Index i = 0; i < dofs_received.rows(); ++i)
+    for (std::size_t i = 0; i < dofs_received.shape[0]; ++i)
     {
       if (dofs_received(i, b) >= bs[b] * range[0]
           and dofs_received(i, b) < bs[b] * range[1])

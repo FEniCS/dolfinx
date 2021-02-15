@@ -7,7 +7,6 @@
 #include "VTKFile.h"
 #include "VTKWriter.h"
 #include "pugixml.hpp"
-#include <Eigen/Core>
 #include <boost/cstdint.hpp>
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -313,8 +312,7 @@ void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
   fp.precision(16);
 
   // Get function values at vertices
-  Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values
-      = u.compute_point_values();
+  const common::array2d<Scalar> values = u.compute_point_values();
 
   if (rank == 0)
   {
@@ -354,12 +352,9 @@ void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
   ss << std::scientific;
   ss << std::setprecision(16);
 
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      points(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
-             mesh.geometry().x().shape[1]);
+  const common::array2d<double>& points = mesh.geometry().x();
 
-  for (int i = 0; i < points.rows(); ++i)
+  for (std::size_t i = 0; i < points.shape[0]; ++i)
   {
     if (rank == 1 and dim == 2)
     {

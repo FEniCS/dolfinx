@@ -9,6 +9,7 @@
 #include "pugixml.hpp"
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
+#include <Eigen/Core>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/ElementDofLayout.h>
 
@@ -164,9 +165,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   int width = (gdim == 1) ? 2 : gdim;
 
-  // FIXME: Use eigen map for now.
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> _x(
-      geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
+  const common::array2d<double>& _x = geometry.x();
 
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);
@@ -283,18 +282,17 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
   assert(topology_data_node);
   const std::vector tdims = xdmf_utils::get_dataset_shape(topology_data_node);
-  const int npoint_per_cell = tdims[1];
+  const std::size_t npoint_per_cell = tdims[1];
 
   // Read topology data
-  const std::vector topology_data
+  std::vector<std::int64_t> topology_data
       = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
-  const int num_local_cells = topology_data.size() / npoint_per_cell;
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      cells_vtk(topology_data.data(), num_local_cells, npoint_per_cell);
+  const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
+  common::array2d<std::int64_t> cells_vtk({num_local_cells, npoint_per_cell},
+                                          std::move(topology_data));
 
   //  Permute cells from VTK to DOLFINX ordering
   return io::cells::compute_permutation(
-      cells_vtk, io::cells::perm_vtk(cell_type, cells_vtk.cols()));
+      cells_vtk, io::cells::perm_vtk(cell_type, cells_vtk.shape[1]));
 }
 //----------------------------------------------------------------------------
