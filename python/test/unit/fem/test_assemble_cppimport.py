@@ -13,6 +13,7 @@ import numpy
 import petsc4py
 import scipy.sparse.linalg
 import ufl
+import dolfinx.pkgconfig
 from dolfinx.generation import UnitSquareMesh
 from dolfinx.jit import dolfinx_pc
 from dolfinx.wrappers import get_include_path as pybind_inc
@@ -25,7 +26,10 @@ from mpi4py import MPI
 def test_eigen_assembly(tempdir):  # noqa: F811
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
     def compile_eigen_csr_assembler_module():
-        eigen_dir = "/usr/include/eigen3"
+        if dolfinx.pkgconfig.exists("eigen3"):
+            eigen_dir = dolfinx.pkgconfig.parse("eigen3")["include_dirs"]
+        else:
+            raise RuntimeError("Could not find eigen3 pkg-config file.")
         cpp_code_header = f"""
 <%
 setup_pybind11(cfg)
