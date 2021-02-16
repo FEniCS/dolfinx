@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
                      f.begin(), [](double x0, double x1) {
                        double dx
                            = (x0 - 0.5) * (x0 - 0.5) + (x1 - 0.5) * (x1 - 0.5);
-                       return 10.0 * std::exp(-(dx)) / 0.02;
+                       return 10.0 * std::exp(-(dx) / 0.02);
                      });
       return f;
     });
