@@ -47,7 +47,7 @@ void assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const common::array2d<T>& coeffs, const std::vector<T>& constants,
+    const array2d<T>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
@@ -61,7 +61,7 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::array2d<T>& coeffs, const std::vector<T>& constants,
+    const array2d<T>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
 
@@ -75,7 +75,7 @@ void assemble_interior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const common::array2d<T>& coeffs, const std::vector<int>& offsets,
+    const array2d<T>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
@@ -110,7 +110,7 @@ void assemble_matrix(
   const std::vector<T> constants = pack_constants(a);
 
   // Prepare coefficients
-  const common::array2d<T> coeffs = pack_coefficients(a);
+  const array2d<T> coeffs = pack_coefficients(a);
 
   const bool needs_permutation_data = a.needs_permutation_data();
   if (needs_permutation_data)
@@ -172,7 +172,7 @@ void assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const common::array2d<T>& coeffs, const std::vector<T>& constants,
+    const array2d<T>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info)
 {
   const int gdim = geometry.dim();
@@ -182,7 +182,7 @@ void assemble_cells(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const common::array2d<double>& x_g = geometry.x();
+  const array2d<double>& x_g = geometry.x();
 
   // Iterate over active cells
   const int num_dofs0 = dofmap0.links(0).size();
@@ -256,7 +256,7 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const common::array2d<T>& coeffs, const std::vector<T>& constants,
+    const array2d<T>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
@@ -268,7 +268,7 @@ void assemble_exterior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const common::array2d<double>& x_g = mesh.geometry().x();
+  const array2d<double>& x_g = mesh.geometry().x();
 
   // Data structures used in assembly
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
@@ -357,7 +357,7 @@ void assemble_interior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const common::array2d<T>& coeffs, const std::vector<int>& offsets,
+    const array2d<T>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
@@ -370,7 +370,7 @@ void assemble_interior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const common::array2d<double>& x_g = mesh.geometry().x();
+  const array2d<double>& x_g = mesh.geometry().x();
 
   // Data structures used in assembly
   std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);

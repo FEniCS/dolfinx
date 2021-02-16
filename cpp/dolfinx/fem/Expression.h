@@ -50,8 +50,7 @@ public:
   Expression(
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
-      const std::shared_ptr<const mesh::Mesh>& mesh,
-      const common::array2d<double>& X,
+      const std::shared_ptr<const mesh::Mesh>& mesh, const array2d<double>& X,
       const std::function<void(T*, const T*, const T*, const double*)> fn,
       const std::size_t value_size)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x(X),
@@ -94,7 +93,7 @@ public:
   /// correct sizing which should be num_cells rows by
   /// num_points*value_size columns.
   void eval(const tcb::span<const std::int32_t>& active_cells,
-            common::array2d<T>& values) const
+            array2d<T>& values) const
   {
     fem::eval(values, *this, active_cells);
   }
@@ -122,7 +121,7 @@ public:
 
   /// Get evaluation points on reference cell
   /// @return Evaluation points
-  const common::array2d<double>& x() const { return _x; }
+  const array2d<double>& x() const { return _x; }
 
   /// Get value size
   /// @return value_size
@@ -146,7 +145,7 @@ private:
   std::function<void(T*, const T*, const T*, const double*)> _fn;
 
   // Evaluation points on reference cell
-  common::array2d<double> _x;
+  array2d<double> _x;
 
   // The mesh.
   std::shared_ptr<const mesh::Mesh> _mesh;
