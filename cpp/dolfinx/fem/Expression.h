@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <Eigen/Core>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/evaluate.h>
 #include <functional>
 #include <utility>
@@ -25,37 +25,36 @@ namespace fem
 template <typename T>
 class Constant;
 
-/// Represents a mathematical expression evaluated at a pre-defined set of
-/// points on the reference cell. This class closely follows the concept of a
-/// UFC Expression.
+/// Represents a mathematical expression evaluated at a pre-defined set
+/// of points on the reference cell. This class closely follows the
+/// concept of a UFC Expression.
 ///
-/// This functionality can be used to evaluate a gradient of a Function at
-/// quadrature points in all cells. This evaluated gradient can then be used as
-/// input in to a non-FEniCS function that calculates a material constitutive
-/// model.
+/// This functionality can be used to evaluate a gradient of a Function
+/// at quadrature points in all cells. This evaluated gradient can then
+/// be used as input in to a non-FEniCS function that calculates a
+/// material constitutive model.
 
 template <typename T>
 class Expression
 {
 public:
-  /// Create Expression.
+  /// Create Expression
   ///
   /// @param[in] coefficients Coefficients in the Expression
   /// @param[in] constants Constants in the Expression
   /// @param[in] mesh
-  /// @param[in] x points on reference cell, number of points rows
-  ///   and tdim cols
+  /// @param[in] X points on reference cell, number of points rows and
+  /// tdim cols
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_size size of expression evaluated at single point
   Expression(
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
       const std::shared_ptr<const mesh::Mesh>& mesh,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
+      const common::array2d<double>& X,
       const std::function<void(T*, const T*, const T*, const double*)> fn,
       const std::size_t value_size)
-      : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x(x),
+      : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x(X),
         _fn(fn), _value_size(value_size)
   {
     // Do nothing
@@ -91,13 +90,11 @@ public:
 
   /// Evaluate the expression on cells
   /// @param[in] active_cells Cells on which to evaluate the Expression
-  /// @param[in,out] values To store the result. Caller responsible for correct
-  ///   sizing which should be num_cells rows by num_points*value_size columns.
-  void
-  eval(const std::vector<std::int32_t>& active_cells,
-       Eigen::Ref<
-           Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-           values) const
+  /// @param[out] values To store the result. Caller responsible for
+  /// correct sizing which should be num_cells rows by
+  /// num_points*value_size columns.
+  void eval(const tcb::span<const std::int32_t>& active_cells,
+            common::array2d<T>& values) const
   {
     fem::eval(values, *this, active_cells);
   }
@@ -125,11 +122,7 @@ public:
 
   /// Get evaluation points on reference cell
   /// @return Evaluation points
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-  x() const
-  {
-    return _x;
-  }
+  const common::array2d<double>& x() const { return _x; }
 
   /// Get value size
   /// @return value_size
@@ -137,7 +130,7 @@ public:
 
   /// Get number of points
   /// @return number of points
-  const Eigen::Index num_points() const { return _x.rows(); }
+  const std::size_t num_points() const { return _x.shape[0]; }
 
   /// Scalar type (T).
   using scalar_type = T;
@@ -153,7 +146,7 @@ private:
   std::function<void(T*, const T*, const T*, const double*)> _fn;
 
   // Evaluation points on reference cell
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _x;
+  common::array2d<double> _x;
 
   // The mesh.
   std::shared_ptr<const mesh::Mesh> _mesh;

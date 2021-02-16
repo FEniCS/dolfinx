@@ -154,7 +154,9 @@ b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 dolfinx.fem.set_bc(b, [bc])
 
 uc = dolfinx.Function(U)
-dolfinx.la.solve(A_cond, uc.vector, b)
+solver = PETSc.KSP().create(A_cond.getComm())
+solver.setOperators(A_cond)
+solver.solve(b, uc.vector)
 
 # Pure displacement based formulation
 a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx

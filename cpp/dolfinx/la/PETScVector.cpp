@@ -7,6 +7,7 @@
 
 #include "PETScVector.h"
 #include "utils.h"
+#include <algorithm>
 #include <cstddef>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>

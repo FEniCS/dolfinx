@@ -7,8 +7,8 @@
 #pragma once
 
 #include "ElementDofLayout.h"
-#include <Eigen/Dense>
 #include <cstdint>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -29,8 +29,8 @@ public:
   /// @param[in] geometric_dimension Geometric dimension
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  /// @param[in] needs_permutation_data Indicates whether or not the element
-  /// needs permutation data (for higher order elements)
+  /// @param[in] needs_permutation_data Indicates whether or not the
+  /// element needs permutation data (for higher order elements)
   /// @param[in] permute_dofs Function that permutes the DOF numbering
   /// @param[in] unpermute_dofs Function that reverses a DOF permutation
   CoordinateElement(int basix_element_handle, int geometric_dimension,
@@ -71,26 +71,17 @@ public:
   /// @param[in,out] x The physical coordinates of the reference points X
   /// @param[in] X The coordinates on the reference cells
   /// @param[in] cell_geometry The cell node coordinates (physical)
-  void push_forward(
-      Eigen::Ref<
-          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-          x,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& X,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&
-          cell_geometry) const;
+  void push_forward(common::array2d<double>& x,
+                    const common::array2d<double>& X,
+                    const common::array2d<double>& cell_geometry) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
   void compute_reference_geometry(
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
-      std::vector<double>& J, tcb::span<double> detJ, std::vector<double>& K,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&
-          cell_geometry) const;
+      common::array2d<double>& X, std::vector<double>& J,
+      tcb::span<double> detJ, std::vector<double>& K,
+      const common::array2d<double>& x,
+      const common::array2d<double>& cell_geometry) const;
 
   /// Permutes a list of DOF numbers on a cell
   void permute_dofs(int* dofs, const uint32_t cell_perm) const;
@@ -98,8 +89,8 @@ public:
   /// Reverses a DOF permutation
   void unpermute_dofs(int* dofs, const uint32_t cell_perm) const;
 
-  /// Indicates whether the coordinate map needs permutation data passing in
-  /// (for higher order geometries)
+  /// Indicates whether the coordinate map needs permutation data
+  /// passing in (for higher order geometries)
   bool needs_permutation_data() const;
 
 private:

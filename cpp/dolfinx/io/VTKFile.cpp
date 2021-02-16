@@ -7,7 +7,6 @@
 #include "VTKFile.h"
 #include "VTKWriter.h"
 #include "pugixml.hpp"
-#include <Eigen/Core>
 #include <boost/cstdint.hpp>
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -166,7 +165,7 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
       = mesh.topology().index_map(cell_dim)->size_local();
 
   // Number of points in mesh (can be more than the number of vertices)
-  const int num_nodes = mesh.geometry().x().rows();
+  const int num_nodes = mesh.geometry().x().shape[0];
 
   // Write headers
   vtk_header_open(num_nodes, num_cells, vtu_filename);
@@ -313,8 +312,7 @@ void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
   fp.precision(16);
 
   // Get function values at vertices
-  Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values
-      = u.compute_point_values();
+  const common::array2d<Scalar> values = u.compute_point_values();
 
   if (rank == 0)
   {
@@ -353,9 +351,10 @@ void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
   std::ostringstream ss;
   ss << std::scientific;
   ss << std::setprecision(16);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
-      = mesh.geometry().x();
-  for (int i = 0; i < points.rows(); ++i)
+
+  const common::array2d<double>& points = mesh.geometry().x();
+
+  for (std::size_t i = 0; i < points.shape[0]; ++i)
   {
     if (rank == 1 and dim == 2)
     {

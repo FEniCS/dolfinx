@@ -48,14 +48,12 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
-  Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      data_values = u.compute_point_values();
+  const common::array2d <Scalar > data_values = u.compute_point_values();
 
   const int width = get_padded_width(*u.function_space()->element());
   assert(mesh->geometry().index_map());
   const int num_local_points = mesh->geometry().index_map()->size_local();
-  assert(data_values.rows() >= num_local_points);
-  data_values.conservativeResize(num_local_points, Eigen::NoChange);
+  assert((int)data_values.shape[0] >= num_local_points);
 
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
@@ -79,7 +77,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
   {
     _data_values = std::vector<Scalar>(
         data_values.data(),
-        data_values.data() + data_values.rows() * data_values.cols());
+        data_values.data() + num_local_points * data_values.shape[1]);
   }
 
   return _data_values;
@@ -348,22 +346,19 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
   return cell_str->second;
 }
 //-----------------------------------------------------------------------------
-std::pair<
-    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    std::vector<std::int32_t>>
+std::pair<common::array2d<std::int32_t>, std::vector<std::int32_t>>
 xdmf_utils::extract_local_entities(
     const mesh::Mesh& mesh, const int entity_dim,
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                       Eigen::RowMajor>& entities,
-    const std::vector<std::int32_t>& values)
+    const common::array2d<std::int64_t>& entities,
+    const tcb::span<const std::int32_t>& values)
 {
-  if ((std::size_t)entities.rows() != values.size())
+  if (entities.shape[0] != values.size())
     throw std::runtime_error("Number of entities and values must match");
 
   // Get layout of dofs on 0th entity
   const std::vector<int> entity_layout
       = mesh.geometry().cmap().dof_layout().entity_closure_dofs(entity_dim, 0);
-  assert((int)entity_layout.size() == entities.cols());
+  assert(entity_layout.size() == entities.shape[1]);
 
   auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
   if (!c_to_v)
@@ -395,16 +390,17 @@ xdmf_utils::extract_local_entities(
 
   const mesh::CellType entity_type
       = mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim);
-  const int num_vertices_per_entity = mesh::cell_num_entities(entity_type, 0);
-  assert(entity_vertex_dofs.size() == (std::size_t)num_vertices_per_entity);
+  const std::size_t num_vertices_per_entity
+      = mesh::cell_num_entities(entity_type, 0);
+  assert(entity_vertex_dofs.size() == num_vertices_per_entity);
 
   // Throw away input global indices which do not belong to entity vertices
   // This decreases the amount of data needed in parallel communication
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entities_vertices(entities.rows(), num_vertices_per_entity);
-  for (Eigen::Index e = 0; e < entities_vertices.rows(); ++e)
+  common::array2d<std::int64_t> entities_vertices(entities.shape[0],
+                                                  num_vertices_per_entity);
+  for (std::size_t e = 0; e < entities_vertices.shape[0]; ++e)
   {
-    for (Eigen::Index i = 0; i < entities_vertices.cols(); ++i)
+    for (std::size_t i = 0; i < entities_vertices.shape[1]; ++i)
       entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
   }
 
@@ -450,11 +446,10 @@ xdmf_utils::extract_local_entities(
   std::vector<std::vector<std::int64_t>> entities_send(comm_size);
   std::vector<std::vector<std::int32_t>> values_send(comm_size);
   std::vector<std::int64_t> entity(num_vertices_per_entity);
-  for (std::int32_t e = 0; e < entities_vertices.rows(); ++e)
+  for (std::size_t e = 0; e < entities_vertices.shape[0]; ++e)
   {
     // Copy vertices for entity and sort
-    std::copy(entities_vertices.row(e).data(),
-              entities_vertices.row(e).data() + entities_vertices.cols(),
+    std::copy(entities_vertices.row(e).begin(), entities_vertices.row(e).end(),
               entity.begin());
     std::sort(entity.begin(), entity.end());
 
@@ -556,14 +551,14 @@ xdmf_utils::extract_local_entities(
   {
     bool entity_found = true;
     std::vector<std::int32_t> entity(num_vertices_per_entity);
-    for (Eigen::Index i = 0; i < num_vertices_per_entity; ++i)
+    for (std::size_t i = 0; i < num_vertices_per_entity; ++i)
     {
       const auto it = igi_to_vertex.find(
           recv_ents.array()[e * num_vertices_per_entity + i]);
       if (it == igi_to_vertex.end())
       {
-        // As soon as this received index is not in locally owned input global
-        // indices skip the entire entity
+        // As soon as this received index is not in locally owned input
+        // global indices skip the entire entity
         entity_found = false;
         break;
       }
@@ -577,11 +572,10 @@ xdmf_utils::extract_local_entities(
     }
   }
 
-  return {Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>(
-              entities_new.data(),
-              entities_new.size() / num_vertices_per_entity,
-              num_vertices_per_entity),
+  return {common::array2d<std::int32_t>(
+              {entities_new.size() / num_vertices_per_entity,
+               num_vertices_per_entity},
+              std::move(entities_new)),
           values_new};
 }
 //-----------------------------------------------------------------------------

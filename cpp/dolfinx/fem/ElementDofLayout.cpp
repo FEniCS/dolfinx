@@ -6,6 +6,7 @@
 
 #include "ElementDofLayout.h"
 #include <array>
+#include <cassert>
 #include <dolfinx/mesh/cell_types.h>
 #include <map>
 #include <numeric>

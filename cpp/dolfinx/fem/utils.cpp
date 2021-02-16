@@ -6,6 +6,7 @@
 
 #include "utils.h"
 #include <array>
+#include <basix.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -22,7 +23,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/topologycomputation.h>
-#include <basix.h>
 #include <memory>
 #include <string>
 #include <ufc.h>

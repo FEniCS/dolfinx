@@ -7,8 +7,10 @@
 
 #include "BoundingBoxTree.h"
 #include "utils.h"
+#include <Eigen/Core>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -39,23 +41,22 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
-      = mesh.geometry().x();
+  const common::array2d<double>& geom_dofs = mesh.geometry().x();
+
   mesh.topology_mutable().create_connectivity(dim, tdim);
 
   // FIXME: return of small dynamic array is expensive
   const std::array<std::int32_t, 1> entity = {index};
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
-  auto entity_vertex_indices = vertex_indices.row(0);
+  common::array2d vertex_indices
+      = mesh::entities_to_geometry(mesh, dim, entity, false);
+  tcb::span<const int> entity_vertex_indices = vertex_indices.row(0);
 
-  const Eigen::Vector3d x0 = geom_dofs.row(entity_vertex_indices[0]);
   std::array<std::array<double, 3>, 2> b;
-  b[0] = {x0[0], x0[1], x0[2]};
+  std::copy_n(geom_dofs.row(entity_vertex_indices[0]).begin(), 3, b[0].begin());
   b[1] = b[0];
 
   // Compute min and max over remaining vertices
-  for (int i = 1; i < entity_vertex_indices.size(); ++i)
+  for (std::size_t i = 1; i < entity_vertex_indices.size(); ++i)
   {
     const int local_vertex = entity_vertex_indices[i];
     for (int j = 0; j < 3; ++j)
