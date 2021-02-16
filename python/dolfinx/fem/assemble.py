@@ -312,10 +312,18 @@ def _(A: PETSc.Mat,
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 cpp.fem.assemble_matrix_petsc_unrolled(Asub, a_sub, bcs)
+                A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
+
+    # Flush to enable switch from add to set in the matrix
+    A.assemble(PETSc.Mat.AssemblyType.FLUSH)
+
+    # Set diagonal
+    for i, a_row in enumerate(_a):
+        for j, a_sub in enumerate(a_row):
+            if a_sub is not None:
+                Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
-                    # Asub.assemble(PETSc.Mat.AssemblyType.FLUSH)
-                    # cpp.fem.insert_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
-                    cpp.fem.add_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
+                    cpp.fem.set_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
     return A
 
