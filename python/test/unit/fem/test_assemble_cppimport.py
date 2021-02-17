@@ -11,6 +11,7 @@ import cppimport
 import dolfinx
 import numpy
 import petsc4py
+import pytest
 import scipy.sparse.linalg
 import ufl
 import dolfinx.pkgconfig
@@ -23,13 +24,12 @@ from mpi4py import MPI
 
 
 @skip_in_parallel
+@pytest.mark.skipif(not dolfinx.pkgconfig.exists("eigen3"),
+                    reason="This test needs eigen3 pkg-config.")
 def test_eigen_assembly(tempdir):  # noqa: F811
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
     def compile_eigen_csr_assembler_module():
-        if dolfinx.pkgconfig.exists("eigen3"):
-            eigen_dir = dolfinx.pkgconfig.parse("eigen3")["include_dirs"]
-        else:
-            raise RuntimeError("Could not find eigen3 pkg-config file.")
+        eigen_dir = dolfinx.pkgconfig.parse("eigen3")["include_dirs"]
         cpp_code_header = f"""
 <%
 setup_pybind11(cfg)
