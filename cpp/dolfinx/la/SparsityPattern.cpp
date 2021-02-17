@@ -249,7 +249,7 @@ void SparsityPattern::assemble()
   const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
   std::vector<std::int32_t> data_per_proc(outdegree_rev, 0);
   std::vector<int> local_ghost_procs(num_ghosts0);
-  for (size_t i = 0; i < num_ghosts0; ++i)
+  for (int i = 0; i < num_ghosts0; ++i)
   {
     // Find local index of dest ghost process
     auto it = std::find(dest_ranks.begin(), dest_ranks.end(), ghost_owners0[i]);
@@ -270,7 +270,6 @@ void SparsityPattern::assemble()
   std::vector<std::int64_t> ghost_data(counter_out.back());
   for (int i = 0; i < num_ghosts0; ++i)
   {
-    const int row_owner = ghost_owners0[i];
     const int local_index = local_ghost_procs[i];
     for (std::int32_t col_local : _cache_unowned[i])
     {
