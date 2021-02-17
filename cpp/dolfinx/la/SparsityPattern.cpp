@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2020 Garth N. Wells
+// Copyright (C) 2007-2021 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -224,6 +224,7 @@ void SparsityPattern::assemble()
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
   const std::array local_range0 = _index_maps[0]->local_range();
   const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
+  std::vector<int> ghost_owners0 = _index_maps[0]->ghost_owner_rank();
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
@@ -238,83 +239,94 @@ void SparsityPattern::assemble()
   for (std::int64_t global_i : ghosts1)
     global_to_local.insert({global_i, local_i++});
 
-  // For each ghost row, pack and send (global row, global col) pairs to send to
-  // neighborhood
-  std::vector<std::int64_t> ghost_data;
+  // For each ghost row, pack and send (global row, global col, col_owner)
+  // triplets to send to neighborhood
+  std::map<int, std::vector<std::int64_t>> ghost_data;
   for (int i = 0; i < num_ghosts0; ++i)
   {
     const std::int64_t row_global = ghosts0[i];
+    const int row_owner = ghost_owners0[i];
     for (std::int32_t col_local : _cache_unowned[i])
     {
-      ghost_data.push_back(row_global);
+      ghost_data[row_owner].push_back(row_global);
+
       if (col_local < local_size1)
       {
-        ghost_data.push_back(col_local + local_range1[0]);
-        ghost_data.push_back(mpi_rank);
+        ghost_data[row_owner].push_back(col_local + local_range1[0]);
+        ghost_data[row_owner].push_back(mpi_rank);
       }
       else
       {
-        ghost_data.push_back(ghosts1[col_local - local_size1]);
-        ghost_data.push_back(ghost_owners1[col_local - local_size1]);
+        ghost_data[row_owner].push_back(ghosts1[col_local - local_size1]);
+        ghost_data[row_owner].push_back(ghost_owners1[col_local - local_size1]);
       }
     }
   }
 
-  MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::symmetric);
-  int num_neighbors(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
-  assert(num_neighbors == outdegree);
+  // Get ghost->owner communicator
+  MPI_Comm rev_comm
+      = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
+  // Figure out how much data to receive from each neighbor
+  int indegree_rev(-1), outdegree_rev(-2), weighted_rev(-1);
+
+  MPI_Dist_graph_neighbors_count(rev_comm, &indegree_rev, &outdegree_rev,
+                                 &weighted_rev);
+  const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(rev_comm);
+  std::vector<int> ghost_data_size(outdegree_rev);
+  std::vector<std::int64_t> ghost_data_out;
+  // Find size and flatten
+  for (std::int32_t i = 0; i < outdegree_rev; ++i)
+  {
+    ghost_data_size[i] = ghost_data[dest_ranks[i]].size();
+    ghost_data_out.insert(ghost_data_out.end(),
+                          ghost_data[dest_ranks[i]].begin(),
+                          ghost_data[dest_ranks[i]].end());
+  }
 
   // Figure out how much data to receive from each neighbor
-  const int num_my_rows = ghost_data.size();
-  std::vector<int> num_rows_recv(num_neighbors);
-  MPI_Neighbor_allgather(&num_my_rows, 1, MPI_INT, num_rows_recv.data(), 1,
-                         MPI_INT, comm);
+  std::vector<int> data_recv_size(indegree_rev);
+  MPI_Neighbor_alltoall(ghost_data_size.data(), 1, MPI_INT,
+                        data_recv_size.data(), 1, MPI_INT, rev_comm);
 
-  // Compute displacements for data to receive
-  std::vector<int> disp(num_neighbors + 1, 0);
-  std::partial_sum(num_rows_recv.begin(), num_rows_recv.end(),
-                   disp.begin() + 1);
+  // Compute alltoallv displacements
+  std::vector<int> disp_in(indegree_rev + 1, 0);
+  std::partial_sum(data_recv_size.begin(), data_recv_size.end(),
+                   disp_in.begin() + 1);
 
-  // NOTE: Send unowned rows to all neighbors could be a bit 'lazy' and
-  // MPI_Neighbor_alltoallv could be used to send just to the owner, but
-  // maybe the number of rows exchanged in the neighborhood are
-  // relatively small that MPI_Neighbor_allgatherv is simpler.
-
-  // Send all unowned rows to neighbors, and receive rows from
-  // neighbors
-  std::vector<std::int64_t> ghost_data_received(disp.back());
-  MPI_Neighbor_allgatherv(ghost_data.data(), ghost_data.size(), MPI_INT64_T,
-                          ghost_data_received.data(), num_rows_recv.data(),
-                          disp.data(), MPI_INT64_T, comm);
+  std::vector<int> disp_out(outdegree_rev + 1, 0);
+  std::partial_sum(ghost_data_size.begin(), ghost_data_size.end(),
+                   disp_out.begin() + 1);
+  std::vector<std::int64_t> in_ghost_data(disp_in.back());
+  // Send (row,column, owner) triplets to row owner
+  MPI_Neighbor_alltoallv(
+      ghost_data_out.data(), ghost_data_size.data(), disp_out.data(),
+      dolfinx::MPI::mpi_type<std::int64_t>(), in_ghost_data.data(),
+      data_recv_size.data(), disp_in.data(),
+      dolfinx::MPI::mpi_type<std::int64_t>(), rev_comm);
 
   // Add data received from the neighborhood
-  for (std::size_t i = 0; i < ghost_data_received.size(); i += 3)
+  for (std::size_t i = 0; i < in_ghost_data.size(); i += 3)
   {
-    const std::int64_t row = ghost_data_received[i];
-    if (row >= local_range0[0] and row < local_range0[1])
+    const std::int32_t row_local = in_ghost_data[i] - local_range0[0];
+    const std::int64_t col = in_ghost_data[i + 1];
+    if (col >= local_range1[0] and col < local_range1[1])
     {
-      const std::int32_t row_local = row - local_range0[0];
-      const std::int64_t col = ghost_data_received[i + 1];
-      if (col >= local_range1[0] and col < local_range1[1])
+      // Convert to local column index
+      const std::int32_t J = col - local_range1[0];
+      _cache_owned[row_local].push_back(J);
+    }
+    else
+    {
+      // Column index may not exist in column indexmap
+      auto it = global_to_local.insert({col, local_i});
+      if (it.second)
       {
-        // Convert to local column index
-        const std::int32_t J = col - local_range1[0];
-        _cache_owned[row_local].push_back(J);
+        ghosts1.push_back(col);
+        ghost_owners1.push_back(in_ghost_data[i + 2]);
+        ++local_i;
       }
-      else
-      {
-        // Column index may not exist in column indexmap
-        auto it = global_to_local.insert({col, local_i});
-        if (it.second)
-        {
-          ghosts1.push_back(col);
-          ghost_owners1.push_back(ghost_data_received[i + 2]);
-          ++local_i;
-        }
-        const std::int32_t col_local = it.first->second;
-        _cache_owned[row_local].push_back(col_local);
-      }
+      const std::int32_t col_local = it.first->second;
+      _cache_owned[row_local].push_back(col_local);
     }
   }
 
