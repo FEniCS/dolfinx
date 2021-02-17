@@ -19,9 +19,9 @@ using namespace dolfinx::generation;
 namespace
 {
 //-----------------------------------------------------------------------------
-common::array2d<double>
-create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
-            std::array<std::size_t, 3> n)
+array2d<double> create_geom(MPI_Comm comm,
+                            const std::array<std::array<double, 3>, 2>& p,
+                            std::array<std::size_t, 3> n)
 {
   // Extract data
   const std::array<double, 3>& p0 = p[0];
@@ -66,7 +66,7 @@ create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
         "BoxMesh has non-positive number of vertices in some dimension");
   }
 
-  common::array2d<double> geom(range_p[1] - range_p[0], 3);
+  array2d<double> geom(range_p[1] - range_p[0], 3);
 
   const std::int64_t sqxy = (nx + 1) * (ny + 1);
   std::array<double, 3> point;
@@ -96,7 +96,7 @@ mesh::Mesh build_tet(MPI_Comm comm,
 {
   common::Timer timer("Build BoxMesh");
 
-  common::array2d<double> geom = create_geom(comm, p, n);
+  array2d<double> geom = create_geom(comm, p, n);
 
   std::int64_t nx = n[0];
   std::int64_t ny = n[1];
@@ -154,7 +154,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
                      const mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner)
 {
-  common::array2d<double> geom = create_geom(comm, p, n);
+  array2d<double> geom = create_geom(comm, p, n);
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];

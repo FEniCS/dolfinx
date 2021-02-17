@@ -11,7 +11,7 @@
 #include <cassert>
 #include <vector>
 
-namespace dolfinx::common
+namespace dolfinx
 {
 
 /// This class provides a dynamic 2-dimensional row-wise array data
@@ -159,4 +159,4 @@ public:
 private:
   std::vector<T, Allocator> _storage;
 };
-} // namespace dolfinx::common
+} // namespace dolfinx

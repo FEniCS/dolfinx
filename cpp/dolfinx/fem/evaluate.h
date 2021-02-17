@@ -25,7 +25,7 @@ class Expression;
 /// @param[in] active_cells The cells on which to evaluate the
 /// expression
 template <typename T>
-void eval(common::array2d<T>& values, const fem::Expression<T>& e,
+void eval(array2d<T>& values, const fem::Expression<T>& e,
           const tcb::span<const std::int32_t>& active_cells)
 {
   // Extract data from Expression
@@ -33,7 +33,7 @@ void eval(common::array2d<T>& values, const fem::Expression<T>& e,
   assert(mesh);
 
   // Prepare coefficients
-  const common::array2d<T> coeffs = dolfinx::fem::pack_coefficients(e);
+  const array2d<T> coeffs = dolfinx::fem::pack_coefficients(e);
 
   // Prepare constants
   const std::vector<T> constant_values = dolfinx::fem::pack_constants(e);
@@ -52,11 +52,11 @@ void eval(common::array2d<T>& values, const fem::Expression<T>& e,
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const common::array2d<double>& x_g = mesh->geometry().x();
+  const array2d<double>& x_g = mesh->geometry().x();
 
   // Create data structures used in evaluation
   const int gdim = mesh->geometry().dim();
-  common::array2d<double> coordinate_dofs(num_dofs_g, gdim);
+  array2d<double> coordinate_dofs(num_dofs_g, gdim);
 
   // Iterate over cells and 'assemble' into values
   std::vector<T> values_e(e.num_points() * e.value_size(), 0);
