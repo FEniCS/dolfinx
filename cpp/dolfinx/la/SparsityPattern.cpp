@@ -239,72 +239,65 @@ void SparsityPattern::assemble()
   for (std::int64_t global_i : ghosts1)
     global_to_local.insert({global_i, local_i++});
 
-  // For each ghost row, pack and send (global row, global col, col_owner)
-  // triplets to send to neighborhood
-  std::map<int, std::vector<std::int64_t>> ghost_data;
+  // Get ghost->owner communicator
+  MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
+
+  // Compute size of data to send to each process
+  int indegree_rev(-1), outdegree_rev(-2), weighted_rev(-1);
+  MPI_Dist_graph_neighbors_count(comm, &indegree_rev, &outdegree_rev,
+                                 &weighted_rev);
+  const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
+  std::vector<std::int32_t> data_per_proc(outdegree_rev, 0);
+  std::vector<int> local_ghost_procs(num_ghosts0);
+  for (size_t i = 0; i < num_ghosts0; ++i)
+  {
+    // Find local index of dest ghost process
+    auto it = std::find(dest_ranks.begin(), dest_ranks.end(), ghost_owners0[i]);
+    assert(it != dest_ranks.end());
+    const int local_index = std::distance(dest_ranks.begin(), it);
+    local_ghost_procs[i] = local_index;
+    // Add to src size
+    data_per_proc[local_index] += 3 * _cache_unowned[i].size();
+  }
+
+  std::vector<int> counter_out(outdegree_rev + 1, 0);
+  std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
+                   counter_out.begin() + 1);
+
+  // For each ghost row, pack and send (global row, global col,
+  // col_owner) triplets to send to neighborhood
+  std::vector<int> insert_counter(counter_out);
+  std::vector<std::int64_t> ghost_data(counter_out.back());
   for (int i = 0; i < num_ghosts0; ++i)
   {
-    const std::int64_t row_global = ghosts0[i];
     const int row_owner = ghost_owners0[i];
+    const int local_index = local_ghost_procs[i];
     for (std::int32_t col_local : _cache_unowned[i])
     {
-      ghost_data[row_owner].push_back(row_global);
+      const std::int32_t proc_index = insert_counter[local_index];
+      ghost_data[proc_index] = ghosts0[i];
 
       if (col_local < local_size1)
       {
-        ghost_data[row_owner].push_back(col_local + local_range1[0]);
-        ghost_data[row_owner].push_back(mpi_rank);
+        ghost_data[proc_index + 1] = col_local + local_range1[0];
+        ghost_data[proc_index + 2] = mpi_rank;
       }
       else
       {
-        ghost_data[row_owner].push_back(ghosts1[col_local - local_size1]);
-        ghost_data[row_owner].push_back(ghost_owners1[col_local - local_size1]);
+        ghost_data[proc_index + 1] = ghosts1[col_local - local_size1];
+        ghost_data[proc_index + 2] = ghost_owners1[col_local - local_size1];
       }
+      insert_counter[local_index] += 3;
     }
   }
 
-  // Get ghost->owner communicator
-  MPI_Comm rev_comm
-      = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
-  // Figure out how much data to receive from each neighbor
-  int indegree_rev(-1), outdegree_rev(-2), weighted_rev(-1);
-
-  MPI_Dist_graph_neighbors_count(rev_comm, &indegree_rev, &outdegree_rev,
-                                 &weighted_rev);
-  const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(rev_comm);
-  std::vector<int> ghost_data_size(outdegree_rev);
-  std::vector<std::int64_t> ghost_data_out;
-  // Find size and flatten
-  for (std::int32_t i = 0; i < outdegree_rev; ++i)
-  {
-    ghost_data_size[i] = ghost_data[dest_ranks[i]].size();
-    ghost_data_out.insert(ghost_data_out.end(),
-                          ghost_data[dest_ranks[i]].begin(),
-                          ghost_data[dest_ranks[i]].end());
-  }
-
-  // Figure out how much data to receive from each neighbor
-  std::vector<int> data_recv_size(indegree_rev);
-  MPI_Neighbor_alltoall(ghost_data_size.data(), 1, MPI_INT,
-                        data_recv_size.data(), 1, MPI_INT, rev_comm);
-
-  // Compute alltoallv displacements
-  std::vector<int> disp_in(indegree_rev + 1, 0);
-  std::partial_sum(data_recv_size.begin(), data_recv_size.end(),
-                   disp_in.begin() + 1);
-
-  std::vector<int> disp_out(outdegree_rev + 1, 0);
-  std::partial_sum(ghost_data_size.begin(), ghost_data_size.end(),
-                   disp_out.begin() + 1);
-  std::vector<std::int64_t> in_ghost_data(disp_in.back());
-  // Send (row,column, owner) triplets to row owner
-  MPI_Neighbor_alltoallv(
-      ghost_data_out.data(), ghost_data_size.data(), disp_out.data(),
-      dolfinx::MPI::mpi_type<std::int64_t>(), in_ghost_data.data(),
-      data_recv_size.data(), disp_in.data(),
-      dolfinx::MPI::mpi_type<std::int64_t>(), rev_comm);
+  // Create and communicate adjacencylist to neighborhood
+  graph::AdjacencyList<std::int64_t> ghost_data_out(ghost_data, counter_out);
+  graph::AdjacencyList<std::int64_t> ghost_data_in
+      = MPI::neighbor_all_to_all(comm, ghost_data_out);
 
   // Add data received from the neighborhood
+  const std::vector<std::int64_t>& in_ghost_data = ghost_data_in.array();
   for (std::size_t i = 0; i < in_ghost_data.size(); i += 3)
   {
     const std::int32_t row_local = in_ghost_data[i] - local_range0[0];
