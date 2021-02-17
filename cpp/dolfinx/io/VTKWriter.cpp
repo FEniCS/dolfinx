@@ -100,7 +100,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
        << "ascii"
        << "\">";
 
-  const common::array2d<double>& points = mesh.geometry().x();
+  const array2d<double>& points = mesh.geometry().x();
   for (std::size_t i = 0; i < points.shape[0]; ++i)
     file << points(i, 0) << " " << points(i, 1) << " " << points(i, 2) << "  ";
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;

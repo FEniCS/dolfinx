@@ -19,7 +19,7 @@ namespace dolfinx::geometry
 /// @param[in] p Body 1 list of points, shape (num_points, 3)
 /// @param[in] q Body 2 list of points, shape (num_points, 3)
 /// @return shortest vector between bodies
-std::array<double, 3> compute_distance_gjk(const common::array2d<double>& p,
-                                           const common::array2d<double>& q);
+std::array<double, 3> compute_distance_gjk(const array2d<double>& p,
+                                           const array2d<double>& q);
 
 } // namespace dolfinx::geometry

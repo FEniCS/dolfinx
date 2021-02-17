@@ -97,8 +97,7 @@ FunctionSpace::collapse() const
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
-common::array2d<double>
-FunctionSpace::tabulate_dof_coordinates(bool transpose) const
+array2d<double> FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 {
   if (!_component.empty())
   {
@@ -134,7 +133,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     throw std::runtime_error("Cannot evaluate dof coordinates - this element "
                              "does not have pointwise evaluation.");
   }
-  const common::array2d<double> X = _element->interpolation_points();
+  const array2d<double> X = _element->interpolation_points();
 
   // Get coordinate map
   const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
@@ -143,17 +142,17 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = _mesh->geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
-  const common::array2d<double>& x_g = _mesh->geometry().x();
+  const array2d<double>& x_g = _mesh->geometry().x();
   const int num_dofs_g = x_dofmap.num_links(0);
 
   // Array to hold coordinates to return
   const std::size_t shape_c0 = transpose ? 3 : num_dofs;
   const std::size_t shape_c1 = transpose ? num_dofs : 3;
-  common::array2d<double> coords(shape_c0, shape_c1);
+  array2d<double> coords(shape_c0, shape_c1);
 
   // Loop over cells and tabulate dofs
-  common::array2d<double> x(scalar_dofs, gdim);
-  common::array2d<double> coordinate_dofs(num_dofs_g, gdim);
+  array2d<double> x(scalar_dofs, gdim);
+  array2d<double> coordinate_dofs(num_dofs_g, gdim);
 
   auto map = _mesh->topology().index_map(tdim);
   assert(map);

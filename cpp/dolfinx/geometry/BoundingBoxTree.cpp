@@ -41,14 +41,13 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  const common::array2d<double>& geom_dofs = mesh.geometry().x();
+  const array2d<double>& geom_dofs = mesh.geometry().x();
 
   mesh.topology_mutable().create_connectivity(dim, tdim);
 
   // FIXME: return of small dynamic array is expensive
   const std::array<std::int32_t, 1> entity = {index};
-  common::array2d vertex_indices
-      = mesh::entities_to_geometry(mesh, dim, entity, false);
+  array2d vertex_indices = mesh::entities_to_geometry(mesh, dim, entity, false);
   tcb::span<const int> entity_vertex_indices = vertex_indices.row(0);
 
   std::array<std::array<double, 3>, 2> b;

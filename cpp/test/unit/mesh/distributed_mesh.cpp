@@ -57,8 +57,8 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   auto cmap = fem::create_coordinate_map(create_coordinate_map_cmap);
 
   // read mesh data
-  dolfinx::common::array2d<double> x(0, 3);
-  dolfinx::common::array2d<std::int64_t> cells(
+  dolfinx::array2d<double> x(0, 3);
+  dolfinx::array2d<std::int64_t> cells(
       0, dolfinx::mesh::num_cell_vertices(cmap.cell_shape()));
   graph::AdjacencyList<std::int32_t> dest(0);
   if (subset_comm != MPI_COMM_NULL)
