@@ -406,6 +406,7 @@ common::array2d<typename U::scalar_type> pack_coefficients(const U& u)
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   std::vector<int> bs(coefficients.size());
   std::vector<std::reference_wrapper<const std::vector<T>>> v;
+  v.reserve(coefficients.size());
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
     dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
