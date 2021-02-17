@@ -144,7 +144,7 @@ void mesh(py::module& m)
               };
 
         const std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
-        dolfinx::common::array2d<double> _x(x.shape()[0], shape1);
+        dolfinx::array2d<double> _x(x.shape()[0], shape1);
         std::copy_n(x.data(), x.size(), _x.data());
         return dolfinx::mesh::create_mesh(comm.get(), cells, element, _x,
                                           ghost_mode, partitioner_wrapper);
@@ -173,14 +173,14 @@ void mesh(py::module& m)
             assert(x.ndim() <= 2);
             if (x.ndim() == 1)
             {
-              dolfinx::common::array2d<double> _x(x.shape()[0], 1);
+              dolfinx::array2d<double> _x(x.shape()[0], 1);
               std::copy(x.data(), x.data() + x.size(), _x.data());
               return dolfinx::mesh::Geometry(map, dofmap, element,
                                              std::move(_x), std::move(indices));
             }
             else
             {
-              dolfinx::common::array2d<double> _x(x.shape()[0], x.shape()[1]);
+              dolfinx::array2d<double> _x(x.shape()[0], x.shape()[1]);
               std::copy(x.data(), x.data() + x.size(), _x.data());
               return dolfinx::mesh::Geometry(map, dofmap, element,
                                              std::move(_x), std::move(indices));
@@ -193,7 +193,7 @@ void mesh(py::module& m)
       .def_property_readonly(
           "x",
           [](const dolfinx::mesh::Geometry& self) {
-            const dolfinx::common::array2d<double>& x = self.x();
+            const dolfinx::array2d<double>& x = self.x();
             return py::array_t<double>(x.shape, x.strides(), x.data(),
                                        py::cast(self));
           },
@@ -300,7 +300,7 @@ void mesh(py::module& m)
            const std::function<py::array_t<bool>(
                const py::array_t<double, py::array::c_style>&)>& marker) {
           auto cpp_marker
-              = [&marker](const dolfinx::common::array2d<double>& x) {
+              = [&marker](const dolfinx::array2d<double>& x) {
                   py::array_t<double> x_view(x.shape, x.strides(), x.data(),
                                              py::none());
                   py::array_t<bool> marked = marker(x_view);
@@ -316,7 +316,7 @@ void mesh(py::module& m)
            const std::function<py::array_t<bool>(
                const py::array_t<double, py::array::c_style>&)>& marker) {
           auto cpp_marker
-              = [&marker](const dolfinx::common::array2d<double>& x) {
+              = [&marker](const dolfinx::array2d<double>& x) {
                   py::array_t<double> x_view(x.shape, x.strides(), x.data(),
                                              py::none());
                   py::array_t<bool> marked = marker(x_view);

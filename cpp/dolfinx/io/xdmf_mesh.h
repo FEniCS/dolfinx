@@ -65,14 +65,13 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
 /// Read Geometry data
 /// @returns geometry
-common::array2d<double> read_geometry_data(MPI_Comm comm, const hid_t h5_id,
-                                           const pugi::xml_node& node);
+array2d<double> read_geometry_data(MPI_Comm comm, const hid_t h5_id,
+                                   const pugi::xml_node& node);
 
 /// Read Topology data
 /// @returns ((cell type, degree), topology)
-common::array2d<std::int64_t> read_topology_data(MPI_Comm comm,
-                                                 const hid_t h5_id,
-                                                 const pugi::xml_node& node);
+array2d<std::int64_t> read_topology_data(MPI_Comm comm, const hid_t h5_id,
+                                         const pugi::xml_node& node);
 
 } // namespace io::xdmf_mesh
 } // namespace dolfinx
