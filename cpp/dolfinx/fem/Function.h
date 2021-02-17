@@ -201,9 +201,8 @@ public:
 
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
-  void interpolate(
-      const std::function<std::variant<std::vector<T>, common::array2d<T>>(
-          const common::array2d<double>&)>& f)
+  void interpolate(const std::function<std::variant<std::vector<T>, array2d<T>>(
+                       const array2d<double>&)>& f)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -214,7 +213,7 @@ public:
     const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    const common::array2d<double> x = fem::interpolation_coords(
+    const array2d<double> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
     fem::interpolate(*this, f, x, cells);
   }
@@ -229,9 +228,8 @@ public:
   /// @param[in,out] u The values at the points. Values are not computed
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size.
-  void eval(const common::array2d<double>& x,
-            const tcb::span<const std::int32_t>& cells,
-            common::array2d<T>& u) const
+  void eval(const array2d<double>& x,
+            const tcb::span<const std::int32_t>& cells, array2d<T>& u) const
   {
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
@@ -261,7 +259,7 @@ public:
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const common::array2d<double>& x_g = mesh->geometry().x();
+    const array2d<double>& x_g = mesh->geometry().x();
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -290,7 +288,7 @@ public:
     std::vector<double> J(gdim * tdim);
     std::array<double, 1> detJ;
     std::vector<double> K(tdim * gdim);
-    common::array2d<double> X(1, tdim);
+    array2d<double> X(1, tdim);
 
     // Prepare basis function data structures
     std::vector<double> basis_reference_values(space_dimension
@@ -308,9 +306,9 @@ public:
     mesh->topology_mutable().create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
         = mesh->topology().get_cell_permutation_info();
-    common::array2d<double> coordinate_dofs(num_dofs_g, gdim);
+    array2d<double> coordinate_dofs(num_dofs_g, gdim);
 
-    common::array2d<double> xp(1, gdim);
+    array2d<double> xp(1, gdim);
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
@@ -371,7 +369,7 @@ public:
 
   /// Compute values at all mesh 'nodes'
   /// @return The values at all geometric points
-  common::array2d<T> compute_point_values() const
+  array2d<T> compute_point_values() const
   {
     assert(_function_space);
     std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
@@ -382,8 +380,7 @@ public:
     const int value_size_loc = _function_space->element()->value_size();
 
     // Resize Array for holding point values
-    common::array2d<T> point_values(mesh->geometry().x().shape[0],
-                                    value_size_loc);
+    array2d<T> point_values(mesh->geometry().x().shape[0], value_size_loc);
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -391,7 +388,7 @@ public:
 
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const common::array2d<double>& x_g = mesh->geometry().x();
+    const array2d<double>& x_g = mesh->geometry().x();
 
     // Interpolate point values on each cell (using last computed value if
     // not continuous, e.g. discontinuous Galerkin methods)

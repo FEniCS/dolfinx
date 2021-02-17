@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
     const auto bdofs = fem::locate_dofs_geometrical(
-        {*V}, [](const common::array2d<double>& x) {
+        {*V}, [](const array2d<double>& x) {
           constexpr double eps = 10.0 * std::numeric_limits<double>::epsilon();
           std::vector<bool> marked(x.shape[1]);
           std::transform(

@@ -94,9 +94,9 @@ compute_ghost_indices(MPI_Comm comm,
 ///   to be the local index plus the offset for this rank
 /// @return The data for each index in @p indices
 template <typename T>
-common::array2d<T> distribute_data(MPI_Comm comm,
-                                   const std::vector<std::int64_t>& indices,
-                                   const common::array2d<T>& x);
+array2d<T> distribute_data(MPI_Comm comm,
+                           const std::vector<std::int64_t>& indices,
+                           const array2d<T>& x);
 
 /// Given an adjacency list with global, possibly non-contiguous, link
 /// indices and a local adjacency list with contiguous link indices
@@ -130,9 +130,9 @@ compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
 // Implementation
 //---------------------------------------------------------------------------
 template <typename T>
-common::array2d<T>
-build::distribute_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
-                       const common::array2d<T>& x)
+array2d<T> build::distribute_data(MPI_Comm comm,
+                                  const std::vector<std::int64_t>& indices,
+                                  const array2d<T>& x)
 {
   common::Timer timer("Fetch float data from remote processes");
 
@@ -197,7 +197,7 @@ build::distribute_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
 
   assert(x.shape[1] != 0);
   // Pack point data to send back (transpose)
-  common::array2d<T> x_return(indices_recv.size(), x.shape[1]);
+  array2d<T> x_return(indices_recv.size(), x.shape[1]);
   for (int p = 0; p < size; ++p)
   {
     for (int i = disp_index_recv[p]; i < disp_index_recv[p + 1]; ++i)
@@ -214,7 +214,7 @@ build::distribute_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
   MPI_Type_commit(&compound_type);
 
   // Send back point data
-  common::array2d<T> my_x(disp_index_send.back(), x.shape[1]);
+  array2d<T> my_x(disp_index_send.back(), x.shape[1]);
   MPI_Alltoallv(x_return.data(), number_index_recv.data(),
                 disp_index_recv.data(), compound_type, my_x.data(),
                 number_index_send.data(), disp_index_send.data(), compound_type,

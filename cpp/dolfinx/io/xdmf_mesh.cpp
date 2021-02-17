@@ -165,7 +165,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   int width = (gdim == 1) ? 2 : gdim;
 
-  const common::array2d<double>& _x = geometry.x();
+  const array2d<double>& _x = geometry.x();
 
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);
@@ -223,9 +223,8 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
 }
 //----------------------------------------------------------------------------
-common::array2d<double>
-xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
-                              const pugi::xml_node& node)
+array2d<double> xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
+                                              const pugi::xml_node& node)
 {
   // Get geometry node
   pugi::xml_node geometry_node = node.child("Geometry");
@@ -259,13 +258,12 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
   std::vector geometry_data
       = xdmf_read::get_dataset<double>(comm, geometry_data_node, h5_id);
   const std::size_t num_local_nodes = geometry_data.size() / gdim;
-  return common::array2d<double>({num_local_nodes, gdim},
-                                 std::move(geometry_data));
+  return array2d<double>({num_local_nodes, gdim}, std::move(geometry_data));
 }
 //----------------------------------------------------------------------------
-common::array2d<std::int64_t>
-xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
-                              const pugi::xml_node& node)
+array2d<std::int64_t> xdmf_mesh::read_topology_data(MPI_Comm comm,
+                                                    const hid_t h5_id,
+                                                    const pugi::xml_node& node)
 {
   // Get topology node
   pugi::xml_node topology_node = node.child("Topology");
@@ -288,8 +286,8 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
   std::vector<std::int64_t> topology_data
       = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
   const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
-  common::array2d<std::int64_t> cells_vtk({num_local_cells, npoint_per_cell},
-                                          std::move(topology_data));
+  array2d<std::int64_t> cells_vtk({num_local_cells, npoint_per_cell},
+                                  std::move(topology_data));
 
   //  Permute cells from VTK to DOLFINX ordering
   return io::cells::compute_permutation(

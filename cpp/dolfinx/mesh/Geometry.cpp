@@ -28,9 +28,9 @@ std::shared_ptr<const common::IndexMap> Geometry::index_map() const
   return _index_map;
 }
 //-----------------------------------------------------------------------------
-common::array2d<double>& Geometry::x() { return _x; }
+array2d<double>& Geometry::x() { return _x; }
 //-----------------------------------------------------------------------------
-const common::array2d<double>& Geometry::x() const { return _x; }
+const array2d<double>& Geometry::x() const { return _x; }
 //-----------------------------------------------------------------------------
 const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
 //-----------------------------------------------------------------------------
@@ -45,7 +45,7 @@ mesh::Geometry
 mesh::create_geometry(MPI_Comm comm, const Topology& topology,
                       const fem::CoordinateElement& coordinate_element,
                       const graph::AdjacencyList<std::int64_t>& cell_nodes,
-                      const common::array2d<double>& x)
+                      const array2d<double>& x)
 {
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
@@ -75,7 +75,7 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
 
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
-  common::array2d<double> coords
+  array2d<double> coords
       = graph::build::distribute_data<double>(comm, indices, x);
 
   // Compute local-to-global map from local indices in dofmap to the
@@ -89,7 +89,7 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
 
   // Build coordinate dof array
-  common::array2d<double> xg(coords.shape[0], coords.shape[1]);
+  array2d<double> xg(coords.shape[0], coords.shape[1]);
 
   // Allocate space for input global indices
   std::vector<std::int64_t> igi(indices.size());

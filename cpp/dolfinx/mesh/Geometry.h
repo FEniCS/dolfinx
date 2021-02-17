@@ -50,7 +50,7 @@ public:
     // Make all geometry 3D
     if (_dim != 3)
     {
-      common::array2d<double> coords(_x.shape[0], 3, 0.0);
+      array2d<double> coords(_x.shape[0], 3, 0.0);
       for (std::size_t i = 0; i < _x.shape[0]; ++i)
         for (std::size_t j = 0; j < _x.shape[1]; ++j)
           coords(i, j) = _x(i, j);
@@ -83,10 +83,10 @@ public:
   std::shared_ptr<const common::IndexMap> index_map() const;
 
   /// Geometry degrees-of-freedom
-  common::array2d<double>& x();
+  array2d<double>& x();
 
   /// Geometry degrees-of-freedom
-  const common::array2d<double>& x() const;
+  const array2d<double>& x() const;
 
   /// The element that describes the geometry map
   /// @return The coordinate/geometry element
@@ -109,7 +109,7 @@ private:
   fem::CoordinateElement _cmap;
 
   // Coordinates for all points stored as a contiguous array
-  common::array2d<double> _x;
+  array2d<double> _x;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
@@ -120,7 +120,7 @@ private:
 mesh::Geometry create_geometry(MPI_Comm comm, const Topology& topology,
                                const fem::CoordinateElement& coordinate_element,
                                const graph::AdjacencyList<std::int64_t>& cells,
-                               const common::array2d<double>& x);
+                               const array2d<double>& x);
 
 } // namespace mesh
 } // namespace dolfinx
