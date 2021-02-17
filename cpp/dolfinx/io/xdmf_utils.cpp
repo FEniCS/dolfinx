@@ -48,7 +48,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
-  const common::array2d <Scalar > data_values = u.compute_point_values();
+  const array2d<Scalar> data_values = u.compute_point_values();
 
   const int width = get_padded_width(*u.function_space()->element());
   assert(mesh->geometry().index_map());
@@ -346,11 +346,10 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
   return cell_str->second;
 }
 //-----------------------------------------------------------------------------
-std::pair<common::array2d<std::int32_t>, std::vector<std::int32_t>>
-xdmf_utils::extract_local_entities(
-    const mesh::Mesh& mesh, const int entity_dim,
-    const common::array2d<std::int64_t>& entities,
-    const tcb::span<const std::int32_t>& values)
+std::pair<array2d<std::int32_t>, std::vector<std::int32_t>>
+xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
+                                   const array2d<std::int64_t>& entities,
+                                   const tcb::span<const std::int32_t>& values)
 {
   if (entities.shape[0] != values.size())
     throw std::runtime_error("Number of entities and values must match");
@@ -396,8 +395,8 @@ xdmf_utils::extract_local_entities(
 
   // Throw away input global indices which do not belong to entity vertices
   // This decreases the amount of data needed in parallel communication
-  common::array2d<std::int64_t> entities_vertices(entities.shape[0],
-                                                  num_vertices_per_entity);
+  array2d<std::int64_t> entities_vertices(entities.shape[0],
+                                          num_vertices_per_entity);
   for (std::size_t e = 0; e < entities_vertices.shape[0]; ++e)
   {
     for (std::size_t i = 0; i < entities_vertices.shape[1]; ++i)
@@ -572,10 +571,9 @@ xdmf_utils::extract_local_entities(
     }
   }
 
-  return {common::array2d<std::int32_t>(
-              {entities_new.size() / num_vertices_per_entity,
-               num_vertices_per_entity},
-              std::move(entities_new)),
+  return {array2d<std::int32_t>({entities_new.size() / num_vertices_per_entity,
+                                 num_vertices_per_entity},
+                                std::move(entities_new)),
           values_new};
 }
 //-----------------------------------------------------------------------------

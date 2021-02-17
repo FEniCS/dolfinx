@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
       // Large angle of rotation (60 degrees)
       const double theta = 1.04719755;
 
-      common::array2d<PetscScalar> values(3, x.shape[1], 0.0);
+      array2d<PetscScalar> values(3, x.shape[1], 0.0);
       for (std::size_t i = 0; i < x.shape[1]; ++i)
       {
         // New coordinates
@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
 
     auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
     u_clamp->interpolate([](auto& x) {
-      return common::array2d<PetscScalar>(3, x.shape[1], 0.0);
+      return array2d<PetscScalar>(3, x.shape[1], 0.0);
     });
 
     // Create Dirichlet boundary conditions

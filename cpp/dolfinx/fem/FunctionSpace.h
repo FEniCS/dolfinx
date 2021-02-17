@@ -93,7 +93,7 @@ public:
   /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...) if
   /// @p transpose is false, and otherwise the returned data is
   /// transposed.
-  common::array2d<double> tabulate_dof_coordinates(bool transpose) const;
+  array2d<double> tabulate_dof_coordinates(bool transpose) const;
 
   /// Unique identifier
   std::size_t id() const;
