@@ -348,17 +348,6 @@ void fem(py::module& m)
               dolfinx::la::PETScMatrix::set_fn(A, INSERT_VALUES), V, bcs,
               diagonal);
         });
-  //   m.def(
-  //       "set_diagonal",
-  //       py::overload_cast<const std::function<int(
-  //                             std::int32_t, const std::int32_t*,
-  //                             std::int32_t, const std::int32_t*, const
-  //                             PetscScalar*)>&,
-  //                         const dolfinx::fem::FunctionSpace&,
-  //                         const std::vector<std::shared_ptr<
-  //                             const
-  //                             dolfinx::fem::DirichletBC<PetscScalar>>>&,
-  //                         PetscScalar>(&dolfinx::fem::set_diagonal<PetscScalar>));
   m.def("assemble_matrix",
         py::overload_cast<const std::function<int(
                               std::int32_t, const std::int32_t*, std::int32_t,

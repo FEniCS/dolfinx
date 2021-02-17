@@ -1,4 +1,4 @@
-# Copyright (C) 2020-2021 Joseph P. Dean, Massimiliano Leoni
+# Copyright (C) 2020-2021 Joseph P. Dean and Massimiliano Leoni
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
