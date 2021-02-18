@@ -254,16 +254,17 @@ void SparsityPattern::assemble()
 
   // Compute size of data to send to each process
   std::vector<std::int32_t> data_per_proc(outdegree_rev, 0);
+  std::vector<int> ghost_to_neighbour_rank(num_ghosts0, -1);
   for (int i = 0; i < num_ghosts0; ++i)
   {
     // Find local index of dest ghost process
     const auto it = dest_proc_to_neighbor.find(ghost_owners0[i]);
     assert(it != dest_proc_to_neighbor.end());
-    const int neighbour_rank = it->second;
+    ghost_to_neighbour_rank[i] = it->second;
 
     // Add to src size
-    assert(neighbour_rank < (int)data_per_proc.size());
-    data_per_proc[neighbour_rank] += 3 * _cache_unowned[i].size();
+    assert( ghost_to_neighbour_rank[i] < (int)data_per_proc.size());
+    data_per_proc[ ghost_to_neighbour_rank[i]] += 3 * _cache_unowned[i].size();
   }
 
   std::vector<int> counter_out(outdegree_rev + 1, 0);
@@ -276,9 +277,7 @@ void SparsityPattern::assemble()
   std::vector<std::int64_t> ghost_data(counter_out.back());
   for (int i = 0; i < num_ghosts0; ++i)
   {
-    const int ghost_owner = ghost_owners0[i];
-    const int neighbour_rank = dest_proc_to_neighbor[ghost_owner];
-
+    const int neighbour_rank = ghost_to_neighbour_rank[i];
     for (std::int32_t col_local : _cache_unowned[i])
     {
       // Find local index of dest ghost process
