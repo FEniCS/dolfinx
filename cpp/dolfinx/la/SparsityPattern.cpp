@@ -6,12 +6,12 @@
 
 #include "SparsityPattern.h"
 #include <algorithm>
-#include <map>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <map>
 
 using namespace dolfinx;
 using namespace dolfinx::la;
@@ -276,12 +276,12 @@ void SparsityPattern::assemble()
   std::vector<std::int64_t> ghost_data(counter_out.back());
   for (int i = 0; i < num_ghosts0; ++i)
   {
+    const int ghost_owner = ghost_owners0[i];
+    const int neighbour_rank = dest_proc_to_neighbor[ghost_owner];
+
     for (std::int32_t col_local : _cache_unowned[i])
     {
       // Find local index of dest ghost process
-      const int ghost_owner = ghost_owners0[i];
-      const int neighbour_rank = dest_proc_to_neighbor[ghost_owner];
-
       const std::int32_t proc_index = insert_counter[neighbour_rank];
       ghost_data[proc_index] = ghosts0[i];
 
@@ -301,7 +301,8 @@ void SparsityPattern::assemble()
 
   // Create and communicate adjacencylist to neighborhood
   // Reserve pointer for openMPI to work
-  const graph::AdjacencyList<std::int64_t> ghost_data_out(std::move(ghost_data), std::move(counter_out));
+  const graph::AdjacencyList<std::int64_t> ghost_data_out(
+      std::move(ghost_data), std::move(counter_out));
   const graph::AdjacencyList<std::int64_t> ghost_data_in
       = MPI::neighbor_all_to_all(comm, ghost_data_out);
 
