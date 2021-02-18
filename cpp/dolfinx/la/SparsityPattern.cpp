@@ -291,6 +291,11 @@ void SparsityPattern::assemble()
   }
 
   // Create and communicate adjacencylist to neighborhood
+  // Reserve pointer for openMPI to work
+  if (ghost_data.size() == 0)
+    ghost_data.reserve(1);
+  if (counter_out.size() == 0)
+    counter_out.reserve(1);
   graph::AdjacencyList<std::int64_t> ghost_data_out(ghost_data, counter_out);
   graph::AdjacencyList<std::int64_t> ghost_data_in
       = MPI::neighbor_all_to_all(comm, ghost_data_out);
