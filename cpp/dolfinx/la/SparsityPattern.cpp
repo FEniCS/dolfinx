@@ -262,12 +262,13 @@ void SparsityPattern::assemble()
     const int neighbour_rank = it->second;
 
     // Add to src size
+    assert(neighbour_rank < (int)data_per_proc.size());
     data_per_proc[neighbour_rank] += 3 * _cache_unowned[i].size();
   }
 
   std::vector<int> counter_out(outdegree_rev + 1, 0);
   std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
-                   counter_out.begin() + 1);
+                   std::next(counter_out.begin(), 1));
 
   // For each ghost row, pack and send (global row, global col,
   // col_owner) triplets to send to neighborhood
@@ -300,8 +301,8 @@ void SparsityPattern::assemble()
 
   // Create and communicate adjacencylist to neighborhood
   // Reserve pointer for openMPI to work
-  graph::AdjacencyList<std::int64_t> ghost_data_out(ghost_data, counter_out);
-  graph::AdjacencyList<std::int64_t> ghost_data_in
+  const graph::AdjacencyList<std::int64_t> ghost_data_out(std::move(ghost_data), std::move(counter_out));
+  const graph::AdjacencyList<std::int64_t> ghost_data_in
       = MPI::neighbor_all_to_all(comm, ghost_data_out);
 
   // Add data received from the neighborhood
