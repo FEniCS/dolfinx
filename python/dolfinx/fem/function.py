@@ -101,7 +101,17 @@ class Expression:
         ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
         constants = [ufl_constant._cpp_object for ufl_constant in ufl_constants]
 
-        self._cpp_object = cpp.fem.Expression(coefficients, constants, mesh, x, fn, value_size)
+        # Prepare coefficients data. For every coefficient in form take
+        # its C++ object.
+        original_coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
+        coeffs = {f"w_{i}": original_coefficients[ufc_expression.original_coefficient_positions[i]]._cpp_object for i in range(
+            ufc_expression.num_coefficients)}
+
+        constants = {f"c_{i}": constant for i in }
+
+        self._cpp_object = cpp.fem.create_expression(ffi.cast("uintptr_t", ufc_expression),
+                                                     coeffs, constants, mesh)
+        # self._cpp_object = cpp.fem.Expression(coefficients, constants, mesh, x, fn, value_size)
 
     def eval(self, cells: np.ndarray, u: typing.Optional[np.ndarray] = None) -> np.ndarray:
         """Evaluate Expression in cells.

@@ -44,6 +44,8 @@ class Form;
 template <typename T>
 class Function;
 class FunctionSpace;
+template <typename T>
+class Expression;
 
 /// Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
@@ -391,6 +393,63 @@ std::shared_ptr<fem::FunctionSpace>
 create_functionspace(ufc_function_space* (*fptr)(const char*),
                      const std::string function_name,
                      std::shared_ptr<mesh::Mesh> mesh);
+
+/// Create Expression from UFC
+template <typename T>
+std::shared_ptr<fem::Expression<T>> create_expression(
+    const ufc_expression& expression,
+    const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
+        coefficients,
+    const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
+        constants,
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+{
+
+  // Place coefficients in appropriate order
+  std::vector<std::shared_ptr<const fem::Function<T>>> coeff_map;
+  std::vector<std::string> coefficient_names;
+  for (int i = 0; i < expression.num_coefficients; ++i)
+    coefficient_names.push_back(expression.coefficient_names[i]);
+
+  for (const std::string& name : coefficient_names)
+  {
+    if (auto it = coefficients.find(name); it != coefficients.end())
+      coeff_map.push_back(it->second);
+    else
+    {
+      throw std::runtime_error("Form coefficient \"" + name
+                               + "\" not provided.");
+    }
+  }
+
+  // Place constants in appropriate order
+  std::vector<std::shared_ptr<const fem::Constant<T>>> const_map;
+  std::vector<std::string> constant_names;
+  for (int i = 0; i < expression.num_constants; ++i)
+    constant_names.push_back(expression.constant_names[i]);
+
+  for (const std::string& name : constant_names)
+  {
+    if (auto it = constants.find(name); it != constants.end())
+      const_map.push_back(it->second);
+    else
+    {
+      throw std::runtime_error("Form constant \"" + name + "\" not provided.");
+    }
+  }
+
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      points(expression.points, expression.num_points,
+             expression.topological_dimension);
+
+  int value_size = 1;
+  for (int i = 0; i < expression.num_components; ++i)
+    value_size *= expression.value_shape[i];
+
+  return std::make_shared<fem::Expression<T>>(coeff_map, const_map, mesh, points,
+                         expression.tabulate_expression, value_size);
+}
 
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly

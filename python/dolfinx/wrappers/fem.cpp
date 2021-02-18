@@ -129,6 +129,23 @@ void fem(py::module& m)
         return dolfinx::fem::create_coordinate_map(*p);
       },
       "Create CoordinateElement from a pointer to ufc_coordinate_map.");
+  m.def("create_expression",
+        [](const std::uintptr_t expression,
+           const std::map<
+               std::string,
+               std::shared_ptr<const dolfinx::fem::Function<PetscScalar>>>&
+               coefficients,
+           const std::map<
+               std::string,
+               std::shared_ptr<const dolfinx::fem::Constant<PetscScalar>>>&
+               constants,
+           const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh) {
+          const ufc_expression* p
+              = reinterpret_cast<const ufc_expression*>(expression);
+          auto dolfin_expr = dolfinx::fem::create_expression<PetscScalar>(
+              *p, coefficients, constants, mesh);
+          return dolfin_expr;
+        });
   m.def(
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
