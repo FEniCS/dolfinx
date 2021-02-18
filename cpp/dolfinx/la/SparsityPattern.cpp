@@ -241,23 +241,26 @@ void SparsityPattern::assemble()
 
   // Get ghost->owner communicator
   MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
-
-  // Compute size of data to send to each process
   int indegree_rev(-1), outdegree_rev(-2), weighted_rev(-1);
   MPI_Dist_graph_neighbors_count(comm, &indegree_rev, &outdegree_rev,
                                  &weighted_rev);
   const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
+
+  // Global to local map of destination ranks
+  std::map<int, std::int32_t> dest_global_to_local;
+  for (int i = 0; i < dest_ranks.size(); ++i)
+    dest_global_to_local.insert({dest_ranks[i], i});
+
+  // Compute size of data to send to each process
   std::vector<std::int32_t> data_per_proc(outdegree_rev, 0);
-  std::vector<int> local_ghost_procs(num_ghosts0);
   for (int i = 0; i < num_ghosts0; ++i)
   {
     // Find local index of dest ghost process
-    auto it = std::find(dest_ranks.begin(), dest_ranks.end(), ghost_owners0[i]);
-    assert(it != dest_ranks.end());
-    const int local_index = std::distance(dest_ranks.begin(), it);
-    local_ghost_procs[i] = local_index;
+    const int ghost_owner = ghost_owners0[i];
+    const int neighbour_rank = dest_global_to_local[ghost_owner];
+
     // Add to src size
-    data_per_proc[local_index] += 3 * _cache_unowned[i].size();
+    data_per_proc[neighbour_rank] += 3 * _cache_unowned[i].size();
   }
 
   std::vector<int> counter_out(outdegree_rev + 1, 0);
@@ -270,10 +273,16 @@ void SparsityPattern::assemble()
   std::vector<std::int64_t> ghost_data(counter_out.back());
   for (int i = 0; i < num_ghosts0; ++i)
   {
-    const int local_index = local_ghost_procs[i];
+    const int ghost_owner = ghost_owners0[i];
+    const int neighbour_rank = dest_global_to_local[ghost_owner];
+
     for (std::int32_t col_local : _cache_unowned[i])
     {
-      const std::int32_t proc_index = insert_counter[local_index];
+      // Find local index of dest ghost process
+      const int ghost_owner = ghost_owners0[i];
+      const int neighbour_rank = dest_global_to_local[ghost_owner];
+
+      const std::int32_t proc_index = insert_counter[neighbour_rank];
       ghost_data[proc_index] = ghosts0[i];
 
       if (col_local < local_size1)
@@ -286,7 +295,7 @@ void SparsityPattern::assemble()
         ghost_data[proc_index + 1] = ghosts1[col_local - local_size1];
         ghost_data[proc_index + 2] = ghost_owners1[col_local - local_size1];
       }
-      insert_counter[local_index] += 3;
+      insert_counter[neighbour_rank] += 3;
     }
   }
 
