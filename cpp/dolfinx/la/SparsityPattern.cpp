@@ -249,7 +249,11 @@ void SparsityPattern::assemble()
 
   // Global-to-neigbourhood map for destination ranks
   std::map<int, std::int32_t> dest_proc_to_neighbor;
+<<<<<<< HEAD
   for (int i = 0; i < (int)dest_ranks.size(); ++i)
+=======
+  for (std::size_t i = 0; i < dest_ranks.size(); ++i)
+>>>>>>> abcb2043a9a7c7ed5a846ff2809a8930f5820ffd
     dest_proc_to_neighbor.insert({dest_ranks[i], i});
 
   // Compute size of data to send to each process
@@ -299,6 +303,7 @@ void SparsityPattern::assemble()
   }
 
   // Create and communicate adjacencylist to neighborhood
+<<<<<<< HEAD
 
   // Make vectors non-empty because OpenMPI doesn't like null
   if (ghost_data.empty())
@@ -306,6 +311,9 @@ void SparsityPattern::assemble()
   if (counter_out.empty() == 0)
     counter_out.resize(1);
 
+=======
+  // Reserve pointer for openMPI to work
+>>>>>>> abcb2043a9a7c7ed5a846ff2809a8930f5820ffd
   graph::AdjacencyList<std::int64_t> ghost_data_out(ghost_data, counter_out);
   graph::AdjacencyList<std::int64_t> ghost_data_in
       = MPI::neighbor_all_to_all(comm, ghost_data_out);
