@@ -297,7 +297,7 @@ void interpolate(
         // used std::copy_n(&values(k * value_size + m, c * X.shape[0]),
         // X.shape[0],
         //            _vals.row(m).begin());
-        for (int i = 0; i < X.shape[0]; ++i)
+        for (std::size_t i = 0; i < X.shape[0]; ++i)
           _vals(i, m) = values(k * value_size + m, c * X.shape[0] + i);
       }
 
