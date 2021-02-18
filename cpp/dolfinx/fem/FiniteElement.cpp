@@ -140,13 +140,11 @@ int FiniteElement::value_dimension(int i) const
 std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis(
-    std::vector<double>& reference_values,
-    const common::array2d<double>& X) const
+    std::vector<double>& reference_values, const array2d<double>& X) const
 {
   const int scalar_reference_value_size = _reference_value_size / _bs;
-  common::array2d<double> basix_data(X.shape[0],
-                                     basix::dim(_basix_element_handle)
-                                         * scalar_reference_value_size);
+  array2d<double> basix_data(X.shape[0], basix::dim(_basix_element_handle)
+                                             * scalar_reference_value_size);
   basix::tabulate(_basix_element_handle, basix_data.data(), 0, X.data(),
                   X.shape[0]);
 
@@ -171,8 +169,7 @@ void FiniteElement::evaluate_reference_basis(
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis_derivatives(
-    std::vector<double>& values, int order,
-    const common::array2d<double>& X) const
+    std::vector<double>& values, int order, const array2d<double>& X) const
 {
   // TODO: fix this for order > 1
   if (order != 1)
@@ -185,8 +182,8 @@ void FiniteElement::evaluate_reference_basis_derivatives(
   // nd = tdim + 1;
   // FIXME
   const int nd = 4;
-  common::array2d<double> basix_data(nd * X.shape[0],
-                                     basix::dim(_basix_element_handle));
+  array2d<double> basix_data(nd * X.shape[0],
+                             basix::dim(_basix_element_handle));
   basix::tabulate(_basix_element_handle, basix_data.data(), 1, X.data(),
                   X.shape[0]);
   for (std::size_t p = 0; p < X.shape[0]; ++p)
@@ -210,7 +207,7 @@ void FiniteElement::evaluate_reference_basis_derivatives(
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
     std::vector<double>& values, const std::vector<double>& reference_values,
-    const common::array2d<double>& X, const std::vector<double>& J,
+    const array2d<double>& X, const std::vector<double>& J,
     const tcb::span<const double>& detJ, const std::vector<double>& K) const
 {
   const int num_points = X.shape[0];
@@ -289,7 +286,7 @@ bool FiniteElement::interpolation_ident() const noexcept
   return _interpolation_is_ident;
 }
 //-----------------------------------------------------------------------------
-common::array2d<double> FiniteElement::interpolation_points() const
+array2d<double> FiniteElement::interpolation_points() const
 {
   if (_basix_element_handle == -1)
   {
@@ -298,8 +295,8 @@ common::array2d<double> FiniteElement::interpolation_points() const
   }
   const int gdim
       = basix::cell_geometry_dimension(basix::cell_type(_basix_element_handle));
-  common::array2d<double> points(
-      basix::interpolation_num_points(_basix_element_handle), gdim);
+  array2d<double> points(basix::interpolation_num_points(_basix_element_handle),
+                         gdim);
   basix::interpolation_points(_basix_element_handle, points.data());
   return points;
 }

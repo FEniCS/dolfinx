@@ -31,7 +31,7 @@ class Function;
 /// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression
-common::array2d<double>
+array2d<double>
 interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
                      const tcb::span<const std::int32_t>& cells);
 
@@ -54,12 +54,11 @@ void interpolate(Function<T>& u, const Function<T>& v);
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
 template <typename T>
-void interpolate(
-    Function<T>& u,
-    const std::function<std::variant<std::vector<T>, common::array2d<T>>(
-        const common::array2d<double>&)>& f,
-    const common::array2d<double>& x,
-    const tcb::span<const std::int32_t>& cells);
+void interpolate(Function<T>& u,
+                 const std::function<std::variant<std::vector<T>, array2d<T>>(
+                     const array2d<double>&)>& f,
+                 const array2d<double>& x,
+                 const tcb::span<const std::int32_t>& cells);
 
 /// Interpolate an expression f(x)
 ///
@@ -78,11 +77,10 @@ void interpolate(
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
 template <typename T>
-void interpolate_c(Function<T>& u,
-                   const std::function<void(common::array2d<T>&,
-                                            const common::array2d<double>&)>& f,
-                   const common::array2d<double>& x,
-                   const tcb::span<const std::int32_t>& cells);
+void interpolate_c(
+    Function<T>& u,
+    const std::function<void(array2d<T>&, const array2d<double>&)>& f,
+    const array2d<double>& x, const tcb::span<const std::int32_t>& cells);
 
 namespace detail
 {
@@ -178,12 +176,11 @@ void interpolate(Function<T>& u, const Function<T>& v)
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void interpolate(
-    Function<T>& u,
-    const std::function<std::variant<std::vector<T>, common::array2d<T>>(
-        const common::array2d<double>&)>& f,
-    const common::array2d<double>& x,
-    const tcb::span<const std::int32_t>& cells)
+void interpolate(Function<T>& u,
+                 const std::function<std::variant<std::vector<T>, array2d<T>>(
+                     const array2d<double>&)>& f,
+                 const array2d<double>& x,
+                 const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
@@ -204,7 +201,7 @@ void interpolate(
   const int tdim = mesh->topology().dim();
 
   // Get the interpolation points on the reference cells
-  const common::array2d<double> X = element->interpolation_points();
+  const array2d<double> X = element->interpolation_points();
 
   if (X.shape[0] == 0)
     throw std::runtime_error(
@@ -221,9 +218,9 @@ void interpolate(
 
   // TODO: Copies and memory allocation could be avoided with a 'span2d'
   // class, or by just pointing to the data
-  common::array2d<T> values(element->value_size(), x.shape[1]);
-  std::variant<std::vector<T>, common::array2d<T>> values_v = f(x);
-  if (std::holds_alternative<common::array2d<T>>(values_v))
+  array2d<T> values(element->value_size(), x.shape[1]);
+  std::variant<std::vector<T>, array2d<T>> values_v = f(x);
+  if (std::holds_alternative<array2d<T>>(values_v))
   {
     values = std::get<1>(values_v);
     if (values.shape[0] != element->value_size())
@@ -274,7 +271,7 @@ void interpolate(
 
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
-  common::array2d<T> _vals(value_size, X.shape[0]);
+  array2d<T> _vals(value_size, X.shape[0]);
   for (std::int32_t c : cells)
   {
     auto x_dofs = x_dofmap.links(c);
@@ -319,11 +316,10 @@ void interpolate(
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void interpolate_c(Function<T>& u,
-                   const std::function<void(common::array2d<T>&,
-                                            const common::array2d<double>&)>& f,
-                   const common::array2d<double>& x,
-                   const tcb::span<const std::int32_t>& cells)
+void interpolate_c(
+    Function<T>& u,
+    const std::function<void(array2d<T>&, const array2d<double>&)>& f,
+    const array2d<double>& x, const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
@@ -333,8 +329,8 @@ void interpolate_c(Function<T>& u,
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
 
-  auto fn = [value_size, &f](const common::array2d<double>& x) {
-    common::array2d<T> values(value_size, x.shape[1]);
+  auto fn = [value_size, &f](const array2d<double>& x) {
+    array2d<T> values(value_size, x.shape[1]);
     f(values, x);
     return values;
   };

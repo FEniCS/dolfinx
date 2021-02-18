@@ -167,9 +167,8 @@ support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
 }
 } // namespace
 //----------------------------------------------------------------------------
-std::array<double, 3>
-geometry::compute_distance_gjk(const common::array2d<double>& p,
-                               const common::array2d<double>& q)
+std::array<double, 3> geometry::compute_distance_gjk(const array2d<double>& p,
+                                                     const array2d<double>& q)
 {
   assert(p.shape[1] == 3);
   assert(q.shape[1] == 3);

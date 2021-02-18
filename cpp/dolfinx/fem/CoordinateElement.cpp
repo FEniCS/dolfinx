@@ -64,9 +64,9 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
   return _dof_layout;
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::push_forward(
-    common::array2d<double>& x, const common::array2d<double>& X,
-    const common::array2d<double>& cell_geometry) const
+void CoordinateElement::push_forward(array2d<double>& x,
+                                     const array2d<double>& X,
+                                     const array2d<double>& cell_geometry) const
 {
   assert(x.shape[0] == X.shape[0]);
   assert((int)x.shape[1] == this->geometric_dimension());
@@ -87,9 +87,9 @@ void CoordinateElement::push_forward(
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
-    common::array2d<double>& X, std::vector<double>& J, tcb::span<double> detJ,
-    std::vector<double>& K, const common::array2d<double>& x,
-    const common::array2d<double>& cell_geometry) const
+    array2d<double>& X, std::vector<double>& J, tcb::span<double> detJ,
+    std::vector<double>& K, const array2d<double>& x,
+    const array2d<double>& cell_geometry) const
 {
   // Number of points
   int num_points = x.shape[0];

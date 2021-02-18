@@ -232,13 +232,13 @@ void fem(py::module& m)
            [](const dolfinx::fem::CoordinateElement& self,
               const py::array_t<double, py::array::c_style>& X,
               const py::array_t<double, py::array::c_style>& cell_geometry) {
-             dolfinx::common::array2d<double> _X(X.shape()[0], X.shape()[1]),
+             dolfinx::array2d<double> _X(X.shape()[0], X.shape()[1]),
                  _cell_geometry(cell_geometry.shape()[0],
                                 cell_geometry.shape()[1]);
              std::copy_n(X.data(), X.size(), _X.data());
              std::copy_n(cell_geometry.data(), cell_geometry.size(),
                          _cell_geometry.data());
-             dolfinx::common::array2d<double> x(_X.shape[0],
+             dolfinx::array2d<double> x(_X.shape[0],
                                                 self.geometric_dimension());
              self.push_forward(x, _X, _cell_geometry);
              return as_pyarray2d(std::move(x));
@@ -520,7 +520,7 @@ void fem(py::module& m)
              marker) -> std::array<py::array, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
-        auto _marker = [&marker](const dolfinx::common::array2d<double>& x) {
+        auto _marker = [&marker](const dolfinx::array2d<double>& x) {
           py::array_t _x(x.shape, x.strides(), x.data(), py::none());
           py::array_t m = marker(_x);
           return std::vector<bool>(m.data(), m.data() + m.size());
@@ -536,7 +536,7 @@ void fem(py::module& m)
       [](const dolfinx::fem::FunctionSpace& V,
          const std::function<py::array_t<bool>(const py::array_t<double>&)>&
              marker) {
-        auto _marker = [&marker](const dolfinx::common::array2d<double>& x) {
+        auto _marker = [&marker](const dolfinx::array2d<double>& x) {
           py::array_t _x(x.shape, x.strides(), x.data(), py::none());
           py::array_t m = marker(_x);
           return std::vector<bool>(m.data(), m.data() + m.size());
@@ -564,14 +564,14 @@ void fem(py::module& m)
           [](dolfinx::fem::Function<PetscScalar>& self,
              const std::function<py::array_t<PetscScalar>(
                  const py::array_t<double>&)>& f) {
-            auto _f = [&f](const dolfinx::common::array2d<double>& x)
+            auto _f = [&f](const dolfinx::array2d<double>& x)
                 -> std::variant<std::vector<PetscScalar>,
-                                dolfinx::common::array2d<PetscScalar>> {
+                                dolfinx::array2d<PetscScalar>> {
               py::array_t _x(x.shape, x.strides(), x.data(), py::none());
               py::array_t v = f(_x);
               if (v.ndim() > 1)
               {
-                dolfinx::common::array2d<PetscScalar> vals(v.shape()[0],
+                dolfinx::array2d<PetscScalar> vals(v.shape()[0],
                                                            v.shape()[1]);
                 std::copy_n(v.data(), v.size(), vals.data());
                 return vals;
@@ -594,8 +594,8 @@ void fem(py::module& m)
                 = reinterpret_cast<void (*)(PetscScalar*, int, int,
                                             const double*)>(addr);
 
-            auto _f = [&f](dolfinx::common::array2d<PetscScalar>& values,
-                           const dolfinx::common::array2d<double>& x) -> void {
+            auto _f = [&f](dolfinx::array2d<PetscScalar>& values,
+                           const dolfinx::array2d<double>& x) -> void {
               f(values.data(), values.shape[1], values.shape[0], x.data());
             };
 
@@ -610,7 +610,7 @@ void fem(py::module& m)
                 = cell_map->size_local() + cell_map->num_ghosts();
             std::vector<std::int32_t> cells(num_cells, 0);
             std::iota(cells.begin(), cells.end(), 0);
-            const dolfinx::common::array2d<double> x
+            const dolfinx::array2d<double> x
                 = dolfinx::fem::interpolation_coords(
                     *self.function_space()->element(),
                     *self.function_space()->mesh(), cells);
@@ -633,9 +633,9 @@ void fem(py::module& m)
              const py::array_t<std::int32_t, py::array::c_style>& cells,
              py::array_t<PetscScalar, py::array::c_style>& u) {
             // TODO: handle 1d case
-            dolfinx::common::array2d<double> _x(x.shape()[0], x.shape()[1]);
+            dolfinx::array2d<double> _x(x.shape()[0], x.shape()[1]);
             std::copy_n(x.data(), x.size(), _x.data());
-            dolfinx::common::array2d<PetscScalar> _u(u.shape()[0],
+            dolfinx::array2d<PetscScalar> _u(u.shape()[0],
                                                      u.shape()[1]);
             self.eval(_x, tcb::span(cells.data(), cells.size()), _u);
             std::copy_n(_u.data(), _u.size(), u.mutable_data());
@@ -701,7 +701,7 @@ void fem(py::module& m)
                  auto tabulate_expression_ptr = (void (*)(
                      PetscScalar*, const PetscScalar*, const PetscScalar*,
                      const double*))addr.cast<std::uintptr_t>();
-                 dolfinx::common::array2d<double> _X(X.shape()[0],
+                 dolfinx::array2d<double> _X(X.shape()[0],
                                                      X.shape()[1]);
                  std::copy_n(X.data(), X.size(), _X.data());
                  return dolfinx::fem::Expression<PetscScalar>(
@@ -714,7 +714,7 @@ void fem(py::module& m)
            [](const dolfinx::fem::Expression<PetscScalar>& self,
               const py::array_t<std::int32_t, py::array::c_style>& active_cells,
               py::array_t<PetscScalar> values) {
-             dolfinx::common::array2d<PetscScalar> _values(
+             dolfinx::array2d<PetscScalar> _values(
                  active_cells.shape()[0],
                  self.num_points() * self.value_size());
              self.eval(tcb::span(active_cells.data(), active_cells.size()),

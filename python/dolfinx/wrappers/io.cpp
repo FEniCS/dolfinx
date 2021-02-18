@@ -44,10 +44,10 @@ void io(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int entity_dim,
            const py::array_t<std::int64_t, py::array::c_style>& entities,
            const py::array_t<std::int32_t, py::array::c_style>& values) {
-          dolfinx::common::array2d<std::int64_t> _entities(entities.shape()[0],
+          dolfinx::array2d<std::int64_t> _entities(entities.shape()[0],
                                                            entities.shape()[1]);
           std::copy_n(entities.data(), entities.size(), _entities.data());
-          std::pair<dolfinx::common::array2d<std::int32_t>,
+          std::pair<dolfinx::array2d<std::int32_t>,
                     std::vector<std::int32_t>>
               e = dolfinx::io::xdmf_utils::extract_local_entities(
                   mesh, entity_dim, _entities,

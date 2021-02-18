@@ -298,4 +298,3 @@ private:
 };
 
 } // namespace dolfinx::common
- 
