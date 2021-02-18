@@ -156,7 +156,6 @@ public:
   /// the expression. The call must allocate the space. Is has
   template <typename T>
   constexpr void interpolate(const common::array2d<T>& values,
-                             std::uint32_t cell_permutation,
                              tcb::span<T> dofs) const
   {
     const std::size_t rows = _space_dim / _bs;
@@ -174,8 +173,6 @@ public:
           std::next(_interpolation_matrix.begin(), i * cols + cols),
           values.data(), T(0.0));
     }
-
-    _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
   }
 
   /// @todo Expand on when permutation data might be required
@@ -187,7 +184,7 @@ public:
   /// Apply permutation to some data
   ///
   /// @param[in,out] data The data to be transformed
-  /// @param[in] cell_permutation Permutation data fro the cell
+  /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
   void apply_dof_transformation(T* data, std::uint32_t cell_permutation,
@@ -198,6 +195,34 @@ public:
     else
       _apply_dof_transformation_to_scalar(data, cell_permutation, block_size);
   }
+
+  /// Apply inverse transpose permutation to some data
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_inverse_transpose_dof_transformation(
+      T* data, std::uint32_t cell_permutation, int block_size) const
+  {
+    if constexpr (std::is_same<T, double>::value)
+      _apply_inverse_transpose_dof_transformation(data, cell_permutation,
+                                                  block_size);
+    else
+      _apply_inverse_transpose_dof_transformation_to_scalar(
+          data, cell_permutation, block_size);
+  }
+
+  void map_pull_back(double* physical_data, const double* reference_data,
+                     const double* J, const double* detJ, const double* K,
+                     const int physical_dim, const int physical_value_size,
+                     const int nresults, const int npoints) const;
+
+  void map_pull_back(std::complex<double>* physical_data,
+                     const std::complex<double>* reference_data,
+                     const double* J, const double* detJ, const double* K,
+                     const int physical_dim, const int physical_value_size,
+                     const int nresults, const int npoints) const;
 
 private:
   std::string _signature, _family;
@@ -225,6 +250,12 @@ private:
 
   std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
       _apply_dof_transformation_to_scalar;
+
+  std::function<int(double*, const std::uint32_t, const int)>
+      _apply_inverse_transpose_dof_transformation;
+
+  std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
+      _apply_inverse_transpose_dof_transformation_to_scalar;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.

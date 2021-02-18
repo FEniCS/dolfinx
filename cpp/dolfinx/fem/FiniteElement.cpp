@@ -24,6 +24,10 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _apply_dof_transformation(ufc_element.apply_dof_transformation),
       _apply_dof_transformation_to_scalar(
           ufc_element.apply_dof_transformation_to_scalar),
+      _apply_inverse_transpose_dof_transformation(
+          ufc_element.apply_inverse_transpose_dof_transformation),
+      _apply_inverse_transpose_dof_transformation_to_scalar(
+          ufc_element.apply_inverse_transpose_dof_transformation_to_scalar),
       _bs(ufc_element.block_size),
       _interpolation_is_ident(ufc_element.interpolation_is_identity),
       _needs_permutation_data(ufc_element.needs_permutation_data)
@@ -303,5 +307,29 @@ common::array2d<double> FiniteElement::interpolation_points() const
 bool FiniteElement::needs_permutation_data() const noexcept
 {
   return _needs_permutation_data;
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::map_pull_back(double* physical_data,
+                                  const double* reference_data, const double* J,
+                                  const double* detJ, const double* K,
+                                  const int physical_dim,
+                                  const int physical_value_size,
+                                  const int nresults, const int npoints) const
+{
+  basix::map_pull_back_real(_basix_element_handle, physical_data,
+                            reference_data, J, detJ, K, physical_dim,
+                            physical_value_size, nresults, npoints);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::map_pull_back(std::complex<double>* physical_data,
+                                  const std::complex<double>* reference_data,
+                                  const double* J, const double* detJ,
+                                  const double* K, const int physical_dim,
+                                  const int physical_value_size,
+                                  const int nresults, const int npoints) const
+{
+  basix::map_pull_back_complex(_basix_element_handle, physical_data,
+                               reference_data, J, detJ, K, physical_dim,
+                               physical_value_size, nresults, npoints);
 }
 //-----------------------------------------------------------------------------
