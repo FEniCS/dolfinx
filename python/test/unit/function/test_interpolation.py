@@ -104,6 +104,7 @@ def one_cell_mesh(cell_type):
 
 def run_scalar_test(V, poly_order):
     """Test that interpolation is correct in a scalar valued space."""
+    random.seed(13)
     tdim = V.mesh.topology.dim
 
     if tdim == 1:
@@ -127,6 +128,7 @@ def run_scalar_test(V, poly_order):
 
 def run_vector_test(V, poly_order):
     """Test that interpolation is correct in a scalar valued space."""
+    random.seed(12)
     tdim = V.mesh.topology.dim
 
     if tdim == 1:
