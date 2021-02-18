@@ -248,7 +248,7 @@ void SparsityPattern::assemble()
 
   // Global to local map of destination ranks
   std::map<int, std::int32_t> dest_proc_to_neighbor;
-  for (int i = 0; i < dest_ranks.size(); ++i)
+  for (std::size_t i = 0; i < dest_ranks.size(); ++i)
     dest_proc_to_neighbor.insert({dest_ranks[i], i});
 
   // Compute size of data to send to each process
