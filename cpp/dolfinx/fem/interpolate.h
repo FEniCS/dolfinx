@@ -250,7 +250,7 @@ void interpolate(Function<T>& u,
       = mesh->geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const common::array2d<double>& x_g = mesh->geometry().x();
+  const array2d<double>& x_g = mesh->geometry().x();
 
   // NOTE: The below loop over cells could be skipped for some elements,
   // e.g. Lagrange, where the interpolation is just the identity
@@ -259,15 +259,15 @@ void interpolate(Function<T>& u,
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
 
-  common::array2d<double> x_cell(X.shape[0], gdim);
+  array2d<double> x_cell(X.shape[0], gdim);
   std::vector<double> J(X.shape[0] * gdim * tdim);
   std::vector<double> detJ(X.shape[0]);
   std::vector<double> K(X.shape[0] * tdim * gdim);
-  common::array2d<double> X_ref(X.shape[0], tdim);
+  array2d<double> X_ref(X.shape[0], tdim);
 
-  common::array2d<double> coordinate_dofs(num_dofs_g, gdim);
+  array2d<double> coordinate_dofs(num_dofs_g, gdim);
 
-  common::array2d<T> reference_data(value_size, X.shape[0]);
+  array2d<T> reference_data(value_size, X.shape[0]);
 
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
