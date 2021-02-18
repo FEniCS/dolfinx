@@ -257,51 +257,53 @@ void SparsityPattern::assemble()
   std::vector<int> ghost_to_neighbour_rank(num_ghosts0, -1);
   for (int i = 0; i < num_ghosts0; ++i)
   {
-    // Find local index of dest ghost process
+    // Find rank on neigbourhood comm of ghost owner
     const auto it = dest_proc_to_neighbor.find(ghost_owners0[i]);
     assert(it != dest_proc_to_neighbor.end());
     ghost_to_neighbour_rank[i] = it->second;
 
     // Add to src size
-    assert( ghost_to_neighbour_rank[i] < (int)data_per_proc.size());
+    assert(ghost_to_neighbour_rank[i] < (int)data_per_proc.size());
     data_per_proc[ ghost_to_neighbour_rank[i]] += 3 * _cache_unowned[i].size();
   }
 
-  std::vector<int> counter_out(outdegree_rev + 1, 0);
+  // Compute send displacements
+  std::vector<int> send_disp(outdegree_rev + 1, 0);
   std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
-                   std::next(counter_out.begin(), 1));
+                   std::next(send_disp.begin(), 1));
 
   // For each ghost row, pack and send (global row, global col,
   // col_owner) triplets to send to neighborhood
-  std::vector<int> insert_counter(counter_out);
-  std::vector<std::int64_t> ghost_data(counter_out.back());
+  std::vector<int> insert_pos(send_disp);
+  std::vector<std::int64_t> ghost_data(send_disp.back());
   for (int i = 0; i < num_ghosts0; ++i)
   {
     const int neighbour_rank = ghost_to_neighbour_rank[i];
     for (std::int32_t col_local : _cache_unowned[i])
     {
-      // Find local index of dest ghost process
-      const std::int32_t proc_index = insert_counter[neighbour_rank];
-      ghost_data[proc_index] = ghosts0[i];
+      // Get index in send buffer
+      const std::int32_t pos = insert_pos[neighbour_rank];
 
+      // Pack send data
+      ghost_data[pos] = ghosts0[i];
       if (col_local < local_size1)
       {
-        ghost_data[proc_index + 1] = col_local + local_range1[0];
-        ghost_data[proc_index + 2] = mpi_rank;
+        ghost_data[pos + 1] = col_local + local_range1[0];
+        ghost_data[pos + 2] = mpi_rank;
       }
       else
       {
-        ghost_data[proc_index + 1] = ghosts1[col_local - local_size1];
-        ghost_data[proc_index + 2] = ghost_owners1[col_local - local_size1];
+        ghost_data[pos + 1] = ghosts1[col_local - local_size1];
+        ghost_data[pos + 2] = ghost_owners1[col_local - local_size1];
       }
-      insert_counter[neighbour_rank] += 3;
+
+      insert_pos[neighbour_rank] += 3;
     }
   }
 
-  // Create and communicate adjacencylist to neighborhood
-  // Reserve pointer for openMPI to work
+  // Create and communicate adjacency list to neighborhood
   const graph::AdjacencyList<std::int64_t> ghost_data_out(
-      std::move(ghost_data), std::move(counter_out));
+      std::move(ghost_data), std::move(send_disp));
   const graph::AdjacencyList<std::int64_t> ghost_data_in
       = MPI::neighbor_all_to_all(comm, ghost_data_out);
 
