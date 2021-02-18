@@ -244,26 +244,24 @@ dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
   MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
                                  &weighted);
 
-  // Get receive sizes
-  std::vector<int> send_sizes(outdegree, 0);
-  std::vector<int> recv_sizes(indegree);
-  // Allocate memory for empty arrays (for openmpi to work)
-  send_sizes.reserve(1);
-  recv_sizes.reserve(1);
+  // Allocate memory (add '1' to handle empty as OpenMPI fails for null pointers
+  std::vector<int> send_sizes(outdegree + 1, 0);
+  std::vector<int> recv_sizes(indegree + 1);
   std::adjacent_difference(std::next(send_data.offsets().begin()),
                            send_data.offsets().end(), send_sizes.begin());
+  // Get receive sizes
   MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI::mpi_type<int>(),
                         recv_sizes.data(), 1, MPI::mpi_type<int>(),
                         neighbor_comm);
 
   // Work out recv offsets
-  std::vector<int> recv_offsets(recv_sizes.size() + 1);
+  std::vector<int> recv_offsets(indegree + 1);
   recv_offsets[0] = 0;
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::next(recv_offsets.begin(), 1));
 
   std::vector<T> recv_data(recv_offsets[recv_offsets.size() - 1]);
-  recv_data.reserve(1);
+  // recv_data.reserve(1);
   MPI_Neighbor_alltoallv(
       send_data.array().data(), send_sizes.data(), send_data.offsets().data(),
       MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
