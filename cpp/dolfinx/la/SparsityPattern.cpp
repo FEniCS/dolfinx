@@ -247,9 +247,9 @@ void SparsityPattern::assemble()
   const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
 
   // Global to local map of destination ranks
-  std::map<int, std::int32_t> dest_global_to_local;
+  std::map<int, std::int32_t> dest_proc_to_neighbor;
   for (int i = 0; i < dest_ranks.size(); ++i)
-    dest_global_to_local.insert({dest_ranks[i], i});
+    dest_proc_to_neighbor.insert({dest_ranks[i], i});
 
   // Compute size of data to send to each process
   std::vector<std::int32_t> data_per_proc(outdegree_rev, 0);
@@ -257,7 +257,7 @@ void SparsityPattern::assemble()
   {
     // Find local index of dest ghost process
     const int ghost_owner = ghost_owners0[i];
-    const int neighbour_rank = dest_global_to_local[ghost_owner];
+    const int neighbour_rank = dest_proc_to_neighbor[ghost_owner];
 
     // Add to src size
     data_per_proc[neighbour_rank] += 3 * _cache_unowned[i].size();
@@ -274,13 +274,13 @@ void SparsityPattern::assemble()
   for (int i = 0; i < num_ghosts0; ++i)
   {
     const int ghost_owner = ghost_owners0[i];
-    const int neighbour_rank = dest_global_to_local[ghost_owner];
+    const int neighbour_rank = dest_proc_to_neighbor[ghost_owner];
 
     for (std::int32_t col_local : _cache_unowned[i])
     {
       // Find local index of dest ghost process
       const int ghost_owner = ghost_owners0[i];
-      const int neighbour_rank = dest_global_to_local[ghost_owner];
+      const int neighbour_rank = dest_proc_to_neighbor[ghost_owner];
 
       const std::int32_t proc_index = insert_counter[neighbour_rank];
       ghost_data[proc_index] = ghosts0[i];
