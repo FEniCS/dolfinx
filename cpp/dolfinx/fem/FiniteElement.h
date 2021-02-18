@@ -151,7 +151,6 @@ public:
   /// @param[in] values The values of the function. It has shape
   /// (value_size, num_points), where `num_points` is the number of
   /// points given by FiniteElement::interpolation_points.
-  /// @param[in] cell_permutation Permutation data for the cell
   /// @param[out] dofs The element degrees of freedom (interpolants) of
   /// the expression. The call must allocate the space. Is has
   template <typename T>
