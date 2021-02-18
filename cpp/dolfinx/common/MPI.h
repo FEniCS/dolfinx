@@ -257,11 +257,13 @@ dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
   MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI::mpi_type<int>(),
                         recv_sizes.data(), 1, MPI::mpi_type<int>(),
                         neighbor_comm);
+
   // Work out recv offsets
   std::vector<int> recv_offsets(recv_sizes.size() + 1);
   recv_offsets[0] = 0;
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::next(recv_offsets.begin(), 1));
+
   std::vector<T> recv_data(recv_offsets[recv_offsets.size() - 1]);
   if (recv_data.size() == 0)
     recv_data.reserve(1);
