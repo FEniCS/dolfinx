@@ -213,11 +213,13 @@ public:
           data, cell_permutation, block_size);
   }
 
+  /// TODO: document this once finished
   void map_pull_back(double* physical_data, const double* reference_data,
                      const double* J, const double* detJ, const double* K,
                      const int physical_dim, const int physical_value_size,
                      const int nresults, const int npoints) const;
 
+  /// TODO: document this once finished
   void map_pull_back(std::complex<double>* physical_data,
                      const std::complex<double>* reference_data,
                      const double* J, const double* detJ, const double* K,
