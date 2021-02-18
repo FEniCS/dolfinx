@@ -6,6 +6,7 @@
 
 #include "SparsityPattern.h"
 #include <algorithm>
+#include <map>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -239,16 +240,16 @@ void SparsityPattern::assemble()
   for (std::int64_t global_i : ghosts1)
     global_to_local.insert({global_i, local_i++});
 
-  // Get ghost->owner communicator
+  // Get ghost->owner communicator for rows
   MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
   int indegree_rev(-1), outdegree_rev(-2), weighted_rev(-1);
   MPI_Dist_graph_neighbors_count(comm, &indegree_rev, &outdegree_rev,
                                  &weighted_rev);
   const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
 
-  // Global to local map of destination ranks
+  // Global-to-neigbourhood map for destination ranks
   std::map<int, std::int32_t> dest_proc_to_neighbor;
-  for (int i = 0; i < dest_ranks.size(); ++i)
+  for (int i = 0; i < (int)dest_ranks.size(); ++i)
     dest_proc_to_neighbor.insert({dest_ranks[i], i});
 
   // Compute size of data to send to each process
@@ -256,8 +257,9 @@ void SparsityPattern::assemble()
   for (int i = 0; i < num_ghosts0; ++i)
   {
     // Find local index of dest ghost process
-    const int ghost_owner = ghost_owners0[i];
-    const int neighbour_rank = dest_proc_to_neighbor[ghost_owner];
+    const auto it = dest_proc_to_neighbor.find(ghost_owners0[i]);
+    assert(it != dest_proc_to_neighbor.end());
+    const int neighbour_rank = it->second;
 
     // Add to src size
     data_per_proc[neighbour_rank] += 3 * _cache_unowned[i].size();
@@ -273,9 +275,6 @@ void SparsityPattern::assemble()
   std::vector<std::int64_t> ghost_data(counter_out.back());
   for (int i = 0; i < num_ghosts0; ++i)
   {
-    const int ghost_owner = ghost_owners0[i];
-    const int neighbour_rank = dest_proc_to_neighbor[ghost_owner];
-
     for (std::int32_t col_local : _cache_unowned[i])
     {
       // Find local index of dest ghost process
@@ -300,11 +299,13 @@ void SparsityPattern::assemble()
   }
 
   // Create and communicate adjacencylist to neighborhood
-  // Reserve pointer for openMPI to work
-  if (ghost_data.size() == 0)
-    ghost_data.reserve(1);
-  if (counter_out.size() == 0)
-    counter_out.reserve(1);
+
+  // Make vectors non-empty because OpenMPI doesn't like null
+  if (ghost_data.empty())
+    ghost_data.resize(1);
+  if (counter_out.empty() == 0)
+    counter_out.resize(1);
+
   graph::AdjacencyList<std::int64_t> ghost_data_out(ghost_data, counter_out);
   graph::AdjacencyList<std::int64_t> ghost_data_in
       = MPI::neighbor_all_to_all(comm, ghost_data_out);
