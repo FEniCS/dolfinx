@@ -84,7 +84,7 @@ public:
   /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(std::vector<double>& values,
-                                const common::array2d<double>& X) const;
+                                const array2d<double>& X) const;
 
   /// Evaluate all basis function derivatives of given order at given points in
   /// reference cell
