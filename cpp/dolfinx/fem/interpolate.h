@@ -270,12 +270,11 @@ void interpolate(
 
   common::array2d<double> coordinate_dofs(num_dofs_g, gdim);
 
-  common::array2d<T> reference_data(X.shape[0], value_size);
-  common::array2d<T> reference_data_transpose(value_size, X.shape[0]);
+  common::array2d<T> reference_data(value_size, X.shape[0]);
 
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
-  common::array2d<T> _vals(X.shape[0], value_size);
+  common::array2d<T> _vals(value_size, X.shape[0]);
   for (std::int32_t c : cells)
   {
     auto x_dofs = x_dofmap.links(c);
@@ -293,12 +292,8 @@ void interpolate(
       // Extract computed expression values for element block k
       for (int m = 0; m < value_size; ++m)
       {
-        // TODO: work out to do away with the transpose here, then copy_n can be
-        // used std::copy_n(&values(k * value_size + m, c * X.shape[0]),
-        // X.shape[0],
-        //            _vals.row(m).begin());
-        for (std::size_t i = 0; i < X.shape[0]; ++i)
-          _vals(i, m) = values(k * value_size + m, c * X.shape[0] + i);
+        std::copy_n(&values(k * value_size + m, c * X.shape[0]), X.shape[0],
+                    _vals.row(m).begin());
       }
 
       // Get element degrees of freedom for block
@@ -306,15 +301,10 @@ void interpolate(
                              detJ.data(), K.data(), gdim, value_size, 1,
                              X.shape[0]);
 
-      // TODO: work out to do away with the transpose here, then remove these
-      // lines
-      for (std::size_t i = 0; i < reference_data.shape[0]; ++i)
-        for (std::size_t j = 0; j < reference_data.shape[1]; ++j)
-          reference_data_transpose(j, i) = reference_data(i, j);
-
-      element->interpolate(reference_data_transpose, tcb::make_span(_coeffs));
+      element->interpolate(reference_data, tcb::make_span(_coeffs));
       element->apply_inverse_transpose_dof_transformation(_coeffs.data(),
                                                           cell_info[c], 1);
+
       assert(_coeffs.size() == num_scalar_dofs);
 
       // Copy interpolation dofs into coefficient vector
