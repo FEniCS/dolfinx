@@ -196,8 +196,15 @@ void interpolate(Function<T>& u,
   auto mesh = u.function_space()->mesh();
   assert(mesh);
 
+  const int gdim = mesh->geometry().dim();
+  const int tdim = mesh->topology().dim();
+
   // Get the interpolation points on the reference cells
   const array2d<double> X = element->interpolation_points();
+
+  if (X.shape[0] == 0)
+    throw std::runtime_error(
+        "Interpolation into this space is not yet supported.");
 
   mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
@@ -234,6 +241,16 @@ void interpolate(Function<T>& u,
   assert(dofmap);
   const int dofmap_bs = dofmap->bs();
 
+  // Get coordinate map
+  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+
+  // Get geometry data
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = x_dofmap.num_links(0);
+  const array2d<double>& x_g = mesh->geometry().x();
+
   // NOTE: The below loop over cells could be skipped for some elements,
   // e.g. Lagrange, where the interpolation is just the identity
 
@@ -241,12 +258,31 @@ void interpolate(Function<T>& u,
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
 
+  array2d<double> x_cell(X.shape[0], gdim);
+  std::vector<double> J(X.shape[0] * gdim * tdim);
+  std::vector<double> detJ(X.shape[0]);
+  std::vector<double> K(X.shape[0] * tdim * gdim);
+  array2d<double> X_ref(X.shape[0], tdim);
+
+  array2d<double> coordinate_dofs(num_dofs_g, gdim);
+
+  array2d<T> reference_data(value_size, X.shape[0]);
+
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
   array2d<T> _vals(value_size, X.shape[0]);
   for (std::int32_t c : cells)
   {
+    auto x_dofs = x_dofmap.links(c);
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+    cmap.push_forward(x_cell, X, coordinate_dofs);
+
+    cmap.compute_reference_geometry(X_ref, J, detJ, K, x_cell, coordinate_dofs);
+
     auto dofs = dofmap->cell_dofs(c);
+
     for (int k = 0; k < element_bs; ++k)
     {
       // Extract computed expression values for element block k
@@ -257,7 +293,14 @@ void interpolate(Function<T>& u,
       }
 
       // Get element degrees of freedom for block
-      element->interpolate(_vals, cell_info[c], tcb::make_span(_coeffs));
+      element->map_pull_back(reference_data.data(), _vals.data(), J.data(),
+                             detJ.data(), K.data(), gdim, value_size, 1,
+                             X.shape[0]);
+
+      element->interpolate(reference_data, tcb::make_span(_coeffs));
+      element->apply_inverse_transpose_dof_transformation(_coeffs.data(),
+                                                          cell_info[c], 1);
+
       assert(_coeffs.size() == num_scalar_dofs);
 
       // Copy interpolation dofs into coefficient vector
