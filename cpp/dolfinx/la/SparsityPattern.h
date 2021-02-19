@@ -72,8 +72,19 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Return index map for dimension dim
+  /// Index map for given dimension dimension. Returns the index map for
+  /// rows and columns that will be set by the current MPI rank.
+  ///
+  /// @param[in] dim The requested map, row (0) or column (1)
+  /// @return The index map
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
+
+  /// The index map for columns in the sparsity pattern for owned rows
+  /// @note This map is computed only once SparsityPattern::assemble has
+  /// been called.
+  ///
+  /// @return The index map
+  std::shared_ptr<const common::IndexMap> column_map() const;
 
   /// Return index map block size for dimension dim
   int block_size(int dim) const;
@@ -110,6 +121,7 @@ private:
 
   // Index maps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
+  std::shared_ptr<const common::IndexMap> _column_map;
   std::array<int, 2> _bs;
 
   // Caches for unassembled entries on owned and unowned (ghost) rows

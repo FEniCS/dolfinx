@@ -385,7 +385,7 @@ void SparsityPattern::assemble()
   // FIXME: Do this in a more efficient way -
   // dolfinx::MPI::compute_graph_edges is expensive. Should already have
   // the required information on neighbour ranks
-  _index_maps[1] = std::make_shared<common::IndexMap>(
+  _column_map = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), local_size1,
       dolfinx::MPI::compute_graph_edges(
           _mpi_comm.comm(),
