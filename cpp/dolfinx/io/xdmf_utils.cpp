@@ -103,14 +103,18 @@ std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
   const auto dofmap = u.function_space()->dofmap();
   assert(dofmap->element_dof_layout);
   const int ndofs = dofmap->element_dof_layout->num_dofs();
+  const int bs = dofmap->bs();
+  assert(ndofs * bs == value_size);
 
   for (int cell = 0; cell < num_local_cells; ++cell)
   {
     // Tabulate dofs
     auto dofs = dofmap->cell_dofs(cell);
-    assert(ndofs == value_size);
     for (int i = 0; i < ndofs; ++i)
-      dof_set.push_back(dofs[i]);
+    {
+      for (int j = 0; j < bs; ++j)
+        dof_set.push_back(bs * dofs[i] + j);
+    }
   }
 
   // Get values
