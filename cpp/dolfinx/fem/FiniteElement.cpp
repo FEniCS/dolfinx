@@ -213,9 +213,9 @@ void FiniteElement::transform_reference_basis(
   const int Jcols = X.shape[1];
   const int Jrows = Jsize / Jcols;
 
-  basix::map_push_forward(_basix_element_handle, values.data(),
-                          reference_values.data(), J.data(), detJ.data(),
-                          K.data(), Jrows, value_size, scalar_dim, num_points);
+  basix::map_push_forward_real(
+      _basix_element_handle, values.data(), reference_values.data(), J.data(),
+      detJ.data(), K.data(), Jrows, value_size, scalar_dim, num_points);
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
