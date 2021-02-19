@@ -153,6 +153,11 @@ SparsityPattern::index_map(int dim) const
   return _index_maps.at(dim);
 }
 //-----------------------------------------------------------------------------
+  std::shared_ptr<const common::IndexMap> SparsityPattern::column_map() const
+  {
+    return _column_map;
+  }
+//-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(const tcb::span<const std::int32_t>& rows,

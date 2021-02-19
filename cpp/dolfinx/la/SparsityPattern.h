@@ -63,7 +63,7 @@ public:
 
   SparsityPattern(const SparsityPattern& pattern) = delete;
 
-/// Move constructor
+  /// Move constructor
   SparsityPattern(SparsityPattern&& pattern) = default;
 
   /// Destructor
