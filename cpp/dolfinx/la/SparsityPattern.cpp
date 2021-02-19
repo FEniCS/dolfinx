@@ -264,7 +264,7 @@ void SparsityPattern::assemble()
 
     // Add to src size
     assert(ghost_to_neighbour_rank[i] < (int)data_per_proc.size());
-    data_per_proc[ ghost_to_neighbour_rank[i]] += 3 * _cache_unowned[i].size();
+    data_per_proc[ghost_to_neighbour_rank[i]] += 3 * _cache_unowned[i].size();
   }
 
   // Compute send displacements
@@ -302,8 +302,8 @@ void SparsityPattern::assemble()
   }
 
   // Create and communicate adjacency list to neighborhood
-  const graph::AdjacencyList<std::int64_t> ghost_data_out(
-      std::move(ghost_data), std::move(send_disp));
+  const graph::AdjacencyList<std::int64_t> ghost_data_out(std::move(ghost_data),
+                                                          std::move(send_disp));
   const graph::AdjacencyList<std::int64_t> ghost_data_in
       = MPI::neighbor_all_to_all(comm, ghost_data_out);
 
@@ -334,11 +334,10 @@ void SparsityPattern::assemble()
     }
   }
 
-  // Sort and remove duplicates
-  std::vector<std::int32_t> adj_counts(local_size0, 0);
-  std::vector<std::int32_t> adj_data;
-  std::vector<std::int32_t> adj_counts_off(local_size0, 0);
-  std::vector<std::int32_t> adj_data_off;
+  // Sort and remove duplicate column indices in each owned row
+  std::vector<std::int32_t> adj_counts(local_size0, 0),
+      adj_counts_off(local_size0, 0);
+  std::vector<std::int32_t> adj_data, adj_data_off;
   for (std::int32_t i = 0; i < local_size0; ++i)
   {
     std::vector<std::int32_t>& row = _cache_owned[i];
@@ -350,18 +349,21 @@ void SparsityPattern::assemble()
     const std::vector<std::int32_t>::iterator it_diag
         = std::lower_bound(row.begin(), it_end, local_size1);
 
+    // Store owned columns
     adj_data.insert(adj_data.end(), row.begin(), it_diag);
     adj_counts[i] += (it_diag - row.begin());
+
+    // Store non-owned columns
     adj_data_off.insert(adj_data_off.end(), it_diag, it_end);
     adj_counts_off[i] += (it_end - it_diag);
-    std::vector<std::int32_t>().swap(row);
   }
   std::vector<std::vector<std::int32_t>>().swap(_cache_owned);
 
-  std::vector<std::int32_t> adj_offsets(local_size0 + 1);
+  // Compute offsets for diagonal and off-diagonal block adjacency lists
+  std::vector<std::int32_t> adj_offsets(local_size0 + 1),
+      adj_offsets_off(local_size0 + 1);
   std::partial_sum(adj_counts.begin(), adj_counts.end(),
                    adj_offsets.begin() + 1);
-  std::vector<std::int32_t> adj_offsets_off(local_size0 + 1);
   std::partial_sum(adj_counts_off.begin(), adj_counts_off.end(),
                    adj_offsets_off.begin() + 1);
 
@@ -374,11 +376,15 @@ void SparsityPattern::assemble()
   _diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(adj_data), std::move(adj_offsets));
 
-  // Column map increased due to received rows from other processes (see above)
+  // Column map increased due to received rows from other processes (see
+  // above)
   LOG(INFO) << "Column ghost size increased from "
             << _index_maps[1]->ghosts().size() << " to " << ghosts1.size()
             << "\n";
 
+  // FIXME: Do this in a more efficient way -
+  // dolfinx::MPI::compute_graph_edges is expensive. Should already have
+  // the required information on neighbour ranks
   _index_maps[1] = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), local_size1,
       dolfinx::MPI::compute_graph_edges(

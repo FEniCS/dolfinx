@@ -108,7 +108,7 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 
-  // common::IndexMaps for each dimension
+  // Index maps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
   std::array<int, 2> _bs;
 
