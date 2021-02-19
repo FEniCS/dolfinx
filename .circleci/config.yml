@@ -3,7 +3,7 @@ version: 2.1
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
-    pip3 install git+https://github.com/FEniCS/basix.git@mscroggs/template_mappings
+    pip3 install git+https://github.com/FEniCS/basix.git
     pip3 install git+https://github.com/FEniCS/ufl.git
     pip3 install git+https://github.com/FEniCS/ffcx.git
     pip3 install sphinx==3.4.3
