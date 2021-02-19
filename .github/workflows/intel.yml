@@ -48,7 +48,7 @@ jobs:
       - name: Install FEniCS Python components
         run: |
           . /opt/intel/oneapi/setvars.sh
-          python3 -m pip install git+https://github.com/FEniCS/basix.git git+https://github.com/FEniCS/ufl.git git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@igor/libraries git+https://github.com/FEniCS/ufl.git git+https://github.com/FEniCS/ffcx.git
 
       - name: Configure C++
         run: |
