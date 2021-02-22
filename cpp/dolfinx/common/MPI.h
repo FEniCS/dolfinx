@@ -263,7 +263,6 @@ dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
                    std::next(recv_offsets.begin(), 1));
 
   std::vector<T> recv_data(recv_offsets[recv_offsets.size() - 1]);
-  // recv_data.reserve(1);
   MPI_Neighbor_alltoallv(
       send_data.array().data(), send_sizes.data(), send_data.offsets().data(),
       MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
