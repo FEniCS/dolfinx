@@ -362,7 +362,7 @@ std::shared_ptr<Form<T>> create_form(
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   ufc_form* form = fptr();
-  auto L = std::make_shared<fem::Form<T>>(dolfinx::fem::create_form<T>(
+  auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
       *form, spaces, coefficients, constants, subdomains, mesh));
   std::free(form);
   return L;
@@ -454,9 +454,7 @@ std::shared_ptr<fem::Expression<T>> create_expression(
 // NOTE: This is subject to change
 /// Pack coefficients of u of generic type U ready for assembly
 template <typename U>
-Eigen::Array<typename U::scalar_type, Eigen::Dynamic, Eigen::Dynamic,
-             Eigen::RowMajor>
-pack_coefficients(const U& u)
+array2d<typename U::scalar_type> pack_coefficients(const U& u)
 {
   using T = typename U::scalar_type;
 
@@ -467,6 +465,7 @@ pack_coefficients(const U& u)
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   std::vector<int> bs(coefficients.size());
   std::vector<std::reference_wrapper<const std::vector<T>>> v;
+  v.reserve(coefficients.size());
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
     dofmaps[i] = coefficients[i]->function_space()->dofmap().get();
@@ -483,9 +482,8 @@ pack_coefficients(const U& u)
         + mesh->topology().index_map(tdim)->num_ghosts();
 
   // Copy data into coefficient array
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> c(
-      num_cells, offsets.back());
-  if (coefficients.size() > 0)
+  array2d<T> c(num_cells, offsets.back());
+  if (!coefficients.empty())
   {
     for (int cell = 0; cell < num_cells; ++cell)
     {

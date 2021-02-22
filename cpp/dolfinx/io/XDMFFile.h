@@ -111,17 +111,17 @@ public:
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return (Cell type, degree), and cells topology (global node indexing)
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  read_topology_data(const std::string name,
-                     const std::string xpath = "/Xdmf/Domain") const;
+  array2d<std::int64_t> read_topology_data(const std::string name,
+                                           const std::string xpath
+                                           = "/Xdmf/Domain") const;
 
   /// Read Geometry data for Mesh
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return points on each process
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  read_geometry_data(const std::string name,
-                     const std::string xpath = "/Xdmf/Domain") const;
+  array2d<double> read_geometry_data(const std::string name,
+                                     const std::string xpath
+                                     = "/Xdmf/Domain") const;
 
   /// Read information about cell type
   /// @param[in] grid_name Name of Grid for which cell type is needed

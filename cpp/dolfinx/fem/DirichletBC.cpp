@@ -10,9 +10,6 @@
 #include <algorithm>
 #include <array>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/Function.h>
-#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -142,8 +139,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> dofs_global(
-      dofs_local.size(), 2);
+  array2d<std::int64_t> dofs_global(dofs_local.size(), 2);
 
   // This is messy to handle block sizes
   {
@@ -187,8 +183,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // Send/receive global index of dofs with bcs to all neighbors
   assert(disp.back() % 2 == 0);
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> dofs_received(
-      disp.back() / 2, 2);
+  array2d<std::int64_t> dofs_received(disp.back() / 2, 2);
   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm0);
@@ -214,7 +209,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
         global_local_ghosts.begin(), global_local_ghosts.end());
 
     std::vector<std::int32_t>& dofs = dofs_array[b];
-    for (Eigen::Index i = 0; i < dofs_received.rows(); ++i)
+    for (std::size_t i = 0; i < dofs_received.shape[0]; ++i)
     {
       if (dofs_received(i, b) >= bs[b] * range[0]
           and dofs_received(i, b) < bs[b] * range[1])
@@ -454,9 +449,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker_fn)
+    const std::function<std::vector<bool>(const array2d<double>&)>& marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
@@ -480,12 +473,11 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     throw std::runtime_error("Function spaces must have the same element.");
 
   // Compute dof coordinates
-  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
-      = V1.tabulate_dof_coordinates().transpose();
+  const array2d dof_coordinates = V1.tabulate_dof_coordinates(true);
+  assert(dof_coordinates.shape[0] == 3);
 
   // Evaluate marker for each dof coordinate
-  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
-      = marker_fn(dof_coordinates);
+  const std::vector<bool> marked_dofs = marker_fn(dof_coordinates);
 
   // Get dofmaps
   std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
@@ -547,25 +539,22 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> fem::locate_dofs_geometrical(
     const fem::FunctionSpace& V,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker_fn)
+    const std::function<std::vector<bool>(const array2d<double>&)>& marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
   // interface that computes dofs coordinates only for specified cell.
 
   // Compute dof coordinates
-  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
-      = V.tabulate_dof_coordinates().transpose();
+  const array2d dof_coordinates = V.tabulate_dof_coordinates(true);
+  assert(dof_coordinates.shape[0] == 3);
 
   // Compute marker for each dof coordinate
-  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
-      = marker_fn(dof_coordinates);
+  const std::vector<bool> marked_dofs = marker_fn(dof_coordinates);
 
   std::vector<std::int32_t> dofs;
-  dofs.reserve(marked_dofs.count());
-  for (Eigen::Index i = 0; i < marked_dofs.rows(); ++i)
+  dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));
+  for (std::size_t i = 0; i < marked_dofs.size(); ++i)
   {
     if (marked_dofs[i])
       dofs.push_back(i);

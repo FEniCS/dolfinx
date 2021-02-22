@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Garth N. Wells
+// Copyright (C) 2020-2021 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -6,19 +6,34 @@
 
 #pragma once
 
-#include "Function.h"
 #include "FunctionSpace.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
+#include <variant>
 
 namespace dolfinx::fem
 {
 
 template <typename T>
 class Function;
+
+/// Compute the evaluation points in the physical space at which an
+/// expression should be computed to interpolate it in a finite elemenet
+/// space.
+///
+/// @param[in] element The element to be interpolated into
+/// @param[in] mesh The domain
+/// @param[in] cells Indices of the cells in the mesh to compute
+/// interpolation coordinates for
+/// @return The coordinates in the physical space at which to evaluate
+/// an expression
+array2d<double>
+interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
+                     const tcb::span<const std::int32_t>& cells);
 
 /// Interpolate a finite element Function (on possibly non-matching
 /// meshes) in another finite element space
@@ -28,15 +43,22 @@ template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v);
 
 /// Interpolate an expression in a finite element space
+///
 /// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
+/// @param[in] x The points at which f should be evaluated, as computed
+/// by fem::interpolation_coords. The element used in
+/// fem::interpolation_coords should be the same element as associated
+/// with u.
+/// @param[in] cells Indices of the cells in the mesh on which to
+/// interpolate. Should be the same as the list used when calling
+/// fem::interpolation_coords.
 template <typename T>
-void interpolate(
-    Function<T>& u,
-    const std::function<
-        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
-            const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                Eigen::RowMajor>>&)>& f);
+void interpolate(Function<T>& u,
+                 const std::function<std::variant<std::vector<T>, array2d<T>>(
+                     const array2d<double>&)>& f,
+                 const array2d<double>& x,
+                 const tcb::span<const std::int32_t>& cells);
 
 /// Interpolate an expression f(x)
 ///
@@ -49,14 +71,16 @@ void interpolate(
 ///
 /// @param[out] u The function to interpolate into
 /// @param[in] f The expression to be interpolated
+/// @param[in] x The points at which should be evaluated, as
+/// computed by fem::interpolation_coords
+/// @param[in] cells Indices of the cells in the mesh on which to
+/// interpolate. Should be the same as the list used when calling
+/// fem::interpolation_coords.
 template <typename T>
 void interpolate_c(
     Function<T>& u,
-    const std::function<void(
-        Eigen::Ref<
-            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
-        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                            Eigen::RowMajor>>&)>& f);
+    const std::function<void(array2d<T>&, const array2d<double>&)>& f,
+    const array2d<double>& x, const tcb::span<const std::int32_t>& cells);
 
 namespace detail
 {
@@ -152,20 +176,15 @@ void interpolate(Function<T>& u, const Function<T>& v)
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void interpolate(
-    Function<T>& u,
-    const std::function<
-        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
-            const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                                Eigen::RowMajor>>&)>& f)
+void interpolate(Function<T>& u,
+                 const std::function<std::variant<std::vector<T>, array2d<T>>(
+                     const array2d<double>&)>& f,
+                 const array2d<double>& x,
+                 const tcb::span<const std::int32_t>& cells)
 {
-  using EigenMatrixRowXd
-      = Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-
   const auto element = u.function_space()->element();
   assert(element);
   const int element_bs = element->block_size();
-
   if (int num_sub = element->num_sub_elements();
       num_sub > 0 and num_sub != element_bs)
   {
@@ -177,69 +196,39 @@ void interpolate(
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
-  const int gdim = mesh->geometry().dim();
-  auto cell_map = mesh->topology().index_map(tdim);
-  assert(cell_map);
-  const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
-
-  // Get mesh geometry data and the element coordinate map
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const EigenMatrixRowXd& x_g = mesh->geometry().x();
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
   // Get the interpolation points on the reference cells
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
-      = element->interpolation_points();
+  const array2d<double> X = element->interpolation_points();
 
   mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
       = mesh->topology().get_cell_permutation_info();
 
-  // Push reference coordinates (X) forward to the physical coordinates
-  // (x) for each cell
-  EigenMatrixRowXd x_cell(X.rows(), gdim);
-  std::vector<double> x;
-  EigenMatrixRowXd coordinate_dofs(num_dofs_g, gdim);
-  for (int c = 0; c < num_cells; ++c)
-  {
-    // Get geometry data for current cell
-    auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
-
-    // Push forward coordinates (X -> x)
-    cmap.push_forward(x_cell, X, coordinate_dofs);
-    x.insert(x.end(), x_cell.data(), x_cell.data() + x_cell.size());
-  }
-
-  // Re-pack points (each row for a given coordinate component) and pad
-  // up to gdim with zero
-  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> _x
-      = Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>::Zero(
-          3, x.size() / gdim);
-  for (int i = 0; i < gdim; ++i)
-  {
-    _x.row(i)
-        = Eigen::Map<Eigen::ArrayXd, 0, Eigen::InnerStride<Eigen::Dynamic>>(
-            x.data() + i, x.size() / gdim,
-            Eigen::InnerStride<Eigen::Dynamic>(gdim));
-  }
-
   // Evaluate function at physical points. The returned array has a
   // number of rows equal to the number of components of the function,
   // and the number of columns is equal to the number of evaluation
-  // points. Scalar case needs special handling as pybind11 will return
-  // a column array when we need a row array.
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values;
-  values = f(_x);
+  // points.
 
-  // FIXME: This is hack for NumPy/pybind11/Eigen that returns 1D arrays a
-  // column vectors. Fix in the pybind11 layer?
-  if (element->value_size() == 1 and values.rows() > 1)
-    values = values.transpose().eval();
+  // TODO: Copies and memory allocation could be avoided with a 'span2d'
+  // class, or by just pointing to the data
+  array2d<T> values(element->value_size(), x.shape[1]);
+  std::variant<std::vector<T>, array2d<T>> values_v = f(x);
+  if (std::holds_alternative<array2d<T>>(values_v))
+  {
+    values = std::get<1>(values_v);
+    if (values.shape[0] != element->value_size())
+      throw std::runtime_error("Interpolation data has the wrong shape.");
+  }
+  else
+  {
+    if (element->value_size() != 1)
+      throw std::runtime_error("Interpolation data has the wrong shape.");
+    std::copy(std::get<0>(values_v).begin(), std::get<0>(values_v).end(),
+              values.data());
+  }
+
+  if (values.shape[1] != cells.size() * X.shape[0])
+    throw std::runtime_error("Interpolation data has the wrong shape.");
 
   // Get dofmap
   const auto dofmap = u.function_space()->dofmap();
@@ -247,31 +236,26 @@ void interpolate(
   const int dofmap_bs = dofmap->bs();
 
   // NOTE: The below loop over cells could be skipped for some elements,
-  // e.g. Lagrange, where the interpolation is just the identity.
+  // e.g. Lagrange, where the interpolation is just the identity
 
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
 
-  // Check that return type from f is the correct shape
-  if ((values.rows() != value_size * element_bs)
-      || (values.cols() != num_cells * X.rows()))
-    throw std::runtime_error("Interpolation data has the wrong shape.");
-
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
-  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals;
-  for (int c = 0; c < num_cells; ++c)
+  array2d<T> _vals(value_size, X.shape[0]);
+  for (std::int32_t c : cells)
   {
     auto dofs = dofmap->cell_dofs(c);
     for (int k = 0; k < element_bs; ++k)
     {
-      // FIXME: expensive - avoid assignment
       // Extract computed expression values for element block k
-      // _vals = values.block(k * value_size, c * X.rows(), value_size,
-      // X.rows());
-      Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _vals
-          = values.block(k * value_size, c * X.rows(), value_size, X.rows());
+      for (int m = 0; m < value_size; ++m)
+      {
+        std::copy_n(&values(k * value_size + m, c * X.shape[0]), X.shape[0],
+                    _vals.row(m).begin());
+      }
 
       // Get element degrees of freedom for block
       element->interpolate(_vals, cell_info[c], tcb::make_span(_coeffs));
@@ -291,11 +275,8 @@ void interpolate(
 template <typename T>
 void interpolate_c(
     Function<T>& u,
-    const std::function<void(
-        Eigen::Ref<
-            Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>,
-        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                            Eigen::RowMajor>>&)>& f)
+    const std::function<void(array2d<T>&, const array2d<double>&)>& f,
+    const array2d<double>& x, const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
@@ -305,17 +286,13 @@ void interpolate_c(
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
 
-  auto fn =
-      [value_size,
-       &f](const Eigen::Ref<
-           const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>& x) {
-        Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> values(
-            x.cols(), value_size);
-        f(values, x.transpose());
-        return values;
-      };
+  auto fn = [value_size, &f](const array2d<double>& x) {
+    array2d<T> values(value_size, x.shape[1]);
+    f(values, x);
+    return values;
+  };
 
-  interpolate<T>(u, fn);
+  interpolate<T>(u, fn, x, cells);
 }
 //----------------------------------------------------------------------------
 

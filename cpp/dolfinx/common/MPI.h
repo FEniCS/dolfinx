@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <cassert>
 #include <complex>
@@ -15,6 +14,7 @@
 #include <iostream>
 #include <numeric>
 #include <set>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>

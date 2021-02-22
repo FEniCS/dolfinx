@@ -10,7 +10,6 @@
 #include <memory>
 #include <mpi.h>
 #include <tuple>
-#include <vector>
 
 namespace dolfinx
 {

@@ -26,9 +26,8 @@ void create_mesh_file()
   // Create mesh using all processes and save xdmf
   auto cmap = fem::create_coordinate_map(create_coordinate_map_cmap);
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD,
-      {Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 0.0)},
-      {32, 32}, cmap, mesh::GhostMode::shared_facet));
+      MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32}, cmap,
+      mesh::GhostMode::shared_facet));
 
   // Save mesh in XDMF format
   io::XDMFFile file(MPI_COMM_WORLD, "mesh.xdmf", "w");
@@ -58,11 +57,10 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   auto cmap = fem::create_coordinate_map(create_coordinate_map_cmap);
 
   // read mesh data
-  Eigen::Array<double, -1, -1, Eigen::RowMajor> x(0, 3);
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells(0, dolfinx::mesh::num_cell_vertices(cmap.cell_shape()));
+  dolfinx::array2d<double> x(0, 3);
+  dolfinx::array2d<std::int64_t> cells(
+      0, dolfinx::mesh::num_cell_vertices(cmap.cell_shape()));
   graph::AdjacencyList<std::int32_t> dest(0);
-
   if (subset_comm != MPI_COMM_NULL)
   {
     int nparts{mpi_size};
@@ -100,7 +98,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   CHECK(mesh->topology().index_map(0)->size_global() == 1089);
   CHECK(mesh->topology().index_map(0)->size_local() > 0);
 
-  CHECK(mesh->geometry().x().rows()
+  CHECK(mesh->geometry().x().shape[0]
         == mesh->topology().index_map(0)->size_local()
                + mesh->topology().index_map(0)->num_ghosts());
 }

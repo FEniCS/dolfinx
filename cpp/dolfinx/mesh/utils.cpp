@@ -9,7 +9,7 @@
 #include "MeshTags.h"
 #include "cell_types.h"
 #include "graphbuild.h"
-#include <Eigen/Core>
+#include <Eigen/Dense>
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>
@@ -66,9 +66,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   // Get geometry dofmap and dofs
   const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
-      = mesh.geometry().x();
-
+  const array2d<double>& geom_dofs = geometry.x();
   std::vector<double> h_cells(entities.size(), 0);
   assert(num_vertices <= 8);
   std::array<Eigen::Vector3d, 8> points;
@@ -77,7 +75,8 @@ std::vector<double> mesh::h(const Mesh& mesh,
     // Get the coordinates  of the vertices
     auto dofs = x_dofs.links(entities[e]);
     for (int i = 0; i < num_vertices; ++i)
-      points[i] = geom_dofs.row(dofs[i]);
+      for (int j = 0; j < 3; ++j)
+        points[i][j] = geom_dofs(dofs[i], j);
 
     // Get maximum edge length
     for (int i = 0; i < num_vertices; ++i)
@@ -90,26 +89,32 @@ std::vector<double> mesh::h(const Mesh& mesh,
   return h_cells;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+array2d<double>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                    const tcb::span<const std::int32_t>& entities)
 {
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type
       = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
+
   // Find geometry nodes for topology entities
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
-      = mesh.geometry().x();
+  // FIXME: Use eigen map for now.
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      geom_dofs(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
+                mesh.geometry().x().shape[1]);
 
   // Orient cells if they are tetrahedron
   bool orient = false;
   if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
     orient = true;
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      geometry_entities = entities_to_geometry(mesh, dim, entities, orient);
+  array2d<std::int32_t> geometry_entities
+      = entities_to_geometry(mesh, dim, entities, orient);
 
   const std::int32_t num_entities = entities.size();
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_entities, 3);
+  array2d<double> _n(num_entities, 3);
+
+  Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> n(
+      _n.data(), _n.shape[0], _n.shape[1]);
   switch (type)
   {
   case (mesh::CellType::interval):
@@ -126,7 +131,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       Eigen::Vector3d t = p1 - p0;
       n.row(i) = Eigen::Vector3d(-t[1], t[0], 0.0).normalized();
     }
-    return n;
+    return _n;
   }
   case (mesh::CellType::triangle):
   {
@@ -141,7 +146,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       // Define cell normal via cross product of first two edges
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
     }
-    return n;
+    return _n;
   }
   case (mesh::CellType::quadrilateral):
   {
@@ -157,49 +162,50 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       // Define cell normal via cross product of first two edges
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
     }
-    return n;
+    return _n;
   }
   default:
     throw std::invalid_argument(
         "cell_normal not supported for this cell type.");
   }
 
-  return Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>();
+  return array2d<double>(0, 3);
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-mesh::midpoints(const mesh::Mesh& mesh, int dim,
-                const tcb::span<const std::int32_t>& entities)
+array2d<double> mesh::midpoints(const mesh::Mesh& mesh, int dim,
+                                const tcb::span<const std::int32_t>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
-      = geometry.x();
+
+  // FIXME: Use eigen map for now.
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x(geometry.x().data(), geometry.x().shape[0], geometry.x().shape[1]);
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entity_to_geometry = entities_to_geometry(mesh, dim, entities, false);
+  array2d<std::int32_t> entity_to_geometry
+      = entities_to_geometry(mesh, dim, entities, false);
 
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x_mid(
-      entities.size(), 3);
+  array2d<double> midpoints(entities.size(), 3);
+  Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> x_mid(
+      midpoints.data(), entities.size(), 3);
 
-  for (Eigen::Index e = 0; e < entity_to_geometry.rows(); ++e)
+  for (std::size_t e = 0; e < entity_to_geometry.shape[0]; ++e)
   {
     auto entity_vertices = entity_to_geometry.row(e);
     x_mid.row(e) = 0.0;
-    for (Eigen::Index v = 0; v < entity_vertices.size(); ++v)
+    for (std::size_t v = 0; v < entity_vertices.size(); ++v)
       x_mid.row(e) += x.row(entity_vertices[v]);
     x_mid.row(e) /= entity_vertices.size();
   }
 
-  return x_mid;
+  return midpoints;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker)
+    const std::function<std::vector<bool>(const array2d<double>&)>& marker)
 {
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -226,16 +232,15 @@ std::vector<std::int32_t> mesh::locate_entities(
   }
 
   // Pack coordinates of vertices
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_nodes
-      = mesh.geometry().x();
-  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_vertices(
-      3, vertex_to_node.size());
+  const array2d<double>& x_nodes = mesh.geometry().x();
+  array2d<double> x_vertices(3, vertex_to_node.size());
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
-    x_vertices.col(i) = x_nodes.row(vertex_to_node[i]);
+    for (std::size_t j = 0; j < 3; ++j)
+      x_vertices(j, i) = x_nodes(vertex_to_node[i], j);
 
   // Run marker function on vertex coordinates
-  const Eigen::Array<bool, Eigen::Dynamic, 1> marked = marker(x_vertices);
-  if (marked.rows() != x_vertices.cols())
+  const std::vector<bool> marked = marker(x_vertices);
+  if (marked.size() != x_vertices.shape[1])
     throw std::runtime_error("Length of array of markers is wrong.");
 
   // Iterate over entities to build vector of marked entities
@@ -264,9 +269,7 @@ std::vector<std::int32_t> mesh::locate_entities(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker)
+    const std::function<std::vector<bool>(const array2d<double>&)>& marker)
 {
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -309,8 +312,11 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_nodes
-      = mesh.geometry().x();
+
+  // FIXME: Use eigen map for now.
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      x_nodes(mesh.geometry().x().data(), mesh.geometry().x().shape[0],
+              mesh.geometry().x().shape[1]);
 
   // Build vector of boundary vertices
   const std::vector<std::int32_t> vertices(boundary_vertices.begin(),
@@ -321,8 +327,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   assert(v_to_c);
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
-  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_vertices(
-      3, vertices.size());
+  array2d<double> x_vertices(3, vertices.size());
   std::vector<std::int32_t> vertex_to_pos(v_to_c->num_nodes(), -1);
   for (std::size_t i = 0; i < vertices.size(); ++i)
   {
@@ -336,14 +341,15 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
     const int local_pos = std::distance(vertices.begin(), it);
 
     auto dofs = x_dofmap.links(c);
-    x_vertices.col(i) = x_nodes.row(dofs[local_pos]);
+    for (int j = 0; j < 3; ++j)
+      x_vertices(j, i) = x_nodes(dofs[local_pos], j);
 
     vertex_to_pos[v] = i;
   }
 
   // Run marker function on the vertex coordinates
-  const Eigen::Array<bool, Eigen::Dynamic, 1> marked = marker(x_vertices);
-  if (marked.size() != x_vertices.cols())
+  const std::vector<bool> marked = marker(x_vertices);
+  if (marked.size() != x_vertices.shape[1])
     throw std::runtime_error("Length of array of markers is wrong.");
 
   // Loop over entities and check vertex markers
@@ -374,7 +380,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   return entities;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+array2d<std::int32_t>
 mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
                            const tcb::span<const std::int32_t>& entity_list,
                            bool orient)
@@ -382,16 +388,15 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
   dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
   int num_entity_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entity_geometry(entity_list.size(), num_entity_vertices);
+  array2d<std::int32_t> entity_geometry(entity_list.size(),
+                                        num_entity_vertices);
 
   if (orient
       and (cell_type != dolfinx::mesh::CellType::tetrahedron or dim != 2))
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const mesh::Geometry& geometry = mesh.geometry();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& geom_dofs
-      = mesh.geometry().x();
+  const array2d<double>& geom_dofs = geometry.x();
   const mesh::Topology& topology = mesh.topology();
 
   const int tdim = topology.dim();
@@ -426,16 +431,21 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
     {
       // Compute cell midpoint
       Eigen::Vector3d midpoint(0.0, 0.0, 0.0);
-      for (auto j : xc)
-        midpoint += geom_dofs.row(j).matrix().transpose();
+      for (std::int32_t j : xc)
+        for (int k = 0; k < 3; ++k)
+          midpoint[k] += geom_dofs(j, k);
       midpoint /= xc.size();
 
       // Compute vector triple product of two edges and vector to midpoint
-      Eigen::Vector3d p0 = geom_dofs.row(entity_geometry(i, 0));
+      Eigen::Vector3d p0, p1, p2;
+      std::copy_n(geom_dofs.row(entity_geometry(i, 0)).begin(), 3, p0.data());
+      std::copy_n(geom_dofs.row(entity_geometry(i, 1)).begin(), 3, p1.data());
+      std::copy_n(geom_dofs.row(entity_geometry(i, 2)).begin(), 3, p2.data());
+
       Eigen::Matrix3d a;
       a.row(0) = midpoint - p0;
-      a.row(1) = geom_dofs.row(entity_geometry(i, 1)).matrix().transpose() - p0;
-      a.row(2) = geom_dofs.row(entity_geometry(i, 2)).matrix().transpose() - p0;
+      a.row(1) = p1 - p0;
+      a.row(2) = p2 - p0;
 
       // Midpoint direction should be opposite to normal, hence this
       // should be negative. Switch points if not.

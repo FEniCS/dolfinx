@@ -182,20 +182,15 @@ def test_eval_manifold():
 
 
 def test_interpolation_mismatch_rank0(W):
-    def f(x):
-        return np.ones(x.shape[1])
     u = Function(W)
     with pytest.raises(RuntimeError):
-        u.interpolate(f)
+        u.interpolate(lambda x: np.ones(x.shape[1]))
 
 
 def test_interpolation_mismatch_rank1(W):
-    def f(x):
-        return np.ones((2, x.shape[1]))
-
     u = Function(W)
     with pytest.raises(RuntimeError):
-        u.interpolate(f)
+        u.interpolate(lambda x: np.ones((2, x.shape[1])))
 
 
 def test_mixed_element_interpolation():
@@ -260,8 +255,9 @@ def test_cffi_expression(V):
     code_c = """
     void eval(double* values, int num_points, int value_size, const double* x)
     {
+      /* x0 + x1 */
       for (int i = 0; i < num_points; ++i)
-        values[i*value_size + 0] = x[i*3 + 0] + x[i*3 + 1];
+        values[i  + 0] = x[i] + x[i + num_points];
     }
     """
     module = "_expr_eval" + str(MPI.COMM_WORLD.rank)

@@ -4,7 +4,7 @@ DOLFINX has now been installed in
 
     ${CMAKE_INSTALL_PREFIX}
 
-and the demo programs have been installed in
+and demo programs have been installed in
 
     ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/dolfinx/demo
 
@@ -14,7 +14,7 @@ variables (for users of the Bash shell).
 
 To update your environment variables, run the following command:
 
-    source ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/dolfinx/dolfinx.conf
+    source ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/dolfinx/dolfinx.conf
 
 ----------------------------------------------------------------------------\")")
 
