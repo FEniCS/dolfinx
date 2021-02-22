@@ -151,12 +151,10 @@ public:
   /// @param[in] values The values of the function. It has shape
   /// (value_size, num_points), where `num_points` is the number of
   /// points given by FiniteElement::interpolation_points.
-  /// @param[in] cell_permutation Permutation data for the cell
   /// @param[out] dofs The element degrees of freedom (interpolants) of
   /// the expression. The call must allocate the space. Is has
   template <typename T>
   constexpr void interpolate(const array2d<T>& values,
-                             std::uint32_t cell_permutation,
                              tcb::span<T> dofs) const
   {
     const std::size_t rows = _space_dim / _bs;
@@ -174,8 +172,6 @@ public:
           std::next(_interpolation_matrix.begin(), i * cols + cols),
           values.data(), T(0.0));
     }
-
-    _apply_dof_transformation_to_scalar(dofs.data(), cell_permutation, 1);
   }
 
   /// @todo Expand on when permutation data might be required
@@ -187,7 +183,7 @@ public:
   /// Apply permutation to some data
   ///
   /// @param[in,out] data The data to be transformed
-  /// @param[in] cell_permutation Permutation data fro the cell
+  /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename T>
   void apply_dof_transformation(T* data, std::uint32_t cell_permutation,
@@ -198,6 +194,37 @@ public:
     else
       _apply_dof_transformation_to_scalar(data, cell_permutation, block_size);
   }
+
+  /// Apply inverse transpose permutation to some data
+  ///
+  /// @param[in,out] data The data to be transformed
+  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in] block_size The block_size of the input data
+  template <typename T>
+  void apply_inverse_transpose_dof_transformation(
+      T* data, std::uint32_t cell_permutation, int block_size) const
+  {
+    if constexpr (std::is_same<T, double>::value)
+      _apply_inverse_transpose_dof_transformation(data, cell_permutation,
+                                                  block_size);
+    else
+      _apply_inverse_transpose_dof_transformation_to_scalar(
+          data, cell_permutation, block_size);
+  }
+
+  /// Pull physical data back to the reference element.
+  /// This passes the inputs directly into Basix's map_pull_back function.
+  void map_pull_back(double* physical_data, const double* reference_data,
+                     const double* J, const double* detJ, const double* K,
+                     const int physical_dim, const int physical_value_size,
+                     const int nresults, const int npoints) const;
+
+  /// Pull physical data back to the reference element.
+  void map_pull_back(std::complex<double>* physical_data,
+                     const std::complex<double>* reference_data,
+                     const double* J, const double* detJ, const double* K,
+                     const int physical_dim, const int physical_value_size,
+                     const int nresults, const int npoints) const;
 
 private:
   std::string _signature, _family;
@@ -225,6 +252,12 @@ private:
 
   std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
       _apply_dof_transformation_to_scalar;
+
+  std::function<int(double*, const std::uint32_t, const int)>
+      _apply_inverse_transpose_dof_transformation;
+
+  std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
+      _apply_inverse_transpose_dof_transformation_to_scalar;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.
