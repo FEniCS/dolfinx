@@ -32,7 +32,7 @@ Mat la::create_petsc_matrix(
     petsc_error(ierr, __FILE__, "MatCreate");
 
   // Get IndexMaps from sparsity patterm, and block size
-  std::array maps{sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)};
+  std::array maps = {sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)};
   const std::array bs
       = {sparsity_pattern.block_size(0), sparsity_pattern.block_size(1)};
 
