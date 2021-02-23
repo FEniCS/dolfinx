@@ -153,10 +153,10 @@ SparsityPattern::index_map(int dim) const
   return _index_maps.at(dim);
 }
 //-----------------------------------------------------------------------------
-  std::shared_ptr<const common::IndexMap> SparsityPattern::column_map() const
-  {
-    return _column_map;
-  }
+std::shared_ptr<const common::IndexMap> SparsityPattern::column_map() const
+{
+  return _column_map;
+}
 //-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
@@ -387,15 +387,12 @@ void SparsityPattern::assemble()
             << _index_maps[1]->ghosts().size() << " to " << ghosts1.size()
             << "\n";
 
-  // FIXME: Do this in a more efficient way -
-  // dolfinx::MPI::compute_graph_edges is expensive. Should already have
-  // the required information on neighbour ranks
+  // Get destination ranks in symmetric communicator
+  const auto [srcs, dests] = dolfinx::MPI::neighbors(_index_maps[0]->comm());
+  assert(srcs.size() == dests.size());
+
   _column_map = std::make_shared<common::IndexMap>(
-      _mpi_comm.comm(), local_size1,
-      dolfinx::MPI::compute_graph_edges(
-          _mpi_comm.comm(),
-          std::set<int>(ghost_owners1.begin(), ghost_owners1.end())),
-      ghosts1, ghost_owners1);
+      _mpi_comm.comm(), local_size1, dests, ghosts1, ghost_owners1);
 
   _off_diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(adj_data_off), std::move(adj_offsets_off));
