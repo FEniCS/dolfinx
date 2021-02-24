@@ -9,12 +9,12 @@ import pathlib
 
 import cppimport
 import dolfinx
+import dolfinx.pkgconfig
 import numpy
 import petsc4py
 import pytest
 import scipy.sparse.linalg
 import ufl
-import dolfinx.pkgconfig
 from dolfinx.generation import UnitSquareMesh
 from dolfinx.jit import dolfinx_pc
 from dolfinx.wrappers import get_include_path as pybind_inc

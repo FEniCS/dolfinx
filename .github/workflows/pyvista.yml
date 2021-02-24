@@ -40,7 +40,7 @@ jobs:
 
       - name: Install FEniCS Python components and other dependencies
         run: |
-          pip3 install git+https://github.com/FEniCS/basix.git@igor/libraries
+          pip3 install git+https://github.com/FEniCS/basix.git
           pip3 install git+https://github.com/FEniCS/ufl.git
           pip3 install git+https://github.com/FEniCS/ffcx.git
           apt-get update
