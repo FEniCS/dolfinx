@@ -37,7 +37,7 @@ jobs:
 
       - name: Install FEniCS Python components
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/basix.git@garth/eigen-alignment
+          python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
           python3 -m pip install sphinx==3.4.3
