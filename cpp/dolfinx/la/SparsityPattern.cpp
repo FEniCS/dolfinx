@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2020 Garth N. Wells
+// Copyright (C) 2007-2021 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -11,6 +11,7 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <map>
 
 using namespace dolfinx;
 using namespace dolfinx::la;
@@ -152,6 +153,11 @@ SparsityPattern::index_map(int dim) const
   return _index_maps.at(dim);
 }
 //-----------------------------------------------------------------------------
+  std::shared_ptr<const common::IndexMap> SparsityPattern::column_map() const
+  {
+    return _column_map;
+  }
+//-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(const tcb::span<const std::int32_t>& rows,
@@ -224,6 +230,7 @@ void SparsityPattern::assemble()
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
   const std::array local_range0 = _index_maps[0]->local_range();
   const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
+  std::vector<int> ghost_owners0 = _index_maps[0]->ghost_owner_rank();
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
@@ -238,91 +245,104 @@ void SparsityPattern::assemble()
   for (std::int64_t global_i : ghosts1)
     global_to_local.insert({global_i, local_i++});
 
-  // For each ghost row, pack and send (global row, global col) pairs to send to
-  // neighborhood
-  std::vector<std::int64_t> ghost_data;
+  // Get ghost->owner communicator for rows
+  MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
+  int indegree_rev(-1), outdegree_rev(-2), weighted_rev(-1);
+  MPI_Dist_graph_neighbors_count(comm, &indegree_rev, &outdegree_rev,
+                                 &weighted_rev);
+  const auto [src_ranks, dest_ranks] = dolfinx::MPI::neighbors(comm);
+
+  // Global-to-neigbourhood map for destination ranks
+  std::map<int, std::int32_t> dest_proc_to_neighbor;
+  for (std::size_t i = 0; i < dest_ranks.size(); ++i)
+    dest_proc_to_neighbor.insert({dest_ranks[i], i});
+
+  // Compute size of data to send to each process
+  std::vector<std::int32_t> data_per_proc(outdegree_rev, 0);
+  std::vector<int> ghost_to_neighbour_rank(num_ghosts0, -1);
   for (int i = 0; i < num_ghosts0; ++i)
   {
-    const std::int64_t row_global = ghosts0[i];
+    // Find rank on neigbourhood comm of ghost owner
+    const auto it = dest_proc_to_neighbor.find(ghost_owners0[i]);
+    assert(it != dest_proc_to_neighbor.end());
+    ghost_to_neighbour_rank[i] = it->second;
+
+    // Add to src size
+    assert(ghost_to_neighbour_rank[i] < (int)data_per_proc.size());
+    data_per_proc[ghost_to_neighbour_rank[i]] += 3 * _cache_unowned[i].size();
+  }
+
+  // Compute send displacements
+  std::vector<int> send_disp(outdegree_rev + 1, 0);
+  std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
+                   std::next(send_disp.begin(), 1));
+
+  // For each ghost row, pack and send (global row, global col,
+  // col_owner) triplets to send to neighborhood
+  std::vector<int> insert_pos(send_disp);
+  std::vector<std::int64_t> ghost_data(send_disp.back());
+  for (int i = 0; i < num_ghosts0; ++i)
+  {
+    const int neighbour_rank = ghost_to_neighbour_rank[i];
     for (std::int32_t col_local : _cache_unowned[i])
     {
-      ghost_data.push_back(row_global);
+      // Get index in send buffer
+      const std::int32_t pos = insert_pos[neighbour_rank];
+
+      // Pack send data
+      ghost_data[pos] = ghosts0[i];
       if (col_local < local_size1)
       {
-        ghost_data.push_back(col_local + local_range1[0]);
-        ghost_data.push_back(mpi_rank);
+        ghost_data[pos + 1] = col_local + local_range1[0];
+        ghost_data[pos + 2] = mpi_rank;
       }
       else
       {
-        ghost_data.push_back(ghosts1[col_local - local_size1]);
-        ghost_data.push_back(ghost_owners1[col_local - local_size1]);
+        ghost_data[pos + 1] = ghosts1[col_local - local_size1];
+        ghost_data[pos + 2] = ghost_owners1[col_local - local_size1];
       }
+
+      insert_pos[neighbour_rank] += 3;
     }
   }
 
-  MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::symmetric);
-  int num_neighbors(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
-  assert(num_neighbors == outdegree);
-
-  // Figure out how much data to receive from each neighbor
-  const int num_my_rows = ghost_data.size();
-  std::vector<int> num_rows_recv(num_neighbors);
-  MPI_Neighbor_allgather(&num_my_rows, 1, MPI_INT, num_rows_recv.data(), 1,
-                         MPI_INT, comm);
-
-  // Compute displacements for data to receive
-  std::vector<int> disp(num_neighbors + 1, 0);
-  std::partial_sum(num_rows_recv.begin(), num_rows_recv.end(),
-                   disp.begin() + 1);
-
-  // NOTE: Send unowned rows to all neighbors could be a bit 'lazy' and
-  // MPI_Neighbor_alltoallv could be used to send just to the owner, but
-  // maybe the number of rows exchanged in the neighborhood are
-  // relatively small that MPI_Neighbor_allgatherv is simpler.
-
-  // Send all unowned rows to neighbors, and receive rows from
-  // neighbors
-  std::vector<std::int64_t> ghost_data_received(disp.back());
-  MPI_Neighbor_allgatherv(ghost_data.data(), ghost_data.size(), MPI_INT64_T,
-                          ghost_data_received.data(), num_rows_recv.data(),
-                          disp.data(), MPI_INT64_T, comm);
+  // Create and communicate adjacency list to neighborhood
+  const graph::AdjacencyList<std::int64_t> ghost_data_out(std::move(ghost_data),
+                                                          std::move(send_disp));
+  const graph::AdjacencyList<std::int64_t> ghost_data_in
+      = MPI::neighbor_all_to_all(comm, ghost_data_out);
 
   // Add data received from the neighborhood
-  for (std::size_t i = 0; i < ghost_data_received.size(); i += 3)
+  const std::vector<std::int64_t>& in_ghost_data = ghost_data_in.array();
+  for (std::size_t i = 0; i < in_ghost_data.size(); i += 3)
   {
-    const std::int64_t row = ghost_data_received[i];
-    if (row >= local_range0[0] and row < local_range0[1])
+    const std::int32_t row_local = in_ghost_data[i] - local_range0[0];
+    const std::int64_t col = in_ghost_data[i + 1];
+    if (col >= local_range1[0] and col < local_range1[1])
     {
-      const std::int32_t row_local = row - local_range0[0];
-      const std::int64_t col = ghost_data_received[i + 1];
-      if (col >= local_range1[0] and col < local_range1[1])
+      // Convert to local column index
+      const std::int32_t J = col - local_range1[0];
+      _cache_owned[row_local].push_back(J);
+    }
+    else
+    {
+      // Column index may not exist in column indexmap
+      auto it = global_to_local.insert({col, local_i});
+      if (it.second)
       {
-        // Convert to local column index
-        const std::int32_t J = col - local_range1[0];
-        _cache_owned[row_local].push_back(J);
+        ghosts1.push_back(col);
+        ghost_owners1.push_back(in_ghost_data[i + 2]);
+        ++local_i;
       }
-      else
-      {
-        // Column index may not exist in column indexmap
-        auto it = global_to_local.insert({col, local_i});
-        if (it.second)
-        {
-          ghosts1.push_back(col);
-          ghost_owners1.push_back(ghost_data_received[i + 2]);
-          ++local_i;
-        }
-        const std::int32_t col_local = it.first->second;
-        _cache_owned[row_local].push_back(col_local);
-      }
+      const std::int32_t col_local = it.first->second;
+      _cache_owned[row_local].push_back(col_local);
     }
   }
 
-  // Sort and remove duplicates
-  std::vector<std::int32_t> adj_counts(local_size0, 0);
-  std::vector<std::int32_t> adj_data;
-  std::vector<std::int32_t> adj_counts_off(local_size0, 0);
-  std::vector<std::int32_t> adj_data_off;
+  // Sort and remove duplicate column indices in each owned row
+  std::vector<std::int32_t> adj_counts(local_size0, 0),
+      adj_counts_off(local_size0, 0);
+  std::vector<std::int32_t> adj_data, adj_data_off;
   for (std::int32_t i = 0; i < local_size0; ++i)
   {
     std::vector<std::int32_t>& row = _cache_owned[i];
@@ -334,18 +354,21 @@ void SparsityPattern::assemble()
     const std::vector<std::int32_t>::iterator it_diag
         = std::lower_bound(row.begin(), it_end, local_size1);
 
+    // Store owned columns
     adj_data.insert(adj_data.end(), row.begin(), it_diag);
     adj_counts[i] += (it_diag - row.begin());
+
+    // Store non-owned columns
     adj_data_off.insert(adj_data_off.end(), it_diag, it_end);
     adj_counts_off[i] += (it_end - it_diag);
-    std::vector<std::int32_t>().swap(row);
   }
   std::vector<std::vector<std::int32_t>>().swap(_cache_owned);
 
-  std::vector<std::int32_t> adj_offsets(local_size0 + 1);
+  // Compute offsets for diagonal and off-diagonal block adjacency lists
+  std::vector<std::int32_t> adj_offsets(local_size0 + 1),
+      adj_offsets_off(local_size0 + 1);
   std::partial_sum(adj_counts.begin(), adj_counts.end(),
                    adj_offsets.begin() + 1);
-  std::vector<std::int32_t> adj_offsets_off(local_size0 + 1);
   std::partial_sum(adj_counts_off.begin(), adj_counts_off.end(),
                    adj_offsets_off.begin() + 1);
 
@@ -358,12 +381,16 @@ void SparsityPattern::assemble()
   _diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(adj_data), std::move(adj_offsets));
 
-  // Column map increased due to received rows from other processes (see above)
+  // Column map increased due to received rows from other processes (see
+  // above)
   LOG(INFO) << "Column ghost size increased from "
             << _index_maps[1]->ghosts().size() << " to " << ghosts1.size()
             << "\n";
 
-  _index_maps[1] = std::make_shared<common::IndexMap>(
+  // FIXME: Do this in a more efficient way -
+  // dolfinx::MPI::compute_graph_edges is expensive. Should already have
+  // the required information on neighbour ranks
+  _column_map = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), local_size1,
       dolfinx::MPI::compute_graph_edges(
           _mpi_comm.comm(),
