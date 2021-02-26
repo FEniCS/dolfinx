@@ -394,7 +394,7 @@ void SparsityPattern::assemble()
             << _index_maps[1]->ghosts().size() << " to " << ghosts1.size()
             << "\n";
 
-  _col_ghosts = ghosts1;
+  _col_ghosts.swap(ghosts1);
 
   _off_diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(adj_data_off), std::move(adj_offsets_off));
