@@ -159,4 +159,84 @@ public:
 private:
   std::vector<T, Allocator> _storage;
 };
+
+// This class provides a view into a 2-dimensional row-wise array of data
+template <typename T>
+class span2d
+{
+public:
+  // /// \cond DO_NOT_DOCUMENT
+  using value_type = T;
+  // using allocator_type = Allocator;
+  using size_type = typename std::size_t;
+  using reference = T&;
+  using const_reference = const T&;
+  using pointer = T*;
+  // using pointer = typename std::vector<T, Allocator>::pointer;
+  // using iterator = typename std::vector<T, Allocator>::iterator;
+  // using const_iterator = typename std::vector<T, Allocator>::const_iterator;
+  // /// \endcond
+
+  /// Construct a two dimensional array
+  /// @param[in] shape The shape the array {rows, cols}
+  /// @param[in] value Initial value for all entries
+  /// @param[in] alloc The memory allocator for the data storage
+  span2d(T* data, std::array<size_type, 2> shape) : _storage(data), shape(shape)
+  {
+    // Do nothing
+  }
+
+  /// Return a reference to the element at specified location (i, j)
+  /// @param[in] i Row index
+  /// @param[in] j Column index
+  /// @return Reference to the (i, j) item
+  /// @note No bounds checking is performed
+  constexpr reference operator()(size_type i, size_type j)
+  {
+    return _storage[i * shape[1] + j];
+  }
+
+  /// Return a reference to the element at specified location (i, j)
+  /// (const version)
+  /// @param[in] i Row index
+  /// @param[in] j Column index
+  /// @return Reference to the (i, j) item
+  /// @note No bounds checking is performed
+  constexpr const_reference operator()(size_type i, size_type j) const
+  {
+    return _storage[i * shape[1] + j];
+  }
+
+  /// Access a row in the array
+  /// @param[in] i Row index
+  /// @return Span of the row data
+  constexpr tcb::span<value_type> row(size_type i)
+  {
+    return tcb::span<value_type>(_storage + i * shape[1], shape[1]);
+  }
+
+  /// Access a row in the array (const version)
+  /// @param[in] i Row index
+  /// @return Span of the row data
+  constexpr tcb::span<const value_type> row(size_type i) const
+  {
+    return tcb::span<const value_type>(_storage + i * shape[1], shape[1]);
+  }
+
+  /// Get pointer to the first element of the underlying storage
+  /// @warning Use this with caution - the data storage may be strided
+  constexpr value_type* data() noexcept { return _storage; }
+
+  /// Get pointer to the first element of the underlying storage (const
+  /// version)
+  /// @warning Use this with caution - the data storage may be strided
+  constexpr const value_type* data() const noexcept { return _storage; };
+
+  /// The shape of the array
+  std::array<size_type, 2> shape;
+
+private:
+  T* _storage;
+};
+
 } // namespace dolfinx
