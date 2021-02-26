@@ -242,7 +242,6 @@ void SparsityPattern::assemble()
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
   const std::array local_range1 = _index_maps[1]->local_range();
-  std::vector<int> ghost_owners1 = _index_maps[1]->ghost_owner_rank();
   _col_ghosts = _index_maps[1]->ghosts();
 
   // Global to local map for ghost columns
@@ -276,7 +275,7 @@ void SparsityPattern::assemble()
 
     // Add to src size
     assert(ghost_to_neighbour_rank[i] < (int)data_per_proc.size());
-    data_per_proc[ghost_to_neighbour_rank[i]] += 3 * _cache_unowned[i].size();
+    data_per_proc[ghost_to_neighbour_rank[i]] += 2 * _cache_unowned[i].size();
   }
 
   // Compute send displacements
@@ -299,17 +298,11 @@ void SparsityPattern::assemble()
       // Pack send data
       ghost_data[pos] = ghosts0[i];
       if (col_local < local_size1)
-      {
         ghost_data[pos + 1] = col_local + local_range1[0];
-        ghost_data[pos + 2] = mpi_rank;
-      }
       else
-      {
         ghost_data[pos + 1] = _col_ghosts[col_local - local_size1];
-        ghost_data[pos + 2] = ghost_owners1[col_local - local_size1];
-      }
 
-      insert_pos[neighbour_rank] += 3;
+      insert_pos[neighbour_rank] += 2;
     }
   }
 
@@ -321,7 +314,7 @@ void SparsityPattern::assemble()
 
   // Add data received from the neighborhood
   const std::vector<std::int64_t>& in_ghost_data = ghost_data_in.array();
-  for (std::size_t i = 0; i < in_ghost_data.size(); i += 3)
+  for (std::size_t i = 0; i < in_ghost_data.size(); i += 2)
   {
     const std::int32_t row_local = in_ghost_data[i] - local_range0[0];
     const std::int64_t col = in_ghost_data[i + 1];
@@ -338,7 +331,6 @@ void SparsityPattern::assemble()
       if (it.second)
       {
         _col_ghosts.push_back(col);
-        ghost_owners1.push_back(in_ghost_data[i + 2]);
         ++local_i;
       }
       const std::int32_t col_local = it.first->second;
