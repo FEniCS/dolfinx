@@ -242,14 +242,14 @@ void SparsityPattern::assemble()
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
   const std::array local_range1 = _index_maps[1]->local_range();
-  std::vector<std::int64_t> ghosts1 = _index_maps[1]->ghosts();
   std::vector<int> ghost_owners1 = _index_maps[1]->ghost_owner_rank();
+  _col_ghosts = _index_maps[1]->ghosts();
 
   // Global to local map for ghost columns
   const int mpi_rank = dolfinx::MPI::rank(_mpi_comm.comm());
   std::map<std::int64_t, std::int32_t> global_to_local;
   std::int32_t local_i = local_size1;
-  for (std::int64_t global_i : ghosts1)
+  for (std::int64_t global_i : _col_ghosts)
     global_to_local.insert({global_i, local_i++});
 
   // Get ghost->owner communicator for rows
@@ -305,7 +305,7 @@ void SparsityPattern::assemble()
       }
       else
       {
-        ghost_data[pos + 1] = ghosts1[col_local - local_size1];
+        ghost_data[pos + 1] = _col_ghosts[col_local - local_size1];
         ghost_data[pos + 2] = ghost_owners1[col_local - local_size1];
       }
 
@@ -337,7 +337,7 @@ void SparsityPattern::assemble()
       auto it = global_to_local.insert({col, local_i});
       if (it.second)
       {
-        ghosts1.push_back(col);
+        _col_ghosts.push_back(col);
         ghost_owners1.push_back(in_ghost_data[i + 2]);
         ++local_i;
       }
@@ -391,10 +391,8 @@ void SparsityPattern::assemble()
   // Column map increased due to received rows from other processes (see
   // above)
   LOG(INFO) << "Column ghost size increased from "
-            << _index_maps[1]->ghosts().size() << " to " << ghosts1.size()
+            << _index_maps[1]->ghosts().size() << " to " << _col_ghosts.size()
             << "\n";
-
-  _col_ghosts.swap(ghosts1);
 
   _off_diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(adj_data_off), std::move(adj_offsets_off));
