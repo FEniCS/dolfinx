@@ -245,7 +245,6 @@ void SparsityPattern::assemble()
   _col_ghosts = _index_maps[1]->ghosts();
 
   // Global to local map for ghost columns
-  const int mpi_rank = dolfinx::MPI::rank(_mpi_comm.comm());
   std::map<std::int64_t, std::int32_t> global_to_local;
   std::int32_t local_i = local_size1;
   for (std::int64_t global_i : _col_ghosts)
