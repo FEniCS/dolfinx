@@ -216,12 +216,11 @@ void interpolate(Function<T>& u,
   // and the number of columns is equal to the number of evaluation
   // points.
 
-  std::variant<std::vector<T>, array2d<T>> values_v = f(x);
+  auto values_v = f(x);
   std::array<std::size_t, 2> shape = {element->value_size(), x.shape[1]};
-  constexpr int alternative = std::holds_alternative<array2d<T>>(values_v);
-  span2d<T> values(std::get<alternative>(values_v).data(), shape);
+  span2d<T> values(std::get<values_v.index()>(values_v).data(), shape);
 
-  if (alternative)
+  if (std::holds_alternative<array2d>(values_v))
   {
     if (values.shape[0] != element->value_size())
       throw std::runtime_error("Interpolation data has the wrong shape.");
