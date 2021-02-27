@@ -160,7 +160,7 @@ private:
   std::vector<T, Allocator> _storage;
 };
 
-// This class provides a view into a 2-dimensional row-wise array of data
+/// This class provides a view into a 2-dimensional row-wise array of data
 template <typename T>
 class span2d
 {
@@ -178,9 +178,8 @@ public:
   // /// \endcond
 
   /// Construct a two dimensional array
+  /// @param[in] data  pointer to the array to construct a view for
   /// @param[in] shape The shape the array {rows, cols}
-  /// @param[in] value Initial value for all entries
-  /// @param[in] alloc The memory allocator for the data storage
   span2d(T* data, std::array<size_type, 2> shape) : _storage(data), shape(shape)
   {
     // Do nothing
