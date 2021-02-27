@@ -218,15 +218,19 @@ void interpolate(Function<T>& u,
 
   auto values_v = f(x);
   std::array<std::size_t, 2> shape = {element->value_size(), x.shape[1]};
-  span2d<T> values(std::get<values_v.index()>(values_v).data(), shape);
+  span2d<T> values(nullptr, shape);
 
-  if (std::holds_alternative<array2d>(values_v))
+  if (std::holds_alternative<array2d<T>>(values_v))
   {
+    values = span2d<T>(std::get<1>(values_v).data(), shape);
     if (values.shape[0] != element->value_size())
       throw std::runtime_error("Interpolation data has the wrong shape.");
   }
   else if (element->value_size() != 1)
+  {
     throw std::runtime_error("Interpolation data has the wrong shape.");
+    values = span2d<T>(std::get<0>(values_v).data(), shape);
+  }
 
   if (values.shape[1] != cells.size() * X.shape[0])
     throw std::runtime_error("Interpolation data has the wrong shape.");
