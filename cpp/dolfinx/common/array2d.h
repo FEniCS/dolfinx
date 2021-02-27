@@ -167,14 +167,10 @@ class span2d
 public:
   // /// \cond DO_NOT_DOCUMENT
   using value_type = T;
-  // using allocator_type = Allocator;
-  using size_type = typename std::size_t;
+  using size_type = std::size_t;
   using reference = T&;
   using const_reference = const T&;
   using pointer = T*;
-  // using pointer = typename std::vector<T, Allocator>::pointer;
-  // using iterator = typename std::vector<T, Allocator>::iterator;
-  // using const_iterator = typename std::vector<T, Allocator>::const_iterator;
   // /// \endcond
 
   /// Construct a two dimensional array
