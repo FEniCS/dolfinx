@@ -216,20 +216,22 @@ void interpolate(Function<T>& u,
   // and the number of columns is equal to the number of evaluation
   // points.
 
-  auto values_v = f(x);
-  std::array<std::size_t, 2> shape = {element->value_size(), x.shape[1]};
-  span2d<T> values(nullptr, shape);
-
+  // TODO: Copies and memory allocation could be avoided with a 'span2d'
+  // class, or by just pointing to the data
+  array2d<T> values(element->value_size(), x.shape[1]);
+  std::variant<std::vector<T>, array2d<T>> values_v = f(x);
   if (std::holds_alternative<array2d<T>>(values_v))
   {
-    values = span2d<T>(std::get<1>(values_v).data(), shape);
+    values = std::get<1>(values_v);
     if (values.shape[0] != element->value_size())
       throw std::runtime_error("Interpolation data has the wrong shape.");
   }
-  else if (element->value_size() != 1)
+  else
   {
-    throw std::runtime_error("Interpolation data has the wrong shape.");
-    values = span2d<T>(std::get<0>(values_v).data(), shape);
+    if (element->value_size() != 1)
+      throw std::runtime_error("Interpolation data has the wrong shape.");
+    std::copy(std::get<0>(values_v).begin(), std::get<0>(values_v).end(),
+              values.data());
   }
 
   if (values.shape[1] != cells.size() * X.shape[0])
