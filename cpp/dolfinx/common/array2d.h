@@ -54,9 +54,9 @@ public:
     _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
   }
 
-  /// @todo Use suitable std::enable_if to make this more general (and correct)
   /// Constructs a two dimensional array from a vector
-  template <typename Vector>
+  template <typename Vector, typename = typename std::enable_if<
+                                 std::is_class<Vector>::value, Vector>::type>
   array2d(std::array<size_type, 2> shape, Vector&& x)
       : shape(shape), _storage(std::forward<Vector>(x))
   {
