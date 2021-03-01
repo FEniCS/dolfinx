@@ -56,7 +56,7 @@ public:
 
   /// Constructs a two dimensional array from a vector
   template <typename Vector, typename = typename std::enable_if<
-                                 std::is_union<Vector>::value, Vector>::type>
+                                 std::is_class<Vector>::value, Vector>::type>
   array2d(std::array<size_type, 2> shape, Vector&& x)
       : shape(shape), _storage(std::forward<Vector>(x))
   {
