@@ -35,8 +35,6 @@ void test_array2d()
   for (std::size_t i = 0; i < arr.shape[0]; i++)
     for (std::size_t j = 0; j < arr.shape[1]; j++)
       REQUIRE(arr(i, j) == j);
-
-  REQUIRE(all_equal);
 }
 
 void test_dot_product()
@@ -60,8 +58,8 @@ void test_dot_product()
   std::array<double, 9> result = {0};
   span2d<double> view(result.data(), {3, 3});
 
-  for (std::size_t i = 0; i < 3; i++)
-    for (std::size_t j = 0; j < 3; j++)
+  for (std::size_t i = 0; i < view.shape[0]; i++)
+    for (std::size_t j = 0; j < view.shape[1]; j++)
       view(i, j) = std::inner_product(arr1.row(i).begin(), arr1.row(i).end(),
                                       arr2_T.row(j).begin(), 0.0);
 
