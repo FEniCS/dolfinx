@@ -137,7 +137,7 @@ get_local_indexing(
       for (std::size_t i = ghost_offset; i < entity_list.shape[0]; ++i)
       {
         const std::int32_t idx = entity_index[i];
-        ghost_status[idx] += 2;
+        ghost_status[idx] = ghost_status[idx] | 2;
       }
     }
   }
