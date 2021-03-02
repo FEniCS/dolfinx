@@ -47,10 +47,11 @@ public:
   /// tdim cols
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_size size of expression evaluated at single point
+  template <typename Span>
   Expression(
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
-      const std::shared_ptr<const mesh::Mesh>& mesh, const array2d<double>& X,
+      const std::shared_ptr<const mesh::Mesh>& mesh, Span& X,
       const std::function<void(T*, const T*, const T*, const double*)> fn,
       const std::size_t value_size)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh), _x(X),
@@ -92,8 +93,9 @@ public:
   /// @param[out] values To store the result. Caller responsible for
   /// correct sizing which should be num_cells rows by
   /// num_points*value_size columns.
+  template <typename Span>
   void eval(const tcb::span<const std::int32_t>& active_cells,
-            array2d<T>& values) const
+            const Span& values) const
   {
     fem::eval(values, *this, active_cells);
   }

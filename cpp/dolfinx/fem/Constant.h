@@ -26,7 +26,8 @@ public:
   explicit Constant(const std::vector<T>& c) : shape(1, c.size()), value({c}) {}
 
   /// Create a rank-2 constant
-  explicit Constant(const array2d<T>& c)
+  template <typename Span>
+  explicit Constant(const Span& c)
       : shape({(int)c.rows(), (int)c.cols()}), value(c.rows() * c.cols())
   {
     for (int i = 0; i < c.rows(); ++i)

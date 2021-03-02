@@ -14,6 +14,9 @@
 namespace dolfinx
 {
 
+template <typename T>
+class span2d;
+
 /// This class provides a dynamic 2-dimensional row-wise array data
 /// structure
 template <typename T, class Allocator = std::allocator<T>>
@@ -72,6 +75,20 @@ public:
     for (std::initializer_list<T> l : list)
       for (const T val : l)
         _storage.push_back(val);
+  }
+
+  /// Construct a two dimensional array from a two dimensional span
+  /// @param[in] s The span
+  constexpr array2d(const span2d<T>& s)
+      : shape(s.shape), _storage(s.data(), s.data() + s.shape[0] * s.shape[1])
+  {
+    // Do nothing
+  }
+
+  constexpr array2d(const span2d<const T>& s)
+      : shape(s.shape), _storage(s.data(), s.data() + s.shape[0] * s.shape[1])
+  {
+    // Do nothing
   }
 
   /// Copy constructor
@@ -171,12 +188,27 @@ public:
   using reference = T&;
   using const_reference = const T&;
   using pointer = T*;
+  using const_pointer = const T*;
   // /// \endcond
 
   /// Construct a two dimensional array
   /// @param[in] data  pointer to the array to construct a view for
   /// @param[in] shape The shape the array {rows, cols}
   span2d(T* data, std::array<size_type, 2> shape) : _storage(data), shape(shape)
+  {
+    // Do nothing
+  }
+
+  /// Construct a two dimensional span from a two dimensional array
+  /// @param[in] x The shape the array {rows, cols}
+  span2d(array2d<T>& x) : _storage(x.data()), shape(x.shape)
+  {
+    // Do nothing
+  }
+
+  /// Construct a two dimensional span from a two dimensional array
+  /// @param[in] x The shape the array {rows, cols}
+  span2d(const array2d<T>& x) : _storage(x.data()), shape(x.shape)
   {
     // Do nothing
   }
@@ -221,6 +253,11 @@ public:
   /// Get pointer to the first element of the underlying storage
   /// @warning Use this with caution - the data storage may be strided
   constexpr value_type* data() noexcept { return _storage; }
+
+  /// Get pointer to the first element of the underlying storage (const
+  /// version)
+  /// @warning Use this with caution - the data storage may be strided
+  constexpr const value_type* data() const noexcept { return _storage; };
 
   /// The shape of the array
   std::array<size_type, 2> shape;
