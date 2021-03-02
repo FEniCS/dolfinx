@@ -222,11 +222,6 @@ public:
   /// @warning Use this with caution - the data storage may be strided
   constexpr value_type* data() noexcept { return _storage; }
 
-  /// Get pointer to the first element of the underlying storage (const
-  /// version)
-  /// @warning Use this with caution - the data storage may be strided
-  constexpr const value_type* data() const noexcept { return _storage; };
-
   /// The shape of the array
   std::array<size_type, 2> shape;
 
