@@ -32,6 +32,9 @@ void declare_adjacency_list(py::module& m, std::string type)
         std::vector<T> data(adj.data(), adj.data() + adj.size());
         return dolfinx::graph::build_adjacency_list<T>(std::move(data), dim);
       }))
+      .def(py::init([](const std::vector<std::vector<T>> adj) {
+        return dolfinx::graph::AdjacencyList<T>(adj);
+      }))
       .def(
           "links",
           [](const dolfinx::graph::AdjacencyList<T>& self, int i) {
