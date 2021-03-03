@@ -95,7 +95,8 @@ locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker_fn);
+    const std::function<std::vector<bool>(const span2d<const double>&)>&
+        marker_fn);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
@@ -110,7 +111,8 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
 /// with V.
 std::vector<std::int32_t> locate_dofs_geometrical(
     const fem::FunctionSpace& V,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker_fn);
+    const std::function<std::vector<bool>(const span2d<const double>&)>&
+        marker_fn);
 
 /// Interface for setting (strong) Dirichlet boundary conditions
 ///

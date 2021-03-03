@@ -79,7 +79,8 @@ void CoordinateElement::push_forward(
   basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[0]);
 
   // x = phi * cell_geometry;
-  std::fill(const_cast<double*>(x.data()), const_cast<double*>(x.data()) + x.size(), 0.0);
+  std::fill(const_cast<double*>(x.data()),
+            const_cast<double*>(x.data()) + x.size(), 0.0);
   for (std::size_t i = 0; i < x.shape[0]; ++i)
     for (std::size_t j = 0; j < x.shape[1]; ++j)
       for (std::size_t k = 0; k < cell_geometry.shape[0]; ++k)
@@ -87,9 +88,9 @@ void CoordinateElement::push_forward(
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
-    array2d<double>& X, std::vector<double>& J, tcb::span<double> detJ,
-    std::vector<double>& K, const array2d<double>& x,
-    const array2d<double>& cell_geometry) const
+    const span2d<double>& X, std::vector<double>& J, tcb::span<double> detJ,
+    std::vector<double>& K, const span2d<const double>& x,
+    const span2d<const double>& cell_geometry) const
 {
   // Number of points
   int num_points = x.shape[0];

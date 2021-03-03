@@ -254,18 +254,24 @@ public:
 
   /// Get pointer to the first element of the underlying storage
   /// @warning Use this with caution - the data storage may be strided
-  constexpr value_type* data() noexcept { return _storage; }
+  // constexpr value_type* data() noexcept { return _storage; }
 
   /// Get pointer to the first element of the underlying storage (const
   /// version)
   /// @warning Use this with caution - the data storage may be strided
-  constexpr const value_type* data() const noexcept { return _storage; };
+  constexpr value_type* data() const noexcept { return _storage; };
 
   /// Returns the number of elements in the span
   /// @warning Use this caution - the data storage may be strided, i.e.
   /// the size of the underlying storage may be greater than
   /// sizeof(T)*(rows * cols)
   constexpr size_type size() const noexcept { return shape[0] * shape[1]; }
+
+  /// Returns the strides of the array
+  constexpr std::array<size_type, 2> strides() const noexcept
+  {
+    return {shape[1] * sizeof(T), sizeof(T)};
+  }
 
   /// The shape of the array
   std::array<size_type, 2> shape;
