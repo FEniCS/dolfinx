@@ -352,7 +352,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
 //-----------------------------------------------------------------------------
 std::pair<array2d<std::int32_t>, std::vector<std::int32_t>>
 xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
-                                   const array2d<std::int64_t>& entities,
+                                   const span2d<const std::int64_t>& entities,
                                    const tcb::span<const std::int32_t>& values)
 {
   if (entities.shape[0] != values.size())
