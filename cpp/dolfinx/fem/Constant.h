@@ -31,8 +31,8 @@ public:
       : shape({(int)c.shape[0], (int)c.shape[1]}),
         value(c.shape[0] * c.shape[1])
   {
-    for (int i = 0; i < c.rows(); ++i)
-      for (int j = 0; j < c.cols(); ++j)
+    for (std::size_t i = 0; i < c.shape[0]; ++i)
+      for (std::size_t j = 0; j < c.shape[1]; ++j)
         value[i * c.cols() + j] = c(i, j);
   }
 
