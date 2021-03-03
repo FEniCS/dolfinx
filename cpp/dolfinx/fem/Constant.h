@@ -33,7 +33,7 @@ public:
   {
     for (std::size_t i = 0; i < c.shape[0]; ++i)
       for (std::size_t j = 0; j < c.shape[1]; ++j)
-        value[i * c.cols() + j] = c(i, j);
+        value[i * c.shape[0] + j] = c(i, j);
   }
 
   /// Create an arbitrary rank constant. Data layout is row-major (C style).
