@@ -232,14 +232,17 @@ void fem(py::module& m)
            [](const dolfinx::fem::CoordinateElement& self,
               const py::array_t<double, py::array::c_style>& X,
               const py::array_t<double, py::array::c_style>& cell_geometry) {
-             dolfinx::array2d<double> _X(X.shape()[0], X.shape()[1]),
-                 _cell_geometry(cell_geometry.shape()[0],
-                                cell_geometry.shape()[1]);
-             std::copy_n(X.data(), X.size(), _X.data());
-             std::copy_n(cell_geometry.data(), cell_geometry.size(),
-                         _cell_geometry.data());
-             dolfinx::array2d<double> x(_X.shape[0],
-                                        self.geometric_dimension());
+             std::array X_shape = {static_cast<std::size_t>(X.shape()[0]),
+                                   static_cast<std::size_t>(X.shape()[1])};
+             dolfinx::span2d<const double> _X(X.data(), X_shape);
+
+             std::array geom_shape
+                 = {static_cast<std::size_t>(cell_geometry.shape()[0]),
+                    static_cast<std::size_t>(cell_geometry.shape()[1])};
+             dolfinx::span2d<const double> _cell_geometry(cell_geometry.data(),
+                                                          geom_shape);
+
+             dolfinx::array2d<double> x(X_shape[0], self.geometric_dimension());
              self.push_forward(x, _X, _cell_geometry);
              return as_pyarray2d(std::move(x));
            })
@@ -571,6 +574,7 @@ void fem(py::module& m)
               py::array_t v = f(_x);
               if (v.ndim() > 1)
               {
+                // Should use span 2d here?
                 dolfinx::array2d<PetscScalar> vals(v.shape()[0], v.shape()[1]);
                 std::copy_n(v.data(), v.size(), vals.data());
                 return vals;
@@ -631,12 +635,13 @@ void fem(py::module& m)
              const py::array_t<double, py::array::c_style>& x,
              const py::array_t<std::int32_t, py::array::c_style>& cells,
              py::array_t<PetscScalar, py::array::c_style>& u) {
-            // TODO: handle 1d case
-            dolfinx::array2d<double> _x(x.shape()[0], x.shape()[1]);
-            std::copy_n(x.data(), x.size(), _x.data());
-            dolfinx::array2d<PetscScalar> _u(u.shape()[0], u.shape()[1]);
+            std::array xshape = {static_cast<std::size_t>(x.shape()[0]),
+                                 static_cast<std::size_t>(x.shape()[1])};
+            dolfinx::span2d<const double> _x(x.data(), xshape);
+            std::array ushape = {static_cast<std::size_t>(u.shape()[0]),
+                                 static_cast<std::size_t>(u.shape()[1])};
+            dolfinx::span2d<PetscScalar> _u(u.mutable_data(), ushape);
             self.eval(_x, tcb::span(cells.data(), cells.size()), _u);
-            std::copy_n(_u.data(), _u.size(), u.mutable_data());
           },
           py::arg("x"), py::arg("cells"), py::arg("values"),
           "Evaluate Function")
