@@ -202,7 +202,7 @@ public:
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
   void interpolate(const std::function<std::variant<std::vector<T>, array2d<T>>(
-                       const array2d<double>&)>& f)
+                       const span2d<const double>&)>& f)
   {
     assert(_function_space);
     assert(_function_space->element());

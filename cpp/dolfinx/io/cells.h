@@ -116,8 +116,9 @@ std::vector<std::uint8_t> transpose(const std::vector<std::uint8_t>& map);
 ///   where `a_p` is the permuted array
 /// @return Permuted cell topology, where for a cell `v_new[i] =
 ///   v_old[map[i]]`
-array2d<std::int64_t> compute_permutation(const array2d<std::int64_t>& cells,
-                                          const std::vector<std::uint8_t>& p);
+array2d<std::int64_t>
+compute_permutation(const span2d<const std::int64_t>& cells,
+                    const std::vector<std::uint8_t>& p);
 
 /// Get VTK cell identifier
 /// @param[in] mesh The Mesh

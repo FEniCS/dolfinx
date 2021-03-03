@@ -56,8 +56,8 @@ void interpolate(Function<T>& u, const Function<T>& v);
 template <typename T>
 void interpolate(Function<T>& u,
                  const std::function<std::variant<std::vector<T>, array2d<T>>(
-                     const array2d<double>&)>& f,
-                 const array2d<double>& x,
+                     const span2d<const double>&)>& f,
+                 const span2d<const double>& x,
                  const tcb::span<const std::int32_t>& cells);
 
 /// Interpolate an expression f(x)
@@ -79,8 +79,8 @@ void interpolate(Function<T>& u,
 template <typename T>
 void interpolate_c(
     Function<T>& u,
-    const std::function<void(array2d<T>&, const array2d<double>&)>& f,
-    const array2d<double>& x, const tcb::span<const std::int32_t>& cells);
+    const std::function<void(const span2d<T>&, const span2d<const double>&)>& f,
+    const span2d<const double>& x, const tcb::span<const std::int32_t>& cells);
 
 namespace detail
 {
@@ -178,8 +178,8 @@ void interpolate(Function<T>& u, const Function<T>& v)
 template <typename T>
 void interpolate(Function<T>& u,
                  const std::function<std::variant<std::vector<T>, array2d<T>>(
-                     const array2d<double>&)>& f,
-                 const array2d<double>& x,
+                     const span2d<const double>&)>& f,
+                 const span2d<const double>& x,
                  const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
@@ -298,7 +298,8 @@ void interpolate(Function<T>& u,
                              detJ.data(), K.data(), gdim, value_size, 1,
                              X.shape[0]);
 
-      element->interpolate(reference_data, tcb::make_span(_coeffs));
+      element->interpolate(span2d<const T>(reference_data),
+                           tcb::make_span(_coeffs));
       element->apply_inverse_transpose_dof_transformation(_coeffs.data(),
                                                           cell_info[c], 1);
 
@@ -318,8 +319,8 @@ void interpolate(Function<T>& u,
 template <typename T>
 void interpolate_c(
     Function<T>& u,
-    const std::function<void(array2d<T>&, const array2d<double>&)>& f,
-    const array2d<double>& x, const tcb::span<const std::int32_t>& cells)
+    const std::function<void(const span2d<T>&, const span2d<const double>&)>& f,
+    const span2d<const double>& x, const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
@@ -329,7 +330,7 @@ void interpolate_c(
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
 
-  auto fn = [value_size, &f](const array2d<double>& x) {
+  auto fn = [value_size, &f](const span2d<const double>& x) {
     array2d<T> values(value_size, x.shape[1]);
     f(values, x);
     return values;

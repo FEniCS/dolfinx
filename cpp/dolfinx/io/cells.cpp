@@ -350,7 +350,7 @@ io::cells::transpose(const std::vector<std::uint8_t>& map)
 }
 //-----------------------------------------------------------------------------
 array2d<std::int64_t>
-io::cells::compute_permutation(const array2d<std::int64_t>& cells,
+io::cells::compute_permutation(const span2d<const std::int64_t>& cells,
                                const std::vector<std::uint8_t>& p)
 {
   array2d<std::int64_t> cells_new(cells.shape);

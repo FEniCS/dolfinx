@@ -140,7 +140,7 @@ int FiniteElement::value_dimension(int i) const
 std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis(
-    std::vector<double>& reference_values, const array2d<double>& X) const
+    std::vector<double>& reference_values, const span2d<const double>& X) const
 {
   const int scalar_reference_value_size = _reference_value_size / _bs;
   array2d<double> basix_data(X.shape[0], basix::dim(_basix_element_handle)
@@ -169,7 +169,7 @@ void FiniteElement::evaluate_reference_basis(
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis_derivatives(
-    std::vector<double>& values, int order, const array2d<double>& X) const
+    std::vector<double>& values, int order, const span2d<const double>& X) const
 {
   // TODO: fix this for order > 1
   if (order != 1)
@@ -207,7 +207,7 @@ void FiniteElement::evaluate_reference_basis_derivatives(
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
     std::vector<double>& values, const std::vector<double>& reference_values,
-    const array2d<double>& X, const std::vector<double>& J,
+    const span2d<const double>& X, const std::vector<double>& J,
     const tcb::span<const double>& detJ, const std::vector<double>& K) const
 {
   const int num_points = X.shape[0];

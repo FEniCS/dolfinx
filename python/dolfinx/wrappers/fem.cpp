@@ -597,8 +597,8 @@ void fem(py::module& m)
                 = reinterpret_cast<void (*)(PetscScalar*, int, int,
                                             const double*)>(addr);
 
-            auto _f = [&f](dolfinx::array2d<PetscScalar>& values,
-                           const dolfinx::array2d<double>& x) -> void {
+            auto _f = [&f](const dolfinx::span2d<PetscScalar>& values,
+                           const dolfinx::span2d<const double>& x) -> void {
               f(values.data(), values.shape[1], values.shape[0], x.data());
             };
 
