@@ -11,6 +11,16 @@
 #include <cassert>
 #include <vector>
 
+template <typename T, typename = std::array<std::size_t, 2>>
+struct has_shape : std::false_type
+{
+};
+
+template <typename T>
+struct has_shape<T, decltype(T::shape)> : std::true_type
+{
+};
+
 namespace dolfinx
 {
 
@@ -208,14 +218,8 @@ public:
   }
 
   /// Construct a two dimensional span from a two dimensional array
-  /// @param[in] x The shape the array {rows, cols}
-  // span2d(array2d<T>& x) : _storage(x.data()), shape(x.shape)
-  // {
-  //   // Do nothing
-  // }
-
-  /// Construct a two dimensional span from a two dimensional array
-  template <typename Array2d>
+  template <typename Array2d,
+            typename = typename std::enable_if<has_shape<Array2d>::value>>
   span2d(Array2d& x) : shape(x.shape), _storage(x.data())
   {
     // Do nothing
