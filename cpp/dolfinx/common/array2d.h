@@ -215,10 +215,8 @@ public:
   // }
 
   /// Construct a two dimensional span from a two dimensional array
-  /// @param[in] x A 2D span or array
   template <typename Array2d>
   span2d(Array2d& x) : shape(x.shape), _storage(x.data())
-  // span2d(const array2d<T>& x) : _storage(x.data()), shape(x.shape)
   {
     // Do nothing
   }
