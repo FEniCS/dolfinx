@@ -26,10 +26,11 @@ public:
   explicit Constant(const std::vector<T>& c) : shape(1, c.size()), value({c}) {}
 
   /// Create a rank-2 constant
-  template <typename Span>
+  template <typename Span,
+            typename
+            = typename std::enable_if<std::is_class<Span>::value>::type>
   explicit Constant(const Span& c)
-      : shape({(int)c.shape[0], (int)c.shape[1]}),
-        value(c.shape[0] * c.shape[1])
+      : shape({(int)c.shape[0], (int)c.shape[1]}), value(c.size())
   {
     for (std::size_t i = 0; i < c.shape[0]; ++i)
       for (std::size_t j = 0; j < c.shape[1]; ++j)
