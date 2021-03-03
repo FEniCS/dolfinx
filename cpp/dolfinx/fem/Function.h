@@ -228,8 +228,8 @@ public:
   /// @param[in,out] u The values at the points. Values are not computed
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size.
-  void eval(const array2d<double>& x,
-            const tcb::span<const std::int32_t>& cells, array2d<T>& u) const
+  void eval(const span2d<const double>& x,
+            const tcb::span<const std::int32_t>& cells, span2d<T>& u) const
   {
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
@@ -405,7 +405,8 @@ public:
         cells[dofs[i]] = c;
     }
 
-    eval(x_g, cells, point_values);
+    span2d<T> values(point_values);
+    eval(x_g, cells, values);
 
     return point_values;
   }

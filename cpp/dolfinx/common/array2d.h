@@ -68,8 +68,9 @@ public:
   }
 
   /// Constructs a two dimensional array from a vector
-  template <typename Vector, typename = typename std::enable_if<
-                                 std::is_class<Vector>::value, Vector>::type>
+  template <typename Vector,
+            typename
+            = typename std::enable_if<std::is_class<Vector>::value>::type>
   array2d(std::array<size_type, 2> shape, Vector&& x)
       : shape(shape), _storage(std::forward<Vector>(x))
   {
@@ -89,25 +90,13 @@ public:
 
   /// Construct a two dimensional array from a two dimensional span
   /// @param[in] s The span
-  template <typename Span2d>
+  template <typename Span2d,
+            typename = typename std::enable_if<has_shape<Span2d>::value>>
   constexpr array2d(Span2d& s)
       : shape(s.shape), _storage(s.data(), s.data() + s.shape[0] * s.shape[1])
   {
     // Do nothing
   }
-  // constexpr array2d(const span2d<T>& s)
-  //     : shape(s.shape), _storage(s.data(), s.data() + s.shape[0] *
-  //     s.shape[1])
-  // {
-  //   // Do nothing
-  // }
-
-  // constexpr array2d(const span2d<const T>& s)
-  //     : shape(s.shape), _storage(s.data(), s.data() + s.shape[0] *
-  //     s.shape[1])
-  // {
-  //   // Do nothing
-  // }
 
   /// Copy constructor
   array2d(const array2d& x) = default;
@@ -270,6 +259,12 @@ public:
   /// version)
   /// @warning Use this with caution - the data storage may be strided
   constexpr const value_type* data() const noexcept { return _storage; };
+
+  /// Returns the number of elements in the span
+  /// @warning Use this caution - the data storage may be strided, i.e.
+  /// the size of the underlying storage may be greater than
+  /// sizeof(T)*(rows * cols)
+  constexpr size_type size() const noexcept { return shape[0] * shape[1]; }
 
   /// The shape of the array
   std::array<size_type, 2> shape;
