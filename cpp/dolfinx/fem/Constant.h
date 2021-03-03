@@ -28,7 +28,8 @@ public:
   /// Create a rank-2 constant
   template <typename Span>
   explicit Constant(const Span& c)
-      : shape({(int)c.rows(), (int)c.cols()}), value(c.rows() * c.cols())
+      : shape({(int)c.shape[0], (int)c.shape[1]}),
+        value(c.shape[0] * c.shape[1])
   {
     for (int i = 0; i < c.rows(); ++i)
       for (int j = 0; j < c.cols(); ++j)
@@ -45,7 +46,7 @@ public:
   /// Shape
   std::vector<int> shape;
 
-  /// Values, stored as a flattened array.
+  /// Values, stored as a flattened array
   std::vector<T> value;
 };
 } // namespace dolfinx::fem
