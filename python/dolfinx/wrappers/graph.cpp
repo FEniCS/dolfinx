@@ -38,7 +38,8 @@ void declare_adjacency_list(py::module& m, std::string type)
             std::vector<T> data(array.data(), array.data() + array.size());
             std::vector<std::int32_t> offsets(displ.data(),
                                               displ.data() + displ.size());
-            return dolfinx::graph::AdjacencyList<T>(data, offsets);
+            return dolfinx::graph::AdjacencyList<T>(std::move(data),
+                                                    std::move(offsets));
           }))
       .def(
           "links",
