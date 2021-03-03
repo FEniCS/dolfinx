@@ -9,6 +9,7 @@
 #include "span.hpp"
 #include <array>
 #include <cassert>
+#include <numeric>
 #include <vector>
 
 template <typename T, typename = std::array<std::size_t, 2>>
@@ -24,13 +25,13 @@ struct has_shape<T, decltype(T::shape)> : std::true_type
 namespace dolfinx
 {
 
-template <typename T>
-class span2d;
+template <typename T, std::size_t N>
+class ndspan;
 
 /// This class provides a dynamic 2-dimensional row-wise array data
 /// structure
-template <typename T, class Allocator = std::allocator<T>>
-class array2d
+template <typename T, std::size_t N, class Allocator = std::allocator<T>>
+class ndarray
 {
 public:
   /// \cond DO_NOT_DOCUMENT
@@ -42,17 +43,20 @@ public:
   using pointer = typename std::vector<T, Allocator>::pointer;
   using iterator = typename std::vector<T, Allocator>::iterator;
   using const_iterator = typename std::vector<T, Allocator>::const_iterator;
+  // using rank = N;
   /// \endcond
 
   /// Construct a two dimensional array
   /// @param[in] shape The shape the array {rows, cols}
   /// @param[in] value Initial value for all entries
   /// @param[in] alloc The memory allocator for the data storage
-  array2d(std::array<size_type, 2> shape, value_type value = T(),
+  ndarray(std::array<size_type, N> shape, value_type value = T(),
           const Allocator& alloc = Allocator())
       : shape(shape)
   {
-    _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
+    size_type size = std::accumulate(shape.begin(), shape.end(), 1,
+                                     std::multiplies<size_type>());
+    _storage = std::vector<T, Allocator>(size, value, alloc);
   }
 
   /// Construct a two dimensional array
@@ -60,7 +64,8 @@ public:
   /// @param[in] cols The number of columns
   /// @param[in] value Initial value for all entries
   /// @param[in] alloc The memory allocator for the data storage
-  array2d(size_type rows, size_type cols, value_type value = T(),
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
+  ndarray(size_type rows, size_type cols, value_type value = T(),
           const Allocator& alloc = Allocator())
       : shape({rows, cols})
   {
@@ -71,15 +76,17 @@ public:
   template <typename Vector,
             typename
             = typename std::enable_if<std::is_class<Vector>::value>::type>
-  array2d(std::array<size_type, 2> shape, Vector&& x)
+  ndarray(std::array<size_type, N> shape, Vector&& x)
       : shape(shape), _storage(std::forward<Vector>(x))
   {
     // Do nothing
   }
 
+  /// @todo Decide what to do here
   /// Construct a two dimensional array using nested initializer lists
   /// @param[in] list The nested initializer list
-  constexpr array2d(std::initializer_list<std::initializer_list<T>> list)
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
+  constexpr ndarray(std::initializer_list<std::initializer_list<T>> list)
       : shape({list.size(), (*list.begin()).size()})
   {
     _storage.reserve(shape[0] * shape[1]);
@@ -92,32 +99,33 @@ public:
   /// @param[in] s The span
   template <typename Span2d,
             typename = typename std::enable_if<has_shape<Span2d>::value>>
-  constexpr array2d(Span2d& s)
+  constexpr ndarray(Span2d& s)
       : shape(s.shape), _storage(s.data(), s.data() + s.shape[0] * s.shape[1])
   {
     // Do nothing
   }
 
   /// Copy constructor
-  array2d(const array2d& x) = default;
+  ndarray(const ndarray& x) = default;
 
   /// Move constructor
-  array2d(array2d&& x) = default;
+  ndarray(ndarray&& x) = default;
 
   /// Destructor
-  ~array2d() = default;
+  ~ndarray() = default;
 
   /// Copy assignment
-  array2d& operator=(const array2d& x) = default;
+  ndarray& operator=(const ndarray& x) = default;
 
   /// Move assignment
-  array2d& operator=(array2d&& x) = default;
+  ndarray& operator=(ndarray&& x) = default;
 
   /// Return a reference to the element at specified location (i, j)
   /// @param[in] i Row index
   /// @param[in] j Column index
   /// @return Reference to the (i, j) item
   /// @note No bounds checking is performed
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr reference operator()(size_type i, size_type j)
   {
     return _storage[i * shape[1] + j];
@@ -129,14 +137,32 @@ public:
   /// @param[in] j Column index
   /// @return Reference to the (i, j) item
   /// @note No bounds checking is performed
+  // template <typename std::enable_if<N == 2>::value>
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr const_reference operator()(size_type i, size_type j) const
   {
     return _storage[i * shape[1] + j];
   }
 
+  /// Return a reference to the element at specified location (i, j, k)
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
+  constexpr reference operator()(size_type i, size_type j, size_type k)
+  {
+    return _storage[shape[2] * (i * shape[1] + j) + k];
+  }
+
+  /// Return a reference to the element at specified location (i, j, k)
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
+  constexpr const_reference operator()(size_type i, size_type j,
+                                       size_type k) const
+  {
+    return _storage[shape[2] * (i * shape[1] + j) + k];
+  }
+
   /// Access a row in the array
   /// @param[in] i Row index
   /// @return Span of the row data
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr tcb::span<value_type> row(size_type i)
   {
     return tcb::span<value_type>(std::next(_storage.data(), i * shape[1]),
@@ -146,6 +172,7 @@ public:
   /// Access a row in the array (const version)
   /// @param[in] i Row index
   /// @return Span of the row data
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr tcb::span<const value_type> row(size_type i) const
   {
     return tcb::span<const value_type>(std::next(_storage.data(), i * shape[1]),
@@ -168,6 +195,7 @@ public:
   constexpr size_type size() const noexcept { return _storage.size(); }
 
   /// Returns the strides of the array
+  template <int _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr std::array<size_type, 2> strides() const noexcept
   {
     return {shape[1] * sizeof(T), sizeof(T)};
@@ -177,16 +205,22 @@ public:
   /// @return Returns true if underlying storage is empty
   constexpr bool empty() const noexcept { return _storage.empty(); }
 
+  /// Get the rank
+  constexpr std::size_t rank() const noexcept { return N; }
+
   /// The shape of the array
-  std::array<size_type, 2> shape;
+  std::array<size_type, N> shape;
 
 private:
   std::vector<T, Allocator> _storage;
 };
 
-/// This class provides a view into a 2-dimensional row-wise array of data
 template <typename T>
-class span2d
+using array2d = ndarray<T, 2>;
+
+/// This class provides a view into a 2-dimensional row-wise array of data
+template <typename T, std::size_t N = 2>
+class ndspan
 {
 public:
   // /// \cond DO_NOT_DOCUMENT
@@ -201,7 +235,7 @@ public:
   /// Construct a two dimensional array
   /// @param[in] data  pointer to the array to construct a view for
   /// @param[in] shape The shape the array {rows, cols}
-  constexpr span2d(T* data, std::array<size_type, 2> shape)
+  constexpr ndspan(T* data, std::array<size_type, N> shape)
       : _storage(data), shape(shape)
   {
     // Do nothing
@@ -210,7 +244,7 @@ public:
   /// Construct a two dimensional span from a two dimensional array
   template <typename Array2d,
             typename = typename std::enable_if<has_shape<Array2d>::value>>
-  constexpr span2d(Array2d& x) : shape(x.shape), _storage(x.data())
+  constexpr ndspan(Array2d& x) : shape(x.shape), _storage(x.data())
   {
     // Do nothing
   }
@@ -220,6 +254,7 @@ public:
   /// @param[in] j Column index
   /// @return Reference to the (i, j) item
   /// @note No bounds checking is performed
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr reference operator()(size_type i, size_type j)
   {
     return _storage[i * shape[1] + j];
@@ -231,14 +266,31 @@ public:
   /// @param[in] j Column index
   /// @return Reference to the (i, j) item
   /// @note No bounds checking is performed
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr reference operator()(size_type i, size_type j) const
   {
     return _storage[i * shape[1] + j];
   }
 
+  /// Return a reference to the element at specified location (i, j, k)
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
+  constexpr reference operator()(size_type i, size_type j, size_type k)
+  {
+    return _storage[shape[2] * (i * shape[1] + j) + k];
+  }
+
+  /// Return a reference to the element at specified location (i, j, k)
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
+  constexpr const_reference operator()(size_type i, size_type j,
+                                       size_type k) const
+  {
+    return _storage[shape[2] * (i * shape[1] + j) + k];
+  }
+
   /// Access a row in the array
   /// @param[in] i Row index
   /// @return Span of the row data
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr tcb::span<value_type> row(size_type i)
   {
     return tcb::span<value_type>(_storage + i * shape[1], shape[1]);
@@ -247,6 +299,7 @@ public:
   /// Access a row in the array (const version)
   /// @param[in] i Row index
   /// @return Span of the row data
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr tcb::span<const value_type> row(size_type i) const
   {
     return tcb::span<const value_type>(_storage + i * shape[1], shape[1]);
@@ -265,19 +318,30 @@ public:
   /// @warning Use this caution - the data storage may be strided, i.e.
   /// the size of the underlying storage may be greater than
   /// sizeof(T)*(rows * cols)
-  constexpr size_type size() const noexcept { return shape[0] * shape[1]; }
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
+  constexpr size_type size() const noexcept
+  {
+    return shape[0] * shape[1];
+  }
 
   /// Returns the strides of the array
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr std::array<size_type, 2> strides() const noexcept
   {
     return {shape[1] * sizeof(T), sizeof(T)};
   }
 
+  /// Get the rank
+  constexpr std::size_t rank() const noexcept { return N; }
+
   /// The shape of the array
-  std::array<size_type, 2> shape;
+  std::array<size_type, N> shape;
 
 private:
   T* _storage;
 };
+
+template <typename T>
+using span2d = ndspan<T, 2>;
 
 } // namespace dolfinx
