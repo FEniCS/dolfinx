@@ -232,14 +232,17 @@ void fem(py::module& m)
            [](const dolfinx::fem::CoordinateElement& self,
               const py::array_t<double, py::array::c_style>& X,
               const py::array_t<double, py::array::c_style>& cell_geometry) {
-             dolfinx::array2d<double> _X(X.shape()[0], X.shape()[1]),
-                 _cell_geometry(cell_geometry.shape()[0],
-                                cell_geometry.shape()[1]);
-             std::copy_n(X.data(), X.size(), _X.data());
-             std::copy_n(cell_geometry.data(), cell_geometry.size(),
-                         _cell_geometry.data());
-             dolfinx::array2d<double> x(_X.shape[0],
-                                        self.geometric_dimension());
+             std::array X_shape = {static_cast<std::size_t>(X.shape()[0]),
+                                   static_cast<std::size_t>(X.shape()[1])};
+             dolfinx::span2d<const double> _X(X.data(), X_shape);
+
+             std::array geom_shape
+                 = {static_cast<std::size_t>(cell_geometry.shape()[0]),
+                    static_cast<std::size_t>(cell_geometry.shape()[1])};
+             dolfinx::span2d<const double> _cell_geometry(cell_geometry.data(),
+                                                          geom_shape);
+
+             dolfinx::array2d<double> x(X_shape[0], self.geometric_dimension());
              self.push_forward(x, _X, _cell_geometry);
              return as_pyarray2d(std::move(x));
            })

@@ -64,9 +64,9 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
   return _dof_layout;
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::push_forward(array2d<double>& x,
-                                     const array2d<double>& X,
-                                     const array2d<double>& cell_geometry) const
+void CoordinateElement::push_forward(
+    const span2d<double>& x, const span2d<const double>& X,
+    const span2d<const double>& cell_geometry) const
 {
   assert(x.shape[0] == X.shape[0]);
   assert((int)x.shape[1] == this->geometric_dimension());
@@ -79,7 +79,7 @@ void CoordinateElement::push_forward(array2d<double>& x,
   basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[0]);
 
   // x = phi * cell_geometry;
-  std::fill(x.data(), x.data() + x.size(), 0.0);
+  std::fill(const_cast<double*>(x.data()), const_cast<double*>(x.data()) + x.size(), 0.0);
   for (std::size_t i = 0; i < x.shape[0]; ++i)
     for (std::size_t j = 0; j < x.shape[1]; ++j)
       for (std::size_t k = 0; k < cell_geometry.shape[0]; ++k)
