@@ -63,7 +63,8 @@ array2d<double> midpoints(const mesh::Mesh& mesh, int dim,
 ///   (indices local to the process)
 std::vector<std::int32_t> locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker);
+    const std::function<std::vector<bool>(const span2d<const double>&)>&
+        marker);
 
 /// Compute indicies of all mesh entities that are attached to an owned
 /// boundary facet and evaluate to true for the provided geometric
@@ -87,7 +88,8 @@ std::vector<std::int32_t> locate_entities(
 /// process)
 std::vector<std::int32_t> locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker);
+    const std::function<std::vector<bool>(const span2d<const double>&)>&
+        marker);
 
 /// Compute the indices the geometry data for the vertices of the given
 /// mesh entities

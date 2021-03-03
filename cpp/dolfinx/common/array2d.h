@@ -201,7 +201,8 @@ public:
   /// Construct a two dimensional array
   /// @param[in] data  pointer to the array to construct a view for
   /// @param[in] shape The shape the array {rows, cols}
-  span2d(T* data, std::array<size_type, 2> shape) : _storage(data), shape(shape)
+  constexpr span2d(T* data, std::array<size_type, 2> shape)
+      : _storage(data), shape(shape)
   {
     // Do nothing
   }
@@ -209,7 +210,7 @@ public:
   /// Construct a two dimensional span from a two dimensional array
   template <typename Array2d,
             typename = typename std::enable_if<has_shape<Array2d>::value>>
-  span2d(Array2d& x) : shape(x.shape), _storage(x.data())
+  constexpr span2d(Array2d& x) : shape(x.shape), _storage(x.data())
   {
     // Do nothing
   }
