@@ -179,6 +179,24 @@ public:
                                        shape[1]);
   }
 
+  /// Access a row in the array
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
+  constexpr ndspan<value_type, 2> row(size_type i)
+  {
+    return ndspan<value_type, 2>(
+        std::next(_storage.data(), i * shape[2] * shape[1]),
+        {shape[1], shape[2]});
+  }
+
+  /// Access a row in the array (const version)
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
+  constexpr ndspan<const value_type, 2> row(size_type i) const
+  {
+    return ndspan<const value_type, 2>(
+        std::next(_storage.data(), i * shape[2] * shape[1]),
+        {shape[1], shape[2]});
+  }
+
   /// Get pointer to the first element of the underlying storage
   /// @warning Use this with caution - the data storage may be strided
   constexpr value_type* data() noexcept { return _storage.data(); }
@@ -321,7 +339,8 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr size_type size() const noexcept
   {
-    return shape[0] * shape[1];
+    return std::accumulate(shape.begin(), shape.end(), 1,
+                           std::multiplies<size_type>());
   }
 
   /// Returns the strides of the array
