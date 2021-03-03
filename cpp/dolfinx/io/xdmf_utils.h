@@ -96,7 +96,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// will receive (local) cell-vertex connectivity for this triangle.
 std::pair<array2d<std::int32_t>, std::vector<std::int32_t>>
 extract_local_entities(const mesh::Mesh& mesh, int entity_dim,
-                       const array2d<std::int64_t>& entities,
+                       const span2d<const std::int64_t>& entities,
                        const tcb::span<const std::int32_t>& values);
 
 /// TODO: Document
