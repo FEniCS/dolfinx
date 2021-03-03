@@ -79,17 +79,25 @@ public:
 
   /// Construct a two dimensional array from a two dimensional span
   /// @param[in] s The span
-  constexpr array2d(const span2d<T>& s)
+  template <typename Span2d>
+  constexpr array2d(Span2d& s)
       : shape(s.shape), _storage(s.data(), s.data() + s.shape[0] * s.shape[1])
   {
     // Do nothing
   }
+  // constexpr array2d(const span2d<T>& s)
+  //     : shape(s.shape), _storage(s.data(), s.data() + s.shape[0] *
+  //     s.shape[1])
+  // {
+  //   // Do nothing
+  // }
 
-  constexpr array2d(const span2d<const T>& s)
-      : shape(s.shape), _storage(s.data(), s.data() + s.shape[0] * s.shape[1])
-  {
-    // Do nothing
-  }
+  // constexpr array2d(const span2d<const T>& s)
+  //     : shape(s.shape), _storage(s.data(), s.data() + s.shape[0] *
+  //     s.shape[1])
+  // {
+  //   // Do nothing
+  // }
 
   /// Copy constructor
   array2d(const array2d& x) = default;
@@ -229,7 +237,7 @@ public:
   /// @param[in] j Column index
   /// @return Reference to the (i, j) item
   /// @note No bounds checking is performed
-  constexpr const_reference operator()(size_type i, size_type j) const
+  constexpr reference operator()(size_type i, size_type j) const
   {
     return _storage[i * shape[1] + j];
   }
