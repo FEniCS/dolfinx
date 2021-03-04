@@ -107,7 +107,7 @@ public:
                      std::multiplies<size_type>());
   }
 
-  /// @fixme Need to handle strides
+  /// @todo Need to handle strides
   /// Construct an n-dimensional array from an n-dimensional span
   /// @param[in] s The span
   template <typename Span, typename = std::enable_if_t<has_shape<Span>::value>>
@@ -300,11 +300,12 @@ public:
   /// Construct an n-dimensional array
   /// @param[in] data  pointer to the array to construct a view for
   /// @param[in] shape The shape the array {rows, cols}
+  /// @param[in] stride The array stides (by entries, not bytes)
   constexpr ndspan(T* data, std::array<size_type, N> shape,
                    std::array<size_type, N> stride)
       : _storage(data), shape(shape), stride(stride)
   {
-    // Do nothing
+    assert(stride.back() == 1);
   }
 
   /// Construct an n-dimensional span from an n-dimensional array
