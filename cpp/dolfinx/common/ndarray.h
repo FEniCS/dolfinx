@@ -63,7 +63,7 @@ public:
                      std::multiplies<size_type>());
   }
 
-  /// Construct an n-dimensional array
+  /// Construct an 2d-dimensional array
   /// @param[in] rows The number of rows
   /// @param[in] cols The number of columns
   /// @param[in] value Initial value for all entries
@@ -90,7 +90,8 @@ public:
                      std::multiplies<size_type>());
   }
 
-  /// @todo Decide what to do here
+  /// @todo Decide what to do here, perhaps remove and add assignment
+  /// operator
   /// Construct an n-dimensional array using nested initializer lists
   /// @param[in] list The nested initializer list
   template <typename = std::enable_if_t<N == 2>>
@@ -106,15 +107,15 @@ public:
                      std::multiplies<size_type>());
   }
 
+  /// @fixme Need to handle strides
   /// Construct an n-dimensional array from an n-dimensional span
   /// @param[in] s The span
   template <typename Span, typename = std::enable_if_t<has_shape<Span>::value>>
   constexpr ndarray(Span& s)
-      : shape(s.shape), _storage(s.data(), s.data() + s.size())
+      : shape(s.shape), stride(s.stride),
+        _storage(s.data(), s.data() + s.size())
   {
-    stride.back() = 1;
-    std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
-                     std::multiplies<size_type>());
+    // Do nothing
   }
 
   /// Copy constructor
@@ -195,7 +196,7 @@ public:
   constexpr ndspan<value_type, 2> row(size_type i)
   {
     return ndspan<value_type, 2>(std::next(_storage.data(), i * stride[0]),
-                                 {shape[1], shape[2]});
+                                 {shape[1], shape[2]}, {stride[1], stride[2]});
   }
 
   /// Access a row in the array (const version)
@@ -203,7 +204,8 @@ public:
   constexpr ndspan<const value_type, 2> row(size_type i) const
   {
     return ndspan<const value_type, 2>(
-        std::next(_storage.data(), i * stride[0]), {shape[1], shape[2]});
+        std::next(_storage.data(), i * stride[0]), {shape[1], shape[2]},
+        {stride[1], stride[2]});
   }
 
   /// Access a block in the array
