@@ -134,7 +134,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr reference operator()(size_type i, size_type j)
   {
-    return _storage[i * stride[1] + j];
+    return _storage[i * stride[0] + j];
   }
 
   /// Return a reference to the element at specified location (i, j)
@@ -146,14 +146,14 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr const_reference operator()(size_type i, size_type j) const
   {
-    return _storage[i * stride[1] + j];
+    return _storage[i * stride[0] + j];
   }
 
   /// Return a reference to the element at specified location (i, j, k)
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
   constexpr reference operator()(size_type i, size_type j, size_type k)
   {
-    return _storage[i * stride[2] * j * stride[1] + k];
+    return _storage[i * stride[0] * j * stride[1] + k];
   }
 
   /// Return a reference to the element at specified location (i, j, k)
@@ -161,7 +161,7 @@ public:
   constexpr const_reference operator()(size_type i, size_type j,
                                        size_type k) const
   {
-    return _storage[i * stride[2] * j * stride[1] + k];
+    return _storage[i * stride[0] * j * stride[1] + k];
   }
 
   /// Access a row in the array
@@ -181,16 +181,15 @@ public:
   constexpr tcb::span<const value_type> row(size_type i) const
   {
     return tcb::span<const value_type>(
-        std::next(_storage.data(), i * stride[1]), shape[1]);
+        std::next(_storage.data(), i * stride[0]), shape[1]);
   }
 
   /// Access a row in the array
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
   constexpr ndspan<value_type, 2> row(size_type i)
   {
-    return ndspan<value_type, 2>(
-        std::next(_storage.data(), i * shape[2] * shape[1]),
-        {shape[1], shape[2]});
+    return ndspan<value_type, 2>(std::next(_storage.data(), i * stride[0]),
+                                 {shape[1], shape[2]});
   }
 
   /// Access a row in the array (const version)
@@ -198,8 +197,7 @@ public:
   constexpr ndspan<const value_type, 2> row(size_type i) const
   {
     return ndspan<const value_type, 2>(
-        std::next(_storage.data(), i * shape[2] * shape[1]),
-        {shape[1], shape[2]});
+        std::next(_storage.data(), i * stride[0]), {shape[1], shape[2]});
   }
 
   /// Get pointer to the first element of the underlying storage
@@ -269,7 +267,8 @@ public:
   constexpr ndspan(T* data, std::array<size_type, N> shape)
       : _storage(data), shape(shape)
   {
-    // Do nothing
+    std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
+                     std::multiplies<size_type>());
   }
 
   /// Construct an n-dimensional span from an n-dimensional array
@@ -277,7 +276,8 @@ public:
             typename = std::enable_if_t<has_shape<Array>::value>>
   constexpr ndspan(Array& x) : shape(x.shape), _storage(x.data())
   {
-    // Do nothing
+    std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
+                     std::multiplies<size_type>());
   }
 
   /// Return a reference to the element at specified location (i, j)
@@ -288,7 +288,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr reference operator()(size_type i, size_type j)
   {
-    return _storage[i * shape[1] + j];
+    return _storage[i * stride[0] + j];
   }
 
   /// Return a reference to the element at specified location (i, j)
@@ -300,14 +300,14 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr reference operator()(size_type i, size_type j) const
   {
-    return _storage[i * shape[1] + j];
+    return _storage[i * stride[0] + j];
   }
 
   /// Return a reference to the element at specified location (i, j, k)
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
   constexpr reference operator()(size_type i, size_type j, size_type k)
   {
-    return _storage[shape[2] * (i * shape[1] + j) + k];
+    return _storage[i * stride[0] + j * stride[1] + k];
   }
 
   /// Return a reference to the element at specified location (i, j, k)
@@ -315,7 +315,7 @@ public:
   constexpr const_reference operator()(size_type i, size_type j,
                                        size_type k) const
   {
-    return _storage[shape[2] * (i * shape[1] + j) + k];
+    return _storage[i * stride[0] + j * stride[1] + k];
   }
 
   /// Access a row in the array
@@ -324,7 +324,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr tcb::span<value_type> row(size_type i)
   {
-    return tcb::span<value_type>(_storage + i * shape[1], shape[1]);
+    return tcb::span<value_type>(_storage + i * stride[0], shape[1]);
   }
 
   /// Access a row in the array (const version)
@@ -333,14 +333,14 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr tcb::span<const value_type> row(size_type i) const
   {
-    return tcb::span<const value_type>(_storage + i * shape[1], shape[1]);
+    return tcb::span<const value_type>(_storage + i * stride[0], shape[1]);
   }
 
   /// Access a row in the array
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
   constexpr ndspan<value_type, 2> row(size_type i)
   {
-    return ndspan<value_type, 2>(_storage + i * shape[2] * shape[1],
+    return ndspan<value_type, 2>(_storage + i * stride[0],
                                  {shape[1], shape[2]});
   }
 
@@ -348,7 +348,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
   constexpr ndspan<const value_type, 2> row(size_type i) const
   {
-    return ndspan<const value_type, 2>(_storage + i * shape[2] * shape[1],
+    return ndspan<const value_type, 2>(_storage + i * stride[0],
                                        {shape[1], shape[2]});
   }
 
@@ -381,6 +381,10 @@ public:
 
   /// The shape of the span
   std::array<size_type, N> shape;
+
+  /// Span strides. strides[i] is the numbers of values to needed to
+  /// advance one values in the ith dimension.
+  std::array<size_type, N> stride;
 
   /// The rank of the span
   static constexpr size_type rank = size_type(N);
