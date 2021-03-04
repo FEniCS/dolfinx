@@ -31,7 +31,6 @@ void test_array2d()
     std::iota(row.begin(), row.end(), 0);
   }
 
-  bool all_equal = true;
   for (std::size_t i = 0; i < arr.shape[0]; i++)
     for (std::size_t j = 0; j < arr.shape[1]; j++)
       REQUIRE(arr(i, j) == j);

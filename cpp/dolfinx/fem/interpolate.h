@@ -217,7 +217,6 @@ void interpolate(Function<T>& u,
   // points.
 
   std::variant<std::vector<T>, array2d<T>> values_v = f(x);
-  std::array<std::size_t, 2> shape = {element->value_size(), x.shape[1]};
   span2d<T> values(nullptr, {0, 0});
   if (std::holds_alternative<array2d<T>>(values_v))
   {
@@ -231,7 +230,8 @@ void interpolate(Function<T>& u,
   {
     if (element->value_size() != 1)
       throw std::runtime_error("Interpolation data has the wrong shape.");
-    values = span2d<T>(std::get<0>(values_v).data(), shape);
+    values = span2d<T>(std::get<0>(values_v).data(),
+                       {element->value_size(), x.shape[1]});
   }
 
   if (values.shape[1] != cells.size() * X.shape[0])

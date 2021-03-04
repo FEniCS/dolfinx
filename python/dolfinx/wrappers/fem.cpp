@@ -574,7 +574,7 @@ void fem(py::module& m)
               py::array_t v = f(_x);
               if (v.ndim() > 1)
               {
-                // Should use span 2d here?
+                // FIXME: Should we use span 2d here?
                 dolfinx::array2d<PetscScalar> vals(v.shape()[0], v.shape()[1]);
                 std::copy_n(v.data(), v.size(), vals.data());
                 return vals;

@@ -47,7 +47,7 @@ public:
   /// tdim cols
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_size size of expression evaluated at single point
-  template <typename Span>
+  template <typename Span, typename = std::enable_if_t<has_shape<Span>::value>>
   Expression(
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
