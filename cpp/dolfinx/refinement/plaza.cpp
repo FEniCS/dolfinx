@@ -308,7 +308,7 @@ face_long_edge(const mesh::Mesh& mesh)
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
   std::vector<double> edge_length(map_e->size_local() + map_e->num_ghosts());
-  const array2d<double>& x = mesh.geometry().x();
+  const ndarray<double, 2>& x = mesh.geometry().x();
   for (std::size_t e = 0; e < edge_length.size(); ++e)
   {
     // Get first attached cell
@@ -383,7 +383,7 @@ face_long_edge(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 // Convenient interface for both uniform and marker refinement
-std::tuple<graph::AdjacencyList<std::int64_t>, array2d<double>,
+std::tuple<graph::AdjacencyList<std::int64_t>, ndarray<double, 2>,
            std::vector<std::int32_t>>
 compute_refinement(
     const MPI_Comm& neighbor_comm, const std::vector<bool>& marked_edges,
@@ -519,7 +519,7 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
-    array2d<double> coords(new_vertex_coordinates);
+    ndarray<double, 2> coords(new_vertex_coordinates);
     return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
                              coords, mesh::GhostMode::none);
   }
@@ -551,7 +551,7 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
-    array2d<double> coords(new_vertex_coordinates);
+    ndarray<double, 2> coords(new_vertex_coordinates);
     return mesh::create_mesh(mesh.mpi_comm(), cell_adj, mesh.geometry().cmap(),
                              coords, mesh::GhostMode::none);
   }
@@ -574,7 +574,7 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
                                redistribute, ghost_mode);
 }
 //------------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int64_t>, array2d<double>,
+std::tuple<graph::AdjacencyList<std::int64_t>, ndarray<double, 2>,
            std::vector<std::int32_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh)
 {
@@ -604,7 +604,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh)
           std::move(parent_cell)};
 }
 //------------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int64_t>, array2d<double>,
+std::tuple<graph::AdjacencyList<std::int64_t>, ndarray<double, 2>,
            std::vector<std::int32_t>>
 plaza::compute_refinement_data(
     const mesh::Mesh& mesh,

@@ -10,7 +10,7 @@
 #include <Eigen/Core>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -41,13 +41,13 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   const int tdim = mesh.topology().dim();
-  const array2d<double>& geom_dofs = mesh.geometry().x();
+  const ndarray<double, 2>& geom_dofs = mesh.geometry().x();
 
   mesh.topology_mutable().create_connectivity(dim, tdim);
 
   // FIXME: return of small dynamic array is expensive
   const std::array<std::int32_t, 1> entity = {index};
-  array2d<std::int32_t> vertex_indices
+  ndarray<std::int32_t, 2> vertex_indices
       = mesh::entities_to_geometry(mesh, dim, entity, false);
   tcb::span<const int> entity_vertex_indices = vertex_indices.row(0);
 

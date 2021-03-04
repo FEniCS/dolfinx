@@ -7,7 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
@@ -44,11 +44,11 @@ std::vector<double> h(const Mesh& mesh,
                       const tcb::span<const std::int32_t>& entities, int dim);
 
 /// Compute normal to given cell (viewed as embedded in 3D)
-array2d<double> cell_normals(const Mesh& mesh, int dim,
+ndarray<double, 2> cell_normals(const Mesh& mesh, int dim,
                              const tcb::span<const std::int32_t>& entities);
 
 /// Compute midpoints or mesh entities of a given dimension
-array2d<double> midpoints(const mesh::Mesh& mesh, int dim,
+ndarray<double, 2> midpoints(const mesh::Mesh& mesh, int dim,
                           const tcb::span<const std::int32_t>& entities);
 
 /// Compute indicies of all mesh entities that evaluate to true for the
@@ -102,7 +102,7 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// @return Indices in the geometry array for the mesh entity vertices, i.e.
 /// indices(i, j) is the position in the geometry array of the j-th vertex of
 /// the entity entity_list[i].
-array2d<std::int32_t>
+ndarray<std::int32_t, 2>
 entities_to_geometry(const mesh::Mesh& mesh, int dim,
                      const tcb::span<const std::int32_t>& entity_list,
                      bool orient);

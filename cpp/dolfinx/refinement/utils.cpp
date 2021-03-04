@@ -50,7 +50,7 @@ std::int64_t local_to_global(std::int32_t local_index,
 // @param Mesh
 // @param local_edge_to_new_vertex
 // @return array of points
-array2d<double> create_new_geometry(
+ndarray<double, 2> create_new_geometry(
     const mesh::Mesh& mesh,
     const std::map<std::int32_t, std::int64_t>& local_edge_to_new_vertex)
 {
@@ -79,7 +79,7 @@ array2d<double> create_new_geometry(
   }
 
   // Copy over existing mesh vertices
-  const array2d<double>& x_g = mesh.geometry().x();
+  const ndarray<double, 2>& x_g = mesh.geometry().x();
 
   const std::int32_t num_vertices = map_v->size_local();
   const std::int32_t num_new_vertices = local_edge_to_new_vertex.size();
@@ -101,7 +101,7 @@ array2d<double> create_new_geometry(
   new_vertex_coordinates.bottomRows(num_new_vertices) = midpoints_eigen;
 
   const int gdim = mesh.geometry().dim();
-  array2d<double> x(new_vertex_coordinates.rows(), gdim);
+  ndarray<double, 2> x(new_vertex_coordinates.rows(), gdim);
   for (std::size_t i = 0; i < x.shape[0]; ++i)
     for (std::size_t j = 0; j < x.shape[1]; ++j)
       x(i, j) = new_vertex_coordinates(i, j);
@@ -191,7 +191,7 @@ void refinement::update_logical_edgefunction(
   }
 }
 //-----------------------------------------------------------------------------
-std::pair<std::map<std::int32_t, std::int64_t>, array2d<double>>
+std::pair<std::map<std::int32_t, std::int64_t>, ndarray<double, 2>>
 refinement::create_new_vertices(
     const MPI_Comm& neighbor_comm,
     const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
@@ -222,7 +222,7 @@ refinement::create_new_vertices(
     e.second += global_offset;
 
   // Create actual points
-  array2d<double> new_vertex_coordinates
+  ndarray<double, 2> new_vertex_coordinates
       = create_new_geometry(mesh, local_edge_to_new_vertex);
 
   // If they are shared, then the new global vertex index needs to be
@@ -315,7 +315,7 @@ refinement::partition(const mesh::Mesh& old_mesh,
 
   if (redistribute)
   {
-    array2d<double> new_coords(new_vertex_coordinates);
+    ndarray<double, 2> new_coords(new_vertex_coordinates);
     return mesh::create_mesh(old_mesh.mpi_comm(), cell_topology,
                              old_mesh.geometry().cmap(), new_coords, gm);
   }

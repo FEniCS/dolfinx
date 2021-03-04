@@ -312,7 +312,7 @@ void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
   fp.precision(16);
 
   // Get function values at vertices
-  const array2d<Scalar> values = u.compute_point_values();
+  const ndarray<Scalar, 2> values = u.compute_point_values();
 
   if (rank == 0)
   {
@@ -352,7 +352,7 @@ void write_point_data(const fem::Function<Scalar>& u, const mesh::Mesh& mesh,
   ss << std::scientific;
   ss << std::setprecision(16);
 
-  const array2d<double>& points = mesh.geometry().x();
+  const ndarray<double, 2>& points = mesh.geometry().x();
 
   for (std::size_t i = 0; i < points.shape[0]; ++i)
   {

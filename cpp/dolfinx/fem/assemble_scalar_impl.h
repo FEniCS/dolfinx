@@ -79,7 +79,7 @@ T assemble_scalar(const fem::Form<T>& M)
   }
 
   // Prepare coefficients
-  const array2d<T> coeffs = pack_coefficients(M);
+  const ndarray<T, 2> coeffs = pack_coefficients(M);
 
   const bool needs_permutation_data = M.needs_permutation_data();
   if (needs_permutation_data)
@@ -151,7 +151,7 @@ T assemble_cells(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = geometry.x();
+  const ndarray<double, 2>& x_g = geometry.x();
 
   // Create data structures used in assembly
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
@@ -193,7 +193,7 @@ T assemble_exterior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const ndarray<double, 2>& x_g = mesh.geometry().x();
 
   // Creat data structures used in assembly
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
@@ -252,7 +252,7 @@ T assemble_interior_facets(
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh.geometry().x();
+  const ndarray<double, 2>& x_g = mesh.geometry().x();
 
   // Creat data structures used in assembly
   std::vector<double> coordinate_dofs(2 * num_dofs_g * gdim);

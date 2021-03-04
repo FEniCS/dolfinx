@@ -111,7 +111,7 @@ public:
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return (Cell type, degree), and cells topology (global node indexing)
-  array2d<std::int64_t> read_topology_data(const std::string name,
+  ndarray<std::int64_t, 2> read_topology_data(const std::string name,
                                            const std::string xpath
                                            = "/Xdmf/Domain") const;
 
@@ -119,7 +119,7 @@ public:
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return points on each process
-  array2d<double> read_geometry_data(const std::string name,
+  ndarray<double, 2> read_geometry_data(const std::string name,
                                      const std::string xpath
                                      = "/Xdmf/Domain") const;
 

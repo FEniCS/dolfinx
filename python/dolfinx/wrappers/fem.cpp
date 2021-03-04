@@ -242,7 +242,7 @@ void fem(py::module& m)
              dolfinx::span2d<const double> _cell_geometry(cell_geometry.data(),
                                                           geom_shape);
 
-             dolfinx::array2d<double> x(X_shape[0], self.geometric_dimension());
+             dolfinx::ndarray<double, 2> x(X_shape[0], self.geometric_dimension());
              self.push_forward(x, _X, _cell_geometry);
              return as_pyarray2d(std::move(x));
            })
@@ -567,15 +567,15 @@ void fem(py::module& m)
           [](dolfinx::fem::Function<PetscScalar>& self,
              const std::function<py::array_t<PetscScalar>(
                  const py::array_t<double>&)>& f) {
-            auto _f = [&f](const dolfinx::array2d<double>& x)
+            auto _f = [&f](const dolfinx::ndarray<double, 2>& x)
                 -> std::variant<std::vector<PetscScalar>,
-                                dolfinx::array2d<PetscScalar>> {
+                                dolfinx::ndarray<PetscScalar, 2>> {
               py::array_t _x(x.shape, x.strides(), x.data(), py::none());
               py::array_t v = f(_x);
               if (v.ndim() > 1)
               {
                 // FIXME: Should we use span 2d here?
-                dolfinx::array2d<PetscScalar> vals(v.shape()[0], v.shape()[1]);
+                dolfinx::ndarray<PetscScalar, 2> vals(v.shape()[0], v.shape()[1]);
                 std::copy_n(v.data(), v.size(), vals.data());
                 return vals;
               }
@@ -613,7 +613,7 @@ void fem(py::module& m)
                 = cell_map->size_local() + cell_map->num_ghosts();
             std::vector<std::int32_t> cells(num_cells, 0);
             std::iota(cells.begin(), cells.end(), 0);
-            const dolfinx::array2d<double> x
+            const dolfinx::ndarray<double, 2> x
                 = dolfinx::fem::interpolation_coords(
                     *self.function_space()->element(),
                     *self.function_space()->mesh(), cells);
@@ -718,7 +718,7 @@ void fem(py::module& m)
            [](const dolfinx::fem::Expression<PetscScalar>& self,
               const py::array_t<std::int32_t, py::array::c_style>& active_cells,
               py::array_t<PetscScalar> values) {
-             dolfinx::array2d<PetscScalar> _values(active_cells.shape()[0],
+             dolfinx::ndarray<PetscScalar, 2> _values(active_cells.shape()[0],
                                                    self.num_points()
                                                        * self.value_size());
              self.eval(tcb::span(active_cells.data(), active_cells.size()),

@@ -7,7 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
@@ -50,7 +50,7 @@ public:
     // Make all geometry 3D
     if (_dim != 3)
     {
-      array2d<double> coords(_x.shape[0], 3, 0.0);
+      ndarray<double, 2> coords(_x.shape[0], 3, 0.0);
       for (std::size_t i = 0; i < _x.shape[0]; ++i)
         for (std::size_t j = 0; j < _x.shape[1]; ++j)
           coords(i, j) = _x(i, j);
@@ -83,10 +83,10 @@ public:
   std::shared_ptr<const common::IndexMap> index_map() const;
 
   /// Geometry degrees-of-freedom
-  array2d<double>& x();
+  ndarray<double, 2>& x();
 
   /// Geometry degrees-of-freedom
-  const array2d<double>& x() const;
+  const ndarray<double, 2>& x() const;
 
   /// The element that describes the geometry map
   /// @return The coordinate/geometry element
@@ -109,7 +109,7 @@ private:
   fem::CoordinateElement _cmap;
 
   // Coordinates for all points stored as a contiguous array
-  array2d<double> _x;
+  ndarray<double, 2> _x;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -33,7 +33,7 @@ void eval(const span2d<T>& values, const fem::Expression<T>& e,
   assert(mesh);
 
   // Prepare coefficients
-  const array2d<T> coeffs = dolfinx::fem::pack_coefficients(e);
+  const ndarray<T, 2> coeffs = dolfinx::fem::pack_coefficients(e);
 
   // Prepare constants
   const std::vector<T> constant_values = dolfinx::fem::pack_constants(e);
@@ -52,11 +52,11 @@ void eval(const span2d<T>& values, const fem::Expression<T>& e,
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh->geometry().x();
+  const ndarray<double, 2>& x_g = mesh->geometry().x();
 
   // Create data structures used in evaluation
   const int gdim = mesh->geometry().dim();
-  array2d<double> coordinate_dofs(num_dofs_g, gdim);
+  ndarray<double, 2> coordinate_dofs(num_dofs_g, gdim);
 
   // Iterate over cells and 'assemble' into values
   std::vector<T> values_e(e.num_points() * e.value_size(), 0);

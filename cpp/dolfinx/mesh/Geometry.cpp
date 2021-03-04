@@ -28,9 +28,9 @@ std::shared_ptr<const common::IndexMap> Geometry::index_map() const
   return _index_map;
 }
 //-----------------------------------------------------------------------------
-array2d<double>& Geometry::x() { return _x; }
+ndarray<double, 2>& Geometry::x() { return _x; }
 //-----------------------------------------------------------------------------
-const array2d<double>& Geometry::x() const { return _x; }
+const ndarray<double, 2>& Geometry::x() const { return _x; }
 //-----------------------------------------------------------------------------
 const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
 //-----------------------------------------------------------------------------
@@ -75,7 +75,7 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
 
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
-  array2d<double> coords
+  ndarray<double, 2> coords
       = graph::build::distribute_data<double>(comm, indices, x);
 
   // Compute local-to-global map from local indices in dofmap to the
@@ -89,7 +89,7 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
 
   // Build coordinate dof array
-  array2d<double> xg(coords.shape[0], coords.shape[1]);
+  ndarray<double, 2> xg(coords.shape[0], coords.shape[1]);
 
   // Allocate space for input global indices
   std::vector<std::int64_t> igi(indices.size());

@@ -10,7 +10,7 @@
 #include "interpolate.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>
@@ -201,7 +201,7 @@ public:
 
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
-  void interpolate(const std::function<std::variant<std::vector<T>, array2d<T>>(
+  void interpolate(const std::function<std::variant<std::vector<T>, ndarray<T, 2>>(
                        const span2d<const double>&)>& f)
   {
     assert(_function_space);
@@ -213,7 +213,7 @@ public:
     const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    const array2d<double> x = fem::interpolation_coords(
+    const ndarray<double, 2> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
     fem::interpolate(*this, f, x, cells);
   }
@@ -259,7 +259,7 @@ public:
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const array2d<double>& x_g = mesh->geometry().x();
+    const ndarray<double, 2>& x_g = mesh->geometry().x();
 
     // Get coordinate map
     const fem::CoordinateElement& cmap = mesh->geometry().cmap();
@@ -288,7 +288,7 @@ public:
     std::vector<double> J(gdim * tdim);
     std::array<double, 1> detJ;
     std::vector<double> K(tdim * gdim);
-    array2d<double> X(1, tdim);
+    ndarray<double, 2> X(1, tdim);
 
     // Prepare basis function data structures
     std::vector<double> basis_reference_values(space_dimension
@@ -306,9 +306,9 @@ public:
     mesh->topology_mutable().create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
         = mesh->topology().get_cell_permutation_info();
-    array2d<double> coordinate_dofs(num_dofs_g, gdim);
+    ndarray<double, 2> coordinate_dofs(num_dofs_g, gdim);
 
-    array2d<double> xp(1, gdim);
+    ndarray<double, 2> xp(1, gdim);
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
@@ -369,7 +369,7 @@ public:
 
   /// Compute values at all mesh 'nodes'
   /// @return The values at all geometric points
-  array2d<T> compute_point_values() const
+  ndarray<T, 2> compute_point_values() const
   {
     assert(_function_space);
     std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
@@ -380,7 +380,7 @@ public:
     const int value_size_loc = _function_space->element()->value_size();
 
     // Resize Array for holding point values
-    array2d<T> point_values(mesh->geometry().x().shape[0], value_size_loc);
+    ndarray<T, 2> point_values(mesh->geometry().x().shape[0], value_size_loc);
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -388,7 +388,7 @@ public:
 
     // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = x_dofmap.num_links(0);
-    const array2d<double>& x_g = mesh->geometry().x();
+    const ndarray<double, 2>& x_g = mesh->geometry().x();
 
     // Interpolate point values on each cell (using last computed value if
     // not continuous, e.g. discontinuous Galerkin methods)

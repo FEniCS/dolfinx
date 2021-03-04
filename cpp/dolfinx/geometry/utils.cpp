@@ -309,18 +309,18 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 {
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  const array2d<double>& geom_dofs = geometry.x();
+  const ndarray<double, 2>& geom_dofs = geometry.x();
   assert(geom_dofs.shape[1] == 3);
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
-  array2d<double> _p(1, 3);
+  ndarray<double, 2> _p(1, 3);
   std::copy(p.begin(), p.end(), _p.data());
 
   if (dim == tdim)
   {
     auto dofs = x_dofmap.links(index);
-    array2d<double> nodes(dofs.size(), 3);
+    ndarray<double, 2> nodes(dofs.size(), 3);
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (std::size_t j = 0; j < 3; ++j)
         nodes(i, j) = geom_dofs(dofs[i], j);
@@ -351,7 +351,7 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
     const std::vector<int> entity_dofs
         = geometry.cmap().dof_layout().entity_closure_dofs(dim,
                                                            local_cell_entity);
-    array2d<double> nodes(entity_dofs.size(), 3);
+    ndarray<double, 2> nodes(entity_dofs.size(), 3);
     for (std::size_t i = 0; i < entity_dofs.size(); i++)
       for (std::size_t j = 0; j < 3; ++j)
         nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);

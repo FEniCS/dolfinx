@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/fem/evaluate.h>
 #include <functional>
 #include <utility>
@@ -122,7 +122,7 @@ public:
 
   /// Get evaluation points on reference cell
   /// @return Evaluation points
-  const array2d<double>& x() const { return _x; }
+  const ndarray<double, 2>& x() const { return _x; }
 
   /// Get value size
   /// @return value_size
@@ -146,7 +146,7 @@ private:
   std::function<void(T*, const T*, const T*, const double*)> _fn;
 
   // Evaluation points on reference cell
-  array2d<double> _x;
+  ndarray<double, 2> _x;
 
   // The mesh.
   std::shared_ptr<const mesh::Mesh> _mesh;

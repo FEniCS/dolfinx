@@ -66,7 +66,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   // Get geometry dofmap and dofs
   const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
-  const array2d<double>& geom_dofs = geometry.x();
+  const ndarray<double, 2>& geom_dofs = geometry.x();
   std::vector<double> h_cells(entities.size(), 0);
   assert(num_vertices <= 8);
   std::array<Eigen::Vector3d, 8> points;
@@ -89,7 +89,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   return h_cells;
 }
 //-----------------------------------------------------------------------------
-array2d<double>
+ndarray<double, 2>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                    const tcb::span<const std::int32_t>& entities)
 {
@@ -107,11 +107,11 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   bool orient = false;
   if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
     orient = true;
-  array2d<std::int32_t> geometry_entities
+  ndarray<std::int32_t, 2> geometry_entities
       = entities_to_geometry(mesh, dim, entities, orient);
 
   const std::int32_t num_entities = entities.size();
-  array2d<double> _n(num_entities, 3);
+  ndarray<double, 2> _n(num_entities, 3);
 
   Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> n(
       _n.data(), _n.shape[0], _n.shape[1]);
@@ -169,10 +169,10 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
         "cell_normal not supported for this cell type.");
   }
 
-  return array2d<double>(0, 3);
+  return ndarray<double, 2>(0, 3);
 }
 //-----------------------------------------------------------------------------
-array2d<double> mesh::midpoints(const mesh::Mesh& mesh, int dim,
+ndarray<double, 2> mesh::midpoints(const mesh::Mesh& mesh, int dim,
                                 const tcb::span<const std::int32_t>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
@@ -184,10 +184,10 @@ array2d<double> mesh::midpoints(const mesh::Mesh& mesh, int dim,
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
-  array2d<std::int32_t> entity_to_geometry
+  ndarray<std::int32_t, 2> entity_to_geometry
       = entities_to_geometry(mesh, dim, entities, false);
 
-  array2d<double> midpoints(entities.size(), 3);
+  ndarray<double, 2> midpoints(entities.size(), 3);
   Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> x_mid(
       midpoints.data(), entities.size(), 3);
 
@@ -232,8 +232,8 @@ std::vector<std::int32_t> mesh::locate_entities(
   }
 
   // Pack coordinates of vertices
-  const array2d<double>& x_nodes = mesh.geometry().x();
-  array2d<double> x_vertices(3, vertex_to_node.size());
+  const ndarray<double, 2>& x_nodes = mesh.geometry().x();
+  ndarray<double, 2> x_vertices(3, vertex_to_node.size());
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
     for (std::size_t j = 0; j < 3; ++j)
       x_vertices(j, i) = x_nodes(vertex_to_node[i], j);
@@ -327,7 +327,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   assert(v_to_c);
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
-  array2d<double> x_vertices(3, vertices.size());
+  ndarray<double, 2> x_vertices(3, vertices.size());
   std::vector<std::int32_t> vertex_to_pos(v_to_c->num_nodes(), -1);
   for (std::size_t i = 0; i < vertices.size(); ++i)
   {
@@ -380,7 +380,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   return entities;
 }
 //-----------------------------------------------------------------------------
-array2d<std::int32_t>
+ndarray<std::int32_t, 2>
 mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
                            const tcb::span<const std::int32_t>& entity_list,
                            bool orient)
@@ -388,7 +388,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
   dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
   int num_entity_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
-  array2d<std::int32_t> entity_geometry(entity_list.size(),
+  ndarray<std::int32_t, 2> entity_geometry(entity_list.size(),
                                         num_entity_vertices);
 
   if (orient
@@ -396,7 +396,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const mesh::Geometry& geometry = mesh.geometry();
-  const array2d<double>& geom_dofs = geometry.x();
+  const ndarray<double, 2>& geom_dofs = geometry.x();
   const mesh::Topology& topology = mesh.topology();
 
   const int tdim = topology.dim();

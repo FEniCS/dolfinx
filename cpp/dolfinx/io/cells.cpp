@@ -349,11 +349,11 @@ io::cells::transpose(const std::vector<std::uint8_t>& map)
   return transpose;
 }
 //-----------------------------------------------------------------------------
-array2d<std::int64_t>
+ndarray<std::int64_t, 2>
 io::cells::compute_permutation(const span2d<const std::int64_t>& cells,
                                const std::vector<std::uint8_t>& p)
 {
-  array2d<std::int64_t> cells_new(cells.shape);
+  ndarray<std::int64_t, 2> cells_new(cells.shape);
   for (std::size_t c = 0; c < cells_new.shape[0]; ++c)
   {
     auto cell = cells.row(c);

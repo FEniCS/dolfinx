@@ -7,7 +7,7 @@
 #include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/VTKFile.h>
@@ -48,7 +48,7 @@ void io(py::module& m)
                               static_cast<std::size_t>(entities.shape()[1])};
           const dolfinx::span2d<const std::int64_t> _entities(entities.data(),
                                                               shape);
-          std::pair<dolfinx::array2d<std::int32_t>, std::vector<std::int32_t>> e
+          std::pair<dolfinx::ndarray<std::int32_t, 2>, std::vector<std::int32_t>> e
               = dolfinx::io::xdmf_utils::extract_local_entities(
                   mesh, entity_dim, _entities,
                   tcb::span(values.data(), values.size()));

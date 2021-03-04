@@ -91,12 +91,12 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
   }
 }
 //-----------------------------------------------------------------------------
-dolfinx::array2d<int> mesh::get_entity_vertices(mesh::CellType type, int dim)
+dolfinx::ndarray<int, 2> mesh::get_entity_vertices(mesh::CellType type, int dim)
 {
   const std::vector<std::vector<int>> topology
       = basix::topology(to_string(type).c_str())[dim];
 
-  dolfinx::array2d<int> e(topology.size(), topology[0].size());
+  dolfinx::ndarray<int, 2> e(topology.size(), topology[0].size());
   for (std::size_t i = 0; i < topology.size(); ++i)
     for (std::size_t j = 0; j < topology[0].size(); ++j)
       e(i, j) = topology[i][j];
@@ -104,7 +104,7 @@ dolfinx::array2d<int> mesh::get_entity_vertices(mesh::CellType type, int dim)
   return e;
 }
 //-----------------------------------------------------------------------------
-dolfinx::array2d<int> mesh::get_sub_entities(CellType type, int dim0, int dim1)
+dolfinx::ndarray<int, 2> mesh::get_sub_entities(CellType type, int dim0, int dim1)
 {
   if (dim0 != 2)
   {
@@ -117,11 +117,11 @@ dolfinx::array2d<int> mesh::get_sub_entities(CellType type, int dim0, int dim1)
         "mesh::get_sub_entities supports getting edges (d=1) at present.");
   }
   // TODO: get this data from basix
-  dolfinx::array2d<int> triangle({{0, 1, 2}});
-  dolfinx::array2d<int> quadrilateral({{0, 1, 2, 3}});
-  dolfinx::array2d<int> tetrahedron(
+  dolfinx::ndarray<int, 2> triangle({{0, 1, 2}});
+  dolfinx::ndarray<int, 2> quadrilateral({{0, 1, 2, 3}});
+  dolfinx::ndarray<int, 2> tetrahedron(
       {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}});
-  dolfinx::array2d<int> hexahedron({{0, 1, 3, 5},
+  dolfinx::ndarray<int, 2> hexahedron({{0, 1, 3, 5},
                                     {0, 2, 4, 8},
                                     {1, 2, 6, 9},
                                     {3, 4, 7, 10},
@@ -130,9 +130,9 @@ dolfinx::array2d<int> mesh::get_sub_entities(CellType type, int dim0, int dim1)
   switch (type)
   {
   case mesh::CellType::interval:
-    return dolfinx::array2d<int>(0, 0);
+    return dolfinx::ndarray<int, 2>(0, 0);
   case mesh::CellType::point:
-    return dolfinx::array2d<int>(0, 0);
+    return dolfinx::ndarray<int, 2>(0, 0);
   case mesh::CellType::triangle:
     return triangle;
   case mesh::CellType::tetrahedron:
@@ -143,7 +143,7 @@ dolfinx::array2d<int> mesh::get_sub_entities(CellType type, int dim0, int dim1)
     return hexahedron;
   default:
     throw std::runtime_error("Unsupported cell type.");
-    return dolfinx::array2d<int>(0, 0);
+    return dolfinx::ndarray<int, 2>(0, 0);
   }
 
   // static const int triangle[][4] = {

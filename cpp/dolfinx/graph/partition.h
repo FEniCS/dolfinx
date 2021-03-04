@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <mpi.h>
@@ -94,7 +94,7 @@ compute_ghost_indices(MPI_Comm comm,
 ///   to be the local index plus the offset for this rank
 /// @return The data for each index in @p indices
 template <typename T>
-array2d<T> distribute_data(MPI_Comm comm,
+ndarray<T, 2> distribute_data(MPI_Comm comm,
                            const std::vector<std::int64_t>& indices,
                            const span2d<const T>& x);
 
@@ -130,7 +130,7 @@ compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
 // Implementation
 //---------------------------------------------------------------------------
 template <typename T>
-array2d<T> build::distribute_data(MPI_Comm comm,
+ndarray<T, 2> build::distribute_data(MPI_Comm comm,
                                   const std::vector<std::int64_t>& indices,
                                   const span2d<const T>& x)
 {
@@ -197,7 +197,7 @@ array2d<T> build::distribute_data(MPI_Comm comm,
 
   assert(x.shape[1] != 0);
   // Pack point data to send back (transpose)
-  array2d<T> x_return(indices_recv.size(), x.shape[1]);
+  ndarray<T, 2> x_return(indices_recv.size(), x.shape[1]);
   for (int p = 0; p < size; ++p)
   {
     for (int i = disp_index_recv[p]; i < disp_index_recv[p + 1]; ++i)
@@ -214,7 +214,7 @@ array2d<T> build::distribute_data(MPI_Comm comm,
   MPI_Type_commit(&compound_type);
 
   // Send back point data
-  array2d<T> my_x(disp_index_send.back(), x.shape[1]);
+  ndarray<T, 2> my_x(disp_index_send.back(), x.shape[1]);
   MPI_Alltoallv(x_return.data(), number_index_recv.data(),
                 disp_index_recv.data(), compound_type, my_x.data(),
                 number_index_send.data(), disp_index_send.data(), compound_type,

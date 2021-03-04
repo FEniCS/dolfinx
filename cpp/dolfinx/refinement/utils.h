@@ -8,7 +8,7 @@
 
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <map>
 #include <memory>
 #include <set>
@@ -59,7 +59,7 @@ void update_logical_edgefunction(
 /// @param[in] mesh Existing mesh
 /// @param[in] marked_edges
 /// @return edge_to_new_vertex map and geometry array
-std::pair<std::map<std::int32_t, std::int64_t>, array2d<double>>
+std::pair<std::map<std::int32_t, std::int64_t>, ndarray<double, 2>>
 create_new_vertices(
     const MPI_Comm& neighbor_comm,
     const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,

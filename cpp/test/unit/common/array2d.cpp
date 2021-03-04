@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <catch.hpp>
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <numeric>
 #include <vector>
 
@@ -20,7 +20,7 @@ void test_array2d()
   std::size_t nj = GENERATE(3, 100, 300);
 
   std::array<std::size_t, 2> shape = {ni, nj};
-  array2d<std::size_t> arr(shape);
+  ndarray<std::size_t, 2> arr(shape);
 
   CHECK(arr.shape[0] == ni);
   CHECK(arr.shape[1] == nj);
@@ -41,8 +41,8 @@ void test_dot_product()
   std::array<std::size_t, 2> shape1 = {3, 100};
   std::array<std::size_t, 2> shape2 = {100, 3};
 
-  array2d<double> arr1(shape1, 1.);
-  array2d<double> arr2(shape2, 2.);
+  ndarray<double, 2> arr1(shape1, 1.);
+  ndarray<double, 2> arr2(shape2, 2.);
 
   // transpose arr2 and use vector data structure
   std::vector<double> data_transpose(300);

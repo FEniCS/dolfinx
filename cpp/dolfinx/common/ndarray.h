@@ -25,6 +25,7 @@ template <typename T>
 struct has_shape<T, decltype(T::shape)> : std::true_type
 {
 };
+
 template <typename T, std::size_t N>
 class ndspan;
 
@@ -232,9 +233,6 @@ public:
 private:
   std::vector<T, Allocator> _storage;
 };
-
-template <typename T>
-using array2d = ndarray<T, 2>;
 
 /// This class provides a view into a 2-dimensional row-wise array of data
 template <typename T, std::size_t N = 2>

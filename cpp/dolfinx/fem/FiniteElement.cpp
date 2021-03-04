@@ -143,7 +143,7 @@ void FiniteElement::evaluate_reference_basis(
     std::vector<double>& reference_values, const span2d<const double>& X) const
 {
   const int scalar_reference_value_size = _reference_value_size / _bs;
-  array2d<double> basix_data(X.shape[0], basix::dim(_basix_element_handle)
+  ndarray<double, 2> basix_data(X.shape[0], basix::dim(_basix_element_handle)
                                              * scalar_reference_value_size);
   basix::tabulate(_basix_element_handle, basix_data.data(), 0, X.data(),
                   X.shape[0]);
@@ -182,7 +182,7 @@ void FiniteElement::evaluate_reference_basis_derivatives(
   // nd = tdim + 1;
   // FIXME
   const int nd = 4;
-  array2d<double> basix_data(nd * X.shape[0],
+  ndarray<double, 2> basix_data(nd * X.shape[0],
                              basix::dim(_basix_element_handle));
   basix::tabulate(_basix_element_handle, basix_data.data(), 1, X.data(),
                   X.shape[0]);
@@ -286,7 +286,7 @@ bool FiniteElement::interpolation_ident() const noexcept
   return _interpolation_is_ident;
 }
 //-----------------------------------------------------------------------------
-array2d<double> FiniteElement::interpolation_points() const
+ndarray<double, 2> FiniteElement::interpolation_points() const
 {
   if (_basix_element_handle == -1)
   {
@@ -295,7 +295,7 @@ array2d<double> FiniteElement::interpolation_points() const
   }
   const int gdim
       = basix::cell_geometry_dimension(basix::cell_type(_basix_element_handle));
-  array2d<double> points(basix::interpolation_num_points(_basix_element_handle),
+  ndarray<double, 2> points(basix::interpolation_num_points(_basix_element_handle),
                          gdim);
   basix::interpolation_points(_basix_element_handle, points.data());
   return points;

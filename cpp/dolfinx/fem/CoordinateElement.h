@@ -8,7 +8,7 @@
 
 #include "ElementDofLayout.h"
 #include <cstdint>
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>

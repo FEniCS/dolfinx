@@ -139,7 +139,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
-  array2d<std::int64_t> dofs_global(dofs_local.size(), 2);
+  ndarray<std::int64_t, 2> dofs_global(dofs_local.size(), 2);
 
   // This is messy to handle block sizes
   {
@@ -183,7 +183,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 
   // Send/receive global index of dofs with bcs to all neighbors
   assert(disp.back() % 2 == 0);
-  array2d<std::int64_t> dofs_received(disp.back() / 2, 2);
+  ndarray<std::int64_t, 2> dofs_received(disp.back() / 2, 2);
   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm0);
@@ -474,7 +474,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     throw std::runtime_error("Function spaces must have the same element.");
 
   // Compute dof coordinates
-  const array2d<double> dof_coordinates = V1.tabulate_dof_coordinates(true);
+  const ndarray<double, 2> dof_coordinates = V1.tabulate_dof_coordinates(true);
   assert(dof_coordinates.shape[0] == 3);
 
   // Evaluate marker for each dof coordinate
@@ -548,7 +548,7 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   // interface that computes dofs coordinates only for specified cell.
 
   // Compute dof coordinates
-  const array2d<double> dof_coordinates = V.tabulate_dof_coordinates(true);
+  const ndarray<double, 2> dof_coordinates = V.tabulate_dof_coordinates(true);
   assert(dof_coordinates.shape[0] == 3);
 
   // Compute marker for each dof coordinate

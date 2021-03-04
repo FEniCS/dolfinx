@@ -48,7 +48,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
-  const array2d<Scalar> data_values = u.compute_point_values();
+  const ndarray<Scalar, 2> data_values = u.compute_point_values();
 
   const int width = get_padded_width(*u.function_space()->element());
   assert(mesh->geometry().index_map());
@@ -350,7 +350,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
   return cell_str->second;
 }
 //-----------------------------------------------------------------------------
-std::pair<array2d<std::int32_t>, std::vector<std::int32_t>>
+std::pair<ndarray<std::int32_t, 2>, std::vector<std::int32_t>>
 xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
                                    const span2d<const std::int64_t>& entities,
                                    const tcb::span<const std::int32_t>& values)
@@ -399,7 +399,7 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
 
   // Throw away input global indices which do not belong to entity vertices
   // This decreases the amount of data needed in parallel communication
-  array2d<std::int64_t> entities_vertices(entities.shape[0],
+  ndarray<std::int64_t, 2> entities_vertices(entities.shape[0],
                                           num_vertices_per_entity);
   for (std::size_t e = 0; e < entities_vertices.shape[0]; ++e)
   {
@@ -575,7 +575,7 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
     }
   }
 
-  return {array2d<std::int32_t>({entities_new.size() / num_vertices_per_entity,
+  return {ndarray<std::int32_t, 2>({entities_new.size() / num_vertices_per_entity,
                                  num_vertices_per_entity},
                                 std::move(entities_new)),
           values_new};

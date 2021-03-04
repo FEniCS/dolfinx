@@ -7,7 +7,7 @@
 #pragma once
 
 #include <cstdint>
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <vector>
 
@@ -116,7 +116,7 @@ std::vector<std::uint8_t> transpose(const std::vector<std::uint8_t>& map);
 ///   where `a_p` is the permuted array
 /// @return Permuted cell topology, where for a cell `v_new[i] =
 ///   v_old[map[i]]`
-array2d<std::int64_t>
+ndarray<std::int64_t, 2>
 compute_permutation(const span2d<const std::int64_t>& cells,
                     const std::vector<std::uint8_t>& p);
 

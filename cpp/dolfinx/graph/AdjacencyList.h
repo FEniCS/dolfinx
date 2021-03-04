@@ -7,7 +7,7 @@
 #pragma once
 
 #include <cassert>
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/common/span.hpp>
 #include <numeric>
 #include <sstream>
@@ -23,7 +23,7 @@ namespace dolfinx::graph
 /// matrix(i, j) is the jth neighbor of the ith node
 /// @return Adjacency list data and offset array
 template <typename T>
-auto create_adjacency_data(const array2d<T>& array)
+auto create_adjacency_data(const ndarray<T, 2>& array)
 {
   std::vector<T> data(array.size());
   std::vector<std::int32_t> offset(array.shape[0] + 1, 0);

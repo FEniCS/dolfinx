@@ -7,7 +7,7 @@
 #pragma once
 
 #include <cstddef>
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -93,7 +93,7 @@ public:
   /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...) if
   /// @p transpose is false, and otherwise the returned data is
   /// transposed.
-  array2d<double> tabulate_dof_coordinates(bool transpose) const;
+  ndarray<double, 2> tabulate_dof_coordinates(bool transpose) const;
 
   /// Unique identifier
   std::size_t id() const;

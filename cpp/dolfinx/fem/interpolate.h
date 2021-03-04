@@ -31,7 +31,7 @@ class Function;
 /// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression
-array2d<double>
+ndarray<double, 2>
 interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
                      const tcb::span<const std::int32_t>& cells);
 
@@ -55,7 +55,7 @@ void interpolate(Function<T>& u, const Function<T>& v);
 /// fem::interpolation_coords.
 template <typename T>
 void interpolate(Function<T>& u,
-                 const std::function<std::variant<std::vector<T>, array2d<T>>(
+                 const std::function<std::variant<std::vector<T>, ndarray<T, 2>>(
                      const span2d<const double>&)>& f,
                  const span2d<const double>& x,
                  const tcb::span<const std::int32_t>& cells);
@@ -177,7 +177,7 @@ void interpolate(Function<T>& u, const Function<T>& v)
 //----------------------------------------------------------------------------
 template <typename T>
 void interpolate(Function<T>& u,
-                 const std::function<std::variant<std::vector<T>, array2d<T>>(
+                 const std::function<std::variant<std::vector<T>, ndarray<T, 2>>(
                      const span2d<const double>&)>& f,
                  const span2d<const double>& x,
                  const tcb::span<const std::int32_t>& cells)
@@ -201,7 +201,7 @@ void interpolate(Function<T>& u,
   const int tdim = mesh->topology().dim();
 
   // Get the interpolation points on the reference cells
-  const array2d<double> X = element->interpolation_points();
+  const ndarray<double, 2> X = element->interpolation_points();
 
   if (X.shape[0] == 0)
     throw std::runtime_error(
@@ -216,9 +216,9 @@ void interpolate(Function<T>& u,
   // and the number of columns is equal to the number of evaluation
   // points.
 
-  std::variant<std::vector<T>, array2d<T>> values_v = f(x);
+  std::variant<std::vector<T>, ndarray<T, 2>> values_v = f(x);
   span2d<T> values(nullptr, {0, 0});
-  if (std::holds_alternative<array2d<T>>(values_v))
+  if (std::holds_alternative<ndarray<T, 2>>(values_v))
   {
     T* ptr = std::get<1>(values_v).data();
     std::array shape = std::get<1>(values_v).shape;
@@ -250,7 +250,7 @@ void interpolate(Function<T>& u,
       = mesh->geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh->geometry().x();
+  const ndarray<double, 2>& x_g = mesh->geometry().x();
 
   // NOTE: The below loop over cells could be skipped for some elements,
   // e.g. Lagrange, where the interpolation is just the identity
@@ -259,19 +259,19 @@ void interpolate(Function<T>& u,
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
 
-  array2d<double> x_cell(X.shape[0], gdim);
+  ndarray<double, 2> x_cell(X.shape[0], gdim);
   std::vector<double> J(X.shape[0] * gdim * tdim);
   std::vector<double> detJ(X.shape[0]);
   std::vector<double> K(X.shape[0] * tdim * gdim);
-  array2d<double> X_ref(X.shape[0], tdim);
+  ndarray<double, 2> X_ref(X.shape[0], tdim);
 
-  array2d<double> coordinate_dofs(num_dofs_g, gdim);
+  ndarray<double, 2> coordinate_dofs(num_dofs_g, gdim);
 
-  array2d<T> reference_data(value_size, X.shape[0]);
+  ndarray<T, 2> reference_data(value_size, X.shape[0]);
 
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
-  array2d<T> _vals(value_size, X.shape[0]);
+  ndarray<T, 2> _vals(value_size, X.shape[0]);
   for (std::int32_t c : cells)
   {
     auto x_dofs = x_dofmap.links(c);
@@ -331,7 +331,7 @@ void interpolate_c(
                                          1, std::multiplies<>());
 
   auto fn = [value_size, &f](const span2d<const double>& x) {
-    array2d<T> values(value_size, x.shape[1]);
+    ndarray<T, 2> values(value_size, x.shape[1]);
     f(values, x);
     return values;
   };

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/mesh/cell_types.h>
 #include <hdf5.h>
@@ -65,12 +65,12 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
 /// Read Geometry data
 /// @returns geometry
-array2d<double> read_geometry_data(MPI_Comm comm, const hid_t h5_id,
+ndarray<double, 2> read_geometry_data(MPI_Comm comm, const hid_t h5_id,
                                    const pugi::xml_node& node);
 
 /// Read Topology data
 /// @returns ((cell type, degree), topology)
-array2d<std::int64_t> read_topology_data(MPI_Comm comm, const hid_t h5_id,
+ndarray<std::int64_t, 2> read_topology_data(MPI_Comm comm, const hid_t h5_id,
                                          const pugi::xml_node& node);
 
 } // namespace io::xdmf_mesh
