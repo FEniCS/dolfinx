@@ -57,6 +57,8 @@ public:
     size_type size = std::accumulate(shape.begin(), shape.end(), 1,
                                      std::multiplies<size_type>());
     _storage = std::vector<T, Allocator>(size, value, alloc);
+    std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
+                     std::multiplies<size_type>());
   }
 
   /// Construct an n-dimensional array
@@ -70,6 +72,8 @@ public:
       : shape({rows, cols})
   {
     _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
+    std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
+                     std::multiplies<size_type>());
   }
 
   /// Constructs an n-dimensional array from a vector
@@ -78,7 +82,8 @@ public:
   ndarray(std::array<size_type, N> shape, Vector&& x)
       : shape(shape), _storage(std::forward<Vector>(x))
   {
-    // Do nothing
+    std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
+                     std::multiplies<size_type>());
   }
 
   /// @todo Decide what to do here
@@ -92,6 +97,8 @@ public:
     for (std::initializer_list<T> l : list)
       for (const T val : l)
         _storage.push_back(val);
+    std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
+                     std::multiplies<size_type>());
   }
 
   /// Construct an n-dimensional array from an n-dimensional span
@@ -100,7 +107,8 @@ public:
   constexpr ndarray(Span& s)
       : shape(s.shape), _storage(s.data(), s.data() + s.size())
   {
-    // Do nothing
+    std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
+                     std::multiplies<size_type>());
   }
 
   /// Copy constructor
@@ -126,7 +134,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr reference operator()(size_type i, size_type j)
   {
-    return _storage[i * shape[1] + j];
+    return _storage[i * stride[1] + j];
   }
 
   /// Return a reference to the element at specified location (i, j)
@@ -138,14 +146,14 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr const_reference operator()(size_type i, size_type j) const
   {
-    return _storage[i * shape[1] + j];
+    return _storage[i * stride[1] + j];
   }
 
   /// Return a reference to the element at specified location (i, j, k)
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
   constexpr reference operator()(size_type i, size_type j, size_type k)
   {
-    return _storage[shape[2] * (i * shape[1] + j) + k];
+    return _storage[i * stride[2] * j * stride[1] + k];
   }
 
   /// Return a reference to the element at specified location (i, j, k)
@@ -153,7 +161,7 @@ public:
   constexpr const_reference operator()(size_type i, size_type j,
                                        size_type k) const
   {
-    return _storage[shape[2] * (i * shape[1] + j) + k];
+    return _storage[i * stride[2] * j * stride[1] + k];
   }
 
   /// Access a row in the array
@@ -162,7 +170,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr tcb::span<value_type> row(size_type i)
   {
-    return tcb::span<value_type>(std::next(_storage.data(), i * shape[1]),
+    return tcb::span<value_type>(std::next(_storage.data(), i * stride[1]),
                                  shape[1]);
   }
 
@@ -172,8 +180,8 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr tcb::span<const value_type> row(size_type i) const
   {
-    return tcb::span<const value_type>(std::next(_storage.data(), i * shape[1]),
-                                       shape[1]);
+    return tcb::span<const value_type>(
+        std::next(_storage.data(), i * stride[1]), shape[1]);
   }
 
   /// Access a row in the array
@@ -213,7 +221,10 @@ public:
   template <int _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr std::array<size_type, 2> strides() const noexcept
   {
-    return {shape[1] * sizeof(T), sizeof(T)};
+    std::array<size_type, N> s;
+    std::transform(stride.begin(), stride.end(), s.begin(),
+                   [](size_type c) { return sizeof(T) * c; });
+    return s;
   }
 
   /// Checks whether the container is empty
@@ -222,6 +233,10 @@ public:
 
   /// The shape of the array
   std::array<size_type, N> shape;
+
+  /// Array strides. strides[i] is the numbers of values to needed to
+  /// advance one values in the ith dimension
+  std::array<size_type, N> stride;
 
   /// The rank of the array
   static constexpr size_type rank = size_type(N);
