@@ -107,7 +107,7 @@ public:
                      std::multiplies<size_type>());
   }
 
-  /// @todo Need to handle strides
+  /// @todo Need to handle strides correctly
   /// Construct an n-dimensional array from an n-dimensional span
   /// @param[in] s The span
   template <typename Span, typename = std::enable_if_t<has_shape<Span>::value>>
@@ -311,11 +311,10 @@ public:
   /// Construct an n-dimensional span from an n-dimensional array
   template <typename Array,
             typename = std::enable_if_t<has_shape<Array>::value>>
-  constexpr ndspan(Array& x) : shape(x.shape), _storage(x.data())
+  constexpr ndspan(Array& x)
+      : shape(x.shape), stride(x.stride), _storage(x.data())
   {
-    stride.back() = 1;
-    std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
-                     std::multiplies<size_type>());
+    // Do nothing
   }
 
   /// Return a reference to the element at specified location (i, j)
@@ -415,19 +414,19 @@ public:
   /// Get pointer to the first element of the underlying storage (const
   /// version)
   /// @warning Use this with caution - the data storage may be strided
-  constexpr value_type* data() const noexcept { return _storage; };
+  constexpr T* data() const noexcept { return _storage; };
 
   /// Returns the number of elements in the span
   /// @warning Use this caution - the data storage may be strided, i.e.
   /// the size of the underlying storage may be greater than
-  /// sizeof(T)*(rows * cols)
+  /// sizeof(T) * (rows * cols)
   constexpr size_type size() const
   {
     return std::accumulate(shape.begin(), shape.end(), 1,
                            std::multiplies<size_type>());
   }
 
-  /// Returns the strides of the span
+  /// Returns the strides of the span in bytes
   constexpr std::array<size_type, 2> strides() const
   {
     std::array<size_type, N> s;
