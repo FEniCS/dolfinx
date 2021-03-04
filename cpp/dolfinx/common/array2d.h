@@ -9,8 +9,8 @@
 #include "span.hpp"
 #include <array>
 #include <cassert>
-#include <iostream>
 #include <numeric>
+#include <ostream>
 #include <vector>
 
 template <typename T, typename = std::array<std::size_t, 2>>
@@ -229,6 +229,10 @@ public:
   /// The rank of the array
   static constexpr size_type rank = size_type(N);
 
+  /// Pretty printing, useful for debuging
+  template <typename Array>
+  friend std::ostream& operator<<(std::ostream& out, const Array& array);
+
 private:
   std::vector<T, Allocator> _storage;
 };
@@ -327,18 +331,16 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
   constexpr ndspan<value_type, 2> row(size_type i)
   {
-    return ndspan<value_type, 2>(
-        std::next(_storage.data(), i * shape[2] * shape[1]),
-        {shape[1], shape[2]});
+    return ndspan<value_type, 2>(_storage + i * shape[2] * shape[1],
+                                 {shape[1], shape[2]});
   }
 
   /// Access a row in the array (const version)
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
   constexpr ndspan<const value_type, 2> row(size_type i) const
   {
-    return ndspan<const value_type, 2>(
-        std::next(_storage.data(), i * shape[2] * shape[1]),
-        {shape[1], shape[2]});
+    return ndspan<const value_type, 2>(_storage + i * shape[2] * shape[1],
+                                       {shape[1], shape[2]});
   }
 
   /// Get pointer to the first element of the underlying storage
@@ -380,5 +382,34 @@ private:
 
 template <typename T>
 using span2d = ndspan<T, 2>;
+
+/// Pretty printing, useful for debuging
+template <typename T, std::size_t N>
+std::ostream& operator<<(std::ostream& out, const ndarray<T, N>& array)
+{
+  if constexpr (array.rank == 2)
+    for (std::size_t i = 0; i < array.shape[0]; i++)
+    {
+      out << "{";
+      for (std::size_t j = 0; j < array.shape[1]; j++)
+        out << array(i, j) << ", ";
+      out << "}" << std::endl;
+    }
+
+  if constexpr (array.rank == 3)
+    for (std::size_t i = 0; i < array.shape[0]; i++)
+    {
+      for (std::size_t j = 0; j < array.shape[1]; j++)
+      {
+        out << "{";
+        for (std::size_t k = 0; k < array.shape[2]; k++)
+          out << array(i, j, k) << ", ";
+        out << "}" << std::endl;
+      }
+      out << std::endl;
+    }
+
+  return out;
+}
 
 } // namespace dolfinx
