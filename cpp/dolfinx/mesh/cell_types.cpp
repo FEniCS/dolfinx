@@ -104,7 +104,8 @@ dolfinx::ndarray<int, 2> mesh::get_entity_vertices(mesh::CellType type, int dim)
   return e;
 }
 //-----------------------------------------------------------------------------
-dolfinx::ndarray<int, 2> mesh::get_sub_entities(CellType type, int dim0, int dim1)
+dolfinx::ndarray<int, 2> mesh::get_sub_entities(CellType type, int dim0,
+                                                int dim1)
 {
   if (dim0 != 2)
   {
@@ -116,17 +117,16 @@ dolfinx::ndarray<int, 2> mesh::get_sub_entities(CellType type, int dim0, int dim
     throw std::runtime_error(
         "mesh::get_sub_entities supports getting edges (d=1) at present.");
   }
+
   // TODO: get this data from basix
-  dolfinx::ndarray<int, 2> triangle({{0, 1, 2}});
-  dolfinx::ndarray<int, 2> quadrilateral({{0, 1, 2, 3}});
-  dolfinx::ndarray<int, 2> tetrahedron(
-      {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}});
-  dolfinx::ndarray<int, 2> hexahedron({{0, 1, 3, 5},
-                                    {0, 2, 4, 8},
-                                    {1, 2, 6, 9},
-                                    {3, 4, 7, 10},
-                                    {5, 6, 7, 11},
-                                    {8, 9, 10, 11}});
+  dolfinx::ndarray<int, 2> triangle = {{0, 1, 2}};
+  dolfinx::ndarray<int, 2> quadrilateral = {{0, 1, 2, 3}};
+  dolfinx::ndarray<int, 2> tetrahedron
+      = {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}};
+  dolfinx::ndarray<int, 2> hexahedron
+      = {{0, 1, 3, 5},  {0, 2, 4, 8},  {1, 2, 6, 9},
+         {3, 4, 7, 10}, {5, 6, 7, 11}, {8, 9, 10, 11}};
+
   switch (type)
   {
   case mesh::CellType::interval:

@@ -84,7 +84,7 @@ public:
   /// @todo Decide what to do here
   /// Construct a two dimensional array using nested initializer lists
   /// @param[in] list The nested initializer list
-  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
+  template <typename = std::enable_if_t<N == 2>>
   constexpr ndarray(std::initializer_list<std::initializer_list<T>> list)
       : shape({list.size(), (*list.begin()).size()})
   {
