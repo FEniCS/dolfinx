@@ -13,7 +13,10 @@
 #include <ostream>
 #include <vector>
 
-template <typename T, typename = std::array<std::size_t, 2>>
+namespace dolfinx
+{
+
+template <typename T, typename = std::array<std::size_t, T::rank>>
 struct has_shape : std::false_type
 {
 };
@@ -22,10 +25,6 @@ template <typename T>
 struct has_shape<T, decltype(T::shape)> : std::true_type
 {
 };
-
-namespace dolfinx
-{
-
 template <typename T, std::size_t N>
 class ndspan;
 
