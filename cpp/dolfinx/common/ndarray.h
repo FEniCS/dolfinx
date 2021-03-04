@@ -14,8 +14,6 @@
 #include <ostream>
 #include <vector>
 
-#include <iostream>
-
 namespace dolfinx
 {
 
@@ -79,9 +77,6 @@ public:
     stride.back() = 1;
     std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
                      std::multiplies<size_type>());
-    std::cout << "Testing " << std::endl;
-    std::cout << "Sizes:  " << shape[0] << ", " << shape[1] << std::endl;
-    std::cout << "Stride: " << stride[0] << ", " << stride[1] << std::endl;
   }
 
   /// Constructs an n-dimensional array from a vector
@@ -211,6 +206,24 @@ public:
         std::next(_storage.data(), i * stride[0]), {shape[1], shape[2]});
   }
 
+  /// Access a block in the array
+  constexpr ndspan<value_type, N> block(std::array<size_type, N> start,
+                                        std::array<size_type, N> shape)
+  {
+    size_type offset
+        = std::inner_product(stride.begin(), stride.end(), start.begin(), 0);
+    return ndspan<value_type, N>(_storage.data() + offset, shape, stride);
+  }
+
+  /// Access a block in the array (const)
+  constexpr ndspan<value_type, N> block(std::array<size_type, N> start,
+                                        std::array<size_type, N> shape) const
+  {
+    size_type offset
+        = std::inner_product(stride.begin(), stride.end(), start.begin(), 0);
+    return ndspan<value_type, N>(_storage.data() + offset, shape, stride);
+  }
+
   /// Get pointer to the first element of the underlying storage
   /// @warning Use this with caution - the data storage may be strided
   constexpr value_type* data() noexcept { return _storage.data(); }
@@ -280,6 +293,16 @@ public:
     stride.back() = 1;
     std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
                      std::multiplies<size_type>());
+  }
+
+  /// Construct an n-dimensional array
+  /// @param[in] data  pointer to the array to construct a view for
+  /// @param[in] shape The shape the array {rows, cols}
+  constexpr ndspan(T* data, std::array<size_type, N> shape,
+                   std::array<size_type, N> stride)
+      : _storage(data), shape(shape), stride(stride)
+  {
+    // Do nothing
   }
 
   /// Construct an n-dimensional span from an n-dimensional array
@@ -362,6 +385,24 @@ public:
   {
     return ndspan<const value_type, 2>(_storage + i * stride[0],
                                        {shape[1], shape[2]});
+  }
+
+  /// Access a block in the array
+  constexpr ndspan<value_type, N> block(std::array<size_type, N> start,
+                                        std::array<size_type, N> shape)
+  {
+    size_type offset
+        = std::inner_product(stride.begin(), stride.end(), start.begin(), 0);
+    return ndspan<value_type, 2>(_storage + offset, shape, stride);
+  }
+
+  /// Access a block in the array (const)
+  constexpr ndspan<value_type, N> block(std::array<size_type, N> start,
+                                        std::array<size_type, N> shape) const
+  {
+    size_type offset
+        = std::inner_product(stride.begin(), stride.end(), start.begin(), 0);
+    return ndspan<value_type, 2>(_storage + offset, shape, stride);
   }
 
   /// Get pointer to the first element of the underlying storage
