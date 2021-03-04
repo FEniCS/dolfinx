@@ -9,6 +9,7 @@
 #include "span.hpp"
 #include <array>
 #include <cassert>
+#include <iostream>
 #include <numeric>
 #include <vector>
 
@@ -43,7 +44,6 @@ public:
   using pointer = typename std::vector<T, Allocator>::pointer;
   using iterator = typename std::vector<T, Allocator>::iterator;
   using const_iterator = typename std::vector<T, Allocator>::const_iterator;
-  // using rank = N;
   /// \endcond
 
   /// Construct a two dimensional array
@@ -95,12 +95,12 @@ public:
         _storage.push_back(val);
   }
 
-  /// Construct a two dimensional array from a two dimensional span
+  /// Construct a n-dimensional array from a n-dimensional span
   /// @param[in] s The span
   template <typename Span2d,
             typename = typename std::enable_if<has_shape<Span2d>::value>>
   constexpr ndarray(Span2d& s)
-      : shape(s.shape), _storage(s.data(), s.data() + s.shape[0] * s.shape[1])
+      : shape(s.shape), _storage(s.data(), s.data() + s.size())
   {
     // Do nothing
   }
@@ -223,11 +223,11 @@ public:
   /// @return Returns true if underlying storage is empty
   constexpr bool empty() const noexcept { return _storage.empty(); }
 
-  /// Get the rank
-  constexpr std::size_t rank() const noexcept { return N; }
-
   /// The shape of the array
   std::array<size_type, N> shape;
+
+  /// The rank of the array
+  static constexpr size_type rank = size_type(N);
 
 private:
   std::vector<T, Allocator> _storage;
@@ -323,6 +323,24 @@ public:
     return tcb::span<const value_type>(_storage + i * shape[1], shape[1]);
   }
 
+  /// Access a row in the array
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
+  constexpr ndspan<value_type, 2> row(size_type i)
+  {
+    return ndspan<value_type, 2>(
+        std::next(_storage.data(), i * shape[2] * shape[1]),
+        {shape[1], shape[2]});
+  }
+
+  /// Access a row in the array (const version)
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
+  constexpr ndspan<const value_type, 2> row(size_type i) const
+  {
+    return ndspan<const value_type, 2>(
+        std::next(_storage.data(), i * shape[2] * shape[1]),
+        {shape[1], shape[2]});
+  }
+
   /// Get pointer to the first element of the underlying storage
   /// @warning Use this with caution - the data storage may be strided
   // constexpr value_type* data() noexcept { return _storage; }
@@ -350,11 +368,11 @@ public:
     return {shape[1] * sizeof(T), sizeof(T)};
   }
 
-  /// Get the rank
-  constexpr std::size_t rank() const noexcept { return N; }
-
   /// The shape of the array
   std::array<size_type, N> shape;
+
+  /// The rank of the array
+  static constexpr size_type rank = size_type(N);
 
 private:
   T* _storage;
