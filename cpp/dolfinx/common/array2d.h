@@ -95,9 +95,8 @@ public:
 
   /// Construct a n-dimensional array from a n-dimensional span
   /// @param[in] s The span
-  template <typename Span2d,
-            typename = std::enable_if_t<has_shape<Span2d>::value>>
-  constexpr ndarray(Span2d& s)
+  template <typename Span, typename = std::enable_if_t<has_shape<Span>::value>>
+  constexpr ndarray(Span& s)
       : shape(s.shape), _storage(s.data(), s.data() + s.size())
   {
     // Do nothing
@@ -360,18 +359,22 @@ public:
                            std::multiplies<size_type>());
   }
 
-  /// Returns the strides of the array
+  /// Returns the strides of the span
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr std::array<size_type, 2> strides() const noexcept
   {
     return {shape[1] * sizeof(T), sizeof(T)};
   }
 
-  /// The shape of the array
+  /// The shape of the span
   std::array<size_type, N> shape;
 
-  /// The rank of the array
+  /// The rank of the span
   static constexpr size_type rank = size_type(N);
+
+  /// Pretty printing, useful for debuging
+  template <typename Span>
+  friend std::ostream& operator<<(std::ostream& out, const Span& array);
 
 private:
   T* _storage;
@@ -381,8 +384,8 @@ template <typename T>
 using span2d = ndspan<T, 2>;
 
 /// Pretty printing, useful for debuging
-template <typename T, std::size_t N>
-std::ostream& operator<<(std::ostream& out, const ndarray<T, N>& array)
+template <typename Array>
+std::ostream& print_array(std::ostream& out, const Array& array)
 {
   if constexpr (array.rank == 2)
     for (std::size_t i = 0; i < array.shape[0]; i++)
@@ -407,6 +410,20 @@ std::ostream& operator<<(std::ostream& out, const ndarray<T, N>& array)
     }
 
   return out;
+}
+
+/// Pretty printing, useful for debuging
+template <typename T, std::size_t N>
+std::ostream& operator<<(std::ostream& out, const ndarray<T, N>& array)
+{
+  return print_array(out, array);
+}
+
+/// Pretty printing, useful for debuging
+template <typename T, std::size_t N>
+std::ostream& operator<<(std::ostream& out, const ndspan<T, N>& span)
+{
+  return print_array(out, span);
 }
 
 } // namespace dolfinx
