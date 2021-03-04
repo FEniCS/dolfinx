@@ -378,7 +378,7 @@ private:
   T* _storage;
 };
 
-/// Pretty printing, useful for debuging
+/// Convenience function for outputting arrays
 template <typename Array>
 std::ostream& print_array(std::ostream& out, const Array& array)
 {
