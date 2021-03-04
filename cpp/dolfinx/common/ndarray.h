@@ -29,7 +29,7 @@ struct has_shape<T, decltype(T::shape)> : std::true_type
 template <typename T, std::size_t N>
 class ndspan;
 
-/// This class provides a dynamic 2-dimensional row-wise array data
+/// This class provides a dynamic n-dimensional row-wise array data
 /// structure
 template <typename T, std::size_t N, class Allocator = std::allocator<T>>
 class ndarray
@@ -46,7 +46,7 @@ public:
   using const_iterator = typename std::vector<T, Allocator>::const_iterator;
   /// \endcond
 
-  /// Construct a two dimensional array
+  /// Construct an n-dimensional array
   /// @param[in] shape The shape the array {rows, cols}
   /// @param[in] value Initial value for all entries
   /// @param[in] alloc The memory allocator for the data storage
@@ -59,7 +59,7 @@ public:
     _storage = std::vector<T, Allocator>(size, value, alloc);
   }
 
-  /// Construct a two dimensional array
+  /// Construct an n-dimensional array
   /// @param[in] rows The number of rows
   /// @param[in] cols The number of columns
   /// @param[in] value Initial value for all entries
@@ -72,7 +72,7 @@ public:
     _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
   }
 
-  /// Constructs a two dimensional array from a vector
+  /// Constructs an n-dimensional array from a vector
   template <typename Vector,
             typename = std::enable_if_t<std::is_class<Vector>::value>>
   ndarray(std::array<size_type, N> shape, Vector&& x)
@@ -82,7 +82,7 @@ public:
   }
 
   /// @todo Decide what to do here
-  /// Construct a two dimensional array using nested initializer lists
+  /// Construct an n-dimensional array using nested initializer lists
   /// @param[in] list The nested initializer list
   template <typename = std::enable_if_t<N == 2>>
   constexpr ndarray(std::initializer_list<std::initializer_list<T>> list)
@@ -94,7 +94,7 @@ public:
         _storage.push_back(val);
   }
 
-  /// Construct a n-dimensional array from a n-dimensional span
+  /// Construct an n-dimensional array from an n-dimensional span
   /// @param[in] s The span
   template <typename Span, typename = std::enable_if_t<has_shape<Span>::value>>
   constexpr ndarray(Span& s)
@@ -234,7 +234,7 @@ private:
   std::vector<T, Allocator> _storage;
 };
 
-/// This class provides a view into a 2-dimensional row-wise array of data
+/// This class provides a view into an n-dimensional row-wise array of data
 template <typename T, std::size_t N = 2>
 class ndspan
 {
@@ -248,7 +248,7 @@ public:
   using const_pointer = const T*;
   // /// \endcond
 
-  /// Construct a two dimensional array
+  /// Construct an n-dimensional array
   /// @param[in] data  pointer to the array to construct a view for
   /// @param[in] shape The shape the array {rows, cols}
   constexpr ndspan(T* data, std::array<size_type, N> shape)
@@ -257,7 +257,7 @@ public:
     // Do nothing
   }
 
-  /// Construct a two dimensional span from a two dimensional array
+  /// Construct an n-dimensional span from an n-dimensional array
   template <typename Array,
             typename = std::enable_if_t<has_shape<Array>::value>>
   constexpr ndspan(Array& x) : shape(x.shape), _storage(x.data())
