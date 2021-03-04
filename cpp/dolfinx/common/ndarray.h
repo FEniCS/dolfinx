@@ -14,6 +14,8 @@
 #include <ostream>
 #include <vector>
 
+#include <iostream>
+
 namespace dolfinx
 {
 
@@ -58,6 +60,7 @@ public:
     size_type size = std::accumulate(shape.begin(), shape.end(), 1,
                                      std::multiplies<size_type>());
     _storage = std::vector<T, Allocator>(size, value, alloc);
+    stride.back() = 1;
     std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
                      std::multiplies<size_type>());
   }
@@ -73,8 +76,12 @@ public:
       : shape({rows, cols})
   {
     _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
+    stride.back() = 1;
     std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
                      std::multiplies<size_type>());
+    std::cout << "Testing " << std::endl;
+    std::cout << "Sizes:  " << shape[0] << ", " << shape[1] << std::endl;
+    std::cout << "Stride: " << stride[0] << ", " << stride[1] << std::endl;
   }
 
   /// Constructs an n-dimensional array from a vector
@@ -83,6 +90,7 @@ public:
   ndarray(std::array<size_type, N> shape, Vector&& x)
       : shape(shape), _storage(std::forward<Vector>(x))
   {
+    stride.back() = 1;
     std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
                      std::multiplies<size_type>());
   }
@@ -98,6 +106,7 @@ public:
     for (std::initializer_list<T> l : list)
       for (const T val : l)
         _storage.push_back(val);
+    stride.back() = 1;
     std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
                      std::multiplies<size_type>());
   }
@@ -108,6 +117,7 @@ public:
   constexpr ndarray(Span& s)
       : shape(s.shape), _storage(s.data(), s.data() + s.size())
   {
+    stride.back() = 1;
     std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
                      std::multiplies<size_type>());
   }
@@ -171,7 +181,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr tcb::span<value_type> row(size_type i)
   {
-    return tcb::span<value_type>(std::next(_storage.data(), i * stride[1]),
+    return tcb::span<value_type>(std::next(_storage.data(), i * stride[0]),
                                  shape[1]);
   }
 
@@ -217,8 +227,7 @@ public:
   constexpr size_type size() const noexcept { return _storage.size(); }
 
   /// Returns the strides of the array
-  template <int _N = N, typename = std::enable_if_t<_N == 2>>
-  constexpr std::array<size_type, 2> strides() const noexcept
+  constexpr std::array<size_type, N> strides() const
   {
     std::array<size_type, N> s;
     std::transform(stride.begin(), stride.end(), s.begin(),
@@ -268,6 +277,7 @@ public:
   constexpr ndspan(T* data, std::array<size_type, N> shape)
       : _storage(data), shape(shape)
   {
+    stride.back() = 1;
     std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
                      std::multiplies<size_type>());
   }
@@ -277,6 +287,7 @@ public:
             typename = std::enable_if_t<has_shape<Array>::value>>
   constexpr ndspan(Array& x) : shape(x.shape), _storage(x.data())
   {
+    stride.back() = 1;
     std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
                      std::multiplies<size_type>());
   }
@@ -366,18 +377,19 @@ public:
   /// @warning Use this caution - the data storage may be strided, i.e.
   /// the size of the underlying storage may be greater than
   /// sizeof(T)*(rows * cols)
-  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
-  constexpr size_type size() const noexcept
+  constexpr size_type size() const
   {
     return std::accumulate(shape.begin(), shape.end(), 1,
                            std::multiplies<size_type>());
   }
 
   /// Returns the strides of the span
-  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
-  constexpr std::array<size_type, 2> strides() const noexcept
+  constexpr std::array<size_type, 2> strides() const
   {
-    return {shape[1] * sizeof(T), sizeof(T)};
+    std::array<size_type, N> s;
+    std::transform(stride.begin(), stride.end(), s.begin(),
+                   [](size_type c) { return sizeof(T) * c; });
+    return s;
   }
 
   /// The shape of the span
