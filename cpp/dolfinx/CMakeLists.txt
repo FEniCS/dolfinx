@@ -88,6 +88,10 @@ appropriate ideal alignment instead if it is stricter. Otherwise, the value \
 of this variable will be used by Eigen for the alignment of all data structures.\\
 ")
 
+# ADIOS2
+target_link_libraries(dolfinx PUBLIC adios2::cxx11_mpi)
+
+
 # Eigen3
 target_include_directories(dolfinx SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
 target_compile_definitions(dolfinx PUBLIC "EIGEN_MAX_ALIGN_BYTES=${DOLFINX_EIGEN_MAX_ALIGN_BYTES}")

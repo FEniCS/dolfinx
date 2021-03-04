@@ -88,11 +88,11 @@
 // .. code-block:: cpp
 
 #include "poisson.h"
+#include <adios2.h>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
-#include <adios2.h>
 
 using namespace dolfinx;
 
@@ -111,7 +111,7 @@ using namespace dolfinx;
 //
 // .. code-block:: cpp
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
   common::subsystem::init_logging(argc, argv);
   common::subsystem::init_petsc(argc, argv);
@@ -162,30 +162,32 @@ int main(int argc, char *argv[])
     // Define boundary condition
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
-    const auto bdofs = fem::locate_dofs_geometrical(
-        {*V}, [](const array2d<double> &x) {
-          constexpr double eps = 10.0 * std::numeric_limits<double>::epsilon();
-          std::vector<bool> marked(x.shape[1]);
-          std::transform(
-              x.row(0).begin(), x.row(0).end(), marked.begin(),
-              [](double x0) { return x0 < eps or std::abs(x0 - 1) < eps; });
-          return marked;
-        });
+    const auto bdofs
+        = fem::locate_dofs_geometrical({*V}, [](const array2d<double>& x) {
+            constexpr double eps
+                = 10.0 * std::numeric_limits<double>::epsilon();
+            std::vector<bool> marked(x.shape[1]);
+            std::transform(
+                x.row(0).begin(), x.row(0).end(), marked.begin(),
+                [](double x0) { return x0 < eps or std::abs(x0 - 1) < eps; });
+            return marked;
+          });
 
     std::vector bc{std::make_shared<const fem::DirichletBC<PetscScalar>>(
         u0, std::move(bdofs))};
 
-    f->interpolate([](auto &x) {
+    f->interpolate([](auto& x) {
       std::vector<PetscScalar> f(x.shape[1]);
       std::transform(x.row(0).begin(), x.row(0).end(), x.row(1).begin(),
                      f.begin(), [](double x0, double x1) {
-                       double dx = (x0 - 0.5) * (x0 - 0.5) + (x1 - 0.5) * (x1 - 0.5);
+                       double dx
+                           = (x0 - 0.5) * (x0 - 0.5) + (x1 - 0.5) * (x1 - 0.5);
                        return 10.0 * std::exp(-(dx) / 0.02);
                      });
       return f;
     });
 
-    g->interpolate([](auto &x) {
+    g->interpolate([](auto& x) {
       std::vector<PetscScalar> f(x.shape[1]);
       std::transform(x.row(0).begin(), x.row(0).end(), f.begin(),
                      [](double x0) { return std::sin(5 * x0); });
@@ -246,8 +248,7 @@ int main(int argc, char *argv[])
                 <UnstructuredGrid>
                 <Piece NumberOfPoints="NumOfVertices" NumberOfCells="NumOfElements">
                   <Points>
-                   <DataArray Name="vertices" />)";
-    meshData += R"(
+                   <DataArray Name="vertices" />
                   </Points>
                   <Cells>
                      <DataArray Name="connectivity" />
@@ -264,53 +265,71 @@ int main(int argc, char *argv[])
     adios2::IO io = adios.DeclareIO("Test output");
     io.SetEngine("BPFile");
     const int tdim = mesh->topology().dim();
-    const std::uint32_t num_elements = mesh->topology().index_map(tdim)->size_local();
-    const std::uint32_t num_vertices = mesh->geometry().index_map()->size_local() + mesh->geometry().index_map()->num_ghosts();
+    const std::uint32_t num_elements
+        = mesh->topology().index_map(tdim)->size_local();
+    const std::uint32_t num_vertices
+        = mesh->geometry().index_map()->size_local()
+          + mesh->geometry().index_map()->num_ghosts();
     adios2::Engine writer = io.Open("output.bp", adios2::Mode::Write);
     io.DefineAttribute<std::string>("vtk.xml", meshData);
 
     writer.BeginStep();
 
-    adios2::Variable<std::uint32_t> vertices = io.DefineVariable<std::uint32_t>("NumOfVertices", {adios2::LocalValueDim});
+    adios2::Variable<std::uint32_t> vertices = io.DefineVariable<std::uint32_t>(
+        "NumOfVertices", {adios2::LocalValueDim});
     writer.Put<std::uint32_t>(vertices, num_vertices);
-    adios2::Variable<std::uint32_t> elements = io.DefineVariable<std::uint32_t>("NumOfElements", {adios2::LocalValueDim});
+    adios2::Variable<std::uint32_t> elements = io.DefineVariable<std::uint32_t>(
+        "NumOfElements", {adios2::LocalValueDim});
     writer.Put<std::uint32_t>(elements, num_elements);
 
-    std::vector<int32_t>
-        cells(num_elements);
+    std::vector<int32_t> cells(num_elements);
     std::iota(cells.begin(), cells.end(), 0);
-    dolfinx::array2d<std::int32_t> geometry_top = dolfinx::mesh::entities_to_geometry(*mesh, tdim, cells, false);
+    dolfinx::array2d<std::int32_t> geometry_top
+        = dolfinx::mesh::entities_to_geometry(*mesh, tdim, cells, false);
     const size_t num_vertices_per_element = geometry_top.shape[1];
-    adios2::Variable<double> local_geometry = io.DefineVariable<double>("vertices", {}, {}, {num_vertices, 3});
+    adios2::Variable<double> local_geometry
+        = io.DefineVariable<double>("vertices", {}, {}, {num_vertices, 3});
     writer.Put<double>(local_geometry, mesh->geometry().x().data());
 
-    adios2::Variable<std::uint64_t> local_topology = io.DefineVariable<std::uint64_t>("connectivity", {}, {}, {num_elements, num_vertices_per_element + 1});
-    std::vector<std::uint64_t> glob_topology(num_elements * (geometry_top.shape[1] + 1));
+    adios2::Variable<std::uint64_t> local_topology
+        = io.DefineVariable<std::uint64_t>(
+            "connectivity", {}, {},
+            {num_elements, num_vertices_per_element + 1});
+    std::vector<std::uint64_t> glob_topology(num_elements
+                                             * (geometry_top.shape[1] + 1));
     std::vector<std::int64_t> global_top_i(num_vertices_per_element);
     int connectivity_offset = 0;
     for (size_t i = 0; i < num_elements; ++i)
     {
-      mesh->geometry().index_map()->local_to_global(geometry_top.row(i).data(), global_top_i.size(), global_top_i.data());
+      mesh->geometry().index_map()->local_to_global(
+          geometry_top.row(i).data(), global_top_i.size(), global_top_i.data());
       glob_topology[connectivity_offset++] = num_vertices_per_element;
       for (size_t j = 0; j < global_top_i.size(); ++j)
-        glob_topology[connectivity_offset++] = geometry_top.row(i)[j]; //global_top_i[j];
+        glob_topology[connectivity_offset++]
+            = geometry_top.row(i)[j]; // global_top_i[j];
     }
     writer.Put<std::uint64_t>(local_topology, glob_topology.data());
     // add element cell types
     std::vector<std::uint32_t> cell_types(num_elements, 5);
-    adios2::Variable<std::uint32_t> local_cell_types = io.DefineVariable<std::uint32_t>("types");
+    adios2::Variable<std::uint32_t> local_cell_types
+        = io.DefineVariable<std::uint32_t>("types");
     writer.Put<std::uint32_t>(local_cell_types, 5);
 
     writer.Put<std::uint32_t>(local_cell_types, cell_types.data());
 
-    std::uint32_t local_size = num_vertices; //V->dofmap()->index_map->size_local() * V->dofmap()->index_map_bs();
-    adios2::Variable<PetscScalar> local_output = io.DefineVariable<PetscScalar>("sol", {}, {}, {local_size});
+    std::uint32_t local_size
+        = num_vertices; // V->dofmap()->index_map->size_local()
+                        // * V->dofmap()->index_map_bs();
+    adios2::Variable<PetscScalar> local_output
+        = io.DefineVariable<PetscScalar>("sol", {}, {}, {local_size});
     // auto vals = u.compute_point_values();
     // writer.Put<PetscScalar>(local_output, vals.data());
     writer.Put<PetscScalar>(local_output, u.x()->array().data());
 
     writer.EndStep();
     writer.Close();
+    dolfinx::io::ADIOSFile adios_f(MPI_COMM_WORLD, "test.bp");
+    adios_f.write_function(u);
   }
 
   common::subsystem::finalize_petsc();
