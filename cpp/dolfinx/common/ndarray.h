@@ -7,6 +7,7 @@
 #pragma once
 
 #include "span.hpp"
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <numeric>
