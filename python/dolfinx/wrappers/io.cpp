@@ -46,7 +46,7 @@ void io(py::module& m)
            const py::array_t<std::int32_t, py::array::c_style>& values) {
           std::array shape = {static_cast<std::size_t>(entities.shape()[0]),
                               static_cast<std::size_t>(entities.shape()[1])};
-          const dolfinx::span2d<const std::int64_t> _entities(entities.data(),
+          const dolfinx::ndspan<const std::int64_t, 2> _entities(entities.data(),
                                                               shape);
           std::pair<dolfinx::ndarray<std::int32_t, 2>, std::vector<std::int32_t>> e
               = dolfinx::io::xdmf_utils::extract_local_entities(

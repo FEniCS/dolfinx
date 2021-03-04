@@ -84,7 +84,7 @@ public:
   /// Evaluate all basis functions at given points in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(std::vector<double>& values,
-                                const span2d<const double>& X) const;
+                                const ndspan<const double, 2>& X) const;
 
   /// Evaluate all basis function derivatives of given order at given points in
   /// reference cell
@@ -92,12 +92,12 @@ public:
   void
   evaluate_reference_basis_derivatives(std::vector<double>& reference_values,
                                        int order,
-                                       const span2d<const double>& X) const;
+                                       const ndspan<const double, 2>& X) const;
 
   /// Push basis functions forward to physical element
   void transform_reference_basis(std::vector<double>& values,
                                  const std::vector<double>& reference_values,
-                                 const span2d<const double>& X,
+                                 const ndspan<const double, 2>& X,
                                  const std::vector<double>& J,
                                  const tcb::span<const double>& detJ,
                                  const std::vector<double>& K) const;
@@ -106,7 +106,7 @@ public:
   void transform_reference_basis_derivatives(
       std::vector<double>& values, std::size_t order,
       const std::vector<double>& reference_values,
-      const span2d<const double>& X, const std::vector<double>& J,
+      const ndspan<const double, 2>& X, const std::vector<double>& J,
       const tcb::span<const double>& detJ, const std::vector<double>& K) const;
 
   /// Get the number of sub elements (for a mixed element)
@@ -154,7 +154,7 @@ public:
   /// @param[out] dofs The element degrees of freedom (interpolants) of
   /// the expression. The call must allocate the space. Is has
   template <typename T>
-  constexpr void interpolate(const span2d<const T>& values,
+  constexpr void interpolate(const ndspan<const T, 2>& values,
                              tcb::span<T> dofs) const
   {
     const std::size_t rows = _space_dim / _bs;

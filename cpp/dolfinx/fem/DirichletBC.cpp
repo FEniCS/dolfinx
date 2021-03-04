@@ -449,7 +449,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const std::function<std::vector<bool>(const span2d<const double>&)>&
+    const std::function<std::vector<bool>(const ndspan<const double, 2>&)>&
         marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
@@ -540,7 +540,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> fem::locate_dofs_geometrical(
     const fem::FunctionSpace& V,
-    const std::function<std::vector<bool>(const span2d<const double>&)>&
+    const std::function<std::vector<bool>(const ndspan<const double, 2>&)>&
         marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,

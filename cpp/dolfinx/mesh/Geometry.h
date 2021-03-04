@@ -120,7 +120,7 @@ private:
 mesh::Geometry create_geometry(MPI_Comm comm, const Topology& topology,
                                const fem::CoordinateElement& coordinate_element,
                                const graph::AdjacencyList<std::int64_t>& cells,
-                               const span2d<const double>& x);
+                               const ndspan<const double, 2>& x);
 
 } // namespace mesh
 } // namespace dolfinx

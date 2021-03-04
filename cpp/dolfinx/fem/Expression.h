@@ -94,7 +94,7 @@ public:
   /// correct sizing which should be num_cells rows by
   /// num_points*value_size columns.
   void eval(const tcb::span<const std::int32_t>& active_cells,
-            const span2d<T>& values) const
+            const ndspan<T, 2>& values) const
   {
     fem::eval(values, *this, active_cells);
   }

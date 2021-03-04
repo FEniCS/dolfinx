@@ -156,12 +156,12 @@ private:
 /// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const span2d<const double>& x, GhostMode ghost_mode);
+                 const ndspan<const double, 2>& x, GhostMode ghost_mode);
 
 /// Create a mesh using a provided mesh partitioning function
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const span2d<const double>& x, GhostMode ghost_mode,
+                 const ndspan<const double, 2>& x, GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
 
 } // namespace mesh

@@ -96,7 +96,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// will receive (local) cell-vertex connectivity for this triangle.
 std::pair<ndarray<std::int32_t, 2>, std::vector<std::int32_t>>
 extract_local_entities(const mesh::Mesh& mesh, int entity_dim,
-                       const span2d<const std::int64_t>& entities,
+                       const ndspan<const std::int64_t, 2>& entities,
                        const tcb::span<const std::int32_t>& values);
 
 /// TODO: Document

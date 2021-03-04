@@ -25,7 +25,7 @@ using namespace dolfinx::mesh;
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const span2d<const double>& x,
+                       const ndspan<const double, 2>& x,
                        mesh::GhostMode ghost_mode)
 {
   return create_mesh(
@@ -39,7 +39,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const span2d<const double>& x,
+                       const ndspan<const double, 2>& x,
                        mesh::GhostMode ghost_mode,
                        const mesh::CellPartitionFunction& cell_partitioner)
 {

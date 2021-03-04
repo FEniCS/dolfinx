@@ -309,7 +309,7 @@ std::vector<std::int64_t> refinement::adjust_indices(
 mesh::Mesh
 refinement::partition(const mesh::Mesh& old_mesh,
                       const graph::AdjacencyList<std::int64_t>& cell_topology,
-                      const span2d<const double>& new_vertex_coordinates,
+                      const ndspan<const double, 2>& new_vertex_coordinates,
                       bool redistribute, mesh::GhostMode gm)
 {
 

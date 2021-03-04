@@ -378,9 +378,6 @@ private:
   T* _storage;
 };
 
-template <typename T>
-using span2d = ndspan<T, 2>;
-
 /// Pretty printing, useful for debuging
 template <typename Array>
 std::ostream& print_array(std::ostream& out, const Array& array)

@@ -63,7 +63,7 @@ ndarray<double, 2> midpoints(const mesh::Mesh& mesh, int dim,
 ///   (indices local to the process)
 std::vector<std::int32_t> locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const span2d<const double>&)>&
+    const std::function<std::vector<bool>(const ndspan<const double, 2>&)>&
         marker);
 
 /// Compute indicies of all mesh entities that are attached to an owned
@@ -88,7 +88,7 @@ std::vector<std::int32_t> locate_entities(
 /// process)
 std::vector<std::int32_t> locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const span2d<const double>&)>&
+    const std::function<std::vector<bool>(const ndspan<const double, 2>&)>&
         marker);
 
 /// Compute the indices the geometry data for the vertices of the given

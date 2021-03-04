@@ -25,7 +25,7 @@ class Expression;
 /// @param[in] active_cells The cells on which to evaluate the
 /// expression
 template <typename T>
-void eval(const span2d<T>& values, const fem::Expression<T>& e,
+void eval(const ndspan<T, 2>& values, const fem::Expression<T>& e,
           const tcb::span<const std::int32_t>& active_cells)
 {
   // Extract data from Expression

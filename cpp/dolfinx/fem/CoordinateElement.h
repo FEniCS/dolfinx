@@ -71,16 +71,16 @@ public:
   /// @param[in,out] x The physical coordinates of the reference points X
   /// @param[in] X The coordinates on the reference cells
   /// @param[in] cell_geometry The cell node coordinates (physical)
-  void push_forward(const span2d<double>& x, const span2d<const double>& X,
-                    const span2d<const double>& cell_geometry) const;
+  void push_forward(const ndspan<double, 2>& x, const ndspan<const double, 2>& X,
+                    const ndspan<const double, 2>& cell_geometry) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
   void
-  compute_reference_geometry(const span2d<double>& X, std::vector<double>& J,
+  compute_reference_geometry(const ndspan<double, 2>& X, std::vector<double>& J,
                              tcb::span<double> detJ, std::vector<double>& K,
-                             const span2d<const double>& x,
-                             const span2d<const double>& cell_geometry) const;
+                             const ndspan<const double, 2>& x,
+                             const ndspan<const double, 2>& cell_geometry) const;
 
   /// Permutes a list of DOF numbers on a cell
   void permute_dofs(int* dofs, const uint32_t cell_perm) const;

@@ -117,7 +117,7 @@ std::vector<std::uint8_t> transpose(const std::vector<std::uint8_t>& map);
 /// @return Permuted cell topology, where for a cell `v_new[i] =
 ///   v_old[map[i]]`
 ndarray<std::int64_t, 2>
-compute_permutation(const span2d<const std::int64_t>& cells,
+compute_permutation(const ndspan<const std::int64_t, 2>& cells,
                     const std::vector<std::uint8_t>& p);
 
 /// Get VTK cell identifier

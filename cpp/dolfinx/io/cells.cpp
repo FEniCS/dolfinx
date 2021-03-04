@@ -350,7 +350,7 @@ io::cells::transpose(const std::vector<std::uint8_t>& map)
 }
 //-----------------------------------------------------------------------------
 ndarray<std::int64_t, 2>
-io::cells::compute_permutation(const span2d<const std::int64_t>& cells,
+io::cells::compute_permutation(const ndspan<const std::int64_t, 2>& cells,
                                const std::vector<std::uint8_t>& p)
 {
   ndarray<std::int64_t, 2> cells_new(cells.shape);

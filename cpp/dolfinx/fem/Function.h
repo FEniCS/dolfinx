@@ -202,7 +202,7 @@ public:
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
   void interpolate(const std::function<std::variant<std::vector<T>, ndarray<T, 2>>(
-                       const span2d<const double>&)>& f)
+                       const ndspan<const double, 2>&)>& f)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -228,8 +228,8 @@ public:
   /// @param[in,out] u The values at the points. Values are not computed
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size.
-  void eval(const span2d<const double>& x,
-            const tcb::span<const std::int32_t>& cells, span2d<T>& u) const
+  void eval(const ndspan<const double, 2>& x,
+            const tcb::span<const std::int32_t>& cells, ndspan<T, 2>& u) const
   {
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
@@ -405,7 +405,7 @@ public:
         cells[dofs[i]] = c;
     }
 
-    span2d<T> values(point_values);
+    ndspan<T, 2> values(point_values);
     eval(x_g, cells, values);
 
     return point_values;

@@ -45,7 +45,7 @@ mesh::Geometry
 mesh::create_geometry(MPI_Comm comm, const Topology& topology,
                       const fem::CoordinateElement& coordinate_element,
                       const graph::AdjacencyList<std::int64_t>& cell_nodes,
-                      const span2d<const double>& x)
+                      const ndspan<const double, 2>& x)
 {
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data

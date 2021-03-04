@@ -65,8 +65,8 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(
-    const span2d<double>& x, const span2d<const double>& X,
-    const span2d<const double>& cell_geometry) const
+    const ndspan<double, 2>& x, const ndspan<const double, 2>& X,
+    const ndspan<const double, 2>& cell_geometry) const
 {
   assert(x.shape[0] == X.shape[0]);
   assert((int)x.shape[1] == this->geometric_dimension());
@@ -88,9 +88,9 @@ void CoordinateElement::push_forward(
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
-    const span2d<double>& X, std::vector<double>& J, tcb::span<double> detJ,
-    std::vector<double>& K, const span2d<const double>& x,
-    const span2d<const double>& cell_geometry) const
+    const ndspan<double, 2>& X, std::vector<double>& J, tcb::span<double> detJ,
+    std::vector<double>& K, const ndspan<const double, 2>& x,
+    const ndspan<const double, 2>& cell_geometry) const
 {
   // Number of points
   int num_points = x.shape[0];

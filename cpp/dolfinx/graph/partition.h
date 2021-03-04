@@ -96,7 +96,7 @@ compute_ghost_indices(MPI_Comm comm,
 template <typename T>
 ndarray<T, 2> distribute_data(MPI_Comm comm,
                            const std::vector<std::int64_t>& indices,
-                           const span2d<const T>& x);
+                           const ndspan<const T, 2>& x);
 
 /// Given an adjacency list with global, possibly non-contiguous, link
 /// indices and a local adjacency list with contiguous link indices
@@ -132,7 +132,7 @@ compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
 template <typename T>
 ndarray<T, 2> build::distribute_data(MPI_Comm comm,
                                   const std::vector<std::int64_t>& indices,
-                                  const span2d<const T>& x)
+                                  const ndspan<const T, 2>& x)
 {
   common::Timer timer("Fetch float data from remote processes");
 

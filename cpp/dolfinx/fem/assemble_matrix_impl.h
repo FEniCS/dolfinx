@@ -47,7 +47,7 @@ void assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const span2d<const T>& coeffs, const std::vector<T>& constants,
+    const ndspan<const T, 2>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
@@ -61,7 +61,7 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const span2d<const T>& coeffs, const std::vector<T>& constants,
+    const ndspan<const T, 2>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
 
@@ -75,7 +75,7 @@ void assemble_interior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const span2d<const T>& coeffs, const std::vector<int>& offsets,
+    const ndspan<const T, 2>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
@@ -172,7 +172,7 @@ void assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const span2d<const T>& coeffs, const std::vector<T>& constants,
+    const ndspan<const T, 2>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info)
 {
   const int gdim = geometry.dim();
@@ -256,7 +256,7 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
-    const span2d<const T>& coeffs, const std::vector<T>& constants,
+    const ndspan<const T, 2>& coeffs, const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
@@ -357,7 +357,7 @@ void assemble_interior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const span2d<const T>& coeffs, const std::vector<int>& offsets,
+    const ndspan<const T, 2>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constants,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)

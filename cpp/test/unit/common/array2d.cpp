@@ -46,7 +46,7 @@ void test_dot_product()
 
   // transpose arr2 and use vector data structure
   std::vector<double> data_transpose(300);
-  span2d<double> arr2_T(data_transpose.data(), shape1);
+  ndspan<double, 2> arr2_T(data_transpose.data(), shape1);
   for (std::size_t i = 0; i < arr2.shape[0]; i++)
     for (std::size_t j = 0; j < arr2.shape[1]; j++)
       arr2_T(j, i) = arr2(i, j);
@@ -55,7 +55,7 @@ void test_dot_product()
     CHECK(e == 2.0);
 
   std::array<double, 9> result = {0};
-  span2d<double> view(result.data(), {3, 3});
+  ndspan<double, 2> view(result.data(), {3, 3});
 
   for (std::size_t i = 0; i < view.shape[0]; i++)
     for (std::size_t j = 0; j < view.shape[1]; j++)

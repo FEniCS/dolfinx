@@ -205,7 +205,7 @@ ndarray<double, 2> mesh::midpoints(const mesh::Mesh& mesh, int dim,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const span2d<const double>&)>& marker)
+    const std::function<std::vector<bool>(const ndspan<const double, 2>&)>& marker)
 {
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -269,7 +269,7 @@ std::vector<std::int32_t> mesh::locate_entities(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const span2d<const double>&)>& marker)
+    const std::function<std::vector<bool>(const ndspan<const double, 2>&)>& marker)
 {
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();

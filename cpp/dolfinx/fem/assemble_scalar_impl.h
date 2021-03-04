@@ -32,7 +32,7 @@ T assemble_cells(
     const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const span2d<const T>& coeffs, const std::vector<T>& constant_values,
+    const ndspan<const T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info);
 
 /// Execute kernel over exterior facets and accumulate result
@@ -41,7 +41,7 @@ T assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const span2d<const T>& coeffs, const std::vector<T>& constant_values,
+    const ndspan<const T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
 
@@ -51,7 +51,7 @@ T assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const span2d<const T>& coeffs, const std::vector<int>& offsets,
+    const ndspan<const T, 2>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms);
@@ -95,7 +95,7 @@ T assemble_scalar(const fem::Form<T>& M)
     const std::vector<std::int32_t>& active_cells
         = M.domains(IntegralType::cell, i);
     value += fem::impl::assemble_cells(mesh->geometry(), active_cells, fn,
-                                       span2d<const T>(coeffs), constant_values,
+                                       ndspan<const T, 2>(coeffs), constant_values,
                                        cell_info);
   }
 
@@ -116,7 +116,7 @@ T assemble_scalar(const fem::Form<T>& M)
       const std::vector<std::int32_t>& active_facets
           = M.domains(IntegralType::exterior_facet, i);
       value += fem::impl::assemble_exterior_facets(
-          *mesh, active_facets, fn, span2d<const T>(coeffs), constant_values,
+          *mesh, active_facets, fn, ndspan<const T, 2>(coeffs), constant_values,
           cell_info, perms);
     }
 
@@ -127,7 +127,7 @@ T assemble_scalar(const fem::Form<T>& M)
       const std::vector<std::int32_t>& active_facets
           = M.domains(IntegralType::interior_facet, i);
       value += fem::impl::assemble_interior_facets(
-          *mesh, active_facets, fn, span2d<const T>(coeffs), c_offsets,
+          *mesh, active_facets, fn, ndspan<const T, 2>(coeffs), c_offsets,
           constant_values, cell_info, perms);
     }
   }
@@ -141,7 +141,7 @@ T assemble_cells(
     const std::vector<std::int32_t>& active_cells,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const span2d<const T>& coeffs, const std::vector<T>& constant_values,
+    const ndspan<const T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info)
 {
   const int gdim = geometry.dim();
@@ -181,7 +181,7 @@ T assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const span2d<const T>& coeffs, const std::vector<T>& constant_values,
+    const ndspan<const T, 2>& coeffs, const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)
 {
@@ -239,7 +239,7 @@ T assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& fn,
-    const span2d<const T>& coeffs, const std::vector<int>& offsets,
+    const ndspan<const T, 2>& coeffs, const std::vector<int>& offsets,
     const std::vector<T>& constant_values,
     const std::vector<std::uint32_t>& cell_info,
     const std::vector<std::uint8_t>& perms)

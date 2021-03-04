@@ -146,7 +146,7 @@ void mesh(py::module& m)
         std::array shape
             = {static_cast<std::size_t>(x.shape()[0]),
                static_cast<std::size_t>(x.ndim() == 1 ? 1 : x.shape()[1])};
-        dolfinx::span2d<const double> _x(x.data(), shape);
+        dolfinx::ndspan<const double, 2> _x(x.data(), shape);
         return dolfinx::mesh::create_mesh(comm.get(), cells, element, _x,
                                           ghost_mode, partitioner_wrapper);
       },

@@ -56,8 +56,8 @@ void interpolate(Function<T>& u, const Function<T>& v);
 template <typename T>
 void interpolate(Function<T>& u,
                  const std::function<std::variant<std::vector<T>, ndarray<T, 2>>(
-                     const span2d<const double>&)>& f,
-                 const span2d<const double>& x,
+                     const ndspan<const double, 2>&)>& f,
+                 const ndspan<const double, 2>& x,
                  const tcb::span<const std::int32_t>& cells);
 
 /// Interpolate an expression f(x)
@@ -79,8 +79,8 @@ void interpolate(Function<T>& u,
 template <typename T>
 void interpolate_c(
     Function<T>& u,
-    const std::function<void(const span2d<T>&, const span2d<const double>&)>& f,
-    const span2d<const double>& x, const tcb::span<const std::int32_t>& cells);
+    const std::function<void(const ndspan<T, 2>&, const ndspan<const double, 2>&)>& f,
+    const ndspan<const double, 2>& x, const tcb::span<const std::int32_t>& cells);
 
 namespace detail
 {
@@ -178,8 +178,8 @@ void interpolate(Function<T>& u, const Function<T>& v)
 template <typename T>
 void interpolate(Function<T>& u,
                  const std::function<std::variant<std::vector<T>, ndarray<T, 2>>(
-                     const span2d<const double>&)>& f,
-                 const span2d<const double>& x,
+                     const ndspan<const double, 2>&)>& f,
+                 const ndspan<const double, 2>& x,
                  const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
@@ -217,12 +217,12 @@ void interpolate(Function<T>& u,
   // points.
 
   std::variant<std::vector<T>, ndarray<T, 2>> values_v = f(x);
-  span2d<T> values(nullptr, {0, 0});
+  ndspan<T, 2> values(nullptr, {0, 0});
   if (std::holds_alternative<ndarray<T, 2>>(values_v))
   {
     T* ptr = std::get<1>(values_v).data();
     std::array shape = std::get<1>(values_v).shape;
-    values = span2d<T>(ptr, shape);
+    values = ndspan<T, 2>(ptr, shape);
     if (values.shape[0] != element->value_size())
       throw std::runtime_error("Interpolation data has the wrong shape.");
   }
@@ -230,7 +230,7 @@ void interpolate(Function<T>& u,
   {
     if (element->value_size() != 1)
       throw std::runtime_error("Interpolation data has the wrong shape.");
-    values = span2d<T>(std::get<0>(values_v).data(),
+    values = ndspan<T, 2>(std::get<0>(values_v).data(),
                        {element->value_size(), x.shape[1]});
   }
 
@@ -298,7 +298,7 @@ void interpolate(Function<T>& u,
                              detJ.data(), K.data(), gdim, value_size, 1,
                              X.shape[0]);
 
-      element->interpolate(span2d<const T>(reference_data),
+      element->interpolate(ndspan<const T, 2>(reference_data),
                            tcb::make_span(_coeffs));
       element->apply_inverse_transpose_dof_transformation(_coeffs.data(),
                                                           cell_info[c], 1);
@@ -319,8 +319,8 @@ void interpolate(Function<T>& u,
 template <typename T>
 void interpolate_c(
     Function<T>& u,
-    const std::function<void(const span2d<T>&, const span2d<const double>&)>& f,
-    const span2d<const double>& x, const tcb::span<const std::int32_t>& cells)
+    const std::function<void(const ndspan<T, 2>&, const ndspan<const double, 2>&)>& f,
+    const ndspan<const double, 2>& x, const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
@@ -330,7 +330,7 @@ void interpolate_c(
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
 
-  auto fn = [value_size, &f](const span2d<const double>& x) {
+  auto fn = [value_size, &f](const ndspan<const double, 2>& x) {
     ndarray<T, 2> values(value_size, x.shape[1]);
     f(values, x);
     return values;
