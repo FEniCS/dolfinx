@@ -74,8 +74,7 @@ public:
 
   /// Constructs a two dimensional array from a vector
   template <typename Vector,
-            typename
-            = typename std::enable_if<std::is_class<Vector>::value>::type>
+            typename = std::enable_if_t<std::is_class<Vector>::value>>
   ndarray(std::array<size_type, N> shape, Vector&& x)
       : shape(shape), _storage(std::forward<Vector>(x))
   {
@@ -98,7 +97,7 @@ public:
   /// Construct a n-dimensional array from a n-dimensional span
   /// @param[in] s The span
   template <typename Span2d,
-            typename = typename std::enable_if<has_shape<Span2d>::value>>
+            typename = std::enable_if_t<has_shape<Span2d>::value>>
   constexpr ndarray(Span2d& s)
       : shape(s.shape), _storage(s.data(), s.data() + s.size())
   {
@@ -137,7 +136,6 @@ public:
   /// @param[in] j Column index
   /// @return Reference to the (i, j) item
   /// @note No bounds checking is performed
-  // template <typename std::enable_if<N == 2>::value>
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr const_reference operator()(size_type i, size_type j) const
   {
@@ -264,9 +262,9 @@ public:
   }
 
   /// Construct a two dimensional span from a two dimensional array
-  template <typename Array2d,
-            typename = typename std::enable_if<has_shape<Array2d>::value>>
-  constexpr ndspan(Array2d& x) : shape(x.shape), _storage(x.data())
+  template <typename Array,
+            typename = std::enable_if_t<has_shape<Array>::value>>
+  constexpr ndspan(Array& x) : shape(x.shape), _storage(x.data())
   {
     // Do nothing
   }
