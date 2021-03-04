@@ -40,8 +40,11 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_compile_options(cpp PRIVATE "-fvisibility=default")
 endif()
 
+# Check for ADIOS
+find_package(ADIOS2 REQUIRED)
+
 # Add DOLFINX libraries and other config
-target_link_libraries(cpp PRIVATE pybind11::module dolfinx)
+target_link_libraries(cpp PRIVATE pybind11::module dolfinx adios2::cxx11_mpi)
 
 # Add to CMake search path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)

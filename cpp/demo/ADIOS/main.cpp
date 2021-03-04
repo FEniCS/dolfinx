@@ -88,7 +88,6 @@
 // .. code-block:: cpp
 
 #include "poisson.h"
-#include <adios2.h>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
@@ -243,91 +242,6 @@ int main(int argc, char* argv[])
     io::VTKFile file("u.pvd");
     file.write(u);
 
-    std::string meshData = R"(
-                <VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian">
-                <UnstructuredGrid>
-                <Piece NumberOfPoints="NumOfVertices" NumberOfCells="NumOfElements">
-                  <Points>
-                   <DataArray Name="vertices" />
-                  </Points>
-                  <Cells>
-                     <DataArray Name="connectivity" />
-                     <DataArray Name="types" />
-                  </Cells>
-                  <PointData>
-                    <DataArray Name="sol" />
-                  </PointData>
-                </Piece>
-                </UnstructuredGrid>
-                </VTKFile> )";
-
-    adios2::ADIOS adios(MPI_COMM_WORLD);
-    adios2::IO io = adios.DeclareIO("Test output");
-    io.SetEngine("BPFile");
-    const int tdim = mesh->topology().dim();
-    const std::uint32_t num_elements
-        = mesh->topology().index_map(tdim)->size_local();
-    const std::uint32_t num_vertices
-        = mesh->geometry().index_map()->size_local()
-          + mesh->geometry().index_map()->num_ghosts();
-    adios2::Engine writer = io.Open("output.bp", adios2::Mode::Write);
-    io.DefineAttribute<std::string>("vtk.xml", meshData);
-
-    writer.BeginStep();
-
-    adios2::Variable<std::uint32_t> vertices = io.DefineVariable<std::uint32_t>(
-        "NumOfVertices", {adios2::LocalValueDim});
-    writer.Put<std::uint32_t>(vertices, num_vertices);
-    adios2::Variable<std::uint32_t> elements = io.DefineVariable<std::uint32_t>(
-        "NumOfElements", {adios2::LocalValueDim});
-    writer.Put<std::uint32_t>(elements, num_elements);
-
-    std::vector<int32_t> cells(num_elements);
-    std::iota(cells.begin(), cells.end(), 0);
-    dolfinx::array2d<std::int32_t> geometry_top
-        = dolfinx::mesh::entities_to_geometry(*mesh, tdim, cells, false);
-    const size_t num_vertices_per_element = geometry_top.shape[1];
-    adios2::Variable<double> local_geometry
-        = io.DefineVariable<double>("vertices", {}, {}, {num_vertices, 3});
-    writer.Put<double>(local_geometry, mesh->geometry().x().data());
-
-    adios2::Variable<std::uint64_t> local_topology
-        = io.DefineVariable<std::uint64_t>(
-            "connectivity", {}, {},
-            {num_elements, num_vertices_per_element + 1});
-    std::vector<std::uint64_t> glob_topology(num_elements
-                                             * (geometry_top.shape[1] + 1));
-    std::vector<std::int64_t> global_top_i(num_vertices_per_element);
-    int connectivity_offset = 0;
-    for (size_t i = 0; i < num_elements; ++i)
-    {
-      mesh->geometry().index_map()->local_to_global(
-          geometry_top.row(i).data(), global_top_i.size(), global_top_i.data());
-      glob_topology[connectivity_offset++] = num_vertices_per_element;
-      for (size_t j = 0; j < global_top_i.size(); ++j)
-        glob_topology[connectivity_offset++]
-            = geometry_top.row(i)[j]; // global_top_i[j];
-    }
-    writer.Put<std::uint64_t>(local_topology, glob_topology.data());
-    // add element cell types
-    std::vector<std::uint32_t> cell_types(num_elements, 5);
-    adios2::Variable<std::uint32_t> local_cell_types
-        = io.DefineVariable<std::uint32_t>("types");
-    writer.Put<std::uint32_t>(local_cell_types, 5);
-
-    writer.Put<std::uint32_t>(local_cell_types, cell_types.data());
-
-    std::uint32_t local_size
-        = num_vertices; // V->dofmap()->index_map->size_local()
-                        // * V->dofmap()->index_map_bs();
-    adios2::Variable<PetscScalar> local_output
-        = io.DefineVariable<PetscScalar>("sol", {}, {}, {local_size});
-    // auto vals = u.compute_point_values();
-    // writer.Put<PetscScalar>(local_output, vals.data());
-    writer.Put<PetscScalar>(local_output, u.x()->array().data());
-
-    writer.EndStep();
-    writer.Close();
     dolfinx::io::ADIOSFile adios_f(MPI_COMM_WORLD, "test.bp");
     adios_f.write_function(u);
   }

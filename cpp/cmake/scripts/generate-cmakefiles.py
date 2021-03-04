@@ -23,6 +23,8 @@ if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
+find_package(ADIOS2 REQUIRED)
+
 # Executable
 add_executable(${{PROJECT_NAME}} {src_files})
 
@@ -30,7 +32,7 @@ add_executable(${{PROJECT_NAME}} {src_files})
 target_compile_features(${{PROJECT_NAME}} PRIVATE cxx_std_17)
 
 # Target libraries
-target_link_libraries(${{PROJECT_NAME}} dolfinx)
+target_link_libraries(${{PROJECT_NAME}} dolfinx adios2::cxx11_mpi)
 
 # Do not throw error for 'multi-line comments' (these are typical in
 # rst which includes LaTeX)
@@ -55,7 +57,7 @@ executable_prefixes = dict(demo="demo_")
 main_file_names = dict(demo=set(["main.cpp"]))
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)
-exclude_projects = ["ADIOS"]
+exclude_projects = []
 
 
 def generate_cmake_files(subdirectory, generated_files):
