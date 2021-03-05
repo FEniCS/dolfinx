@@ -55,18 +55,11 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u)
   adios2::Variable<double> local_geometry
       = _io->DefineVariable<double>("vertices", {}, {}, {num_vertices, 3});
 
-  // Extract topology for all local cells
-  // Output is written as [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
+  // Get DOLFINx to VTK permuation
+  // FIXME: Use better way to get number of nods
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::uint32_t num_nodes = x_dofmap.num_links(0);
-  adios2::Variable<std::uint64_t> local_topology
-      = _io->DefineVariable<std::uint64_t>("connectivity", {}, {},
-                                           {num_elements, num_nodes + 1});
-  std::vector<std::uint64_t> vtk_topology(num_elements * (num_nodes + 1));
-  int connectivity_offset = 0;
-
-  // FIXME: Use better way to get number of nods
   std::vector<std::uint8_t> map = dolfinx::io::cells::transpose(
       dolfinx::io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
   // TODO: Remove when when paraview issue 19433 is resolved
@@ -77,6 +70,15 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u)
     map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
            22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
   }
+
+  // Extract topology for all local cells
+  // Output is written as [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
+
+  adios2::Variable<std::uint64_t> local_topology
+      = _io->DefineVariable<std::uint64_t>("connectivity", {}, {},
+                                           {num_elements, num_nodes + 1});
+  std::vector<std::uint64_t> vtk_topology(num_elements * (num_nodes + 1));
+  int connectivity_offset = 0;
   for (size_t c = 0; c < num_elements; ++c)
   {
     auto x_dofs = x_dofmap.links(c);
@@ -91,7 +93,6 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u)
 
   // Start writer for given function
   _writer->BeginStep();
-
   _writer->Put<std::uint32_t>(vertices, num_vertices);
   _writer->Put<std::uint32_t>(elements, num_elements);
   _writer->Put<std::uint32_t>(
@@ -99,19 +100,43 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u)
   _writer->Put<double>(local_geometry, mesh->geometry().x().data());
   _writer->Put<std::uint64_t>(local_topology, vtk_topology.data());
 
-  // Write function data to file
+  // Extract and write function data
   // NOTE: This only works for CG1
+  std::vector<Scalar> function_data = u.x()->array();
   std::uint32_t local_size
       = num_vertices; // V->dofmap()->index_map->size_local()
                       // * V->dofmap()->index_map_bs();
-  adios2::Variable<Scalar> local_output
-      = _io->DefineVariable<Scalar>(u.name, {}, {}, {local_size});
-  _point_data.push_back(u.name);
 
-  // FIXME: Not correct behavior for complex
-  // auto vals = u.compute_point_values();
-  // writer.Put<PetscScalar>(local_output, vals.data());
-  _writer->Put<Scalar>(local_output, u.x()->array().data());
+  // Extract real and imaginary components
+  std::vector<std::string> components = {""};
+  if constexpr (!std::is_scalar<Scalar>::value)
+    components = {"real", "imag"};
+
+  // Write each component
+  std::vector<double> out_data;
+  out_data.reserve(local_size);
+  for (const auto& component : components)
+  {
+    std::string function_name = u.name;
+    if (component != "")
+      function_name += "_" + component;
+    adios2::Variable<double> local_output
+        = _io->DefineVariable<double>(function_name, {}, {}, {local_size});
+    for (size_t i = 0; i < local_size; ++i)
+    {
+      if (component == "imag")
+        out_data[i] = std::imag(function_data[i]);
+      else
+        out_data[i] = std::real(function_data[i]);
+    }
+    _point_data.push_back(function_name);
+    // auto vals = u.compute_point_values();
+    // writer.Put<PetscScalar>(local_output, vals.data());
+    _writer->Put<double>(local_output, out_data.data());
+    // To reuse out_data, we perform a put (writing data) to ADIOS2 here
+    _writer->PerformPuts();
+  }
+  // Add VTKScheme for current step
   _io->DefineAttribute<std::string>("vtk.xml", VTKSchema());
   _writer->EndStep();
 }
