@@ -233,17 +233,26 @@ int main(int argc, char* argv[])
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
-    // solution to a ``VTK`` file (specified using the suffix ``.pvd``) for
+    // solution to a ``bp`` file (specified using the suffix ``.bp``) for
     // visualisation in an external program such as Paraview.
     //
     // .. code-block:: cpp
 
-    // Save solution in VTK format
-    io::VTKFile file("u.pvd");
-    file.write(u);
+    // Save solution in ADIOS format
+    dolfinx::io::ADIOSFile adios(MPI_COMM_WORLD, "test.bp");
+    adios.write_function(u);
+    u.interpolate([](auto& x) {
+      std::vector<PetscScalar> f(x.shape[1]);
+      std::transform(x.row(0).begin(), x.row(0).end(), x.row(1).begin(),
+                     f.begin(), [](double x0, double x1) {
+                       double dx
+                           = (x0 - 0.5) * (x0 - 0.5) + (x1 - 0.5) * (x1 - 0.5);
+                       return 10.0 * std::exp(-(dx) / 0.02);
+                     });
+      return f;
+    });
 
-    dolfinx::io::ADIOSFile adios_f(MPI_COMM_WORLD, "test.bp");
-    adios_f.write_function(u);
+    adios_f.write_function(u, 2.0);
   }
 
   common::subsystem::finalize_petsc();
