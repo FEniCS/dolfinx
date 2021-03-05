@@ -48,7 +48,7 @@ public:
   /// \endcond
 
   /// Construct an n-dimensional array
-  /// @param[in] shape The shape the array {rows, cols}
+  /// @param[in] shape The shape the array, e.g. {rows, cols}
   /// @param[in] value Initial value for all entries
   /// @param[in] alloc The memory allocator for the data storage
   ndarray(std::array<size_type, N> shape, value_type value = T(),
@@ -73,6 +73,7 @@ public:
           const Allocator& alloc = Allocator())
       : shape({rows, cols})
   {
+    static_assert(N > 0);
     _storage = std::vector<T, Allocator>(shape[0] * shape[1], value, alloc);
     stride.back() = 1;
     std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
@@ -85,6 +86,7 @@ public:
   ndarray(std::array<size_type, N> shape, Vector&& x)
       : shape(shape), _storage(std::forward<Vector>(x))
   {
+    static_assert(N > 0);
     stride.back() = 1;
     std::partial_sum(shape.rbegin(), shape.rend() - 1, stride.rbegin() + 1,
                      std::multiplies<size_type>());
@@ -128,25 +130,35 @@ public:
   ~ndarray() = default;
 
   /// Copy assignment
-  ndarray& operator=(const ndarray& x) = default;
+  ndarray& operator=(const ndarray& x)
+  {
+    if (this != &x)
+    {
+      this->shape = x.shape;
+      this->stride = x.stride;
+      this->storage = x._storage;
+    }
+
+    return *this;
+  }
 
   /// Move assignment
   ndarray& operator=(ndarray&& x) = default;
 
-  /// Assignment
+  /// Assign and scalar to the array
   ndarray& operator=(const T& v)
   {
     std::fill(_storage.begin(), _storage.end(), v);
   }
 
-  /// TODO
+  /// Multiply the array by a scalar
   ndarray& operator*=(const T& v)
   {
     std::transform(_storage.begin(), _storage.end(), _storage.begin(),
                    [&v](T& x) { return x * v; });
   }
 
-  /// TODO
+  /// Add a scalar to the array
   ndarray& operator+=(const T& v)
   {
     std::transform(_storage.begin(), _storage.end(), _storage.begin(),
@@ -201,13 +213,19 @@ public:
   constexpr auto operator[](size_type i)
   {
     assert(i < shape[0]);
-    if constexpr (N == 2)
+    if constexpr (N == 1)
+      return _storage[i * stride[0]];
+    else if constexpr (N == 2)
+    {
       return tcb::span<value_type>(std::next(_storage.data(), i * stride[0]),
                                    shape[1]);
+    }
     else if constexpr (N == 3)
+    {
       return ndspan<value_type, 2>(std::next(_storage.data(), i * stride[0]),
                                    {shape[1], shape[2]},
                                    {stride[1], stride[2]});
+    }
   }
 
   /// Access a slice of the array with codimension 1
@@ -217,12 +235,18 @@ public:
   {
     assert(i < shape[0]);
     if constexpr (N == 3)
+    {
       return ndspan<const value_type, 2>(
           std::next(_storage.data(), i * stride[0]), {shape[1], shape[2]},
           {stride[1], stride[2]});
+    }
     else if constexpr (N == 2)
+    {
       return tcb::span<const value_type>(
           std::next(_storage.data(), i * stride[0]), shape[1]);
+    }
+    else if constexpr (N == 1)
+      return _storage[i * stride[0]];
   }
 
   /// Access a block in the array
@@ -261,7 +285,7 @@ public:
   /// Returns the strides of the array in bytes
   constexpr std::array<size_type, N> strides() const
   {
-    std::array<size_type, N> s = {0};
+    std::array<size_type, N> s;
     std::transform(stride.begin(), stride.end(), s.begin(),
                    [](size_type c) { return sizeof(T) * c; });
     return s;
@@ -322,6 +346,7 @@ public:
                    std::array<size_type, N> stride)
       : _storage(data), shape(shape), stride(stride)
   {
+    static_assert(N > 0);
     assert(stride.back() == 1);
   }
 
@@ -337,12 +362,9 @@ public:
   /// Assignment
   ndspan& operator=(const T& v)
   {
-    if constexpr (N == 2)
-    {
+    if constexpr (N == 1)
       for (std::size_t i = 0; i < shape[0]; ++i)
-        for (std::size_t j = 0; j < shape[1]; ++j)
-          _storage[i * stride[0] + j] = v;
-    }
+        _storage[i * stride[0]] = v;
     else
     {
       for (std::size_t i = 0; i < shape[0]; ++i)
@@ -353,11 +375,10 @@ public:
   /// TODO
   ndspan& operator*=(const T& v)
   {
-    if constexpr (N == 2)
+    if constexpr (N == 1)
     {
       for (std::size_t i = 0; i < shape[0]; ++i)
-        for (std::size_t j = 0; j < shape[1]; ++j)
-          _storage[i * stride[0] + j] *= v;
+        _storage[i * stride[0]] *= v;
     }
     else
     {
@@ -369,17 +390,36 @@ public:
   /// TODO
   ndspan& operator+=(const T& v)
   {
-    if constexpr (N == 2)
+    if constexpr (N == 1)
     {
       for (std::size_t i = 0; i < shape[0]; ++i)
-        for (std::size_t j = 0; j < shape[1]; ++j)
-          _storage[i * stride[0] + j] += v;
+        _storage[i * stride[0]] += v;
     }
     else
     {
       for (std::size_t i = 0; i < shape[0]; ++i)
         *this[i] += v;
     }
+  }
+
+  /// Return a reference to the element at specified location (i)
+  /// @param[in] i Position index
+  /// @return Reference to the (i) item
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 1>>
+  constexpr reference operator()(size_type i)
+  {
+    assert(i < shape[0]);
+    return _storage[i * stride[0]];
+  }
+
+  /// Return a reference to the element at specified location (i)
+  /// @param[in] i Position index
+  /// @return Reference to the (i) item
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 1>>
+  constexpr reference operator()(size_type i) const
+  {
+    assert(i < shape[0]);
+    return _storage[i * stride[0]];
   }
 
   /// Return a reference to the element at specified location (i, j)
@@ -391,7 +431,7 @@ public:
   constexpr reference operator()(size_type i, size_type j)
   {
     assert(i < shape[0] && j < shape[1]);
-    return _storage[i * stride[0] + j];
+    return _storage[i * stride[0] + j * stride[1]];
   }
 
   /// Return a reference to the element at specified location (i, j)
@@ -404,7 +444,7 @@ public:
   constexpr reference operator()(size_type i, size_type j) const
   {
     assert(i < shape[0] && j < shape[1]);
-    return _storage[i * stride[0] + j];
+    return _storage[i * stride[0] + j * stride[]];
   }
 
   /// Return a reference to the element at specified location (i, j, k)
@@ -412,7 +452,7 @@ public:
   constexpr reference operator()(size_type i, size_type j, size_type k)
   {
     assert(i < shape[0] && j < shape[1] && k < shape[2]);
-    return _storage[i * stride[0] + j * stride[1] + k];
+    return _storage[i * stride[0] + j * stride[1] + k * stride[2]];
   }
 
   /// Return a reference to the element at specified location (i, j, k)
@@ -430,11 +470,15 @@ public:
   constexpr auto operator[](size_type i)
   {
     if constexpr (N == 3)
+    {
       return ndspan<value_type, 2>(_storage + i * stride[0],
                                    {shape[1], shape[2]},
                                    {stride[1], stride[2]});
+    }
     else if constexpr (N == 2)
       return tcb::span<value_type>(_storage + i * stride[0], shape[1]);
+    else if constexpr (N == 1)
+      return _storage[i * stride[0]];
   }
 
   /// Access a slice of the array with codimension 1
@@ -448,9 +492,12 @@ public:
                                          {stride[1], stride[2]});
     else if constexpr (N == 2)
       return tcb::span<const value_type>(_storage + i * stride[0], shape[1]);
+    else if constexpr (N == 1)
+      return _storage[i * stride[0]];
   }
 
   /// Access a block in the array
+  /// @todo How should other dims be handled?
   constexpr ndspan<value_type, N> block(std::array<size_type, N> start,
                                         std::array<size_type, N> shape)
   {
@@ -460,6 +507,7 @@ public:
   }
 
   /// Access a block in the array (const)
+  /// @todo How should other dims be handled?
   constexpr ndspan<value_type, N> block(std::array<size_type, N> start,
                                         std::array<size_type, N> shape) const
   {
@@ -490,7 +538,7 @@ public:
   /// Returns the strides of the span in bytes
   constexpr std::array<size_type, N> strides() const
   {
-    std::array<size_type, N> s = {0};
+    std::array<size_type, N> s;
     std::transform(stride.begin(), stride.end(), s.begin(),
                    [](size_type c) { return sizeof(T) * c; });
     return s;
