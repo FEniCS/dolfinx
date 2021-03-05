@@ -26,10 +26,7 @@ void test_array2d()
   CHECK(arr.shape[1] == nj);
 
   for (int i = 0; i < ni; i++)
-  {
-    auto row = arr.row(i);
-    std::iota(row.begin(), row.end(), 0);
-  }
+    std::iota(arr[i].begin(), arr[i].end(), 0);
 
   for (std::size_t i = 0; i < arr.shape[0]; i++)
     for (std::size_t j = 0; j < arr.shape[1]; j++)
@@ -59,8 +56,8 @@ void test_dot_product()
 
   for (std::size_t i = 0; i < view.shape[0]; i++)
     for (std::size_t j = 0; j < view.shape[1]; j++)
-      view(i, j) = std::inner_product(arr1.row(i).begin(), arr1.row(i).end(),
-                                      arr2_T.row(j).begin(), 0.0);
+      view(i, j) = std::inner_product(arr1[i].begin(), arr1[i].end(),
+                                      arr2_T[j].begin(), 0.0);
 
   for (auto e : result)
     CHECK(e == 200.0);

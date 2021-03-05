@@ -197,13 +197,13 @@ void assemble_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).begin(), gdim,
+      std::copy_n(x_g[x_dofs[i]].begin(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
-    kernel(Ae.data(), coeffs.row(c).data(), constants.data(),
+    kernel(Ae.data(), coeffs[c].data(), constants.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Zero rows/columns for essential bcs
@@ -298,13 +298,13 @@ void assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+      std::copy_n(x_g[x_dofs[i]].data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
-    kernel(Ae.data(), coeffs.row(cells[0]).data(), constants.data(),
+    kernel(Ae.data(), coeffs[cells[0]].data(), constants.data(),
            coordinate_dofs.data(), &local_facet,
            &perms[cells[0] * facets.size() + local_facet], cell_info[cells[0]]);
 
@@ -434,8 +434,8 @@ void assemble_interior_facets(
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
-    auto coeff_cell0 = coeffs.row(cells[0]);
-    auto coeff_cell1 = coeffs.row(cells[1]);
+    auto coeff_cell0 = coeffs[cells[0]];
+    auto coeff_cell1 = coeffs[cells[1]];
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)

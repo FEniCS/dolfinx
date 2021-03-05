@@ -10,8 +10,8 @@
 #include <Eigen/Core>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/ndarray.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/ndarray.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
@@ -49,10 +49,10 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   const std::array<std::int32_t, 1> entity = {index};
   ndarray<std::int32_t, 2> vertex_indices
       = mesh::entities_to_geometry(mesh, dim, entity, false);
-  tcb::span<const int> entity_vertex_indices = vertex_indices.row(0);
+  tcb::span<const int> entity_vertex_indices = vertex_indices[0];
 
   std::array<std::array<double, 3>, 2> b;
-  std::copy_n(geom_dofs.row(entity_vertex_indices[0]).begin(), 3, b[0].begin());
+  std::copy_n(geom_dofs[entity_vertex_indices[0]].begin(), 3, b[0].begin());
   b[1] = b[0];
 
   // Compute min and max over remaining vertices

@@ -163,7 +163,7 @@ void _lift_bc_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+      std::copy_n(x_g[x_dofs[i]].data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
@@ -173,7 +173,7 @@ void _lift_bc_cells(
     const int num_rows = bs0 * dmap0.size();
     const int num_cols = bs1 * dmap1.size();
 
-    auto coeff_array = coeffs.row(c);
+    auto coeff_array = coeffs[c];
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
@@ -278,7 +278,7 @@ void _lift_bc_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).data(), gdim,
+      std::copy_n(x_g[x_dofs[i]].data(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
@@ -288,7 +288,7 @@ void _lift_bc_exterior_facets(
     const int num_rows = bs0 * dmap0.size();
     const int num_cols = bs1 * dmap1.size();
 
-    auto coeff_array = coeffs.row(cell);
+    auto coeff_array = coeffs[cell];
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array.data(), constant_values.data(),
@@ -443,8 +443,8 @@ void _lift_bc_interior_facets(
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
-    const auto coeff_cell0 = coeffs.row(cells[0]);
-    const auto coeff_cell1 = coeffs.row(cells[1]);
+    const auto coeff_cell0 = coeffs[cells[0]];
+    const auto coeff_cell1 = coeffs[cells[1]];
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)
@@ -626,13 +626,13 @@ void assemble_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).begin(), gdim,
+      std::copy_n(x_g[x_dofs[i]].begin(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
     // Tabulate vector for cell
     std::fill(be.begin(), be.end(), 0);
-    kernel(be.data(), coeffs.row(c).data(), constant_values.data(),
+    kernel(be.data(), coeffs[c].data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Scatter cell vector to 'global' vector array
@@ -690,13 +690,13 @@ void assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(x_g.row(x_dofs[i]).begin(), gdim,
+      std::copy_n(x_g[x_dofs[i]].begin(), gdim,
                   std::next(coordinate_dofs.begin(), i * gdim));
     }
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
-    fn(be.data(), coeffs.row(cell).data(), constant_values.data(),
+    fn(be.data(), coeffs[cell].data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet,
        &perms[cell * facets.size() + local_facet], cell_info[cell]);
 
@@ -773,8 +773,8 @@ void assemble_interior_facets(
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
-    auto coeff_cell0 = coeffs.row(cells[0]);
-    auto coeff_cell1 = coeffs.row(cells[1]);
+    auto coeff_cell0 = coeffs[cells[0]];
+    auto coeff_cell1 = coeffs[cells[1]];
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)

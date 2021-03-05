@@ -352,7 +352,7 @@ public:
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 
       // Compute expansion
-      auto u_row = u.row(p);
+      auto u_row = u[p];
       for (int k = 0; k < bs_element; ++k)
       {
         for (int i = 0; i < space_dimension; ++i)

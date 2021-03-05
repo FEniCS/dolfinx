@@ -356,8 +356,8 @@ io::cells::compute_permutation(const ndspan<const std::int64_t, 2>& cells,
   ndarray<std::int64_t, 2> cells_new(cells.shape);
   for (std::size_t c = 0; c < cells_new.shape[0]; ++c)
   {
-    auto cell = cells.row(c);
-    auto cell_new = cells_new.row(c);
+    auto cell = cells[c];
+    auto cell_new = cells_new[c];
     for (std::size_t i = 0; i < cell_new.size(); ++i)
       cell_new[i] = cell[p[i]];
   }

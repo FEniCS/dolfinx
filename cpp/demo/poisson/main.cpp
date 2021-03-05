@@ -161,24 +161,23 @@ int main(int argc, char* argv[])
     // Define boundary condition
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
-    const auto bdofs
-        = fem::locate_dofs_geometrical({*V}, [](const ndspan<const double, 2>& x) {
-            constexpr double eps
-                = 10.0 * std::numeric_limits<double>::epsilon();
-            std::vector<bool> marked(x.shape[1]);
-            std::transform(
-                x.row(0).begin(), x.row(0).end(), marked.begin(),
-                [](double x0) { return x0 < eps or std::abs(x0 - 1) < eps; });
-            return marked;
-          });
+    const auto bdofs = fem::locate_dofs_geometrical(
+        {*V}, [](const ndspan<const double, 2>& x) {
+          constexpr double eps = 10.0 * std::numeric_limits<double>::epsilon();
+          std::vector<bool> marked(x.shape[1]);
+          std::transform(
+              x[0].begin(), x[0].end(), marked.begin(),
+              [](double x0) { return x0 < eps or std::abs(x0 - 1) < eps; });
+          return marked;
+        });
 
     std::vector bc{std::make_shared<const fem::DirichletBC<PetscScalar>>(
         u0, std::move(bdofs))};
 
     f->interpolate([](auto& x) {
       std::vector<PetscScalar> f(x.shape[1]);
-      std::transform(x.row(0).begin(), x.row(0).end(), x.row(1).begin(),
-                     f.begin(), [](double x0, double x1) {
+      std::transform(x[0].begin(), x[0].end(), x[1].begin(), f.begin(),
+                     [](double x0, double x1) {
                        double dx
                            = (x0 - 0.5) * (x0 - 0.5) + (x1 - 0.5) * (x1 - 0.5);
                        return 10.0 * std::exp(-(dx) / 0.02);
@@ -188,7 +187,7 @@ int main(int argc, char* argv[])
 
     g->interpolate([](auto& x) {
       std::vector<PetscScalar> f(x.shape[1]);
-      std::transform(x.row(0).begin(), x.row(0).end(), f.begin(),
+      std::transform(x[0].begin(), x[0].end(), f.begin(),
                      [](double x0) { return std::sin(5 * x0); });
       return f;
     });

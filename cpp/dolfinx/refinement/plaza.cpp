@@ -328,8 +328,8 @@ face_long_edge(const mesh::Mesh& mesh)
     const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
     auto x_dofs = x_dofmap.links(c);
-    auto x0 = x.row(x_dofs[local0]);
-    auto x1 = x.row(x_dofs[local1]);
+    auto x0 = x[x_dofs[local0]];
+    auto x1 = x[x_dofs[local1]];
     edge_length[e] = std::sqrt(std::transform_reduce(
         x0.begin(), x0.end(), x1.begin(), 0.0, std::plus<>(),
         [](double x, double y) { return (x - y) * (x - y); }));

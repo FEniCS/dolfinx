@@ -124,7 +124,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     for (int i = 0; i < num_entities; ++i)
     {
       // Get the two vertices as points
-      auto vertices = geometry_entities.row(i);
+      auto vertices = geometry_entities[i];
       Eigen::Vector3d p0 = geom_dofs.row(vertices[0]);
       Eigen::Vector3d p1 = geom_dofs.row(vertices[1]);
       // Define normal by rotating tangent counter-clockwise
@@ -138,7 +138,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     for (int i = 0; i < num_entities; ++i)
     {
       // Get the three vertices as points
-      auto vertices = geometry_entities.row(i);
+      auto vertices = geometry_entities[i];
       const Eigen::Vector3d p0 = geom_dofs.row(vertices[0]);
       const Eigen::Vector3d p1 = geom_dofs.row(vertices[1]);
       const Eigen::Vector3d p2 = geom_dofs.row(vertices[2]);
@@ -154,7 +154,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     for (int i = 0; i < num_entities; ++i)
     {
       // Get three vertices as points
-      auto vertices = geometry_entities.row(i);
+      auto vertices = geometry_entities[i];
       const Eigen::Vector3d p0 = geom_dofs.row(vertices[0]);
       const Eigen::Vector3d p1 = geom_dofs.row(vertices[1]);
       const Eigen::Vector3d p2 = geom_dofs.row(vertices[2]);
@@ -172,8 +172,9 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   return ndarray<double, 2>(0, 3);
 }
 //-----------------------------------------------------------------------------
-ndarray<double, 2> mesh::midpoints(const mesh::Mesh& mesh, int dim,
-                                const tcb::span<const std::int32_t>& entities)
+ndarray<double, 2>
+mesh::midpoints(const mesh::Mesh& mesh, int dim,
+                const tcb::span<const std::int32_t>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
 
@@ -193,7 +194,7 @@ ndarray<double, 2> mesh::midpoints(const mesh::Mesh& mesh, int dim,
 
   for (std::size_t e = 0; e < entity_to_geometry.shape[0]; ++e)
   {
-    auto entity_vertices = entity_to_geometry.row(e);
+    auto entity_vertices = entity_to_geometry[e];
     x_mid.row(e) = 0.0;
     for (std::size_t v = 0; v < entity_vertices.size(); ++v)
       x_mid.row(e) += x.row(entity_vertices[v]);
@@ -205,7 +206,8 @@ ndarray<double, 2> mesh::midpoints(const mesh::Mesh& mesh, int dim,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const ndspan<const double, 2>&)>& marker)
+    const std::function<std::vector<bool>(const ndspan<const double, 2>&)>&
+        marker)
 {
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -269,7 +271,8 @@ std::vector<std::int32_t> mesh::locate_entities(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const ndspan<const double, 2>&)>& marker)
+    const std::function<std::vector<bool>(const ndspan<const double, 2>&)>&
+        marker)
 {
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -389,7 +392,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
   int num_entity_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
   ndarray<std::int32_t, 2> entity_geometry(entity_list.size(),
-                                        num_entity_vertices);
+                                           num_entity_vertices);
 
   if (orient
       and (cell_type != dolfinx::mesh::CellType::tetrahedron or dim != 2))
@@ -438,9 +441,9 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
 
       // Compute vector triple product of two edges and vector to midpoint
       Eigen::Vector3d p0, p1, p2;
-      std::copy_n(geom_dofs.row(entity_geometry(i, 0)).begin(), 3, p0.data());
-      std::copy_n(geom_dofs.row(entity_geometry(i, 1)).begin(), 3, p1.data());
-      std::copy_n(geom_dofs.row(entity_geometry(i, 2)).begin(), 3, p2.data());
+      std::copy_n(geom_dofs[entity_geometry(i, 0)].begin(), 3, p0.data());
+      std::copy_n(geom_dofs[entity_geometry(i, 1)].begin(), 3, p1.data());
+      std::copy_n(geom_dofs[entity_geometry(i, 2)].begin(), 3, p2.data());
 
       Eigen::Matrix3d a;
       a.row(0) = midpoint - p0;

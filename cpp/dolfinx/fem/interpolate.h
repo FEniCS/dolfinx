@@ -54,11 +54,12 @@ void interpolate(Function<T>& u, const Function<T>& v);
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
 template <typename T>
-void interpolate(Function<T>& u,
-                 const std::function<std::variant<std::vector<T>, ndarray<T, 2>>(
-                     const ndspan<const double, 2>&)>& f,
-                 const ndspan<const double, 2>& x,
-                 const tcb::span<const std::int32_t>& cells);
+void interpolate(
+    Function<T>& u,
+    const std::function<std::variant<std::vector<T>, ndarray<T, 2>>(
+        const ndspan<const double, 2>&)>& f,
+    const ndspan<const double, 2>& x,
+    const tcb::span<const std::int32_t>& cells);
 
 /// Interpolate an expression f(x)
 ///
@@ -77,10 +78,11 @@ void interpolate(Function<T>& u,
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
 template <typename T>
-void interpolate_c(
-    Function<T>& u,
-    const std::function<void(const ndspan<T, 2>&, const ndspan<const double, 2>&)>& f,
-    const ndspan<const double, 2>& x, const tcb::span<const std::int32_t>& cells);
+void interpolate_c(Function<T>& u,
+                   const std::function<void(const ndspan<T, 2>&,
+                                            const ndspan<const double, 2>&)>& f,
+                   const ndspan<const double, 2>& x,
+                   const tcb::span<const std::int32_t>& cells);
 
 namespace detail
 {
@@ -176,11 +178,12 @@ void interpolate(Function<T>& u, const Function<T>& v)
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void interpolate(Function<T>& u,
-                 const std::function<std::variant<std::vector<T>, ndarray<T, 2>>(
-                     const ndspan<const double, 2>&)>& f,
-                 const ndspan<const double, 2>& x,
-                 const tcb::span<const std::int32_t>& cells)
+void interpolate(
+    Function<T>& u,
+    const std::function<std::variant<std::vector<T>, ndarray<T, 2>>(
+        const ndspan<const double, 2>&)>& f,
+    const ndspan<const double, 2>& x,
+    const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
@@ -231,7 +234,7 @@ void interpolate(Function<T>& u,
     if (element->value_size() != 1)
       throw std::runtime_error("Interpolation data has the wrong shape.");
     values = ndspan<T, 2>(std::get<0>(values_v).data(),
-                       {element->value_size(), x.shape[1]});
+                          {element->value_size(), x.shape[1]});
   }
 
   if (values.shape[1] != cells.size() * X.shape[0])
@@ -290,7 +293,7 @@ void interpolate(Function<T>& u,
       for (int m = 0; m < value_size; ++m)
       {
         std::copy_n(&values(k * value_size + m, c * X.shape[0]), X.shape[0],
-                    _vals.row(m).begin());
+                    _vals[m].begin());
       }
 
       // Get element degrees of freedom for block
@@ -317,10 +320,11 @@ void interpolate(Function<T>& u,
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void interpolate_c(
-    Function<T>& u,
-    const std::function<void(const ndspan<T, 2>&, const ndspan<const double, 2>&)>& f,
-    const ndspan<const double, 2>& x, const tcb::span<const std::int32_t>& cells)
+void interpolate_c(Function<T>& u,
+                   const std::function<void(const ndspan<T, 2>&,
+                                            const ndspan<const double, 2>&)>& f,
+                   const ndspan<const double, 2>& x,
+                   const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);

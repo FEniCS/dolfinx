@@ -94,7 +94,7 @@ public:
   /// operator
   /// Construct an n-dimensional array using nested initializer lists
   /// @param[in] list The nested initializer list
-  template <typename = std::enable_if_t<N == 2>>
+  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr ndarray(std::initializer_list<std::initializer_list<T>> list)
       : shape({list.size(), (*list.begin()).size()})
   {
@@ -171,41 +171,32 @@ public:
     return _storage[i * stride[0] * j * stride[1] + k];
   }
 
-  /// Access a row in the array
-  /// @param[in] i Row index
-  /// @return Span of the row data
-  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
-  constexpr tcb::span<value_type> row(size_type i)
+  /// Access a slice of the array with codimension 1
+  /// @param[in] i Slice index
+  /// @return Span of the sliced data
+  constexpr auto operator[](size_type i)
   {
-    return tcb::span<value_type>(std::next(_storage.data(), i * stride[0]),
-                                 shape[1]);
+    if constexpr (N == 2)
+      return tcb::span<value_type>(std::next(_storage.data(), i * stride[0]),
+                                   shape[1]);
+    else if constexpr (N == 3)
+      return ndspan<value_type, 2>(std::next(_storage.data(), i * stride[0]),
+                                   {shape[1], shape[2]},
+                                   {stride[1], stride[2]});
   }
 
-  /// Access a row in the array (const version)
-  /// @param[in] i Row index
-  /// @return Span of the row data
-  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
-  constexpr tcb::span<const value_type> row(size_type i) const
+  /// Access a slice of the array with codimension 1
+  /// @param[in] i Slice index
+  /// @return Span of the sliced data
+  constexpr auto operator[](size_type i) const
   {
-    return tcb::span<const value_type>(
-        std::next(_storage.data(), i * stride[0]), shape[1]);
-  }
-
-  /// Access a row in the array
-  template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
-  constexpr ndspan<value_type, 2> row(size_type i)
-  {
-    return ndspan<value_type, 2>(std::next(_storage.data(), i * stride[0]),
-                                 {shape[1], shape[2]}, {stride[1], stride[2]});
-  }
-
-  /// Access a row in the array (const version)
-  template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
-  constexpr ndspan<const value_type, 2> row(size_type i) const
-  {
-    return ndspan<const value_type, 2>(
-        std::next(_storage.data(), i * stride[0]), {shape[1], shape[2]},
-        {stride[1], stride[2]});
+    if constexpr (N == 3)
+      return ndspan<const value_type, 2>(
+          std::next(_storage.data(), i * stride[0]), {shape[1], shape[2]},
+          {stride[1], stride[2]});
+    else if constexpr (N == 2)
+      return tcb::span<const value_type>(
+          std::next(_storage.data(), i * stride[0]), shape[1]);
   }
 
   /// Access a block in the array
@@ -300,7 +291,7 @@ public:
   /// Construct an n-dimensional array
   /// @param[in] data  pointer to the array to construct a view for
   /// @param[in] shape The shape the array {rows, cols}
-  /// @param[in] stride The array stides (by entries, not bytes)
+  /// @param[in] stride The array strides (by entries, not bytes)
   constexpr ndspan(T* data, std::array<size_type, N> shape,
                    std::array<size_type, N> stride)
       : _storage(data), shape(shape), stride(stride)
@@ -355,38 +346,30 @@ public:
     return _storage[i * stride[0] + j * stride[1] + k];
   }
 
-  /// Access a row in the array
-  /// @param[in] i Row index
-  /// @return Span of the row data
-  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
-  constexpr tcb::span<value_type> row(size_type i)
+  /// Access a slice of the array with codimension 1
+  /// @param[in] i Slice index
+  /// @return Span of the sliced data
+  constexpr auto operator[](size_type i)
   {
-    return tcb::span<value_type>(_storage + i * stride[0], shape[1]);
+    if constexpr (N == 3)
+      return ndspan<value_type, 2>(_storage + i * stride[0],
+                                   {shape[1], shape[2]},
+                                   {stride[1], stride[2]});
+    else if constexpr (N == 2)
+      return tcb::span<value_type>(_storage + i * stride[0], shape[1]);
   }
 
-  /// Access a row in the array (const version)
-  /// @param[in] i Row index
-  /// @return Span of the row data
-  template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
-  constexpr tcb::span<const value_type> row(size_type i) const
+  /// Access a slice of the array with codimension 1
+  /// @param[in] i Slice index
+  /// @return Span of the sliced data
+  constexpr auto operator[](size_type i) const
   {
-    return tcb::span<const value_type>(_storage + i * stride[0], shape[1]);
-  }
-
-  /// Access a row in the array
-  template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
-  constexpr ndspan<value_type, 2> row(size_type i)
-  {
-    return ndspan<value_type, 2>(_storage + i * stride[0],
-                                 {shape[1], shape[2]});
-  }
-
-  /// Access a row in the array (const version)
-  template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
-  constexpr ndspan<const value_type, 2> row(size_type i) const
-  {
-    return ndspan<const value_type, 2>(_storage + i * stride[0],
-                                       {shape[1], shape[2]});
+    if constexpr (N == 3)
+      return ndspan<const value_type, 2>(_storage + i * stride[0],
+                                         {shape[1], shape[2]},
+                                         {stride[1], stride[2]});
+    else if constexpr (N == 2)
+      return tcb::span<const value_type>(_storage + i * stride[0], shape[1]);
   }
 
   /// Access a block in the array
@@ -457,7 +440,7 @@ private:
 template <typename Array>
 std::ostream& print_array(std::ostream& out, const Array& array)
 {
-  if constexpr (array.rank == 2)
+  if constexpr (Array::rank == 2)
     for (std::size_t i = 0; i < array.shape[0]; i++)
     {
       out << "{";
@@ -466,7 +449,7 @@ std::ostream& print_array(std::ostream& out, const Array& array)
       out << "}" << std::endl;
     }
 
-  if constexpr (array.rank == 3)
+  if constexpr (Array::rank == 3)
     for (std::size_t i = 0; i < array.shape[0]; i++)
     {
       for (std::size_t j = 0; j < array.shape[1]; j++)

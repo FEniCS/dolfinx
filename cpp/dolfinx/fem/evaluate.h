@@ -71,7 +71,7 @@ void eval(const ndspan<T, 2>& values, const fem::Expression<T>& e,
         coordinate_dofs(j, k) = x_g(x_dof, k);
     }
 
-    auto coeff_cell = coeffs.row(c);
+    auto coeff_cell = coeffs[c];
     std::fill(values_e.begin(), values_e.end(), 0.0);
     fn(values_e.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data());
