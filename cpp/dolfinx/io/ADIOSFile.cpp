@@ -6,6 +6,8 @@
 
 #include "ADIOSFile.h"
 #include "dolfinx/io/cells.h"
+#include <adios2.h>
+
 using namespace dolfinx;
 using namespace dolfinx::io;
 
@@ -18,6 +20,8 @@ ADIOSFile::ADIOSFile(MPI_Comm comm, const std::string filename)
   _writer = std::make_shared<adios2::Engine>(
       _io->Open(filename, adios2::Mode::Write));
 }
+
+ADIOSFile::~ADIOSFile() { _writer->Close(); }
 
 void ADIOSFile::write_function(const dolfinx::fem::Function<double>& u)
 {

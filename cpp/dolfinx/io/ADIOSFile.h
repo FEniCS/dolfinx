@@ -6,9 +6,16 @@
 
 #pragma once
 
-#include <adios2.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/Function.h>
+#include <memory>
+
+namespace adios2
+{
+class ADIOS;
+class IO;
+class Engine;
+} // namespace adios2
 
 namespace dolfinx
 {
@@ -22,7 +29,7 @@ public:
   ADIOSFile(MPI_Comm comm, const std::string filename);
 
   /// Destructor
-  ~ADIOSFile() { _writer->Close(); }
+  ~ADIOSFile();
 
   /// Write a function to file
   void write_function(const dolfinx::fem::Function<double>& u);

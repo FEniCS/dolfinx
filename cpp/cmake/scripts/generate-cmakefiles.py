@@ -23,8 +23,6 @@ if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
-find_package(ADIOS2 REQUIRED)
-
 # Executable
 add_executable(${{PROJECT_NAME}} {src_files})
 
@@ -113,7 +111,8 @@ def generate_cmake_files(subdirectory, generated_files):
         if program_name not in executable_names:
             executable_names.add(program_name)
         else:
-            warnings.warn("Duplicate executable names found when generating CMakeLists.txt files.")
+            warnings.warn(
+                "Duplicate executable names found when generating CMakeLists.txt files.")
 
         # Write file
         filename = os.path.join(program_dir, "CMakeLists.txt")
