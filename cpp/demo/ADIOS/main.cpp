@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
       return f;
     });
 
-    adios_f.write_function(u, 2.0);
+    adios.write_function(u, 2.0);
   }
 
   common::subsystem::finalize_petsc();
