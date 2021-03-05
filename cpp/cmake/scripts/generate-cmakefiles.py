@@ -25,7 +25,7 @@ endif()
 
 # Executable
 add_executable(${{PROJECT_NAME}} {src_files})
- 
+
 # Set C++17 standard
 target_compile_features(${{PROJECT_NAME}} PRIVATE cxx_std_17)
 
