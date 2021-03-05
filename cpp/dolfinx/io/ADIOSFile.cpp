@@ -4,6 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#ifdef HAS_ADIOS2
+
 #include "ADIOSFile.h"
 #include "dolfinx/io/cells.h"
 
@@ -228,3 +230,5 @@ std::string ADIOSFile::VTKSchema()
 
   return schema;
 }
+
+#endif
