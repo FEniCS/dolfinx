@@ -444,7 +444,7 @@ public:
   constexpr reference operator()(size_type i, size_type j) const
   {
     assert(i < shape[0] && j < shape[1]);
-    return _storage[i * stride[0] + j * stride[]];
+    return _storage[i * stride[0] + j * stride[1]];
   }
 
   /// Return a reference to the element at specified location (i, j, k)
@@ -461,7 +461,7 @@ public:
                                        size_type k) const
   {
     assert(i < shape[0] && j < shape[1] && k < shape[2]);
-    return _storage[i * stride[0] + j * stride[1] + k];
+    return _storage[i * stride[0] + j * stride[1] + k * stride[2]];
   }
 
   /// Access a slice of the array with codimension 1
