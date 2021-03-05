@@ -25,12 +25,12 @@ endif()
 
 # Executable
 add_executable(${{PROJECT_NAME}} {src_files})
-
+ 
 # Set C++17 standard
 target_compile_features(${{PROJECT_NAME}} PRIVATE cxx_std_17)
 
 # Target libraries
-target_link_libraries(${{PROJECT_NAME}} dolfinx adios2::cxx11_mpi)
+target_link_libraries(${{PROJECT_NAME}} dolfinx)
 
 # Do not throw error for 'multi-line comments' (these are typical in
 # rst which includes LaTeX)

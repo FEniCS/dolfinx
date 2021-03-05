@@ -6,6 +6,7 @@
 
 #include "ADIOSFile.h"
 #include "dolfinx/io/cells.h"
+
 #include <adios2.h>
 
 using namespace dolfinx;

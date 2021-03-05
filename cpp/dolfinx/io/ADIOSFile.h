@@ -9,6 +9,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/Function.h>
 #include <memory>
+#include <vector>
 
 namespace adios2
 {
@@ -44,7 +45,7 @@ private:
   template <typename Scalar>
   void _write_function(const dolfinx::fem::Function<Scalar>& u, double t);
 
-    std::shared_ptr<adios2::ADIOS> _adios;
+  std::shared_ptr<adios2::ADIOS> _adios;
   // NOTE: Could have separate IOs for different tasks, but we will currently
   // only have one
   std::shared_ptr<adios2::IO> _io;
