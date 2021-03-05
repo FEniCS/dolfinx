@@ -1,4 +1,5 @@
-// Copyright (C) 2017-2019 Chris N. Richardson Garth N. Wells
+// Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and Jørgen S.
+// Dokken
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -10,6 +11,7 @@
 #include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/io/ADIOSFile.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
@@ -45,11 +47,10 @@ void io(py::module& m)
            const py::array_t<std::int64_t, py::array::c_style>& entities,
            const py::array_t<std::int32_t, py::array::c_style>& values) {
           dolfinx::array2d<std::int64_t> _entities(entities.shape()[0],
-                                                           entities.shape()[1]);
+                                                   entities.shape()[1]);
           std::copy_n(entities.data(), entities.size(), _entities.data());
-          std::pair<dolfinx::array2d<std::int32_t>,
-                    std::vector<std::int32_t>>
-              e = dolfinx::io::xdmf_utils::extract_local_entities(
+          std::pair<dolfinx::array2d<std::int32_t>, std::vector<std::int32_t>> e
+              = dolfinx::io::xdmf_utils::extract_local_entities(
                   mesh, entity_dim, _entities,
                   tcb::span(values.data(), values.size()));
           return std::pair(as_pyarray2d(std::move(e.first)),
@@ -128,6 +129,24 @@ void io(py::module& m)
         return MPICommWrapper(self.comm());
       });
 
+#ifdef HAS_ADIOS2
+  // dolfinx::io::ADIOSFile
+  py::class_<dolfinx::io::ADIOSFile, std::shared_ptr<dolfinx::io::ADIOSFile>>
+      adios_file(m, "ADIOSFile");
+  adios_file
+      .def(py::init([](const MPICommWrapper comm, const std::string filename) {
+        return std::make_unique<dolfinx::io::ADIOSFile>(comm.get(), filename);
+      }))
+      .def(
+          "write_function",
+          py::overload_cast<const dolfinx::fem::Function<std::complex<double>>&,
+                            double>(&dolfinx::io::ADIOSFile::write_function),
+          py::arg("function"), py::arg("t"))
+      .def("write_function",
+           py::overload_cast<const dolfinx::fem::Function<double>&, double>(
+               &dolfinx::io::ADIOSFile::write_function),
+           py::arg("function"), py::arg("t"));
+#endif
   // dolfinx::io::VTKFile
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>
       vtk_file(m, "VTKFile");
