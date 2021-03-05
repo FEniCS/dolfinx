@@ -133,6 +133,26 @@ public:
   /// Move assignment
   ndarray& operator=(ndarray&& x) = default;
 
+  /// Assignment
+  ndarray& operator=(const T& v)
+  {
+    std::fill(_storage.begin(), _storage.end(), v);
+  }
+
+  /// TODO
+  ndarray& operator*=(const T& v)
+  {
+    std::transform(_storage.begin(), _storage.end(), _storage.begin(),
+                   [&v](T& x) { return x * v; });
+  }
+
+  /// TODO
+  ndarray& operator+=(const T& v)
+  {
+    std::transform(_storage.begin(), _storage.end(), _storage.begin(),
+                   [&v](T& x) { return x + v; });
+  }
+
   /// Return a reference to the element at specified location (i, j)
   /// @param[in] i Row index
   /// @param[in] j Column index
@@ -312,6 +332,54 @@ public:
       : shape(x.shape), stride(x.stride), _storage(x.data())
   {
     // Do nothing
+  }
+
+  /// Assignment
+  ndspan& operator=(const T& v)
+  {
+    if constexpr (N == 2)
+    {
+      for (std::size_t i = 0; i < shape[0]; ++i)
+        for (std::size_t j = 0; j < shape[1]; ++j)
+          _storage[i * stride[0] + j] = v;
+    }
+    else
+    {
+      for (std::size_t i = 0; i < shape[0]; ++i)
+        *this[i] = v;
+    }
+  }
+
+  /// TODO
+  ndspan& operator*=(const T& v)
+  {
+    if constexpr (N == 2)
+    {
+      for (std::size_t i = 0; i < shape[0]; ++i)
+        for (std::size_t j = 0; j < shape[1]; ++j)
+          _storage[i * stride[0] + j] *= v;
+    }
+    else
+    {
+      for (std::size_t i = 0; i < shape[0]; ++i)
+        *this[i] *= v;
+    }
+  }
+
+  /// TODO
+  ndspan& operator+=(const T& v)
+  {
+    if constexpr (N == 2)
+    {
+      for (std::size_t i = 0; i < shape[0]; ++i)
+        for (std::size_t j = 0; j < shape[1]; ++j)
+          _storage[i * stride[0] + j] += v;
+    }
+    else
+    {
+      for (std::size_t i = 0; i < shape[0]; ++i)
+        *this[i] += v;
+    }
   }
 
   /// Return a reference to the element at specified location (i, j)
