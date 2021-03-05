@@ -141,6 +141,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr reference operator()(size_type i, size_type j)
   {
+    assert(i < shape[0] && j < shape[1]);
     return _storage[i * stride[0] + j];
   }
 
@@ -153,6 +154,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr const_reference operator()(size_type i, size_type j) const
   {
+    assert(i < shape[0] && j < shape[1]);
     return _storage[i * stride[0] + j];
   }
 
@@ -160,6 +162,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
   constexpr reference operator()(size_type i, size_type j, size_type k)
   {
+    assert(i < shape[0] && j < shape[1] && k < shape[2]);
     return _storage[i * stride[0] * j * stride[1] + k];
   }
 
@@ -168,6 +171,7 @@ public:
   constexpr const_reference operator()(size_type i, size_type j,
                                        size_type k) const
   {
+    assert(i < shape[0] && j < shape[1] && k < shape[2]);
     return _storage[i * stride[0] * j * stride[1] + k];
   }
 
@@ -176,6 +180,7 @@ public:
   /// @return Span of the sliced data
   constexpr auto operator[](size_type i)
   {
+    assert(i < shape[0]);
     if constexpr (N == 2)
       return tcb::span<value_type>(std::next(_storage.data(), i * stride[0]),
                                    shape[1]);
@@ -190,6 +195,7 @@ public:
   /// @return Span of the sliced data
   constexpr auto operator[](size_type i) const
   {
+    assert(i < shape[0]);
     if constexpr (N == 3)
       return ndspan<const value_type, 2>(
           std::next(_storage.data(), i * stride[0]), {shape[1], shape[2]},
@@ -232,10 +238,10 @@ public:
   /// sizeof(T)*(rows * cols)
   constexpr size_type size() const noexcept { return _storage.size(); }
 
-  /// Returns the strides of the array
+  /// Returns the strides of the array in bytes
   constexpr std::array<size_type, N> strides() const
   {
-    std::array<size_type, N> s;
+    std::array<size_type, N> s = {0};
     std::transform(stride.begin(), stride.end(), s.begin(),
                    [](size_type c) { return sizeof(T) * c; });
     return s;
@@ -316,6 +322,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr reference operator()(size_type i, size_type j)
   {
+    assert(i < shape[0] && j < shape[1]);
     return _storage[i * stride[0] + j];
   }
 
@@ -328,6 +335,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 2>>
   constexpr reference operator()(size_type i, size_type j) const
   {
+    assert(i < shape[0] && j < shape[1]);
     return _storage[i * stride[0] + j];
   }
 
@@ -335,6 +343,7 @@ public:
   template <std::size_t _N = N, typename = std::enable_if_t<_N == 3>>
   constexpr reference operator()(size_type i, size_type j, size_type k)
   {
+    assert(i < shape[0] && j < shape[1] && k < shape[2]);
     return _storage[i * stride[0] + j * stride[1] + k];
   }
 
@@ -343,6 +352,7 @@ public:
   constexpr const_reference operator()(size_type i, size_type j,
                                        size_type k) const
   {
+    assert(i < shape[0] && j < shape[1] && k < shape[2]);
     return _storage[i * stride[0] + j * stride[1] + k];
   }
 
@@ -410,9 +420,9 @@ public:
   }
 
   /// Returns the strides of the span in bytes
-  constexpr std::array<size_type, 2> strides() const
+  constexpr std::array<size_type, N> strides() const
   {
-    std::array<size_type, N> s;
+    std::array<size_type, N> s = {0};
     std::transform(stride.begin(), stride.end(), s.begin(),
                    [](size_type c) { return sizeof(T) * c; });
     return s;
