@@ -6,6 +6,8 @@
 
 #pragma once
 
+#ifdef HAS_ADIOS2
+
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/Function.h>
 #include <memory>
@@ -56,3 +58,5 @@ private:
 
 } // namespace io
 } // namespace dolfinx
+
+#endif
