@@ -149,11 +149,10 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u,
   _writer->Put<std::uint64_t>(local_topology, vtk_topology.data());
 
   // Extract and write function data
-  // NOTE: This only works for CG1
-  std::vector<Scalar> function_data = u.x()->array();
-  std::uint32_t local_size
-      = num_vertices; // V->dofmap()->index_map->size_local()
-                      // * V->dofmap()->index_map_bs();
+  // NOTE: Currently CG-1 interpolation of data.
+  auto function_data = u.compute_point_values();
+  std::uint32_t local_size = function_data.shape[0];
+  std::uint32_t block_size = function_data.shape[1];
 
   // Extract real and imaginary components
   std::vector<std::string> components = {""};
@@ -173,13 +172,12 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u,
     for (size_t i = 0; i < local_size; ++i)
     {
       if (component == "imag")
-        out_data[i] = std::imag(function_data[i]);
+        out_data[i] = std::imag(function_data.row(i)[0]);
       else
-        out_data[i] = std::real(function_data[i]);
+        out_data[i] = std::real(function_data.row(i)[0]);
     }
     _point_data.push_back(function_name);
-    // auto vals = u.compute_point_values();
-    // writer.Put<PetscScalar>(local_output, vals.data());
+
     _writer->Put<double>(local_output, out_data.data());
     // To reuse out_data, we perform a put (writing data) to ADIOS2 here
     _writer->PerformPuts();
