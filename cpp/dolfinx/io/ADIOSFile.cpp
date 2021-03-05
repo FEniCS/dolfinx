@@ -10,6 +10,42 @@
 
 using namespace dolfinx;
 using namespace dolfinx::io;
+namespace
+{
+// Safe definition of an attribute (required for time dependent problems)
+template <class T>
+adios2::Attribute<T>
+DefineAttribute(std::shared_ptr<adios2::IO> io, const std::string& attr_name,
+                const T& value, const std::string& var_name = "",
+                const std::string separator = "/")
+{
+  adios2::Attribute<T> attribute = io->InquireAttribute<T>(attr_name);
+  if (attribute)
+    return attribute;
+  return io->DefineAttribute<T>(attr_name, value, var_name, separator);
+}
+
+// Safe definition of a variable (required for time dependent problems)
+template <class T>
+adios2::Variable<T> DefineVariable(std::shared_ptr<adios2::IO> io,
+                                   const std::string& var_name,
+                                   const adios2::Dims& shape = adios2::Dims(),
+                                   const adios2::Dims& start = adios2::Dims(),
+                                   const adios2::Dims& count = adios2::Dims())
+{
+  adios2::Variable<T> variable = io->InquireVariable<T>(var_name);
+  if (variable)
+  {
+    if (variable.Count() != count
+        && variable.ShapeID() == adios2::ShapeID::LocalArray)
+      variable.SetSelection({start, count});
+  }
+  else
+    variable = io->DefineVariable<T>(var_name, shape, start, count);
+
+  return variable;
+}
+} // namespace
 
 ADIOSFile::ADIOSFile(MPI_Comm comm, const std::string filename)
     : _adios(), _io(), _point_data(), _writer()
@@ -23,20 +59,27 @@ ADIOSFile::ADIOSFile(MPI_Comm comm, const std::string filename)
 
 ADIOSFile::~ADIOSFile() { _writer->Close(); }
 
-void ADIOSFile::write_function(const dolfinx::fem::Function<double>& u)
+void ADIOSFile::write_function(const dolfinx::fem::Function<double>& u,
+                               double t)
 {
-  _write_function<double>(u);
+  _write_function<double>(u, t);
 }
 
 void ADIOSFile::write_function(
-    const dolfinx::fem::Function<std::complex<double>>& u)
+    const dolfinx::fem::Function<std::complex<double>>& u, double t)
 {
-  _write_function<std::complex<double>>(u);
+  _write_function<std::complex<double>>(u, t);
 }
 
 template <typename Scalar>
-void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u)
+void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u,
+                                double t)
 {
+  // Write time step information
+  _time_dep = true;
+  adios2::Variable<double> time = DefineVariable<double>(_io, "step");
+  _writer->Put<double>(time, t);
+
   // Get some data about mesh
   auto mesh = u.function_space()->mesh();
   auto top = mesh->topology();
@@ -48,16 +91,16 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u)
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
 
   // NOTE: This should be moved to a separate constructor eventually
-  adios2::Variable<std::uint32_t> vertices = _io->DefineVariable<std::uint32_t>(
-      "NumOfVertices", {adios2::LocalValueDim});
-  adios2::Variable<std::uint32_t> elements = _io->DefineVariable<std::uint32_t>(
-      "NumOfElements", {adios2::LocalValueDim});
+  adios2::Variable<std::uint32_t> vertices = DefineVariable<std::uint32_t>(
+      _io, "NumOfVertices", {adios2::LocalValueDim});
+  adios2::Variable<std::uint32_t> elements = DefineVariable<std::uint32_t>(
+      _io, "NumOfElements", {adios2::LocalValueDim});
 
   // Extract geometry for all local cells
   std::vector<int32_t> cells(num_elements);
   std::iota(cells.begin(), cells.end(), 0);
   adios2::Variable<double> local_geometry
-      = _io->DefineVariable<double>("vertices", {}, {}, {num_vertices, 3});
+      = DefineVariable<double>(_io, "vertices", {}, {}, {num_vertices, 3});
 
   // Get DOLFINx to VTK permuation
   // FIXME: Use better way to get number of nods
@@ -79,8 +122,8 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u)
   // Output is written as [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
 
   adios2::Variable<std::uint64_t> local_topology
-      = _io->DefineVariable<std::uint64_t>("connectivity", {}, {},
-                                           {num_elements, num_nodes + 1});
+      = DefineVariable<std::uint64_t>(_io, "connectivity", {}, {},
+                                      {num_elements, num_nodes + 1});
   std::vector<std::uint64_t> vtk_topology(num_elements * (num_nodes + 1));
   int connectivity_offset = 0;
   for (size_t c = 0; c < num_elements; ++c)
@@ -93,7 +136,7 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u)
 
   // Add element cell types
   adios2::Variable<std::uint32_t> cell_type
-      = _io->DefineVariable<std::uint32_t>("types");
+      = DefineVariable<std::uint32_t>(_io, "types");
 
   // Start writer for given function
   _writer->BeginStep();
@@ -125,7 +168,7 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u)
     if (component != "")
       function_name += "_" + component;
     adios2::Variable<double> local_output
-        = _io->DefineVariable<double>(function_name, {}, {}, {local_size});
+        = DefineVariable<double>(_io, function_name, {}, {}, {local_size});
     for (size_t i = 0; i < local_size; ++i)
     {
       if (component == "imag")
@@ -141,15 +184,15 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u)
     _writer->PerformPuts();
   }
   // Add VTKScheme for current step
-  _io->DefineAttribute<std::string>("vtk.xml", VTKSchema());
+  DefineAttribute<std::string>(_io, "vtk.xml", VTKSchema());
   _writer->EndStep();
 }
 
 std::string ADIOSFile::VTKSchema()
 {
   std::string schema = R"(
-                <VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian">
-                <UnstructuredGrid>
+            <VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian">
+              <UnstructuredGrid>
                 <Piece NumberOfPoints="NumOfVertices" NumberOfCells="NumOfElements">
                   <Points>
                    <DataArray Name="vertices" />
@@ -164,15 +207,25 @@ std::string ADIOSFile::VTKSchema()
   else
   {
     schema += R"(<PointData>)";
-    schema += "\n";
     for (auto name : _point_data)
-      schema += R"(<DataArray Name=")" + name + R"(" />)" + "\n";
-    schema += R"(</PointData>)";
-    schema += "\n";
+      schema += R"(
+                     <DataArray Name=")"
+                + name + R"(" />)";
+
+    if (_time_dep)
+    {
+      schema += R"(
+                     <DataArray Name="TIME">
+                       step 
+                     </DataArray>)";
+    }
+    schema += R"(
+                   </PointData>)";
   }
-  schema += R"(</Piece>
-                </UnstructuredGrid>
-                </VTKFile> )";
+  schema += R"(
+                </Piece>
+              </UnstructuredGrid>
+            </VTKFile> )";
 
   return schema;
 }
