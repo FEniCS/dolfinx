@@ -238,24 +238,23 @@ int main(int argc, char* argv[])
     //
     // .. code-block:: cpp
 
-    if (has_adios2())
-    {
-      // Save solution in ADIOS format
-      dolfinx::io::ADIOSFile adios(MPI_COMM_WORLD, "test.bp");
-      adios.write_function(u);
-      u.interpolate([](auto& x) {
-        std::vector<PetscScalar> f(x.shape[1]);
-        std::transform(x.row(0).begin(), x.row(0).end(), x.row(1).begin(),
-                       f.begin(), [](double x0, double x1) {
-                         double dx = (x0 - 0.5) * (x0 - 0.5)
-                                     + (x1 - 0.5) * (x1 - 0.5);
-                         return 10.0 * std::exp(-(dx) / 0.02);
-                       });
-        return f;
-      });
+#ifdef HAS_ADIOS2
+    // Save solution in ADIOS format
+    dolfinx::io::ADIOSFile adios(MPI_COMM_WORLD, "test.bp");
+    adios.write_function(u);
+    u.interpolate([](auto& x) {
+      std::vector<PetscScalar> f(x.shape[1]);
+      std::transform(x.row(0).begin(), x.row(0).end(), x.row(1).begin(),
+                     f.begin(), [](double x0, double x1) {
+                       double dx
+                           = (x0 - 0.5) * (x0 - 0.5) + (x1 - 0.5) * (x1 - 0.5);
+                       return 10.0 * std::exp(-(dx) / 0.02);
+                     });
+      return f;
+    });
 
-      adios.write_function(u, 2.0);
-    }
+    adios.write_function(u, 2.0);
+#endif
   }
 
   common::subsystem::finalize_petsc();
