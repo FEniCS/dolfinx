@@ -41,14 +41,13 @@ jobs:
           path: ./basix
           repository: FEniCS/basix
           ref: xtensor
+
+      - name: Install FEniCS Python components
         run: |
           cd basix
           cmake -G Ninja -B build-dir -S .
           cmake --build build-dir
           sudo cmake --install build-dir
-
-      - name: Install FEniCS Python components
-        run: |
           # python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
