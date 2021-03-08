@@ -657,22 +657,6 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   return shared_indices;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const
-{
-  std::vector<std::int64_t> remote_data;
-  scatter_fwd(local_data, remote_data, n);
-  return remote_data;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-IndexMap::scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const
-{
-  std::vector<std::int32_t> remote_data;
-  scatter_fwd(local_data, remote_data, n);
-  return remote_data;
-}
-//-----------------------------------------------------------------------------
 template <typename T>
 void IndexMap::scatter_fwd(const std::vector<T>& local_data,
                            std::vector<T>& remote_data, int n) const
