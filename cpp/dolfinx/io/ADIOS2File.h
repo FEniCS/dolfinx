@@ -25,35 +25,45 @@ namespace dolfinx
 
 namespace io
 {
-class ADIOSFile
+class ADIOS2File
 {
 public:
   /// Initialize ADIOS
-  ADIOSFile(MPI_Comm comm, const std::string filename);
+  ADIOS2File(MPI_Comm comm, std::string filename, std::string mode);
 
   /// Destructor
-  ~ADIOSFile();
+  ~ADIOS2File();
 
   /// Write a function to file
-  void write_function(const dolfinx::fem::Function<double>& u, double t = 0.0);
+  void write_function(
+      const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
+      double t = 0.0);
 
-  void write_function(const dolfinx::fem::Function<std::complex<double>>& u,
-                      double t = 0.0);
+  void write_function(
+      const std::vector<
+          std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
+      double t = 0.0);
 
   /// Wrapper for creating VTKSchema for given input
-  std::string VTKSchema();
+  std::string VTKSchema(std::set<std::string> point_data);
 
 private:
   template <typename Scalar>
-  void _write_function(const dolfinx::fem::Function<Scalar>& u, double t);
+  void _write_function(
+      const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
+      double t);
+  // Function for updating vtk schema
+  std::set<std::string> update_vtk_point_data();
 
   std::shared_ptr<adios2::ADIOS> _adios;
   // NOTE: Could have separate IOs for different tasks, but we will currently
   // only have one
   std::shared_ptr<adios2::IO> _io;
-  std::vector<std::string> _point_data;
-  std::shared_ptr<adios2::Engine> _writer;
+  std::shared_ptr<adios2::Engine> _engine;
   bool _time_dep = false;
+  // String holding vtk scheme from previous time step (in append mode)
+  std::string _vtk_scheme;
+  std::string _mode;
 };
 
 } // namespace io

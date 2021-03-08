@@ -6,9 +6,8 @@
 
 #ifdef HAS_ADIOS2
 
-#include "ADIOSFile.h"
+#include "ADIOS2File.h"
 #include "dolfinx/io/cells.h"
-
 #include <adios2.h>
 
 using namespace dolfinx;
@@ -48,43 +47,71 @@ adios2::Variable<T> DefineVariable(std::shared_ptr<adios2::IO> io,
 
   return variable;
 }
-} // namespace
 
-ADIOSFile::ADIOSFile(MPI_Comm comm, const std::string filename)
-    : _adios(), _io(), _point_data(), _writer()
+adios2::Mode string_to_mode(std::string mode)
 {
-  _adios = std::make_shared<adios2::ADIOS>(comm);
-  _io = std::make_shared<adios2::IO>(_adios->DeclareIO("Output IO"));
-  _io->SetEngine("BPFile");
-  _writer = std::make_shared<adios2::Engine>(
-      _io->Open(filename, adios2::Mode::Write));
+  if (mode == "w")
+    return adios2::Mode::Write;
+  else if (mode == "a")
+    return adios2::Mode::Append;
+  else if (mode == "r")
+    return adios2::Mode::Read;
+  else
+    throw std::runtime_error("Unknown mode for ADIOS2: " + mode);
 }
 
-ADIOSFile::~ADIOSFile() { _writer->Close(); }
+} // namespace
 
-void ADIOSFile::write_function(const dolfinx::fem::Function<double>& u,
-                               double t)
+ADIOS2File::ADIOS2File(MPI_Comm comm, std::string filename, std::string mode)
+    : _adios(), _io(), _engine(), _vtk_scheme(), _mode(mode)
+{
+  _adios = std::make_shared<adios2::ADIOS>(comm);
+  adios2::Mode file_mode = string_to_mode(mode);
+  _io = std::make_shared<adios2::IO>(_adios->DeclareIO("ADIOS2 DOLFINx IO"));
+  _io->SetEngine("BPFile");
+
+  if (mode == "a")
+  {
+    // FIXME: Remove this when is resolved
+    // https://github.com/ornladios/ADIOS2/issues/2482
+    _io->SetParameter("AggregatorRatio", "1");
+  }
+
+  _engine = std::make_shared<adios2::Engine>(_io->Open(filename, file_mode));
+}
+
+ADIOS2File::~ADIOS2File() { _engine->Close(); };
+
+void ADIOS2File::write_function(
+    const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
+    double t)
 {
   _write_function<double>(u, t);
 }
 
-void ADIOSFile::write_function(
-    const dolfinx::fem::Function<std::complex<double>>& u, double t)
+void ADIOS2File::write_function(
+    const std::vector<
+        std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
+    double t)
 {
   _write_function<std::complex<double>>(u, t);
 }
 
 template <typename Scalar>
-void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u,
-                                double t)
+void ADIOS2File::_write_function(
+    const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
+    double t)
 {
+  if (_mode == "a")
+    throw std::runtime_error(
+        "Cannot append functions to previously created file.");
   // Write time step information
   _time_dep = true;
   adios2::Variable<double> time = DefineVariable<double>(_io, "step");
-  _writer->Put<double>(time, t);
+  _engine->Put<double>(time, t);
 
   // Get some data about mesh
-  auto mesh = u.function_space()->mesh();
+  auto mesh = u[0].get().function_space()->mesh();
   auto top = mesh->topology();
   auto x_map = mesh->geometry().index_map();
   const int tdim = top.dim();
@@ -92,8 +119,6 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u,
   // As the mesh data is written with local indices we need the ghost vertices
   const std::uint32_t num_elements = top.index_map(tdim)->size_local();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
-
-  // NOTE: This should be moved to a separate constructor eventually
   adios2::Variable<std::uint32_t> vertices = DefineVariable<std::uint32_t>(
       _io, "NumOfVertices", {adios2::LocalValueDim});
   adios2::Variable<std::uint32_t> elements = DefineVariable<std::uint32_t>(
@@ -129,67 +154,89 @@ void ADIOSFile::_write_function(const dolfinx::fem::Function<Scalar>& u,
                                       {num_elements, num_nodes + 1});
   std::vector<std::uint64_t> vtk_topology(num_elements * (num_nodes + 1));
   int connectivity_offset = 0;
+  std::stringstream cc;
+
   for (size_t c = 0; c < num_elements; ++c)
   {
     auto x_dofs = x_dofmap.links(c);
     vtk_topology[connectivity_offset++] = x_dofs.size();
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
       vtk_topology[connectivity_offset++] = x_dofs[map[i]];
+    }
   }
 
   // Add element cell types
   adios2::Variable<std::uint32_t> cell_type
       = DefineVariable<std::uint32_t>(_io, "types");
-
+  std::cout << "NUM V/NUM E: " << num_vertices << " " << num_elements << "\n";
   // Start writer for given function
-  _writer->BeginStep();
-  _writer->Put<std::uint32_t>(vertices, num_vertices);
-  _writer->Put<std::uint32_t>(elements, num_elements);
-  _writer->Put<std::uint32_t>(
+
+  _engine->Put<std::uint32_t>(vertices, num_vertices);
+  _engine->Put<std::uint32_t>(elements, num_elements);
+
+  _engine->BeginStep();
+
+  _engine->Put<std::uint32_t>(
       cell_type, dolfinx::io::cells::get_vtk_cell_type(*mesh, tdim));
-  _writer->Put<double>(local_geometry, mesh->geometry().x().data());
-  _writer->Put<std::uint64_t>(local_topology, vtk_topology.data());
-
+  _engine->Put<double>(local_geometry, mesh->geometry().x().data());
+  _engine->Put<std::uint64_t>(local_topology, vtk_topology.data());
   // Extract and write function data
-  // NOTE: Currently CG-1 interpolation of data.
-  auto function_data = u.compute_point_values();
-  std::uint32_t local_size = function_data.shape[0];
-  std::uint32_t block_size = function_data.shape[1];
-
-  // Extract real and imaginary components
-  std::vector<std::string> components = {""};
-  if constexpr (!std::is_scalar<Scalar>::value)
-    components = {"real", "imag"};
-
-  // Write each component
-  std::vector<double> out_data;
-  out_data.reserve(local_size);
-  for (const auto& component : components)
+  std::set<std::string> point_data;
+  for (auto u_ : u)
   {
-    std::string function_name = u.name;
-    if (component != "")
-      function_name += "_" + component;
-    adios2::Variable<double> local_output
-        = DefineVariable<double>(_io, function_name, {}, {}, {local_size});
-    for (size_t i = 0; i < local_size; ++i)
-    {
-      if (component == "imag")
-        out_data[i] = std::imag(function_data.row(i)[0]);
-      else
-        out_data[i] = std::real(function_data.row(i)[0]);
-    }
-    _point_data.push_back(function_name);
+    assert(mesh == u_.get().function_space()->mesh());
 
-    _writer->Put<double>(local_output, out_data.data());
-    // To reuse out_data, we perform a put (writing data) to ADIOS2 here
-    _writer->PerformPuts();
+    // NOTE: Currently CG-1 interpolation of data.
+    auto function_data = u_.get().compute_point_values();
+    std::uint32_t local_size = function_data.shape[0];
+    std::uint32_t block_size = function_data.shape[1];
+    // Extract real and imaginary components
+    std::vector<std::string> components = {""};
+    if constexpr (!std::is_scalar<Scalar>::value)
+      components = {"real", "imag"};
+
+    // Write each component
+    std::vector<double> out_data(local_size);
+
+    for (const auto& component : components)
+    {
+      std::string function_name = u_.get().name;
+      std::cout << function_name << "!!!\n";
+      if (component != "")
+        function_name += "_" + component;
+      adios2::Variable<double> local_output
+          = DefineVariable<double>(_io, function_name, {}, {}, {local_size});
+      for (size_t i = 0; i < local_size; ++i)
+      {
+        if (component == "imag")
+          out_data[i] = std::imag(function_data.row(i)[0]);
+        else
+          out_data[i] = std::real(function_data.row(i)[0]);
+      }
+      point_data.insert(function_name);
+      // To reuse out_data, we use sync mode here
+      _engine->Put<double>(local_output, out_data.data(), adios2::Mode::Sync);
+    }
   }
-  // Add VTKScheme for current step
-  DefineAttribute<std::string>(_io, "vtk.xml", VTKSchema());
-  _writer->EndStep();
+  // Check if VTKScheme exists, and if so, check that we are only adding values
+  // already existing
+  std::cout << point_data.size() << "\n";
+  std::string vtk_scheme = VTKSchema(point_data);
+  // If writing to file set vtk scheme as current
+  if (_vtk_scheme.empty())
+    _vtk_scheme = vtk_scheme;
+  if (vtk_scheme != _vtk_scheme)
+  {
+    throw std::runtime_error(
+        "Have to write the same functions to file for each "
+        "time step");
+  }
+  DefineAttribute<std::string>(_io, "vtk.xml", vtk_scheme);
+  _engine->EndStep();
 }
 
-std::string ADIOSFile::VTKSchema()
+std::string ADIOS2File::VTKSchema(std::set<std::string> point_data)
 {
   std::string schema = R"(
             <VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian">
@@ -203,16 +250,19 @@ std::string ADIOSFile::VTKSchema()
                      <DataArray Name="types" />
                   </Cells>)";
 
-  if (_point_data.empty())
+  if (point_data.empty())
     schema += "\n";
   else
   {
-    schema += R"(<PointData>)";
-    for (auto name : _point_data)
+    schema += R"(
+                  <PointData>)";
+    for (auto name : point_data)
+    {
+      std::cout << name << "-";
       schema += R"(
                      <DataArray Name=")"
                 + name + R"(" />)";
-
+    }
     if (_time_dep)
     {
       schema += R"(
@@ -227,7 +277,6 @@ std::string ADIOSFile::VTKSchema()
                 </Piece>
               </UnstructuredGrid>
             </VTKFile> )";
-
   return schema;
 }
 

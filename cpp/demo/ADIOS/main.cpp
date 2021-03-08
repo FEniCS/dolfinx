@@ -136,6 +136,7 @@ int main(int argc, char* argv[])
     // Prepare and set Constants for the bilinear form
     auto kappa = std::make_shared<fem::Constant<PetscScalar>>(2.0);
     auto f = std::make_shared<fem::Function<PetscScalar>>(V);
+    f->name = "f";
     auto g = std::make_shared<fem::Function<PetscScalar>>(V);
 
     // Define variational forms
@@ -203,7 +204,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // // Compute solution
-    fem::Function<PetscScalar> u(V);
+    auto u = std::make_shared<fem::Function<PetscScalar>>(V);
     la::PETScMatrix A = la::PETScMatrix(fem::create_matrix(*a), false);
     la::PETScVector b(*L->function_spaces()[0]->dofmap()->index_map,
                       L->function_spaces()[0]->dofmap()->index_map_bs());
@@ -229,7 +230,7 @@ int main(int argc, char* argv[])
     lu.set_from_options();
 
     lu.set_operator(A.mat());
-    lu.solve(u.vector(), b.vec());
+    lu.solve(u->vector(), b.vec());
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
@@ -240,20 +241,22 @@ int main(int argc, char* argv[])
 
 #ifdef HAS_ADIOS2
     // Save solution in ADIOS format
-    dolfinx::io::ADIOSFile adios(MPI_COMM_WORLD, "test.bp");
-    adios.write_function(u);
-    u.interpolate([](auto& x) {
-      std::vector<PetscScalar> f(x.shape[1]);
-      std::transform(x.row(0).begin(), x.row(0).end(), x.row(1).begin(),
-                     f.begin(), [](double x0, double x1) {
-                       double dx
-                           = (x0 - 0.5) * (x0 - 0.5) + (x1 - 0.5) * (x1 - 0.5);
-                       return 10.0 * std::exp(-(dx) / 0.02);
-                     });
-      return f;
-    });
-
-    adios.write_function(u, 2.0);
+    {
+      std::cout << u->name << " " << f->name << "\n";
+      dolfinx::io::ADIOS2File adios(MPI_COMM_WORLD, "test.bp", "w");
+      adios.write_function({*u, *f}, 0.0);
+      u->interpolate([](auto& x) {
+        std::vector<PetscScalar> f(x.shape[1]);
+        std::transform(x.row(0).begin(), x.row(0).end(), x.row(1).begin(),
+                       f.begin(), [](double x0, double x1) {
+                         double dx = (x0 - 0.5) * (x0 - 0.5)
+                                     + (x1 - 0.5) * (x1 - 0.5);
+                         return 10.0 * std::exp(-(dx) / 0.02);
+                       });
+        return f;
+      });
+      adios.write_function({*u, *f}, 2.0);
+    }
 #endif
   }
 

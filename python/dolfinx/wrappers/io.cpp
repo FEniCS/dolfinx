@@ -11,7 +11,7 @@
 #include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/io/ADIOSFile.h>
+#include <dolfinx/io/ADIOS2File.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
@@ -130,21 +130,21 @@ void io(py::module& m)
       });
 
 #ifdef HAS_ADIOS2
-  // dolfinx::io::ADIOSFile
-  py::class_<dolfinx::io::ADIOSFile, std::shared_ptr<dolfinx::io::ADIOSFile>>
-      adios_file(m, "ADIOSFile");
+  // dolfinx::io::ADIOS2File
+  py::class_<dolfinx::io::ADIOS2File, std::shared_ptr<dolfinx::io::ADIOS2File>>
+      adios_file(m, "ADIOS2File");
   adios_file
       .def(py::init([](const MPICommWrapper comm, const std::string filename) {
-        return std::make_unique<dolfinx::io::ADIOSFile>(comm.get(), filename);
+        return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(), filename);
       }))
       .def(
           "write_function",
           py::overload_cast<const dolfinx::fem::Function<std::complex<double>>&,
-                            double>(&dolfinx::io::ADIOSFile::write_function),
+                            double>(&dolfinx::io::ADIOS2File::write_function),
           py::arg("function"), py::arg("t"))
       .def("write_function",
            py::overload_cast<const dolfinx::fem::Function<double>&, double>(
-               &dolfinx::io::ADIOSFile::write_function),
+               &dolfinx::io::ADIOS2File::write_function),
            py::arg("function"), py::arg("t"));
 #endif
   // dolfinx::io::VTKFile
