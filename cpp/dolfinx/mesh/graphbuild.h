@@ -32,4 +32,9 @@ std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
 build_local_dual_graph(const graph::AdjacencyList<std::int64_t>& cell_vertices,
                        const mesh::CellType& cell_type);
 
+/// Compute dense local part (shared vertex connections) of the dual graph, and
+/// return local_graph
+graph::AdjacencyList<std::int32_t> build_dense_local_dual_graph(
+    const graph::AdjacencyList<std::int64_t>& cell_vertices);
+
 } // namespace dolfinx::mesh
