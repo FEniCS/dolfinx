@@ -172,7 +172,7 @@ public:
   ///   from the owning process. Size will be n * num_ghosts().
   /// @param[in] n Number of data items per index
   template <typename T>
-  void scatter_fwd(const tcb::span<T> local_data, tcb::span<T> remote_data,
+  void scatter_fwd(tcb::span<const T> local_data, tcb::span<T> remote_data,
                    int n) const;
 
   /// Send n values for each ghost index to owning to the process
@@ -185,7 +185,7 @@ public:
   /// @param[in] n Number of data items per index
   /// @param[in] op Sum or set received values in local_data
   template <typename T>
-  void scatter_rev(tcb::span<T> local_data, const tcb::span<T> remote_data,
+  void scatter_rev(tcb::span<T> local_data, tcb::span<const T> remote_data,
                    int n, IndexMap::Mode op) const;
 
 private:
