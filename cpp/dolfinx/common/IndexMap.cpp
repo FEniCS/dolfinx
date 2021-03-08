@@ -735,6 +735,7 @@ void IndexMap::scatter_fwd(const std::vector<T>& local_data,
   }
 }
 //-----------------------------------------------------------------------------
+// \cond turn off doxygen
 template void
 IndexMap::scatter_fwd<std::int64_t>(const std::vector<std::int64_t>& local_data,
                                     std::vector<std::int64_t>& remote_data,
@@ -749,7 +750,7 @@ IndexMap::scatter_fwd<double>(const std::vector<double>& local_data,
 template void IndexMap::scatter_fwd<std::complex<double>>(
     const std::vector<std::complex<double>>& local_data,
     std::vector<std::complex<double>>& remote_data, int n) const;
-
+// \endcond
 //-----------------------------------------------------------------------------
 template <typename T>
 void IndexMap::scatter_rev(std::vector<T>& local_data,
@@ -827,6 +828,7 @@ void IndexMap::scatter_rev(std::vector<T>& local_data,
   }
 }
 //-----------------------------------------------------------------------------
+// \cond turn off doxygen
 template void IndexMap::scatter_rev<std::int64_t>(
     std::vector<std::int64_t>& local_data,
     const std::vector<std::int64_t>& remote_data, int n,
@@ -846,3 +848,4 @@ template void IndexMap::scatter_rev<std::complex<double>>(
     std::vector<std::complex<double>>& local_data,
     const std::vector<std::complex<double>>& remote_data, int n,
     IndexMap::Mode op) const;
+// \endcond
