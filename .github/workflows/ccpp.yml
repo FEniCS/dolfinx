@@ -35,22 +35,23 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Get Spack
+      - name: Get Basix and install
         uses: actions/checkout@v2
         with:
           path: ./basix
           repository: FEniCS/basix
           ref: xtensor
+        run: |
+          cd basix
+          cmake -G Ninja -B build-dir -S .
+          cmake --build build-dir
+          sudo cmake --install build-dir
 
       - name: Install FEniCS Python components
         run: |
           # python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
-          cd basix
-          cmake -G Ninja -B build-dir -S .
-          cmake --build build-dir
-          sudo cmake --install build-dir
 
       - name: Flake8 checks
         run: |
