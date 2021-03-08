@@ -46,7 +46,7 @@ void test_scatter_fwd()
   std::vector<std::int64_t> data_ghost(n * num_ghosts, -1);
 
   // Scatter values to ghost and check value is correctly received
-  idx_map.scatter_fwd(tcb::span<std::int64_t>(data_local),
+  idx_map.scatter_fwd(tcb::span<const std::int64_t>(data_local),
                       tcb::span<std::int64_t>(data_ghost), n);
   CHECK(data_ghost.size() == n * num_ghosts);
   CHECK(std::all_of(data_ghost.begin(), data_ghost.end(), [=](auto i) {
@@ -84,7 +84,7 @@ void test_scatter_rev()
   std::vector<std::int64_t> data_local(n * size_local, 0);
   std::vector<std::int64_t> data_ghost(n * num_ghosts, value);
   idx_map.scatter_rev(tcb::span<std::int64_t>(data_local),
-                      tcb::span<std::int64_t>(data_ghost), n,
+                      tcb::span<const std::int64_t>(data_ghost), n,
                       common::IndexMap::Mode::add);
 
   std::int64_t sum;
@@ -93,13 +93,13 @@ void test_scatter_rev()
   CHECK(sum == n * value * num_ghosts);
 
   idx_map.scatter_rev(tcb::span<std::int64_t>(data_local),
-                      tcb::span<std::int64_t>(data_ghost), n,
+                      tcb::span<const std::int64_t>(data_ghost), n,
                       common::IndexMap::Mode::insert);
   sum = std::accumulate(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 
   idx_map.scatter_rev(tcb::span<std::int64_t>(data_local),
-                      tcb::span<std::int64_t>(data_ghost), n,
+                      tcb::span<const std::int64_t>(data_ghost), n,
                       common::IndexMap::Mode::add);
   sum = std::accumulate(data_local.begin(), data_local.end(), 0);
   CHECK(sum == 2 * n * value * num_ghosts);
