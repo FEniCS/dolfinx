@@ -46,7 +46,7 @@ jobs:
         run: |
           cmake -G Ninja -B build-dir -S ./basix
           cmake --build build-dir
-          sudo cmake --install build-dir
+          cmake --install build-dir
           python3 -m pip install ./basix/python
           # python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
