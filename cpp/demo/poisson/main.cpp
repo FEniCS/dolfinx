@@ -161,15 +161,16 @@ int main(int argc, char* argv[])
     // Define boundary condition
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
-    const auto bdofs = fem::locate_dofs_geometrical(
-        {*V}, [](const array2d<double>& x) {
-          constexpr double eps = 10.0 * std::numeric_limits<double>::epsilon();
-          std::vector<bool> marked(x.shape[1]);
-          std::transform(
-              x.row(0).begin(), x.row(0).end(), marked.begin(),
-              [](double x0) { return x0 < eps or std::abs(x0 - 1) < eps; });
-          return marked;
-        });
+    const auto bdofs
+        = fem::locate_dofs_geometrical({*V}, [](const array2d<double>& x) {
+            constexpr double eps
+                = 10.0 * std::numeric_limits<double>::epsilon();
+            std::vector<bool> marked(x.shape[1]);
+            std::transform(
+                x.row(0).begin(), x.row(0).end(), marked.begin(),
+                [](double x0) { return x0 < eps or std::abs(x0 - 1) < eps; });
+            return marked;
+          });
 
     std::vector bc{std::make_shared<const fem::DirichletBC<PetscScalar>>(
         u0, std::move(bdofs))};
@@ -184,13 +185,14 @@ int main(int argc, char* argv[])
                      });
       return f;
     });
-
+    f->name = "f";
     g->interpolate([](auto& x) {
       std::vector<PetscScalar> f(x.shape[1]);
       std::transform(x.row(0).begin(), x.row(0).end(), f.begin(),
                      [](double x0) { return std::sin(5 * x0); });
       return f;
     });
+    g->name = "g";
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a
@@ -202,7 +204,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Compute solution
-    fem::Function<PetscScalar> u(V);
+    auto u = std::make_shared<fem::Function<PetscScalar>>(V);
     la::PETScMatrix A = la::PETScMatrix(fem::create_matrix(*a), false);
     la::PETScVector b(*L->function_spaces()[0]->dofmap()->index_map,
                       L->function_spaces()[0]->dofmap()->index_map_bs());
@@ -228,18 +230,20 @@ int main(int argc, char* argv[])
     lu.set_from_options();
 
     lu.set_operator(A.mat());
-    lu.solve(u.vector(), b.vec());
+    lu.solve(u->vector(), b.vec());
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
-    // solution to a ``VTK`` file (specified using the suffix ``.pvd``) for
+    // solution to a ``bp`` file (specified using the suffix ``.bp``) for
     // visualisation in an external program such as Paraview.
     //
     // .. code-block:: cpp
 
-    // Save solution in VTK format
-    io::VTKFile file("u.pvd");
-    file.write(u);
+#ifdef HAS_ADIOS2
+    // Save solution in ADIOS format
+    dolfinx::io::ADIOS2File adios(MPI_COMM_WORLD, "poisson.bp", "w");
+    adios.write_function({*u, *f, *g}, 0.0);
+#endif
   }
 
   common::subsystem::finalize_petsc();
