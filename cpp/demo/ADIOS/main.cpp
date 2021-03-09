@@ -242,7 +242,6 @@ int main(int argc, char* argv[])
 #ifdef HAS_ADIOS2
     // Save solution in ADIOS format
     {
-      std::cout << u->name << " " << f->name << "\n";
       dolfinx::io::ADIOS2File adios(MPI_COMM_WORLD, "test.bp", "w");
       adios.write_function({*u, *f}, 0.0);
       u->interpolate([](auto& x) {

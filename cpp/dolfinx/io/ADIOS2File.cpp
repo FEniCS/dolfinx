@@ -169,9 +169,7 @@ void ADIOS2File::_write_function(
   // Add element cell types
   adios2::Variable<std::uint32_t> cell_type
       = DefineVariable<std::uint32_t>(_io, "types");
-  std::cout << "NUM V/NUM E: " << num_vertices << " " << num_elements << "\n";
   // Start writer for given function
-
   _engine->Put<std::uint32_t>(vertices, num_vertices);
   _engine->Put<std::uint32_t>(elements, num_elements);
 
@@ -202,7 +200,6 @@ void ADIOS2File::_write_function(
     for (const auto& component : components)
     {
       std::string function_name = u_.get().name;
-      std::cout << function_name << "!!!\n";
       if (component != "")
         function_name += "_" + component;
       adios2::Variable<double> local_output
@@ -221,7 +218,6 @@ void ADIOS2File::_write_function(
   }
   // Check if VTKScheme exists, and if so, check that we are only adding values
   // already existing
-  std::cout << point_data.size() << "\n";
   std::string vtk_scheme = VTKSchema(point_data);
   // If writing to file set vtk scheme as current
   if (_vtk_scheme.empty())
@@ -258,7 +254,6 @@ std::string ADIOS2File::VTKSchema(std::set<std::string> point_data)
                   <PointData>)";
     for (auto name : point_data)
     {
-      std::cout << name << "-";
       schema += R"(
                      <DataArray Name=")"
                 + name + R"(" />)";

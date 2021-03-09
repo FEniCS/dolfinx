@@ -44,9 +44,6 @@ public:
           std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
       double t = 0.0);
 
-  /// Wrapper for creating VTKSchema for given input
-  std::string VTKSchema(std::set<std::string> point_data);
-
 private:
   template <typename Scalar>
   void _write_function(
@@ -54,6 +51,9 @@ private:
       double t);
   // Function for updating vtk schema
   std::set<std::string> update_vtk_point_data();
+
+  /// Wrapper for creating VTKSchema for given input
+  std::string VTKSchema(std::set<std::string> point_data);
 
   std::shared_ptr<adios2::ADIOS> _adios;
   // NOTE: Could have separate IOs for different tasks, but we will currently
