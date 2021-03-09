@@ -8,8 +8,8 @@
 
 #include "ADIOS2File.h"
 #include "dolfinx/io/cells.h"
+#include "pugixml.hpp"
 #include <adios2.h>
-
 using namespace dolfinx;
 using namespace dolfinx::io;
 namespace
@@ -154,7 +154,6 @@ void ADIOS2File::_write_function(
 
   // Extract topology for all local cells
   // Output is written as [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
-
   adios2::Variable<std::uint64_t> local_topology
       = DefineVariable<std::uint64_t>(_io, "connectivity", {}, {},
                                       {num_elements, num_nodes + 1});
@@ -252,46 +251,51 @@ void ADIOS2File::_write_function(
 
 std::string ADIOS2File::VTKSchema(std::set<std::string> point_data)
 {
-  std::string schema = R"(
-            <VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian">
-              <UnstructuredGrid>
-                <Piece NumberOfPoints="NumOfVertices" NumberOfCells="NumOfElements">
-                  <Points>
-                   <DataArray Name="vertices" />
-                  </Points>
-                  <Cells>
-                     <DataArray Name="connectivity" />
-                     <DataArray Name="types" />
-                  </Cells>)";
-
-  // Write scalar data
-  if (point_data.empty())
-    schema += "\n";
-  else
+  // Create XML SCHEMA by using pugi_xml
+  pugi::xml_document xml_schema;
+  pugi::xml_node vtk_node = xml_schema.append_child("VTKFile");
+  vtk_node.append_attribute("type") = "UnstructuredGrid";
+  vtk_node.append_attribute("version") = "0.1";
+  vtk_node.append_attribute("byte_order") = "LittleEndian";
+  pugi::xml_node unstructured = vtk_node.append_child("UnstructuredGrid");
+  pugi::xml_node piece = unstructured.append_child("Piece");
+  // Create VTK schema for mesh
   {
-    schema += R"(
-                  <PointData>)";
-    for (auto name : point_data)
+    piece.append_attribute("NumberOfPoints") = "NumberOfVertices";
+    piece.append_attribute("NumberOfCells") = "NumOfElements";
+    pugi::xml_node geometry = piece.append_child("Points");
+    pugi::xml_node vertices = geometry.append_child("DataArray");
+    vertices.append_attribute("Name") = "vertices";
+    pugi::xml_node topology = piece.append_child("Cells");
+    std::vector<std::string> topology_data = {"connectivity", "types"};
+    for (auto data : topology_data)
     {
-      schema += R"(
-                     <DataArray Name=")"
-                + name + R"(" />)";
+      pugi::xml_node item = topology.append_child("DataArray");
+      item.append_attribute("Name") = data.c_str();
     }
+  }
+  // If we have any point data to write to file
+  if (!point_data.empty())
+  {
+    pugi::xml_node pdata = piece.append_child("PointData");
+    // Stepping info for time dependency
     if (_time_dep)
     {
-      schema += R"(
-                     <DataArray Name="TIME">
-                       step 
-                     </DataArray>)";
+      pugi::xml_node item = pdata.append_child("DataArray");
+      item.append_attribute("Name") = "TIME";
+      item.append_child(pugi::node_pcdata).set_value("step");
     }
-    schema += R"(
-                   </PointData>)";
+    // Append point data to VTK Schema
+    for (auto name : point_data)
+    {
+      pugi::xml_node item = pdata.append_child("DataArray");
+      item.append_attribute("Name") = name.c_str();
+    }
   }
-  schema += R"(
-                </Piece>
-              </UnstructuredGrid>
-            </VTKFile> )";
-  return schema;
+
+  std::stringstream ss;
+  xml_schema.save(ss, "  ");
+  return ss.str();
 }
 
 #endif

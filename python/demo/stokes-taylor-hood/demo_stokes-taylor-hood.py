@@ -267,7 +267,7 @@ if has_adios2():
     from dolfinx.cpp.io import ADIOS2File
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    with ADIOS2File(MPI.COMM_WORLD, "velocity.bp", "w") as adios:
+    with ADIOS2File(MPI.COMM_WORLD, "taylor-hood.bp", "w") as adios:
         adios.write_function([u._cpp_object, p._cpp_object], 0.0)
 with XDMFFile(MPI.COMM_WORLD, "velocity.xdmf", "w") as ufile_xdmf:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
