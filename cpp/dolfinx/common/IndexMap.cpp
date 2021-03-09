@@ -446,11 +446,12 @@ const std::vector<std::int64_t>& IndexMap::ghosts() const noexcept
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-void IndexMap::local_to_global(const std::int32_t* local, int n,
-                               std::int64_t* global) const
+void IndexMap::local_to_global(tcb::span<const std::int32_t> local,
+                               tcb::span<std::int64_t> global) const
 {
+  assert(local.size() <= global.size());
   const std::int32_t local_size = _local_range[1] - _local_range[0];
-  for (int i = 0; i < n; ++i)
+  for (std::size_t i = 0; i < local.size(); ++i)
   {
     if (local[i] < local_size)
       global[i] = _local_range[0] + local[i];

@@ -77,8 +77,9 @@ void common(py::module& m)
              if (local.ndim() != 1)
                throw std::runtime_error("Array of local indices must be 1D.");
              py::array_t<std::int64_t> global(local.size());
-             self.local_to_global(local.data(), local.size(),
-                                  global.mutable_data());
+             self.local_to_global(
+                 local,
+                 tcb::span<std::int64_t>(global.mutable_data(), global.size()));
              return global;
            });
 

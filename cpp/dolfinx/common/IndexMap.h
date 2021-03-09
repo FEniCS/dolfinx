@@ -126,10 +126,9 @@ public:
 
   /// Compute global indices for array of local indices
   /// @param[in] local Local indices
-  /// @param[in] n Number of indices
   /// @param[out] global The global indices
-  void local_to_global(const std::int32_t* local, int n,
-                       std::int64_t* global) const;
+  void local_to_global(tcb::span<const std::int32_t> local,
+                       tcb::span<std::int64_t> global) const;
 
   /// Compute local indices for array of global indices
   /// @param[in] indices Global indices
