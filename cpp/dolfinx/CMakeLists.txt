@@ -59,9 +59,8 @@ target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 # UFC
 target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 
-# basix
-target_include_directories(dolfinx SYSTEM PUBLIC ${BASIX_INCLUDE_DIRS})
-target_link_libraries(dolfinx PUBLIC ${BASIX_LIBRARY})
+# Basix
+target_link_libraries(dolfinx PUBLIC Basix::basix)
 
 # Have left these well written comments about Eigen alignment
 # here with the intention that this should be moved to build documentation.

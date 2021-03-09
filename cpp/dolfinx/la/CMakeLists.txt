@@ -20,5 +20,6 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/PETScVector.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SLEPcEigenSolver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPattern.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/VectorSpaceBasis.cpp
 )

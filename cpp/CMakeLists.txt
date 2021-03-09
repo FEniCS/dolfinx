@@ -171,7 +171,8 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
   URL "https://github.com/fenics/ffcx")
 
-find_package(basix MODULE 0.0.1)
+# find_package(xtl REQUIRED)
+find_package(Basix 0.0.1 REQUIRED)
 set_package_properties(basix PROPERTIES TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
   URL "https://github.com/fenics/basix")
