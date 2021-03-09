@@ -155,8 +155,8 @@ std::vector<bool> mesh::compute_interface_facets(const Topology& topology)
   auto facets = topology.index_map(tdim - 1);
   if (!facets)
     throw std::runtime_error("Facets have not been computed.");
-  std::set<std::int32_t> fwd_shared_facets = std::set<std::int32_t>(
-      facets->shared_indices().begin(), facets->shared_indices().end());
+  std::set<std::int32_t> fwd_shared_facets(facets->shared_indices().begin(),
+                                           facets->shared_indices().end());
 
   std::int32_t num_facets = facets->size_local() + facets->num_ghosts();
   std::vector<bool> _boundary_facet(num_facets, false);

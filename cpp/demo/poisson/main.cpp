@@ -1,247 +1,189 @@
-// Poisson equation (C++)
-// ======================
-//
-// This demo illustrates how to:
-//
-// * Solve a linear partial differential equation
-// * Create and apply Dirichlet boundary conditions
-// * Define Expressions
-// * Define a FunctionSpace
-//
-// The solution for :math:`u` in this demo will look as follows:
-//
-// .. image:: ../poisson_u.png
-//     :scale: 75 %
-//
-//
-// Equation and problem definition
-// -------------------------------
-//
-// The Poisson equation is the canonical elliptic partial differential
-// equation.  For a domain :math:`\Omega \subset \mathbb{R}^n` with
-// boundary :math:`\partial \Omega = \Gamma_{D} \cup \Gamma_{N}`, the
-// Poisson equation with particular boundary conditions reads:
-//
-// .. math::
-//    - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
-//      u &= 0 \quad {\rm on} \ \Gamma_{D}, \\
-//      \nabla u \cdot n &= g \quad {\rm on} \ \Gamma_{N}. \\
-//
-// Here, :math:`f` and :math:`g` are input data and :math:`n` denotes the
-// outward directed boundary normal. The most standard variational form
-// of Poisson equation reads: find :math:`u \in V` such that
-//
-// .. math::
-//    a(u, v) = L(v) \quad \forall \ v \in V,
-//
-// where :math:`V` is a suitable function space and
-//
-// .. math::
-//    a(u, v) &= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
-//    L(v)    &= \int_{\Omega} f v \, {\rm d} x
-//    + \int_{\Gamma_{N}} g v \, {\rm d} s.
-//
-// The expression :math:`a(u, v)` is the bilinear form and :math:`L(v)`
-// is the linear form. It is assumed that all functions in :math:`V`
-// satisfy the Dirichlet boundary conditions (:math:`u = 0 \ {\rm on} \
-// \Gamma_{D}`).
-//
-// In this demo, we shall consider the following definitions of the input
-// functions, the domain, and the boundaries:
-//
-// * :math:`\Omega = [0,1] \times [0,1]` (a unit square)
-// * :math:`\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}`
-// (Dirichlet boundary)
-// * :math:`\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}`
-// (Neumann boundary)
-// * :math:`g = \sin(5x)` (normal derivative)
-// * :math:`f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)` (source term)
-//
-//
-// Implementation
-// --------------
-//
-// The implementation is split in two files: a form file containing the
-// definition of the variational forms expressed in UFL and a C++ file
-// containing the actual solver.
-//
-// Running this demo requires the files: :download:`main.cpp`,
-// :download:`Poisson.ufl` and :download:`CMakeLists.txt`.
-//
-//
-// UFL form file
-// ^^^^^^^^^^^^^
-//
-// The UFL file is implemented in :download:`Poisson.ufl`, and the
-// explanation of the UFL file can be found at :doc:`here <Poisson.ufl>`.
-//
-//
-// C++ program
-// ^^^^^^^^^^^
-//
-// The main solver is implemented in the :download:`main.cpp` file.
-//
-// At the top we include the DOLFIN header file and the generated header
-// file "Poisson.h" containing the variational forms for the Poisson
-// equation.  For convenience we also include the DOLFIN namespace.
-//
-// .. code-block:: cpp
-
 #include "poisson.h"
 #include <cmath>
 #include <dolfinx.h>
-#include <dolfinx/fem/Constant.h>
-#include <dolfinx/fem/petsc.h>
+#include <dolfinx/io/XDMFFile.h>
+#include <dolfinx/mesh/MeshTags.h>
 
 using namespace dolfinx;
-
-// Then follows the definition of the coefficient functions (for
-// :math:`f` and :math:`g`), which are derived from the
-// :cpp:class:`Expression` class in DOLFIN
-//
-// .. code-block:: cpp
-
-// Inside the ``main`` function, we begin by defining a mesh of the
-// domain. As the unit square is a very standard domain, we can use a
-// built-in mesh provided by the :cpp:class:`UnitSquareMesh` factory. In
-// order to create a mesh consisting of 32 x 32 squares with each square
-// divided into two triangles, and the finite element space (specified in
-// the form file) defined relative to this mesh, we do as follows
-//
-// .. code-block:: cpp
 
 int main(int argc, char* argv[])
 {
   common::subsystem::init_logging(argc, argv);
-  common::subsystem::init_petsc(argc, argv);
+  common::subsystem::init_mpi(argc, argv);
 
   {
+    MPI_Comm comm = MPI_COMM_WORLD;
     // Create mesh and function space
     auto cmap = fem::create_coordinate_map(create_coordinate_map_poisson);
     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32}, cmap,
-        mesh::GhostMode::none));
+        comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {2, 2}, cmap,
+        mesh::GhostMode::shared_facet));
 
-    auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
-                                       mesh);
+    int tdim = mesh->topology().dim();
+    mesh->topology().create_connectivity(tdim - 1, tdim);
+    mesh->topology().create_connectivity(tdim - 1, 0);
+    mesh->topology().create_connectivity(0, tdim);
 
-    // Next, we define the variational formulation by initializing the
-    // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
-    // defined :cpp:class:`FunctionSpace` ``V``.  Then we can create the
-    // source and boundary flux term (:math:`f`, :math:`g`) and attach these
-    // to the linear form.
-    //
-    // .. code-block:: cpp
+    std::vector<bool> bnd_facets
+        = dolfinx::mesh::compute_interface_facets(mesh->topology());
 
-    // Prepare and set Constants for the bilinear form
-    auto kappa = std::make_shared<fem::Constant<PetscScalar>>(2.0);
-    auto f = std::make_shared<fem::Function<PetscScalar>>(V);
-    auto g = std::make_shared<fem::Function<PetscScalar>>(V);
+    int mpi_rank;
+    MPI_Comm_rank(comm, &mpi_rank);
 
-    // Define variational forms
-    auto a = fem::create_form<PetscScalar>(create_form_poisson_a, {V, V}, {},
-                                           {{"kappa", kappa}}, {});
-    auto L = fem::create_form<PetscScalar>(create_form_poisson_L, {V},
-                                           {{"f", f}, {"g", g}}, {}, {});
+    int mpi_size;
+    MPI_Comm_size(comm, &mpi_size);
 
-    // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
-    // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
-    // takes two arguments: the value of the boundary condition,
-    // and the part of the boundary on which the condition applies.
-    // In our example, the value of the boundary condition (0.0) can
-    // represented using a :cpp:class:`Function`, and the Dirichlet boundary
-    // is defined by the indices of degrees of freedom to which the boundary
-    // condition applies.
-    // The definition of the Dirichlet boundary condition then looks
-    // as follows:
-    //
-    // .. code-block:: cpp
+    auto fv = mesh->topology().connectivity(tdim - 1, 0);
+    auto vc = mesh->topology().connectivity(0, tdim);
 
-    // FIXME: zero function and make sure ghosts are updated
-    // Define boundary condition
-    auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
+    std::vector<std::int32_t> facet_indices;
+    for (std::size_t f = 0; f < bnd_facets.size(); ++f)
+      if (bnd_facets[f])
+        facet_indices.push_back(f);
 
-    const auto bdofs = fem::locate_dofs_geometrical(
-        {*V}, [](const array2d<double>& x) {
-          constexpr double eps = 10.0 * std::numeric_limits<double>::epsilon();
-          std::vector<bool> marked(x.shape[1]);
-          std::transform(
-              x.row(0).begin(), x.row(0).end(), marked.begin(),
-              [](double x0) { return x0 < eps or std::abs(x0 - 1) < eps; });
-          return marked;
-        });
+    // Identify interface vertices
+    std::vector<std::int32_t> int_vertices;
+    int_vertices.reserve(facet_indices.size() * 2);
+    for (auto f : facet_indices)
+      for (auto v : fv->links(f))
+        int_vertices.push_back(v);
 
-    std::vector bc{std::make_shared<const fem::DirichletBC<PetscScalar>>(
-        u0, std::move(bdofs))};
+    // Remove repeated and owned vertices
+    auto vertex_index_map = mesh->topology().index_map(0);
+    std::sort(int_vertices.begin(), int_vertices.end());
+    int_vertices.erase(std::unique(int_vertices.begin(), int_vertices.end()),
+                       int_vertices.end());
 
-    f->interpolate([](auto& x) {
-      std::vector<PetscScalar> f(x.shape[1]);
-      std::transform(x.row(0).begin(), x.row(0).end(), x.row(1).begin(),
-                     f.begin(), [](double x0, double x1) {
-                       double dx
-                           = (x0 - 0.5) * (x0 - 0.5) + (x1 - 0.5) * (x1 - 0.5);
-                       return 10.0 * std::exp(-(dx) / 0.02);
-                     });
-      return f;
-    });
+    std::int32_t local_size = vertex_index_map->size_local();
+    std::vector<std::int32_t> local_int_verts;
+    std::copy_if(int_vertices.begin(), int_vertices.end(),
+                 std::back_inserter(local_int_verts),
+                 [local_size](std::int32_t v) { return v < local_size; });
 
-    g->interpolate([](auto& x) {
-      std::vector<PetscScalar> f(x.shape[1]);
-      std::transform(x.row(0).begin(), x.row(0).end(), f.begin(),
-                     [](double x0) { return std::sin(5 * x0); });
-      return f;
-    });
+    int_vertices.erase(
+        std::remove_if(int_vertices.begin(), int_vertices.end(),
+                       [local_size](std::int32_t v) { return v < local_size; }),
+        int_vertices.end());
 
-    // Now, we have specified the variational forms and can consider the
-    // solution of the variational problem. First, we need to define a
-    // :cpp:class:`Function` ``u`` to store the solution. (Upon
-    // initialization, it is simply set to the zero function.) Next, we can
-    // call the ``solve`` function with the arguments ``a == L``, ``u`` and
-    // ``bc`` as follows:
-    //
-    // .. code-block:: cpp
+    // Get global indices
+    std::vector<std::int64_t> int_vertices_global(int_vertices.size());
+    vertex_index_map->local_to_global(int_vertices.data(), int_vertices.size(),
+                                      int_vertices_global.data());
 
-    // Compute solution
-    fem::Function<PetscScalar> u(V);
-    la::PETScMatrix A = la::PETScMatrix(fem::create_matrix(*a), false);
-    la::PETScVector b(*L->function_spaces()[0]->dofmap()->index_map,
-                      L->function_spaces()[0]->dofmap()->index_map_bs());
+    // Get interface vertices owners
+    auto ghost_owners = vertex_index_map->ghost_owner_rank();
+    auto ghosts = vertex_index_map->ghosts();
+    std::vector<std::int32_t> owner(int_vertices_global.size());
+    for (std::size_t i = 0; i < int_vertices_global.size(); i++)
+    {
+      std::int64_t ghost = int_vertices_global[i];
+      auto it = std::find(ghosts.begin(), ghosts.end(), ghost);
+      assert(it != ghosts.end());
+      int pos = std::distance(ghosts.begin(), it);
+      owner[i] = ghost_owners[pos];
+    }
 
-    MatZeroEntries(A.mat());
-    fem::assemble_matrix(la::PETScMatrix::add_block_fn(A.mat()), *a, bc);
-    fem::add_diagonal(la::PETScMatrix::add_fn(A.mat()), *V, bc);
-    MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
+    // Figure out how much data to send to each neighbor (ghost owner)
+    MPI_Comm reverse_com
+        = vertex_index_map->comm(common::IndexMap::Direction::reverse);
+    auto [sources, destinations] = dolfinx::MPI::neighbors(reverse_com);
+    std::vector<int> send_sizes(destinations.size(), 0);
+    std::vector<int> recv_sizes(sources.size(), 0);
+    for (std::size_t i = 0; i < int_vertices_global.size(); i++)
+    {
+      auto it = std::find(destinations.begin(), destinations.end(), owner[i]);
+      assert(it != destinations.end());
+      int pos = std::distance(destinations.begin(), it);
+      // Number of cells containing the vertex
+      // int num_cells = vc->links(int_vertices[i]).size();
+      // send_sizes[pos] += num_cells * 1;
+      send_sizes[pos]++;
+    }
 
-    VecSet(b.vec(), 0.0);
-    VecGhostUpdateBegin(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
-    fem::assemble_vector_petsc(b.vec(), *L);
-    fem::apply_lifting_petsc(b.vec(), {a}, {{bc}}, {}, 1.0);
-    VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-    VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-    fem::set_bc_petsc(b.vec(), bc, nullptr);
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, reverse_com);
 
-    la::PETScKrylovSolver lu(MPI_COMM_WORLD);
-    la::PETScOptions::set("ksp_type", "preonly");
-    la::PETScOptions::set("pc_type", "lu");
-    lu.set_from_options();
+    // Prepare communication displacements
+    std::vector<int> send_disp(destinations.size() + 1, 0);
+    std::vector<int> recv_disp(sources.size() + 1, 0);
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     send_disp.begin() + 1);
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     recv_disp.begin() + 1);
 
-    lu.set_operator(A.mat());
-    lu.solve(u.vector(), b.vec());
+    // Pack the data to send the owning rank
+    std::vector<std::int64_t> send_data(send_disp.back());
+    std::vector<std::int64_t> recv_data(recv_disp.back());
+    std::vector<int> insert_pos = send_disp;
+    auto cell_index_map = mesh->topology().index_map(tdim);
+    for (std::size_t i = 0; i < int_vertices_global.size(); i++)
+    {
+      auto it = std::find(destinations.begin(), destinations.end(), owner[i]);
+      assert(it != destinations.end());
+      int p = std::distance(destinations.begin(), it);
+      int& pos = insert_pos[p];
+      send_data[pos++] = int_vertices_global[i];
+    }
 
-    // The function ``u`` will be modified during the call to solve. A
-    // :cpp:class:`Function` can be saved to a file. Here, we output the
-    // solution to a ``VTK`` file (specified using the suffix ``.pvd``) for
-    // visualisation in an external program such as Paraview.
-    //
-    // .. code-block:: cpp
+    // A rank in the neighborhood communicator can have no incoming or
+    // outcoming edges. This may cause OpenMPI to crash. Workaround:
+    if (send_sizes.empty())
+      send_sizes.reserve(1);
+    if (recv_sizes.empty())
+      recv_sizes.reserve(1);
 
-    // Save solution in VTK format
-    io::VTKFile file("u.pvd");
-    file.write(u);
+    MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T, recv_data.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           reverse_com);
+
+    {
+      auto fwd_shared_vertices = vertex_index_map->shared_indices();
+      std::map<std::int64_t, std::vector<int>> vertex_neighbour_map;
+      for (std::size_t i = 0; i < recv_sizes.size(); i++)
+      {
+        for (int j = recv_disp[i]; j < recv_disp[i + 1]; j++)
+          vertex_neighbour_map[recv_data[j]].push_back(i);
+      }
+
+      // Figure out how much data to send to each neighbor
+      MPI_Comm forward_com
+          = vertex_index_map->comm(common::IndexMap::Direction::forward);
+
+      auto [sources, destinations] = dolfinx::MPI::neighbors(forward_com);
+      std::vector<int> send_sizes(destinations.size(), 0);
+      std::vector<int> recv_sizes(sources.size(), 0);
+      for (auto const& [key, val] : vertex_neighbour_map)
+        for (auto p : val)
+          send_sizes[p] += (2 + val.size());
+
+      if (mpi_rank == 1)
+        for (auto a : send_sizes)
+          std::cout << a << " ";
+      // if (mpi_rank == 0)
+      // {
+      //   std::cout << std::endl;
+      //   for (auto a : recv_data)
+      //     std::cout << a << " ";
+
+      //   auto vec = vertex_index_map->shared_indices();
+      //   std::cout << std::endl;
+      //   for (auto a : vec)
+      //     std::cout << a << " ";
+      // }
+
+      //   std::vector<int> values(facet_indices.size(), 1);
+      //   dolfinx::mesh::MeshTags<int> mt(mesh, tdim - 1, facet_indices,
+      //   values);
+
+      //   // Save solution in VTK format
+      //   io::XDMFFile file(comm, "mesh.xdmf", "w");
+      //   std::string geometry_xpath =
+      //   "/Xdmf/Domain/Grid[@Name='mesh']/Geometry"; file.write_mesh(*mesh);
+      //   file.write_meshtags(mt, geometry_xpath);
+    }
   }
 
-  common::subsystem::finalize_petsc();
+  common::subsystem::finalize_mpi();
   return 0;
 }
