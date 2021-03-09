@@ -61,6 +61,7 @@ adios2::Mode string_to_mode(std::string mode)
 }
 
 } // namespace
+//-----------------------------------------------------------------------------
 
 ADIOS2File::ADIOS2File(MPI_Comm comm, std::string filename, std::string mode)
     : _adios(), _io(), _engine(), _vtk_scheme(), _mode(mode)
@@ -79,14 +80,25 @@ ADIOS2File::ADIOS2File(MPI_Comm comm, std::string filename, std::string mode)
 
   _engine = std::make_shared<adios2::Engine>(_io->Open(filename, file_mode));
 }
+//-----------------------------------------------------------------------------
 
 ADIOS2File::~ADIOS2File() { close(); };
+//-----------------------------------------------------------------------------
 
 void ADIOS2File::close()
 {
   if (*_engine)
+  {
+    // Add VTKSchema if it hasn't been previously added (for instance when
+    // writing meshes)
+    if (_vtk_scheme.empty())
+    {
+      DefineAttribute<std::string>(_io, "vtk.xml", VTKSchema({}));
+    }
     _engine->Close();
+  }
 }
+//-----------------------------------------------------------------------------
 
 void ADIOS2File::write_function(
     const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
@@ -94,6 +106,7 @@ void ADIOS2File::write_function(
 {
   _write_function<double>(u, t);
 }
+//-----------------------------------------------------------------------------
 
 void ADIOS2File::write_function(
     const std::vector<
@@ -102,24 +115,17 @@ void ADIOS2File::write_function(
 {
   _write_function<std::complex<double>>(u, t);
 }
+//-----------------------------------------------------------------------------
 
-template <typename Scalar>
-void ADIOS2File::_write_function(
-    const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
-    double t)
+void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
 {
   if (_mode == "a")
     throw std::runtime_error(
         "Cannot append functions to previously created file.");
-  // Write time step information
-  _time_dep = true;
-  adios2::Variable<double> time = DefineVariable<double>(_io, "step");
-  _engine->Put<double>(time, t);
 
   // Get some data about mesh
-  auto mesh = u[0].get().function_space()->mesh();
-  auto top = mesh->topology();
-  auto x_map = mesh->geometry().index_map();
+  auto top = mesh.topology();
+  auto x_map = mesh.geometry().index_map();
   const int tdim = top.dim();
 
   // As the mesh data is written with local indices we need the ghost vertices
@@ -138,14 +144,13 @@ void ADIOS2File::_write_function(
 
   // Get DOLFINx to VTK permuation
   // FIXME: Use better way to get number of nods
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::uint32_t num_nodes = x_dofmap.num_links(0);
   std::vector<std::uint8_t> map = dolfinx::io::cells::transpose(
-      dolfinx::io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
+      dolfinx::io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
   // TODO: Remove when when paraview issue 19433 is resolved
   // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-  if (mesh->topology().cell_type() == dolfinx::mesh::CellType::hexahedron
+  if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
       and num_nodes == 27)
   {
     map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
@@ -177,13 +182,30 @@ void ADIOS2File::_write_function(
   // Start writer for given function
   _engine->Put<std::uint32_t>(vertices, num_vertices);
   _engine->Put<std::uint32_t>(elements, num_elements);
+  _engine->Put<std::uint32_t>(
+      cell_type, dolfinx::io::cells::get_vtk_cell_type(mesh, tdim));
+  _engine->Put<double>(local_geometry, mesh.geometry().x().data());
+  _engine->Put<std::uint64_t>(local_topology, vtk_topology.data());
+  _engine->PerformPuts();
+}
+//-----------------------------------------------------------------------------
 
+template <typename Scalar>
+void ADIOS2File::_write_function(
+    const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
+    double t)
+{
+  auto mesh = u[0].get().function_space()->mesh();
   _engine->BeginStep();
 
-  _engine->Put<std::uint32_t>(
-      cell_type, dolfinx::io::cells::get_vtk_cell_type(*mesh, tdim));
-  _engine->Put<double>(local_geometry, mesh->geometry().x().data());
-  _engine->Put<std::uint64_t>(local_topology, vtk_topology.data());
+  // Write time step information
+  _time_dep = true;
+  adios2::Variable<double> time = DefineVariable<double>(_io, "step");
+  _engine->Put<double>(time, t);
+
+  // Write mesh to file
+  write_mesh(*mesh);
+
   // Extract and write function data
   std::set<std::string> point_data;
   for (auto u_ : u)
@@ -248,6 +270,7 @@ void ADIOS2File::_write_function(
   DefineAttribute<std::string>(_io, "vtk.xml", vtk_scheme);
   _engine->EndStep();
 }
+//-----------------------------------------------------------------------------
 
 std::string ADIOS2File::VTKSchema(std::set<std::string> point_data)
 {

@@ -10,6 +10,7 @@
 
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/Function.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <vector>
 
@@ -36,17 +37,27 @@ public:
 
   void close();
 
-  /// Write a function to file
+  /// Write a list of functions to file (real mode)
+  /// @param[in] u - List of functions
+  /// @param[in] t - The time step
   void write_function(
       const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
       double t = 0.0);
 
+  // Write a list of functions to file (complex mode)
+  /// @param[in] u - List of functions
+  /// @param[in] t - The time step
   void write_function(
       const std::vector<
           std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
       double t = 0.0);
 
+  /// Write mesh to file
+  /// @param[in] mesh
+  void write_mesh(const mesh::Mesh& mesh);
+
 private:
+  /// Templated writer for functions
   template <typename Scalar>
   void _write_function(
       const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
@@ -58,12 +69,9 @@ private:
   std::string VTKSchema(std::set<std::string> point_data);
 
   std::shared_ptr<adios2::ADIOS> _adios;
-  // NOTE: Could have separate IOs for different tasks, but we will currently
-  // only have one
   std::shared_ptr<adios2::IO> _io;
   std::shared_ptr<adios2::Engine> _engine;
   bool _time_dep = false;
-  // String holding vtk scheme from previous time step (in append mode)
   std::string _vtk_scheme;
   std::string _mode;
 };
