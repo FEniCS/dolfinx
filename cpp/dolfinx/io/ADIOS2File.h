@@ -11,6 +11,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <memory>
 #include <vector>
 
@@ -56,6 +57,10 @@ public:
   /// @param[in] mesh
   void write_mesh(const mesh::Mesh& mesh);
 
+  /// Write meshtags to file
+  /// @param[in] meshtags
+  void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtag);
+
 private:
   /// Templated writer for functions
   template <typename Scalar>
@@ -66,7 +71,8 @@ private:
   std::set<std::string> update_vtk_point_data();
 
   /// Wrapper for creating VTKSchema for given input
-  std::string VTKSchema(std::set<std::string> point_data);
+  std::string VTKSchema(std::set<std::string> point_data,
+                        std::set<std::string> cell_data);
 
   std::shared_ptr<adios2::ADIOS> _adios;
   std::shared_ptr<adios2::IO> _io;

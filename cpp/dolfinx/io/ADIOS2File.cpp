@@ -8,6 +8,7 @@
 
 #include "ADIOS2File.h"
 #include "dolfinx/io/cells.h"
+#include "dolfinx/mesh/utils.h"
 #include "pugixml.hpp"
 #include <adios2.h>
 using namespace dolfinx;
@@ -93,27 +94,83 @@ void ADIOS2File::close()
     // writing meshes)
     if (_vtk_scheme.empty())
     {
-      DefineAttribute<std::string>(_io, "vtk.xml", VTKSchema({}));
+      DefineAttribute<std::string>(_io, "vtk.xml", VTKSchema({}, {}));
     }
     _engine->Close();
   }
 }
 //-----------------------------------------------------------------------------
-
-void ADIOS2File::write_function(
-    const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
-    double t)
+/// Write meshtags to file
+/// @param[in] meshtags
+void ADIOS2File::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtag)
 {
-  _write_function<double>(u, t);
-}
-//-----------------------------------------------------------------------------
+  // NOTE: CellData cannot be visualized, see:
+  // https://gitlab.kitware.com/vtk/vtk/-/merge_requests/7401
+  /// Get topology of geometry
+  const int dim = meshtag.dim();
+  auto mesh = meshtag.mesh();
+  array2d<std::int32_t> geometry_entities
+      = entities_to_geometry(*mesh, dim, meshtag.indices(), false);
+  auto x_map = mesh->geometry().index_map();
+  const std::uint32_t num_elements = meshtag.indices().size();
+  const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
+  adios2::Variable<std::uint32_t> vertices = DefineVariable<std::uint32_t>(
+      _io, "NumberOfNodes", {adios2::LocalValueDim});
+  adios2::Variable<std::uint32_t> elements = DefineVariable<std::uint32_t>(
+      _io, "NumberOfEntities", {adios2::LocalValueDim});
 
-void ADIOS2File::write_function(
-    const std::vector<
-        std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
-    double t)
-{
-  _write_function<std::complex<double>>(u, t);
+  std::vector<int32_t> cells(num_elements);
+  std::iota(cells.begin(), cells.end(), 0);
+  const std::uint32_t num_nodes = geometry_entities.shape[1];
+  adios2::Variable<double> local_geometry
+      = DefineVariable<double>(_io, "geometry", {}, {}, {num_vertices, 3});
+  mesh::CellType cell_type
+      = mesh::cell_entity_type(mesh->topology().cell_type(), dim);
+  std::vector<std::uint8_t> map = dolfinx::io::cells::transpose(
+      dolfinx::io::cells::perm_vtk(cell_type, num_nodes));
+  // TODO: Remove when when paraview issue 19433 is resolved
+  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
+  if (cell_type == dolfinx::mesh::CellType::hexahedron and num_nodes == 27)
+  {
+    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+  }
+  adios2::Variable<std::uint64_t> local_topology
+      = DefineVariable<std::uint64_t>(_io, "connectivity", {}, {},
+                                      {num_elements, num_nodes + 1});
+  std::vector<std::uint64_t> vtk_topology(num_elements * (num_nodes + 1));
+  int topology_offset = 0;
+  std::stringstream cc;
+
+  for (size_t c = 0; c < geometry_entities.shape[0]; ++c)
+  {
+    auto x_dofs = geometry_entities.row(c);
+    vtk_topology[topology_offset++] = x_dofs.size();
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      vtk_topology[topology_offset++] = x_dofs[map[i]];
+    }
+  }
+
+  // Add element cell types
+  const uint32_t vtk_type = dolfinx::io::cells::get_vtk_cell_type(*mesh, dim);
+  adios2::Variable<std::uint32_t> cell_types
+      = DefineVariable<std::uint32_t>(_io, "types");
+
+  // Create attribute for meshtags data
+  adios2::Variable<std::int32_t> mesh_tags
+      = DefineVariable<std::int32_t>(_io, "MeshTag", {}, {}, {num_elements});
+  _engine->Put<std::int32_t>(mesh_tags, meshtag.values().data());
+  std::set<std::string> cell_data = {"MeshTag"};
+
+  // Start writer for given function
+  _engine->Put<std::uint32_t>(vertices, num_vertices);
+  _engine->Put<std::uint32_t>(elements, num_elements);
+  _engine->Put<std::uint32_t>(cell_types, vtk_type);
+  _engine->Put<double>(local_geometry, mesh->geometry().x().data());
+  _engine->Put<std::uint64_t>(local_topology, vtk_topology.data());
+  _engine->PerformPuts();
+  DefineAttribute<std::string>(_io, "vtk.xml", VTKSchema({}, cell_data));
 }
 //-----------------------------------------------------------------------------
 
@@ -132,15 +189,15 @@ void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
   const std::uint32_t num_elements = top.index_map(tdim)->size_local();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<std::uint32_t> vertices = DefineVariable<std::uint32_t>(
-      _io, "NumOfVertices", {adios2::LocalValueDim});
+      _io, "NumberOfNodes", {adios2::LocalValueDim});
   adios2::Variable<std::uint32_t> elements = DefineVariable<std::uint32_t>(
-      _io, "NumOfElements", {adios2::LocalValueDim});
+      _io, "NumberOfEntities", {adios2::LocalValueDim});
 
   // Extract geometry for all local cells
   std::vector<int32_t> cells(num_elements);
   std::iota(cells.begin(), cells.end(), 0);
   adios2::Variable<double> local_geometry
-      = DefineVariable<double>(_io, "vertices", {}, {}, {num_vertices, 3});
+      = DefineVariable<double>(_io, "geometry", {}, {}, {num_vertices, 3});
 
   // Get DOLFINx to VTK permuation
   // FIXME: Use better way to get number of nods
@@ -163,16 +220,16 @@ void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
       = DefineVariable<std::uint64_t>(_io, "connectivity", {}, {},
                                       {num_elements, num_nodes + 1});
   std::vector<std::uint64_t> vtk_topology(num_elements * (num_nodes + 1));
-  int connectivity_offset = 0;
+  int topology_offset = 0;
   std::stringstream cc;
 
   for (size_t c = 0; c < num_elements; ++c)
   {
     auto x_dofs = x_dofmap.links(c);
-    vtk_topology[connectivity_offset++] = x_dofs.size();
+    vtk_topology[topology_offset++] = x_dofs.size();
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      vtk_topology[connectivity_offset++] = x_dofs[map[i]];
+      vtk_topology[topology_offset++] = x_dofs[map[i]];
     }
   }
 
@@ -257,7 +314,7 @@ void ADIOS2File::_write_function(
   }
   // Check if VTKScheme exists, and if so, check that we are only adding values
   // already existing
-  std::string vtk_scheme = VTKSchema(point_data);
+  std::string vtk_scheme = VTKSchema(point_data, {});
   // If writing to file set vtk scheme as current
   if (_vtk_scheme.empty())
     _vtk_scheme = vtk_scheme;
@@ -272,7 +329,25 @@ void ADIOS2File::_write_function(
 }
 //-----------------------------------------------------------------------------
 
-std::string ADIOS2File::VTKSchema(std::set<std::string> point_data)
+void ADIOS2File::write_function(
+    const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
+    double t)
+{
+  _write_function<double>(u, t);
+}
+//-----------------------------------------------------------------------------
+
+void ADIOS2File::write_function(
+    const std::vector<
+        std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
+    double t)
+{
+  _write_function<std::complex<double>>(u, t);
+}
+//-----------------------------------------------------------------------------
+
+std::string ADIOS2File::VTKSchema(std::set<std::string> point_data,
+                                  std::set<std::string> cell_data)
 {
   // Create XML SCHEMA by using pugi_xml
   pugi::xml_document xml_schema;
@@ -283,13 +358,14 @@ std::string ADIOS2File::VTKSchema(std::set<std::string> point_data)
   pugi::xml_node unstructured = vtk_node.append_child("UnstructuredGrid");
   pugi::xml_node piece = unstructured.append_child("Piece");
   // Create VTK schema for mesh
+  piece.append_attribute("NumberOfPoints") = "NumberOfNodes";
+  piece.append_attribute("NumberOfCells") = "NumberOfEntities";
+  pugi::xml_node geometry = piece.append_child("Points");
+  pugi::xml_node vertices = geometry.append_child("DataArray");
+  vertices.append_attribute("Name") = "geometry";
+
+  pugi::xml_node topology = piece.append_child("Cells");
   {
-    piece.append_attribute("NumberOfPoints") = "NumberOfVertices";
-    piece.append_attribute("NumberOfCells") = "NumOfElements";
-    pugi::xml_node geometry = piece.append_child("Points");
-    pugi::xml_node vertices = geometry.append_child("DataArray");
-    vertices.append_attribute("Name") = "vertices";
-    pugi::xml_node topology = piece.append_child("Cells");
     std::vector<std::string> topology_data = {"connectivity", "types"};
     for (auto data : topology_data)
     {
@@ -297,21 +373,31 @@ std::string ADIOS2File::VTKSchema(std::set<std::string> point_data)
       item.append_attribute("Name") = data.c_str();
     }
   }
-  // If we have any point data to write to file
-  if (!point_data.empty())
+
   {
-    pugi::xml_node pdata = piece.append_child("PointData");
+    pugi::xml_node data = piece.append_child("PointData");
+
+    // If we have any point data to write to file
     // Stepping info for time dependency
     if (_time_dep)
     {
-      pugi::xml_node item = pdata.append_child("DataArray");
+      pugi::xml_node item = data.append_child("DataArray");
       item.append_attribute("Name") = "TIME";
       item.append_child(pugi::node_pcdata).set_value("step");
     }
     // Append point data to VTK Schema
     for (auto name : point_data)
     {
-      pugi::xml_node item = pdata.append_child("DataArray");
+      pugi::xml_node item = data.append_child("DataArray");
+      item.append_attribute("Name") = name.c_str();
+    }
+  }
+  {
+    pugi::xml_node data = piece.append_child("CellData");
+    // Append point data to VTK Schema
+    for (auto name : cell_data)
+    {
+      pugi::xml_node item = data.append_child("DataArray");
       item.append_attribute("Name") = name.c_str();
     }
   }

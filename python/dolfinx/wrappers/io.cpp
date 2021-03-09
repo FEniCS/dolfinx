@@ -150,6 +150,7 @@ void io(py::module& m)
               py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::ADIOS2File::close)
       .def("write_mesh", &dolfinx::io::ADIOS2File::write_mesh)
+      .def("write_meshtags", &dolfinx::io::ADIOS2File::write_meshtags)
       .def("write_function",
            py::overload_cast<
                const std::vector<std::reference_wrapper<
