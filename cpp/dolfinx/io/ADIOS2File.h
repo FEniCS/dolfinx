@@ -55,7 +55,8 @@ private:
   std::set<std::string> update_vtk_point_data();
 
   /// Wrapper for creating VTKSchema for given input
-  std::string VTKSchema(std::set<std::string> point_data);
+  std::string VTKSchema(std::set<std::string> scalar_point_data,
+                        std::set<std::string> vector_point_data);
 
   std::shared_ptr<adios2::ADIOS> _adios;
   // NOTE: Could have separate IOs for different tasks, but we will currently

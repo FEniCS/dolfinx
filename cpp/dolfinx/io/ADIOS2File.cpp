@@ -186,7 +186,8 @@ void ADIOS2File::_write_function(
   _engine->Put<double>(local_geometry, mesh->geometry().x().data());
   _engine->Put<std::uint64_t>(local_topology, vtk_topology.data());
   // Extract and write function data
-  std::set<std::string> point_data;
+  std::set<std::string> scalar_point_data;
+  std::set<std::string> vector_point_data;
   for (auto u_ : u)
   {
     assert(mesh == u_.get().function_space()->mesh());
@@ -195,36 +196,50 @@ void ADIOS2File::_write_function(
     auto function_data = u_.get().compute_point_values();
     std::uint32_t local_size = function_data.shape[0];
     std::uint32_t block_size = function_data.shape[1];
-    // Extract real and imaginary components
-    std::vector<std::string> components = {""};
+    // Extract real and imaginary parts
+    std::vector<std::string> parts = {""};
     if constexpr (!std::is_scalar<Scalar>::value)
-      components = {"real", "imag"};
+      parts = {"real", "imag"};
 
-    // Write each component
-    std::vector<double> out_data(local_size);
-
-    for (const auto& component : components)
+    // Write each real and imaginary part of the function
+    const int rank = u_.get().function_space()->element()->value_rank();
+    const std::uint32_t num_components = std::pow(3, rank);
+    std::vector<double> out_data(num_components * local_size);
+    for (const auto& part : parts)
     {
       std::string function_name = u_.get().name;
-      if (component != "")
-        function_name += "_" + component;
-      adios2::Variable<double> local_output
-          = DefineVariable<double>(_io, function_name, {}, {}, {local_size});
+      if (part != "")
+        function_name += "_" + part;
+      adios2::Variable<double> local_output = DefineVariable<double>(
+          _io, function_name, {}, {}, {local_size, num_components});
+      // Loop over components of each real and imaginary part
       for (size_t i = 0; i < local_size; ++i)
       {
-        if (component == "imag")
-          out_data[i] = std::imag(function_data.row(i)[0]);
-        else
-          out_data[i] = std::real(function_data.row(i)[0]);
+        for (size_t j = 0; j < block_size; ++j)
+          if (part == "imag")
+            out_data[i * block_size + j] = std::imag(function_data.row(i)[j]);
+          else
+            out_data[i * block_size + j] = std::real(function_data.row(i)[j]);
+
+        // Pad data to 3D if vector or tensor data
+        for (size_t j = block_size; j < num_components; ++j)
+        {
+          out_data[i * block_size + j] = 0;
+        }
       }
-      point_data.insert(function_name);
+      if (rank == 0)
+        scalar_point_data.insert(function_name);
+      if (rank == 1)
+      {
+        vector_point_data.insert(function_name);
+      }
       // To reuse out_data, we use sync mode here
       _engine->Put<double>(local_output, out_data.data(), adios2::Mode::Sync);
     }
   }
   // Check if VTKScheme exists, and if so, check that we are only adding values
   // already existing
-  std::string vtk_scheme = VTKSchema(point_data);
+  std::string vtk_scheme = VTKSchema(scalar_point_data, vector_point_data);
   // If writing to file set vtk scheme as current
   if (_vtk_scheme.empty())
     _vtk_scheme = vtk_scheme;
@@ -238,7 +253,8 @@ void ADIOS2File::_write_function(
   _engine->EndStep();
 }
 
-std::string ADIOS2File::VTKSchema(std::set<std::string> point_data)
+std::string ADIOS2File::VTKSchema(std::set<std::string> scalar_point_data,
+                                  std::set<std::string> vector_point_data)
 {
   std::string schema = R"(
             <VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian">
@@ -252,13 +268,14 @@ std::string ADIOS2File::VTKSchema(std::set<std::string> point_data)
                      <DataArray Name="types" />
                   </Cells>)";
 
-  if (point_data.empty())
+  // Write scalar data
+  if (scalar_point_data.empty())
     schema += "\n";
   else
   {
     schema += R"(
-                  <PointData>)";
-    for (auto name : point_data)
+                  <PointData Scalars="">)";
+    for (auto name : scalar_point_data)
     {
       schema += R"(
                      <DataArray Name=")"
@@ -270,6 +287,20 @@ std::string ADIOS2File::VTKSchema(std::set<std::string> point_data)
                      <DataArray Name="TIME">
                        step 
                      </DataArray>)";
+    }
+    schema += R"(
+                   </PointData>)";
+  }
+  // Write vector data
+  if (!vector_point_data.empty())
+  {
+    schema += R"(
+                  <PointData Vectors="">)";
+    for (auto name : vector_point_data)
+    {
+      schema += R"(
+                     <DataArray Name=")"
+                + name + R"(" />)";
     }
     schema += R"(
                    </PointData>)";
