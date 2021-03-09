@@ -34,6 +34,8 @@ public:
   /// Destructor
   ~ADIOS2File();
 
+  void close();
+
   /// Write a function to file
   void write_function(
       const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,

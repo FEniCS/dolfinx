@@ -80,7 +80,13 @@ ADIOS2File::ADIOS2File(MPI_Comm comm, std::string filename, std::string mode)
   _engine = std::make_shared<adios2::Engine>(_io->Open(filename, file_mode));
 }
 
-ADIOS2File::~ADIOS2File() { _engine->Close(); };
+ADIOS2File::~ADIOS2File() { close(); };
+
+void ADIOS2File::close()
+{
+  if (*_engine)
+    _engine->Close();
+}
 
 void ADIOS2File::write_function(
     const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,

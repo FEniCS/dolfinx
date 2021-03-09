@@ -9,6 +9,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/array2d.h>
+#include <dolfinx/common/defines.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/ADIOS2File.h>
@@ -56,6 +57,9 @@ void io(py::module& m)
           return std::pair(as_pyarray2d(std::move(e.first)),
                            as_pyarray(std::move(e.second)));
         });
+
+  // Flag for ADIOS2 installation
+  m.def("has_adios2", &dolfinx::has_adios2);
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
@@ -139,6 +143,12 @@ void io(py::module& m)
         return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(), filename,
                                                          mode);
       }))
+      .def("__enter__",
+           [](std::shared_ptr<dolfinx::io::ADIOS2File>& self) { return self; })
+      .def("__exit__",
+           [](dolfinx::io::ADIOS2File& self, py::object exc_type,
+              py::object exc_value, py::object traceback) { self.close(); })
+      .def("close", &dolfinx::io::ADIOS2File::close)
       .def("write_function",
            py::overload_cast<
                const std::vector<std::reference_wrapper<

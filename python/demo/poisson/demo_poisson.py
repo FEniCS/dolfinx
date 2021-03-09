@@ -78,6 +78,7 @@ import numpy as np
 import ufl
 from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh, fem,
                      plot)
+from dolfinx.cpp.io import has_adios2
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
@@ -201,6 +202,11 @@ with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
 
 # Update ghost entries and plot
 uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+if has_adios2():
+    from dolfinx.cpp.io import ADIOS2File
+    with ADIOS2File(MPI.COMM_WORLD, "poisson.bp", "w") as file:
+        file.write_function([uh._cpp_object], 0.0)
 try:
     import pyvista
 
