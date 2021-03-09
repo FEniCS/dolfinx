@@ -134,17 +134,21 @@ void io(py::module& m)
   py::class_<dolfinx::io::ADIOS2File, std::shared_ptr<dolfinx::io::ADIOS2File>>
       adios_file(m, "ADIOS2File");
   adios_file
-      .def(py::init([](const MPICommWrapper comm, const std::string filename) {
-        return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(), filename);
+      .def(py::init([](const MPICommWrapper comm, const std::string filename,
+                       const std::string mode) {
+        return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(), filename,
+                                                         mode);
       }))
-      .def(
-          "write_function",
-          py::overload_cast<const dolfinx::fem::Function<std::complex<double>>&,
-                            double>(&dolfinx::io::ADIOS2File::write_function),
-          py::arg("function"), py::arg("t"))
       .def("write_function",
-           py::overload_cast<const dolfinx::fem::Function<double>&, double>(
-               &dolfinx::io::ADIOS2File::write_function),
+           py::overload_cast<
+               const std::vector<std::reference_wrapper<
+                   const dolfinx::fem::Function<std::complex<double>>>>&,
+               double>(&dolfinx::io::ADIOS2File::write_function),
+           py::arg("function"), py::arg("t"))
+      .def("write_function",
+           py::overload_cast<const std::vector<std::reference_wrapper<
+                                 const dolfinx::fem::Function<double>>>&,
+                             double>(&dolfinx::io::ADIOS2File::write_function),
            py::arg("function"), py::arg("t"));
 #endif
   // dolfinx::io::VTKFile
