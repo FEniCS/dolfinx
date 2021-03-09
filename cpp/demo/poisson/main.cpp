@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     auto cmap = fem::create_coordinate_map(create_coordinate_map_poisson);
     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
         comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {2, 2}, cmap,
-        mesh::GhostMode::shared_facet));
+        mesh::GhostMode::none));
 
     int tdim = mesh->topology().dim();
     mesh->topology().create_connectivity(tdim - 1, tdim);
@@ -94,9 +94,6 @@ int main(int argc, char* argv[])
       auto it = std::find(destinations.begin(), destinations.end(), owner[i]);
       assert(it != destinations.end());
       int pos = std::distance(destinations.begin(), it);
-      // Number of cells containing the vertex
-      // int num_cells = vc->links(int_vertices[i]).size();
-      // send_sizes[pos] += num_cells * 1;
       send_sizes[pos]++;
     }
 
@@ -138,7 +135,9 @@ int main(int argc, char* argv[])
                            reverse_com);
 
     {
-      auto fwd_shared_vertices = vertex_index_map->shared_indices();
+      MPI_Comm forward_com
+          = vertex_index_map->comm(common::IndexMap::Direction::forward);
+      auto [sources, destinations] = dolfinx::MPI::neighbors(forward_com);
       std::map<std::int64_t, std::vector<int>> vertex_neighbour_map;
       for (std::size_t i = 0; i < recv_sizes.size(); i++)
       {
@@ -147,41 +146,88 @@ int main(int argc, char* argv[])
       }
 
       // Figure out how much data to send to each neighbor
-      MPI_Comm forward_com
-          = vertex_index_map->comm(common::IndexMap::Direction::forward);
-
-      auto [sources, destinations] = dolfinx::MPI::neighbors(forward_com);
       std::vector<int> send_sizes(destinations.size(), 0);
       std::vector<int> recv_sizes(sources.size(), 0);
-      for (auto const& [key, val] : vertex_neighbour_map)
-        for (auto p : val)
-          send_sizes[p] += (2 + val.size());
+      for (auto const& [vertex, neighbors] : vertex_neighbour_map)
+        for (auto p : neighbors)
+          send_sizes[p] += (2 + neighbors.size() + 1);
 
-      if (mpi_rank == 1)
-        for (auto a : send_sizes)
-          std::cout << a << " ";
-      // if (mpi_rank == 0)
-      // {
-      //   std::cout << std::endl;
-      //   for (auto a : recv_data)
-      //     std::cout << a << " ";
+      MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                            MPI_INT, forward_com);
 
-      //   auto vec = vertex_index_map->shared_indices();
-      //   std::cout << std::endl;
-      //   for (auto a : vec)
-      //     std::cout << a << " ";
-      // }
+      // Prepare communication displacements
+      std::vector<int> send_disp(destinations.size() + 1, 0);
+      std::vector<int> recv_disp(sources.size() + 1, 0);
+      std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                       send_disp.begin() + 1);
+      std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                       recv_disp.begin() + 1);
 
-      //   std::vector<int> values(facet_indices.size(), 1);
-      //   dolfinx::mesh::MeshTags<int> mt(mesh, tdim - 1, facet_indices,
-      //   values);
+      // Pack the data to send
+      // [V1 3 P1 P2 P3 V2 2 P2 P3 ...]
+      std::vector<std::int64_t> send_data(send_disp.back());
+      std::vector<std::int64_t> recv_data(recv_disp.back());
+      std::vector<int> insert_pos = send_disp;
+      for (auto const& [vertex, neighbors] : vertex_neighbour_map)
+      {
+        for (auto p : neighbors)
+        {
+          send_data[insert_pos[p]++] = vertex;
+          send_data[insert_pos[p]++] = neighbors.size() + 1;
+          send_data[insert_pos[p]++] = mpi_rank;
+          for (auto other : neighbors)
+            send_data[insert_pos[p]++] = destinations[other];
+        }
+      }
 
-      //   // Save solution in VTK format
-      //   io::XDMFFile file(comm, "mesh.xdmf", "w");
-      //   std::string geometry_xpath =
-      //   "/Xdmf/Domain/Grid[@Name='mesh']/Geometry"; file.write_mesh(*mesh);
-      //   file.write_meshtags(mt, geometry_xpath);
+      // A rank in the neighborhood communicator can have no incoming or
+      // outcoming edges. This may cause OpenMPI to crash. Workaround:
+      if (send_sizes.empty())
+        send_sizes.reserve(1);
+      if (recv_sizes.empty())
+        recv_sizes.reserve(1);
+
+      MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
+                             send_disp.data(), MPI_INT64_T, recv_data.data(),
+                             recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                             forward_com);
+
+      auto cell_map = mesh->topology().index_map(tdim);
+      auto vc = mesh->topology().connectivity(0, tdim);
+      std::vector<std::int32_t> num_dest(cell_map->size_local(), 1);
+
+      for (auto it = recv_data.begin(); it < recv_data.end(); it++)
+      {
+        std::int64_t global_index = *it++;
+        std::int32_t local_index = -1;
+        // vertex_index_map->global_to_local()
+        // std::cout << *it++ << " ";
+        std::advance(it, *it);
+      }
     }
+
+    // if (mpi_rank == 0)
+    // {
+    //   std::cout << std::endl;
+    //   for (auto a : recv_data)
+    //     std::cout << a << " ";
+
+    //   auto vec = vertex_index_map->shared_indices();
+    //   std::cout << std::endl;
+    //   for (auto a : vec)
+    //     std::cout << a << " ";
+    // }
+
+    //   std::vector<int> values(facet_indices.size(), 1);
+    //   dolfinx::mesh::MeshTags<int> mt(mesh, tdim - 1, facet_indices,
+    //   values);
+
+    //   // Save solution in VTK format
+    //   io::XDMFFile file(comm, "mesh.xdmf", "w");
+    //   std::string geometry_xpath =
+    //   "/Xdmf/Domain/Grid[@Name='mesh']/Geometry"; file.write_mesh(*mesh);
+    //   file.write_meshtags(mt, geometry_xpath);
+    // }
   }
 
   common::subsystem::finalize_mpi();
