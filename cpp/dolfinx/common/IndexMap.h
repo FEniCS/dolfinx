@@ -9,6 +9,7 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/span.hpp>
 #include <map>
 #include <tuple>
 #include <utility>
@@ -170,46 +171,9 @@ public:
   /// @param[in,out] remote_data Ghost data on this process received
   ///   from the owning process. Size will be n * num_ghosts().
   /// @param[in] n Number of data items per index
-  void scatter_fwd(const std::vector<std::int64_t>& local_data,
-                   std::vector<std::int64_t>& remote_data, int n) const;
-
-  /// Send n values for each index that is owned to processes that have
-  /// the index as a ghost. The size of the input array local_data must
-  /// be the same as n * size_local().
-  ///
-  /// @param[in] local_data Local data associated with each owned local
-  ///   index to be sent to process where the data is ghosted. Size must
-  ///   be n * size_local().
-  /// @param[in,out] remote_data Ghost data on this process received
-  ///   from the owning process. Size will be n * num_ghosts().
-  /// @param[in] n Number of data items per index
-  void scatter_fwd(const std::vector<std::int32_t>& local_data,
-                   std::vector<std::int32_t>& remote_data, int n) const;
-
-  /// Send n values for each index that is owned to processes that have
-  /// the index as a ghost. The size of the input array local_data must
-  /// be the same as n * size_local().
-  ///
-  /// @param[in] local_data Local data associated with each owned local
-  ///   index to be sent to process where the data is ghosted. Size must
-  ///   be n * size_local().
-  /// @param[in] n Number of data items per index
-  /// @return Ghost data on this process received from the owning
-  ///   process. Size will be n * num_ghosts().
-  std::vector<std::int64_t>
-  scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const;
-
-  /// Send n values for each index that is owned to processes that have
-  /// the index as a ghost
-  ///
-  /// @param[in] local_data Local data associated with each owned local
-  ///   index to be sent to process where the data is ghosted. Size must
-  ///   be n * size_local().
-  /// @param[in] n Number of data items per index
-  /// @return Ghost data on this process received from the owning
-  ///   process. Size will be n * num_ghosts().
-  std::vector<std::int32_t>
-  scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const;
+  template <typename T>
+  void scatter_fwd(tcb::span<const T> local_data, tcb::span<T> remote_data,
+                   int n) const;
 
   /// Send n values for each ghost index to owning to the process
   ///
@@ -220,22 +184,9 @@ public:
   ///   the owning process. Size will be n * num_ghosts().
   /// @param[in] n Number of data items per index
   /// @param[in] op Sum or set received values in local_data
-  void scatter_rev(std::vector<std::int64_t>& local_data,
-                   const std::vector<std::int64_t>& remote_data, int n,
-                   IndexMap::Mode op) const;
-
-  /// Send n values for each ghost index to owning to the process
-  ///
-  /// @param[in,out] local_data Local data associated with each owned
-  ///   local index to be sent to process where the data is ghosted.
-  ///   Size must be n * size_local().
-  /// @param[in] remote_data Ghost data on this process received from
-  ///   the owning process. Size will be n * num_ghosts().
-  /// @param[in] n Number of data items per index
-  /// @param[in] op Sum or set received values in local_data
-  void scatter_rev(std::vector<std::int32_t>& local_data,
-                   const std::vector<std::int32_t>& remote_data, int n,
-                   IndexMap::Mode op) const;
+  template <typename T>
+  void scatter_rev(tcb::span<T> local_data, tcb::span<const T> remote_data,
+                   int n, IndexMap::Mode op) const;
 
 private:
   // Range of indices (global) owned by this process
@@ -287,14 +238,6 @@ private:
   // starting postion in _shared_indices for data that is ghosted on
   // rank i, where i is the ith outgoing edge on _comm_owner_to_ghost.
   std::vector<std::int32_t> _shared_disp;
-
-  template <typename T>
-  void scatter_fwd_impl(const std::vector<T>& local_data,
-                        std::vector<T>& remote_data, int n) const;
-  template <typename T>
-  void scatter_rev_impl(std::vector<T>& local_data,
-                        const std::vector<T>& remote_data, int n,
-                        Mode op) const;
 };
 
 } // namespace dolfinx::common
