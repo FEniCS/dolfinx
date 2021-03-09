@@ -21,6 +21,7 @@ project(${{PROJECT_NAME}})
 # DOLFINX_CMAKE_CONFIG_PATH)
 if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
+  find_package(Basix REQUIRED)
 endif()
 
 # Executable
