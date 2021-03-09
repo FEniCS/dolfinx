@@ -172,7 +172,6 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
   URL "https://github.com/fenics/ffcx")
 
 # find_package(xtl REQUIRED)
-find_package(xtensor REQUIRED)
 find_package(Basix 0.0.1 REQUIRED)
 set_package_properties(basix PROPERTIES TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"

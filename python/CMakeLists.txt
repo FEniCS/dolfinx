@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.10)
 
 PROJECT(dolfinx_pybind11)
 
-find_package(xtensor REQUIRED)
 find_package(Basix REQUIRED)
 find_package(DOLFINX REQUIRED)
 
