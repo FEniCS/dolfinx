@@ -41,6 +41,11 @@ void common(py::module& m)
 #endif
   m.attr("git_commit_hash") = dolfinx::git_commit_hash();
 
+  // dolfinx::common::IndexMap::Mode
+  py::enum_<dolfinx::common::IndexMap::Mode>(m, "ScatterMode")
+      .value("add", dolfinx::common::IndexMap::Mode::add)
+      .value("insert", dolfinx::common::IndexMap::Mode::insert);
+
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,
              std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
