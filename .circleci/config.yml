@@ -5,7 +5,7 @@ install-python-components: &install-python-components
   command: |
     git clone https://github.com/FEniCS/basix.git --branch xtensor --single-branch
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-dir -S ./basix
-    cmake --build --parallel 3 build-dir
+    cmake --build build-dir --parallel 3
     cmake --install build-dir
     pip3 install ./basix/python
     # pip3 install git+https://github.com/FEniCS/basix.git
