@@ -172,8 +172,8 @@ solver.view()
 with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
     file.write_mesh(mesh)
     file.write_function(u)
-# u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
+u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 if has_adios2():
     from dolfinx.cpp.io import ADIOS2File
     with ADIOS2File(MPI.COMM_WORLD, "elasticity.bp", "w") as file:

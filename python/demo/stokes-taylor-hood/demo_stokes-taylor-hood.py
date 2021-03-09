@@ -77,6 +77,7 @@ from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
 from dolfinx.io import XDMFFile
+from dolfinx.cpp.io import has_adios2
 from dolfinx.mesh import locate_entities_boundary
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -262,7 +263,12 @@ if MPI.COMM_WORLD.rank == 0:
 # The solution fields can be saved to file in XDMF format for
 # visualization, e.g. with ParView. Before writing to file, ghost values
 # are updated.
-
+if has_adios2():
+    from dolfinx.cpp.io import ADIOS2File
+    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    with ADIOS2File(MPI.COMM_WORLD, "velocity.bp", "w") as adios:
+        adios.write_function([u._cpp_object, p._cpp_object], 0.0)
 with XDMFFile(MPI.COMM_WORLD, "velocity.xdmf", "w") as ufile_xdmf:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     ufile_xdmf.write_mesh(mesh)
