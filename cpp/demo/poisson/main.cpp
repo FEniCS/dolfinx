@@ -55,11 +55,6 @@ int main(int argc, char* argv[])
                        int_vertices.end());
 
     std::int32_t local_size = vertex_index_map->size_local();
-    std::vector<std::int32_t> local_int_verts;
-    std::copy_if(int_vertices.begin(), int_vertices.end(),
-                 std::back_inserter(local_int_verts),
-                 [local_size](std::int32_t v) { return v < local_size; });
-
     int_vertices.erase(
         std::remove_if(int_vertices.begin(), int_vertices.end(),
                        [local_size](std::int32_t v) { return v < local_size; }),
@@ -67,8 +62,7 @@ int main(int argc, char* argv[])
 
     // Get global indices
     std::vector<std::int64_t> int_vertices_global(int_vertices.size());
-    vertex_index_map->local_to_global(int_vertices.data(), int_vertices.size(),
-                                      int_vertices_global.data());
+    vertex_index_map->local_to_global(int_vertices, int_vertices_global);
 
     // Get interface vertices owners
     auto ghost_owners = vertex_index_map->ghost_owner_rank();
@@ -194,16 +188,62 @@ int main(int argc, char* argv[])
 
       auto cell_map = mesh->topology().index_map(tdim);
       auto vc = mesh->topology().connectivity(0, tdim);
-      std::vector<std::int32_t> num_dest(cell_map->size_local(), 1);
 
-      for (auto it = recv_data.begin(); it < recv_data.end(); it++)
+      std::map<std::int64_t, std::vector<std::int32_t>> vertex_procs;
+      for (auto it = recv_data.begin(); it < recv_data.end();)
       {
-        std::int64_t global_index = *it++;
-        std::int32_t local_index = -1;
-        // vertex_index_map->global_to_local()
-        // std::cout << *it++ << " ";
-        std::advance(it, *it);
+        const std::int64_t global_index = *it++;
+        int num_procs = *it++;
+        auto& processes = vertex_procs[global_index];
+        std::copy_n(it, num_procs, std::back_inserter(processes));
+        std::advance(it, num_procs);
       }
+
+      std::vector<std::int32_t> num_dest(cell_map->size_local(), 1);
+      for (auto const& [vertex, neighbors] : vertex_procs)
+      {
+        for (auto cell : vc->links(vertex))
+          num_dest[cell] += neighbors.size();
+      }
+
+      std::vector<std::int32_t> offsets(num_dest.size() + 1);
+      std::partial_sum(num_dest.begin(), num_dest.end(), offsets.begin() + 1);
+      std::vector<std::int32_t> pos = offsets;
+      std::vector<std::int32_t> data(offsets.back());
+
+      for (auto const& [vertex, neighbors] : vertex_procs)
+      {
+        for (auto cell : vc->links(vertex))
+        {
+          std::copy(neighbors.begin(), neighbors.end(),
+                    data.begin() + pos[cell]);
+          pos[cell] += neighbors.size();
+        }
+      }
+
+      graph::AdjacencyList<std::int32_t> dest(data, offsets);
+
+      std::cout << dest.str();
+
+      // std::vector<std::int32_t> local_vertices(global_vertices.size());
+      // vertex_index_map->global_to_local(global_vertices, local_vertices);
+
+      //
+      // for (std::size_t i = 0; i < local_vertices.size(); i++)
+      //   for (auto cell : vc->links(local_vertices[i]))
+      //     if (cell < cell_index_map->size_local())
+      //       num_dest[cell] += num_procs_vert[i];
+
+      // std::vector<std::int32_t> offsets(num_dest.size() + 1);
+      // std::partial_sum(num_dest.begin(), num_dest.end(), offsets.begin() +
+      // 1); std::vector<std::int32_t> array(num_dest.back(), -1); auto pos = 0;
+      // for (std::size_t i = 0; i < local_vertices.size(); i++)
+      //   for (auto cell : vc->links(local_vertices[i]))
+
+      // for
+
+      // for (auto a : local_vertices)
+      //   std::cout << a << " ";
     }
 
     // if (mpi_rank == 0)
