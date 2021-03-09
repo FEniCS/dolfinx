@@ -129,14 +129,14 @@ public:
   /// @param[in] local Local indices
   /// @param[out] global The global indices
   void local_to_global(const tcb::span<const std::int32_t>& local,
-                       tcb::span<std::int64_t> global) const;
+                       const tcb::span<std::int64_t>& global) const;
 
   /// Compute local indices for array of global indices
   /// @param[in] global Global indices
   /// @param[out] local The local of the corresponding global index in 'global'.
   /// Returns -1 if the local index does not exist on this process.
   void global_to_local(const tcb::span<const std::int64_t>& global,
-                       tcb::span<std::int32_t> local) const;
+                       const tcb::span<std::int32_t>& local) const;
 
   /// Global indices
   /// @return The global index for all local indices (0, 1, 2, ...) on
