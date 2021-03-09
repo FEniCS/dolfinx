@@ -40,7 +40,7 @@ jobs:
         with:
           path: ./basix
           repository: FEniCS/basix
-          ref: xtensor
+          ref: main
 
       - name: Install FEniCS Python components
         run: |
