@@ -267,8 +267,12 @@ u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWAR
 p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 if has_adios2():
     from dolfinx.cpp.io import ADIOS2File
-    with ADIOS2File(MPI.COMM_WORLD, "taylor-hood.bp", "w") as adios:
-        adios.write_function([u._cpp_object, p._cpp_object], 0.0)
+    # We save to indivdual files such that the CG-2 field is properly stored
+    with ADIOS2File(MPI.COMM_WORLD, "velocity.bp", "w") as adios:
+        adios.write_function([u._cpp_object], 0.0)
+    with ADIOS2File(MPI.COMM_WORLD, "pressure.bp", "w") as adios:
+        adios.write_function([p._cpp_object], 0.0)
+
 with XDMFFile(MPI.COMM_WORLD, "velocity.xdmf", "w") as ufile_xdmf:
     ufile_xdmf.write_mesh(mesh)
     ufile_xdmf.write_function(u)

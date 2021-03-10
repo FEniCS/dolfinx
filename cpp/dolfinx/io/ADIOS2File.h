@@ -62,11 +62,17 @@ public:
   void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtag);
 
 private:
-  /// Templated writer for functions
+  /// Templated writer for functions using CG-1 interpolation
   template <typename Scalar>
-  void _write_function(
+  void _write_function_at_nodes(
       const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
       double t);
+
+  /// Templated writer for a single Lagrange function
+  template <typename Scalar>
+  void _write_lagrange_function(
+      std::reference_wrapper<const fem::Function<Scalar>> u, double t);
+
   // Function for updating vtk schema
   std::set<std::string> update_vtk_point_data();
 
