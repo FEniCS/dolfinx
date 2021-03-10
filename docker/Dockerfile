@@ -50,6 +50,7 @@ ARG PYBIND11_VERSION=2.6.1
 ARG PETSC_VERSION=3.14.3
 ARG SLEPC_VERSION=3.14.1
 ARG SLEPC4PY_VERSION=3.14.0
+ARG ADIOS2_VERSION=2.7.1
 # Todo: Update KaHIP version upon a release.
 ARG KAHIP_VERSION=623decb
 
@@ -158,6 +159,16 @@ RUN cd /usr/local && \
     cmake -G Ninja -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} -DNONATIVEOPTIMIZATIONS=On .. && \
     ninja install
 
+# Install ADIOS2
+ENV ADIOS2_DIR=/usr/local/ADIOS2/deploy
+RUN cd /usr/local && \
+    git clone git@github.com:ornladios/ADIOS2.git && \
+    cd ADIOS2 && \
+    git checkout v${ADIOS2_VERSION} && \
+    mkdir build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=${ADIOS2_DIR} -DADIOS2_USE_Fortran=Off  -DBUILD_TESTING=Off -DADIOS2_BUILD_EXAMPLES=Off -DADIOS2_USE_ZeroMQ=Off .. && \
+    make && \
+    make install
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
