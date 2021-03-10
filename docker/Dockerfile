@@ -331,7 +331,10 @@ ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/ ffcx/ and
 # dolfinx/ mounted/shared at /src.
-ONBUILD RUN cd basix && pip3 install --no-cache-dir . && \
+ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S . && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    python3 -m pip install ./python && \
     cd ../ufl && pip3 install --no-cache-dir . && \
     cd ../ffcx && pip3 install --no-cache-dir . && \
     cd ../ && pip3 install --no-cache-dir ipython
