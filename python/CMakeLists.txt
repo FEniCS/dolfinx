@@ -42,7 +42,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 # Add DOLFINX libraries and other config
-target_link_libraries(cpp PRIVATE pybind11::module dolfinx basix)
+target_link_libraries(cpp PRIVATE pybind11::module dolfinx)
 
 # Add to CMake search path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
