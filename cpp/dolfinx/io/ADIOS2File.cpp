@@ -65,7 +65,7 @@ adios2::Mode string_to_mode(std::string mode)
 //-----------------------------------------------------------------------------
 
 ADIOS2File::ADIOS2File(MPI_Comm comm, std::string filename, std::string mode)
-    : _adios(), _io(), _engine(), _vtk_scheme(), _mode(mode)
+    : _mode(mode)
 {
   _adios = std::make_shared<adios2::ADIOS>(comm);
   adios2::Mode file_mode = string_to_mode(mode);
@@ -170,7 +170,8 @@ void ADIOS2File::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtag)
   _engine->Put<double>(local_geometry, mesh->geometry().x().data());
   _engine->Put<std::uint64_t>(local_topology, vtk_topology.data());
   _engine->PerformPuts();
-  DefineAttribute<std::string>(_io, "vtk.xml", VTKSchema({}, cell_data));
+  std::string _vtk_scheme = VTKSchema({}, cell_data);
+  DefineAttribute<std::string>(_io, "vtk.xml", _vtk_scheme);
 }
 //-----------------------------------------------------------------------------
 

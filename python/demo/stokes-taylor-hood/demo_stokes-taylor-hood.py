@@ -260,22 +260,20 @@ if MPI.COMM_WORLD.rank == 0:
     print("(A) Norm of velocity coefficient vector (nested, iterative): {}".format(norm_u_0))
     print("(A) Norm of pressure coefficient vector (nested, iterative): {}".format(norm_p_0))
 
-# The solution fields can be saved to file in XDMF format for
+# The solution fields can be saved to file in XDMF/bp format for
 # visualization, e.g. with ParView. Before writing to file, ghost values
 # are updated.
+u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 if has_adios2():
     from dolfinx.cpp.io import ADIOS2File
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     with ADIOS2File(MPI.COMM_WORLD, "taylor-hood.bp", "w") as adios:
         adios.write_function([u._cpp_object, p._cpp_object], 0.0)
 with XDMFFile(MPI.COMM_WORLD, "velocity.xdmf", "w") as ufile_xdmf:
-    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     ufile_xdmf.write_mesh(mesh)
     ufile_xdmf.write_function(u)
 
 with XDMFFile(MPI.COMM_WORLD, "pressure.xdmf", "w") as pfile_xdmf:
-    p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     pfile_xdmf.write_mesh(mesh)
     pfile_xdmf.write_function(p)
 
