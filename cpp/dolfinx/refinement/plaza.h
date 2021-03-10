@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <cstdint>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <utility>
 #include <vector>
@@ -59,10 +60,8 @@ mesh::Mesh refine(const mesh::Mesh& mesh,
 /// redistribute after refinement
 /// @return New mesh data: cell topology, vertex coordinates and parent cell
 /// index
-std::tuple<
-    graph::AdjacencyList<std::int64_t>,
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    std::vector<std::int32_t>>
+std::tuple<graph::AdjacencyList<std::int64_t>, array2d<double>,
+           std::vector<std::int32_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
                         const mesh::MeshTags<std::int8_t>& refinement_marker);
 
@@ -71,10 +70,8 @@ compute_refinement_data(const mesh::Mesh& mesh,
 /// @param[in] mesh Input mesh to be refined
 /// @return New mesh data: cell topology, vertex coordinates and parent cell
 /// index
-std::tuple<
-    graph::AdjacencyList<std::int64_t>,
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    std::vector<std::int32_t>>
+std::tuple<graph::AdjacencyList<std::int64_t>, array2d<double>,
+           std::vector<std::int32_t>>
 compute_refinement_data(const mesh::Mesh& mesh);
 
 } // namespace plaza

@@ -17,6 +17,7 @@
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <numeric>
+#include <random>
 #include <unordered_map>
 
 using namespace dolfinx;

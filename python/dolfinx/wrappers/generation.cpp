@@ -11,7 +11,6 @@
 #include <dolfinx/generation/BoxMesh.h>
 #include <dolfinx/generation/IntervalMesh.h>
 #include <dolfinx/generation/RectangleMesh.h>
-#include <pybind11/eigen.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -61,7 +60,8 @@ void generation(py::module& m)
 
   m.def(
       "create_rectangle_mesh",
-      [](const MPICommWrapper comm, std::array<Eigen::Vector3d, 2> p,
+      [](const MPICommWrapper comm,
+         const std::array<std::array<double, 3>, 2>& p,
          std::array<std::size_t, 2> n,
          const dolfinx::fem::CoordinateElement& element,
          dolfinx::mesh::GhostMode ghost_mode,
@@ -76,7 +76,8 @@ void generation(py::module& m)
 
   m.def(
       "create_box_mesh",
-      [](const MPICommWrapper comm, std::array<Eigen::Vector3d, 2> p,
+      [](const MPICommWrapper comm,
+         const std::array<std::array<double, 3>, 2>& p,
          std::array<std::size_t, 3> n,
          const dolfinx::fem::CoordinateElement& element,
          dolfinx::mesh::GhostMode ghost_mode,

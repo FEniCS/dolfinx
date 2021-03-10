@@ -31,8 +31,8 @@ namespace generation::IntervalMesh
 /// @param[in] x The end points of the interval
 /// @param[in] element Element that describes the geometry of a cell
 /// @param[in] ghost_mode Ghosting mode
-/// @param[in] partitioner Partitioning function to use for
-/// determining the parallel distribution of cells across MPI ranks
+/// @param[in] partitioner Partitioning function to use for determining
+/// the parallel distribution of cells across MPI ranks
 /// @return A mesh
 mesh::Mesh
 create(MPI_Comm comm, std::size_t n, std::array<double, 2> x,

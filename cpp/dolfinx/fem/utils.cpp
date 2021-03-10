@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include <Eigen/Core>
 #include <array>
+#include <basix.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -23,7 +23,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/topologycomputation.h>
-#include <basix.h>
 #include <memory>
 #include <string>
 #include <ufc.h>
@@ -228,7 +227,7 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
       ufc_cmap.element_family, cell_name.c_str(), ufc_cmap.element_degree);
   return fem::CoordinateElement(handle, ufc_cmap.geometric_dimension,
                                 ufc_cmap.signature, dof_layout,
-                                ufc_cmap.needs_permutation_data,
+                                ufc_cmap.needs_transformation_data,
                                 ufc_cmap.permute_dofs, ufc_cmap.unpermute_dofs);
 }
 //-----------------------------------------------------------------------------

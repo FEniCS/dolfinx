@@ -59,9 +59,8 @@ target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 # UFC
 target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 
-# basix
-target_include_directories(dolfinx SYSTEM PUBLIC ${BASIX_INCLUDE_DIRS})
-target_link_libraries(dolfinx PUBLIC ${BASIX_LIBRARY})
+# Basix
+target_link_libraries(dolfinx PUBLIC Basix::basix)
 
 # Have left these well written comments about Eigen alignment
 # here with the intention that this should be moved to build documentation.
@@ -148,7 +147,7 @@ install(TARGETS dolfinx
   )
 
 # Generate DOLFINTargets.cmake
-install(EXPORT DOLFINXTargets DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx/cmake)
+install(EXPORT DOLFINXTargets DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
 
 # Install the header files
 foreach(DIR ${DOLFINX_DIRS})
@@ -166,7 +165,7 @@ write_basic_package_version_file(${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersio
 
 configure_package_config_file(${DOLFINX_SOURCE_DIR}/cmake/templates/DOLFINXConfig.cmake.in
 ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
-INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx/cmake)
+INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
 
 # Install CMake helper files
 install(
@@ -175,7 +174,7 @@ install(
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
-  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx/cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
   COMPONENT Development)
 
 #------------------------------------------------------------------------------

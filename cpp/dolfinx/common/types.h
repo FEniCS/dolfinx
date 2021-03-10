@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <cstdint>
 #include <petscsys.h>
 
 // Typedefs for ufc_scalar

@@ -167,17 +167,25 @@ support(const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& bd,
 }
 } // namespace
 //----------------------------------------------------------------------------
-Eigen::Vector3d geometry::compute_distance_gjk(
-    const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& p,
-    const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>& q)
+std::array<double, 3> geometry::compute_distance_gjk(const array2d<double>& p,
+                                                     const array2d<double>& q)
 {
+  assert(p.shape[1] == 3);
+  assert(q.shape[1] == 3);
+  const Eigen::Map<
+      const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      _p(p.data(), p.shape[0], p.shape[1]);
+  const Eigen::Map<
+      const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      _q(q.data(), q.shape[0], q.shape[1]);
+
   const int maxk = 10; // Maximum number of iterations of the GJK algorithm
 
   // Tolerance
   const double eps = 1e-12;
 
   // Initialise vector and simplex
-  Eigen::Vector3d v = p.row(0) - q.row(0);
+  Eigen::Vector3d v = _p.row(0) - _q.row(0);
   Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor, 4, 3> s
       = v.transpose();
 
@@ -186,7 +194,7 @@ Eigen::Vector3d geometry::compute_distance_gjk(
   for (k = 0; k < maxk; ++k)
   {
     // Support function
-    const Eigen::Vector3d w = support(p, -v) - support(q, v);
+    const Eigen::Vector3d w = support(_p, -v) - support(_q, v);
 
     // Break if any existing points are the same as w
     int m;
@@ -215,9 +223,10 @@ Eigen::Vector3d geometry::compute_distance_gjk(
     if (v.squaredNorm() < eps * eps)
       break;
   }
+
   if (k == maxk)
     throw std::runtime_error("GJK error: max iteration limit reached");
 
-  return v;
+  return {v[0], v[1], v[2]};
 }
 //----------------------------------------------------------------------------

@@ -35,9 +35,20 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Get Basix and install
+        uses: actions/checkout@v2
+        with:
+          path: ./basix
+          repository: FEniCS/basix
+          ref: main
+
       - name: Install FEniCS Python components
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-dir -S ./basix
+          cmake --build build-dir
+          cmake --install build-dir
+          python3 -m pip install ./basix/python
+          # python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
 
@@ -64,15 +75,15 @@ jobs:
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/unit/ -S build/test/unit/
           cmake --build build/test/unit
           cd build/test/unit
-          ctest --output-on-failure -R unittests
+          ctest -V --output-on-failure -R unittests
           mpiexec -np 2 ctest --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/
           cmake --build build/demo
           cd build/demo
-          ctest -R demo -R serial
-          ctest -R demo -R mpi_2
+          ctest -V -R demo -R serial
+          ctest -V -R demo -R mpi_2
 
       - name: Build Python interface
         run: python3 -m pip -v install --global-option build --global-option --debug python/

@@ -7,7 +7,6 @@
 #include "MPICommWrapper.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <Eigen/Core>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Table.h>
@@ -16,7 +15,7 @@
 #include <dolfinx/common/subsystem.h>
 #include <dolfinx/common/timing.h>
 #include <memory>
-#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <string>
@@ -41,6 +40,11 @@ void common(py::module& m)
   m.attr("has_slepc4py") = false;
 #endif
   m.attr("git_commit_hash") = dolfinx::git_commit_hash();
+
+  // dolfinx::common::IndexMap::Mode
+  py::enum_<dolfinx::common::IndexMap::Mode>(m, "ScatterMode")
+      .value("add", dolfinx::common::IndexMap::Mode::add)
+      .value("insert", dolfinx::common::IndexMap::Mode::insert);
 
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,

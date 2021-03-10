@@ -119,9 +119,8 @@ int main(int argc, char* argv[])
     // Create mesh and function space
     auto cmap = fem::create_coordinate_map(create_coordinate_map_poisson);
     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-        MPI_COMM_WORLD,
-        {Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 0.0)},
-        {32, 32}, cmap, mesh::GhostMode::none));
+        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32}, cmap,
+        mesh::GhostMode::none));
 
     auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
                                        mesh);
@@ -162,21 +161,36 @@ int main(int argc, char* argv[])
     // Define boundary condition
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
-    const auto bdofs = fem::locate_dofs_geometrical({*V}, [](auto& x) {
-      static const double epsilon = std::numeric_limits<double>::epsilon();
-      return (x.row(0).abs() < 10.0 * epsilon
-              or (x.row(0) - 1.0).abs() < 10.0 * epsilon);
-    });
+    const auto bdofs = fem::locate_dofs_geometrical(
+        {*V}, [](const array2d<double>& x) {
+          constexpr double eps = 10.0 * std::numeric_limits<double>::epsilon();
+          std::vector<bool> marked(x.shape[1]);
+          std::transform(
+              x.row(0).begin(), x.row(0).end(), marked.begin(),
+              [](double x0) { return x0 < eps or std::abs(x0 - 1) < eps; });
+          return marked;
+        });
 
     std::vector bc{std::make_shared<const fem::DirichletBC<PetscScalar>>(
         u0, std::move(bdofs))};
 
     f->interpolate([](auto& x) {
-      auto dx = Eigen::square(x - 0.5);
-      return 10.0 * Eigen::exp(-(dx.row(0) + dx.row(1)) / 0.02);
+      std::vector<PetscScalar> f(x.shape[1]);
+      std::transform(x.row(0).begin(), x.row(0).end(), x.row(1).begin(),
+                     f.begin(), [](double x0, double x1) {
+                       double dx
+                           = (x0 - 0.5) * (x0 - 0.5) + (x1 - 0.5) * (x1 - 0.5);
+                       return 10.0 * std::exp(-(dx) / 0.02);
+                     });
+      return f;
     });
 
-    g->interpolate([](auto& x) { return Eigen::sin(5 * x.row(0)); });
+    g->interpolate([](auto& x) {
+      std::vector<PetscScalar> f(x.shape[1]);
+      std::transform(x.row(0).begin(), x.row(0).end(), f.begin(),
+                     [](double x0) { return std::sin(5 * x0); });
+      return f;
+    });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a

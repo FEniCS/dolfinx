@@ -18,7 +18,6 @@
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/complex.h>
-#include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -101,6 +100,9 @@ void la(py::module& m)
                              &dolfinx::la::Vector<PetscScalar>::mutable_array);
 
   // utils
+  m.def("scatter_forward", &dolfinx::la::scatter_fwd<PetscScalar>);
+  m.def("scatter_reverse", &dolfinx::la::scatter_rev<PetscScalar>);
+
   m.def("create_vector",
         py::overload_cast<const dolfinx::common::IndexMap&, int>(
             &dolfinx::la::create_petsc_vector),

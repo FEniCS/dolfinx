@@ -11,16 +11,10 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
-#include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 
@@ -31,9 +25,7 @@ using namespace dolfinx::mesh;
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>& x,
-                       mesh::GhostMode ghost_mode)
+                       const array2d<double>& x, mesh::GhostMode ghost_mode)
 {
   return create_mesh(
       comm, cells, element, x, ghost_mode,
@@ -46,9 +38,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>& x,
-                       mesh::GhostMode ghost_mode,
+                       const array2d<double>& x, mesh::GhostMode ghost_mode,
                        const mesh::CellPartitionFunction& cell_partitioner)
 {
   if (ghost_mode == mesh::GhostMode::shared_vertex)

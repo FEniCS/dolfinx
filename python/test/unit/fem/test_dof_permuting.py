@@ -138,11 +138,10 @@ def test_dof_positions(cell_type, space_type):
     entities = {i: {} for i in range(1, tdim)}
     for cell in range(coord_dofs.num_nodes):
         # Push coordinates forward
-        X = V.element.interpolation_points
+        X = V.element.interpolation_points()
         V.element.apply_dof_transformation(X, perms[cell], tdim)
-        x = X.copy()
         xg = x_g[coord_dofs.links(cell), :tdim]
-        cmap.push_forward(x, X, xg)
+        x = cmap.push_forward(X, xg)
 
         dofs = V.dofmap.cell_dofs(cell)
 
@@ -159,6 +158,8 @@ def test_dof_positions(cell_type, space_type):
 
 
 def random_evaluation_mesh(cell_type):
+    random.seed(6)
+
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type, 1))
     if cell_type == "triangle":
         temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.], [0., 1.]])
@@ -242,6 +243,7 @@ def test_evaluation(cell_type, space_type, space_order):
             eval_points = np.array([[0., i / N, j / N] for i in range(N + 1) for j in range(N + 1)])
         else:
             eval_points = np.array([[0., i / N, 0.] for i in range(N + 1)])
+
         for d in dofs:
             v = Function(V)
             v.vector[:] = [1 if i == d else 0 for i in range(v.vector.local_size)]
