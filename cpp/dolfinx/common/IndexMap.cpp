@@ -657,51 +657,9 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   return shared_indices;
 }
 //-----------------------------------------------------------------------------
-void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
-                           std::vector<std::int64_t>& remote_data, int n) const
-{
-  scatter_fwd_impl(local_data, remote_data, n);
-}
-//-----------------------------------------------------------------------------
-void IndexMap::scatter_fwd(const std::vector<std::int32_t>& local_data,
-                           std::vector<std::int32_t>& remote_data, int n) const
-{
-  scatter_fwd_impl(local_data, remote_data, n);
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const
-{
-  std::vector<std::int64_t> remote_data;
-  scatter_fwd_impl(local_data, remote_data, n);
-  return remote_data;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-IndexMap::scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const
-{
-  std::vector<std::int32_t> remote_data;
-  scatter_fwd_impl(local_data, remote_data, n);
-  return remote_data;
-}
-//-----------------------------------------------------------------------------
-void IndexMap::scatter_rev(std::vector<std::int64_t>& local_data,
-                           const std::vector<std::int64_t>& remote_data, int n,
-                           IndexMap::Mode op) const
-{
-  scatter_rev_impl(local_data, remote_data, n, op);
-}
-//-----------------------------------------------------------------------------
-void IndexMap::scatter_rev(std::vector<std::int32_t>& local_data,
-                           const std::vector<std::int32_t>& remote_data, int n,
-                           IndexMap::Mode op) const
-{
-  scatter_rev_impl(local_data, remote_data, n, op);
-}
-//-----------------------------------------------------------------------------
 template <typename T>
-void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
-                                std::vector<T>& remote_data, int n) const
+void IndexMap::scatter_fwd(tcb::span<const T> local_data,
+                           tcb::span<T> remote_data, int n) const
 {
 
   // Get number of neighbors
@@ -716,8 +674,10 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
                            neighbors_out.data(), MPI_UNWEIGHTED);
 
   const std::int32_t _size_local = size_local();
-  assert((int)local_data.size() == n * _size_local);
-  remote_data.resize(n * _ghosts.size());
+  if ((int)local_data.size() != n * _size_local)
+    throw std::runtime_error("Invalid local size in scatter_fwd");
+  if (remote_data.size() != n * _ghosts.size())
+    throw std::runtime_error("Invalid remote size in scatter_fwd");
 
   // Create displacement vectors
   std::vector<std::int32_t> sizes_recv(indegree, 0);
@@ -726,7 +686,7 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
 
   std::vector displs_send = _shared_disp;
   std::transform(displs_send.begin(), displs_send.end(), displs_send.begin(),
-                 std::bind(std::multiplies<T>(), std::placeholders::_1, n));
+                 std::bind(std::multiplies<int>(), std::placeholders::_1, n));
   std::vector<std::int32_t> sizes_send(outdegree, 0);
   std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
                            sizes_send.begin());
@@ -761,13 +721,33 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
   }
 }
 //-----------------------------------------------------------------------------
+// \cond turn off doxygen
+template void
+IndexMap::scatter_fwd<std::int64_t>(tcb::span<const std::int64_t> local_data,
+                                    tcb::span<std::int64_t> remote_data,
+                                    int n) const;
+template void
+IndexMap::scatter_fwd<std::int32_t>(tcb::span<const std::int32_t> local_data,
+                                    tcb::span<std::int32_t> remote_data,
+                                    int n) const;
+template void IndexMap::scatter_fwd<double>(tcb::span<const double> local_data,
+                                            tcb::span<double> remote_data,
+                                            int n) const;
+template void IndexMap::scatter_fwd<std::complex<double>>(
+    tcb::span<const std::complex<double>> local_data,
+    tcb::span<std::complex<double>> remote_data, int n) const;
+// \endcond
+//-----------------------------------------------------------------------------
 template <typename T>
-void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
-                                const std::vector<T>& remote_data, int n,
-                                IndexMap::Mode op) const
+void IndexMap::scatter_rev(tcb::span<T> local_data,
+                           tcb::span<const T> remote_data, int n,
+                           IndexMap::Mode op) const
 {
-  assert((std::int32_t)remote_data.size() == n * num_ghosts());
-  local_data.resize(n * size_local(), 0);
+  if ((int)remote_data.size() != n * num_ghosts())
+    throw std::runtime_error("Invalid remote size in scatter_rev");
+
+  if ((int)local_data.size() != n * size_local())
+    throw std::runtime_error("Invalid local size in scatter_rev");
 
   // Get number of neighbors
   int indegree(-1), outdegree(-2), weighted(-1);
@@ -837,3 +817,23 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
   }
 }
 //-----------------------------------------------------------------------------
+// \cond turn off doxygen
+template void
+IndexMap::scatter_rev<std::int64_t>(tcb::span<std::int64_t> local_data,
+                                    tcb::span<const std::int64_t> remote_data,
+                                    int n, IndexMap::Mode op) const;
+
+template void
+IndexMap::scatter_rev<std::int32_t>(tcb::span<std::int32_t> local_data,
+                                    tcb::span<const std::int32_t> remote_data,
+                                    int n, IndexMap::Mode op) const;
+
+template void IndexMap::scatter_rev<double>(tcb::span<double> local_data,
+                                            tcb::span<const double> remote_data,
+                                            int n, IndexMap::Mode op) const;
+
+template void IndexMap::scatter_rev<std::complex<double>>(
+    tcb::span<std::complex<double>> local_data,
+    tcb::span<const std::complex<double>> remote_data, int n,
+    IndexMap::Mode op) const;
+// \endcond
