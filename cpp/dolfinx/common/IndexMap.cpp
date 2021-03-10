@@ -421,7 +421,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   _shared_indices.resize(shared_ind.size());
   std::transform(
       shared_ind.begin(), shared_ind.end(), _shared_indices.begin(),
-      [offset = offset](std::int64_t x) -> std::int32_t { return x - offset; });
+      [offset](std::int64_t x) -> std::int32_t { return x - offset; });
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -684,9 +684,9 @@ void IndexMap::scatter_fwd(tcb::span<const T> local_data,
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
     sizes_recv[_ghost_owners[i]] += n;
 
-  std::vector displs_send = _shared_disp;
-  std::transform(displs_send.begin(), displs_send.end(), displs_send.begin(),
-                 std::bind(std::multiplies<int>(), std::placeholders::_1, n));
+  std::vector<std::int32_t> displs_send(_shared_disp.size());
+  std::transform(_shared_disp.begin(), _shared_disp.end(), displs_send.begin(),
+                 [n](auto x) { return x * n; });
   std::vector<std::int32_t> sizes_send(outdegree, 0);
   std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
                            sizes_send.begin());
