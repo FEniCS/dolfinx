@@ -147,7 +147,7 @@ public:
 
   /// @todo Reconsider name
   /// Local (owned) indices shared with neighbor processes, i.e. are
-  /// ghosts on other processes
+  /// ghosts on other processes, grouped by sharing (neighbor) process.
   /// @return List of indices that are ghosted on other processes
   const graph::AdjacencyList<std::int32_t>& shared_indices() const noexcept;
 
@@ -223,7 +223,8 @@ private:
   std::vector<std::int32_t> _ghost_owners;
 
   // List of owned local indices that are in the halo (ghost) region on other
-  // ranks, grouped by rank in the neighbor communicator.
+  // ranks, grouped by rank in the neighbor communicator (destination ranks in
+  // forward communicator and sources in the reverse communicator).
   graph::AdjacencyList<std::int32_t> _shared_indices;
 };
 
