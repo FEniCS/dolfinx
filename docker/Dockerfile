@@ -352,7 +352,10 @@ ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/ ffcx/ and
 # dolfinx/ mounted/shared at /src.
-ONBUILD RUN cd basix && pip3 install --no-cache-dir . && \
+ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S . && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    python3 -m pip install ./python && \
     cd ../ufl && pip3 install --no-cache-dir . && \
     cd ../ffcx && pip3 install --no-cache-dir . && \
     cd ../ && pip3 install --no-cache-dir ipython
@@ -395,11 +398,7 @@ LABEL description="DOLFIN-X in 32-bit real and complex modes"
 # Docker that you cannot cleanup after an ADD operation. This reduces the
 # container size by around 80MB as the /src folder no longer exists in the final
 # image.
-
-COPY --from=intermediate /usr/local/dolfinx-real /usr/local/dolfinx-real
-COPY --from=intermediate /usr/local/dolfinx-complex /usr/local/dolfinx-complex
-COPY --from=intermediate /usr/local/lib/python3.8/dist-packages /usr/local/lib/python3.8/dist-packages
-COPY --from=intermediate /usr/local/bin /usr/local/bin
+COPY --from=intermediate /usr/local /usr/local
 COPY --from=intermediate /root/.config /root/.config
 
 # Real by default.
