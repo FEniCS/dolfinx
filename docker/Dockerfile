@@ -160,15 +160,25 @@ RUN cd /usr/local && \
     ninja install
 
 # Install ADIOS2
-ENV ADIOS2_DIR=/usr/local/ADIOS2/deploy
-RUN cd /usr/local && \
-    git clone git@github.com:ornladios/ADIOS2.git && \
-    cd ADIOS2 && \
-    git checkout v${ADIOS2_VERSION} && \
+ENV ADIOS2_DIR=/usr/local/adios2
+WORKDIR /tmp
+RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
+    mkdir -p ${ADIOS2_DIR} && tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C ${ADIOS2_DIR} --strip-components 1 && \
+    cd ${ADIOS2_DIR} && \
     mkdir build && cd build && \
-    cmake -DCMAKE_INSTALL_PREFIX=${ADIOS2_DIR} -DADIOS2_USE_Fortran=Off  -DBUILD_TESTING=Off -DADIOS2_BUILD_EXAMPLES=Off -DADIOS2_USE_ZeroMQ=Off .. && \
+    cmake -DCMAKE_INSTALL_PREFIX=${ADIOS2_DIR} -DADIOS2_USE_Fortran=Off -DBUILD_TESTING=Off -DADIOS2_BUILD_EXAMPLES=Off -DADIOS2_USE_ZeroMQ=Off .. && \
     make && \
-    make install
+    make install && \
+    rm -rf \
+    /tmp/* \
+    ${ADIOS2_DIR}/bindings \
+    ${ADIOS2_DIR}/cmake \
+    ${ADIOS2_DIR}/examples \
+    ${ADIOS2_DIR}/testing \
+    ${ADIOS2_DIR}/docs \
+    ${ADIOS2_DIR}/scripts \
+    ${ADIOS2_DIR}/source \
+    ${ADIOS2_DIR}/thirdparty
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
