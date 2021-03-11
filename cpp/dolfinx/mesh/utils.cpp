@@ -544,7 +544,10 @@ mesh::Mesh mesh::add_ghost_layer(mesh::Mesh& mesh)
   auto map_c = topology.index_map(tdim);
 
   // Implemented in three steps:
-  // Add description ...
+  // FIXME: Add description ...
+  
+  // FIXME: Add information from index-map, some cells are already shared,
+  // we are currently ignoring this information. 
 
   // Data shared between steps
   std::vector<std::int64_t> recv_data;
