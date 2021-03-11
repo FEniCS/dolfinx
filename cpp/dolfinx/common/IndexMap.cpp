@@ -446,8 +446,8 @@ const std::vector<std::int64_t>& IndexMap::ghosts() const noexcept
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-void IndexMap::local_to_global(tcb::span<const std::int32_t> local,
-                               tcb::span<std::int64_t> global) const
+void IndexMap::local_to_global(const tcb::span<const std::int32_t>& local,
+                               const tcb::span<std::int64_t>& global) const
 {
   assert(local.size() <= global.size());
   const std::int32_t local_size = _local_range[1] - _local_range[0];
@@ -463,8 +463,8 @@ void IndexMap::local_to_global(tcb::span<const std::int32_t> local,
   }
 }
 //-----------------------------------------------------------------------------
-void IndexMap::global_to_local(tcb::span<const std::int64_t> global,
-                               tcb::span<std::int32_t> local) const
+void IndexMap::global_to_local(const tcb::span<const std::int64_t>& global,
+                               const tcb::span<std::int32_t>& local) const
 {
   const std::int32_t local_size = _local_range[1] - _local_range[0];
 
