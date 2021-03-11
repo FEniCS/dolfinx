@@ -204,7 +204,7 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.create_cell_integral(id);
     assert(integral);
-    if (integral->needs_permutation_data)
+    if (integral->needs_transformation_data)
       needs_permutation_data = true;
     integral_data[IntegralType::cell].first.emplace_back(
         id, integral->tabulate_tensor);
@@ -240,7 +240,7 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.create_exterior_facet_integral(id);
     assert(integral);
-    if (integral->needs_permutation_data)
+    if (integral->needs_transformation_data)
       needs_permutation_data = true;
     integral_data[IntegralType::exterior_facet].first.emplace_back(
         id, integral->tabulate_tensor);
@@ -262,7 +262,7 @@ Form<T> create_form(
   {
     ufc_integral* integral = ufc_form.create_interior_facet_integral(id);
     assert(integral);
-    if (integral->needs_permutation_data)
+    if (integral->needs_transformation_data)
       needs_permutation_data = true;
     integral_data[IntegralType::interior_facet].first.emplace_back(
         id, integral->tabulate_tensor);
