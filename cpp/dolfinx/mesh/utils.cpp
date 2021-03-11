@@ -532,17 +532,21 @@ graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
   return partfn(comm, n, dual_graph, num_ghost_nodes, ghosting);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh add_ghost_layer(mesh::Mesh& mesh)
+mesh::Mesh mesh::add_ghost_layer(mesh::Mesh& mesh)
 {
 
   const mesh::Topology& topology = mesh.topology();
   int tdim = topology.dim();
   auto fv = topology.connectivity(tdim - 1, 0);
   auto vc = topology.connectivity(0, tdim);
+  auto cv = topology.connectivity(tdim, 0);
   auto map_v = topology.index_map(0);
   auto map_c = topology.index_map(tdim);
 
-  // Data to used in step 2.
+  // Implemented in three steps:
+  // Add description ...
+
+  // Data shared between steps
   std::vector<std::int64_t> recv_data;
   std::vector<int> recv_sizes;
   std::vector<int> recv_disp;
@@ -644,6 +648,219 @@ mesh::Mesh add_ghost_layer(mesh::Mesh& mesh)
                            reverse_comm);
   }
 
-  
-  return mesh;
+  graph::AdjacencyList<std::int32_t> dest(0);
+
+  // Step 2: Each process now has a list of all processes for which one of its
+  // owned vertices is an interface vertice. Gather information an send the
+  // list to all processes that share the same vertice.
+  {
+    MPI_Comm forward_comm = map_v->comm(common::IndexMap::Direction::forward);
+    int mpi_rank = dolfinx::MPI::rank(forward_comm);
+    auto [sources, destinations] = dolfinx::MPI::neighbors(forward_comm);
+
+    // Pack information into a more manageable format
+    std::map<std::int64_t, std::vector<int>> vertex_procs_owned;
+    for (std::size_t i = 0; i < recv_sizes.size(); i++)
+      for (int j = recv_disp[i]; j < recv_disp[i + 1]; j++)
+        vertex_procs_owned[recv_data[j]].push_back(i);
+
+    std::vector<std::int64_t> global_indices_owned(vertex_procs_owned.size());
+    std::transform(vertex_procs_owned.begin(), vertex_procs_owned.end(),
+                   global_indices_owned.begin(),
+                   [](auto& pair) { return pair.first; });
+    std::vector<std::int32_t> local_indices_owned(global_indices_owned.size());
+    map_v->global_to_local(global_indices_owned, local_indices_owned);
+
+    // Figure out how much data to send to each neighbor
+    // For every shared vertice we send:
+    // [Global index, Number of Processes, P1, ...,  PN]
+    std::vector<int> send_sizes(destinations.size(), 0);
+    recv_sizes.resize(sources.size(), 0);
+    for (auto const& [vertex, neighbors] : vertex_procs_owned)
+      for (auto p : neighbors)
+        send_sizes[p] += (2 + neighbors.size() + 1);
+
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, forward_comm);
+
+    // Prepare communication displacements
+    std::vector<int> send_disp(destinations.size() + 1, 0);
+    recv_disp.resize(sources.size() + 1, 0);
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     send_disp.begin() + 1);
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     recv_disp.begin() + 1);
+
+    // Pack the data to send: EG
+    // [V100 3 P1 P2 P3 V2 2 P2 P3 ...]
+    std::vector<std::int64_t> send_data(send_disp.back());
+    std::vector<std::int64_t> recv_data(recv_disp.back());
+    std::vector<int> insert_pos = send_disp;
+    for (auto const& [vertex, neighbors] : vertex_procs_owned)
+    {
+      for (auto p : neighbors)
+      {
+        send_data[insert_pos[p]++] = vertex;
+        // Should include this process to the list (+1) as the
+        // vertex owner.
+        send_data[insert_pos[p]++] = neighbors.size() + 1;
+        send_data[insert_pos[p]++] = mpi_rank;
+        for (auto other : neighbors)
+          send_data[insert_pos[p]++] = destinations[other];
+      }
+    }
+
+    // A rank in the neighborhood communicator can have no incoming or
+    // outcoming edges. This may cause OpenMPI to crash. Workaround:
+    if (send_sizes.empty())
+      send_sizes.reserve(1);
+    if (recv_sizes.empty())
+      recv_sizes.reserve(1);
+
+    // Send packaged information only to relevant neighbors
+    MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T, recv_data.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           forward_comm);
+
+    // Unpack data and create a more manageable structure
+    auto vc = topology.connectivity(0, tdim);
+    std::map<std::int64_t, std::vector<std::int32_t>> vertex_procs_ghost;
+    for (auto it = recv_data.begin(); it < recv_data.end();)
+    {
+      const std::int64_t global_index = *it++;
+      int num_procs = *it++;
+      auto& processes = vertex_procs_ghost[global_index];
+      std::copy_n(it, num_procs, std::back_inserter(processes));
+      std::advance(it, num_procs);
+    }
+
+    std::vector<std::int64_t> global_indices(vertex_procs_ghost.size());
+    std::transform(vertex_procs_ghost.begin(), vertex_procs_ghost.end(),
+                   global_indices.begin(),
+                   [](auto& pair) { return pair.first; });
+
+    std::vector<std::int32_t> local_indices(global_indices.size());
+    map_v->global_to_local(global_indices, local_indices);
+
+    // Start getting the destination of local cells
+    std::int32_t num_local_cells = map_c->size_local();
+    std::vector<std::int32_t> num_dest(num_local_cells, 1);
+
+    // merge maps
+    {
+      int pos = 0;
+      for (auto const& [vertex, neighbors] : vertex_procs_ghost)
+      {
+        for (auto cell : vc->links(local_indices[pos++]))
+          num_dest[cell] += neighbors.size();
+      }
+
+      pos = 0;
+      for (auto const& [vertex, neighbors] : vertex_procs_owned)
+      {
+        for (auto cell : vc->links(local_indices_owned[pos++]))
+          num_dest[cell] += neighbors.size() + 1;
+      }
+    }
+
+    std::vector<std::int32_t> offsets(num_dest.size() + 1);
+    std::partial_sum(num_dest.begin(), num_dest.end(), offsets.begin() + 1);
+    std::vector<std::int32_t> pos = offsets;
+    std::vector<std::int32_t> data(offsets.back(), mpi_rank);
+    {
+      // Merge maps?
+      int j = 0;
+      for (auto const& [vertex, neighbors] : vertex_procs_ghost)
+      {
+        for (auto cell : vc->links(local_indices[j++]))
+        {
+          if (cell < num_local_cells)
+          {
+            std::copy(neighbors.begin(), neighbors.end(),
+                      data.begin() + pos[cell]);
+            pos[cell] += neighbors.size();
+          }
+        }
+      }
+
+      j = 0;
+      for (auto const& [vertex, neighbors] : vertex_procs_owned)
+      {
+        for (auto cell : vc->links(local_indices_owned[j++]))
+        {
+          if (cell < num_local_cells)
+          {
+            for (auto n : neighbors)
+              data[pos[cell]++] = destinations[n];
+            data[pos[cell]++] = mpi_rank;
+          }
+        }
+      }
+    }
+    graph::AdjacencyList<std::int32_t> dest_duplicates(data, offsets);
+
+    // Remove duplicates entries in the destination Adjacency List
+    std::vector<int> counter(num_local_cells, 0);
+    std::vector<std::int32_t> cell_data;
+    for (std::int32_t c = 0; c < num_local_cells; c++)
+    {
+      // unordered_set is potentially faster, but data is not ordered
+      std::set<std::int32_t> local_set(dest_duplicates.links(c).begin(),
+                                       dest_duplicates.links(c).end());
+      local_set.erase(mpi_rank);
+      cell_data.push_back(mpi_rank);
+      cell_data.insert(cell_data.end(), local_set.begin(), local_set.end());
+      counter[c] = local_set.size() + 1;
+    }
+
+    std::vector<std::int32_t> new_offsets(counter.size() + 1, 0);
+    std::partial_sum(counter.begin(), counter.end(), new_offsets.begin() + 1);
+    dest = graph::AdjacencyList<std::int32_t>(cell_data, new_offsets);
+  }
+
+  // Step 3: Create new mesh
+  [[maybe_unused]] auto partitioner = [&dest](...) { return dest; };
+
+  const auto& geometry = mesh.geometry();
+
+  std::int32_t num_local_cells = map_c->size_local();
+  std::int32_t num_cells = map_c->size_local() + map_c->num_ghosts();
+  std::vector<std::int32_t> vertex_to_x(map_v->size_local()
+                                        + map_v->num_ghosts());
+  for (int c = 0; c < num_cells; ++c)
+  {
+    auto vertices = cv->links(c);
+    auto dofs = geometry.dofmap().links(c);
+    for (std::size_t i = 0; i < vertices.size(); ++i)
+      vertex_to_x[vertices[i]] = dofs[i];
+  }
+
+  // FIXME: Allocate data to avoid insert/push_back
+  std::vector<std::int64_t> topology_array;
+  std::vector<int> counter(num_local_cells);
+  for (std::int32_t i = 0; i < num_local_cells; i++)
+  {
+    std::vector<int64_t> global_inds(cv->num_links(i));
+    map_v->local_to_global(cv->links(i), global_inds);
+    topology_array.insert(topology_array.end(), global_inds.begin(),
+                          global_inds.end());
+    counter[i] += global_inds.size();
+  }
+
+  std::vector<std::int32_t> offsets(counter.size() + 1, 0);
+  std::partial_sum(counter.begin(), counter.end(), offsets.begin() + 1);
+  graph::AdjacencyList<std::int64_t> cell_vertices(topology_array, offsets);
+
+  // Copy over existing mesh vertices
+  const std::int32_t num_vertices = map_v->size_local();
+  const array2d<double>& x_g = geometry.x();
+  array2d<double> x(num_vertices, x_g.shape[1]);
+  for (int v = 0; v < num_vertices; ++v)
+    for (std::size_t j = 0; j < x_g.shape[1]; ++j)
+      x(v, j) = x_g(vertex_to_x[v], j);
+
+  return mesh::create_mesh(mesh.mpi_comm(), cell_vertices, geometry.cmap(), x,
+                           mesh::GhostMode::shared_facet, partitioner);
 }
+//-----------------------------------------------------------------------------
