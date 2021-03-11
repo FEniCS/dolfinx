@@ -545,9 +545,11 @@ mesh::Mesh mesh::add_ghost_layer(mesh::Mesh& mesh)
 
   // Implemented in three steps:
   // FIXME: Add description ...
-  
-  // FIXME: Add information from index-map, some cells are already shared,
-  // we are currently ignoring this information. 
+
+  // FIXME: Add information from index-map, some cells might be already shared
+  // (mesh has ghosts), we are currently ignoring this information.
+
+  // TODO: Profile this function ...
 
   // Data shared between steps
   std::vector<std::int64_t> recv_data;
