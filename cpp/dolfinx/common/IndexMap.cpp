@@ -212,7 +212,7 @@ common::stack_index_maps(
   {
     const int bs = maps[f].second;
     const std::vector<std::int32_t>& forward_indices
-        = maps[f].first.get().shared_indices();
+        = maps[f].first.get().shared_indices().array();
     const std::int64_t offset = bs * maps[f].first.get().local_range()[0];
     for (std::int32_t local_index : forward_indices)
     {
@@ -306,7 +306,7 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
     : _comm_owner_to_ghost(MPI_COMM_NULL), _comm_ghost_to_owner(MPI_COMM_NULL),
-      _comm_symmetric(MPI_COMM_NULL)
+      _comm_symmetric(MPI_COMM_NULL), _shared_indices(0)
 {
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -350,7 +350,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<std::int64_t>& ghosts,
                    const std::vector<int>& src_ranks)
     : _comm_owner_to_ghost(MPI_COMM_NULL), _comm_ghost_to_owner(MPI_COMM_NULL),
-      _comm_symmetric(MPI_COMM_NULL), _ghosts(ghosts)
+      _comm_symmetric(MPI_COMM_NULL), _ghosts(ghosts), _shared_indices(0)
 {
   assert(size_t(ghosts.size()) == src_ranks.size());
   assert(src_ranks == get_ghost_ranks(mpi_comm, local_size, _ghosts));
@@ -410,7 +410,6 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // many of my indices each neighbor ghosts
   const auto [shared_ind, shared_disp] = compute_owned_shared(
       _comm_ghost_to_owner.comm(), _ghosts, _ghost_owners);
-  _shared_disp = std::move(shared_disp);
 
   // Wait for MPI_Iexscan to complete (get offset)
   MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
@@ -418,10 +417,13 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 
   // Convert owned global indices that are ghosts on another rank to
   // local indexing
-  _shared_indices.resize(shared_ind.size());
+  std::vector<std::int32_t> local_shared_ind(shared_ind.size());
   std::transform(
-      shared_ind.begin(), shared_ind.end(), _shared_indices.begin(),
+      shared_ind.begin(), shared_ind.end(), local_shared_ind.begin(),
       [offset](std::int64_t x) -> std::int32_t { return x - offset; });
+
+  _shared_indices = graph::AdjacencyList<std::int32_t>(
+      std::move(local_shared_ind), std::move(shared_disp));
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -502,7 +504,8 @@ std::vector<std::int64_t> IndexMap::global_indices() const
   return global;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::int32_t>& IndexMap::shared_indices() const noexcept
+const graph::AdjacencyList<std::int32_t>&
+IndexMap::shared_indices() const noexcept
 {
   return graph::AjacencyList<std::int32_t>(_shared_indices, _shared_disp);
 }
@@ -553,14 +556,11 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   std::map<std::int32_t, std::set<int>> shared_indices;
 
   // Build map from owned local index to ranks that ghost the index
-  for (std::size_t p = 0; p < _shared_disp.size() - 1; ++p)
+  for (std::int32_t p = 0; p < _shared_indices.num_nodes(); ++p)
   {
     const int rank_global = neighbors_out[p];
-    for (int i = _shared_disp[p]; i < _shared_disp[p + 1]; ++i)
-    {
-      int idx = _shared_indices[i];
+    for (const auto& idx : _shared_indices.links(p))
       shared_indices[idx].insert(rank_global);
-    }
   }
 
   // Ghost indices know the owner rank, but they don't know about other
@@ -570,11 +570,10 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
 
   std::vector<std::int64_t> fwd_sharing_data;
   std::vector<int> fwd_sharing_offsets{0};
-  for (std::size_t p = 0; p < _shared_disp.size() - 1; ++p)
+  for (std::int32_t p = 0; p < _shared_indices.num_nodes(); ++p)
   {
-    for (int i = _shared_disp[p]; i < _shared_disp[p + 1]; ++i)
+    for (const auto& idx : _shared_indices.links(p))
     {
-      int idx = _shared_indices[i];
       assert(shared_indices.find(idx) != shared_indices.end());
       if (auto it = shared_indices.find(idx); it->second.size() > 1)
       {
@@ -682,8 +681,9 @@ void IndexMap::scatter_fwd(tcb::span<const T> local_data,
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
     sizes_recv[_ghost_owners[i]] += n;
 
-  std::vector<std::int32_t> displs_send(_shared_disp.size());
-  std::transform(_shared_disp.begin(), _shared_disp.end(), displs_send.begin(),
+  const std::vector<int32_t>& shared_disp = _shared_indices.offsets();
+  std::vector<std::int32_t> displs_send(shared_disp.size());
+  std::transform(shared_disp.begin(), shared_disp.end(), displs_send.begin(),
                  [n](auto x) { return x * n; });
   std::vector<std::int32_t> sizes_send(outdegree, 0);
   std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
@@ -694,9 +694,10 @@ void IndexMap::scatter_fwd(tcb::span<const T> local_data,
 
   // Copy into sending buffer
   std::vector<T> data_to_send(displs_send.back());
-  for (std::size_t i = 0; i < _shared_indices.size(); ++i)
+  const std::vector<std::int32_t>& indices = _shared_indices.array();
+  for (std::size_t i = 0; i < indices.size(); ++i)
   {
-    const int index = _shared_indices[i];
+    const int index = indices[i];
     for (int j = 0; j < n; ++j)
       data_to_send[i * n + j] = local_data[index * n + j];
   }
@@ -769,7 +770,7 @@ void IndexMap::scatter_rev(tcb::span<T> local_data,
   std::vector<std::int32_t> displs_recv(indegree + 1, 0);
   for (int i = 0; i < indegree; ++i)
   {
-    recv_sizes[i] = (_shared_disp[i + 1] - _shared_disp[i]) * n;
+    recv_sizes[i] = _shared_indices.num_links(i) * n;
     displs_recv[i + 1] = displs_recv[i] + recv_sizes[i];
   }
 
@@ -794,21 +795,22 @@ void IndexMap::scatter_rev(tcb::span<T> local_data,
       MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
       displs_recv.data(), MPI::mpi_type<T>(), _comm_ghost_to_owner.comm());
 
+  const std::vector<std::int32_t>& shared_indices = _shared_indices.array();
   // Copy or accumulate into "local_data"
   if (op == Mode::insert)
   {
-    for (std::size_t i = 0; i < _shared_indices.size(); ++i)
+    for (std::size_t i = 0; i < shared_indices.size(); ++i)
     {
-      const int index = _shared_indices[i];
+      const int index = shared_indices[i];
       for (int j = 0; j < n; ++j)
         local_data[index * n + j] = recv_data[i * n + j];
     }
   }
   else if (op == Mode::add)
   {
-    for (std::size_t i = 0; i < _shared_indices.size(); ++i)
+    for (std::size_t i = 0; i < shared_indices.size(); ++i)
     {
-      const int index = _shared_indices[i];
+      const int index = shared_indices[i];
       for (int j = 0; j < n; ++j)
         local_data[index * n + j] += recv_data[i * n + j];
     }

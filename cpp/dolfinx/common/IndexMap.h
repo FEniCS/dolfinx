@@ -144,7 +144,10 @@ public:
   std::vector<std::int64_t> global_indices() const;
 
   /// Local (owned) indices shared with neighbor processes, i.e. are
-  /// ghosts on other processes
+  /// ghosts on other processes, grouped by sharing (neighbor)
+  /// process(destination ranks in forward communicator and source ranks in the
+  /// reverse communicator)
+  /// @return List of indices that are ghosted on other processes
   const graph::AdjacencyList<std::int32_t>& shared_indices() const noexcept;
 
   /// Owner rank (on global communicator) of each ghost entry
@@ -218,26 +221,9 @@ private:
   // communicator for each ghost index
   std::vector<std::int32_t> _ghost_owners;
 
-  // // TODO: replace _shared_indices and _shared_disp by an AdjacencyList
-
-  // // TODO: _shared_indices are received on _comm_ghost_to_owner, and
-  // // _shared_indices is the recv_disp on _comm_ghost_to_owner. Check for
-  // // corect use on _comm_owner_to_ghost. Can guarantee that
-  // // _comm_owner_to_ghost and _comm_ghost_to_owner are the transpose of
-  // // each other?
-
-  // // Owned local indices that are in the halo (ghost) region on other
-  // // ranks
-  // std::vector<std::int32_t> _shared_indices;
-
-  // // FIXME: explain better the ranks
-  // // Displacement vector for _shared_indices. _shared_indices[i] is the
-  // // starting postion in _shared_indices for data that is ghosted on
-  // // rank i, where i is the ith outgoing edge on _comm_owner_to_ghost.
-  // std::vector<std::int32_t> _shared_disp;
-
-  // Owned local indices that are in the halo (ghost) region on other
-  // ranks
+  // List of owned local indices that are in the halo (ghost) region on other
+  // ranks, grouped by rank in the neighbor communicator (destination ranks in
+  // forward communicator and source ranks in the reverse communicator).
   graph::AdjacencyList<std::int32_t> _shared_indices;
 };
 
