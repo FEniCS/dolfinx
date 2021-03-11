@@ -532,3 +532,118 @@ graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
   return partfn(comm, n, dual_graph, num_ghost_nodes, ghosting);
 }
 //-----------------------------------------------------------------------------
+mesh::Mesh add_ghost_layer(mesh::Mesh& mesh)
+{
+
+  const mesh::Topology& topology = mesh.topology();
+  int tdim = topology.dim();
+  auto fv = topology.connectivity(tdim - 1, 0);
+  auto vc = topology.connectivity(0, tdim);
+  auto map_v = topology.index_map(0);
+  auto map_c = topology.index_map(tdim);
+
+  // Data to used in step 2.
+  std::vector<std::int64_t> recv_data;
+  std::vector<int> recv_sizes;
+  std::vector<int> recv_disp;
+
+  // Step 1: Identify interface entities and send information to the entity
+  // owner.
+  {
+    std::vector<bool> bnd_facets = mesh::compute_interface_facets(topology);
+    std::vector<std::int32_t> facet_indices;
+
+    // Get indices of interface facets
+    for (std::size_t f = 0; f < bnd_facets.size(); ++f)
+      if (bnd_facets[f])
+        facet_indices.push_back(f);
+
+    // Identify interface vertices
+    std::vector<std::int32_t> int_vertices;
+    int_vertices.reserve(facet_indices.size() * 2);
+    for (auto f : facet_indices)
+      for (auto v : fv->links(f))
+        int_vertices.push_back(v);
+
+    // Remove repeated and owned vertices
+    std::int32_t local_size = map_v->size_local();
+    std::sort(int_vertices.begin(), int_vertices.end());
+    int_vertices.erase(std::unique(int_vertices.begin(), int_vertices.end()),
+                       int_vertices.end());
+    int_vertices.erase(
+        std::remove_if(int_vertices.begin(), int_vertices.end(),
+                       [local_size](std::int32_t v) { return v < local_size; }),
+        int_vertices.end());
+
+    // Compute global indices for the vertices on the interface
+    std::vector<std::int64_t> int_vertices_global(int_vertices.size());
+    map_v->local_to_global(int_vertices, int_vertices_global);
+
+    // Get the owners of each interface vertex
+    auto ghost_owners = map_v->ghost_owner_rank();
+    auto ghosts = map_v->ghosts();
+    std::vector<std::int32_t> owner(int_vertices_global.size());
+    // FIXME: This could be made faster if ghosts were sorted
+    for (std::size_t i = 0; i < int_vertices_global.size(); i++)
+    {
+      std::int64_t ghost = int_vertices_global[i];
+      auto it = std::find(ghosts.begin(), ghosts.end(), ghost);
+      assert(it != ghosts.end());
+      int pos = std::distance(ghosts.begin(), it);
+      owner[i] = ghost_owners[pos];
+    }
+
+    // Each process reports to the owners of the vertices it has on
+    // its boundary. Reverse_comm: Ghost -> owner communication
+
+    // Figure out how much data to send to each neighbor (ghost owner).
+    MPI_Comm reverse_comm = map_v->comm(common::IndexMap::Direction::reverse);
+    auto [sources, destinations] = dolfinx::MPI::neighbors(reverse_comm);
+    std::vector<int> send_sizes(destinations.size(), 0);
+    recv_sizes.resize(sources.size(), 0);
+    // FIXME: This could be made faster if ghosts were sorted
+    for (std::size_t i = 0; i < int_vertices_global.size(); i++)
+    {
+      auto it = std::find(destinations.begin(), destinations.end(), owner[i]);
+      assert(it != destinations.end());
+      int pos = std::distance(destinations.begin(), it);
+      send_sizes[pos]++;
+    }
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, reverse_comm);
+
+    // Prepare communication displacements
+    std::vector<int> send_disp(destinations.size() + 1, 0);
+    recv_disp.resize(sources.size() + 1, 0);
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     send_disp.begin() + 1);
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     recv_disp.begin() + 1);
+
+    // Pack the data to send the owning rank:
+    // Each process send its interface vertices to the respective owner
+    std::vector<std::int64_t> send_data(send_disp.back());
+    recv_data.resize(recv_disp.back());
+    std::vector<int> insert_pos = send_disp;
+    for (std::size_t i = 0; i < int_vertices_global.size(); i++)
+    {
+      auto it = std::find(destinations.begin(), destinations.end(), owner[i]);
+      assert(it != destinations.end());
+      int p = std::distance(destinations.begin(), it);
+      int& pos = insert_pos[p];
+      send_data[pos++] = int_vertices_global[i];
+    }
+
+    // A rank in the neighborhood communicator can have no incoming or
+    // outcoming edges. This may cause OpenMPI to crash. Workaround:
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T, recv_data.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           reverse_comm);
+  }
+
+  
+  return mesh;
+}

@@ -504,7 +504,7 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>& IndexMap::shared_indices() const noexcept
 {
-  return _shared_indices;
+  return graph::AjacencyList<std::int32_t>(_shared_indices, _shared_disp);
 }
 //-----------------------------------------------------------------------------
 std::vector<int> IndexMap::ghost_owner_rank() const

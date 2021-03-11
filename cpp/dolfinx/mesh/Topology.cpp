@@ -155,6 +155,7 @@ std::vector<bool> mesh::compute_interface_facets(const Topology& topology)
   auto facets = topology.index_map(tdim - 1);
   if (!facets)
     throw std::runtime_error("Facets have not been computed.");
+
   std::set<std::int32_t> fwd_shared_facets(facets->shared_indices().begin(),
                                            facets->shared_indices().end());
 
@@ -163,12 +164,15 @@ std::vector<bool> mesh::compute_interface_facets(const Topology& topology)
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> fc
       = topology.connectivity(tdim - 1, tdim);
+
   if (!fc)
     throw std::runtime_error("Facet-cell connectivity missing.");
 
-  // Interface facets are either owned and shared or ghost
+  // Interface facets are either owned and shared or ghosts in this process
   for (auto facet : fwd_shared_facets)
-    _boundary_facet[facet] = true;
+    if (fc->num_links(facet) == 1)
+      _boundary_facet[facet] = true;
+
   for (std::int32_t f = facets->size_local(); f < num_facets; f++)
     if (fc->num_links(f) == 1)
       _boundary_facet[f] = true;
