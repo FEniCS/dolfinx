@@ -19,37 +19,6 @@ using namespace dolfinx;
 namespace
 {
 
-graph::AdjacencyList<std::int32_t>
-transpose_adjacency_list(const graph::AdjacencyList<std::int64_t>& graph)
-{
-  if (graph.num_nodes() == 0)
-    return graph::AdjacencyList<std::int32_t>(0);
-
-  auto [min, max]
-      = std::minmax_element(graph.array().begin(), graph.array().end());
-  std::int64_t vert_offset = *min;
-
-  std::cout << vert_offset << std::endl;
-
-  std::int32_t num_nodes = graph.num_nodes();
-  std::vector<std::int64_t> counter(*max - vert_offset + 1, 0);
-  for (std::int32_t c = 0; c < num_nodes; c++)
-    for (auto vert : graph.links(c))
-      counter[vert - vert_offset]++;
-
-  std::vector<int> offsets(counter.size() + 1, 0);
-  std::partial_sum(counter.begin(), counter.end(), offsets.begin() + 1);
-
-  std::vector<std::int32_t> data(offsets.back(), 0);
-  std::vector<int> pos = offsets;
-  for (std::int32_t c = 0; c < num_nodes; c++)
-    for (const auto& vert : graph.links(c))
-      data[pos[vert - vert_offset]++] = c;
-
-  return graph::AdjacencyList<std::int32_t>(std::move(data),
-                                            std::move(offsets));
-}
-
 //-----------------------------------------------------------------------------
 // Compute local part of the dual graph, and return return (local_graph,
 // facet_cell_map, number of local edges in the graph (undirected)
@@ -478,62 +447,5 @@ mesh::build_local_dual_graph(
         "Cannot compute local part of dual graph. Entities with "
         + std::to_string(num_entity_vertices) + " vertices not supported");
   }
-}
-//-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t> mesh::build_dense_local_dual_graph(
-    const graph::AdjacencyList<std::int64_t>& cell_vertices)
-{
-  common::Timer timer("Compute local part of mesh dual graph - dense");
-
-  auto vertice_cells = transpose_adjacency_list(cell_vertices);
-
-  // Compute cell-cell connections
-  std::int32_t num_cells = cell_vertices.num_nodes();
-  std::vector<std::int64_t> counter(num_cells, 0);
-  std::int32_t num_verts = vertice_cells.num_nodes();
-  for (std::int32_t v = 0; v < num_verts; v++)
-  {
-    const auto& cells = vertice_cells.links(v);
-    for (auto& cell : cells)
-      counter[cell] += cells.size();
-  }
-
-  std::vector<int> index_offsets(counter.size() + 1, 0);
-  std::partial_sum(counter.begin(), counter.end(), index_offsets.begin() + 1);
-  std::vector<std::int32_t> data(index_offsets.back());
-  std::vector<int> pos = index_offsets;
-
-  for (std::int32_t v = 0; v < num_verts; v++)
-  {
-    const auto& cells = vertice_cells.links(v);
-    for (auto& cell : cells)
-    {
-      std::copy_n(cells.begin(), cells.size(),
-                  std::next(data.begin(), pos[cell]));
-      pos[cell] += cells.size();
-    }
-  }
-  graph::AdjacencyList<std::int32_t> cell_cell_duplicates(
-      std::move(data), std::move(index_offsets));
-
-  // Remove duplicates
-  counter.resize(num_cells, 0);
-  std::vector<std::int32_t> cell_data;
-
-  for (std::int32_t c = 0; c < num_cells; c++)
-  {
-    // unordered_set is potentially faster, but data is not ordered
-    std::set<std::int32_t> local_set(cell_cell_duplicates.links(c).begin(),
-                                     cell_cell_duplicates.links(c).end());
-    local_set.erase(c);
-    cell_data.insert(cell_data.end(), local_set.begin(), local_set.end());
-    counter[c] = local_set.size();
-  }
-
-  std::vector<std::int32_t> offsets(counter.size() + 1, 0);
-  std::partial_sum(counter.begin(), counter.end(), offsets.begin() + 1);
-
-  return graph::AdjacencyList<std::int32_t>(std::move(cell_data),
-                                            std::move(offsets));
 }
 //-----------------------------------------------------------------------------

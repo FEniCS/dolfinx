@@ -50,8 +50,8 @@ std::vector<bool> compute_boundary_facets(const Topology& topology);
 /// Compute marker for facets that are on the interface between processes.
 /// @param[in] topology The topology
 /// @return Vector with length equal to the number of facets on
-///   this this process (owned + ghosts). True if the ith facet (local index) 
-///   is on the interface.
+///   this this process (owned + ghosts). True if the ith facet (local index)
+///   is on the interface between adjacent processes.
 std::vector<bool> compute_interface_facets(const Topology& topology);
 
 /// Topology stores the topology of a mesh, consisting of mesh entities

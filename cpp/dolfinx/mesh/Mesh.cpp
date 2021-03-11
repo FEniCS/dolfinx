@@ -16,7 +16,6 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <iostream>
 #include <memory>
 
 using namespace dolfinx;
@@ -66,21 +65,6 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   // Distribute cells to destination rank
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
       = graph::build::distribute(comm, cells, dest);
-  /*
-    for (int i = 0; i < dolfinx::MPI::size(comm); i++)
-    {
-      MPI_Barrier(comm);
-      std::cout << std::endl;
-      if (MPI::rank(comm) == i)
-      {
-        for (auto s : ghost_owners)
-          std::cout << s << " ";
-
-        std::cout << cell_nodes.str();
-      }
-    } */
-
-  /* std::cout << cell_nodes.str(); */
 
   // Create cells and vertices with the ghosting requested. Input
   // topology includes cells shared via facet, but output will remove
