@@ -536,7 +536,6 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
 {
   MPI_Comm comm = mesh.mpi_comm();
   int mpi_rank = dolfinx::MPI::rank(comm);
-  int mpi_size = dolfinx::MPI::size(comm);
 
   // Get topology information
   const mesh::Topology& topology = mesh.topology();
@@ -571,24 +570,21 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
       if (bnd_facets[f])
         facet_indices.push_back(f);
 
-    // Identify interface vertices
+    // Identify ghost interface vertices
+    std::int32_t local_size = map_v->size_local();
     std::vector<std::int32_t> int_vertices;
     int_vertices.reserve(facet_indices.size() * 2);
-    for (auto f : facet_indices)
-      for (auto v : fv->links(f))
-        int_vertices.push_back(v);
+    for (const auto& f : facet_indices)
+      for (const auto& v : fv->links(f))
+        if (v >= local_size)
+          int_vertices.push_back(v);
 
-    // Remove repeated and owned vertices
-    std::int32_t local_size = map_v->size_local();
+    // Remove repeated vertices
     std::sort(int_vertices.begin(), int_vertices.end());
     int_vertices.erase(std::unique(int_vertices.begin(), int_vertices.end()),
                        int_vertices.end());
-    int_vertices.erase(
-        std::remove_if(int_vertices.begin(), int_vertices.end(),
-                       [local_size](std::int32_t v) { return v < local_size; }),
-        int_vertices.end());
 
-    // Compute global indices for the vertices on the interface
+    // Compute the global indices of the vertices on the interface
     std::vector<std::int64_t> int_vertices_global(int_vertices.size());
     map_v->local_to_global(int_vertices, int_vertices_global);
 
@@ -614,7 +610,6 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
     auto [sources, destinations] = dolfinx::MPI::neighbors(reverse_comm);
     std::vector<int> send_sizes(destinations.size(), 0);
     recv_sizes.resize(sources.size(), 0);
-    // FIXME: This could be made faster if ghosts were sorted
     for (std::size_t i = 0; i < int_vertices_global.size(); i++)
     {
       auto it = std::find(destinations.begin(), destinations.end(), owner[i]);
@@ -622,6 +617,7 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
       int pos = std::distance(destinations.begin(), it);
       send_sizes[pos]++;
     }
+
     MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
                           MPI_INT, reverse_comm);
 
@@ -655,6 +651,9 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
                            send_disp.data(), MPI_INT64_T, recv_data.data(),
                            recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
                            reverse_comm);
+
+    // recv_data should be equal to map_v.shared_indices if the if the original
+    // mesh does not have ghosts cells.
   }
 
   graph::AdjacencyList<std::int32_t> dest(0);
@@ -667,25 +666,18 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
     auto [sources, destinations] = dolfinx::MPI::neighbors(forward_comm);
 
     // Pack information into a more manageable format
-    std::map<std::int64_t, std::vector<int>> vertex_procs_owned;
+    std::map<std::int64_t, std::vector<int>> vertex_procs;
     for (std::size_t i = 0; i < recv_sizes.size(); i++)
       for (int j = recv_disp[i]; j < recv_disp[i + 1]; j++)
-        vertex_procs_owned[recv_data[j]].push_back(i);
-
-    std::vector<std::int64_t> global_indices_owned(vertex_procs_owned.size());
-    std::transform(vertex_procs_owned.begin(), vertex_procs_owned.end(),
-                   global_indices_owned.begin(),
-                   [](auto& pair) { return pair.first; });
-    std::vector<std::int32_t> local_indices_owned(global_indices_owned.size());
-    map_v->global_to_local(global_indices_owned, local_indices_owned);
+        vertex_procs[recv_data[j]].push_back(i);
 
     // Figure out how much data to send to each neighbor
     // For every shared vertice we send:
     // [Global index, Number of Processes, P1, ...,  PN]
     std::vector<int> send_sizes(destinations.size(), 0);
     recv_sizes.resize(sources.size(), 0);
-    for (auto const& [vertex, neighbors] : vertex_procs_owned)
-      for (auto p : neighbors)
+    for (auto const& [vertex, neighbors] : vertex_procs)
+      for (const int& p : neighbors)
         send_sizes[p] += (2 + neighbors.size() + 1);
 
     MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
@@ -704,7 +696,7 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
     std::vector<std::int64_t> send_data(send_disp.back());
     std::vector<std::int64_t> recv_data(recv_disp.back());
     std::vector<int> insert_pos = send_disp;
-    for (auto const& [vertex, neighbors] : vertex_procs_owned)
+    for (auto const& [vertex, neighbors] : vertex_procs)
     {
       for (auto p : neighbors)
       {
@@ -716,6 +708,16 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
         for (auto other : neighbors)
           send_data[insert_pos[p]++] = destinations[other];
       }
+    }
+
+    // Translate from neighbor rank to rank in global communicator
+    // and add the current rank to the list of connected procs via
+    // vertex
+    for (auto& [vertex, neighbors] : vertex_procs)
+    {
+      for (auto& p : neighbors)
+        p = destinations[p];
+      neighbors.push_back(mpi_rank);
     }
 
     // A rank in the neighborhood communicator can have no incoming or
@@ -731,20 +733,19 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
                            recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
                            forward_comm);
 
-    // Unpack data and create a more manageable structure
+    // Unpack received data and add to the vertex_procs map
     auto vc = topology.connectivity(0, tdim);
-    std::map<std::int64_t, std::vector<std::int32_t>> vertex_procs_ghost;
     for (auto it = recv_data.begin(); it < recv_data.end();)
     {
       const std::int64_t global_index = *it++;
       int num_procs = *it++;
-      auto& processes = vertex_procs_ghost[global_index];
+      auto& processes = vertex_procs[global_index];
       std::copy_n(it, num_procs, std::back_inserter(processes));
       std::advance(it, num_procs);
     }
 
-    std::vector<std::int64_t> global_indices(vertex_procs_ghost.size());
-    std::transform(vertex_procs_ghost.begin(), vertex_procs_ghost.end(),
+    std::vector<std::int64_t> global_indices(vertex_procs.size());
+    std::transform(vertex_procs.begin(), vertex_procs.end(),
                    global_indices.begin(),
                    [](auto& pair) { return pair.first; });
 
@@ -755,82 +756,60 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
     std::int32_t num_local_cells = map_c->size_local();
     std::vector<std::int32_t> num_dest(num_local_cells, 1);
 
-    // merge maps
-    {
-      int pos = 0;
-      for (auto const& [vertex, neighbors] : vertex_procs_ghost)
-      {
-        for (auto cell : vc->links(local_indices[pos++]))
-          if (cell < num_local_cells)
-            num_dest[cell] += neighbors.size();
-      }
+    // Get number of destinations for each cell
+    int i = 0;
+    for (auto const& [vertex, neighbors] : vertex_procs)
+      for (const auto& cell : vc->links(local_indices[i++]))
+        if (cell < num_local_cells)
+          num_dest[cell] += neighbors.size();
 
-      pos = 0;
-      for (auto const& [vertex, neighbors] : vertex_procs_owned)
-      {
-        for (auto cell : vc->links(local_indices_owned[pos++]))
-          if (cell < num_local_cells)
-            num_dest[cell] += neighbors.size() + 1;
-      }
+    // Calculate extended offsets (including repeated entries)
+    std::vector<std::int32_t> ext_offsets(num_dest.size() + 1);
+    std::partial_sum(num_dest.begin(), num_dest.end(), ext_offsets.begin() + 1);
+    std::vector<std::int32_t> pos = ext_offsets;
+    std::vector<std::int32_t> data(ext_offsets.back(), mpi_rank);
+
+    // Get destinations for each cell
+    i = 0;
+    for (auto const& [vertex, neighbors] : vertex_procs)
+    {
+      std::int32_t local_index = local_indices[i++];
+      for (const auto& cell : vc->links(local_index))
+        if (cell < num_local_cells)
+        {
+          std::copy(neighbors.begin(), neighbors.end(),
+                    data.begin() + pos[cell]);
+          pos[cell] += neighbors.size();
+        }
     }
 
-    std::vector<std::int32_t> offsets(num_dest.size() + 1);
-    std::partial_sum(num_dest.begin(), num_dest.end(), offsets.begin() + 1);
-    std::vector<std::int32_t> pos = offsets;
-    std::vector<std::int32_t> data(offsets.back(), mpi_rank);
-    {
-      // Merge maps?
-      int j = 0;
-      for (auto const& [vertex, neighbors] : vertex_procs_ghost)
-      {
-        for (auto cell : vc->links(local_indices[j++]))
-        {
-          if (cell < num_local_cells)
-          {
-            std::copy(neighbors.begin(), neighbors.end(),
-                      data.begin() + pos[cell]);
-            pos[cell] += neighbors.size();
-          }
-        }
-      }
-
-      j = 0;
-      for (auto const& [vertex, neighbors] : vertex_procs_owned)
-      {
-        for (auto cell : vc->links(local_indices_owned[j++]))
-        {
-          if (cell < num_local_cells)
-          {
-            for (auto n : neighbors)
-              data[pos[cell]++] = destinations[n];
-            data[pos[cell]++] = mpi_rank;
-          }
-        }
-      }
-    }
-    graph::AdjacencyList<std::int32_t> dest_duplicates(data, offsets);
+    // Create destination adjacency list with duplicated entries
+    graph::AdjacencyList<std::int32_t> dest_duplicates(std::move(data),
+                                                       std::move(ext_offsets));
 
     // Remove duplicates entries in the destination Adjacency List
-    std::vector<int> counter(num_local_cells, 0);
     std::vector<std::int32_t> cell_data;
+    std::fill(num_dest.begin(), num_dest.end(), 0);
     for (std::int32_t c = 0; c < num_local_cells; c++)
     {
       // unordered_set is potentially faster, but data is not ordered
       std::set<std::int32_t> local_set(dest_duplicates.links(c).begin(),
                                        dest_duplicates.links(c).end());
+      // Remove the current rank from local_set, and add insert it in the
+      // first position cell_data (the current rank is the owner of the cell).
       local_set.erase(mpi_rank);
       cell_data.push_back(mpi_rank);
       cell_data.insert(cell_data.end(), local_set.begin(), local_set.end());
-      counter[c] = local_set.size() + 1;
+      num_dest[c] = local_set.size() + 1;
     }
 
-    std::vector<std::int32_t> new_offsets(counter.size() + 1, 0);
-    std::partial_sum(counter.begin(), counter.end(), new_offsets.begin() + 1);
-    dest = graph::AdjacencyList<std::int32_t>(cell_data, new_offsets);
+    std::vector<std::int32_t> offsets(num_dest.size() + 1, 0);
+    std::partial_sum(num_dest.begin(), num_dest.end(), offsets.begin() + 1);
+    dest = graph::AdjacencyList<std::int32_t>(cell_data, offsets);
   }
 
-  // Step 3: Create new mesh
-  [[maybe_unused]] auto partitioner = [&dest](...) { return dest; };
+  // Step 3: Create new mesh from local data
+  auto partitioner = [&dest](...) { return dest; };
 
   const auto& geometry = mesh.geometry();
 

@@ -109,13 +109,13 @@ if __name__ == "__main__":
     V = dolfinx.FunctionSpace(mesh, ("DG", 0))
     u = dolfinx.fem.Function(V)
 
-    u.vector.array[:] = mpi_comm.rank
-    print(u.vector.sizes)
-    print(len(u.x.array))
+    u.vector.array[:] = mpi_comm.rank + 10
+    ls = V.dofmap.index_map.size_local
 
-    # with u.localForm() as u_local:
-    #     print(u.vector.size)
-    #     # u_local[]
+    with u.vector.localForm() as u_local:
+        u_local.array[ls:] = 0
+
+    dolfinx.cpp.la.scatter_reverse(u.x, dolfinx.cpp.common.ScatterMode.insert)
 
     with XDMFFile(mpi_comm, "u.xdmf", "w") as file:
         file.write_mesh(mesh)
