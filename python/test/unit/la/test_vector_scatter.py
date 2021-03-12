@@ -25,7 +25,7 @@ def test_scatter_forward():
     cpp.la.scatter_forward(u.x)
     assert np.allclose(w0, u.x.array)
 
-    # Fill with with local array with the mpi rank
+    # Fill local array with the mpi rank
     u.x.array.fill(MPI.COMM_WORLD.rank)
     w0 = u.x.array.copy()
     cpp.la.scatter_forward(u.x)
