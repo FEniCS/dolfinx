@@ -13,7 +13,8 @@ from dolfinx import cpp, fem
 from dolfinx.cpp.mesh import create_meshtags
 
 __all__ = [
-    "locate_entities", "locate_entities_boundary", "refine", "create_mesh", "create_meshtags", "MeshTags"
+    "locate_entities", "locate_entities_boundary", "refine", "add_ghost_layer",
+    "create_mesh", "create_meshtags", "MeshTags"
 ]
 
 
@@ -97,6 +98,15 @@ def refine(mesh, cell_markers=None, redistribute=True):
     domain._ufl_cargo = mesh_refined
     mesh_refined._ufl_domain = domain
     return mesh_refined
+
+
+def add_ghost_layer(mesh):
+    """Add ghost layer to the mesh"""
+    new_mesh = cpp.mesh.add_ghost_layer(mesh)
+    domain = mesh._ufl_domain
+    domain._ufl_cargo = new_mesh
+    new_mesh._ufl_domain = domain
+    return new_mesh
 
 
 def create_mesh(comm, cells, x, domain,

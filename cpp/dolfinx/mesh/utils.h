@@ -142,7 +142,7 @@ partition_cells_graph(MPI_Comm comm, int n, const mesh::CellType cell_type,
 
 /// Add a new ghost layer by shared-vertex connectivity.
 /// @param[in] mesh The mesh
-mesh::Mesh add_ghost_layer(mesh::Mesh& mesh);
+mesh::Mesh add_ghost_layer(const mesh::Mesh& mesh);
 
 } // namespace mesh
 } // namespace dolfinx

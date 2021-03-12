@@ -532,9 +532,13 @@ graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
   return partfn(comm, n, dual_graph, num_ghost_nodes, ghosting);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh mesh::add_ghost_layer(mesh::Mesh& mesh)
+mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
 {
+  MPI_Comm comm = mesh.mpi_comm();
+  int mpi_rank = dolfinx::MPI::rank(comm);
+  int mpi_size = dolfinx::MPI::size(comm);
 
+  // Get topology information
   const mesh::Topology& topology = mesh.topology();
   int tdim = topology.dim();
   auto fv = topology.connectivity(tdim - 1, 0);
@@ -546,7 +550,7 @@ mesh::Mesh mesh::add_ghost_layer(mesh::Mesh& mesh)
   // Implemented in three steps:
   // FIXME: Add description ...
 
-  // FIXME: Add information from index-map, some cells might be already shared
+  // FIXME: Add information from index-map, some cells might be already  shared
   // (mesh has ghosts), we are currently ignoring this information.
 
   // TODO: Profile this function ...
@@ -660,7 +664,6 @@ mesh::Mesh mesh::add_ghost_layer(mesh::Mesh& mesh)
   // list to all processes that share the same vertice.
   {
     MPI_Comm forward_comm = map_v->comm(common::IndexMap::Direction::forward);
-    int mpi_rank = dolfinx::MPI::rank(forward_comm);
     auto [sources, destinations] = dolfinx::MPI::neighbors(forward_comm);
 
     // Pack information into a more manageable format
@@ -758,14 +761,16 @@ mesh::Mesh mesh::add_ghost_layer(mesh::Mesh& mesh)
       for (auto const& [vertex, neighbors] : vertex_procs_ghost)
       {
         for (auto cell : vc->links(local_indices[pos++]))
-          num_dest[cell] += neighbors.size();
+          if (cell < num_local_cells)
+            num_dest[cell] += neighbors.size();
       }
 
       pos = 0;
       for (auto const& [vertex, neighbors] : vertex_procs_owned)
       {
         for (auto cell : vc->links(local_indices_owned[pos++]))
-          num_dest[cell] += neighbors.size() + 1;
+          if (cell < num_local_cells)
+            num_dest[cell] += neighbors.size() + 1;
       }
     }
 
@@ -860,9 +865,10 @@ mesh::Mesh mesh::add_ghost_layer(mesh::Mesh& mesh)
   // Copy over existing mesh vertices
   const std::int32_t num_vertices = map_v->size_local();
   const array2d<double>& x_g = geometry.x();
-  array2d<double> x(num_vertices, x_g.shape[1]);
+  int gdim = geometry.dim();
+  array2d<double> x(num_vertices, gdim);
   for (int v = 0; v < num_vertices; ++v)
-    for (std::size_t j = 0; j < x_g.shape[1]; ++j)
+    for (int j = 0; j < gdim; ++j)
       x(v, j) = x_g(vertex_to_x[v], j);
 
   return mesh::create_mesh(mesh.mpi_comm(), cell_vertices, geometry.cmap(), x,

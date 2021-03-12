@@ -336,6 +336,6 @@ void mesh(py::module& m)
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
 
   // dolfinx::mesh::add_ghost_layer
-  m.def("add_ghost_layer", &dolfinx::mesh::add_ghost_layer);
+  m.def("add_ghost_layer", dolfinx::mesh::add_ghost_layer);
 }
 } // namespace dolfinx_wrappers
