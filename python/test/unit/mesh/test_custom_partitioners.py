@@ -87,36 +87,3 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     assert num_cells > 0
     assert np.all(cell_midpoints[:, 0] >= mpi_comm.rank)
     assert np.all(cell_midpoints[:, 0] <= mpi_comm.rank + 1)
-
-
-if __name__ == "__main__":
-    mpi_comm = MPI.COMM_WORLD
-    Nx = 50
-    cell_type = CellType.tetrahedron
-    t = MPI.Wtime()
-    mesh = dolfinx.UnitCubeMesh(mpi_comm, Nx, Nx, Nx, ghost_mode=GhostMode.none)
-    # mesh.topology.create_connectivity(2, 3)
-    # mesh.topology.create_connectivity(0, 3)
-    mesh.topology.create_connectivity_all()
-    t = MPI.Wtime() - t
-    print(t)
-
-    t = MPI.Wtime()
-    mesh = dolfinx.mesh.add_ghost_layer(mesh)
-    t = MPI.Wtime() - t
-    print(t)
-
-    V = dolfinx.FunctionSpace(mesh, ("DG", 0))
-    u = dolfinx.fem.Function(V)
-
-    u.vector.array[:] = mpi_comm.rank + 10
-    ls = V.dofmap.index_map.size_local
-
-    with u.vector.localForm() as u_local:
-        u_local.array[ls:] = 0
-
-    dolfinx.cpp.la.scatter_reverse(u.x, dolfinx.cpp.common.ScatterMode.insert)
-
-    with XDMFFile(mpi_comm, "u.xdmf", "w") as file:
-        file.write_mesh(mesh)
-        file.write_function(u)
