@@ -96,8 +96,17 @@ void la(py::module& m)
   // dolfinx::la::Vector
   py::class_<dolfinx::la::Vector<PetscScalar>,
              std::shared_ptr<dolfinx::la::Vector<PetscScalar>>>(m, "Vector")
-      .def_property_readonly("array",
-                             &dolfinx::la::Vector<PetscScalar>::mutable_array);
+      .def_property_readonly(
+          "array",
+          [](dolfinx::la::Vector<PetscScalar>& self) {
+            std::vector<PetscScalar>& array = self.mutable_array();
+            return py::array(array.size(), array.data(), py::cast(self));
+          })
+      .def_property_readonly(
+          "array", [](std::shared_ptr<dolfinx::la::Vector<PetscScalar>>& self) {
+            std::vector<PetscScalar>& array = self->mutable_array();
+            return py::array(array.size(), array.data(), py::cast(self));
+          });
 
   // utils
   m.def("scatter_forward", &dolfinx::la::scatter_fwd<PetscScalar>);

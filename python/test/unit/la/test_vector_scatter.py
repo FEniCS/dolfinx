@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2020 Chris Richardson
+# Copyright (C) 2021 Chris Richardson
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -21,10 +21,19 @@ def test_scatter_forward():
     u.interpolate(lambda x: (x[0]))
 
     # Forward scatter should have no effect
-    w0 = np.array(u.x.array)
+    w0 = u.x.array.copy()
     cpp.la.scatter_forward(u.x)
-    w1 = np.array(u.x.array)
-    assert np.allclose(w0, w1)
+    assert np.allclose(w0, u.x.array)
+
+    # Fill with with local array with the mpi rank
+    u.x.array.fill(MPI.COMM_WORLD.rank)
+    w0 = u.x.array.copy()
+    cpp.la.scatter_forward(u.x)
+    # Now the ghosts should have the value of the rank of
+    # the owning process
+    ghost_owners = u.function_space.dofmap.index_map.ghost_owner_rank()
+    ls = u.function_space.dofmap.index_map.size_local
+    assert np.allclose(u.x.array[ls:], ghost_owners)
 
 
 def test_scatter_reverse():
@@ -36,18 +45,17 @@ def test_scatter_reverse():
     u.interpolate(lambda x: (x[0]))
 
     # Reverse scatter (insert) should have no effect
-    w0 = np.array(u.x.array)
+    w0 = u.x.array.copy()
     cpp.la.scatter_reverse(u.x, cpp.common.ScatterMode.insert)
-    w1 = np.array(u.x.array)
-    assert np.allclose(w0, w1)
+    assert np.allclose(w0, u.x.array)
 
     # Fill with ones, and count all entries on all processes
     u.interpolate(lambda x: (np.ones(x.shape[1])))
-    all_count0 = MPI.COMM_WORLD.allreduce(sum(u.x.array), op=MPI.SUM)
+    all_count0 = MPI.COMM_WORLD.allreduce(u.x.array.sum(), op=MPI.SUM)
 
     # Reverse scatter (add)
     cpp.la.scatter_reverse(u.x, cpp.common.ScatterMode.add)
     ghost_count = MPI.COMM_WORLD.allreduce(V.dofmap.index_map.num_ghosts, op=MPI.SUM)
     # New count should have gone up by the number of ghosts on all processes
-    all_count1 = MPI.COMM_WORLD.allreduce(sum(u.x.array), op=MPI.SUM)
+    all_count1 = MPI.COMM_WORLD.allreduce(u.x.array.sum(), op=MPI.SUM)
     assert all_count1 == (all_count0 + ghost_count)
