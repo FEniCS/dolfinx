@@ -343,6 +343,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
   _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   _comm_symmetric = dolfinx::MPI::Comm(comm2, false);
+  _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(0);
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
