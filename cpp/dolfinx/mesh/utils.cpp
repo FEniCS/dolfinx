@@ -549,9 +549,6 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
   // Implemented in three steps:
   // FIXME: Add description ...
 
-  // FIXME: Add information from index-map, some cells might be already  shared
-  // (mesh has ghosts), we are currently ignoring this information.
-
   // TODO: Profile this function ...
 
   // Data shared between steps
@@ -756,18 +753,50 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
     std::int32_t num_local_cells = map_c->size_local();
     std::vector<std::int32_t> num_dest(num_local_cells, 1);
 
-    // Get number of destinations for each cell
+    // // Some cells should be already shared
+    // const graph::AdjacencyList<std::int32_t> shared_cells
+    //     = map_c->shared_indices();
+
+    // // Transpose Adjacency list, (cell - list procs)
+    // std::vector<std::int32_t> counter(num_local_cells, 0);
+    // graph::AdjacencyList<std::int32_t> cells_sharing_procs(0);
+    // if (shared_cells.num_nodes() != 0)
+    // {
+    //   std::int32_t num_nodes = shared_cells.num_nodes();
+    //   for (std::int32_t p = 0; p < num_nodes; p++)
+    //     for (auto cell : shared_cells.links(p))
+    //       counter[cell]++;
+
+    //   std::vector<std::int32_t> offsets(counter.size() + 1, 0);
+    //   std::partial_sum(counter.begin(), counter.end(), offsets.begin() + 1);
+
+    //   std::vector<std::int32_t> data(offsets.back());
+    //   std::vector<std::int32_t> insert_pos = offsets;
+
+    //   for (std::int32_t p = 0; p < num_nodes; p++)
+    //     for (const auto& cell : shared_cells.links(p))
+    //       data[insert_pos[cell]++] = destinations[p];
+
+    //   cells_sharing_procs = graph::AdjacencyList<std::int32_t>(
+    //       std::move(data), std::move(offsets));
+    // }
+
+    // Get number of destinations from vertex connectivity
     int i = 0;
     for (auto const& [vertex, neighbors] : vertex_procs)
       for (const auto& cell : vc->links(local_indices[i++]))
         if (cell < num_local_cells)
           num_dest[cell] += neighbors.size();
 
+    // // Get number of destinations from previously shared cells
+    // for (std::int32_t c = 0; c < cells_sharing_procs.num_nodes(); c++)
+    //   num_dest[c] += cells_sharing_procs.num_links(c);
+
     // Calculate extended offsets (including repeated entries)
     std::vector<std::int32_t> ext_offsets(num_dest.size() + 1);
     std::partial_sum(num_dest.begin(), num_dest.end(), ext_offsets.begin() + 1);
-    std::vector<std::int32_t> pos = ext_offsets;
     std::vector<std::int32_t> data(ext_offsets.back(), mpi_rank);
+    insert_pos = ext_offsets;
 
     // Get destinations for each cell
     i = 0;
@@ -778,9 +807,16 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
         if (cell < num_local_cells)
         {
           std::copy(neighbors.begin(), neighbors.end(),
-                    data.begin() + pos[cell]);
-          pos[cell] += neighbors.size();
+                    data.begin() + insert_pos[cell]);
+          insert_pos[cell] += neighbors.size();
         }
+    }
+
+    for (std::int32_t c = 0; c < cells_sharing_procs.num_nodes(); c++)
+    {
+      const auto& procs = cells_sharing_procs.links(c);
+      std::copy(procs.begin(), procs.end(), data.begin() + insert_pos[c]);
+      insert_pos[c] += procs.size();
     }
 
     // Create destination adjacency list with duplicated entries
