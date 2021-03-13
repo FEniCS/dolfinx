@@ -160,16 +160,14 @@ RUN cd /usr/local && \
     ninja install
 
 # Install ADIOS2
-ENV ADIOS2_DIR=/usr/local/adios2
 WORKDIR /tmp
 RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
     mkdir -p adios2-v${ADIOS2_VERSION} && \
     tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C adios2-v${ADIOS2_VERSION} --strip-components 1 && \
     cd adios2-v${ADIOS2_VERSION} && \
     mkdir -p build && cd build && \
-    cmake -DCMAKE_INSTALL_PREFIX=${ADIOS2_DIR} -DADIOS2_USE_Fortran=Off -DBUILD_TESTING=Off -DADIOS2_BUILD_EXAMPLES=Off -DADIOS2_USE_ZeroMQ=Off .. && \
-    make && \
-    make install && \
+    cmake -G Ninja -DADIOS2_USE_Fortran=Off -DBUILD_TESTING=Off -DADIOS2_BUILD_EXAMPLES=Off -DADIOS2_USE_ZeroMQ=Off .. && \
+    ninja install && \
     rm -rf /tmp
 
 
@@ -413,12 +411,12 @@ RUN pip3 install --upgrade --no-cache-dir jupyter jupyterlab
 
 # Pyvista dependecies from apt
 RUN apt-get -qq update && \
-    apt-get -y install libgl1-mesa-dev \ 
+    apt-get -y install libgl1-mesa-dev \
     xvfb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Pyvista dependencies from pip 
+# Pyvista dependencies from pip
 # matplotlib improves plotting quality with better color maps and properly rendering colorbars.
 RUN pip3 install --no-cache-dir pyvista matplotlib
 
