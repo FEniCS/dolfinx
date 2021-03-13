@@ -9,6 +9,7 @@ import math
 
 import dolfinx
 import numpy
+import scipy.sparse
 import pytest
 import ufl
 from dolfinx import fem
@@ -17,7 +18,7 @@ from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import derivative, ds, dx, inner
+from ufl import derivative, ds, dx, inner, grad
 
 
 def nest_matrix_norm(A):
@@ -698,3 +699,32 @@ def test_basic_assembly_constant(mode):
 
     assert (A1 * 3.0 - A2 * 5.0).norm() == pytest.approx(0.0)
     assert (b1 * 3.0 - b2 * 5.0).norm() == pytest.approx(0.0)
+
+
+def test_lambda_assembler():
+    """Tests assembly with a lambda function
+
+    """
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
+    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+
+    a = inner(grad(u), grad(v))*dx
+
+    # Initial assembly
+    a_form = fem.Form(a)
+
+    rdata = []
+    cdata = []
+    vdata = []
+    def mat_insert(rows, cols, vals):
+        vdata.append(vals)
+        rdata.append(numpy.repeat(rows, len(cols)))
+        cdata.append(numpy.tile(cols, len(rows)))
+        return 0
+
+    dolfinx.cpp.fem.assemble_matrix(mat_insert, a_form._cpp_object, [])
+    vdata = numpy.array(vdata).flatten()
+    cdata = numpy.array(cdata).flatten()
+    rdata = numpy.array(rdata).flatten()
+    mat = scipy.sparse.coo_matrix((vdata, (rdata, cdata)))
