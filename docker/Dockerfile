@@ -46,7 +46,7 @@
 #
 
 ARG GMSH_VERSION=4.6.0
-ARG PYBIND11_VERSION=2.6.1
+ARG PYBIND11_VERSION=2.6.2
 ARG PETSC_VERSION=3.14.3
 ARG SLEPC_VERSION=3.14.1
 ARG SLEPC4PY_VERSION=3.14.0
@@ -65,6 +65,7 @@ ARG PYBIND11_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
+ARG ADIOS2_VERSION
 
 # The following ARGS are used in the dev-env layer.
 # They are safe defaults. They can be overridden by the user.
@@ -164,12 +165,10 @@ WORKDIR /tmp
 RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
     mkdir -p adios2-v${ADIOS2_VERSION} && \
     tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C adios2-v${ADIOS2_VERSION} --strip-components 1 && \
-    cd adios2-v${ADIOS2_VERSION} && \
-    mkdir -p build && cd build && \
-    cmake -G Ninja -DADIOS2_USE_Fortran=Off -DBUILD_TESTING=Off -DADIOS2_BUILD_EXAMPLES=Off -DADIOS2_USE_ZeroMQ=Off .. && \
-    ninja install && \
+    cmake -DADIOS2_USE_Fortran=Off -DBUILD_TESTING=Off -DADIOS2_BUILD_EXAMPLES=Off -DADIOS2_USE_ZeroMQ=Off  -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
     rm -rf /tmp
-
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
