@@ -97,8 +97,8 @@ void la(py::module& m)
   py::class_<dolfinx::la::Vector<PetscScalar>,
              std::shared_ptr<dolfinx::la::Vector<PetscScalar>>>(m, "Vector")
       .def_property_readonly(
-          "array", [](std::shared_ptr<dolfinx::la::Vector<PetscScalar>>& self) {
-            std::vector<PetscScalar>& array = self->mutable_array();
+          "array", [](dolfinx::la::Vector<PetscScalar>& self) {
+            std::vector<PetscScalar>& array = self.mutable_array();
             return py::array(array.size(), array.data(), py::cast(self));
           });
 
