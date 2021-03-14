@@ -18,7 +18,7 @@ from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import derivative, ds, dx, inner, grad
+from ufl import derivative, ds, dx, inner
 
 
 def nest_matrix_norm(A):
@@ -709,7 +709,7 @@ def test_lambda_assembler():
     V = fem.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    a = inner(grad(u), grad(v))*dx
+    a = inner(u, v) * dx
 
     # Initial assembly
     a_form = fem.Form(a)
@@ -717,6 +717,7 @@ def test_lambda_assembler():
     rdata = []
     cdata = []
     vdata = []
+
     def mat_insert(rows, cols, vals):
         vdata.append(vals)
         rdata.append(numpy.repeat(rows, len(cols)))
@@ -728,3 +729,6 @@ def test_lambda_assembler():
     cdata = numpy.array(cdata).flatten()
     rdata = numpy.array(rdata).flatten()
     mat = scipy.sparse.coo_matrix((vdata, (rdata, cdata)))
+    v = numpy.ones(mat.shape[1])
+    s = MPI.COMM_WORLD.allreduce(mat.dot(v).sum(), MPI.SUM)
+    assert numpy.isclose(s, 1.0)
