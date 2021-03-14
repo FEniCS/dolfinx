@@ -360,7 +360,7 @@ void fem(py::module& m)
                 return fin(py::array(nr, rows), py::array(nc, cols), py::array(nr*nc, data));
               };
           dolfinx::fem::assemble_matrix<PetscScalar>(f, form, bcs);
-        });
+        }, "Experimental assembly with Python insertion function. This will be slow. Testing use only.");
 
   // BC modifiers
   m.def(
