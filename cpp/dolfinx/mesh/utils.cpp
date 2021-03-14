@@ -475,8 +475,8 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   if (topology.index_map(tdim)->num_ghosts() == 0)
   {
     fwd_shared_facets.insert(
-        topology.index_map(tdim - 1)->shared_indices()->array().begin(),
-        topology.index_map(tdim - 1)->shared_indices()->array().end());
+        topology.index_map(tdim - 1)->shared_indices().array().begin(),
+        topology.index_map(tdim - 1)->shared_indices().array().end());
   }
 
   // Find all owned facets (not ghost) with only one attached cell, which are

@@ -151,8 +151,7 @@ public:
   /// process(destination ranks in forward communicator and source ranks in the
   /// reverse communicator)
   /// @return List of indices that are ghosted on other processes
-  const std::unique_ptr<graph::AdjacencyList<std::int32_t>>&
-  shared_indices() const noexcept;
+  const graph::AdjacencyList<std::int32_t>& shared_indices() const noexcept;
 
   /// Owner rank (on global communicator) of each ghost entry
   std::vector<int> ghost_owner_rank() const;

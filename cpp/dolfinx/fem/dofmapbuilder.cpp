@@ -384,7 +384,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     {
       shared_entity[d] = std::vector<bool>(map->size_local(), false);
       const std::vector<std::int32_t>& forward_indices
-          = map->shared_indices()->array();
+          = map->shared_indices().array();
       for (auto entity : forward_indices)
         shared_entity[d][entity] = true;
     }

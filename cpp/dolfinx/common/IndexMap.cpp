@@ -212,7 +212,7 @@ common::stack_index_maps(
   {
     const int bs = maps[f].second;
     const std::vector<std::int32_t>& forward_indices
-        = maps[f].first.get().shared_indices()->array();
+        = maps[f].first.get().shared_indices().array();
     const std::int64_t offset = bs * maps[f].first.get().local_range()[0];
     for (std::int32_t local_index : forward_indices)
     {
@@ -505,10 +505,10 @@ std::vector<std::int64_t> IndexMap::global_indices() const
   return global;
 }
 //-----------------------------------------------------------------------------
-const std::unique_ptr<graph::AdjacencyList<std::int32_t>>&
+const graph::AdjacencyList<std::int32_t>&
 IndexMap::shared_indices() const noexcept
 {
-  return _shared_indices;
+  return *_shared_indices;
 }
 //-----------------------------------------------------------------------------
 std::vector<int> IndexMap::ghost_owner_rank() const
