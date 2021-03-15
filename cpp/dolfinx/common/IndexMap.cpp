@@ -698,7 +698,7 @@ void IndexMap::scatter_fwd(tcb::span<const T> local_data,
   const std::vector<std::int32_t>& indices = _shared_indices->array();
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
-    const int index = indices[i];
+    const std::int32_t index = indices[i];
     for (int j = 0; j < n; ++j)
       data_to_send[i * n + j] = local_data[index * n + j];
   }
@@ -802,7 +802,7 @@ void IndexMap::scatter_rev(tcb::span<T> local_data,
   {
     for (std::size_t i = 0; i < shared_indices.size(); ++i)
     {
-      const int index = shared_indices[i];
+      const std::int32_t index = shared_indices[i];
       for (int j = 0; j < n; ++j)
         local_data[index * n + j] = recv_data[i * n + j];
     }
@@ -811,7 +811,7 @@ void IndexMap::scatter_rev(tcb::span<T> local_data,
   {
     for (std::size_t i = 0; i < shared_indices.size(); ++i)
     {
-      const int index = shared_indices[i];
+      const std::int32_t index = shared_indices[i];
       for (int j = 0; j < n; ++j)
         local_data[index * n + j] += recv_data[i * n + j];
     }
