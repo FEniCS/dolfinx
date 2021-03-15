@@ -560,7 +560,7 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   for (std::int32_t p = 0; p < _shared_indices->num_nodes(); ++p)
   {
     const int rank_global = neighbors_out[p];
-    for (const auto& idx : _shared_indices->links(p))
+    for (const std::int32_t& idx : _shared_indices->links(p))
       shared_indices[idx].insert(rank_global);
   }
 
@@ -573,7 +573,7 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   std::vector<int> fwd_sharing_offsets{0};
   for (std::int32_t p = 0; p < _shared_indices->num_nodes(); ++p)
   {
-    for (const auto& idx : _shared_indices->links(p))
+    for (const std::int32_t& idx : _shared_indices->links(p))
     {
       assert(shared_indices.find(idx) != shared_indices.end());
       if (auto it = shared_indices.find(idx); it->second.size() > 1)
