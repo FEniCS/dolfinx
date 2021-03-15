@@ -784,7 +784,7 @@ void IndexMap::scatter_rev(tcb::span<T> local_data,
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
   {
     const int np = _ghost_owners[i];
-    for (std::int32_t j = 0; j < n; ++j)
+    for (int j = 0; j < n; ++j)
       send_data[displs[np] + j] = remote_data[i * n + j];
     displs[np] += n;
   }
