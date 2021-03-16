@@ -11,7 +11,7 @@ configure_file(${DOLFINX_SOURCE_DIR}/dolfinx/common/version.h.in
 #------------------------------------------------------------------------------
 # Delcare the library (target)
 
-add_library(dolfinx "")  # The "" is needed for older CMake. Remove later.
+add_library(dolfinx)
 
 #------------------------------------------------------------------------------
 # Add source files to the target
@@ -59,9 +59,8 @@ target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 # UFC
 target_include_directories(dolfinx SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 
-# basix
-target_include_directories(dolfinx SYSTEM PUBLIC ${BASIX_INCLUDE_DIRS})
-target_link_libraries(dolfinx PUBLIC ${BASIX_LIBRARY})
+# Basix
+target_link_libraries(dolfinx PUBLIC Basix::basix)
 
 # Eigen3
 target_include_directories(dolfinx SYSTEM PRIVATE ${EIGEN3_INCLUDE_DIR})
