@@ -46,10 +46,11 @@
 #
 
 ARG GMSH_VERSION=4.6.0
-ARG PYBIND11_VERSION=2.6.1
+ARG PYBIND11_VERSION=2.6.2
 ARG PETSC_VERSION=3.14.3
 ARG SLEPC_VERSION=3.14.1
 ARG SLEPC4PY_VERSION=3.14.0
+ARG ADIOS2_VERSION=2.7.1
 # Todo: Update KaHIP version upon a release.
 ARG KAHIP_VERSION=623decb
 
@@ -64,6 +65,7 @@ ARG PYBIND11_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
+ARG ADIOS2_VERSION
 
 # The following ARGS are used in the dev-env layer.
 # They are safe defaults. They can be overridden by the user.
@@ -158,6 +160,15 @@ RUN cd /usr/local && \
     cmake -G Ninja -DCMAKE_INSTALL_PREFIX=${KAHIP_DIR} -DNONATIVEOPTIMIZATIONS=On .. && \
     ninja install
 
+# Install ADIOS2
+WORKDIR /tmp
+RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
+    mkdir -p adios2-v${ADIOS2_VERSION} && \
+    tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C adios2-v${ADIOS2_VERSION} --strip-components 1 && \
+    cmake -DADIOS2_USE_Fortran=Off -DBUILD_TESTING=Off -DADIOS2_BUILD_EXAMPLES=Off -DADIOS2_USE_ZeroMQ=Off  -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
@@ -399,12 +410,12 @@ RUN pip3 install --upgrade --no-cache-dir jupyter jupyterlab
 
 # Pyvista dependecies from apt
 RUN apt-get -qq update && \
-    apt-get -y install libgl1-mesa-dev \ 
+    apt-get -y install libgl1-mesa-dev \
     xvfb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Pyvista dependencies from pip 
+# Pyvista dependencies from pip
 # matplotlib improves plotting quality with better color maps and properly rendering colorbars.
 RUN pip3 install --no-cache-dir pyvista matplotlib
 
