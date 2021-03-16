@@ -421,7 +421,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   _shared_indices.resize(shared_ind.size());
   std::transform(
       shared_ind.begin(), shared_ind.end(), _shared_indices.begin(),
-      [offset = offset](std::int64_t x) -> std::int32_t { return x - offset; });
+      [offset](std::int64_t x) -> std::int32_t { return x - offset; });
 
   // Wait for the MPI_Iallreduce to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -446,11 +446,12 @@ const std::vector<std::int64_t>& IndexMap::ghosts() const noexcept
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-void IndexMap::local_to_global(const std::int32_t* local, int n,
-                               std::int64_t* global) const
+void IndexMap::local_to_global(const tcb::span<const std::int32_t>& local,
+                               const tcb::span<std::int64_t>& global) const
 {
+  assert(local.size() <= global.size());
   const std::int32_t local_size = _local_range[1] - _local_range[0];
-  for (int i = 0; i < n; ++i)
+  for (std::size_t i = 0; i < local.size(); ++i)
   {
     if (local[i] < local_size)
       global[i] = _local_range[0] + local[i];
@@ -458,6 +459,32 @@ void IndexMap::local_to_global(const std::int32_t* local, int n,
     {
       assert((local[i] - local_size) < (int)_ghosts.size());
       global[i] = _ghosts[local[i] - local_size];
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void IndexMap::global_to_local(const tcb::span<const std::int64_t>& global,
+                               const tcb::span<std::int32_t>& local) const
+{
+  const std::int32_t local_size = _local_range[1] - _local_range[0];
+
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
+    global_local_ghosts.emplace_back(_ghosts[i], i + local_size);
+
+  std::map<std::int64_t, std::int32_t> global_to_local(
+      global_local_ghosts.begin(), global_local_ghosts.end());
+  for (std::size_t i = 0; i < global.size(); i++)
+  {
+    std::int64_t index = global[i];
+    if (index >= _local_range[0] and index < _local_range[1])
+      local[i] = index - _local_range[0];
+    else
+    {
+      if (auto it = global_to_local.find(index); it != global_to_local.end())
+        local[i] = it->second;
+      else
+        local[i] = -1;
     }
   }
 }
@@ -473,35 +500,6 @@ std::vector<std::int64_t> IndexMap::global_indices() const
     global[local_size + i] = _ghosts[i];
 
   return global;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-IndexMap::global_to_local(const std::vector<std::int64_t>& indices) const
-{
-  const std::int32_t local_size = _local_range[1] - _local_range[0];
-
-  std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
-  for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    global_local_ghosts.emplace_back(_ghosts[i], i + local_size);
-
-  std::map<std::int64_t, std::int32_t> global_to_local(
-      global_local_ghosts.begin(), global_local_ghosts.end());
-  const std::array<std::int64_t, 2> range = this->local_range();
-  std::vector<std::int32_t> local;
-  for (std::int64_t index : indices)
-  {
-    if (index >= range[0] and index < range[1])
-      local.push_back(index - range[0]);
-    else
-    {
-      if (auto it = global_to_local.find(index); it != global_to_local.end())
-        local.push_back(it->second);
-      else
-        local.push_back(-1);
-    }
-  }
-
-  return local;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>& IndexMap::shared_indices() const noexcept
@@ -684,9 +682,9 @@ void IndexMap::scatter_fwd(tcb::span<const T> local_data,
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
     sizes_recv[_ghost_owners[i]] += n;
 
-  std::vector displs_send = _shared_disp;
-  std::transform(displs_send.begin(), displs_send.end(), displs_send.begin(),
-                 std::bind(std::multiplies<int>(), std::placeholders::_1, n));
+  std::vector<std::int32_t> displs_send(_shared_disp.size());
+  std::transform(_shared_disp.begin(), _shared_disp.end(), displs_send.begin(),
+                 [n](auto x) { return x * n; });
   std::vector<std::int32_t> sizes_send(outdegree, 0);
   std::adjacent_difference(displs_send.begin() + 1, displs_send.end(),
                            sizes_send.begin());
