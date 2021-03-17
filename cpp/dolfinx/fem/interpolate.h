@@ -269,7 +269,7 @@ void interpolate(Function<T>& u,
 
   array2d<T> reference_data(value_size, X.shape[0]);
 
-  array2d<double> phi(X.shape[0], gdim);
+  array2d<double> phi(num_dofs_g, X.shape[0]);
   cmap.tabulate_shape_functions(X, phi);
 
   std::vector<T>& coeffs = u.x()->mutable_array();

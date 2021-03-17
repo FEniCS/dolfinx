@@ -215,7 +215,7 @@ public:
     std::iota(cells.begin(), cells.end(), 0);
     const array2d<double> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
-    // fem::interpolate(*this, f, x, cells);
+    fem::interpolate(*this, f, x, cells);
   }
 
   /// Evaluate the Function at points

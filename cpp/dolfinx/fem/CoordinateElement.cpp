@@ -70,7 +70,7 @@ void CoordinateElement::push_forward(array2d<double>& x,
                                      const array2d<double>& phi) const
 {
   assert((int)x.shape[1] == this->geometric_dimension());
-  assert((int)phi.shape[1] == this->geometric_dimension());
+  assert(phi.shape[0] == cell_geometry.shape[0]);
 
   // Compute physical coordinates
   // x = phi * cell_geometry;
@@ -247,13 +247,7 @@ bool CoordinateElement::needs_permutation_data() const
 void CoordinateElement::tabulate_shape_functions(const array2d<double>& X,
                                                  array2d<double>& phi) const
 {
-  assert(phi.shape[0] == X.shape[0]);
-  assert((int)phi.shape[1] == _gdim);
-  assert(phi.size() == 20);
-
-  std::cout << _gdim * X.shape[0] << std::endl;
-
-  std::vector<double> phi_t(30);
-  basix::tabulate(_basix_element_handle, phi_t.data(), 0, X.data(), X.shape[0]);
-  std::copy(phi_t.begin(), phi_t.end(), phi.data());
+  // FIXME: Should probably have an assert for the number of cols in phi
+  assert(phi.shape[1] == X.shape[0]);
+  basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[0]);
 }
