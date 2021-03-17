@@ -7,6 +7,7 @@
 #include "CoordinateElement.h"
 #include <Eigen/Dense>
 #include <basix.h>
+#include <iostream>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -248,7 +249,11 @@ void CoordinateElement::tabulate_shape_functions(const array2d<double>& X,
 {
   assert(phi.shape[0] == X.shape[0]);
   assert((int)phi.shape[1] == _gdim);
+  assert(phi.size() == 20);
 
-  // std::vector<double> data(30);
-  basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[0]);
+  std::cout << _gdim * X.shape[0] << std::endl;
+
+  std::vector<double> phi_t(30);
+  basix::tabulate(_basix_element_handle, phi_t.data(), 0, X.data(), X.shape[0]);
+  std::copy(phi_t.begin(), phi_t.end(), phi.data());
 }
