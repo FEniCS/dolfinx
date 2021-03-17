@@ -53,7 +53,7 @@ partition_graph(const MPI_Comm comm, int nparts,
 
 /// Tools for distributed graphs
 ///
-/// @todo Add a function that sends data (Eigen arrays) to the 'owner'
+/// @todo Add a function that sends data to the 'owner'
 namespace build
 {
 /// Distribute adjacency list nodes to destination ranks. The global
