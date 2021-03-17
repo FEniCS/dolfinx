@@ -178,8 +178,7 @@ get_local_indexing(
     auto entity_list_i = entity_list.links(i);
     vlocal.assign(entity_list_i.begin(), entity_list_i.end());
     vglobal.resize(vlocal.size());
-    vertex_indexmap->local_to_global(vlocal.data(), vlocal.size(),
-                                     vglobal.data());
+    vertex_indexmap->local_to_global(vlocal, vglobal);
     std::sort(vglobal.begin(), vglobal.end());
 
     procs.clear();

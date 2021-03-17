@@ -16,7 +16,7 @@ on:
 jobs:
   build_end_user_images:
     name: Build dolfinx end-user images
-    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/master' }}
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-20.04
     env:
       PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
