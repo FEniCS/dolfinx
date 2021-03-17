@@ -30,7 +30,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
           ufc_element.apply_inverse_transpose_dof_transformation_to_scalar),
       _bs(ufc_element.block_size),
       _interpolation_is_ident(ufc_element.interpolation_is_identity),
-      _needs_permutation_data(ufc_element.needs_permutation_data)
+      _needs_permutation_data(ufc_element.needs_transformation_data)
 {
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)

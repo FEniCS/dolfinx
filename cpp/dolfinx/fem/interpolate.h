@@ -7,7 +7,6 @@
 #pragma once
 
 #include "FunctionSpace.h"
-#include <Eigen/Core>
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
