@@ -57,10 +57,13 @@ public:
   /// Return the geometric dimension of the cell shape
   int geometric_dimension() const;
 
+  void tabulate_shape_functions(const array2d<double>& X,
+                                array2d<double>& phi) const;
+
   /// Return the dof layout
   const ElementDofLayout& dof_layout() const;
 
-  /// Absolute increment stopping criterium for non-affine Newton solver
+  /// Absolute increment stopping criteria for non-affine Newton solver
   double non_affine_atol = 1.0e-8;
 
   /// Maximum number of iterations for non-affine Newton solver
@@ -69,10 +72,10 @@ public:
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
   /// @param[in,out] x The physical coordinates of the reference points X
-  /// @param[in] X The coordinates on the reference cells
   /// @param[in] cell_geometry The cell node coordinates (physical)
-  void push_forward(array2d<double>& x, const array2d<double>& X,
-                    const array2d<double>& cell_geometry) const;
+  /// @param[in] phi Tabulated basis functions at reference points X
+  void push_forward(array2d<double>& x, const array2d<double>& cell_geometry,
+                    const array2d<double>& phi) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x

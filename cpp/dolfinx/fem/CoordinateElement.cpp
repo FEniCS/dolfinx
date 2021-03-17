@@ -65,25 +65,19 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(array2d<double>& x,
-                                     const array2d<double>& X,
-                                     const array2d<double>& cell_geometry) const
+                                     const array2d<double>& cell_geometry,
+                                     const array2d<double>& phi) const
 {
-  assert(x.shape[0] == X.shape[0]);
   assert((int)x.shape[1] == this->geometric_dimension());
-  assert((int)X.shape[1] == this->topological_dimension());
-
-  // FIXME: remove dynamic memory allocation
+  assert((int)phi.shape[1] == this->geometric_dimension());
 
   // Compute physical coordinates
-  Eigen::MatrixXd phi(X.shape[0], cell_geometry.shape[0]);
-  basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[0]);
-
   // x = phi * cell_geometry;
   std::fill(x.data(), x.data() + x.size(), 0.0);
   for (std::size_t i = 0; i < x.shape[0]; ++i)
     for (std::size_t j = 0; j < x.shape[1]; ++j)
       for (std::size_t k = 0; k < cell_geometry.shape[0]; ++k)
-        x(i, j) += phi(i, k) * cell_geometry(k, j);
+        x(i, j) += phi(k, i) * cell_geometry(k, j);
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
@@ -249,3 +243,12 @@ bool CoordinateElement::needs_permutation_data() const
   return _needs_permutation_data;
 }
 //-----------------------------------------------------------------------------
+void CoordinateElement::tabulate_shape_functions(const array2d<double>& X,
+                                                 array2d<double>& phi) const
+{
+  assert(phi.shape[0] == X.shape[0]);
+  assert((int)phi.shape[1] == _gdim);
+
+  // std::vector<double> data(30);
+  basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[0]);
+}

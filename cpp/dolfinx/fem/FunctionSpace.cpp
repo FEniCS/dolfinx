@@ -165,6 +165,9 @@ array2d<double> FunctionSpace::tabulate_dof_coordinates(bool transpose) const
       = needs_permutation_data ? _mesh->topology().get_cell_permutation_info()
                                : std::vector<std::uint32_t>(num_cells);
 
+  array2d<double> phi(X.shape[0], gdim);
+  cmap.tabulate_shape_functions(X, phi);
+
   for (int c = 0; c < num_cells; ++c)
   {
     // Extract cell geometry
@@ -174,7 +177,7 @@ array2d<double> FunctionSpace::tabulate_dof_coordinates(bool transpose) const
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Tabulate dof coordinates on cell
-    cmap.push_forward(x, X, coordinate_dofs);
+    cmap.push_forward(x, coordinate_dofs, phi);
 
     _element->apply_dof_transformation(x.data(), cell_info[c], x.shape[1]);
 
