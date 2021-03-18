@@ -44,7 +44,7 @@ jobs:
 
       - name: Install FEniCS Python components
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-dir -S ./basix
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S ./basix
           cmake --build build-dir
           cmake --install build-dir
           python3 -m pip install ./basix/python
