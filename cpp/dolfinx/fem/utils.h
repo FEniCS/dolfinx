@@ -438,10 +438,11 @@ std::shared_ptr<fem::Expression<T>> create_expression(
     }
   }
 
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      points(expression.points, expression.num_points,
-             expression.topological_dimension);
+  const int size = expression.num_points * expression.topological_dimension;
+  const std::vector<double> _points(expression.points, expression.points + size);
+
+  const array2d<double> points(
+      {expression.num_points, expression.topological_dimension}, _points);
 
   int value_size = 1;
   for (int i = 0; i < expression.num_components; ++i)

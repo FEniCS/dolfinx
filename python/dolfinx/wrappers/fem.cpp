@@ -424,7 +424,7 @@ void fem(py::module& m)
             = dolfinx::fem::create_sparsity_discrete_gradient(V0, V1);
         Mat A = dolfinx::la::create_petsc_matrix(MPI_COMM_WORLD, sp);
         dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
-            dolfinx::la::PETScMatrix::add_fn(A), V0, V1);
+            dolfinx::la::PETScMatrix::set_fn(A, ADD_VALUES), V0, V1);
         MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
         MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
         return A;
@@ -755,6 +755,10 @@ void fem(py::module& m)
                              &dolfinx::fem::Expression<PetscScalar>::value_size,
                              py::return_value_policy::reference_internal)
       .def_property_readonly("x", &dolfinx::fem::Expression<PetscScalar>::x,
+                             py::return_value_policy::reference_internal)
+      .def_property_readonly("coefficients", &dolfinx::fem::Expression<PetscScalar>::coefficients,
+                             py::return_value_policy::reference_internal)
+      .def_property_readonly("constants", &dolfinx::fem::Expression<PetscScalar>::constants,
                              py::return_value_policy::reference_internal);
 }
 } // namespace dolfinx_wrappers

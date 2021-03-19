@@ -135,6 +135,9 @@ public:
   using scalar_type = T;
 
 private:
+  // Function spaces (one for each argument)
+  std::vector<std::shared_ptr<const fem::FunctionSpace>> _function_spaces;
+
   // Coefficients associated with the Expression
   std::vector<std::shared_ptr<const fem::Function<T>>> _coefficients;
 
