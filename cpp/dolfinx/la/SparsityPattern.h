@@ -79,12 +79,13 @@ public:
   /// @return The index map
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// The index map for columns in the sparsity pattern for owned rows
-  /// @note This map is computed only once SparsityPattern::assemble has
+  /// Global indices of non-zero columns on owned rows.
+  /// @note The ghosts are computed only once SparsityPattern::assemble has
   /// been called.
   ///
-  /// @return The index map
-  std::shared_ptr<const common::IndexMap> column_map() const;
+  /// @return The global index non-zero columns on this process, including
+  /// ghosts
+  std::vector<std::int64_t> column_indices() const;
 
   /// Return index map block size for dimension dim
   int block_size(int dim) const;
@@ -121,8 +122,10 @@ private:
 
   // Index maps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
-  std::shared_ptr<const common::IndexMap> _column_map;
   std::array<int, 2> _bs;
+
+  // Non-zero ghost columns in owned rows
+  std::vector<std::int64_t> _col_ghosts;
 
   // Caches for unassembled entries on owned and unowned (ghost) rows
   std::vector<std::vector<std::int32_t>> _cache_owned;

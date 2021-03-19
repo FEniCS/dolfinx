@@ -316,8 +316,8 @@ private:
         if (topology.index_map(tdim)->num_ghosts() == 0)
         {
           fwd_shared.insert(
-              topology.index_map(tdim - 1)->shared_indices().begin(),
-              topology.index_map(tdim - 1)->shared_indices().end());
+              topology.index_map(tdim - 1)->shared_indices().array().begin(),
+              topology.index_map(tdim - 1)->shared_indices().array().end());
         }
 
         for (auto f = tagged_entities.begin(); f != entity_end; ++f)
@@ -402,8 +402,8 @@ private:
         if (topology.index_map(tdim)->num_ghosts() == 0)
         {
           fwd_shared_facets.insert(
-              topology.index_map(tdim - 1)->shared_indices().begin(),
-              topology.index_map(tdim - 1)->shared_indices().end());
+              topology.index_map(tdim - 1)->shared_indices().array().begin(),
+              topology.index_map(tdim - 1)->shared_indices().array().end());
         }
 
         const int num_facets = topology.index_map(tdim - 1)->size_local();
