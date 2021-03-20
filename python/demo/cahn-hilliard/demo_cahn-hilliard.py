@@ -126,8 +126,7 @@ try:
     import pyvistaqt as pvqt
     have_pyvista = True
     if pv.OFF_SCREEN:
-        from pyvista.utilities.xvfb import start_xvfb
-        start_xvfb(wait=0)
+        pv.start_xvfb(wait=0)
 
 except ModuleNotFoundError:
     print("pyvista is required to visualise the solution")
