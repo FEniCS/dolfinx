@@ -45,7 +45,7 @@
 #    docker build --target dev-env --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
 
-ARG GMSH_VERSION=4.8.0
+ARG GMSH_VERSION=4.6.0
 ARG PYBIND11_VERSION=2.6.2
 ARG PETSC_VERSION=3.14.3
 ARG SLEPC_VERSION=3.14.1
