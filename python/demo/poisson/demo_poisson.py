@@ -216,8 +216,7 @@ try:
 
     # If pyvista environment variable is set to off-screen (static) plotting save png
     if pyvista.OFF_SCREEN:
-        from pyvista.utilities.xvfb import start_xvfb
-        start_xvfb(wait=0)
+        pyvista.start_xvfb(wait=0)
         plotter.screenshot("uh.png")
     else:
         plotter.show()

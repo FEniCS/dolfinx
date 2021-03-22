@@ -25,8 +25,7 @@ except ModuleNotFoundError:
 # If environment variable PYVISTA_OFF_SCREEN is set to true save a png
 # otherwise create interactive plot
 if pyvista.OFF_SCREEN:
-    from pyvista.utilities.xvfb import start_xvfb
-    start_xvfb(wait=0.1)
+    pyvista.start_xvfb(wait=0.1)
 
 # Set some global options for all plots
 transparent = False
