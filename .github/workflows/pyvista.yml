@@ -38,11 +38,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install FEniCS Python components and other dependencies
+      - name: Get Basix and install
+        uses: actions/checkout@v2
+        with:
+          path: ./basix
+          repository: FEniCS/basix
+          ref: main
+
+      - name: Install FEniCS Python components
         run: |
-          pip3 install git+https://github.com/FEniCS/basix.git
-          pip3 install git+https://github.com/FEniCS/ufl.git
-          pip3 install git+https://github.com/FEniCS/ffcx.git
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-dir -S ./basix
+          cmake --build build-dir
+          cmake --install build-dir
+          python3 -m pip install ./basix/python
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
           apt-get update
           apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb # pyvista
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
