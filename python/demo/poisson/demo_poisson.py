@@ -207,6 +207,7 @@ if has_adios2():
     from dolfinx.cpp.io import ADIOS2File
     with ADIOS2File(MPI.COMM_WORLD, "poisson.bp", "w") as file:
         file.write_function([uh._cpp_object], 0.0)
+
 try:
     import pyvista
 

@@ -22,8 +22,10 @@ using namespace dolfinx::io;
 
 namespace
 {
-std::string VTKSchema(std::set<std::string> point_data,
-                      std::set<std::string> cell_data, bool _time_dep)
+// @todo Add description
+std::string create_vtk_schema(const std::set<std::string>& point_data,
+                              const std::set<std::string>& cell_data,
+                              bool _time_dep)
 {
   // Create XML SCHEMA by using pugi_xml
   pugi::xml_document xml_schema;
@@ -145,12 +147,12 @@ bool is_cellwise_constant(std::shared_ptr<const fem::FiniteElement> element)
 //-----------------------------------------------------------------------------
 } // namespace
 
+//-----------------------------------------------------------------------------
 ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
                        const std::string& mode)
     : _mode(mode)
 {
   _adios = std::make_shared<adios2::ADIOS>(comm);
-  adios2::Mode file_mode = string_to_mode(mode);
   _io = std::make_shared<adios2::IO>(_adios->DeclareIO("ADIOS2 DOLFINx IO"));
   _io->SetEngine("BPFile");
 
@@ -161,6 +163,7 @@ ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
     _io->SetParameter("AggregatorRatio", "1");
   }
 
+  adios2::Mode file_mode = string_to_mode(mode);
   _engine = std::make_shared<adios2::Engine>(_io->Open(filename, file_mode));
 }
 //-----------------------------------------------------------------------------
@@ -168,13 +171,17 @@ ADIOS2File::~ADIOS2File() { close(); };
 //-----------------------------------------------------------------------------
 void ADIOS2File::close()
 {
-  if (_engine)
+  assert(_engine);
+
+  // This looks a bit odd because ADIOS2 uses `operator bool()` to test
+  // of the engine is open
+  if (*_engine)
   {
-    // Add VTKSchema if it hasn't been previously added (for instance
+    // Add create_vtk_schema if it hasn't been previously added (for instance
     // when writing meshes)
     if (_vtk_scheme.empty())
       DefineAttribute<std::string>(*_io, "vtk.xml",
-                                   VTKSchema({}, {}, _time_dep));
+                                   create_vtk_schema({}, {}, _time_dep));
     _engine->Close();
   }
 }
@@ -247,7 +254,7 @@ void ADIOS2File::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtag)
   _engine->Put<double>(local_geometry, mesh->geometry().x().data());
   _engine->Put<std::uint64_t>(local_topology, vtk_topology.data());
   _engine->PerformPuts();
-  std::string _vtk_scheme = VTKSchema({}, cell_data, _time_dep);
+  std::string _vtk_scheme = create_vtk_schema({}, cell_data, _time_dep);
   DefineAttribute<std::string>(*_io, "vtk.xml", _vtk_scheme);
 }
 //-----------------------------------------------------------------------------
@@ -396,7 +403,7 @@ void ADIOS2File::_write_function_at_nodes(
 
   // Check if VTKScheme exists, and if so, check that we are only adding
   // values already existing
-  std::string vtk_scheme = VTKSchema(point_data, {}, _time_dep);
+  std::string vtk_scheme = create_vtk_schema(point_data, {}, _time_dep);
   // If writing to file set vtk scheme as current
   if (_vtk_scheme.empty())
     _vtk_scheme = vtk_scheme;
@@ -526,7 +533,7 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
 
   // Check if VTKScheme exists, and if so, check that we are only adding
   // values already existing
-  std::string vtk_scheme = VTKSchema({point_data}, {}, time_dep);
+  std::string vtk_scheme = create_vtk_schema({point_data}, {}, time_dep);
 
   // If writing to file set vtk scheme as current
   // if (_vtk_scheme.empty())
