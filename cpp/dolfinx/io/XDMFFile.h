@@ -72,9 +72,6 @@ public:
            const std::string file_mode,
            const Encoding encoding = default_encoding);
 
-  /// Move constructor
-  XDMFFile(XDMFFile&& file) = default;
-
   /// Destructor
   ~XDMFFile();
 

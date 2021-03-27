@@ -75,8 +75,8 @@ void io(py::module& m)
       .def(py::init([](const MPICommWrapper comm, const std::string& filename,
                        const std::string& file_mode,
                        dolfinx::io::XDMFFile::Encoding encoding) {
-             return dolfinx::io::XDMFFile(comm.get(), filename, file_mode,
-                                          encoding);
+             return std::make_unique<dolfinx::io::XDMFFile>(
+                 comm.get(), filename, file_mode, encoding);
            }),
            py::arg("comm"), py::arg("filename"), py::arg("file_mode"),
            py::arg("encoding") = dolfinx::io::XDMFFile::Encoding::HDF5)
