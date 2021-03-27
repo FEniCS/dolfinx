@@ -47,7 +47,7 @@ public:
   ADIOS2File(ADIOS2File&& file) = default;
 
   /// Destructor
-  ~ADIOS2File();
+  virtual ~ADIOS2File();
 
   void close();
 
@@ -84,12 +84,12 @@ private:
   // Function for updating vtk schema
   //   std::set<std::string> update_vtk_point_data();
 
-  std::shared_ptr<adios2::ADIOS> _adios;
-  std::shared_ptr<adios2::IO> _io;
-  std::shared_ptr<adios2::Engine> _engine;
+  std::unique_ptr<adios2::ADIOS> _adios;
+  std::unique_ptr<adios2::IO> _io;
+  std::unique_ptr<adios2::Engine> _engine;
+
   bool _time_dep = false;
   std::string _vtk_scheme;
-  std::string _mode;
 };
 
 } // namespace dolfinx::io

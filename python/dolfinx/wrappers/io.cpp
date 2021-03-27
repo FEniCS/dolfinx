@@ -140,7 +140,8 @@ void io(py::module& m)
       m, "ADIOS2File")
       .def(py::init([](const MPICommWrapper comm, const std::string& filename,
                        const std::string& mode) {
-        return dolfinx::io::ADIOS2File(comm.get(), filename, mode);
+        return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(), filename,
+                                                         mode);
       }))
       .def("__enter__",
            [](std::shared_ptr<dolfinx::io::ADIOS2File>& self) { return self; })

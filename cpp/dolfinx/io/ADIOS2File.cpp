@@ -127,7 +127,7 @@ adios2::Variable<T> DefineVariable(adios2::IO& io, const std::string& var_name,
   return variable;
 }
 //-----------------------------------------------------------------------------
-adios2::Mode string_to_mode(std::string mode)
+adios2::Mode string_to_mode(const std::string& mode)
 {
   if (mode == "w")
     return adios2::Mode::Write;
@@ -139,10 +139,10 @@ adios2::Mode string_to_mode(std::string mode)
     throw std::runtime_error("Unknown mode for ADIOS2: " + mode);
 }
 //-----------------------------------------------------------------------------
-bool is_cellwise_constant(std::shared_ptr<const fem::FiniteElement> element)
+bool is_cellwise_constant(const fem::FiniteElement& element)
 {
-  std::string family = element->family();
-  int num_nodes_per_dim = element->space_dimension() / element->block_size();
+  std::string family = element.family();
+  int num_nodes_per_dim = element.space_dimension() / element.block_size();
   return num_nodes_per_dim == 1;
 }
 //-----------------------------------------------------------------------------
@@ -151,10 +151,9 @@ bool is_cellwise_constant(std::shared_ptr<const fem::FiniteElement> element)
 //-----------------------------------------------------------------------------
 ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
                        const std::string& mode)
-    : _mode(mode)
+    : _adios(std::make_unique<adios2::ADIOS>(comm))
 {
-  _adios = std::make_shared<adios2::ADIOS>(comm);
-  _io = std::make_shared<adios2::IO>(_adios->DeclareIO("ADIOS2 DOLFINx IO"));
+  _io = std::make_unique<adios2::IO>(_adios->DeclareIO("ADIOS2 DOLFINx IO"));
   _io->SetEngine("BPFile");
 
   if (mode == "a")
@@ -165,7 +164,7 @@ ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
   }
 
   adios2::Mode file_mode = string_to_mode(mode);
-  _engine = std::make_shared<adios2::Engine>(_io->Open(filename, file_mode));
+  _engine = std::make_unique<adios2::Engine>(_io->Open(filename, file_mode));
 }
 //-----------------------------------------------------------------------------
 ADIOS2File::~ADIOS2File() { close(); };
@@ -263,20 +262,22 @@ void ADIOS2File::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtag)
 //-----------------------------------------------------------------------------
 void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
 {
-  if (_mode == "a")
-  {
-    throw std::runtime_error(
-        "Cannot append functions to previously created file.");
-  }
+  // assert(_engine);
+  // // ADIOS should handle mode checks, and if we need to we should get it
+  // // from ADIOS - DOLFINx should not store the state
+  // if (_engine->OpenMode() == adios2::Mode::Append)
+  // {
+  //   throw std::runtime_error(
+  //       "Cannot append functions to previously created file.");
+  // }
 
   // Get some data about mesh
-  auto top = mesh.topology();
-  auto x_map = mesh.geometry().index_map();
-  const int tdim = top.dim();
+  std::shared_ptr<const common::IndexMap> x_map = mesh.geometry().index_map();
+  const int tdim = mesh.topology().dim();
+  const std::uint32_t num_cells = mesh.topology().index_map(tdim)->size_local();
 
   // As the mesh data is written with local indices we need the ghost
   // vertices
-  const std::uint32_t num_elements = top.index_map(tdim)->size_local();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<std::uint32_t> vertices = DefineVariable<std::uint32_t>(
       *_io, "NumberOfNodes", {adios2::LocalValueDim});
@@ -284,7 +285,7 @@ void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
       *_io, "NumberOfEntities", {adios2::LocalValueDim});
 
   // Extract geometry for all local cells
-  std::vector<int32_t> cells(num_elements);
+  std::vector<int32_t> cells(num_cells);
   std::iota(cells.begin(), cells.end(), 0);
   adios2::Variable<double> local_geometry
       = DefineVariable<double>(*_io, "geometry", {}, {}, {num_vertices, 3});
@@ -308,15 +309,15 @@ void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
   // Output is written as [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
   adios2::Variable<std::uint64_t> local_topology
       = DefineVariable<std::uint64_t>(*_io, "connectivity", {}, {},
-                                      {num_elements, num_nodes + 1});
-  std::vector<std::uint64_t> vtk_topology(num_elements * (num_nodes + 1));
-  int topology_offset = 0;
-  for (size_t c = 0; c < num_elements; ++c)
+                                      {num_cells, num_nodes + 1});
+  std::vector<std::uint64_t> vtk_topology;
+  vtk_topology.reserve(num_cells * (num_nodes + 1));
+  for (size_t c = 0; c < num_cells; ++c)
   {
     auto x_dofs = x_dofmap.links(c);
-    vtk_topology[topology_offset++] = x_dofs.size();
+    vtk_topology.push_back(x_dofs.size());
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      vtk_topology[topology_offset++] = x_dofs[map[i]];
+      vtk_topology.push_back(x_dofs[map[i]]);
   }
 
   // Add element cell types
@@ -325,7 +326,7 @@ void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
 
   // Start writer for given function
   _engine->Put<std::uint32_t>(vertices, num_vertices);
-  _engine->Put<std::uint32_t>(elements, num_elements);
+  _engine->Put<std::uint32_t>(elements, num_cells);
   _engine->Put<std::uint32_t>(
       cell_type, dolfinx::io::cells::get_vtk_cell_type(mesh, tdim));
   _engine->Put<double>(local_geometry, mesh.geometry().x().data());
@@ -443,8 +444,10 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
   const std::uint32_t num_nodes = dofmap->cell_dofs(0).size();
   std::vector<std::uint8_t> map;
   if (family == "Lagrange")
+  {
     map = dolfinx::io::cells::transpose(
         io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
+  }
   else
     map = dolfinx::io::cells::perm_discontinuous(mesh->topology().cell_type(),
                                                  num_nodes);
@@ -459,9 +462,7 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
     auto dofs = dofmap->cell_dofs(c);
     vtk_topology[topology_offset++] = dofs.size();
     for (std::size_t i = 0; i < dofs.size(); ++i)
-    {
       vtk_topology[topology_offset++] = dofs[map[i]];
-    }
   }
 
   // Define ADIOS2 variables for geometry, topology, celltypes and
@@ -559,7 +560,7 @@ void ADIOS2File::write_function(
     double t)
 {
   bool compute_at_nodes = false;
-  std::vector<std::string> supported_elements
+  std::array<std::string, 2> supported_elements
       = {"Lagrange", "Discontinuous Lagrange"};
 
   // Can only write one mesh to file at the time if using higher order
@@ -570,7 +571,8 @@ void ADIOS2File::write_function(
   {
     std::shared_ptr<const fem::FiniteElement> element
         = u[0].get().function_space()->element();
-    if (is_cellwise_constant(element))
+    assert(element);
+    if (is_cellwise_constant(*element))
       throw std::runtime_error("Cell-wise constants not currently supported");
 
     std::string family = element->family();
@@ -580,6 +582,7 @@ void ADIOS2File::write_function(
       compute_at_nodes = true;
     }
   }
+
   if (compute_at_nodes)
     _write_function_at_nodes<double>(u, t);
   else
@@ -603,7 +606,8 @@ void ADIOS2File::write_function(
   {
     std::shared_ptr<const fem::FiniteElement> element
         = u[0].get().function_space()->element();
-    if (is_cellwise_constant(element))
+    assert(element);
+    if (is_cellwise_constant(*element))
       throw std::runtime_error("Cell-wise constants not currently supported");
 
     std::string family = element->family();
@@ -622,5 +626,4 @@ void ADIOS2File::write_function(
                                                    _time_dep);
 }
 //-----------------------------------------------------------------------------
-
 #endif
