@@ -157,31 +157,33 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
   //       "Cannot append functions to previously created file.");
   // }
 
-  // Get some data about mesh
   std::shared_ptr<const common::IndexMap> x_map = mesh.geometry().index_map();
   const int tdim = mesh.topology().dim();
   const std::uint32_t num_cells = mesh.topology().index_map(tdim)->size_local();
 
-  // As the mesh data is written with local indices we need the ghost
-  // vertices
+  // Add number of nodes (mesh data is written with local indices we need the
+  // ghost vertices)
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<std::uint32_t> vertices = DefineVariable<std::uint32_t>(
       io, "NumberOfNodes", {adios2::LocalValueDim});
-  adios2::Variable<std::uint32_t> elements = DefineVariable<std::uint32_t>(
+  engine.Put<std::uint32_t>(vertices, num_vertices);
+
+  // Add cell metadata
+  adios2::Variable<std::uint32_t> cell_variable = DefineVariable<std::uint32_t>(
       io, "NumberOfEntities", {adios2::LocalValueDim});
+  engine.Put<std::uint32_t>(cell_variable, num_cells);
 
-  // Extract geometry for all local cells
-  std::vector<int32_t> cells(num_cells);
-  std::iota(cells.begin(), cells.end(), 0);
-  adios2::Variable<double> local_geometry
-      = DefineVariable<double>(io, "geometry", {}, {}, {num_vertices, 3});
+  adios2::Variable<std::uint32_t> celltype_variable
+      = DefineVariable<std::uint32_t>(io, "types");
+  engine.Put<std::uint32_t>(celltype_variable,
+                            cells::get_vtk_cell_type(mesh, tdim));
 
-  // Get DOLFINx to VTK permuation
-  // FIXME: Use better way to get number of nods
+  // Get DOLFINx to VTK permutation
+  // FIXME: Use better way to get number of nodes
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::uint32_t num_nodes = x_dofmap.num_links(0);
-  std::vector<std::uint8_t> map = dolfinx::io::cells::transpose(
-      dolfinx::io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
+  std::vector map = dolfinx::io::cells::transpose(
+      cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
   // TODO: Remove when when paraview issue 19433 is resolved
   // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
   if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
@@ -191,11 +193,8 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
            22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
   }
 
-  // Extract topology for all local cells
+  // Extract mesh 'nodes'
   // Output is written as [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
-  adios2::Variable<std::uint64_t> local_topology
-      = DefineVariable<std::uint64_t>(io, "connectivity", {}, {},
-                                      {num_cells, num_nodes + 1});
   std::vector<std::uint64_t> vtk_topology;
   vtk_topology.reserve(num_cells * (num_nodes + 1));
   for (size_t c = 0; c < num_cells; ++c)
@@ -206,17 +205,17 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
       vtk_topology.push_back(x_dofs[map[i]]);
   }
 
-  // Add element cell types
-  adios2::Variable<std::uint32_t> cell_type
-      = DefineVariable<std::uint32_t>(io, "types");
-
-  // Start writer for given function
-  engine.Put<std::uint32_t>(vertices, num_vertices);
-  engine.Put<std::uint32_t>(elements, num_cells);
-  engine.Put<std::uint32_t>(cell_type,
-                            dolfinx::io::cells::get_vtk_cell_type(mesh, tdim));
-  engine.Put<double>(local_geometry, mesh.geometry().x().data());
+  // Start topology (node) writer
+  adios2::Variable<std::uint64_t> local_topology
+      = DefineVariable<std::uint64_t>(io, "connectivity", {}, {},
+                                      {num_cells, num_nodes + 1});
   engine.Put<std::uint64_t>(local_topology, vtk_topology.data());
+
+  // Start geometry writer
+  adios2::Variable<double> local_geometry
+      = DefineVariable<double>(io, "geometry", {}, {}, {num_vertices, 3});
+  engine.Put<double>(local_geometry, mesh.geometry().x().data());
+
   engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
