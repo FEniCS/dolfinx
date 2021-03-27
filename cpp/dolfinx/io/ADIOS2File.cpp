@@ -27,7 +27,7 @@ std::string create_vtk_schema(const std::set<std::string>& point_data,
                               const std::set<std::string>& cell_data,
                               bool _time_dep)
 {
-  // Create XML SCHEMA by using pugi_xml
+  // Create XML
   pugi::xml_document xml_schema;
   pugi::xml_node vtk_node = xml_schema.append_child("VTKFile");
   vtk_node.append_attribute("type") = "UnstructuredGrid";
@@ -36,49 +36,45 @@ std::string create_vtk_schema(const std::set<std::string>& point_data,
   pugi::xml_node unstructured = vtk_node.append_child("UnstructuredGrid");
   pugi::xml_node piece = unstructured.append_child("Piece");
 
-  // Create VTK schema for mesh
+  // Add mesh attributes
   piece.append_attribute("NumberOfPoints") = "NumberOfNodes";
-  piece.append_attribute("NumberOfCells") = "NumberOfEntities";
-  pugi::xml_node geometry = piece.append_child("Points");
-  pugi::xml_node vertices = geometry.append_child("DataArray");
-  vertices.append_attribute("Name") = "geometry";
+  piece.append_attribute("NumberOfCells") = "NumberOfCells";
 
-  pugi::xml_node topology = piece.append_child("Cells");
+  // Add point information
+  pugi::xml_node xml_geometry = piece.append_child("Points");
+  pugi::xml_node xml_vertices = xml_geometry.append_child("DataArray");
+  xml_vertices.append_attribute("Name") = "geometry";
+
+  // Add topology pointers
+  pugi::xml_node xml_topology = piece.append_child("Cells");
+  xml_topology.append_child("DataArray").append_attribute("Name")
+      = "connectivity";
+  xml_topology.append_child("DataArray").append_attribute("Name") = "types";
+
+  // If we have any point data to write to file
+  pugi::xml_node xml_pointdata = piece.append_child("PointData");
+
+  // Stepping info for time dependency
+  if (_time_dep)
   {
-    std::vector<std::string> topology_data = {"connectivity", "types"};
-    for (auto data : topology_data)
-    {
-      pugi::xml_node item = topology.append_child("DataArray");
-      item.append_attribute("Name") = data.c_str();
-    }
+    pugi::xml_node item = xml_pointdata.append_child("DataArray");
+    item.append_attribute("Name") = "TIME";
+    item.append_child(pugi::node_pcdata).set_value("step");
   }
 
+  // Append point data to VTK Schema
+  for (auto name : point_data)
   {
-    pugi::xml_node data = piece.append_child("PointData");
-
-    // If we have any point data to write to file
-    // Stepping info for time dependency
-    if (_time_dep)
-    {
-      pugi::xml_node item = data.append_child("DataArray");
-      item.append_attribute("Name") = "TIME";
-      item.append_child(pugi::node_pcdata).set_value("step");
-    }
-    // Append point data to VTK Schema
-    for (auto name : point_data)
-    {
-      pugi::xml_node item = data.append_child("DataArray");
-      item.append_attribute("Name") = name.c_str();
-    }
+    pugi::xml_node item = xml_pointdata.append_child("DataArray");
+    item.append_attribute("Name") = name.c_str();
   }
+
+  // Append point data
+  pugi::xml_node xml_celldata = piece.append_child("CellData");
+  for (auto& name : cell_data)
   {
-    pugi::xml_node data = piece.append_child("CellData");
-    // Append point data to VTK Schema
-    for (auto name : cell_data)
-    {
-      pugi::xml_node item = data.append_child("DataArray");
-      item.append_attribute("Name") = name.c_str();
-    }
+    pugi::xml_node item = xml_celldata.append_child("DataArray");
+    item.append_attribute("Name") = name.c_str();
   }
 
   std::stringstream ss;
@@ -93,38 +89,35 @@ namespace
 //-----------------------------------------------------------------------------
 // Safe definition of an attribute (required for time dependent problems)
 template <class T>
-adios2::Attribute<T>
-DefineAttribute(adios2::IO& io, const std::string& attr_name, const T& value,
-                const std::string& var_name = "",
-                const std::string& separator = "/")
+adios2::Attribute<T> DefineAttribute(adios2::IO& io, const std::string& name,
+                                     const T& value,
+                                     const std::string& var_name = "",
+                                     const std::string& separator = "/")
 {
-  adios2::Attribute<T> attribute = io.InquireAttribute<T>(attr_name);
-  if (attribute)
-    return attribute;
+  adios2::Attribute<T> attr = io.InquireAttribute<T>(name);
+  if (attr)
+    return attr;
   else
-    return io.DefineAttribute<T>(attr_name, value, var_name, separator);
+    return io.DefineAttribute<T>(name, value, var_name, separator);
 }
 //-----------------------------------------------------------------------------
 // Safe definition of a variable (required for time dependent problems)
 template <class T>
-adios2::Variable<T> DefineVariable(adios2::IO& io, const std::string& var_name,
+adios2::Variable<T> DefineVariable(adios2::IO& io, const std::string& name,
                                    const adios2::Dims& shape = adios2::Dims(),
                                    const adios2::Dims& start = adios2::Dims(),
                                    const adios2::Dims& count = adios2::Dims())
 {
-  adios2::Variable<T> variable = io.InquireVariable<T>(var_name);
-  if (variable)
+  adios2::Variable<T> v = io.InquireVariable<T>(name);
+  if (v)
   {
-    if (variable.Count() != count
-        and variable.ShapeID() == adios2::ShapeID::LocalArray)
-    {
-      variable.SetSelection({start, count});
-    }
+    if (v.Count() != count and v.ShapeID() == adios2::ShapeID::LocalArray)
+      v.SetSelection({start, count});
   }
   else
-    variable = io.DefineVariable<T>(var_name, shape, start, count);
+    v = io.DefineVariable<T>(name, shape, start, count);
 
-  return variable;
+  return v;
 }
 //-----------------------------------------------------------------------------
 adios2::Mode string_to_mode(const std::string& mode)
@@ -169,10 +162,12 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
   // Add cell metadata
+  // adios2::Variable<std::uint32_t> cell_variable =
+  // DefineVariable<std::uint32_t>(
+  //     io, "NumberOfEntities", {adios2::LocalValueDim});
   adios2::Variable<std::uint32_t> cell_variable = DefineVariable<std::uint32_t>(
-      io, "NumberOfEntities", {adios2::LocalValueDim});
+      io, "NumberOfCells", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(cell_variable, num_cells);
-
   adios2::Variable<std::uint32_t> celltype_variable
       = DefineVariable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(celltype_variable,
@@ -195,21 +190,21 @@ void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
 
   // Extract mesh 'nodes'
   // Output is written as [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
-  std::vector<std::uint64_t> vtk_topology;
-  vtk_topology.reserve(num_cells * (num_nodes + 1));
+  std::vector<std::uint64_t> topology;
+  topology.reserve(num_cells * (num_nodes + 1));
   for (size_t c = 0; c < num_cells; ++c)
   {
     auto x_dofs = x_dofmap.links(c);
-    vtk_topology.push_back(x_dofs.size());
+    topology.push_back(x_dofs.size());
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      vtk_topology.push_back(x_dofs[map[i]]);
+      topology.push_back(x_dofs[map[i]]);
   }
 
-  // Start topology (node) writer
+  // Put topology (nodes)
   adios2::Variable<std::uint64_t> local_topology
       = DefineVariable<std::uint64_t>(io, "connectivity", {}, {},
                                       {num_cells, num_nodes + 1});
-  engine.Put<std::uint64_t>(local_topology, vtk_topology.data());
+  engine.Put<std::uint64_t>(local_topology, topology.data());
 
   // Start geometry writer
   adios2::Variable<double> local_geometry

@@ -67,6 +67,9 @@ public:
       double t = 0.0);
 
   /// Write mesh to file
+  /// @note The ADIOS2 files embeds VTK XML to describe the layout, and
+  /// only one grid can be stored in a VTK XML file, see
+  /// https://vtk.org/doc/nightly/html/classvtkXMLUnstructuredGridWriter.html
   /// @param[in] mesh
   void write_mesh(const mesh::Mesh& mesh);
 
@@ -75,15 +78,6 @@ public:
   void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtag);
 
 private:
-  /// Templated writer for functions using CG-1 interpolation
-//   template <typename Scalar>
-//   void _write_function_at_nodes(
-//       const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
-//       double t);
-
-  // Function for updating vtk schema
-  //   std::set<std::string> update_vtk_point_data();
-
   std::unique_ptr<adios2::ADIOS> _adios;
   std::unique_ptr<adios2::IO> _io;
   std::unique_ptr<adios2::Engine> _engine;
