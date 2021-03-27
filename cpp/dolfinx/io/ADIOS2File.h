@@ -43,6 +43,9 @@ public:
   ADIOS2File(MPI_Comm comm, const std::string& filename,
              const std::string& mode);
 
+  /// Move constructor
+  ADIOS2File(ADIOS2File&& file) = default;
+
   /// Destructor
   ~ADIOS2File();
 

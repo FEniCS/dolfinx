@@ -72,11 +72,11 @@ void io(py::module& m)
       .value("ASCII", dolfinx::io::XDMFFile::Encoding::ASCII);
 
   xdmf_file
-      .def(py::init([](const MPICommWrapper comm, const std::string filename,
-                       const std::string file_mode,
+      .def(py::init([](const MPICommWrapper comm, const std::string& filename,
+                       const std::string& file_mode,
                        dolfinx::io::XDMFFile::Encoding encoding) {
-             return std::make_unique<dolfinx::io::XDMFFile>(
-                 comm.get(), filename, file_mode, encoding);
+             return dolfinx::io::XDMFFile(comm.get(), filename, file_mode,
+                                          encoding);
            }),
            py::arg("comm"), py::arg("filename"), py::arg("file_mode"),
            py::arg("encoding") = dolfinx::io::XDMFFile::Encoding::HDF5)
@@ -136,13 +136,11 @@ void io(py::module& m)
 
 #ifdef HAS_ADIOS2
   // dolfinx::io::ADIOS2File
-  py::class_<dolfinx::io::ADIOS2File, std::shared_ptr<dolfinx::io::ADIOS2File>>
-      adios_file(m, "ADIOS2File");
-  adios_file
-      .def(py::init([](const MPICommWrapper comm, const std::string filename,
-                       const std::string mode) {
-        return std::make_unique<dolfinx::io::ADIOS2File>(comm.get(), filename,
-                                                         mode);
+  py::class_<dolfinx::io::ADIOS2File, std::shared_ptr<dolfinx::io::ADIOS2File>>(
+      m, "ADIOS2File")
+      .def(py::init([](const MPICommWrapper comm, const std::string& filename,
+                       const std::string& mode) {
+        return dolfinx::io::ADIOS2File(comm.get(), filename, mode);
       }))
       .def("__enter__",
            [](std::shared_ptr<dolfinx::io::ADIOS2File>& self) { return self; })
@@ -164,6 +162,7 @@ void io(py::module& m)
                              double>(&dolfinx::io::ADIOS2File::write_function),
            py::arg("function"), py::arg("t"));
 #endif
+
   // dolfinx::io::VTKFile
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>
       vtk_file(m, "VTKFile");

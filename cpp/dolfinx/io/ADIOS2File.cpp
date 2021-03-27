@@ -96,12 +96,13 @@ template <class T>
 adios2::Attribute<T>
 DefineAttribute(adios2::IO& io, const std::string& attr_name, const T& value,
                 const std::string& var_name = "",
-                const std::string separator = "/")
+                const std::string& separator = "/")
 {
   adios2::Attribute<T> attribute = io.InquireAttribute<T>(attr_name);
   if (attribute)
     return attribute;
-  return io.DefineAttribute<T>(attr_name, value, var_name, separator);
+  else
+    return io.DefineAttribute<T>(attr_name, value, var_name, separator);
 }
 //-----------------------------------------------------------------------------
 // Safe definition of a variable (required for time dependent problems)
@@ -177,11 +178,13 @@ void ADIOS2File::close()
   // of the engine is open
   if (*_engine)
   {
-    // Add create_vtk_schema if it hasn't been previously added (for instance
-    // when writing meshes)
+    // Add create_vtk_schema if it hasn't been previously added (for
+    // instance when writing meshes)
     if (_vtk_scheme.empty())
+    {
       DefineAttribute<std::string>(*_io, "vtk.xml",
                                    create_vtk_schema({}, {}, _time_dep));
+    }
     _engine->Close();
   }
 }
