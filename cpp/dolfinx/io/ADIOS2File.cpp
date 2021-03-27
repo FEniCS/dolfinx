@@ -146,121 +146,7 @@ bool is_cellwise_constant(const fem::FiniteElement& element)
   return num_nodes_per_dim == 1;
 }
 //-----------------------------------------------------------------------------
-} // namespace
-
-//-----------------------------------------------------------------------------
-ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
-                       const std::string& mode)
-    : _adios(std::make_unique<adios2::ADIOS>(comm))
-{
-  _io = std::make_unique<adios2::IO>(_adios->DeclareIO("ADIOS2 DOLFINx IO"));
-  _io->SetEngine("BPFile");
-
-  if (mode == "a")
-  {
-    // FIXME: Remove this when is resolved
-    // https://github.com/ornladios/ADIOS2/issues/2482
-    _io->SetParameter("AggregatorRatio", "1");
-  }
-
-  adios2::Mode file_mode = string_to_mode(mode);
-  _engine = std::make_unique<adios2::Engine>(_io->Open(filename, file_mode));
-}
-//-----------------------------------------------------------------------------
-ADIOS2File::~ADIOS2File() { close(); };
-//-----------------------------------------------------------------------------
-void ADIOS2File::close()
-{
-  assert(_engine);
-
-  // This looks a bit odd because ADIOS2 uses `operator bool()` to test
-  // of the engine is open
-  if (*_engine)
-  {
-    // Add create_vtk_schema if it hasn't been previously added (for
-    // instance when writing meshes)
-    if (_vtk_scheme.empty())
-    {
-      DefineAttribute<std::string>(*_io, "vtk.xml",
-                                   create_vtk_schema({}, {}, _time_dep));
-    }
-    _engine->Close();
-  }
-}
-//-----------------------------------------------------------------------------
-void ADIOS2File::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtag)
-{
-  // NOTE: CellData cannot be visualized, see:
-  // https://gitlab.kitware.com/vtk/vtk/-/merge_requests/7401
-
-  /// Get topology of geometry
-  const int dim = meshtag.dim();
-  auto mesh = meshtag.mesh();
-
-  array2d<std::int32_t> geometry_entities
-      = entities_to_geometry(*mesh, dim, meshtag.indices(), false);
-  auto x_map = mesh->geometry().index_map();
-  const std::uint32_t num_elements = meshtag.indices().size();
-  const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
-
-  adios2::Variable<std::uint32_t> vertices = DefineVariable<std::uint32_t>(
-      *_io, "NumberOfNodes", {adios2::LocalValueDim});
-  adios2::Variable<std::uint32_t> elements = DefineVariable<std::uint32_t>(
-      *_io, "NumberOfEntities", {adios2::LocalValueDim});
-
-  std::vector<int32_t> cells(num_elements);
-  std::iota(cells.begin(), cells.end(), 0);
-  const std::uint32_t num_nodes = geometry_entities.shape[1];
-  adios2::Variable<double> local_geometry
-      = DefineVariable<double>(*_io, "geometry", {}, {}, {num_vertices, 3});
-  mesh::CellType cell_type
-      = mesh::cell_entity_type(mesh->topology().cell_type(), dim);
-  std::vector<std::uint8_t> map = dolfinx::io::cells::transpose(
-      dolfinx::io::cells::perm_vtk(cell_type, num_nodes));
-
-  // TODO: Remove when when paraview issue 19433 is resolved
-  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-  if (cell_type == dolfinx::mesh::CellType::hexahedron and num_nodes == 27)
-  {
-    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
-  }
-  adios2::Variable<std::uint64_t> local_topology
-      = DefineVariable<std::uint64_t>(*_io, "connectivity", {}, {},
-                                      {num_elements, num_nodes + 1});
-  std::vector<std::uint64_t> vtk_topology(num_elements * (num_nodes + 1));
-  int topology_offset = 0;
-  for (size_t c = 0; c < geometry_entities.shape[0]; ++c)
-  {
-    auto x_dofs = geometry_entities.row(c);
-    vtk_topology[topology_offset++] = x_dofs.size();
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      vtk_topology[topology_offset++] = x_dofs[map[i]];
-  }
-
-  // Add element cell types
-  const uint32_t vtk_type = dolfinx::io::cells::get_vtk_cell_type(*mesh, dim);
-  adios2::Variable<std::uint32_t> cell_types
-      = DefineVariable<std::uint32_t>(*_io, "types");
-
-  // Create attribute for meshtags data
-  adios2::Variable<std::int32_t> mesh_tags
-      = DefineVariable<std::int32_t>(*_io, "MeshTag", {}, {}, {num_elements});
-  _engine->Put<std::int32_t>(mesh_tags, meshtag.values().data());
-  std::set<std::string> cell_data = {"MeshTag"};
-
-  // Start writer for given function
-  _engine->Put<std::uint32_t>(vertices, num_vertices);
-  _engine->Put<std::uint32_t>(elements, num_elements);
-  _engine->Put<std::uint32_t>(cell_types, vtk_type);
-  _engine->Put<double>(local_geometry, mesh->geometry().x().data());
-  _engine->Put<std::uint64_t>(local_topology, vtk_topology.data());
-  _engine->PerformPuts();
-  std::string _vtk_scheme = create_vtk_schema({}, cell_data, _time_dep);
-  DefineAttribute<std::string>(*_io, "vtk.xml", _vtk_scheme);
-}
-//-----------------------------------------------------------------------------
-void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
+void _write_mesh(adios2::IO& io, adios2::Engine& engine, const mesh::Mesh& mesh)
 {
   // assert(_engine);
   // // ADIOS should handle mode checks, and if we need to we should get it
@@ -280,15 +166,15 @@ void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
   // vertices
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<std::uint32_t> vertices = DefineVariable<std::uint32_t>(
-      *_io, "NumberOfNodes", {adios2::LocalValueDim});
+      io, "NumberOfNodes", {adios2::LocalValueDim});
   adios2::Variable<std::uint32_t> elements = DefineVariable<std::uint32_t>(
-      *_io, "NumberOfEntities", {adios2::LocalValueDim});
+      io, "NumberOfEntities", {adios2::LocalValueDim});
 
   // Extract geometry for all local cells
   std::vector<int32_t> cells(num_cells);
   std::iota(cells.begin(), cells.end(), 0);
   adios2::Variable<double> local_geometry
-      = DefineVariable<double>(*_io, "geometry", {}, {}, {num_vertices, 3});
+      = DefineVariable<double>(io, "geometry", {}, {}, {num_vertices, 3});
 
   // Get DOLFINx to VTK permuation
   // FIXME: Use better way to get number of nods
@@ -308,7 +194,7 @@ void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
   // Extract topology for all local cells
   // Output is written as [N0 v0_0 .... v0_N0 N1 v1_0 .... v1_N1 ....]
   adios2::Variable<std::uint64_t> local_topology
-      = DefineVariable<std::uint64_t>(*_io, "connectivity", {}, {},
+      = DefineVariable<std::uint64_t>(io, "connectivity", {}, {},
                                       {num_cells, num_nodes + 1});
   std::vector<std::uint64_t> vtk_topology;
   vtk_topology.reserve(num_cells * (num_nodes + 1));
@@ -322,107 +208,18 @@ void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
 
   // Add element cell types
   adios2::Variable<std::uint32_t> cell_type
-      = DefineVariable<std::uint32_t>(*_io, "types");
+      = DefineVariable<std::uint32_t>(io, "types");
 
   // Start writer for given function
-  _engine->Put<std::uint32_t>(vertices, num_vertices);
-  _engine->Put<std::uint32_t>(elements, num_cells);
-  _engine->Put<std::uint32_t>(
-      cell_type, dolfinx::io::cells::get_vtk_cell_type(mesh, tdim));
-  _engine->Put<double>(local_geometry, mesh.geometry().x().data());
-  _engine->Put<std::uint64_t>(local_topology, vtk_topology.data());
-  _engine->PerformPuts();
+  engine.Put<std::uint32_t>(vertices, num_vertices);
+  engine.Put<std::uint32_t>(elements, num_cells);
+  engine.Put<std::uint32_t>(cell_type,
+                            dolfinx::io::cells::get_vtk_cell_type(mesh, tdim));
+  engine.Put<double>(local_geometry, mesh.geometry().x().data());
+  engine.Put<std::uint64_t>(local_topology, vtk_topology.data());
+  engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
-template <typename Scalar>
-void ADIOS2File::_write_function_at_nodes(
-    const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
-    double t)
-{
-  auto mesh = u[0].get().function_space()->mesh();
-  _engine->BeginStep();
-
-  // Write time step information
-  _time_dep = true;
-  adios2::Variable<double> time = DefineVariable<double>(*_io, "step");
-  _engine->Put<double>(time, t);
-
-  // Write mesh to file
-  write_mesh(*mesh);
-
-  // Extract and write function data
-  std::set<std::string> point_data;
-  for (auto u_ : u)
-  {
-    assert(mesh == u_.get().function_space()->mesh());
-
-    // NOTE: Currently CG-1 interpolation of data.
-    auto function_data = u_.get().compute_point_values();
-    std::uint32_t local_size = function_data.shape[0];
-    std::uint32_t block_size = function_data.shape[1];
-    // Extract real and imaginary parts
-    std::vector<std::string> parts = {""};
-    if constexpr (!std::is_scalar<Scalar>::value)
-      parts = {"real", "imag"};
-
-    // Write each real and imaginary part of the function
-    const int rank = u_.get().function_space()->element()->value_rank();
-    const std::uint32_t num_components = std::pow(3, rank);
-    std::vector<double> out_data(num_components * local_size);
-    for (const auto& part : parts)
-    {
-      std::string function_name = u_.get().name;
-      if (part != "")
-        function_name += "_" + part;
-      adios2::Variable<double> local_output = DefineVariable<double>(
-          *_io, function_name, {}, {}, {local_size, num_components});
-
-      // Loop over components of each real and imaginary part
-      for (size_t i = 0; i < local_size; ++i)
-      {
-        for (size_t j = 0; j < block_size; ++j)
-        {
-          if (part == "imag")
-          {
-            out_data[i * num_components + j]
-                = std::imag(function_data.row(i)[j]);
-          }
-          else
-          {
-            out_data[i * num_components + j]
-                = std::real(function_data.row(i)[j]);
-          }
-        }
-
-        // Pad data to 3D if vector or tensor data
-        for (size_t j = block_size; j < num_components; ++j)
-          out_data[i * num_components + j] = 0;
-      }
-      point_data.insert(function_name);
-
-      // To reuse out_data, we use sync mode here
-      _engine->Put<double>(local_output, out_data.data(), adios2::Mode::Sync);
-    }
-  }
-
-  // Check if VTKScheme exists, and if so, check that we are only adding
-  // values already existing
-  std::string vtk_scheme = create_vtk_schema(point_data, {}, _time_dep);
-  // If writing to file set vtk scheme as current
-  if (_vtk_scheme.empty())
-    _vtk_scheme = vtk_scheme;
-  if (vtk_scheme != _vtk_scheme)
-  {
-    throw std::runtime_error(
-        "Have to write the same functions to file for each "
-        "time step");
-  }
-  DefineAttribute<std::string>(*_io, "vtk.xml", vtk_scheme);
-  _engine->EndStep();
-}
-//-----------------------------------------------------------------------------
-namespace
-{
 template <typename Scalar>
 void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
                               const fem::Function<Scalar>& u, double /*t*/,
@@ -553,15 +350,222 @@ void _write_lagrange_function(adios2::IO& io, adios2::Engine& engine,
   DefineAttribute<std::string>(io, "vtk.xml", vtk_scheme);
   engine.EndStep();
 }
+//-----------------------------------------------------------------------------
+template <typename Scalar>
+void _write_function_at_nodes(
+    adios2::IO& io, adios2::Engine& engine,
+    const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
+    double t, bool time_dep)
+{
+  auto mesh = u[0].get().function_space()->mesh();
+  engine.BeginStep();
+
+  // Write time step information
+  // _time_dep = true;
+  adios2::Variable<double> time = DefineVariable<double>(io, "step");
+  engine.Put<double>(time, t);
+
+  // Write mesh to file
+  _write_mesh(io, engine, *mesh);
+
+  // Extract and write function data
+  std::set<std::string> point_data;
+  for (auto u_ : u)
+  {
+    assert(mesh == u_.get().function_space()->mesh());
+
+    // NOTE: Currently CG-1 interpolation of data.
+    auto function_data = u_.get().compute_point_values();
+    std::uint32_t local_size = function_data.shape[0];
+    std::uint32_t block_size = function_data.shape[1];
+    // Extract real and imaginary parts
+    std::vector<std::string> parts = {""};
+    if constexpr (!std::is_scalar<Scalar>::value)
+      parts = {"real", "imag"};
+
+    // Write each real and imaginary part of the function
+    const int rank = u_.get().function_space()->element()->value_rank();
+    const std::uint32_t num_components = std::pow(3, rank);
+    std::vector<double> out_data(num_components * local_size);
+    for (const auto& part : parts)
+    {
+      std::string function_name = u_.get().name;
+      if (part != "")
+        function_name += "_" + part;
+      adios2::Variable<double> local_output = DefineVariable<double>(
+          io, function_name, {}, {}, {local_size, num_components});
+
+      // Loop over components of each real and imaginary part
+      for (size_t i = 0; i < local_size; ++i)
+      {
+        for (size_t j = 0; j < block_size; ++j)
+        {
+          if (part == "imag")
+          {
+            out_data[i * num_components + j]
+                = std::imag(function_data.row(i)[j]);
+          }
+          else
+          {
+            out_data[i * num_components + j]
+                = std::real(function_data.row(i)[j]);
+          }
+        }
+
+        // Pad data to 3D if vector or tensor data
+        for (size_t j = block_size; j < num_components; ++j)
+          out_data[i * num_components + j] = 0;
+      }
+      point_data.insert(function_name);
+
+      // To reuse out_data, we use sync mode here
+      engine.Put<double>(local_output, out_data.data(), adios2::Mode::Sync);
+    }
+  }
+
+  // Check if VTKScheme exists, and if so, check that we are only adding
+  // values already existing
+  std::string vtk_scheme = create_vtk_schema(point_data, {}, time_dep);
+  // If writing to file set vtk scheme as current
+  // if (_vtk_scheme.empty())
+  //   _vtk_scheme = vtk_scheme;
+  // if (vtk_scheme != _vtk_scheme)
+  // {
+  //   throw std::runtime_error(
+  //       "Have to write the same functions to file for each "
+  //       "time step");
+  // }
+
+  DefineAttribute<std::string>(io, "vtk.xml", vtk_scheme);
+  engine.EndStep();
+}
+//-----------------------------------------------------------------------------
 } // namespace
+
+//-----------------------------------------------------------------------------
+ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
+                       const std::string& mode)
+    : _adios(std::make_unique<adios2::ADIOS>(comm))
+{
+  _io = std::make_unique<adios2::IO>(_adios->DeclareIO("ADIOS2 DOLFINx IO"));
+  _io->SetEngine("BPFile");
+
+  if (mode == "a")
+  {
+    // FIXME: Remove this when is resolved
+    // https://github.com/ornladios/ADIOS2/issues/2482
+    _io->SetParameter("AggregatorRatio", "1");
+  }
+
+  adios2::Mode file_mode = string_to_mode(mode);
+  _engine = std::make_unique<adios2::Engine>(_io->Open(filename, file_mode));
+}
+//-----------------------------------------------------------------------------
+ADIOS2File::~ADIOS2File() { close(); };
+//-----------------------------------------------------------------------------
+void ADIOS2File::close()
+{
+  assert(_engine);
+
+  // This looks a bit odd because ADIOS2 uses `operator bool()` to test
+  // of the engine is open
+  if (*_engine)
+  {
+    // Add create_vtk_schema if it hasn't been previously added (for
+    // instance when writing meshes)
+    if (_vtk_scheme.empty())
+    {
+      DefineAttribute<std::string>(*_io, "vtk.xml",
+                                   create_vtk_schema({}, {}, _time_dep));
+    }
+    _engine->Close();
+  }
+}
+//-----------------------------------------------------------------------------
+void ADIOS2File::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtag)
+{
+  // NOTE: CellData cannot be visualized, see:
+  // https://gitlab.kitware.com/vtk/vtk/-/merge_requests/7401
+
+  /// Get topology of geometry
+  const int dim = meshtag.dim();
+  auto mesh = meshtag.mesh();
+
+  array2d<std::int32_t> geometry_entities
+      = entities_to_geometry(*mesh, dim, meshtag.indices(), false);
+  auto x_map = mesh->geometry().index_map();
+  const std::uint32_t num_elements = meshtag.indices().size();
+  const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
+
+  adios2::Variable<std::uint32_t> vertices = DefineVariable<std::uint32_t>(
+      *_io, "NumberOfNodes", {adios2::LocalValueDim});
+  adios2::Variable<std::uint32_t> elements = DefineVariable<std::uint32_t>(
+      *_io, "NumberOfEntities", {adios2::LocalValueDim});
+
+  std::vector<int32_t> cells(num_elements);
+  std::iota(cells.begin(), cells.end(), 0);
+  const std::uint32_t num_nodes = geometry_entities.shape[1];
+  adios2::Variable<double> local_geometry
+      = DefineVariable<double>(*_io, "geometry", {}, {}, {num_vertices, 3});
+  mesh::CellType cell_type
+      = mesh::cell_entity_type(mesh->topology().cell_type(), dim);
+  std::vector<std::uint8_t> map = dolfinx::io::cells::transpose(
+      dolfinx::io::cells::perm_vtk(cell_type, num_nodes));
+
+  // TODO: Remove when when paraview issue 19433 is resolved
+  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
+  if (cell_type == dolfinx::mesh::CellType::hexahedron and num_nodes == 27)
+  {
+    map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+           22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+  }
+  adios2::Variable<std::uint64_t> local_topology
+      = DefineVariable<std::uint64_t>(*_io, "connectivity", {}, {},
+                                      {num_elements, num_nodes + 1});
+  std::vector<std::uint64_t> vtk_topology(num_elements * (num_nodes + 1));
+  int topology_offset = 0;
+  for (size_t c = 0; c < geometry_entities.shape[0]; ++c)
+  {
+    auto x_dofs = geometry_entities.row(c);
+    vtk_topology[topology_offset++] = x_dofs.size();
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      vtk_topology[topology_offset++] = x_dofs[map[i]];
+  }
+
+  // Add element cell types
+  const uint32_t vtk_type = dolfinx::io::cells::get_vtk_cell_type(*mesh, dim);
+  adios2::Variable<std::uint32_t> cell_types
+      = DefineVariable<std::uint32_t>(*_io, "types");
+
+  // Create attribute for meshtags data
+  adios2::Variable<std::int32_t> mesh_tags
+      = DefineVariable<std::int32_t>(*_io, "MeshTag", {}, {}, {num_elements});
+  _engine->Put<std::int32_t>(mesh_tags, meshtag.values().data());
+  std::set<std::string> cell_data = {"MeshTag"};
+
+  // Start writer for given function
+  _engine->Put<std::uint32_t>(vertices, num_vertices);
+  _engine->Put<std::uint32_t>(elements, num_elements);
+  _engine->Put<std::uint32_t>(cell_types, vtk_type);
+  _engine->Put<double>(local_geometry, mesh->geometry().x().data());
+  _engine->Put<std::uint64_t>(local_topology, vtk_topology.data());
+  _engine->PerformPuts();
+  std::string _vtk_scheme = create_vtk_schema({}, cell_data, _time_dep);
+  DefineAttribute<std::string>(*_io, "vtk.xml", _vtk_scheme);
+}
+//-----------------------------------------------------------------------------
+void ADIOS2File::write_mesh(const mesh::Mesh& mesh)
+{
+  assert(_io);
+  assert(_engine);
+  _write_mesh(*_io, *_engine, mesh);
+}
 //-----------------------------------------------------------------------------
 void ADIOS2File::write_function(
     const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
     double t)
 {
   bool compute_at_nodes = false;
-  std::array<std::string, 2> supported_elements
-      = {"Lagrange", "Discontinuous Lagrange"};
 
   // Can only write one mesh to file at the time if using higher order
   // visualization
@@ -575,16 +579,17 @@ void ADIOS2File::write_function(
     if (is_cellwise_constant(*element))
       throw std::runtime_error("Cell-wise constants not currently supported");
 
-    std::string family = element->family();
-    if (std::find(supported_elements.begin(), supported_elements.end(), family)
-        == supported_elements.end())
+    std::array<std::string, 2> elements
+        = {"Lagrange", "Discontinuous Lagrange"};
+    if (std::find(elements.begin(), elements.end(), element->family())
+        == elements.end())
     {
       compute_at_nodes = true;
     }
   }
 
   if (compute_at_nodes)
-    _write_function_at_nodes<double>(u, t);
+    _write_function_at_nodes<double>(*_io, *_engine, u, t, _time_dep);
   else
     _write_lagrange_function<double>(*_io, *_engine, u[0], t, _time_dep);
 }
@@ -595,8 +600,6 @@ void ADIOS2File::write_function(
     double t)
 {
   bool compute_at_nodes = false;
-  std::vector<std::string> supported_elements
-      = {"Lagrange", "Discontinuous Lagrange"};
 
   // Can only write one mesh to file at the time if using higher order
   // visualization
@@ -610,17 +613,18 @@ void ADIOS2File::write_function(
     if (is_cellwise_constant(*element))
       throw std::runtime_error("Cell-wise constants not currently supported");
 
-    std::string family = element->family();
-
-    if (std::find(supported_elements.begin(), supported_elements.end(), family)
-        == supported_elements.end())
+    std::array<std::string, 2> elements
+        = {"Lagrange", "Discontinuous Lagrange"};
+    if (std::find(elements.begin(), elements.end(), element->family())
+        == elements.end())
     {
       compute_at_nodes = true;
     }
   }
 
   if (compute_at_nodes)
-    _write_function_at_nodes<std::complex<double>>(u, t);
+    _write_function_at_nodes<std::complex<double>>(*_io, *_engine, u, t,
+                                                   _time_dep);
   else
     _write_lagrange_function<std::complex<double>>(*_io, *_engine, u[0], t,
                                                    _time_dep);

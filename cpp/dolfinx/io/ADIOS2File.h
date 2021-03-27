@@ -76,10 +76,10 @@ public:
 
 private:
   /// Templated writer for functions using CG-1 interpolation
-  template <typename Scalar>
-  void _write_function_at_nodes(
-      const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
-      double t);
+//   template <typename Scalar>
+//   void _write_function_at_nodes(
+//       const std::vector<std::reference_wrapper<const fem::Function<Scalar>>>& u,
+//       double t);
 
   // Function for updating vtk schema
   //   std::set<std::string> update_vtk_point_data();
