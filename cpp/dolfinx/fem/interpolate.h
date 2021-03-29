@@ -269,12 +269,18 @@ void interpolate(Function<T>& u,
 
   array2d<T> reference_data(value_size, X.shape[0]);
 
-  array2d<double> phi(num_dofs_g, X.shape[0]);
-  cmap.tabulate_shape_functions(X, phi);
+  // array2d<double> phi(num_dofs_g, X.shape[0]);
+  // cmap.tabulate_shape_functions(X, 0, phi);
 
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
   array2d<T> _vals(value_size, X.shape[0]);
+
+  // Tabulate 0th and 1st order derivatives of shape functions at interpolation
+  // coords
+  array2d<double> tabulated_data(X.shape[0] * (tdim + 1), num_dofs_g);
+  cmap.tabulate_shape_functions(X, 1, tabulated_data);
+
   for (std::int32_t c : cells)
   {
     auto x_dofs = x_dofmap.links(c);
@@ -282,9 +288,12 @@ void interpolate(Function<T>& u,
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
-    cmap.push_forward(x_cell, coordinate_dofs, phi);
+    // cmap.push_forward(x_cell, coordinate_dofs, phi);
+    cmap.compute_jacobian_data(tabulated_data, X, coordinate_dofs, J, detJ, K);
+    // cmap.compute_reference_geometry(X_ref, J, detJ, K, x_cell,
+    // coordinate_dofs);
 
-    cmap.compute_reference_geometry(X_ref, J, detJ, K, x_cell, coordinate_dofs);
+    // Compute J, detJ and K
 
     auto dofs = dofmap->cell_dofs(c);
 

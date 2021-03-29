@@ -57,8 +57,18 @@ public:
   /// Return the geometric dimension of the cell shape
   int geometric_dimension() const;
 
-  void tabulate_shape_functions(const array2d<double>& X,
+  /// Tabulate shape functions up to n-th order derivative at points X in the
+  /// reference geometry
+  void tabulate_shape_functions(const array2d<double>& X, int n,
                                 array2d<double>& phi) const;
+
+  /// Compute J, K and detJ for a cell with given geometry, and the
+  /// basis functions and first order derivatives at points X
+  void compute_jacobian_data(const array2d<double>& tabulated_data,
+                             const array2d<double>& X,
+                             const array2d<double>& cell_geometry,
+                             std::vector<double>& J, tcb::span<double> detJ,
+                             std::vector<double>& K) const;
 
   /// Return the dof layout
   const ElementDofLayout& dof_layout() const;

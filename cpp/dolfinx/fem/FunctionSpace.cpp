@@ -166,7 +166,7 @@ array2d<double> FunctionSpace::tabulate_dof_coordinates(bool transpose) const
                                : std::vector<std::uint32_t>(num_cells);
 
   array2d<double> phi(num_dofs_g, X.shape[0]);
-  cmap.tabulate_shape_functions(X, phi);
+  cmap.tabulate_shape_functions(X, 0, phi);
 
   for (int c = 0; c < num_cells; ++c)
   {

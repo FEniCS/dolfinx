@@ -245,9 +245,104 @@ bool CoordinateElement::needs_permutation_data() const
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::tabulate_shape_functions(const array2d<double>& X,
+                                                 int n,
                                                  array2d<double>& phi) const
 {
-  // FIXME: Should probably have an assert for the number of cols in phi
-  assert(phi.shape[1] == X.shape[0]);
-  basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[0]);
+  // FIXME: Should probably have some asserts for the shape of X and phi
+  basix::tabulate(_basix_element_handle, phi.data(), n, X.data(), X.shape[0]);
+}
+//-----------------------------------------------------------------------------
+
+void CoordinateElement::compute_jacobian_data(
+    const array2d<double>& tabulated_data, const array2d<double>& X,
+    const array2d<double>& cell_geometry, std::vector<double>& J,
+    tcb::span<double> detJ, std::vector<double>& K) const
+{
+  // Number of points
+  int num_points = X.shape[0];
+  if (num_points == 0)
+    return;
+
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      _cell_geometry(cell_geometry.data(), cell_geometry.shape[0],
+                     cell_geometry.shape[1]);
+
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      _tabulated_data(tabulated_data.data(), tabulated_data.shape[0],
+                      tabulated_data.shape[1]);
+
+  // in-argument checks
+  const int tdim = this->topological_dimension();
+  const int gdim = this->geometric_dimension();
+  assert(_cell_geometry.cols() == gdim);
+
+  // In/out size checks
+  assert(X.shape[0] == std::size_t(num_points));
+  assert(X.shape[1] == std::size_t(tdim));
+  assert((int)J.size() == num_points * gdim * tdim);
+  assert((int)detJ.size() == num_points);
+  assert((int)K.size() == num_points * gdim * tdim);
+
+  const int d = _cell_geometry.rows();
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
+      d, tdim);
+  if (_is_affine)
+  {
+    // FIXME: This data should not be returned as transpose from basix
+    dphi = _tabulated_data.block(1, 0, tdim, d).transpose();
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
+        J0(gdim, tdim);
+    J0 = _cell_geometry.matrix().transpose() * dphi;
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
+        K0(tdim, gdim);
+
+    // Fill result for J, K and detJ
+    if (gdim == tdim)
+    {
+      K0 = J0.inverse();
+      std::fill(detJ.begin(), detJ.end(), J0.determinant());
+    }
+    else
+    {
+      // Penrose-Moore pseudo-inverse
+      K0 = (J0.transpose() * J0).inverse() * J0.transpose();
+      std::fill(detJ.begin(), detJ.end(),
+                std::sqrt((J0.transpose() * J0).determinant()));
+    }
+    Eigen::Map<
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        Jview(J.data(), gdim * num_points, tdim);
+    Jview = J0.replicate(num_points, 1);
+    Eigen::Map<
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        Kview(K.data(), tdim * num_points, gdim);
+    Kview = K0.replicate(num_points, 1);
+  }
+  else
+  {
+    for (int ip = 0; ip < num_points; ++ip)
+    {
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+          Jview(J.data() + ip * gdim * tdim, gdim, tdim);
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+          Kview(K.data() + ip * gdim * tdim, tdim, gdim);
+      dphi = _tabulated_data.block(ip * (tdim + 1) + 1, 0, tdim, d).transpose();
+      Jview = _cell_geometry.matrix().transpose() * dphi;
+      if (gdim == tdim)
+      {
+        Kview = Jview.inverse();
+        detJ[ip] = Jview.determinant();
+      }
+      else
+      {
+        // Penrose-Moore pseudo-inverse
+        Kview = (Jview.transpose() * Jview).inverse() * Jview.transpose();
+        detJ[ip] = std::sqrt((Jview.transpose() * Jview).determinant());
+      }
+    }
+  }
 }

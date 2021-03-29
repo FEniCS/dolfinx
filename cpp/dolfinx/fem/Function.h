@@ -213,6 +213,8 @@ public:
     const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
+    // FIXME: Remove interpolation coords as it should be done internally in
+    // fem::interpolate
     const array2d<double> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
     fem::interpolate(*this, f, x, cells);
