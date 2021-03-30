@@ -282,7 +282,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // Build vector local dofs for each cell facet
   std::vector<std::vector<int>> entity_dofs;
   for (int i = 0;
-       i < mesh::cell_num_entities(mesh->topology().cell_type(), dim); ++i)
+       i < mesh::cell_num_entities(mesh->topology().cell_type()[0], dim); ++i)
   {
     entity_dofs.push_back(
         dofmap0->element_dof_layout->entity_closure_dofs(dim, i));
@@ -385,7 +385,7 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
   // Prepare an element - local dof layout for dofs on entities of the
   // entity_dim
   const int num_cell_entities
-      = mesh::cell_num_entities(mesh->topology().cell_type(), dim);
+      = mesh::cell_num_entities(mesh->topology().cell_type()[0], dim);
   std::vector<std::vector<int>> entity_dofs;
   for (int i = 0; i < num_cell_entities; ++i)
   {

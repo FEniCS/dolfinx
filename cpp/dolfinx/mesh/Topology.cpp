@@ -149,12 +149,12 @@ std::vector<bool> mesh::compute_boundary_facets(const Topology& topology)
   return _boundary_facet;
 }
 //-----------------------------------------------------------------------------
-Topology::Topology(MPI_Comm comm, mesh::CellType type)
-    : _mpi_comm(comm), _cell_type(type),
+Topology::Topology(MPI_Comm comm, int cell_dim)
+    : _mpi_comm(comm),
       _connectivity(
-          mesh::cell_dim(type) + 1,
+          cell_dim + 1,
           std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
-              mesh::cell_dim(type) + 1))
+              cell_dim + 1))
 {
   // Do nothing
 }
@@ -275,6 +275,13 @@ void Topology::set_connectivity(
   _connectivity[d0][d1] = c;
 }
 //-----------------------------------------------------------------------------
+void Topology::set_cell_type(mesh::CellType type)
+{
+  const int tdim = dim();
+  _cell_type
+      = std::vector<mesh::CellType>(_connectivity[tdim][0]->num_nodes(), type);
+}
+//-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
   if (_cell_permutations.empty())
@@ -295,7 +302,10 @@ const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
-mesh::CellType Topology::cell_type() const { return _cell_type; }
+const std::vector<mesh::CellType>& Topology::cell_type() const
+{
+  return _cell_type;
+}
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
@@ -603,8 +613,8 @@ mesh::create_topology(MPI_Comm comm,
         std::move(my_local_cells_array), cells.offsets());
   }
 
-  Topology topology(comm, cell_type);
-  const int tdim = topology.dim();
+  const int tdim = mesh::cell_dim(cell_type);
+  Topology topology(comm, tdim);
 
   // Vertex IndexMap
   auto index_map_v = std::make_shared<common::IndexMap>(
@@ -621,6 +631,7 @@ mesh::create_topology(MPI_Comm comm,
   // Cell IndexMap
   topology.set_index_map(tdim, index_map_c);
   topology.set_connectivity(my_local_cells, tdim, 0);
+  topology.set_cell_type(cell_type);
 
   return topology;
 }

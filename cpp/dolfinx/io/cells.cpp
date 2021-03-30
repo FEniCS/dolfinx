@@ -369,7 +369,7 @@ std::int8_t io::cells::get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh,
 {
   // Get cell type
   mesh::CellType cell_type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
+      = mesh::cell_entity_type(mesh.topology().cell_type()[0], dim);
 
   // Determine VTK cell type (Using arbitrary Lagrange elements)
   // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html

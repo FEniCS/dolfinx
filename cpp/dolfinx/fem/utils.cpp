@@ -149,7 +149,7 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
                                mesh::Topology& topology)
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
-      create_element_dof_layout(ufc_dofmap, topology.cell_type()));
+      create_element_dof_layout(ufc_dofmap, topology.cell_type()[0]));
   assert(element_dof_layout);
 
   // Create required mesh entities

@@ -17,8 +17,8 @@ using namespace refinement;
 mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh,
                                        bool redistribute)
 {
-  if (mesh.topology().cell_type() != mesh::CellType::triangle
-      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_type()[0] != mesh::CellType::triangle
+      and mesh.topology().cell_type()[0] != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Refinement only defined for simplices");
   }
@@ -41,8 +41,8 @@ dolfinx::refinement::refine(const mesh::Mesh& mesh,
                             const mesh::MeshTags<std::int8_t>& cell_markers,
                             bool redistribute)
 {
-  if (mesh.topology().cell_type() != mesh::CellType::triangle
-      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_type()[0] != mesh::CellType::triangle
+      and mesh.topology().cell_type()[0] != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Refinement only defined for simplices");
   }
