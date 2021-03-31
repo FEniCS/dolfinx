@@ -291,7 +291,13 @@ void CoordinateElement::compute_jacobian_data(
   if (_is_affine)
   {
     // FIXME: This data should not be returned as transpose from basix
-    dphi = _tabulated_data.block(1, 0, tdim, d).transpose();
+    for (std::int32_t i = 0; i < tdim; ++i)
+    {
+      auto dphi_i = _tabulated_data.row(num_points * (i + 1));
+      for (std::int32_t j = 0; j < d; ++j)
+        dphi(j, i) = dphi_i[j];
+    }
+    // dphi = _tabulated_data.block(1, 0, tdim, d).transpose();
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
         J0(gdim, tdim);
     J0 = _cell_geometry.matrix().transpose() * dphi;
@@ -330,7 +336,15 @@ void CoordinateElement::compute_jacobian_data(
       Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                Eigen::RowMajor>>
           Kview(K.data() + ip * gdim * tdim, tdim, gdim);
-      dphi = _tabulated_data.block(ip * (tdim + 1) + 1, 0, tdim, d).transpose();
+      for (std::int32_t i = 0; i < tdim; ++i)
+      {
+        auto dphi_i = _tabulated_data.row(num_points * (i + 1) + ip);
+        for (std::int32_t j = 0; j < d; ++j)
+          dphi(j, i) = dphi_i[j];
+      }
+
+      // dphi = _tabulated_data.block(ip * (tdim + 1) + 1, 0, tdim,
+      // d).transpose();
       Jview = _cell_geometry.matrix().transpose() * dphi;
       if (gdim == tdim)
       {
