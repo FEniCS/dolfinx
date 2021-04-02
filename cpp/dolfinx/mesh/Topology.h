@@ -57,9 +57,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  /// @param comm MPI communicator
-  /// @param cell_dim Topological dimension of cells
-  Topology(MPI_Comm comm, int cell_dim);
+  Topology(MPI_Comm comm, mesh::CellType type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -106,9 +104,6 @@ public:
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
 
-  /// Set the cell type
-  void set_cell_type(mesh::CellType type);
-
   /// Returns the permutation information
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
@@ -124,8 +119,8 @@ public:
   const std::vector<std::uint8_t>& get_facet_permutations() const;
 
   /// Cell type
-  /// @return Cell type for each cell
-  const std::vector<mesh::CellType>& cell_type() const;
+  /// @return Cell type that the topology is for
+  mesh::CellType cell_type() const;
 
   // TODO: Rework memory management and associated API
   // Currently, there is no clear caching policy implemented and no way of
@@ -158,7 +153,7 @@ private:
   dolfinx::MPI::Comm _mpi_comm;
 
   // Cell type
-  std::vector<mesh::CellType> _cell_type;
+  mesh::CellType _cell_type;
 
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;

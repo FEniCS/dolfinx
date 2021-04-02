@@ -418,8 +418,7 @@ compute_entities_by_key_matching(
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
 
   // Create map from cell vertices to entity vertices
-  graph::AdjacencyList<int> e_vertices
-      = mesh::get_entity_vertices(cell_type, dim);
+  auto e_vertices = mesh::get_entity_vertices(cell_type, dim);
 
   const int num_cells = cells.num_nodes();
 
@@ -587,23 +586,20 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   std::vector<std::int32_t> offsets(c_d0_0.num_nodes() + 1, 0);
 
   // Search for d1 entities of d0 in map, and recover index
-  const graph::AdjacencyList<int> e_vertices_ref
-      = mesh::get_entity_vertices(cell_type_d0, d1);
+  const auto e_vertices_ref = mesh::get_entity_vertices(cell_type_d0, d1);
   std::vector<int> keys(e_vertices_ref.num_nodes());
   for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {
     auto e0 = c_d0_0.links(e);
-    for (int i = 0; i < e_vertices_ref.num_nodes(); ++i)
-      for (int j = 0; j < e_vertices_ref.num_links(0); ++j)
-        keys[i * e_vertices_ref.num_links(0) + j]
-            = e0[e_vertices_ref.links(i)[j]];
+    for (std::size_t i = 0; i < e_vertices_ref.num_nodes(); ++i)
+      for (std::size_t j = 0; j < e_vertices_ref.num_links(i); ++j)
+        keys[i * e_vertices_ref.num_links(i) + j] = e0[e_vertices_ref.links(i)[j]];
 
-    for (int i = 0; i < e_vertices_ref.num_nodes(); ++i)
+    for (std::size_t i = 0; i < e_vertices_ref.num_nodes(); ++i)
     {
-      auto keys_begin
-          = std::next(keys.cbegin(), i * e_vertices_ref.num_links(0));
+      auto keys_begin = std::next(keys.cbegin(), i * e_vertices_ref.num_links(i));
       auto keys_end
-          = std::next(keys.cbegin(), (i + 1) * e_vertices_ref.num_links(0));
+        = std::next(keys.cbegin(), (i + 1) * e_vertices_ref.num_links(i));
       std::partial_sort_copy(keys_begin, keys_end, key.begin(), key.end());
       const auto it = entity_to_index.find(key);
       assert(it != entity_to_index.end());
@@ -659,7 +655,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<common::IndexMap>>
       data = compute_entities_by_key_matching(
-          comm, *cells, vertex_map, cell_map, topology.cell_type()[0], dim);
+          comm, *cells, vertex_map, cell_map, topology.cell_type(), dim);
 
   return data;
 }
@@ -708,8 +704,8 @@ mesh::compute_connectivity(const Topology& topology, int d0, int d1)
     {
       auto c_d1_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_map(*c_d1_0, *c_d0_0,
-                           mesh::cell_entity_type(topology.cell_type()[0], d1),
-                           d1, d0));
+                           mesh::cell_entity_type(topology.cell_type(), d1), d1,
+                           d0));
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes(), d0, d1));
       return {c_d0_d1, c_d1_d0};
@@ -730,8 +726,8 @@ mesh::compute_connectivity(const Topology& topology, int d0, int d1)
     // those of a higher dimension entity
     auto c_d0_d1
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(compute_from_map(
-            *c_d0_0, *c_d1_0,
-            mesh::cell_entity_type(topology.cell_type()[0], d0), d0, d1));
+            *c_d0_0, *c_d1_0, mesh::cell_entity_type(topology.cell_type(), d0),
+            d0, d1));
     return {c_d0_d1, nullptr};
   }
   else

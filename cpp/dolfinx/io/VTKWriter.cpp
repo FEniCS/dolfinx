@@ -132,11 +132,11 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
 
     // Get map from VTK index i to DOLFIN index j
     std::vector map = io::cells::transpose(
-        io::cells::perm_vtk(mesh.topology().cell_type()[0], num_nodes));
+        io::cells::perm_vtk(mesh.topology().cell_type(), num_nodes));
 
     // TODO: Remove when when paraview issue 19433 is resolved
     // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-    if (mesh.topology().cell_type()[0] == dolfinx::mesh::CellType::hexahedron
+    if (mesh.topology().cell_type() == dolfinx::mesh::CellType::hexahedron
         and num_nodes == 27)
     {
       map = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
@@ -176,7 +176,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     }
 
     const mesh::CellType e_type
-        = mesh::cell_entity_type(mesh.topology().cell_type()[0], cell_dim);
+        = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
     // FIXME : Need to implement re-mapping for higher order
     // geometries (aka line segments). CoordinateDofs needs to be
     // extended to have connections to facets.

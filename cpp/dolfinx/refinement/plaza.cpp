@@ -579,8 +579,8 @@ std::tuple<graph::AdjacencyList<std::int64_t>, array2d<double>,
 plaza::compute_refinement_data(const mesh::Mesh& mesh)
 {
 
-  if (mesh.topology().cell_type()[0] != mesh::CellType::triangle
-      and mesh.topology().cell_type()[0] != mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_type() != mesh::CellType::triangle
+      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }
@@ -610,8 +610,8 @@ plaza::compute_refinement_data(
     const mesh::Mesh& mesh,
     const mesh::MeshTags<std::int8_t>& refinement_marker)
 {
-  if (mesh.topology().cell_type()[0] != mesh::CellType::triangle
-      and mesh.topology().cell_type()[0] != mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_type() != mesh::CellType::triangle
+      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }

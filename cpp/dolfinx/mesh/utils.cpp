@@ -60,7 +60,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
 
   // Get number of cell vertices
   const mesh::CellType type
-      = cell_entity_type(mesh.topology().cell_type()[0], dim);
+      = cell_entity_type(mesh.topology().cell_type(), dim);
   const int num_vertices = num_cell_vertices(type);
 
   // Get geometry dofmap and dofs
@@ -95,7 +95,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 {
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type
-      = mesh::cell_entity_type(mesh.topology().cell_type()[0], dim);
+      = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
 
   // Find geometry nodes for topology entities
   // FIXME: Use eigen map for now.
@@ -105,7 +105,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 
   // Orient cells if they are tetrahedron
   bool orient = false;
-  if (mesh.topology().cell_type()[0] == mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
     orient = true;
   array2d<std::int32_t> geometry_entities
       = entities_to_geometry(mesh, dim, entities, orient);
@@ -385,7 +385,7 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
                            const tcb::span<const std::int32_t>& entity_list,
                            bool orient)
 {
-  dolfinx::mesh::CellType cell_type = mesh.topology().cell_type()[0];
+  dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
   int num_entity_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
   array2d<std::int32_t> entity_geometry(entity_list.size(),

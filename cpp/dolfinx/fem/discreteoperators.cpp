@@ -85,13 +85,13 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
   assert(dofmap0);
   // Create local lookup table for local edge to cell dofs
   const int num_edges_per_cell
-      = mesh::cell_num_entities(mesh->topology().cell_type()[0], 1);
+      = mesh::cell_num_entities(mesh->topology().cell_type(), 1);
   std::map<std::int32_t, std::vector<std::int32_t>> local_edge_dofs;
   for (std::int32_t i = 0; i < num_edges_per_cell; ++i)
     local_edge_dofs[i] = layout0->entity_dofs(1, i);
   // Create local lookup table for local vertex to cell dofs
   const int num_vertices_per_cell
-      = mesh::cell_num_entities(mesh->topology().cell_type()[0], 0);
+      = mesh::cell_num_entities(mesh->topology().cell_type(), 0);
   std::map<std::int32_t, std::vector<std::int32_t>> local_vertex_dofs;
   for (std::int32_t i = 0; i < num_vertices_per_cell; ++i)
     local_vertex_dofs[i] = layout1->entity_dofs(0, i);

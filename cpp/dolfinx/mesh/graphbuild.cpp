@@ -189,15 +189,15 @@ compute_local_dual_graph_keyed(
   std::partial_sum(num_local_graph.begin(), num_local_graph.end(),
                    std::next(offsets.begin(), 1));
   std::vector<std::int32_t> local_graph_data(offsets.back());
-  std::vector<int> pos(num_local_cells, 0);
 
   // Build adjacency data
+  std::vector<std::int32_t> pos(offsets.begin(), offsets.end());
   for (std::size_t i = 0; i < local_graph.size(); i += 2)
   {
     const std::size_t c0 = local_graph[i];
     const std::size_t c1 = local_graph[i + 1];
-    local_graph_data[offsets[c0] + pos[c0]++] = c1;
-    local_graph_data[offsets[c1] + pos[c1]++] = c0;
+    local_graph_data[pos[c0]++] = c1;
+    local_graph_data[pos[c1]++] = c0;
   }
 
   return {graph::AdjacencyList<std::int32_t>(std::move(local_graph_data),
