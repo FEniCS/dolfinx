@@ -28,8 +28,16 @@ compute_local_dual_graph_keyed(
 {
   common::Timer timer("Compute local part of mesh dual graph");
 
-  // Count number of cells with n vertices from 0-8
   const std::int32_t num_local_cells = cell_vertices.num_nodes();
+  if (num_local_cells == 0)
+  {
+    // Empty mesh on this process
+    std::vector<int> offsets = {0};
+    std::vector<int> values;
+    return {graph::AdjacencyList<std::int32_t>(values, offsets), {}};
+  }
+
+  // Count number of cells with n vertices from 0-8
   std::vector<int> count(9, 0);
   for (int i = 0; i < num_local_cells; ++i)
     ++count[cell_vertices.num_links(i)];
@@ -39,22 +47,18 @@ compute_local_dual_graph_keyed(
 
   if (tdim == 1)
   {
-    if (count[2] == 0)
-      throw std::runtime_error("No cells in 1D");
     num_facets = count[2] * 2;
     num_facet_vertices = 1;
   }
   else if (tdim == 2)
   {
-    if (count[3] == 0 and count[4] == 0)
-      throw std::runtime_error("No cells in 2D");
     num_facet_vertices = 2;
     num_facets = count[3] * 3 + count[4] * 4;
   }
   else if (tdim == 3)
   {
     // Check for prism, pyramid or mix of tet and hex
-    if (count[5] > 0 or count[6] > 0 or (count[4] > 0 and count[8] > 0))
+    if (count[5] > 0 or count[6] > 0)
       throw std::runtime_error("Mixed meshes in 3D not yet supported");
     else if (count[4] > 0)
     {
@@ -143,11 +147,11 @@ compute_local_dual_graph_keyed(
   std::sort(facet_index.begin(), facet_index.end(), cmp);
 
   // Stack up cells joined by facet as pairs in local_graph
-  int eq_count = 0;
-  int jlast = facet_index[0];
   std::vector<std::int32_t> local_graph;
   std::vector<std::int64_t> facet_cell_map;
 
+  int eq_count = 0;
+  int jlast = facet_index[0];
   for (std::size_t i = 1; i < facet_index.size(); ++i)
   {
     int j = facet_index[i];
