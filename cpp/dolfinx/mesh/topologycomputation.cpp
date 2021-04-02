@@ -418,7 +418,8 @@ compute_entities_by_key_matching(
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
 
   // Create map from cell vertices to entity vertices
-  auto e_vertices = mesh::get_entity_vertices(cell_type, dim);
+  graph::AdjacencyList<int> e_vertices
+      = mesh::get_entity_vertices(cell_type, dim);
 
   const int num_cells = cells.num_nodes();
 
@@ -443,7 +444,7 @@ compute_entities_by_key_matching(
       // Get entity vertices
       const int offset = k * num_vertices_per_entity;
       for (int j = 0; j < num_vertices_per_entity; ++j)
-        entity_array[offset + j] = vertices[e_vertices(i, j)];
+        entity_array[offset + j] = vertices[e_vertices.links(i)[j]];
       ++k;
     }
   }
@@ -586,27 +587,30 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   std::vector<std::int32_t> offsets(c_d0_0.num_nodes() + 1, 0);
 
   // Search for d1 entities of d0 in map, and recover index
-  const auto e_vertices_ref = mesh::get_entity_vertices(cell_type_d0, d1);
-  std::vector<int> keys(e_vertices_ref.size());
+  const graph::AdjacencyList<int> e_vertices_ref
+      = mesh::get_entity_vertices(cell_type_d0, d1);
+  std::vector<int> keys(e_vertices_ref.num_nodes());
   for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {
     auto e0 = c_d0_0.links(e);
-    for (std::size_t i = 0; i < e_vertices_ref.shape[0]; ++i)
-      for (std::size_t j = 0; j < e_vertices_ref.shape[1]; ++j)
-        keys[i * e_vertices_ref.shape[1] + j] = e0[e_vertices_ref(i, j)];
+    for (int i = 0; i < e_vertices_ref.num_nodes(); ++i)
+      for (int j = 0; j < e_vertices_ref.num_links(0); ++j)
+        keys[i * e_vertices_ref.num_links(0) + j]
+            = e0[e_vertices_ref.links(i)[j]];
 
-    for (std::size_t i = 0; i < e_vertices_ref.shape[0]; ++i)
+    for (int i = 0; i < e_vertices_ref.num_nodes(); ++i)
     {
-      auto keys_begin = std::next(keys.cbegin(), i * e_vertices_ref.shape[1]);
+      auto keys_begin
+          = std::next(keys.cbegin(), i * e_vertices_ref.num_links(0));
       auto keys_end
-          = std::next(keys.cbegin(), (i + 1) * e_vertices_ref.shape[1]);
+          = std::next(keys.cbegin(), (i + 1) * e_vertices_ref.num_links(0));
       std::partial_sort_copy(keys_begin, keys_end, key.begin(), key.end());
       const auto it = entity_to_index.find(key);
       assert(it != entity_to_index.end());
       connections.push_back(it->second);
     }
 
-    offsets[e + 1] = offsets[e] + e_vertices_ref.shape[0];
+    offsets[e + 1] = offsets[e] + e_vertices_ref.num_nodes();
   }
 
   connections.shrink_to_fit();

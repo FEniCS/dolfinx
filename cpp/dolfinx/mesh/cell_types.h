@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "dolfinx/common/array2d.h"
+#include "dolfinx/graph/AdjacencyList.h"
 
 namespace dolfinx::mesh
 {
@@ -47,10 +48,9 @@ CellType cell_entity_type(CellType type, int d);
 /// @return The type of the cell's facets
 CellType cell_facet_type(CellType type);
 
-/// Return array entities(num entities, num vertices per entity), where
-/// entities(e, k) is the local vertex index for the kth vertex of
-/// entity e of dimension dim
-dolfinx::array2d<int> get_entity_vertices(CellType type, int dim);
+/// Return list of entities, where entities(e, k) is the local vertex index for
+/// the kth vertex of entity e of dimension dim
+dolfinx::graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
 
 /// Get entities of dimension dim1 and that make up entities of dimension
 /// dim0

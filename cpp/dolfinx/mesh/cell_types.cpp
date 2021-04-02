@@ -91,17 +91,13 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
   }
 }
 //-----------------------------------------------------------------------------
-dolfinx::array2d<int> mesh::get_entity_vertices(mesh::CellType type, int dim)
+graph::AdjacencyList<int> mesh::get_entity_vertices(mesh::CellType type,
+                                                    int dim)
 {
   const std::vector<std::vector<int>> topology
       = basix::topology(to_string(type).c_str())[dim];
 
-  dolfinx::array2d<int> e(topology.size(), topology[0].size());
-  for (std::size_t i = 0; i < topology.size(); ++i)
-    for (std::size_t j = 0; j < topology[0].size(); ++j)
-      e(i, j) = topology[i][j];
-
-  return e;
+  return graph::AdjacencyList<int>(topology);
 }
 //-----------------------------------------------------------------------------
 dolfinx::array2d<int> mesh::get_sub_entities(CellType type, int dim0, int dim1)
@@ -226,7 +222,8 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
   for (int i = 0; i <= cell_dim; ++i)
     num_entities[i] = mesh::cell_num_entities(cell_type, i);
 
-  const auto edge_v = mesh::get_entity_vertices(cell_type, 1);
+  const graph::AdjacencyList<int> edge_v
+      = mesh::get_entity_vertices(cell_type, 1);
   const auto face_e = mesh::get_sub_entities(cell_type, 2, 1);
 
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure;
@@ -261,15 +258,16 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
           for (int v = 0; v < 2; ++v)
           {
             // Add vertex connected to edge
-            entity_closure[{{dim, entity}}][0].insert(edge_v(edge_index, v));
+            entity_closure[{{dim, entity}}][0].insert(
+                edge_v.links(edge_index)[v]);
           }
         }
       }
 
       if (dim == 1)
       {
-        entity_closure[{{dim, entity}}][0].insert(edge_v(entity, 0));
-        entity_closure[{{dim, entity}}][0].insert(edge_v(entity, 1));
+        entity_closure[{{dim, entity}}][0].insert(edge_v.links(entity)[0]);
+        entity_closure[{{dim, entity}}][0].insert(edge_v.links(entity)[1]);
       }
     }
   }
