@@ -27,6 +27,8 @@ enum class CellType : int
   triangle = 3,
   tetrahedron = 4,
   quadrilateral = -4,
+  pyramid = -5,
+  prism = -6,
   hexahedron = -8
 };
 
