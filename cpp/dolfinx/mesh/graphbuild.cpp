@@ -22,7 +22,7 @@ namespace
 //-----------------------------------------------------------------------------
 // Compute local part of the dual graph, and return return (local_graph,
 // facet_cell_map, number of local edges in the graph (undirected)
-std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
+std::pair<graph::AdjacencyList<std::int32_t>, dolfinx::array2d<std::int64_t>>
 compute_local_dual_graph_keyed(
     const graph::AdjacencyList<std::int64_t>& cell_vertices, int tdim)
 {
@@ -32,12 +32,12 @@ compute_local_dual_graph_keyed(
   if (num_local_cells == 0)
   {
     // Empty mesh on this process
-    std::vector<int> offsets = {0};
-    std::vector<int> values;
-    return {graph::AdjacencyList<std::int32_t>(values, offsets), {}};
+    dolfinx::array2d<std::int64_t> m(0, 0);
+    return {graph::AdjacencyList<std::int32_t>(0), m};
   }
 
   // Count number of cells with n vertices from 0-8
+  // covering interval(2) through to hex(8)
   std::vector<int> count(9, 0);
   for (int i = 0; i < num_local_cells; ++i)
     ++count[cell_vertices.num_links(i)];
@@ -45,57 +45,46 @@ compute_local_dual_graph_keyed(
   int num_facets = 0;
   int num_facet_vertices = 0;
 
-  if (tdim == 1)
-  {
-    num_facets = count[2] * 2;
-    num_facet_vertices = 1;
-  }
-  else if (tdim == 2)
-  {
-    num_facet_vertices = 2;
-    num_facets = count[3] * 3 + count[4] * 4;
-  }
-  else if (tdim == 3)
-  {
-    // Check for prism, pyramid or mix of tet and hex
-    if (count[5] > 0 or count[6] > 0)
-      throw std::runtime_error("Mixed meshes in 3D not yet supported");
-    else if (count[4] > 0)
-    {
-      num_facet_vertices = 3;
-      num_facets = count[4] * 4;
-    }
-    else if (count[8] > 0)
-    {
-      num_facet_vertices = 4;
-      num_facets = count[8] * 6;
-    }
-    else
-      throw std::runtime_error("No cells in 3D");
-  }
-
   // Map from number of cell vertices -> facet vertex list
   // This is unique for each dimension
   // 1D (interval: 2 vertices -> 2 facets)
   // 2D (triangle: 3v->3f, quad: 4v->4f)
   // 3D (tet: 4v->4f, pyramid: 5v->5f, prism: 6v->5f, hex: 8v->6f)
-  std::map<int, graph::AdjacencyList<int>> nv_to_facets;
+  std::vector<graph::AdjacencyList<int>> nv_to_facets(
+      9, graph::AdjacencyList<int>(0));
+
   if (tdim == 1)
-    nv_to_facets.insert(
-        {2, mesh::get_entity_vertices(mesh::CellType::interval, 0)});
+  {
+    nv_to_facets[2] = mesh::get_entity_vertices(mesh::CellType::interval, 0);
+    num_facets = count[2] * 2;
+    num_facet_vertices = 1;
+  }
   else if (tdim == 2)
   {
-    nv_to_facets.insert(
-        {3, mesh::get_entity_vertices(mesh::CellType::triangle, 1)});
-    nv_to_facets.insert(
-        {4, mesh::get_entity_vertices(mesh::CellType::quadrilateral, 1)});
+    nv_to_facets[3] = mesh::get_entity_vertices(mesh::CellType::triangle, 1);
+    nv_to_facets[4]
+        = mesh::get_entity_vertices(mesh::CellType::quadrilateral, 1);
+    num_facet_vertices = 2;
+    num_facets = count[3] * 3 + count[4] * 4;
   }
   else if (tdim == 3)
   {
-    nv_to_facets.insert(
-        {4, mesh::get_entity_vertices(mesh::CellType::tetrahedron, 2)});
-    nv_to_facets.insert(
-        {8, mesh::get_entity_vertices(mesh::CellType::hexahedron, 2)});
+    // Check for prism, pyramid
+    if (count[5] > 0 or count[6] > 0)
+      throw std::runtime_error("Mixed meshes in 3D not yet supported");
+
+    // If any quad facetsin mesh, expand to width=4
+    if (count[5] > 0 or count[6] > 0 or count[8] > 0)
+      num_facet_vertices = 4;
+    else
+      num_facet_vertices = 3;
+
+    num_facets = count[4] * 4 + count[5] * 5 + count[6] * 5 + count[8] * 6;
+
+    nv_to_facets[4] = mesh::get_entity_vertices(mesh::CellType::tetrahedron, 2);
+    nv_to_facets[5] = mesh::get_entity_vertices(mesh::CellType::pyramid, 2);
+    nv_to_facets[6] = mesh::get_entity_vertices(mesh::CellType::prism, 2);
+    nv_to_facets[8] = mesh::get_entity_vertices(mesh::CellType::hexahedron, 2);
   }
 
   // List of facets and associated cells
@@ -110,13 +99,17 @@ compute_local_dual_graph_keyed(
     // Iterate over facets of cell
     auto vertices = cell_vertices.links(i);
     const int nv = vertices.size();
-    const graph::AdjacencyList<int>& f = nv_to_facets.find(nv)->second;
-    int num_facets_per_cell = f.num_nodes();
+    const graph::AdjacencyList<int>& f = nv_to_facets.at(nv);
+    const int num_facets_per_cell = f.num_nodes();
 
     for (int j = 0; j < num_facets_per_cell; ++j)
     {
       cell_index[counter] = i;
       tcb::span<std::int64_t> facet = facets.row(counter);
+      // fill last entry with -1, for mixed 3D, when
+      // some facets may be triangle
+      facet.back() = -1;
+
       // Get list of facet vertices
       for (int k = 0; k < f.num_links(j); ++k)
         facet[k] = vertices[f.links(j)[k]];
@@ -138,9 +131,10 @@ compute_local_dual_graph_keyed(
   // Sort facet indices
   std::sort(facet_index.begin(), facet_index.end(), cmp);
 
-  // Stack up cells joined by facet as pairs in local_graph
+  // Stack up cells joined by facet as pairs in local_graph, and record any
+  // non-matching
   std::vector<std::int32_t> local_graph;
-  std::vector<std::int64_t> facet_cell_map;
+  std::vector<std::int32_t> unmatched_facets;
 
   int eq_count = 0;
   int jlast = facet_index[0];
@@ -162,12 +156,7 @@ compute_local_dual_graph_keyed(
     else
     {
       if (eq_count == 0)
-      {
-        // unmatched: save jlast to facet_cell_map
-        facet_cell_map.insert(facet_cell_map.end(), facets.row(jlast).begin(),
-                              facets.row(jlast).end());
-        facet_cell_map.push_back(cell_index[jlast]);
-      }
+        unmatched_facets.push_back(jlast);
       eq_count = 0;
     }
     jlast = j;
@@ -175,10 +164,17 @@ compute_local_dual_graph_keyed(
 
   // save last one, if unmatched...
   if (eq_count == 0)
+    unmatched_facets.push_back(jlast);
+
+  dolfinx::array2d<std::int64_t> facet_cell_map(unmatched_facets.size(),
+                                                facets.shape[1] + 1);
+  int c = 0;
+  for (std::int32_t j : unmatched_facets)
   {
-    facet_cell_map.insert(facet_cell_map.end(), facets.row(jlast).begin(),
-                          facets.row(jlast).end());
-    facet_cell_map.push_back(cell_index[jlast]);
+    std::copy(facets.row(j).begin(), facets.row(j).end(),
+              facet_cell_map.row(c).begin());
+    facet_cell_map.row(c).back() = cell_index[j];
+    ++c;
   }
 
   // Get connection counts for each cell
@@ -211,10 +207,8 @@ compute_local_dual_graph_keyed(
 // num_nonlocal_edges)
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 compute_nonlocal_dual_graph(
-    const MPI_Comm comm,
-    const graph::AdjacencyList<std::int64_t>& cell_vertices,
-    const mesh::CellType& cell_type,
-    const std::vector<std::int64_t>& facet_cell_map,
+    const MPI_Comm comm, std::int32_t num_local_cells,
+    const dolfinx::array2d<std::int64_t>& facet_cell_map,
     const graph::AdjacencyList<std::int32_t>& local_graph)
 {
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
@@ -232,9 +226,7 @@ compute_nonlocal_dual_graph(
             0};
   }
 
-  const int tdim = mesh::cell_dim(cell_type);
-  const int num_vertices_per_facet
-      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
+  const int num_vertices_per_facet = facet_cell_map.shape[1] - 1;
 
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries
@@ -246,12 +238,11 @@ compute_nonlocal_dual_graph(
   // processes which do the matching, and using a neighbor comm?
   std::int64_t local_min = std::numeric_limits<std::int64_t>::max();
   std::int64_t local_max = 0;
-  assert(facet_cell_map.size() % (num_vertices_per_facet + 1) == 0);
-  for (std::size_t i = 0; i < facet_cell_map.size();
-       i += num_vertices_per_facet + 1)
+
+  for (int i = 0; i < facet_cell_map.shape[0]; ++i)
   {
-    local_min = std::min(local_min, facet_cell_map[i]);
-    local_max = std::max(local_max, facet_cell_map[i]);
+    local_min = std::min(local_min, facet_cell_map(i, 0));
+    local_max = std::max(local_max, facet_cell_map(i, 0));
   }
 
   std::int64_t global_min, global_max;
@@ -262,18 +253,16 @@ compute_nonlocal_dual_graph(
   // Send facet-cell map to intermediary match-making processes
 
   // Get cell offset for this process to create global numbering for cells
-  const std::int32_t num_local_cells = cell_vertices.num_nodes();
   const std::int64_t cell_offset
       = dolfinx::MPI::global_offset(comm, num_local_cells, true);
 
   // Count number of item to send to each rank
   std::vector<int> p_count(num_processes, 0);
-  for (std::size_t i = 0; i < facet_cell_map.size();
-       i += num_vertices_per_facet + 1)
+  for (int i = 0; i < facet_cell_map.shape[0]; ++i)
   {
     // Use first vertex of facet to partition into blocks
     const int dest_proc = dolfinx::MPI::index_owner(
-        num_processes, facet_cell_map[i] - global_min, global_range);
+        num_processes, facet_cell_map(i, 0) - global_min, global_range);
     p_count[dest_proc] += num_vertices_per_facet + 1;
   }
 
@@ -286,11 +275,9 @@ compute_nonlocal_dual_graph(
 
   // Pack map data and send to match-maker process
   std::vector<int> pos(send_buffer.num_nodes(), 0);
-  for (std::size_t i = 0; i < facet_cell_map.size();
-       i += num_vertices_per_facet + 1)
+  for (int i = 0; i < facet_cell_map.shape[0]; ++i)
   {
-    tcb::span<const std::int64_t> facet(&facet_cell_map[i],
-                                        num_vertices_per_facet + 1);
+    tcb::span<const std::int64_t> facet = facet_cell_map.row(i);
     const int dest_proc = dolfinx::MPI::index_owner(
         num_processes, facet[0] - global_min, global_range);
     tcb::span<std::int64_t> buffer = send_buffer.links(dest_proc);
@@ -470,7 +457,7 @@ mesh::build_dual_graph(const MPI_Comm mpi_comm,
 
   // Compute nonlocal part
   auto [graph, num_ghost_nodes] = compute_nonlocal_dual_graph(
-      mpi_comm, cell_vertices, cell_type, facet_cell_map, local_graph);
+      mpi_comm, cell_vertices.num_nodes(), facet_cell_map, local_graph);
 
   LOG(INFO) << "Graph edges (local:" << local_graph.offsets().back()
             << ", non-local:"
@@ -479,7 +466,7 @@ mesh::build_dual_graph(const MPI_Comm mpi_comm,
   return {std::move(graph), {num_ghost_nodes, local_graph.offsets().back()}};
 }
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
+std::pair<graph::AdjacencyList<std::int32_t>, dolfinx::array2d<std::int64_t>>
 mesh::build_local_dual_graph(
     const graph::AdjacencyList<std::int64_t>& cell_vertices,
     const mesh::CellType& cell_type)
