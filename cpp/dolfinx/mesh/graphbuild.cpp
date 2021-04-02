@@ -104,15 +104,6 @@ compute_local_dual_graph_keyed(
   std::vector<std::int32_t> facet_index(num_facets);
   std::iota(facet_index.begin(), facet_index.end(), 0);
 
-  int c = 0;
-  for (int i = 0; i < num_local_cells; ++i)
-  {
-    const int nv = cell_vertices.num_links(i);
-    const int nf = nv_to_facets.find(nv)->second.num_nodes();
-    for (int j = 0; j < nf; ++j)
-      cell_index[c++] = i;
-  }
-
   int counter = 0;
   for (std::int32_t i = 0; i < num_local_cells; ++i)
   {
@@ -124,6 +115,7 @@ compute_local_dual_graph_keyed(
 
     for (int j = 0; j < num_facets_per_cell; ++j)
     {
+      cell_index[counter] = i;
       tcb::span<std::int64_t> facet = facets.row(counter);
       // Get list of facet vertices
       for (int k = 0; k < f.num_links(j); ++k)
