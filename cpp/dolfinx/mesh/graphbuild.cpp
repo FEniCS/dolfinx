@@ -55,12 +55,16 @@ compute_local_dual_graph_keyed(
 
   if (tdim == 1)
   {
+    if (count[2] != num_local_cells)
+      throw std::runtime_error("Invalid cells in 1D mesh");
     nv_to_facets[2] = mesh::get_entity_vertices(mesh::CellType::interval, 0);
     num_facets = count[2] * 2;
     num_facet_vertices = 1;
   }
   else if (tdim == 2)
   {
+    if ((count[3] + count[4]) != num_local_cells)
+      throw std::runtime_error("Invalid cells in 2D mesh");
     nv_to_facets[3] = mesh::get_entity_vertices(mesh::CellType::triangle, 1);
     nv_to_facets[4]
         = mesh::get_entity_vertices(mesh::CellType::quadrilateral, 1);
@@ -69,9 +73,8 @@ compute_local_dual_graph_keyed(
   }
   else if (tdim == 3)
   {
-    // Check for prism, pyramid
-    if (count[5] > 0 or count[6] > 0)
-      throw std::runtime_error("Mixed meshes in 3D not yet supported");
+    if ((count[4] + count[5] + count[6] + count[8]) != num_local_cells)
+      throw std::runtime_error("Invalid cells in 3D mesh");
 
     // If any quad facets in mesh, expand to width=4
     if (count[5] > 0 or count[6] > 0 or count[8] > 0)

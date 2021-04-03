@@ -124,7 +124,7 @@ void mesh(py::module& m)
 
   using PythonPartitioningFunction
       = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
-          MPICommWrapper, int, const dolfinx::mesh::CellType,
+          MPICommWrapper, int, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&,
           dolfinx::mesh::GhostMode)>;
 
@@ -138,10 +138,10 @@ void mesh(py::module& m)
          PythonPartitioningFunction partitioner) {
         auto partitioner_wrapper
             = [partitioner](
-                  MPI_Comm comm, int n, const dolfinx::mesh::CellType cell_type,
+                  MPI_Comm comm, int n, int tdim,
                   const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
                   dolfinx::mesh::GhostMode ghost_mode) {
-                return partitioner(MPICommWrapper(comm), n, cell_type, cells,
+                return partitioner(MPICommWrapper(comm), n, tdim, cells,
                                    ghost_mode);
               };
 
@@ -288,13 +288,12 @@ void mesh(py::module& m)
 
   // Partitioning interface
   m.def("partition_cells_graph",
-        [](const MPICommWrapper comm, int nparts,
-           dolfinx::mesh::CellType cell_type,
+        [](const MPICommWrapper comm, int nparts, int tdim,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
            dolfinx::mesh::GhostMode ghost_mode)
             -> dolfinx::graph::AdjacencyList<std::int32_t> {
-          return dolfinx::mesh::partition_cells_graph(
-              comm.get(), nparts, cell_type, cells, ghost_mode);
+          return dolfinx::mesh::partition_cells_graph(comm.get(), nparts, tdim,
+                                                      cells, ghost_mode);
         });
 
   m.def("locate_entities",
