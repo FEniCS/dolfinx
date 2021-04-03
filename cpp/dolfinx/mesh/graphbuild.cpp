@@ -227,7 +227,14 @@ compute_nonlocal_dual_graph(
             0};
   }
 
-  const int num_vertices_per_facet = facet_cell_map.shape[1] - 1;
+  // Some processes may have empty map
+
+  std::int32_t num_vertices_per_facet;
+  MPI_Allreduce(&facet_cell_map.shape[1], &num_vertices_per_facet, 1,
+                MPI_INT32_T, MPI_MAX, comm);
+  num_vertices_per_facet--;
+
+  LOG(INFO) << "nv per facet=" << num_vertices_per_facet << "\n";
 
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries
