@@ -106,9 +106,10 @@ compute_local_dual_graph_keyed(
     {
       cell_index[counter] = i;
       tcb::span<std::int64_t> facet = facets.row(counter);
-      // fill last entry with -1, for mixed 3D, when
-      // some facets may be triangle
-      facet.back() = -1;
+      // fill last entry with max_int64: for mixed 3D, when
+      // some facets may be triangle adds an extra dummy vertex which will sort
+      // to last position
+      facet.back() = std::numeric_limits<std::int64_t>::max();
 
       // Get list of facet vertices
       for (int k = 0; k < f.num_links(j); ++k)
