@@ -442,6 +442,7 @@ compute_entities_by_key_matching(
     {
       // Get entity vertices
       const int offset = k * num_vertices_per_entity;
+      assert(e_vertices.num_links(i) == num_vertices_per_entity);
       for (int j = 0; j < num_vertices_per_entity; ++j)
         entity_array[offset + j] = vertices[e_vertices.links(i)[j]];
       ++k;
@@ -587,19 +588,21 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 
   // Search for d1 entities of d0 in map, and recover index
   const auto e_vertices_ref = mesh::get_entity_vertices(cell_type_d0, d1);
-  std::vector<int> keys(e_vertices_ref.num_nodes());
+  std::vector<int> keys(e_vertices_ref.array().size());
   for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {
     auto e0 = c_d0_0.links(e);
     for (int i = 0; i < e_vertices_ref.num_nodes(); ++i)
       for (int j = 0; j < e_vertices_ref.num_links(i); ++j)
-        keys[i * e_vertices_ref.num_links(i) + j] = e0[e_vertices_ref.links(i)[j]];
+        keys[i * e_vertices_ref.num_links(i) + j]
+            = e0[e_vertices_ref.links(i)[j]];
 
     for (int i = 0; i < e_vertices_ref.num_nodes(); ++i)
     {
-      auto keys_begin = std::next(keys.cbegin(), i * e_vertices_ref.num_links(i));
+      auto keys_begin
+          = std::next(keys.cbegin(), i * e_vertices_ref.num_links(i));
       auto keys_end
-        = std::next(keys.cbegin(), (i + 1) * e_vertices_ref.num_links(i));
+          = std::next(keys.cbegin(), (i + 1) * e_vertices_ref.num_links(i));
       std::partial_sort_copy(keys_begin, keys_end, key.begin(), key.end());
       const auto it = entity_to_index.find(key);
       assert(it != entity_to_index.end());

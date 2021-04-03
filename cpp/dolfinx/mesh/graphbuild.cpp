@@ -40,7 +40,10 @@ compute_local_dual_graph_keyed(
   // covering interval(2) through to hex(8)
   std::vector<int> count(9, 0);
   for (int i = 0; i < num_local_cells; ++i)
+  {
+    assert(cell_vertices.num_links(i) < 9);
     ++count[cell_vertices.num_links(i)];
+  }
 
   int num_facets = 0;
   int num_facet_vertices = 0;
@@ -114,6 +117,7 @@ compute_local_dual_graph_keyed(
       // to last position
       facet.back() = std::numeric_limits<std::int64_t>::max();
 
+      assert(f.num_links(j) <= facets.shape[1]);
       // Get list of facet vertices
       for (int k = 0; k < f.num_links(j); ++k)
         facet[k] = vertices[f.links(j)[k]];
@@ -125,6 +129,7 @@ compute_local_dual_graph_keyed(
       counter++;
     }
   }
+  assert(counter == facets.shape[0]);
 
   auto cmp = [&facets](int a, int b) {
     return std::lexicographical_compare(
@@ -184,18 +189,25 @@ compute_local_dual_graph_keyed(
   // Get connection counts for each cell
   std::vector<std::int32_t> num_local_graph(num_local_cells, 0);
   for (std::int32_t cell : local_graph)
+  {
+    assert(cell < num_local_cells);
     ++num_local_graph[cell];
+  }
   std::vector<std::int32_t> offsets(num_local_graph.size() + 1, 0);
   std::partial_sum(num_local_graph.begin(), num_local_graph.end(),
                    std::next(offsets.begin(), 1));
   std::vector<std::int32_t> local_graph_data(offsets.back());
 
   // Build adjacency data
-  std::vector<std::int32_t> pos(offsets.begin(), offsets.end());
+  std::vector<std::int32_t> pos(offsets.begin(), offsets.end() - 1);
   for (std::size_t i = 0; i < local_graph.size(); i += 2)
   {
     const std::size_t c0 = local_graph[i];
     const std::size_t c1 = local_graph[i + 1];
+    assert(c0 < pos.size());
+    assert(c1 < pos.size());
+    assert(pos[c0] < local_graph_data.size());
+    assert(pos[c1] < local_graph_data.size());
     local_graph_data[pos[c0]++] = c1;
     local_graph_data[pos[c1]++] = c0;
   }
