@@ -45,8 +45,7 @@ create(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
        const mesh::GhostMode ghost_mode,
        const mesh::CellPartitionFunction& partitioner
        = static_cast<graph::AdjacencyList<std::int32_t> (*)(
-           MPI_Comm, int, const mesh::CellType,
-           const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
-           &mesh::partition_cells_graph));
+           MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
+           mesh::GhostMode)>(&mesh::partition_cells_graph));
 } // namespace generation::BoxMesh
 } // namespace dolfinx

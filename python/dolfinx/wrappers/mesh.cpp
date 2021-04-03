@@ -102,9 +102,6 @@ void mesh(py::module& m)
               mesh, dim, tcb::span(entities.data(), entities.size())));
         });
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
-
-  m.def("build_dual_graph", &dolfinx::mesh::build_dual_graph);
-
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
   m.def(
