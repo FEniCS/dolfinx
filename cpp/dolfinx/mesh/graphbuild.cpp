@@ -73,7 +73,7 @@ compute_local_dual_graph_keyed(
     if (count[5] > 0 or count[6] > 0)
       throw std::runtime_error("Mixed meshes in 3D not yet supported");
 
-    // If any quad facetsin mesh, expand to width=4
+    // If any quad facets in mesh, expand to width=4
     if (count[5] > 0 or count[6] > 0 or count[8] > 0)
       num_facet_vertices = 4;
     else
@@ -240,7 +240,7 @@ compute_nonlocal_dual_graph(
   std::int64_t local_min = std::numeric_limits<std::int64_t>::max();
   std::int64_t local_max = 0;
 
-  for (int i = 0; i < facet_cell_map.shape[0]; ++i)
+  for (std::size_t i = 0; i < facet_cell_map.shape[0]; ++i)
   {
     local_min = std::min(local_min, facet_cell_map(i, 0));
     local_max = std::max(local_max, facet_cell_map(i, 0));
@@ -259,7 +259,7 @@ compute_nonlocal_dual_graph(
 
   // Count number of item to send to each rank
   std::vector<int> p_count(num_processes, 0);
-  for (int i = 0; i < facet_cell_map.shape[0]; ++i)
+  for (std::size_t i = 0; i < facet_cell_map.shape[0]; ++i)
   {
     // Use first vertex of facet to partition into blocks
     const int dest_proc = dolfinx::MPI::index_owner(
@@ -276,7 +276,7 @@ compute_nonlocal_dual_graph(
 
   // Pack map data and send to match-maker process
   std::vector<int> pos(send_buffer.num_nodes(), 0);
-  for (int i = 0; i < facet_cell_map.shape[0]; ++i)
+  for (std::size_t i = 0; i < facet_cell_map.shape[0]; ++i)
   {
     tcb::span<const std::int64_t> facet = facet_cell_map.row(i);
     const int dest_proc = dolfinx::MPI::index_owner(
@@ -448,13 +448,13 @@ compute_nonlocal_dual_graph(
 std::pair<graph::AdjacencyList<std::int64_t>, std::array<std::int32_t, 2>>
 mesh::build_dual_graph(const MPI_Comm mpi_comm,
                        const graph::AdjacencyList<std::int64_t>& cell_vertices,
-                       const mesh::CellType& cell_type)
+                       int tdim)
 {
   LOG(INFO) << "Build mesh dual graph";
 
   // Compute local part of dual graph
   auto [local_graph, facet_cell_map]
-      = mesh::build_local_dual_graph(cell_vertices, cell_type);
+      = mesh::build_local_dual_graph(cell_vertices, tdim);
 
   // Compute nonlocal part
   auto [graph, num_ghost_nodes] = compute_nonlocal_dual_graph(
@@ -469,12 +469,9 @@ mesh::build_dual_graph(const MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int32_t>, dolfinx::array2d<std::int64_t>>
 mesh::build_local_dual_graph(
-    const graph::AdjacencyList<std::int64_t>& cell_vertices,
-    const mesh::CellType& cell_type)
+    const graph::AdjacencyList<std::int64_t>& cell_vertices, int tdim)
 {
   LOG(INFO) << "Build local part of mesh dual graph";
-
-  const int tdim = mesh::cell_dim(cell_type);
   return compute_local_dual_graph_keyed(cell_vertices, tdim);
 }
 //-----------------------------------------------------------------------------

@@ -519,8 +519,9 @@ graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
   }
 
   // Compute distributed dual graph (for the cells on this process)
+  const int tdim = mesh::cell_dim(cell_type);
   const auto [dual_graph, graph_info]
-      = mesh::build_dual_graph(comm, cells, cell_type);
+      = mesh::build_dual_graph(comm, cells, tdim);
 
   // Extract data from graph_info
   const auto [num_ghost_nodes, num_local_edges] = graph_info;

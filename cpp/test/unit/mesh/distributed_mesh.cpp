@@ -124,8 +124,9 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
         = [](MPI_Comm mpi_comm, int nparts, const mesh::CellType cell_type,
              const graph::AdjacencyList<std::int64_t>& cells,
              mesh::GhostMode ghost_mode) {
+            const int tdim = mesh::cell_dim(cell_type);
             const auto [dual_graph, graph_info]
-                = mesh::build_dual_graph(mpi_comm, cells, cell_type);
+                = mesh::build_dual_graph(mpi_comm, cells, tdim);
             bool ghosting = (ghost_mode != mesh::GhostMode::none);
             return graph::kahip::partition(mpi_comm, nparts, dual_graph, -1,
                                            ghosting);
