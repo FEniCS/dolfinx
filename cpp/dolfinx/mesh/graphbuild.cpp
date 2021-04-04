@@ -117,7 +117,7 @@ compute_local_dual_graph_keyed(
       // to last position
       facet.back() = std::numeric_limits<std::int64_t>::max();
 
-      assert(f.num_links(j) <= facets.shape[1]);
+      assert(f.num_links(j) <= (int)facets.shape[1]);
       // Get list of facet vertices
       for (int k = 0; k < f.num_links(j); ++k)
         facet[k] = vertices[f.links(j)[k]];
@@ -129,7 +129,7 @@ compute_local_dual_graph_keyed(
       counter++;
     }
   }
-  assert(counter == facets.shape[0]);
+  assert(counter == (int)facets.shape[0]);
 
   auto cmp = [&facets](int a, int b) {
     return std::lexicographical_compare(
@@ -206,8 +206,8 @@ compute_local_dual_graph_keyed(
     const std::size_t c1 = local_graph[i + 1];
     assert(c0 < pos.size());
     assert(c1 < pos.size());
-    assert(pos[c0] < local_graph_data.size());
-    assert(pos[c1] < local_graph_data.size());
+    assert(pos[c0] < (int)local_graph_data.size());
+    assert(pos[c1] < (int)local_graph_data.size());
     local_graph_data[pos[c0]++] = c1;
     local_graph_data[pos[c1]++] = c0;
   }
