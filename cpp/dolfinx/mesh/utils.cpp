@@ -492,35 +492,26 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   return surface_facets;
 }
 //------------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
-    MPI_Comm comm, int n, const mesh::CellType cell_type,
-    const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode)
+graph::AdjacencyList<std::int32_t>
+mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
+                            const graph::AdjacencyList<std::int64_t>& cells,
+                            mesh::GhostMode ghost_mode)
 {
-  return partition_cells_graph(comm, n, cell_type, cells, ghost_mode,
+  return partition_cells_graph(comm, n, tdim, cells, ghost_mode,
                                &graph::partition_graph);
 }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t> mesh::partition_cells_graph(
-    MPI_Comm comm, int n, const mesh::CellType cell_type,
-    const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode,
-    const graph::partition_fn& partfn)
+graph::AdjacencyList<std::int32_t>
+mesh::partition_cells_graph(MPI_Comm comm, int n, int tdim,
+                            const graph::AdjacencyList<std::int64_t>& cells,
+                            mesh::GhostMode ghost_mode,
+                            const graph::partition_fn& partfn)
 {
   LOG(INFO) << "Compute partition of cells across ranks";
 
-  if (cells.num_nodes() > 0)
-  {
-    if (cells.num_links(0) != mesh::num_cell_vertices(cell_type))
-    {
-      throw std::runtime_error(
-          "Inconsistent number of cell vertices. Got "
-          + std::to_string(cells.num_links(0)) + ", expected "
-          + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
-    }
-  }
-
   // Compute distributed dual graph (for the cells on this process)
   const auto [dual_graph, graph_info]
-      = mesh::build_dual_graph(comm, cells, cell_type);
+      = mesh::build_dual_graph(comm, cells, tdim);
 
   // Extract data from graph_info
   const auto [num_ghost_nodes, num_local_edges] = graph_info;
