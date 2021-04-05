@@ -37,7 +37,7 @@ compute_local_dual_graph_keyed(
   }
 
   common::Timer tx0("XX local cells");
-  
+
   // Count number of cells of each type, based on
   // the number of vertices in each cell,
   // covering interval(2) through to hex(8)
@@ -104,10 +104,7 @@ compute_local_dual_graph_keyed(
   }
 
   // List of facets and associated cells
-  dolfinx::array2d<std::int64_t> facets(num_facets, num_facet_vertices);
-  std::vector<std::int32_t> cell_index(num_facets);
-  std::vector<std::int32_t> facet_index(num_facets);
-  std::iota(facet_index.begin(), facet_index.end(), 0);
+  std::vector<std::array<std::int64_t, 5>> facets(num_facets);
 
   int counter = 0;
   for (std::int32_t i = 0; i < num_local_cells; ++i)
@@ -120,57 +117,57 @@ compute_local_dual_graph_keyed(
 
     for (int j = 0; j < num_facets_per_cell; ++j)
     {
-      cell_index[counter] = i;
-      tcb::span<std::int64_t> facet = facets.row(counter);
+      std::array<std::int64_t, 5>& facet = facets[counter];
+      facet[4] = i; // cell counter
+
       // fill last entry with max_int64: for mixed 3D, when
       // some facets may be triangle adds an extra dummy vertex which will sort
       // to last position
-      facet.back() = std::numeric_limits<std::int64_t>::max();
+      facet[3] = std::numeric_limits<std::int64_t>::max();
 
-      assert(f.num_links(j) <= (int)facets.shape[1]);
+      assert(f.num_links(j) < 5);
       // Get list of facet vertices
       for (int k = 0; k < f.num_links(j); ++k)
         facet[k] = vertices[f.links(j)[k]];
 
       // Sort facet vertices
-      std::sort(facet.begin(), facet.end());
+      std::sort(facet.begin(), facet.begin() + f.num_links(j));
 
       // Increment facet counter
       counter++;
     }
   }
-  assert(counter == (int)facets.shape[0]);
+  assert(counter == (int)facets.size());
 
-  auto cmp = [&facets](int a, int b) {
+  auto cmp = [&num_facet_vertices](const std::array<std::int64_t, 5>& fa,
+                                   const std::array<std::int64_t, 5>& fb) {
     return std::lexicographical_compare(
-        facets.row(a).begin(), facets.row(a).end(), facets.row(b).begin(),
-        facets.row(b).end());
+        fa.begin(), fa.begin() + num_facet_vertices, fb.begin(),
+        fb.begin() + num_facet_vertices);
   };
 
   // Sort facet indices
-  std::sort(facet_index.begin(), facet_index.end(), cmp);
+  std::sort(facets.begin(), facets.end(), cmp);
 
   tx0.stop();
   common::Timer tx1("XX local join");
-  
+
   // Stack up cells joined by facet as pairs in local_graph, and record any
   // non-matching
   std::vector<std::int32_t> local_graph;
   std::vector<std::int32_t> unmatched_facets;
+  local_graph.reserve(num_local_cells * 2);
+  unmatched_facets.reserve(num_local_cells);
 
   int eq_count = 0;
-  int jlast = facet_index[0];
-  for (std::size_t i = 1; i < facet_index.size(); ++i)
+  for (std::size_t j = 1; j < facets.size(); ++j)
   {
-    int j = facet_index[i];
-
-    if (std::equal(facets.row(j).begin(), facets.row(j).end(),
-                   facets.row(jlast).begin()))
+    if (std::equal(facets[j].begin(), facets[j].end(), facets[j - 1].begin()))
     {
       ++eq_count;
       // join cells at cell_index[j] <-> cell_index[jlast]
-      local_graph.push_back(cell_index[j]);
-      local_graph.push_back(cell_index[jlast]);
+      local_graph.push_back(facets[j].back());
+      local_graph.push_back(facets[j - 1].back());
       // FIXME: This may not strictly be an error if tdim != gdim
       if (eq_count == 2)
         throw std::runtime_error("Same facet in more than two cells");
@@ -178,24 +175,23 @@ compute_local_dual_graph_keyed(
     else
     {
       if (eq_count == 0)
-        unmatched_facets.push_back(jlast);
+        unmatched_facets.push_back(j - 1);
       eq_count = 0;
     }
-    jlast = j;
   }
 
   // save last one, if unmatched...
   if (eq_count == 0)
-    unmatched_facets.push_back(jlast);
+    unmatched_facets.push_back(facets.size() - 1);
 
   dolfinx::array2d<std::int64_t> facet_cell_map(unmatched_facets.size(),
-                                                facets.shape[1] + 1);
+                                                num_facet_vertices + 1);
   int c = 0;
   for (std::int32_t j : unmatched_facets)
   {
-    std::copy(facets.row(j).begin(), facets.row(j).end(),
+    std::copy(facets[j].begin(), facets[j].begin() + num_facet_vertices,
               facet_cell_map.row(c).begin());
-    facet_cell_map.row(c).back() = cell_index[j];
+    facet_cell_map.row(c).back() = facets[j].back();
     ++c;
   }
 
