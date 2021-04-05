@@ -36,8 +36,6 @@ compute_local_dual_graph_keyed(
     return {graph::AdjacencyList<std::int32_t>(0), m};
   }
 
-  common::Timer tx0("XX local cells");
-
   // Count number of cells of each type, based on
   // the number of vertices in each cell,
   // covering interval(2) through to hex(8)
@@ -148,9 +146,6 @@ compute_local_dual_graph_keyed(
 
   // Sort facet indices
   std::sort(facets.begin(), facets.end(), cmp);
-
-  tx0.stop();
-  common::Timer tx1("XX local join");
 
   // Stack up cells joined by facet as pairs in local_graph, and record any
   // non-matching
