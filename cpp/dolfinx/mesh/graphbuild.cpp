@@ -36,36 +36,41 @@ compute_local_dual_graph_keyed(
     return {graph::AdjacencyList<std::int32_t>(0), m};
   }
 
-  // Count number of cells with n vertices from 0-8
+  // Count number of cells of each type, based on
+  // the number of vertices in each cell,
   // covering interval(2) through to hex(8)
   std::vector<int> count(9, 0);
   for (int i = 0; i < num_local_cells; ++i)
   {
-    assert(cell_vertices.num_links(i) < 9);
-    ++count[cell_vertices.num_links(i)];
+    const int num_cell_vertices = cell_vertices.num_links(i);
+    assert(num_cell_vertices < 9);
+    ++count[num_cell_vertices];
   }
 
   int num_facets = 0;
   int num_facet_vertices = 0;
 
-  // Map from number of cell vertices -> facet vertex list
-  // This is unique for each dimension
-  // 1D (interval: 2 vertices -> 2 facets)
-  // 2D (triangle: 3v->3f, quad: 4v->4f)
-  // 3D (tet: 4v->4f, pyramid: 5v->5f, prism: 6v->5f, hex: 8v->6f)
+  // For each topological dimension, there is a limited set of allowed cell
+  // types. In 1D, interval; 2D: tri or quad, 3D: tet, prism, pyramid or hex.
+  //
+  // To quickly look up the facets on a given cell, create a lookup table, which
+  // maps from number of cell vertices->facet vertex list. This is unique for
+  // each dimension 1D (interval: 2 vertices)) 2D (triangle: 3, quad: 4) 3D
+  // (tet: 4, pyramid: 5, prism: 6, hex: 8)
   std::vector<graph::AdjacencyList<int>> nv_to_facets(
       9, graph::AdjacencyList<int>(0));
 
-  if (tdim == 1)
+  switch (tdim)
   {
+  case 1:
     if (count[2] != num_local_cells)
       throw std::runtime_error("Invalid cells in 1D mesh");
     nv_to_facets[2] = mesh::get_entity_vertices(mesh::CellType::interval, 0);
     num_facets = count[2] * 2;
     num_facet_vertices = 1;
-  }
-  else if (tdim == 2)
-  {
+    break;
+
+  case 2:
     if ((count[3] + count[4]) != num_local_cells)
       throw std::runtime_error("Invalid cells in 2D mesh");
     nv_to_facets[3] = mesh::get_entity_vertices(mesh::CellType::triangle, 1);
@@ -73,9 +78,9 @@ compute_local_dual_graph_keyed(
         = mesh::get_entity_vertices(mesh::CellType::quadrilateral, 1);
     num_facet_vertices = 2;
     num_facets = count[3] * 3 + count[4] * 4;
-  }
-  else if (tdim == 3)
-  {
+    break;
+
+  case 3:
     if ((count[4] + count[5] + count[6] + count[8]) != num_local_cells)
       throw std::runtime_error("Invalid cells in 3D mesh");
 
@@ -91,6 +96,9 @@ compute_local_dual_graph_keyed(
     nv_to_facets[5] = mesh::get_entity_vertices(mesh::CellType::pyramid, 2);
     nv_to_facets[6] = mesh::get_entity_vertices(mesh::CellType::prism, 2);
     nv_to_facets[8] = mesh::get_entity_vertices(mesh::CellType::hexahedron, 2);
+    break;
+  default:
+    throw std::runtime_error("Invalid tdim");
   }
 
   // List of facets and associated cells
@@ -242,12 +250,11 @@ compute_nonlocal_dual_graph(
             0};
   }
 
-  // Some processes may have empty map
-
+  // Some processes may have empty map, so get max across all
+  const std::int32_t num_vertices_local = facet_cell_map.shape[1] - 1;
   std::int32_t num_vertices_per_facet;
-  MPI_Allreduce(&facet_cell_map.shape[1], &num_vertices_per_facet, 1,
-                MPI_INT32_T, MPI_MAX, comm);
-  num_vertices_per_facet--;
+  MPI_Allreduce(&num_vertices_local, &num_vertices_per_facet, 1, MPI_INT32_T,
+                MPI_MAX, comm);
 
   LOG(INFO) << "nv per facet=" << num_vertices_per_facet << "\n";
 

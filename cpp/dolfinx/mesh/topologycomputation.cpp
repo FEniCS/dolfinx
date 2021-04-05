@@ -593,9 +593,13 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   {
     auto e0 = c_d0_0.links(e);
     for (int i = 0; i < e_vertices_ref.num_nodes(); ++i)
+    {
       for (int j = 0; j < e_vertices_ref.num_links(i); ++j)
+      {
         keys[i * e_vertices_ref.num_links(i) + j]
             = e0[e_vertices_ref.links(i)[j]];
+      }
+    }
 
     for (int i = 0; i < e_vertices_ref.num_nodes(); ++i)
     {
