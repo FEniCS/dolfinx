@@ -128,6 +128,12 @@ void mesh(py::module& m)
           const dolfinx::graph::AdjacencyList<std::int64_t>&,
           dolfinx::mesh::GhostMode)>;
 
+  m.def("build_dual_graph",
+        [](const MPICommWrapper comm,
+           const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim) {
+          return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim);
+        });
+
   m.def(
       "create_mesh",
       [](const MPICommWrapper comm,
