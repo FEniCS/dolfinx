@@ -4,15 +4,85 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os
 import basix
 import cffi
+import ctypes
+import ctypes.util
 import dolfinx
+import dolfinx.io
+import dolfiny.la
+import matplotlib.pyplot as plt
 import numba
 import numpy as np
+import scipy.linalg
 import pytest
 import ufl
 from mpi4py import MPI
+import petsc4py.lib
 from petsc4py import PETSc
+from petsc4py import get_config as PETSc_get_config
+
+# Get details of PETSc install
+petsc_dir = PETSc_get_config()['PETSC_DIR']
+petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
+petsc_lib_name = ctypes.util.find_library("petsc")
+
+# Get PETSc int and scalar types
+if np.dtype(PETSc.ScalarType).kind == 'c':
+    complex = True
+else:
+    complex = False
+
+scalar_size = np.dtype(PETSc.ScalarType).itemsize
+index_size = np.dtype(PETSc.IntType).itemsize
+
+if index_size == 8:
+    c_int_t = "int64_t"
+    ctypes_index = ctypes.c_int64
+elif index_size == 4:
+    c_int_t = "int32_t"
+    ctypes_index = ctypes.c_int32
+else:
+    raise RuntimeError("Cannot translate PETSc index size into a C type, index_size: {}.".format(index_size))
+
+if complex and scalar_size == 16:
+    c_scalar_t = "double _Complex"
+    numba_scalar_t = numba.types.complex128
+elif complex and scalar_size == 8:
+    c_scalar_t = "float _Complex"
+    numba_scalar_t = numba.types.complex64
+elif not complex and scalar_size == 8:
+    c_scalar_t = "double"
+    numba_scalar_t = numba.types.float64
+elif not complex and scalar_size == 4:
+    c_scalar_t = "float"
+    numba_scalar_t = numba.types.float32
+else:
+    raise RuntimeError(
+        "Cannot translate PETSc scalar type to a C type, complex: {} size: {}.".format(complex, scalar_size))
+
+
+ffi = cffi.FFI()
+# Get MatSetValuesLocal from PETSc available via cffi in ABI mode
+ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
+                                {0} ncol, const {0}* icol, const {1}* y, int addv);
+int MatZeroRowsLocal(void* mat, {0} nrow, const {0}* irow, {1} diag);
+int MatAssemblyBegin(void* mat, int mode);
+int MatAssemblyEnd(void* mat, int mode);
+""".format(c_int_t, c_scalar_t))
+
+if petsc_lib_name is not None:
+    petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
+else:
+    try:
+        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
+    except OSError:
+        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
+    except OSError:
+        print("Could not load PETSc library for CFFI (ABI mode).")
+        raise
+MatSetValues = petsc_lib_cffi.MatSetValuesLocal
 
 
 def test_rank0():
@@ -23,16 +93,12 @@ def test_rank0():
     degrees-of-freedom of vector P1 space, values could be used to interpolate
     the expression into this space.
 
-    This test also shows simple Numba assembler which accepts the donor P2
-    function ``f`` as a coefficient and tabulates vector P1 function into
-    tensor ``b``.
-
     For a donor function f(x, y) = x^2 + 2*y^2 result is compared with the
     exact gradient grad f(x, y) = [2*x, 4*y].
     """
     mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
     P2 = dolfinx.FunctionSpace(mesh, ("P", 2))
-    vP1 = dolfinx.VectorFunctionSpace(mesh, ("P", 1))
+    vdP1 = dolfinx.VectorFunctionSpace(mesh, ("DG", 1))
 
     f = dolfinx.Function(P2)
 
@@ -44,49 +110,25 @@ def test_rank0():
     ufl_expr = ufl.grad(f)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
 
-    compiled_expr = dolfinx.jit.ffcx_jit(mesh.mpi_comm(), (ufl_expr, points))
+    compiled_expr = dolfinx.Expression(ufl_expr, points)
+    num_cells = mesh.topology.index_map(2).size_local
+    array_evaluated = compiled_expr.eval(np.arange(num_cells))
 
     ffi = cffi.FFI()
 
     @numba.njit
-    def assemble_expression(b, kernel, mesh, dofmap, coeff, coeff_dofmap):
-        pos, x_dofmap, x = mesh
-        geometry = np.zeros((3, 2))
-        w = np.zeros(6, dtype=PETSc.ScalarType)
-        constants = np.zeros(1, dtype=PETSc.ScalarType)
-        b_local = np.zeros(6, dtype=PETSc.ScalarType)
-
-        for i, cell in enumerate(pos[:-1]):
-            num_vertices = pos[i + 1] - pos[i]
-            c = x_dofmap[cell:cell + num_vertices]
+    def scatter(vec, array_evaluated, dofmap):
+        for i in range(num_cells):
             for j in range(3):
                 for k in range(2):
-                    geometry[j, k] = x[c[j], k]
+                    vec[2 * dofmap[i * 3 + j] + k] = array_evaluated[i, 2 * j + k]
 
-            for j in range(6):
-                w[j] = coeff[coeff_dofmap[i * 6 + j]]
-
-            b_local.fill(0.0)
-            kernel(ffi.from_buffer(b_local),
-                   ffi.from_buffer(w),
-                   ffi.from_buffer(constants),
-                   ffi.from_buffer(geometry))
-            for j in range(3):
-                for k in range(2):
-                    b[2 * dofmap[i * 3 + j] + k] = b_local[2 * j + k]
-
-    # Prepare mesh and dofmap data
-    pos = mesh.geometry.dofmap.offsets
-    x_dofs = mesh.geometry.dofmap.array
-    x = mesh.geometry.x
-    coeff_dofmap = P2.dofmap.list.array
-    dofmap = vP1.dofmap.list.array
 
     # Data structure for the result
-    b = dolfinx.Function(vP1)
+    b = dolfinx.Function(vdP1)
 
-    assemble_expression(b.vector.array, compiled_expr.tabulate_expression,
-                        (pos, x_dofs, x), dofmap, f.vector.array, coeff_dofmap)
+    dofmap = vdP1.dofmap.list.array
+    scatter(b.vector.array, array_evaluated, dofmap)
 
     def grad_expr1(x):
         values = np.empty((2, x.shape[1]))
@@ -95,11 +137,159 @@ def test_rank0():
 
         return values
 
-    b2 = dolfinx.Function(vP1)
+    b2 = dolfinx.Function(vdP1)
     b2.interpolate(grad_expr1)
 
     assert np.isclose((b2.vector - b.vector).norm(), 0.0)
 
+
+def test_rank1():
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    P2 = dolfinx.FunctionSpace(mesh, ("P", 2))
+    vdP1 = dolfinx.VectorFunctionSpace(mesh, ("DG", 1))
+
+    f = ufl.TrialFunction(P2)
+    ufl_expr = ufl.grad(f)
+
+    points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+    compiled_expr = dolfinx.Expression(ufl_expr, points)
+
+    num_cells = mesh.topology.index_map(2).size_local
+    array_evaluated = compiled_expr.eval(np.arange(num_cells))
+
+    @numba.njit
+    def scatter(A, array_evaluated, dofmap0, dofmap1):
+        for i in range(num_cells):
+            rows = dofmap0[i, :]
+            cols = dofmap1[i, :]
+            A_local = array_evaluated[i, :]
+            MatSetValues(A, 6, rows.ctypes, 6, cols.ctypes, A_local.ctypes, 1)
+
+    a = ufl.TrialFunction(P2) * ufl.TestFunction(vdP1)[0] * ufl.dx
+    A = dolfinx.fem.create_matrix(a)
+
+    dofmap_col = P2.dofmap.list.array.reshape(num_cells, -1)
+    dofmap_row = vdP1.dofmap.list.array
+
+    dofmap_row_unrolled = (2 * np.repeat(dofmap_row, 2).reshape(-1, 2)
+                           + np.arange(2)).flatten().astype(dofmap_row.dtype)
+    dofmap_row = dofmap_row_unrolled.reshape(num_cells, -1)
+
+    scatter(A.handle, array_evaluated, dofmap_row, dofmap_col)
+    A.assemble()
+
+    g = dolfinx.Function(P2, name="g")
+
+    def expr1(x):
+        return x[0] ** 2 + 2.0 * x[1] ** 2
+
+    g.interpolate(expr1)
+
+    def grad_expr1(x):
+        values = np.empty((2, x.shape[1]))
+        values[0] = 2.0 * x[0]
+        values[1] = 4.0 * x[1]
+
+        return values
+
+    h = dolfinx.Function(vdP1)
+    h.interpolate(grad_expr1)
+
+    A_scipy = dolfiny.la.petsc_to_scipy(A)
+
+    plt.spy(A_scipy, markersize=0.4)
+    plt.xticks(np.arange(0, 401, step=100))
+    # plt.yticks(np.arange(0, 1, step=0.2))
+    plt.tight_layout()
+    plt.savefig("grad.pdf")
+
+    h2 = A * g.vector
+
+    assert np.isclose((h2 - h.vector).norm(), 0.0)
+
+    A_dense = A_scipy.todense()
+    U, S, V = scipy.linalg.svd(A_dense)
+
+    g1 = dolfinx.Function(P2, name="g1")
+    g2 = dolfinx.Function(P2, name="g2")
+    g3 = dolfinx.Function(P2, name="g3")
+
+    g.vector.array[:] = V[-1, :]
+    g1.vector.array[:] = V[-2, :]
+    g2.vector.array[:] = V[-3, :]
+    g3.vector.array[:] = V[-4, :]
+
+    gs = [g, g1, g2, g3]
+
+    for i in range(4):
+        with dolfinx.io.XDMFFile(MPI.COMM_WORLD, f"eig{i}.xdmf", "w") as file:
+            file.write_mesh(mesh)
+            file.write_function(gs[i])
+
+
+def test_rank1_div():
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    vP1 = dolfinx.VectorFunctionSpace(mesh, ("P", 1))
+    dP0 = dolfinx.FunctionSpace(mesh, ("DG", 0))
+
+    f = ufl.TrialFunction(vP1)
+    ufl_expr = ufl.div(f)
+
+    points = np.array([[0.25, 0.25]])
+    compiled_expr = dolfinx.Expression(ufl_expr, points)
+
+    num_cells = mesh.topology.index_map(2).size_local
+    array_evaluated = compiled_expr.eval(np.arange(num_cells))
+
+    @numba.njit
+    def scatter(A, array_evaluated, dofmap0, dofmap1):
+        for i in range(num_cells):
+            rows = dofmap0[i, :]
+            cols = dofmap1[i, :]
+            A_local = array_evaluated[i, :]
+            MatSetValues(A, 1, rows.ctypes, 6, cols.ctypes, A_local.ctypes, 1)
+
+    a = ufl.TrialFunction(vP1)[0] * ufl.TestFunction(dP0) * ufl.dx
+    A = dolfinx.fem.create_matrix(a)
+
+    dofmap_col = vP1.dofmap.list.array
+    dofmap_row = dP0.dofmap.list.array.reshape(num_cells, -1)
+
+    dofmap_col_unrolled = (2 * np.repeat(dofmap_col, 2).reshape(-1, 2)
+                           + np.arange(2)).flatten().astype(dofmap_col.dtype)
+    dofmap_col = dofmap_col_unrolled.reshape(num_cells, -1)
+
+    scatter(A.handle, array_evaluated, dofmap_row, dofmap_col)
+    A.assemble()
+
+    A_scipy = dolfiny.la.petsc_to_scipy(A)
+
+    plt.spy(A_scipy, markersize=0.4)
+    plt.tight_layout()
+    plt.savefig("div.pdf")
+
+    g = dolfinx.Function(vP1)
+
+    def expr1(x):
+        values = np.empty((2, x.shape[1]))
+        values[0] = 2.0 * x[0]
+        values[1] = 4.0 * x[1]
+
+        return values
+
+    g.interpolate(expr1)
+
+    def div_expr1(x):
+        values = np.empty((1, x.shape[1]))
+        values[0] = 6.0
+        return values
+
+    h = dolfinx.Function(dP0)
+    h.interpolate(div_expr1)
+
+    h2 = A * g.vector
+
+    assert np.isclose((h2 - h.vector).norm(), 0.0)
 
 def test_simple_evaluation():
     """Test evaluation of UFL Expression.

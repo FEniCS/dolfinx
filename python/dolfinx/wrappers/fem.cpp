@@ -196,6 +196,9 @@ void fem(py::module& m)
              self.apply_dof_transformation(x.mutable_data(), cell_permutation,
                                            dim);
            })
+      .def_property_readonly(
+          "needs_permutation_data",
+          &dolfinx::fem::FiniteElement::needs_permutation_data)
       .def("signature", &dolfinx::fem::FiniteElement::signature);
 
   // dolfinx::fem::ElementDofLayout
@@ -720,34 +723,29 @@ void fem(py::module& m)
                       const dolfinx::fem::Constant<PetscScalar>>>& constants,
                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
                   const py::array_t<double, py::array::c_style>& X,
-                  py::object addr, const std::size_t value_size) {
-                 auto tabulate_expression_ptr = (void (*)(
-                     PetscScalar*, const PetscScalar*, const PetscScalar*,
-                     const double*))addr.cast<std::uintptr_t>();
+                  std::uintptr_t fn_addr, const std::vector<int>& value_shape,
+                  const std::vector<int>& num_argument_dofs) {
+                 auto tabulate_expression_ptr
+                     = (void (*)(PetscScalar*, const PetscScalar*,
+                                 const PetscScalar*, const double*, const int*,
+                                 const uint8_t*, uintptr_t))fn_addr;
                  dolfinx::array2d<double> _X(X.shape()[0], X.shape()[1]);
                  std::copy_n(X.data(), X.size(), _X.data());
                  return dolfinx::fem::Expression<PetscScalar>(
                      coefficients, constants, mesh, _X, tabulate_expression_ptr,
-                     value_size);
+                     value_shape, num_argument_dofs);
                }),
            py::arg("coefficients"), py::arg("constants"), py::arg("mesh"),
-           py::arg("x"), py::arg("fn"), py::arg("value_size"))
+           py::arg("x"), py::arg("fn"), py::arg("value_shape"),
+           py::arg("num_argument_dofs"))
       .def("eval",
-           [](const dolfinx::fem::Expression<PetscScalar>& self,
-              const py::array_t<std::int32_t, py::array::c_style>& active_cells,
-              py::array_t<PetscScalar> values) {
-             dolfinx::array2d<PetscScalar> _values(active_cells.shape()[0],
-                                                   self.num_points()
-                                                       * self.value_size());
-             self.eval(tcb::span(active_cells.data(), active_cells.size()),
-                       _values);
-             assert(values.ndim() == 2);
-             assert(values.shape()[0] == (py::ssize_t)_values.shape[0]);
-             assert(values.shape()[1] == (py::ssize_t)_values.shape[1]);
-             auto v = values.mutable_unchecked();
-             for (py::ssize_t i = 0; i < v.shape(0); i++)
-               for (py::ssize_t j = 0; j < v.shape(1); j++)
-                 v(i, j) = _values(i, j);
+           [](dolfinx::fem::Expression<PetscScalar>& self,
+              const py::array_t<std::int32_t, py::array::c_style>&
+                  active_cells) {
+             dolfinx::array2d<PetscScalar> values = self.eval(
+                 tcb::span(active_cells.data(), active_cells.size()));
+
+             return py::array_t(values.shape, values.strides(), values.data());
            })
       .def_property_readonly("mesh",
                              &dolfinx::fem::Expression<PetscScalar>::mesh,
@@ -760,9 +758,14 @@ void fem(py::module& m)
                              py::return_value_policy::reference_internal)
       .def_property_readonly("x", &dolfinx::fem::Expression<PetscScalar>::x,
                              py::return_value_policy::reference_internal)
-      .def_property_readonly("coefficients", &dolfinx::fem::Expression<PetscScalar>::coefficients,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly("constants", &dolfinx::fem::Expression<PetscScalar>::constants,
+      .def_property_readonly(
+          "num_argument_dofs",
+          &dolfinx::fem::Expression<PetscScalar>::num_argument_dofs)
+      .def_property_readonly(
+          "coefficients", &dolfinx::fem::Expression<PetscScalar>::coefficients,
+          py::return_value_policy::reference_internal)
+      .def_property_readonly("constants",
+                             &dolfinx::fem::Expression<PetscScalar>::constants,
                              py::return_value_policy::reference_internal);
 }
 } // namespace dolfinx_wrappers

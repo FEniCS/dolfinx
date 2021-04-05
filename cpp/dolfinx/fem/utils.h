@@ -444,12 +444,17 @@ std::shared_ptr<fem::Expression<T>> create_expression(
   const array2d<double> points(
       {expression.num_points, expression.topological_dimension}, _points);
 
-  int value_size = 1;
+  std::vector<int> value_shape;
   for (int i = 0; i < expression.num_components; ++i)
-    value_size *= expression.value_shape[i];
+    value_shape.push_back(expression.value_shape[i]);
 
-  return std::make_shared<fem::Expression<T>>(coeff_map, const_map, mesh, points,
-                         expression.tabulate_expression, value_size);
+  std::vector<int> num_argument_dofs;
+  for (int i = 0; i < expression.num_arguments; ++i)
+    num_argument_dofs.push_back(expression.num_argument_dofs[i]);
+
+  return std::make_shared<fem::Expression<T>>(
+      coeff_map, const_map, mesh, points, expression.tabulate_expression,
+      value_shape, num_argument_dofs);
 }
 
 // NOTE: This is subject to change

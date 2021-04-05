@@ -104,16 +104,13 @@ class Expression:
         self._cpp_object = cpp.fem.create_expression(ffi.cast("uintptr_t", ufc_expression),
                                                      coeffs, constants, mesh)
 
-    def eval(self, cells: np.ndarray, u: typing.Optional[np.ndarray] = None) -> np.ndarray:
+    def eval(self, cells: np.ndarray) -> np.ndarray:
         """Evaluate Expression in cells.
 
         Parameters
         ----------
         cells
             local indices of cells to evaluate expression.
-        u: optional
-            array of shape (num_cells, num_points*value_size) to
-            store result of expression evaluation.
 
         Returns
         -------
@@ -121,29 +118,11 @@ class Expression:
         u: np.ndarray
             The i-th row of u contains the expression evaluated on cells[i].
 
-        Note
-        ----
-        This function allocates u of the appropriate size if u is not passed.
         """
         cells = np.asarray(cells, dtype=np.int32)
-        assert cells.ndim == 1
         num_cells = cells.shape[0]
 
-        # Allocate memory for result if u was not provided
-        if u is None:
-            if common.has_petsc_complex:
-                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.complex128)
-            else:
-                u = np.empty((num_cells, self.num_points * self.value_size), dtype=np.float64)
-            self._cpp_object.eval(cells, u)
-        else:
-            assert u.ndim < 3
-            assert u.size == num_cells * self.num_points * self.value_size
-            assert u.shape[0] == num_cells
-            assert u.shape[1] == self.num_points * self.value_size
-            self._cpp_object.eval(cells, u)
-
-        return u
+        return self._cpp_object.eval(cells)
 
     @property
     def ufl_expression(self):
