@@ -162,7 +162,8 @@ compute_local_dual_graph_keyed(
   int eq_count = 0;
   for (std::size_t j = 1; j < facets.size(); ++j)
   {
-    if (std::equal(facets[j].begin(), facets[j].end(), facets[j - 1].begin()))
+    if (std::equal(facets[j].begin(), facets[j].begin() + num_facet_vertices,
+                   facets[j - 1].begin()))
     {
       ++eq_count;
       // join cells at cell_index[j] <-> cell_index[jlast]
