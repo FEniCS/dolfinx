@@ -68,8 +68,9 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
     cells = infile.read_topology_data("mesh");
     x = infile.read_geometry_data("mesh");
     auto [data, offsets] = graph::create_adjacency_data(cells);
+    const int tdim = mesh::cell_dim(cmap.cell_shape());
     dest = partitioner(
-        subset_comm, nparts, cmap.cell_shape(),
+        subset_comm, nparts, tdim,
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
         mesh::GhostMode::shared_facet);
   }
@@ -112,24 +113,22 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
   {
     CHECK_NOTHROW(test_distributed_mesh(
         static_cast<graph::AdjacencyList<std::int32_t> (*)(
-            MPI_Comm, int, const mesh::CellType,
-            const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
-            &mesh::partition_cells_graph)));
+            MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
+            mesh::GhostMode)>(&mesh::partition_cells_graph)));
   }
 
 #ifdef HASKIP
   SECTION("KAHIP with Lambda")
   {
-    auto kahip
-        = [](MPI_Comm mpi_comm, int nparts, const mesh::CellType cell_type,
-             const graph::AdjacencyList<std::int64_t>& cells,
-             mesh::GhostMode ghost_mode) {
-            const auto [dual_graph, graph_info]
-                = mesh::build_dual_graph(mpi_comm, cells, cell_type);
-            bool ghosting = (ghost_mode != mesh::GhostMode::none);
-            return graph::kahip::partition(mpi_comm, nparts, dual_graph, -1,
-                                           ghosting);
-          };
+    auto kahip = [](MPI_Comm mpi_comm, int nparts, int tdim,
+                    const graph::AdjacencyList<std::int64_t>& cells,
+                    mesh::GhostMode ghost_mode) {
+      const auto [dual_graph, graph_info]
+          = mesh::build_dual_graph(mpi_comm, cells, tdim);
+      bool ghosting = (ghost_mode != mesh::GhostMode::none);
+      return graph::kahip::partition(mpi_comm, nparts, dual_graph, -1,
+                                     ghosting);
+    };
     CHECK_NOTHROW(test_distributed_mesh(kahip));
   }
 #endif
