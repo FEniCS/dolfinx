@@ -455,7 +455,7 @@ ADIOS2File::ADIOS2File(MPI_Comm comm, const std::string& filename,
   _engine = std::make_unique<adios2::Engine>(_io->Open(filename, file_mode));
 }
 //-----------------------------------------------------------------------------
-ADIOS2File::~ADIOS2File() { close(); };
+ADIOS2File::~ADIOS2File() { close(); }
 //-----------------------------------------------------------------------------
 void ADIOS2File::close()
 {
