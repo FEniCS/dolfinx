@@ -24,7 +24,7 @@ namespace
 void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
-  auto cmap = fem::create_coordinate_map(create_coordinate_map_cmap);
+  auto cmap = fem::create_coordinate_map(*coordinate_mapping_cmap);
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
       MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}}}, {32, 32}, cmap,
       mesh::GhostMode::shared_facet));
@@ -54,7 +54,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &subset_comm);
 
   // Create coordinate map
-  auto cmap = fem::create_coordinate_map(create_coordinate_map_cmap);
+  auto cmap = fem::create_coordinate_map(*coordinate_mapping_cmap);
 
   // read mesh data
   dolfinx::array2d<double> x(0, 3);
