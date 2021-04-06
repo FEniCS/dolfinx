@@ -39,8 +39,7 @@ create(MPI_Comm comm, std::size_t n, std::array<double, 2> x,
        const fem::CoordinateElement& element, const mesh::GhostMode ghost_mode,
        const mesh::CellPartitionFunction& partitioner
        = static_cast<graph::AdjacencyList<std::int32_t> (*)(
-           MPI_Comm, int, const mesh::CellType,
-           const graph::AdjacencyList<std::int64_t>&, mesh::GhostMode)>(
-           &mesh::partition_cells_graph));
+           MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
+           mesh::GhostMode)>(&mesh::partition_cells_graph));
 } // namespace generation::IntervalMesh
 } // namespace dolfinx

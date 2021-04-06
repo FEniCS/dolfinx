@@ -322,12 +322,11 @@ refinement::partition(const mesh::Mesh& old_mesh,
                              old_mesh.geometry().cmap(), new_coords, gm);
   }
 
-  auto partitioner = [](MPI_Comm mpi_comm, int, const mesh::CellType cell_type,
+  auto partitioner = [](MPI_Comm mpi_comm, int, int tdim,
                         const graph::AdjacencyList<std::int64_t>& cell_topology,
                         mesh::GhostMode) {
     // Find out the ghosting information
-    auto [graph, info]
-        = mesh::build_dual_graph(mpi_comm, cell_topology, cell_type);
+    auto [graph, info] = mesh::build_dual_graph(mpi_comm, cell_topology, tdim);
 
     // FIXME: much of this is reverse engineering of data that is already
     // known in the GraphBuilder
