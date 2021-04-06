@@ -95,14 +95,13 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
-    _value_dimension.push_back(ufc_element.value_dimension(i));
+    _value_dimension.push_back(ufc_element.value_shape[i]);
 
   // Create all sub-elements
   for (int i = 0; i < ufc_element.num_sub_elements; ++i)
   {
-    ufc_finite_element* ufc_sub_element = ufc_element.create_sub_element(i);
+    ufc_finite_element* ufc_sub_element = ufc_element.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
-    std::free(ufc_sub_element);
   }
 }
 //-----------------------------------------------------------------------------
