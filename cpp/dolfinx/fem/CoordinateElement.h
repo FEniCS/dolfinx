@@ -15,6 +15,11 @@
 #include <memory>
 #include <string>
 
+namespace basix
+{
+class FiniteElement;
+}
+
 namespace dolfinx::fem
 {
 
@@ -25,27 +30,21 @@ class CoordinateElement
 {
 public:
   /// Create a coordinate element
-  /// @param[in] basix_element_handle Element handle from basix
+  /// @param[in] element Element from basix
   /// @param[in] geometric_dimension Geometric dimension
-  /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   /// @param[in] needs_permutation_data Indicates whether or not the
   /// element needs permutation data (for higher order elements)
   /// @param[in] permute_dofs Function that permutes the DOF numbering
   /// @param[in] unpermute_dofs Function that reverses a DOF permutation
-  CoordinateElement(int basix_element_handle, int geometric_dimension,
-                    const std::string& signature,
-                    const ElementDofLayout& dof_layout,
+  CoordinateElement(std::shared_ptr<basix::FiniteElement> element,
+                    int geometric_dimension, const ElementDofLayout& dof_layout,
                     bool needs_permutation_data,
                     std::function<int(int*, const uint32_t)> permute_dofs,
                     std::function<int(int*, const uint32_t)> unpermute_dofs);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
-
-  /// String identifying the finite element
-  /// @return The signature
-  std::string signature() const;
 
   /// Cell shape
   /// @return The cell shape
@@ -73,7 +72,7 @@ public:
   /// Return the dof layout
   const ElementDofLayout& dof_layout() const;
 
-  /// Absolute increment stopping criteria for non-affine Newton solver
+  /// Absolute increment stopping criterium for non-affine Newton solver
   double non_affine_atol = 1.0e-8;
 
   /// Maximum number of iterations for non-affine Newton solver
@@ -86,7 +85,7 @@ public:
   /// @param[in] phi Tabulated basis functions at reference points X
   void push_forward(array2d<double>& x, const array2d<double>& cell_geometry,
                     const array2d<double>& phi) const;
-
+                    
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
   void compute_reference_geometry(array2d<double>& X, std::vector<double>& J,
@@ -109,9 +108,6 @@ private:
   // Geometric dimensions
   int _gdim;
 
-  // Signature, usually from UFC
-  std::string _signature;
-
   // Layout of dofs on element
   ElementDofLayout _dof_layout;
 
@@ -129,5 +125,8 @@ private:
 
   // Dof permutation maker
   std::function<int(int*, const uint32_t)> _unpermute_dofs;
+
+  // Actual Element;
+  std::shared_ptr<basix::FiniteElement> _element;
 };
 } // namespace dolfinx::fem

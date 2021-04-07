@@ -7,37 +7,45 @@
 #include "CoordinateElement.h"
 #include <Eigen/Dense>
 #include <basix.h>
-#include <iostream>
+#include <basix/finite-element.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
-    int basix_element_handle, int geometric_dimension,
-    const std::string& signature, const ElementDofLayout& dof_layout,
-    bool needs_permutation_data,
+    std::shared_ptr<basix::FiniteElement> element, int geometric_dimension,
+    const ElementDofLayout& dof_layout, bool needs_permutation_data,
     std::function<int(int*, const uint32_t)> permute_dofs,
     std::function<int(int*, const uint32_t)> unpermute_dofs)
-    : _gdim(geometric_dimension), _signature(signature),
-      _dof_layout(dof_layout), _basix_element_handle(basix_element_handle),
+    : _gdim(geometric_dimension), _dof_layout(dof_layout),
       _needs_permutation_data(needs_permutation_data),
-      _permute_dofs(permute_dofs), _unpermute_dofs(unpermute_dofs)
+      _permute_dofs(permute_dofs), _unpermute_dofs(unpermute_dofs),
+      _element(element)
 {
+
+  int degree = _element->degree();
+  const char* cell_type
+      = basix::cell::type_to_str(_element->cell_type()).c_str();
+
+  const char* family_name
+      = basix::element::type_to_str(_element->family()).c_str();
+
+  _basix_element_handle
+      = basix::register_element(family_name, cell_type, degree);
+
   const mesh::CellType cell = cell_shape();
-  int degree = basix::degree(basix_element_handle);
+
   _is_affine
       = ((cell == mesh::CellType::interval or cell == mesh::CellType::triangle
           or cell == mesh::CellType::tetrahedron)
          and degree == 1);
 }
 //-----------------------------------------------------------------------------
-std::string CoordinateElement::signature() const { return _signature; }
-//-----------------------------------------------------------------------------
 mesh::CellType CoordinateElement::cell_shape() const
 {
   // TODO
-  const std::string cell = basix::cell_type(_basix_element_handle);
+  const std::string cell = basix::cell::type_to_str(_element->cell_type());
 
   const std::map<std::string, mesh::CellType> str_to_type
       = {{"interval", mesh::CellType::interval},
@@ -54,8 +62,7 @@ mesh::CellType CoordinateElement::cell_shape() const
 //-----------------------------------------------------------------------------
 int CoordinateElement::topological_dimension() const
 {
-  const std::string cell = basix::cell_type(_basix_element_handle);
-  return basix::topology(cell.c_str()).size() - 1;
+  return basix::cell::topology(_element->cell_type()).size() - 1;
 }
 //-----------------------------------------------------------------------------
 int CoordinateElement::geometric_dimension() const { return _gdim; }
