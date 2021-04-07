@@ -164,9 +164,8 @@ array2d<double> FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const std::vector<std::uint32_t>& cell_info
       = needs_permutation_data ? _mesh->topology().get_cell_permutation_info()
                                : std::vector<std::uint32_t>(num_cells);
-
-  array2d<double> phi(num_dofs_g, X.shape[0]);
-  cmap.tabulate_shape_functions(X, 0, phi);
+                               
+  auto phi = cmap.tabulate_shape_functions(0, X);
 
   for (int c = 0; c < num_cells; ++c)
   {

@@ -74,10 +74,10 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(array2d<double>& x,
                                      const array2d<double>& cell_geometry,
-                                     const array2d<double>& phi) const
+                                     const xt::xtensor<double, 4>& phi) const
 {
   assert((int)x.shape[1] == this->geometric_dimension());
-  assert(phi.shape[0] == cell_geometry.shape[0]);
+  assert(phi.shape(2) == cell_geometry.shape[0]);
 
   // Compute physical coordinates
   // x = phi * cell_geometry;
@@ -85,7 +85,7 @@ void CoordinateElement::push_forward(array2d<double>& x,
   for (std::size_t i = 0; i < x.shape[0]; ++i)
     for (std::size_t j = 0; j < x.shape[1]; ++j)
       for (std::size_t k = 0; k < cell_geometry.shape[0]; ++k)
-        x(i, j) += phi(k, i) * cell_geometry(k, j);
+        x(i, j) += phi(0, i, k, 0) * cell_geometry(k, j);
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
@@ -251,17 +251,17 @@ bool CoordinateElement::needs_permutation_data() const
   return _needs_permutation_data;
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::tabulate_shape_functions(const array2d<double>& X,
-                                                 int n,
-                                                 array2d<double>& phi) const
+xt::xtensor<double, 4>
+CoordinateElement::tabulate_shape_functions(int n,
+                                            const array2d<double>& X) const
 {
-  // FIXME: Should probably have some asserts for the shape of X and phi
-  basix::tabulate(_basix_element_handle, phi.data(), n, X.data(), X.shape[0]);
+  auto _X = xt::adapt(X.data(), X.shape);
+  return _element->tabulate(n, _X);
 }
 //-----------------------------------------------------------------------------
 
 void CoordinateElement::compute_jacobian_data(
-    const array2d<double>& tabulated_data, const array2d<double>& X,
+    const xt::xtensor<double, 4>& tabulated_data, const array2d<double>& X,
     const array2d<double>& cell_geometry, std::vector<double>& J,
     tcb::span<double> detJ, std::vector<double>& K) const
 {
@@ -270,20 +270,10 @@ void CoordinateElement::compute_jacobian_data(
   if (num_points == 0)
     return;
 
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      _cell_geometry(cell_geometry.data(), cell_geometry.shape[0],
-                     cell_geometry.shape[1]);
-
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      _tabulated_data(tabulated_data.data(), tabulated_data.shape[0],
-                      tabulated_data.shape[1]);
-
   // in-argument checks
   const int tdim = this->topological_dimension();
   const int gdim = this->geometric_dimension();
-  assert(_cell_geometry.cols() == gdim);
+  assert(int(cell_geometry.shape[1]) == gdim);
 
   // In/out size checks
   assert(X.shape[0] == std::size_t(num_points));
@@ -292,22 +282,26 @@ void CoordinateElement::compute_jacobian_data(
   assert((int)detJ.size() == num_points);
   assert((int)K.size() == num_points * gdim * tdim);
 
-  const int d = _cell_geometry.rows();
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
-      d, tdim);
+  const int d = cell_geometry.shape[0];
+  xt::xtensor<double, 2> dphi({std::size_t(d), std::size_t(tdim)});
   if (_is_affine)
   {
     // FIXME: This data should not be returned as transpose from basix
     for (std::int32_t i = 0; i < tdim; ++i)
     {
-      auto dphi_i = _tabulated_data.row(num_points * (i + 1));
+      auto dphi_i = xt::view(tabulated_data, i + 1, 0, xt::all(), 0);
       for (std::int32_t j = 0; j < d; ++j)
-        dphi(j, i) = dphi_i[j];
+        dphi(j, i) = dphi_i(j);
     }
-    // dphi = _tabulated_data.block(1, 0, tdim, d).transpose();
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
         J0(gdim, tdim);
-    J0 = _cell_geometry.matrix().transpose() * dphi;
+
+    // J0 = dphi * cell_geometry;
+    for (int i = 0; i < gdim; ++i)
+      for (int j = 0; j < tdim; ++j)
+        for (int k = 0; k < d; ++k)
+          J0(i, j) += dphi(k, i) * cell_geometry(j, k);
+
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
         K0(tdim, gdim);
 
@@ -345,14 +339,17 @@ void CoordinateElement::compute_jacobian_data(
           Kview(K.data() + ip * gdim * tdim, tdim, gdim);
       for (std::int32_t i = 0; i < tdim; ++i)
       {
-        auto dphi_i = _tabulated_data.row(num_points * (i + 1) + ip);
+        auto dphi_i = xt::view(tabulated_data, i + 1, ip, xt::all(), 0);
         for (std::int32_t j = 0; j < d; ++j)
           dphi(j, i) = dphi_i[j];
       }
 
-      // dphi = _tabulated_data.block(ip * (tdim + 1) + 1, 0, tdim,
-      // d).transpose();
-      Jview = _cell_geometry.matrix().transpose() * dphi;
+      // J0 = dphi * cell_geometry;
+      for (int i = 0; i < gdim; ++i)
+        for (int j = 0; j < tdim; ++j)
+          for (int k = 0; k < d; ++k)
+            Jview(i, j) += dphi(k, i) * cell_geometry(j, k);
+
       if (gdim == tdim)
       {
         Kview = Jview.inverse();

@@ -277,8 +277,7 @@ void interpolate(Function<T>& u,
 
   // Tabulate 0th and 1st order derivatives of shape functions at interpolation
   // coords
-  array2d<double> tabulated_data(X.shape[0] * (tdim + 1), num_dofs_g);
-  cmap.tabulate_shape_functions(X, 1, tabulated_data);
+  auto tabulated_data = cmap.tabulate_shape_functions(1, X);
 
   for (std::int32_t c : cells)
   {

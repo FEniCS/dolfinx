@@ -240,7 +240,8 @@ void fem(py::module& m)
                          _cell_geometry.data());
              dolfinx::array2d<double> x(_X.shape[0],
                                         self.geometric_dimension());
-             self.push_forward(x, _X, _cell_geometry);
+             auto phi = self.tabulate_shape_functions(0, _X);
+             self.push_forward(x, _cell_geometry, phi);
              return as_pyarray2d(std::move(x));
            })
       .def_readwrite("non_affine_atol",
