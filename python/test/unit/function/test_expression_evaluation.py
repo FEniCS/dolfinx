@@ -9,7 +9,6 @@ import cffi
 import dolfinx
 import numba
 import numpy as np
-import pytest
 import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
