@@ -283,7 +283,12 @@ void CoordinateElement::compute_jacobian_data(
   assert((int)K.size() == num_points * gdim * tdim);
 
   const int d = cell_geometry.shape[0];
-  xt::xtensor<double, 2> dphi({std::size_t(d), std::size_t(tdim)});
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
+      d, tdim);
+  Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                 Eigen::RowMajor>>
+      _cell_geometry(cell_geometry.data(), cell_geometry.shape[0],
+                     cell_geometry.shape[1]);
   if (_is_affine)
   {
     // FIXME: This data should not be returned as transpose from basix
@@ -293,14 +298,7 @@ void CoordinateElement::compute_jacobian_data(
       for (std::int32_t j = 0; j < d; ++j)
         dphi(j, i) = dphi_i(j);
     }
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
-        J0(gdim, tdim);
-
-    // J0 = dphi * cell_geometry;
-    for (int i = 0; i < gdim; ++i)
-      for (int j = 0; j < tdim; ++j)
-        for (int k = 0; k < d; ++k)
-          J0(i, j) += dphi(k, i) * cell_geometry(j, k);
+    auto J0 = _cell_geometry.transpose() * dphi;
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
         K0(tdim, gdim);
@@ -343,13 +341,7 @@ void CoordinateElement::compute_jacobian_data(
         for (std::int32_t j = 0; j < d; ++j)
           dphi(j, i) = dphi_i[j];
       }
-
-      // J0 = dphi * cell_geometry;
-      for (int i = 0; i < gdim; ++i)
-        for (int j = 0; j < tdim; ++j)
-          for (int k = 0; k < d; ++k)
-            Jview(i, j) += dphi(k, i) * cell_geometry(j, k);
-
+      Jview = _cell_geometry.transpose() * dphi;
       if (gdim == tdim)
       {
         Kview = Jview.inverse();

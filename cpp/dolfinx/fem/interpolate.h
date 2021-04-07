@@ -286,15 +286,10 @@ void interpolate(Function<T>& u,
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
-    // cmap.push_forward(x_cell, coordinate_dofs, phi);
-    cmap.compute_jacobian_data(tabulated_data, X, coordinate_dofs, J, detJ, K);
-    // cmap.compute_reference_geometry(X_ref, J, detJ, K, x_cell,
-    // coordinate_dofs);
-
     // Compute J, detJ and K
+    cmap.compute_jacobian_data(tabulated_data, X, coordinate_dofs, J, detJ, K);
 
     auto dofs = dofmap->cell_dofs(c);
-
     for (int k = 0; k < element_bs; ++k)
     {
       // Extract computed expression values for element block k
