@@ -68,7 +68,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   const std::string family = ufc_element.family;
 
   // FIXME: Add element 'handle' to UFC and do not use fragile strings
-  if (family == "mixed element")
+  if (family == "mixed element" or family == "Quadrature")
   {
     // basix does not support mixed elements, so the subelements should be
     // handled separately
