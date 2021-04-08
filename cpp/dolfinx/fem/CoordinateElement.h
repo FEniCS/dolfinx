@@ -35,10 +35,7 @@ public:
   /// @param[in] unpermute_dofs Function that reverses a DOF permutation
   CoordinateElement(int basix_element_handle, int geometric_dimension,
                     const std::string& signature,
-                    const ElementDofLayout& dof_layout,
-                    bool needs_permutation_data,
-                    std::function<int(int*, const uint32_t)> permute_dofs,
-                    std::function<int(int*, const uint32_t)> unpermute_dofs);
+                    const ElementDofLayout& dof_layout);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -110,11 +107,5 @@ private:
 
   // Does the element need permutation data
   bool _needs_permutation_data;
-
-  // Dof permutation maker
-  std::function<int(int*, const uint32_t)> _permute_dofs;
-
-  // Dof permutation maker
-  std::function<int(int*, const uint32_t)> _unpermute_dofs;
 };
 } // namespace dolfinx::fem
