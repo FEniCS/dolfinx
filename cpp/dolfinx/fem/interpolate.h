@@ -53,11 +53,11 @@ void interpolate(Function<T>& u, const Function<T>& v);
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
 template <typename T>
-void interpolate(Function<T>& u,
-                 const std::function<std::variant<std::vector<T>, array2d<T>>(
-                     const array2d<double>&)>& f,
-                 const array2d<double>& x,
-                 const tcb::span<const std::int32_t>& cells);
+void interpolate(
+    Function<T>& u,
+    const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
+    const xt::xtensor<double, 2>& x,
+    const tcb::span<const std::int32_t>& cells);
 
 /// Interpolate an expression f(x)
 ///
