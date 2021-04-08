@@ -100,8 +100,5 @@ private:
 
   // Basix element
   int _basix_element_handle;
-
-  // Does the element need permutation data
-  bool _needs_permutation_data;
 };
 } // namespace dolfinx::fem
