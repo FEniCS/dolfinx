@@ -216,8 +216,12 @@ void interpolate(
   // points.
 
   xt::xarray<T> values = f(x);
+
   if (values.dimension() == 1)
     values.reshape({element->value_size(), x.shape(1)});
+
+  if (values.shape(0) != element->value_size())
+    throw std::runtime_error("Interpolation data has the wrong shape.");
 
   if (values.shape(1) != cells.size() * X.shape[0])
     throw std::runtime_error("Interpolation data has the wrong shape.");
@@ -272,7 +276,7 @@ void interpolate(
     // Compute J, detJ and K
     cmap.compute_jacobian_data(tabulated_data, X, coordinate_dofs, J, detJ, K);
 
-    auto dofs = dofmap->cell_dofs(c);
+    tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
     for (int k = 0; k < element_bs; ++k)
     {
       // Extract computed expression values for element block k
@@ -319,7 +323,7 @@ void interpolate_c(
       std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
 
   auto fn = [value_size, &f](const xt::xtensor<double, 2>& x) {
-    xt::xarray<T> values({value_size, x.shape(1)});
+    xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
     f(values, x);
     return values;
   };

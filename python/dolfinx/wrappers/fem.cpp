@@ -588,19 +588,11 @@ void fem(py::module& m)
                 s *= sizeof(double);
               py::array_t _x(x.shape(), strides, x.data(), py::none());
               py::array_t v = f(_x);
-              if (v.ndim() > 1)
-              {
-                std::vector<std::size_t> shape;
-                for (pybind11::ssize_t i = 0; i < v.ndim(); i++)
-                  shape.push_back(v.shape()[i]);
-                return xt::adapt(v.mutable_data(), shape);
-              }
-              else
-              {
-                return xt::adapt(v.data(), {std::size_t(v.size())});
-              }
+              std::vector<std::size_t> shape;
+              for (pybind11::ssize_t i = 0; i < v.ndim(); i++)
+                shape.push_back(v.shape()[i]);
+              return xt::adapt(v.data(), shape);
             };
-
             self.interpolate(_f);
           },
           py::arg("f"), "Interpolate an expression")
@@ -615,9 +607,8 @@ void fem(py::module& m)
                 = reinterpret_cast<void (*)(PetscScalar*, int, int,
                                             const double*)>(addr);
 
-            [[maybe_unused]] auto _f
-                = [&f](xt::xarray<PetscScalar>& values,
-                       const xt::xtensor<double, 2>& x) -> void {
+            auto _f = [&f](xt::xarray<PetscScalar>& values,
+                           const xt::xtensor<double, 2>& x) -> void {
               f(values.data(), int(values.shape(1)), int(values.shape(0)),
                 x.data());
             };
@@ -636,7 +627,7 @@ void fem(py::module& m)
             const auto x = dolfinx::fem::interpolation_coords(
                 *self.function_space()->element(),
                 *self.function_space()->mesh(), cells);
-
+                
             dolfinx::fem::interpolate_c<PetscScalar>(self, _f, x, cells);
           },
           "Interpolate using a pointer to an expression with a C "
