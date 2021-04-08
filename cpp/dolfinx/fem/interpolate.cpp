@@ -36,7 +36,8 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   // (x) for each cell
   array2d<double> x_cell(X.shape[0], gdim);
   array2d<double> coordinate_dofs(num_dofs_g, gdim);
-  xt::xtensor<double, 2> x({3, cells.size() * X.shape[0]});
+  std::array<std::size_t, 2> shape = {3, cells.size() * X.shape[0]};
+  xt::xtensor<double, 2> x = xt::zeros<double>(shape);
   for (std::size_t c = 0; c < cells.size(); ++c)
   {
     // Get geometry data for current cell

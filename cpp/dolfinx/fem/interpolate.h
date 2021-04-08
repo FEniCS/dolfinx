@@ -218,7 +218,11 @@ void interpolate(
   xt::xarray<T> values = f(x);
 
   if (values.dimension() == 1)
+  {
+    if (element->value_size() != 1)
+      throw std::runtime_error("Interpolation data has the wrong shape.");
     values.reshape({element->value_size(), x.shape(1)});
+  }
 
   if (values.shape(0) != element->value_size())
     throw std::runtime_error("Interpolation data has the wrong shape.");
