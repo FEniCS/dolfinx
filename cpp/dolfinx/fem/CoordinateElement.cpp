@@ -291,7 +291,6 @@ void CoordinateElement::compute_jacobian_data(
                      cell_geometry.shape[1]);
   if (_is_affine)
   {
-    // FIXME: This data should not be returned as transpose from basix
     for (std::int32_t i = 0; i < tdim; ++i)
     {
       auto dphi_i = xt::view(tabulated_data, i + 1, 0, xt::all(), 0);
@@ -319,12 +318,12 @@ void CoordinateElement::compute_jacobian_data(
                 std::sqrt((J0.transpose() * J0).determinant()));
     }
 
-    // As J0 and K0 is constant for affine meshes, replicate per intepolation
+    // As J0 and K0 are constant for affine meshes, replicate per intepolation
     // point
-    for (int i = 0; i < num_points; i++)
+    for (int ip = 0; ip < num_points; ip++)
     {
-      std::copy_n(J0.data(), J0.size(), J.data() + i * J0.size());
-      std::copy_n(K0.data(), K0.size(), K.data() + i * K0.size());
+      std::copy_n(J0.data(), J0.size(), J.data() + ip * J0.size());
+      std::copy_n(K0.data(), K0.size(), K.data() + ip * K0.size());
     }
   }
   else

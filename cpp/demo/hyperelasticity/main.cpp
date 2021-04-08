@@ -147,9 +147,9 @@ int main(int argc, char* argv[])
 
       // Large angle of rotation (60 degrees)
       const double theta = 1.04719755;
-
-      auto values = xt::zeros<double>({3, x.shape[1]});
-      for (std::size_t i = 0; i < x.shape[1]; ++i)
+      std::array<std::size_t, 2> shape = {3, x.shape(1)};
+      xt::xarray<double> values = xt::zeros<double>(shape);
+      for (std::size_t i = 0; i < x.shape(1); ++i)
       {
         // New coordinates
         double y = y0 + (x(1, i) - y0) * std::cos(theta)
@@ -167,7 +167,9 @@ int main(int argc, char* argv[])
 
     auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
     u_clamp->interpolate([](auto& x) {
-      return xt::zeros<double>({3, x.shape[1]});
+      std::array<std::size_t, 2> shape = {3, x.shape(1)};
+      xt::xarray<double> out = xt::zeros<double>(shape);
+      return out;
     });
 
     // Create Dirichlet boundary conditions
