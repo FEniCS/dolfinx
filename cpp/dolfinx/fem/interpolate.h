@@ -30,7 +30,7 @@ class Function;
 /// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression
-array2d<double>
+xt::xtensor<double, 2>
 interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
                      const tcb::span<const std::int32_t>& cells);
 
@@ -78,8 +78,9 @@ void interpolate(Function<T>& u,
 template <typename T>
 void interpolate_c(
     Function<T>& u,
-    const std::function<void(array2d<T>&, const array2d<double>&)>& f,
-    const array2d<double>& x, const tcb::span<const std::int32_t>& cells);
+    const std::function<void(xt::xarray<T>&, const xt::xtensor<double, 2>&)>& f,
+    const xt::xtensor<double, 2>& x,
+    const tcb::span<const std::int32_t>& cells);
 
 namespace detail
 {
@@ -175,11 +176,10 @@ void interpolate(Function<T>& u, const Function<T>& v)
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void interpolate(Function<T>& u,
-                 const std::function<std::variant<std::vector<T>, array2d<T>>(
-                     const array2d<double>&)>& f,
-                 const array2d<double>& x,
-                 const tcb::span<const std::int32_t>& cells)
+void interpolate(
+    Function<T>& u,
+    const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
+    const xt::xtensor<double, 2>& x, const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
@@ -215,25 +215,11 @@ void interpolate(Function<T>& u,
   // and the number of columns is equal to the number of evaluation
   // points.
 
-  // TODO: Copies and memory allocation could be avoided with a 'span2d'
-  // class, or by just pointing to the data
-  array2d<T> values(element->value_size(), x.shape[1]);
-  std::variant<std::vector<T>, array2d<T>> values_v = f(x);
-  if (std::holds_alternative<array2d<T>>(values_v))
-  {
-    values = std::get<1>(values_v);
-    if (values.shape[0] != element->value_size())
-      throw std::runtime_error("Interpolation data has the wrong shape.");
-  }
-  else
-  {
-    if (element->value_size() != 1)
-      throw std::runtime_error("Interpolation data has the wrong shape.");
-    std::copy(std::get<0>(values_v).begin(), std::get<0>(values_v).end(),
-              values.data());
-  }
+  xt::xarray<T> values = f(x);
+  if (values.dimension() == 1)
+    values.reshape({element->value_size(), x.shape(1)});
 
-  if (values.shape[1] != cells.size() * X.shape[0])
+  if (values.shape(1) != cells.size() * X.shape[0])
     throw std::runtime_error("Interpolation data has the wrong shape.");
 
   // Get dofmap
@@ -267,9 +253,6 @@ void interpolate(Function<T>& u,
   array2d<double> coordinate_dofs(num_dofs_g, gdim);
 
   array2d<T> reference_data(value_size, X.shape[0]);
-
-  // array2d<double> phi(num_dofs_g, X.shape[0]);
-  // cmap.tabulate_shape_functions(X, 0, phi);
 
   std::vector<T>& coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
@@ -324,19 +307,19 @@ void interpolate(Function<T>& u,
 template <typename T>
 void interpolate_c(
     Function<T>& u,
-    const std::function<void(array2d<T>&, const array2d<double>&)>& f,
-    const array2d<double>& x, const tcb::span<const std::int32_t>& cells)
+    const std::function<void(xt::xarray<T>&, const xt::xtensor<double, 2>&)>& f,
+    const xt::xtensor<double, 2>& x, const tcb::span<const std::int32_t>& cells)
 {
   const auto element = u.function_space()->element();
   assert(element);
   std::vector<int> vshape(element->value_rank(), 1);
   for (std::size_t i = 0; i < vshape.size(); ++i)
     vshape[i] = element->value_dimension(i);
-  const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
-                                         1, std::multiplies<>());
+  const std::size_t value_size = std::accumulate(
+      std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
 
-  auto fn = [value_size, &f](const array2d<double>& x) {
-    array2d<T> values(value_size, x.shape[1]);
+  auto fn = [value_size, &f](const xt::xtensor<double, 2>& x) {
+    xt::xarray<T> values({value_size, x.shape(1)});
     f(values, x);
     return values;
   };

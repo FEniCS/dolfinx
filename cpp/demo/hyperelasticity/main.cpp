@@ -5,6 +5,7 @@
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/Vector.h>
+#include <xtensor/xarray.hpp>
 
 using namespace dolfinx;
 
@@ -147,7 +148,7 @@ int main(int argc, char* argv[])
       // Large angle of rotation (60 degrees)
       const double theta = 1.04719755;
 
-      array2d<PetscScalar> values(3, x.shape[1], 0.0);
+      auto values = xt::zeros<double>({3, x.shape[1]});
       for (std::size_t i = 0; i < x.shape[1]; ++i)
       {
         // New coordinates
@@ -166,7 +167,7 @@ int main(int argc, char* argv[])
 
     auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
     u_clamp->interpolate([](auto& x) {
-      return array2d<PetscScalar>(3, x.shape[1], 0.0);
+      return xt::zeros<double>({3, x.shape[1]});
     });
 
     // Create Dirichlet boundary conditions

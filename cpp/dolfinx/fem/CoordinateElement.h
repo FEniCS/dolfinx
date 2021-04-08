@@ -86,7 +86,7 @@ public:
   /// @param[in] cell_geometry The cell node coordinates (physical)
   /// @param[in] phi Tabulated basis functions at reference points X
   void push_forward(array2d<double>& x, const array2d<double>& cell_geometry,
-                    const xt::xtensor<double, 4>& phi) const;
+                    const xt::xtensor<double, 2>& phi) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x

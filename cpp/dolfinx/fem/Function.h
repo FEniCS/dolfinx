@@ -201,8 +201,8 @@ public:
 
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
-  void interpolate(const std::function<std::variant<std::vector<T>, array2d<T>>(
-                       const array2d<double>&)>& f)
+  void interpolate(
+      const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -215,7 +215,7 @@ public:
     std::iota(cells.begin(), cells.end(), 0);
     // FIXME: Remove interpolation coords as it should be done internally in
     // fem::interpolate
-    const array2d<double> x = fem::interpolation_coords(
+    const xt::xtensor<double, 2> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
     fem::interpolate(*this, f, x, cells);
   }

@@ -74,7 +74,7 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(array2d<double>& x,
                                      const array2d<double>& cell_geometry,
-                                     const xt::xtensor<double, 4>& phi) const
+                                     const xt::xtensor<double, 2>& phi) const
 {
   assert((int)x.shape[1] == this->geometric_dimension());
   assert(phi.shape(2) == cell_geometry.shape[0]);
@@ -85,7 +85,7 @@ void CoordinateElement::push_forward(array2d<double>& x,
   for (std::size_t i = 0; i < x.shape[0]; ++i)
     for (std::size_t j = 0; j < x.shape[1]; ++j)
       for (std::size_t k = 0; k < cell_geometry.shape[0]; ++k)
-        x(i, j) += phi(0, i, k, 0) * cell_geometry(k, j);
+        x(i, j) += phi(i, k) * cell_geometry(k, j);
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
@@ -298,11 +298,13 @@ void CoordinateElement::compute_jacobian_data(
       for (std::int32_t j = 0; j < d; ++j)
         dphi(j, i) = dphi_i(j);
     }
-    auto J0 = _cell_geometry.transpose() * dphi;
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
+        J0 = _cell_geometry.transpose() * dphi;
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
         K0(tdim, gdim);
 
+    // NOTE: should we use xtensor-blas?
     // Fill result for J, K and detJ
     if (gdim == tdim)
     {
@@ -316,14 +318,14 @@ void CoordinateElement::compute_jacobian_data(
       std::fill(detJ.begin(), detJ.end(),
                 std::sqrt((J0.transpose() * J0).determinant()));
     }
-    Eigen::Map<
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        Jview(J.data(), gdim * num_points, tdim);
-    Jview = J0.replicate(num_points, 1);
-    Eigen::Map<
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        Kview(K.data(), tdim * num_points, gdim);
-    Kview = K0.replicate(num_points, 1);
+
+    // As J0 and K0 is constant for affine meshes, replicate per intepolation
+    // point
+    for (int i = 0; i < num_points; i++)
+    {
+      std::copy_n(J0.data(), J0.size(), J.data() + i * J0.size());
+      std::copy_n(K0.data(), K0.size(), K.data() + i * K0.size());
+    }
   }
   else
   {
