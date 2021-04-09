@@ -229,12 +229,13 @@ void CoordinateElement::compute_reference_geometry(
   }
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::permute_dofs(int* dofs, const uint32_t cell_perm) const
+void CoordinateElement::permute_dofs(std::int32_t* dofs,
+                                     const uint32_t cell_perm) const
 {
   basix::permute_dofs(_basix_element_handle, dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::unpermute_dofs(int* dofs,
+void CoordinateElement::unpermute_dofs(std::int32_t* dofs,
                                        const uint32_t cell_perm) const
 {
   basix::unpermute_dofs(_basix_element_handle, dofs, cell_perm);
