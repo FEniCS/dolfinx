@@ -251,7 +251,6 @@ void interpolate(
     for (std::int32_t c : cells)
     {
       tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
-      assert(dofs.size() == num_scalar_dofs);
       for (int k = 0; k < element_bs; ++k)
       {
         for (int i = 0; i < num_scalar_dofs; ++i)

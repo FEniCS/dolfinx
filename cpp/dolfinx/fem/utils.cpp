@@ -228,8 +228,7 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
       = std::make_shared<basix::FiniteElement>(basix::create_element(
           ufc_cmap.element_family, cell_name.c_str(), ufc_cmap.element_degree));
   return fem::CoordinateElement(basix_element, ufc_cmap.geometric_dimension,
-                                dof_layout, ufc_cmap.needs_transformation_data,
-                                ufc_cmap.permute_dofs, ufc_cmap.unpermute_dofs);
+                                ufc_cmap.signature, dof_layout);
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement
