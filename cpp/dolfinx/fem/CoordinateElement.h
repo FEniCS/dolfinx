@@ -101,7 +101,7 @@ private:
   // Basix element
   int _basix_element_handle;
 
-  // Basix Element (basix::FiniteElement)
+  // Basix Element
   std::shared_ptr<basix::FiniteElement> _element;
 };
 } // namespace dolfinx::fem
