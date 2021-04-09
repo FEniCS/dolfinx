@@ -209,12 +209,6 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   const mesh::CellType cell_type = ufc_to_cell.at(ufc_cmap.cell_shape);
   assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
 
-  // Get scalar dof layout for geometry
-  ufc_dofmap* dmap = ufc_cmap.create_scalar_dofmap();
-  assert(dmap);
-  ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
-  std::free(dmap);
-
   static const std::map<ufc_shape, std::string> ufc_to_string
       = {{vertex, "no point"},
          {interval, "interval"},
@@ -228,7 +222,7 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
       = std::make_shared<basix::FiniteElement>(basix::create_element(
           ufc_cmap.element_family, cell_name.c_str(), ufc_cmap.element_degree));
   return fem::CoordinateElement(basix_element, ufc_cmap.geometric_dimension,
-                                ufc_cmap.signature, dof_layout);
+                                ufc_cmap.signature);
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement

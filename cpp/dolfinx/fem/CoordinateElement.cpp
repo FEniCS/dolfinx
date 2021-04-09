@@ -16,9 +16,8 @@ using namespace dolfinx::fem;
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
     std::shared_ptr<basix::FiniteElement> element, int geometric_dimension,
-    const std::string& signature, const ElementDofLayout& dof_layout)
-    : _gdim(geometric_dimension), _signature(signature),
-      _dof_layout(dof_layout), _element(element)
+    const std::string& signature)
+    : _gdim(geometric_dimension), _signature(signature), _element(element)
 {
   int degree = _element->degree();
   const char* cell_type
@@ -59,9 +58,21 @@ int CoordinateElement::topological_dimension() const
 //-----------------------------------------------------------------------------
 int CoordinateElement::geometric_dimension() const { return _gdim; }
 //-----------------------------------------------------------------------------
-const ElementDofLayout& CoordinateElement::dof_layout() const
+ElementDofLayout CoordinateElement::dof_layout() const
 {
-  return _dof_layout;
+  assert(_element);
+  int counter = 0;
+  const std::vector<std::vector<int>>& edofs = _element->entity_dofs();
+  std::vector<std::vector<std::set<int>>> entity_dofs(edofs.size());
+  for (std::size_t d = 0; d < edofs.size(); ++d)
+  {
+    entity_dofs[d].resize(edofs[d].size());
+    for (std::size_t e = 0; e < edofs[d].size(); ++e)
+      for (int i = 0; i < edofs[d][e]; ++i)
+        entity_dofs[d][e].insert(counter++);
+  }
+
+  return ElementDofLayout(1, entity_dofs, {}, {}, this->cell_shape());
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(array2d<double>& x,

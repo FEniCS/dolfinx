@@ -36,8 +36,7 @@ public:
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   CoordinateElement(std::shared_ptr<basix::FiniteElement> element,
-                    int geometric_dimension, const std::string& signature,
-                    const ElementDofLayout& dof_layout);
+                    int geometric_dimension, const std::string& signature);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -70,7 +69,7 @@ public:
                              std::vector<double>& K) const;
 
   /// Return the dof layout
-  const ElementDofLayout& dof_layout() const;
+  ElementDofLayout dof_layout() const;
 
   /// Absolute increment stopping criterium for non-affine Newton solver
   double non_affine_atol = 1.0e-8;
@@ -110,9 +109,6 @@ private:
 
   // Signature, usually from UFC
   std::string _signature;
-
-  // Layout of dofs on element
-  ElementDofLayout _dof_layout;
 
   // Flag denoting affine map
   bool _is_affine;
