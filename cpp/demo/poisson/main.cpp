@@ -177,17 +177,17 @@ int main(int argc, char* argv[])
     std::vector bc{std::make_shared<const fem::DirichletBC<PetscScalar>>(
         u0, std::move(bdofs))};
 
-    f->interpolate([](const xt::xtensor<double, 2>& x) {
-      auto dx
-          = xt::square(xt::row(x, 0) - 0.5) + xt::square(xt::row(x, 1) - 0.5);
-      xt::xarray<PetscScalar> f = 10 * xt::exp(-(dx) / 0.02);
-      return f;
-    });
+    f->interpolate(
+        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar> {
+          auto dx = xt::square(xt::row(x, 0) - 0.5)
+                    + xt::square(xt::row(x, 1) - 0.5);
+          return 10 * xt::exp(-(dx) / 0.02);
+        });
 
-    g->interpolate([](const xt::xtensor<double, 2>& x) {
-      xt::xarray<PetscScalar> f = xt::sin(5 * xt::row(x, 0));
-      return f;
-    });
+    g->interpolate(
+        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar> {
+          return xt::sin(5 * xt::row(x, 0));
+        });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a

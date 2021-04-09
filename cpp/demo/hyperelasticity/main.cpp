@@ -139,16 +139,15 @@ int main(int argc, char* argv[])
 
     auto u_rotation = std::make_shared<fem::Function<PetscScalar>>(V);
     u_rotation->interpolate([](auto& x) {
-      const double scale = 0.005;
+      constexpr double scale = 0.005;
 
       // Center of rotation
-      const double y0 = 0.5;
-      const double z0 = 0.5;
+      constexpr double y0 = 0.5;
+      constexpr double z0 = 0.5;
 
       // Large angle of rotation (60 degrees)
-      const double theta = 1.04719755;
-      std::array<std::size_t, 2> shape = {3, x.shape(1)};
-      xt::xarray<double> values = xt::zeros<double>(shape);
+      constexpr double theta = 1.04719755;
+      xt::xarray<double> values = xt::zeros_like(x);
       for (std::size_t i = 0; i < x.shape(1); ++i)
       {
         // New coordinates
@@ -166,11 +165,8 @@ int main(int argc, char* argv[])
     });
 
     auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
-    u_clamp->interpolate([](auto& x) {
-      std::array<std::size_t, 2> shape = {3, x.shape(1)};
-      xt::xarray<double> out = xt::zeros<double>(shape);
-      return out;
-    });
+    u_clamp->interpolate(
+        [](auto& x) -> xt::xarray<double> { return xt::zeros_like(x); });
 
     // Create Dirichlet boundary conditions
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
