@@ -8,6 +8,7 @@
 #include <Eigen/Dense>
 #include <basix.h>
 #include <basix/finite-element.h>
+#include <dolfinx/mesh/cell_types.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -30,7 +31,7 @@ CoordinateElement::CoordinateElement(
       = basix::register_element(family_name, cell_type, degree);
 
   const mesh::CellType cell = cell_shape();
-  _is_affine = mesh : is_simplex(cell) and degree == 1;
+  _is_affine = mesh::is_simplex(cell) and degree == 1;
 }
 //-----------------------------------------------------------------------------
 mesh::CellType CoordinateElement::cell_shape() const
