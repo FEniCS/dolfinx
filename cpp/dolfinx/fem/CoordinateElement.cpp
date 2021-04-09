@@ -249,8 +249,7 @@ bool CoordinateElement::needs_permutation_data() const
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 4>
-CoordinateElement::tabulate_shape_functions(int n,
-                                            const array2d<double>& X) const
+CoordinateElement::tabulate(int n, const array2d<double>& X) const
 {
   auto _X = xt::adapt(X.data(), X.shape);
   return _element->tabulate(n, _X);

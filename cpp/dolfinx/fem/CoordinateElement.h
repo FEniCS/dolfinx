@@ -59,8 +59,7 @@ public:
   /// Tabulate shape functions up to n-th order derivative at points X in the
   /// reference geometry
   /// Note: Dynamic allocation.
-  xt::xtensor<double, 4>
-  tabulate_shape_functions(int n, const array2d<double>& X) const;
+  xt::xtensor<double, 4> tabulate(int n, const array2d<double>& X) const;
 
   /// Compute J, K and detJ for a cell with given geometry, and the
   /// basis functions and first order derivatives at points X

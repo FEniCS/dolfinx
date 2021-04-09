@@ -29,9 +29,9 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   // Get the interpolation points on the reference cells
   const array2d<double> X = element.interpolation_points();
 
-  auto tabulated_data = cmap.tabulate_shape_functions(0, X);
-  xt::xtensor<double, 2> phi
-      = xt::view(tabulated_data, 0, xt::all(), xt::all(), 0);
+  const xt::xtensor<double, 2> phi
+      = xt::view(cmap.tabulate(0, X), 0, xt::all(), xt::all(), 0);
+
   // Push reference coordinates (X) forward to the physical coordinates
   // (x) for each cell
   array2d<double> x_cell(X.shape[0], gdim);

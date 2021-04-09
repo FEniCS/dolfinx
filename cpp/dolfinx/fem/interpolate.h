@@ -292,8 +292,7 @@ void interpolate(
 
     // Tabulate 0th and 1st order derivatives of shape functions at
     // interpolation coords
-    auto tabulated_data = cmap.tabulate_shape_functions(1, X);
-
+    xt::xtensor<double, 4> tabulated_data = cmap.tabulate(1, X);
     for (std::int32_t c : cells)
     {
       auto x_dofs = x_dofmap.links(c);

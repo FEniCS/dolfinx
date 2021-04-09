@@ -15,9 +15,8 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <vector>
-#include <xtensor/xview.hpp>
 #include <xtensor/xtensor.hpp>
-
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -168,9 +167,8 @@ array2d<double> FunctionSpace::tabulate_dof_coordinates(bool transpose) const
       = needs_permutation_data ? _mesh->topology().get_cell_permutation_info()
                                : std::vector<std::uint32_t>(num_cells);
 
-  auto tabulated_data = cmap.tabulate_shape_functions(0, X);
-  xt::xtensor<double, 2> phi
-      = xt::view(tabulated_data, 0, xt::all(), xt::all(), 0);
+  const xt::xtensor<double, 2> phi
+      = xt::view(cmap.tabulate(0, X), 0, xt::all(), xt::all(), 0);
 
   for (int c = 0; c < num_cells; ++c)
   {

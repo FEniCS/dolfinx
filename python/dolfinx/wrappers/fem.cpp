@@ -243,9 +243,8 @@ void fem(py::module& m)
                          _cell_geometry.data());
              dolfinx::array2d<double> x(_X.shape[0],
                                         self.geometric_dimension());
-             auto tabulated_data = self.tabulate_shape_functions(0, _X);
              xt::xtensor<double, 2> phi
-                 = xt::view(tabulated_data, 0, xt::all(), xt::all(), 0);
+                 = xt::view(self.tabulate(0, _X), 0, xt::all(), xt::all(), 0);
              self.push_forward(x, _cell_geometry, phi);
              return as_pyarray2d(std::move(x));
            })
@@ -627,7 +626,7 @@ void fem(py::module& m)
             const auto x = dolfinx::fem::interpolation_coords(
                 *self.function_space()->element(),
                 *self.function_space()->mesh(), cells);
-                
+
             dolfinx::fem::interpolate_c<PetscScalar>(self, _f, x, cells);
           },
           "Interpolate using a pointer to an expression with a C "
