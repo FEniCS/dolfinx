@@ -41,6 +41,10 @@ public:
   /// Destructor
   virtual ~CoordinateElement() = default;
 
+  /// String identifying the finite element
+  /// @return The signature
+  std::string signature() const;
+
   /// Cell shape
   /// @return The cell shape
   mesh::CellType cell_shape() const;
