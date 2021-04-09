@@ -15,9 +15,8 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
-    std::shared_ptr<basix::FiniteElement> element, int geometric_dimension,
-    const std::string& signature)
-    : _gdim(geometric_dimension), _signature(signature), _element(element)
+    std::shared_ptr<basix::FiniteElement> element, int geometric_dimension)
+    : _gdim(geometric_dimension), _element(element)
 {
   int degree = _element->degree();
   const char* cell_type

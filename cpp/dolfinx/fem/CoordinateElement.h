@@ -33,17 +33,11 @@ public:
   /// Create a coordinate element
   /// @param[in] element Element from basix
   /// @param[in] geometric_dimension Geometric dimension
-  /// @param[in] signature Signature string description of coordinate map
-  /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   CoordinateElement(std::shared_ptr<basix::FiniteElement> element,
-                    int geometric_dimension, const std::string& signature);
+                    int geometric_dimension);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
-
-  /// String identifying the finite element
-  /// @return The signature
-  std::string signature() const;
 
   /// Cell shape
   /// @return The cell shape
@@ -106,9 +100,6 @@ public:
 private:
   // Geometric dimensions
   int _gdim;
-
-  // Signature, usually from UFC
-  std::string _signature;
 
   // Flag denoting affine map
   bool _is_affine;
