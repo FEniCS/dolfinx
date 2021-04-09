@@ -313,6 +313,12 @@ def _(A: PETSc.Mat,
                 if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
                     cpp.fem.add_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
+            elif i == j:
+                for bc in bcs:
+                    if a_row[0].function_spaces[0].contains(bc.function_space):
+                        raise RuntimeError(
+                            f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
+                            " Consider assembling a zero block.")
     return A
 
 
