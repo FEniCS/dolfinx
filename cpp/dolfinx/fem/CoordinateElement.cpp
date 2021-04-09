@@ -19,7 +19,6 @@ CoordinateElement::CoordinateElement(
     : _gdim(geometric_dimension), _signature(signature),
       _dof_layout(dof_layout), _element(element)
 {
-
   int degree = _element->degree();
   const char* cell_type
       = basix::cell::type_to_str(_element->cell_type()).c_str();
@@ -31,11 +30,7 @@ CoordinateElement::CoordinateElement(
       = basix::register_element(family_name, cell_type, degree);
 
   const mesh::CellType cell = cell_shape();
-
-  _is_affine
-      = ((cell == mesh::CellType::interval or cell == mesh::CellType::triangle
-          or cell == mesh::CellType::tetrahedron)
-         and degree == 1);
+  _is_affine = mesh : is_simplex(cell) and degree == 1;
 }
 //-----------------------------------------------------------------------------
 mesh::CellType CoordinateElement::cell_shape() const
