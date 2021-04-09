@@ -240,9 +240,10 @@ void interpolate(
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
-  std::vector<T> _coeffs(num_scalar_dofs);
 
   std::vector<T>& coeffs = u.x()->mutable_array();
+  std::vector<T> _coeffs(num_scalar_dofs);
+
   // This assumes that any element with an identity interpolation matrix is a
   // point evaluation
   if (element->interpolation_ident())
@@ -251,7 +252,6 @@ void interpolate(
     {
       tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
       assert(dofs.size() == num_scalar_dofs);
-
       for (int k = 0; k < element_bs; ++k)
       {
         for (int i = 0; i < num_scalar_dofs; ++i)
@@ -260,8 +260,9 @@ void interpolate(
                                                             cell_info[c], 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
-          const int dof = dofs[i] * element_bs + k;
-          coeffs[dof] = _coeffs[i];
+          const int dof = i * element_bs + k;
+          std::div_t pos = std::div(dof, dofmap_bs);
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
         }
       }
     }
