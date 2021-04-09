@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Garth N. Wells
+// Copyright (C) 2021 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
