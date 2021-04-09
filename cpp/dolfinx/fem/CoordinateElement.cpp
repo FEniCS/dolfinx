@@ -12,16 +12,12 @@ using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-CoordinateElement::CoordinateElement(
-    int basix_element_handle, int geometric_dimension,
-    const std::string& signature, const ElementDofLayout& dof_layout,
-    bool needs_permutation_data,
-    std::function<int(int*, const uint32_t)> permute_dofs,
-    std::function<int(int*, const uint32_t)> unpermute_dofs)
+CoordinateElement::CoordinateElement(int basix_element_handle,
+                                     int geometric_dimension,
+                                     const std::string& signature,
+                                     const ElementDofLayout& dof_layout)
     : _gdim(geometric_dimension), _signature(signature),
-      _dof_layout(dof_layout), _basix_element_handle(basix_element_handle),
-      _needs_permutation_data(needs_permutation_data),
-      _permute_dofs(permute_dofs), _unpermute_dofs(unpermute_dofs)
+      _dof_layout(dof_layout), _basix_element_handle(basix_element_handle)
 {
   const mesh::CellType cell = cell_shape();
   int degree = basix::degree(basix_element_handle);
@@ -233,19 +229,20 @@ void CoordinateElement::compute_reference_geometry(
   }
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::permute_dofs(int* dofs, const uint32_t cell_perm) const
+void CoordinateElement::permute_dofs(std::int32_t* dofs,
+                                     const uint32_t cell_perm) const
 {
-  _permute_dofs(dofs, cell_perm);
+  basix::permute_dofs(_basix_element_handle, dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::unpermute_dofs(int* dofs,
+void CoordinateElement::unpermute_dofs(std::int32_t* dofs,
                                        const uint32_t cell_perm) const
 {
-  _unpermute_dofs(dofs, cell_perm);
+  basix::unpermute_dofs(_basix_element_handle, dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
 bool CoordinateElement::needs_permutation_data() const
 {
-  return _needs_permutation_data;
+  return !basix::dof_transformations_are_identity(_basix_element_handle);
 }
 //-----------------------------------------------------------------------------
