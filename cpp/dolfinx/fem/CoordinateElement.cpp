@@ -16,7 +16,8 @@ using namespace dolfinx::fem;
 CoordinateElement::CoordinateElement(
     std::shared_ptr<basix::FiniteElement> element, int geometric_dimension,
     const std::string& signature, const ElementDofLayout& dof_layout)
-    : _gdim(geometric_dimension), _signature(signature), _dof_layout(dof_layout)
+    : _gdim(geometric_dimension), _signature(signature),
+      _dof_layout(dof_layout), _element(element)
 {
 
   int degree = _element->degree();
