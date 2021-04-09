@@ -349,7 +349,6 @@ def test_dP_hex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["RTCE", "RTCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_RTC_quad(family, degree, cell_type, datadir):
-    pytest.skip("RTCE and RTCF spaces currently not implemented in basix")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
@@ -359,7 +358,6 @@ def test_RTC_quad(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("family", ["NCE", "NCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_NC_hex(family, degree, cell_type, datadir):
-    pytest.skip("NCE and NCF spaces currently not implemented in basix")
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
