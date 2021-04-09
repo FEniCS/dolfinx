@@ -142,7 +142,8 @@ template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v)
 {
   assert(u.function_space());
-  const auto element = u.function_space()->element();
+  const std::shared_ptr<const FiniteElement> element
+      = u.function_space()->element();
   assert(element);
 
   // Check that function ranks match
@@ -181,7 +182,8 @@ void interpolate(
     const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
     const xt::xtensor<double, 2>& x, const tcb::span<const std::int32_t>& cells)
 {
-  const auto element = u.function_space()->element();
+  const std::shared_ptr<const FiniteElement> element
+      = u.function_space()->element();
   assert(element);
   const int element_bs = element->block_size();
   if (int num_sub = element->num_sub_elements();
@@ -235,78 +237,102 @@ void interpolate(
   assert(dofmap);
   const int dofmap_bs = dofmap->bs();
 
-  // Get coordinate map
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
-
-  // Get geometry data
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
-  // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-  const array2d<double>& x_g = mesh->geometry().x();
-
-  // NOTE: The below loop over cells could be skipped for some elements,
-  // e.g. Lagrange, where the interpolation is just the identity
-
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
-
-  array2d<double> x_cell(X.shape[0], gdim);
-  std::vector<double> J(X.shape[0] * gdim * tdim);
-  std::vector<double> detJ(X.shape[0]);
-  std::vector<double> K(X.shape[0] * tdim * gdim);
-  array2d<double> X_ref(X.shape[0], tdim);
-
-  array2d<double> coordinate_dofs(num_dofs_g, gdim);
-
-  array2d<T> reference_data(value_size, X.shape[0]);
+  std::vector<T> _coeffs(num_scalar_dofs);
 
   std::vector<T>& coeffs = u.x()->mutable_array();
-  std::vector<T> _coeffs(num_scalar_dofs);
-  array2d<T> _vals(value_size, X.shape[0]);
-
-  // Tabulate 0th and 1st order derivatives of shape functions at interpolation
-  // coords
-  auto tabulated_data = cmap.tabulate_shape_functions(1, X);
-
-  for (std::int32_t c : cells)
+  // This assumes that any element with an identity interpolation matrix is a
+  // point evaluation
+  if (element->interpolation_ident())
   {
-    auto x_dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
-
-    // Compute J, detJ and K
-    cmap.compute_jacobian_data(tabulated_data, X, coordinate_dofs, J, detJ, K);
-
-    tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
-    for (int k = 0; k < element_bs; ++k)
+    for (std::int32_t c : cells)
     {
-      // Extract computed expression values for element block k
-      for (int m = 0; m < value_size; ++m)
+      tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+      assert(dofs.size() == num_scalar_dofs);
+
+      for (int k = 0; k < element_bs; ++k)
       {
-        std::copy_n(&values(k * value_size + m, c * X.shape[0]), X.shape[0],
-                    _vals.row(m).begin());
+        for (int i = 0; i < num_scalar_dofs; ++i)
+          _coeffs[i] = values(k, c * num_scalar_dofs + i);
+        element->apply_inverse_transpose_dof_transformation(_coeffs.data(),
+                                                            cell_info[c], 1);
+        for (int i = 0; i < num_scalar_dofs; ++i)
+        {
+          const int dof = dofs[i] * element_bs + k;
+          coeffs[dof] = _coeffs[i];
+        }
       }
+    }
+  }
+  else
+  {
+    // Get coordinate map
+    const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
-      // Get element degrees of freedom for block
-      element->map_pull_back(reference_data.data(), _vals.data(), J.data(),
-                             detJ.data(), K.data(), gdim, value_size, 1,
-                             X.shape[0]);
+    // Get geometry data
+    const graph::AdjacencyList<std::int32_t>& x_dofmap
+        = mesh->geometry().dofmap();
+    // FIXME: Add proper interface for num coordinate dofs
+    const int num_dofs_g = x_dofmap.num_links(0);
+    const array2d<double>& x_g = mesh->geometry().x();
 
-      element->interpolate(reference_data, tcb::make_span(_coeffs));
-      element->apply_inverse_transpose_dof_transformation(_coeffs.data(),
-                                                          cell_info[c], 1);
+    // Create data structures for Jacobian info
+    array2d<double> x_cell(X.shape[0], gdim);
+    std::vector<double> J(X.shape[0] * gdim * tdim);
+    std::vector<double> detJ(X.shape[0]);
+    std::vector<double> K(X.shape[0] * tdim * gdim);
+    array2d<double> X_ref(X.shape[0], tdim);
 
-      assert(_coeffs.size() == num_scalar_dofs);
+    array2d<double> coordinate_dofs(num_dofs_g, gdim);
 
-      // Copy interpolation dofs into coefficient vector
-      for (int i = 0; i < num_scalar_dofs; ++i)
+    array2d<T> reference_data(value_size, X.shape[0]);
+    array2d<T> _vals(value_size, X.shape[0]);
+
+    // Tabulate 0th and 1st order derivatives of shape functions at
+    // interpolation coords
+    auto tabulated_data = cmap.tabulate_shape_functions(1, X);
+
+    for (std::int32_t c : cells)
+    {
+      auto x_dofs = x_dofmap.links(c);
+      for (int i = 0; i < num_dofs_g; ++i)
+        for (int j = 0; j < gdim; ++j)
+          coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+
+      // Compute J, detJ and K
+      cmap.compute_jacobian_data(tabulated_data, X, coordinate_dofs, J, detJ,
+                                 K);
+
+      tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+      for (int k = 0; k < element_bs; ++k)
       {
-        const int dof = i * element_bs + k;
-        std::div_t pos = std::div(dof, dofmap_bs);
-        coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+        // Extract computed expression values for element block k
+        for (int m = 0; m < value_size; ++m)
+        {
+          std::copy_n(&values(k * value_size + m, c * X.shape[0]), X.shape[0],
+                      _vals.row(m).begin());
+        }
+
+        // Get element degrees of freedom for block
+        element->map_pull_back(reference_data.data(), _vals.data(), J.data(),
+                               detJ.data(), K.data(), gdim, value_size, 1,
+                               X.shape[0]);
+
+        element->interpolate(reference_data, tcb::make_span(_coeffs));
+        element->apply_inverse_transpose_dof_transformation(_coeffs.data(),
+                                                            cell_info[c], 1);
+
+        assert(_coeffs.size() == num_scalar_dofs);
+
+        // Copy interpolation dofs into coefficient vector
+        for (int i = 0; i < num_scalar_dofs; ++i)
+        {
+          const int dof = i * element_bs + k;
+          std::div_t pos = std::div(dof, dofmap_bs);
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+        }
       }
     }
   }
@@ -318,7 +344,8 @@ void interpolate_c(
     const std::function<void(xt::xarray<T>&, const xt::xtensor<double, 2>&)>& f,
     const xt::xtensor<double, 2>& x, const tcb::span<const std::int32_t>& cells)
 {
-  const auto element = u.function_space()->element();
+  const std::shared_ptr<const FiniteElement> element
+      = u.function_space()->element();
   assert(element);
   std::vector<int> vshape(element->value_rank(), 1);
   for (std::size_t i = 0; i < vshape.size(); ++i)

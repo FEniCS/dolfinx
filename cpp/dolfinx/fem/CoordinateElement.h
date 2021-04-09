@@ -116,6 +116,8 @@ private:
   // Flag denoting affine map
   bool _is_affine;
 
+  // TODO: This should be removed now as we are transitioning to
+  // basix::FiniteElement
   // Basix element
   int _basix_element_handle;
 
@@ -128,7 +130,7 @@ private:
   // Dof permutation maker
   std::function<int(int*, const uint32_t)> _unpermute_dofs;
 
-  // Actual Element;
+  // Basix Element
   std::shared_ptr<basix::FiniteElement> _element;
 };
 } // namespace dolfinx::fem
