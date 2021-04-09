@@ -33,6 +33,7 @@ public:
   /// Create a coordinate element
   /// @param[in] element Element from basix
   /// @param[in] geometric_dimension Geometric dimension
+  /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   CoordinateElement(std::shared_ptr<basix::FiniteElement> element,
                     int geometric_dimension, const std::string& signature,
