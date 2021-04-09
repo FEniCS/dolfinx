@@ -14,6 +14,12 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <xtensor/xtensor.hpp>
+
+namespace basix
+{
+class FiniteElement;
+}
 
 namespace dolfinx::fem
 {
@@ -25,12 +31,12 @@ class CoordinateElement
 {
 public:
   /// Create a coordinate element
-  /// @param[in] basix_element_handle Element handle from basix
+  /// @param[in] element Element from basix
   /// @param[in] geometric_dimension Geometric dimension
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  CoordinateElement(int basix_element_handle, int geometric_dimension,
-                    const std::string& signature,
+  CoordinateElement(std::shared_ptr<basix::FiniteElement> element,
+                    int geometric_dimension, const std::string& signature,
                     const ElementDofLayout& dof_layout);
 
   /// Destructor
@@ -50,6 +56,19 @@ public:
   /// Return the geometric dimension of the cell shape
   int geometric_dimension() const;
 
+  /// Tabulate shape functions up to n-th order derivative at points X in the
+  /// reference geometry
+  /// Note: Dynamic allocation.
+  xt::xtensor<double, 4> tabulate(int n, const array2d<double>& X) const;
+
+  /// Compute J, K and detJ for a cell with given geometry, and the
+  /// basis functions and first order derivatives at points X
+  void compute_jacobian_data(const xt::xtensor<double, 4>& tabulated_data,
+                             const array2d<double>& X,
+                             const array2d<double>& cell_geometry,
+                             std::vector<double>& J, tcb::span<double> detJ,
+                             std::vector<double>& K) const;
+
   /// Return the dof layout
   const ElementDofLayout& dof_layout() const;
 
@@ -62,10 +81,10 @@ public:
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
   /// @param[in,out] x The physical coordinates of the reference points X
-  /// @param[in] X The coordinates on the reference cells
   /// @param[in] cell_geometry The cell node coordinates (physical)
-  void push_forward(array2d<double>& x, const array2d<double>& X,
-                    const array2d<double>& cell_geometry) const;
+  /// @param[in] phi Tabulated basis functions at reference points X
+  void push_forward(array2d<double>& x, const array2d<double>& cell_geometry,
+                    const xt::xtensor<double, 2>& phi) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
@@ -98,7 +117,12 @@ private:
   // Flag denoting affine map
   bool _is_affine;
 
+  // TODO: This should be removed now as we are transitioning to
+  // basix::FiniteElement
   // Basix element
   int _basix_element_handle;
+
+  // Basix Element (basix::FiniteElement)
+  std::shared_ptr<basix::FiniteElement> _element;
 };
 } // namespace dolfinx::fem

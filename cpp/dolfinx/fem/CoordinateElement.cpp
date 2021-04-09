@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Garth N. Wells
+// Copyright (C) 2018-2021 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -7,32 +7,37 @@
 #include "CoordinateElement.h"
 #include <Eigen/Dense>
 #include <basix.h>
+#include <basix/finite-element.h>
+#include <dolfinx/mesh/cell_types.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-CoordinateElement::CoordinateElement(int basix_element_handle,
-                                     int geometric_dimension,
-                                     const std::string& signature,
-                                     const ElementDofLayout& dof_layout)
+CoordinateElement::CoordinateElement(
+    std::shared_ptr<basix::FiniteElement> element, int geometric_dimension,
+    const std::string& signature, const ElementDofLayout& dof_layout)
     : _gdim(geometric_dimension), _signature(signature),
-      _dof_layout(dof_layout), _basix_element_handle(basix_element_handle)
+      _dof_layout(dof_layout), _element(element)
 {
+  int degree = _element->degree();
+  const char* cell_type
+      = basix::cell::type_to_str(_element->cell_type()).c_str();
+
+  const char* family_name
+      = basix::element::type_to_str(_element->family()).c_str();
+
+  _basix_element_handle
+      = basix::register_element(family_name, cell_type, degree);
+
   const mesh::CellType cell = cell_shape();
-  int degree = basix::degree(basix_element_handle);
-  _is_affine
-      = ((cell == mesh::CellType::interval or cell == mesh::CellType::triangle
-          or cell == mesh::CellType::tetrahedron)
-         and degree == 1);
+  _is_affine = mesh::is_simplex(cell) and degree == 1;
 }
-//-----------------------------------------------------------------------------
-std::string CoordinateElement::signature() const { return _signature; }
 //-----------------------------------------------------------------------------
 mesh::CellType CoordinateElement::cell_shape() const
 {
   // TODO
-  const std::string cell = basix::cell_type(_basix_element_handle);
+  const std::string cell = basix::cell::type_to_str(_element->cell_type());
 
   const std::map<std::string, mesh::CellType> str_to_type
       = {{"interval", mesh::CellType::interval},
@@ -49,8 +54,7 @@ mesh::CellType CoordinateElement::cell_shape() const
 //-----------------------------------------------------------------------------
 int CoordinateElement::topological_dimension() const
 {
-  const std::string cell = basix::cell_type(_basix_element_handle);
-  return basix::topology(cell.c_str()).size() - 1;
+  return basix::cell::topology(_element->cell_type()).size() - 1;
 }
 //-----------------------------------------------------------------------------
 int CoordinateElement::geometric_dimension() const { return _gdim; }
@@ -61,19 +65,13 @@ const ElementDofLayout& CoordinateElement::dof_layout() const
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(array2d<double>& x,
-                                     const array2d<double>& X,
-                                     const array2d<double>& cell_geometry) const
+                                     const array2d<double>& cell_geometry,
+                                     const xt::xtensor<double, 2>& phi) const
 {
-  assert(x.shape[0] == X.shape[0]);
   assert((int)x.shape[1] == this->geometric_dimension());
-  assert((int)X.shape[1] == this->topological_dimension());
-
-  // FIXME: remove dynamic memory allocation
+  assert(phi.shape(2) == cell_geometry.shape[0]);
 
   // Compute physical coordinates
-  Eigen::MatrixXd phi(X.shape[0], cell_geometry.shape[0]);
-  basix::tabulate(_basix_element_handle, phi.data(), 0, X.data(), X.shape[0]);
-
   // x = phi * cell_geometry;
   std::fill(x.data(), x.data() + x.size(), 0.0);
   for (std::size_t i = 0; i < x.shape[0]; ++i)
@@ -246,3 +244,108 @@ bool CoordinateElement::needs_permutation_data() const
   return !basix::dof_transformations_are_identity(_basix_element_handle);
 }
 //-----------------------------------------------------------------------------
+xt::xtensor<double, 4>
+CoordinateElement::tabulate(int n, const array2d<double>& X) const
+{
+  auto _X = xt::adapt(X.data(), X.shape);
+  return _element->tabulate(n, _X);
+}
+//-----------------------------------------------------------------------------
+
+void CoordinateElement::compute_jacobian_data(
+    const xt::xtensor<double, 4>& tabulated_data, const array2d<double>& X,
+    const array2d<double>& cell_geometry, std::vector<double>& J,
+    tcb::span<double> detJ, std::vector<double>& K) const
+{
+  // Number of points
+  int num_points = X.shape[0];
+  if (num_points == 0)
+    return;
+
+  // in-argument checks
+  const int tdim = this->topological_dimension();
+  const int gdim = this->geometric_dimension();
+  assert(int(cell_geometry.shape[1]) == gdim);
+
+  // In/out size checks
+  assert(X.shape[0] == std::size_t(num_points));
+  assert(X.shape[1] == std::size_t(tdim));
+  assert((int)J.size() == num_points * gdim * tdim);
+  assert((int)detJ.size() == num_points);
+  assert((int)K.size() == num_points * gdim * tdim);
+
+  const int d = cell_geometry.shape[0];
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
+      d, tdim);
+  Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                 Eigen::RowMajor>>
+      _cell_geometry(cell_geometry.data(), cell_geometry.shape[0],
+                     cell_geometry.shape[1]);
+  if (_is_affine)
+  {
+    for (std::int32_t i = 0; i < tdim; ++i)
+    {
+      auto dphi_i = xt::view(tabulated_data, i + 1, 0, xt::all(), 0);
+      for (std::int32_t j = 0; j < d; ++j)
+        dphi(j, i) = dphi_i(j);
+    }
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
+        J0 = _cell_geometry.transpose() * dphi;
+
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
+        K0(tdim, gdim);
+
+    // NOTE: should we use xtensor-blas?
+    // Fill result for J, K and detJ
+    if (gdim == tdim)
+    {
+      K0 = J0.inverse();
+      std::fill(detJ.begin(), detJ.end(), J0.determinant());
+    }
+    else
+    {
+      // Penrose-Moore pseudo-inverse
+      K0 = (J0.transpose() * J0).inverse() * J0.transpose();
+      std::fill(detJ.begin(), detJ.end(),
+                std::sqrt((J0.transpose() * J0).determinant()));
+    }
+
+    // As J0 and K0 are constant for affine meshes, replicate per intepolation
+    // point
+    for (int ip = 0; ip < num_points; ip++)
+    {
+      std::copy_n(J0.data(), J0.size(), J.data() + ip * J0.size());
+      std::copy_n(K0.data(), K0.size(), K.data() + ip * K0.size());
+    }
+  }
+  else
+  {
+    for (int ip = 0; ip < num_points; ++ip)
+    {
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+          Jview(J.data() + ip * gdim * tdim, gdim, tdim);
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+          Kview(K.data() + ip * gdim * tdim, tdim, gdim);
+      for (std::int32_t i = 0; i < tdim; ++i)
+      {
+        auto dphi_i = xt::view(tabulated_data, i + 1, ip, xt::all(), 0);
+        for (std::int32_t j = 0; j < d; ++j)
+          dphi(j, i) = dphi_i[j];
+      }
+      Jview = _cell_geometry.transpose() * dphi;
+      if (gdim == tdim)
+      {
+        Kview = Jview.inverse();
+        detJ[ip] = Jview.determinant();
+      }
+      else
+      {
+        // Penrose-Moore pseudo-inverse
+        Kview = (Jview.transpose() * Jview).inverse() * Jview.transpose();
+        detJ[ip] = std::sqrt((Jview.transpose() * Jview).determinant());
+      }
+    }
+  }
+}

@@ -7,6 +7,7 @@
 #include "utils.h"
 #include <array>
 #include <basix.h>
+#include <basix/finite-element.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -223,9 +224,10 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
          {hexahedron, "hexahedron"}};
   const std::string cell_name = ufc_to_string.at(ufc_cmap.cell_shape);
 
-  int handle = basix::register_element(
-      ufc_cmap.element_family, cell_name.c_str(), ufc_cmap.element_degree);
-  return fem::CoordinateElement(handle, ufc_cmap.geometric_dimension,
+  auto basix_element
+      = std::make_shared<basix::FiniteElement>(basix::create_element(
+          ufc_cmap.element_family, cell_name.c_str(), ufc_cmap.element_degree));
+  return fem::CoordinateElement(basix_element, ufc_cmap.geometric_dimension,
                                 ufc_cmap.signature, dof_layout);
 }
 //-----------------------------------------------------------------------------
