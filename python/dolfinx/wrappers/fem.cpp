@@ -241,8 +241,7 @@ void fem(py::module& m)
              std::copy_n(X.data(), X.size(), _X.data());
              std::copy_n(cell_geometry.data(), cell_geometry.size(),
                          _cell_geometry.data());
-             dolfinx::array2d<double> x(_X.shape[0],
-                                        self.geometric_dimension());
+             dolfinx::array2d<double> x(_X.shape[0], cell_geometry.shape(1));
              xt::xtensor<double, 2> phi
                  = xt::view(self.tabulate(0, _X), 0, xt::all(), xt::all(), 0);
              self.push_forward(x, _cell_geometry, phi);

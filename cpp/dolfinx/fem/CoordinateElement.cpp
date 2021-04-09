@@ -15,8 +15,8 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
-    std::shared_ptr<basix::FiniteElement> element, int geometric_dimension)
-    : _gdim(geometric_dimension), _element(element)
+    std::shared_ptr<basix::FiniteElement> element)
+    : _element(element)
 {
   int degree = _element->degree();
   const char* cell_type
@@ -55,8 +55,6 @@ int CoordinateElement::topological_dimension() const
   return basix::cell::topology(_element->cell_type()).size() - 1;
 }
 //-----------------------------------------------------------------------------
-int CoordinateElement::geometric_dimension() const { return _gdim; }
-//-----------------------------------------------------------------------------
 ElementDofLayout CoordinateElement::dof_layout() const
 {
   assert(_element);
@@ -78,7 +76,6 @@ void CoordinateElement::push_forward(array2d<double>& x,
                                      const array2d<double>& cell_geometry,
                                      const xt::xtensor<double, 2>& phi) const
 {
-  assert((int)x.shape[1] == this->geometric_dimension());
   assert(phi.shape(2) == cell_geometry.shape[0]);
 
   // Compute physical coordinates
@@ -113,8 +110,7 @@ void CoordinateElement::compute_reference_geometry(
 
   // in-argument checks
   const int tdim = this->topological_dimension();
-  const int gdim = this->geometric_dimension();
-  assert(_x.cols() == gdim);
+  const int gdim = _x.cols();
   assert(_cell_geometry.cols() == gdim);
 
   // In/out size checks
@@ -136,7 +132,7 @@ void CoordinateElement::compute_reference_geometry(
 
   if (_is_affine)
   {
-    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> x0(_gdim);
+    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> x0(gdim);
     Eigen::ArrayXXd X0 = Eigen::ArrayXXd::Zero(1, tdim);
 
     basix::tabulate(_basix_element_handle, tabulated_data.data(), 1, X0.data(),
@@ -274,8 +270,7 @@ void CoordinateElement::compute_jacobian_data(
 
   // in-argument checks
   const int tdim = this->topological_dimension();
-  const int gdim = this->geometric_dimension();
-  assert(int(cell_geometry.shape[1]) == gdim);
+  const int gdim = cell_geometry.shape[1];
 
   // In/out size checks
   assert(X.shape[0] == std::size_t(num_points));

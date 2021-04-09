@@ -31,10 +31,8 @@ class CoordinateElement
 {
 public:
   /// Create a coordinate element
-  /// @param[in] element Element from basix
-  /// @param[in] geometric_dimension Geometric dimension
-  CoordinateElement(std::shared_ptr<basix::FiniteElement> element,
-                    int geometric_dimension);
+  /// @param[in] element Element from Basix
+  CoordinateElement(std::shared_ptr<basix::FiniteElement> element);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -45,9 +43,6 @@ public:
 
   /// Return the topological dimension of the cell shape
   int topological_dimension() const;
-
-  /// Return the geometric dimension of the cell shape
-  int geometric_dimension() const;
 
   /// Tabulate shape functions up to n-th order derivative at points X in the
   /// reference geometry
@@ -98,9 +93,6 @@ public:
   bool needs_permutation_data() const;
 
 private:
-  // Geometric dimensions
-  int _gdim;
-
   // Flag denoting affine map
   bool _is_affine;
 

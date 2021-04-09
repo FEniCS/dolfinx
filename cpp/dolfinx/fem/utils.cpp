@@ -226,7 +226,7 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
   auto basix_element
       = std::make_shared<basix::FiniteElement>(basix::create_element(
           ufc_cmap.element_family, cell_name.c_str(), ufc_cmap.element_degree));
-  return fem::CoordinateElement(basix_element, ufc_cmap.geometric_dimension);
+  return fem::CoordinateElement(basix_element);
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement
