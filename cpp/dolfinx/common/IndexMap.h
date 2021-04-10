@@ -142,8 +142,10 @@ public:
 
   /// Global indices
   /// @return The global index for all local indices (0, 1, 2, ...) on
+  ///   this process, including ghosts
   std::vector<std::int64_t> global_indices() const;
 
+  /// @todo Reconsider name
   /// Local (owned) indices shared with neighbor processes, i.e. are
   /// ghosts on other processes, grouped by sharing (neighbor)
   /// process(destination ranks in forward communicator and source ranks in the
