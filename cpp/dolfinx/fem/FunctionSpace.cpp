@@ -99,7 +99,8 @@ FunctionSpace::collapse() const
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
-array2d<double> FunctionSpace::tabulate_dof_coordinates(bool transpose) const
+xt::xtensor<double, 2>
+FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 {
   if (!_component.empty())
   {
@@ -150,7 +151,7 @@ array2d<double> FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   // Array to hold coordinates to return
   const std::size_t shape_c0 = transpose ? 3 : num_dofs;
   const std::size_t shape_c1 = transpose ? num_dofs : 3;
-  array2d<double> coords(shape_c0, shape_c1);
+  xt::xtensor<double, 2> coords({shape_c0, shape_c1});
 
   // Loop over cells and tabulate dofs
   array2d<double> x(scalar_dofs, gdim);

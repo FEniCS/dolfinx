@@ -447,7 +447,8 @@ fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker_fn)
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
@@ -471,11 +472,12 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     throw std::runtime_error("Function spaces must have the same element.");
 
   // Compute dof coordinates
-  const array2d dof_coordinates = V1.tabulate_dof_coordinates(true);
-  assert(dof_coordinates.shape[0] == 3);
+  const xt::xtensor<double, 2> dof_coordinates
+      = V1.tabulate_dof_coordinates(true);
+  assert(dof_coordinates.shape(0) == 3);
 
   // Evaluate marker for each dof coordinate
-  const std::vector<bool> marked_dofs = marker_fn(dof_coordinates);
+  const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
 
   // Get dofmaps
   std::shared_ptr<const fem::DofMap> dofmap0 = V0.dofmap();
@@ -537,18 +539,20 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> fem::locate_dofs_geometrical(
     const fem::FunctionSpace& V,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker_fn)
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
   // interface that computes dofs coordinates only for specified cell.
 
   // Compute dof coordinates
-  const array2d dof_coordinates = V.tabulate_dof_coordinates(true);
-  assert(dof_coordinates.shape[0] == 3);
+  const xt::xtensor<double, 2> dof_coordinates
+      = V.tabulate_dof_coordinates(true);
+  assert(dof_coordinates.shape(0) == 3);
 
   // Compute marker for each dof coordinate
-  const std::vector<bool> marked_dofs = marker_fn(dof_coordinates);
+  const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
 
   std::vector<std::int32_t> dofs;
   dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));

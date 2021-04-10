@@ -54,4 +54,21 @@ inline py::array_t<T> as_pyarray2d(dolfinx::array2d<T>&& array)
   return py::array(shape, strides, data, capsule);
 }
 
+/// Create a py::array_t that shares data with an
+/// xtensor array. The C++ object owns the data, and the
+/// py::array_t object keeps the C++ object alive .
+// From https://github.com/pybind/pybind11/issues/1042
+template <typename U>
+auto xt_as_pyarray(U&& array)
+{
+  auto shape = array.shape();
+  auto strides = array.strides();
+  auto data = array.data();
+  std::unique_ptr<U> array_ptr = std::make_unique<U>(std::move(array));
+  auto capsule = py::capsule(array_ptr.get(), [](void* p) {
+    std::unique_ptr<U>(reinterpret_cast<U*>(p));
+  });
+  array_ptr.release();
+  return py::array_t<typename U::value_type>(shape, strides, data, capsule);
+}
 } // namespace dolfinx_wrappers
