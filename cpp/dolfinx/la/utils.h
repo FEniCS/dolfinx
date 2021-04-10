@@ -41,5 +41,3 @@ template <typename T>
 T max(const la::Vector<T>& v);
 
 } // namespace dolfinx::la
-
-} // namespace dolfinx

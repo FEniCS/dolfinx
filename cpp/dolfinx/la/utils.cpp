@@ -44,7 +44,7 @@ template void dolfinx::la::scatter_rev<std::complex<double>>(
 template <typename T>
 T dolfinx::la::norm(const dolfinx::la::Vector<T>& v)
 {
-  const Eigen::Matrix<T, Eigen::Dynamic, 1>& arr = v.array();
+  const std::vector<T>& arr = v.array();
   const std::int32_t size_local = v.map()->size_local();
 
   double result = std::transform_reduce(arr.data(), arr.data() + size_local,
@@ -71,7 +71,7 @@ dolfinx::la::norm(const dolfinx::la::Vector<std::complex<float>>&);
 template <typename T>
 T dolfinx::la::max(const dolfinx::la::Vector<T>& v)
 {
-  const Eigen::Matrix<T, Eigen::Dynamic, 1>& arr = v.array();
+  const std::vector<T>& arr = v.array();
   const std::int32_t size_local = v.map()->size_local();
 
   T result = std::reduce(arr.data(), arr.data() + size_local, 0.0,
