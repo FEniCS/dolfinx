@@ -535,10 +535,16 @@ void fem(py::module& m)
              marker) -> std::array<py::array, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
-        auto _marker = [&marker](const dolfinx::array2d<double>& x) {
-          py::array_t _x(x.shape, x.strides(), x.data(), py::none());
+
+        auto _marker =
+            [&marker](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1> {
+          auto strides = x.strides();
+          std::transform(strides.begin(), strides.end(), strides.begin(),
+                         [](auto s) { return s * sizeof(double); });
+          py::array_t _x(x.shape(), strides, x.data(), py::none());
           py::array_t m = marker(_x);
-          return std::vector<bool>(m.data(), m.data() + m.size());
+          std::vector<std::size_t> s(m.shape(), m.shape() + m.ndim());
+          return xt::adapt(m.data(), m.size(), xt::no_ownership(), s);
         };
 
         std::array<std::vector<std::int32_t>, 2> dofs
@@ -551,10 +557,15 @@ void fem(py::module& m)
       [](const dolfinx::fem::FunctionSpace& V,
          const std::function<py::array_t<bool>(const py::array_t<double>&)>&
              marker) {
-        auto _marker = [&marker](const dolfinx::array2d<double>& x) {
-          py::array_t _x(x.shape, x.strides(), x.data(), py::none());
+        auto _marker =
+            [&marker](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1> {
+          auto strides = x.strides();
+          std::transform(strides.begin(), strides.end(), strides.begin(),
+                         [](auto s) { return s * sizeof(double); });
+          py::array_t _x(x.shape(), strides, x.data(), py::none());
           py::array_t m = marker(_x);
-          return std::vector<bool>(m.data(), m.data() + m.size());
+          std::vector<std::size_t> s(m.shape(), m.shape() + m.ndim());
+          return xt::adapt(m.data(), m.size(), xt::no_ownership(), s);
         };
         return as_pyarray(dolfinx::fem::locate_dofs_geometrical(V, _marker));
       },
@@ -582,8 +593,8 @@ void fem(py::module& m)
             auto _f = [&f](const xt::xtensor<double, 2>& x)
                 -> xt::xarray<PetscScalar> {
               auto strides = x.strides();
-              for (auto& s : strides)
-                s *= sizeof(double);
+              std::transform(strides.begin(), strides.end(), strides.begin(),
+                             [](auto s) { return s * sizeof(double); });
               py::array_t _x(x.shape(), strides, x.data(), py::none());
               py::array_t v = f(_x);
               std::vector<std::size_t> shape;
@@ -680,7 +691,7 @@ void fem(py::module& m)
       .def("sub", &dolfinx::fem::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",
            [](const dolfinx::fem::FunctionSpace& self) {
-             return as_pyarray2d(self.tabulate_dof_coordinates(false));
+             return xt_as_pyarray(self.tabulate_dof_coordinates(false));
            });
 
   // dolfinx::fem::Constant
