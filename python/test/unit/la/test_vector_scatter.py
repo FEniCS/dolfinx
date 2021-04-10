@@ -63,7 +63,7 @@ def test_scatter_reverse(element):
     cpp.la.scatter_reverse(u.x, cpp.common.ScatterMode.insert)
     assert np.allclose(w0, u.x.array)
 
-    # Fill with MPI rank, and count sum all entries in the vector (including ghosts)
+    # Fill with MPI rank, and sum all entries in the vector (including ghosts)
     u.x.array.fill(comm.rank)
     all_count0 = MPI.COMM_WORLD.allreduce(u.x.array.sum(), op=MPI.SUM)
 
