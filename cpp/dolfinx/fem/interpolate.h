@@ -13,6 +13,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <variant>
+#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
 {
