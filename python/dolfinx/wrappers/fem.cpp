@@ -536,9 +536,13 @@ void fem(py::module& m)
              marker) -> std::array<py::array, 2> {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
+
         auto _marker =
             [&marker](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1> {
-          py::array_t _x(x.shape(), x.strides(), x.data(), py::none());
+          auto strides = x.strides();
+          std::transform(strides.begin(), strides.end(), strides.begin(),
+                         [](auto s) { return s * sizeof(double); });
+          py::array_t _x(x.shape(), strides, x.data(), py::none());
           py::array_t m = marker(_x);
           std::vector<std::size_t> s(m.shape(), m.shape() + m.ndim());
           return xt::adapt(m.data(), m.size(), xt::no_ownership(), s);
@@ -556,7 +560,10 @@ void fem(py::module& m)
              marker) {
         auto _marker =
             [&marker](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1> {
-          py::array_t _x(x.shape(), x.strides(), x.data(), py::none());
+          auto strides = x.strides();
+          std::transform(strides.begin(), strides.end(), strides.begin(),
+                         [](auto s) { return s * sizeof(double); });
+          py::array_t _x(x.shape(), strides, x.data(), py::none());
           py::array_t m = marker(_x);
           std::vector<std::size_t> s(m.shape(), m.shape() + m.ndim());
           return xt::adapt(m.data(), m.size(), xt::no_ownership(), s);
@@ -587,8 +594,8 @@ void fem(py::module& m)
             auto _f = [&f](const xt::xtensor<double, 2>& x)
                 -> xt::xarray<PetscScalar> {
               auto strides = x.strides();
-              for (auto& s : strides)
-                s *= sizeof(double);
+              std::transform(strides.begin(), strides.end(), strides.begin(),
+                             [](auto s) { return s * sizeof(double); });
               py::array_t _x(x.shape(), strides, x.data(), py::none());
               py::array_t v = f(_x);
               std::vector<std::size_t> shape;
