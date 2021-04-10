@@ -39,7 +39,7 @@ namespace mesh
 /// compute the destination rank for cells currently on this rank.
 using CellPartitionFunction
     = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm comm, int nparts, const dolfinx::mesh::CellType cell_type,
+        MPI_Comm comm, int nparts, int tdim,
         const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
         dolfinx::mesh::GhostMode ghost_mode)>;
 

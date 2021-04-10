@@ -117,7 +117,7 @@ std::vector<std::int32_t> exterior_facet_indices(const Mesh& mesh);
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] n Number of partitions
-/// @param[in] cell_type Cell type
+/// @param[in] tdim Topological dimension
 /// @param[in] cells Cells on this process. The ith entry in list
 /// contains the global indices for the cell vertices. Each cell can
 /// appear only once across all processes. The cell vertex indices are
@@ -128,14 +128,14 @@ std::vector<std::int32_t> exterior_facet_indices(const Mesh& mesh);
 /// shared_facet or shared_vertex
 /// @return Destination rank for each cell on this process
 graph::AdjacencyList<std::int32_t>
-partition_cells_graph(MPI_Comm comm, int n, const mesh::CellType cell_type,
+partition_cells_graph(MPI_Comm comm, int n, int tdim,
                       const graph::AdjacencyList<std::int64_t>& cells,
                       mesh::GhostMode ghost_mode);
 
 /// Compute destination rank for mesh cells on this rank by applying the
 /// a provided graph partitioner to the dual graph of the mesh
 graph::AdjacencyList<std::int32_t>
-partition_cells_graph(MPI_Comm comm, int n, const mesh::CellType cell_type,
+partition_cells_graph(MPI_Comm comm, int n, int tdim,
                       const graph::AdjacencyList<std::int64_t>& cells,
                       mesh::GhostMode ghost_mode,
                       const graph::partition_fn& partfn);

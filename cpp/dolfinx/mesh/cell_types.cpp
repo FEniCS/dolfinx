@@ -30,6 +30,10 @@ std::string mesh::to_string(mesh::CellType type)
     return "tetrahedron";
   case mesh::CellType::quadrilateral:
     return "quadrilateral";
+  case mesh::CellType::pyramid:
+    return "pyramid";
+  case mesh::CellType::prism:
+    return "prism";
   case mesh::CellType::hexahedron:
     return "hexahedron";
   default:
@@ -50,6 +54,10 @@ mesh::CellType mesh::to_type(const std::string& cell)
     return mesh::CellType::tetrahedron;
   else if (cell == "quadrilateral")
     return mesh::CellType::quadrilateral;
+  else if (cell == "pyramid")
+    return mesh::CellType::pyramid;
+  else if (cell == "prism")
+    return mesh::CellType::prism;
   else if (cell == "hexahedron")
     return mesh::CellType::hexahedron;
   else
@@ -83,6 +91,10 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
     return mesh::CellType::triangle;
   case mesh::CellType::quadrilateral:
     return mesh::CellType::interval;
+  case mesh::CellType::pyramid:
+    throw std::runtime_error("TODO: pyramid");
+  case mesh::CellType::prism:
+    throw std::runtime_error("TODO: prism");
   case mesh::CellType::hexahedron:
     return mesh::CellType::quadrilateral;
   default:
@@ -91,17 +103,13 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
   }
 }
 //-----------------------------------------------------------------------------
-dolfinx::array2d<int> mesh::get_entity_vertices(mesh::CellType type, int dim)
+graph::AdjacencyList<int> mesh::get_entity_vertices(mesh::CellType type,
+                                                    int dim)
 {
   const std::vector<std::vector<int>> topology
       = basix::topology(to_string(type).c_str())[dim];
 
-  dolfinx::array2d<int> e(topology.size(), topology[0].size());
-  for (std::size_t i = 0; i < topology.size(); ++i)
-    for (std::size_t j = 0; j < topology[0].size(); ++j)
-      e(i, j) = topology[i][j];
-
-  return e;
+  return graph::AdjacencyList<int>(topology);
 }
 //-----------------------------------------------------------------------------
 dolfinx::array2d<int> mesh::get_sub_entities(CellType type, int dim0, int dim1)
@@ -171,6 +179,10 @@ int mesh::cell_dim(mesh::CellType type)
     return 3;
   case mesh::CellType::quadrilateral:
     return 2;
+  case mesh::CellType::pyramid:
+    return 3;
+  case mesh::CellType::prism:
+    return 3;
   case mesh::CellType::hexahedron:
     return 3;
   default:
@@ -187,6 +199,8 @@ int mesh::cell_num_entities(mesh::CellType type, int dim)
   static const int triangle[4] = {3, 3, 1, 0};
   static const int quadrilateral[4] = {4, 4, 1, 0};
   static const int tetrahedron[4] = {4, 6, 4, 1};
+  static const int pyramid[4] = {5, 8, 5, 1};
+  static const int prism[4] = {6, 9, 5, 1};
   static const int hexahedron[4] = {8, 12, 6, 1};
   switch (type)
   {
@@ -200,6 +214,10 @@ int mesh::cell_num_entities(mesh::CellType type, int dim)
     return tetrahedron[dim];
   case mesh::CellType::quadrilateral:
     return quadrilateral[dim];
+  case mesh::CellType::pyramid:
+    return pyramid[dim];
+  case mesh::CellType::prism:
+    return prism[dim];
   case mesh::CellType::hexahedron:
     return hexahedron[dim];
   default:
@@ -226,7 +244,8 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
   for (int i = 0; i <= cell_dim; ++i)
     num_entities[i] = mesh::cell_num_entities(cell_type, i);
 
-  const auto edge_v = mesh::get_entity_vertices(cell_type, 1);
+  const graph::AdjacencyList<int> edge_v
+      = mesh::get_entity_vertices(cell_type, 1);
   const auto face_e = mesh::get_sub_entities(cell_type, 2, 1);
 
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure;
@@ -261,15 +280,16 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
           for (int v = 0; v < 2; ++v)
           {
             // Add vertex connected to edge
-            entity_closure[{{dim, entity}}][0].insert(edge_v(edge_index, v));
+            entity_closure[{{dim, entity}}][0].insert(
+                edge_v.links(edge_index)[v]);
           }
         }
       }
 
       if (dim == 1)
       {
-        entity_closure[{{dim, entity}}][0].insert(edge_v(entity, 0));
-        entity_closure[{{dim, entity}}][0].insert(edge_v(entity, 1));
+        entity_closure[{{dim, entity}}][0].insert(edge_v.links(entity)[0]);
+        entity_closure[{{dim, entity}}][0].insert(edge_v.links(entity)[1]);
       }
     }
   }

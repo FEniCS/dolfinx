@@ -306,7 +306,7 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
     : _comm_owner_to_ghost(MPI_COMM_NULL), _comm_ghost_to_owner(MPI_COMM_NULL),
-      _comm_symmetric(MPI_COMM_NULL), _shared_indices(0)
+      _comm_symmetric(MPI_COMM_NULL)
 {
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -343,6 +343,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
   _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
   _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
   _comm_symmetric = dolfinx::MPI::Comm(comm2, false);
+  _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(0);
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
@@ -350,7 +351,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<std::int64_t>& ghosts,
                    const std::vector<int>& src_ranks)
     : _comm_owner_to_ghost(MPI_COMM_NULL), _comm_ghost_to_owner(MPI_COMM_NULL),
-      _comm_symmetric(MPI_COMM_NULL), _ghosts(ghosts), _shared_indices(0)
+      _comm_symmetric(MPI_COMM_NULL), _ghosts(ghosts)
 {
   assert(size_t(ghosts.size()) == src_ranks.size());
   assert(src_ranks == get_ghost_ranks(mpi_comm, local_size, _ghosts));
@@ -422,7 +423,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
       shared_ind.begin(), shared_ind.end(), local_shared_ind.begin(),
       [offset](std::int64_t x) -> std::int32_t { return x - offset; });
 
-  _shared_indices = graph::AdjacencyList<std::int32_t>(
+  _shared_indices = std::make_unique<graph::AdjacencyList<std::int32_t>>(
       std::move(local_shared_ind), std::move(shared_disp));
 
   // Wait for the MPI_Iallreduce to complete
@@ -507,7 +508,7 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 const graph::AdjacencyList<std::int32_t>&
 IndexMap::shared_indices() const noexcept
 {
-  return _shared_indices;
+  return *_shared_indices;
 }
 //-----------------------------------------------------------------------------
 std::vector<int> IndexMap::ghost_owner_rank() const
@@ -556,10 +557,10 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   std::map<std::int32_t, std::set<int>> shared_indices;
 
   // Build map from owned local index to ranks that ghost the index
-  for (std::int32_t p = 0; p < _shared_indices.num_nodes(); ++p)
+  for (std::int32_t p = 0; p < _shared_indices->num_nodes(); ++p)
   {
     const int rank_global = neighbors_out[p];
-    for (const auto& idx : _shared_indices.links(p))
+    for (const std::int32_t& idx : _shared_indices->links(p))
       shared_indices[idx].insert(rank_global);
   }
 
@@ -570,9 +571,9 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
 
   std::vector<std::int64_t> fwd_sharing_data;
   std::vector<int> fwd_sharing_offsets{0};
-  for (std::int32_t p = 0; p < _shared_indices.num_nodes(); ++p)
+  for (std::int32_t p = 0; p < _shared_indices->num_nodes(); ++p)
   {
-    for (const auto& idx : _shared_indices.links(p))
+    for (const std::int32_t& idx : _shared_indices->links(p))
     {
       assert(shared_indices.find(idx) != shared_indices.end());
       if (auto it = shared_indices.find(idx); it->second.size() > 1)
@@ -681,7 +682,7 @@ void IndexMap::scatter_fwd(tcb::span<const T> local_data,
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
     sizes_recv[_ghost_owners[i]] += n;
 
-  const std::vector<int32_t>& shared_disp = _shared_indices.offsets();
+  const std::vector<int32_t>& shared_disp = _shared_indices->offsets();
   std::vector<std::int32_t> displs_send(shared_disp.size());
   std::transform(shared_disp.begin(), shared_disp.end(), displs_send.begin(),
                  [n](auto x) { return x * n; });
@@ -694,10 +695,10 @@ void IndexMap::scatter_fwd(tcb::span<const T> local_data,
 
   // Copy into sending buffer
   std::vector<T> data_to_send(displs_send.back());
-  const std::vector<std::int32_t>& indices = _shared_indices.array();
+  const std::vector<std::int32_t>& indices = _shared_indices->array();
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
-    const int index = indices[i];
+    const std::int32_t index = indices[i];
     for (int j = 0; j < n; ++j)
       data_to_send[i * n + j] = local_data[index * n + j];
   }
@@ -770,7 +771,7 @@ void IndexMap::scatter_rev(tcb::span<T> local_data,
   std::vector<std::int32_t> displs_recv(indegree + 1, 0);
   for (int i = 0; i < indegree; ++i)
   {
-    recv_sizes[i] = _shared_indices.num_links(i) * n;
+    recv_sizes[i] = _shared_indices->num_links(i) * n;
     displs_recv[i + 1] = displs_recv[i] + recv_sizes[i];
   }
 
@@ -783,7 +784,7 @@ void IndexMap::scatter_rev(tcb::span<T> local_data,
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
   {
     const int np = _ghost_owners[i];
-    for (std::int32_t j = 0; j < n; ++j)
+    for (int j = 0; j < n; ++j)
       send_data[displs[np] + j] = remote_data[i * n + j];
     displs[np] += n;
   }
@@ -795,13 +796,13 @@ void IndexMap::scatter_rev(tcb::span<T> local_data,
       MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
       displs_recv.data(), MPI::mpi_type<T>(), _comm_ghost_to_owner.comm());
 
-  const std::vector<std::int32_t>& shared_indices = _shared_indices.array();
+  const std::vector<std::int32_t>& shared_indices = _shared_indices->array();
   // Copy or accumulate into "local_data"
   if (op == Mode::insert)
   {
     for (std::size_t i = 0; i < shared_indices.size(); ++i)
     {
-      const int index = shared_indices[i];
+      const std::int32_t index = shared_indices[i];
       for (int j = 0; j < n; ++j)
         local_data[index * n + j] = recv_data[i * n + j];
     }
@@ -810,7 +811,7 @@ void IndexMap::scatter_rev(tcb::span<T> local_data,
   {
     for (std::size_t i = 0; i < shared_indices.size(); ++i)
     {
-      const int index = shared_indices[i];
+      const std::int32_t index = shared_indices[i];
       for (int j = 0; j < n; ++j)
         local_data[index * n + j] += recv_data[i * n + j];
     }

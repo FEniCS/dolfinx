@@ -12,6 +12,7 @@
 #include <dolfinx/common/span.hpp>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
+#include <memory>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -224,7 +225,7 @@ private:
   // List of owned local indices that are in the halo (ghost) region on other
   // ranks, grouped by rank in the neighbor communicator (destination ranks in
   // forward communicator and source ranks in the reverse communicator).
-  graph::AdjacencyList<std::int32_t> _shared_indices;
+  std::unique_ptr<graph::AdjacencyList<std::int32_t>> _shared_indices;
 };
 
 } // namespace dolfinx::common

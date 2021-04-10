@@ -16,6 +16,7 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/graphbuild.h>
 #include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
 #include <iostream>
@@ -82,6 +83,8 @@ void mesh(py::module& m)
       .value("triangle", dolfinx::mesh::CellType::triangle)
       .value("quadrilateral", dolfinx::mesh::CellType::quadrilateral)
       .value("tetrahedron", dolfinx::mesh::CellType::tetrahedron)
+      .value("pyramid", dolfinx::mesh::CellType::pyramid)
+      .value("prism", dolfinx::mesh::CellType::prism)
       .value("hexahedron", dolfinx::mesh::CellType::hexahedron);
 
   m.def("to_string", &dolfinx::mesh::to_string);
@@ -99,7 +102,6 @@ void mesh(py::module& m)
               mesh, dim, tcb::span(entities.data(), entities.size())));
         });
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
-
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
   m.def(
@@ -122,9 +124,15 @@ void mesh(py::module& m)
 
   using PythonPartitioningFunction
       = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
-          MPICommWrapper, int, const dolfinx::mesh::CellType,
+          MPICommWrapper, int, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&,
           dolfinx::mesh::GhostMode)>;
+
+  m.def("build_dual_graph",
+        [](const MPICommWrapper comm,
+           const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim) {
+          return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim);
+        });
 
   m.def(
       "create_mesh",
@@ -136,10 +144,10 @@ void mesh(py::module& m)
          PythonPartitioningFunction partitioner) {
         auto partitioner_wrapper
             = [partitioner](
-                  MPI_Comm comm, int n, const dolfinx::mesh::CellType cell_type,
+                  MPI_Comm comm, int n, int tdim,
                   const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
                   dolfinx::mesh::GhostMode ghost_mode) {
-                return partitioner(MPICommWrapper(comm), n, cell_type, cells,
+                return partitioner(MPICommWrapper(comm), n, tdim, cells,
                                    ghost_mode);
               };
 
@@ -286,13 +294,12 @@ void mesh(py::module& m)
 
   // Partitioning interface
   m.def("partition_cells_graph",
-        [](const MPICommWrapper comm, int nparts,
-           dolfinx::mesh::CellType cell_type,
+        [](const MPICommWrapper comm, int nparts, int tdim,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
            dolfinx::mesh::GhostMode ghost_mode)
             -> dolfinx::graph::AdjacencyList<std::int32_t> {
-          return dolfinx::mesh::partition_cells_graph(
-              comm.get(), nparts, cell_type, cells, ghost_mode);
+          return dolfinx::mesh::partition_cells_graph(comm.get(), nparts, tdim,
+                                                      cells, ghost_mode);
         });
 
   m.def("locate_entities",
