@@ -151,7 +151,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   // Array to hold coordinates to return
   const std::size_t shape_c0 = transpose ? 3 : num_dofs;
   const std::size_t shape_c1 = transpose ? num_dofs : 3;
-  xt::xtensor<double, 2> coords({shape_c0, shape_c1});
+  xt::xtensor<double, 2> coords = xt::zeros<double>({shape_c0, shape_c1});
 
   // Loop over cells and tabulate dofs
   array2d<double> x(scalar_dofs, gdim);
