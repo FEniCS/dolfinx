@@ -43,6 +43,21 @@ public:
   /// Move Assignment operator
   Vector& operator=(Vector&& x) = default;
 
+  /// Inner product of the local part of this vector with the local part
+  /// of another vector. To get the global inner product, do a global reduce
+  /// of the result with MPI_SUM.
+  /// @param b Another la::Vector of the same size
+  /// @return Inner product of the local part of this vector with b
+  T inner_product(const Vector<T>& b)
+  {
+    const std::int32_t local_size = _bs * _map->size_local();
+    if (b._bs * b._map->size_local() != local_size)
+      throw std::runtime_error("Incompatible vector for inner_product");
+
+    return std::transform_reduce(_x.begin(), _x.begin() + local_size,
+                                 b._x.begin(), 0.0);
+  }
+
   /// Get IndexMap
   std::shared_ptr<const common::IndexMap> map() const { return _map; }
 
