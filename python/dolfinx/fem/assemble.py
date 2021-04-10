@@ -252,6 +252,12 @@ def _(A: PETSc.Mat,
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
                 assemble_matrix(Asub, a_block, bcs)
+            elif i == j:
+                for bc in bcs:
+                    if a_row[0].function_spaces[0].contains(bc.function_space):
+                        raise RuntimeError(
+                            f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
+                            " Consider assembling a zero block.")
     return A
 
 
