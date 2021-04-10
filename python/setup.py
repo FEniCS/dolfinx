@@ -8,8 +8,8 @@ from distutils.version import LooseVersion
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
-if sys.version_info < (3, 5):
-    print("Python 3.5 or higher required, please upgrade.")
+if sys.version_info < (3, 6):
+    print("Python 3.6 or higher required, please upgrade.")
     sys.exit(1)
 
 VERSION = "2019.2.0.dev0"
@@ -49,7 +49,7 @@ class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPython3_EXECUTABLE=' + sys.executable]
+                      '-DPYTHON_EXECUTABLE=' + sys.executable]
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
@@ -79,7 +79,6 @@ setup(name='fenics-dolfinx',
       long_description='',
       packages=["dolfinx",
                 "dolfinx.fem",
-                "dolfinx.la",
                 "dolfinx.wrappers",
                 "dolfinx_utils.test"],
       package_data={'dolfinx.wrappers': ['*.h']},

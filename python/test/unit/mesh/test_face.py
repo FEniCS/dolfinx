@@ -1,15 +1,17 @@
-# Copyright (C) 2011 Garth N. Wells
+# Copyright (C) 2020 Garth N. Wells, Jørgen S. Dokken
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
-from mpi4py import MPI
-
 import dolfinx
+import pytest
+import numpy
 from dolfinx import UnitCubeMesh, UnitSquareMesh
+from dolfinx.mesh import locate_entities_boundary
+from dolfinx.cpp.mesh import cell_normals
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 
 
 @pytest.fixture
@@ -22,6 +24,7 @@ def square():
     return UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
 
 
+@pytest.mark.skip("volume_entities needs fixing")
 @skip_in_parallel
 def test_area(cube, square):
     """Iterate over faces and sum area."""
@@ -37,3 +40,18 @@ def test_area(cube, square):
     cube.topology.create_entities(1)
     area = dolfinx.cpp.mesh.volume_entities(square, range(num_faces), 2).sum()
     assert area == pytest.approx(1.0)
+
+
+def test_normals(cube, square):
+    """ Test cell normals for a subset of facets """
+    def left_side(x):
+        return numpy.isclose(x[0], 0)
+    fdim = cube.topology.dim - 1
+    facets = locate_entities_boundary(cube, fdim, left_side)
+    normals = cell_normals(cube, fdim, facets)
+    assert numpy.allclose(normals, [-1, 0, 0])
+
+    fdim = square.topology.dim - 1
+    facets = locate_entities_boundary(square, fdim, left_side)
+    normals = cell_normals(square, fdim, facets)
+    assert numpy.allclose(normals, [-1, 0, 0])

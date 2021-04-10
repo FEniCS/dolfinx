@@ -10,7 +10,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
-#include <petscsys.h>
 #include <string>
 
 namespace pugi
@@ -26,11 +25,11 @@ namespace fem
 class CoordinateElement;
 }
 
-namespace function
+namespace fem
 {
 template <typename T>
 class Function;
-} // namespace function
+} // namespace fem
 
 namespace mesh
 {
@@ -44,7 +43,7 @@ class MeshTags;
 namespace io
 {
 
-/// Read and write mesh::Mesh, function::Function and other objects in
+/// Read and write mesh::Mesh, fem::Function and other objects in
 /// XDMF.
 
 /// This class supports the output of meshes and functions in XDMF
@@ -112,17 +111,17 @@ public:
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return (Cell type, degree), and cells topology (global node indexing)
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  read_topology_data(const std::string name,
-                     const std::string xpath = "/Xdmf/Domain") const;
+  array2d<std::int64_t> read_topology_data(const std::string name,
+                                           const std::string xpath
+                                           = "/Xdmf/Domain") const;
 
   /// Read Geometry data for Mesh
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return points on each process
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  read_geometry_data(const std::string name,
-                     const std::string xpath = "/Xdmf/Domain") const;
+  array2d<double> read_geometry_data(const std::string name,
+                                     const std::string xpath
+                                     = "/Xdmf/Domain") const;
 
   /// Read information about cell type
   /// @param[in] grid_name Name of Grid for which cell type is needed
@@ -132,13 +131,21 @@ public:
                                                 = "/Xdmf/Domain");
 
   /// Write Function
-  /// @param[in] function The Function to write to file
+  /// @param[in] u The Function to write to file
   /// @param[in] t The time stamp to associate with the Function
   /// @param[in] mesh_xpath XPath for a Grid under which Function will
-  ///   be inserted
-  void write_function(const function::Function<PetscScalar>& function,
-                      const double t,
-                      const std::string mesh_xpath
+  /// be inserted
+  void write_function(const fem::Function<double>& u, double t,
+                      const std::string& mesh_xpath
+                      = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
+
+  /// Write Function
+  /// @param[in] u The Function to write to file
+  /// @param[in] t The time stamp to associate with the Function
+  /// @param[in] mesh_xpath XPath for a Grid under which Function will
+  /// be inserted
+  void write_function(const fem::Function<std::complex<double>>& u, double t,
+                      const std::string& mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
   /// Write MeshTags
@@ -147,8 +154,8 @@ public:
   ///   in file
   /// @param[in] xpath XPath where MeshTags Grid will be inserted
   void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
-                      const std::string geometry_xpath,
-                      const std::string xpath = "/Xdmf/Domain");
+                      const std::string& geometry_xpath,
+                      const std::string& xpath = "/Xdmf/Domain");
 
   /// Read MeshTags
   /// @param[in] mesh The Mesh that the data is defined on

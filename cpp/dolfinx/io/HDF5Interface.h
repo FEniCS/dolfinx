@@ -8,6 +8,7 @@
 
 #include <array>
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <dolfinx/common/log.h>
 #include <hdf5.h>
@@ -282,6 +283,8 @@ HDF5Interface::read_dataset(const hid_t file_handle,
                             const std::string& dataset_path,
                             const std::array<std::int64_t, 2>& range)
 {
+  auto timer_start = std::chrono::system_clock::now();
+
   // Open the dataset
   const hid_t dset_id
       = H5Dopen2(file_handle, dataset_path.c_str(), H5P_DEFAULT);
@@ -349,6 +352,12 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   // Close dataset
   status = H5Dclose(dset_id);
   assert(status != HDF5_FAIL);
+
+  auto timer_end = std::chrono::system_clock::now();
+  std::chrono::duration<double> dt = (timer_end - timer_start);
+  double data_rate = data.size() * sizeof(T) / (1e6 * dt.count());
+
+  LOG(INFO) << "HDF5 Read data rate: " << data_rate << "MB/s";
 
   return data;
 }

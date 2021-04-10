@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include <complex>
 #include <hdf5.h>
 #include <mpi.h>
-#include <petscsys.h>
 
 namespace pugi
 {
@@ -17,7 +17,7 @@ class xml_node;
 
 namespace dolfinx
 {
-namespace function
+namespace fem
 {
 template <typename T>
 class Function;
@@ -30,7 +30,11 @@ namespace xdmf_function
 {
 
 /// TODO
-void add_function(MPI_Comm comm, const function::Function<PetscScalar>& u,
+void add_function(MPI_Comm comm, const fem::Function<double>& u, const double t,
+                  pugi::xml_node& xml_node, const hid_t h5_id);
+
+/// TODO
+void add_function(MPI_Comm comm, const fem::Function<std::complex<double>>& u,
                   const double t, pugi::xml_node& xml_node, const hid_t h5_id);
 
 } // namespace xdmf_function

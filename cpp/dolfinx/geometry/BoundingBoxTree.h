@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <array>
-#include <memory>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/common/span.hpp>
 #include <vector>
 
 namespace dolfinx
@@ -33,13 +33,27 @@ public:
   /// Constructor
   /// @param[in] mesh The mesh for building the bounding box tree
   /// @param[in] tdim The topological dimension of the mesh entities to
-  ///                 by the bounding box tree for
-  BoundingBoxTree(const mesh::Mesh& mesh, int tdim);
+  /// build the bounding box tree for
+  /// @param[in] entities List of entity indices (local to process) to
+  /// compute the bounding box for (may be empty, if none).
+  /// @param[in] padding A float perscribing how much the bounding box
+  /// of each entity should be padded
+  BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
+                  const tcb::span<const std::int32_t>& entities,
+                  double padding = 0);
 
   /// Constructor
-  /// @param[in] points Cloud of points to build the bounding box tree
-  ///                   around
-  BoundingBoxTree(const std::vector<Eigen::Vector3d>& points);
+  /// @param[in] mesh The mesh for building the bounding box tree
+  /// @param[in] tdim The topological dimension of the mesh entities to
+  /// build the bounding box tree for
+  /// @param[in] padding A float perscribing how much the bounding box
+  /// of each entity should be padded
+  BoundingBoxTree(const mesh::Mesh& mesh, int tdim, double padding = 0);
+
+  /// Constructor @param[in] points Cloud of points, with associated
+  /// point identifier index, to build the bounding box tree around
+  BoundingBoxTree(
+      std::vector<std::pair<std::array<double, 3>, std::int32_t>> points);
 
   /// Move constructor
   BoundingBoxTree(BoundingBoxTree&& tree) = default;
@@ -50,17 +64,27 @@ public:
   /// Move assignment
   BoundingBoxTree& operator=(BoundingBoxTree&& other) = default;
 
+  /// Copy assignment
+  BoundingBoxTree& operator=(const BoundingBoxTree& other) = default;
+
   /// Destructor
   ~BoundingBoxTree() = default;
 
   /// Return bounding box coordinates for a given node in the tree
   /// @param[in] node The bounding box node index
-  /// @return The bounding box where row(0) is the lower corner and
-  ///         row(1) is the upper corner
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> get_bbox(int node) const;
+  /// @return The bounding box where [0] is the lower corner and [1] is
+  /// the upper corner
+  std::array<std::array<double, 3>, 2> get_bbox(std::size_t node) const;
+
+  /// Compute a global bounding tree (collective on comm)
+  /// This can be used to find which process a point might have a
+  /// collision with.
+  /// @param[in] comm MPI Communicator for collective communication
+  /// @return BoundingBoxTree where each node represents a process
+  BoundingBoxTree create_global_tree(const MPI_Comm& comm) const;
 
   /// Return number of bounding boxes
-  int num_bboxes() const;
+  std::int32_t num_bboxes() const;
 
   /// Topological dimension of leaf entities
   int tdim() const;
@@ -69,23 +93,22 @@ public:
   std::string str() const;
 
   /// Get bounding box child nodes
+  ///
   /// @param[in] node The bounding box node index
-  /// @return The indices of the two child nodes. For leaf nodes, index
-  ///         0 is equal to the node index and index 1 is equal to the
-  ///         index of the entity that the leaf box bounds,   e.g. the
-  ///         index of the cell that it bounds,
-  std::array<int, 2> bbox(int node) const
+  /// @return The indices of the two child nodes. If @p node is a leaf
+  /// nodes, then the values in the returned array are equal and
+  /// correspond to the index of the entity that the leaf node bounds,
+  /// e.g. the index of the cell that it bounds.
+  std::array<int, 2> bbox(std::size_t node) const
   {
-    assert(node < (int)_bboxes.rows());
-    return {_bboxes(node, 0), _bboxes(node, 1)};
+    assert(2 * node + 1 < _bboxes.size());
+    return {_bboxes[2 * node], _bboxes[2 * node + 1]};
   }
 
 private:
   // Constructor
-  BoundingBoxTree(
-      const Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor>& bboxes,
-      const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-          bbox_coords);
+  BoundingBoxTree(std::vector<std::int32_t>&& bboxes,
+                  std::vector<double>&& bbox_coords);
 
   // Topological dimension of leaf entities
   int _tdim;
@@ -94,15 +117,10 @@ private:
   void tree_print(std::stringstream& s, int i) const;
 
   // List of bounding boxes (parent-child-entity relations)
-  Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor> _bboxes;
+  std::vector<std::int32_t> _bboxes;
 
   // List of bounding box coordinates
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _bbox_coordinates;
-
-public:
-  /// Global tree for mesh ownership of each process (same on all
-  /// processes)
-  std::unique_ptr<BoundingBoxTree> global_tree;
+  std::vector<double> _bbox_coordinates;
 };
 } // namespace geometry
 } // namespace dolfinx

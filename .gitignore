@@ -120,7 +120,7 @@ install_manifest.txt
 
 cmake.local
 
-build/
+build*/
 dist/
 
 .vscode
@@ -128,3 +128,8 @@ dist/
 .pytest_cache
 .*.swp
 *_tempdir_*
+_petsc*
+
+# Files created by demos
+core
+log.txt

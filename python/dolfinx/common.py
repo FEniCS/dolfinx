@@ -3,6 +3,7 @@
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""General tools for timing and configuration"""
 
 import functools
 
@@ -15,10 +16,6 @@ TimingType = cpp.common.TimingType
 
 def timing(task: str):
     return cpp.common.timing(task)
-
-
-def timings(timing_types: list):
-    return cpp.common.timings(timing_types)
 
 
 def list_timings(mpi_comm, timing_types: list):
@@ -84,20 +81,7 @@ class Timer:
 
 
 def timed(task: str):
-    """
-    Decorator for timing functions. Usage::
-
-    @timed(\"Do Foo\")
-    def do_foo(*args, **kwargs):
-        # Do something costly
-        pass
-
-    do_foo()
-    list_timings([TimingType.wall, TimingType.user])
-
-    t = timing(\"Do Foo\", TimingClear.clear)
-    print("Do foo wall time: %s" % t[1])
-    """
+    """Decorator for timing functions."""
 
     def decorator(func):
         @functools.wraps(func)

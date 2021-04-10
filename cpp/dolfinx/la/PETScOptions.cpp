@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "PETScOptions.h"
+#include "PETScVector.h"
 
 using namespace dolfinx;
 using namespace dolfinx::la;

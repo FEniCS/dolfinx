@@ -5,9 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MPI.h"
-#include "SubSystemsManager.h"
 #include <algorithm>
-#include <numeric>
 
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)
@@ -143,7 +141,7 @@ std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
   std::vector<std::uint8_t> edge_count(dolfinx::MPI::size(comm), 0);
   for (auto e : edges)
     edge_count[e] = 1;
-  std::vector<std::uint8_t> in_edge_count(dolfinx::MPI::size(comm), -1);
+  std::vector<std::uint8_t> in_edge_count(dolfinx::MPI::size(comm));
   MPI_Alltoall(edge_count.data(), 1, MPI_UINT8_T, in_edge_count.data(), 1,
                MPI_UINT8_T, comm);
 
@@ -164,7 +162,7 @@ dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
   MPI_Topo_test(neighbor_comm, &status);
   assert(status != MPI_UNDEFINED);
 
-  // Get list of neighbours
+  // Get list of neighbors
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
                                  &weighted);

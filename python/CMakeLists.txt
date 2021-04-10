@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 PROJECT(dolfinx_pybind11)
 
+find_package(Basix REQUIRED)
 find_package(DOLFINX REQUIRED)
 
 # Set C++ standard before finding pybind11
@@ -17,7 +18,6 @@ pybind11_add_module(cpp SHARED
   dolfinx/wrappers/dolfin.cpp
   dolfinx/wrappers/common.cpp
   dolfinx/wrappers/fem.cpp
-  dolfinx/wrappers/function.cpp
   dolfinx/wrappers/generation.cpp
   dolfinx/wrappers/geometry.cpp
   dolfinx/wrappers/graph.cpp
@@ -33,6 +33,12 @@ include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
   target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
+endif()
+
+# In Debug mode override pybind11 symbols visibility
+# Symbols must be visible to backtrace_symbols() to produce nice logs
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  target_compile_options(cpp PRIVATE "-fvisibility=default")
 endif()
 
 # Add DOLFINX libraries and other config

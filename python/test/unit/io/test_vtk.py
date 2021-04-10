@@ -7,15 +7,14 @@
 import os
 
 import pytest
-from mpi4py import MPI
-
-from dolfinx import (Function, FunctionSpace,
-                     TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, VectorFunctionSpace)
+from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
+                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
+                     VectorFunctionSpace)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import VTKFile
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 
 assert (tempdir)
 
@@ -42,7 +41,7 @@ def type_conv():
 
 @pytest.fixture(scope="function")
 def tempfile(tempdir, request):
-    return os.path.join(tempdir, request.function.__name__)
+    return os.path.join(tempdir, request.fem.__name__)
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")

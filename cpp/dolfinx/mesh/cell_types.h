@@ -6,16 +6,16 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <array>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
-namespace dolfinx
-{
-namespace mesh
+#include "dolfinx/common/array2d.h"
+#include "dolfinx/graph/AdjacencyList.h"
+
+namespace dolfinx::mesh
 {
 
 /// Cell type identifier
@@ -27,6 +27,8 @@ enum class CellType : int
   triangle = 3,
   tetrahedron = 4,
   quadrilateral = -4,
+  pyramid = -5,
+  prism = -6,
   hexahedron = -8
 };
 
@@ -48,16 +50,13 @@ CellType cell_entity_type(CellType type, int d);
 /// @return The type of the cell's facets
 CellType cell_facet_type(CellType type);
 
-/// Return array entities(num entities, num vertices per entity), where
-/// entities(e, k) is the local vertex index for the kth vertex of
-/// entity e of dimension dim
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_entity_vertices(CellType type, int dim);
+/// Return list of entities, where entities(e, k) is the local vertex index for
+/// the kth vertex of entity e of dimension dim
+dolfinx::graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
 
-/// Get entities of dimsion dim1 and that make up entities of dimension
+/// Get entities of dimension dim1 and that make up entities of dimension
 /// dim0
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-get_sub_entities(CellType type, int dim0, int dim1);
+dolfinx::array2d<int> get_sub_entities(CellType type, int dim0, int dim1);
 
 /// Return topological dimension of cell type
 int cell_dim(CellType type);
@@ -86,5 +85,4 @@ int num_cell_vertices(CellType type);
 std::map<std::array<int, 2>, std::vector<std::set<int>>>
 cell_entity_closure(mesh::CellType cell_type);
 
-} // namespace mesh
-} // namespace dolfinx
+} // namespace dolfinx::mesh

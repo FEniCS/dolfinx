@@ -6,14 +6,13 @@
 
 import numpy as np
 import pytest
-from mpi4py import MPI
-from scipy.spatial.transform import Rotation
-
 import ufl
 from dolfinx import cpp, geometry
 from dolfinx.cpp.geometry import compute_distance_gjk
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
+from scipy.spatial.transform import Rotation
 
 
 def distance_point_to_line_3D(P1, P2, point):
@@ -35,7 +34,7 @@ def test_line_point_distance(delta):
     point = point_on_line + delta * normal
     distance = np.linalg.norm(compute_distance_gjk(line, point))
     actual_distance = distance_point_to_line_3D(line[0], line[1], point)
-    assert(np.isclose(distance, actual_distance, atol=1e-15))
+    assert np.isclose(distance, actual_distance, atol=1e-15)
 
 
 @pytest.mark.parametrize("delta", [0.1, 1e-12, 0])
@@ -47,7 +46,7 @@ def test_line_line_distance(delta):
     line_2 = np.array([point, [2, 5, 6]], dtype=np.float64)
     distance = np.linalg.norm(compute_distance_gjk(line, line_2))
     actual_distance = distance_point_to_line_3D(line[0], line[1], line_2[0])
-    assert(np.isclose(distance, actual_distance, atol=1e-15))
+    assert np.isclose(distance, actual_distance, atol=1e-15)
 
 
 @pytest.mark.parametrize("delta", [0.1**(3 * i) for i in range(6)])
@@ -59,7 +58,7 @@ def test_tri_distance(delta):
     point = tri_2[0]
     actual_distance = distance_point_to_line_3D(P1, P2, point)
     distance = np.linalg.norm(compute_distance_gjk(tri_1, tri_2))
-    assert(np.isclose(distance, actual_distance, atol=1e-15))
+    assert np.isclose(distance, actual_distance, atol=1e-15)
 
 
 @pytest.mark.parametrize("delta", [0.1 * 0.1**(3 * i) for i in range(6)])
@@ -71,7 +70,7 @@ def test_quad_distance2d(delta):
     point = quad_2[0]
     actual_distance = distance_point_to_line_3D(P1, P2, point)
     distance = np.linalg.norm(compute_distance_gjk(quad_1, quad_2))
-    assert(np.isclose(distance, actual_distance, atol=1e-15))
+    assert np.isclose(distance, actual_distance, atol=1e-15)
 
 
 @pytest.mark.parametrize("delta", [1 * 0.5**(3 * i) for i in range(7)])
@@ -80,7 +79,7 @@ def test_tetra_distance_3d(delta):
     tetra_2 = np.array([[0, 0, -3], [1, 0, -3], [0, 1, -3], [0.5, 0.3, -delta]], dtype=np.float64)
     actual_distance = distance_point_to_plane_3D(tetra_1[0], tetra_1[1], tetra_1[2], tetra_2[3])
     distance = np.linalg.norm(compute_distance_gjk(tetra_1, tetra_2))
-    assert(np.isclose(distance, actual_distance, atol=1e-15))
+    assert np.isclose(distance, actual_distance, atol=1e-15)
 
 
 @pytest.mark.parametrize("delta", [(-1)**i * np.sqrt(2) * 0.1**(3 * i)
@@ -91,9 +90,9 @@ def test_tetra_collision_3d(delta):
     actual_distance = distance_point_to_plane_3D(tetra_1[0], tetra_1[1], tetra_1[2], tetra_2[3])
     distance = np.linalg.norm(compute_distance_gjk(tetra_1, tetra_2))
     if delta < 0:
-        assert(np.isclose(distance, 0, atol=1e-15))
+        assert np.isclose(distance, 0, atol=1e-15)
     else:
-        assert(np.isclose(distance, actual_distance, atol=1e-15))
+        assert np.isclose(distance, actual_distance, atol=1e-15)
 
 
 @pytest.mark.parametrize("delta", [0, -0.1, -0.49, -0.51])
@@ -117,9 +116,9 @@ def test_hex_collision_3d(delta):
     actual_distance = np.linalg.norm(np.array([1, 1, P0[2]], dtype=np.float64) - hex_2[0])
     distance = np.linalg.norm(compute_distance_gjk(hex_1, hex_2))
     if P0[0] < 1:
-        assert(np.isclose(distance, 0, atol=1e-15))
+        assert np.isclose(distance, 0, atol=1e-15)
     else:
-        assert(np.isclose(distance, actual_distance, atol=1e-15))
+        assert np.isclose(distance, actual_distance, atol=1e-15)
 
 
 @pytest.mark.parametrize("delta", [1e8, 1.0, 1e-6, 1e-12])
@@ -155,12 +154,12 @@ def test_cube_distance(delta, scale):
             c0rot = r.apply(cube0)
             c1rot = r.apply(cube1)
             distance = np.linalg.norm(compute_distance_gjk(c0rot, c1rot))
-            assert(np.isclose(distance, delta))
+            assert np.isclose(distance, delta)
 
 
 @skip_in_parallel
 def test_collision_2nd_order_triangle():
-    points = np.array([[0, 0], [1, 0], [0, 1], [0.65, 0.65], [0, 0.5], [0.5, 0]])
+    points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.65, 0.65], [0.0, 0.5], [0.5, 0.0]])
     cells = np.array([[0, 1, 2, 3, 4, 5]])
     cell = ufl.Cell("triangle", geometric_dimension=2)
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
@@ -168,13 +167,14 @@ def test_collision_2nd_order_triangle():
 
     # Sample points along an interior line of the domain. The last point
     # is outside the simplex made by the vertices.
-    sample_points = np.array([[0.1, 0.3, 0], [0.2, 0.5, 0], [0.6, 0.6, 0]])
+    sample_points = np.array([[0.1, 0.3, 0.0], [0.2, 0.5, 0.0], [0.6, 0.6, 0.0]])
 
     # Create boundingboxtree
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     for point in sample_points:
-        colliding_cell = geometry.compute_colliding_cells(tree, mesh, point, 1)
-        assert(len(colliding_cell) == 1)
+        cell_candidates = geometry.compute_collisions_point(tree, point)
+        colliding_cell = geometry.select_colliding_cells(mesh, cell_candidates, point, 1)
+        assert len(colliding_cell) == 1
 
     # Check if there is a point on the linear approximation of the
     # curved facet

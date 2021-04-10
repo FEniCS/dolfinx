@@ -7,66 +7,38 @@
 
 #include "Mesh.h"
 #include "Geometry.h"
-#include "Partitioning.h"
 #include "Topology.h"
-#include "TopologyComputation.h"
+#include "topologycomputation.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/DofMapBuilder.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/Partitioning.h>
-#include <dolfinx/io/cells.h>
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
-namespace
-{
-//-----------------------------------------------------------------------------
-Eigen::ArrayXd cell_h(const mesh::Mesh& mesh)
-{
-  const int dim = mesh.topology().dim();
-  auto map = mesh.topology().index_map(dim);
-  assert(map);
-  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-  if (num_cells == 0)
-    throw std::runtime_error("Cannot compute h min/max. No cells.");
-
-  Eigen::ArrayXi cells(num_cells);
-  std::iota(cells.data(), cells.data() + cells.size(), 0);
-  return mesh::h(mesh, cells, dim);
-}
-//-----------------------------------------------------------------------------
-Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
-{
-  const int dim = mesh.topology().dim();
-  auto map = mesh.topology().index_map(dim);
-  assert(map);
-  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-  if (num_cells == 0)
-    throw std::runtime_error("Cannnot compute inradius min/max. No cells.");
-
-  Eigen::ArrayXi cells(num_cells);
-  std::iota(cells.data(), cells.data() + cells.size(), 0);
-  return mesh::inradius(mesh, cells);
-}
-//-----------------------------------------------------------------------------
-} // namespace
-
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>& x,
-                       mesh::GhostMode ghost_mode)
+                       const array2d<double>& x, mesh::GhostMode ghost_mode)
+{
+  return create_mesh(
+      comm, cells, element, x, ghost_mode,
+      static_cast<graph::AdjacencyList<std::int32_t> (*)(
+          MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
+          mesh::GhostMode)>(&mesh::partition_cells_graph));
+}
+//-----------------------------------------------------------------------------
+Mesh mesh::create_mesh(MPI_Comm comm,
+                       const graph::AdjacencyList<std::int64_t>& cells,
+                       const fem::CoordinateElement& element,
+                       const array2d<double>& x, mesh::GhostMode ghost_mode,
+                       const mesh::CellPartitionFunction& cell_partitioner)
 {
   if (ghost_mode == mesh::GhostMode::shared_vertex)
     throw std::runtime_error("Ghost mode via vertex currently disabled.");
@@ -82,20 +54,20 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                                cells);
 
   // Compute the destination rank for cells on this process via graph
-  // partitioning. Always get the ghost cells via facet, though these may be
-  // discarded later.
+  // partitioning. Always get the ghost cells via facet, though these
+  // may be discarded later.
   const int size = dolfinx::MPI::size(comm);
-  const graph::AdjacencyList<std::int32_t> dest
-      = Partitioning::partition_cells(comm, size, element.cell_shape(),
-                                      cells_topology, GhostMode::shared_facet);
+  const int tdim = mesh::cell_dim(element.cell_shape());
+  const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
+      comm, size, tdim, cells_topology, GhostMode::shared_facet);
 
   // Distribute cells to destination rank
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
-      = graph::Partitioning::distribute(comm, cells, dest);
+      = graph::build::distribute(comm, cells, dest);
 
-  // Create cells and vertices with the ghosting requested. Input topology
-  // includes cells shared via facet, but output will remove these, if not
-  // required by ghost_mode.
+  // Create cells and vertices with the ghosting requested. Input
+  // topology includes cells shared via facet, but output will remove
+  // these, if not required by ghost_mode.
   Topology topology = mesh::create_topology(
       comm,
       mesh::extract_topology(element.cell_shape(), element.dof_layout(),
@@ -104,13 +76,12 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
-  const int tdim = topology.dim();
   for (int e = 1; e < tdim; ++e)
   {
     if (element.dof_layout().num_entity_dofs(e) > 0)
     {
       auto [cell_entity, entity_vertex, index_map]
-          = mesh::TopologyComputation::compute_entities(comm, topology, e);
+          = mesh::compute_entities(comm, topology, e);
       if (cell_entity)
         topology.set_connectivity(cell_entity, tdim, e);
       if (entity_vertex)
@@ -124,12 +95,16 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                       + topology.index_map(tdim)->num_ghosts();
 
   // Remove ghost cells from geometry data, if not required.
-  const Eigen::Matrix<std::int32_t, Eigen::Dynamic, 1>& off1
-      = cell_nodes.offsets().head(n_cells_local + 1);
-  const Eigen::Matrix<std::int64_t, Eigen::Dynamic, 1>& data1
-      = cell_nodes.array().head(off1[n_cells_local]);
-  graph::AdjacencyList<std::int64_t> cell_nodes_2(data1, off1);
-
+  std::vector<std::int32_t> off1(
+      cell_nodes.offsets().begin(),
+      std::next(cell_nodes.offsets().begin(), n_cells_local + 1));
+  std::vector<std::int64_t> data1(
+      cell_nodes.array().begin(),
+      std::next(cell_nodes.array().begin(), off1[n_cells_local]));
+  graph::AdjacencyList<std::int64_t> cell_nodes_2(std::move(data1),
+                                                  std::move(off1));
+  if (element.needs_permutation_data())
+    topology.create_entity_permutations();
   Geometry geometry
       = mesh::create_geometry(comm, topology, element, cell_nodes_2, x);
 
@@ -147,28 +122,6 @@ Topology& Mesh::topology_mutable() const { return _topology; }
 Geometry& Mesh::geometry() { return _geometry; }
 //-----------------------------------------------------------------------------
 const Geometry& Mesh::geometry() const { return _geometry; }
-//-----------------------------------------------------------------------------
-double Mesh::hmin() const { return cell_h(*this).minCoeff(); }
-//-----------------------------------------------------------------------------
-double Mesh::hmax() const { return cell_h(*this).maxCoeff(); }
-//-----------------------------------------------------------------------------
-double Mesh::rmin() const { return cell_r(*this).minCoeff(); }
-//-----------------------------------------------------------------------------
-double Mesh::rmax() const { return cell_r(*this).maxCoeff(); }
-//-----------------------------------------------------------------------------
-std::size_t Mesh::hash() const
-{
-  // Get local hashes
-  const std::size_t kt_local = _topology.hash();
-  const std::size_t kg_local = _geometry.hash();
-
-  // Compute global hash
-  const std::size_t kt = common::hash_global(_mpi_comm.comm(), kt_local);
-  const std::size_t kg = common::hash_global(_mpi_comm.comm(), kg_local);
-
-  // Compute hash based on the Cantor pairing function
-  return (kt + kg) * (kt + kg + 1) / 2 + kg;
-}
 //-----------------------------------------------------------------------------
 MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------

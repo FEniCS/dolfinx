@@ -5,14 +5,14 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "init.h"
-#include "SubSystemsManager.h"
+#include "subsystem.h"
 #include <dolfinx/common/log.h>
 
 //-----------------------------------------------------------------------------
 void dolfinx::init(int argc, char* argv[])
 {
-  common::SubSystemsManager::init_logging(argc, argv);
+  common::subsystem::init_logging(argc, argv);
   LOG(INFO) << "Initializing DOLFINX version" << DOLFINX_VERSION;
-  common::SubSystemsManager::init_petsc(argc, argv);
+  common::subsystem::init_petsc(argc, argv);
 }
 //-----------------------------------------------------------------------------

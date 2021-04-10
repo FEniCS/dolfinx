@@ -9,6 +9,8 @@
 #include "pugixml.hpp"
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
+#include <Eigen/Core>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/ElementDofLayout.h>
 
 using namespace dolfinx;
@@ -19,7 +21,7 @@ void xdmf_mesh::add_topology_data(
     MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
     const std::string path_prefix, const mesh::Topology& topology,
     const mesh::Geometry& geometry, const int dim,
-    const std::vector<std::int32_t>& active_entities)
+    const tcb::span<const std::int32_t>& active_entities)
 {
   LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
 
@@ -50,9 +52,8 @@ void xdmf_mesh::add_topology_data(
   assert(map_g);
   const std::int64_t offset_g = map_g->local_range()[0];
 
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map_g->ghosts();
-
-  const std::vector<std::uint8_t> vtk_map = io::cells::transpose(
+  const std::vector<std::int64_t>& ghosts = map_g->ghosts();
+  const std::vector vtk_map = io::cells::transpose(
       io::cells::perm_vtk(entity_cell_type, num_nodes_per_entity));
   auto map_e = topology.index_map(dim);
   assert(map_e);
@@ -62,7 +63,7 @@ void xdmf_mesh::add_topology_data(
     {
       assert(c < cells_g.num_nodes());
       auto nodes = cells_g.links(c);
-      for (int i = 0; i < nodes.rows(); ++i)
+      for (std::size_t i = 0; i < nodes.size(); ++i)
       {
         std::int64_t global_index = nodes[vtk_map[i]];
         if (global_index < map_g->size_local())
@@ -89,18 +90,18 @@ void xdmf_mesh::add_topology_data(
 
       // Find local number of entity wrt. cell
       auto cell_entities = c_to_e->links(c);
-      const auto* it0 = std::find(
-          cell_entities.data(), cell_entities.data() + cell_entities.rows(), e);
-      assert(it0 != (cell_entities.data() + cell_entities.rows()));
-      const int local_cell_entity = std::distance(cell_entities.data(), it0);
+      auto it0 = std::find(cell_entities.begin(), cell_entities.end(), e);
+      assert(it0 != cell_entities.end());
+      const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
+      // FIXME: Move dynamic  allocation outside of loop
       // Tabulate geometry dofs for the entity
-      const Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs
+      const std::vector<int> entity_dofs
           = geometry.cmap().dof_layout().entity_closure_dofs(dim,
                                                              local_cell_entity);
 
       auto nodes = cells_g.links(c);
-      for (Eigen::Index i = 0; i < entity_dofs.rows(); ++i)
+      for (std::size_t i = 0; i < entity_dofs.size(); ++i)
       {
         std::int64_t global_index = nodes[entity_dofs[vtk_map[i]]];
         if (global_index < map_g->size_local())
@@ -164,12 +165,12 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   int width = (gdim == 1) ? 2 : gdim;
 
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& _x
-      = geometry.x();
+  const array2d<double>& _x = geometry.x();
+
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);
   if (width == 3)
-    std::copy(_x.data(), _x.data() + num_values, x.begin());
+    std::copy_n(_x.data(), num_values, x.begin());
   else
   {
     for (int i = 0; i < num_points_local; ++i)
@@ -215,15 +216,15 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   std::iota(active_cells.begin(), active_cells.end(), 0);
 
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
-                    mesh.geometry(), tdim, active_cells);
+                    mesh.geometry(), tdim,
+                    tcb::span(active_cells.data(), num_cells));
 
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
 }
 //----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
-                              const pugi::xml_node& node)
+array2d<double> xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
+                                              const pugi::xml_node& node)
 {
   // Get geometry node
   pugi::xml_node geometry_node = node.child("Geometry");
@@ -233,7 +234,7 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
   pugi::xml_attribute geometry_type_attr
       = geometry_node.attribute("GeometryType");
   assert(geometry_type_attr);
-  int gdim = -1;
+  std::size_t gdim = 0;
   const std::string geometry_type = geometry_type_attr.value();
   if (geometry_type == "XY")
     gdim = 2;
@@ -249,23 +250,20 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
   // Get number of points from Geometry dataitem node
   pugi::xml_node geometry_data_node = geometry_node.child("DataItem");
   assert(geometry_data_node);
-  const std::vector<std::int64_t> gdims
-      = xdmf_utils::get_dataset_shape(geometry_data_node);
+  const std::vector gdims = xdmf_utils::get_dataset_shape(geometry_data_node);
   assert(gdims.size() == 2);
-  assert(gdims[1] == gdim);
+  assert(gdims[1] == (int)gdim);
 
   // Read geometry data
-  const std::vector<double> geometry_data
+  std::vector geometry_data
       = xdmf_read::get_dataset<double>(comm, geometry_data_node, h5_id);
   const std::size_t num_local_nodes = geometry_data.size() / gdim;
-  return Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                       Eigen::RowMajor>>(geometry_data.data(),
-                                                         num_local_nodes, gdim);
+  return array2d<double>({num_local_nodes, gdim}, std::move(geometry_data));
 }
 //----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
-                              const pugi::xml_node& node)
+array2d<std::int64_t> xdmf_mesh::read_topology_data(MPI_Comm comm,
+                                                    const hid_t h5_id,
+                                                    const pugi::xml_node& node)
 {
   // Get topology node
   pugi::xml_node topology_node = node.child("Topology");
@@ -281,20 +279,18 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
   // Get topology dataset node
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
   assert(topology_data_node);
-  const std::vector<std::int64_t> tdims
-      = xdmf_utils::get_dataset_shape(topology_data_node);
-  const int npoint_per_cell = tdims[1];
+  const std::vector tdims = xdmf_utils::get_dataset_shape(topology_data_node);
+  const std::size_t npoint_per_cell = tdims[1];
 
   // Read topology data
-  const std::vector<std::int64_t> topology_data
+  std::vector<std::int64_t> topology_data
       = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
-  const int num_local_cells = topology_data.size() / npoint_per_cell;
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      cells_vtk(topology_data.data(), num_local_cells, npoint_per_cell);
+  const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
+  array2d<std::int64_t> cells_vtk({num_local_cells, npoint_per_cell},
+                                  std::move(topology_data));
 
   //  Permute cells from VTK to DOLFINX ordering
   return io::cells::compute_permutation(
-      cells_vtk, io::cells::perm_vtk(cell_type, cells_vtk.cols()));
+      cells_vtk, io::cells::perm_vtk(cell_type, cells_vtk.shape[1]));
 }
 //----------------------------------------------------------------------------

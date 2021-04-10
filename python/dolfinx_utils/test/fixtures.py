@@ -6,6 +6,7 @@
 """Shared fixtures for unit tests."""
 
 import os
+import time
 import shutil
 from collections import defaultdict
 from mpi4py import MPI
@@ -18,9 +19,9 @@ import pytest
 def worker_id(request):
     """Returns thread id when running with pytest-xdist in parallel."""
     try:
-        return request.config.slaveinput['slaveid']
+        return request.config.workerinput["workerid"]
     except AttributeError:
-        return 'master'
+        return "master"
 
 
 def _create_tempdir(request):
@@ -72,6 +73,16 @@ def _create_tempdir(request):
         # e.g. test_foo_tempdir/test_something__3
         if not os.path.exists(path):
             os.mkdir(path)
+
+        # Wait until the above created the directory
+        waited = 0
+        while not os.path.exists(path):
+            time.sleep(0.1)
+            waited += 0.1
+
+            if waited > 1:
+                raise RuntimeError(f"Unable to create test directory {path}")
+
     comm.Barrier()
 
     return path

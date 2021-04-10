@@ -7,7 +7,6 @@
 #pragma once
 
 #include "cell_types.h"
-#include <Eigen/Dense>
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
@@ -58,12 +57,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(MPI_Comm comm, mesh::CellType type)
-      : _mpi_comm(comm), _cell_type(type),
-        _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
-  {
-    // Do nothing
-  }
+  Topology(MPI_Comm comm, mesh::CellType type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -111,8 +105,7 @@ public:
                         int d0, int d1);
 
   /// Returns the permutation information
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
-  get_cell_permutation_info() const;
+  const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
   /// Get the permutation number to apply to a facet. The permutations
   /// are numbered so that:
@@ -123,11 +116,7 @@ public:
   /// Each column of the returned array represents a cell, and each row
   /// a facet of that cell.
   /// @return The permutation number
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-  get_facet_permutations() const;
-
-  /// Return hash based on the hash of cell-vertex connectivity
-  size_t hash() const;
+  const std::vector<std::uint8_t>& get_facet_permutations() const;
 
   /// Cell type
   /// @return Cell type that the topology is for
@@ -170,17 +159,17 @@ private:
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
   // AdjacencyList for pairs of topological dimensions
-  Eigen::Array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-               Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  std::vector<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>>
       _connectivity;
 
-  // The facet permutations
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
-      _facet_permutations;
+  // The facet permutations (local facet, cell))
+  // [cell0_0, cell0_1, ,cell0_2, cell1_0, cell1_1, ,cell1_2, ...,
+  // celln_0, celln_1, ,celln_2,]
+  std::vector<std::uint8_t> _facet_permutations;
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _cell_permutations;
+  std::vector<std::uint32_t> _cell_permutations;
 };
 
 /// Create distributed topology
@@ -191,7 +180,7 @@ private:
 ///   global indices for the vertices. It contains cells that have been
 ///   distributed to this rank, e.g. via a graph partitioner. It must
 ///   also contain all ghost cells via facet, i.e. cells which are on a
-///   neighbouring process and share a facet with a local cell.
+///   neighboring process and share a facet with a local cell.
 /// @param[in] original_cell_index The original global index associated
 ///   with each cell.
 /// @param[in] ghost_owners The ownership of the ghost cells (ghost

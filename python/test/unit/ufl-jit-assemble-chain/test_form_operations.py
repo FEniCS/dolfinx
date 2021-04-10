@@ -8,10 +8,9 @@
 
 import numpy
 import pytest
-from mpi4py import MPI
-
 from dolfinx import FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
+from mpi4py import MPI
 from ufl import TestFunction, TrialFunction, dx, grad, inner, lhs, rhs, system
 
 
@@ -34,7 +33,7 @@ def test_lhs_rhs_simple():
 
     Fl = lhs(F)
     Fr = rhs(F)
-    assert(Fr)
+    assert Fr
 
     a0 = inner(grad(v), grad(u)) * dx
 

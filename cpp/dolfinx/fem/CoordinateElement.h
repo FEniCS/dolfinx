@@ -7,12 +7,19 @@
 #pragma once
 
 #include "ElementDofLayout.h"
-#include <Eigen/Dense>
 #include <cstdint>
+#include <dolfinx/common/array2d.h>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
+#include <memory>
 #include <string>
-#include <unsupported/Eigen/CXX11/Tensor>
+#include <xtensor/xtensor.hpp>
+
+namespace basix
+{
+class FiniteElement;
+}
 
 namespace dolfinx::fem
 {
@@ -24,18 +31,13 @@ class CoordinateElement
 {
 public:
   /// Create a coordinate element
-  /// @param[in] cell_type Cell type
-  /// @param[in] topological_dimension Topological dimension
+  /// @param[in] element Element from basix
   /// @param[in] geometric_dimension Geometric dimension
   /// @param[in] signature Signature string description of coordinate map
   /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
-  /// @param[in] is_affine Boolean flag indicating affine mapping
-  /// @param[in] evaluate_basis_derivatives
-  CoordinateElement(mesh::CellType cell_type, int topological_dimension,
+  CoordinateElement(std::shared_ptr<basix::FiniteElement> element,
                     int geometric_dimension, const std::string& signature,
-                    const ElementDofLayout& dof_layout, bool is_affine,
-                    std::function<int(double*, int, int, const double*)>
-                        evaluate_basis_derivatives);
+                    const ElementDofLayout& dof_layout);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
@@ -54,43 +56,57 @@ public:
   /// Return the geometric dimension of the cell shape
   int geometric_dimension() const;
 
+  /// Tabulate shape functions up to n-th order derivative at points X in the
+  /// reference geometry
+  /// Note: Dynamic allocation.
+  xt::xtensor<double, 4> tabulate(int n, const array2d<double>& X) const;
+
+  /// Compute J, K and detJ for a cell with given geometry, and the
+  /// basis functions and first order derivatives at points X
+  void compute_jacobian_data(const xt::xtensor<double, 4>& tabulated_data,
+                             const array2d<double>& X,
+                             const array2d<double>& cell_geometry,
+                             std::vector<double>& J, tcb::span<double> detJ,
+                             std::vector<double>& K) const;
+
   /// Return the dof layout
   const ElementDofLayout& dof_layout() const;
+
+  /// Absolute increment stopping criterium for non-affine Newton solver
+  double non_affine_atol = 1.0e-8;
+
+  /// Maximum number of iterations for non-affine Newton solver
+  int non_affine_max_its = 10;
 
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
   /// @param[in,out] x The physical coordinates of the reference points X
-  /// @param[in] X The coordinates on the reference cells
   /// @param[in] cell_geometry The cell node coordinates (physical)
-  void push_forward(
-      Eigen::Ref<
-          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-          x,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& X,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&
-          cell_geometry) const;
+  /// @param[in] phi Tabulated basis functions at reference points X
+  void push_forward(array2d<double>& x, const array2d<double>& cell_geometry,
+                    const xt::xtensor<double, 2>& phi) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
-  void compute_reference_geometry(
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
-      Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> detJ,
-      Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&
-          cell_geometry) const;
+  void compute_reference_geometry(array2d<double>& X, std::vector<double>& J,
+                                  tcb::span<double> detJ,
+                                  std::vector<double>& K,
+                                  const array2d<double>& x,
+                                  const array2d<double>& cell_geometry) const;
+
+  /// Permutes a list of DOF numbers on a cell
+  void permute_dofs(std::int32_t* dofs, const uint32_t cell_perm) const;
+
+  /// Reverses a DOF permutation
+  void unpermute_dofs(std::int32_t* dofs, const uint32_t cell_perm) const;
+
+  /// Indicates whether the coordinate map needs permutation data
+  /// passing in (for higher order geometries)
+  bool needs_permutation_data() const;
 
 private:
-  // Topological and geometric dimensions
-  int _tdim, _gdim;
-
-  // Cell type
-  mesh::CellType _cell;
+  // Geometric dimensions
+  int _gdim;
 
   // Signature, usually from UFC
   std::string _signature;
@@ -101,12 +117,12 @@ private:
   // Flag denoting affine map
   bool _is_affine;
 
-  // Function to evaluate the basis on the underlying element
-  // @param basis_values Returned values
-  // @param order
-  // @param num_points
-  // @param reference points
-  std::function<int(double*, int, int, const double*)>
-      _evaluate_basis_derivatives;
+  // TODO: This should be removed now as we are transitioning to
+  // basix::FiniteElement
+  // Basix element
+  int _basix_element_handle;
+
+  // Basix Element (basix::FiniteElement)
+  std::shared_ptr<basix::FiniteElement> _element;
 };
 } // namespace dolfinx::fem

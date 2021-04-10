@@ -5,14 +5,13 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "BoxMesh.h"
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
-#include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/common/array2d.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/io/cells.h>
 
 using namespace dolfinx;
 using namespace dolfinx::generation;
@@ -20,19 +19,19 @@ using namespace dolfinx::generation;
 namespace
 {
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-            std::array<std::size_t, 3> n)
+array2d<double> create_geom(MPI_Comm comm,
+                            const std::array<std::array<double, 3>, 2>& p,
+                            std::array<std::size_t, 3> n)
 {
   // Extract data
-  const Eigen::Vector3d& p0 = p[0];
-  const Eigen::Vector3d& p1 = p[1];
+  const std::array<double, 3>& p0 = p[0];
+  const std::array<double, 3>& p1 = p[1];
   std::int64_t nx = n[0];
   std::int64_t ny = n[1];
   std::int64_t nz = n[2];
 
   const std::int64_t n_points = (nx + 1) * (ny + 1) * (nz + 1);
-  std::array<std::int64_t, 2> range_p = dolfinx::MPI::local_range(
+  std::array range_p = dolfinx::MPI::local_range(
       dolfinx::MPI::rank(comm), n_points, dolfinx::MPI::size(comm));
 
   // Extract minimum and maximum coordinates
@@ -54,8 +53,8 @@ create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const double ef = (f - e) / static_cast<double>(nz);
 
   if (std::abs(x0 - x1) < 2.0 * DBL_EPSILON
-      || std::abs(y0 - y1) < 2.0 * DBL_EPSILON
-      || std::abs(z0 - z1) < 2.0 * DBL_EPSILON)
+      or std::abs(y0 - y1) < 2.0 * DBL_EPSILON
+      or std::abs(z0 - z1) < 2.0 * DBL_EPSILON)
   {
     throw std::runtime_error(
         "Box seems to have zero width, height or depth. Check dimensions");
@@ -67,10 +66,10 @@ create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
         "BoxMesh has non-positive number of vertices in some dimension");
   }
 
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom(
-      range_p[1] - range_p[0], 3);
+  array2d<double> geom(range_p[1] - range_p[0], 3);
 
   const std::int64_t sqxy = (nx + 1) * (ny + 1);
+  std::array<double, 3> point;
   for (std::int64_t v = range_p[0]; v < range_p[1]; ++v)
   {
     const std::int64_t iz = v / sqxy;
@@ -80,27 +79,30 @@ create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     const double z = e + ef * static_cast<double>(iz);
     const double y = c + cd * static_cast<double>(iy);
     const double x = a + ab * static_cast<double>(ix);
-    geom.row(v - range_p[0]) << x, y, z;
+    point = {x, y, z};
+    for (std::size_t i = 0; i < 3; i++)
+      geom(v - range_p[0], i) = point[i];
   }
 
   return geom;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+mesh::Mesh build_tet(MPI_Comm comm,
+                     const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 3> n,
                      const fem::CoordinateElement& element,
-                     const mesh::GhostMode ghost_mode)
+                     const mesh::GhostMode ghost_mode,
+                     const mesh::CellPartitionFunction& partitioner)
 {
   common::Timer timer("Build BoxMesh");
 
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom
-      = create_geom(comm, p, n);
+  array2d<double> geom = create_geom(comm, p, n);
 
   std::int64_t nx = n[0];
   std::int64_t ny = n[1];
   std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
-  std::array<std::int64_t, 2> range_c = dolfinx::MPI::local_range(
+  std::array range_c = dolfinx::MPI::local_range(
       dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
   Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(
       6 * (range_c[1] - range_c[0]), 4);
@@ -138,23 +140,27 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
-                           element, geom, ghost_mode);
+  auto [data, offset] = graph::create_adjacency_data(topo);
+  return mesh::create_mesh(
+      comm,
+      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
+      element, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+mesh::Mesh build_hex(MPI_Comm comm,
+                     const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 3> n,
                      const fem::CoordinateElement& element,
-                     const mesh::GhostMode ghost_mode)
+                     const mesh::GhostMode ghost_mode,
+                     const mesh::CellPartitionFunction& partitioner)
 {
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom
-      = create_geom(comm, p, n);
+  array2d<double> geom = create_geom(comm, p, n);
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
   const std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
-  std::array<std::int64_t, 2> range_c = dolfinx::MPI::local_range(
+  std::array range_c = dolfinx::MPI::local_range(
       dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
   Eigen::Array<std::int64_t, Eigen::Dynamic, 8, Eigen::RowMajor> topo(
       range_c[1] - range_c[0], 8);
@@ -176,12 +182,15 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
     const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
     const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
-    topo.row(cell) << v0, v4, v2, v6, v1, v5, v3, v7;
+    topo.row(cell) << v0, v1, v2, v3, v4, v5, v6, v7;
     ++cell;
   }
 
-  return mesh::create_mesh(comm, graph::AdjacencyList<std::int64_t>(topo),
-                           element, geom, ghost_mode);
+  auto [data, offset] = graph::create_adjacency_data(topo);
+  return mesh::create_mesh(
+      comm,
+      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
+      element, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 
@@ -189,15 +198,16 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 
 //-----------------------------------------------------------------------------
 mesh::Mesh BoxMesh::create(MPI_Comm comm,
-                           const std::array<Eigen::Vector3d, 2>& p,
+                           const std::array<std::array<double, 3>, 2>& p,
                            std::array<std::size_t, 3> n,
                            const fem::CoordinateElement& element,
-                           const mesh::GhostMode ghost_mode)
+                           const mesh::GhostMode ghost_mode,
+                           const mesh::CellPartitionFunction& partitioner)
 {
   if (element.cell_shape() == mesh::CellType::tetrahedron)
-    return build_tet(comm, p, n, element, ghost_mode);
+    return build_tet(comm, p, n, element, ghost_mode, partitioner);
   else if (element.cell_shape() == mesh::CellType::hexahedron)
-    return build_hex(comm, p, n, element, ghost_mode);
+    return build_hex(comm, p, n, element, ghost_mode, partitioner);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
 }

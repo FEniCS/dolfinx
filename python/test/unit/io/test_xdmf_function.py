@@ -7,14 +7,13 @@
 import os
 
 import pytest
-from mpi4py import MPI
-
-from dolfinx import (Function, FunctionSpace,
-                     TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, VectorFunctionSpace, has_petsc_complex)
+from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
+                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
+                     VectorFunctionSpace, has_petsc_complex)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
 from dolfinx_utils.test.fixtures import tempdir
+from mpi4py import MPI
 
 assert (tempdir)
 

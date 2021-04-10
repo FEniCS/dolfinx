@@ -5,11 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FiniteElement.h"
+#include <basix.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/mesh/utils.h>
 #include <functional>
-#include <iostream>
-#include <memory>
 #include <ufc.h>
 
 using namespace dolfinx;
@@ -23,21 +21,17 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
       _hash(std::hash<std::string>{}(_signature)),
-      _evaluate_reference_basis(ufc_element.evaluate_reference_basis),
-      _evaluate_reference_basis_derivatives(
-          ufc_element.evaluate_reference_basis_derivatives),
-      _transform_reference_basis_derivatives(
-          ufc_element.transform_reference_basis_derivatives),
-      _transform_values(ufc_element.transform_values)
+      _apply_dof_transformation(ufc_element.apply_dof_transformation),
+      _apply_dof_transformation_to_scalar(
+          ufc_element.apply_dof_transformation_to_scalar),
+      _apply_inverse_transpose_dof_transformation(
+          ufc_element.apply_inverse_transpose_dof_transformation),
+      _apply_inverse_transpose_dof_transformation_to_scalar(
+          ufc_element.apply_inverse_transpose_dof_transformation_to_scalar),
+      _bs(ufc_element.block_size),
+      _interpolation_is_ident(ufc_element.interpolation_is_identity),
+      _needs_permutation_data(ufc_element.needs_transformation_data)
 {
-  // Store dof coordinates on reference element if they exist
-  assert(ufc_element.tabulate_reference_dof_coordinates);
-  _refX.resize(_space_dim, _tdim);
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(
-      _space_dim, _tdim);
-  if (ufc_element.tabulate_reference_dof_coordinates(X.data()) != -1)
-    _refX = X;
-
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
   {
@@ -62,6 +56,43 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   }
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
+  static const std::map<ufc_shape, std::string> ufc_to_cell
+      = {{vertex, "point"},
+         {interval, "interval"},
+         {triangle, "triangle"},
+         {tetrahedron, "tetrahedron"},
+         {quadrilateral, "quadrilateral"},
+         {hexahedron, "hexahedron"}};
+  const std::string cell_shape = ufc_to_cell.at(ufc_element.cell_shape);
+
+  const std::string family = ufc_element.family;
+
+  // FIXME: Add element 'handle' to UFC and do not use fragile strings
+  if (family == "mixed element")
+  {
+    // basix does not support mixed elements, so the subelements should be
+    // handled separately
+    // This will cause an error, if actually used
+    _basix_element_handle = -1;
+  }
+  else
+  {
+    _basix_element_handle = basix::register_element(
+        family.c_str(), cell_shape.c_str(), ufc_element.degree);
+    std::vector<int> value_shape(basix::value_rank(_basix_element_handle));
+    basix::value_shape(_basix_element_handle, value_shape.data());
+    int basix_value_size = 1;
+    for (int w : value_shape)
+      basix_value_size *= w;
+
+    _interpolation_matrix = std::vector<double>(
+        basix::dim(_basix_element_handle)
+        * basix::interpolation_num_points(_basix_element_handle)
+        * basix_value_size);
+    basix::interpolation_matrix(_basix_element_handle,
+                                _interpolation_matrix.data());
+  }
+
   // Fill value dimension
   for (int i = 0; i < ufc_element.value_rank; ++i)
     _value_dimension.push_back(ufc_element.value_dimension(i));
@@ -75,136 +106,128 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   }
 }
 //-----------------------------------------------------------------------------
-std::string FiniteElement::signature() const { return _signature; }
+std::string FiniteElement::signature() const noexcept { return _signature; }
 //-----------------------------------------------------------------------------
-mesh::CellType FiniteElement::cell_shape() const { return _cell_shape; }
+mesh::CellType FiniteElement::cell_shape() const noexcept
+{
+  return _cell_shape;
+}
 //-----------------------------------------------------------------------------
-int FiniteElement::space_dimension() const { return _space_dim; }
+int FiniteElement::space_dimension() const noexcept { return _space_dim; }
 //-----------------------------------------------------------------------------
-int FiniteElement::value_size() const { return _value_size; }
+int FiniteElement::value_size() const noexcept { return _value_size; }
 //-----------------------------------------------------------------------------
-int FiniteElement::reference_value_size() const
+int FiniteElement::reference_value_size() const noexcept
 {
   return _reference_value_size;
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::value_rank() const { return _value_dimension.size(); }
+int FiniteElement::value_rank() const noexcept
+{
+  return _value_dimension.size();
+}
+//-----------------------------------------------------------------------------
+int FiniteElement::block_size() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
 int FiniteElement::value_dimension(int i) const
 {
   if (i >= (int)_value_dimension.size())
     return 1;
-  return _value_dimension.at(i);
+  else
+    return _value_dimension.at(i);
 }
 //-----------------------------------------------------------------------------
-std::string FiniteElement::family() const { return _family; }
+std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis(
-    Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X) const
+    std::vector<double>& reference_values, const array2d<double>& X) const
 {
-  assert(_evaluate_reference_basis);
-  const int num_points = X.rows();
-  int ret = _evaluate_reference_basis(reference_values.data(), num_points,
-                                      X.data());
-  if (ret == -1)
+  const int scalar_reference_value_size = _reference_value_size / _bs;
+  array2d<double> basix_data(X.shape[0], basix::dim(_basix_element_handle)
+                                             * scalar_reference_value_size);
+  basix::tabulate(_basix_element_handle, basix_data.data(), 0, X.data(),
+                  X.shape[0]);
+
+  assert(basix_data.shape[1] % scalar_reference_value_size == 0);
+  const int scalar_dofs = basix_data.shape[1] / scalar_reference_value_size;
+
+  assert(reference_values.size()
+         == X.shape[0] * scalar_dofs * scalar_reference_value_size);
+
+  for (std::size_t p = 0; p < X.shape[0]; ++p)
   {
-    throw std::runtime_error("Generated code returned error "
-                             "in evaluate_reference_basis");
+    for (int d = 0; d < scalar_dofs; ++d)
+    {
+      for (int v = 0; v < scalar_reference_value_size; ++v)
+      {
+        reference_values[(p * scalar_dofs + d) * scalar_reference_value_size
+                         + v]
+            = basix_data(p, d + scalar_dofs * v);
+      }
+    }
   }
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis_derivatives(
-    Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values, int order,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X) const
+    std::vector<double>& values, int order, const array2d<double>& X) const
 {
-  assert(_evaluate_reference_basis_derivatives);
-  const int num_points = X.rows();
-  int ret = _evaluate_reference_basis_derivatives(reference_values.data(),
-                                                  order, num_points, X.data());
-  if (ret == -1)
+  // TODO: fix this for order > 1
+  if (order != 1)
   {
-    throw std::runtime_error("Generated code returned error "
-                             "in evaluate_reference_basis_derivatives");
+    throw std::runtime_error(
+        "FiniteElement::evaluate_reference_basis_derivatives only supports "
+        "order 1 at the moment.");
+  }
+
+  // nd = tdim + 1;
+  // FIXME
+  const int nd = 4;
+  array2d<double> basix_data(nd * X.shape[0],
+                             basix::dim(_basix_element_handle));
+  basix::tabulate(_basix_element_handle, basix_data.data(), 1, X.data(),
+                  X.shape[0]);
+  for (std::size_t p = 0; p < X.shape[0]; ++p)
+  {
+    for (std::size_t d = 0; d < basix_data.shape[1] / _reference_value_size;
+         ++d)
+    {
+      for (int v = 0; v < _reference_value_size; ++v)
+      {
+        for (std::size_t deriv = 0; deriv < nd; ++deriv)
+        {
+          values[(p * basix_data.shape[1] + d * _reference_value_size + v)
+                     * (basix_data.size() - 1)
+                 + deriv]
+              = basix_data(p, d * _reference_value_size + v);
+        }
+      }
+    }
   }
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
-    Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-    const std::uint32_t permutation_info) const
+    std::vector<double>& values, const std::vector<double>& reference_values,
+    const array2d<double>& X, const std::vector<double>& J,
+    const tcb::span<const double>& detJ, const std::vector<double>& K) const
 {
-  assert(_transform_reference_basis_derivatives);
-  const int num_points = X.rows();
-  int ret = _transform_reference_basis_derivatives(
-      values.data(), 0, num_points, reference_values.data(), X.data(), J.data(),
-      detJ.data(), K.data(), permutation_info);
-  if (ret == -1)
-  {
-    throw std::runtime_error("Generated code returned error "
-                             "in transform_reference_basis_derivatives");
-  }
-}
-//-----------------------------------------------------------------------------
-void FiniteElement::transform_reference_basis_derivatives(
-    Eigen::Tensor<double, 4, Eigen::RowMajor>& values, std::size_t order,
-    const Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& X,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-    const std::uint32_t permutation_info) const
-{
-  assert(_transform_reference_basis_derivatives);
-  const int num_points = X.rows();
-  int ret = _transform_reference_basis_derivatives(
-      values.data(), order, num_points, reference_values.data(), X.data(),
-      J.data(), detJ.data(), K.data(), permutation_info);
-  if (ret == -1)
-  {
-    throw std::runtime_error("Generated code returned error "
-                             "in transform_reference_basis_derivatives");
-  }
-}
-//-----------------------------------------------------------------------------
-const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-FiniteElement::dof_reference_coordinates() const
-{
-  if (_refX.size() == 0)
-  {
-    throw std::runtime_error(
-        "Dof reference coordinates do not exist for this element.");
-  }
+  const int num_points = X.shape[0];
+  const int scalar_dim = _space_dim / _bs;
+  const int value_size = _value_size / _bs;
+  const int Jsize = J.size() / num_points;
+  const int Jcols = X.shape[1];
+  const int Jrows = Jsize / Jcols;
 
-  return _refX;
+  basix::map_push_forward_real(
+      _basix_element_handle, values.data(), reference_values.data(), J.data(),
+      detJ.data(), K.data(), Jrows, value_size, scalar_dim, num_points);
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::transform_values(
-    ufc_scalar_t* reference_values,
-    const Eigen::Ref<const Eigen::Array<ufc_scalar_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        physical_values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& coordinate_dofs)
-    const
+int FiniteElement::num_sub_elements() const noexcept
 {
-  assert(_transform_values);
-  _transform_values(reference_values, physical_values.data(),
-                    coordinate_dofs.data(), nullptr);
+  return _sub_elements.size();
 }
-
 //-----------------------------------------------------------------------------
-int FiniteElement::num_sub_elements() const { return _sub_elements.size(); }
-//-----------------------------------------------------------------------------
-std::size_t FiniteElement::hash() const { return _hash; }
+std::size_t FiniteElement::hash() const noexcept { return _hash; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FiniteElement>
 FiniteElement::extract_sub_element(const std::vector<int>& component) const
@@ -224,15 +247,15 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   // Check that a sub system has been specified
   if (component.empty())
   {
-    throw std::runtime_error(
-        "Cannot extract subsystem of finite element. No system was specified");
+    throw std::runtime_error("Cannot extract subsystem of finite element. No "
+                             "system was specified");
   }
 
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
   {
-    throw std::runtime_error(
-        "Cannot extract subsystem of finite element. There are no subsystems.");
+    throw std::runtime_error("Cannot extract subsystem of finite element. "
+                             "There are no subsystems.");
   }
 
   // Check the number of available sub systems
@@ -256,5 +279,54 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   const std::vector<int> sub_component(component.begin() + 1, component.end());
 
   return extract_sub_element(*sub_element, sub_component);
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::interpolation_ident() const noexcept
+{
+  return _interpolation_is_ident;
+}
+//-----------------------------------------------------------------------------
+array2d<double> FiniteElement::interpolation_points() const
+{
+  if (_basix_element_handle == -1)
+  {
+    throw std::runtime_error("Cannot get interpolation points - no basix "
+                             "element handle. Maybe this is a mixed element?");
+  }
+  const int gdim
+      = basix::cell_geometry_dimension(basix::cell_type(_basix_element_handle));
+  array2d<double> points(basix::interpolation_num_points(_basix_element_handle),
+                         gdim);
+  basix::interpolation_points(_basix_element_handle, points.data());
+  return points;
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::needs_permutation_data() const noexcept
+{
+  return _needs_permutation_data;
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::map_pull_back(double* physical_data,
+                                  const double* reference_data, const double* J,
+                                  const double* detJ, const double* K,
+                                  const int physical_dim,
+                                  const int physical_value_size,
+                                  const int nresults, const int npoints) const
+{
+  basix::map_pull_back_real(_basix_element_handle, physical_data,
+                            reference_data, J, detJ, K, physical_dim,
+                            physical_value_size, nresults, npoints);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::map_pull_back(std::complex<double>* physical_data,
+                                  const std::complex<double>* reference_data,
+                                  const double* J, const double* detJ,
+                                  const double* K, const int physical_dim,
+                                  const int physical_value_size,
+                                  const int nresults, const int npoints) const
+{
+  basix::map_pull_back_complex(_basix_element_handle, physical_data,
+                               reference_data, J, detJ, K, physical_dim,
+                               physical_value_size, nresults, npoints);
 }
 //-----------------------------------------------------------------------------
