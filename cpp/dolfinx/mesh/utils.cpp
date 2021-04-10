@@ -803,12 +803,12 @@ mesh::Mesh mesh::add_ghost_layer(const mesh::Mesh& mesh)
         }
     }
 
-    for (std::int32_t c = 0; c < cells_sharing_procs.num_nodes(); c++)
-    {
-      const auto& procs = cells_sharing_procs.links(c);
-      std::copy(procs.begin(), procs.end(), data.begin() + insert_pos[c]);
-      insert_pos[c] += procs.size();
-    }
+    // for (std::int32_t c = 0; c < cells_sharing_procs.num_nodes(); c++)
+    // {
+    //   const auto& procs = cells_sharing_procs.links(c);
+    //   std::copy(procs.begin(), procs.end(), data.begin() + insert_pos[c]);
+    //   insert_pos[c] += procs.size();
+    // }
 
     // Create destination adjacency list with duplicated entries
     graph::AdjacencyList<std::int32_t> dest_duplicates(std::move(data),
