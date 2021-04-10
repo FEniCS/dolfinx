@@ -18,14 +18,12 @@ import ufl
 @pytest.mark.parametrize("element", [ufl.FiniteElement("CG", "triangle", 1), ufl.VectorElement("CG", "triangle", 1)])
 def test_scatter_forward(element):
 
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
     V = FunctionSpace(mesh, element)
     u = Function(V)
     bs = V.dofmap.bs
 
-    def f(x): return (x[0]) if bs == 1 else (x[0], x[1])
-
-    u.interpolate(f)
+    u.interpolate(lambda x: [x[i] for i in range(bs)])
 
     # Forward scatter should have no effect
     w0 = u.x.array.copy()
@@ -49,14 +47,12 @@ def test_scatter_forward(element):
 def test_scatter_reverse(element):
 
     comm = MPI.COMM_WORLD
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 3, 3)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
     V = FunctionSpace(mesh, element)
     u = Function(V)
     bs = V.dofmap.bs
 
-    def f(x): return (x[0]) if bs == 1 else (x[0], x[1])
-
-    u.interpolate(f)
+    u.interpolate(lambda x: [x[i] for i in range(bs)])
 
     # Reverse scatter (insert) should have no effect
     w0 = u.x.array.copy()
