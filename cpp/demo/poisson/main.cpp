@@ -92,6 +92,8 @@
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
+#include <xtensor/xarray.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -162,35 +164,25 @@ int main(int argc, char* argv[])
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
     const auto bdofs = fem::locate_dofs_geometrical(
-        {*V}, [](const array2d<double>& x) {
-          constexpr double eps = 10.0 * std::numeric_limits<double>::epsilon();
-          std::vector<bool> marked(x.shape[1]);
-          std::transform(
-              x.row(0).begin(), x.row(0).end(), marked.begin(),
-              [](double x0) { return x0 < eps or std::abs(x0 - 1) < eps; });
-          return marked;
+        {*V}, [](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1> {
+          auto x0 = xt::row(x, 0);
+          return xt::isclose(x0, 0.0) or xt::isclose(x0, 1.0);
         });
 
     std::vector bc{std::make_shared<const fem::DirichletBC<PetscScalar>>(
         u0, std::move(bdofs))};
 
-    f->interpolate([](auto& x) {
-      std::vector<PetscScalar> f(x.shape[1]);
-      std::transform(x.row(0).begin(), x.row(0).end(), x.row(1).begin(),
-                     f.begin(), [](double x0, double x1) {
-                       double dx
-                           = (x0 - 0.5) * (x0 - 0.5) + (x1 - 0.5) * (x1 - 0.5);
-                       return 10.0 * std::exp(-(dx) / 0.02);
-                     });
-      return f;
-    });
+    f->interpolate(
+        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar> {
+          auto dx = xt::square(xt::row(x, 0) - 0.5)
+                    + xt::square(xt::row(x, 1) - 0.5);
+          return 10 * xt::exp(-(dx) / 0.02);
+        });
 
-    g->interpolate([](auto& x) {
-      std::vector<PetscScalar> f(x.shape[1]);
-      std::transform(x.row(0).begin(), x.row(0).end(), f.begin(),
-                     [](double x0) { return std::sin(5 * x0); });
-      return f;
-    });
+    g->interpolate(
+        [](const xt::xtensor<double, 2>& x) -> xt::xarray<PetscScalar> {
+          return xt::sin(5 * xt::row(x, 0));
+        });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a

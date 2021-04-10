@@ -11,6 +11,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/array2d.h>
+#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>
@@ -26,6 +27,7 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
 {
@@ -201,8 +203,8 @@ public:
 
   /// Interpolate an expression
   /// @param[in] f The expression to be interpolated
-  void interpolate(const std::function<std::variant<std::vector<T>, array2d<T>>(
-                       const array2d<double>&)>& f)
+  void interpolate(
+      const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -213,7 +215,9 @@ public:
     const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    const array2d<double> x = fem::interpolation_coords(
+    // FIXME: Remove interpolation coords as it should be done internally in
+    // fem::interpolate
+    const xt::xtensor<double, 2> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
     fem::interpolate(*this, f, x, cells);
   }
