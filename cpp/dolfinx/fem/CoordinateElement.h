@@ -83,10 +83,10 @@ public:
                                   const array2d<double>& cell_geometry) const;
 
   /// Permutes a list of DOF numbers on a cell
-  void permute_dofs(std::int32_t* dofs, const uint32_t cell_perm) const;
+  void permute_dofs(std::int32_t* dofs, std::uint32_t cell_perm) const;
 
   /// Reverses a DOF permutation
-  void unpermute_dofs(std::int32_t* dofs, const uint32_t cell_perm) const;
+  void unpermute_dofs(std::int32_t* dofs, std::uint32_t cell_perm) const;
 
   /// Indicates whether the coordinate map needs permutation data
   /// passing in (for higher order geometries)
