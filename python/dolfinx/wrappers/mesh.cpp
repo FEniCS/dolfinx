@@ -121,6 +121,7 @@ void mesh(py::module& m)
               mesh, dim, tcb::span(entity_list.data(), entity_list.size())));
         });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
+  m.def("compute_interface_facets", &dolfinx::mesh::compute_interface_facets);
 
   using PythonPartitioningFunction
       = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(

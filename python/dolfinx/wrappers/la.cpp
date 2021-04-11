@@ -106,11 +106,15 @@ void la(py::module& m)
   m.def("scatter_forward", &dolfinx::la::scatter_fwd<PetscScalar>);
   m.def("scatter_reverse", &dolfinx::la::scatter_rev<PetscScalar>);
 
-  m.def("create_vector",
+  m.def("create_petsc_vector",
         py::overload_cast<const dolfinx::common::IndexMap&, int>(
             &dolfinx::la::create_petsc_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
+
+  m.def("create_vector",
+        [](const std::shared_ptr<const dolfinx::common::IndexMap>& map,
+           int bs) { return dolfinx::la::Vector<PetscScalar>(map, bs); });
   m.def(
       "create_matrix",
       [](const MPICommWrapper comm, const dolfinx::la::SparsityPattern& p,
