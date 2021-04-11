@@ -165,7 +165,7 @@ q, v = TestFunctions(ME)
 # the 's' at the end) is used to define the scalar test functions ``q``
 # and ``v``.
 # Some mixed objects of the
-#:py:class:`Function<dolfinx.fem.function.Function>` class on ``ME``
+# :py:class:`Function<dolfinx.fem.function.Function>` class on ``ME``
 # are defined to represent :math:`u = (c_{n+1}, \mu_{n+1})` and :math:`u0
 # = (c_{n}, \mu_{n})`, and these are then split into sub-functions::
 

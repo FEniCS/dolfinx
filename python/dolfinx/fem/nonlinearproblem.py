@@ -63,16 +63,21 @@ class NonlinearProblem:
         """
         This function is called before the residual or Jacobian is computed.
         This is usually used to update ghost values.
-        Input:
-           x: The vector containing the latest solution
+        Parameters
+        ----------
+        x
+            The vector containing the latest solution
         """
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def F(self, x: PETSc.Vec, b: PETSc.Vec):
         """Assemble the residual F into the vector b.
-        Input:
-           x: The vector containing the latest solution
-           b: Vector to assemble the residual into
+        Parameters
+        ----------
+        x
+            The vector containing the latest solution
+        b
+            Vector to assemble the residual into
         """
         # Reset the residual vector
         with b.localForm() as b_local:
@@ -85,9 +90,12 @@ class NonlinearProblem:
 
     def J(self, x: PETSc.Vec, A: PETSc.Mat):
         """Assemble the Jacobian matrix.
-        Input:
-          - x: The vector containing the latest solution
-          - A: The matrix to assemble the Jacobian into
+        Parameters
+        ----------
+        x
+            The vector containing the latest solution
+        A
+            The matrix to assemble the Jacobian into
         """
         A.zeroEntries()
         fem.assemble_matrix(A, self.a, self.bcs)
