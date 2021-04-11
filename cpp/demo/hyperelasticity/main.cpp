@@ -5,6 +5,8 @@
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/Vector.h>
+#include <xtensor/xarray.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -138,17 +140,16 @@ int main(int argc, char* argv[])
 
     auto u_rotation = std::make_shared<fem::Function<PetscScalar>>(V);
     u_rotation->interpolate([](auto& x) {
-      const double scale = 0.005;
+      constexpr double scale = 0.005;
 
       // Center of rotation
-      const double y0 = 0.5;
-      const double z0 = 0.5;
+      constexpr double y0 = 0.5;
+      constexpr double z0 = 0.5;
 
       // Large angle of rotation (60 degrees)
-      const double theta = 1.04719755;
-
-      array2d<PetscScalar> values(3, x.shape[1], 0.0);
-      for (std::size_t i = 0; i < x.shape[1]; ++i)
+      constexpr double theta = 1.04719755;
+      xt::xarray<double> values = xt::zeros_like(x);
+      for (std::size_t i = 0; i < x.shape(1); ++i)
       {
         // New coordinates
         double y = y0 + (x(1, i) - y0) * std::cos(theta)
@@ -165,27 +166,20 @@ int main(int argc, char* argv[])
     });
 
     auto u_clamp = std::make_shared<fem::Function<PetscScalar>>(V);
-    u_clamp->interpolate([](auto& x) {
-      return array2d<PetscScalar>(3, x.shape[1], 0.0);
-    });
+    u_clamp->interpolate(
+        [](auto& x) -> xt::xarray<double> { return xt::zeros_like(x); });
 
     // Create Dirichlet boundary conditions
     auto u0 = std::make_shared<fem::Function<PetscScalar>>(V);
 
-    const auto bdofs_left = fem::locate_dofs_geometrical({*V}, [](auto& x) {
-      constexpr double eps = 10 * std::numeric_limits<double>::epsilon();
-      std::vector<bool> marked(x.shape[1]);
-      std::transform(x.row(0).begin(), x.row(0).end(), marked.begin(),
-                     [](double x0) { return x0 < eps; });
-      return marked;
-    });
-    const auto bdofs_right = fem::locate_dofs_geometrical({*V}, [](auto& x) {
-      constexpr double eps = 10 * std::numeric_limits<double>::epsilon();
-      std::vector<bool> marked(x.shape[1]);
-      std::transform(x.row(0).begin(), x.row(0).end(), marked.begin(),
-                     [](double x0) { return std::abs(x0 - 1) < eps; });
-      return marked;
-    });
+    const auto bdofs_left = fem::locate_dofs_geometrical(
+        {*V}, [](auto& x) -> xt::xtensor<bool, 1> {
+          return xt::isclose(xt::row(x, 0), 0.0);
+        });
+    const auto bdofs_right = fem::locate_dofs_geometrical(
+        {*V}, [](auto& x) -> xt::xtensor<bool, 1> {
+          return xt::isclose(xt::row(x, 0), 1.0);
+        });
 
     auto bcs
         = std::vector({std::make_shared<const fem::DirichletBC<PetscScalar>>(
