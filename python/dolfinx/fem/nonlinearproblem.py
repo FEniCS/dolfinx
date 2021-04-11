@@ -20,7 +20,7 @@ class NonlinearProblem:
 
     def __init__(self, F: ufl.form.Form, u: fem.Function, bcs: List[fem.DirichletBC] = [],
                  form_compiler_parameters={}, jit_parameters={}):
-        """Initialize class that sets up structures for solving the non-linear problem using Newton's method, 
+        """Initialize class that sets up structures for solving the non-linear problem using Newton's method,
         dF/du(u) du = -F(u)
 
         Parameters
@@ -63,13 +63,13 @@ class NonlinearProblem:
         """
         This function is called before the residual or Jacobian is computed.
         This is usually used to update ghost values.
-        Input: 
+        Input:
            x: The vector containing the latest solution
         """
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def F(self, x: PETSc.Vec, b: PETSc.Vec):
-        """Assemble the residual F into the vector b. 
+        """Assemble the residual F into the vector b.
         Input:
            x: The vector containing the latest solution
            b: Vector to assemble the residual into
