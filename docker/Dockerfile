@@ -47,12 +47,15 @@
 
 ARG GMSH_VERSION=4.6.0
 ARG PYBIND11_VERSION=2.6.2
-ARG PETSC_VERSION=3.14.3
-ARG SLEPC_VERSION=3.14.1
-ARG SLEPC4PY_VERSION=3.14.0
+ARG PETSC_VERSION=3.15.0
+ARG SLEPC_VERSION=3.15.0
+ARG SLEPC4PY_VERSION=3.15.0
 ARG ADIOS2_VERSION=2.7.1
 # Todo: Update KaHIP version upon a release.
 ARG KAHIP_VERSION=623decb
+ARG XTENSOR_VERSION=0.23.4
+ARG XTENSOR_BLAS_VERSION=master
+ARG XTL_VERSION=0.7.2
 
 ########################################
 
@@ -66,6 +69,10 @@ ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
 ARG ADIOS2_VERSION
+ARG KAHIP_VERSION
+ARG XTENSOR_VERSION
+ARG XTENSOR_BLAS_VERSION
+ARG XTL_VERSION
 
 # The following ARGS are used in the dev-env layer.
 # They are safe defaults. They can be overridden by the user.
@@ -139,6 +146,23 @@ RUN pip3 install --no-cache-dir mpi4py numba && \
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
 RUN pip3 install --no-binary="numpy" numpy --upgrade
+
+# Install xtl, xtensor, xtensor-blas.
+RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack/xtl.git && \
+    cd xtl && \
+    cmake -G Ninja . && \
+    ninja install && \
+    cd ../ && \
+    git clone -b ${XTENSOR_VERSION} --single-branch https://github.com/xtensor-stack/xtensor.git && \
+    cd xtensor && \
+    cmake -G Ninja . && \
+    ninja install && \
+    cd ../ && \
+    git clone -b ${XTENSOR_BLAS_VERSION} --single-branch https://github.com/xtensor-stack/xtensor-blas.git && \
+    cd xtensor-blas && \
+    cmake -G Ninja . && \
+    ninja install && \
+    rm -rf xtl xtensor xtensor-blas
 
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
