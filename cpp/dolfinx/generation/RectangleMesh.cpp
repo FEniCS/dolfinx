@@ -32,8 +32,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
   if (dolfinx::MPI::rank(comm) != 0)
   {
     array2d<double> geom(0, 2);
-    xt::xtensor<std::int64_t, 2> topo({0, 3});
-    auto [data, offset] = graph::create_adjacency_data(topo);
+    xt::xtensor<std::int64_t, 2> cells({0, 3});
+    auto [data, offset] = graph::create_adjacency_data(cells);
     return mesh::create_mesh(
         comm,
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
@@ -47,8 +47,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
     throw std::runtime_error("Unknown mesh diagonal definition.");
   }
 
-  const std::array<double, 3>& p0 = p[0];
-  const std::array<double, 3>& p1 = p[1];
+  const std::array<double, 3> p0 = p[0];
+  const std::array<double, 3> p1 = p[1];
 
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
@@ -93,7 +93,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
   }
 
   array2d<double> geom(nv, 2);
-  xt::xtensor<std::int64_t, 2> topo({nc, 3});
+  xt::xtensor<std::int64_t, 2> cells({nc, 3});
 
   // Create main vertices
   std::size_t vertex = 0;
@@ -136,12 +136,11 @@ mesh::Mesh build_tri(MPI_Comm comm,
         const std::size_t v3 = v1 + (nx + 1);
         const std::size_t vmid = (nx + 1) * (ny + 1) + iy * nx + ix;
 
-        // Note that v0 < v1 < v2 < v3 < vmid.
-        xt::xtensor_fixed<std::size_t, xt::xshape<4, 3>> cells
+        // Note that v0 < v1 < v2 < v3 < vmid
+        xt::xtensor_fixed<std::size_t, xt::xshape<4, 3>> c
             = {{v0, v1, vmid}, {v0, v2, vmid}, {v1, v3, vmid}, {v2, v3, vmid}};
         std::size_t offset = iy * nx + ix;
-        xt::view(topo, xt::range(4 * offset, 4 * offset + 4), xt::all())
-            = cells;
+        xt::view(cells, xt::range(4 * offset, 4 * offset + 4), xt::all()) = c;
       }
     }
   }
@@ -177,26 +176,17 @@ mesh::Mesh build_tri(MPI_Comm comm,
         std::size_t offset = iy * nx + ix;
         if (local_diagonal == "left")
         {
-          xt::xtensor_fixed<std::size_t, xt::xshape<2, 3>> cells
+          xt::xtensor_fixed<std::size_t, xt::xshape<2, 3>> c
               = {{v0, v1, v2}, {v1, v2, v3}};
-          xt::view(topo, xt::range(2 * offset, 2 * offset + 2)) = cells;
-
-          // topo.row(cell) << v0, v1, v2;
-          // ++cell;
-          // topo.row(cell) << v1, v2, v3;
-          // ++cell;
+          xt::view(cells, xt::range(2 * offset, 2 * offset + 2)) = c;
           if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "right";
         }
         else
         {
-          xt::xtensor_fixed<std::size_t, xt::xshape<2, 3>> cells
+          xt::xtensor_fixed<std::size_t, xt::xshape<2, 3>> c
               = {{v0, v1, v3}, {v0, v2, v3}};
-          xt::view(topo, xt::range(2 * offset, 2 * offset + 2)) = cells;
-          // topo.row(cell) << v0, v1, v3;
-          // ++cell;
-          // topo.row(cell) << v0, v2, v3;
-          // ++cell;
+          xt::view(cells, xt::range(2 * offset, 2 * offset + 2)) = c;
           if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "left";
         }
@@ -204,7 +194,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
     }
   }
 
-  auto [data, offset] = graph::create_adjacency_data(topo);
+  auto [data, offset] = graph::create_adjacency_data(cells);
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
@@ -224,8 +214,8 @@ mesh::Mesh build_quad(MPI_Comm comm,
   if (dolfinx::MPI::rank(comm) != 0)
   {
     array2d<double> geom(0, 2);
-    xt::xtensor<std::int64_t, 2> topo({0, 4});
-    auto [data, offset] = graph::create_adjacency_data(topo);
+    xt::xtensor<std::int64_t, 2> cells({0, 4});
+    auto [data, offset] = graph::create_adjacency_data(cells);
     return mesh::create_mesh(
         comm,
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
@@ -258,20 +248,20 @@ mesh::Mesh build_quad(MPI_Comm comm,
   }
 
   // Create rectangles
-  xt::xtensor<std::int64_t, 2> topo({nx * ny, 4});
+  xt::xtensor<std::int64_t, 2> cells({nx * ny, 4});
   for (std::size_t ix = 0; ix < nx; ix++)
   {
     for (std::size_t iy = 0; iy < ny; iy++)
     {
       const std::size_t i0 = ix * (ny + 1);
       std::size_t cell = ix * ny + iy;
-      xt::xtensor_fixed<std::size_t, xt::xshape<4>> t
+      xt::xtensor_fixed<std::size_t, xt::xshape<4>> c
           = {i0 + iy, i0 + iy + 1, i0 + iy + ny + 1, i0 + iy + ny + 2};
-      xt::view(topo, cell, xt::all()) = t;
+      xt::view(cells, cell, xt::all()) = c;
     }
   }
 
-  auto [data, offset] = graph::create_adjacency_data(topo);
+  auto [data, offset] = graph::create_adjacency_data(cells);
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
