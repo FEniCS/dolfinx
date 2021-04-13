@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include <Eigen/Core>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -20,6 +19,9 @@
 #include <memory>
 #include <mpi.h>
 #include <vector>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -81,12 +83,12 @@ array2d<double> create_new_geometry(
   // Copy over existing mesh vertices
   const array2d<double>& x_g = mesh.geometry().x();
 
-  const std::int32_t num_vertices = map_v->size_local();
-  const std::int32_t num_new_vertices = local_edge_to_new_vertex.size();
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-      new_vertex_coordinates(num_vertices + num_new_vertices, 3);
+  const std::size_t num_vertices = map_v->size_local();
+  const std::size_t num_new_vertices = local_edge_to_new_vertex.size();
+  xt::xtensor<double, 2> new_vertex_coordinates(
+      {num_vertices + num_new_vertices, 3});
 
-  for (int v = 0; v < num_vertices; ++v)
+  for (std::size_t v = 0; v < num_vertices; ++v)
     for (std::size_t j = 0; j < x_g.shape[1]; ++j)
       new_vertex_coordinates(v, j) = x_g(vertex_to_x[v], j);
 
@@ -95,13 +97,15 @@ array2d<double> create_new_geometry(
   for (auto& e : local_edge_to_new_vertex)
     edges[i++] = e.first;
 
-  const auto midpoints = mesh::midpoints(mesh, 1, edges);
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-      midpoints_eigen(midpoints.data(), midpoints.shape[0], midpoints.shape[1]);
-  new_vertex_coordinates.bottomRows(num_new_vertices) = midpoints_eigen;
+  const array2d<double> midpoints = mesh::midpoints(mesh, 1, edges);
+  auto _midpoints = xt::adapt(midpoints.data(), midpoints.size(),
+                              xt::no_ownership(), midpoints.shape);
+  xt::view(new_vertex_coordinates, xt::range(-1, -1 - num_new_vertices),
+           xt::all())
+      = _midpoints;
 
   const int gdim = mesh.geometry().dim();
-  array2d<double> x(new_vertex_coordinates.rows(), gdim);
+  array2d<double> x(new_vertex_coordinates.shape(0), gdim);
   for (std::size_t i = 0; i < x.shape[0]; ++i)
     for (std::size_t j = 0; j < x.shape[1]; ++j)
       x(i, j) = new_vertex_coordinates(i, j);
