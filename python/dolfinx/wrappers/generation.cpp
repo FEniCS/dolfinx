@@ -23,18 +23,17 @@ namespace
 {
 using PythonCellPartitionFunction
     = std::function<const dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int, const dolfinx::mesh::CellType,
+        dolfinx_wrappers::MPICommWrapper, int, int,
         const dolfinx::graph::AdjacencyList<std::int64_t>&,
         dolfinx::mesh::GhostMode)>;
 
 auto create_partitioner_wrapper(const PythonCellPartitionFunction& partitioner)
 {
-  return [partitioner](MPI_Comm comm, int n,
-                       const dolfinx::mesh::CellType cell_type,
+  return [partitioner](MPI_Comm comm, int n, int tdim,
                        const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
                        dolfinx::mesh::GhostMode ghost_mode) {
-    return partitioner(dolfinx_wrappers::MPICommWrapper(comm), n, cell_type,
-                       cells, ghost_mode);
+    return partitioner(dolfinx_wrappers::MPICommWrapper(comm), n, tdim, cells,
+                       ghost_mode);
   };
 }
 

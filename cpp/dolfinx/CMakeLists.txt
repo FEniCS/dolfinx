@@ -65,6 +65,9 @@ target_link_libraries(dolfinx PUBLIC Basix::basix)
 # Eigen3
 target_include_directories(dolfinx SYSTEM PRIVATE ${EIGEN3_INCLUDE_DIR})
 
+# xtensor
+target_include_directories(dolfinx SYSTEM PUBLIC ${xtensor_INCLUDE_DIRS})
+
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
 target_link_libraries(dolfinx PUBLIC Boost::timer)

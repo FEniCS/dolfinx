@@ -15,6 +15,8 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <vector>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -97,7 +99,8 @@ FunctionSpace::collapse() const
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
-array2d<double> FunctionSpace::tabulate_dof_coordinates(bool transpose) const
+xt::xtensor<double, 2>
+FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 {
   if (!_component.empty())
   {
@@ -148,7 +151,7 @@ array2d<double> FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   // Array to hold coordinates to return
   const std::size_t shape_c0 = transpose ? 3 : num_dofs;
   const std::size_t shape_c1 = transpose ? num_dofs : 3;
-  array2d<double> coords(shape_c0, shape_c1);
+  xt::xtensor<double, 2> coords = xt::zeros<double>({shape_c0, shape_c1});
 
   // Loop over cells and tabulate dofs
   array2d<double> x(scalar_dofs, gdim);
@@ -165,6 +168,9 @@ array2d<double> FunctionSpace::tabulate_dof_coordinates(bool transpose) const
       = needs_permutation_data ? _mesh->topology().get_cell_permutation_info()
                                : std::vector<std::uint32_t>(num_cells);
 
+  const xt::xtensor<double, 2> phi
+      = xt::view(cmap.tabulate(0, X), 0, xt::all(), xt::all(), 0);
+
   for (int c = 0; c < num_cells; ++c)
   {
     // Extract cell geometry
@@ -174,7 +180,7 @@ array2d<double> FunctionSpace::tabulate_dof_coordinates(bool transpose) const
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Tabulate dof coordinates on cell
-    cmap.push_forward(x, X, coordinate_dofs);
+    cmap.push_forward(x, coordinate_dofs, phi);
 
     _element->apply_dof_transformation(x.data(), cell_info[c], x.shape[1]);
 
