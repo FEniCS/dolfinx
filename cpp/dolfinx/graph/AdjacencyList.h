@@ -39,7 +39,7 @@ auto create_adjacency_data(const array2d<T>& array)
 
 /// Construct adjacency list data for a problem with a fixed number of
 /// links (edges) for each node
-/// @param [in] matrix Two-dimensional array of adjacency data where
+/// @param [in] array Two-dimensional array of adjacency data where
 /// matrix(i, j) is the jth neighbor of the ith node
 /// @return Adjacency list data and offset array
 template <typename T>
