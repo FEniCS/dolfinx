@@ -31,7 +31,7 @@ class NonlinearProblem:
             The unknown
         bcs
             List of Dirichlet boundary conditions
-        J 
+        J
             UFL representation of the Jacobian (Optional)
         form_compiler_parameters
             Parameters used in FFCX compilation of this form. Run `ffcx --help` at
