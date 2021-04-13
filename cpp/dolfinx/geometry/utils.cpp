@@ -8,11 +8,12 @@
 #include "utils.h"
 #include "BoundingBoxTree.h"
 #include "gjk.h"
-#include <Eigen/Core>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
+#include <xtensor/xfixed.hpp>
+#include <xtensor/xnorm.hpp>
 
 using namespace dolfinx;
 
@@ -29,7 +30,7 @@ constexpr bool is_leaf(const std::array<int, 2>& bbox)
 bool point_in_bbox(const std::array<std::array<double, 3>, 2>& b,
                    const std::array<double, 3>& x)
 {
-  Eigen::Array3d _x, b0, b1;
+  xt::xtensor_fixed<double, xt::xshape<3>> _x, b0, b1;
   for (int i = 0; i < 3; ++i)
   {
     _x[i] = x[i];
@@ -37,15 +38,15 @@ bool point_in_bbox(const std::array<std::array<double, 3>, 2>& b,
     b1[i] = b[1][i];
   }
 
-  const double rtol = 1e-14;
-  const Eigen::Array3d eps0 = rtol * (b1 - b0);
-  return (_x >= (b0 - eps0)).all() and (_x <= (b1 + eps0)).all();
+  constexpr double rtol = 1e-14;
+  auto eps0 = rtol * (b1 - b0);
+  return xt::all(_x >= (b0 - eps0)) and xt::all(_x <= (b1 + eps0));
 }
 //-----------------------------------------------------------------------------
 bool bbox_in_bbox(const std::array<std::array<double, 3>, 2>& a,
                   const std::array<std::array<double, 3>, 2>& b)
 {
-  Eigen::Array3d a0, a1, b0, b1;
+  xt::xtensor_fixed<double, xt::xshape<3>> a0, a1, b0, b1;
   for (int i = 0; i < 3; ++i)
   {
     a0[i] = a[0][i];
@@ -56,7 +57,7 @@ bool bbox_in_bbox(const std::array<std::array<double, 3>, 2>& a,
 
   constexpr double rtol = 1e-14;
   auto eps0 = rtol * (b1 - b0);
-  return (b0 - eps0 <= a1).all() and (b1 + eps0 >= a0).all();
+  return xt::all(b0 - eps0 <= a1) and xt::all(b1 + eps0 >= a0);
 }
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
@@ -254,15 +255,19 @@ double geometry::compute_squared_distance_bbox(
     const std::array<std::array<double, 3>, 2>& b,
     const std::array<double, 3>& x)
 {
-  Eigen::Array3d d0, d1;
+  xt::xtensor_fixed<double, xt::xshape<3>> d0, d1;
   for (int i = 0; i < 3; ++i)
   {
     d0[i] = x[i] - b[0][i];
     d1[i] = x[i] - b[1][i];
   }
 
-  return (d0 > 0.0).select(0, d0).matrix().squaredNorm()
-         + (d1 < 0.0).select(0, d1).matrix().squaredNorm();
+  auto _d0 = xt::where(d0 > 0.0, 0, d0);
+  auto _d1 = xt::where(d1 < 0.0, 0, d1);
+  return xt::norm_sq(_d0)() + xt::norm_sq(_d1)();
+
+  // return (d0 > 0.0).select(0, d0).matrix().squaredNorm()
+  //        + (d1 < 0.0).select(0, d1).matrix().squaredNorm();
 }
 //-----------------------------------------------------------------------------
 std::pair<int, double>
