@@ -56,28 +56,6 @@ auto create_adjacency_data(const xt::xtensor<T, 2>& array)
   return std::pair(std::move(data), std::move(offset));
 }
 
-/// Construct adjacency list data for a problem with a fixed number of
-/// links (edges) for each node
-/// @param [in] matrix Two-dimensional array of adjacency data where
-/// matrix(i, j) is the jth neighbor of the ith node
-/// @return Adjacency list data and offset array
-template <typename Container>
-auto create_adjacency_data(const Container& matrix)
-{
-  using T = typename Container::value_type;
-
-  std::vector<T> data(matrix.size());
-  std::vector<std::int32_t> offset(matrix.rows() + 1, 0);
-
-  for (std::size_t i = 0; i < std::size_t(matrix.rows()); ++i)
-  {
-    for (std::size_t j = 0; j < std::size_t(matrix.cols()); ++j)
-      data[i * matrix.cols() + j] = matrix(i, j);
-    offset[i + 1] = offset[i] + matrix.cols();
-  }
-  return std::pair(std::move(data), std::move(offset));
-}
-
 /// This class provides a static adjacency list data structure. It is
 /// commonly used to store directed graphs. For each node in the
 /// contiguous list of nodes [0, 1, 2, ..., n) it stores the connected

@@ -265,9 +265,6 @@ double geometry::compute_squared_distance_bbox(
   auto _d0 = xt::where(d0 > 0.0, 0, d0);
   auto _d1 = xt::where(d1 < 0.0, 0, d1);
   return xt::norm_sq(_d0)() + xt::norm_sq(_d1)();
-
-  // return (d0 > 0.0).select(0, d0).matrix().squaredNorm()
-  //        + (d1 < 0.0).select(0, d1).matrix().squaredNorm();
 }
 //-----------------------------------------------------------------------------
 std::pair<int, double>

@@ -348,7 +348,6 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
   {
     for (int k = 0; k < 3; ++k)
       s << _bbox_coordinates[6 * i + j * 3 + k] << " ";
-    // s << bbox(j, k) << " ";
     if (j == 0)
       s << "]->"
         << "[";
