@@ -24,6 +24,7 @@
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
+using namespace xt::placeholders;
 
 namespace
 {
@@ -100,8 +101,7 @@ array2d<double> create_new_geometry(
   const array2d<double> midpoints = mesh::midpoints(mesh, 1, edges);
   auto _midpoints = xt::adapt(midpoints.data(), midpoints.size(),
                               xt::no_ownership(), midpoints.shape);
-  xt::view(new_vertex_coordinates, xt::range(-1, -1 - num_new_vertices),
-           xt::all())
+  xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _), xt::all())
       = _midpoints;
 
   const int gdim = mesh.geometry().dim();
