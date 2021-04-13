@@ -57,11 +57,6 @@ class NonlinearProblem:
                                jit_parameters=jit_parameters)
         self.bcs = bcs
 
-        # Create matrix and vector to be used for assembly
-        # of the non-linear problem
-        self.matrix = fem.create_matrix(self.a)
-        self.vector = fem.create_vector(self.L)
-
     def form(self, x: PETSc.Vec):
         """
         This function is called before the residual or Jacobian is computed.
@@ -111,8 +106,13 @@ class NewtonSolver(cpp.nls.NewtonSolver):
         Create a Newton solver for a given MPI communicator and non-linear problem.
         """
         super().__init__(comm)
-        self.setF(problem.F, problem.vector)
-        self.setJ(problem.J, problem.matrix)
+
+        # Create matrix and vector to be used for assembly
+        # of the non-linear problem
+        self.A = fem.create_matrix(problem.a)
+        self.setJ(problem.J, self.A)
+        self.L = fem.create_vector(problem.L)
+        self.setF(problem.F, self.L)
         self.set_form(problem.form)
 
     def solve(self, u: fem.Function):
