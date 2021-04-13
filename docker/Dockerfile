@@ -1,4 +1,4 @@
-# Dockerfile describing development builds of FEniCS-X
+# Dockerfile describing development builds of FEniCSx
 #
 # Authors:
 # Jack S. Hale <jack.hale@uni.lu>
@@ -18,7 +18,7 @@
 #
 #    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab
 #
-# To build from source, first checkout the DOLFINX, FFCX, Basix and UFL
+# To build from source, first checkout the DOLFINx, FFCx, Basix and UFL
 # repositories into the working directory, e.g.:
 #
 # $ ls $(pwd)
@@ -185,7 +185,6 @@ RUN cd /usr/local && \
     ninja install
 
 # Install ADIOS2
-WORKDIR /tmp
 RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
     mkdir -p adios2-v${ADIOS2_VERSION} && \
     tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C adios2-v${ADIOS2_VERSION} --strip-components 1 && \
@@ -205,7 +204,6 @@ ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH \
 
 # Install PETSc and petsc4py with real and complex types
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
-WORKDIR /tmp
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
@@ -309,7 +307,6 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install SLEPc
-WORKDIR /tmp
 RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
     mkdir -p ${SLEPC_DIR} && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
     cd ${SLEPC_DIR} && \
@@ -325,11 +322,11 @@ RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION
     export PETSC_ARCH=linux-gnu-complex-64 && \
     python3 ./configure && \
     make && \
+    # Install slepc4py
+    cd src/binding/slepc4py && \
+    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir . && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
-
-# Install slepc4py with real and complex types
-RUN PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
 WORKDIR /root
 
@@ -432,7 +429,7 @@ WORKDIR /root
 
 RUN pip3 install --upgrade --no-cache-dir jupyter jupyterlab
 
-# Pyvista dependecies from apt
+# pyvista dependencies from apt
 RUN apt-get -qq update && \
     apt-get -y install libgl1-mesa-dev \
     xvfb && \
