@@ -431,8 +431,7 @@ RUN pip3 install --upgrade --no-cache-dir jupyter jupyterlab
 
 # pyvista dependencies from apt
 RUN apt-get -qq update && \
-    apt-get -y install libgl1-mesa-dev \
-    xvfb && \
+    apt-get -y install libgl1-mesa-dev xvfb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
