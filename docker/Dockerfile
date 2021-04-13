@@ -140,7 +140,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 # - First set of packages are required to build and run DOLFINX Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
-RUN pip3 install --no-cache-dir mpi4py numba && \
+# LLVM_CONFIG required on aarch64, should be removed long-term.
+RUN LLVM_CONFIG=/usr/bin/llvm-config-10 pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
@@ -193,11 +194,15 @@ RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSI
     cmake --install build-dir && \
     rm -rf /tmp/*
 
-# Download Install Gmsh SDK
-RUN cd /usr/local && \
-    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-    rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
+# Download Install gmsh SDK
+# Only compatible with x86-64 (amd64)
+RUN dpkgArch="$(dpkg --print-architecture)"; \
+    case "$dpkgArch" in amd64) \
+      cd /usr/local && \
+      wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+      tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+      rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz ;; \
+    esac;
 
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH \
     PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
