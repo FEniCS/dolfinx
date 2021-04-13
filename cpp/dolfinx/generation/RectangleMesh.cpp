@@ -265,10 +265,9 @@ mesh::Mesh build_quad(MPI_Comm comm,
     {
       const std::size_t i0 = ix * (ny + 1);
       std::size_t cell = ix * ny + iy;
-      topo(cell, 0) = i0 + iy;
-      topo(cell, 1) = i0 + iy + 1;
-      topo(cell, 2) = i0 + iy + ny + 1;
-      topo(cell, 3) = i0 + iy + ny + 2;
+      xt::xtensor_fixed<std::size_t, xt::xshape<4>> t
+          = {i0 + iy, i0 + iy + 1, i0 + iy + ny + 1, i0 + iy + ny + 2};
+      xt::view(topo, cell, xt::all()) = t;
     }
   }
 
