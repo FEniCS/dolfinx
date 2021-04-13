@@ -13,6 +13,8 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <variant>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
@@ -280,13 +282,12 @@ void interpolate(
     const array2d<double>& x_g = mesh->geometry().x();
 
     // Create data structures for Jacobian info
-    array2d<double> x_cell(X.shape[0], gdim);
-    std::vector<double> J(X.shape[0] * gdim * tdim);
-    std::vector<double> detJ(X.shape[0]);
-    std::vector<double> K(X.shape[0] * tdim * gdim);
-    array2d<double> X_ref(X.shape[0], tdim);
+    xt::xtensor<double, 3> J = xt::empty<double>({int(X.shape[0]), gdim, tdim});
+    xt::xtensor<double, 3> K = xt::empty<double>({int(X.shape[0]), tdim, gdim});
+    xt::xtensor<double, 1> detJ = xt::empty<double>({X.shape[0]});
 
-    array2d<double> coordinate_dofs(num_dofs_g, gdim);
+    xt::xtensor<double, 2> coordinate_dofs
+        = xt::empty<double>({num_dofs_g, gdim});
 
     array2d<T> reference_data(value_size, X.shape[0]);
     array2d<T> _vals(value_size, X.shape[0]);
@@ -302,8 +303,9 @@ void interpolate(
           coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
       // Compute J, detJ and K
-      cmap.compute_jacobian_data(tabulated_data, X, coordinate_dofs, J, detJ,
-                                 K);
+      cmap.compute_jacobian(tabulated_data, coordinate_dofs, J);
+      cmap.compute_jacobian_inverse(J, K);
+      cmap.compute_jacobian_determinant(J, detJ);
 
       tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
       for (int k = 0; k < element_bs; ++k)

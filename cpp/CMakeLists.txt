@@ -144,6 +144,7 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
 
 # Check for required package xtensor
 find_package(xtensor REQUIRED)
+find_package(xtensor-blas REQUIRED)
 set_package_properties(xtensor PROPERTIES TYPE REQUIRED
   DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
   URL "https://xtensor.readthedocs.io/")

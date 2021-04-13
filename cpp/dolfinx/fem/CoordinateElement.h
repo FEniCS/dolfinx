@@ -69,6 +69,22 @@ public:
                              std::vector<double>& J, tcb::span<double> detJ,
                              std::vector<double>& K) const;
 
+  /// Compute Jacobian for a cell with given geometry, and the
+  /// basis functions and first order derivatives using the tabulated data
+  void compute_jacobian(const xt::xtensor<double, 4>& tabulated_data,
+                        const xt::xtensor<double, 2>& cell_geometry,
+                        xt::xtensor<double, 3>& J) const;
+
+  /// Compute Jacobian for a cell with given geometry, and the
+  /// basis functions and first order derivatives using the tabulated data
+  void compute_jacobian_inverse(const xt::xtensor<double, 3>& J,
+                                xt::xtensor<double, 3>& K) const;
+
+  /// Compute Jacobian for a cell with given geometry, and the
+  /// basis functions and first order derivatives using the tabulated data
+  void compute_jacobian_determinant(const xt::xtensor<double, 3>& J,
+                                    xt::xtensor<double, 1>& detJ) const;
+
   /// Return the dof layout
   const ElementDofLayout& dof_layout() const;
 

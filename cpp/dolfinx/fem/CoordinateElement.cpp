@@ -9,6 +9,8 @@
 #include <basix.h>
 #include <basix/finite-element.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <xtensor-blas/xlinalg.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -251,7 +253,6 @@ CoordinateElement::tabulate(int n, const array2d<double>& X) const
   return _element->tabulate(n, _X);
 }
 //-----------------------------------------------------------------------------
-
 void CoordinateElement::compute_jacobian_data(
     const xt::xtensor<double, 4>& tabulated_data, const array2d<double>& X,
     const array2d<double>& cell_geometry, std::vector<double>& J,
@@ -268,12 +269,7 @@ void CoordinateElement::compute_jacobian_data(
   assert(int(cell_geometry.shape[1]) == gdim);
 
   // In/out size checks
-  assert(X.shape[0] == std::size_t(num_points));
-  assert(X.shape[1] == std::size_t(tdim));
   assert((int)J.size() == num_points * gdim * tdim);
-  assert((int)detJ.size() == num_points);
-  assert((int)K.size() == num_points * gdim * tdim);
-
   const int d = cell_geometry.shape[0];
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
       d, tdim);
@@ -346,6 +342,106 @@ void CoordinateElement::compute_jacobian_data(
         Kview = (Jview.transpose() * Jview).inverse() * Jview.transpose();
         detJ[ip] = std::sqrt((Jview.transpose() * Jview).determinant());
       }
+    }
+  }
+}
+//--------------------------------------------------------------------------------
+void CoordinateElement::compute_jacobian(
+    const xt::xtensor<double, 4>& tabulated_data,
+    const xt::xtensor<double, 2>& cell_geometry,
+    xt::xtensor<double, 3>& J) const
+{
+  // Number of points
+  int num_points = tabulated_data.shape(1);
+  if (num_points == 0)
+    return;
+
+  assert(int(J.shape(0)) == num_points);
+
+  // in-argument checks
+  const int tdim = this->topological_dimension();
+  const int gdim = this->geometric_dimension();
+  assert(int(cell_geometry.shape(1)) == gdim);
+
+  // In/out size checks
+  assert((int)J.size() == num_points * gdim * tdim);
+  const int d = cell_geometry.shape(0);
+  xt::xtensor<double, 2> dphi = xt::empty<double>({tdim, d});
+
+  if (_is_affine)
+  {
+    dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), 0, xt::all(), 0);
+    auto J0 = xt::linalg::dot(dphi, cell_geometry);
+    J = xt::broadcast(xt::transpose(J0), J.shape());
+  }
+  else
+  {
+    for (int ip = 0; ip < num_points; ++ip)
+    {
+      auto J_ip = xt::view(J, ip, xt::all(), xt::all());
+      dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), ip, xt::all(), 0);
+      auto J0 = xt::linalg::dot(dphi, cell_geometry);
+      J_ip.assign(J0);
+    }
+  }
+}
+//--------------------------------------------------------------------------------
+void CoordinateElement::compute_jacobian_inverse(
+    const xt::xtensor<double, 3>& J, xt::xtensor<double, 3>& K) const
+{
+  assert(J.shape(0) == K.shape(0));
+  assert(J.shape(1) == K.shape(2));
+  assert(J.shape(2) == K.shape(1));
+
+  int num_points = J.shape(0);
+  const int gdim = J.shape(1);
+  const int tdim = K.shape(2);
+
+  xt::xtensor<double, 2> K0 = xt::empty<double>({tdim, gdim});
+  xt::xtensor<double, 2> J0 = xt::empty<double>({gdim, tdim});
+
+  if (_is_affine)
+  {
+    J0 = xt::view(J, 0, xt::all(), xt::all());
+    if (gdim == tdim)
+      K0 = xt::linalg::inv(J0);
+    else
+      K0 = xt::linalg::pinv(J0);
+    K = xt::broadcast(K0, K.shape());
+  }
+  else
+  {
+    for (int ip = 0; ip < num_points; ip++)
+    {
+      J0 = xt::view(J, ip, xt::all(), xt::all());
+      if (gdim == tdim)
+        K0 = xt::linalg::inv(J0);
+      else
+        K0 = xt::linalg::pinv(J0);
+      auto K_ip = xt::view(K, ip, xt::all(), xt::all());
+      K_ip.assign(K0);
+    }
+  }
+}
+
+//--------------------------------------------------------------------------------
+void CoordinateElement::compute_jacobian_determinant(
+    const xt::xtensor<double, 3>& J, xt::xtensor<double, 1>& Jdet) const
+{
+  assert(J.shape(0) == Jdet.shape(0));
+  int num_points = J.shape(0);
+
+  if (_is_affine)
+  {
+    auto J0 = xt::view(J, 0, xt::all(), xt::all());
+    Jdet.fill(xt::linalg::det(J0));
+  }
+  else
+  {
+    for (int ip = 0; ip < num_points; ip++)
+    {
+      auto Jip = xt::view(J, ip, xt::all(), xt::all());
+      Jdet[ip] = xt::linalg::det(Jip);
     }
   }
 }
