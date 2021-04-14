@@ -40,7 +40,7 @@ jobs:
         with:
           path: ./basix
           repository: FEniCS/basix
-          ref: main
+          ref: mscroggs/apply-dof-transformations
 
       - name: Install FEniCS Python components
         run: |
