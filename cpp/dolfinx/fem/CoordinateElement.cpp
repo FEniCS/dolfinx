@@ -83,7 +83,7 @@ void CoordinateElement::push_forward(array2d<double>& x,
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
-    array2d<double>& X, std::vector<double>& J, tcb::span<double> detJ,
+    array2d<double>& X, std::vector<double>& J, xtl::span<double> detJ,
     std::vector<double>& K, const array2d<double>& x,
     const array2d<double>& cell_geometry) const
 {

@@ -9,12 +9,12 @@
 #include "ElementDofLayout.h"
 #include <cstdint>
 #include <dolfinx/common/array2d.h>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <string>
 #include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace basix
 {
@@ -97,7 +97,7 @@ public:
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
   void compute_reference_geometry(array2d<double>& X, std::vector<double>& J,
-                                  tcb::span<double> detJ,
+                                  xtl::span<double> detJ,
                                   std::vector<double>& K,
                                   const array2d<double>& x,
                                   const array2d<double>& cell_geometry) const;

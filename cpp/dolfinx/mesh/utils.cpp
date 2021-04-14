@@ -52,7 +52,7 @@ mesh::extract_topology(const CellType& cell_type,
 }
 //-----------------------------------------------------------------------------
 std::vector<double> mesh::h(const Mesh& mesh,
-                            const tcb::span<const std::int32_t>& entities,
+                            const xtl::span<const std::int32_t>& entities,
                             int dim)
 {
   if (dim != mesh.topology().dim())
@@ -91,7 +91,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 array2d<double>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
-                   const tcb::span<const std::int32_t>& entities)
+                   const xtl::span<const std::int32_t>& entities)
 {
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type
@@ -173,7 +173,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 }
 //-----------------------------------------------------------------------------
 array2d<double> mesh::midpoints(const mesh::Mesh& mesh, int dim,
-                                const tcb::span<const std::int32_t>& entities)
+                                const xtl::span<const std::int32_t>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
 
@@ -382,7 +382,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 //-----------------------------------------------------------------------------
 array2d<std::int32_t>
 mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
-                           const tcb::span<const std::int32_t>& entity_list,
+                           const xtl::span<const std::int32_t>& entity_list,
                            bool orient)
 {
   dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
