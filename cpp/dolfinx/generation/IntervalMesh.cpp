@@ -6,7 +6,6 @@
 
 #include "IntervalMesh.h"
 #include <Eigen/Core>
-#include <basix/finite-element.h>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
@@ -23,9 +22,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
                  const mesh::GhostMode ghost_mode,
                  const mesh::CellPartitionFunction& partitioner)
 {
-  auto e = std::make_shared<basix::FiniteElement>(
-      basix::create_element("Lagrange", "interval", 1));
-  fem::CoordinateElement element(e);
+  fem::CoordinateElement element(mesh::CellType::interval, 1);
 
   // Receive mesh according to parallel policy
   if (dolfinx::MPI::rank(comm) != 0)

@@ -300,8 +300,8 @@ def test_higher_order_coordinate_map(points, celltype, order):
     X = V.element.interpolation_points()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
+    cmap = mesh.geometry.cmap
 
-    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
     i = 0
@@ -349,7 +349,7 @@ def test_higher_order_tetra_coordinate_map(order):
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
 
-    cmap = fem.create_coordinate_map(mesh.mpi_comm(), mesh.ufl_domain())
+    cmap = mesh.geometry.cmap
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
     i = 0

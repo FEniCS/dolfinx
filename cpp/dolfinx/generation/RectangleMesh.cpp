@@ -6,7 +6,6 @@
 
 #include "RectangleMesh.h"
 #include <Eigen/Core>
-#include <basix/finite-element.h>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
@@ -25,9 +24,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
                      const mesh::CellPartitionFunction& partitioner,
                      const std::string& diagonal)
 {
-  auto e = std::make_shared<basix::FiniteElement>(
-      basix::create_element("Lagrange", "triangle", 1));
-  fem::CoordinateElement element(e);
+  fem::CoordinateElement element(mesh::CellType::triangle, 1);
 
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
@@ -216,9 +213,7 @@ mesh::Mesh build_quad(MPI_Comm comm,
                       const mesh::GhostMode ghost_mode,
                       const mesh::CellPartitionFunction& partitioner)
 {
-  auto e = std::make_shared<basix::FiniteElement>(
-      basix::create_element("Lagrange", "quadrilateral", 1));
-  fem::CoordinateElement element(e);
+  fem::CoordinateElement element(mesh::CellType::quadrilateral, 1);
 
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)

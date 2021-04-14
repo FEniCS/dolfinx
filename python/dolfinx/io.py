@@ -53,9 +53,9 @@ class XDMFFile(cpp.io.XDMFFile):
         # Construct the geometry map
         cell = ufl.Cell(cpp.mesh.to_string(cell_shape), geometric_dimension=x.shape[1])
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
-        cmap = fem.create_coordinate_map(self.comm(), domain)
 
         # Build the mesh
+        cmap = cpp.fem.CoordinateElement(cell_shape, cell_degree)
         mesh = cpp.mesh.create_mesh(self.comm(), cpp.graph.AdjacencyList_int64(cells),
                                     cmap, x, ghost_mode, cpp.mesh.partition_cells_graph)
         mesh.name = name

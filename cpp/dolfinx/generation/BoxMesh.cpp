@@ -6,7 +6,6 @@
 
 #include "BoxMesh.h"
 #include <Eigen/Core>
-#include <basix/finite-element.h>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
@@ -140,9 +139,7 @@ mesh::Mesh build_tet(MPI_Comm comm,
     ++cell;
   }
 
-  auto e = std::make_shared<basix::FiniteElement>(
-      basix::create_element("Lagrange", "tetrahedron", 1));
-  fem::CoordinateElement element(e);
+  fem::CoordinateElement element(mesh::CellType::tetrahedron, 1);
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
       comm,
@@ -188,9 +185,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
     ++cell;
   }
 
-  auto e = std::make_shared<basix::FiniteElement>(
-      basix::create_element("Lagrange", "hexahedron", 1));
-  fem::CoordinateElement element(e);
+  fem::CoordinateElement element(mesh::CellType::hexahedron, 1);
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
       comm,
