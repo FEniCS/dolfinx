@@ -6,7 +6,6 @@
 
 #include "xdmf_utils.h"
 #include "pugixml.hpp"
-#include <Eigen/Core>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -23,6 +22,9 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -493,23 +495,26 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
   // Figure out which processes are owners of received nodes
   std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
   std::vector<std::vector<std::int32_t>> send_vals_owned(comm_size);
-  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>
-      _entities_recv(entities_recv.array().data(),
-                     entities_recv.array().size() / num_vertices_per_entity,
-                     num_vertices_per_entity);
+  std::array<std::size_t, 2> shape
+      = {entities_recv.array().size() / num_vertices_per_entity,
+         num_vertices_per_entity};
+  auto _entities_recv
+      = xt::adapt(entities_recv.array().data(), entities_recv.array().size(),
+                  xt::no_ownership(), shape);
+
   const std::vector<std::int32_t>& _values_recv = values_recv.array();
-  assert((int)_values_recv.size() == _entities_recv.rows());
-  for (int e = 0; e < _entities_recv.rows(); ++e)
+  assert(_values_recv.size() == _entities_recv.shape(0));
+  for (std::size_t e = 0; e < _entities_recv.shape(0); ++e)
   {
+    auto e_recv = xt::row(_entities_recv, e);
+
     // Find ranks that have node0
-    auto [it0, it1] = node_to_rank.equal_range(_entities_recv(e, 0));
+    auto [it0, it1] = node_to_rank.equal_range(e_recv[0]);
     for (auto it = it0; it != it1; ++it)
     {
       const int p1 = it->second;
-      send_nodes_owned[p1].insert(
-          send_nodes_owned[p1].end(), _entities_recv.row(e).data(),
-          _entities_recv.row(e).data() + _entities_recv.cols());
+      send_nodes_owned[p1].insert(send_nodes_owned[p1].end(), e_recv.begin(),
+                                  e_recv.end());
       send_vals_owned[p1].push_back(_values_recv[e]);
     }
   }
@@ -525,7 +530,7 @@ xdmf_utils::extract_local_entities(const mesh::Mesh& mesh, const int entity_dim,
   //    (entities) are on this process.
 
   // TODO: Rather than using std::map<std::vector<std::int64_t>,
-  //       std::int32_t>, use a rectangular Eigen::Array to avoid the
+  //       std::int32_t>, use a rectangular array to avoid the
   //       cost of std::vector<std::int64_t> allocations, and sort the
   //       Array by row.
   //
