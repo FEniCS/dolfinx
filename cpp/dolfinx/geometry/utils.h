@@ -7,9 +7,9 @@
 #pragma once
 
 #include <array>
-#include <xtl/xspan.hpp>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {

@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include <xtl/xspan.hpp>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <numeric>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 struct ufc_coordinate_mapping;
 struct ufc_finite_element;
@@ -154,8 +154,7 @@ public:
   /// @param[out] dofs The element degrees of freedom (interpolants) of
   /// the expression. The call must allocate the space. Is has
   template <typename T>
-  constexpr void interpolate(const array2d<T>& values,
-                             xtl::span<T> dofs) const
+  constexpr void interpolate(const array2d<T>& values, xtl::span<T> dofs) const
   {
     const std::size_t rows = _space_dim / _bs;
     assert(_space_dim % _bs == 0);

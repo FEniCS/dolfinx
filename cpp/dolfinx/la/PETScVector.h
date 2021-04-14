@@ -10,10 +10,10 @@
 #include "utils.h"
 #include <array>
 #include <cstdint>
-#include <xtl/xspan.hpp>
 #include <functional>
 #include <petscvec.h>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {

@@ -9,13 +9,13 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <xtl/xspan.hpp>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {

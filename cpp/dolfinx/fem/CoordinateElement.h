@@ -9,12 +9,12 @@
 #include "ElementDofLayout.h"
 #include <cstdint>
 #include <dolfinx/common/array2d.h>
-#include <xtl/xspan.hpp>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <string>
 #include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace basix
 {

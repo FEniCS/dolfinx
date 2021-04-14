@@ -11,6 +11,7 @@
 #include <functional>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {

@@ -7,13 +7,13 @@
 #pragma once
 
 #include "FunctionSpace.h"
-#include <xtl/xspan.hpp>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <variant>
 #include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {

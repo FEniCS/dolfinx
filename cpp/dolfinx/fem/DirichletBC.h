@@ -7,7 +7,6 @@
 #pragma once
 
 #include <array>
-#include <xtl/xspan.hpp>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/utils.h>
@@ -15,6 +14,7 @@
 #include <memory>
 #include <vector>
 #include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {

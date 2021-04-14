@@ -10,7 +10,6 @@
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <Eigen/Core>
-#include <xtl/xspan.hpp>
 #include <dolfinx/fem/ElementDofLayout.h>
 
 using namespace dolfinx;

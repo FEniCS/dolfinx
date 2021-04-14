@@ -11,7 +11,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/array2d.h>
-#include <xtl/xspan.hpp>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>
@@ -28,6 +27,7 @@
 #include <variant>
 #include <vector>
 #include <xtensor/xtensor.hpp>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {

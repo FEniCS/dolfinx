@@ -9,9 +9,9 @@
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
-#include <xtl/xspan.hpp>
 #include <memory>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {

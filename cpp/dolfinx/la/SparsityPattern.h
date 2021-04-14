@@ -7,10 +7,10 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <xtl/xspan.hpp>
 #include <memory>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {

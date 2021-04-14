@@ -7,13 +7,13 @@
 #pragma once
 
 #include <dolfinx/common/array2d.h>
-#include <xtl/xspan.hpp>
 #include <dolfinx/mesh/cell_types.h>
 #include <hdf5.h>
 #include <mpi.h>
 #include <string>
 #include <tuple>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace pugi
 {

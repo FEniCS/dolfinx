@@ -11,12 +11,12 @@
 #include "utils.h"
 #include <array>
 #include <dolfinx/common/array2d.h>
-#include <xtl/xspan.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <string>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace pugi
 {

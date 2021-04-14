@@ -8,10 +8,10 @@
 #pragma once
 
 #include <dolfinx/common/array2d.h>
-#include <xtl/xspan.hpp>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {

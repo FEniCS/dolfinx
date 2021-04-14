@@ -8,10 +8,10 @@
 
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/array2d.h>
-#include <xtl/xspan.hpp>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <functional>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
