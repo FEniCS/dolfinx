@@ -26,6 +26,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <xtl/xspan.hpp>
 
 namespace py = pybind11;
 
@@ -70,7 +71,7 @@ void declare_meshtags(py::module& m, std::string type)
            const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
            const py::array_t<T, py::array::c_style>& values) {
           return dolfinx::mesh::create_meshtags(
-              mesh, dim, entities, tcb::span(values.data(), values.size()));
+              mesh, dim, entities, xtl::span(values.data(), values.size()));
         });
 }
 
@@ -99,7 +100,7 @@ void mesh(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const py::array_t<std::int32_t, py::array::c_style>& entities) {
           return as_pyarray2d(dolfinx::mesh::cell_normals(
-              mesh, dim, tcb::span(entities.data(), entities.size())));
+              mesh, dim, xtl::span(entities.data(), entities.size())));
         });
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
@@ -109,7 +110,7 @@ void mesh(py::module& m)
       [](const dolfinx::mesh::Mesh& mesh, int dim,
          const py::array_t<std::int32_t, py::array::c_style>& entities) {
         return as_pyarray(dolfinx::mesh::h(
-            mesh, tcb::span(entities.data(), entities.size()), dim));
+            mesh, xtl::span(entities.data(), entities.size()), dim));
       },
       "Compute maximum distance between any two vertices.");
   m.def("midpoints", &dolfinx::mesh::midpoints);
@@ -118,7 +119,7 @@ void mesh(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list) {
           return as_pyarray2d(dolfinx::mesh::midpoints(
-              mesh, dim, tcb::span(entity_list.data(), entity_list.size())));
+              mesh, dim, xtl::span(entity_list.data(), entity_list.size())));
         });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
@@ -337,7 +338,7 @@ void mesh(py::module& m)
            py::array_t<std::int32_t, py::array::c_style> entity_list,
            bool orient) {
           return as_pyarray2d(dolfinx::mesh::entities_to_geometry(
-              mesh, dim, tcb::span(entity_list.data(), entity_list.size()),
+              mesh, dim, xtl::span(entity_list.data(), entity_list.size()),
               orient));
         });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);

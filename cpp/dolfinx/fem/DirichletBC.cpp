@@ -241,7 +241,7 @@ get_remote_bcs2(const common::IndexMap& map0, int bs0,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const fem::FunctionSpace>, 2>& V,
-    const int dim, const tcb::span<const std::int32_t>& entities, bool remote)
+    const int dim, const xtl::span<const std::int32_t>& entities, bool remote)
 {
   const fem::FunctionSpace& V0 = V.at(0).get();
   const fem::FunctionSpace& V1 = V.at(1).get();
@@ -310,8 +310,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const int entity_local_index = std::distance(entities_d.begin(), it);
 
     // Get cell dofmap
-    tcb::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
-    tcb::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
+    xtl::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
+    xtl::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
     assert(bs0 * cell_dofs0.size() == bs1 * cell_dofs1.size());
 
     // Loop over facet dofs and 'unpack' blocked dofs
@@ -367,7 +367,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 fem::locate_dofs_topological(const fem::FunctionSpace& V, const int dim,
-                             const tcb::span<const std::int32_t>& entities,
+                             const xtl::span<const std::int32_t>& entities,
                              bool remote)
 {
   assert(V.dofmap());

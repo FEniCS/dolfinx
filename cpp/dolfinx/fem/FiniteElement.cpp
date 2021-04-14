@@ -208,7 +208,7 @@ void FiniteElement::evaluate_reference_basis_derivatives(
 void FiniteElement::transform_reference_basis(
     std::vector<double>& values, const std::vector<double>& reference_values,
     const array2d<double>& X, const std::vector<double>& J,
-    const tcb::span<const double>& detJ, const std::vector<double>& K) const
+    const xtl::span<const double>& detJ, const std::vector<double>& K) const
 {
   const int num_points = X.shape[0];
   const int scalar_dim = _space_dim / _bs;
