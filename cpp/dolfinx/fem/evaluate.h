@@ -8,10 +8,10 @@
 #pragma once
 
 #include <dolfinx/common/array2d.h>
-#include <dolfinx/common/span.hpp>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
@@ -26,7 +26,7 @@ class Expression;
 /// expression
 template <typename T>
 void eval(array2d<T>& values, const fem::Expression<T>& e,
-          const tcb::span<const std::int32_t>& active_cells)
+          const xtl::span<const std::int32_t>& active_cells)
 {
   // Extract data from Expression
   auto mesh = e.mesh();

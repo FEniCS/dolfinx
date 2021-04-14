@@ -917,8 +917,7 @@ RECURSIVE              = YES
 EXCLUDE                = ../dolfinx/io/pugixml.hpp \
                          ../dolfinx/io/pugixml.cpp \
                          ../dolfinx/common/loguru.hpp \
-                         ../dolfinx/common/loguru.cpp \
-                         ../dolfinx/common/span.hpp
+                         ../dolfinx/common/loguru.cpp
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
