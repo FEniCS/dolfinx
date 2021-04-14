@@ -181,7 +181,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
   }
 
   fem::CoordinateElement element(mesh::CellType::hexahedron, 1);
-  auto [data, offset] = graph::create_adjacency_data(cell);
+  auto [data, offset] = graph::create_adjacency_data(cells);
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
