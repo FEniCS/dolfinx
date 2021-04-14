@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx import (FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, VectorFunctionSpace, cpp, fem)
+                     UnitSquareMesh, VectorFunctionSpace, cpp)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import create_mesh
 from dolfinx_utils.test.skips import skip_in_parallel
