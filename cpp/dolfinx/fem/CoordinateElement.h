@@ -61,14 +61,6 @@ public:
   /// Note: Dynamic allocation.
   xt::xtensor<double, 4> tabulate(int n, const array2d<double>& X) const;
 
-  /// Compute J, K and detJ for a cell with given geometry, and the
-  /// basis functions and first order derivatives at points X
-  void compute_jacobian_data(const xt::xtensor<double, 4>& tabulated_data,
-                             const array2d<double>& X,
-                             const array2d<double>& cell_geometry,
-                             std::vector<double>& J, tcb::span<double> detJ,
-                             std::vector<double>& K) const;
-
   /// Compute Jacobian for a cell with given geometry, and the
   /// basis functions and first order derivatives using the tabulated data
   void compute_jacobian(const xt::xtensor<double, 4>& tabulated_data,

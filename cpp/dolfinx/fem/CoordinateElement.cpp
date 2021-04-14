@@ -252,104 +252,10 @@ CoordinateElement::tabulate(int n, const array2d<double>& X) const
   auto _X = xt::adapt(X.data(), X.shape);
   return _element->tabulate(n, _X);
 }
-//-----------------------------------------------------------------------------
-void CoordinateElement::compute_jacobian_data(
-    const xt::xtensor<double, 4>& tabulated_data, const array2d<double>& X,
-    const array2d<double>& cell_geometry, std::vector<double>& J,
-    tcb::span<double> detJ, std::vector<double>& K) const
-{
-  // Number of points
-  int num_points = X.shape[0];
-  if (num_points == 0)
-    return;
-
-  // in-argument checks
-  const int tdim = this->topological_dimension();
-  const int gdim = this->geometric_dimension();
-  assert(int(cell_geometry.shape[1]) == gdim);
-
-  // In/out size checks
-  assert((int)J.size() == num_points * gdim * tdim);
-  const int d = cell_geometry.shape[0];
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dphi(
-      d, tdim);
-  Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                 Eigen::RowMajor>>
-      _cell_geometry(cell_geometry.data(), cell_geometry.shape[0],
-                     cell_geometry.shape[1]);
-  if (_is_affine)
-  {
-    for (std::int32_t i = 0; i < tdim; ++i)
-    {
-      auto dphi_i = xt::view(tabulated_data, i + 1, 0, xt::all(), 0);
-      for (std::int32_t j = 0; j < d; ++j)
-        dphi(j, i) = dphi_i(j);
-    }
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
-        J0 = _cell_geometry.transpose() * dphi;
-
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, 3, 3>
-        K0(tdim, gdim);
-
-    // NOTE: should we use xtensor-blas?
-    // Fill result for J, K and detJ
-    if (gdim == tdim)
-    {
-      K0 = J0.inverse();
-      std::fill(detJ.begin(), detJ.end(), J0.determinant());
-    }
-    else
-    {
-      // Penrose-Moore pseudo-inverse
-      K0 = (J0.transpose() * J0).inverse() * J0.transpose();
-      std::fill(detJ.begin(), detJ.end(),
-                std::sqrt((J0.transpose() * J0).determinant()));
-    }
-
-    // As J0 and K0 are constant for affine meshes, replicate per intepolation
-    // point
-    for (int ip = 0; ip < num_points; ip++)
-    {
-      std::copy_n(J0.data(), J0.size(), J.data() + ip * J0.size());
-      std::copy_n(K0.data(), K0.size(), K.data() + ip * K0.size());
-    }
-  }
-  else
-  {
-    for (int ip = 0; ip < num_points; ++ip)
-    {
-      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>>
-          Jview(J.data() + ip * gdim * tdim, gdim, tdim);
-      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>>
-          Kview(K.data() + ip * gdim * tdim, tdim, gdim);
-      for (std::int32_t i = 0; i < tdim; ++i)
-      {
-        auto dphi_i = xt::view(tabulated_data, i + 1, ip, xt::all(), 0);
-        for (std::int32_t j = 0; j < d; ++j)
-          dphi(j, i) = dphi_i[j];
-      }
-      Jview = _cell_geometry.transpose() * dphi;
-      if (gdim == tdim)
-      {
-        Kview = Jview.inverse();
-        detJ[ip] = Jview.determinant();
-      }
-      else
-      {
-        // Penrose-Moore pseudo-inverse
-        Kview = (Jview.transpose() * Jview).inverse() * Jview.transpose();
-        detJ[ip] = std::sqrt((Jview.transpose() * Jview).determinant());
-      }
-    }
-  }
-}
 //--------------------------------------------------------------------------------
 void CoordinateElement::compute_jacobian(
     const xt::xtensor<double, 4>& tabulated_data,
-    const xt::xtensor<double, 2>& cell_geometry,
-    xt::xtensor<double, 3>& J) const
+    const xt::xtensor<double, 2>& cell_geom, xt::xtensor<double, 3>& J) const
 {
   // Number of points
   int num_points = tabulated_data.shape(1);
@@ -361,26 +267,26 @@ void CoordinateElement::compute_jacobian(
   // in-argument checks
   const int tdim = this->topological_dimension();
   const int gdim = this->geometric_dimension();
-  assert(int(cell_geometry.shape(1)) == gdim);
+  assert(int(cell_geom.shape(1)) == gdim);
 
   // In/out size checks
   assert((int)J.size() == num_points * gdim * tdim);
-  const int d = cell_geometry.shape(0);
+  const int d = cell_geom.shape(0);
   xt::xtensor<double, 2> dphi = xt::empty<double>({tdim, d});
 
   if (_is_affine)
   {
     dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), 0, xt::all(), 0);
-    auto J0 = xt::linalg::dot(dphi, cell_geometry);
-    J = xt::broadcast(xt::transpose(J0), J.shape());
+    auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi));
+    J = xt::broadcast(J0, J.shape());
   }
   else
   {
     for (int ip = 0; ip < num_points; ++ip)
     {
-      auto J_ip = xt::view(J, ip, xt::all(), xt::all());
       dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), ip, xt::all(), 0);
-      auto J0 = xt::linalg::dot(dphi, cell_geometry);
+      auto J_ip = xt::view(J, ip, xt::all(), xt::all());
+      auto J0 = xt::linalg::dot(xt::transpose(cell_geom), xt::transpose(dphi));
       J_ip.assign(J0);
     }
   }
