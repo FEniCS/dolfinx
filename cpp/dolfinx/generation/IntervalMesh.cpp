@@ -5,13 +5,14 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "IntervalMesh.h"
-#include <Eigen/Core>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/array2d.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::generation;
@@ -28,8 +29,8 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   if (dolfinx::MPI::rank(comm) != 0)
   {
     array2d<double> geom(0, 1);
-    Eigen::Array<std::int64_t, 0, 2, Eigen::RowMajor> topo(0, 2);
-    auto [data, offset] = graph::create_adjacency_data(topo);
+    xt::xtensor<std::int64_t, 2> cells({0, 2});
+    auto [data, offset] = graph::create_adjacency_data(cells);
     return mesh::create_mesh(
         comm,
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
@@ -61,11 +62,12 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
     geom(ix, 0) = a + ab * static_cast<double>(ix);
 
   // Create intervals
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> topo(nx, 2);
-  for (std::size_t ix = 0; ix < nx; ix++)
-    topo.row(ix) << ix, ix + 1;
+  xt::xtensor<std::int64_t, 2> cells({nx, 2});
+  for (std::size_t ix = 0; ix < nx; ++ix)
+    for (std::size_t j = 0; j < 2; ++j)
+      cells(ix, j) = ix + j;
 
-  auto [data, offset] = graph::create_adjacency_data(topo);
+  auto [data, offset] = graph::create_adjacency_data(cells);
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),

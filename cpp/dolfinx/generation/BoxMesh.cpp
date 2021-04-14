@@ -5,13 +5,15 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "BoxMesh.h"
-#include <Eigen/Core>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/array2d.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <xtensor/xfixed.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::generation;
@@ -97,17 +99,16 @@ mesh::Mesh build_tet(MPI_Comm comm,
 
   array2d<double> geom = create_geom(comm, p, n);
 
-  std::int64_t nx = n[0];
-  std::int64_t ny = n[1];
-  std::int64_t nz = n[2];
+  const std::int64_t nx = n[0];
+  const std::int64_t ny = n[1];
+  const std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
   std::array range_c = dolfinx::MPI::local_range(
       dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(
-      6 * (range_c[1] - range_c[0]), 4);
+  const std::size_t cell_range = range_c[1] - range_c[0];
+  xt::xtensor<std::int64_t, 2> cells({6 * cell_range, 4});
 
   // Create tetrahedra
-  std::int64_t cell = 0;
   for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
   {
     const int iz = i / (nx * ny);
@@ -124,23 +125,16 @@ mesh::Mesh build_tet(MPI_Comm comm,
     const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
     const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
 
-    // Note that v0 < v1 < v2 < v3 < vmid.
-    topo.row(cell) << v0, v1, v3, v7;
-    ++cell;
-    topo.row(cell) << v0, v1, v7, v5;
-    ++cell;
-    topo.row(cell) << v0, v5, v7, v4;
-    ++cell;
-    topo.row(cell) << v0, v3, v2, v7;
-    ++cell;
-    topo.row(cell) << v0, v6, v4, v7;
-    ++cell;
-    topo.row(cell) << v0, v2, v6, v7;
-    ++cell;
+    // Note that v0 < v1 < v2 < v3 < vmid
+    xt::xtensor_fixed<std::int64_t, xt::xshape<6, 4>> c
+        = {{v0, v1, v3, v7}, {v0, v1, v7, v5}, {v0, v5, v7, v4},
+           {v0, v3, v2, v7}, {v0, v6, v4, v7}, {v0, v2, v6, v7}};
+    std::size_t offset = 6 * (i - range_c[0]);
+    xt::view(cells, xt::range(offset, offset + 6), xt::all()) = c;
   }
 
   fem::CoordinateElement element(mesh::CellType::tetrahedron, 1);
-  auto [data, offset] = graph::create_adjacency_data(topo);
+  auto [data, offset] = graph::create_adjacency_data(cells);
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
@@ -161,11 +155,10 @@ mesh::Mesh build_hex(MPI_Comm comm,
   const std::int64_t n_cells = nx * ny * nz;
   std::array range_c = dolfinx::MPI::local_range(
       dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 8, Eigen::RowMajor> topo(
-      range_c[1] - range_c[0], 8);
+  const std::size_t cell_range = range_c[1] - range_c[0];
+  xt::xtensor<std::int64_t, 2> cells({cell_range, 8});
 
   // Create cuboids
-  std::int64_t cell = 0;
   for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
   {
     const std::int64_t iz = i / (nx * ny);
@@ -181,12 +174,14 @@ mesh::Mesh build_hex(MPI_Comm comm,
     const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
     const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
     const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
-    topo.row(cell) << v0, v1, v2, v3, v4, v5, v6, v7;
-    ++cell;
+
+    xt::xtensor_fixed<std::int64_t, xt::xshape<8>> cell
+        = {v0, v1, v2, v3, v4, v5, v6, v7};
+    xt::view(cells, i - range_c[0], xt::all()) = cell;
   }
 
   fem::CoordinateElement element(mesh::CellType::hexahedron, 1);
-  auto [data, offset] = graph::create_adjacency_data(topo);
+  auto [data, offset] = graph::create_adjacency_data(cell);
   return mesh::create_mesh(
       comm,
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),

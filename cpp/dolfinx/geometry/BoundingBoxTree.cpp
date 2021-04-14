@@ -343,13 +343,11 @@ int BoundingBoxTree::tdim() const { return _tdim; }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
 {
-  Eigen::Map<const Eigen::Array<double, 2, 3, Eigen::RowMajor>> bbox(
-      _bbox_coordinates.data() + 6 * i, 2, 3);
   s << "[";
   for (int j = 0; j < 2; ++j)
   {
     for (int k = 0; k < 3; ++k)
-      s << bbox(j, k) << " ";
+      s << _bbox_coordinates[6 * i + j * 3 + k] << " ";
     if (j == 0)
       s << "]->"
         << "[";
