@@ -84,7 +84,7 @@ void common(py::module& m)
              py::array_t<std::int64_t> global(local.size());
              self.local_to_global(
                  local,
-                 tcb::span<std::int64_t>(global.mutable_data(), global.size()));
+                 xtl::span<std::int64_t>(global.mutable_data(), global.size()));
              return global;
            });
 

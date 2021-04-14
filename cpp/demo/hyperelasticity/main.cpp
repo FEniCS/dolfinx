@@ -57,7 +57,7 @@ public:
   {
     return [&](const Vec x, Vec) {
       // Assemble b and update ghosts
-      tcb::span b(_b.mutable_array());
+      xtl::span<PetscScalar> b(_b.mutable_array());
       std::fill(b.begin(), b.end(), 0.0);
       fem::assemble_vector<PetscScalar>(b, *_l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
@@ -70,7 +70,7 @@ public:
       VecGetSize(x_local, &n);
       const PetscScalar* array = nullptr;
       VecGetArrayRead(x_local, &array);
-      fem::set_bc<PetscScalar>(b, _bcs, tcb::span(array, n), -1.0);
+      fem::set_bc<PetscScalar>(b, _bcs, xtl::span<const PetscScalar>(array, n), -1.0);
       VecRestoreArrayRead(x, &array);
     };
   }

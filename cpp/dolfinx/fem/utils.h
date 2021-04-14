@@ -430,7 +430,7 @@ array2d<typename U::scalar_type> pack_coefficients(const U& u)
     {
       for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
       {
-        tcb::span<const std::int32_t> dofs = dofmaps[coeff]->cell_dofs(cell);
+        xtl::span<const std::int32_t> dofs = dofmaps[coeff]->cell_dofs(cell);
         const std::vector<T>& _v = v[coeff];
         for (std::size_t i = 0; i < dofs.size(); ++i)
         {
