@@ -92,7 +92,7 @@ public:
   /// @param[out] values To store the result. Caller responsible for
   /// correct sizing which should be num_cells rows by
   /// num_points*value_size columns.
-  void eval(const tcb::span<const std::int32_t>& active_cells,
+  void eval(const xtl::span<const std::int32_t>& active_cells,
             array2d<T>& values) const
   {
     fem::eval(values, *this, active_cells);

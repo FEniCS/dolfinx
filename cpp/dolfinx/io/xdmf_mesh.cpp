@@ -10,7 +10,7 @@
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <Eigen/Core>
-#include <dolfinx/common/span.hpp>
+#include <xtl/xspan.hpp>
 #include <dolfinx/fem/ElementDofLayout.h>
 
 using namespace dolfinx;
@@ -21,7 +21,7 @@ void xdmf_mesh::add_topology_data(
     MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
     const std::string path_prefix, const mesh::Topology& topology,
     const mesh::Geometry& geometry, const int dim,
-    const tcb::span<const std::int32_t>& active_entities)
+    const xtl::span<const std::int32_t>& active_entities)
 {
   LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
 
@@ -217,7 +217,7 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
 
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
                     mesh.geometry(), tdim,
-                    tcb::span(active_cells.data(), num_cells));
+                    xtl::span<std::int32_t>(active_cells.data(), num_cells));
 
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());

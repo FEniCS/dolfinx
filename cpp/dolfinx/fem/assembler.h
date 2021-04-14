@@ -9,7 +9,7 @@
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
-#include <dolfinx/common/span.hpp>
+#include <xtl/xspan.hpp>
 #include <memory>
 #include <vector>
 
@@ -42,7 +42,7 @@ T assemble_scalar(const Form<T>& M)
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
 template <typename T>
-void assemble_vector(tcb::span<T> b, const Form<T>& L)
+void assemble_vector(xtl::span<T> b, const Form<T>& L)
 {
   fem::impl::assemble_vector(b, L);
 }
@@ -67,9 +67,9 @@ void assemble_vector(tcb::span<T> b, const Form<T>& L)
 /// is responsible for calling VecGhostUpdateBegin/End.
 template <typename T>
 void apply_lifting(
-    tcb::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
+    xtl::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const std::vector<tcb::span<const T>>& x0, double scale)
+    const std::vector<xtl::span<const T>>& x0, double scale)
 {
   fem::impl::apply_lifting(b, a, bcs1, x0, scale);
 }
@@ -157,7 +157,7 @@ template <typename T>
 void add_diagonal(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const T*)>& mat_add,
-    const tcb::span<const std::int32_t>& rows, T diagonal = 1.0)
+    const xtl::span<const std::int32_t>& rows, T diagonal = 1.0)
 {
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
@@ -211,9 +211,9 @@ void add_diagonal(
 /// 'scale'. The vectors b and x0 must have the same local size. The bcs
 /// should be on (sub-)spaces of the form L that b represents.
 template <typename T>
-void set_bc(tcb::span<T> b,
+void set_bc(xtl::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-            const tcb::span<const T>& x0, double scale = 1.0)
+            const xtl::span<const T>& x0, double scale = 1.0)
 {
   if (b.size() > x0.size())
     throw std::runtime_error("Size mismatch between b and x0 vectors.");
@@ -228,7 +228,7 @@ void set_bc(tcb::span<T> b,
 /// 'scale'. The bcs should be on (sub-)spaces of the form L that b
 /// represents.
 template <typename T>
-void set_bc(tcb::span<T> b,
+void set_bc(xtl::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
             double scale = 1.0)
 {

@@ -11,7 +11,7 @@
 #include "utils.h"
 #include <array>
 #include <dolfinx/common/array2d.h>
-#include <dolfinx/common/span.hpp>
+#include <xtl/xspan.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <string>
@@ -97,7 +97,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 std::pair<array2d<std::int32_t>, std::vector<std::int32_t>>
 extract_local_entities(const mesh::Mesh& mesh, int entity_dim,
                        const array2d<std::int64_t>& entities,
-                       const tcb::span<const std::int32_t>& values);
+                       const xtl::span<const std::int32_t>& values);
 
 /// TODO: Document
 template <typename T>

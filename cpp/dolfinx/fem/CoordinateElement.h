@@ -9,7 +9,7 @@
 #include "ElementDofLayout.h"
 #include <cstdint>
 #include <dolfinx/common/array2d.h>
-#include <dolfinx/common/span.hpp>
+#include <xtl/xspan.hpp>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
@@ -66,7 +66,7 @@ public:
   void compute_jacobian_data(const xt::xtensor<double, 4>& tabulated_data,
                              const array2d<double>& X,
                              const array2d<double>& cell_geometry,
-                             std::vector<double>& J, tcb::span<double> detJ,
+                             std::vector<double>& J, xtl::span<double> detJ,
                              std::vector<double>& K) const;
 
   /// Return the dof layout
@@ -89,7 +89,7 @@ public:
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
   void compute_reference_geometry(array2d<double>& X, std::vector<double>& J,
-                                  tcb::span<double> detJ,
+                                  xtl::span<double> detJ,
                                   std::vector<double>& K,
                                   const array2d<double>& x,
                                   const array2d<double>& cell_geometry) const;

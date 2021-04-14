@@ -7,7 +7,7 @@
 #pragma once
 
 #include "FunctionSpace.h"
-#include <dolfinx/common/span.hpp>
+#include <xtl/xspan.hpp>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -33,7 +33,7 @@ class Function;
 /// an expression
 xt::xtensor<double, 2>
 interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
-                     const tcb::span<const std::int32_t>& cells);
+                     const xtl::span<const std::int32_t>& cells);
 
 /// Interpolate a finite element Function (on possibly non-matching
 /// meshes) in another finite element space
@@ -58,7 +58,7 @@ void interpolate(
     Function<T>& u,
     const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
     const xt::xtensor<double, 2>& x,
-    const tcb::span<const std::int32_t>& cells);
+    const xtl::span<const std::int32_t>& cells);
 
 /// Interpolate an expression f(x)
 ///
@@ -81,7 +81,7 @@ void interpolate_c(
     Function<T>& u,
     const std::function<void(xt::xarray<T>&, const xt::xtensor<double, 2>&)>& f,
     const xt::xtensor<double, 2>& x,
-    const tcb::span<const std::int32_t>& cells);
+    const xtl::span<const std::int32_t>& cells);
 
 namespace detail
 {
@@ -125,8 +125,8 @@ void interpolate_from_any(Function<T>& u, const Function<T>& v)
   assert(bs == dofmap_u->bs());
   for (int c = 0; c < num_cells; ++c)
   {
-    tcb::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
-    tcb::span<const std::int32_t> cell_dofs = dofmap_u->cell_dofs(c);
+    xtl::span<const std::int32_t> dofs_v = dofmap_v->cell_dofs(c);
+    xtl::span<const std::int32_t> cell_dofs = dofmap_u->cell_dofs(c);
     assert(dofs_v.size() == cell_dofs.size());
     for (std::size_t i = 0; i < dofs_v.size(); ++i)
     {
@@ -181,7 +181,7 @@ template <typename T>
 void interpolate(
     Function<T>& u,
     const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
-    const xt::xtensor<double, 2>& x, const tcb::span<const std::int32_t>& cells)
+    const xt::xtensor<double, 2>& x, const xtl::span<const std::int32_t>& cells)
 {
   const std::shared_ptr<const FiniteElement> element
       = u.function_space()->element();
@@ -251,7 +251,7 @@ void interpolate(
   {
     for (std::int32_t c : cells)
     {
-      tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
       for (int k = 0; k < element_bs; ++k)
       {
         for (int i = 0; i < num_scalar_dofs; ++i)
@@ -305,7 +305,7 @@ void interpolate(
       cmap.compute_jacobian_data(tabulated_data, X, coordinate_dofs, J, detJ,
                                  K);
 
-      tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
       for (int k = 0; k < element_bs; ++k)
       {
         // Extract computed expression values for element block k
@@ -342,7 +342,7 @@ template <typename T>
 void interpolate_c(
     Function<T>& u,
     const std::function<void(xt::xarray<T>&, const xt::xtensor<double, 2>&)>& f,
-    const xt::xtensor<double, 2>& x, const tcb::span<const std::int32_t>& cells)
+    const xt::xtensor<double, 2>& x, const xtl::span<const std::int32_t>& cells)
 {
   const std::shared_ptr<const FiniteElement> element
       = u.function_space()->element();

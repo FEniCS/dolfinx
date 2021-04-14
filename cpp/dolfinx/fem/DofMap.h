@@ -107,7 +107,7 @@ public:
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
   /// indices)
-  tcb::span<const std::int32_t> cell_dofs(int cell) const
+  xtl::span<const std::int32_t> cell_dofs(int cell) const
   {
     return _dofmap.links(cell);
   }

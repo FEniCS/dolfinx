@@ -11,7 +11,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/array2d.h>
-#include <dolfinx/common/span.hpp>
+#include <xtl/xspan.hpp>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/la/PETScVector.h>
@@ -233,7 +233,7 @@ public:
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size.
   void eval(const array2d<double>& x,
-            const tcb::span<const std::int32_t>& cells, array2d<T>& u) const
+            const xtl::span<const std::int32_t>& cells, array2d<T>& u) const
   {
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
@@ -350,7 +350,7 @@ public:
                                          X, J, detJ, K);
 
       // Get degrees of freedom for current cell
-      tcb::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
+      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
@@ -404,7 +404,7 @@ public:
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       // Get coordinates for all points in cell
-      tcb::span<const std::int32_t> dofs = x_dofmap.links(c);
+      xtl::span<const std::int32_t> dofs = x_dofmap.links(c);
       for (int i = 0; i < num_dofs_g; ++i)
         cells[dofs[i]] = c;
     }
