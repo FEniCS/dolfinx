@@ -6,6 +6,7 @@
 
 #include "BoxMesh.h"
 #include <Eigen/Core>
+#include <basix/finite-element.h>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
@@ -90,7 +91,6 @@ array2d<double> create_geom(MPI_Comm comm,
 mesh::Mesh build_tet(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 3> n,
-                     const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner)
 {
@@ -140,6 +140,9 @@ mesh::Mesh build_tet(MPI_Comm comm,
     ++cell;
   }
 
+  auto e = std::make_shared<basix::FiniteElement>(
+      basix::create_element("lagrange", "tetrahedron", 1));
+  fem::CoordinateElement element(e);
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
       comm,
@@ -150,7 +153,6 @@ mesh::Mesh build_tet(MPI_Comm comm,
 mesh::Mesh build_hex(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 3> n,
-                     const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner)
 {
@@ -186,6 +188,9 @@ mesh::Mesh build_hex(MPI_Comm comm,
     ++cell;
   }
 
+  auto e = std::make_shared<basix::FiniteElement>(
+      basix::create_element("lagrange", "hexahedron", 1));
+  fem::CoordinateElement element(e);
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
       comm,
@@ -200,14 +205,14 @@ mesh::Mesh build_hex(MPI_Comm comm,
 mesh::Mesh BoxMesh::create(MPI_Comm comm,
                            const std::array<std::array<double, 3>, 2>& p,
                            std::array<std::size_t, 3> n,
-                           const fem::CoordinateElement& element,
+                           mesh::CellType celltype,
                            const mesh::GhostMode ghost_mode,
                            const mesh::CellPartitionFunction& partitioner)
 {
-  if (element.cell_shape() == mesh::CellType::tetrahedron)
-    return build_tet(comm, p, n, element, ghost_mode, partitioner);
-  else if (element.cell_shape() == mesh::CellType::hexahedron)
-    return build_hex(comm, p, n, element, ghost_mode, partitioner);
+  if (celltype == mesh::CellType::tetrahedron)
+    return build_tet(comm, p, n, ghost_mode, partitioner);
+  else if (celltype == mesh::CellType::hexahedron)
+    return build_hex(comm, p, n, ghost_mode, partitioner);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
 }

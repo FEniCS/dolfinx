@@ -77,12 +77,11 @@ void generation(py::module& m)
       "create_box_mesh",
       [](const MPICommWrapper comm,
          const std::array<std::array<double, 3>, 2>& p,
-         std::array<std::size_t, 3> n,
-         const dolfinx::fem::CoordinateElement& element,
+         std::array<std::size_t, 3> n, dolfinx::mesh::CellType celltype,
          dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& partitioner) {
         return dolfinx::generation::BoxMesh::create(
-            comm.get(), p, n, element, ghost_mode,
+            comm.get(), p, n, celltype, ghost_mode,
             create_partitioner_wrapper(partitioner));
       },
       py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("element"),
