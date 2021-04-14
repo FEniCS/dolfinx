@@ -135,14 +135,6 @@ void fem(py::module& m)
       },
       "Create Form from a pointer to ufc_form.");
   m.def(
-      "create_coordinate_map",
-      [](std::uintptr_t cmap) {
-        const ufc_coordinate_mapping* p
-            = reinterpret_cast<const ufc_coordinate_mapping*>(cmap);
-        return dolfinx::fem::create_coordinate_map(*p);
-      },
-      "Create CoordinateElement from a pointer to ufc_coordinate_map.");
-  m.def(
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout) {

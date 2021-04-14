@@ -194,45 +194,6 @@ std::vector<std::string> fem::get_constant_names(const ufc_form& ufc_form)
   return constants;
 }
 //-----------------------------------------------------------------------------
-fem::CoordinateElement
-fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
-{
-  static const std::map<ufc_shape, mesh::CellType> ufc_to_cell
-      = {{vertex, mesh::CellType::point},
-         {interval, mesh::CellType::interval},
-         {triangle, mesh::CellType::triangle},
-         {tetrahedron, mesh::CellType::tetrahedron},
-         {quadrilateral, mesh::CellType::quadrilateral},
-         {hexahedron, mesh::CellType::hexahedron}};
-
-  // Get cell type
-  const mesh::CellType cell_type = ufc_to_cell.at(ufc_cmap.cell_shape);
-  assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
-
-  static const std::map<ufc_shape, std::string> ufc_to_string
-      = {{vertex, "no point"},
-         {interval, "interval"},
-         {triangle, "triangle"},
-         {tetrahedron, "tetrahedron"},
-         {quadrilateral, "quadrilateral"},
-         {hexahedron, "hexahedron"}};
-  const std::string cell_name = ufc_to_string.at(ufc_cmap.cell_shape);
-
-  auto basix_element
-      = std::make_shared<basix::FiniteElement>(basix::create_element(
-          ufc_cmap.element_family, cell_name.c_str(), ufc_cmap.element_degree));
-  return fem::CoordinateElement(basix_element);
-}
-//-----------------------------------------------------------------------------
-fem::CoordinateElement
-fem::create_coordinate_map(ufc_coordinate_mapping* (*fptr)())
-{
-  ufc_coordinate_mapping* cmap = fptr();
-  fem::CoordinateElement element = create_coordinate_map(*cmap);
-  std::free(cmap);
-  return element;
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<fem::FunctionSpace>
 fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
                           const std::string function_name,

@@ -366,18 +366,6 @@ std::shared_ptr<Form<T>> create_form(
   return L;
 }
 
-/// Create a CoordinateElement from ufc
-/// @param[in] ufc_cmap UFC coordinate mapping
-/// @return A DOLFINX coordinate map
-fem::CoordinateElement
-create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap);
-
-/// Create a CoordinateElement from ufc
-/// @param[in] fptr Function Pointer to a ufc_function_coordinate_map
-///   function
-/// @return A DOLFINX coordinate map
-fem::CoordinateElement create_coordinate_map(ufc_coordinate_mapping* (*fptr)());
-
 /// Create FunctionSpace from UFC
 /// @param[in] fptr Function Pointer to a ufc_function_space_create
 ///   function
