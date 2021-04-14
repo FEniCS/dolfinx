@@ -88,7 +88,7 @@ void CoordinateElement::push_forward(array2d<double>& x,
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
-    array2d<double>& X, std::vector<double>& J, tcb::span<double> detJ,
+    array2d<double>& X, std::vector<double>& J, xtl::span<double> detJ,
     std::vector<double>& K, const array2d<double>& x,
     const array2d<double>& cell_geometry) const
 {
@@ -262,7 +262,7 @@ CoordinateElement::tabulate(int n, const array2d<double>& X) const
 void CoordinateElement::compute_jacobian_data(
     const xt::xtensor<double, 4>& tabulated_data, const array2d<double>& X,
     const array2d<double>& cell_geometry, std::vector<double>& J,
-    tcb::span<double> detJ, std::vector<double>& K) const
+    xtl::span<double> detJ, std::vector<double>& K) const
 {
   // Number of points
   int num_points = X.shape[0];

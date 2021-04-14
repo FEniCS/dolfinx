@@ -8,11 +8,11 @@
 
 #include <cassert>
 #include <dolfinx/common/array2d.h>
-#include <dolfinx/common/span.hpp>
 #include <numeric>
 #include <sstream>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::graph
 {
@@ -148,20 +148,20 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList:num_links(node).
-  tcb::span<T> links(int node)
+  xtl::span<T> links(int node)
   {
-    return tcb::span(_array.data() + _offsets[node],
-                     _offsets[node + 1] - _offsets[node]);
+    return xtl::span<T>(_array.data() + _offsets[node],
+                        _offsets[node + 1] - _offsets[node]);
   }
 
   /// Get the links (edges) for given node (const version)
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList:num_links(node).
-  tcb::span<const T> links(int node) const
+  xtl::span<const T> links(int node) const
   {
-    return tcb::span(_array.data() + _offsets[node],
-                     _offsets[node + 1] - _offsets[node]);
+    return xtl::span<const T>(_array.data() + _offsets[node],
+                              _offsets[node + 1] - _offsets[node]);
   }
 
   /// Return contiguous array of links for all nodes (const version)

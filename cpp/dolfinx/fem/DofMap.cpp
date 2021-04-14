@@ -97,8 +97,8 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   std::vector<std::int64_t> global_index_remote(
       dofmap_view.index_map->num_ghosts());
   dofmap_view.index_map->scatter_fwd(
-      tcb::span<const std::int64_t>(global_index),
-      tcb::span<std::int64_t>(global_index_remote), 1);
+      xtl::span<const std::int64_t>(global_index),
+      xtl::span<std::int64_t>(global_index_remote), 1);
   const std::vector ghost_owner_old = dofmap_view.index_map->ghost_owner_rank();
 
   // Compute ghosts for collapsed dofmap
@@ -274,8 +274,8 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   const int bs = dofmap_new->bs();
   for (int c = 0; c < cells->num_nodes(); ++c)
   {
-    tcb::span<const std::int32_t> cell_dofs_view = this->cell_dofs(c);
-    tcb::span<const std::int32_t> cell_dofs = dofmap_new->cell_dofs(c);
+    xtl::span<const std::int32_t> cell_dofs_view = this->cell_dofs(c);
+    xtl::span<const std::int32_t> cell_dofs = dofmap_new->cell_dofs(c);
     for (std::size_t i = 0; i < cell_dofs.size(); ++i)
     {
       for (int k = 0; k < bs; ++k)
