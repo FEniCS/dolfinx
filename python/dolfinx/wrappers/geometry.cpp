@@ -16,6 +16,8 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xtensor.hpp>
 
 namespace py = pybind11;
 
@@ -41,7 +43,10 @@ void geometry(py::module& m)
         [](const py::array_t<double>& p, const py::array_t<double>& q) {
           const std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
           const std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
-          dolfinx::array2d<double> _p(p_s0, 3, 0.0), _q(q_s0, 3, 0.0);
+          xt::xtensor<double, 2> _p
+              = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+          xt::xtensor<double, 2> _q
+              = xt::zeros<double>({q_s0, static_cast<std::size_t>(3)});
 
           auto px = p.unchecked();
           if (px.ndim() == 1)
