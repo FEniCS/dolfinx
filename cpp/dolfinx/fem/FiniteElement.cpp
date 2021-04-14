@@ -21,13 +21,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
       _hash(std::hash<std::string>{}(_signature)),
-      _apply_dof_transformation(ufc_element.apply_dof_transformation),
-      _apply_dof_transformation_to_scalar(
-          ufc_element.apply_dof_transformation_to_scalar),
-      _apply_inverse_transpose_dof_transformation(
-          ufc_element.apply_inverse_transpose_dof_transformation),
-      _apply_inverse_transpose_dof_transformation_to_scalar(
-          ufc_element.apply_inverse_transpose_dof_transformation_to_scalar),
       _bs(ufc_element.block_size),
       _interpolation_is_ident(ufc_element.interpolation_is_identity),
       _needs_permutation_data(ufc_element.needs_transformation_data)
@@ -351,8 +344,6 @@ void FiniteElement::apply_inverse_transpose_dof_transformation(
 {
   basix::apply_inverse_transpose_dof_transformation_real(
       _basix_element_handle, data, block_size, cell_permutation);
-  //  _apply_inverse_transpose_dof_transformation_to_scalar(data,
-  //  cell_permutation, block_size);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::apply_inverse_transpose_dof_transformation(

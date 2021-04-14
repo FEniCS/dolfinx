@@ -250,18 +250,6 @@ private:
   // Dimension of each value space
   std::vector<int> _value_dimension;
 
-  std::function<int(double*, const std::uint32_t, const int)>
-      _apply_dof_transformation;
-
-  std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
-      _apply_dof_transformation_to_scalar;
-
-  std::function<int(double*, const std::uint32_t, const int)>
-      _apply_inverse_transpose_dof_transformation;
-
-  std::function<int(ufc_scalar_t*, const std::uint32_t, const int)>
-      _apply_inverse_transpose_dof_transformation_to_scalar;
-
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs colocated at each point.
   int _bs;
