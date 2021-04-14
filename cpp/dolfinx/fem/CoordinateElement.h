@@ -30,9 +30,14 @@ namespace dolfinx::fem
 class CoordinateElement
 {
 public:
-  /// Create a coordinate element
+  /// Create a coordinate element from a Basix element
   /// @param[in] element Element from Basix
-  CoordinateElement(std::shared_ptr<basix::FiniteElement> element);
+  explicit CoordinateElement(std::shared_ptr<basix::FiniteElement> element);
+
+  /// Create a Lagrage coordinate element
+  /// @param[in] celltype The cell shape
+  /// @param[in] degree Polynomial degree of the map
+  CoordinateElement(mesh::CellType celltype, int degree);
 
   /// Destructor
   virtual ~CoordinateElement() = default;

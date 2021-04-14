@@ -32,6 +32,13 @@ CoordinateElement::CoordinateElement(
   _is_affine = mesh::is_simplex(cell) and degree == 1;
 }
 //-----------------------------------------------------------------------------
+CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
+    : CoordinateElement(std::make_shared<basix::FiniteElement>(
+        basix::create_element("Lagrange", mesh::to_string(celltype), degree)))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 mesh::CellType CoordinateElement::cell_shape() const
 {
   // TODO
