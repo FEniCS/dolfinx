@@ -6,10 +6,10 @@
 
 #include "RectangleMesh.h"
 #include <Eigen/Core>
+#include <basix/finite-element.h>
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 
 using namespace dolfinx;
@@ -21,11 +21,14 @@ namespace
 mesh::Mesh build_tri(MPI_Comm comm,
                      const std::array<std::array<double, 3>, 2>& p,
                      std::array<std::size_t, 2> n,
-                     const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode,
                      const mesh::CellPartitionFunction& partitioner,
                      const std::string& diagonal)
 {
+  auto e = std::make_shared<basix::FiniteElement>(
+      basix::create_element("Lagrange", "triangle", 1));
+  fem::CoordinateElement element(e);
+
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
@@ -210,10 +213,13 @@ mesh::Mesh build_tri(MPI_Comm comm,
 mesh::Mesh build_quad(MPI_Comm comm,
                       const std::array<std::array<double, 3>, 2> p,
                       std::array<std::size_t, 2> n,
-                      const fem::CoordinateElement& element,
                       const mesh::GhostMode ghost_mode,
                       const mesh::CellPartitionFunction& partitioner)
 {
+  auto e = std::make_shared<basix::FiniteElement>(
+      basix::create_element("Lagrange", "quadrilteral", 1));
+  fem::CoordinateElement element(e);
+
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
@@ -276,12 +282,12 @@ mesh::Mesh build_quad(MPI_Comm comm,
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,
                                  const std::array<std::array<double, 3>, 2>& p,
                                  std::array<std::size_t, 2> n,
-                                 const fem::CoordinateElement& element,
+                                 mesh::CellType celltype,
                                  const mesh::GhostMode ghost_mode,
                                  const std::string& diagonal)
 {
   return RectangleMesh::create(
-      comm, p, n, element, ghost_mode,
+      comm, p, n, celltype, ghost_mode,
       static_cast<graph::AdjacencyList<std::int32_t> (*)(
           MPI_Comm, int, int, const graph::AdjacencyList<std::int64_t>&,
           mesh::GhostMode)>(&mesh::partition_cells_graph),
@@ -291,15 +297,15 @@ mesh::Mesh RectangleMesh::create(MPI_Comm comm,
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,
                                  const std::array<std::array<double, 3>, 2>& p,
                                  std::array<std::size_t, 2> n,
-                                 const fem::CoordinateElement& element,
+                                 mesh::CellType celltype,
                                  const mesh::GhostMode ghost_mode,
                                  const mesh::CellPartitionFunction& partitioner,
                                  const std::string& diagonal)
 {
-  if (element.cell_shape() == mesh::CellType::triangle)
-    return build_tri(comm, p, n, element, ghost_mode, partitioner, diagonal);
-  else if (element.cell_shape() == mesh::CellType::quadrilateral)
-    return build_quad(comm, p, n, element, ghost_mode, partitioner);
+  if (celltype == mesh::CellType::triangle)
+    return build_tri(comm, p, n, ghost_mode, partitioner, diagonal);
+  else if (celltype == mesh::CellType::quadrilateral)
+    return build_quad(comm, p, n, ghost_mode, partitioner);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
 }
