@@ -297,11 +297,14 @@ mesh::Mesh RectangleMesh::create(MPI_Comm comm,
                                  const mesh::CellPartitionFunction& partitioner,
                                  const std::string& diagonal)
 {
-  if (celltype == mesh::CellType::triangle)
+  switch (celltype)
+  {
+  case mesh::CellType::triangle:
     return build_tri(comm, p, n, ghost_mode, partitioner, diagonal);
-  else if (celltype == mesh::CellType::quadrilateral)
+  case mesh::CellType::quadrilateral:
     return build_quad(comm, p, n, ghost_mode, partitioner);
-  else
+  default:
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
+  }
 }
 //-----------------------------------------------------------------------------

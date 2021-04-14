@@ -204,11 +204,14 @@ mesh::Mesh BoxMesh::create(MPI_Comm comm,
                            const mesh::GhostMode ghost_mode,
                            const mesh::CellPartitionFunction& partitioner)
 {
-  if (celltype == mesh::CellType::tetrahedron)
+  switch (celltype)
+  {
+  case mesh::CellType::tetrahedron:
     return build_tet(comm, p, n, ghost_mode, partitioner);
-  else if (celltype == mesh::CellType::hexahedron)
+  case mesh::CellType::hexahedron:
     return build_hex(comm, p, n, ghost_mode, partitioner);
-  else
-    throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
+  default:
+    throw std::runtime_error("Generate box mesh. Wrong cell type");
+  }
 }
 //-----------------------------------------------------------------------------
