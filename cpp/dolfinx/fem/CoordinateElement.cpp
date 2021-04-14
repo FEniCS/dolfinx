@@ -229,21 +229,21 @@ void CoordinateElement::compute_reference_geometry(
   }
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::permute_dofs(std::int32_t* dofs,
+void CoordinateElement::permute_dofs(tcb::span<std::int32_t> dofs,
                                      const uint32_t cell_perm) const
 {
-  basix::permute_dofs(_basix_element_handle, dofs, cell_perm);
+  _element->permute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::unpermute_dofs(std::int32_t* dofs,
+void CoordinateElement::unpermute_dofs(tcb::span<std::int32_t> dofs,
                                        const uint32_t cell_perm) const
 {
-  basix::unpermute_dofs(_basix_element_handle, dofs, cell_perm);
+  _element->unpermute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
 bool CoordinateElement::needs_permutation_data() const
 {
-  return !basix::dof_transformations_are_identity(_basix_element_handle);
+  return !_element->dof_transformations_are_identity();
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 4>
