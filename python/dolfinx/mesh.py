@@ -9,7 +9,7 @@ import types
 
 import numpy
 import ufl
-from dolfinx import cpp, fem
+from dolfinx import cpp
 from dolfinx.cpp.mesh import create_meshtags
 
 __all__ = [
@@ -101,7 +101,6 @@ def refine(mesh, cell_markers=None, redistribute=True):
         mesh_refined = cpp.refinement.refine(mesh, redistribute)
     else:
         mesh_refined = cpp.refinement.refine(mesh, cell_markers, redistribute)
-
 
     domain = mesh._ufl_domain
     domain._ufl_cargo = mesh_refined

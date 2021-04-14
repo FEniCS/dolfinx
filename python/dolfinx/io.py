@@ -10,7 +10,7 @@
 import numpy
 import ufl
 
-from dolfinx import cpp, fem
+from dolfinx import cpp
 
 
 class VTKFile:
