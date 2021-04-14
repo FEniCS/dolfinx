@@ -330,3 +330,36 @@ void FiniteElement::map_pull_back(std::complex<double>* physical_data,
                                physical_value_size, nresults, npoints);
 }
 //-----------------------------------------------------------------------------
+void FiniteElement::apply_dof_transformation(double* data,
+                                             std::uint32_t cell_permutation,
+                                             int block_size) const
+{
+  basix::apply_dof_transformation_real(_basix_element_handle, data, block_size,
+                                       cell_permutation);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::apply_dof_transformation(std::complex<double>* data,
+                                             std::uint32_t cell_permutation,
+                                             int block_size) const
+{
+  basix::apply_dof_transformation_complex(_basix_element_handle, data,
+                                          block_size, cell_permutation);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::apply_inverse_transpose_dof_transformation(
+    double* data, std::uint32_t cell_permutation, int block_size) const
+{
+  basix::apply_inverse_transpose_dof_transformation_real(
+      _basix_element_handle, data, block_size, cell_permutation);
+  //  _apply_inverse_transpose_dof_transformation_to_scalar(data,
+  //  cell_permutation, block_size);
+}
+//-----------------------------------------------------------------------------
+void FiniteElement::apply_inverse_transpose_dof_transformation(
+    std::complex<double>* data, std::uint32_t cell_permutation,
+    int block_size) const
+{
+  basix::apply_inverse_transpose_dof_transformation_complex(
+      _basix_element_handle, data, block_size, cell_permutation);
+}
+//-----------------------------------------------------------------------------
