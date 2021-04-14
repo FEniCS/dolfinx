@@ -141,7 +141,7 @@ mesh::Mesh build_tet(MPI_Comm comm,
   }
 
   auto e = std::make_shared<basix::FiniteElement>(
-      basix::create_element("lagrange", "tetrahedron", 1));
+      basix::create_element("Lagrange", "tetrahedron", 1));
   fem::CoordinateElement element(e);
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
@@ -189,7 +189,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
   }
 
   auto e = std::make_shared<basix::FiniteElement>(
-      basix::create_element("lagrange", "hexahedron", 1));
+      basix::create_element("Lagrange", "hexahedron", 1));
   fem::CoordinateElement element(e);
   auto [data, offset] = graph::create_adjacency_data(topo);
   return mesh::create_mesh(
