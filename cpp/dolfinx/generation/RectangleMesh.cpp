@@ -217,7 +217,7 @@ mesh::Mesh build_quad(MPI_Comm comm,
                       const mesh::CellPartitionFunction& partitioner)
 {
   auto e = std::make_shared<basix::FiniteElement>(
-      basix::create_element("Lagrange", "quadrilteral", 1));
+      basix::create_element("Lagrange", "quadrilateral", 1));
   fem::CoordinateElement element(e);
 
   // Receive mesh if not rank 0
