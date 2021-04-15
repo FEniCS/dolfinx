@@ -8,7 +8,6 @@
 
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/array2d.h>
 #include <map>
 #include <memory>
 #include <set>

@@ -113,7 +113,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   bool orient = false;
   if (mesh.topology().cell_type() == mesh::CellType::tetrahedron)
     orient = true;
-  array2d<std::int32_t> geometry_entities
+  xt::xtensor<std::int32_t, 2> geometry_entities
       = entities_to_geometry(mesh, dim, entities, orient);
 
   const std::size_t num_entities = entities.size();
@@ -127,7 +127,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     for (std::size_t i = 0; i < num_entities; ++i)
     {
       // Get the two vertices as points
-      auto vertices = geometry_entities.row(i);
+      auto vertices = xt::row(geometry_entities, i);
       auto p0 = xt::row(xg, vertices[0]);
       auto p1 = xt::row(xg, vertices[1]);
 
@@ -146,7 +146,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     for (std::size_t i = 0; i < num_entities; ++i)
     {
       // Get the three vertices as points
-      auto vertices = geometry_entities.row(i);
+      auto vertices = xt::row(geometry_entities, i);
       auto p0 = xt::row(xg, vertices[0]);
       auto p1 = xt::row(xg, vertices[1]);
       auto p2 = xt::row(xg, vertices[2]);
@@ -164,7 +164,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     for (std::size_t i = 0; i < num_entities; ++i)
     {
       // Get three vertices as points
-      auto vertices = geometry_entities.row(i);
+      auto vertices = xt::row(geometry_entities, i);
       auto p0 = xt::row(xg, vertices[0]);
       auto p1 = xt::row(xg, vertices[1]);
       auto p2 = xt::row(xg, vertices[2]);
@@ -190,13 +190,13 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
-  array2d<std::int32_t> entity_to_geometry
+  xt::xtensor<std::int32_t, 2> entity_to_geometry
       = entities_to_geometry(mesh, dim, entities, false);
 
   xt::xtensor<double, 2> x_mid({entities.size(), 3});
-  for (std::size_t e = 0; e < entity_to_geometry.shape[0]; ++e)
+  for (std::size_t e = 0; e < entity_to_geometry.shape(0); ++e)
   {
-    auto entity_vertices = entity_to_geometry.row(e);
+    auto entity_vertices = xt::row(entity_to_geometry, e);
     auto x_e = xt::row(x_mid, e);
     x_e = 0.0;
     for (std::size_t v = 0; v < entity_vertices.size(); ++v)
@@ -209,7 +209,8 @@ mesh::midpoints(const mesh::Mesh& mesh, int dim,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker)
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker)
 {
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -237,14 +238,14 @@ std::vector<std::int32_t> mesh::locate_entities(
 
   // Pack coordinates of vertices
   const xt::xtensor<double, 2>& x_nodes = mesh.geometry().x();
-  array2d<double> x_vertices(3, vertex_to_node.size());
+  xt::xtensor<double, 2> x_vertices({3, vertex_to_node.size()});
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
     for (std::size_t j = 0; j < 3; ++j)
       x_vertices(j, i) = x_nodes(vertex_to_node[i], j);
 
   // Run marker function on vertex coordinates
-  const std::vector<bool> marked = marker(x_vertices);
-  if (marked.size() != x_vertices.shape[1])
+  const xt::xtensor<bool, 1> marked = marker(x_vertices);
+  if (marked.shape(0) != x_vertices.shape(1))
     throw std::runtime_error("Length of array of markers is wrong.");
 
   // Iterate over entities to build vector of marked entities
@@ -273,7 +274,8 @@ std::vector<std::int32_t> mesh::locate_entities(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker)
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker)
 {
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -327,7 +329,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   assert(v_to_c);
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
-  array2d<double> x_vertices(3, vertices.size());
+  xt::xtensor<double, 2> x_vertices({3, vertices.size()});
   std::vector<std::int32_t> vertex_to_pos(v_to_c->num_nodes(), -1);
   for (std::size_t i = 0; i < vertices.size(); ++i)
   {
@@ -348,8 +350,8 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   }
 
   // Run marker function on the vertex coordinates
-  const std::vector<bool> marked = marker(x_vertices);
-  if (marked.size() != x_vertices.shape[1])
+  const xt::xtensor<bool, 1> marked = marker(x_vertices);
+  if (marked.shape(0) != x_vertices.shape(1))
     throw std::runtime_error("Length of array of markers is wrong.");
 
   // Loop over entities and check vertex markers
@@ -380,16 +382,16 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   return entities;
 }
 //-----------------------------------------------------------------------------
-array2d<std::int32_t>
+xt::xtensor<std::int32_t, 2>
 mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
                            const xtl::span<const std::int32_t>& entity_list,
                            bool orient)
 {
   dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
-  int num_entity_vertices
+  const std::size_t num_entity_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
-  array2d<std::int32_t> entity_geometry(entity_list.size(),
-                                        num_entity_vertices);
+  xt::xtensor<std::int32_t, 2> entity_geometry(
+      {entity_list.size(), num_entity_vertices});
 
   if (orient
       and (cell_type != dolfinx::mesh::CellType::tetrahedron or dim != 2))
@@ -419,10 +421,10 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
     const std::int32_t idx = entity_list[i];
     const std::int32_t cell = e_to_c->links(idx)[0];
     auto ev = e_to_v->links(idx);
-    assert((int)ev.size() == num_entity_vertices);
+    assert(ev.size() == num_entity_vertices);
     const auto cv = c_to_v->links(cell);
     const auto xc = xdofs.links(cell);
-    for (int j = 0; j < num_entity_vertices; ++j)
+    for (std::size_t j = 0; j < num_entity_vertices; ++j)
     {
       int k = std::distance(cv.begin(), std::find(cv.begin(), cv.end(), ev[j]));
       assert(k < (int)cv.size());

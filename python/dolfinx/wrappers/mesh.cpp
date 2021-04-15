@@ -313,12 +313,14 @@ void mesh(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const std::function<py::array_t<bool>(
                const py::array_t<double, py::array::c_style>&)>& marker) {
-          auto cpp_marker = [&marker](const dolfinx::array2d<double>& x) {
-            py::array_t<double> x_view(x.shape, x.strides(), x.data(),
-                                       py::none());
+          auto cpp_marker
+              = [&marker](
+                    const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1> {
+            py::array_t<double> x_view(x.shape(), x.data(), py::none());
             py::array_t<bool> marked = marker(x_view);
-            return std::vector<bool>(marked.data(),
-                                     marked.data() + marked.size());
+            std::array shape = {static_cast<std::size_t>(marked.size())};
+            return xt::adapt(marked.data(), marked.size(), xt::no_ownership(),
+                             shape);
           };
           return as_pyarray(
               dolfinx::mesh::locate_entities(mesh, dim, cpp_marker));
@@ -328,12 +330,14 @@ void mesh(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const std::function<py::array_t<bool>(
                const py::array_t<double, py::array::c_style>&)>& marker) {
-          auto cpp_marker = [&marker](const dolfinx::array2d<double>& x) {
-            py::array_t<double> x_view(x.shape, x.strides(), x.data(),
-                                       py::none());
+          auto cpp_marker
+              = [&marker](
+                    const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1> {
+            py::array_t<double> x_view(x.shape(), x.data(), py::none());
             py::array_t<bool> marked = marker(x_view);
-            return std::vector<bool>(marked.data(),
-                                     marked.data() + marked.size());
+            std::array shape = {static_cast<std::size_t>(marked.size())};
+            return xt::adapt(marked.data(), marked.size(), xt::no_ownership(),
+                             shape);
           };
           return as_pyarray(
               dolfinx::mesh::locate_entities_boundary(mesh, dim, cpp_marker));
@@ -343,7 +347,7 @@ void mesh(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            py::array_t<std::int32_t, py::array::c_style> entity_list,
            bool orient) {
-          return as_pyarray2d(dolfinx::mesh::entities_to_geometry(
+          return xt_as_pyarray(dolfinx::mesh::entities_to_geometry(
               mesh, dim, xtl::span(entity_list.data(), entity_list.size()),
               orient));
         });

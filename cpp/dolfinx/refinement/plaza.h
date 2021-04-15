@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <cstdint>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <utility>
 #include <vector>

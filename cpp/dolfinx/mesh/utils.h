@@ -7,7 +7,6 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/array2d.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <functional>
@@ -64,7 +63,8 @@ xt::xtensor<double, 2> midpoints(const mesh::Mesh& mesh, int dim,
 ///   (indices local to the process)
 std::vector<std::int32_t> locate_entities(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker);
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker);
 
 /// Compute indicies of all mesh entities that are attached to an owned
 /// boundary facet and evaluate to true for the provided geometric
@@ -88,7 +88,8 @@ std::vector<std::int32_t> locate_entities(
 /// process)
 std::vector<std::int32_t> locate_entities_boundary(
     const mesh::Mesh& mesh, int dim,
-    const std::function<std::vector<bool>(const array2d<double>&)>& marker);
+    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+        marker);
 
 /// Compute the indices the geometry data for the vertices of the given
 /// mesh entities
@@ -101,7 +102,7 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// @return Indices in the geometry array for the mesh entity vertices, i.e.
 /// indices(i, j) is the position in the geometry array of the j-th vertex of
 /// the entity entity_list[i].
-array2d<std::int32_t>
+xt::xtensor<std::int32_t, 2>
 entities_to_geometry(const mesh::Mesh& mesh, int dim,
                      const xtl::span<const std::int32_t>& entity_list,
                      bool orient);

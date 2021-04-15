@@ -12,7 +12,6 @@
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/array2d.h>
 #include <string>
 #include <utility>
 
