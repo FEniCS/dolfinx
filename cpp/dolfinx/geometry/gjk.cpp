@@ -29,7 +29,6 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
 {
   assert(s.shape(1) == 3);
   const std::size_t s_rows = s.shape(0);
-
   switch (s_rows)
   {
   case 2:
