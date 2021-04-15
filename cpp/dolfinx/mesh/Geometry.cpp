@@ -63,8 +63,10 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
         = topology.get_cell_permutation_info();
 
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
+    {
       coordinate_element.unpermute_dofs(dofmap.links(cell).data(),
                                         cell_info[cell]);
+    }
   }
 
   // Build list of unique (global) node indices from adjacency list
@@ -88,18 +90,16 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
   // coords
   std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
 
-  // Build coordinate dof array
+  // Build coordinate dof array,  copying coordinates to correct
+  // position
   xt::xtensor<double, 2> xg({coords.shape(0), coords.shape(1)});
+  xt::view(xg, xt::all(), xt::all())
+      = xt::view(coords, xt::keep(l2l), xt::all());
 
-  // Allocate space for input global indices
+  // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(indices.size());
-
-  for (std::size_t i = 0; i < coords.shape(0); ++i)
-  {
-    for (std::size_t j = 0; j < coords.shape(1); ++j)
-      xg(i, j) = coords(l2l[i], j);
-    igi[i] = indices[l2l[i]];
-  }
+  std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
+                 [&indices](auto index) { return indices[index]; });
 
   // If the mesh has higher order geometry, permute the dofmap
   if (coordinate_element.needs_permutation_data())
@@ -110,8 +110,10 @@ mesh::create_geometry(MPI_Comm comm, const Topology& topology,
         = topology.get_cell_permutation_info();
 
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
+    {
       coordinate_element.permute_dofs(dofmap.links(cell).data(),
                                       cell_info[cell]);
+    }
   }
 
   return Geometry(dof_index_map, std::move(dofmap), coordinate_element,

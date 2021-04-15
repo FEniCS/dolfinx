@@ -659,7 +659,7 @@ void fem(py::module& m)
             std::array<std::size_t, 2> shape_u
                 = {static_cast<std::size_t>(u.shape(0)),
                    static_cast<std::size_t>(u.shape(1))};
-            xt::xtensor<double, 2> _u = xt::adapt(u.mutable_data(), u.size(),
+            xt::xtensor<PetscScalar, 2> _u = xt::adapt(u.mutable_data(), u.size(),
                                                   xt::no_ownership(), shape_u);
             self.eval(_x, xtl::span(cells.data(), cells.size()), _u);
             std::copy_n(_u.data(), _u.size(), u.mutable_data());

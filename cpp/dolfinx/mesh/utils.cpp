@@ -80,9 +80,8 @@ std::vector<double> mesh::h(const Mesh& mesh,
   {
     // Get the coordinates  of the vertices
     auto dofs = x_dofs.links(entities[e]);
-    for (int i = 0; i < num_vertices; ++i)
-      for (int j = 0; j < 3; ++j)
-        points(i, j) = geom_dofs(dofs[i], j);
+    xt::view(points, xt::range(0, num_vertices), xt::all())
+        = xt::view(geom_dofs, xt::keep(dofs), xt::all());
 
     // Get maximum edge length
     for (int i = 0; i < num_vertices; ++i)
@@ -394,7 +393,9 @@ mesh::entities_to_geometry(const mesh::Mesh& mesh, int dim,
 
   if (orient
       and (cell_type != dolfinx::mesh::CellType::tetrahedron or dim != 2))
+  {
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
+  }
 
   const mesh::Geometry& geometry = mesh.geometry();
   const xt::xtensor<double, 2>& geom_dofs = geometry.x();
@@ -486,7 +487,9 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   {
     if (f_to_c->num_links(f) == 1
         and fwd_shared_facets.find(f) == fwd_shared_facets.end())
+    {
       surface_facets.push_back(f);
+    }
   }
 
   return surface_facets;
