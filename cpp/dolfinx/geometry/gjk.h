@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <xtensor/xfixed.hpp>
 #include <xtensor/xtensor.hpp>
 
 namespace dolfinx::geometry
@@ -19,7 +20,8 @@ namespace dolfinx::geometry
 /// @param[in] p Body 1 list of points, shape (num_points, 3)
 /// @param[in] q Body 2 list of points, shape (num_points, 3)
 /// @return shortest vector between bodies
-std::array<double, 3> compute_distance_gjk(const xt::xtensor<double, 2>& p,
-                                           const xt::xtensor<double, 2>& q);
+xt::xtensor_fixed<double, xt::xshape<3>>
+compute_distance_gjk(const xt::xtensor<double, 2>& p,
+                     const xt::xtensor<double, 2>& q);
 
 } // namespace dolfinx::geometry

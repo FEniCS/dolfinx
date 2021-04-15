@@ -78,7 +78,9 @@ void geometry(py::module& m)
           else
             throw std::runtime_error("Array has wrong ndim.");
 
-          return dolfinx::geometry::compute_distance_gjk(_p, _q);
+          const xt::xtensor_fixed<double, xt::xshape<3>> d
+              = dolfinx::geometry::compute_distance_gjk(_p, _q);
+          return py::array_t<double>(d.shape(), d.data());
         });
 
   m.def("squared_distance", &dolfinx::geometry::squared_distance);

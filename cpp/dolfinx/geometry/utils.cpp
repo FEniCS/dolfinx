@@ -327,8 +327,7 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
       for (std::size_t j = 0; j < 3; ++j)
         nodes(i, j) = geom_dofs(dofs[i], j);
 
-    const std::array<double, 3> x = geometry::compute_distance_gjk(_p, nodes);
-    return x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
+    return xt::norm_sq(geometry::compute_distance_gjk(_p, nodes))();
   }
   else
   {
@@ -358,8 +357,7 @@ double geometry::squared_distance(const mesh::Mesh& mesh, int dim,
       for (std::size_t j = 0; j < 3; ++j)
         nodes(i, j) = geom_dofs(dofs[entity_dofs[i]], j);
 
-    std::array<double, 3> x = geometry::compute_distance_gjk(_p, nodes);
-    return x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
+    return xt::norm_sq(geometry::compute_distance_gjk(_p, nodes))();
   }
 }
 //-------------------------------------------------------------------------------

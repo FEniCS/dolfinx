@@ -189,7 +189,7 @@ support(const xt::xtensor<double, 2>& bd,
 }
 } // namespace
 //----------------------------------------------------------------------------
-std::array<double, 3>
+xt::xtensor_fixed<double, xt::xshape<3>>
 geometry::compute_distance_gjk(const xt::xtensor<double, 2>& p,
                                const xt::xtensor<double, 2>& q)
 {
@@ -248,6 +248,6 @@ geometry::compute_distance_gjk(const xt::xtensor<double, 2>& p,
   if (k == maxk)
     throw std::runtime_error("GJK error: max iteration limit reached");
 
-  return {v[0], v[1], v[2]};
+  return v;
 }
 //----------------------------------------------------------------------------
