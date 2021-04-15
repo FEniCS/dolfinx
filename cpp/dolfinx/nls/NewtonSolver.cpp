@@ -62,15 +62,16 @@ void update_solution(const nls::NewtonSolver& solver, const Vec dx, Vec x)
 } // namespace
 
 //-----------------------------------------------------------------------------
-nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
+nls::NewtonSolver::NewtonSolver(MPI_Comm comm, const std::string solver_type,
+                                const std::string pc_type)
     : _converged(converged), _update_solution(update_solution),
       _krylov_iterations(0), _iteration(0), _residual(0.0), _residual0(0.0),
       _solver(comm), _dx(nullptr), _mpi_comm(comm)
 {
   // Create linear solver if not already created. Default to LU.
   _solver.set_options_prefix("nls_solve_");
-  la::PETScOptions::set("nls_solve_ksp_type", "preonly");
-  la::PETScOptions::set("nls_solve_pc_type", "lu");
+  la::PETScOptions::set("nls_solve_ksp_type", solver_type);
+  la::PETScOptions::set("nls_solve_pc_type", pc_type);
 #if PETSC_HAVE_MUMPS
   la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
 #endif

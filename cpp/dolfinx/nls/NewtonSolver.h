@@ -33,7 +33,9 @@ class NewtonSolver
 public:
   /// Create nonlinear solver
   /// @param[in] comm The MPI communicator for the solver
-  explicit NewtonSolver(MPI_Comm comm);
+  explicit NewtonSolver(MPI_Comm comm,
+                        const std::string solver_type = "preonly",
+                        const std::string pc_type = "lu");
 
   /// Destructor
   virtual ~NewtonSolver();
