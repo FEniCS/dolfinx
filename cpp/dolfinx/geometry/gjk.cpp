@@ -5,9 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "gjk.h"
-#include <array>
-#include <iomanip>
-#include <iostream>
 #include <stdexcept>
 #include <tuple>
 #include <xtensor-blas/xlinalg.hpp>

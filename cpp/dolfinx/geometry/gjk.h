@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <array>
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xtensor.hpp>
 
