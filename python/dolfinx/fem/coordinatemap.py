@@ -16,13 +16,13 @@ def create_coordinate_map(comm, o):
     try:
         # Create a compiled coordinate map from an object with the
         # ufl_mesh attribute
-        cmap_ptr = jit.ffcx_jit(comm, o.ufl_domain())
+        ufc_cmap = jit.ffcx_jit(comm, o.ufl_domain())
     except AttributeError:
         # FIXME: It would be good to avoid the type check, but ffc_jit
         # supports other objects so we could get, e.g., a compiled
         # finite element
         if isinstance(o, ufl.domain.Mesh):
-            cmap_ptr = jit.ffcx_jit(comm, o)
+            ufc_cmap = jit.ffcx_jit(comm, o)
         else:
             raise TypeError(
                 "Cannot create coordinate map from an object of type: {}"
@@ -33,5 +33,5 @@ def create_coordinate_map(comm, o):
 
     # Wrap compiled coordinate map and return
     ffi = FFI()
-    cmap = cpp.fem.create_coordinate_map(ffi.cast("uintptr_t", cmap_ptr))
+    cmap = cpp.fem.create_coordinate_map(ffi.cast("uintptr_t", ffi.addressof(ufc_cmap)))
     return cmap
