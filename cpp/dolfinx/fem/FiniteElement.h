@@ -14,7 +14,6 @@
 #include <vector>
 #include <xtl/xspan.hpp>
 
-struct ufc_coordinate_mapping;
 struct ufc_finite_element;
 
 namespace dolfinx::fem
