@@ -6,9 +6,13 @@ name: Docker environment images (ARM)
 
 on:
   # Uncomment the below to trigger 'docker build' on push
-   push:
+  push:
     branches:
       - "**"
+  schedule:
+    # '*' is a special character in YAML, so string must be quoted
+    - cron: "0 4 * * MON"
+  workflow_dispatch: ~
 
 jobs:
   start_runner:
@@ -30,18 +34,63 @@ jobs:
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0f1631321e16df148
+          ec2-image-id: ami-0de56e022172321f4
           ec2-instance-type: t4g.micro
           subnet-id: subnet-dc2151b7
           security-group-id: sg-03fc69ee7a6ba8bc4
 
-  test_job:
-    name: Build fenicsproject/test-env:mpich image
+  build_test_env_openmpi:
+    name: Build fenicsproject/test-env:openmpi image
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
     needs: start_runner
     runs-on: ${{ needs.start_runner.outputs.label }}
+    env:
+      PETSC_SLEPC_OPTFLAGS: "-O2 -g"
+      PETSC_SLEPC_DEBUGGING: "yes"
+      MPI: "openmpi"
     steps:
-      - name: Hello World
-        run: echo 'Hello World!'
+      - uses: actions/checkout@v2
+      - name: build the docker image
+        run: docker buildx --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI} docker/
+      - name: log into the dockerhub registry
+        run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
+      - name: push to the dockerhub registry
+        run: docker push fenicsproject/test-env:${MPI}
+
+  build_test_env_mpich:
+    name: Build fenicsproject/test-env:mpich image
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    needs: start_runner
+    runs-on: ${{ needs.start_runner.outputs.label }}
+    env:
+      PETSC_SLEPC_OPTFLAGS: "-O2 -g"
+      PETSC_SLEPC_DEBUGGING: "yes"
+      MPI: "mpich"
+    steps:
+      - uses: actions/checkout@v2
+      - name: build the docker image
+        run: docker buildx --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${MPI} docker/
+      - name: log into the dockerhub registry
+        run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
+      - name: push to the dockerhub registry
+        run: docker push fenicsproject/test-env:${MPI}
+
+  build_dev_env:
+    name: Build dolfinx/dev-env image
+    if: ${{ github.repository == 'FEniCS/dolfinx' && github.ref == 'refs/heads/main' }}
+    runs-on: ${{ needs.start_runner.outputs.label }}
+    env:
+      PETSC_SLEPC_OPTFLAGS: "-O2 -march=sandybridge"
+      PETSC_SLEPC_DEBUGGING: "no"
+      MPI: "mpich"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build the Docker image
+        run: docker buildx --build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env docker/
+      - name: Log into the DockerHub registry
+        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+      - name: Push to the DockerHub registry
+        run: docker push dolfinx/dev-env
 
   stop-runner:
     name: Stop self-hosted EC2 runner
