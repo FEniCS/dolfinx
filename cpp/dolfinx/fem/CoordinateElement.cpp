@@ -17,10 +17,8 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
-    std::shared_ptr<basix::FiniteElement> element, int geometric_dimension,
-    const std::string& signature, const ElementDofLayout& dof_layout)
-    : _gdim(geometric_dimension), _signature(signature),
-      _dof_layout(dof_layout), _element(element)
+    std::shared_ptr<basix::FiniteElement> element)
+    : _element(element)
 {
   int degree = _element->degree();
   const char* cell_type
@@ -34,6 +32,13 @@ CoordinateElement::CoordinateElement(
 
   const mesh::CellType cell = cell_shape();
   _is_affine = mesh::is_simplex(cell) and degree == 1;
+}
+//-----------------------------------------------------------------------------
+CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
+    : CoordinateElement(std::make_shared<basix::FiniteElement>(
+        basix::create_element("Lagrange", mesh::to_string(celltype), degree)))
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 mesh::CellType CoordinateElement::cell_shape() const
@@ -59,18 +64,27 @@ int CoordinateElement::topological_dimension() const
   return basix::cell::topology(_element->cell_type()).size() - 1;
 }
 //-----------------------------------------------------------------------------
-int CoordinateElement::geometric_dimension() const { return _gdim; }
-//-----------------------------------------------------------------------------
-const ElementDofLayout& CoordinateElement::dof_layout() const
+ElementDofLayout CoordinateElement::dof_layout() const
 {
-  return _dof_layout;
+  assert(_element);
+  int counter = 0;
+  const std::vector<std::vector<int>>& edofs = _element->entity_dofs();
+  std::vector<std::vector<std::set<int>>> entity_dofs(edofs.size());
+  for (std::size_t d = 0; d < edofs.size(); ++d)
+  {
+    entity_dofs[d].resize(edofs[d].size());
+    for (std::size_t e = 0; e < edofs[d].size(); ++e)
+      for (int i = 0; i < edofs[d][e]; ++i)
+        entity_dofs[d][e].insert(counter++);
+  }
+
+  return ElementDofLayout(1, entity_dofs, {}, {}, this->cell_shape());
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(array2d<double>& x,
                                      const array2d<double>& cell_geometry,
                                      const xt::xtensor<double, 2>& phi) const
 {
-  assert((int)x.shape[1] == this->geometric_dimension());
   assert(phi.shape(2) == cell_geometry.shape[0]);
 
   // Compute physical coordinates
@@ -105,8 +119,7 @@ void CoordinateElement::compute_reference_geometry(
 
   // in-argument checks
   const int tdim = this->topological_dimension();
-  const int gdim = this->geometric_dimension();
-  assert(_x.cols() == gdim);
+  const int gdim = _x.cols();
   assert(_cell_geometry.cols() == gdim);
 
   // In/out size checks
@@ -128,7 +141,7 @@ void CoordinateElement::compute_reference_geometry(
 
   if (_is_affine)
   {
-    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> x0(_gdim);
+    Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1> x0(gdim);
     Eigen::ArrayXXd X0 = Eigen::ArrayXXd::Zero(1, tdim);
 
     basix::tabulate(_basix_element_handle, tabulated_data.data(), 1, X0.data(),
@@ -238,11 +251,6 @@ void CoordinateElement::permute_dofs(tcb::span<std::int32_t> dofs,
 void CoordinateElement::unpermute_dofs(tcb::span<std::int32_t> dofs,
                                        const uint32_t cell_perm) const
 {
-  _element->unpermute_dofs(dofs, cell_perm);
-}
-//-----------------------------------------------------------------------------
-bool CoordinateElement::needs_permutation_data() const
-{
   return !_element->dof_transformations_are_identity();
 }
 //-----------------------------------------------------------------------------
@@ -266,8 +274,7 @@ void CoordinateElement::compute_jacobian(
 
   // in-argument checks
   const int tdim = this->topological_dimension();
-  const int gdim = this->geometric_dimension();
-  assert(int(cell_geom.shape(1)) == gdim);
+  const int gdim = cell_geom.shape(1);
 
   // In/out size checks
   assert((int)J.size() == num_points * gdim * tdim);
