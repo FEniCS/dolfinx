@@ -49,24 +49,45 @@ public:
   /// Return the topological dimension of the cell shape
   int topological_dimension() const;
 
-  /// Tabulate shape functions up to n-th order derivative at points X in the
-  /// reference geometry
-  /// Note: Dynamic allocation.
+  /// Compute basis values and derivatives at set of points.
+  /// @param[in] nd The order of derivatives, up to and including, to
+  /// compute. Use 0 for the basis functions only.
+  /// @param[in] x The points at which to compute the basis functions.
+  /// The shape of x is (number of points, geometric dimension).
+  /// @return The basis functions (and derivatives). The shape is
+  /// (derivative, number point, number of basis fn, value size).
   xt::xtensor<double, 4> tabulate(int n, const array2d<double>& X) const;
 
-  /// Compute Jacobian for a cell with given geometry, and the
-  /// basis functions and first order derivatives using the tabulated data
+  /// Compute Jacobian for a cell with given geometry using the
+  /// basis functions and first order derivatives.
+  /// @param[in] tabulated_data Pre-computed basis values and derivatives at set
+  /// of points. Need at least first order derivative.
+  /// @param[in] cell_geometry Coordinates/geometry
+  /// @param[in,out] J The Jacobian
+  /// The shape of J is (number of points, geometric dimension, topological
+  /// dimenson).
   void compute_jacobian(const xt::xtensor<double, 4>& tabulated_data,
                         const xt::xtensor<double, 2>& cell_geometry,
                         xt::xtensor<double, 3>& J) const;
 
-  /// Compute Jacobian for a cell with given geometry, and the
-  /// basis functions and first order derivatives using the tabulated data
+  /// Compute the inverse of the Jacobian. If the coordinate element is
+  /// affine, it computes the inverse at only one point.
+  /// @param[in] J The Jacobian
+  /// The shape of J is (number of points, geometric dimension, topological
+  /// dimenson).
+  /// @param[in,out] K The inverse of the Jacobian
+  /// The shape of J is (number of points, tpological dimension, geometrical
+  /// dimenson).
   void compute_jacobian_inverse(const xt::xtensor<double, 3>& J,
                                 xt::xtensor<double, 3>& K) const;
 
-  /// Compute Jacobian for a cell with given geometry, and the
-  /// basis functions and first order derivatives using the tabulated data
+  /// Compute the determinant of the Jacobian. If the coordinate element is
+  /// affine, it computes the determinant at only one point.
+  /// @param[in] J Polynomial degree of the map
+  /// The shape of J is (number of points, geometric dimension, topological
+  /// dimenson).
+  /// @param[in,out] detJ Jacobian
+  /// The shape of detJ is (number of points)
   void compute_jacobian_determinant(const xt::xtensor<double, 3>& J,
                                     xt::xtensor<double, 1>& detJ) const;
 
