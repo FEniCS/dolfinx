@@ -26,9 +26,9 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
-#include <xtensor/xadapt.hpp>
 
 namespace dolfinx::fem
 {
@@ -343,9 +343,12 @@ public:
       xt::xtensor<double, 2> xpview = xt::adapt(xp.data(), xp.shape);
       xt::xtensor<double, 2> coord_view
           = xt::adapt(coordinate_dofs.data(), coordinate_dofs.shape);
-      
       cmap.compute_reference_geometry(Xview, Jview, detJview, Kview, xpview,
                                       coord_view);
+      std::copy(Xview.begin(), Xview.end(), X.data());
+      std::copy(Jview.begin(), Jview.end(), J.data());
+      std::copy(Kview.begin(), Kview.end(), K.data());
+      std::copy(detJview.begin(), detJview.end(), detJ.data());
 
       // Compute basis on reference element
       element->evaluate_reference_basis(basis_reference_values, X);

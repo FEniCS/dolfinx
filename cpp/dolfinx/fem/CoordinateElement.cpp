@@ -37,15 +37,6 @@ CoordinateElement::CoordinateElement(
     : _element(element)
 {
   int degree = _element->degree();
-  const char* cell_type
-      = basix::cell::type_to_str(_element->cell_type()).c_str();
-
-  const char* family_name
-      = basix::element::type_to_str(_element->family()).c_str();
-
-  _basix_element_handle
-      = basix::register_element(family_name, cell_type, degree);
-
   const mesh::CellType cell = cell_shape();
   _is_affine = mesh::is_simplex(cell) and degree == 1;
 }
@@ -157,7 +148,7 @@ void CoordinateElement::compute_reference_geometry(
   }
   else
   {
-    xt::xtensor<double, 1> Xk = xt::empty<double>({tdim});
+    xt::xtensor<double, 2> Xk = xt::empty<double>({1, tdim});
     xt::xtensor<double, 1> dX = xt::empty<double>({tdim});
     for (int ip = 0; ip < num_points; ++ip)
     {
@@ -174,7 +165,6 @@ void CoordinateElement::compute_reference_geometry(
         compute_jacobian_inverse(J, K);
         compute_jacobian_determinant(J, detJ);
 
-        // Calculate X for each point
         auto K0 = xt::view(K, 0, xt::all(), xt::all());
         dX = xt::linalg::dot(K0, xt::row(x, ip) - xk);
 
@@ -182,7 +172,7 @@ void CoordinateElement::compute_reference_geometry(
           break;
         Xk += dX;
       }
-      xt::row(X, ip) = Xk;
+      xt::row(X, ip) = xt::row(Xk, 0);
       if (k == non_affine_max_its)
       {
         throw std::runtime_error(

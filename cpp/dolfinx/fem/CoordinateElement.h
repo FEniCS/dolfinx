@@ -111,11 +111,6 @@ private:
   // Flag denoting affine map
   bool _is_affine;
 
-  // TODO: This should be removed now as we are transitioning to
-  // basix::FiniteElement
-  // Basix element
-  int _basix_element_handle;
-
   // Basix Element
   std::shared_ptr<basix::FiniteElement> _element;
 };
